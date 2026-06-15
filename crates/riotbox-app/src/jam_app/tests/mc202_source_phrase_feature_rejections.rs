@@ -52,6 +52,27 @@ fn committed_mc202_answer_rejects_feature_empty_source_phrase_as_fallback() {
         plan.fallback_reason.as_deref(),
         Some("stay_out_source_context")
     );
+    assert_eq!(
+        plan.candidate_family,
+        Some(Mc202SourcePhraseCandidateFamilyState::StayOut)
+    );
+    assert!(
+        plan.candidate_scorecards.iter().any(|score| {
+            score.selected
+                && score.family == Mc202SourcePhraseCandidateFamilyState::StayOut
+                && score.rejection_reason.is_none()
+                && score.source_grid_lock <= 0.35
+        }),
+        "{plan:?}"
+    );
+    assert!(
+        plan.candidate_scorecards.iter().any(|score| {
+            score.family == Mc202SourcePhraseCandidateFamilyState::FallbackControl
+                && score.rejection_reason.as_deref()
+                    == Some("control_template_not_source_derived")
+        }),
+        "{plan:?}"
+    );
     assert!(plan.rhythm_cells.iter().all(Option::is_none));
     assert_eq!(state.runtime.mc202_render.routing, Mc202RenderRouting::Silent);
     assert!(state.runtime.mc202_render.source_phrase_plan.is_none());

@@ -248,8 +248,12 @@ sixteen-step rhythm/interval cells, note budget, touch, confidence, and any
 explicit fallback reason. It also records the selected source-phrase candidate
 family, generated candidate count, rejected candidate count, and provenance refs
 for the source features / candidate rejections that led to the committed plan.
-Missing or `None` means the lane is still using the primitive MC-202 role/shape
-projection and must not be described as source-derived phrase intelligence.
+Candidate scorecards record the winning and losing families with total score,
+low-end impact, source-grid lock, answer contrast, hook avoidance, phrase
+memory, destructive usefulness, role fit, and explicit rejection reason when a
+candidate was rejected. Missing or `None` means the lane is still using the
+primitive MC-202 role/shape projection and must not be described as
+source-derived phrase intelligence.
 
 The stable candidate-family labels are `sub_pressure_shove`,
 `sparse_offbeat_answer`, `call_back_stab`,

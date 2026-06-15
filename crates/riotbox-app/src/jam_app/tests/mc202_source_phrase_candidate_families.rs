@@ -35,9 +35,111 @@ fn committed_mc202_answer_records_source_backed_candidate_family_metadata() {
             .any(|reference| reference.starts_with("candidate_rejected:fallback_control")),
         "{plan:?}"
     );
+    assert_eq!(
+        plan.candidate_scorecards.len(),
+        plan.candidate_count as usize,
+        "{plan:?}"
+    );
+    let selected_score = plan
+        .candidate_scorecards
+        .iter()
+        .find(|score| score.selected)
+        .expect("selected candidate scorecard");
+    assert_eq!(
+        selected_score.family,
+        Mc202SourcePhraseCandidateFamilyState::SparseOffbeatAnswer
+    );
+    assert!(selected_score.total_score > 0.50, "{selected_score:?}");
+    assert!(
+        selected_score.answer_contrast > selected_score.low_end_impact,
+        "{selected_score:?}"
+    );
+    assert!(
+        plan.candidate_scorecards.iter().any(|score| {
+            score.family == Mc202SourcePhraseCandidateFamilyState::FallbackControl
+                && score.rejection_reason.as_deref()
+                    == Some("control_template_not_source_derived")
+        }),
+        "{plan:?}"
+    );
+    assert!(plan.phrase_memory_distance > 0.90, "{plan:?}");
 
     let metrics = signal_metrics(&rendered);
     assert!(metrics.rms > 0.001, "candidate-backed answer rendered silent");
+}
+
+#[test]
+fn committed_mc202_answer_candidate_scoring_is_deterministic_for_same_source_seed() {
+    let mut graph = source_phrase_test_graph("src-deterministic", "hash-deterministic", 132.0, 37, 2);
+    add_phrase_audio_features(
+        &mut graph, 2, 0.12, 0.20, 0.18, 0.36, 0.78, 0.30, 0.18, 0.15,
+    );
+    let mut first_state = confirmed_source_phrase_state(graph.clone());
+    let mut second_state = confirmed_source_phrase_state(graph);
+
+    commit_source_derived_answer(&mut first_state);
+    commit_source_derived_answer(&mut second_state);
+    let first_plan = first_state
+        .session
+        .runtime_state
+        .lane_state
+        .mc202
+        .source_phrase_plan
+        .as_ref()
+        .expect("first candidate plan");
+    let second_plan = second_state
+        .session
+        .runtime_state
+        .lane_state
+        .mc202
+        .source_phrase_plan
+        .as_ref()
+        .expect("second candidate plan");
+
+    assert_eq!(first_plan.candidate_family, second_plan.candidate_family);
+    assert_eq!(first_plan.rhythm_cells, second_plan.rhythm_cells);
+    assert_eq!(first_plan.candidate_scorecards, second_plan.candidate_scorecards);
+}
+
+#[test]
+fn committed_mc202_answer_scorecards_record_phrase_memory_after_previous_plan() {
+    let mut graph = source_phrase_test_graph("src-memory", "hash-memory", 132.0, 43, 2);
+    add_phrase_audio_features(
+        &mut graph, 2, 0.12, 0.20, 0.18, 0.36, 0.78, 0.30, 0.18, 0.15,
+    );
+    let mut state = confirmed_source_phrase_state(graph);
+
+    commit_source_derived_answer(&mut state);
+    let first_memory = state
+        .session
+        .runtime_state
+        .lane_state
+        .mc202
+        .source_phrase_plan
+        .as_ref()
+        .expect("first candidate plan")
+        .phrase_memory_distance;
+    commit_source_derived_answer(&mut state);
+    let second_plan = state
+        .session
+        .runtime_state
+        .lane_state
+        .mc202
+        .source_phrase_plan
+        .as_ref()
+        .expect("second candidate plan");
+    let selected_score = second_plan
+        .candidate_scorecards
+        .iter()
+        .find(|score| score.selected)
+        .expect("selected candidate scorecard");
+
+    assert!(first_memory > 0.90, "{first_memory}");
+    assert!(second_plan.phrase_memory_distance < 1.0, "{second_plan:?}");
+    assert_eq!(
+        selected_score.phrase_memory,
+        second_plan.phrase_memory_distance
+    );
 }
 
 #[test]

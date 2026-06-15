@@ -41,8 +41,19 @@ pub(super) fn derive_mc202_source_phrase_plan(
     let section = section_for_transport_bar(graph, &transport_clock_from_boundary(boundary));
     let features = mc202_source_phrase_feature_vector(graph, phrase_slot);
     let source_fallback_reason = source_phrase_fallback_reason(&features);
-    let candidate_selection =
-        choose_source_phrase_candidate(graph, role, section, phrase_slot, &features);
+    let candidate_selection = choose_source_phrase_candidate(
+        graph,
+        role,
+        section,
+        phrase_slot,
+        &features,
+        session
+            .runtime_state
+            .lane_state
+            .mc202
+            .source_phrase_plan
+            .as_ref(),
+    );
     let fallback_reason = source_fallback_reason.or(candidate_selection.fallback_reason.clone());
     let rhythm_cells =
         if fallback_reason.is_none() && candidate_selection.candidate_family.is_source_derived() {
@@ -68,6 +79,8 @@ pub(super) fn derive_mc202_source_phrase_plan(
         candidate_count: candidate_selection.candidate_count,
         rejected_candidate_count: candidate_selection.rejected_candidate_count,
         candidate_provenance_refs: candidate_selection.provenance_refs,
+        candidate_scorecards: candidate_selection.scorecards,
+        phrase_memory_distance: candidate_selection.phrase_memory_distance,
         fallback_reason,
     })
 }

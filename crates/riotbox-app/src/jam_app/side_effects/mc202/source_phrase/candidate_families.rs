@@ -1,6 +1,8 @@
 use riotbox_core::{
     session::{
-        Mc202RoleState, Mc202SourcePhraseCandidateFamilyState, Mc202SourcePhraseNoteBudgetState,
+        Mc202RoleState, Mc202SourcePhraseCandidateFamilyState,
+        Mc202SourcePhraseCandidateScoreState, Mc202SourcePhraseNoteBudgetState,
+        Mc202SourcePhrasePlanState,
     },
     source_graph::{Mc202SourcePhraseFeatureVector, PhraseSpan, Section, SourceGraph},
 };
@@ -10,6 +12,12 @@ use super::{
     source_phrase_contour_offset, source_phrase_fingerprint, source_phrase_note_budget,
 };
 
+mod scoring;
+
+use scoring::{
+    candidate_score, candidate_scorecards, phrase_memory_distance, phrase_memory_rejection_reason,
+};
+
 pub(super) struct Mc202SourcePhraseCandidateSelection {
     pub rhythm_cells: [Option<i8>; 16],
     pub note_budget: Mc202SourcePhraseNoteBudgetState,
@@ -17,6 +25,8 @@ pub(super) struct Mc202SourcePhraseCandidateSelection {
     pub candidate_count: u8,
     pub rejected_candidate_count: u8,
     pub provenance_refs: Vec<String>,
+    pub scorecards: Vec<Mc202SourcePhraseCandidateScoreState>,
+    pub phrase_memory_distance: f32,
     pub fallback_reason: Option<String>,
 }
 
@@ -25,6 +35,7 @@ struct Mc202SourcePhraseCandidate {
     cells: [Option<i8>; 16],
     score: f32,
     rejection_reason: Option<&'static str>,
+    phrase_memory: f32,
 }
 
 pub(super) fn choose_source_phrase_candidate(
@@ -33,53 +44,61 @@ pub(super) fn choose_source_phrase_candidate(
     section: Option<&Section>,
     phrase_slot: &PhraseSpan,
     features: &Mc202SourcePhraseFeatureVector,
+    previous_plan: Option<&Mc202SourcePhrasePlanState>,
 ) -> Mc202SourcePhraseCandidateSelection {
     let contour = source_phrase_contour_offset(section, features);
     let fingerprint = source_phrase_fingerprint(graph, section, phrase_slot);
     let mut candidates = [
         build_candidate(
             Mc202SourcePhraseCandidateFamilyState::SubPressureShove,
-            role,
             features,
             fingerprint,
         ),
         build_candidate(
             Mc202SourcePhraseCandidateFamilyState::SparseOffbeatAnswer,
-            role,
             features,
             fingerprint,
         ),
         build_candidate(
             Mc202SourcePhraseCandidateFamilyState::CallBackStab,
-            role,
             features,
             fingerprint,
         ),
         build_candidate(
             Mc202SourcePhraseCandidateFamilyState::HookRestraintGhostAnswer,
-            role,
             features,
             fingerprint,
         ),
         build_candidate(
             Mc202SourcePhraseCandidateFamilyState::FillPickupInstigator,
-            role,
             features,
             fingerprint,
         ),
         build_candidate(
             Mc202SourcePhraseCandidateFamilyState::StayOut,
-            role,
             features,
             fingerprint,
         ),
         build_candidate(
             Mc202SourcePhraseCandidateFamilyState::FallbackControl,
-            role,
             features,
             fingerprint,
         ),
     ];
+
+    for candidate in &mut candidates {
+        candidate.phrase_memory = phrase_memory_distance(previous_plan, candidate);
+        candidate.rejection_reason = candidate
+            .rejection_reason
+            .or_else(|| phrase_memory_rejection_reason(previous_plan, candidate));
+        candidate.score = candidate_score(
+            candidate.family,
+            role,
+            features,
+            candidate.phrase_memory,
+            candidate.rejection_reason,
+        );
+    }
 
     let candidate_count = candidates.len() as u8;
     let rejected_candidate_count = candidates
@@ -121,13 +140,14 @@ pub(super) fn choose_source_phrase_candidate(
         candidate_count,
         rejected_candidate_count,
         provenance_refs: candidate_provenance_refs(features, &candidates, selected_index),
+        scorecards: candidate_scorecards(role, features, &candidates, selected_index),
+        phrase_memory_distance: candidates[selected_index].phrase_memory,
         fallback_reason: candidate_fallback_reason(family, selected_rejection_reason),
     }
 }
 
 fn build_candidate(
     family: Mc202SourcePhraseCandidateFamilyState,
-    role: Mc202RoleState,
     features: &Mc202SourcePhraseFeatureVector,
     fingerprint: Mc202SourcePhraseFingerprint,
 ) -> Mc202SourcePhraseCandidate {
@@ -197,8 +217,9 @@ fn build_candidate(
     Mc202SourcePhraseCandidate {
         family,
         cells,
-        score: candidate_score(family, role, features, rejection_reason),
+        score: 0.0,
         rejection_reason,
+        phrase_memory: 1.0,
     }
 }
 
@@ -233,72 +254,6 @@ fn candidate_rejection_reason(
         Mc202SourcePhraseCandidateFamilyState::FallbackControl => {
             Some("control_template_not_source_derived")
         }
-    }
-}
-
-fn candidate_score(
-    family: Mc202SourcePhraseCandidateFamilyState,
-    role: Mc202RoleState,
-    features: &Mc202SourcePhraseFeatureVector,
-    rejection_reason: Option<&'static str>,
-) -> f32 {
-    if rejection_reason.is_some() {
-        return -1.0;
-    }
-
-    let base = match family {
-        Mc202SourcePhraseCandidateFamilyState::SubPressureShove => {
-            features.low_band_pressure * 0.52
-                + features.source_strength * 0.28
-                + (1.0 - features.hook_restraint) * 0.10
-        }
-        Mc202SourcePhraseCandidateFamilyState::SparseOffbeatAnswer => {
-            features.offbeat_density * 0.48
-                + features.transient_density * 0.18
-                + (1.0 - features.hook_restraint).min(0.55) * 0.16
-        }
-        Mc202SourcePhraseCandidateFamilyState::CallBackStab => {
-            features.transient_density * 0.42
-                + features.source_strength * 0.26
-                + features.offbeat_density * 0.14
-        }
-        Mc202SourcePhraseCandidateFamilyState::HookRestraintGhostAnswer => {
-            features.hook_restraint * 0.44
-                + features.transient_density * 0.14
-                + (1.0 - features.low_band_pressure).max(0.0) * 0.08
-        }
-        Mc202SourcePhraseCandidateFamilyState::FillPickupInstigator => {
-            features.transient_density * 0.44
-                + features.offbeat_density * 0.24
-                + features.source_strength * 0.12
-        }
-        Mc202SourcePhraseCandidateFamilyState::StayOut => 0.10 + features.hook_restraint * 0.30,
-        Mc202SourcePhraseCandidateFamilyState::FallbackControl => -1.0,
-    };
-
-    (base + role_family_bias(role, family)).clamp(0.0, 1.0)
-}
-
-fn role_family_bias(role: Mc202RoleState, family: Mc202SourcePhraseCandidateFamilyState) -> f32 {
-    match (role, family) {
-        (Mc202RoleState::Pressure, Mc202SourcePhraseCandidateFamilyState::SubPressureShove)
-        | (Mc202RoleState::Answer, Mc202SourcePhraseCandidateFamilyState::SparseOffbeatAnswer)
-        | (
-            Mc202RoleState::Instigator,
-            Mc202SourcePhraseCandidateFamilyState::FillPickupInstigator,
-        ) => 0.30,
-        (
-            Mc202RoleState::Leader | Mc202RoleState::Follower,
-            Mc202SourcePhraseCandidateFamilyState::CallBackStab,
-        ) => 0.12,
-        (Mc202RoleState::Answer, Mc202SourcePhraseCandidateFamilyState::SubPressureShove)
-        | (Mc202RoleState::Pressure, Mc202SourcePhraseCandidateFamilyState::SparseOffbeatAnswer) => {
-            -0.18
-        }
-        (_, Mc202SourcePhraseCandidateFamilyState::HookRestraintGhostAnswer) => 0.04,
-        (_, Mc202SourcePhraseCandidateFamilyState::StayOut) => -0.10,
-        (_, Mc202SourcePhraseCandidateFamilyState::FallbackControl) => -1.0,
-        _ => 0.0,
     }
 }
 

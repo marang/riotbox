@@ -158,6 +158,8 @@ fn source_phrase_plan(source_id: &str) -> Mc202SourcePhrasePlanState {
         candidate_count: 3,
         rejected_candidate_count: 1,
         candidate_provenance_refs: vec!["candidate_family:sparse_offbeat_answer".into()],
+        candidate_scorecards: Vec::new(),
+        phrase_memory_distance: 1.0,
         fallback_reason: None,
     }
 }
