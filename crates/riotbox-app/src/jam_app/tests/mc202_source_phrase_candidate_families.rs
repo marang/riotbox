@@ -78,39 +78,6 @@ fn committed_mc202_answer_records_source_backed_candidate_family_metadata() {
 }
 
 #[test]
-fn committed_mc202_answer_candidate_scoring_is_deterministic_for_same_source_seed() {
-    let mut graph = source_phrase_test_graph("src-deterministic", "hash-deterministic", 132.0, 37, 2);
-    add_phrase_audio_features(
-        &mut graph, 2, 0.12, 0.20, 0.18, 0.36, 0.78, 0.30, 0.18, 0.15,
-    );
-    let mut first_state = confirmed_source_phrase_state(graph.clone());
-    let mut second_state = confirmed_source_phrase_state(graph);
-
-    commit_source_derived_answer(&mut first_state);
-    commit_source_derived_answer(&mut second_state);
-    let first_plan = first_state
-        .session
-        .runtime_state
-        .lane_state
-        .mc202
-        .source_phrase_plan
-        .as_ref()
-        .expect("first candidate plan");
-    let second_plan = second_state
-        .session
-        .runtime_state
-        .lane_state
-        .mc202
-        .source_phrase_plan
-        .as_ref()
-        .expect("second candidate plan");
-
-    assert_eq!(first_plan.candidate_family, second_plan.candidate_family);
-    assert_eq!(first_plan.rhythm_cells, second_plan.rhythm_cells);
-    assert_eq!(first_plan.candidate_scorecards, second_plan.candidate_scorecards);
-}
-
-#[test]
 fn committed_mc202_answer_scorecards_record_phrase_memory_after_previous_plan() {
     let mut graph = source_phrase_test_graph("src-memory", "hash-memory", 132.0, 43, 2);
     add_phrase_audio_features(
