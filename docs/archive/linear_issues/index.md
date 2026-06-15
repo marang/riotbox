@@ -1190,4 +1190,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   MC-202 structured listening review and demo-bank promotion gate
 - [RIOTBOX-1271.md](./RIOTBOX-1271.md)
   MC-202 source phrase groove spacing from transient and hook evidence
+- [RIOTBOX-1272.md](./RIOTBOX-1272.md)
+  MC-202 phrase memory variation for repeated live triggers
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
