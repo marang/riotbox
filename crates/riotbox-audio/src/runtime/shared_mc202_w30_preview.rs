@@ -133,6 +133,9 @@ pub(super) struct SharedMc202RenderState {
     source_phrase_semitones: [AtomicU32; 16],
     source_phrase_pressure_bits: AtomicU32,
     source_phrase_contrast_bits: AtomicU32,
+    source_phrase_bass_weight_bits: AtomicU32,
+    source_phrase_stab_bite_bits: AtomicU32,
+    source_phrase_gate_snap_bits: AtomicU32,
     touch_bits: AtomicU32,
     music_bus_level_bits: AtomicU32,
     tempo_bpm_bits: AtomicU32,
@@ -155,6 +158,9 @@ impl SharedMc202RenderState {
             source_phrase_semitones: std::array::from_fn(|_| AtomicU32::new(0)),
             source_phrase_pressure_bits: AtomicU32::new(0.0_f32.to_bits()),
             source_phrase_contrast_bits: AtomicU32::new(0.0_f32.to_bits()),
+            source_phrase_bass_weight_bits: AtomicU32::new(0.0_f32.to_bits()),
+            source_phrase_stab_bite_bits: AtomicU32::new(0.0_f32.to_bits()),
+            source_phrase_gate_snap_bits: AtomicU32::new(0.0_f32.to_bits()),
             touch_bits: AtomicU32::new(0),
             music_bus_level_bits: AtomicU32::new(0),
             tempo_bpm_bits: AtomicU32::new(0),
@@ -220,6 +226,27 @@ impl SharedMc202RenderState {
                 .to_bits(),
             Ordering::Relaxed,
         );
+        self.source_phrase_bass_weight_bits.store(
+            render_state
+                .source_phrase_plan
+                .map_or(0.0, |plan| plan.bass_weight)
+                .to_bits(),
+            Ordering::Relaxed,
+        );
+        self.source_phrase_stab_bite_bits.store(
+            render_state
+                .source_phrase_plan
+                .map_or(0.0, |plan| plan.stab_bite)
+                .to_bits(),
+            Ordering::Relaxed,
+        );
+        self.source_phrase_gate_snap_bits.store(
+            render_state
+                .source_phrase_plan
+                .map_or(0.0, |plan| plan.gate_snap)
+                .to_bits(),
+            Ordering::Relaxed,
+        );
         if let Some(plan) = render_state.source_phrase_plan {
             for (index, semitone) in plan.semitones.iter().enumerate() {
                 self.source_phrase_semitones[index]
@@ -271,6 +298,11 @@ impl SharedMc202RenderState {
             destructive_mask: self.source_phrase_destructive_mask.load(Ordering::Relaxed) as u16,
             pressure: f32::from_bits(self.source_phrase_pressure_bits.load(Ordering::Relaxed)),
             contrast: f32::from_bits(self.source_phrase_contrast_bits.load(Ordering::Relaxed)),
+            bass_weight: f32::from_bits(
+                self.source_phrase_bass_weight_bits.load(Ordering::Relaxed),
+            ),
+            stab_bite: f32::from_bits(self.source_phrase_stab_bite_bits.load(Ordering::Relaxed)),
+            gate_snap: f32::from_bits(self.source_phrase_gate_snap_bits.load(Ordering::Relaxed)),
         })
     }
 }
