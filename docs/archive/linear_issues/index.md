@@ -1200,4 +1200,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   MC-202 composer chooses bass and answer motifs from source expression
 - [RIOTBOX-1276.md](./RIOTBOX-1276.md)
   MC-202 production sound-design pass for source-composed motifs
+- [RIOTBOX-1277.md](./RIOTBOX-1277.md)
+  MC-202 quality gate rejects source-fake and hardcoded composer output
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
