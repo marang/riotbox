@@ -132,6 +132,7 @@ fn source_phrase_plan(source_id: &str) -> Mc202SourcePhrasePlanState {
             start_bar: 0,
             end_bar: 7,
         },
+        source_expression: None,
         role: Mc202RoleState::Answer,
         rhythm_cells: [
             None,

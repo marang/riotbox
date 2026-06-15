@@ -80,6 +80,11 @@ render seams.
      generated count, selected family, rejected count, and provenance are stored
      in `lane_state.mc202.source_phrase_plan`. `fallback_control` remains
      labeled as a rejected control and cannot satisfy source-derived proof.
+   - RIOTBOX-1274 adds the typed MC-202 source-expression vector to the
+     committed Session plan. It preserves low-pressure contour, bass pressure,
+     transient / backbeat pressure, offbeat answer space, phrase density,
+     hook-restraint pressure, stab bite, stay-out pressure, confidence, and
+     provenance as the next composer input contract.
    - RIOTBOX-1271 adds source-phrase groove spacing inside the existing
      candidate-family layer: pressure, answer, callback, hook-safe, and pickup
      steps are derived from source timing anchors and phrase evidence before a
@@ -191,6 +196,42 @@ Future work may add learned phrase ranking, reference-free taste models,
 performer-personalized phrase memory, and source-aware destructive resampling.
 These ideas cannot weaken the Level 2-4 release gates.
 
+## Producer-Grade Implementation Chain
+
+RIOTBOX-1264 remains open until the MC-202 lane reaches Level 4. Individual
+implementation tickets may merge when they improve the spine and prove their
+bounded output path, but they are not product-completion claims. The current
+chain is:
+
+1. RIOTBOX-1274: add a typed MC-202 source-expression vector. This is the
+   composer input contract for low-pressure contour, transient anchors,
+   offbeat gaps, phrase density, hook-restraint pressure, bite / roughness, and
+   confidence / provenance.
+2. RIOTBOX-1275: compose bass and answer motifs from that expression vector.
+   This replaces source-aware template mutation with source-conditioned
+   musical decisions for role, placement, contour, density, accent, glide,
+   destructive intent, rests, and stay-out.
+3. RIOTBOX-1276: run the production sound-design pass on the existing MC-202
+   render seam. Pressure phrases must gain physical low-end body; answer,
+   callback, hook-restraint, and pickup phrases must gain transient bite
+   without adding callback-local composition logic.
+4. RIOTBOX-1277: tighten the automated gates against source-fake output. A
+   phrase that survives low-band / transient / hook neutralization unchanged is
+   a control or failure, not quality proof.
+5. RIOTBOX-1278: generate dense-break and non-dense real-source listening
+   packs with expression summary, selected motif, primitive A/B control, MC-202
+   stem, mix, metrics, and `human_verdict: unverified` until reviewed.
+6. RIOTBOX-1279: close out only after automated gates and structured listening
+   review support demo-bank / professional-output promotion. If the review says
+   the sound is still weak, create concrete fix tickets and keep RIOTBOX-1264
+   open.
+
+This chain is deliberately allowed to take multiple PRs. The quality standard
+does not shrink to fit a slice boundary: a merged slice can be useful
+infrastructure, but producer-grade MC-202 means real source evidence causes a
+musical decision that reaches the audible output and survives cross-source,
+neutralized-source, automated, and human listening checks.
+
 ## Product Acceptance
 
 - `a`, `P`, and `G` can produce source-derived MC-202 behavior when source
@@ -238,3 +279,11 @@ not separate product-completion claims:
   reject identical source-derived claims and feature-independent winners.
 - RIOTBOX-1270: structured listening review and demo-bank promotion gate. This
   is the closeout gate for demo-ready MC-202 claims, not an optional polish pass.
+- RIOTBOX-1274: typed MC-202 source-expression vector for producer-grade
+  phrase decisions.
+- RIOTBOX-1275: expression-driven MC-202 composer for bass / answer motifs.
+- RIOTBOX-1276: production sound-design pass for source-composed MC-202 motifs.
+- RIOTBOX-1277: source-fake / hardcoded-output rejection gate.
+- RIOTBOX-1278: real-source corpus listening pack for dense and non-dense
+  MC-202 proof.
+- RIOTBOX-1279: producer-grade closeout review and demo-bank promotion gate.

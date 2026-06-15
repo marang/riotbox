@@ -28,6 +28,7 @@ fn committed_mc202_answer_candidate_scoring_is_deterministic_for_same_source_see
 
     assert_eq!(first_plan.candidate_family, second_plan.candidate_family);
     assert_eq!(first_plan.rhythm_cells, second_plan.rhythm_cells);
+    assert_eq!(first_plan.source_expression, second_plan.source_expression);
     assert_eq!(first_plan.candidate_scorecards, second_plan.candidate_scorecards);
     assert_eq!(
         first_state.runtime.mc202_render.source_phrase_plan,
@@ -95,6 +96,11 @@ fn committed_mc202_answer_passes_cross_source_diversity_gate_for_feature_familie
             .expect("source family gate render plan");
 
         assert!(plan.is_source_derived(), "{} {plan:?}", case.label);
+        assert!(
+            plan.source_expression.is_some(),
+            "{} source-derived plan did not record expression state: {plan:?}",
+            case.label
+        );
         assert_eq!(
             plan.candidate_family,
             Some(case.expected_family),
@@ -114,11 +120,16 @@ fn committed_mc202_answer_passes_cross_source_diversity_gate_for_feature_familie
             let (left_label, left_plan, left_render_plan, left_render) = &outputs[left_index];
             let (right_label, right_plan, right_render_plan, right_render) = &outputs[right_index];
             let plan_distance = source_phrase_plan_distance(left_plan, right_plan);
+            let expression_distance = source_expression_distance(left_plan, right_plan);
             let render_delta = signal_delta_metrics(left_render, right_render);
 
             assert!(
                 plan_distance >= 0.30,
                 "{left_label} -> {right_label} source plans collapsed: {plan_distance:.3}; left={left_plan:?} right={right_plan:?}"
+            );
+            assert!(
+                expression_distance >= 0.20,
+                "{left_label} -> {right_label} source expressions collapsed: {expression_distance:.3}; left={left_plan:?} right={right_plan:?}"
             );
             assert_ne!(
                 left_render_plan.active_mask, right_render_plan.active_mask,
@@ -171,6 +182,22 @@ fn committed_mc202_answer_rejects_template_collapse_when_source_features_are_neu
     assert!(
         !neutral_plan.is_source_derived(),
         "neutralized low/transient/hook features still passed source-derived proof: {neutral_plan:?}"
+    );
+    let measured_expression = measured_plan
+        .source_expression
+        .as_ref()
+        .expect("measured source expression");
+    let neutral_expression = neutral_plan
+        .source_expression
+        .as_ref()
+        .expect("neutralized source expression");
+    assert!(
+        measured_expression.confidence > neutral_expression.confidence,
+        "neutralization did not lower expression confidence: measured={measured_expression:?} neutral={neutral_expression:?}"
+    );
+    assert!(
+        neutral_expression.stay_out_pressure > measured_expression.stay_out_pressure,
+        "neutralization did not increase stay-out pressure: measured={measured_expression:?} neutral={neutral_expression:?}"
     );
     assert!(
         neutral_plan.rhythm_cells.iter().all(Option::is_none),
@@ -291,6 +318,36 @@ fn source_phrase_plan_distance(
         / 8.0;
 
     (family_distance + cell_distance * 0.50 + active_distance * 0.15).clamp(0.0, 1.0)
+}
+
+fn source_expression_distance(
+    left: &riotbox_core::session::Mc202SourcePhrasePlanState,
+    right: &riotbox_core::session::Mc202SourcePhrasePlanState,
+) -> f32 {
+    let Some(left) = left.source_expression.as_ref() else {
+        return 0.0;
+    };
+    let Some(right) = right.source_expression.as_ref() else {
+        return 0.0;
+    };
+
+    let deltas = [
+        left.low_pressure_contour - right.low_pressure_contour,
+        left.bass_pressure - right.bass_pressure,
+        left.transient_backbeat - right.transient_backbeat,
+        left.offbeat_answer_space - right.offbeat_answer_space,
+        left.phrase_density - right.phrase_density,
+        left.hook_restraint - right.hook_restraint,
+        left.stab_bite - right.stab_bite,
+        left.stay_out_pressure - right.stay_out_pressure,
+    ];
+    let mean = deltas.iter().map(|delta| delta.abs()).sum::<f32>() / deltas.len() as f32;
+    let strongest_axis = deltas
+        .iter()
+        .map(|delta| delta.abs())
+        .fold(0.0_f32, f32::max);
+
+    (mean * 0.65 + strongest_axis * 0.35).clamp(0.0, 1.0)
 }
 
 fn render_signal_fingerprint(buffer: &[f32]) -> (u32, u32, u32) {

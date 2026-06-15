@@ -1,7 +1,7 @@
 use riotbox_core::{
     session::{
-        Mc202RoleState, Mc202SourcePhraseNoteBudgetState, Mc202SourcePhrasePlanState,
-        Mc202SourcePhraseSlotState, SessionFile,
+        Mc202RoleState, Mc202SourcePhraseExpressionState, Mc202SourcePhraseNoteBudgetState,
+        Mc202SourcePhrasePlanState, Mc202SourcePhraseSlotState, SessionFile,
     },
     source_graph::{
         AssetType, CandidateType, EnergyClass, Mc202SourcePhraseFeatureVector, PhraseSpan, Section,
@@ -70,6 +70,7 @@ pub(super) fn derive_mc202_source_phrase_plan(
             start_bar: phrase_slot.start_bar,
             end_bar: phrase_slot.end_bar,
         },
+        source_expression: Some(mc202_source_phrase_expression_state(&features)),
         role,
         rhythm_cells,
         note_budget: candidate_selection.note_budget,
@@ -399,4 +400,67 @@ fn source_phrase_fallback_reason(features: &Mc202SourcePhraseFeatureVector) -> O
         return Some("weak_source_phrase_features".into());
     }
     None
+}
+
+fn mc202_source_phrase_expression_state(
+    features: &Mc202SourcePhraseFeatureVector,
+) -> Mc202SourcePhraseExpressionState {
+    let bass_pressure =
+        (features.low_band_pressure * 0.74 + features.low_band_movement * 0.26).clamp(0.0, 1.0);
+    let transient_backbeat =
+        (features.backbeat_density * 0.58 + features.transient_density * 0.42).clamp(0.0, 1.0);
+    let offbeat_answer_space = (features.offbeat_density * (1.0 - features.hook_restraint * 0.28)
+        + features.transient_density * 0.12)
+        .clamp(0.0, 1.0);
+    let phrase_density = (features.transient_density * 0.44
+        + features.offbeat_density * 0.24
+        + features.source_strength * 0.24
+        + features.backbeat_density * 0.08)
+        .clamp(0.0, 1.0);
+    let stab_bite = (features.spectral_roughness * 0.36
+        + features.spectral_brightness * 0.24
+        + features.transient_density * 0.25
+        + features.backbeat_density * 0.15)
+        .clamp(0.0, 1.0);
+    let stay_out_pressure = if features.stay_out {
+        1.0
+    } else {
+        (features.hook_restraint * 0.42
+            + (1.0 - features.source_strength) * 0.34
+            + (1.0 - features.confidence) * 0.24)
+            .clamp(0.0, 1.0)
+    };
+
+    let mut provenance_refs = vec![
+        format!(
+            "expression:low_pressure_contour:{:.3}",
+            features.low_band_movement
+        ),
+        format!("expression:bass_pressure:{bass_pressure:.3}"),
+        format!("expression:transient_backbeat:{transient_backbeat:.3}"),
+        format!("expression:offbeat_answer_space:{offbeat_answer_space:.3}"),
+        format!("expression:phrase_density:{phrase_density:.3}"),
+        format!("expression:hook_restraint:{:.3}", features.hook_restraint),
+        format!("expression:stab_bite:{stab_bite:.3}"),
+    ];
+    provenance_refs.extend(
+        features
+            .provenance_refs
+            .iter()
+            .take(10)
+            .map(|reference| format!("source_expression:{reference}")),
+    );
+
+    Mc202SourcePhraseExpressionState {
+        low_pressure_contour: features.low_band_movement.clamp(0.0, 1.0),
+        bass_pressure,
+        transient_backbeat,
+        offbeat_answer_space,
+        phrase_density,
+        hook_restraint: features.hook_restraint.clamp(0.0, 1.0),
+        stab_bite,
+        stay_out_pressure,
+        confidence: features.confidence.clamp(0.0, 1.0),
+        provenance_refs,
+    }
 }

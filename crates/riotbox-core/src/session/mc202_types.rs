@@ -19,6 +19,8 @@ impl Mc202LaneState {
 pub struct Mc202SourcePhrasePlanState {
     pub source_id: SourceId,
     pub phrase_slot: Mc202SourcePhraseSlotState,
+    #[serde(default)]
+    pub source_expression: Option<Mc202SourcePhraseExpressionState>,
     pub role: Mc202RoleState,
     pub rhythm_cells: [Option<i8>; 16],
     pub note_budget: Mc202SourcePhraseNoteBudgetState,
@@ -48,6 +50,21 @@ impl Mc202SourcePhrasePlanState {
             .is_none_or(Mc202SourcePhraseCandidateFamilyState::is_source_derived);
         self.fallback_reason.is_none() && family_is_source_derived
     }
+}
+
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct Mc202SourcePhraseExpressionState {
+    pub low_pressure_contour: f32,
+    pub bass_pressure: f32,
+    pub transient_backbeat: f32,
+    pub offbeat_answer_space: f32,
+    pub phrase_density: f32,
+    pub hook_restraint: f32,
+    pub stab_bite: f32,
+    pub stay_out_pressure: f32,
+    pub confidence: f32,
+    #[serde(default)]
+    pub provenance_refs: Vec<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
