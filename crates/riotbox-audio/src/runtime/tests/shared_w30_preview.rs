@@ -122,6 +122,9 @@ fn shared_mc202_render_state_clears_source_phrase_plan() {
             destructive_mask: 0b0000_0000_0000_1000,
             pressure: 0.72,
             contrast: 0.48,
+            bass_weight: 0.62,
+            stab_bite: 0.34,
+            gate_snap: 0.28,
         }),
         ..Mc202RenderState::default()
     };

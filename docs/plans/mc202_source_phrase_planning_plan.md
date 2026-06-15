@@ -116,6 +116,11 @@ render seams.
      MC-202 render seam uses those values for source-only gain, gate, drive,
      accent, and pitch-dive/cut behavior; primitive shapes remain fallback
      controls.
+   - RIOTBOX-1273 adds typed render articulation for source-derived MC-202
+     plans: bass weight, stab bite, and gate snap are derived from the selected
+     family / scorecard so pressure phrases render with more body while answer,
+     callback, hook-restraint, and pickup phrases render with sharper transient
+     behavior.
 
 6. Prove the output path.
    - Add primitive-vs-source-derived A/B render evidence.

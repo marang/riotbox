@@ -131,6 +131,9 @@ pub struct Mc202SourcePhraseRenderPlan {
     pub destructive_mask: u16,
     pub pressure: f32,
     pub contrast: f32,
+    pub bass_weight: f32,
+    pub stab_bite: f32,
+    pub gate_snap: f32,
 }
 
 impl Mc202SourcePhraseRenderPlan {
@@ -197,7 +200,15 @@ pub fn render_mc202_buffer(
     let touch = render.touch.clamp(0.0, 1.0);
     let source_pressure = source_phrase_plan.map_or(0.0, |plan| plan.pressure.clamp(0.0, 1.0));
     let source_contrast = source_phrase_plan.map_or(0.0, |plan| plan.contrast.clamp(0.0, 1.0));
-    let source_gain = 1.0 + source_pressure * 0.55 + source_contrast * 0.20;
+    let source_bass_weight =
+        source_phrase_plan.map_or(0.0, |plan| plan.bass_weight.clamp(0.0, 1.0));
+    let source_stab_bite = source_phrase_plan.map_or(0.0, |plan| plan.stab_bite.clamp(0.0, 1.0));
+    let source_gate_snap = source_phrase_plan.map_or(0.0, |plan| plan.gate_snap.clamp(0.0, 1.0));
+    let source_gain = 1.0
+        + source_pressure * 0.55
+        + source_contrast * 0.20
+        + source_bass_weight * 0.18
+        + source_stab_bite * 0.10;
     let gain = render.music_bus_level.clamp(0.0, 1.0) * (0.08 + touch * 0.08) * source_gain;
 
     for frame in 0..buffer.len() / channel_count {
@@ -229,7 +240,8 @@ pub fn render_mc202_buffer(
             Mc202RenderMode::Follower | Mc202RenderMode::Pressure => -12.0,
             Mc202RenderMode::Instigator => -2.0,
             _ => -5.0,
-        };
+        } - source_bass_weight as f64 * 5.0
+            + source_stab_bite as f64 * 2.0;
         let destructive_pitch_dive = if destructive_step {
             -10.0 * f64::from(step_phase)
         } else {
@@ -241,9 +253,13 @@ pub fn render_mc202_buffer(
         let gate_len = match render.phrase_shape {
             Mc202PhraseShape::PressureCell => 0.50,
             Mc202PhraseShape::InstigatorSpike => 0.30,
-            _ if source_phrase_plan.is_some() => 0.42 + source_contrast * 0.20,
+            _ if source_phrase_plan.is_some() => {
+                (0.42 + source_contrast * 0.20 + source_bass_weight * 0.08)
+                    * (1.0 - source_gate_snap * 0.38)
+            }
             _ => 0.62,
-        };
+        }
+        .clamp(0.18, 0.68);
         if step_phase > gate_len {
             continue;
         }
@@ -264,9 +280,18 @@ pub fn render_mc202_buffer(
         let note_seconds = f64::from(step_phase) * 60.0 / tempo_bpm / 4.0;
         let phase = (note_seconds * frequency).fract();
         let saw = (phase as f32 * 2.0) - 1.0;
-        let pulse = if phase < 0.42 { 1.0 } else { -1.0 };
-        let bite = (saw * (0.58 + touch * 0.25)) + (pulse * (0.24 + touch * 0.18));
-        let drive = 1.0 + source_pressure * 1.15 + source_contrast * 0.55;
+        let pulse_width = (0.42 + source_stab_bite * 0.10 - source_bass_weight * 0.08)
+            .clamp(0.30, 0.55);
+        let pulse = if phase < pulse_width as f64 { 1.0 } else { -1.0 };
+        let sub = (phase as f32 * std::f32::consts::TAU).sin();
+        let bite = (saw * (0.58 + touch * 0.25 + source_stab_bite * 0.18))
+            + (pulse * (0.24 + touch * 0.18 + source_stab_bite * 0.22))
+            + (sub * source_bass_weight * 0.30);
+        let drive = 1.0
+            + source_pressure * 1.15
+            + source_contrast * 0.55
+            + source_bass_weight * 0.65
+            + source_stab_bite * 0.40;
         let cut = if destructive_step && step_phase > 0.70 {
             (1.0 - (step_phase - 0.70) / 0.30).clamp(0.0, 1.0)
         } else {

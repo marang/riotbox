@@ -48,6 +48,7 @@ include!("tests/w30_feral_rebake_policy.rs");
 include!("tests/w30_backfill_mc202_commits.rs");
 include!("tests/mc202_recipe_helpers.rs");
 include!("tests/mc202_source_phrase_candidate_families.rs");
+include!("tests/mc202_source_phrase_articulation.rs");
 include!("tests/mc202_source_phrase_quality_gates.rs");
 include!("tests/mc202_source_phrase_feature_rejections.rs");
 include!("tests/mc202_restore_replay.rs");
