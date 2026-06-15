@@ -1184,4 +1184,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   MC-202 musical scoring, rejection, and phrase memory
 - [RIOTBOX-1268.md](./RIOTBOX-1268.md)
   MC-202 source-composed render pressure and destructive contrast
+- [RIOTBOX-1269.md](./RIOTBOX-1269.md)
+  MC-202 cross-source diversity and template-collapse QA gates
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
