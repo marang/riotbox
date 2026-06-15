@@ -1010,6 +1010,7 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
         }
     if child_id == "professional_output_listening_pack":
         cases = list_or_empty(data.get("cases"))
+        mc202_gate = object_or_empty(data.get("mc202_source_composed_review_gate"))
         return {
             "case_count": int(number(data.get("case_count"))),
             "source_families": sorted(
@@ -1028,6 +1029,11 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                     "Not demo-ready yet:"
                 )
             ),
+            "mc202_source_composed_gate_result": str(mc202_gate.get("result")),
+            "mc202_source_composed_case_count": int(number(mc202_gate.get("source_composed_case_count"))),
+            "mc202_dense_break_case_count": int(number(mc202_gate.get("dense_break_case_count"))),
+            "mc202_non_dense_break_case_count": int(number(mc202_gate.get("non_dense_break_case_count"))),
+            "mc202_quality_proof": mc202_gate.get("quality_proof"),
         }
     if child_id == "non_dense_professional_proof_pack":
         return {
@@ -1193,6 +1199,13 @@ def validate_listening_identity(listening_report: Path) -> dict[str, Any]:
             "Not demo-ready yet:"
         ):
             case_failures.append("not_demo_worthy_reason_missing")
+        mc202_gate = object_or_empty(case.get("mc202_source_composed_review_gate"))
+        if mc202_gate.get("source_composed_evidence") is not True:
+            case_failures.append("mc202_source_composed_evidence_missing")
+        if mc202_gate.get("primitive_or_template_only") is not False:
+            case_failures.append("mc202_template_only_not_blocked")
+        if mc202_gate.get("promotion_blocked_until_human_pass") is not True:
+            case_failures.append("mc202_promotion_boundary_missing")
         failures.extend(f"{case_id}:{code}" for code in case_failures)
         cases.append(
             {
@@ -1204,6 +1217,7 @@ def validate_listening_identity(listening_report: Path) -> dict[str, Any]:
                 "demo_readiness": case.get("demo_readiness"),
                 "demo_worthy_reason": case.get("demo_worthy_reason"),
                 "not_demo_worthy_reason": case.get("not_demo_worthy_reason"),
+                "mc202_source_composed_review_gate": mc202_gate,
                 "failure_codes": case_failures,
             }
         )
@@ -1213,10 +1227,20 @@ def validate_listening_identity(listening_report: Path) -> dict[str, Any]:
         failures.append("listening_source_family_coverage_mismatch")
     if int(number(report.get("case_count"))) != len(cases):
         failures.append("listening_case_count_mismatch")
+    mc202_pack_gate = object_or_empty(report.get("mc202_source_composed_review_gate"))
+    if mc202_pack_gate.get("result") != "pass":
+        failures.append("mc202_pack_gate_not_pass")
+    if int(number(mc202_pack_gate.get("dense_break_case_count"))) < 1:
+        failures.append("mc202_dense_break_review_candidate_missing")
+    if int(number(mc202_pack_gate.get("non_dense_break_case_count"))) < 1:
+        failures.append("mc202_non_dense_review_candidate_missing")
+    if mc202_pack_gate.get("quality_proof") is not False:
+        failures.append("mc202_pack_gate_claims_quality_proof")
     return {
         "result": "pass" if not failures else "fail",
         "case_count": len(cases),
         "source_families": families,
+        "mc202_source_composed_review_gate": mc202_pack_gate,
         "failure_codes": failures,
         "cases": cases,
     }

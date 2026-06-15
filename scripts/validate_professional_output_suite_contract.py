@@ -198,6 +198,25 @@ def validate_mutation_fixtures(report: dict[str, Any], output: Path) -> list[str
             ),
             "demo_readiness_not_unverified",
         ),
+        (
+            "missing_non_dense_mc202_gate",
+            lambda data: set_child_metric(
+                data,
+                "professional_output_listening_pack",
+                "mc202_non_dense_break_case_count",
+                0,
+            ),
+            "listening_mc202_non_dense_candidate_missing",
+        ),
+        (
+            "template_only_mc202_case",
+            lambda data: set_first_listening_case_gate_field(
+                data,
+                "primitive_or_template_only",
+                True,
+            ),
+            "mc202_template_only_not_blocked",
+        ),
     ]
 
     failures: list[str] = []
@@ -239,6 +258,26 @@ def validate_listening_metrics(
         "listening_not_demo_ready_reason_count_mismatch",
         failures,
     )
+    require(
+        metrics.get("mc202_source_composed_gate_result") == "pass",
+        "listening_mc202_gate_not_pass",
+        failures,
+    )
+    require(
+        int(number(metrics.get("mc202_dense_break_case_count"))) >= 1,
+        "listening_mc202_dense_candidate_missing",
+        failures,
+    )
+    require(
+        int(number(metrics.get("mc202_non_dense_break_case_count"))) >= 1,
+        "listening_mc202_non_dense_candidate_missing",
+        failures,
+    )
+    require(
+        metrics.get("mc202_quality_proof") is False,
+        "listening_mc202_gate_claims_quality_proof",
+        failures,
+    )
     identity = object_or_empty(report.get("listening_identity"))
     require(identity.get("result") == "pass", "listening_identity_result_not_pass", failures)
     require(int(number(identity.get("case_count"))) == 3, "listening_identity_case_count_mismatch", failures)
@@ -263,6 +302,17 @@ def validate_listening_metrics(
         require(
             str(case.get("not_demo_worthy_reason", "")).startswith("Not demo-ready yet:"),
             f"{case_id}_not_demo_worthy_reason_missing",
+            failures,
+        )
+        gate = object_or_empty(case.get("mc202_source_composed_review_gate"))
+        require(
+            gate.get("source_composed_evidence") is True,
+            f"{case_id}_mc202_source_composed_evidence_missing",
+            failures,
+        )
+        require(
+            gate.get("primitive_or_template_only") is False,
+            f"{case_id}_mc202_template_only_not_blocked",
             failures,
         )
 
@@ -641,6 +691,20 @@ def set_first_listening_case_field(report: dict[str, Any], field: str, value: An
     if not isinstance(cases, list) or not cases or not isinstance(cases[0], dict):
         return False
     cases[0][field] = value
+    return True
+
+
+def set_first_listening_case_gate_field(report: dict[str, Any], field: str, value: Any) -> bool:
+    identity = report.get("listening_identity")
+    if not isinstance(identity, dict):
+        return False
+    cases = identity.get("cases")
+    if not isinstance(cases, list) or not cases or not isinstance(cases[0], dict):
+        return False
+    gate = cases[0].get("mc202_source_composed_review_gate")
+    if not isinstance(gate, dict):
+        return False
+    gate[field] = value
     return True
 
 

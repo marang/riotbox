@@ -41,6 +41,8 @@ jq -e '
     and (.metrics.sha256 | length == 64)
     and (.review_prompt.sha256 | length == 64)
     and (.fix_categories | length == 0)
+    and .mc202_source_composed_review_gate.source_composed_evidence == true
+    and .mc202_source_composed_review_gate.primitive_or_template_only == false
   )
 ' "$tmp/demo-bank-pass.json" >/dev/null
 
@@ -72,6 +74,8 @@ jq -e '
     and .human_verdict == "weak"
     and .demo_readiness == "not_demo_ready"
     and (.fix_categories == ["bass_movement"])
+    and .mc202_source_composed_review_gate.source_composed_evidence == true
+    and .mc202_source_composed_review_gate.metrics.bass_movement_source_derived == 1.0
   )
 ' "$tmp/demo-bank-weak.json" >/dev/null
 
@@ -104,5 +108,23 @@ if python3 scripts/promote_listening_review_to_demo_bank.py \
   exit 1
 fi
 grep -q "stale artifact hash" "$tmp/stale.out"
+
+template_only_review="$tmp/template-only-review.json"
+jq '.audio_judge_label.mc202_source_composed_review_gate.source_composed_evidence = false
+  | .audio_judge_label.mc202_source_composed_review_gate.primitive_or_template_only = true
+  | .audio_judge_label.mc202_source_composed_review_gate.failure_codes += ["fixture_template_only"]' \
+  "$pass_review" > "$template_only_review"
+if python3 scripts/promote_listening_review_to_demo_bank.py \
+  --review "$template_only_review" \
+  --demo-bank scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json \
+  --json-output "$tmp/demo-bank-template-only.json" \
+  --entry-id dense-beat03-template-only-fixture \
+  --demo-worthiness-note "This should not promote." \
+  --require-artifact-hashes >"$tmp/template-only.out" 2>&1; then
+  cat "$tmp/template-only.out" >&2
+  echo "expected template-only MC-202 promotion to fail" >&2
+  exit 1
+fi
+grep -q "MC-202 source-composed evidence is required" "$tmp/template-only.out"
 
 echo "demo-bank promotion fixture gate ok"
