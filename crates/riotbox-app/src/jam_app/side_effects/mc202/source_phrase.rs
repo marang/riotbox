@@ -40,13 +40,15 @@ pub(super) fn derive_mc202_source_phrase_plan(
 
     let section = section_for_transport_bar(graph, &transport_clock_from_boundary(boundary));
     let features = mc202_source_phrase_feature_vector(graph, phrase_slot);
-    let source_fallback_reason = source_phrase_fallback_reason(&features);
+    let source_expression = mc202_source_phrase_expression_state(&features);
+    let source_fallback_reason = source_phrase_fallback_reason(&features, &source_expression);
     let candidate_selection = choose_source_phrase_candidate(
         graph,
         role,
         section,
         phrase_slot,
         &features,
+        &source_expression,
         session
             .runtime_state
             .lane_state
@@ -70,7 +72,7 @@ pub(super) fn derive_mc202_source_phrase_plan(
             start_bar: phrase_slot.start_bar,
             end_bar: phrase_slot.end_bar,
         },
-        source_expression: Some(mc202_source_phrase_expression_state(&features)),
+        source_expression: Some(source_expression),
         role,
         rhythm_cells,
         note_budget: candidate_selection.note_budget,
@@ -241,15 +243,21 @@ fn hash_u64(hash: &mut u64, value: u64) {
 pub(super) fn add_source_phrase_accent(
     role: Mc202RoleState,
     cells: &mut [Option<i8>; 16],
-    features: &Mc202SourcePhraseFeatureVector,
+    expression: &Mc202SourcePhraseExpressionState,
     fingerprint: Mc202SourcePhraseFingerprint,
 ) {
-    if !fingerprint.strong_source || features.source_strength < 0.55 {
+    if !fingerprint.strong_source
+        || expression.phrase_density < 0.38
+        || expression.confidence < 0.45
+    {
         return;
     }
 
     let index = feature_step(
-        features.source_strength.max(features.transient_density),
+        expression
+            .phrase_density
+            .max(expression.transient_backbeat)
+            .max(expression.bass_pressure),
         fingerprint.accent_step,
         1,
     );
@@ -329,7 +337,7 @@ fn source_phrase_anchor_type_code(anchor_type: SourceTimingAnchorType) -> u64 {
 
 pub(super) fn source_phrase_contour_offset(
     section: Option<&Section>,
-    features: &Mc202SourcePhraseFeatureVector,
+    expression: &Mc202SourcePhraseExpressionState,
 ) -> i8 {
     let section_offset = match section.map(|section| (section.label_hint, section.energy_class)) {
         Some((SectionLabelHint::Build, _)) => 2,
@@ -343,10 +351,12 @@ pub(super) fn source_phrase_contour_offset(
         Some((_, EnergyClass::Low)) => -5,
         _ => 0,
     };
-    let pressure_offset = if features.low_band_pressure > 0.72 {
+    let pressure_offset = if expression.bass_pressure > 0.72 {
         -5
-    } else if features.offbeat_density > 0.55 {
+    } else if expression.offbeat_answer_space > 0.55 {
         2
+    } else if expression.stab_bite > 0.62 {
+        3
     } else {
         0
     };
@@ -356,9 +366,12 @@ pub(super) fn source_phrase_contour_offset(
 pub(super) fn source_phrase_note_budget(
     role: Mc202RoleState,
     section: Option<&Section>,
-    features: &Mc202SourcePhraseFeatureVector,
+    expression: &Mc202SourcePhraseExpressionState,
 ) -> Mc202SourcePhraseNoteBudgetState {
-    if features.hook_restraint > 0.72 || features.source_strength < 0.40 {
+    if expression.stay_out_pressure > 0.72
+        || expression.hook_restraint > 0.72
+        || expression.phrase_density < 0.28
+    {
         return Mc202SourcePhraseNoteBudgetState::Sparse;
     }
 
@@ -392,11 +405,14 @@ fn source_phrase_confidence(
         .clamp(0.0, 1.0)
 }
 
-fn source_phrase_fallback_reason(features: &Mc202SourcePhraseFeatureVector) -> Option<String> {
-    if features.stay_out {
+fn source_phrase_fallback_reason(
+    features: &Mc202SourcePhraseFeatureVector,
+    expression: &Mc202SourcePhraseExpressionState,
+) -> Option<String> {
+    if features.stay_out || expression.stay_out_pressure >= 0.90 {
         return Some("stay_out_source_context".into());
     }
-    if !features.has_musical_evidence() {
+    if !features.has_musical_evidence() || expression.confidence < 0.35 {
         return Some("weak_source_phrase_features".into());
     }
     None

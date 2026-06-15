@@ -1,6 +1,6 @@
-use riotbox_core::source_graph::{
-    Mc202SourcePhraseFeatureVector, PhraseSpan, SourceGraph, SourceTimingAnchor,
-    SourceTimingAnchorType,
+use riotbox_core::{
+    session::Mc202SourcePhraseExpressionState,
+    source_graph::{PhraseSpan, SourceGraph, SourceTimingAnchor, SourceTimingAnchorType},
 };
 
 use super::super::{Mc202SourcePhraseFingerprint, feature_step};
@@ -18,19 +18,22 @@ impl SourcePhraseGrooveMap {
     pub(super) fn from_graph(
         graph: &SourceGraph,
         phrase_slot: &PhraseSpan,
-        features: &Mc202SourcePhraseFeatureVector,
+        expression: &Mc202SourcePhraseExpressionState,
         fingerprint: Mc202SourcePhraseFingerprint,
     ) -> Self {
         let fallback_pressure =
-            feature_step(features.low_band_pressure, fingerprint.step_rotation, 0);
+            feature_step(expression.bass_pressure, fingerprint.step_rotation, 0);
         let fallback_answer = feature_step(
-            features.offbeat_density.max(0.25),
+            expression.offbeat_answer_space.max(0.25),
             fingerprint.accent_step,
             3,
         );
-        let fallback_callback =
-            feature_step(features.transient_density, fingerprint.accent_step, 2);
-        let fallback_fill = feature_step(features.transient_density, fingerprint.accent_step, 14);
+        let fallback_callback = feature_step(
+            expression.transient_backbeat.max(expression.stab_bite),
+            fingerprint.accent_step,
+            2,
+        );
+        let fallback_fill = feature_step(expression.phrase_density, fingerprint.accent_step, 14);
         let pressure_step = strongest_anchor_step(
             graph,
             phrase_slot,
@@ -67,7 +70,7 @@ impl SourcePhraseGrooveMap {
             avoid_steps((step + 1) % 16, &[pressure_step])
         });
         let hook_safe_step = avoid_steps(
-            feature_step(features.hook_restraint, fingerprint.accent_step, 11),
+            feature_step(expression.hook_restraint, fingerprint.accent_step, 11),
             &[pressure_step, backbeat_step, answer_step, 0, 8],
         );
         let fill_pickup_step =
