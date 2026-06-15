@@ -63,6 +63,15 @@ fn committed_mc202_answer_records_source_backed_candidate_family_metadata() {
         "{plan:?}"
     );
     assert!(plan.phrase_memory_distance > 0.90, "{plan:?}");
+    let render_plan = state
+        .runtime
+        .mc202_render
+        .source_phrase_plan
+        .expect("source phrase render plan");
+    assert!(render_plan.pressure > 0.10, "{render_plan:?}");
+    assert!(render_plan.contrast > 0.40, "{render_plan:?}");
+    assert_ne!(render_plan.accent_mask, 0, "{render_plan:?}");
+    assert_ne!(render_plan.destructive_mask, 0, "{render_plan:?}");
 
     let metrics = signal_metrics(&rendered);
     assert!(metrics.rms > 0.001, "candidate-backed answer rendered silent");

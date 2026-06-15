@@ -101,6 +101,11 @@ render seams.
    - Keep primitive MC-202 shapes as explicit fallback and A/B control only.
    - Route weak or untrusted candidates to an explicit `stay_out` /
      `fallback_reason` path instead of filling silence with fake intelligence.
+   - RIOTBOX-1268 projects selected scorecards into the source render plan as
+     accent/destructive masks plus pressure and contrast scalars. The existing
+     MC-202 render seam uses those values for source-only gain, gate, drive,
+     accent, and pitch-dive/cut behavior; primitive shapes remain fallback
+     controls.
 
 6. Prove the output path.
    - Add primitive-vs-source-derived A/B render evidence.

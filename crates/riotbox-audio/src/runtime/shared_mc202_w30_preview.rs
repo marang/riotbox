@@ -128,7 +128,11 @@ pub(super) struct SharedMc202RenderState {
     contour_hint: AtomicU32,
     hook_response: AtomicU32,
     source_phrase_active_mask: AtomicU32,
+    source_phrase_accent_mask: AtomicU32,
+    source_phrase_destructive_mask: AtomicU32,
     source_phrase_semitones: [AtomicU32; 16],
+    source_phrase_pressure_bits: AtomicU32,
+    source_phrase_contrast_bits: AtomicU32,
     touch_bits: AtomicU32,
     music_bus_level_bits: AtomicU32,
     tempo_bpm_bits: AtomicU32,
@@ -146,7 +150,11 @@ impl SharedMc202RenderState {
             contour_hint: AtomicU32::new(mc202_contour_hint_to_u32(Mc202ContourHint::Neutral)),
             hook_response: AtomicU32::new(mc202_hook_response_to_u32(Mc202HookResponse::Direct)),
             source_phrase_active_mask: AtomicU32::new(0),
+            source_phrase_accent_mask: AtomicU32::new(0),
+            source_phrase_destructive_mask: AtomicU32::new(0),
             source_phrase_semitones: std::array::from_fn(|_| AtomicU32::new(0)),
+            source_phrase_pressure_bits: AtomicU32::new(0.0_f32.to_bits()),
+            source_phrase_contrast_bits: AtomicU32::new(0.0_f32.to_bits()),
             touch_bits: AtomicU32::new(0),
             music_bus_level_bits: AtomicU32::new(0),
             tempo_bpm_bits: AtomicU32::new(0),
@@ -184,6 +192,32 @@ impl SharedMc202RenderState {
             render_state
                 .source_phrase_plan
                 .map_or(0, |plan| u32::from(plan.active_mask)),
+            Ordering::Relaxed,
+        );
+        self.source_phrase_accent_mask.store(
+            render_state
+                .source_phrase_plan
+                .map_or(0, |plan| u32::from(plan.accent_mask)),
+            Ordering::Relaxed,
+        );
+        self.source_phrase_destructive_mask.store(
+            render_state
+                .source_phrase_plan
+                .map_or(0, |plan| u32::from(plan.destructive_mask)),
+            Ordering::Relaxed,
+        );
+        self.source_phrase_pressure_bits.store(
+            render_state
+                .source_phrase_plan
+                .map_or(0.0, |plan| plan.pressure)
+                .to_bits(),
+            Ordering::Relaxed,
+        );
+        self.source_phrase_contrast_bits.store(
+            render_state
+                .source_phrase_plan
+                .map_or(0.0, |plan| plan.contrast)
+                .to_bits(),
             Ordering::Relaxed,
         );
         if let Some(plan) = render_state.source_phrase_plan {
@@ -233,6 +267,10 @@ impl SharedMc202RenderState {
         Some(Mc202SourcePhraseRenderPlan {
             active_mask,
             semitones,
+            accent_mask: self.source_phrase_accent_mask.load(Ordering::Relaxed) as u16,
+            destructive_mask: self.source_phrase_destructive_mask.load(Ordering::Relaxed) as u16,
+            pressure: f32::from_bits(self.source_phrase_pressure_bits.load(Ordering::Relaxed)),
+            contrast: f32::from_bits(self.source_phrase_contrast_bits.load(Ordering::Relaxed)),
         })
     }
 }
