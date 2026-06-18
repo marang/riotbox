@@ -280,6 +280,12 @@ until structured listening records a human pass/weak/fail verdict. A primitive
 or template-only MC-202 candidate remains a production blocker, not a product
 fallback or proof of musician-ready quality.
 
+The professional-output listening-pack and MC-202 closeout smoke recipes keep
+their JSON contracts in repo-local validators instead of long inline `jq`
+expressions. Validator extraction is QA maintainability only: it must preserve
+or tighten the same source-composed evidence, no primitive/template product
+output, artifact identity, and human-verdict blocking semantics.
+
 The synthetic fixture showcase can still run the musical-quality review gate:
 
 ```bash
