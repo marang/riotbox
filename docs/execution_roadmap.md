@@ -779,6 +779,10 @@ following:
     listening-pack and MC-202 producer-grade closeout gates: `Justfile` keeps
     the smoke commands short while Python validators preserve the same
     source-composed, no-primitive-template, and human-verdict-blocked contracts
+  - RIOTBOX-1287 continues the extraction for edge-source and non-dense
+    professional proof gates: validators own source-family coverage,
+    diagnostic-only boundaries, rendered-artifact checks, mutation fixtures,
+    weak-routing checks, and no-quality-claim safeguards for those reports
 - no PR, roadmap claim, or release note presents an audible feature as
   musician-ready when its human verdict is missing, weak, or explicitly
   unverified

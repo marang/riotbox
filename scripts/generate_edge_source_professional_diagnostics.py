@@ -64,14 +64,22 @@ def main() -> int:
     parser.add_argument("--date", default="local-edge-source-professional-diagnostics")
     parser.add_argument("--keep-output", action="store_true")
     parser.add_argument("--validate-report", type=Path)
+    parser.add_argument("--require-artifacts", action="store_true")
+    parser.add_argument("--mutation-fixtures", action="store_true")
     args = parser.parse_args()
 
     try:
         if args.validate_report:
             report = read_json(args.validate_report)
-            failures = report_failure_codes(report)
+            failures = report_failure_codes(
+                report,
+                report_path=args.validate_report,
+                require_artifacts=args.require_artifacts,
+            )
             if failures:
                 raise ValueError(", ".join(failures))
+            if args.mutation_fixtures:
+                run_mutation_fixtures(report, args.validate_report)
             print(f"valid edge-source professional diagnostics: {args.validate_report}")
             return 0
 
@@ -571,21 +579,40 @@ def case_failure_codes(cases: list[dict[str, Any]]) -> list[str]:
     return failures
 
 
-def report_failure_codes(report: dict[str, Any]) -> list[str]:
+def report_failure_codes(
+    report: dict[str, Any],
+    *,
+    report_path: Path | None = None,
+    require_artifacts: bool = False,
+) -> list[str]:
     failures = []
     failures.extend(evidence_boundary_failure_codes(report))
     if report.get("schema") != SCHEMA:
         failures.append("schema_mismatch")
     if report.get("schema_version") != 1:
         failures.append("schema_version_mismatch")
+    if report.get("result") != "pass":
+        failures.append("result_not_pass")
+    if report.get("agent_verdict") != "agent_promising":
+        failures.append("agent_verdict_not_promising")
     if report.get("human_verdict") != "unverified":
         failures.append("unexpected_human_verdict")
     if report.get("automated_musical_approval") is not False:
         failures.append("automated_musical_approval_not_false")
+    if report.get("evidence_role") != "diagnostic":
+        failures.append("evidence_role_mismatch")
+    if report.get("source_backed") is not True:
+        failures.append("source_backed_not_true")
+    if report.get("source_timing_backed") is not True:
+        failures.append("source_timing_backed_not_true")
     if report.get("quality_proof") is not False:
         failures.append("quality_proof_not_false")
     if report.get("scripted_generation") is not True:
         failures.append("scripted_generation_not_true")
+    if report.get("case_count") != 2:
+        failures.append("case_count_mismatch")
+    if report.get("weak_routed_case_count") != 2:
+        failures.append("weak_routed_case_count_mismatch")
     cases = list_or_empty(report.get("cases"))
     if len(cases) < 2:
         failures.append("case_coverage_too_small")
@@ -593,12 +620,19 @@ def report_failure_codes(report: dict[str, Any]) -> list[str]:
         case_id = str(case.get("case_id", "unknown"))
         metrics = object_or_empty(case.get("metrics"))
         proof = object_or_empty(case.get("proof"))
+        if case.get("musical_risk_status") != "weak_routed":
+            failures.append(f"{case_id}:musical_risk_status_not_weak_routed")
         if not case.get("source_family"):
             failures.append(f"{case_id}:missing_source_family_metadata")
-        if not object_or_empty(case.get("source_timing")).get("confidence_result"):
+        source_timing = object_or_empty(case.get("source_timing"))
+        if not source_timing.get("confidence_result"):
             failures.append(f"{case_id}:source_timing_missing")
         if not object_or_empty(case.get("pressure_lift_policy")).get("source_family"):
             failures.append(f"{case_id}:pressure_lift_source_family_missing")
+        if len(str(case.get("rendered_audio_sha256", ""))) != 64:
+            failures.append(f"{case_id}:rendered_audio_sha_invalid")
+        if len(str(case.get("source_window_sha256", ""))) != 64:
+            failures.append(f"{case_id}:source_window_sha_invalid")
         if (
             case.get("source_family") == "pad_noise"
             and object_or_empty(case.get("pressure_lift_policy")).get("source_family")
@@ -606,6 +640,10 @@ def report_failure_codes(report: dict[str, Any]) -> list[str]:
         ):
             failures.append(f"{case_id}:pad_noise_policy_not_applied")
         if case.get("source_family") == "pad_noise":
+            if source_timing.get("confidence_result") != "degraded":
+                failures.append(f"{case_id}:pad_noise_timing_confidence_unexpected")
+            if source_timing.get("grid_use") != "unavailable":
+                failures.append(f"{case_id}:pad_noise_grid_use_unexpected")
             if number(proof.get("pad_noise_texture_source_derived")) < 1.0:
                 failures.append(f"{case_id}:pad_noise_texture_not_source_derived")
             if number(proof.get("pad_noise_texture_candidate_count")) < MIN_PAD_NOISE_TEXTURE_CANDIDATES:
@@ -632,11 +670,17 @@ def report_failure_codes(report: dict[str, Any]) -> list[str]:
                 failures.append(f"{case_id}:pad_noise_texture_lacks_transient_shape")
         timing_policy = object_or_empty(case.get("timing_policy"))
         if case.get("source_family") == "bad_timing":
+            if source_timing.get("confidence_result") != "candidate_ambiguous":
+                failures.append(f"{case_id}:bad_timing_confidence_unexpected")
+            if source_timing.get("grid_use") != "manual_confirm_only":
+                failures.append(f"{case_id}:bad_timing_grid_use_unexpected")
             if (
                 object_or_empty(case.get("pressure_lift_policy")).get("source_family")
                 != "bad_timing"
             ):
                 failures.append(f"{case_id}:bad_timing_cautious_policy_not_applied")
+            if timing_policy.get("policy") != "manual_confirm_cautious_arrangement":
+                failures.append(f"{case_id}:bad_timing_policy_unexpected")
             if timing_policy.get("bar_locked_policy_allowed") is not False:
                 failures.append(f"{case_id}:bad_timing_bar_locked_policy_allowed")
             if timing_policy.get("requires_user_confirmation") is not True:
@@ -683,6 +727,13 @@ def report_failure_codes(report: dict[str, Any]) -> list[str]:
             failures.append(f"{case_id}:rebuild_only_source_character_not_surviving")
         if not case.get("proposed_fix_categories"):
             failures.append(f"{case_id}:missing_fix_routing")
+        if require_artifacts:
+            rendered_audio = Path(str(case.get("rendered_audio", "")))
+            source_timing_path = Path(str(source_timing.get("report", "")))
+            if not rendered_audio.is_file():
+                failures.append(f"{case_id}:rendered_audio_file_missing")
+            if not source_timing_path.is_file():
+                failures.append(f"{case_id}:source_timing_file_missing")
         if case.get("human_verdict") != "unverified":
             failures.append(f"{case_id}:unexpected_human_verdict")
         if case.get("automated_musical_approval") is not False:
@@ -693,6 +744,96 @@ def report_failure_codes(report: dict[str, Any]) -> list[str]:
     if families != ["bad_timing", "pad_noise"]:
         failures.append("source_family_coverage_mismatch")
     return sorted(set(failures))
+
+
+def run_mutation_fixtures(report: dict[str, Any], report_path: Path) -> None:
+    fixtures = []
+    mutated = json.loads(json.dumps(report))
+    mutated["cases"][0]["metrics"]["full_performance_rms"] = 0.0
+    fixtures.append(("silent_output", mutated, "rendered_audio_silent"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["cases"][0]["rendered_audio_sha256"] = mutated["cases"][0]["source_window_sha256"]
+    fixtures.append(("identical_output", mutated, "identical_output"))
+
+    mutated = json.loads(json.dumps(report))
+    del mutated["cases"][0]["source_family"]
+    fixtures.append(("missing_source_family", mutated, "missing_source_family_metadata"))
+
+    mutated = json.loads(json.dumps(report))
+    for case in mutated["cases"]:
+        if case.get("source_family") == "pad_noise":
+            case["pressure_lift_policy"]["source_family"] = "dense_break"
+    fixtures.append(("pad_noise_policy", mutated, "pad_noise_policy_not_applied"))
+
+    mutated = json.loads(json.dumps(report))
+    for case in mutated["cases"]:
+        if case.get("source_family") == "pad_noise":
+            case["proof"]["pad_noise_texture_source_derived"] = 0.0
+    fixtures.append(("pad_noise_texture_source", mutated, "pad_noise_texture_not_source_derived"))
+
+    mutated = json.loads(json.dumps(report))
+    for case in mutated["cases"]:
+        if case.get("source_family") == "pad_noise":
+            case["proof"]["pad_noise_texture_gate_static_distance_frames"] = 0.0
+    fixtures.append(
+        (
+            "pad_noise_fixed_gate",
+            mutated,
+            "pad_noise_texture_gate_collapsed_to_fixed_choice",
+        )
+    )
+
+    mutated = json.loads(json.dumps(report))
+    mutated["cases"][0]["proof"]["strongest_audible_element"] = "none"
+    fixtures.append(("missing_strongest_element", mutated, "strongest_audible_element_missing"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["cases"][0]["proof"]["rebuild_only_source_character_survival_score"] = 0.0
+    fixtures.append(
+        (
+            "source_character_lost",
+            mutated,
+            "rebuild_only_source_character_not_surviving",
+        )
+    )
+
+    mutated = json.loads(json.dumps(report))
+    for case in mutated["cases"]:
+        if case.get("source_family") == "bad_timing":
+            case["pressure_lift_policy"]["source_family"] = "sparse_bass_pressure"
+    fixtures.append(("bad_timing_policy", mutated, "bad_timing_cautious_policy_not_applied"))
+
+    mutated = json.loads(json.dumps(report))
+    for case in mutated["cases"]:
+        if case.get("source_family") == "bad_timing":
+            case["timing_policy"]["bar_locked_policy_allowed"] = True
+    fixtures.append(("bad_timing_bar_locked", mutated, "bad_timing_bar_locked_policy_allowed"))
+
+    mutated = json.loads(json.dumps(report))
+    for case in mutated["cases"]:
+        if case.get("source_family") == "bad_timing":
+            case["proof"]["manual_confirm_cue_transient_score"] = 0.0
+    fixtures.append(("bad_timing_weak_cue", mutated, "bad_timing_confirmation_cue_too_weak"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["cases"][0]["proof"]["source_to_performance_correlation"] = 0.999
+    fixtures.append(
+        (
+            "fallback_collapse",
+            mutated,
+            "fallback_or_identical_output_collapse",
+        )
+    )
+
+    for name, fixture, expected in fixtures:
+        failures = report_failure_codes(
+            fixture,
+            report_path=report_path,
+            require_artifacts=False,
+        )
+        if not any(expected in failure for failure in failures):
+            raise ValueError(f"mutation {name} expected {expected}, got {failures}")
 
 
 def run_or_exit(

@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from audio_qa_evidence_boundary import apply_evidence_boundary
+from audio_qa_evidence_boundary import apply_evidence_boundary, evidence_boundary_failure_codes
 
 
 SCHEMA = "riotbox.non_dense_professional_proof_pack.v1"
@@ -63,7 +63,27 @@ def main() -> int:
     parser.add_argument("--professional-source-wav-pack", type=Path, default=DEFAULT_SOURCE_WAV_PACK)
     parser.add_argument("--reuse-professional-source-wav-pack", action="store_true")
     parser.add_argument("--keep-output", action="store_true")
+    parser.add_argument("--validate-report", type=Path)
+    parser.add_argument("--require-artifacts", action="store_true")
+    parser.add_argument("--mutation-fixtures", action="store_true")
     args = parser.parse_args()
+
+    if args.validate_report:
+        try:
+            report = read_json(args.validate_report)
+            failures = validate_report_failure_codes(
+                report,
+                require_artifacts=args.require_artifacts,
+            )
+            if failures:
+                raise ValueError(", ".join(failures))
+            if args.mutation_fixtures:
+                run_mutation_fixtures(report)
+        except (OSError, TypeError, ValueError, json.JSONDecodeError) as error:
+            print(f"invalid non-dense professional proof pack: {error}", file=sys.stderr)
+            return 1
+        print(f"valid non-dense professional proof pack: {args.validate_report}")
+        return 0
 
     repo = repo_root()
     output = resolve_repo_path(repo, args.output)
@@ -107,9 +127,18 @@ def main() -> int:
             "product-quality proof while render decisions remain scripted."
         ),
     )
+    validation_failures = validate_report_failure_codes(report, require_artifacts=False)
+    if validation_failures:
+        report["result"] = "fail"
+        report["agent_verdict"] = "agent_fail"
+        report["failure_codes"] = sorted(set(failures + validation_failures))
     write_reports(output, report)
-    if failures:
-        print("non-dense professional proof pack failed: " + ", ".join(failures), file=sys.stderr)
+    if report["result"] != "pass":
+        print(
+            "non-dense professional proof pack failed: "
+            + ", ".join(report["failure_codes"]),
+            file=sys.stderr,
+        )
         return 1
     print(f"non-dense professional proof pack written to {output}")
     return 0
@@ -265,6 +294,130 @@ def report_failure_codes(source_wav_report: dict[str, Any], cases: list[dict[str
         for code in case["failure_codes"]:
             failures.append(f"{case['case_id']}:{code}")
     return failures
+
+
+def validate_report_failure_codes(
+    report: dict[str, Any],
+    *,
+    require_artifacts: bool = False,
+) -> list[str]:
+    failures = []
+    failures.extend(evidence_boundary_failure_codes(report))
+    if report.get("schema") != SCHEMA:
+        failures.append("schema_mismatch")
+    if report.get("schema_version") != 1:
+        failures.append("schema_version_mismatch")
+    if report.get("result") != "pass":
+        failures.append("result_not_pass")
+    if report.get("agent_verdict") != "agent_promising":
+        failures.append("agent_verdict_not_promising")
+    if report.get("human_verdict") != "unverified":
+        failures.append("human_verdict_not_unverified")
+    if report.get("evidence_role") != "diagnostic":
+        failures.append("evidence_role_mismatch")
+    if report.get("source_backed") is not True:
+        failures.append("source_backed_not_true")
+    if report.get("source_timing_backed") is not True:
+        failures.append("source_timing_backed_not_true")
+    if report.get("scripted_generation") is not True:
+        failures.append("scripted_generation_not_true")
+    if report.get("quality_proof") is not False:
+        failures.append("quality_proof_claimed")
+    cases = list_or_empty(report.get("cases"))
+    if report.get("case_count") != 2 or len(cases) != 2:
+        failures.append("case_count_mismatch")
+    if report.get("passed_case_count") != 2:
+        failures.append("passed_case_count_mismatch")
+    if len(str(report.get("professional_source_wav_pack_sha256", ""))) != 64:
+        failures.append("professional_source_wav_pack_sha_invalid")
+    families = sorted(str(case.get("source_family", "")) for case in cases if isinstance(case, dict))
+    if families != ["sparse_bass_pressure", "tonal_hook"]:
+        failures.append("source_family_coverage_mismatch")
+    for index, case in enumerate(cases):
+        validate_report_case(case, index, require_artifacts, failures)
+    return sorted(set(failures))
+
+
+def validate_report_case(
+    case: Any,
+    index: int,
+    require_artifacts: bool,
+    failures: list[str],
+) -> None:
+    if not isinstance(case, dict):
+        failures.append(f"case_{index}_not_object")
+        return
+    prefix = f"case_{index}"
+    if case.get("result") != "pass":
+        failures.append(f"{prefix}_result_not_pass")
+    if case.get("agent_verdict") != "agent_promising":
+        failures.append(f"{prefix}_agent_verdict_not_promising")
+    if case.get("human_verdict") != "unverified":
+        failures.append(f"{prefix}_human_verdict_not_unverified")
+    if case.get("evidence_role") != "diagnostic":
+        failures.append(f"{prefix}_evidence_role_mismatch")
+    if case.get("source_backed") is not True:
+        failures.append(f"{prefix}_source_backed_not_true")
+    if case.get("source_timing_backed") is not True:
+        failures.append(f"{prefix}_source_timing_backed_not_true")
+    if case.get("scripted_generation") is not True:
+        failures.append(f"{prefix}_scripted_generation_not_true")
+    if case.get("quality_proof") is not False:
+        failures.append(f"{prefix}_quality_proof_claimed")
+    if len(str(case.get("rendered_audio_sha256", ""))) != 64:
+        failures.append(f"{prefix}_rendered_audio_sha_invalid")
+    if len(str(case.get("source_family_manifest_sha256", ""))) != 64:
+        failures.append(f"{prefix}_source_family_manifest_sha_invalid")
+    if len(str(case.get("source_family_validator_sha256", ""))) != 64:
+        failures.append(f"{prefix}_source_family_validator_sha_invalid")
+    if len(str(case.get("review_prompt_sha256", ""))) != 64:
+        failures.append(f"{prefix}_review_prompt_sha_invalid")
+    if case.get("failure_codes") not in ([], None):
+        failures.append(f"{prefix}_has_failure_codes")
+    if require_artifacts:
+        artifact_fields = (
+            ("rendered_audio", "rendered_audio_file_missing"),
+            ("source_report", "source_report_file_missing"),
+            ("source_family_validator", "source_family_validator_file_missing"),
+            ("review_prompt", "review_prompt_file_missing"),
+        )
+        for field, code in artifact_fields:
+            if not Path(str(case.get(field, ""))).is_file():
+                failures.append(f"{prefix}_{code}")
+
+
+def run_mutation_fixtures(report: dict[str, Any]) -> None:
+    fixtures = []
+    mutated = json.loads(json.dumps(report))
+    mutated["human_verdict"] = "pass"
+    fixtures.append(("human_verdict_claim", mutated, "human_verdict_not_unverified"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["quality_proof"] = True
+    mutated["evidence_boundary"]["quality_proof"] = True
+    fixtures.append(("quality_claim", mutated, "quality_proof_claimed"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["cases"][0]["source_family"] = "dense_break"
+    fixtures.append(("source_family_coverage", mutated, "source_family_coverage_mismatch"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["cases"][0]["rendered_audio_sha256"] = "0"
+    fixtures.append(("bad_render_hash", mutated, "case_0_rendered_audio_sha_invalid"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["cases"][0]["quality_proof"] = True
+    mutated["cases"][0]["evidence_boundary"]["quality_proof"] = True
+    fixtures.append(("case_quality_claim", mutated, "case_0_quality_proof_claimed"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["passed_case_count"] = 1
+    fixtures.append(("stale_pass_count", mutated, "passed_case_count_mismatch"))
+
+    for name, fixture, expected in fixtures:
+        failures = validate_report_failure_codes(fixture, require_artifacts=False)
+        if expected not in failures:
+            raise ValueError(f"mutation {name} expected {expected}, got {failures}")
 
 
 def run_or_exit(repo: Path, command: list[str], log_path: Path) -> None:
