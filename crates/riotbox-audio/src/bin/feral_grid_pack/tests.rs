@@ -228,6 +228,53 @@ mod tests {
     }
 
     #[test]
+    fn tonal_hold_contour_keeps_mc202_support_reviewable() {
+        let grid = Grid::new(120.0, 4, 4).expect("grid");
+        let source_contour = Mc202SourceContourProfile {
+            contour_hint: Mc202ContourHint::Hold,
+            note_budget: Mc202NoteBudget::Sparse,
+            touch_boost: 0.035,
+            music_bus_boost: 0.025,
+            low_band_energy_ratio: 0.23,
+            mid_band_energy_ratio: 0.73,
+            high_band_energy_ratio: 0.04,
+            event_density_per_bar: 0.5,
+            reason: "source_mid_section_hold_contour",
+        };
+        let tr909_profile = SourceAwareTr909Profile {
+            signal_rms: 0.10,
+            low_band_rms: 0.04,
+            onset_count: 4,
+            event_density_per_bar: 0.5,
+            low_band_energy_ratio: 0.23,
+            mid_band_energy_ratio: 0.73,
+            high_band_energy_ratio: 0.04,
+            support_profile: Tr909SourceSupportProfile::SteadyPulse,
+            support_context: Tr909SourceSupportContext::TransportBar,
+            pattern_adoption: Tr909PatternAdoption::SupportPulse,
+            phrase_variation: Tr909PhraseVariation::PhraseAnchor,
+            drum_bus_level: 0.70,
+            slam_intensity: 0.16,
+            reason: "source_steady_pulse",
+        };
+
+        let (mc202_render, mc202_pressure, mc202_source_contour) =
+            render_mc202_bass_pressure_with_source_contour(&grid, tr909_profile, source_contour);
+
+        assert!(mc202_pressure.applied, "{mc202_pressure:?}");
+        assert!(
+            mc202_pressure.pressure_reinforcement_gain >= 0.038,
+            "{mc202_pressure:?}"
+        );
+        assert!(
+            mc202_pressure.signal_rms >= 0.0055,
+            "{mc202_pressure:?}"
+        );
+        assert!(mc202_source_contour.applied, "{mc202_source_contour:?}");
+        assert!(signal_metrics(&mc202_render).rms >= 0.0055);
+    }
+
+    #[test]
     fn renders_grid_pack_files_and_noncollapsed_audio() {
         let temp = tempfile::tempdir().expect("tempdir");
         let source_path = temp.path().join("source.wav");

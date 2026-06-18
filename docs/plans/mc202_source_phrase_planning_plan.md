@@ -346,6 +346,10 @@ not separate product-completion claims:
 - RIOTBOX-1278: real-source corpus listening pack for dense and non-dense
   MC-202 proof.
 - RIOTBOX-1279: producer-grade closeout review and demo-bank promotion gate.
+- RIOTBOX-1285: tonal-hook MC-202 source-composed support pass; tonal review
+  candidates now clear `source_composed_evidence` instead of remaining
+  primitive/template-only blockers, while promotion still waits for human
+  verdicts.
 
 ## Global No-Hardcoded-Fallback Follow-ups
 

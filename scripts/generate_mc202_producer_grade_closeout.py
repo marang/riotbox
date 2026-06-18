@@ -221,11 +221,7 @@ def closeout_blockers(
                 "reason": "Producer-grade closeout needs structured listener verdicts before quality or demo-bank promotion.",
             }
         )
-    primitive_or_template = [
-        candidate["case_id"]
-        for candidate in candidates
-        if candidate["primitive_or_template_only"]
-    ]
+    primitive_or_template = primitive_or_template_case_ids(candidates)
     if primitive_or_template:
         blockers.append(
             {
@@ -335,15 +331,6 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             "candidate_non_dense_source_composed_missing",
             failures,
         )
-        check(
-            any(
-                isinstance(candidate, dict)
-                and candidate.get("primitive_or_template_only") is True
-                for candidate in candidates
-            ),
-            "candidate_primitive_template_blocker_missing",
-            failures,
-        )
         for index, candidate in enumerate(candidates):
             validate_candidate(candidate, index, failures)
     blockers = report.get("blockers")
@@ -351,11 +338,19 @@ def validate_report(report: dict[str, Any]) -> list[str]:
     if isinstance(blockers, list):
         codes = {str(blocker.get("code")) for blocker in blockers if isinstance(blocker, dict)}
         check("structured_human_verdict_missing" in codes, "human_verdict_blocker_missing", failures)
-        check(
-            "primitive_or_template_candidate_blocks_promotion" in codes,
-            "primitive_template_blocker_missing",
-            failures,
-        )
+        primitive_case_ids = primitive_or_template_case_ids(candidates if isinstance(candidates, list) else [])
+        if primitive_case_ids:
+            check(
+                "primitive_or_template_candidate_blocks_promotion" in codes,
+                "primitive_template_blocker_missing",
+                failures,
+            )
+        else:
+            check(
+                "primitive_or_template_candidate_blocks_promotion" not in codes,
+                "primitive_template_blocker_stale",
+                failures,
+            )
     check(isinstance(report.get("next_actions"), list) and report["next_actions"], "next_actions_missing", failures)
     summary = str(report.get("musician_summary", ""))
     check("not demo-ready" in summary and "human pass" in summary, "musician_summary_missing", failures)
@@ -388,6 +383,11 @@ def validate_candidate(candidate: Any, index: int, failures: list[str]) -> None:
     check(candidate.get("quality_proof") is False, f"{prefix}_claims_quality", failures)
     check(candidate.get("promotion_blocked_until_human_pass") is True, f"{prefix}_promotion_not_blocked", failures)
     check(candidate.get("template_only_blocks_promotion") is True, f"{prefix}_template_blocker_missing", failures)
+    check(
+        candidate.get("source_composed_evidence") != candidate.get("primitive_or_template_only"),
+        f"{prefix}_source_composed_primitive_state_ambiguous",
+        failures,
+    )
     check(len(str(candidate.get("candidate_sha256", ""))) == 64, f"{prefix}_candidate_sha_invalid", failures)
     check(len(str(candidate.get("review_sha256", ""))) == 64, f"{prefix}_review_sha_invalid", failures)
 
@@ -411,18 +411,24 @@ def run_mutation_fixtures(report: dict[str, Any]) -> None:
     fixtures.append(("primitive_control_leak", mutated, "primitive_controls_are_product_output"))
 
     mutated = json.loads(json.dumps(report))
-    mutated["blockers"] = [
-        blocker
-        for blocker in mutated["blockers"]
-        if blocker["code"] != "primitive_or_template_candidate_blocks_promotion"
-    ]
-    fixtures.append(("missing_primitive_blocker", mutated, "primitive_template_blocker_missing"))
-
-    mutated = json.loads(json.dumps(report))
     for candidate in mutated["review_candidates"]:
         if candidate["source_family"] == "dense_break":
             candidate["source_composed_evidence"] = False
     fixtures.append(("dense_not_source_composed", mutated, "candidate_dense_break_source_composed_missing"))
+
+    mutated = json.loads(json.dumps(report))
+    for candidate in mutated["review_candidates"]:
+        if candidate["source_family"] == "tonal_hook":
+            candidate["primitive_or_template_only"] = True
+            candidate["source_composed_evidence"] = False
+    fixtures.append(("primitive_without_blocker", mutated, "primitive_template_blocker_missing"))
+
+    mutated = json.loads(json.dumps(report))
+    for candidate in mutated["review_candidates"]:
+        if candidate["source_family"] == "tonal_hook":
+            candidate["primitive_or_template_only"] = False
+            candidate["source_composed_evidence"] = False
+    fixtures.append(("ambiguous_candidate_state", mutated, "candidate_1_source_composed_primitive_state_ambiguous"))
 
     for name, fixture, expected in fixtures:
         failures = validate_report(fixture)
@@ -472,14 +478,32 @@ def markdown_report(report: dict[str, Any]) -> str:
 
 
 def musician_summary(blockers: list[dict[str, Any]]) -> str:
+    primitive_blocked = any(
+        blocker.get("code") == "primitive_or_template_candidate_blocks_promotion"
+        for blocker in blockers
+    )
     if blockers:
+        if primitive_blocked:
+            return (
+                "MC-202 is technically reviewable across dense and non-dense sources, "
+                "but it is not demo-ready and must not claim producer-grade quality "
+                "until structured listening records a human pass. Primitive/template "
+                "cases stay fix targets, not musical proof."
+            )
         return (
             "MC-202 is technically reviewable across dense and non-dense sources, "
             "but it is not demo-ready and must not claim producer-grade quality "
-            "until structured listening records a human pass. Primitive/template "
-            "cases stay fix targets, not musical proof."
+            "until structured listening records a human pass."
         )
     return "MC-202 has no closeout blockers."
+
+
+def primitive_or_template_case_ids(candidates: list[Any]) -> list[str]:
+    return [
+        str(candidate.get("case_id"))
+        for candidate in candidates
+        if isinstance(candidate, dict) and candidate.get("primitive_or_template_only") is True
+    ]
 
 
 def read_json_object(path: Path) -> dict[str, Any]:

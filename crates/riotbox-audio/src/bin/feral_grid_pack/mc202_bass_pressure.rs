@@ -286,7 +286,7 @@ fn mc202_pressure_reinforcement_gain(
     let contour_gain = match source_contour.contour_hint {
         Mc202ContourHint::Drop => 0.018,
         Mc202ContourHint::Lift => 0.010,
-        Mc202ContourHint::Hold | Mc202ContourHint::Neutral => 0.012,
+        Mc202ContourHint::Hold | Mc202ContourHint::Neutral => 0.020,
     };
 
     (profile_gain + contour_gain + low_dominance * 0.020).clamp(0.010, 0.060)

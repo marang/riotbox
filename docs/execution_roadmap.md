@@ -725,6 +725,11 @@ following:
     `blocked_for_human_promotion`, demo-bank promotion stays false, and
     RIOTBOX-1264 stays open until structured listening records human verdicts;
     primitive/template-only candidates remain production blockers, not proof
+  - RIOTBOX-1285 lifts the tonal-hook MC-202 review candidate out of the
+    primitive/template-only blocker by increasing source-derived Hold-contour
+    bass support and tonal restore balance; dense, tonal, and sparse MC-202
+    candidates are now all source-composed review candidates, while human
+    verdicts still block producer-grade/demo-bank promotion
   - edge-source diagnostic coverage now includes pad/noise and bad-timing
     sources as weak/risky routed cases: source-timing, rendered WAV, metrics,
     source-family metadata, and concrete fix routing are present; pad/noise now
