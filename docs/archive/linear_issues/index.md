@@ -1208,4 +1208,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Remove primitive_renderer as positive musical output in lane recipe and feral-grid packs
 - [RIOTBOX-1280.md](./RIOTBOX-1280.md)
   Remove W-30 synthetic preview fallback from musician-facing output
+- [RIOTBOX-1283.md](./RIOTBOX-1283.md)
+  Remove fallback selection strategies from scripted professional-output generators
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
