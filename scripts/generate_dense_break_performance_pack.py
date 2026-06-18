@@ -10,6 +10,7 @@ import shutil
 import struct
 import subprocess
 import sys
+import tempfile
 import wave
 import zlib
 from dataclasses import asdict, dataclass
@@ -280,6 +281,9 @@ def main() -> int:
     parser.add_argument("--source-start-seconds", type=float, default=0.0)
     parser.add_argument("--keep-output", action="store_true")
     parser.add_argument("--validate-report", type=Path)
+    parser.add_argument("--validate-agent-review", type=Path)
+    parser.add_argument("--require-visuals", action="store_true")
+    parser.add_argument("--mutation-fixtures", action="store_true")
     parser.add_argument("--validate-weak-source-character-report", type=Path)
     parser.add_argument("--weak-source-character-fixture", action="store_true")
     parser.add_argument("--timing-confidence-result")
@@ -290,7 +294,14 @@ def main() -> int:
     if args.validate_report:
         report_path = resolve_repo_path(repo, args.validate_report)
         validate_report_file(report_path)
+        if args.mutation_fixtures:
+            run_mutation_fixtures(report_path)
         print(f"valid dense-break performance report: {report_path}")
+        return 0
+    if args.validate_agent_review:
+        report_path = resolve_repo_path(repo, args.validate_agent_review)
+        validate_agent_review_file(report_path, require_visuals=args.require_visuals)
+        print(f"valid agent musical review pack: {report_path}")
         return 0
     if args.validate_weak_source_character_report:
         report_path = resolve_repo_path(repo, args.validate_weak_source_character_report)
@@ -3482,6 +3493,70 @@ def validate_report_file(path: Path) -> None:
         raise SystemExit(
             "invalid dense-break performance report: rebuild_only_performance file missing"
         )
+    explicit_failures: list[str] = []
+    if report.get("agent_verdict") != "agent_promising":
+        explicit_failures.append("agent_verdict_not_promising")
+    if report.get("human_verdict") != "unverified":
+        explicit_failures.append("unexpected_human_verdict")
+    if report.get("evidence_role") != "diagnostic":
+        explicit_failures.append("evidence_role_not_diagnostic")
+    if report.get("source_backed") is not True:
+        explicit_failures.append("source_backed_not_true")
+    if report.get("source_timing_backed") is not True:
+        explicit_failures.append("source_timing_backed_not_true")
+    if report.get("scripted_generation") is not True:
+        explicit_failures.append("scripted_generation_not_true")
+    if report.get("quality_proof") is not False:
+        explicit_failures.append("quality_proof_not_false")
+    if not isinstance(source_policy, dict):
+        explicit_failures.append("source_policy_missing")
+    else:
+        if source_policy.get("source_aware") is not True:
+            explicit_failures.append("source_policy_not_source_aware")
+        scripted_boundaries = source_policy.get("scripted_boundaries")
+        if not isinstance(scripted_boundaries, list) or len(scripted_boundaries) < 4:
+            explicit_failures.append("scripted_boundaries_missing")
+        decisions = source_policy.get("decisions")
+        if not isinstance(decisions, dict) or not isinstance(
+            decisions.get("pressure_shape"), str
+        ):
+            explicit_failures.append("pressure_shape_decision_missing")
+        pressure_lift_policy = source_policy.get("pressure_lift_policy")
+        if not isinstance(pressure_lift_policy, dict):
+            explicit_failures.append("pressure_lift_policy_missing")
+        else:
+            if pressure_lift_policy.get("source_aware") is not True:
+                explicit_failures.append("pressure_lift_policy_not_source_aware")
+            if pressure_lift_policy.get("source_family") != "dense_break":
+                explicit_failures.append("pressure_lift_policy_not_dense_break")
+            if pressure_lift_policy.get("lift_shape") != "transient-pressure slam":
+                explicit_failures.append("pressure_lift_shape_mismatch")
+            if numeric_field(pressure_lift_policy, "tr909_drive") < 1.10:
+                explicit_failures.append("tr909_drive_too_weak")
+            if numeric_field(pressure_lift_policy, "break_snap_drive") < 1.20:
+                explicit_failures.append("break_snap_drive_too_weak")
+        arrangement_policy = source_policy.get("arrangement_policy")
+        if not isinstance(arrangement_policy, dict):
+            explicit_failures.append("arrangement_policy_missing")
+        else:
+            if arrangement_policy.get("source_aware") is not True:
+                explicit_failures.append("arrangement_policy_not_source_aware")
+            if arrangement_policy.get("role_order_source_derived") is not True:
+                explicit_failures.append("arrangement_policy_not_source_derived")
+            if arrangement_policy.get("source_family") != "dense_break":
+                explicit_failures.append("arrangement_policy_not_dense_break")
+            if (
+                numeric_field(arrangement_policy, "candidate_count")
+                < MIN_ARRANGEMENT_ROLE_CANDIDATES
+            ):
+                explicit_failures.append("arrangement_policy_not_enough_candidates")
+            if (
+                numeric_field(arrangement_policy, "scripted_role_distance")
+                < MIN_ARRANGEMENT_SCRIPTED_ROLE_DISTANCE
+            ):
+                explicit_failures.append("arrangement_policy_collapsed_to_scripted")
+            if not isinstance(arrangement_policy.get("role_order_signature"), str):
+                explicit_failures.append("arrangement_role_signature_missing")
     boundary_failures = evidence_boundary_failure_codes(report)
     fallback_strategy_failures = fallback_selection_strategy_failure_codes(report)
     source_family = None
@@ -3490,17 +3565,210 @@ def validate_report_file(path: Path) -> None:
         if isinstance(pressure_lift_policy, dict):
             source_family = str(pressure_lift_policy.get("source_family") or "")
     computed_failures = failure_codes_for(metrics, proof, source_family)
-    if boundary_failures or fallback_strategy_failures or computed_failures:
-        failures = boundary_failures + fallback_strategy_failures + computed_failures
+    if explicit_failures or boundary_failures or fallback_strategy_failures or computed_failures:
+        failures = (
+            explicit_failures
+            + boundary_failures
+            + fallback_strategy_failures
+            + computed_failures
+        )
         raise SystemExit("invalid dense-break performance report: " + ", ".join(failures))
     if report.get("result") != "pass":
         raise SystemExit("invalid dense-break performance report: result_not_pass")
     if report.get("failure_codes") != []:
         raise SystemExit("invalid dense-break performance report: stale_failure_codes")
+
+
+def run_mutation_fixtures(report_path: Path) -> None:
+    report = json.loads(report_path.read_text())
+    fixtures: list[tuple[str, dict[str, Any], str]] = []
+
+    mutated = json.loads(json.dumps(report))
+    mutated["source_policy"]["arrangement_policy"]["selection_strategy"] = (
+        "fallback-scripted-source-family-role-order"
+    )
+    fixtures.append(
+        (
+            "fallback_selection_strategy",
+            mutated,
+            "fallback_selection_strategy:report.source_policy.arrangement_policy.selection_strategy",
+        )
+    )
+
+    mutations = [
+        (
+            "silent_rebuild",
+            ("metrics", "rebuild_only_performance", "rms"),
+            0.0,
+            "rebuild_only_performance_too_quiet_or_silent",
+        ),
+        (
+            "hook_chop_not_source",
+            ("proof", "hook_chop_selection_source_derived"),
+            0.0,
+            "hook_chop_selection_not_source_derived",
+        ),
+        (
+            "weak_source_character",
+            ("proof", "hook_chop_source_character_score_floor"),
+            0.0,
+            "hook_chop_source_character_too_weak",
+        ),
+        (
+            "arrangement_not_source",
+            ("proof", "arrangement_role_order_source_derived"),
+            0.0,
+            "arrangement_role_order_not_source_derived",
+        ),
+        (
+            "mix_not_source",
+            ("proof", "mix_treatment_source_derived"),
+            0.0,
+            "mix_treatment_not_source_derived",
+        ),
+        (
+            "tail_not_source",
+            ("proof", "tail_shape_source_derived"),
+            0.0,
+            "tail_shape_not_source_derived",
+        ),
+        (
+            "fixed_tail",
+            ("proof", "tail_shape_fixed_distance"),
+            0.0,
+            "tail_shape_collapsed_to_fixed_recipe",
+        ),
+        (
+            "missing_strongest",
+            ("proof", "strongest_audible_element"),
+            "none",
+            "strongest_audible_element_missing",
+        ),
+        (
+            "ambiguous_strongest",
+            ("proof", "strongest_audible_element_margin"),
+            0.0,
+            "strongest_audible_element_ambiguous",
+        ),
+        (
+            "source_character_lost",
+            ("proof", "rebuild_only_source_character_survival_score"),
+            0.0,
+            "rebuild_only_source_character_not_surviving",
+        ),
+        (
+            "destructive_not_source",
+            ("proof", "destructive_gesture_source_derived"),
+            0.0,
+            "destructive_gesture_not_source_derived",
+        ),
+        (
+            "source_masked",
+            ("proof", "rebuild_only_to_source_correlation"),
+            0.999,
+            "rebuild_only_too_source_masked",
+        ),
+        (
+            "source_toggle_collapse",
+            ("proof", "source_on_to_rebuild_only_correlation"),
+            1.0,
+            "source_layer_toggle_did_not_change_output",
+        ),
+    ]
+    for name, path, value, expected in mutations:
+        mutated = json.loads(json.dumps(report))
+        set_nested(mutated, path, value)
+        fixtures.append((name, mutated, expected))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["proof"]["strongest_audible_element"] = "bass"
+    mutated["proof"]["dense_break_physical_drum_pressure_score"] = 0.0
+    mutated["proof"]["dense_break_pressure_transient_to_hook_ratio"] = 0.0
+    fixtures.append(("weak_drum_pressure", mutated, "dense_break_snare_not_strongest"))
+
+    for name, fixture, expected in fixtures:
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as handle:
+            json.dump(fixture, handle)
+            handle.write("\n")
+            tmp_path = Path(handle.name)
+        try:
+            validate_report_file(tmp_path)
+        except SystemExit as error:
+            if expected not in str(error):
+                raise SystemExit(f"mutation {name} failed with wrong error: {error}") from error
+        else:
+            raise SystemExit(f"mutation {name} unexpectedly passed")
+        finally:
+            tmp_path.unlink(missing_ok=True)
+
+
+def set_nested(target: dict[str, Any], path: tuple[str, ...], value: Any) -> None:
+    cursor: Any = target
+    for key in path[:-1]:
+        cursor = cursor[key]
+    cursor[path[-1]] = value
+
+
+def numeric_field(mapping: dict[str, Any], key: str) -> float:
+    value = mapping.get(key)
+    return float(value) if isinstance(value, int | float) else 0.0
+
+
+def validate_agent_review_file(path: Path, *, require_visuals: bool) -> None:
+    try:
+        report = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError) as error:
+        raise SystemExit(f"invalid agent musical review pack: {error}") from error
+    if not isinstance(report, dict):
+        raise SystemExit("invalid agent musical review pack: root must be an object")
+    failures: list[str] = []
+    if report.get("schema") != AGENT_REVIEW_SCHEMA:
+        failures.append("schema_mismatch")
+    if report.get("result") != "pass":
+        failures.append("result_not_pass")
+    if report.get("agent_verdict") != "agent_promising":
+        failures.append("agent_verdict_not_promising")
     if report.get("human_verdict") != "unverified":
-        raise SystemExit("invalid dense-break performance report: unexpected_human_verdict")
+        failures.append("human_verdict_not_unverified")
+    if report.get("evidence_role") != "diagnostic":
+        failures.append("evidence_role_mismatch")
+    if report.get("source_backed") is not True:
+        failures.append("source_backed_not_true")
+    if report.get("source_timing_backed") is not True:
+        failures.append("source_timing_backed_not_true")
+    if report.get("scripted_generation") is not True:
+        failures.append("scripted_generation_not_true")
     if report.get("quality_proof") is not False:
-        raise SystemExit("invalid dense-break performance report: quality_proof_not_false")
+        failures.append("quality_proof_claimed")
+    if report.get("source_recognition") != "source_transformed_but_present":
+        failures.append("source_recognition_mismatch")
+    visual_files = report.get("visual_files")
+    if not isinstance(visual_files, dict):
+        failures.append("visual_files_missing")
+    else:
+        for role in (
+            "source_window",
+            "chop_hook",
+            "pressure_lift",
+            "dropout_stutter",
+            "restore_hit",
+            "full_performance",
+            "rebuild_only_performance",
+        ):
+            role_files = visual_files.get(role)
+            if not isinstance(role_files, dict):
+                failures.append(f"{role}_visuals_missing")
+                continue
+            for kind in ("waveform", "spectrogram"):
+                relative = str(role_files.get(kind, ""))
+                if not relative.endswith(f".{kind}.png"):
+                    failures.append(f"{role}_{kind}_visual_path_invalid")
+                if require_visuals and not (path.parent / relative).is_file():
+                    failures.append(f"{role}_{kind}_visual_file_missing")
+    if failures:
+        raise SystemExit(
+            "invalid agent musical review pack: " + ", ".join(sorted(set(failures)))
+        )
 
 
 def validate_weak_source_character_report_file(path: Path) -> None:

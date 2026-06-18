@@ -679,14 +679,15 @@ thresholds, evidence-boundary checks, artifact existence checks, and failure-cod
 names should live in validator scripts so future sound-quality gates stay
 reviewable without weakening proof.
 
-The P023 professional-source WAV pack, edge-source diagnostics, and non-dense
-professional proof pack follow the same rule: their smoke recipes must call
-report validators with mutation fixtures instead of duplicating source-family
-coverage, human-verdict, diagnostic-only, artifact, silence, identity-collapse,
-source-derived policy, source-character, and weak-routing checks as shell `jq`.
+The P023 professional-source WAV pack, edge-source diagnostics, non-dense
+professional proof pack, dense-break performance pack, and agent musical review
+pack follow the same rule: their smoke recipes must call report validators with
+mutation fixtures instead of duplicating source-family coverage, human-verdict,
+diagnostic-only, artifact, silence, identity-collapse, source-derived policy,
+source-character, visual-review, and weak-routing checks as shell `jq`.
 Passing those validators proves the diagnostic boundary and contract shape only;
-it does not promote scripted professional-source, edge, or non-dense renders to
-product-quality proof.
+it does not promote scripted professional-source, edge, non-dense, dense-break,
+or agent-review renders to product-quality proof.
 
 Run:
 

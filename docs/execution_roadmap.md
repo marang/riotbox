@@ -787,6 +787,11 @@ following:
     pack: its generator validate mode owns tonal/sparse source-family gates,
     source-aware policy checks, source-character thresholds, rendered-artifact
     requirements, mutation fixtures, and the diagnostic-only boundary
+  - RIOTBOX-1289 continues the extraction for dense-break performance and
+    agent musical review packs: the dense-break generator owns source-policy
+    gates, physical drum-pressure checks, source-character survival,
+    source-layer collapse mutations, and review visual-file validation while
+    keeping the diagnostic-only/no-quality-proof boundary explicit
 - no PR, roadmap claim, or release note presents an audible feature as
   musician-ready when its human verdict is missing, weak, or explicitly
   unverified
