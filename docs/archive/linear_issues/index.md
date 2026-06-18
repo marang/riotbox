@@ -1212,4 +1212,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Remove fallback selection strategies from scripted professional-output generators
 - [RIOTBOX-1284.md](./RIOTBOX-1284.md)
   Persist or reconstruct MC-202 source phrase plans through replay and restore
+- [RIOTBOX-1282.md](./RIOTBOX-1282.md)
+  Audit TR-909 primitive support so hardcoded drum fallback cannot count as product output
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
