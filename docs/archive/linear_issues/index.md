@@ -1216,4 +1216,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Audit TR-909 primitive support so hardcoded drum fallback cannot count as product output
 - [RIOTBOX-1279.md](./RIOTBOX-1279.md)
   MC-202 producer-grade closeout review and demo-bank promotion gate
+- [RIOTBOX-1285.md](./RIOTBOX-1285.md)
+  Make tonal-hook MC-202 candidate source-composed instead of template-only
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
