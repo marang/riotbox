@@ -699,6 +699,13 @@ following:
     presence and scores selected hook/chop/riff windows for source-character
     floor and variation so weak or too-narrow source-window choices route back
     to source selection instead of being hidden by later mix or routing reports
+  - RIOTBOX-1295 strengthens that Hook/Chop path from selected offsets into
+    audible riff playback proof: dense-break and tonal-hook diagnostics now
+    require a source-derived hit pattern, minimum hit density, velocity
+    contrast, reverse-hit presence, and suite-level Matrix/Source-WAV
+    aggregation. Pad/noise and bad-timing source families are kept off the W-30
+    hook-riff path and use texture/timing-cue behavior instead, preventing
+    family-inappropriate Hook/Chop fallback from masking weak outputs.
   - dense-break and tonal-hook diagnostics now also derive destructive
     dropout/stutter/restore cue selection from scanned source/W-30 candidates,
     expose distance from old fixed destructive choices and stutter/restore offset
@@ -816,6 +823,12 @@ following:
     trusted plan, and the session save/load sample covers both lane-state and
     commit-record persistence. This protects restore from falling back to
     primitive or stale MC-202 material when source-composed plans are absent.
+  - RIOTBOX-1295 requires W-30 Hook/Chop diagnostic output to prove the audible
+    riff pattern itself is source-derived, not only the selected source window:
+    dense-break/tonal reports carry source-derived hit-pattern, hit-count,
+    velocity-span, and reverse-hit gates through dense, matrix, source-WAV, and
+    professional-output suite validation while keeping all artifacts
+    diagnostic-only.
 - no PR, roadmap claim, or release note presents an audible feature as
   musician-ready when its human verdict is missing, weak, or explicitly
   unverified

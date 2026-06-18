@@ -182,6 +182,16 @@ def render_case(
                 "hook_chop_riff_unique_source_offset_count": proof[
                     "hook_chop_riff_unique_source_offset_count"
                 ],
+                "hook_chop_riff_hit_pattern_source_derived": proof[
+                    "hook_chop_riff_hit_pattern_source_derived"
+                ],
+                "hook_chop_riff_hit_count": proof["hook_chop_riff_hit_count"],
+                "hook_chop_riff_velocity_span": proof[
+                    "hook_chop_riff_velocity_span"
+                ],
+                "hook_chop_riff_reverse_count": proof[
+                    "hook_chop_riff_reverse_count"
+                ],
                 "hook_chop_source_character_score_floor": proof[
                     "hook_chop_source_character_score_floor"
                 ],

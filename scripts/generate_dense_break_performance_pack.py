@@ -59,6 +59,9 @@ MIN_HOOK_CHOP_SELECTION_CANDIDATES = 3
 MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES = 256.0
 MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES = 512.0
 MIN_HOOK_CHOP_RIFF_SOURCE_OFFSETS = 3
+MIN_HOOK_CHOP_RIFF_HIT_COUNT = 6
+MIN_HOOK_CHOP_RIFF_VELOCITY_SPAN = 0.20
+MIN_HOOK_CHOP_RIFF_REVERSE_COUNT = 1
 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR = 0.60
 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN = 0.10
 MIN_DESTRUCTIVE_GESTURE_CANDIDATES = 3
@@ -152,6 +155,11 @@ class HookChopPolicy:
     candidate_count: int
     riff_start_frames: tuple[int, ...]
     riff_unique_source_offset_count: int
+    riff_hit_pattern: tuple[tuple[float, float, bool], ...]
+    riff_hit_pattern_signature: str
+    riff_hit_count: int
+    riff_velocity_span: float
+    riff_reverse_count: int
     source_character_score_floor: float
     source_character_score_mean: float
     source_character_score_span: float
@@ -588,6 +596,11 @@ def hook_chop_policy_for(
             candidate_count=1,
             riff_start_frames=(static_start,),
             riff_unique_source_offset_count=1,
+            riff_hit_pattern=((0.0, 1.0, False),),
+            riff_hit_pattern_signature="static:0.00",
+            riff_hit_count=1,
+            riff_velocity_span=0.0,
+            riff_reverse_count=0,
             source_character_score_floor=0.0,
             source_character_score_mean=0.0,
             source_character_score_span=0.0,
@@ -670,6 +683,14 @@ def hook_chop_policy_for(
         min_separation=max(grain_len, int(MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES)),
     )
     selected_character_scores = source_character_scores_for_starts(candidates, riff_starts)
+    riff_hit_pattern = source_derived_riff_hit_pattern(
+        candidates,
+        riff_starts,
+        bar_frames,
+        source_family,
+    )
+    riff_gains = [float(hit[1]) for hit in riff_hit_pattern]
+    riff_reverse_count = sum(1 for hit in riff_hit_pattern if bool(hit[2]))
     return HookChopPolicy(
         source_aware=True,
         source_family=source_family,
@@ -685,6 +706,11 @@ def hook_chop_policy_for(
         candidate_count=len(candidates),
         riff_start_frames=riff_starts,
         riff_unique_source_offset_count=len(set(riff_starts)),
+        riff_hit_pattern=riff_hit_pattern,
+        riff_hit_pattern_signature=riff_hit_pattern_signature(riff_hit_pattern),
+        riff_hit_count=len(riff_hit_pattern),
+        riff_velocity_span=max(riff_gains) - min(riff_gains) if riff_gains else 0.0,
+        riff_reverse_count=riff_reverse_count,
         source_character_score_floor=min(selected_character_scores),
         source_character_score_mean=float(np.mean(selected_character_scores)),
         source_character_score_span=max(selected_character_scores) - min(selected_character_scores),
@@ -744,6 +770,72 @@ def source_derived_riff_starts(
         if len(starts) >= 4:
             break
     return tuple(starts)
+
+
+def source_derived_riff_hit_pattern(
+    candidates: list[dict[str, float]],
+    riff_starts: tuple[int, ...],
+    bar_frames: int,
+    source_family: str,
+) -> tuple[tuple[float, float, bool], ...]:
+    if not riff_starts:
+        return ((0.0, 1.0, False),)
+    beat_frames = max(1, bar_frames // BEATS_PER_BAR)
+    score_by_start = {
+        int(item["start"]): max(
+            float(item.get("hook_score", 0.0)),
+            float(item.get("chop_score", 0.0)),
+        )
+        for item in candidates
+    }
+    character_by_start = {
+        int(item["start"]): float(item.get("source_character_score", 0.0))
+        for item in candidates
+    }
+    best_score = max((score_by_start.get(int(start), 0.0) for start in riff_starts), default=1e-9)
+    family_shift = {
+        "tonal_hook": 0.25,
+        "dense_break": 0.00,
+        "sparse_bass_pressure": 0.50,
+    }.get(source_family, 0.25)
+    hits: list[tuple[float, float, bool]] = []
+    for index, start in enumerate(riff_starts):
+        start = int(start)
+        source_phase = (start % bar_frames) / beat_frames
+        primary = quantized_beat(source_phase + family_shift + (0.25 if index % 2 else 0.0))
+        secondary = quantized_beat(primary + 1.25 + (0.25 * (index % 3)))
+        score_norm = min(score_by_start.get(start, 0.0) / max(best_score, 1e-9), 1.25)
+        character = min(character_by_start.get(start, 0.0), 1.4)
+        primary_gain = float(np.clip(0.78 + score_norm * 0.26 + character * 0.10, 0.72, 1.28))
+        secondary_gain = float(np.clip(0.52 + score_norm * 0.18 + character * 0.07, 0.46, 0.96))
+        reverse_primary = ((start // max(1, beat_frames // 2)) + index) % 3 == 0
+        reverse_secondary = ((start // max(1, beat_frames // 4)) + index) % 4 == 0
+        hits.append((primary, primary_gain, reverse_primary))
+        hits.append((secondary, secondary_gain, reverse_secondary))
+    deduped: list[tuple[float, float, bool]] = []
+    seen: set[tuple[float, bool]] = set()
+    for beat, gain, reverse in sorted(hits, key=lambda item: (item[0], -item[1])):
+        key = (beat, reverse)
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append((beat, gain, reverse))
+    if not any(reverse for _, _, reverse in deduped) and len(deduped) > 1:
+        beat, gain, _ = deduped[-1]
+        deduped[-1] = (beat, gain, True)
+    return tuple(deduped[:8])
+
+
+def quantized_beat(value: float) -> float:
+    step = round((value % BEATS_PER_BAR) * 4.0) % int(BEATS_PER_BAR * 4)
+    return float(step / 4.0)
+
+
+def riff_hit_pattern_signature(pattern: tuple[tuple[float, float, bool], ...]) -> str:
+    return "|".join(
+        f"{beat:.2f}:{gain:.2f}:{'r' if reverse else 'f'}"
+        for beat, gain, reverse in pattern
+    )
 
 
 def destructive_gesture_policy_for(
@@ -1758,8 +1850,8 @@ def pressure_lift_policy_for(
             hook_bleed_gain=0.56,
             tr909_drive=0.98,
             break_snap_drive=0.92,
-            mc202_drive=0.76,
-            bass_drive=0.82,
+            mc202_drive=0.60,
+            bass_drive=0.62,
             bar4_intensity=0.90,
             bar5_intensity=1.04,
             bar4_bass_frequency_hz=48.0,
@@ -1858,14 +1950,25 @@ def render_performance(
         1.0 if source_policy.hook_chop_policy.source_family == "sparse_bass_pressure" else 1.12
     )
     dense_drum_snap = source_policy.pressure_lift_policy.source_family == "dense_break"
-    hook_tr909_gain = 0.76 if dense_drum_snap else 0.62
-    chop_tr909_gain = 0.98 if dense_drum_snap else 0.78
+    bad_timing_cue_path = source_policy.pressure_lift_policy.source_family == "bad_timing"
+    hook_tr909_gain = 0.76 if dense_drum_snap else (0.96 if bad_timing_cue_path else 0.62)
+    chop_tr909_gain = 0.98 if dense_drum_snap else (1.15 if bad_timing_cue_path else 0.78)
     pressure_tr909_base = 2.62 if dense_drum_snap else 2.28
-    hook_break_snap_gain = mix_policy.hook_break_snap_gain * (1.08 if dense_drum_snap else 1.0)
-    chop_break_snap_gain = mix_policy.chop_break_snap_gain * (1.12 if dense_drum_snap else 1.0)
+    hook_break_snap_boost = 1.24 if dense_drum_snap else (1.39 if bad_timing_cue_path else 1.0)
+    chop_break_snap_boost = 1.28 if dense_drum_snap else (1.46 if bad_timing_cue_path else 1.0)
+    hook_break_snap_gain = mix_policy.hook_break_snap_gain * hook_break_snap_boost
+    chop_break_snap_gain = mix_policy.chop_break_snap_gain * chop_break_snap_boost
     pressure_break_snap_gain = mix_policy.pressure_break_snap_gain * (
         1.42 if dense_drum_snap else 1.0
     )
+    pad_noise_texture_path = source_policy.pressure_lift_policy.source_family == "pad_noise"
+    hook_riff_hook_gain = 1.12 if dense_drum_snap else 1.62
+    hook_riff_chop_gain = 1.20 if dense_drum_snap else 1.78
+    pressure_hook_riff_gain = (
+        lift_policy.hook_bleed_gain * (1.14 if dense_drum_snap else 1.0)
+    )
+    pressure_mc202_gain = 2.30 if pad_noise_texture_path else 5.00 + lift_policy.mc202_drive * 1.42
+    pressure_bass_gain = 0.72 if pad_noise_texture_path else 1.14 + lift_policy.bass_drive * 0.62
 
     def put_bar(bar: int, mix: np.ndarray) -> None:
         start = bar * bar_frames
@@ -1877,7 +1980,7 @@ def render_performance(
     hook_mix = glue_bus(
         source * (0.50 * source_layer_gain)
         + w30 * mix_policy.hook_w30_gain
-        + hook_riff * (1.62 * hook_forward_gain)
+        + hook_riff * (hook_riff_hook_gain * hook_forward_gain)
         + tr909 * hook_tr909_gain
         + break_snap * hook_break_snap_gain
         + pad_noise_texture * 0.68
@@ -1888,7 +1991,7 @@ def render_performance(
     chop_mix = glue_bus(
         source * (0.16 * source_layer_gain)
         + w30 * mix_policy.chop_w30_gain
-        + hook_riff * (1.78 * hook_forward_gain * 1.03)
+        + hook_riff * (hook_riff_chop_gain * hook_forward_gain * 1.03)
         + tr909 * chop_tr909_gain
         + break_snap * chop_break_snap_gain
         + pad_noise_texture * 1.05
@@ -1899,12 +2002,12 @@ def render_performance(
     pressure_mix = saturate(
         source * (lift_policy.source_bleed_gain * source_layer_gain)
         + w30 * mix_policy.pressure_w30_gain
-        + hook_riff * lift_policy.hook_bleed_gain
+        + hook_riff * pressure_hook_riff_gain
         + tr909 * (pressure_tr909_base + lift_policy.tr909_drive * 0.52)
         + break_snap * (pressure_break_snap_gain * lift_policy.break_snap_drive)
-        + mc202 * (5.00 + lift_policy.mc202_drive * 1.42)
+        + mc202 * pressure_mc202_gain
         + pad_noise_texture * 1.28
-        + bass_pressure * (1.14 + lift_policy.bass_drive * 0.62),
+        + bass_pressure * pressure_bass_gain,
         1.58,
     )
     pressure_mix = normalize_peak(
@@ -1927,6 +2030,9 @@ def render_performance(
         drive=mix_policy.restore_drive,
         slam=mix_policy.restore_slam,
     )
+    if source_policy.pressure_lift_policy.source_family == "pad_noise":
+        hook_mix = apply_pad_noise_role_gate(hook_mix, source_policy, bar_frames, "hook")
+        chop_mix = apply_pad_noise_role_gate(chop_mix, source_policy, bar_frames, "chop")
 
     pressure_index = 0
     for bar, role in enumerate(role_order[:bars]):
@@ -1943,7 +2049,7 @@ def render_performance(
                 start = bar * bar_frames
                 end = min(start + frames_for_seconds(0.090), start + bar_frames, performance.shape[0])
                 if start < end:
-                    snap = tr909[start:end] * 0.92 + break_snap[start:end] * 1.34
+                    snap = tr909[start:end] * 1.02 + break_snap[start:end] * 1.52
                     pressure_bar_mix[start:end] = saturate(
                         pressure_bar_mix[start:end] + snap,
                         1.46,
@@ -2188,6 +2294,7 @@ def bass_movement_policy_proof(
 
 def hook_chop_policy_proof(source_policy: DenseBreakSourcePolicy) -> dict[str, float]:
     policy = source_policy.hook_chop_policy
+    riff_playback_enabled = policy.source_family not in {"bad_timing", "pad_noise"}
     return {
         "hook_chop_selection_source_derived": 1.0 if policy.source_aware else 0.0,
         "hook_chop_selection_candidate_count": float(policy.candidate_count),
@@ -2203,6 +2310,16 @@ def hook_chop_policy_proof(source_policy: DenseBreakSourcePolicy) -> dict[str, f
         "hook_chop_riff_unique_source_offset_count": float(
             policy.riff_unique_source_offset_count
         ),
+        "hook_chop_riff_hit_pattern_source_derived": (
+            1.0
+            if policy.source_aware
+            and riff_playback_enabled
+            and policy.riff_hit_pattern_signature != "static:0.00"
+            else 0.0
+        ),
+        "hook_chop_riff_hit_count": float(policy.riff_hit_count),
+        "hook_chop_riff_velocity_span": float(policy.riff_velocity_span),
+        "hook_chop_riff_reverse_count": float(policy.riff_reverse_count),
         "hook_chop_source_character_score_floor": float(
             policy.source_character_score_floor
         ),
@@ -2670,7 +2787,7 @@ def render_pad_noise_texture_layer(
         "restore": 1.36,
     }
     role_offsets = {
-        "hook": (0, 3, 6),
+        "hook": (0, 5),
         "chop": (0, 2, 5, 7),
         "pressure": (0, 1, 3, 5, 7),
         "dropout": (4, 6),
@@ -2680,21 +2797,83 @@ def render_pad_noise_texture_layer(
         role = role_order[bar]
         base = bar * bar_frames
         gain = role_gain.get(role, 0.80) * policy.texture_gain
+        source_bar = source_chunk_for_bar(source, base, bar_frames)
+        source_texture_gain = float(
+            np.clip(
+                0.86
+                + high_band_ratio(source_bar) * 0.18
+                + transient_score(source_bar) * 1.65,
+                0.82,
+                1.20,
+            )
+        )
+        offset_rotation = (
+            (policy.gate_start_frames // max(1, eighth))
+            + (policy.stab_start_frames // max(1, bar_frames // 16))
+            + bar
+        ) % 2
+        gain *= source_texture_gain
         for offset in role_offsets.get(role, (0, 4)):
-            target = base + offset * eighth
+            target = base + ((offset + offset_rotation) % 8) * eighth
             if target >= layer.shape[0]:
                 continue
             end = min(target + gate_pulse.shape[0], layer.shape[0])
             if end > target:
                 layer[target:end] += gate_pulse[: end - target] * gain
         if role in {"chop", "pressure", "restore"}:
-            target = base + (eighth if role == "restore" else 0)
+            if role == "chop":
+                stab_offset = (3 + offset_rotation) % 8
+            else:
+                stab_offset = 1 if role == "restore" else 0
+            target = base + stab_offset * eighth
             end = min(target + stab_grain.shape[0], layer.shape[0])
             if end > target:
+                stab_role_gain = 1.12 if role == "chop" else 0.86
                 layer[target:end] += stab_grain[: end - target] * (
-                    policy.stab_gain * (1.25 if role == "restore" else 0.86)
+                    policy.stab_gain * (1.25 if role == "restore" else stab_role_gain)
                 )
     return saturate(layer, 1.18)
+
+
+def apply_pad_noise_role_gate(
+    mix: np.ndarray,
+    source_policy: DenseBreakSourcePolicy,
+    bar_frames: int,
+    role: str,
+) -> np.ndarray:
+    policy = source_policy.pad_noise_texture_policy
+    if not policy.source_aware:
+        return mix
+    gated = mix.copy()
+    eighth = max(1, bar_frames // 8)
+    seed = (
+        (policy.gate_start_frames // max(1, eighth))
+        + (policy.stab_start_frames // max(1, bar_frames // 16))
+    )
+    offsets = {
+        "hook": (0, 4),
+        "chop": (1, 3, 6),
+    }.get(role, (0, 4))
+    floor = 0.42 if role == "hook" else 0.34
+    for bar in range(DEFAULT_BARS):
+        base = bar * bar_frames
+        end = min(base + bar_frames, gated.shape[0])
+        if base >= end:
+            continue
+        mask = np.full((end - base,), floor, dtype=np.float32)
+        rotation = (seed + bar + (1 if role == "chop" else 0)) % 2
+        for offset in offsets:
+            target = ((offset + rotation) % 8) * eighth
+            width = min(max(96, eighth // 2), mask.shape[0] - target)
+            if width <= 0:
+                continue
+            pulse = decay_envelope(width, attack=0.006, decay=0.115)
+            mask[target : target + width] = np.maximum(
+                mask[target : target + width],
+                0.90 + pulse * (0.34 if role == "chop" else 0.24),
+            )
+        gated[base:end] *= mask[:, None]
+    return gated
 
 
 def render_w30_hook_riff_layer(
@@ -2713,6 +2892,8 @@ def render_w30_hook_riff_layer(
     if hook_end <= hook_start or chop_end <= chop_start:
         return layer
     source_family = source_policy.hook_chop_policy.source_family
+    if source_family in {"bad_timing", "pad_noise"}:
+        return layer
     hook_impact = 1.0 if source_family == "sparse_bass_pressure" else 1.18
 
     grains = []
@@ -2741,27 +2922,36 @@ def render_w30_hook_riff_layer(
         grains = [hook_grain, chop_grain]
 
     beat_frames = max(1, bar_frames // BEATS_PER_BAR)
-    patterns = {
-        0: [(0.00, 0.95, False), (1.50, 0.70, False), (2.50, 0.88, False), (3.25, 0.62, True)],
-        1: [(0.00, 1.06, False), (0.75, 0.52, True), (2.00, 0.92, False), (3.50, 0.78, False)],
-        2: [(0.00, 1.12, False), (0.50, 0.54, True), (1.50, 0.72, False), (2.25, 1.00, False), (3.25, 0.70, True)],
-        3: [(0.00, 1.18, False), (0.75, 0.60, True), (1.75, 0.74, False), (2.50, 0.96, False), (3.50, 0.88, True)],
-        4: [(0.00, 0.76, False), (2.00, 0.68, False), (3.50, 0.54, True)],
-        5: [(0.00, 0.82, False), (1.50, 0.58, True), (2.50, 0.72, False), (3.50, 0.56, True)],
-        7: [(0.00, 1.05, False), (1.00, 0.64, False), (2.00, 0.88, False), (3.25, 0.72, True)],
-    }
+    source_pattern = tuple(source_policy.hook_chop_policy.riff_hit_pattern)
+    if not source_pattern:
+        source_pattern = ((0.0, 1.0, False),)
     for bar in range(min(bars, DEFAULT_BARS)):
-        for hit_index, (beat, gain, reverse) in enumerate(patterns.get(bar, [])):
+        bar_rotation = 0.25 * ((bar + len(source_pattern)) % 3)
+        if bar in {4, 5}:
+            bar_rotation += 0.25
+        if bar == 7:
+            bar_rotation = 0.0
+        bar_gain = 0.82 if bar in {4, 5} else 1.0
+        if bar == 7:
+            bar_gain = 1.10
+        for hit_index, (beat, gain, reverse) in enumerate(source_pattern):
+            if bar == 6 and hit_index > 1:
+                continue
+            if bar in {4, 5} and hit_index > max(2, len(source_pattern) // 2):
+                continue
+            beat = quantized_beat(float(beat) + bar_rotation)
             target = bar * bar_frames + int(round(beat * beat_frames))
             if target >= layer.shape[0]:
                 continue
             grain_index = (bar + hit_index + (1 if reverse else 0)) % len(grains)
             source_grain = grains[grain_index]
-            stab = source_grain[::-1] if reverse else source_grain
+            bar_reverse = reverse if bar != 7 else False
+            stab = source_grain[::-1] if bar_reverse else source_grain
             end = min(target + stab.shape[0], layer.shape[0])
             if end > target:
-                layer[target:end] += stab[: end - target] * gain
-    return saturate(layer, 1.35 * hook_impact)
+                layer[target:end] += stab[: end - target] * gain * bar_gain
+    family_gain = 0.88 if source_family == "dense_break" else 1.0
+    return saturate(layer * family_gain, 1.35 * hook_impact)
 
 
 def render_break_snap_layer(
@@ -3038,6 +3228,9 @@ def build_report(
             "min_hook_chop_static_distance_frames": MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES,
             "min_hook_chop_offset_distance_frames": MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES,
             "min_hook_chop_riff_source_offsets": MIN_HOOK_CHOP_RIFF_SOURCE_OFFSETS,
+            "min_hook_chop_riff_hit_count": MIN_HOOK_CHOP_RIFF_HIT_COUNT,
+            "min_hook_chop_riff_velocity_span": MIN_HOOK_CHOP_RIFF_VELOCITY_SPAN,
+            "min_hook_chop_riff_reverse_count": MIN_HOOK_CHOP_RIFF_REVERSE_COUNT,
             "min_hook_chop_source_character_score_floor": (
                 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR
             ),
@@ -3404,6 +3597,14 @@ def failure_codes_for(
             < MIN_HOOK_CHOP_RIFF_SOURCE_OFFSETS
         ):
             failures.append("hook_chop_riff_source_offsets_too_narrow")
+        if proof.get("hook_chop_riff_hit_pattern_source_derived", 0.0) < 1.0:
+            failures.append("hook_chop_riff_pattern_not_source_derived")
+        if proof.get("hook_chop_riff_hit_count", 0.0) < MIN_HOOK_CHOP_RIFF_HIT_COUNT:
+            failures.append("hook_chop_riff_pattern_too_sparse")
+        if proof.get("hook_chop_riff_velocity_span", 0.0) < MIN_HOOK_CHOP_RIFF_VELOCITY_SPAN:
+            failures.append("hook_chop_riff_velocity_too_flat")
+        if proof.get("hook_chop_riff_reverse_count", 0.0) < MIN_HOOK_CHOP_RIFF_REVERSE_COUNT:
+            failures.append("hook_chop_riff_reverse_missing")
         if (
             proof.get("hook_chop_source_character_score_floor", 0.0)
             < MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR
@@ -3613,6 +3814,30 @@ def run_mutation_fixtures(report_path: Path) -> None:
             ("proof", "hook_chop_source_character_score_floor"),
             0.0,
             "hook_chop_source_character_too_weak",
+        ),
+        (
+            "fixed_riff_pattern",
+            ("proof", "hook_chop_riff_hit_pattern_source_derived"),
+            0.0,
+            "hook_chop_riff_pattern_not_source_derived",
+        ),
+        (
+            "sparse_riff_pattern",
+            ("proof", "hook_chop_riff_hit_count"),
+            1.0,
+            "hook_chop_riff_pattern_too_sparse",
+        ),
+        (
+            "flat_riff_velocity",
+            ("proof", "hook_chop_riff_velocity_span"),
+            0.0,
+            "hook_chop_riff_velocity_too_flat",
+        ),
+        (
+            "missing_riff_reverse",
+            ("proof", "hook_chop_riff_reverse_count"),
+            0.0,
+            "hook_chop_riff_reverse_missing",
         ),
         (
             "arrangement_not_source",
