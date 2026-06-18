@@ -35,6 +35,7 @@ def main() -> int:
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--date", default="local-mc202-producer-grade-closeout")
     parser.add_argument("--validate-report", type=Path)
+    parser.add_argument("--require-all-source-composed-candidates", action="store_true")
     parser.add_argument("--mutation-fixtures", action="store_true")
     args = parser.parse_args()
 
@@ -47,6 +48,8 @@ def main() -> int:
             report = build_report(args, professional_pack, real_source_pack)
             write_reports(args.output, report)
         failures = validate_report(report)
+        if args.require_all_source_composed_candidates:
+            failures.extend(validate_all_source_composed_candidates(report))
         if failures:
             raise ValueError(", ".join(failures))
         if args.mutation_fixtures:
@@ -390,6 +393,44 @@ def validate_candidate(candidate: Any, index: int, failures: list[str]) -> None:
     )
     check(len(str(candidate.get("candidate_sha256", ""))) == 64, f"{prefix}_candidate_sha_invalid", failures)
     check(len(str(candidate.get("review_sha256", ""))) == 64, f"{prefix}_review_sha_invalid", failures)
+
+
+def validate_all_source_composed_candidates(report: dict[str, Any]) -> list[str]:
+    failures: list[str] = []
+    professional = object_or_empty(report.get("professional_pack"))
+    gate = object_or_empty(professional.get("mc202_source_composed_review_gate"))
+    check(gate.get("source_composed_case_count") == 3, "pack_gate_source_composed_count_mismatch", failures)
+    check(gate.get("non_dense_break_case_count", 0) >= 2, "pack_gate_non_dense_break_count_too_low", failures)
+    candidates = report.get("review_candidates")
+    if not isinstance(candidates, list):
+        failures.append("review_candidates_missing")
+        return failures
+    for index, candidate in enumerate(candidates):
+        if not isinstance(candidate, dict):
+            failures.append(f"candidate_{index}_not_object")
+            continue
+        check(
+            candidate.get("source_composed_evidence") is True,
+            f"candidate_{index}_source_composed_missing",
+            failures,
+        )
+        check(
+            candidate.get("primitive_or_template_only") is False,
+            f"candidate_{index}_primitive_template_leaked",
+            failures,
+        )
+    blockers = report.get("blockers")
+    if isinstance(blockers, list):
+        check(
+            all(
+                not isinstance(blocker, dict)
+                or blocker.get("code") != "primitive_or_template_candidate_blocks_promotion"
+                for blocker in blockers
+            ),
+            "primitive_template_blocker_stale",
+            failures,
+        )
+    return failures
 
 
 def run_mutation_fixtures(report: dict[str, Any]) -> None:

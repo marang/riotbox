@@ -775,6 +775,10 @@ following:
   oracle or promoting scripted diagnostics to quality proof
 - large professional-output JSON contracts move into named repo-local validators
   instead of growing opaque inline `jq` blocks in `Justfile`
+  - RIOTBOX-1286 starts this extraction for the professional-output
+    listening-pack and MC-202 producer-grade closeout gates: `Justfile` keeps
+    the smoke commands short while Python validators preserve the same
+    source-composed, no-primitive-template, and human-verdict-blocked contracts
 - no PR, roadmap claim, or release note presents an audible feature as
   musician-ready when its human verdict is missing, weak, or explicitly
   unverified
