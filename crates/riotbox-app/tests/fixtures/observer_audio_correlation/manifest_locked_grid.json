@@ -133,5 +133,17 @@
       "source_contains_selection": true,
       "reason": "source_chop_edges_faded_and_repeat_safe"
     }
+  },
+  "primitive_renderer_boundary": {
+    "schema": "riotbox.primitive_renderer_boundary.v1",
+    "evidence_role": "non_product_diagnostic_control",
+    "product_output_allowed": false,
+    "quality_proof": false,
+    "demo_readiness": "unverified",
+    "promotion_blocked": true,
+    "affected_paths": [
+      "metrics.mc202_bass_pressure.pattern_origin"
+    ],
+    "musician_message": "Observer/audio fixture primitive MC-202 evidence is a diagnostic control, not product output."
   }
 }

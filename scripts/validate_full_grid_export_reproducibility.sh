@@ -66,6 +66,13 @@ render_grid_export() {
       and .feral_scorecard.readiness == "ready"
       and .feral_scorecard.source_backed == true
       and .feral_scorecard.fallback_like == false
+      and .primitive_renderer_boundary.schema == "riotbox.primitive_renderer_boundary.v1"
+      and .primitive_renderer_boundary.evidence_role == "non_product_diagnostic_control"
+      and .primitive_renderer_boundary.product_output_allowed == false
+      and .primitive_renderer_boundary.quality_proof == false
+      and .primitive_renderer_boundary.demo_readiness == "unverified"
+      and .primitive_renderer_boundary.promotion_blocked == true
+      and ([.primitive_renderer_boundary.affected_paths[]] | sort == ["metrics.mc202_bass_pressure.pattern_origin", "metrics.tr909_kick_pressure.pattern_origin"])
       and (.feral_scorecard.lane_gestures | index("mc202 question/answer")) == null
       and .metrics.full_grid_mix.signal.rms > 0.000001
       and .metrics.full_grid_mix.low_band.rms > 0.000001
