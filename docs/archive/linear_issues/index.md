@@ -1234,4 +1234,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Downgrade primitive renderer lane recipe packs to non-product controls
 - [RIOTBOX-1293.md](./RIOTBOX-1293.md)
   Require source-derived TR-909 support evidence before product claims
+- [RIOTBOX-1294.md](./RIOTBOX-1294.md)
+  Persist MC-202 source phrase plans through replay and restore
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
