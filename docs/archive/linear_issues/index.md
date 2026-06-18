@@ -1232,4 +1232,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Remove W-30 synthetic preview fallback from musician surfaces
 - [RIOTBOX-1292.md](./RIOTBOX-1292.md)
   Downgrade primitive renderer lane recipe packs to non-product controls
+- [RIOTBOX-1293.md](./RIOTBOX-1293.md)
+  Require source-derived TR-909 support evidence before product claims
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
