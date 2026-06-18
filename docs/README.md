@@ -48,6 +48,7 @@ This directory holds implementation-facing specifications, plans, reviews, bench
 25. [Source Timing Intelligence Plan](./plans/source_timing_intelligence_plan.md)
 26. [Source Transport Map Capture Plan](./plans/source_transport_map_capture_plan.md)
 27. [MC-202 Source Phrase Planning Plan](./plans/mc202_source_phrase_planning_plan.md)
+28. [MC-202 Real-Source Listening Pack Benchmark](./benchmarks/mc202_real_source_listening_pack_v1_2026-06-18.md)
 
 ## Why This Order
 
@@ -210,6 +211,7 @@ docs/
 - `benchmarks/weak_output_fix_routing_v1_2026-06-05.md`: P023 weak-output failure-to-production-fix routing contract captured
 - `benchmarks/source_family_release_demo_coverage_v1_2026-06-12.md`: P023 source-family release-demo coverage gate captured
 - `benchmarks/sound_quality_readiness_report_v1_2026-06-12.md`: P023 sound-quality readiness status report captured
+- `benchmarks/mc202_real_source_listening_pack_v1_2026-06-18.md`: RIOTBOX-1278 MC-202 dense/non-dense real-source listening-review scaffold captured
 - `benchmarks/p011_exit_evidence_manifest.json`: machine-checkable P011 exit evidence index captured
 - `reviews/external_review_refresh_2026-05-22.md`: external review freshness, audio-QA, and runtime module-cut refresh captured
 - `reviews/tui_include_shell_audit_2026-05-22.md`: TUI include-shell ownership audit and leaf-first conversion recommendation captured

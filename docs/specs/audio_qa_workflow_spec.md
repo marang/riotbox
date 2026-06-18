@@ -244,6 +244,19 @@ files, renders Riotbox stems and mixes, and emits a report that separates
 `technical_status` from `musical_verdict`. A technically valid render may still
 receive a weak or failed musical verdict.
 
+For MC-202 producer-grade review scaffolding, use the dense/non-dense
+real-source listening pack:
+
+```bash
+just mc202-real-source-listening-pack-smoke
+```
+
+This writes source windows, MC-202 stems, generated-support mixes, listening
+review packs, source-expression summaries, selected motif metadata, and a
+primitive A/B control that is explicitly non-product evidence. The control must
+keep `product_fallback_allowed: false`; it is not fallback music and cannot
+support a product-quality claim.
+
 The synthetic fixture showcase can still run the musical-quality review gate:
 
 ```bash

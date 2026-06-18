@@ -126,6 +126,10 @@ Current benchmark artifacts:
   P023 aggregate readiness report that shows release blockers, missing
   source-family demo coverage, artifact paths to hear, and concrete production
   fix categories without acting as a hidden taste oracle.
+- [mc202_real_source_listening_pack_v1_2026-06-18.md](./mc202_real_source_listening_pack_v1_2026-06-18.md)
+  RIOTBOX-1278 dense/non-dense MC-202 real-source listening-review scaffold with
+  expression summaries, selected motifs, non-product primitive A/B controls, and
+  `quality_proof: false`.
 - [jam_footer_color_hierarchy_baseline_2026-04-25.md](./jam_footer_color_hierarchy_baseline_2026-04-25.md)
   First bounded readability baseline for the semantic Jam footer color and emphasis hierarchy.
 - [capture_do_next_readability_baseline_2026-04-25.md](./capture_do_next_readability_baseline_2026-04-25.md)
