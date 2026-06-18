@@ -434,10 +434,16 @@ pub(super) fn build_w30_preview_render_state(
     } else {
         None
     };
+    let has_preview_material = source_window_preview.is_some() || pad_playback.is_some();
+    let routing = if has_preview_material {
+        W30PreviewRenderRouting::MusicBusPreview
+    } else {
+        W30PreviewRenderRouting::Silent
+    };
 
     W30PreviewRenderState {
         mode,
-        routing: W30PreviewRenderRouting::MusicBusPreview,
+        routing,
         source_profile,
         active_bank_id: w30.active_bank.as_ref().map(ToString::to_string),
         focused_pad_id: w30.focused_pad.as_ref().map(ToString::to_string),
@@ -451,11 +457,15 @@ pub(super) fn build_w30_preview_render_state(
             .unwrap_or(0.0),
         source_window_preview,
         pad_playback,
-        music_bus_level: session
-            .runtime_state
-            .mixer_state
-            .music_level
-            .clamp(0.0, 1.0),
+        music_bus_level: if has_preview_material {
+            session
+                .runtime_state
+                .mixer_state
+                .music_level
+                .clamp(0.0, 1.0)
+        } else {
+            0.0
+        },
         grit_level: session.runtime_state.macro_state.w30_grit.clamp(0.0, 1.0),
         is_transport_running: transport.is_playing,
         tempo_bpm,

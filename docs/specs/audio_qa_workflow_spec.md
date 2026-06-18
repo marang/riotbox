@@ -1003,7 +1003,7 @@ For larger changes, a broader smoke pack is required.
 For every new or changed audio-producing function, the minimum test shape is:
 
 - one control-path assertion, such as action log, render-state, queue/commit, or provenance state
-- one output-path assertion, such as non-silence, peak/RMS range, source-vs-fallback metric delta, or a fixture-backed WAV artifact comparison
+- one output-path assertion, such as non-silence, peak/RMS range, source-vs-control metric delta, or a fixture-backed WAV artifact comparison
 
 For source-derived rebuild, arrangement, TR-909 reinforcement, MC-202 phrase, W-30
 slice/capture, bass, or Feral policy changes, the release gate must also state
@@ -1145,12 +1145,12 @@ Today the repo already has:
 - an initial W-30 preview smoke listening-pack convention under `docs/benchmarks/`
 - an initial local baseline-vs-candidate audio artifact convention under `docs/benchmarks/`
 - an initial local W-30 preview smoke metrics comparison helper for baseline-vs-candidate Markdown metrics that writes local `comparison.md` and `manifest.json` reports
-- a W-30 source-vs-fallback control wrapper that renders synthetic fallback as baseline, source-backed WAV preview as candidate, and requires minimum RMS / sum deltas so fallback collapse is caught
-- a CI-safe generated W-30 source-vs-fallback smoke that uses deterministic synthetic source material, checks minimum source-vs-fallback deltas, validates the generated listening manifest, and runs under `just audio-qa-ci`
-- a CI-safe first-playable Jam probe, `just first-playable-jam-probe`, that combines synthetic source material, W-30 source-vs-fallback output evidence, and a generated app-level observer probe for the current `space -> capture -> raw audition -> promote -> W-30 hit` user path
+- a W-30 source-vs-control wrapper that renders a synthetic non-product baseline, source-backed WAV preview as candidate, and requires minimum RMS / sum deltas so control collapse is caught
+- a CI-safe generated W-30 source-vs-control smoke that uses deterministic synthetic source material, checks minimum source-vs-control deltas, validates the generated listening manifest, and runs under `just audio-qa-ci`; existing command names may still say `source-vs-fallback` for compatibility, but the baseline is diagnostic control only
+- a CI-safe first-playable Jam probe, `just first-playable-jam-probe`, that combines synthetic source material, W-30 source-vs-control output evidence, and a generated app-level observer probe for the current `space -> capture -> raw audition -> promote -> W-30 hit` user path
 - a CI-safe source timing confirmation probe, `just source-timing-confirmation-probe`, that presses the real `C` control against a manual-confirm Source Graph, validates the normal observer stream, asserts the immediate `source_timing.confirm_grid` commit, and proves `grid_confirmed` runtime state appears without changing analyzer cue / warning evidence
-- a CI-safe source transport map/capture probe, `just source-transport-map-capture-probe`, that starts in manual-confirm listen-first mode, confirms the grid, seeks the Source Map, captures a bar-aligned source window, raw-auditions, promotes, triggers W-30, and correlates the observer path with W-30 source-vs-fallback output evidence
-- a CI-safe stage-style Jam probe, `just stage-style-jam-probe`, that uses generated app-level multi-boundary observer evidence, generated W-30 source-vs-fallback output evidence, and summary-level commit boundary assertions for `Phrase`, `Bar`, and `Beat`
+- a CI-safe source transport map/capture probe, `just source-transport-map-capture-probe`, that starts in manual-confirm listen-first mode, confirms the grid, seeks the Source Map, captures a bar-aligned source window, raw-auditions, promotes, triggers W-30, and correlates the observer path with W-30 source-vs-control output evidence
+- a CI-safe stage-style Jam probe, `just stage-style-jam-probe`, that uses generated app-level multi-boundary observer evidence, generated W-30 source-vs-control output evidence, and summary-level commit boundary assertions for `Phrase`, `Bar`, and `Beat`
 - a CI-safe stage-style snapshot convergence smoke, `just stage-style-snapshot-convergence-smoke`, that drives a supported Scene / MC-202 / TR-909 stage-style sequence, restores from a mid-run snapshot payload, asserts latest-snapshot replay summary readiness, rejects unsupported suffix commands, and compares the replayed final mix buffer against the committed final mix
 - a bounded repeated stage-style stability smoke/proof, `just stage-style-stability-smoke` / `just stage-style-stability-proof`, that runs the generated stage-style restore-diversity observer/audio path multiple times, validates observer and summary contracts for every run, rejects collapsed output metrics, requires the generated full-grid mix WAV hash to remain stable across repetitions, and validates normalized proof data for run count, commit-boundary coverage, observer/audio evidence, and stable output hash
 - an explicit stronger stage-style stability gate, `just stage-style-stability-gate`, that reuses the same generated observer/audio path with more repetitions and a longer generated source/grid budget; it is still CI-safe and deterministic, but is a bounded gate rather than a real host-audio soak

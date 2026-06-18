@@ -335,7 +335,7 @@ fn committed_w30_live_recall_updates_lane_focus_and_log_result() {
     );
     assert_eq!(
         state.runtime.w30_preview.routing,
-        W30PreviewRenderRouting::MusicBusPreview
+        W30PreviewRenderRouting::Silent
     );
     assert_eq!(
         state.runtime.w30_preview.source_profile,
@@ -358,4 +358,3 @@ fn committed_w30_live_recall_updates_lane_focus_and_log_result() {
         Some("recalled cap-01 on W-30 pad bank-b/pad-03")
     );
 }
-

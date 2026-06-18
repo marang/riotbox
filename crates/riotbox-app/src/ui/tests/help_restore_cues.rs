@@ -179,11 +179,11 @@ fn renders_help_overlay_with_capture_path_cue() {
         "{rendered}"
     );
     assert!(
-        rendered.contains("src means source-backed; fallback is safe preview"),
+        rendered.contains("src/artifact means audible; unavailable means recapture"),
         "{rendered}"
     );
     assert!(
-        rendered.contains("hear src/fallback: [o] raw, [p] promote, [w] hit"),
+        rendered.contains("hear only backed W-30: [o] raw, [p] promote, [w] hit"),
         "{rendered}"
     );
     assert!(

@@ -56,7 +56,7 @@ const fn capture_handoff_readiness_view(
     if capture.source_window.is_some() {
         CaptureHandoffReadinessView::Source
     } else {
-        CaptureHandoffReadinessView::Fallback
+        CaptureHandoffReadinessView::Unavailable
     }
 }
 

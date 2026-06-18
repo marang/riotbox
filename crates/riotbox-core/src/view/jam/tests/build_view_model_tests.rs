@@ -59,7 +59,7 @@ fn projects_capture_summary() {
     );
     assert_eq!(
         vm.capture.last_capture_handoff_readiness,
-        Some(CaptureHandoffReadinessView::Fallback)
+        Some(CaptureHandoffReadinessView::Unavailable)
     );
     assert_eq!(
         vm.capture.last_promotion_result.as_deref(),

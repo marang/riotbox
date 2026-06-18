@@ -7,7 +7,7 @@ use riotbox_core::{
     view::jam::{CaptureHandoffReadinessView, CaptureTargetKindView},
 };
 
-use super::{JamShellState, transport_label};
+use super::{JamShellState, transport_label, w30_preview_source_readiness};
 
 #[cfg(test)]
 pub(super) use pending_capture::{capture_pending_detail_line, capture_pending_intent_line};
@@ -164,12 +164,12 @@ pub(super) fn capture_do_next_lines(shell: &JamShellState) -> Vec<Line<'static>>
         capture.last_capture_target.as_deref(),
     ) {
         (Some(CaptureTargetKindView::W30Pad), Some(target)) => {
-            if handoff_readiness == "fallback" {
+            if handoff_readiness == "unavailable" {
                 vec![
-                    Line::from(format!("fallback: [w]/[o] safe {target}")),
+                    Line::from("unavailable: no W-30 audio"),
+                    Line::from(format!("target {target}")),
                     Line::from("[3] Source shows why"),
-                    Line::from("[c] new capture can become src"),
-                    Line::from(format!("source {last_capture_id}")),
+                    Line::from("[c] recapture source-backed"),
                 ]
             } else {
                 vec![
@@ -222,15 +222,27 @@ fn capture_target_boundary_label(shell: &JamShellState) -> String {
 }
 
 fn capture_handoff_readiness_label(shell: &JamShellState) -> &'static str {
+    if matches!(
+        shell.app.jam_view.capture.last_capture_target_kind,
+        Some(CaptureTargetKindView::W30Pad)
+    ) {
+        match w30_preview_source_readiness(shell) {
+            Some("source-backed") => return "src",
+            Some("artifact-backed") => return "artifact",
+            Some("unavailable") => return "unavailable",
+            _ => {}
+        }
+    }
+
     match shell.app.jam_view.capture.last_capture_handoff_readiness {
         Some(CaptureHandoffReadinessView::Source) => "src",
-        Some(CaptureHandoffReadinessView::Fallback) | None => "fallback",
+        Some(CaptureHandoffReadinessView::Unavailable) | None => "unavailable",
     }
 }
 
 fn capture_handoff_help_line(handoff_readiness: &str) -> &'static str {
-    if handoff_readiness == "fallback" {
-        "if still fallback: [3] Source"
+    if handoff_readiness == "unavailable" {
+        "if unavailable: [3] Source"
     } else {
         "[2] confirm result"
     }
