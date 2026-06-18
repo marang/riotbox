@@ -191,6 +191,7 @@ mod tests {
             },
             commit_sequence,
             committed_at,
+            mc202_source_phrase_plan: None,
         }
     }
 

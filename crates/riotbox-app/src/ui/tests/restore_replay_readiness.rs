@@ -46,6 +46,7 @@ fn renders_log_shell_with_restore_replay_readiness_cues() {
             },
             commit_sequence: 1,
             committed_at: 900,
+                mc202_source_phrase_plan: None,
         });
     shell.app.refresh_view();
     shell.active_screen = ShellScreen::Log;

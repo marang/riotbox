@@ -60,6 +60,7 @@ fn snapshot_payload_restore_hydrates_capture_now_artifact_preview_output() {
         },
         commit_sequence: 1,
         committed_at: 500,
+                mc202_source_phrase_plan: None,
     });
     session.snapshots = vec![Snapshot {
         snapshot_id: SnapshotId::from("before-capture-now"),

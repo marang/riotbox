@@ -65,6 +65,7 @@ fn w30_snapshot_payload_restore_hydrates_capture_to_pad_artifact_preview_output(
         },
         commit_sequence: 1,
         committed_at: 500,
+                mc202_source_phrase_plan: None,
     });
     session.snapshots = vec![Snapshot {
         snapshot_id: SnapshotId::from("before-w30-capture-to-pad"),

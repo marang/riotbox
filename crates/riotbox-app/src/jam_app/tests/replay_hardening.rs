@@ -419,6 +419,7 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
         },
         commit_sequence: 1,
         committed_at: 500,
+                mc202_source_phrase_plan: None,
     });
     session.snapshots = vec![Snapshot {
         snapshot_id: SnapshotId::from("before-artifact"),

@@ -211,5 +211,6 @@ fn family_commit_record(action_id: u64, commit_sequence: u32) -> ActionCommitRec
         },
         commit_sequence,
         committed_at: 1_000 + action_id,
+                mc202_source_phrase_plan: None,
     }
 }

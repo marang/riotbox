@@ -128,6 +128,7 @@ impl JamAppState {
                 boundary: committed_ref.boundary,
                 commit_sequence: committed_ref.commit_sequence,
                 committed_at: requested_at,
+                mc202_source_phrase_plan: None,
             });
         update_logged_action_result(&mut self.session, action_id, result_summary);
         self.runtime.last_commit_boundary = Some(boundary);
@@ -253,6 +254,7 @@ impl JamAppState {
                 boundary: committed_ref.boundary,
                 commit_sequence: committed_ref.commit_sequence,
                 committed_at: requested_at,
+                mc202_source_phrase_plan: None,
             });
         update_logged_action_result(&mut self.session, action_id, result_summary);
         self.runtime.last_commit_boundary = Some(boundary);
@@ -378,6 +380,7 @@ impl JamAppState {
                 boundary: committed_ref.boundary,
                 commit_sequence: committed_ref.commit_sequence,
                 committed_at: requested_at,
+                mc202_source_phrase_plan: None,
             });
         update_logged_action_result(&mut self.session, action_id, result_summary);
         self.runtime.last_commit_boundary = Some(boundary);

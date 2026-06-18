@@ -207,6 +207,7 @@ fn artifact_ready_blocked_autosave_session() -> SessionFile {
         },
         commit_sequence: 1,
         committed_at: 500,
+                mc202_source_phrase_plan: None,
     });
     session
 }

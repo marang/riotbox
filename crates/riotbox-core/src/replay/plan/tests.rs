@@ -48,6 +48,7 @@ fn commit_record(
         },
         commit_sequence,
         committed_at,
+        mc202_source_phrase_plan: None,
     }
 }
 
@@ -179,12 +180,14 @@ fn replay_plan_rejects_duplicate_sequence_within_boundary() {
                 boundary: duplicated_boundary.clone(),
                 commit_sequence: 1,
                 committed_at: 200,
+                mc202_source_phrase_plan: None,
             },
             ActionCommitRecord {
                 action_id: ActionId(2),
                 boundary: duplicated_boundary.clone(),
                 commit_sequence: 1,
                 committed_at: 210,
+                mc202_source_phrase_plan: None,
             },
         ],
         replay_policy: ReplayPolicy::DeterministicPreferred,

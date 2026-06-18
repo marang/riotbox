@@ -151,6 +151,7 @@ fn renders_manual_recovery_prompt_with_blocked_restore_replay_state() {
             },
             commit_sequence: 1,
             committed_at: 900,
+                mc202_source_phrase_plan: None,
         });
     shell.app.refresh_view();
     save_session_json(&autosave_path, &shell.app.session).expect("save blocked autosave session");
@@ -244,6 +245,7 @@ fn renders_artifact_ready_replay_blocker_hint_without_selecting_candidate() {
             },
             commit_sequence: 1,
             committed_at: 900,
+                mc202_source_phrase_plan: None,
         });
     shell.app.refresh_view();
     save_session_json(&autosave_path, &shell.app.session).expect("save blocked autosave session");
