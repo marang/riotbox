@@ -9,13 +9,36 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
-from audio_qa_evidence_boundary import apply_evidence_boundary
+from audio_qa_evidence_boundary import apply_evidence_boundary, evidence_boundary_failure_codes
 
 
 SCHEMA = "riotbox.professional_source_wav_pack.v1"
 DEFAULT_OUTPUT = Path("artifacts/audio_qa/local-professional-source-wav-pack")
 MIN_TONAL_W30_TO_SOURCE_RMS_RATIO = 0.20
+MIN_PROFESSIONAL_W30_TO_SOURCE_RMS_RATIO = 0.22
+MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES = 256.0
+MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES = 512.0
+MIN_HOOK_CHOP_RIFF_UNIQUE_SOURCE_OFFSET_COUNT = 3.0
+MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR = 0.60
+MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN = 0.10
+MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES = 256.0
+MIN_DESTRUCTIVE_OFFSET_DISTANCE_FRAMES = 512.0
+MIN_MIX_TREATMENT_FIXED_DISTANCE = 0.08
+MIN_MIX_TREATMENT_OUTPUT_CONTRAST_RATIO = 2.10
+MIN_TAIL_SHAPE_FIXED_DISTANCE = 0.20
+MIN_TAIL_SHAPE_OUTPUT_CONTRAST_RATIO = 3.00
+MIN_STRONGEST_AUDIBLE_ELEMENT_SCORE = 1.00
+MIN_STRONGEST_AUDIBLE_ELEMENT_MARGIN = 0.05
+MIN_REBUILD_ONLY_SOURCE_SPECTRAL_SIMILARITY = 0.60
+MIN_REBUILD_ONLY_SOURCE_TRANSIENT_RETENTION = 0.45
+MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE = 0.70
+MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 1.25
+MIN_SPARSE_BASS_MOVEMENT_FREQUENCY_SPAN_HZ = 8.0
+MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 1.60
+MIN_SPARSE_BASS_DOMINANCE_MARGIN = 0.08
+ALLOWED_STRONGEST_AUDIBLE_ELEMENTS = {"kick", "snare", "bass", "stab", "silence", "restore"}
 DEFAULT_CASES = [
     {
         "case_id": "tonal_rusharp_120",
@@ -37,7 +60,27 @@ def main() -> int:
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--date", default="local-professional-source-wav-pack")
     parser.add_argument("--keep-output", action="store_true")
+    parser.add_argument("--validate-report", type=Path)
+    parser.add_argument("--require-artifacts", action="store_true")
+    parser.add_argument("--mutation-fixtures", action="store_true")
     args = parser.parse_args()
+
+    if args.validate_report:
+        try:
+            report = read_json(args.validate_report)
+            failures = validate_report_failure_codes(
+                report,
+                require_artifacts=args.require_artifacts,
+            )
+            if failures:
+                raise ValueError(", ".join(failures))
+            if args.mutation_fixtures:
+                run_mutation_fixtures(report)
+        except (OSError, TypeError, ValueError, json.JSONDecodeError) as error:
+            print(f"invalid professional source WAV pack: {error}", file=sys.stderr)
+            return 1
+        print(f"valid professional source WAV pack: {args.validate_report}")
+        return 0
 
     repo = repo_root()
     output = resolve_repo_path(repo, args.output)
@@ -71,11 +114,17 @@ def main() -> int:
             "coverage, not source-family quality proof."
         ),
     )
+    validation_failures = validate_report_failure_codes(report, require_artifacts=False)
+    if validation_failures:
+        report["result"] = "fail"
+        report["agent_verdict"] = "agent_weak"
+        failed = cases
+        report["failure_codes"] = validation_failures
     write_reports(output, report)
-    if failed:
+    if report["result"] != "pass":
         print(
             "professional source WAV pack failed: "
-            + ", ".join(case["case_id"] for case in failed),
+            + ", ".join(report.get("failure_codes") or [case["case_id"] for case in failed]),
             file=sys.stderr,
         )
         return 1
@@ -350,6 +399,350 @@ def family_failure_codes(source_family: str, proof: dict, metrics: dict) -> list
     else:
         failures.append("unsupported_source_family")
     return failures
+
+
+def validate_report_failure_codes(
+    report: dict[str, Any],
+    *,
+    require_artifacts: bool = False,
+) -> list[str]:
+    failures = []
+    failures.extend(evidence_boundary_failure_codes(report))
+    if report.get("schema") != SCHEMA:
+        failures.append("schema_mismatch")
+    if report.get("schema_version") != 1:
+        failures.append("schema_version_mismatch")
+    if report.get("result") != "pass":
+        failures.append("result_not_pass")
+    if report.get("agent_verdict") != "agent_promising":
+        failures.append("agent_verdict_not_promising")
+    if report.get("human_verdict") != "unverified":
+        failures.append("human_verdict_not_unverified")
+    if report.get("evidence_role") != "diagnostic":
+        failures.append("evidence_role_mismatch")
+    if report.get("source_backed") is not True:
+        failures.append("source_backed_not_true")
+    if report.get("source_timing_backed") is not True:
+        failures.append("source_timing_backed_not_true")
+    if report.get("scripted_generation") is not True:
+        failures.append("scripted_generation_not_true")
+    if report.get("quality_proof") is not False:
+        failures.append("quality_proof_claimed")
+    cases = list_or_empty(report.get("cases"))
+    if report.get("case_count") != 2 or len(cases) != 2:
+        failures.append("case_count_mismatch")
+    if report.get("passed_case_count") != 2:
+        failures.append("passed_case_count_mismatch")
+    families = sorted(str(case.get("source_family", "")) for case in cases if isinstance(case, dict))
+    if families != ["sparse_bass_pressure", "tonal_hook"]:
+        failures.append("source_family_coverage_mismatch")
+    for index, case in enumerate(cases):
+        validate_report_case(case, index, require_artifacts, failures)
+    if not any(is_tonal_professional_case(case) for case in cases if isinstance(case, dict)):
+        failures.append("tonal_hook_professional_case_missing")
+    if not any(is_sparse_professional_case(case) for case in cases if isinstance(case, dict)):
+        failures.append("sparse_bass_pressure_professional_case_missing")
+    return sorted(set(failures))
+
+
+def validate_report_case(
+    case: Any,
+    index: int,
+    require_artifacts: bool,
+    failures: list[str],
+) -> None:
+    if not isinstance(case, dict):
+        failures.append(f"case_{index}_not_object")
+        return
+    prefix = str(case.get("case_id") or f"case_{index}")
+    proof = object_or_empty(case.get("proof"))
+    metrics = object_or_empty(case.get("metrics"))
+    pressure_policy = object_or_empty(case.get("pressure_lift_policy"))
+    arrangement_policy = object_or_empty(case.get("arrangement_policy"))
+    audio_files = object_or_empty(case.get("audio_files"))
+
+    if case.get("result") != "pass":
+        failures.append(f"{prefix}:result_not_pass")
+    if case.get("human_verdict") != "unverified":
+        failures.append(f"{prefix}:human_verdict_not_unverified")
+    if case.get("evidence_role") != "diagnostic":
+        failures.append(f"{prefix}:evidence_role_mismatch")
+    if case.get("source_backed") is not True:
+        failures.append(f"{prefix}:source_backed_not_true")
+    if case.get("source_timing_backed") is not True:
+        failures.append(f"{prefix}:source_timing_backed_not_true")
+    if case.get("scripted_generation") is not True:
+        failures.append(f"{prefix}:scripted_generation_not_true")
+    if case.get("quality_proof") is not False:
+        failures.append(f"{prefix}:quality_proof_claimed")
+    if pressure_policy.get("source_aware") is not True:
+        failures.append(f"{prefix}:pressure_lift_policy_not_source_aware")
+    if pressure_policy.get("source_family") != case.get("source_family"):
+        failures.append(f"{prefix}:pressure_lift_source_family_mismatch")
+    if arrangement_policy.get("source_aware") is not True:
+        failures.append(f"{prefix}:arrangement_policy_not_source_aware")
+    if arrangement_policy.get("source_family") != case.get("source_family"):
+        failures.append(f"{prefix}:arrangement_source_family_mismatch")
+    if not isinstance(arrangement_policy.get("role_order_signature"), str):
+        failures.append(f"{prefix}:arrangement_role_order_signature_missing")
+    if number(proof.get("pressure_lift_policy_decision_count")) < 12.0:
+        failures.append(f"{prefix}:pressure_lift_policy_decision_count_too_low")
+    if number(proof.get("arrangement_policy_decision_count")) < 8.0:
+        failures.append(f"{prefix}:arrangement_policy_decision_count_too_low")
+    if number(proof.get("arrangement_pressure_role_count")) < 2.0:
+        failures.append(f"{prefix}:arrangement_pressure_role_count_too_low")
+    if number(proof.get("arrangement_destructive_role_count")) < 2.0:
+        failures.append(f"{prefix}:arrangement_destructive_role_count_too_low")
+    if number(proof.get("arrangement_failure_count")) != 0.0:
+        failures.append(f"{prefix}:arrangement_failure_count_nonzero")
+    if number(proof.get("pressure_lift_bar5_to_bar4_rms_ratio")) < 1.02:
+        failures.append(f"{prefix}:pressure_lift_bar5_to_bar4_too_weak")
+    if number(proof.get("rebuild_only_to_full_rms_ratio")) < 0.42:
+        failures.append(f"{prefix}:rebuild_only_to_full_too_weak")
+    if number(proof.get("rebuild_only_to_source_rms_ratio")) < 0.30:
+        failures.append(f"{prefix}:rebuild_only_to_source_too_weak")
+    if number(proof.get("rebuild_only_to_source_correlation")) > 0.92:
+        failures.append(f"{prefix}:rebuild_only_too_source_masked")
+    if number(proof.get("source_on_to_rebuild_only_correlation")) > 0.995:
+        failures.append(f"{prefix}:source_layer_toggle_did_not_change_output")
+    if number(metrics.get("full_performance_peak_abs")) > 0.985:
+        failures.append(f"{prefix}:full_performance_near_clipping")
+    if number(metrics.get("rebuild_only_performance_peak_abs")) > 0.985:
+        failures.append(f"{prefix}:rebuild_only_performance_near_clipping")
+    if number(proof.get("arrangement_role_order_source_derived")) < 1.0:
+        failures.append(f"{prefix}:arrangement_role_order_not_source_derived")
+    if number(proof.get("arrangement_role_candidate_count")) < 6.0:
+        failures.append(f"{prefix}:arrangement_role_candidate_count_too_low")
+    if number(proof.get("arrangement_scripted_role_distance")) < 1.0:
+        failures.append(f"{prefix}:arrangement_role_order_too_scripted")
+    validate_common_source_character(case, prefix, proof, failures)
+    if require_artifacts:
+        output = Path(str(case.get("output", "")))
+        for role in ("full_performance", "rebuild_only_performance"):
+            if not str(audio_files.get(role, "")).endswith(".wav"):
+                failures.append(f"{prefix}:{role}_not_wav")
+        for relative in (
+            audio_files.get("full_performance"),
+            audio_files.get("rebuild_only_performance"),
+            "performance-report.json",
+        ):
+            if not relative or not (output / str(relative)).is_file():
+                failures.append(f"{prefix}:artifact_missing_{relative}")
+
+
+def validate_common_source_character(
+    case: dict[str, Any],
+    prefix: str,
+    proof: dict[str, Any],
+    failures: list[str],
+) -> None:
+    if number(proof.get("mix_treatment_source_derived")) < 1.0:
+        failures.append(f"{prefix}:mix_treatment_not_source_derived")
+    if number(proof.get("mix_treatment_candidate_count")) < 6.0:
+        failures.append(f"{prefix}:mix_treatment_candidate_count_too_low")
+    if number(proof.get("mix_treatment_fixed_distance")) < MIN_MIX_TREATMENT_FIXED_DISTANCE:
+        failures.append(f"{prefix}:mix_treatment_too_fixed")
+    if number(proof.get("mix_treatment_output_contrast_ratio")) < MIN_MIX_TREATMENT_OUTPUT_CONTRAST_RATIO:
+        failures.append(f"{prefix}:mix_treatment_output_contrast_too_low")
+    if number(proof.get("tail_shape_source_derived")) < 1.0:
+        failures.append(f"{prefix}:tail_shape_not_source_derived")
+    if number(proof.get("tail_shape_candidate_count")) < 6.0:
+        failures.append(f"{prefix}:tail_shape_candidate_count_too_low")
+    if number(proof.get("tail_shape_fixed_distance")) < MIN_TAIL_SHAPE_FIXED_DISTANCE:
+        failures.append(f"{prefix}:tail_shape_collapsed_to_fixed_recipe")
+    if number(proof.get("tail_shape_output_contrast_ratio")) < MIN_TAIL_SHAPE_OUTPUT_CONTRAST_RATIO:
+        failures.append(f"{prefix}:tail_shape_output_contrast_too_low")
+    if proof.get("strongest_audible_element") not in ALLOWED_STRONGEST_AUDIBLE_ELEMENTS:
+        failures.append(f"{prefix}:strongest_audible_element_missing")
+    if number(proof.get("strongest_audible_element_score")) < MIN_STRONGEST_AUDIBLE_ELEMENT_SCORE:
+        failures.append(f"{prefix}:strongest_audible_element_too_weak")
+    if number(proof.get("strongest_audible_element_margin")) < MIN_STRONGEST_AUDIBLE_ELEMENT_MARGIN:
+        failures.append(f"{prefix}:strongest_audible_element_ambiguous")
+    if number(proof.get("strongest_audible_element_candidate_count")) < 5.0:
+        failures.append(f"{prefix}:strongest_audible_element_candidate_count_too_low")
+    if number(proof.get("rebuild_only_source_spectral_similarity")) < MIN_REBUILD_ONLY_SOURCE_SPECTRAL_SIMILARITY:
+        failures.append(f"{prefix}:rebuild_only_source_spectral_character_lost")
+    if number(proof.get("rebuild_only_source_transient_retention")) < MIN_REBUILD_ONLY_SOURCE_TRANSIENT_RETENTION:
+        failures.append(f"{prefix}:rebuild_only_source_transient_character_lost")
+    if number(proof.get("rebuild_only_source_character_survival_score")) < MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE:
+        failures.append(f"{prefix}:rebuild_only_source_character_not_surviving")
+    if case.get("source_family") == "tonal_hook":
+        validate_tonal_case(prefix, proof, failures)
+    if case.get("source_family") == "sparse_bass_pressure":
+        validate_sparse_case(prefix, proof, failures)
+
+
+def validate_tonal_case(prefix: str, proof: dict[str, Any], failures: list[str]) -> None:
+    if number(proof.get("hook_chop_selection_source_derived")) < 1.0:
+        failures.append(f"{prefix}:hook_chop_selection_not_source_derived")
+    if number(proof.get("hook_chop_static_distance_frames")) < MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES:
+        failures.append(f"{prefix}:hook_chop_selection_collapsed_to_static_first_bar")
+    if number(proof.get("hook_chop_offset_distance_frames")) < MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES:
+        failures.append(f"{prefix}:hook_chop_selection_offsets_too_close")
+    if number(proof.get("w30_to_source_rms_ratio")) < MIN_PROFESSIONAL_W30_TO_SOURCE_RMS_RATIO:
+        failures.append(f"{prefix}:tonal_w30_source_chop_too_weak")
+    if number(proof.get("hook_chop_riff_unique_source_offset_count")) < MIN_HOOK_CHOP_RIFF_UNIQUE_SOURCE_OFFSET_COUNT:
+        failures.append(f"{prefix}:hook_chop_riff_source_offsets_too_narrow")
+    if number(proof.get("hook_chop_source_character_score_floor")) < MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR:
+        failures.append(f"{prefix}:hook_chop_source_character_too_weak")
+    if number(proof.get("hook_chop_source_character_score_span")) < MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN:
+        failures.append(f"{prefix}:hook_chop_source_character_too_flat")
+    if number(proof.get("destructive_gesture_source_derived")) < 1.0:
+        failures.append(f"{prefix}:destructive_gesture_not_source_derived")
+    if number(proof.get("destructive_static_distance_frames")) < MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES:
+        failures.append(f"{prefix}:destructive_gesture_collapsed_to_fixed_choice")
+    if number(proof.get("destructive_offset_distance_frames")) < MIN_DESTRUCTIVE_OFFSET_DISTANCE_FRAMES:
+        failures.append(f"{prefix}:destructive_gesture_offsets_too_close")
+
+
+def validate_sparse_case(prefix: str, proof: dict[str, Any], failures: list[str]) -> None:
+    if number(proof.get("bass_movement_source_derived")) < 1.0:
+        failures.append(f"{prefix}:sparse_bass_movement_not_source_derived")
+    if number(proof.get("sparse_bass_movement_static_distance_hz")) < MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ:
+        failures.append(f"{prefix}:sparse_bass_movement_collapsed_to_fixed_contour")
+    if number(proof.get("sparse_bass_movement_frequency_span_hz")) < MIN_SPARSE_BASS_MOVEMENT_FREQUENCY_SPAN_HZ:
+        failures.append(f"{prefix}:sparse_bass_movement_frequency_span_too_narrow")
+    if number(proof.get("pressure_low_band_lift_ratio")) < MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO:
+        failures.append(f"{prefix}:sparse_pressure_lift_lacks_low_band_support")
+    if proof.get("strongest_audible_element") != "bass":
+        failures.append(f"{prefix}:sparse_bass_not_strongest")
+    if number(proof.get("strongest_audible_element_margin")) < MIN_SPARSE_BASS_DOMINANCE_MARGIN:
+        failures.append(f"{prefix}:sparse_bass_dominance_margin_too_low")
+
+
+def is_tonal_professional_case(case: dict[str, Any]) -> bool:
+    proof = object_or_empty(case.get("proof"))
+    return (
+        case.get("source_family") == "tonal_hook"
+        and number(proof.get("hook_chop_selection_source_derived")) >= 1.0
+        and number(proof.get("hook_chop_static_distance_frames")) >= MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES
+        and number(proof.get("hook_chop_offset_distance_frames")) >= MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES
+        and number(proof.get("w30_to_source_rms_ratio")) >= MIN_PROFESSIONAL_W30_TO_SOURCE_RMS_RATIO
+        and number(proof.get("hook_chop_source_character_score_floor")) >= MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR
+        and number(proof.get("hook_chop_source_character_score_span")) >= MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN
+        and number(proof.get("destructive_gesture_source_derived")) >= 1.0
+        and number(proof.get("destructive_static_distance_frames")) >= MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES
+        and number(proof.get("destructive_offset_distance_frames")) >= MIN_DESTRUCTIVE_OFFSET_DISTANCE_FRAMES
+    )
+
+
+def is_sparse_professional_case(case: dict[str, Any]) -> bool:
+    proof = object_or_empty(case.get("proof"))
+    return (
+        case.get("source_family") == "sparse_bass_pressure"
+        and number(proof.get("bass_movement_source_derived")) >= 1.0
+        and number(proof.get("sparse_bass_movement_static_distance_hz")) >= MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ
+        and number(proof.get("sparse_bass_movement_frequency_span_hz")) >= MIN_SPARSE_BASS_MOVEMENT_FREQUENCY_SPAN_HZ
+        and number(proof.get("pressure_low_band_lift_ratio")) >= MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO
+        and proof.get("strongest_audible_element") == "bass"
+        and number(proof.get("strongest_audible_element_margin")) >= MIN_SPARSE_BASS_DOMINANCE_MARGIN
+    )
+
+
+def run_mutation_fixtures(report: dict[str, Any]) -> None:
+    fixtures = []
+    mutated = json.loads(json.dumps(report))
+    mutated["human_verdict"] = "pass"
+    fixtures.append(("human_verdict_claim", mutated, "human_verdict_not_unverified"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["quality_proof"] = True
+    mutated["evidence_boundary"]["quality_proof"] = True
+    fixtures.append(("quality_claim", mutated, "quality_proof_claimed"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["cases"][0]["source_family"] = "dense_break"
+    fixtures.append(("source_family_coverage", mutated, "source_family_coverage_mismatch"))
+
+    mutated = mutate_case_proof(report, "tonal_hook", "hook_chop_selection_source_derived", 0.0)
+    fixtures.append(("tonal_hook_not_source_derived", mutated, "hook_chop_selection_not_source_derived"))
+
+    mutated = mutate_case_proof(report, "tonal_hook", "hook_chop_static_distance_frames", 0.0)
+    fixtures.append(
+        (
+            "tonal_hook_static",
+            mutated,
+            "hook_chop_selection_collapsed_to_static_first_bar",
+        )
+    )
+
+    mutated = mutate_case_proof(report, "tonal_hook", "hook_chop_riff_unique_source_offset_count", 1.0)
+    fixtures.append(
+        ("tonal_hook_narrow_offsets", mutated, "hook_chop_riff_source_offsets_too_narrow")
+    )
+
+    mutated = mutate_case_proof(report, "tonal_hook", "destructive_static_distance_frames", 0.0)
+    fixtures.append(
+        (
+            "tonal_destructive_static",
+            mutated,
+            "destructive_gesture_collapsed_to_fixed_choice",
+        )
+    )
+
+    mutated = mutate_case_proof(report, "sparse_bass_pressure", "bass_movement_source_derived", 0.0)
+    fixtures.append(("sparse_bass_not_source_derived", mutated, "sparse_bass_movement_not_source_derived"))
+
+    mutated = mutate_case_proof(report, "sparse_bass_pressure", "sparse_bass_movement_static_distance_hz", 0.0)
+    fixtures.append(
+        (
+            "sparse_bass_static",
+            mutated,
+            "sparse_bass_movement_collapsed_to_fixed_contour",
+        )
+    )
+
+    mutated = mutate_case_proof(report, "sparse_bass_pressure", "pressure_low_band_lift_ratio", 0.0)
+    fixtures.append(
+        ("sparse_pressure_weak", mutated, "sparse_pressure_lift_lacks_low_band_support")
+    )
+
+    mutated = mutate_case_proof(report, "sparse_bass_pressure", "strongest_audible_element_margin", 0.0)
+    fixtures.append(
+        ("sparse_bass_ambiguous", mutated, "sparse_bass_dominance_margin_too_low")
+    )
+
+    for name, fixture, expected in fixtures:
+        failures = validate_report_failure_codes(fixture, require_artifacts=False)
+        if not any(expected in failure for failure in failures):
+            raise ValueError(f"mutation {name} expected {expected}, got {failures}")
+
+
+def mutate_case_proof(
+    report: dict[str, Any],
+    source_family: str,
+    key: str,
+    value: Any,
+) -> dict[str, Any]:
+    mutated = json.loads(json.dumps(report))
+    for case in mutated["cases"]:
+        if case.get("source_family") == source_family:
+            case["proof"][key] = value
+            return mutated
+    raise ValueError(f"missing source family in mutation fixture: {source_family}")
+
+
+def read_json(path: Path) -> dict[str, Any]:
+    value = json.loads(path.read_text())
+    if not isinstance(value, dict):
+        raise ValueError(f"expected JSON object: {path}")
+    return value
+
+
+def list_or_empty(value: Any) -> list[Any]:
+    return value if isinstance(value, list) else []
+
+
+def object_or_empty(value: Any) -> dict[str, Any]:
+    return value if isinstance(value, dict) else {}
+
+
+def number(value: Any) -> float:
+    if isinstance(value, bool) or value is None:
+        return 0.0
+    if isinstance(value, (int, float)):
+        return float(value)
+    return 0.0
 
 
 def write_reports(output: Path, report: dict) -> None:

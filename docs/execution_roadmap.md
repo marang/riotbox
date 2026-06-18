@@ -783,6 +783,10 @@ following:
     professional proof gates: validators own source-family coverage,
     diagnostic-only boundaries, rendered-artifact checks, mutation fixtures,
     weak-routing checks, and no-quality-claim safeguards for those reports
+  - RIOTBOX-1288 continues the extraction for the professional-source WAV
+    pack: its generator validate mode owns tonal/sparse source-family gates,
+    source-aware policy checks, source-character thresholds, rendered-artifact
+    requirements, mutation fixtures, and the diagnostic-only boundary
 - no PR, roadmap claim, or release note presents an audible feature as
   musician-ready when its human verdict is missing, weak, or explicitly
   unverified
