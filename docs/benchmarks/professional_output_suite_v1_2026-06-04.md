@@ -130,6 +130,12 @@ the rendered result. This prevents a diagnostic render from passing only because
 hook/chop/arrangement choices changed while the final mix bus remains one fixed
 recipe.
 
+Each child report summary now exposes `fallback_selection_strategy_count`.
+`professional-output-suite-smoke` must keep that count at zero for every child:
+diagnostic scripts can label a path `unavailable-*` or `degraded-*`, but any
+`fallback-*` selection strategy blocks the suite because scripted fallback
+choices are not Riotbox product intelligence or quality proof.
+
 Run:
 
 ```bash

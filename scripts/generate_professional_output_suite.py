@@ -315,6 +315,7 @@ def summarize_child(child_id: str, path: Path) -> dict[str, Any]:
         failures.append("child_report_schema_mismatch")
     failures.extend(evidence_boundary_failure_codes(data))
     boundary = extract_evidence_boundary(data)
+    fallback_selection_strategy_paths = selection_strategy_paths(data, "report")
     return {
         "id": child_id,
         "schema": data.get("schema"),
@@ -325,6 +326,8 @@ def summarize_child(child_id: str, path: Path) -> dict[str, Any]:
         "report_sha256": sha256_file(path),
         "failure_codes": failures,
         "key_metrics": key_metrics(child_id, data),
+        "fallback_selection_strategy_count": len(fallback_selection_strategy_paths),
+        "fallback_selection_strategy_paths": fallback_selection_strategy_paths,
         "evidence_boundary": boundary,
         "evidence_role": boundary.get("evidence_role"),
         "source_backed": boundary.get("source_backed"),
@@ -370,6 +373,21 @@ def strongest_audible_element_key_metrics(
             default=0.0,
         ),
     }
+
+
+def selection_strategy_paths(value: Any, path: str) -> list[str]:
+    paths: list[str] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            child_path = f"{path}.{key}"
+            if key == "selection_strategy" and isinstance(child, str):
+                if child.startswith("fallback-") or child == "fallback":
+                    paths.append(child_path)
+            paths.extend(selection_strategy_paths(child, child_path))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            paths.extend(selection_strategy_paths(child, f"{path}[{index}]"))
+    return paths
 
 
 def rebuild_only_source_character_key_metrics(
@@ -1341,6 +1359,8 @@ def suite_failure_codes(
             failures.append(f"{child_id}:quality_proof_not_false")
         if child.get("scripted_generation") is not True:
             failures.append(f"{child_id}:scripted_generation_not_true")
+        if int(number(child.get("fallback_selection_strategy_count"))) != 0:
+            failures.append(f"{child_id}:fallback_selection_strategy_present")
         if not child.get("evidence_role"):
             failures.append(f"{child_id}:evidence_role_missing")
         for code in child["failure_codes"]:

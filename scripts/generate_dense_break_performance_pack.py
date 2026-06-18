@@ -565,7 +565,7 @@ def hook_chop_policy_for(
         return HookChopPolicy(
             source_aware=False,
             source_family=source_family,
-            selection_strategy="fallback-static-first-bar",
+            selection_strategy="unavailable-static-first-bar-control",
             hook_start_frames=static_start,
             chop_start_frames=static_start,
             static_first_bar_start_frames=static_start,
@@ -754,7 +754,7 @@ def destructive_gesture_policy_for(
         return DestructiveGesturePolicy(
             source_aware=False,
             source_family=source_family,
-            selection_strategy="fallback-fixed-destructive-gesture",
+            selection_strategy="unavailable-fixed-destructive-gesture-control",
             stutter_start_frames=fixed_stutter_start,
             restore_start_frames=fixed_restore_start,
             fixed_stutter_start_frames=fixed_stutter_start,
@@ -852,7 +852,7 @@ def fixed_mix_treatment_policy(
     return MixTreatmentPolicy(
         source_aware=False,
         source_family=source_family,
-        selection_strategy="fallback-fixed-mix-treatment",
+        selection_strategy="unavailable-fixed-mix-treatment-control",
         hook_drive=1.04,
         hook_slam=0.05,
         hook_w30_gain=1.38,
@@ -1094,7 +1094,7 @@ def fixed_pad_noise_texture_policy(source_family: str, candidate_count: int = 0)
     return PadNoiseTexturePolicy(
         source_aware=False,
         source_family=source_family,
-        selection_strategy="fallback-no-pad-noise-texture",
+        selection_strategy="unavailable-no-pad-noise-texture",
         gate_start_frames=0,
         stab_start_frames=0,
         fixed_gate_start_frames=0,
@@ -1198,7 +1198,7 @@ def fixed_tail_shape_policy(
     return TailShapePolicy(
         source_aware=False,
         source_family=source_family,
-        selection_strategy="fallback-fixed-dropout-restore-tail",
+        selection_strategy="unavailable-fixed-dropout-restore-tail-control",
         dropout_silence_fraction=0.50,
         dropout_silence_gain=0.015,
         stutter_step_divisor=stutter_step_divisor,
@@ -1588,7 +1588,7 @@ def arrangement_policy_for(
             source_aware=True,
             role_order_source_derived=False,
             source_family=source_family,
-            selection_strategy="fallback-scripted-source-family-role-order",
+            selection_strategy="degraded-scripted-source-family-role-order",
             role_order=scripted_roles,
             role_order_signature=">".join(scripted_roles),
             scripted_role_order=scripted_roles,
@@ -1645,7 +1645,7 @@ def arrangement_policy_for(
             source_aware=True,
             role_order_source_derived=False,
             source_family=source_family,
-            selection_strategy="fallback-scripted-source-family-role-order",
+            selection_strategy="degraded-scripted-source-family-role-order",
             role_order=scripted_roles,
             role_order_signature=">".join(scripted_roles),
             scripted_role_order=scripted_roles,
@@ -2940,6 +2940,12 @@ def build_report(
     failure_codes = failure_codes_for(
         metrics, proof, source_policy.pressure_lift_policy.source_family
     )
+    failure_codes.extend(
+        fallback_selection_strategy_failure_codes(
+            asdict(source_policy),
+            "source_policy.decisions",
+        )
+    )
     verdict = "agent_promising" if not failure_codes else "agent_fail"
     if failure_codes and len(failure_codes) <= 2:
         verdict = "agent_weak"
@@ -3434,6 +3440,23 @@ def failure_codes_for(
     return failures
 
 
+def fallback_selection_strategy_failure_codes(value: Any, path: str = "report") -> list[str]:
+    failures: list[str] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            child_path = f"{path}.{key}"
+            if key == "selection_strategy" and isinstance(child, str):
+                if child.startswith("fallback-") or child == "fallback":
+                    failures.append(f"fallback_selection_strategy:{child_path}")
+            failures.extend(fallback_selection_strategy_failure_codes(child, child_path))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            failures.extend(
+                fallback_selection_strategy_failure_codes(child, f"{path}[{index}]")
+            )
+    return failures
+
+
 def validate_report_file(path: Path) -> None:
     try:
         report = json.loads(path.read_text())
@@ -3458,14 +3481,15 @@ def validate_report_file(path: Path) -> None:
             "invalid dense-break performance report: rebuild_only_performance file missing"
         )
     boundary_failures = evidence_boundary_failure_codes(report)
+    fallback_strategy_failures = fallback_selection_strategy_failure_codes(report)
     source_family = None
     if isinstance(source_policy, dict):
         pressure_lift_policy = source_policy.get("pressure_lift_policy")
         if isinstance(pressure_lift_policy, dict):
             source_family = str(pressure_lift_policy.get("source_family") or "")
     computed_failures = failure_codes_for(metrics, proof, source_family)
-    if boundary_failures or computed_failures:
-        failures = boundary_failures + computed_failures
+    if boundary_failures or fallback_strategy_failures or computed_failures:
+        failures = boundary_failures + fallback_strategy_failures + computed_failures
         raise SystemExit("invalid dense-break performance report: " + ", ".join(failures))
     if report.get("result") != "pass":
         raise SystemExit("invalid dense-break performance report: result_not_pass")
