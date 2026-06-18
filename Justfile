@@ -665,6 +665,7 @@ listening-manifest-validator-fixtures:
     python3 scripts/validate_listening_manifest_json.py crates/riotbox-audio/tests/fixtures/listening_manifest/manifest_valid_source_grid_output_drift.json
     python3 scripts/validate_listening_manifest_json.py crates/riotbox-audio/tests/fixtures/listening_manifest/manifest_valid_lane_source_grid_alignment.json
     python3 scripts/validate_listening_manifest_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/manifest.json
+    tmp="$(mktemp)" && jq 'del(.primitive_renderer_boundary)' crates/riotbox-app/tests/fixtures/observer_audio_correlation/manifest.json > "$tmp" && if python3 scripts/validate_listening_manifest_json.py "$tmp"; then echo "expected primitive-renderer manifest without boundary to fail" >&2; rm "$tmp"; exit 1; fi; rm "$tmp"
     python3 scripts/validate_listening_manifest_json.py crates/riotbox-audio/tests/fixtures/listening_manifest/manifest_missing_artifact_file.json
     if python3 scripts/validate_listening_manifest_json.py crates/riotbox-audio/tests/fixtures/listening_manifest/manifest_invalid_schema_version.json; then echo "expected invalid listening manifest schema fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_listening_manifest_json.py crates/riotbox-audio/tests/fixtures/listening_manifest/manifest_invalid_boolean_schema_version.json; then echo "expected boolean listening manifest schema fixture to fail" >&2; exit 1; fi

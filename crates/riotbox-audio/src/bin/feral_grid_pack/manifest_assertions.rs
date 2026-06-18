@@ -23,6 +23,34 @@ mod manifest_assertions {
             manifest["feral_scorecard"]["top_reason"],
             "grid-locked generated feral QA pack"
         );
+        assert_eq!(
+            manifest["primitive_renderer_boundary"]["schema"],
+            "riotbox.primitive_renderer_boundary.v1"
+        );
+        assert_eq!(
+            manifest["primitive_renderer_boundary"]["evidence_role"],
+            "non_product_diagnostic_control"
+        );
+        assert_eq!(
+            manifest["primitive_renderer_boundary"]["product_output_allowed"],
+            false
+        );
+        assert_eq!(manifest["primitive_renderer_boundary"]["quality_proof"], false);
+        assert_eq!(
+            manifest["primitive_renderer_boundary"]["demo_readiness"],
+            "unverified"
+        );
+        assert_eq!(
+            manifest["primitive_renderer_boundary"]["promotion_blocked"],
+            true
+        );
+        assert_eq!(
+            manifest["primitive_renderer_boundary"]["affected_paths"]
+                .as_array()
+                .expect("primitive affected paths")
+                .len(),
+            2
+        );
         assert_manifest_source_timing(&manifest["source_timing"]);
         assert_eq!(
             manifest["feral_scorecard"]["lane_gestures"]

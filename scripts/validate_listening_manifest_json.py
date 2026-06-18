@@ -18,7 +18,11 @@ from typing import Any
 SCHEMA_VERSION = 1
 SOURCE_TIMING_BPM_MATCH_TOLERANCE = 1.0
 EPSILON = 0.000001
-SOURCE_TIMING_POLICY_PROFILES = {"broad_research", "dance_loop_auto_readiness"}
+SOURCE_TIMING_POLICY_PROFILES = {
+    "broad_research",
+    "dance_loop_auto_readiness",
+    "p014_scene_movement_probe",
+}
 SOURCE_TIMING_READINESS = {"unavailable", "weak", "needs_review", "ready"}
 SOURCE_TIMING_CUES = {"grid locked", "needs confirm", "listen first", "not available"}
 SOURCE_TIMING_ACTIONABILITY = {
@@ -160,6 +164,7 @@ def validate_manifest(manifest: Any) -> None:
         validate_grid_bpm_decision(manifest, source_timing)
         validate_source_timing_bpm_delta_consistency(manifest, source_timing)
 
+    validate_primitive_renderer_boundary(manifest)
     validate_source_grid_output_drift(manifest)
 
 
@@ -191,6 +196,49 @@ def validate_feral_scorecard(scorecard: Any) -> None:
     require_non_empty_string_list(scorecard, "lane_gestures")
     require_non_empty_string_list(scorecard, "material_sources")
     require_non_empty_string_list(scorecard, "warnings")
+
+
+def validate_primitive_renderer_boundary(manifest: dict[str, Any]) -> None:
+    primitive_paths = sorted(find_string_value_paths(manifest, "primitive_renderer"))
+    if not primitive_paths:
+        return
+
+    boundary = require_object_field(manifest, "primitive_renderer_boundary")
+    require_equal(boundary, "schema", "riotbox.primitive_renderer_boundary.v1")
+    require_equal(boundary, "evidence_role", "non_product_diagnostic_control")
+    require_equal(boundary, "product_output_allowed", False)
+    require_equal(boundary, "quality_proof", False)
+    require_equal(boundary, "demo_readiness", "unverified")
+    require_equal(boundary, "promotion_blocked", True)
+    require_string(boundary, "musician_message", "primitive_renderer_boundary musician_message")
+    affected_paths = require_non_empty_string_list(
+        boundary,
+        "affected_paths",
+        "primitive_renderer_boundary affected_paths",
+    )
+    if sorted(affected_paths) != primitive_paths:
+        raise ValueError(
+            "primitive_renderer_boundary affected_paths must exactly match primitive_renderer paths: "
+            f"expected {primitive_paths!r}, got {sorted(affected_paths)!r}"
+        )
+
+
+def find_string_value_paths(value: Any, needle: str, path: str = "") -> list[str]:
+    if isinstance(value, dict):
+        paths = []
+        for key, child in value.items():
+            child_path = f"{path}.{key}" if path else str(key)
+            paths.extend(find_string_value_paths(child, needle, child_path))
+        return paths
+    if isinstance(value, list):
+        paths = []
+        for index, child in enumerate(value):
+            child_path = f"{path}[{index}]"
+            paths.extend(find_string_value_paths(child, needle, child_path))
+        return paths
+    if value == needle:
+        return [path]
+    return []
 
 
 def validate_source_timing(source_timing: Any) -> None:
@@ -672,6 +720,16 @@ def require_object(value: Any, name: str) -> dict[str, Any]:
     return value
 
 
+def require_object_field(parent: dict[str, Any], field: str) -> dict[str, Any]:
+    return require_object(parent.get(field), field)
+
+
+def require_equal(parent: dict[str, Any], field: str, expected: Any) -> None:
+    value = parent.get(field)
+    if value != expected:
+        raise ValueError(f"{field} must be {expected!r}, got {value!r}")
+
+
 def require_schema_version(parent: dict[str, Any]) -> None:
     value = parent.get("schema_version")
     if not isinstance(value, int) or isinstance(value, bool) or value != SCHEMA_VERSION:
@@ -727,12 +785,13 @@ def require_non_negative_number(parent: dict[str, Any], field: str, name: str) -
         raise ValueError(f"{name} must be non-negative")
 
 
-def require_non_empty_string_list(parent: dict[str, Any], field: str) -> None:
-    name = f"feral_scorecard {field}"
-    values = require_list(parent, field, name)
+def require_non_empty_string_list(parent: dict[str, Any], field: str, name: str | None = None) -> list[str]:
+    label = name or f"feral_scorecard {field}"
+    values = require_list(parent, field, label)
     if not values:
-        raise ValueError(f"{name} must not be empty")
-    require_string_list_values(values, name)
+        raise ValueError(f"{label} must not be empty")
+    require_string_list_values(values, label)
+    return values
 
 
 def require_string_list(parent: dict[str, Any], field: str, name: str) -> None:

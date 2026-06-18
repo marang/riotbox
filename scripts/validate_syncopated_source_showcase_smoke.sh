@@ -47,6 +47,13 @@ jq -e \
     and .source_timing.downbeat_status == "stable"
     and .source_timing.anchor_evidence.primary_anchor_count > 0
     and .source_timing_bpm_delta > 0.0
+    and .primitive_renderer_boundary.schema == "riotbox.primitive_renderer_boundary.v1"
+    and .primitive_renderer_boundary.evidence_role == "non_product_diagnostic_control"
+    and .primitive_renderer_boundary.product_output_allowed == false
+    and .primitive_renderer_boundary.quality_proof == false
+    and .primitive_renderer_boundary.demo_readiness == "unverified"
+    and .primitive_renderer_boundary.promotion_blocked == true
+    and ([.primitive_renderer_boundary.affected_paths[]] | sort == ["metrics.mc202_bass_pressure.pattern_origin", "metrics.tr909_kick_pressure.pattern_origin"])
     and .metrics.source_grid_output_drift.hit_ratio >= 0.75
     and .metrics.source_grid_output_drift.max_peak_offset_ms <= .metrics.source_grid_output_drift.max_allowed_peak_offset_ms
     and .metrics.tr909_source_grid_alignment.hit_ratio >= 0.95

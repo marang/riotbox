@@ -97,6 +97,15 @@ If a fixed pattern is a renderer vocabulary or preset, label it as such; if a
 pattern is claimed to react to a source, prove the source relation in the
 manifest.
 
+Any listening manifest that still contains `pattern_origin: "primitive_renderer"`
+must also include `primitive_renderer_boundary` with
+`evidence_role: non_product_diagnostic_control`,
+`product_output_allowed: false`, `demo_readiness: unverified`,
+`quality_proof: false`, `promotion_blocked: true`, and exact affected paths for
+the primitive origins. Missing or stale primitive-boundary metadata is a
+manifest validation failure, because otherwise a hardcoded renderer can slip
+back into musician-facing proof as if it were source-derived output.
+
 ### 3.2.1 Source-derived rebuild gates
 
 Riotbox must distinguish three related but different output modes:

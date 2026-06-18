@@ -57,6 +57,8 @@ cat > "$manifest" <<'JSON'
     { "role": "manifest", "kind": "json", "path": "manifest.json" }
   ],
   "source_timing": {
+    "schema": "riotbox.source_timing_probe_readiness.v1",
+    "schema_version": 1,
     "source_id": "src-p014-scene-movement",
     "policy_profile": "p014_scene_movement_probe",
     "grid_use": "locked_grid",
@@ -97,11 +99,15 @@ cat > "$manifest" <<'JSON'
       "low_band": { "rms": 0.06 }
     },
     "source_grid_output_drift": {
+      "beat_count": 16,
+      "hit_count": 16,
       "hit_ratio": 1.0,
       "max_peak_offset_ms": 1.0,
       "max_allowed_peak_offset_ms": 70.0
     },
     "tr909_source_grid_alignment": {
+      "beat_count": 16,
+      "hit_count": 16,
       "hit_ratio": 1.0,
       "max_peak_offset_ms": 1.0,
       "max_allowed_peak_offset_ms": 70.0
@@ -111,11 +117,15 @@ cat > "$manifest" <<'JSON'
       "applied": true
     },
     "mc202_source_grid_alignment": {
+      "beat_count": 16,
+      "hit_count": 16,
       "hit_ratio": 1.0,
       "max_peak_offset_ms": 1.0,
       "max_allowed_peak_offset_ms": 70.0
     },
     "w30_source_grid_alignment": {
+      "beat_count": 16,
+      "hit_count": 16,
       "hit_ratio": 1.0,
       "max_peak_offset_ms": 1.0,
       "max_allowed_peak_offset_ms": 70.0
@@ -129,10 +139,21 @@ cat > "$manifest" <<'JSON'
       "max_allowed_edge_abs": 0.04,
       "source_contains_selection": true
     }
+  },
+  "primitive_renderer_boundary": {
+    "schema": "riotbox.primitive_renderer_boundary.v1",
+    "evidence_role": "non_product_diagnostic_control",
+    "product_output_allowed": false,
+    "quality_proof": false,
+    "demo_readiness": "unverified",
+    "promotion_blocked": true,
+    "affected_paths": ["metrics.mc202_bass_pressure.pattern_origin"],
+    "musician_message": "Scene movement observer fixture uses primitive MC-202 as diagnostic evidence only; it is not product output."
   }
 }
 JSON
 
+python3 scripts/validate_listening_manifest_json.py "$manifest"
 cargo run -p riotbox-app --bin observer_audio_correlate -- \
   --observer "$observer_fixture" \
   --manifest "$manifest" \

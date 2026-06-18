@@ -8,6 +8,7 @@ struct ListeningPackManifest {
     duration_seconds: f32,
     case_count: usize,
     artifacts: Vec<ManifestArtifact>,
+    primitive_renderer_boundary: PrimitiveRendererBoundary,
     cases: Vec<ManifestCase>,
     result: &'static str,
 }
@@ -17,12 +18,29 @@ struct ManifestCase {
     id: &'static str,
     title: &'static str,
     pattern_origin: &'static str,
+    evidence_role: &'static str,
+    product_output_allowed: bool,
+    quality_proof: bool,
+    demo_readiness: &'static str,
+    promotion_blocked: bool,
     recipe_refs: &'static str,
     baseline_label: &'static str,
     candidate_label: &'static str,
     thresholds: ManifestThresholds,
     metrics: ManifestCaseMetrics,
     result: &'static str,
+}
+
+#[derive(Serialize)]
+struct PrimitiveRendererBoundary {
+    schema: &'static str,
+    evidence_role: &'static str,
+    product_output_allowed: bool,
+    quality_proof: bool,
+    demo_readiness: &'static str,
+    promotion_blocked: bool,
+    affected_paths: Vec<String>,
+    musician_message: &'static str,
 }
 
 #[derive(Serialize)]
@@ -56,6 +74,7 @@ fn write_manifest(
         duration_seconds: args.duration_seconds,
         case_count: reports.len(),
         artifacts: manifest_artifacts(output_dir, reports),
+        primitive_renderer_boundary: primitive_renderer_boundary(reports.len()),
         cases: reports.iter().map(ManifestCase::from).collect(),
         result: "pass",
     };
@@ -99,12 +118,32 @@ fn manifest_artifacts(output_dir: &Path, reports: &[CaseReport]) -> Vec<Manifest
     artifacts
 }
 
+fn primitive_renderer_boundary(case_count: usize) -> PrimitiveRendererBoundary {
+    PrimitiveRendererBoundary {
+        schema: "riotbox.primitive_renderer_boundary.v1",
+        evidence_role: "non_product_diagnostic_control",
+        product_output_allowed: false,
+        quality_proof: false,
+        demo_readiness: "unverified",
+        promotion_blocked: true,
+        affected_paths: (0..case_count)
+            .map(|index| format!("cases[{index}].pattern_origin"))
+            .collect(),
+        musician_message: "Lane recipe primitive renderer cases are regression controls; they must not be promoted as source-derived product output.",
+    }
+}
+
 impl From<&CaseReport> for ManifestCase {
     fn from(report: &CaseReport) -> Self {
         Self {
             id: report.id,
             title: report.title,
             pattern_origin: "primitive_renderer",
+            evidence_role: "non_product_diagnostic_control",
+            product_output_allowed: false,
+            quality_proof: false,
+            demo_readiness: "unverified",
+            promotion_blocked: true,
             recipe_refs: report.recipe_refs,
             baseline_label: report.baseline_label,
             candidate_label: report.candidate_label,
@@ -290,12 +329,48 @@ mod tests {
         assert_eq!(manifest["date"], "manifest-smoke");
         assert_eq!(manifest["result"], "pass");
         assert_eq!(manifest["case_count"], 8);
+        assert_eq!(
+            manifest["primitive_renderer_boundary"]["schema"],
+            "riotbox.primitive_renderer_boundary.v1"
+        );
+        assert_eq!(
+            manifest["primitive_renderer_boundary"]["evidence_role"],
+            "non_product_diagnostic_control"
+        );
+        assert_eq!(
+            manifest["primitive_renderer_boundary"]["product_output_allowed"],
+            false
+        );
+        assert_eq!(manifest["primitive_renderer_boundary"]["quality_proof"], false);
+        assert_eq!(
+            manifest["primitive_renderer_boundary"]["demo_readiness"],
+            "unverified"
+        );
+        assert_eq!(
+            manifest["primitive_renderer_boundary"]["promotion_blocked"],
+            true
+        );
+        assert_eq!(
+            manifest["primitive_renderer_boundary"]["affected_paths"]
+                .as_array()
+                .expect("primitive affected paths")
+                .len(),
+            8
+        );
 
         let cases = manifest["cases"].as_array().expect("cases");
         assert_eq!(cases.len(), 8);
         let first_case = &cases[0];
         assert_eq!(first_case["id"], "tr909-support-to-fill");
         assert_eq!(first_case["pattern_origin"], "primitive_renderer");
+        assert_eq!(
+            first_case["evidence_role"],
+            "non_product_diagnostic_control"
+        );
+        assert_eq!(first_case["product_output_allowed"], false);
+        assert_eq!(first_case["quality_proof"], false);
+        assert_eq!(first_case["demo_readiness"], "unverified");
+        assert_eq!(first_case["promotion_blocked"], true);
         assert_eq!(first_case["result"], "pass");
         assert!(
             first_case["metrics"]["baseline"]["rms"]
