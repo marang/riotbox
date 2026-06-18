@@ -1206,4 +1206,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   MC-202 real-source corpus listening pack for dense and non-dense proof
 - [RIOTBOX-1281.md](./RIOTBOX-1281.md)
   Remove primitive_renderer as positive musical output in lane recipe and feral-grid packs
+- [RIOTBOX-1280.md](./RIOTBOX-1280.md)
+  Remove W-30 synthetic preview fallback from musician-facing output
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
