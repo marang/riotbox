@@ -1285,7 +1285,7 @@ def tail_shape_policy_for(
         strategy = "source-derived-hook-readable-tail"
         silence_bias = 0.038
         density_bias = 0
-        restore_bias = 0.18
+        restore_bias = 0.24
     else:
         strategy = "source-derived-break-snap-tail"
         silence_bias = 0.006
@@ -1497,7 +1497,7 @@ def dense_break_source_policy(
 
     if pressure_lift_policy.source_family == "tonal_hook":
         bass_restore = 51.5
-        pressure_gain = 1.18
+        pressure_gain = 1.15
         bass_gain = 1.16
     elif pressure_lift_policy.source_family == "sparse_bass_pressure":
         bass_restore = 46.0
@@ -1969,6 +1969,8 @@ def render_performance(
             )
             if source_policy.pressure_lift_policy.source_family == "dense_break":
                 restore_bar = apply_gain(restore_bar, 1.14)
+            elif source_policy.pressure_lift_policy.source_family == "tonal_hook":
+                restore_bar = apply_gain(restore_bar, 1.08)
             put_bar(bar, restore_bar)
         else:
             raise ValueError(f"unsupported arrangement role: {role}")

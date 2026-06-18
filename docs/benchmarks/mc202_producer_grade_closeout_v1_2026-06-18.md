@@ -52,14 +52,15 @@ The validator requires:
 - `parent_ticket_state: keep_open`
 - at least one dense and one non-dense MC-202 review candidate
 - source-composed evidence for the dense and sparse MC-202 candidates
-- primitive/template-only candidates preserved as promotion blockers
+- any primitive/template-only candidates preserved as promotion blockers
 - real-source primitive controls marked as non-product output
 - all review candidates still `human_verdict: unverified`,
   `demo_readiness: unverified`, and `quality_proof: false`
 
 Mutation fixtures reject premature quality claims, premature promotion,
 stale human verdict state, primitive-control leakage into product output, and
-missing primitive/template promotion blockers.
+missing primitive/template promotion blockers when a candidate regresses to
+primitive/template-only.
 
 ## Boundary
 
