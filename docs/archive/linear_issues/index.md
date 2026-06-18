@@ -1230,4 +1230,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Make professional-output QA recipes artifact-race resistant
 - [RIOTBOX-1291.md](./RIOTBOX-1291.md)
   Remove W-30 synthetic preview fallback from musician surfaces
+- [RIOTBOX-1292.md](./RIOTBOX-1292.md)
+  Downgrade primitive renderer lane recipe packs to non-product controls
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
