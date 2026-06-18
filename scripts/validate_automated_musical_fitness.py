@@ -32,6 +32,10 @@ MIN_W30_VELOCITY_SPAN = 0.10
 MIN_LANE_CONTRIBUTION_RATIO = 0.015
 MIN_GENERATED_TO_W30_CONTRIBUTION_RATIO = 0.06
 MIN_TR909_LOW_BAND_RATIO = 1.04
+TR909_SOURCE_EVIDENCE_ROLE = "tr909_source_profile_and_accent_dynamics"
+MIN_TR909_KICK_PRESSURE_ANCHORS = 2
+MIN_TR909_ACCENT_DISTINCT_ACCENTS = 3
+MIN_TR909_ACCENT_SPAN = 0.22
 MIN_MC202_BASS_RMS = 0.0025
 MIN_TRANSIENT_SCORE = 0.20
 MIN_SOURCE_GRID_HIT_RATIO = 0.50
@@ -174,6 +178,7 @@ def extract_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
     w30_slice = object_or_empty(raw.get("w30_source_slice_choice"))
     w30_accent = object_or_empty(raw.get("w30_source_accent_dynamics"))
     tr909_pressure = object_or_empty(raw.get("tr909_kick_pressure"))
+    tr909_accent = object_or_empty(raw.get("tr909_source_accent_dynamics"))
     mc202_pressure = object_or_empty(raw.get("mc202_bass_pressure"))
     mc202_contour = object_or_empty(raw.get("mc202_source_contour"))
     identity = object_or_empty(raw.get("identity_collapse") or raw.get("fallback_collapse"))
@@ -271,6 +276,25 @@ def extract_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
         ),
         "tr909_kick_pressure_applied": bool(tr909_pressure.get("applied", False)),
         "tr909_low_band_ratio": first_number(tr909_pressure.get("low_band_rms_ratio")),
+        "tr909_pattern_origin": str(tr909_pressure.get("pattern_origin", "unknown")),
+        "tr909_source_evidence_role": str(
+            tr909_pressure.get("source_evidence_role", "unknown")
+        ),
+        "tr909_source_profile_reason": str(
+            tr909_pressure.get("source_profile_reason", "unknown")
+        ),
+        "tr909_anchor_count": int(first_number(tr909_pressure.get("anchor_count"), 0)),
+        "tr909_accent_pattern_origin": str(tr909_accent.get("pattern_origin", "unknown")),
+        "tr909_accent_dynamics_applied": bool(tr909_accent.get("applied", False)),
+        "tr909_accent_anchor_count": int(first_number(tr909_accent.get("anchor_count"), 0)),
+        "tr909_accent_distinct_accent_count": int(
+            first_number(tr909_accent.get("distinct_accent_count"), 0)
+        ),
+        "tr909_accent_span": first_number(tr909_accent.get("accent_span"), 0.0),
+        "tr909_accent_min_required_span": first_number(
+            tr909_accent.get("min_required_accent_span"),
+            MIN_TR909_ACCENT_SPAN,
+        ),
         "mc202_bass_pressure_applied": bool(mc202_pressure.get("applied", False)),
         "mc202_bass_rms": first_number(mc202_pressure.get("signal_rms")),
         "source_grid_hit_ratio": first_number(grid_alignment.get("hit_ratio")),
@@ -435,10 +459,32 @@ def low_end_transients(metrics: dict[str, Any]) -> dict[str, Any]:
         failures.append("low_end_too_weak")
     if transient_score is not None and transient_score < MIN_TRANSIENT_SCORE:
         failures.append("transients_too_weak")
-    if metrics["tr909_kick_pressure_applied"] and (
-        tr909_ratio is None or tr909_ratio < MIN_TR909_LOW_BAND_RATIO
+    if not metrics["tr909_kick_pressure_applied"]:
+        failures.append("low_end_tr909_kick_pressure_missing")
+    else:
+        if metrics["tr909_pattern_origin"] != "source_derived":
+            failures.append("low_end_tr909_kick_pressure_not_source_derived")
+        if metrics["tr909_source_evidence_role"] != TR909_SOURCE_EVIDENCE_ROLE:
+            failures.append("low_end_tr909_kick_pressure_missing_source_evidence")
+        if not metrics["tr909_source_profile_reason"].startswith("source_"):
+            failures.append("low_end_tr909_kick_pressure_source_reason_missing")
+        if metrics["tr909_anchor_count"] < MIN_TR909_KICK_PRESSURE_ANCHORS:
+            failures.append("low_end_tr909_kick_pressure_anchor_count_too_low")
+        if tr909_ratio is None or tr909_ratio < MIN_TR909_LOW_BAND_RATIO:
+            failures.append("low_end_tr909_kick_pressure_too_decorative")
+    if metrics["tr909_accent_pattern_origin"] != "source_derived":
+        failures.append("low_end_tr909_accent_dynamics_not_source_derived")
+    if not metrics["tr909_accent_dynamics_applied"]:
+        failures.append("low_end_tr909_accent_dynamics_missing")
+    if metrics["tr909_accent_distinct_accent_count"] < MIN_TR909_ACCENT_DISTINCT_ACCENTS:
+        failures.append("low_end_tr909_accent_count_too_low")
+    if metrics["tr909_accent_anchor_count"] < MIN_TR909_KICK_PRESSURE_ANCHORS:
+        failures.append("low_end_tr909_accent_anchor_count_too_low")
+    if metrics["tr909_accent_span"] < max(
+        MIN_TR909_ACCENT_SPAN,
+        metrics["tr909_accent_min_required_span"],
     ):
-        failures.append("low_end_tr909_kick_pressure_too_decorative")
+        failures.append("low_end_tr909_accent_span_too_flat")
     if metrics["mc202_bass_pressure_applied"] and (
         mc202_rms is None or mc202_rms < MIN_MC202_BASS_RMS
     ):
@@ -452,6 +498,18 @@ def low_end_transients(metrics: dict[str, Any]) -> dict[str, Any]:
             "transient_score": transient_score,
             "tr909_kick_pressure_applied": metrics["tr909_kick_pressure_applied"],
             "tr909_low_band_ratio": tr909_ratio,
+            "tr909_pattern_origin": metrics["tr909_pattern_origin"],
+            "tr909_source_evidence_role": metrics["tr909_source_evidence_role"],
+            "tr909_source_profile_reason": metrics["tr909_source_profile_reason"],
+            "tr909_anchor_count": metrics["tr909_anchor_count"],
+            "tr909_accent_pattern_origin": metrics["tr909_accent_pattern_origin"],
+            "tr909_accent_dynamics_applied": metrics["tr909_accent_dynamics_applied"],
+            "tr909_accent_anchor_count": metrics["tr909_accent_anchor_count"],
+            "tr909_accent_distinct_accent_count": metrics[
+                "tr909_accent_distinct_accent_count"
+            ],
+            "tr909_accent_span": metrics["tr909_accent_span"],
+            "tr909_accent_min_required_span": metrics["tr909_accent_min_required_span"],
             "mc202_bass_pressure_applied": metrics["mc202_bass_pressure_applied"],
             "mc202_bass_rms": mc202_rms,
         },
@@ -522,6 +580,11 @@ def build_report(candidates: list[Candidate]) -> dict[str, Any]:
             "max_event_density_per_bar": MAX_EVENT_DENSITY_PER_BAR,
             "min_lane_contribution_ratio": MIN_LANE_CONTRIBUTION_RATIO,
             "min_generated_to_w30_contribution_ratio": MIN_GENERATED_TO_W30_CONTRIBUTION_RATIO,
+            "min_tr909_low_band_ratio": MIN_TR909_LOW_BAND_RATIO,
+            "tr909_source_evidence_role": TR909_SOURCE_EVIDENCE_ROLE,
+            "min_tr909_kick_pressure_anchors": MIN_TR909_KICK_PRESSURE_ANCHORS,
+            "min_tr909_accent_distinct_accent_count": MIN_TR909_ACCENT_DISTINCT_ACCENTS,
+            "min_tr909_accent_span": MIN_TR909_ACCENT_SPAN,
             "min_low_end_transient_score": MIN_TRANSIENT_SCORE,
             "min_source_grid_hit_ratio": MIN_SOURCE_GRID_HIT_RATIO,
             "max_source_grid_peak_offset_ms": MAX_SOURCE_GRID_PEAK_OFFSET_MS,

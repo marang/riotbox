@@ -50,7 +50,20 @@
     },
     "tr909_kick_pressure": {
       "applied": true,
+      "pattern_origin": "source_derived",
+      "source_evidence_role": "tr909_source_profile_and_accent_dynamics",
+      "source_profile_reason": "source_low_drive",
+      "anchor_count": 4,
       "low_band_rms_ratio": 1.14
+    },
+    "tr909_source_accent_dynamics": {
+      "applied": true,
+      "pattern_origin": "source_derived",
+      "anchor_count": 4,
+      "distinct_accent_count": 4,
+      "accent_span": 0.44,
+      "min_required_accent_span": 0.22,
+      "source_energy_span": 0.30
     },
     "mc202_bass_pressure": {
       "applied": true,
