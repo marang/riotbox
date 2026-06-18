@@ -201,6 +201,14 @@ fn derive_w30_preview_warnings(
     {
         warnings.push("W-30 preview is routed to the music bus at zero music level".into());
     }
+    if matches!(render.routing, W30PreviewRenderRouting::Silent)
+        && render.source_window_preview.is_none()
+        && render.pad_playback.is_none()
+    {
+        warnings.push(
+            "W-30 preview unavailable: no source window or artifact-backed pad material".into(),
+        );
+    }
 
     let has_capture = render.capture_id.as_ref().is_some_and(|capture_id| {
         session

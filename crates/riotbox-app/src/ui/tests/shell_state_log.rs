@@ -13,9 +13,9 @@ fn renders_log_shell_snapshot_with_action_trust_history() {
     assert!(rendered.contains("role leader"));
     assert!(rendered.contains("cue idle"));
     assert!(rendered.contains("cue idle | none"));
-    assert!(rendered.contains("prev recall/fallback"));
-    assert!(rendered.contains("mix 0.64/0.50 idle"));
-    assert!(rendered.contains("cap cap-01 | pending"));
+    assert!(rendered.contains("recall/unavailable"), "{rendered}");
+    assert!(rendered.contains("mix 0.00/0.50 idle"));
+    assert!(rendered.contains("result captured"));
     assert!(rendered.contains("ghost"));
     assert!(rendered.contains("mutate.scene"));
     assert!(rendered.contains("TR-909 Render"));

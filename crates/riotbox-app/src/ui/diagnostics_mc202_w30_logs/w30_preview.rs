@@ -22,21 +22,21 @@ pub(super) fn w30_preview_mode_profile_compact(shell: &JamShellState) -> String 
     if matches!(render.mode, W30PreviewRenderMode::RawCaptureAudition) {
         return format!(
             "{mode}/{}",
-            w30_preview_source_suffix(render).unwrap_or("fallback")
+            w30_preview_source_suffix(render).unwrap_or("unavailable")
         );
     }
 
     if matches!(render.mode, W30PreviewRenderMode::PromotedAudition) {
         return format!(
             "{mode}/{}",
-            w30_preview_source_suffix(render).unwrap_or("fallback")
+            w30_preview_source_suffix(render).unwrap_or("unavailable")
         );
     }
 
     if matches!(render.mode, W30PreviewRenderMode::LiveRecall) {
         return format!(
             "{mode}/{profile}/{}",
-            w30_preview_source_suffix(render).unwrap_or("fallback")
+            w30_preview_source_suffix(render).unwrap_or("unavailable")
         );
     }
 
@@ -48,21 +48,21 @@ pub(super) fn w30_preview_log_compact(shell: &JamShellState) -> String {
     if matches!(render.mode, W30PreviewRenderMode::RawCaptureAudition) {
         return format!(
             "raw/{}",
-            w30_preview_source_suffix(render).unwrap_or("fallback")
+            w30_preview_source_suffix(render).unwrap_or("unavailable")
         );
     }
 
     if matches!(render.mode, W30PreviewRenderMode::PromotedAudition) {
         return format!(
             "audition/{}",
-            w30_preview_source_suffix(render).unwrap_or("fallback")
+            w30_preview_source_suffix(render).unwrap_or("unavailable")
         );
     }
 
     if matches!(render.mode, W30PreviewRenderMode::LiveRecall) {
         return format!(
             "recall/{}",
-            w30_preview_source_suffix(render).unwrap_or("fallback")
+            w30_preview_source_suffix(render).unwrap_or("unavailable")
         );
     }
 
@@ -76,8 +76,10 @@ fn w30_preview_source_suffix(render: &W30PreviewRenderState) -> Option<&'static 
 
     if render.source_window_preview.is_some() {
         Some("src")
+    } else if render.pad_playback.is_some() {
+        Some("artifact")
     } else {
-        Some("fallback")
+        Some("unavailable")
     }
 }
 
@@ -86,13 +88,18 @@ pub(super) fn w30_preview_source_readiness(shell: &JamShellState) -> Option<&'st
     if matches!(render.mode, W30PreviewRenderMode::RawCaptureAudition) {
         return match w30_preview_source_suffix(render)? {
             "src" => Some("source-backed"),
-            "fallback" => Some("fallback"),
+            "artifact" => Some("artifact-backed"),
+            "unavailable" => Some("unavailable"),
             _ => None,
         };
     }
 
     if render.source_window_preview.is_some() {
         Some("source-backed")
+    } else if render.pad_playback.is_some() {
+        Some("artifact-backed")
+    } else if !matches!(render.mode, W30PreviewRenderMode::Idle) {
+        Some("unavailable")
     } else {
         None
     }

@@ -144,8 +144,8 @@ pub(super) fn capture_heard_path_label(shell: &JamShellState) -> String {
         (_, Some(target)) if target != "unassigned" => format!("{last_capture_id}->{target} ready"),
         _ => {
             let readiness = capture_handoff_readiness_label(shell);
-            if readiness == "fallback" {
-                format!("{last_capture_id} fallback: [o] raw -> [p]->[w]")
+            if readiness == "unavailable" {
+                format!("{last_capture_id} unavailable: recapture")
             } else {
                 format!("{last_capture_id} src: [o] raw -> [p]->[w]")
             }

@@ -81,13 +81,17 @@ fn w30_perform_action_cue(shell: &JamShellState) -> Option<&'static str> {
             W30PreviewRenderMode::LiveRecall => Some("src: [w] source | 4 Capture"),
             W30PreviewRenderMode::Idle => None,
         }
-    } else {
+    } else if render.pad_playback.is_some() {
         match render.mode {
-            W30PreviewRenderMode::RawCaptureAudition => Some("fallback: [o] raw safe | 4 Capture"),
-            W30PreviewRenderMode::PromotedAudition => Some("fallback: [o] safe | 4 Capture"),
-            W30PreviewRenderMode::LiveRecall => Some("fallback: [w] safe | 4 Capture"),
+            W30PreviewRenderMode::RawCaptureAudition => {
+                Some("artifact: [o] raw capture | 4 Capture")
+            }
+            W30PreviewRenderMode::PromotedAudition => Some("artifact: [o] pad | 4 Capture"),
+            W30PreviewRenderMode::LiveRecall => Some("artifact: [w] pad | 4 Capture"),
             W30PreviewRenderMode::Idle => None,
         }
+    } else {
+        Some("unavailable: no W-30 audio material | 4 Capture")
     }
 }
 

@@ -372,7 +372,7 @@ pub enum CaptureTargetKindView {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CaptureHandoffReadinessView {
     Source,
-    Fallback,
+    Unavailable,
 }
 
 #[derive(Clone, Debug, PartialEq)]

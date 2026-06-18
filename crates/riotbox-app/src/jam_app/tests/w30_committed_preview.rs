@@ -79,7 +79,7 @@ fn committed_w30_promoted_audition_updates_lane_focus_grit_and_log_result() {
     );
     assert_eq!(
         state.runtime.w30_preview.routing,
-        W30PreviewRenderRouting::MusicBusPreview
+        W30PreviewRenderRouting::Silent
     );
     assert_eq!(
         state.runtime.w30_preview.source_profile,
@@ -91,6 +91,12 @@ fn committed_w30_promoted_audition_updates_lane_focus_grit_and_log_result() {
     );
     assert_eq!(state.runtime_view.w30_preview_mode, "promoted_audition");
     assert_eq!(state.runtime_view.w30_preview_profile, "promoted_audition");
+    let preview = render_w30_preview_offline(&state.runtime.w30_preview, 48_000, 2, 2_048);
+    assert!(
+        preview.iter().all(|sample| sample.abs() <= f32::EPSILON),
+        "materialless W-30 audition must stay silent, peak {}",
+        signal_metrics(&preview).peak_abs
+    );
     assert_eq!(
         state
             .session

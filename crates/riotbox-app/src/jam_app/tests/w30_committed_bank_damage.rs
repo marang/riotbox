@@ -336,7 +336,7 @@ fn committed_w30_step_focus_updates_lane_focus_and_preview() {
     );
     assert_eq!(
         state.runtime.w30_preview.routing,
-        W30PreviewRenderRouting::MusicBusPreview
+        W30PreviewRenderRouting::Silent
     );
     assert_eq!(
         state.runtime.w30_preview.source_profile,
@@ -361,4 +361,3 @@ fn committed_w30_step_focus_updates_lane_focus_and_preview() {
         Some("focused W-30 pad bank-b/pad-04 at beat 37 / phrase 2")
     );
 }
-

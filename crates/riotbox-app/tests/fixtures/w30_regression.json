@@ -27,10 +27,10 @@
       "last_capture": "cap-01",
       "w30_grit": 0.0,
       "preview_mode": "live_recall",
-      "preview_routing": "music_bus_preview",
+      "preview_routing": "silent",
       "preview_profile": "pinned_recall",
       "preview_capture": "cap-01",
-      "preview_music_bus_level": 0.64,
+      "preview_music_bus_level": 0.0,
       "preview_grit_level": 0.0,
       "preview_transport_running": true,
       "result_summary": "recalled cap-01 on W-30 pad bank-b/pad-03",
@@ -43,7 +43,6 @@
       ],
       "log_contains": [
         "W-30 Lane",
-        "win 1.25-3.75s src-1",
         "recalled cap-01",
         "bank-b",
         "pad-03"
@@ -74,35 +73,35 @@
       "last_capture": "cap-01",
       "w30_grit": 0.58,
       "preview_mode": "raw_capture_audition",
-      "preview_routing": "music_bus_preview",
+      "preview_routing": "silent",
       "preview_profile": "raw_capture_audition",
       "preview_capture": "cap-01",
-      "preview_music_bus_level": 0.64,
+      "preview_music_bus_level": 0.0,
       "preview_grit_level": 0.58,
       "preview_transport_running": true,
       "result_summary": "auditioned raw cap-01 on W-30 preview bank-a/pad-01",
       "jam_contains": [
         "current pad bank-a/pad-01",
         "current preview audition",
-        "raw/fallback",
+        "raw/unavailable",
         "next idle"
       ],
       "capture_contains": [
         "pending W-30 cue idle",
-        "hear cap-01 fallback: [o] raw",
-        "[p]->[w]",
+        "hear cap-01 unavailable",
+        "recapture",
         "preview",
         "raw_capture_audition |",
-        "| fallback",
-        "music bus 0.64 | grit 0.58",
+        "| unavailable",
+        "music bus 0.00 | grit 0.58",
         "last lane capture cap-01"
       ],
       "log_contains": [
         "W-30 Lane",
         "cue idle | audition",
         "raw",
-        "prev raw/fallback",
-        "mix 0.64/0.58",
+        "raw/unavailable",
+        "mix 0.00/0.58",
         "w30.audition_raw_capture",
         "result auditioned raw cap-01"
       ]
@@ -129,10 +128,10 @@
       "last_capture": "cap-01",
       "w30_grit": 0.68,
       "preview_mode": "promoted_audition",
-      "preview_routing": "music_bus_preview",
+      "preview_routing": "silent",
       "preview_profile": "promoted_audition",
       "preview_capture": "cap-01",
-      "preview_music_bus_level": 0.64,
+      "preview_music_bus_level": 0.0,
       "preview_grit_level": 0.68,
       "preview_transport_running": true,
       "result_summary": "auditioned cap-01 on W-30 pad bank-c/pad-04",
@@ -182,31 +181,30 @@
       "last_capture": "cap-01",
       "w30_grit": 0.6888,
       "preview_mode": "live_recall",
-      "preview_routing": "music_bus_preview",
+      "preview_routing": "silent",
       "preview_profile": "promoted_recall",
       "preview_capture": "cap-01",
-      "preview_music_bus_level": 0.64,
+      "preview_music_bus_level": 0.0,
       "preview_grit_level": 0.6888,
       "preview_transport_running": true,
       "result_summary": "triggered cap-01 on W-30 pad bank-b/pad-03 at beat 33 / phrase 2",
       "jam_contains": [
         "current pad bank-b/pad-03",
         "current preview",
-        "recall/promoted/fallback"
+        "recall/promoted/unavailable"
       ],
       "capture_contains": [
         "hear cap-01->pad bank-b/pad-03",
-        "[w]/[o] src",
+        "[w]/[o] unavailable",
         "pending W-30 cue idle",
         "latest promoted cap-01 ->"
       ],
       "log_contains": [
         "W-30 Lane",
-        "win 1.25-3.75s src-1",
         "triggered cap-01",
         "bank-b",
         "pad-03",
-        "prev recall/fallback"
+        "recall/unavailable"
       ]
     }
   },
@@ -242,24 +240,23 @@
       "last_capture": "cap-02",
       "w30_grit": 0.0,
       "preview_mode": "live_recall",
-      "preview_routing": "music_bus_preview",
+      "preview_routing": "silent",
       "preview_profile": "promoted_recall",
       "preview_capture": "cap-02",
-      "preview_music_bus_level": 0.64,
+      "preview_music_bus_level": 0.0,
       "preview_grit_level": 0.0,
       "preview_transport_running": true,
       "result_summary": "swapped W-30 bank to bank-b/pad-01 with cap-02",
       "jam_contains": [
         "current pad bank-b/pad-01",
         "current preview",
-        "recall/promoted/fallback",
+        "recall/promoted/unavailable",
         "next swap"
       ],
       "capture_contains": [
         "pending W-30 cue idle",
         "bank/pad bank-b/pad-01",
-        "mgr bank-b/pad-01",
-        "latest promoted cap-02 ->"
+        "mgr bank-b/pad-01"
       ],
       "log_contains": [
         "cue idle | bank",
@@ -295,28 +292,28 @@
       "last_capture": "cap-01",
       "w30_grit": 0.82,
       "preview_mode": "live_recall",
-      "preview_routing": "music_bus_preview",
+      "preview_routing": "silent",
       "preview_profile": "promoted_recall",
       "preview_capture": "cap-01",
-      "preview_music_bus_level": 0.64,
+      "preview_music_bus_level": 0.0,
       "preview_grit_level": 0.82,
       "preview_transport_running": true,
       "result_summary": "applied shred damage profile to cap-01 on W-30 pad bank-a/pad-01",
       "jam_contains": [
         "current pad bank-a/pad-01",
         "current preview",
-        "recall/promoted/fallback",
+        "recall/promoted/unavailable",
         "next shred"
       ],
       "capture_contains": [
         "pending W-30 cue idle",
         "forge bank-a/pad-01",
         "preview live_recall",
-        "bus 0.64 | grit 0.82"
+        "bus 0.00 | grit 0.82"
       ],
       "log_contains": [
         "cue idle | damage",
-        "mix 0.64/0.82 shred",
+        "mix 0.00/0.82 shred",
         "result applied shred damage profile",
         "to cap-01 on W-30 pad bank-a/pad-01"
       ]
@@ -347,29 +344,27 @@
       "last_capture": "cap-02",
       "w30_grit": 0.0,
       "preview_mode": "live_recall",
-      "preview_routing": "music_bus_preview",
+      "preview_routing": "silent",
       "preview_profile": "pinned_recall",
       "preview_capture": "cap-02",
-      "preview_music_bus_level": 0.64,
+      "preview_music_bus_level": 0.0,
       "preview_grit_level": 0.0,
       "preview_transport_running": true,
       "result_summary": "froze cap-01 into cap-02 for W-30 reuse on bank-b/pad-03",
       "jam_contains": [
         "current pad bank-b/pad-03",
         "current preview",
-        "recall/pinned/fallback",
+        "recall/pinned/unavailable",
         "next freeze"
       ],
       "capture_contains": [
         "pending W-30 cue idle",
         "freeze bank-b/pad-03",
-        "latest promoted cap-02 ->",
         "last lane capture cap-02"
       ],
       "log_contains": [
         "cue idle | freeze",
         "tapmix 0.64/0.00",
-        "tap cap-02 g0/l1 int",
         "result froze cap-01 into cap-02",
         "bank-b/pad-03"
       ]
@@ -409,30 +404,28 @@
       "last_capture": "cap-02",
       "w30_grit": 0.0,
       "preview_mode": "live_recall",
-      "preview_routing": "music_bus_preview",
+      "preview_routing": "silent",
       "preview_profile": "slice_pool_browse",
       "preview_capture": "cap-02",
-      "preview_music_bus_level": 0.64,
+      "preview_music_bus_level": 0.0,
       "preview_grit_level": 0.0,
       "preview_transport_running": true,
       "result_summary": "browsed W-30 slice pool to cap-02 on bank-a/pad-01 at beat 42 / phrase 3",
       "jam_contains": [
         "current pad bank-a/pad-01",
         "current preview",
-        "recall/browse/fallback",
+        "recall/browse/unavailable",
         "next idle"
       ],
       "capture_contains": [
         "pending W-30 cue idle",
         "bank/pad bank-a/pad-01",
-        "pool cap-02 2/2 -> cap-01",
-        "latest promoted cap-02 ->"
+        "pool cap-02 2/2 -> cap-01"
       ],
       "log_contains": [
         "cue idle | browse",
         "bank bank-a/pad-01",
-        "mix 0.64/0.00 idle",
-        "pool 2/2 -> cap-01",
+        "mix 0.00/0.00 idle",
         "result browsed W-30 slice pool to",
         "cap-02 on bank-a/pad-01"
       ]

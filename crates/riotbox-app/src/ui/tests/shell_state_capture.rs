@@ -32,10 +32,9 @@ fn renders_capture_shell_snapshot_with_capture_context() {
     );
     assert!(rendered.contains("pending W-30 cue idle"));
     assert!(
-        rendered.contains("hear cap-01 fallback: [o] raw"),
+        rendered.contains("hear cap-01 unavailable: recapture"),
         "{rendered}"
     );
-    assert!(rendered.contains("[p]->[w]"), "{rendered}");
     assert!(
         rendered.contains("forge idle | tap ready/raw"),
         "{rendered}"

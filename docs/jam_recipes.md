@@ -274,11 +274,11 @@ What to observe:
 - do not rush `w` immediately after `p`; the pad is only playable after promotion lands
 - `Do Next` is the fastest place to read the next capture/promote/hit step
 - `1 hear it: [o] audition raw ...` is the raw preview path; it is the quickest way to check that the stored moment is audible
-- `2 keep it: [p] promote ...` then `3 play it: [w] hit after promote (src/fallback)` is the reuse path
+- `2 keep it: [p] promote ...` then `3 play it: [w] hit after promote (src/artifact)` is the reuse path
 - while an audition is queued, `Do Next` should say `wait, then hear raw preview` or `wait, then hear promoted preview`
-- `hear ... stored src/fallback [o] raw or [p]->[w]` means the capture exists; `[o]` auditions the raw moment, while `[p]` then `[w]` promotes it into a playable W-30 hit
-- `.../src` means the W-30 preview is source-backed; `.../fallback` means Riotbox stayed on the safe synthetic preview
-- after promotion, `hear ... [w]/[o] src/fallback` means you can trigger it with `w` or audition it with `o`
+- `hear ... src` means the capture has source-window backing; `artifact` means an artifact-backed pad is audible
+- `.../unavailable` means Riotbox has no trusted W-30 audio material for that preview and should not play synthetic replacement music
+- after promotion, `hear ... [w]/[o] src` or `artifact` means you can trigger it with `w` or audition it with `o`
 
 ## Recipe 4: Undo On Purpose
 
@@ -514,7 +514,7 @@ Low-energy contrast note:
 
 ## Recipe 11: Check Source-Backed W-30 Reuse
 
-Goal: test whether the W-30 path is using captured source material or the safe fallback preview.
+Goal: test whether the W-30 path is using captured source material or artifact-backed pad audio instead of becoming unavailable.
 
 Use a local WAV example, preferably:
 
@@ -557,11 +557,12 @@ What to observe:
 - on `Jam`, a source-backed raw audition can show `src: [o] raw source | 4 Capture`
 - on `Jam`, a source-backed promoted audition can show `src: [o] source | 4 Capture`
 - on `Jam`, a source-backed live recall can show `src: [w] source | 4 Capture`
+- `artifact:` cues mean Riotbox is using committed capture-artifact audio for the W-30 pad
 - `Capture -> Do Next` should explain the audible handoff while actions are queued, for example `wait, then hear raw preview`
 - `Log` can also show `win 1.25-3.75s src-1`; that is the source excerpt backing the current W-30 cue
-- `.../fallback` means Riotbox is still using the safe synthetic preview for that path
-- `fallback: [o] raw safe | 4 Capture` and similar `fallback:` Jam cues mean the action is still playable, but it is using the safe preview instead of decoded source-window material
-- `fallback` is not automatically a bug; it means the current session did not have a decoded source-window preview available for that cue
+- `.../unavailable` means Riotbox will not route W-30 preview audio until source-window or artifact-backed material exists
+- `unavailable: no W-30 audio material | 4 Capture` is a musician-facing degraded state, not a playable fallback
+- if W-30 stays unavailable, recapture from a trusted source window or promote a capture artifact before judging the sound
 
 What this teaches:
 
@@ -615,11 +616,11 @@ What this teaches:
 - this is still bounded prototype behavior, not full automatic feral composition
 - if it sounds too similar, use `Log` and `Source` to check whether you were in `ready`, `needs support`, or fallback territory before judging the gesture
 
-## Recipe 13: Prove W-30 Source-Backed Audio Is Not Fallback
+## Recipe 13: Prove W-30 Source-Backed Audio Beats The Diagnostic Control
 
-Goal: get one quick offline proof that the W-30 source-backed preview can differ from the safe synthetic fallback.
+Goal: get one quick offline proof that the W-30 source-backed preview can differ from the non-product synthetic control.
 
-This is not an interactive TUI recipe. Use it when you are unsure whether a W-30 result is really using source material or only the fallback preview.
+This is not an interactive TUI recipe. Use it when you are unsure whether a W-30 source-backed render is materially different from the diagnostic control. The synthetic baseline is not a musician-facing output path.
 
 Run the CI-safe generated check:
 
@@ -629,7 +630,7 @@ just w30-smoke-generated-source-diff
 
 Expected result:
 
-- the command renders a synthetic fallback `baseline.wav`
+- the command renders a synthetic non-product control `baseline.wav`
 - it renders a source-backed `candidate.wav` from deterministic generated source material
 - it compares both metrics and fails if the RMS / sum deltas are too small
 - it validates the generated `manifest.json` and all referenced artifact paths
@@ -656,14 +657,14 @@ artifacts/audio_qa/local-w30-source-diff/w30-preview-smoke/raw_capture_source_wi
 
 How to interpret it:
 
-- `baseline.wav` is the safe fallback preview
+- `baseline.wav` is the diagnostic synthetic control
 - `candidate.wav` is the source-backed preview
 - if they sound identical and the command still passes, create a follow-up with the metrics and source file
-- if the command fails, Riotbox may have collapsed to fallback or the source window may not be useful enough for the current threshold
+- if the command fails, Riotbox may have collapsed toward the control or the source window may not be useful enough for the current threshold
 
 What this teaches:
 
-- `src` / `fallback` is not only UI language; there is now an output-path check for it
+- `src` / `unavailable` is not only UI language; source-backed output has a diagnostic control comparison behind it
 - the Jam `src:` cue is the fast live check; Recipe 13 is the offline proof when the live path still sounds suspicious
 - the current source-backed W-30 path is a short preview excerpt, not full sample streaming
 - use this recipe before judging W-30 by a confusing first TUI run
@@ -680,7 +681,7 @@ just first-playable-jam-probe
 
 Expected result:
 
-- the probe renders W-30 fallback baseline and source-backed candidate WAVs from deterministic synthetic material
+- the probe renders a W-30 diagnostic-control baseline and source-backed candidate WAVs from deterministic synthetic material
 - it validates the generated `manifest.json`
 - it generates and validates an app-level observer probe for `space`, `c`, `o`, `p`, and `w`
 - it correlates that generated control evidence with the W-30 output evidence
@@ -690,7 +691,7 @@ What this proves:
 
 - the current first-playable path has committed control evidence
 - capture / raw audition / promote / promoted hit intent is present in generated observer evidence
-- the W-30 output seam is source-backed enough to produce measurable candidate audio and source-vs-fallback delta
+- the W-30 output seam is source-backed enough to produce measurable candidate audio and diagnostic-control delta
 
 What it does not prove yet:
 
@@ -711,7 +712,7 @@ just source-transport-map-capture-probe
 ```
 
 That probe drives the musician path in a headless observer session and pairs it
-with W-30 source-vs-fallback output evidence.
+with W-30 source-vs-control output evidence.
 
 Target flow:
 
@@ -906,9 +907,9 @@ So if two runs feel similar:
 - use `Recipe 5` if you want to understand source-specific differences
 - use `Recipe 8` if you want the first bounded Scene Brain flow instead of only lane gestures
 - use `Recipe 9` if you want to compare where Scene Brain is already more legible today
-- use `Recipe 11` if you want to check whether W-30 capture reuse is source-backed or on fallback
+- use `Recipe 11` if you want to check whether W-30 capture reuse is source-backed, artifact-backed, or unavailable
 - use `Recipe 12` if you want to understand the new `feral ready` gesture path
-- use `Recipe 13` if you want an offline W-30 source-vs-fallback proof before judging the live TUI path
+- use `Recipe 13` if you want an offline W-30 source-vs-control proof before judging the live TUI path
 - use `Recipe 14` if you want a CI-safe first-playable control-plus-output probe
 - use `Recipe 15` if you want a local Feral grid listening pack and need to choose `auto` versus explicit BPM honestly
 - use `Recipe 16` if you want the fastest Jam taste/proof read before trusting

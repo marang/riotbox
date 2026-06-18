@@ -13,7 +13,7 @@ fn renders_log_w30_source_window_when_available() {
 
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-    assert!(rendered.contains("win 1.25-3.75s src-1"), "{rendered}");
+    assert!(rendered.contains("recall/unavailable"), "{rendered}");
     assert_eq!(w30_capture_log_compact(&shell), "win 1.25-3.75s src-1");
 }
 
@@ -38,7 +38,7 @@ fn renders_capture_shell_snapshot_with_raw_capture_audition_cue() {
         "{rendered}"
     );
     assert!(
-        rendered.contains("hear cap-01 fallback: [o] raw -> [p]->[w]"),
+        rendered.contains("hear cap-01 unavailable: recapture"),
         "{rendered}"
     );
 
@@ -51,7 +51,7 @@ fn renders_capture_shell_snapshot_with_raw_capture_audition_cue() {
 }
 
 #[test]
-fn committed_raw_capture_audition_surfaces_source_fallback_readiness() {
+fn committed_raw_capture_audition_surfaces_unavailable_readiness() {
     let mut shell = sample_shell_without_pending_queue();
     shell.app.session.runtime_state.lane_state.w30.focused_pad = Some("pad-01".into());
     shell.app.refresh_view();
@@ -74,15 +74,11 @@ fn committed_raw_capture_audition_surfaces_source_fallback_readiness() {
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
     assert!(rendered.contains("current preview audition"), "{rendered}");
-    assert!(rendered.contains("raw/fallback"), "{rendered}");
-    assert!(
-        rendered.contains("fallback: [o] raw safe | 4 Capture"),
-        "{rendered}"
-    );
+    assert!(rendered.contains("raw/unavailable"), "{rendered}");
 
     shell.active_screen = ShellScreen::Capture;
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
-    assert!(rendered.contains("| fallback"), "{rendered}");
+    assert!(rendered.contains("| unavailable"), "{rendered}");
 }
 
 #[test]

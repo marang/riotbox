@@ -50,7 +50,6 @@ fn renders_log_shell_snapshot_with_committed_w30_slice_pool_browse_diagnostics()
 
     assert!(rendered.contains("cue idle | browse"), "{rendered}");
     assert!(rendered.contains("bank bank-a/pad-01"), "{rendered}");
-    assert!(rendered.contains("tap cap-02 g0/l1 int"), "{rendered}");
 }
 
 #[test]
@@ -170,8 +169,8 @@ fn renders_w30_bank_manager_and_damage_profile_diagnostics_across_shell_surfaces
         "{log_rendered}"
     );
     assert!(log_rendered.contains("cue idle | damage"), "{log_rendered}");
-    assert!(log_rendered.contains("mix 0.64/0.82"), "{log_rendered}");
-    assert!(log_rendered.contains("swap+shred"), "{log_rendered}");
+    assert!(log_rendered.contains("mix 0.00/0.82"), "{log_rendered}");
+    assert!(log_rendered.contains("unavailable"), "{log_rendered}");
 }
 
 #[test]
@@ -287,7 +286,7 @@ fn w30_operation_diagnostics_follow_current_lane_target() {
     shell.active_screen = ShellScreen::Log;
     let log_rendered = render_jam_shell_snapshot(&shell, 120, 34);
     assert!(
-        log_rendered.contains("mix 0.64/0.82 idle"),
+        log_rendered.contains("mix 0.00/0.82 idle"),
         "{log_rendered}"
     );
 }
@@ -326,7 +325,6 @@ fn renders_capture_shell_snapshot_with_w30_audition_cue() {
             .as_deref(),
         Some("cap-01 -> bank-b/pad-03")
     );
-    assert!(rendered.contains("latest promoted cap-01 ->"), "{rendered}");
     assert!(rendered.contains("cap-01"));
 }
 
@@ -368,6 +366,13 @@ fn renders_capture_handoff_source_readiness_for_w30_targets() {
             end_frame: 180_000,
         });
     shell.app.refresh_view();
+    shell.app.runtime.w30_preview.source_window_preview =
+        Some(riotbox_audio::w30::W30PreviewSampleWindow {
+            source_start_frame: 60_000,
+            source_end_frame: 60_064,
+            sample_count: 64,
+            samples: [0.0; riotbox_audio::w30::W30_PREVIEW_SAMPLE_WINDOW_LEN],
+        });
     shell.active_screen = ShellScreen::Capture;
 
     assert_eq!(
@@ -389,7 +394,7 @@ fn renders_capture_handoff_source_readiness_for_w30_targets() {
 }
 
 #[test]
-fn renders_capture_handoff_fallback_as_actionable_w30_cue() {
+fn renders_capture_handoff_unavailable_as_recapture_cue() {
     let mut shell = sample_shell_without_pending_queue();
     shell.app.session.captures[0].assigned_target =
         Some(riotbox_core::session::CaptureTarget::W30Pad {
@@ -401,18 +406,18 @@ fn renders_capture_handoff_fallback_as_actionable_w30_cue() {
 
     assert_eq!(
         shell.app.jam_view.capture.last_capture_handoff_readiness,
-        Some(CaptureHandoffReadinessView::Fallback)
+        Some(CaptureHandoffReadinessView::Unavailable)
     );
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
     assert!(
-        rendered.contains("fallback: [w]/[o] safe pad"),
+        rendered.contains("unavailable: no W-30 audio"),
         "{rendered}"
     );
-    assert!(rendered.contains("bank-b/pad-03"), "{rendered}");
+    assert!(rendered.contains("target pad bank-b/pad-03"), "{rendered}");
     assert!(rendered.contains("[3] Source shows why"), "{rendered}");
     assert!(
-        rendered.contains("[c] new capture can become src"),
+        rendered.contains("[c] recapture source-backed"),
         "{rendered}"
     );
 }
