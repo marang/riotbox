@@ -679,6 +679,14 @@ thresholds, evidence-boundary checks, artifact existence checks, and failure-cod
 names should live in validator scripts so future sound-quality gates stay
 reviewable without weakening proof.
 
+The P023 edge-source diagnostics and non-dense professional proof pack follow
+the same rule: their smoke recipes must call report validators with mutation
+fixtures instead of duplicating source-family coverage, human-verdict,
+diagnostic-only, artifact, silence, identity-collapse, and weak-routing checks
+as shell `jq`. Passing those validators proves the diagnostic boundary and
+contract shape only; it does not promote scripted edge/non-dense renders to
+product-quality proof.
+
 Run:
 
 ```bash
