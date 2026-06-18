@@ -147,6 +147,11 @@ territory, or if source-on and rebuild-only correlation collapses to identical.
 These negative checks protect the diagnostic gate from quietly accepting
 silence, raw-source masking, or a no-op source-layer toggle.
 
+The dense-break report validator also rejects any `selection_strategy` value
+named `fallback` or starting with `fallback-`. Weak or unsupported source paths
+may be labeled `unavailable-*` or `degraded-*` in diagnostic metadata, but they
+must not be promoted as fallback musical intelligence or quality proof.
+
 Run:
 
 ```bash

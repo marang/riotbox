@@ -213,6 +213,15 @@ def validate_mutation_fixtures(report: dict[str, Any], output: Path) -> list[str
             mark_first_listening_case_template_only_unblocked,
             "mc202_template_only_not_blocked",
         ),
+        (
+            "fallback_selection_strategy_child",
+            lambda data: set_first_child_field(
+                data,
+                "fallback_selection_strategy_count",
+                1,
+            ),
+            "dense_break_fallback_selection_strategy_present",
+        ),
     ]
 
     failures: list[str] = []
@@ -238,6 +247,11 @@ def validate_child_boundary(child: dict[str, Any], failures: list[str]) -> None:
     require(child.get("human_verdict") == "unverified", f"{child_id}_human_verdict_changed", failures)
     require(child.get("scripted_generation") is True, f"{child_id}_not_scripted", failures)
     require(child.get("quality_proof") is False, f"{child_id}_claims_quality_proof", failures)
+    require(
+        int(number(child.get("fallback_selection_strategy_count"))) == 0,
+        f"{child_id}_fallback_selection_strategy_present",
+        failures,
+    )
     require(len(str(child.get("report_sha256", ""))) == 64, f"{child_id}_report_hash_missing", failures)
 
 
@@ -671,6 +685,14 @@ def set_child_metric(
         metrics[metric] = value
         return True
     return False
+
+
+def set_first_child_field(report: dict[str, Any], field: str, value: Any) -> bool:
+    children = report.get("children")
+    if not isinstance(children, list) or not children or not isinstance(children[0], dict):
+        return False
+    children[0][field] = value
+    return True
 
 
 def set_nested_value(report: dict[str, Any], path: list[str], value: Any) -> bool:
