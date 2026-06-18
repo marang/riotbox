@@ -792,6 +792,11 @@ following:
     gates, physical drum-pressure checks, source-character survival,
     source-layer collapse mutations, and review visual-file validation while
     keeping the diagnostic-only/no-quality-proof boundary explicit
+  - RIOTBOX-1290 makes broad professional-output QA runs artifact-race
+    resistant: `just audio-qa-ci` acquires a repo-local broad-audio-QA lock
+    before touching shared `artifacts/audio_qa/local-*` outputs, `just ci`
+    inherits that protection, and concurrent broad runs fail clearly instead
+    of deleting another run's artifacts
 - no PR, roadmap claim, or release note presents an audible feature as
   musician-ready when its human verdict is missing, weak, or explicitly
   unverified

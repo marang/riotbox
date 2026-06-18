@@ -188,6 +188,20 @@ continue to the next workflow iteration. They do not change the order of steps
 0-19 and must not be interpreted as permission to branch, commit, open PRs, or
 merge without an active Linear issue.
 
+## 3.1 Broad Audio-QA Lock
+
+Do not run broad audio-QA gates concurrently when they write shared
+`artifacts/audio_qa/local-*` paths. `just audio-qa-ci` is the public broad gate
+and must acquire the repo-local `broad-audio-qa` lock through
+`scripts/with_audio_qa_lock.sh` before it starts deleting or regenerating local
+audio artifacts. `just ci` calls that public gate and therefore inherits the
+same protection.
+
+If a second broad audio-QA run is already active, the next run must fail early
+with a clear lock message instead of racing on shared artifacts. For concurrent
+experiments, run narrower recipes with explicit unique `output=...` arguments
+or wait for the broad gate to finish.
+
 ---
 
 ## 4. Ambiguous Feedback Handling

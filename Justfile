@@ -37,10 +37,14 @@ ci:
     just p011-exit-evidence-manifest-validator-fixtures
     just p011-exit-evidence-category-gate-fixtures
     just p011-exit-evidence-gate
+    just audio-qa-lock-fixtures
     just audio-qa-ci
     cargo clippy --all-targets --all-features -- -D warnings
 
 audio-qa-ci:
+    scripts/with_audio_qa_lock.sh broad-audio-qa just _audio-qa-ci-unlocked
+
+_audio-qa-ci-unlocked:
     cargo test -p riotbox-audio --bin w30_preview_render --bin w30_preview_compare --bin lane_recipe_pack --bin feral_before_after_pack --bin feral_grid_pack
     cargo test -p riotbox-app --bin observer_audio_correlate
     just observer-audio-correlate-fixture
@@ -105,6 +109,9 @@ audio-qa-ci:
     just recipe2-observer-audio-gate
     just offline-render-reproducibility-smoke
     just full-grid-export-reproducibility-smoke
+
+audio-qa-lock-fixtures:
+    scripts/validate_audio_qa_lock_fixtures.sh
 
 decision-search query:
     ./scripts/research_decision_search.sh "{{query}}"
