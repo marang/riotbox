@@ -1222,4 +1222,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Extract P023 professional-output JSON gates from Justfile into validators
 - [RIOTBOX-1287.md](./RIOTBOX-1287.md)
   Extract edge and non-dense professional JSON gates from Justfile
+- [RIOTBOX-1288.md](./RIOTBOX-1288.md)
+  Extract professional source WAV pack JSON gates from Justfile
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
