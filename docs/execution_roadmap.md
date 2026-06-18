@@ -719,6 +719,12 @@ following:
     summaries, selected motif metadata, and non-product primitive A/B control
     evidence while keeping `human_verdict: unverified` and
     `quality_proof: false`
+  - RIOTBOX-1279 adds `just mc202-producer-grade-closeout-smoke` as the
+    MC-202 closeout boundary: dense and non-dense source-composed candidates
+    can be technically reviewable, but `producer_grade_promotion_result` stays
+    `blocked_for_human_promotion`, demo-bank promotion stays false, and
+    RIOTBOX-1264 stays open until structured listening records human verdicts;
+    primitive/template-only candidates remain production blockers, not proof
   - edge-source diagnostic coverage now includes pad/noise and bad-timing
     sources as weak/risky routed cases: source-timing, rendered WAV, metrics,
     source-family metadata, and concrete fix routing are present; pad/noise now

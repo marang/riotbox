@@ -266,6 +266,20 @@ primitive A/B control that is explicitly non-product evidence. The control must
 keep `product_fallback_allowed: false`; it is not fallback music and cannot
 support a product-quality claim.
 
+For MC-202 producer-grade closeout, run:
+
+```bash
+just mc202-producer-grade-closeout-smoke
+```
+
+This gate aggregates the professional output listening pack, the real-source
+listening scaffold, and the MC-202 source-composed review gate. It must pass
+only as a technical closeout while keeping `quality_claim_allowed: false`,
+`demo_bank_promotion_allowed: false`, and `parent_ticket_state: keep_open`
+until structured listening records a human pass/weak/fail verdict. A primitive
+or template-only MC-202 candidate remains a production blocker, not a product
+fallback or proof of musician-ready quality.
+
 The synthetic fixture showcase can still run the musical-quality review gate:
 
 ```bash

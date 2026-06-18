@@ -22,6 +22,7 @@ just release-grade-demo-bank-fixtures
 just source-family-release-demo-coverage-fixtures
 just release-demo-human-review-queue-fixtures
 just demo-bank-promotion-fixtures
+just mc202-producer-grade-closeout-smoke
 ```
 
 ---
@@ -86,6 +87,13 @@ with its source family, source path, rendered WAV ref, metrics ref, review
 prompt ref, and the next review action. The queue exists to focus human
 listening; it must not promote `human_verdict: unverified` material into
 demo-ready or product-quality claims.
+
+The MC-202 producer-grade closeout gate is stricter about language for the
+MC-202 lane. It may pass the technical closeout when dense and non-dense
+source-composed candidates are reviewable, but it must keep
+`demo_bank_promotion_allowed: false` and `quality_claim_allowed: false` until
+structured listening records a human verdict. Primitive or template-only MC-202
+cases remain promotion blockers and production-fix inputs, not demo-bank proof.
 
 ---
 
