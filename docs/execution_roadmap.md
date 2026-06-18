@@ -714,6 +714,11 @@ following:
     bass/answer behavior can count as source-derived product behavior; the
     implementation plan lives in
     `docs/plans/mc202_source_phrase_planning_plan.md`
+  - RIOTBOX-1278 adds a dense/non-dense MC-202 real-source listening pack that
+    renders source windows, MC-202 stems, generated-support mixes, expression
+    summaries, selected motif metadata, and non-product primitive A/B control
+    evidence while keeping `human_verdict: unverified` and
+    `quality_proof: false`
   - edge-source diagnostic coverage now includes pad/noise and bad-timing
     sources as weak/risky routed cases: source-timing, rendered WAV, metrics,
     source-family metadata, and concrete fix routing are present; pad/noise now
