@@ -162,6 +162,13 @@ Current implementation:
 - Target replay dry-run summaries may expose selected anchor metadata, target cursor, and suffix action scope for QA and future UI/debug seams, but they must not execute actions or mutate runtime state.
 - Latest-snapshot replay convergence summaries may compare the full committed origin against the latest snapshot-to-end suffix for QA, including whether no snapshot forces full replay.
 - Session restore rebuilds the app-runtime `last_commit_boundary` from the latest structured commit record so fresh app state does not lose the most recent musical boundary context.
+- MC-202 source phrase plans stored on `ActionCommitRecord` are replay truth for
+  MC-202 phrase actions. The replay executor restores that persisted plan
+  directly from the commit record, and clears stale MC-202 source phrase state
+  when an older commit record has no trusted plan. SourceGraph-based
+  reconstruction may still be used by higher app restore helpers, but it is not
+  allowed to invent fallback audio or preserve stale source phrase state when
+  the commit record does not carry a plan.
 
 ### 7.3 Minimal replay executor boundary
 

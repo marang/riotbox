@@ -328,6 +328,7 @@ pub fn apply_replay_entry_to_session(
             session.runtime_state.lane_state.mc202.phrase_variant = intent.phrase_variant();
             session.runtime_state.macro_state.mc202_touch =
                 session.runtime_state.macro_state.mc202_touch.max(touch);
+            apply_persisted_mc202_source_phrase_plan(session, entry);
         }
         ActionCommand::Tr909SetSlam => {
             let ActionParams::Mutation { intensity, .. } = &action.params else {
@@ -424,6 +425,15 @@ fn apply_mc202_role(
     session.runtime_state.lane_state.mc202.phrase_variant = None;
     session.runtime_state.macro_state.mc202_touch =
         session.runtime_state.macro_state.mc202_touch.max(touch);
+    apply_persisted_mc202_source_phrase_plan(session, entry);
+}
+
+fn apply_persisted_mc202_source_phrase_plan(
+    session: &mut SessionFile,
+    entry: &ReplayPlanEntry<'_>,
+) {
+    session.runtime_state.lane_state.mc202.source_phrase_plan =
+        entry.commit_record.mc202_source_phrase_plan.clone();
 }
 
 fn mc202_set_role_default_touch(role: Mc202RoleState) -> f32 {

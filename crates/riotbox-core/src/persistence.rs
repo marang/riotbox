@@ -122,22 +122,22 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::session::Mc202RoleState;
-
     use tempfile::tempdir;
 
     use crate::{
         action::{
             Action, ActionCommand, ActionParams, ActionResult, ActionStatus, ActionTarget,
-            ActorType, GhostMode, Quantization, TargetScope, UndoPolicy,
+            ActorType, CommitBoundary, GhostMode, Quantization, TargetScope, UndoPolicy,
         },
         ids::{
             ActionId, AssetId, BankId, CaptureId, PadId, SceneId, SectionId, SnapshotId, SourceId,
         },
         session::{
-            CaptureRef, CaptureTarget, CaptureType, GhostBudgetState, GhostState,
-            GhostSuggestionRecord, GraphStorageMode, SessionFile, Snapshot, SourceGraphRef,
-            SourceRef,
+            ActionCommitRecord, CaptureRef, CaptureTarget, CaptureType, GhostBudgetState,
+            GhostState, GhostSuggestionRecord, GraphStorageMode, Mc202RoleState,
+            Mc202SourcePhraseCandidateFamilyState, Mc202SourcePhraseNoteBudgetState,
+            Mc202SourcePhrasePlanState, Mc202SourcePhraseSlotState, SessionFile, Snapshot,
+            SourceGraphRef, SourceRef,
         },
         source_graph::{
             AnalysisSummary, AnalysisWarning, Asset, AssetType, Candidate, CandidateType,
@@ -145,6 +145,7 @@ mod tests {
             RelationshipType, Section, SectionLabelHint, SourceDescriptor, SourceGraph,
             SourceGraphVersion,
         },
+        transport::CommitBoundaryState,
     };
 
     use super::*;
@@ -246,6 +247,10 @@ mod tests {
         session.runtime_state.transport.current_scene = Some(SceneId::from("scene-1"));
         session.runtime_state.macro_state.scene_aggression = 0.75;
         session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Follower);
+        let mc202_source_phrase_plan =
+            sample_mc202_source_phrase_plan("src-1", Mc202RoleState::Follower);
+        session.runtime_state.lane_state.mc202.source_phrase_plan =
+            Some(mc202_source_phrase_plan.clone());
         session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
         session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-01"));
         session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
@@ -273,6 +278,42 @@ mod tests {
             }),
             undo_policy: UndoPolicy::Undoable,
             explanation: Some("capture current break".into()),
+        });
+        session.action_log.actions.push(Action {
+            id: ActionId(2),
+            actor: ActorType::User,
+            command: ActionCommand::Mc202GenerateFollower,
+            params: ActionParams::Mutation {
+                intensity: 0.78,
+                target_id: None,
+            },
+            target: ActionTarget {
+                scope: Some(TargetScope::LaneMc202),
+                ..Default::default()
+            },
+            requested_at: 240,
+            quantization: Quantization::NextBar,
+            status: ActionStatus::Committed,
+            committed_at: Some(300),
+            result: Some(ActionResult {
+                accepted: true,
+                summary: "generated source-derived MC-202 follower".into(),
+            }),
+            undo_policy: UndoPolicy::Undoable,
+            explanation: Some("commit replayable MC-202 source phrase plan".into()),
+        });
+        session.action_log.commit_records.push(ActionCommitRecord {
+            action_id: ActionId(2),
+            boundary: CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 16,
+                bar_index: 4,
+                phrase_index: 1,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            commit_sequence: 1,
+            committed_at: 300,
+            mc202_source_phrase_plan: Some(mc202_source_phrase_plan),
         });
         session.snapshots.push(Snapshot {
             snapshot_id: SnapshotId::from("snap-1"),
@@ -314,6 +355,50 @@ mod tests {
         };
         session.notes = Some("keeper session".into());
         session
+    }
+
+    fn sample_mc202_source_phrase_plan(
+        source_id: &str,
+        role: Mc202RoleState,
+    ) -> Mc202SourcePhrasePlanState {
+        Mc202SourcePhrasePlanState {
+            source_id: SourceId::from(source_id),
+            phrase_slot: Mc202SourcePhraseSlotState {
+                phrase_index: 1,
+                start_bar: 4,
+                end_bar: 7,
+            },
+            source_expression: None,
+            role,
+            rhythm_cells: [
+                None,
+                Some(0),
+                None,
+                Some(5),
+                None,
+                Some(7),
+                None,
+                None,
+                None,
+                Some(3),
+                None,
+                Some(7),
+                None,
+                None,
+                None,
+                None,
+            ],
+            note_budget: Mc202SourcePhraseNoteBudgetState::Sparse,
+            touch: role.default_touch(),
+            confidence: 0.86,
+            candidate_family: Some(Mc202SourcePhraseCandidateFamilyState::SparseOffbeatAnswer),
+            candidate_count: 3,
+            rejected_candidate_count: 1,
+            candidate_provenance_refs: vec!["candidate_family:sparse_offbeat_answer".into()],
+            candidate_scorecards: Vec::new(),
+            phrase_memory_distance: 1.0,
+            fallback_reason: None,
+        }
     }
 
     #[test]
