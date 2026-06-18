@@ -467,6 +467,18 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             "hook_chop_riff_unique_source_offset_count": number(
                 proof.get("hook_chop_riff_unique_source_offset_count")
             ),
+            "hook_chop_riff_hit_pattern_source_derived": number(
+                proof.get("hook_chop_riff_hit_pattern_source_derived")
+            ),
+            "hook_chop_riff_hit_count": number(
+                proof.get("hook_chop_riff_hit_count")
+            ),
+            "hook_chop_riff_velocity_span": number(
+                proof.get("hook_chop_riff_velocity_span")
+            ),
+            "hook_chop_riff_reverse_count": number(
+                proof.get("hook_chop_riff_reverse_count")
+            ),
             "hook_chop_source_character_score_floor": number(
                 proof.get("hook_chop_source_character_score_floor")
             ),
@@ -599,6 +611,46 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                             "hook_chop_riff_unique_source_offset_count"
                         )
                     )
+                    for case in cases
+                    if object_or_empty(case.get("pressure_lift_policy")).get("source_family")
+                    == "dense_break"
+                ),
+                default=0.0,
+            ),
+            "min_dense_hook_chop_riff_hit_pattern_source_derived": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "hook_chop_riff_hit_pattern_source_derived"
+                        )
+                    )
+                    for case in cases
+                    if object_or_empty(case.get("pressure_lift_policy")).get("source_family")
+                    == "dense_break"
+                ),
+                default=0.0,
+            ),
+            "min_dense_hook_chop_riff_hit_count": min(
+                (
+                    number(object_or_empty(case.get("proof")).get("hook_chop_riff_hit_count"))
+                    for case in cases
+                    if object_or_empty(case.get("pressure_lift_policy")).get("source_family")
+                    == "dense_break"
+                ),
+                default=0.0,
+            ),
+            "min_dense_hook_chop_riff_velocity_span": min(
+                (
+                    number(object_or_empty(case.get("proof")).get("hook_chop_riff_velocity_span"))
+                    for case in cases
+                    if object_or_empty(case.get("pressure_lift_policy")).get("source_family")
+                    == "dense_break"
+                ),
+                default=0.0,
+            ),
+            "min_dense_hook_chop_riff_reverse_count": min(
+                (
+                    number(object_or_empty(case.get("proof")).get("hook_chop_riff_reverse_count"))
                     for case in cases
                     if object_or_empty(case.get("pressure_lift_policy")).get("source_family")
                     == "dense_break"
@@ -847,6 +899,42 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                             "hook_chop_riff_unique_source_offset_count"
                         )
                     )
+                    for case in cases
+                    if case.get("source_family") == "tonal_hook"
+                ),
+                default=0.0,
+            ),
+            "tonal_hook_chop_riff_hit_pattern_source_derived": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "hook_chop_riff_hit_pattern_source_derived"
+                        )
+                    )
+                    for case in cases
+                    if case.get("source_family") == "tonal_hook"
+                ),
+                default=0.0,
+            ),
+            "tonal_hook_chop_riff_hit_count": min(
+                (
+                    number(object_or_empty(case.get("proof")).get("hook_chop_riff_hit_count"))
+                    for case in cases
+                    if case.get("source_family") == "tonal_hook"
+                ),
+                default=0.0,
+            ),
+            "tonal_hook_chop_riff_velocity_span": min(
+                (
+                    number(object_or_empty(case.get("proof")).get("hook_chop_riff_velocity_span"))
+                    for case in cases
+                    if case.get("source_family") == "tonal_hook"
+                ),
+                default=0.0,
+            ),
+            "tonal_hook_chop_riff_reverse_count": min(
+                (
+                    number(object_or_empty(case.get("proof")).get("hook_chop_riff_reverse_count"))
                     for case in cases
                     if case.get("source_family") == "tonal_hook"
                 ),

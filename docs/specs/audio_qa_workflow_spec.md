@@ -591,6 +591,17 @@ hook/chop/riff windows were selected from windows with enough source identity
 and enough variation across selected offsets. They are a bounded selection
 contract, not a musical pass.
 
+P023 Hook/Chop riff playback diagnostics also expose
+`hook_chop_riff_hit_pattern_source_derived`,
+`hook_chop_riff_hit_count`, `hook_chop_riff_velocity_span`, and
+`hook_chop_riff_reverse_count`. Dense-break and tonal-hook reports must prove
+that selected source offsets drive a non-static hit pattern with enough hit
+density, velocity contrast, and at least one reverse gesture. Pad/noise and
+bad-timing source families must not use this W-30 hook/chop riff as a hidden
+product fallback; they use their family-specific texture or timing-cue paths
+instead. These fields remain diagnostic and must keep `quality_proof: false`
+until structured listening review accepts the result.
+
 The dense-break professional diagnostic also keeps a real weak-WAV regression
 for this boundary:
 

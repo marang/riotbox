@@ -21,6 +21,9 @@ MIN_PROFESSIONAL_W30_TO_SOURCE_RMS_RATIO = 0.22
 MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES = 256.0
 MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES = 512.0
 MIN_HOOK_CHOP_RIFF_UNIQUE_SOURCE_OFFSET_COUNT = 3.0
+MIN_HOOK_CHOP_RIFF_HIT_COUNT = 6.0
+MIN_HOOK_CHOP_RIFF_VELOCITY_SPAN = 0.20
+MIN_HOOK_CHOP_RIFF_REVERSE_COUNT = 1.0
 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR = 0.60
 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN = 0.10
 MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES = 256.0
@@ -259,6 +262,12 @@ def render_case(repo: Path, output: Path, date: str, case: dict) -> dict:
             "hook_chop_riff_unique_source_offset_count": proof[
                 "hook_chop_riff_unique_source_offset_count"
             ],
+            "hook_chop_riff_hit_pattern_source_derived": proof[
+                "hook_chop_riff_hit_pattern_source_derived"
+            ],
+            "hook_chop_riff_hit_count": proof["hook_chop_riff_hit_count"],
+            "hook_chop_riff_velocity_span": proof["hook_chop_riff_velocity_span"],
+            "hook_chop_riff_reverse_count": proof["hook_chop_riff_reverse_count"],
             "hook_chop_source_character_score_floor": proof[
                 "hook_chop_source_character_score_floor"
             ],
@@ -583,6 +592,14 @@ def validate_tonal_case(prefix: str, proof: dict[str, Any], failures: list[str])
         failures.append(f"{prefix}:tonal_w30_source_chop_too_weak")
     if number(proof.get("hook_chop_riff_unique_source_offset_count")) < MIN_HOOK_CHOP_RIFF_UNIQUE_SOURCE_OFFSET_COUNT:
         failures.append(f"{prefix}:hook_chop_riff_source_offsets_too_narrow")
+    if number(proof.get("hook_chop_riff_hit_pattern_source_derived")) < 1.0:
+        failures.append(f"{prefix}:hook_chop_riff_pattern_not_source_derived")
+    if number(proof.get("hook_chop_riff_hit_count")) < MIN_HOOK_CHOP_RIFF_HIT_COUNT:
+        failures.append(f"{prefix}:hook_chop_riff_pattern_too_sparse")
+    if number(proof.get("hook_chop_riff_velocity_span")) < MIN_HOOK_CHOP_RIFF_VELOCITY_SPAN:
+        failures.append(f"{prefix}:hook_chop_riff_velocity_too_flat")
+    if number(proof.get("hook_chop_riff_reverse_count")) < MIN_HOOK_CHOP_RIFF_REVERSE_COUNT:
+        failures.append(f"{prefix}:hook_chop_riff_reverse_missing")
     if number(proof.get("hook_chop_source_character_score_floor")) < MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR:
         failures.append(f"{prefix}:hook_chop_source_character_too_weak")
     if number(proof.get("hook_chop_source_character_score_span")) < MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN:
@@ -618,6 +635,11 @@ def is_tonal_professional_case(case: dict[str, Any]) -> bool:
         and number(proof.get("hook_chop_static_distance_frames")) >= MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES
         and number(proof.get("hook_chop_offset_distance_frames")) >= MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES
         and number(proof.get("w30_to_source_rms_ratio")) >= MIN_PROFESSIONAL_W30_TO_SOURCE_RMS_RATIO
+        and number(proof.get("hook_chop_riff_unique_source_offset_count")) >= MIN_HOOK_CHOP_RIFF_UNIQUE_SOURCE_OFFSET_COUNT
+        and number(proof.get("hook_chop_riff_hit_pattern_source_derived")) >= 1.0
+        and number(proof.get("hook_chop_riff_hit_count")) >= MIN_HOOK_CHOP_RIFF_HIT_COUNT
+        and number(proof.get("hook_chop_riff_velocity_span")) >= MIN_HOOK_CHOP_RIFF_VELOCITY_SPAN
+        and number(proof.get("hook_chop_riff_reverse_count")) >= MIN_HOOK_CHOP_RIFF_REVERSE_COUNT
         and number(proof.get("hook_chop_source_character_score_floor")) >= MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR
         and number(proof.get("hook_chop_source_character_score_span")) >= MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN
         and number(proof.get("destructive_gesture_source_derived")) >= 1.0
