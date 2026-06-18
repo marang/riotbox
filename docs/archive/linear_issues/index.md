@@ -1210,4 +1210,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Remove W-30 synthetic preview fallback from musician-facing output
 - [RIOTBOX-1283.md](./RIOTBOX-1283.md)
   Remove fallback selection strategies from scripted professional-output generators
+- [RIOTBOX-1284.md](./RIOTBOX-1284.md)
+  Persist or reconstruct MC-202 source phrase plans through replay and restore
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
