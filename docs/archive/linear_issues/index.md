@@ -1226,4 +1226,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Extract professional source WAV pack JSON gates from Justfile
 - [RIOTBOX-1289.md](./RIOTBOX-1289.md)
   Extract dense-break and agent musical review pack gates into validators
+- [RIOTBOX-1290.md](./RIOTBOX-1290.md)
+  Make professional-output QA recipes artifact-race resistant
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
