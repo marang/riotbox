@@ -1220,4 +1220,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Make tonal-hook MC-202 candidate source-composed instead of template-only
 - [RIOTBOX-1286.md](./RIOTBOX-1286.md)
   Extract P023 professional-output JSON gates from Justfile into validators
+- [RIOTBOX-1287.md](./RIOTBOX-1287.md)
+  Extract edge and non-dense professional JSON gates from Justfile
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
