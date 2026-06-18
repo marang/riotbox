@@ -68,6 +68,7 @@ audio-qa-ci:
     just non-dense-professional-proof-pack-smoke
     just professional-output-listening-pack-smoke
     just mc202-real-source-listening-pack-smoke
+    just mc202-producer-grade-closeout-smoke
     just professional-output-listening-verdict-import-fixtures
     just destructive-variation-professional-smoke
     just rendered-weak-professional-output-fixtures
@@ -361,6 +362,15 @@ mc202-real-source-listening-pack-smoke output="artifacts/audio_qa/local-mc202-re
     python3 scripts/generate_mc202_real_source_listening_pack.py --validate-report "{{output}}/mc202-real-source-listening-pack.json"
     jq -e '.schema == "riotbox.mc202_real_source_listening_pack.v1" and .result == "pass" and .agent_verdict == "agent_promising" and .human_verdict == "unverified" and .demo_readiness == "unverified" and .quality_proof == false and .evidence_role == "listening_review_scaffold" and .source_backed == true and .source_timing_backed == true and .scripted_generation == true and .case_count >= 2 and .dense_case_count >= 1 and .non_dense_case_count >= 1 and all(.cases[]; .human_verdict == "unverified" and .quality_proof == false and .mc202_expression_summary.contour_origin == "source_derived_contour" and (.selected_motif.stem_rms > 0.0005) and .primitive_ab_control.control_kind == "primitive_renderer_non_product_control" and .primitive_ab_control.product_fallback_allowed == false and .primitive_ab_control.ab_delta_passed == true and (.artifacts.mc202_stem.sha256 | length == 64) and (.artifacts.generated_support_mix.sha256 | length == 64))' "{{output}}/mc202-real-source-listening-pack.json"
     for case in beat03_full_main_loop dh_beatc_kicksnr_main_loop dh_rusharp_main_loop; do test -s "{{output}}/cases/$case/review/review.json"; test -s "{{output}}/cases/$case/render/stems/03_mc202_bass_pressure.wav"; test -s "{{output}}/cases/$case/render/05_riotbox_generated_support_mix.wav"; done
+
+mc202-producer-grade-closeout-smoke output="artifacts/audio_qa/local-mc202-producer-grade-closeout":
+    just professional-output-listening-pack-smoke
+    just mc202-real-source-listening-pack-smoke
+    python3 scripts/generate_mc202_producer_grade_closeout.py --output "{{output}}" --date "local-mc202-producer-grade-closeout" --mutation-fixtures
+    python3 scripts/generate_mc202_producer_grade_closeout.py --validate-report "{{output}}/mc202-producer-grade-closeout.json"
+    jq -e '.schema == "riotbox.mc202_producer_grade_closeout.v1" and .result == "pass" and .ticket == "RIOTBOX-1279" and .parent_ticket == "RIOTBOX-1264" and .technical_closeout_result == "pass" and .producer_grade_promotion_result == "blocked_for_human_promotion" and .quality_claim_allowed == false and .demo_bank_promotion_allowed == false and .parent_ticket_state == "keep_open" and .professional_pack.mc202_source_composed_review_gate.result == "pass" and .real_source_listening_scaffold.primitive_controls_are_product_output == false and (.real_source_listening_scaffold.failure_codes | length == 0) and any(.review_candidates[]; .source_family == "dense_break" and .source_composed_evidence == true) and any(.review_candidates[]; .source_family == "sparse_bass_pressure" and .source_composed_evidence == true) and any(.review_candidates[]; .source_family == "tonal_hook" and .primitive_or_template_only == true) and all(.review_candidates[]; .human_verdict == "unverified" and .demo_readiness == "unverified" and .quality_proof == false and .promotion_blocked_until_human_pass == true and .template_only_blocks_promotion == true) and (.blockers[] | select(.code == "structured_human_verdict_missing")) and (.blockers[] | select(.code == "primitive_or_template_candidate_blocks_promotion")) and (.musician_summary | test("not demo-ready"))' "{{output}}/mc202-producer-grade-closeout.json"
+    test -s "{{output}}/mc202-producer-grade-closeout.md"
+    grep -q "MC-202 Producer-Grade Closeout" "{{output}}/mc202-producer-grade-closeout.md"
 
 sound-excellence-source-corpus-fixtures manifest="docs/benchmarks/sound_excellence_source_corpus_v1.json":
     python3 scripts/validate_sound_excellence_source_corpus.py "{{manifest}}"

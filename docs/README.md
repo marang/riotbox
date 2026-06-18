@@ -49,6 +49,7 @@ This directory holds implementation-facing specifications, plans, reviews, bench
 26. [Source Transport Map Capture Plan](./plans/source_transport_map_capture_plan.md)
 27. [MC-202 Source Phrase Planning Plan](./plans/mc202_source_phrase_planning_plan.md)
 28. [MC-202 Real-Source Listening Pack Benchmark](./benchmarks/mc202_real_source_listening_pack_v1_2026-06-18.md)
+29. [MC-202 Producer-Grade Closeout Benchmark](./benchmarks/mc202_producer_grade_closeout_v1_2026-06-18.md)
 
 ## Why This Order
 

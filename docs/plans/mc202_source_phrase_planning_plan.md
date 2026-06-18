@@ -271,6 +271,15 @@ chain is:
    review support demo-bank / professional-output promotion. If the review says
    the sound is still weak, create concrete fix tickets and keep RIOTBOX-1264
    open.
+   - `just mc202-producer-grade-closeout-smoke` is the explicit closeout gate.
+     It passes only as technical reviewability: dense and non-dense MC-202
+     candidates must be source-composed and reviewable, while
+     `producer_grade_promotion_result` stays `blocked_for_human_promotion`,
+     demo-bank promotion stays false, and RIOTBOX-1264 stays open until
+     structured human verdicts accept the sound.
+   - Primitive/template-only MC-202 candidates remain blockers and production
+     fix inputs. They cannot be counted as producer-grade proof, even when the
+     render and source-composed pack are otherwise green.
 
 This chain is deliberately allowed to take multiple PRs. The quality standard
 does not shrink to fit a slice boundary: a merged slice can be useful
