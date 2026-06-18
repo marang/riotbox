@@ -53,6 +53,9 @@ impl JamAppState {
             jam_view,
             runtime_view,
         };
+        state.reconstruct_mc202_source_phrase_plan_for_cursor(
+            state.session.action_log.actions.len(),
+        );
         state.refresh_view();
         state
     }

@@ -218,7 +218,15 @@ Rules:
 - Whole-plan application is all-or-nothing: if any entry fails, the session passed to the executor is not mutated.
 - Single-entry application may mutate the passed session and should be used only when the caller already accepts that boundary.
 - This executor does not perform audio rendering, capture artifact creation, non-allowlisted W-30/TR-909 side effects, Ghost reasoning, source analysis, or snapshot hydration.
-- MC-202 replay currently covers the deterministic phrase-lane state needed by downstream projection: role, phrase reference, phrase variant, and MC-202 touch.
+- MC-202 replay currently covers the deterministic phrase-lane state needed by
+  downstream projection: role, phrase reference, phrase variant, and MC-202
+  touch. App restore/projection also rehydrates committed MC-202 source phrase
+  plans from `ActionCommitRecord.mc202_source_phrase_plan` when present, so
+  source-derived MC-202 output can survive action-log and snapshot replay
+  without rerunning musical selection. Older logs without that persisted plan
+  may reconstruct through the same MC-202 source-phrase side-effect path only
+  when trusted Source Graph / source-timing evidence is available; otherwise the
+  lane must remain degraded/silent rather than synthesize fallback audio.
 - TR-909 replay currently covers the deterministic support-lane state needed by downstream projection: slam, fill, reinforce, takeover, scene-lock, release, pattern references, reinforcement mode, and takeover profile.
 - Scene replay currently covers the deterministic active-scene / restore-scene state carried by committed scene launch and restore actions. The minimal executor updates transport current scene, scene active scene, and restore pointer while deliberately staying Source Graph-free. A separate graph-aware replay boundary can hydrate `last_movement` from the pre-action scene state, committed boundary, committed scene action, and frozen Source Graph context.
 - W-30 replay currently covers a deterministic cue subset whose committed actions already carry explicit target state: live recall, trigger, audition, bank swap, slice-pool browse, focus step, and damage profile. It updates preview mode, focused bank/pad, last capture, and W-30 grit only.

@@ -183,6 +183,7 @@ fn recovery_surface_reports_capture_now_artifact_hydration_blocker_guidance() {
             },
             commit_sequence: 1,
             committed_at: 500,
+                mc202_source_phrase_plan: None,
         });
     blocked_session.captures.push(CaptureRef {
         capture_id: capture_id.clone(),

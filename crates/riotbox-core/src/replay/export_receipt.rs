@@ -428,6 +428,7 @@ mod tests {
                 },
                 commit_sequence: 1,
                 committed_at: 900,
+                mc202_source_phrase_plan: None,
             }],
             replay_policy: ReplayPolicy::DeterministicPreferred,
         };

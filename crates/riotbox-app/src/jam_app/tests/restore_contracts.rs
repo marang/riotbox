@@ -240,6 +240,7 @@ fn sample_commit_record(action_id: ActionId, commit_sequence: u32) -> ActionComm
         },
         commit_sequence,
         committed_at: 200,
+                mc202_source_phrase_plan: None,
     }
 }
 

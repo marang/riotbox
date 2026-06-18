@@ -63,6 +63,7 @@ fn loop_freeze_commit_record(action_id: u64) -> ActionCommitRecord {
         },
         commit_sequence: 1,
         committed_at: 500,
+                mc202_source_phrase_plan: None,
     }
 }
 

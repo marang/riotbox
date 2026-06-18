@@ -255,6 +255,15 @@ candidate was rejected. Missing or `None` means the lane is still using the
 primitive MC-202 role/shape projection and must not be described as
 source-derived phrase intelligence.
 
+Committed MC-202 role and phrase actions also persist the selected
+`mc202_source_phrase_plan` on their `ActionCommitRecord` when the source-phrase
+decision path ran, including explicit degraded / stay-out decisions. This
+per-commit copy is replay truth for the audible MC-202 output because later
+replay cannot always reconstruct phrase memory or historical per-phrase Source
+Graph features from the final graph alone. Older logs may omit the field; those
+logs may reconstruct from trusted Source Graph evidence, and must otherwise
+degrade visibly/silently rather than play hardcoded replacement audio.
+
 The stable candidate-family labels are `sub_pressure_shove`,
 `sparse_offbeat_answer`, `call_back_stab`,
 `hook_restraint_ghost_answer`, `fill_pickup_instigator`, `stay_out`, and
@@ -1038,6 +1047,8 @@ from human-readable result summaries:
 - scene ID when known
 - commit sequence within that boundary
 - committed timestamp
+- optional MC-202 source phrase plan / degraded source-phrase decision for
+  committed MC-202 role / phrase actions
 
 Rules:
 

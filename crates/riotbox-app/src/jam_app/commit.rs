@@ -148,6 +148,7 @@ impl JamAppState {
                 boundary: committed_ref.boundary.clone(),
                 commit_sequence: committed_ref.commit_sequence,
                 committed_at,
+                mc202_source_phrase_plan: None,
             });
         action
     }
@@ -156,7 +157,31 @@ impl JamAppState {
         self.snapshot_undo_state_before_side_effects(action);
         self.materialize_capture_before_lane_side_effects(action, boundary);
         self.apply_lane_scene_and_ghost_side_effects(action, boundary);
+        self.persist_committed_action_replay_artifacts(action);
         self.mirror_committed_transport_state(action);
+    }
+
+    fn persist_committed_action_replay_artifacts(&mut self, action: &Action) {
+        if !is_mc202_phrase_action(action.command) {
+            return;
+        }
+
+        if let Some(commit_record) = self
+            .session
+            .action_log
+            .commit_records
+            .iter_mut()
+            .rev()
+            .find(|record| record.action_id == action.id)
+        {
+            commit_record.mc202_source_phrase_plan = self
+                .session
+                .runtime_state
+                .lane_state
+                .mc202
+                .source_phrase_plan
+                .clone();
+        }
     }
 
     fn snapshot_undo_state_before_side_effects(&mut self, action: &Action) {

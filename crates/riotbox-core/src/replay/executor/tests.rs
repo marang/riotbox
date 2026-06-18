@@ -65,6 +65,7 @@ fn commit_record(
         },
         commit_sequence,
         committed_at,
+        mc202_source_phrase_plan: None,
     }
 }
 

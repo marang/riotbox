@@ -18,11 +18,17 @@ fn mc202_snapshot_payload_restore_hydrates_answer_projection() {
     );
     commit_mc202_recipe_step(&mut committed_state, 2, 600);
     let committed_answer = render_mc202_recipe_buffer(&committed_state.runtime.mc202_render);
+    let replay_base_session =
+        replay_base_with_committed_source_timing(base_session, &committed_state);
+    let replay_graph = committed_state
+        .source_graph
+        .clone()
+        .expect("committed MC-202 state keeps source graph");
 
     let replayed_state = run_snapshot_payload_restore_probe(
-        base_session,
+        replay_base_session,
         &committed_state,
-        graph,
+        replay_graph,
         SnapshotPayloadRestoreSpec {
             plan_label: "committed MC-202 follower/answer action log builds replay plan",
             snapshot_id: "snap-after-mc202-follower",
@@ -36,7 +42,7 @@ fn mc202_snapshot_payload_restore_hydrates_answer_projection() {
         },
         |_| {},
     );
-    let replayed_answer = assert_mc202_replay_degrades_without_source_plan(
+    let replayed_answer = assert_mc202_replay_matches_committed_source_plan(
         "snapshot payload answer restore",
         &replayed_state,
         &committed_state,
@@ -45,11 +51,11 @@ fn mc202_snapshot_payload_restore_hydrates_answer_projection() {
         replayed_state.session.runtime_state.macro_state.mc202_touch,
         committed_state.session.runtime_state.macro_state.mc202_touch
     );
-    assert_recipe_buffers_differ(
-        "snapshot payload answer restore without source plan -> committed answer",
+    assert_recipe_buffers_match(
+        "snapshot payload answer restore source plan -> committed answer",
         &replayed_answer,
         &committed_answer,
-        0.005,
+        0.00001,
     );
     assert_recipe_buffers_differ(
         "snapshot payload restore MC-202 follower -> source-derived answer",
@@ -85,11 +91,17 @@ fn mc202_snapshot_payload_restore_hydrates_pressure_projection() {
     );
     commit_mc202_recipe_step(&mut committed_state, 3, 800);
     let committed_pressure = render_mc202_recipe_buffer(&committed_state.runtime.mc202_render);
+    let replay_base_session =
+        replay_base_with_committed_source_timing(base_session, &committed_state);
+    let replay_graph = committed_state
+        .source_graph
+        .clone()
+        .expect("committed MC-202 state keeps source graph");
 
     let replayed_state = run_snapshot_payload_restore_probe(
-        base_session,
+        replay_base_session,
         &committed_state,
-        graph,
+        replay_graph,
         SnapshotPayloadRestoreSpec {
             plan_label: "committed MC-202 pressure action log builds replay plan",
             snapshot_id: "snap-after-mc202-answer",
@@ -103,7 +115,7 @@ fn mc202_snapshot_payload_restore_hydrates_pressure_projection() {
         },
         |_| {},
     );
-    let replayed_pressure = assert_mc202_replay_degrades_without_source_plan(
+    let replayed_pressure = assert_mc202_replay_matches_committed_source_plan(
         "snapshot payload pressure restore",
         &replayed_state,
         &committed_state,
@@ -112,11 +124,11 @@ fn mc202_snapshot_payload_restore_hydrates_pressure_projection() {
         replayed_state.session.runtime_state.macro_state.mc202_touch,
         committed_state.session.runtime_state.macro_state.mc202_touch
     );
-    assert_recipe_buffers_differ(
-        "snapshot payload pressure restore without source plan -> committed pressure",
+    assert_recipe_buffers_match(
+        "snapshot payload pressure restore source plan -> committed pressure",
         &replayed_pressure,
         &committed_pressure,
-        0.005,
+        0.00001,
     );
     assert_recipe_buffers_differ(
         "snapshot payload restore MC-202 answer -> pressure",
@@ -158,11 +170,17 @@ fn mc202_snapshot_payload_restore_hydrates_instigator_projection() {
     );
     commit_mc202_recipe_step(&mut committed_state, 4, 1_000);
     let committed_instigator = render_mc202_recipe_buffer(&committed_state.runtime.mc202_render);
+    let replay_base_session =
+        replay_base_with_committed_source_timing(base_session, &committed_state);
+    let replay_graph = committed_state
+        .source_graph
+        .clone()
+        .expect("committed MC-202 state keeps source graph");
 
     let replayed_state = run_snapshot_payload_restore_probe(
-        base_session,
+        replay_base_session,
         &committed_state,
-        graph,
+        replay_graph,
         SnapshotPayloadRestoreSpec {
             plan_label: "committed MC-202 instigator action log builds replay plan",
             snapshot_id: "snap-after-mc202-pressure",
@@ -176,7 +194,7 @@ fn mc202_snapshot_payload_restore_hydrates_instigator_projection() {
         },
         |_| {},
     );
-    let replayed_instigator = assert_mc202_replay_degrades_without_source_plan(
+    let replayed_instigator = assert_mc202_replay_matches_committed_source_plan(
         "snapshot payload instigator restore",
         &replayed_state,
         &committed_state,
@@ -185,11 +203,11 @@ fn mc202_snapshot_payload_restore_hydrates_instigator_projection() {
         replayed_state.session.runtime_state.macro_state.mc202_touch,
         committed_state.session.runtime_state.macro_state.mc202_touch
     );
-    assert_recipe_buffers_differ(
-        "snapshot payload instigator restore without source plan -> committed instigator",
+    assert_recipe_buffers_match(
+        "snapshot payload instigator restore source plan -> committed instigator",
         &replayed_instigator,
         &committed_instigator,
-        0.005,
+        0.00001,
     );
     assert_recipe_buffers_differ(
         "snapshot payload restore MC-202 pressure -> instigator",
@@ -237,11 +255,17 @@ fn mc202_snapshot_payload_restore_hydrates_phrase_mutation_projection() {
     );
     commit_mc202_recipe_step(&mut committed_state, 5, 1_200);
     let committed_mutation = render_mc202_recipe_buffer(&committed_state.runtime.mc202_render);
+    let replay_base_session =
+        replay_base_with_committed_source_timing(base_session, &committed_state);
+    let replay_graph = committed_state
+        .source_graph
+        .clone()
+        .expect("committed MC-202 state keeps source graph");
 
     let replayed_state = run_snapshot_payload_restore_probe(
-        base_session,
+        replay_base_session,
         &committed_state,
-        graph,
+        replay_graph,
         SnapshotPayloadRestoreSpec {
             plan_label: "committed MC-202 phrase mutation action log builds replay plan",
             snapshot_id: "snap-after-mc202-instigator",
@@ -255,7 +279,7 @@ fn mc202_snapshot_payload_restore_hydrates_phrase_mutation_projection() {
         },
         |_| {},
     );
-    let replayed_mutation = assert_mc202_replay_degrades_without_source_plan(
+    let replayed_mutation = assert_mc202_replay_matches_committed_source_plan(
         "snapshot payload mutation restore",
         &replayed_state,
         &committed_state,
@@ -264,11 +288,11 @@ fn mc202_snapshot_payload_restore_hydrates_phrase_mutation_projection() {
         replayed_state.session.runtime_state.macro_state.mc202_touch,
         committed_state.session.runtime_state.macro_state.mc202_touch
     );
-    assert_recipe_buffers_differ(
-        "snapshot payload mutation restore without source plan -> committed mutation",
+    assert_recipe_buffers_match(
+        "snapshot payload mutation restore source plan -> committed mutation",
         &replayed_mutation,
         &committed_mutation,
-        0.005,
+        0.00001,
     );
     assert_recipe_buffers_differ(
         "snapshot payload restore MC-202 instigator -> phrase mutation",

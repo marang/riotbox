@@ -414,12 +414,14 @@ pub struct ActionLog {
     pub replay_policy: ReplayPolicy,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionCommitRecord {
     pub action_id: ActionId,
     pub boundary: CommitBoundaryState,
     pub commit_sequence: u32,
     pub committed_at: TimestampMs,
+    #[serde(default)]
+    pub mc202_source_phrase_plan: Option<crate::session::Mc202SourcePhrasePlanState>,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Default, Serialize, Deserialize)]
