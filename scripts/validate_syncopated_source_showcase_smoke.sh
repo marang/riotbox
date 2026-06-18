@@ -53,12 +53,14 @@ jq -e \
     and .primitive_renderer_boundary.quality_proof == false
     and .primitive_renderer_boundary.demo_readiness == "unverified"
     and .primitive_renderer_boundary.promotion_blocked == true
-    and ([.primitive_renderer_boundary.affected_paths[]] | sort == ["metrics.mc202_bass_pressure.pattern_origin", "metrics.tr909_kick_pressure.pattern_origin"])
+    and ([.primitive_renderer_boundary.affected_paths[]] | sort == ["metrics.mc202_bass_pressure.pattern_origin"])
     and .metrics.source_grid_output_drift.hit_ratio >= 0.75
     and .metrics.source_grid_output_drift.max_peak_offset_ms <= .metrics.source_grid_output_drift.max_allowed_peak_offset_ms
     and .metrics.tr909_source_grid_alignment.hit_ratio >= 0.95
     and .metrics.tr909_source_grid_alignment.max_peak_offset_ms <= .metrics.tr909_source_grid_alignment.max_allowed_peak_offset_ms
-    and .metrics.tr909_kick_pressure.pattern_origin == "primitive_renderer"
+    and .metrics.tr909_kick_pressure.pattern_origin == "source_derived"
+    and .metrics.tr909_kick_pressure.source_evidence_role == "tr909_source_profile_and_accent_dynamics"
+    and (.metrics.tr909_kick_pressure.source_profile_reason | startswith("source_"))
     and .metrics.tr909_kick_pressure.applied == true
     and .metrics.tr909_kick_pressure.low_band_rms_ratio >= 1.06
     and .metrics.mc202_bass_pressure.pattern_origin == "primitive_renderer"

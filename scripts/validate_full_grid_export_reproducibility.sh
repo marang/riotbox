@@ -72,12 +72,14 @@ render_grid_export() {
       and .primitive_renderer_boundary.quality_proof == false
       and .primitive_renderer_boundary.demo_readiness == "unverified"
       and .primitive_renderer_boundary.promotion_blocked == true
-      and ([.primitive_renderer_boundary.affected_paths[]] | sort == ["metrics.mc202_bass_pressure.pattern_origin", "metrics.tr909_kick_pressure.pattern_origin"])
+      and ([.primitive_renderer_boundary.affected_paths[]] | sort == ["metrics.mc202_bass_pressure.pattern_origin"])
       and (.feral_scorecard.lane_gestures | index("mc202 question/answer")) == null
       and .metrics.full_grid_mix.signal.rms > 0.000001
       and .metrics.full_grid_mix.low_band.rms > 0.000001
       and .metrics.tr909_beat_fill.signal.rms > 0.000001
-      and .metrics.tr909_kick_pressure.pattern_origin == "primitive_renderer"
+      and .metrics.tr909_kick_pressure.pattern_origin == "source_derived"
+      and .metrics.tr909_kick_pressure.source_evidence_role == "tr909_source_profile_and_accent_dynamics"
+      and (.metrics.tr909_kick_pressure.source_profile_reason | startswith("source_"))
       and .metrics.w30_source_trigger_variation.pattern_origin == "source_derived"
       and .metrics.mc202_bass_pressure.pattern_origin == "primitive_renderer"
       and .metrics.mc202_bass_pressure.applied == true

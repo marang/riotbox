@@ -49,7 +49,7 @@ mod manifest_assertions {
                 .as_array()
                 .expect("primitive affected paths")
                 .len(),
-            2
+            1
         );
         assert_manifest_source_timing(&manifest["source_timing"]);
         assert_eq!(
@@ -180,7 +180,17 @@ mod manifest_assertions {
             .is_some_and(|reason| !reason.is_empty()));
         assert!(manifest["metrics"]["tr909_groove_timing"]["offset_ms"].is_number());
         let tr909_kick_pressure = &manifest["metrics"]["tr909_kick_pressure"];
-        assert_eq!(tr909_kick_pressure["pattern_origin"], "primitive_renderer");
+        assert_eq!(tr909_kick_pressure["pattern_origin"], "source_derived");
+        assert_eq!(
+            tr909_kick_pressure["source_evidence_role"],
+            "tr909_source_profile_and_accent_dynamics"
+        );
+        assert!(
+            tr909_kick_pressure["source_profile_reason"]
+                .as_str()
+                .expect("tr909 pressure source profile reason")
+                .starts_with("source_")
+        );
         assert_eq!(tr909_kick_pressure["applied"], true);
         let tr909_pressure_anchors = tr909_kick_pressure["anchor_count"]
             .as_u64()

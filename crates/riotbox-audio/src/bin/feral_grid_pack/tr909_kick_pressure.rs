@@ -1,5 +1,8 @@
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct Tr909KickPressureProof {
+    pattern_origin: &'static str,
+    source_evidence_role: &'static str,
+    source_profile_reason: &'static str,
     applied: bool,
     anchor_count: usize,
     pressure_gain: f32,
@@ -28,6 +31,8 @@ struct Tr909SourceAccentDynamicsProof {
 #[derive(Serialize)]
 struct ManifestTr909KickPressureProof {
     pattern_origin: &'static str,
+    source_evidence_role: &'static str,
+    source_profile_reason: &'static str,
     applied: bool,
     anchor_count: usize,
     pressure_gain: f32,
@@ -88,7 +93,9 @@ fn manifest_tr909_kick_pressure_proof(
     proof: Tr909KickPressureProof,
 ) -> ManifestTr909KickPressureProof {
     ManifestTr909KickPressureProof {
-        pattern_origin: "primitive_renderer",
+        pattern_origin: proof.pattern_origin,
+        source_evidence_role: proof.source_evidence_role,
+        source_profile_reason: proof.source_profile_reason,
         applied: proof.applied,
         anchor_count: proof.anchor_count,
         pressure_gain: proof.pressure_gain,
@@ -146,12 +153,24 @@ fn apply_tr909_kick_pressure(
     let low_band_rms_delta = post.low_band_rms - pre.low_band_rms;
     let low_band_rms_ratio = post.low_band_rms / pre.low_band_rms.max(f32::EPSILON);
     let accent_dynamics = tr909_source_accent_dynamics_proof(&accents, profile);
-    let applied = !accents.is_empty()
+    let applied = accent_dynamics.applied
+        && !accents.is_empty()
         && low_band_rms_ratio >= TR909_KICK_PRESSURE_MIN_LOW_BAND_RATIO
         && post.peak_abs <= TR909_KICK_PRESSURE_MAX_PEAK_ABS;
 
     (
         Tr909KickPressureProof {
+            pattern_origin: if accent_dynamics.applied {
+                "source_derived"
+            } else {
+                "primitive_renderer"
+            },
+            source_evidence_role: if accent_dynamics.applied {
+                "tr909_source_profile_and_accent_dynamics"
+            } else {
+                "tr909_primitive_control_only"
+            },
+            source_profile_reason: profile.reason,
             applied,
             anchor_count: accents.len(),
             pressure_gain: policy.gain,
@@ -162,6 +181,8 @@ fn apply_tr909_kick_pressure(
             post_peak_abs: post.peak_abs,
             reason: if applied {
                 policy.reason
+            } else if !accent_dynamics.applied {
+                accent_dynamics.reason
             } else {
                 "tr909_kick_pressure_too_weak"
             },

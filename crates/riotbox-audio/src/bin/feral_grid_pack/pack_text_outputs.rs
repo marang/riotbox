@@ -23,7 +23,7 @@ fn write_report(
              - TR-909 support profile: `{}` / pattern `{}` / phrase `{}`\n\
              - TR-909 groove timing: `{}` applied `{}` offset `{:.3}` ms subdivision `{}`\n\
              - TR-909 source low/high energy: `{:.6}` / `{:.6}`\n\
-             - TR-909 kick pressure: `{}` origin `primitive_renderer` anchors `{}` gain `{:.6}` low-band ratio `{:.6}` delta `{:.6}` peak `{:.6}`\n\
+             - TR-909 kick pressure: `{}` origin `{}` evidence `{}` profile `{}` anchors `{}` gain `{:.6}` low-band ratio `{:.6}` delta `{:.6}` peak `{:.6}`\n\
              - TR-909 source-accent dynamics: `{}` origin `source_derived` distinct accents `{}` span `{:.6}` source-energy span `{:.6}`\n\
              - MC-202 bass pressure: `{}` role `{}` origin `primitive_renderer` mode `{}` shape `{}` budget `{}` variation `{}` distinct bar profiles `{}` bar similarity `{:.6}` RMS `{:.6}` low-band `{:.6}` low/mid `{:.6}` low/high `{:.6}` reinforcement `{:.6}` touch `{:.3}` level `{:.3}` peak `{:.6}`\n\
              - MC-202 source contour: `{}` origin `source_derived_contour` contour `{}` budget `{}` delta RMS `{:.6}` touch boost `{:.3}` level boost `{:.3}` low/mid/high `{:.6}` / `{:.6}` / `{:.6}` density `{:.6}`\n\
@@ -69,6 +69,9 @@ fn write_report(
             report.tr909_source_profile.low_band_energy_ratio,
             report.tr909_source_profile.high_band_energy_ratio,
             report.tr909_kick_pressure.reason,
+            report.tr909_kick_pressure.pattern_origin,
+            report.tr909_kick_pressure.source_evidence_role,
+            report.tr909_kick_pressure.source_profile_reason,
             report.tr909_kick_pressure.anchor_count,
             report.tr909_kick_pressure.pressure_gain,
             report.tr909_kick_pressure.low_band_rms_ratio,

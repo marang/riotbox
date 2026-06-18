@@ -820,6 +820,11 @@ bounded BPM policy:
 - W-30 source chop should expose the same bounded alignment evidence under a
   lane-specific key, currently `metrics.w30_source_grid_alignment`, so the
   source-backed sample lane is auditable separately from TR-909 support
+- TR-909 Feral-grid kick-pressure support must not report
+  `primitive_renderer` as positive product evidence. It may count as
+  source-derived support only when the manifest's TR-909 source profile and
+  accent-dynamics evidence pass; otherwise it remains a non-product diagnostic
+  control or degraded/unavailable path.
 - MC-202 Feral-grid bass support should expose the same bounded alignment
   evidence under a lane-specific key, currently
   `metrics.mc202_source_grid_alignment`, so the bass-pressure stem cannot pass
