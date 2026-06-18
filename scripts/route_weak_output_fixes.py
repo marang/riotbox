@@ -102,6 +102,12 @@ CODE_RULES: tuple[tuple[str, str, int, str], ...] = (
     ("arrangement_policy", "destructive_gesture", 4, "Arrangement policy did not make a useful source-aware decision."),
     ("generated_support_balance", "mix_bus", 5, "Generated support/source balance is out of range."),
     ("generated_support_too", "mix_bus", 4, "Generated support is not balanced usefully."),
+    (
+        "source_first_generated_support_masks_source",
+        "mix_bus",
+        100,
+        "Source-first generated support masks the source and must be mixed back.",
+    ),
     ("support_masks", "mix_bus", 5, "Generated support masks the source or hook."),
     ("source_first_generated", "mix_bus", 5, "Source-first balance masks the useful response."),
     ("full_mix_too_quiet", "mix_bus", 4, "Full mix is too quiet."),

@@ -46,6 +46,22 @@ expect_failure invalid_source_fake source_relation_not_source_derived
 expect_failure invalid_grid_drift grid_drift_alignment_too_weak
 expect_failure invalid_identical_response_across_sources cross_source_identical_response
 
+mkdir -p "$TMP/tr909_missing_source_evidence"
+jq 'del(.metrics.tr909_kick_pressure.pattern_origin)
+    | del(.metrics.tr909_kick_pressure.source_evidence_role)
+    | del(.metrics.tr909_kick_pressure.source_profile_reason)
+    | del(.metrics.tr909_source_accent_dynamics)' \
+  "$FIXTURES/valid/manifest.json" >"$TMP/tr909_missing_source_evidence/manifest.json"
+if python3 "$VALIDATOR" "$TMP/tr909_missing_source_evidence" \
+  >"$TMP/tr909_missing_source_evidence.out" 2>&1; then
+  cat "$TMP/tr909_missing_source_evidence.out" >&2
+  echo "expected TR-909 source-evidence mutation to fail" >&2
+  exit 1
+fi
+grep -q low_end_tr909_kick_pressure_missing_source_evidence \
+  "$TMP/tr909_missing_source_evidence.out"
+grep -q low_end_tr909_accent_dynamics_missing "$TMP/tr909_missing_source_evidence.out"
+
 if python3 "$VALIDATOR" \
   "$ROOT/scripts/fixtures/representative_showcase_musical_quality/invalid_static" \
   >"$TMP/representative_invalid_static.out" 2>&1; then

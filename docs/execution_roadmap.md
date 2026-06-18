@@ -802,6 +802,14 @@ following:
     product-output and quality-proof claims, and the listening-manifest
     fixtures now also reject product-output-enabled or stale affected-path
     primitive boundaries
+  - RIOTBOX-1293 requires source-derived TR-909 support evidence before
+    representative showcase or automated-musical-fitness reports can pass:
+    kick pressure must carry `pattern_origin: source_derived`, the
+    `tr909_source_profile_and_accent_dynamics` evidence role, a `source_*`
+    profile reason, enough pressure anchors, and source-derived accent dynamics
+    with distinct accent levels and sufficient span. Generated-pack smoke tests
+    assert the same fields so decorative or fixture-only TR-909 support cannot
+    be promoted as product-quality drum pressure.
 - no PR, roadmap claim, or release note presents an audible feature as
   musician-ready when its human verdict is missing, weak, or explicitly
   unverified

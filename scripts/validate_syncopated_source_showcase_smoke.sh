@@ -62,7 +62,13 @@ jq -e \
     and .metrics.tr909_kick_pressure.source_evidence_role == "tr909_source_profile_and_accent_dynamics"
     and (.metrics.tr909_kick_pressure.source_profile_reason | startswith("source_"))
     and .metrics.tr909_kick_pressure.applied == true
+    and .metrics.tr909_kick_pressure.anchor_count >= 2
     and .metrics.tr909_kick_pressure.low_band_rms_ratio >= 1.06
+    and .metrics.tr909_source_accent_dynamics.pattern_origin == "source_derived"
+    and .metrics.tr909_source_accent_dynamics.applied == true
+    and .metrics.tr909_source_accent_dynamics.anchor_count >= 2
+    and .metrics.tr909_source_accent_dynamics.distinct_accent_count >= 3
+    and .metrics.tr909_source_accent_dynamics.accent_span >= .metrics.tr909_source_accent_dynamics.min_required_accent_span
     and .metrics.mc202_bass_pressure.pattern_origin == "primitive_renderer"
     and .metrics.mc202_bass_pressure.applied == true
     and .metrics.mc202_bass_pressure.reason == "mc202_source_grid_proof_renderer"

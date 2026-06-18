@@ -27,6 +27,8 @@ MIN_W30_UNIQUE_SLICE_OFFSETS = 4
 MIN_W30_ACCENT_DISTINCT_VELOCITIES = 3
 MIN_W30_ACCENT_VELOCITY_SPAN = 0.12
 MIN_TR909_KICK_PRESSURE_LOW_BAND_RATIO = 1.06
+TR909_SOURCE_EVIDENCE_ROLE = "tr909_source_profile_and_accent_dynamics"
+MIN_TR909_KICK_PRESSURE_ANCHORS = 2
 MIN_TR909_ACCENT_DISTINCT_ACCENTS = 3
 MIN_TR909_ACCENT_SPAN = 0.22
 MIN_MC202_BASS_PRESSURE_RMS = 0.003
@@ -92,6 +94,8 @@ def main() -> int:
             "min_w30_accent_distinct_velocity_count": MIN_W30_ACCENT_DISTINCT_VELOCITIES,
             "min_w30_accent_velocity_span": MIN_W30_ACCENT_VELOCITY_SPAN,
             "min_tr909_kick_pressure_low_band_ratio": MIN_TR909_KICK_PRESSURE_LOW_BAND_RATIO,
+            "tr909_source_evidence_role": TR909_SOURCE_EVIDENCE_ROLE,
+            "min_tr909_kick_pressure_anchor_count": MIN_TR909_KICK_PRESSURE_ANCHORS,
             "min_tr909_accent_distinct_accent_count": MIN_TR909_ACCENT_DISTINCT_ACCENTS,
             "min_tr909_accent_span": MIN_TR909_ACCENT_SPAN,
             "min_mc202_bass_pressure_rms": MIN_MC202_BASS_PRESSURE_RMS,
@@ -209,15 +213,27 @@ def candidate_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
         ),
         "tr909_kick_pressure_applied": bool(tr909_kick_pressure.get("applied", False)),
         "tr909_pattern_origin": str(tr909_kick_pressure.get("pattern_origin", "unknown")),
+        "tr909_source_evidence_role": str(
+            tr909_kick_pressure.get("source_evidence_role", "unknown")
+        ),
+        "tr909_source_profile_reason": str(
+            tr909_kick_pressure.get("source_profile_reason", "unknown")
+        ),
         "tr909_kick_pressure_anchor_count": int(tr909_kick_pressure.get("anchor_count", 0)),
         "tr909_kick_pressure_low_band_ratio": number(
             tr909_kick_pressure.get("low_band_rms_ratio", 0.0)
+        ),
+        "tr909_accent_pattern_origin": str(
+            tr909_accent_dynamics.get("pattern_origin", "unknown")
         ),
         "tr909_accent_dynamics_applied": bool(tr909_accent_dynamics.get("applied", False)),
         "tr909_accent_distinct_accent_count": int(
             tr909_accent_dynamics.get("distinct_accent_count", 0)
         ),
         "tr909_accent_span": number(tr909_accent_dynamics.get("accent_span", 0.0)),
+        "tr909_accent_min_required_span": number(
+            tr909_accent_dynamics.get("min_required_accent_span", MIN_TR909_ACCENT_SPAN)
+        ),
         "tr909_accent_source_energy_span": number(
             tr909_accent_dynamics.get("source_energy_span", 0.0)
         ),
@@ -333,9 +349,29 @@ def candidate_issues(metrics: dict[str, Any]) -> list[str]:
             "tr909_kick_pressure_not_applied",
         ),
         (
+            metrics["tr909_pattern_origin"] == "source_derived",
+            "tr909_kick_pressure_not_source_derived",
+        ),
+        (
+            metrics["tr909_source_evidence_role"] == TR909_SOURCE_EVIDENCE_ROLE,
+            "tr909_kick_pressure_missing_source_evidence",
+        ),
+        (
+            metrics["tr909_source_profile_reason"].startswith("source_"),
+            "tr909_kick_pressure_source_reason_missing",
+        ),
+        (
+            metrics["tr909_kick_pressure_anchor_count"] >= MIN_TR909_KICK_PRESSURE_ANCHORS,
+            "tr909_kick_pressure_anchor_count_too_low",
+        ),
+        (
             metrics["tr909_kick_pressure_low_band_ratio"]
             >= MIN_TR909_KICK_PRESSURE_LOW_BAND_RATIO,
             "tr909_kick_pressure_too_decorative",
+        ),
+        (
+            metrics["tr909_accent_pattern_origin"] == "source_derived",
+            "tr909_accent_dynamics_not_source_derived",
         ),
         (
             metrics["tr909_accent_dynamics_applied"],
@@ -346,7 +382,8 @@ def candidate_issues(metrics: dict[str, Any]) -> list[str]:
             "tr909_accent_count_too_low",
         ),
         (
-            metrics["tr909_accent_span"] >= MIN_TR909_ACCENT_SPAN,
+            metrics["tr909_accent_span"]
+            >= max(MIN_TR909_ACCENT_SPAN, metrics["tr909_accent_min_required_span"]),
             "tr909_accent_span_too_flat",
         ),
         (
@@ -607,6 +644,7 @@ def render_markdown(result: dict[str, Any]) -> str:
         "- It keeps the source-first mix below the masking threshold.",
         "- It requires generated TR-909 support to be audible rather than decorative.",
         "- It requires TR-909 kick-pressure proof so the drum layer adds measurable low-end body.",
+        "- It requires TR-909 source evidence and source-shaped accent dynamics before drum support counts as product-quality support.",
         "- It requires MC-202 bass-pressure proof so the bass lane is audible, not only named in the manifest.",
         "- It requires MC-202 phrase variation so the bass lane does not collapse into one repeated support cell.",
         "- It requires MC-202 source-grid proof so the bass lane cannot drift behind stronger aligned stems.",
