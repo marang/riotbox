@@ -797,6 +797,11 @@ following:
     before touching shared `artifacts/audio_qa/local-*` outputs, `just ci`
     inherits that protection, and concurrent broad runs fail clearly instead
     of deleting another run's artifacts
+  - RIOTBOX-1292 keeps primitive-renderer lane and Feral-grid packs as
+    non-product controls: the existing manifest boundary already blocks
+    product-output and quality-proof claims, and the listening-manifest
+    fixtures now also reject product-output-enabled or stale affected-path
+    primitive boundaries
 - no PR, roadmap claim, or release note presents an audible feature as
   musician-ready when its human verdict is missing, weak, or explicitly
   unverified
