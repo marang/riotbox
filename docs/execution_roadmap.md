@@ -810,6 +810,12 @@ following:
     with distinct accent levels and sufficient span. Generated-pack smoke tests
     assert the same fields so decorative or fixture-only TR-909 support cannot
     be promoted as product-quality drum pressure.
+  - RIOTBOX-1294 makes persisted MC-202 source phrase plans replay truth: core
+    replay now restores `ActionCommitRecord.mc202_source_phrase_plan` for
+    MC-202 phrase actions, clears stale plans when older commit records lack a
+    trusted plan, and the session save/load sample covers both lane-state and
+    commit-record persistence. This protects restore from falling back to
+    primitive or stale MC-202 material when source-composed plans are absent.
 - no PR, roadmap claim, or release note presents an audible feature as
   musician-ready when its human verdict is missing, weak, or explicitly
   unverified
