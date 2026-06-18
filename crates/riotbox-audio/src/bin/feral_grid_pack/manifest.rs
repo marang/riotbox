@@ -79,7 +79,7 @@ struct ManifestPrimitiveRendererBoundary {
     quality_proof: bool,
     demo_readiness: &'static str,
     promotion_blocked: bool,
-    affected_paths: [&'static str; 2],
+    affected_paths: [&'static str; 1],
     musician_message: &'static str,
 }
 
@@ -278,11 +278,8 @@ fn manifest_primitive_renderer_boundary() -> ManifestPrimitiveRendererBoundary {
         quality_proof: false,
         demo_readiness: "unverified",
         promotion_blocked: true,
-        affected_paths: [
-            "metrics.tr909_kick_pressure.pattern_origin",
-            "metrics.mc202_bass_pressure.pattern_origin",
-        ],
-        musician_message: "Primitive renderer lanes are diagnostic controls; source-derived product plans or unavailable/degraded state are required before demo or product promotion.",
+        affected_paths: ["metrics.mc202_bass_pressure.pattern_origin"],
+        musician_message: "Primitive renderer lanes are diagnostic controls; source-derived product plans or unavailable/degraded state are required before demo or product promotion. TR-909 kick pressure is source-derived only when its source profile and accent-dynamics evidence pass.",
     }
 }
 
