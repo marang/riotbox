@@ -249,6 +249,12 @@ def render_case(
                 "sparse_bass_movement_frequency_span_hz": proof[
                     "sparse_bass_movement_frequency_span_hz"
                 ],
+                "sparse_pressure_low_band_share": proof[
+                    "sparse_pressure_low_band_share"
+                ],
+                "sparse_pressure_low_to_mid_ratio": proof[
+                    "sparse_pressure_low_to_mid_ratio"
+                ],
                 "arrangement_policy_decision_count": proof[
                     "arrangement_policy_decision_count"
                 ],

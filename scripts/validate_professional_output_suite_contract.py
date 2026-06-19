@@ -36,6 +36,8 @@ MIN_HOOK_CHOP_RIFF_REVERSE_COUNT = 1.0
 MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 1.25
 MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 8.00
 MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 1.60
+MIN_SPARSE_PRESSURE_LOW_BAND_SHARE = 0.20
+MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO = 1.75
 MIN_SPARSE_BASS_DOMINANCE_MARGIN = 0.08
 MAX_DESTRUCTIVE_DROPOUT_TO_STUTTER_RMS_RATIO = 0.10
 MIN_DESTRUCTIVE_STUTTER_TO_HOOK_TRANSIENT_RATIO = 1.20
@@ -172,6 +174,26 @@ def validate_mutation_fixtures(report: dict[str, Any], output: Path) -> list[str
                 0.0,
             ),
             "source_wav_sparse_bass_dominance_margin_too_low",
+        ),
+        (
+            "weak_sparse_low_band_share",
+            lambda data: set_child_metric(
+                data,
+                "professional_source_wav_pack",
+                "sparse_pressure_low_band_share",
+                0.0,
+            ),
+            "source_wav_sparse_pressure_low_band_share_too_low",
+        ),
+        (
+            "sparse_midrange_phrase",
+            lambda data: set_child_metric(
+                data,
+                "professional_source_wav_pack",
+                "sparse_pressure_low_to_mid_ratio",
+                0.0,
+            ),
+            "source_wav_sparse_pressure_reads_as_midrange_phrase",
         ),
         (
             "weak_destructive_stutter",
@@ -633,6 +655,18 @@ def validate_sparse_bass_metrics(
         failures,
     )
     require(
+        number(matrix.get("min_sparse_pressure_low_band_share"))
+        >= MIN_SPARSE_PRESSURE_LOW_BAND_SHARE,
+        "matrix_sparse_pressure_low_band_share_too_low",
+        failures,
+    )
+    require(
+        number(matrix.get("min_sparse_pressure_low_to_mid_ratio"))
+        >= MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO,
+        "matrix_sparse_pressure_reads_as_midrange_phrase",
+        failures,
+    )
+    require(
         number(matrix.get("min_sparse_bass_dominance_margin"))
         >= MIN_SPARSE_BASS_DOMINANCE_MARGIN,
         "matrix_sparse_bass_dominance_margin_too_low",
@@ -654,6 +688,18 @@ def validate_sparse_bass_metrics(
         number(source_wav.get("sparse_pressure_low_band_lift_ratio"))
         >= MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO,
         "source_wav_sparse_pressure_low_band_too_weak",
+        failures,
+    )
+    require(
+        number(source_wav.get("sparse_pressure_low_band_share"))
+        >= MIN_SPARSE_PRESSURE_LOW_BAND_SHARE,
+        "source_wav_sparse_pressure_low_band_share_too_low",
+        failures,
+    )
+    require(
+        number(source_wav.get("sparse_pressure_low_to_mid_ratio"))
+        >= MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO,
+        "source_wav_sparse_pressure_reads_as_midrange_phrase",
         failures,
     )
     require(

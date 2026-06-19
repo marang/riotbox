@@ -716,6 +716,11 @@ following:
     and frequency-span proof, require bass-led low-band pressure and a clear
     strongest-element dominance margin, and reject collapsed fixed movement
     while still treating the scripted render as diagnostic evidence
+  - RIOTBOX-1296 strengthens sparse-bass-pressure diagnostics against
+    midrange-phrase collapse: sparse reports now carry pressure-section
+    low-band share and low/mid dominance gates through Source-WAV, Matrix, and
+    professional-output suite validation, so a moving line cannot count as bass
+    pressure unless the low band actually carries the section.
   - the MC-202 source phrase planning track must turn that diagnostic bass
     movement into replayable Session/Core phrase plans before MC-202
     bass/answer behavior can count as source-derived product behavior; the

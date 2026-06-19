@@ -40,6 +40,8 @@ MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE = 0.70
 MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 1.25
 MIN_SPARSE_BASS_MOVEMENT_FREQUENCY_SPAN_HZ = 8.0
 MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 1.60
+MIN_SPARSE_PRESSURE_LOW_BAND_SHARE = 0.20
+MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO = 1.75
 MIN_SPARSE_BASS_DOMINANCE_MARGIN = 0.08
 ALLOWED_STRONGEST_AUDIBLE_ELEMENTS = {"kick", "snare", "bass", "stab", "silence", "restore"}
 DEFAULT_CASES = [
@@ -317,6 +319,12 @@ def render_case(repo: Path, output: Path, date: str, case: dict) -> dict:
             ],
             "sparse_bass_movement_frequency_span_hz": proof[
                 "sparse_bass_movement_frequency_span_hz"
+            ],
+            "sparse_pressure_low_band_share": proof[
+                "sparse_pressure_low_band_share"
+            ],
+            "sparse_pressure_low_to_mid_ratio": proof[
+                "sparse_pressure_low_to_mid_ratio"
             ],
             "arrangement_policy_decision_count": proof["arrangement_policy_decision_count"],
             "arrangement_role_order_source_derived": proof[
@@ -621,6 +629,10 @@ def validate_sparse_case(prefix: str, proof: dict[str, Any], failures: list[str]
         failures.append(f"{prefix}:sparse_bass_movement_frequency_span_too_narrow")
     if number(proof.get("pressure_low_band_lift_ratio")) < MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO:
         failures.append(f"{prefix}:sparse_pressure_lift_lacks_low_band_support")
+    if number(proof.get("sparse_pressure_low_band_share")) < MIN_SPARSE_PRESSURE_LOW_BAND_SHARE:
+        failures.append(f"{prefix}:sparse_pressure_low_band_share_too_low")
+    if number(proof.get("sparse_pressure_low_to_mid_ratio")) < MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO:
+        failures.append(f"{prefix}:sparse_pressure_reads_as_midrange_phrase")
     if proof.get("strongest_audible_element") != "bass":
         failures.append(f"{prefix}:sparse_bass_not_strongest")
     if number(proof.get("strongest_audible_element_margin")) < MIN_SPARSE_BASS_DOMINANCE_MARGIN:
@@ -656,6 +668,8 @@ def is_sparse_professional_case(case: dict[str, Any]) -> bool:
         and number(proof.get("sparse_bass_movement_static_distance_hz")) >= MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ
         and number(proof.get("sparse_bass_movement_frequency_span_hz")) >= MIN_SPARSE_BASS_MOVEMENT_FREQUENCY_SPAN_HZ
         and number(proof.get("pressure_low_band_lift_ratio")) >= MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO
+        and number(proof.get("sparse_pressure_low_band_share")) >= MIN_SPARSE_PRESSURE_LOW_BAND_SHARE
+        and number(proof.get("sparse_pressure_low_to_mid_ratio")) >= MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO
         and proof.get("strongest_audible_element") == "bass"
         and number(proof.get("strongest_audible_element_margin")) >= MIN_SPARSE_BASS_DOMINANCE_MARGIN
     )
@@ -717,6 +731,16 @@ def run_mutation_fixtures(report: dict[str, Any]) -> None:
     mutated = mutate_case_proof(report, "sparse_bass_pressure", "pressure_low_band_lift_ratio", 0.0)
     fixtures.append(
         ("sparse_pressure_weak", mutated, "sparse_pressure_lift_lacks_low_band_support")
+    )
+
+    mutated = mutate_case_proof(report, "sparse_bass_pressure", "sparse_pressure_low_band_share", 0.0)
+    fixtures.append(
+        ("sparse_low_band_share_weak", mutated, "sparse_pressure_low_band_share_too_low")
+    )
+
+    mutated = mutate_case_proof(report, "sparse_bass_pressure", "sparse_pressure_low_to_mid_ratio", 0.0)
+    fixtures.append(
+        ("sparse_midrange_phrase", mutated, "sparse_pressure_reads_as_midrange_phrase")
     )
 
     mutated = mutate_case_proof(report, "sparse_bass_pressure", "strongest_audible_element_margin", 0.0)
