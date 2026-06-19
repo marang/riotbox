@@ -832,6 +832,24 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                 ),
                 default=0.0,
             ),
+            "min_sparse_pressure_low_band_share": min(
+                (
+                    number(object_or_empty(case.get("proof")).get("sparse_pressure_low_band_share"))
+                    for case in cases
+                    if object_or_empty(case.get("pressure_lift_policy")).get("source_family")
+                    == "sparse_bass_pressure"
+                ),
+                default=0.0,
+            ),
+            "min_sparse_pressure_low_to_mid_ratio": min(
+                (
+                    number(object_or_empty(case.get("proof")).get("sparse_pressure_low_to_mid_ratio"))
+                    for case in cases
+                    if object_or_empty(case.get("pressure_lift_policy")).get("source_family")
+                    == "sparse_bass_pressure"
+                ),
+                default=0.0,
+            ),
             "min_sparse_bass_dominance_margin": min(
                 (
                     number(
@@ -1096,6 +1114,22 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             "sparse_pressure_low_band_lift_ratio": min(
                 (
                     number(object_or_empty(case.get("proof")).get("pressure_low_band_lift_ratio"))
+                    for case in cases
+                    if case.get("source_family") == "sparse_bass_pressure"
+                ),
+                default=0.0,
+            ),
+            "sparse_pressure_low_band_share": min(
+                (
+                    number(object_or_empty(case.get("proof")).get("sparse_pressure_low_band_share"))
+                    for case in cases
+                    if case.get("source_family") == "sparse_bass_pressure"
+                ),
+                default=0.0,
+            ),
+            "sparse_pressure_low_to_mid_ratio": min(
+                (
+                    number(object_or_empty(case.get("proof")).get("sparse_pressure_low_to_mid_ratio"))
                     for case in cases
                     if case.get("source_family") == "sparse_bass_pressure"
                 ),

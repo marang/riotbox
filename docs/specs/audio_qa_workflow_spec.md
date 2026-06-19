@@ -602,6 +602,14 @@ product fallback; they use their family-specific texture or timing-cue paths
 instead. These fields remain diagnostic and must keep `quality_proof: false`
 until structured listening review accepts the result.
 
+P023 sparse-bass-pressure diagnostics also expose
+`sparse_pressure_low_band_share` and
+`sparse_pressure_low_to_mid_ratio` alongside the existing source-derived bass
+movement fields. Sparse reports must prove that the pressure section is not
+only a moving midrange phrase: the low band must carry enough of the pressure
+section and must dominate the mid band by the documented ratio. These are
+technical pressure-shape gates, not musical approval.
+
 The dense-break professional diagnostic also keeps a real weak-WAV regression
 for this boundary:
 

@@ -55,6 +55,8 @@ MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE = 0.70
 MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 1.25
 MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 8.00
 MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 1.60
+MIN_SPARSE_PRESSURE_LOW_BAND_SHARE = 0.20
+MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO = 1.75
 MIN_HOOK_CHOP_SELECTION_CANDIDATES = 3
 MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES = 256.0
 MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES = 512.0
@@ -3223,6 +3225,8 @@ def build_report(
             "min_sparse_pressure_low_band_lift_ratio": (
                 MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO
             ),
+            "min_sparse_pressure_low_band_share": MIN_SPARSE_PRESSURE_LOW_BAND_SHARE,
+            "min_sparse_pressure_low_to_mid_ratio": MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO,
             "min_sparse_bass_dominance_margin": MIN_SPARSE_BASS_DOMINANCE_MARGIN,
             "min_hook_chop_selection_candidates": MIN_HOOK_CHOP_SELECTION_CANDIDATES,
             "min_hook_chop_static_distance_frames": MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES,
@@ -3318,6 +3322,9 @@ def performance_proof(
     restore_rms = rms(sections["restore_hit"])
     pressure_low = low_band_rms(sections["pressure_lift"])
     hook_low = low_band_rms(sections["chop_hook"])
+    pressure_low_share, pressure_mid_share, _ = band_energy_ratios(
+        sections["pressure_lift"]
+    )
     restore_transient = max(
         transient_score(sections["restore_hit"][: frames_for_seconds(0.250)]),
         transient_score(sections["restore_hit"][: frames_for_seconds(0.500)]),
@@ -3342,6 +3349,18 @@ def performance_proof(
         "w30_to_full_performance_rms_ratio": w30_rms / max(full_rms, 1e-9),
         "generated_to_w30_rms_ratio": (tr909_rms + mc202_rms) / max(w30_rms, 1e-9),
         "pressure_low_band_lift_ratio": pressure_low / max(hook_low, 1e-9),
+        "sparse_pressure_low_band_share": (
+            pressure_low_share
+            if source_policy.pressure_lift_policy.source_family
+            == "sparse_bass_pressure"
+            else 0.0
+        ),
+        "sparse_pressure_low_to_mid_ratio": (
+            pressure_low_share / max(pressure_mid_share, 1e-9)
+            if source_policy.pressure_lift_policy.source_family
+            == "sparse_bass_pressure"
+            else 0.0
+        ),
         "dropout_to_stutter_rms_ratio": rms(dropout_first) / max(rms(dropout_second), 1e-9),
         "stutter_to_hook_transient_ratio": transient_score(dropout_second) / max(hook_transient, 1e-9),
         "manual_confirm_cue_transient_score": transient_score(dropout_second),
@@ -3632,6 +3651,16 @@ def failure_codes_for(
     if source_family == "sparse_bass_pressure":
         if proof["pressure_low_band_lift_ratio"] < MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO:
             failures.append("sparse_pressure_lift_lacks_low_band_support")
+        if (
+            proof.get("sparse_pressure_low_band_share", 0.0)
+            < MIN_SPARSE_PRESSURE_LOW_BAND_SHARE
+        ):
+            failures.append("sparse_pressure_low_band_share_too_low")
+        if (
+            proof.get("sparse_pressure_low_to_mid_ratio", 0.0)
+            < MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO
+        ):
+            failures.append("sparse_pressure_reads_as_midrange_phrase")
         if proof.get("strongest_audible_element") != "bass":
             failures.append("sparse_bass_not_strongest")
         if (
