@@ -155,6 +155,9 @@ def render_case(
             "output": str(case_dir),
             "proof": {
                 "w30_to_source_rms_ratio": proof["w30_to_source_rms_ratio"],
+                "hook_chop_w30_to_source_margin": proof[
+                    "hook_chop_w30_to_source_margin"
+                ],
                 "full_to_source_rms_ratio": proof["full_to_source_rms_ratio"],
                 "hook_to_source_transient_ratio": proof["hook_to_source_transient_ratio"],
                 "pressure_to_hook_rms_ratio": proof["pressure_to_hook_rms_ratio"],

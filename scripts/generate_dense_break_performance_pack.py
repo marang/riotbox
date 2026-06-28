@@ -32,6 +32,7 @@ SCHEMA = "riotbox.dense_break_performance_pack.v1"
 AGENT_REVIEW_SCHEMA = "riotbox.agent_musical_review_pack.v1"
 MIN_W30_TO_SOURCE_RMS_RATIO = 0.18
 MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO = 0.22
+MIN_HOOK_FORWARD_W30_TO_SOURCE_MARGIN = 0.025
 MIN_PRESSURE_LOW_BAND_LIFT_RATIO = 1.12
 MAX_DROPOUT_TO_STUTTER_RMS_RATIO = 0.18
 MAX_DROPOUT_SILENCE_TO_STUTTER_RMS_RATIO = 0.08
@@ -374,9 +375,9 @@ def main() -> int:
     ).source_family
     w30_floor = min_w30_to_source_rms_ratio_for(source_family_probe)
     if source_family_probe == "tonal_hook":
-        w30_target_multiplier = 1.34
-        w30_minimum_gain = 1.42
-        w30_maximum_gain = 3.00
+        w30_target_multiplier = 1.52
+        w30_minimum_gain = 1.58
+        w30_maximum_gain = 3.35
     elif source_family_probe == "dense_break":
         w30_target_multiplier = 1.20
         w30_minimum_gain = 1.34
@@ -395,7 +396,8 @@ def main() -> int:
             maximum_gain=w30_maximum_gain,
         ),
     )
-    mc202 = apply_gain(mc202[:frame_count], 1.35)
+    mc202_gain = 1.45 if source_family_probe == "tonal_hook" else 1.35
+    mc202 = apply_gain(mc202[:frame_count], mc202_gain)
 
     bar_frames = frames_for_beats(args.bpm, BEATS_PER_BAR)
     source_policy = dense_break_source_policy(
@@ -3281,6 +3283,9 @@ def build_report(
             "min_hook_chop_source_character_score_span": (
                 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN
             ),
+            "min_hook_chop_w30_to_source_margin": (
+                MIN_HOOK_FORWARD_W30_TO_SOURCE_MARGIN
+            ),
             "min_destructive_gesture_candidates": MIN_DESTRUCTIVE_GESTURE_CANDIDATES,
             "min_destructive_static_distance_frames": MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES,
             "min_destructive_offset_distance_frames": MIN_DESTRUCTIVE_OFFSET_DISTANCE_FRAMES,
@@ -3384,8 +3389,12 @@ def performance_proof(
     source_similarity = waveform_correlation(source, performance)
     rebuild_only_source_similarity = waveform_correlation(source, rebuild_only_performance)
     source_on_rebuild_only_similarity = waveform_correlation(performance, rebuild_only_performance)
+    w30_to_source_ratio = w30_rms / max(source_rms, 1e-9)
     proof = {
-        "w30_to_source_rms_ratio": w30_rms / max(source_rms, 1e-9),
+        "w30_to_source_rms_ratio": w30_to_source_ratio,
+        "hook_chop_w30_to_source_margin": (
+            w30_to_source_ratio - MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO
+        ),
         "w30_to_full_performance_rms_ratio": w30_rms / max(full_rms, 1e-9),
         "generated_to_w30_rms_ratio": (tr909_rms + mc202_rms) / max(w30_rms, 1e-9),
         "pressure_low_band_lift_ratio": pressure_low / max(hook_low, 1e-9),
@@ -3485,6 +3494,12 @@ def failure_codes_for(
             failures.append(f"{name}_near_clipping")
     if proof["w30_to_source_rms_ratio"] < min_w30_to_source_rms_ratio_for(source_family):
         failures.append("w30_hook_not_present_enough")
+    if (
+        source_family in ("dense_break", "tonal_hook")
+        and proof.get("hook_chop_w30_to_source_margin", 0.0)
+        < MIN_HOOK_FORWARD_W30_TO_SOURCE_MARGIN
+    ):
+        failures.append("hook_chop_w30_margin_too_low")
     if proof["pressure_low_band_lift_ratio"] < MIN_PRESSURE_LOW_BAND_LIFT_RATIO:
         failures.append("pressure_section_lacks_bass_lift")
     if proof["dropout_to_stutter_rms_ratio"] > MAX_DROPOUT_TO_STUTTER_RMS_RATIO:
@@ -3895,6 +3910,12 @@ def run_mutation_fixtures(report_path: Path) -> None:
             ("proof", "hook_chop_selection_source_derived"),
             0.0,
             "hook_chop_selection_not_source_derived",
+        ),
+        (
+            "hook_chop_w30_margin_low",
+            ("proof", "hook_chop_w30_to_source_margin"),
+            0.0,
+            "hook_chop_w30_margin_too_low",
         ),
         (
             "weak_source_character",

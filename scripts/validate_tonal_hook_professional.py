@@ -23,6 +23,7 @@ MAX_IDENTITY_CORRELATION = 0.940
 MIN_NORMALIZED_RMS_DELTA = 0.030
 MAX_BAR_SIMILARITY = 0.985
 MIN_W30_CONTRIBUTION_RATIO = 0.400
+MIN_W30_CONTRIBUTION_MARGIN = 0.050
 MIN_W30_DISTINCT_BAR_PATTERNS = 3
 MIN_W30_UNIQUE_SLICE_OFFSETS = 5
 MIN_W30_VELOCITY_SPAN = 0.200
@@ -80,6 +81,7 @@ def build_report(manifest_path: Path) -> dict[str, Any]:
         "min_normalized_rms_delta": MIN_NORMALIZED_RMS_DELTA,
         "max_bar_similarity": MAX_BAR_SIMILARITY,
         "min_w30_contribution_ratio": MIN_W30_CONTRIBUTION_RATIO,
+        "min_w30_contribution_margin": MIN_W30_CONTRIBUTION_MARGIN,
         "min_w30_distinct_bar_patterns": MIN_W30_DISTINCT_BAR_PATTERNS,
         "min_w30_unique_slice_offsets": MIN_W30_UNIQUE_SLICE_OFFSETS,
         "min_w30_velocity_span": MIN_W30_VELOCITY_SPAN,
@@ -155,6 +157,10 @@ def extract_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
         "tr909_contribution_ratio": number(movement.get("tr909_contribution_ratio")),
         "mc202_contribution_ratio": number(movement.get("mc202_contribution_ratio")),
         "w30_contribution_ratio": number(movement.get("w30_contribution_ratio")),
+        "w30_contribution_margin": (
+            number(movement.get("w30_contribution_ratio"))
+            - MIN_W30_CONTRIBUTION_RATIO
+        ),
         "w30_trigger_variation_applied": bool(w30_variation.get("applied", False)),
         "w30_distinct_bar_pattern_count": int(number(w30_variation.get("distinct_bar_pattern_count"))),
         "w30_slice_choice_applied": bool(w30_slice.get("applied", False)),
@@ -194,6 +200,7 @@ def failure_codes(metrics: dict[str, Any]) -> list[str]:
         ("tr909_support_too_weak", metrics["tr909_contribution_ratio"] >= MIN_TR909_CONTRIBUTION_RATIO),
         ("mc202_support_too_weak", metrics["mc202_contribution_ratio"] >= MIN_MC202_CONTRIBUTION_RATIO),
         ("w30_hook_not_dominant", metrics["w30_contribution_ratio"] >= MIN_W30_CONTRIBUTION_RATIO),
+        ("w30_hook_margin_too_low", metrics["w30_contribution_margin"] >= MIN_W30_CONTRIBUTION_MARGIN),
         ("w30_trigger_variation_missing", metrics["w30_trigger_variation_applied"]),
         (
             "w30_trigger_patterns_too_few",
