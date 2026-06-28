@@ -784,6 +784,12 @@ following:
   matrix, source-WAV, edge, professional-suite, and readiness-report
   diagnostics, and the weak-source WAV fixture must now fail both the survival
   floor and margin gates.
+- RIOTBOX-1300 tightens hook/chop proof with W-30 headroom gates:
+  generated dense/tonal professional diagnostics must keep
+  `hook_chop_w30_to_source_margin >= 0.025`, tonal-hook fixture diagnostics
+  must keep `w30_contribution_margin >= 0.050`, and the tonal generated path
+  raises source-derived W-30 presence instead of accepting barely audible hook
+  contribution.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue

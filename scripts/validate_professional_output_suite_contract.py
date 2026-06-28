@@ -30,6 +30,7 @@ EXPECTED_LISTENING_FAMILIES = [
 EXPECTED_EDGE_FAMILIES = ["bad_timing", "pad_noise"]
 AUDIBLE_ELEMENTS = {"kick", "snare", "bass", "stab", "silence", "restore"}
 MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO = 0.22
+MIN_HOOK_FORWARD_W30_TO_SOURCE_MARGIN = 0.025
 MIN_HOOK_CHOP_RIFF_HIT_COUNT = 6.0
 MIN_HOOK_CHOP_RIFF_VELOCITY_SPAN = 0.20
 MIN_HOOK_CHOP_RIFF_REVERSE_COUNT = 1.0
@@ -158,6 +159,16 @@ def validate_mutation_fixtures(report: dict[str, Any], output: Path) -> list[str
                 0.0,
             ),
             "dense_hook_chop_w30_too_weak",
+        ),
+        (
+            "weak_hook_chop_w30_margin",
+            lambda data: set_child_metric(
+                data,
+                "dense_break",
+                "hook_chop_w30_to_source_margin",
+                0.0,
+            ),
+            "dense_hook_chop_w30_margin_too_low",
         ),
         (
             "fixed_hook_chop_riff_pattern",
@@ -478,6 +489,12 @@ def validate_hook_chop_metrics(
         failures,
     )
     require(
+        number(dense.get("hook_chop_w30_to_source_margin"))
+        >= MIN_HOOK_FORWARD_W30_TO_SOURCE_MARGIN,
+        "dense_hook_chop_w30_margin_too_low",
+        failures,
+    )
+    require(
         number(dense.get("hook_chop_selection_source_derived")) == 1.0,
         "dense_hook_chop_selection_not_source_derived",
         failures,
@@ -537,6 +554,12 @@ def validate_hook_chop_metrics(
         failures,
     )
     require(
+        number(matrix.get("min_dense_hook_chop_w30_to_source_margin"))
+        >= MIN_HOOK_FORWARD_W30_TO_SOURCE_MARGIN,
+        "matrix_dense_hook_chop_w30_margin_too_low",
+        failures,
+    )
+    require(
         number(matrix.get("min_dense_hook_chop_static_distance_frames")) >= 256.0,
         "matrix_dense_hook_chop_collapsed_to_static",
         failures,
@@ -589,6 +612,12 @@ def validate_hook_chop_metrics(
         number(source_wav.get("tonal_w30_to_source_rms_ratio"))
         >= MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO,
         "source_wav_tonal_hook_chop_w30_too_weak",
+        failures,
+    )
+    require(
+        number(source_wav.get("tonal_hook_chop_w30_to_source_margin"))
+        >= MIN_HOOK_FORWARD_W30_TO_SOURCE_MARGIN,
+        "source_wav_tonal_hook_chop_w30_margin_too_low",
         failures,
     )
     require(

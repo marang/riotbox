@@ -405,6 +405,9 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
             "dense_w30_to_source_rms_ratio": number(
                 dense.get("w30_to_source_rms_ratio")
             ),
+            "dense_hook_chop_w30_to_source_margin": number(
+                dense.get("hook_chop_w30_to_source_margin")
+            ),
             "dense_hook_chop_score_floor": number(
                 dense.get("hook_chop_source_character_score_floor")
             ),
@@ -420,8 +423,14 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
             "matrix_dense_w30_to_source_rms_ratio": number(
                 matrix.get("min_dense_w30_to_source_rms_ratio")
             ),
+            "matrix_dense_hook_chop_w30_to_source_margin": number(
+                matrix.get("min_dense_hook_chop_w30_to_source_margin")
+            ),
             "tonal_w30_to_source_rms_ratio": number(
                 source_wav.get("tonal_w30_to_source_rms_ratio")
+            ),
+            "tonal_hook_chop_w30_to_source_margin": number(
+                source_wav.get("tonal_hook_chop_w30_to_source_margin")
             ),
             "tonal_hook_chop_score_floor": number(
                 source_wav.get("tonal_hook_chop_source_character_score_floor")
@@ -729,15 +738,33 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             failures,
         )
         check(
+            number(source_character.get("dense_hook_chop_w30_to_source_margin"))
+            >= 0.025,
+            "professional_suite_dense_hook_chop_w30_margin_too_low",
+            failures,
+        )
+        check(
             number(source_character.get("matrix_dense_w30_to_source_rms_ratio"))
             >= MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO,
             "professional_suite_matrix_dense_hook_chop_w30_too_weak",
             failures,
         )
         check(
+            number(source_character.get("matrix_dense_hook_chop_w30_to_source_margin"))
+            >= 0.025,
+            "professional_suite_matrix_dense_hook_chop_w30_margin_too_low",
+            failures,
+        )
+        check(
             number(source_character.get("tonal_w30_to_source_rms_ratio"))
             >= MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO,
             "professional_suite_tonal_hook_chop_w30_too_weak",
+            failures,
+        )
+        check(
+            number(source_character.get("tonal_hook_chop_w30_to_source_margin"))
+            >= 0.025,
+            "professional_suite_tonal_hook_chop_w30_margin_too_low",
             failures,
         )
         check(

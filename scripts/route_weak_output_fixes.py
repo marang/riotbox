@@ -43,6 +43,7 @@ CATEGORY_ORDER = [
 
 CODE_RULES: tuple[tuple[str, str, int, str], ...] = (
     ("w30_hook", "chop_policy", 5, "W-30 hook is weak or not dominant."),
+    ("hook_chop_w30_margin", "chop_policy", 5, "W-30 hook barely clears the source-presence floor."),
     ("hook_transient", "chop_policy", 5, "Hook transient does not cut through."),
     ("hookless", "chop_policy", 5, "The source family needs a stronger riff/chop policy."),
     ("w30_trigger", "chop_policy", 4, "W-30 trigger variation is too static."),

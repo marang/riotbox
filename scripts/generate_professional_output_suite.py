@@ -450,6 +450,9 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
         return {
             "full_to_source_rms_ratio": number(proof.get("full_to_source_rms_ratio")),
             "w30_to_source_rms_ratio": number(proof.get("w30_to_source_rms_ratio")),
+            "hook_chop_w30_to_source_margin": number(
+                proof.get("hook_chop_w30_to_source_margin")
+            ),
             "pressure_to_hook_rms_ratio": number(proof.get("pressure_to_hook_rms_ratio")),
             "restore_to_pressure_rms_ratio": number(proof.get("restore_to_pressure_rms_ratio")),
             "rebuild_only_to_full_rms_ratio": number(
@@ -701,6 +704,19 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             "min_dense_w30_to_source_rms_ratio": min(
                 (
                     number(object_or_empty(case.get("proof")).get("w30_to_source_rms_ratio"))
+                    for case in cases
+                    if object_or_empty(case.get("pressure_lift_policy")).get("source_family")
+                    == "dense_break"
+                ),
+                default=0.0,
+            ),
+            "min_dense_hook_chop_w30_to_source_margin": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "hook_chop_w30_to_source_margin"
+                        )
+                    )
                     for case in cases
                     if object_or_empty(case.get("pressure_lift_policy")).get("source_family")
                     == "dense_break"
@@ -1000,6 +1016,18 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             "tonal_w30_to_source_rms_ratio": min(
                 (
                     number(object_or_empty(case.get("proof")).get("w30_to_source_rms_ratio"))
+                    for case in cases
+                    if case.get("source_family") == "tonal_hook"
+                ),
+                default=0.0,
+            ),
+            "tonal_hook_chop_w30_to_source_margin": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "hook_chop_w30_to_source_margin"
+                        )
+                    )
                     for case in cases
                     if case.get("source_family") == "tonal_hook"
                 ),
