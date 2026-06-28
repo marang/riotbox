@@ -127,6 +127,10 @@ def generate_dense_flat_stutter_case(repo: Path, output: Path) -> dict[str, Any]
             metrics["dropout_stutter"]["rms"] * 0.72,
             metrics["dropout_stutter"]["rms"],
         ),
+        "dropout_silence_to_stutter_rms_ratio": ratio(
+            metrics["dropout_stutter"]["rms"] * 0.72,
+            metrics["dropout_stutter"]["rms"],
+        ),
         "stutter_to_hook_transient_ratio": ratio(
             metrics["dropout_stutter"]["transient_score"],
             metrics["chop_hook"]["transient_score"],
@@ -138,6 +142,10 @@ def generate_dense_flat_stutter_case(repo: Path, output: Path) -> dict[str, Any]
         "restore_to_pressure_rms_ratio": ratio(
             metrics["restore_hit"]["rms"],
             metrics["pressure_lift"]["rms"],
+        ),
+        "restore_to_dropout_silence_rms_ratio": ratio(
+            metrics["restore_hit"]["rms"],
+            metrics["dropout_stutter"]["rms"] * 0.72,
         ),
         "max_adjacent_bar_correlation": 0.996,
         "source_to_performance_correlation": 0.93,
@@ -179,8 +187,14 @@ def generate_dense_flat_stutter_case(repo: Path, output: Path) -> dict[str, Any]
         "metrics": {
             "dropout_stutter_rms": metrics["dropout_stutter"]["rms"],
             "restore_hit_rms": metrics["restore_hit"]["rms"],
+            "dropout_silence_to_stutter_rms_ratio": proof[
+                "dropout_silence_to_stutter_rms_ratio"
+            ],
             "stutter_to_hook_transient_ratio": proof["stutter_to_hook_transient_ratio"],
             "restore_to_pressure_rms_ratio": proof["restore_to_pressure_rms_ratio"],
+            "restore_to_dropout_silence_rms_ratio": proof[
+                "restore_to_dropout_silence_rms_ratio"
+            ],
         },
     }
     return apply_evidence_boundary(

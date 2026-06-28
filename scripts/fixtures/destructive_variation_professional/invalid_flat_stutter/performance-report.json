@@ -3,9 +3,11 @@
   "result": "fail",
   "proof": {
     "dropout_to_stutter_rms_ratio": 0.42,
+    "dropout_silence_to_stutter_rms_ratio": 0.42,
     "stutter_to_hook_transient_ratio": 0.24,
     "restore_to_hook_transient_ratio": 0.40,
     "restore_to_pressure_rms_ratio": 0.74,
+    "restore_to_dropout_silence_rms_ratio": 1.20,
     "max_adjacent_bar_correlation": 0.996,
     "source_to_performance_correlation": 0.96
   },

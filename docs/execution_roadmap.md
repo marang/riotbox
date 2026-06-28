@@ -711,6 +711,11 @@ following:
     expose distance from old fixed destructive choices and stutter/restore offset
     contrast, and reject collapsed fixed destructive gestures while still
     treating the scripted render as diagnostic evidence
+  - RIOTBOX-1297 strengthens destructive-gesture diagnostics from broad
+    dropout/stutter contrast into explicit cut-and-restore impact proof:
+    destructive reports now require the dropout silence to stay low against the
+    stutter and the restore hit to slam back out of the cut, with rendered weak
+    fixtures and suite mutation checks covering flat edits.
   - sparse-bass-pressure diagnostics now derive bass-pressure movement from the
     source low-band envelope and timing centroid, expose fixed-contour distance
     and frequency-span proof, require bass-led low-band pressure and a clear
