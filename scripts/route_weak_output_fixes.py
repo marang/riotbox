@@ -69,6 +69,12 @@ CODE_RULES: tuple[tuple[str, str, int, str], ...] = (
         "Rebuild-only output lost the transformed source identity.",
     ),
     (
+        "rebuild_only_source_character_margin_too_low",
+        "source_selection",
+        6,
+        "Rebuild-only source identity is too close to the minimum survival line.",
+    ),
+    (
         "rebuild_only_source_transient_character_lost",
         "source_selection",
         6,

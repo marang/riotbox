@@ -779,6 +779,11 @@ following:
   not only report mutation checks; the dense-break weak source-character smoke
   renders a weak rebuild-only WAV and requires
   `rebuild_only_source_character_not_surviving`
+- RIOTBOX-1299 tightens source-selection proof with
+  `rebuild_only_source_character_survival_margin >= 0.10` across dense,
+  matrix, source-WAV, edge, professional-suite, and readiness-report
+  diagnostics, and the weak-source WAV fixture must now fail both the survival
+  floor and margin gates.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue

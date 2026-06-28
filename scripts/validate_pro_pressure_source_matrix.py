@@ -295,6 +295,9 @@ def render_case(
                 "rebuild_only_source_character_survival_score": proof[
                     "rebuild_only_source_character_survival_score"
                 ],
+                "rebuild_only_source_character_survival_margin": proof[
+                    "rebuild_only_source_character_survival_margin"
+                ],
             },
             "metrics": {
                 "chop_hook_dbfs": metrics["chop_hook"]["dbfs"],

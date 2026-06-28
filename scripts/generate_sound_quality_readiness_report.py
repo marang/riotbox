@@ -435,6 +435,12 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
                 number(source_wav.get("min_rebuild_only_source_character_survival_score")),
                 number(edge.get("min_rebuild_only_source_character_survival_score")),
             ),
+            "min_rebuild_only_source_character_survival_margin": min(
+                number(dense.get("rebuild_only_source_character_survival_margin")),
+                number(matrix.get("min_rebuild_only_source_character_survival_margin")),
+                number(source_wav.get("min_rebuild_only_source_character_survival_margin")),
+                number(edge.get("min_rebuild_only_source_character_survival_margin")),
+            ),
         },
         "drum_pressure": {
             "dense_strongest_audible_element": str(
@@ -748,6 +754,12 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             number(source_character.get("min_rebuild_only_source_character_survival_score"))
             >= 0.70,
             "professional_suite_source_character_survival_too_low",
+            failures,
+        )
+        check(
+            number(source_character.get("min_rebuild_only_source_character_survival_margin"))
+            >= 0.10,
+            "professional_suite_source_character_survival_margin_too_low",
             failures,
         )
         drum_pressure = suite_drum_pressure if isinstance(suite_drum_pressure, dict) else {}
