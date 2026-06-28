@@ -1246,4 +1246,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Strengthen source-first mix-bus masking proof
 - [RIOTBOX-1299.md](./RIOTBOX-1299.md)
   Strengthen source-character selection survival proof
+- [RIOTBOX-1300.md](./RIOTBOX-1300.md)
+  Strengthen hook/chop policy professional proof
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
