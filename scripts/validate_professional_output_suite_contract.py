@@ -46,6 +46,7 @@ MIN_DESTRUCTIVE_RESTORE_TO_PRESSURE_RMS_RATIO = 1.22
 MIN_DESTRUCTIVE_RESTORE_TO_DROPOUT_SILENCE_RMS_RATIO = 6.00
 MIN_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.16
 MAX_FERAL_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO = 0.16
+MIN_FERAL_SOURCE_FIRST_MASKING_HEADROOM = 0.09
 MAX_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.46
 
 
@@ -235,6 +236,15 @@ def validate_mutation_fixtures(report: dict[str, Any], output: Path) -> list[str
                 0.99,
             ),
             "feral_generated_support_masks_source",
+        ),
+        (
+            "source_first_masking_headroom_low",
+            lambda data: set_nested_value(
+                data,
+                ["feral_mix_balance", "min_source_first_masking_headroom"],
+                0.0,
+            ),
+            "feral_source_first_masking_headroom_too_low",
         ),
         (
             "soft_dense_drum_transient",
@@ -879,6 +889,12 @@ def validate_feral_mix_balance_metrics(report: dict[str, Any], failures: list[st
         number(balance.get("max_source_first_generated_to_source_rms_ratio"))
         <= MAX_FERAL_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO,
         "feral_source_first_generated_support_masks_source",
+        failures,
+    )
+    require(
+        number(balance.get("min_source_first_masking_headroom"))
+        >= MIN_FERAL_SOURCE_FIRST_MASKING_HEADROOM,
+        "feral_source_first_masking_headroom_too_low",
         failures,
     )
     require(

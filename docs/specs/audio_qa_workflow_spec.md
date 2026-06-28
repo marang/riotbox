@@ -370,7 +370,10 @@ Early P011 guardrail defaults:
   across its child manifests. It must fail when source-first renders let
   generated support mask the source, when generated-support renders bury support
   below a useful audible floor, or when generated support dominates the source
-  window. This remains diagnostic evidence, not an automated musical pass.
+  window. Source-first renders must also keep at least `0.09` headroom below
+  the `0.16` generated/source masking ceiling, so a barely-passing source-first
+  mix cannot hide source character risk. This remains diagnostic evidence, not
+  an automated musical pass.
 - Feral grid MC-202 support must expose bounded source-section contour evidence
   under `metrics.mc202_source_contour` before being treated as deeper P013 bass
   behavior. The proof may shape contour, touch, and support level from source

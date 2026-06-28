@@ -23,6 +23,7 @@ SCHEMA = "riotbox.professional_output_suite.v1"
 DEFAULT_OUTPUT = Path("artifacts/audio_qa/local-professional-output-suite")
 MIN_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.16
 MAX_FERAL_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO = 0.16
+MIN_FERAL_SOURCE_FIRST_MASKING_HEADROOM = 0.09
 MAX_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.46
 CHILDREN = {
     "dense_break": "riotbox.dense_break_performance_pack.v1",
@@ -1414,6 +1415,10 @@ def feral_mix_balance_summary(output: Path) -> dict[str, Any]:
                 "manifest": str(manifest_path.relative_to(output)),
                 "source_first_generated_to_source_rms_ratio": source_first,
                 "support_generated_to_source_rms_ratio": support,
+                "source_first_masking_headroom": (
+                    MAX_FERAL_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO
+                    - source_first
+                ),
                 "has_required_mix_balance_fields": is_number(source_first_value)
                 and is_number(support_value),
             }
@@ -1429,6 +1434,12 @@ def feral_mix_balance_summary(output: Path) -> dict[str, Any]:
         for case in cases
     ):
         failures.append("feral_source_first_generated_support_masks_source")
+    if any(
+        case["source_first_masking_headroom"]
+        < MIN_FERAL_SOURCE_FIRST_MASKING_HEADROOM
+        for case in cases
+    ):
+        failures.append("feral_source_first_masking_headroom_too_low")
     if any(
         case["support_generated_to_source_rms_ratio"]
         < MIN_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO
@@ -1456,9 +1467,14 @@ def feral_mix_balance_summary(output: Path) -> dict[str, Any]:
             (case["source_first_generated_to_source_rms_ratio"] for case in cases),
             default=0.0,
         ),
+        "min_source_first_masking_headroom": min(
+            (case["source_first_masking_headroom"] for case in cases),
+            default=0.0,
+        ),
         "thresholds": {
             "min_support_generated_to_source_rms_ratio": MIN_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
             "max_source_first_generated_to_source_rms_ratio": MAX_FERAL_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO,
+            "min_source_first_masking_headroom": MIN_FERAL_SOURCE_FIRST_MASKING_HEADROOM,
             "max_support_generated_to_source_rms_ratio": MAX_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
         },
         "failure_codes": failures,

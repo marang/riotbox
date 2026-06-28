@@ -706,6 +706,11 @@ following:
     aggregation. Pad/noise and bad-timing source families are kept off the W-30
     hook-riff path and use texture/timing-cue behavior instead, preventing
     family-inappropriate Hook/Chop fallback from masking weak outputs.
+  - RIOTBOX-1298 tightens source-first mix-bus masking proof by aligning
+    automated-fitness and representative showcase source-first limits with the
+    professional-suite `0.16` ceiling and adding a suite-level `0.09` masking
+    headroom gate, so generated support cannot barely pass while still risking
+    source-character burial.
   - dense-break and tonal-hook diagnostics now also derive destructive
     dropout/stutter/restore cue selection from scanned source/W-30 candidates,
     expose distance from old fixed destructive choices and stutter/restore offset
