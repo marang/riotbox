@@ -37,6 +37,7 @@ MIN_STRONGEST_AUDIBLE_ELEMENT_MARGIN = 0.05
 MIN_REBUILD_ONLY_SOURCE_SPECTRAL_SIMILARITY = 0.60
 MIN_REBUILD_ONLY_SOURCE_TRANSIENT_RETENTION = 0.45
 MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE = 0.70
+MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_MARGIN = 0.10
 MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 1.25
 MIN_SPARSE_BASS_MOVEMENT_FREQUENCY_SPAN_HZ = 8.0
 MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 1.60
@@ -352,6 +353,9 @@ def render_case(repo: Path, output: Path, date: str, case: dict) -> dict:
             "rebuild_only_source_character_survival_score": proof[
                 "rebuild_only_source_character_survival_score"
             ],
+            "rebuild_only_source_character_survival_margin": proof[
+                "rebuild_only_source_character_survival_margin"
+            ],
         },
         "metrics": {
             "full_performance_rms": metrics["full_performance"]["rms"],
@@ -583,6 +587,8 @@ def validate_common_source_character(
         failures.append(f"{prefix}:rebuild_only_source_transient_character_lost")
     if number(proof.get("rebuild_only_source_character_survival_score")) < MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE:
         failures.append(f"{prefix}:rebuild_only_source_character_not_surviving")
+    if number(proof.get("rebuild_only_source_character_survival_margin")) < MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_MARGIN:
+        failures.append(f"{prefix}:rebuild_only_source_character_margin_too_low")
     if case.get("source_family") == "tonal_hook":
         validate_tonal_case(prefix, proof, failures)
     if case.get("source_family") == "sparse_bass_pressure":

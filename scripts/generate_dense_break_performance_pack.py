@@ -54,6 +54,7 @@ MAX_SOURCE_ON_TO_REBUILD_ONLY_CORRELATION = 0.995
 MIN_REBUILD_ONLY_SOURCE_SPECTRAL_SIMILARITY = 0.60
 MIN_REBUILD_ONLY_SOURCE_TRANSIENT_RETENTION = 0.45
 MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE = 0.70
+MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_MARGIN = 0.10
 MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 1.25
 MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 8.00
 MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 1.60
@@ -1954,6 +1955,7 @@ def render_performance(
         1.0 if source_policy.hook_chop_policy.source_family == "sparse_bass_pressure" else 1.12
     )
     dense_drum_snap = source_policy.pressure_lift_policy.source_family == "dense_break"
+    tonal_hook_path = source_policy.pressure_lift_policy.source_family == "tonal_hook"
     bad_timing_cue_path = source_policy.pressure_lift_policy.source_family == "bad_timing"
     hook_tr909_gain = 0.76 if dense_drum_snap else (0.96 if bad_timing_cue_path else 0.62)
     chop_tr909_gain = 0.98 if dense_drum_snap else (1.15 if bad_timing_cue_path else 0.78)
@@ -1968,6 +1970,18 @@ def render_performance(
     pad_noise_texture_path = source_policy.pressure_lift_policy.source_family == "pad_noise"
     hook_riff_hook_gain = 1.12 if dense_drum_snap else 1.62
     hook_riff_chop_gain = 1.20 if dense_drum_snap else 1.78
+    source_character_rebuild_hook_boost = (
+        1.20 if tonal_hook_path and source_layer_gain <= 0.0 else 1.0
+    )
+    source_character_rebuild_pressure_boost = (
+        1.64 if tonal_hook_path and source_layer_gain <= 0.0 else 1.0
+    )
+    source_character_rebuild_restore_boost = (
+        1.32 if tonal_hook_path and source_layer_gain <= 0.0 else 1.0
+    )
+    if tonal_hook_path and source_layer_gain <= 0.0:
+        w30 = tonal_rebuild_source_character_focus(w30)
+        hook_riff = tonal_rebuild_source_character_focus(hook_riff)
     pressure_hook_riff_gain = (
         lift_policy.hook_bleed_gain * (1.14 if dense_drum_snap else 1.0)
     )
@@ -1983,8 +1997,10 @@ def render_performance(
 
     hook_mix = glue_bus(
         source * (0.50 * source_layer_gain)
-        + w30 * mix_policy.hook_w30_gain
-        + hook_riff * (hook_riff_hook_gain * hook_forward_gain)
+        + w30 * (mix_policy.hook_w30_gain * source_character_rebuild_hook_boost)
+        + hook_riff * (
+            hook_riff_hook_gain * hook_forward_gain * source_character_rebuild_hook_boost
+        )
         + tr909 * hook_tr909_gain
         + break_snap * hook_break_snap_gain
         + pad_noise_texture * 0.68
@@ -1994,8 +2010,13 @@ def render_performance(
     )
     chop_mix = glue_bus(
         source * (0.16 * source_layer_gain)
-        + w30 * mix_policy.chop_w30_gain
-        + hook_riff * (hook_riff_chop_gain * hook_forward_gain * 1.03)
+        + w30 * (mix_policy.chop_w30_gain * source_character_rebuild_hook_boost)
+        + hook_riff * (
+            hook_riff_chop_gain
+            * hook_forward_gain
+            * 1.03
+            * source_character_rebuild_hook_boost
+        )
         + tr909 * chop_tr909_gain
         + break_snap * chop_break_snap_gain
         + pad_noise_texture * 1.05
@@ -2005,8 +2026,10 @@ def render_performance(
     )
     pressure_mix = saturate(
         source * (lift_policy.source_bleed_gain * source_layer_gain)
-        + w30 * mix_policy.pressure_w30_gain
-        + hook_riff * pressure_hook_riff_gain
+        + w30 * (mix_policy.pressure_w30_gain * source_character_rebuild_pressure_boost)
+        + hook_riff * (
+            pressure_hook_riff_gain * source_character_rebuild_pressure_boost
+        )
         + tr909 * (pressure_tr909_base + lift_policy.tr909_drive * 0.52)
         + break_snap * (pressure_break_snap_gain * lift_policy.break_snap_drive)
         + mc202 * pressure_mc202_gain
@@ -2024,8 +2047,10 @@ def render_performance(
     )
     restore_mix = glue_bus(
         source * (0.28 * source_layer_gain)
-        + w30 * 1.76
-        + hook_riff * (1.46 * hook_forward_gain * 0.97)
+        + w30 * (1.76 * source_character_rebuild_restore_boost)
+        + hook_riff * (
+            1.46 * hook_forward_gain * 0.97 * source_character_rebuild_restore_boost
+        )
         + tr909 * 2.78
         + break_snap * mix_policy.restore_break_snap_gain
         + mc202 * 3.65
@@ -2576,11 +2601,15 @@ def rebuild_only_source_character_proof(
         + transient_retention * 0.24
         + rms_retention * 0.18
     )
+    survival_margin = (
+        survival_score - MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE
+    )
     return {
         "rebuild_only_source_spectral_similarity": float(spectral_similarity),
         "rebuild_only_source_transient_retention": float(transient_retention),
         "rebuild_only_source_rms_retention": float(rms_retention),
         "rebuild_only_source_character_survival_score": float(survival_score),
+        "rebuild_only_source_character_survival_margin": float(survival_margin),
         "rebuild_only_source_low_band_ratio": float(rebuild_bands[0]),
         "rebuild_only_source_mid_band_ratio": float(rebuild_bands[1]),
         "rebuild_only_source_high_band_ratio": float(rebuild_bands[2]),
@@ -3226,6 +3255,9 @@ def build_report(
             "min_rebuild_only_source_character_survival_score": (
                 MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE
             ),
+            "min_rebuild_only_source_character_survival_margin": (
+                MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_MARGIN
+            ),
             "min_sparse_bass_movement_static_distance_hz": (
                 MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ
             ),
@@ -3536,6 +3568,11 @@ def failure_codes_for(
         < MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE
     ):
         failures.append("rebuild_only_source_character_not_surviving")
+    if (
+        proof.get("rebuild_only_source_character_survival_margin", 0.0)
+        < MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_MARGIN
+    ):
+        failures.append("rebuild_only_source_character_margin_too_low")
     if proof["rebuild_only_pressure_to_hook_rms_ratio"] < MIN_PRESSURE_TO_HOOK_RMS_RATIO:
         failures.append("rebuild_only_pressure_not_louder_than_hook_enough")
     if (
@@ -3932,6 +3969,12 @@ def run_mutation_fixtures(report_path: Path) -> None:
             "rebuild_only_source_character_not_surviving",
         ),
         (
+            "source_character_barely_survives",
+            ("proof", "rebuild_only_source_character_survival_margin"),
+            0.0,
+            "rebuild_only_source_character_margin_too_low",
+        ),
+        (
             "destructive_not_source",
             ("proof", "destructive_gesture_source_derived"),
             0.0,
@@ -4069,6 +4112,11 @@ def validate_weak_source_character_report_file(path: Path) -> None:
             "invalid weak source-character report: "
             "rebuild_only_source_character_not_surviving missing"
         )
+    if "rebuild_only_source_character_margin_too_low" not in failure_codes:
+        raise SystemExit(
+            "invalid weak source-character report: "
+            "rebuild_only_source_character_margin_too_low missing"
+        )
 
     files = report.get("files")
     if not isinstance(files, dict):
@@ -4090,6 +4138,14 @@ def validate_weak_source_character_report_file(path: Path) -> None:
             "artifact source-character survival unexpectedly passed"
         )
     if (
+        proof["rebuild_only_source_character_survival_margin"]
+        >= MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_MARGIN
+    ):
+        raise SystemExit(
+            "invalid weak source-character report: "
+            "artifact source-character survival margin unexpectedly passed"
+        )
+    if (
         proof["rebuild_only_source_transient_retention"]
         >= MIN_REBUILD_ONLY_SOURCE_TRANSIENT_RETENTION
     ):
@@ -4104,6 +4160,7 @@ def validate_weak_source_character_report_file(path: Path) -> None:
         "rebuild_only_source_spectral_similarity",
         "rebuild_only_source_transient_retention",
         "rebuild_only_source_character_survival_score",
+        "rebuild_only_source_character_survival_margin",
     ):
         if abs(float(reported_proof.get(key, 999.0)) - proof[key]) > 0.0005:
             raise SystemExit(f"invalid weak source-character report: stale {key}")
@@ -4580,6 +4637,22 @@ def one_pole_lowpass(samples: np.ndarray, cutoff_hz: float) -> np.ndarray:
         state += alpha * (float(sample) - state)
         output[index] = state
     return output
+
+
+def tonal_rebuild_source_character_focus(samples: np.ndarray) -> np.ndarray:
+    if samples.size == 0:
+        return samples
+    focused_channels = []
+    for channel in range(samples.shape[1]):
+        raw = samples[:, channel].astype(np.float32)
+        high_passed = raw - one_pole_lowpass(raw, 180.0)
+        mid_band = one_pole_lowpass(high_passed, 2400.0)
+        focused_channels.append(mid_band)
+    focused = np.stack(focused_channels, axis=1).astype(np.float32)
+    focused_rms = rms(focused)
+    if focused_rms > 1e-9:
+        focused = apply_gain(focused, rms(samples) / focused_rms)
+    return normalize_peak(samples * 0.22 + focused * 0.92, 0.88)
 
 
 def max_adjacent_bar_correlation(samples: np.ndarray, bar_frames: int) -> float:

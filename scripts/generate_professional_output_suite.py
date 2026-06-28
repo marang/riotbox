@@ -428,6 +428,17 @@ def rebuild_only_source_character_key_metrics(
             ),
             default=0.0,
         ),
+        "min_rebuild_only_source_character_survival_margin": min(
+            (
+                number(
+                    object_or_empty(case.get("proof")).get(
+                        "rebuild_only_source_character_survival_margin"
+                    )
+                )
+                for case in cases
+            ),
+            default=0.0,
+        ),
     }
 
 
@@ -455,6 +466,9 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             ),
             "rebuild_only_source_character_survival_score": number(
                 proof.get("rebuild_only_source_character_survival_score")
+            ),
+            "rebuild_only_source_character_survival_margin": number(
+                proof.get("rebuild_only_source_character_survival_margin")
             ),
             "hook_chop_selection_source_derived": number(
                 proof.get("hook_chop_selection_source_derived")

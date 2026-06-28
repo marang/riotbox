@@ -585,10 +585,12 @@ survival evidence. The current bounded fields are
 `rebuild_only_source_spectral_similarity`,
 `rebuild_only_source_transient_retention`,
 `rebuild_only_source_rms_retention`, and
-`rebuild_only_source_character_survival_score`. These fields prove only that
-some source-like spectral/transient character survives after raw source masking
-is removed and raw-copy correlation is still rejected; they do not prove that
-the result is musically good.
+`rebuild_only_source_character_survival_score`. P023 diagnostics also expose
+`rebuild_only_source_character_survival_margin`, which must stay at least
+`0.10` above the `0.70` survival floor. These fields prove only that some
+source-like spectral/transient character survives after raw source masking is
+removed and raw-copy correlation is still rejected; they do not prove that the
+result is musically good.
 
 P023 Hook/Chop source selection may also expose
 `hook_chop_source_character_score_floor`,
@@ -626,7 +628,8 @@ just dense-break-weak-source-character-fixture-smoke
 
 That smoke renders an intentionally weak `06_rebuild_only_performance.wav` and
 requires the report validator to reject it with
-`rebuild_only_source_character_not_surviving`. It is negative diagnostic
+`rebuild_only_source_character_not_surviving` and
+`rebuild_only_source_character_margin_too_low`. It is negative diagnostic
 evidence only; it must keep `quality_proof: false` and
 `human_verdict: unverified`.
 

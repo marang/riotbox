@@ -29,6 +29,7 @@ MIN_STRONGEST_AUDIBLE_ELEMENT_MARGIN = 0.05
 MIN_REBUILD_ONLY_SOURCE_SPECTRAL_SIMILARITY = 0.60
 MIN_REBUILD_ONLY_SOURCE_TRANSIENT_RETENTION = 0.45
 MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE = 0.70
+MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_MARGIN = 0.10
 ALLOWED_STRONGEST_AUDIBLE_ELEMENTS = {
     "kick",
     "snare",
@@ -342,6 +343,9 @@ def render_case(
             "rebuild_only_source_character_survival_score": number(
                 proof.get("rebuild_only_source_character_survival_score")
             ),
+            "rebuild_only_source_character_survival_margin": number(
+                proof.get("rebuild_only_source_character_survival_margin")
+            ),
         },
         "metrics": {
             "full_performance_rms": number(
@@ -558,6 +562,11 @@ def diagnostic_failure_codes(
         < MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE
     ):
         failures.append("rebuild_only_source_character_not_surviving")
+    if (
+        number(proof.get("rebuild_only_source_character_survival_margin"))
+        < MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_MARGIN
+    ):
+        failures.append("rebuild_only_source_character_margin_too_low")
     return failures
 
 
@@ -725,6 +734,11 @@ def report_failure_codes(
             < MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE
         ):
             failures.append(f"{case_id}:rebuild_only_source_character_not_surviving")
+        if (
+            number(proof.get("rebuild_only_source_character_survival_margin"))
+            < MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_MARGIN
+        ):
+            failures.append(f"{case_id}:rebuild_only_source_character_margin_too_low")
         if not case.get("proposed_fix_categories"):
             failures.append(f"{case_id}:missing_fix_routing")
         if require_artifacts:
@@ -795,6 +809,16 @@ def run_mutation_fixtures(report: dict[str, Any], report_path: Path) -> None:
             "source_character_lost",
             mutated,
             "rebuild_only_source_character_not_surviving",
+        )
+    )
+
+    mutated = json.loads(json.dumps(report))
+    mutated["cases"][0]["proof"]["rebuild_only_source_character_survival_margin"] = 0.0
+    fixtures.append(
+        (
+            "source_character_barely_survives",
+            mutated,
+            "rebuild_only_source_character_margin_too_low",
         )
     )
 

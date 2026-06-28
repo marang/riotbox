@@ -48,6 +48,7 @@ MIN_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.16
 MAX_FERAL_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO = 0.16
 MIN_FERAL_SOURCE_FIRST_MASKING_HEADROOM = 0.09
 MAX_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.46
+MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_MARGIN = 0.10
 
 
 def main() -> int:
@@ -245,6 +246,16 @@ def validate_mutation_fixtures(report: dict[str, Any], output: Path) -> list[str
                 0.0,
             ),
             "feral_source_first_masking_headroom_too_low",
+        ),
+        (
+            "source_character_survival_margin_low",
+            lambda data: set_child_metric(
+                data,
+                "dense_break",
+                "rebuild_only_source_character_survival_margin",
+                0.0,
+            ),
+            "dense_source_character_margin_too_low",
         ),
         (
             "soft_dense_drum_transient",
@@ -843,15 +854,19 @@ def validate_source_character_metrics(
     require(number(dense.get("rebuild_only_source_spectral_similarity")) >= 0.60, "dense_source_spectral_similarity_too_low", failures)
     require(number(dense.get("rebuild_only_source_transient_retention")) >= 0.45, "dense_source_transient_retention_too_low", failures)
     require(number(dense.get("rebuild_only_source_character_survival_score")) >= 0.70, "dense_source_character_not_surviving", failures)
+    require(number(dense.get("rebuild_only_source_character_survival_margin")) >= MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_MARGIN, "dense_source_character_margin_too_low", failures)
     require(number(matrix.get("min_rebuild_only_source_spectral_similarity")) >= 0.60, "matrix_source_spectral_similarity_too_low", failures)
     require(number(matrix.get("min_rebuild_only_source_transient_retention")) >= 0.45, "matrix_source_transient_retention_too_low", failures)
     require(number(matrix.get("min_rebuild_only_source_character_survival_score")) >= 0.70, "matrix_source_character_not_surviving", failures)
+    require(number(matrix.get("min_rebuild_only_source_character_survival_margin")) >= MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_MARGIN, "matrix_source_character_margin_too_low", failures)
     require(number(source_wav.get("min_rebuild_only_source_spectral_similarity")) >= 0.60, "source_wav_source_spectral_similarity_too_low", failures)
     require(number(source_wav.get("min_rebuild_only_source_transient_retention")) >= 0.45, "source_wav_source_transient_retention_too_low", failures)
     require(number(source_wav.get("min_rebuild_only_source_character_survival_score")) >= 0.70, "source_wav_source_character_not_surviving", failures)
+    require(number(source_wav.get("min_rebuild_only_source_character_survival_margin")) >= MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_MARGIN, "source_wav_source_character_margin_too_low", failures)
     require(number(edge.get("min_rebuild_only_source_spectral_similarity")) >= 0.60, "edge_source_spectral_similarity_too_low", failures)
     require(number(edge.get("min_rebuild_only_source_transient_retention")) >= 0.45, "edge_source_transient_retention_too_low", failures)
     require(number(edge.get("min_rebuild_only_source_character_survival_score")) >= 0.70, "edge_source_character_not_surviving", failures)
+    require(number(edge.get("min_rebuild_only_source_character_survival_margin")) >= MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_MARGIN, "edge_source_character_margin_too_low", failures)
 
 
 def validate_rebuild_balance_metrics(
