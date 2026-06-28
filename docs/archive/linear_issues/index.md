@@ -1238,4 +1238,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Persist MC-202 source phrase plans through replay and restore
 - [RIOTBOX-1295.md](./RIOTBOX-1295.md)
   Strengthen W-30 hook/chop policy for routed weak outputs
+- [RIOTBOX-1296.md](./RIOTBOX-1296.md)
+  Strengthen sparse bass-pressure movement proof
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
