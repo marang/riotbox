@@ -1190,11 +1190,17 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             "dropout_to_stutter_rms_ratio": number(
                 metrics.get("dropout_to_stutter_rms_ratio")
             ),
+            "dropout_silence_to_stutter_rms_ratio": number(
+                metrics.get("dropout_silence_to_stutter_rms_ratio")
+            ),
             "stutter_to_hook_transient_ratio": number(
                 metrics.get("stutter_to_hook_transient_ratio")
             ),
             "restore_to_pressure_rms_ratio": number(
                 metrics.get("restore_to_pressure_rms_ratio")
+            ),
+            "restore_to_dropout_silence_rms_ratio": number(
+                metrics.get("restore_to_dropout_silence_rms_ratio")
             ),
         }
     if child_id == "rendered_weak_professional_outputs":

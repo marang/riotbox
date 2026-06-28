@@ -40,8 +40,10 @@ MIN_SPARSE_PRESSURE_LOW_BAND_SHARE = 0.20
 MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO = 1.75
 MIN_SPARSE_BASS_DOMINANCE_MARGIN = 0.08
 MAX_DESTRUCTIVE_DROPOUT_TO_STUTTER_RMS_RATIO = 0.10
+MAX_DESTRUCTIVE_DROPOUT_SILENCE_TO_STUTTER_RMS_RATIO = 0.08
 MIN_DESTRUCTIVE_STUTTER_TO_HOOK_TRANSIENT_RATIO = 1.20
 MIN_DESTRUCTIVE_RESTORE_TO_PRESSURE_RMS_RATIO = 1.22
+MIN_DESTRUCTIVE_RESTORE_TO_DROPOUT_SILENCE_RMS_RATIO = 6.00
 MIN_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.16
 MAX_FERAL_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO = 0.16
 MAX_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.46
@@ -204,6 +206,26 @@ def validate_mutation_fixtures(report: dict[str, Any], output: Path) -> list[str
                 0.0,
             ),
             "destructive_stutter_lacks_transient_impact",
+        ),
+        (
+            "weak_destructive_cut_depth",
+            lambda data: set_child_metric(
+                data,
+                "destructive_variation",
+                "dropout_silence_to_stutter_rms_ratio",
+                1.0,
+            ),
+            "destructive_dropout_silence_not_deep_enough_before_stutter",
+        ),
+        (
+            "weak_destructive_restore_from_cut",
+            lambda data: set_child_metric(
+                data,
+                "destructive_variation",
+                "restore_to_dropout_silence_rms_ratio",
+                1.0,
+            ),
+            "destructive_restore_does_not_slam_out_of_cut",
         ),
         (
             "generated_support_masks_source",
@@ -613,6 +635,14 @@ def validate_destructive_metrics(
         failures,
     )
     require(
+        "dropout_silence_to_stutter_rms_ratio" in destructive
+        and
+        number(destructive.get("dropout_silence_to_stutter_rms_ratio"))
+        <= MAX_DESTRUCTIVE_DROPOUT_SILENCE_TO_STUTTER_RMS_RATIO,
+        "destructive_dropout_silence_not_deep_enough_before_stutter",
+        failures,
+    )
+    require(
         number(destructive.get("stutter_to_hook_transient_ratio"))
         >= MIN_DESTRUCTIVE_STUTTER_TO_HOOK_TRANSIENT_RATIO,
         "destructive_stutter_lacks_transient_impact",
@@ -622,6 +652,14 @@ def validate_destructive_metrics(
         number(destructive.get("restore_to_pressure_rms_ratio"))
         >= MIN_DESTRUCTIVE_RESTORE_TO_PRESSURE_RMS_RATIO,
         "destructive_restore_not_bigger_than_pressure",
+        failures,
+    )
+    require(
+        "restore_to_dropout_silence_rms_ratio" in destructive
+        and
+        number(destructive.get("restore_to_dropout_silence_rms_ratio"))
+        >= MIN_DESTRUCTIVE_RESTORE_TO_DROPOUT_SILENCE_RMS_RATIO,
+        "destructive_restore_does_not_slam_out_of_cut",
         failures,
     )
     require(number(dense.get("destructive_gesture_source_derived")) == 1.0, "dense_destructive_not_source_derived", failures)

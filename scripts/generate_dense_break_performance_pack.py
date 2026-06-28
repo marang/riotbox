@@ -34,6 +34,7 @@ MIN_W30_TO_SOURCE_RMS_RATIO = 0.18
 MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO = 0.22
 MIN_PRESSURE_LOW_BAND_LIFT_RATIO = 1.12
 MAX_DROPOUT_TO_STUTTER_RMS_RATIO = 0.18
+MAX_DROPOUT_SILENCE_TO_STUTTER_RMS_RATIO = 0.08
 MIN_STUTTER_TO_HOOK_TRANSIENT_RATIO = 0.58
 MIN_BAD_TIMING_CUE_TRANSIENT_SCORE = 0.030
 MIN_RESTORE_TO_HOOK_TRANSIENT_RATIO = 0.85
@@ -44,6 +45,7 @@ MIN_FULL_TO_SOURCE_RMS_RATIO = 0.78
 MIN_HOOK_TO_SOURCE_TRANSIENT_RATIO = 0.48
 MIN_PRESSURE_TO_HOOK_RMS_RATIO = 1.30
 MIN_RESTORE_TO_PRESSURE_RMS_RATIO = 1.12
+MIN_RESTORE_TO_DROPOUT_SILENCE_RMS_RATIO = 6.00
 MIN_REBUILD_ONLY_TO_FULL_RMS_RATIO = 0.42
 MIN_REBUILD_ONLY_TO_SOURCE_RMS_RATIO = 0.30
 MIN_REBUILD_ONLY_RESTORE_TO_PRESSURE_RMS_RATIO = 1.08
@@ -3192,6 +3194,9 @@ def build_report(
             ),
             "min_pressure_low_band_lift_ratio": MIN_PRESSURE_LOW_BAND_LIFT_RATIO,
             "max_dropout_to_stutter_rms_ratio": MAX_DROPOUT_TO_STUTTER_RMS_RATIO,
+            "max_dropout_silence_to_stutter_rms_ratio": (
+                MAX_DROPOUT_SILENCE_TO_STUTTER_RMS_RATIO
+            ),
             "min_stutter_to_hook_transient_ratio": MIN_STUTTER_TO_HOOK_TRANSIENT_RATIO,
             "min_bad_timing_cue_transient_score": MIN_BAD_TIMING_CUE_TRANSIENT_SCORE,
             "min_restore_to_hook_transient_ratio": MIN_RESTORE_TO_HOOK_TRANSIENT_RATIO,
@@ -3202,6 +3207,9 @@ def build_report(
             "min_hook_to_source_transient_ratio": MIN_HOOK_TO_SOURCE_TRANSIENT_RATIO,
             "min_pressure_to_hook_rms_ratio": MIN_PRESSURE_TO_HOOK_RMS_RATIO,
             "min_restore_to_pressure_rms_ratio": MIN_RESTORE_TO_PRESSURE_RMS_RATIO,
+            "min_restore_to_dropout_silence_rms_ratio": (
+                MIN_RESTORE_TO_DROPOUT_SILENCE_RMS_RATIO
+            ),
             "min_rebuild_only_to_full_rms_ratio": MIN_REBUILD_ONLY_TO_FULL_RMS_RATIO,
             "min_rebuild_only_to_source_rms_ratio": MIN_REBUILD_ONLY_TO_SOURCE_RMS_RATIO,
             "min_rebuild_only_restore_to_pressure_rms_ratio": (
@@ -3362,6 +3370,8 @@ def performance_proof(
             else 0.0
         ),
         "dropout_to_stutter_rms_ratio": rms(dropout_first) / max(rms(dropout_second), 1e-9),
+        "dropout_silence_to_stutter_rms_ratio": rms(tail_silence)
+        / max(rms(tail_stutter), 1e-9),
         "stutter_to_hook_transient_ratio": transient_score(dropout_second) / max(hook_transient, 1e-9),
         "manual_confirm_cue_transient_score": transient_score(dropout_second),
         "restore_to_hook_transient_ratio": restore_transient / max(hook_transient, 1e-9),
@@ -3372,6 +3382,7 @@ def performance_proof(
         "hook_to_source_transient_ratio": hook_transient / max(transient_score(source), 1e-9),
         "pressure_to_hook_rms_ratio": pressure_rms / max(hook_rms, 1e-9),
         "restore_to_pressure_rms_ratio": restore_rms / max(pressure_rms, 1e-9),
+        "restore_to_dropout_silence_rms_ratio": restore_rms / max(rms(tail_silence), 1e-9),
         "rebuild_only_to_full_rms_ratio": rebuild_only_rms / max(full_rms, 1e-9),
         "rebuild_only_to_source_rms_ratio": rebuild_only_rms / max(source_rms, 1e-9),
         "rebuild_only_to_source_correlation": rebuild_only_source_similarity,
@@ -3446,6 +3457,11 @@ def failure_codes_for(
         failures.append("pressure_section_lacks_bass_lift")
     if proof["dropout_to_stutter_rms_ratio"] > MAX_DROPOUT_TO_STUTTER_RMS_RATIO:
         failures.append("dropout_not_contrasting_with_stutter")
+    if (
+        proof["dropout_silence_to_stutter_rms_ratio"]
+        > MAX_DROPOUT_SILENCE_TO_STUTTER_RMS_RATIO
+    ):
+        failures.append("dropout_silence_not_deep_enough_before_stutter")
     if source_family == "bad_timing":
         if proof["manual_confirm_cue_transient_score"] < MIN_BAD_TIMING_CUE_TRANSIENT_SCORE:
             failures.append("bad_timing_confirmation_cue_too_weak")
@@ -3492,6 +3508,11 @@ def failure_codes_for(
         failures.append("pressure_section_not_louder_than_hook_enough")
     if proof["restore_to_pressure_rms_ratio"] < MIN_RESTORE_TO_PRESSURE_RMS_RATIO:
         failures.append("restore_hit_not_bigger_than_pressure_section")
+    if (
+        proof["restore_to_dropout_silence_rms_ratio"]
+        < MIN_RESTORE_TO_DROPOUT_SILENCE_RMS_RATIO
+    ):
+        failures.append("restore_hit_does_not_slam_out_of_cut")
     if proof["rebuild_only_to_full_rms_ratio"] < MIN_REBUILD_ONLY_TO_FULL_RMS_RATIO:
         failures.append("rebuild_only_too_weak_relative_to_full_mix")
     if proof["rebuild_only_to_source_rms_ratio"] < MIN_REBUILD_ONLY_TO_SOURCE_RMS_RATIO:

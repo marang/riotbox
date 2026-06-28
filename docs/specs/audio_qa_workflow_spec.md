@@ -399,10 +399,14 @@ Early P011 guardrail defaults:
   margin. These remain scripted diagnostic gates, not musical-pass claims.
 - Destructive-variation professional diagnostics require a hard dropout/stutter
   contrast and an impact restore: `dropout_to_stutter_rms_ratio <= 0.10`,
-  `stutter_to_hook_transient_ratio >= 1.20`, and
-  `restore_to_pressure_rms_ratio >= 1.22`. These thresholds prove the
-  diagnostic output did not collapse to a flat edit; they do not approve the
-  render as product-quality audio without human listening.
+  `dropout_silence_to_stutter_rms_ratio <= 0.08`,
+  `stutter_to_hook_transient_ratio >= 1.20`,
+  `restore_to_pressure_rms_ratio >= 1.22`, and
+  `restore_to_dropout_silence_rms_ratio >= 6.00`. These thresholds prove the
+  diagnostic output did not collapse to a flat edit: the cut must actually get
+  out of the way, the stutter must hit, and the restore must slam back from the
+  cut. They do not approve the render as product-quality audio without human
+  listening.
 - Feral grid W-30 source-chop output must expose source-derived accent dynamics
   under `metrics.w30_source_accent_dynamics`. The proof checks that selected
   source offsets produce multiple trigger velocities and enough velocity span

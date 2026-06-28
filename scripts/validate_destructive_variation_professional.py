@@ -15,9 +15,11 @@ from audio_qa_evidence_boundary import apply_evidence_boundary
 SCHEMA = "riotbox.destructive_variation_professional.v1"
 SOURCE_SCHEMA = "riotbox.dense_break_performance_pack.v1"
 MAX_DROPOUT_TO_STUTTER_RMS_RATIO = 0.10
+MAX_DROPOUT_SILENCE_TO_STUTTER_RMS_RATIO = 0.08
 MIN_STUTTER_TO_HOOK_TRANSIENT_RATIO = 1.20
 MIN_RESTORE_TO_HOOK_TRANSIENT_RATIO = 1.20
 MIN_RESTORE_TO_PRESSURE_RMS_RATIO = 1.22
+MIN_RESTORE_TO_DROPOUT_SILENCE_RMS_RATIO = 6.00
 MAX_ADJACENT_BAR_CORRELATION = 0.95
 MIN_SOURCE_TO_PERFORMANCE_CORRELATION = 0.20
 MAX_SOURCE_TO_PERFORMANCE_CORRELATION = 0.80
@@ -64,9 +66,15 @@ def build_report(performance_report: Path) -> dict[str, Any]:
     metrics = object_or_empty(source.get("metrics"))
     extracted = {
         "dropout_to_stutter_rms_ratio": number(proof.get("dropout_to_stutter_rms_ratio")),
+        "dropout_silence_to_stutter_rms_ratio": number(
+            proof.get("dropout_silence_to_stutter_rms_ratio")
+        ),
         "stutter_to_hook_transient_ratio": number(proof.get("stutter_to_hook_transient_ratio")),
         "restore_to_hook_transient_ratio": number(proof.get("restore_to_hook_transient_ratio")),
         "restore_to_pressure_rms_ratio": number(proof.get("restore_to_pressure_rms_ratio")),
+        "restore_to_dropout_silence_rms_ratio": number(
+            proof.get("restore_to_dropout_silence_rms_ratio")
+        ),
         "max_adjacent_bar_correlation": number(proof.get("max_adjacent_bar_correlation")),
         "source_to_performance_correlation": number(proof.get("source_to_performance_correlation")),
         "destructive_gesture_source_derived": number(
@@ -84,9 +92,15 @@ def build_report(performance_report: Path) -> dict[str, Any]:
     }
     thresholds = {
         "max_dropout_to_stutter_rms_ratio": MAX_DROPOUT_TO_STUTTER_RMS_RATIO,
+        "max_dropout_silence_to_stutter_rms_ratio": (
+            MAX_DROPOUT_SILENCE_TO_STUTTER_RMS_RATIO
+        ),
         "min_stutter_to_hook_transient_ratio": MIN_STUTTER_TO_HOOK_TRANSIENT_RATIO,
         "min_restore_to_hook_transient_ratio": MIN_RESTORE_TO_HOOK_TRANSIENT_RATIO,
         "min_restore_to_pressure_rms_ratio": MIN_RESTORE_TO_PRESSURE_RMS_RATIO,
+        "min_restore_to_dropout_silence_rms_ratio": (
+            MIN_RESTORE_TO_DROPOUT_SILENCE_RMS_RATIO
+        ),
         "max_adjacent_bar_correlation": MAX_ADJACENT_BAR_CORRELATION,
         "min_source_to_performance_correlation": MIN_SOURCE_TO_PERFORMANCE_CORRELATION,
         "max_source_to_performance_correlation": MAX_SOURCE_TO_PERFORMANCE_CORRELATION,
@@ -124,12 +138,22 @@ def build_report(performance_report: Path) -> dict[str, Any]:
 
 
 def failure_codes(source: dict[str, Any], metrics: dict[str, float]) -> list[str]:
+    proof = object_or_empty(source.get("proof"))
     checks = [
         ("source_report_schema_mismatch", source.get("schema") == SOURCE_SCHEMA),
         ("source_report_not_passed", source.get("result") == "pass"),
         (
             "dropout_not_contrasting_with_stutter",
             metrics["dropout_to_stutter_rms_ratio"] <= MAX_DROPOUT_TO_STUTTER_RMS_RATIO,
+        ),
+        (
+            "dropout_silence_metric_missing",
+            "dropout_silence_to_stutter_rms_ratio" in proof,
+        ),
+        (
+            "dropout_silence_not_deep_enough_before_stutter",
+            metrics["dropout_silence_to_stutter_rms_ratio"]
+            <= MAX_DROPOUT_SILENCE_TO_STUTTER_RMS_RATIO,
         ),
         (
             "stutter_lacks_transient_impact",
@@ -142,6 +166,15 @@ def failure_codes(source: dict[str, Any], metrics: dict[str, float]) -> list[str
         (
             "restore_not_bigger_than_pressure",
             metrics["restore_to_pressure_rms_ratio"] >= MIN_RESTORE_TO_PRESSURE_RMS_RATIO,
+        ),
+        (
+            "restore_cut_slam_metric_missing",
+            "restore_to_dropout_silence_rms_ratio" in proof,
+        ),
+        (
+            "restore_does_not_slam_out_of_cut",
+            metrics["restore_to_dropout_silence_rms_ratio"]
+            >= MIN_RESTORE_TO_DROPOUT_SILENCE_RMS_RATIO,
         ),
         ("bars_too_static", metrics["max_adjacent_bar_correlation"] <= MAX_ADJACENT_BAR_CORRELATION),
         (
