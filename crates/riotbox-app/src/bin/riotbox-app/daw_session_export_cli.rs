@@ -142,7 +142,7 @@ fn daw_session_writer_export_execute_ready_summary(
         "writes_files": true,
         "mutates_session": true,
         "observer_events": observer_events,
-        "boundary": riotbox_app::jam_app::DAW_SESSION_LOCAL_PROJECT_WRITER_BOUNDARY_ID,
+        "boundary": crate::jam_app::DAW_SESSION_LOCAL_PROJECT_WRITER_BOUNDARY_ID,
         "session_path": session_path,
         "destination_path": destination_path,
         "readiness_blockers": [],
@@ -197,7 +197,7 @@ fn daw_session_writer_export_execute_blocked_summary(
     session_path: &Path,
     destination_path: &Path,
     state: &JamAppState,
-    error: &riotbox_app::jam_app::JamAppError,
+    error: &crate::jam_app::JamAppError,
     observer_events: bool,
 ) -> Value {
     let surface_gate = state.daw_session_export_surface_gate();
@@ -208,7 +208,7 @@ fn daw_session_writer_export_execute_blocked_summary(
         "writes_files": false,
         "mutates_session": false,
         "observer_events": observer_events,
-        "boundary": riotbox_app::jam_app::DAW_SESSION_LOCAL_PROJECT_WRITER_BOUNDARY_ID,
+        "boundary": crate::jam_app::DAW_SESSION_LOCAL_PROJECT_WRITER_BOUNDARY_ID,
         "session_path": session_path,
         "destination_path": destination_path,
         "readiness_blockers": [error.to_string()],
@@ -227,7 +227,7 @@ fn daw_session_host_import_proof_export_execute_blocked_summary(
     session_path: &Path,
     proof_path: &Path,
     state: &JamAppState,
-    error: &riotbox_app::jam_app::JamAppError,
+    error: &crate::jam_app::JamAppError,
     observer_events: bool,
 ) -> Value {
     let surface_gate = state.daw_session_export_surface_gate();

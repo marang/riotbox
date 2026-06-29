@@ -9,7 +9,7 @@ use riotbox_core::{
         ExportReceiptState,
     },
 };
-use riotbox_app::jam_app::{
+use crate::jam_app::{
     attach_daw_session_json_package_evidence_to_receipt, daw_session_json_package_report,
     write_daw_session_json_package,
 };
@@ -410,8 +410,8 @@ fn write_host_import_observer_proof(path: &Path, imported: bool, blockers: &[&st
     fs::write(
         path,
         serde_json::json!({
-            "schema_id": riotbox_app::jam_app::DAW_SESSION_HOST_IMPORT_PROOF_SCHEMA_ID,
-            "schema_version": riotbox_app::jam_app::DAW_SESSION_HOST_IMPORT_PROOF_SCHEMA_VERSION,
+            "schema_id": crate::jam_app::DAW_SESSION_HOST_IMPORT_PROOF_SCHEMA_ID,
+            "schema_version": crate::jam_app::DAW_SESSION_HOST_IMPORT_PROOF_SCHEMA_VERSION,
             "package_dir": "exports/daw-package/daw_session",
             "imported": imported,
             "blockers": blockers,
@@ -425,8 +425,8 @@ fn write_audible_output_observer_proof(path: &Path, audible: bool, blockers: &[&
     fs::write(
         path,
         serde_json::json!({
-            "schema_id": riotbox_app::jam_app::DAW_SESSION_AUDIBLE_OUTPUT_PROOF_SCHEMA_ID,
-            "schema_version": riotbox_app::jam_app::DAW_SESSION_AUDIBLE_OUTPUT_PROOF_SCHEMA_VERSION,
+            "schema_id": crate::jam_app::DAW_SESSION_AUDIBLE_OUTPUT_PROOF_SCHEMA_ID,
+            "schema_version": crate::jam_app::DAW_SESSION_AUDIBLE_OUTPUT_PROOF_SCHEMA_VERSION,
             "package_dir": "exports/daw-package/daw_session",
             "audible": audible,
             "blockers": blockers,

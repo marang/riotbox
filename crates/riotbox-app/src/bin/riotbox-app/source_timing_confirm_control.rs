@@ -3,7 +3,7 @@ fn confirm_source_timing_grid(shell: &mut JamShellState, requested_at: u64) {
         .app
         .queue_source_timing_grid_confirmation(requested_at)
     {
-        riotbox_app::jam_app::QueueControlResult::Enqueued => {
+        crate::jam_app::QueueControlResult::Enqueued => {
             let transport = shell.app.runtime.transport.clone();
             let committed = shell.app.commit_ready_actions(
                 riotbox_core::transport::CommitBoundaryState {
@@ -21,10 +21,10 @@ fn confirm_source_timing_grid(shell: &mut JamShellState, requested_at: u64) {
                 shell.set_error_status("confirmed source timing grid");
             }
         }
-        riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+        crate::jam_app::QueueControlResult::AlreadyPending => {
             shell.set_error_status("source timing grid trust change already queued");
         }
-        riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+        crate::jam_app::QueueControlResult::AlreadyInState => {
             if shell.app.source_graph.is_some() {
                 shell.set_error_status("source timing grid already confirmed");
             } else {
@@ -36,7 +36,7 @@ fn confirm_source_timing_grid(shell: &mut JamShellState, requested_at: u64) {
 
 fn revert_source_timing_grid(shell: &mut JamShellState, requested_at: u64) {
     match shell.app.queue_source_timing_grid_revert(requested_at) {
-        riotbox_app::jam_app::QueueControlResult::Enqueued => {
+        crate::jam_app::QueueControlResult::Enqueued => {
             let transport = shell.app.runtime.transport.clone();
             let committed = shell.app.commit_ready_actions(
                 riotbox_core::transport::CommitBoundaryState {
@@ -54,10 +54,10 @@ fn revert_source_timing_grid(shell: &mut JamShellState, requested_at: u64) {
                 shell.set_error_status("reverted source timing grid confirmation");
             }
         }
-        riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+        crate::jam_app::QueueControlResult::AlreadyPending => {
             shell.set_error_status("source timing grid trust change already queued");
         }
-        riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+        crate::jam_app::QueueControlResult::AlreadyInState => {
             shell.set_error_status("no source timing grid confirmation to revert");
         }
     }

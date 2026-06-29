@@ -11,7 +11,7 @@ fn navigates_source_map_and_reports_committed_transport_seek() {
 
     navigate_source_map(
         &mut shell,
-        riotbox_app::jam_app::SourceMapNavigationIntent::NextPhrase,
+        crate::jam_app::SourceMapNavigationIntent::NextPhrase,
         123,
     );
 

@@ -1,3 +1,4 @@
+pub mod cli;
 pub mod jam_app;
 pub mod observer;
 pub mod source_timing_cues;

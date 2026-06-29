@@ -67,112 +67,112 @@ fn run_event_loop(
                 }
                 ShellKeyOutcome::QueueSceneSelect => {
                     match shell.app.queue_scene_select(timestamp_now()) {
-                        riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                        crate::jam_app::QueueControlResult::Enqueued => {
                             shell.set_error_status("queued scene select for next bar");
                         }
-                        riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                        crate::jam_app::QueueControlResult::AlreadyPending => {
                             shell.set_error_status("scene transition already queued");
                         }
-                        riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                        crate::jam_app::QueueControlResult::AlreadyInState => {
                             shell.set_error_status(scene_select_unavailable_status(&shell));
                         }
                     }
                 }
                 ShellKeyOutcome::QueueSceneRestore => {
                     match shell.app.queue_scene_restore(timestamp_now()) {
-                        riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                        crate::jam_app::QueueControlResult::Enqueued => {
                             shell.set_error_status("queued scene restore for next bar");
                         }
-                        riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                        crate::jam_app::QueueControlResult::AlreadyPending => {
                             shell.set_error_status("scene transition already queued");
                         }
-                        riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                        crate::jam_app::QueueControlResult::AlreadyInState => {
                             shell.set_error_status("no restore scene available");
                         }
                     }
                 }
                 ShellKeyOutcome::QueueMc202RoleToggle => {
                     match shell.app.queue_mc202_role_toggle(timestamp_now()) {
-                        riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                        crate::jam_app::QueueControlResult::Enqueued => {
                             shell.set_error_status("queued MC-202 role change for next phrase");
                         }
-                        riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                        crate::jam_app::QueueControlResult::AlreadyPending => {
                             shell.set_error_status("MC-202 role change already queued");
                         }
-                        riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                        crate::jam_app::QueueControlResult::AlreadyInState => {
                             shell.set_error_status("MC-202 role already set");
                         }
                     }
                 }
                 ShellKeyOutcome::QueueMc202GenerateFollower => {
                     match shell.app.queue_mc202_generate_follower(timestamp_now()) {
-                        riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                        crate::jam_app::QueueControlResult::Enqueued => {
                             shell.set_error_status(
                                 "queued MC-202 follower generation for next phrase",
                             );
                         }
-                        riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                        crate::jam_app::QueueControlResult::AlreadyPending => {
                             shell.set_error_status("MC-202 follower generation already queued");
                         }
-                        riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                        crate::jam_app::QueueControlResult::AlreadyInState => {
                             shell.set_error_status("MC-202 follower already in state");
                         }
                     }
                 }
                 ShellKeyOutcome::QueueMc202GenerateAnswer => {
                     match shell.app.queue_mc202_generate_answer(timestamp_now()) {
-                        riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                        crate::jam_app::QueueControlResult::Enqueued => {
                             shell.set_error_status(
                                 "queued MC-202 answer generation for next phrase",
                             );
                         }
-                        riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                        crate::jam_app::QueueControlResult::AlreadyPending => {
                             shell.set_error_status("MC-202 answer generation already queued");
                         }
-                        riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                        crate::jam_app::QueueControlResult::AlreadyInState => {
                             shell.set_error_status("MC-202 answer already in state");
                         }
                     }
                 }
                 ShellKeyOutcome::QueueMc202GeneratePressure => {
                     match shell.app.queue_mc202_generate_pressure(timestamp_now()) {
-                        riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                        crate::jam_app::QueueControlResult::Enqueued => {
                             shell.set_error_status(
                                 "queued MC-202 pressure generation for next phrase",
                             );
                         }
-                        riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                        crate::jam_app::QueueControlResult::AlreadyPending => {
                             shell.set_error_status("MC-202 pressure generation already queued");
                         }
-                        riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                        crate::jam_app::QueueControlResult::AlreadyInState => {
                             shell.set_error_status("MC-202 pressure already in state");
                         }
                     }
                 }
                 ShellKeyOutcome::QueueMc202GenerateInstigator => {
                     match shell.app.queue_mc202_generate_instigator(timestamp_now()) {
-                        riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                        crate::jam_app::QueueControlResult::Enqueued => {
                             shell.set_error_status(
                                 "queued MC-202 instigator generation for next phrase",
                             );
                         }
-                        riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                        crate::jam_app::QueueControlResult::AlreadyPending => {
                             shell.set_error_status("MC-202 phrase control already queued");
                         }
-                        riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                        crate::jam_app::QueueControlResult::AlreadyInState => {
                             shell.set_error_status("MC-202 instigator already in state");
                         }
                     }
                 }
                 ShellKeyOutcome::QueueMc202MutatePhrase => {
                     match shell.app.queue_mc202_mutate_phrase(timestamp_now()) {
-                        riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                        crate::jam_app::QueueControlResult::Enqueued => {
                             shell.set_error_status("queued MC-202 phrase mutation for next phrase");
                         }
-                        riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                        crate::jam_app::QueueControlResult::AlreadyPending => {
                             shell.set_error_status("MC-202 phrase control already queued");
                         }
-                        riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                        crate::jam_app::QueueControlResult::AlreadyInState => {
                             shell.set_error_status("set an MC-202 voice before mutating phrase");
                         }
                     }
@@ -194,41 +194,41 @@ fn run_event_loop(
                 }
                 ShellKeyOutcome::QueueTr909Takeover => {
                     match shell.app.queue_tr909_takeover(timestamp_now()) {
-                        riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                        crate::jam_app::QueueControlResult::Enqueued => {
                             shell.set_error_status("queued TR-909 takeover for next phrase");
                         }
-                        riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                        crate::jam_app::QueueControlResult::AlreadyPending => {
                             shell.set_error_status("TR-909 takeover change already queued");
                         }
-                        riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                        crate::jam_app::QueueControlResult::AlreadyInState => {
                             shell.set_error_status("TR-909 takeover already active");
                         }
                     }
                 }
                 ShellKeyOutcome::QueueTr909SceneLock => {
                     match shell.app.queue_tr909_scene_lock(timestamp_now()) {
-                        riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                        crate::jam_app::QueueControlResult::Enqueued => {
                             shell.set_error_status(
                                 "queued TR-909 scene-lock variation for next phrase",
                             );
                         }
-                        riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                        crate::jam_app::QueueControlResult::AlreadyPending => {
                             shell.set_error_status("TR-909 takeover change already queued");
                         }
-                        riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                        crate::jam_app::QueueControlResult::AlreadyInState => {
                             shell.set_error_status("TR-909 scene-lock variation already active");
                         }
                     }
                 }
                 ShellKeyOutcome::QueueTr909Release => {
                     match shell.app.queue_tr909_release(timestamp_now()) {
-                        riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                        crate::jam_app::QueueControlResult::Enqueued => {
                             shell.set_error_status("queued TR-909 release for next phrase");
                         }
-                        riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                        crate::jam_app::QueueControlResult::AlreadyPending => {
                             shell.set_error_status("TR-909 takeover change already queued");
                         }
-                        riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                        crate::jam_app::QueueControlResult::AlreadyInState => {
                             shell.set_error_status("TR-909 takeover already released");
                         }
                     }
@@ -246,13 +246,13 @@ fn run_event_loop(
                 }
                 ShellKeyOutcome::QueueW30TriggerPad => {
                     match shell.app.queue_w30_trigger_pad(timestamp_now()) {
-                        Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
+                        Some(crate::jam_app::QueueControlResult::Enqueued) => {
                             shell.set_error_status("queued W-30 pad trigger for next beat");
                         }
-                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyPending) => {
+                        Some(crate::jam_app::QueueControlResult::AlreadyPending) => {
                             shell.set_error_status("W-30 pad cue already queued");
                         }
-                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyInState) => {
+                        Some(crate::jam_app::QueueControlResult::AlreadyInState) => {
                             shell.set_error_status("W-30 pad trigger already in state");
                         }
                         None => {
@@ -262,13 +262,13 @@ fn run_event_loop(
                 }
                 ShellKeyOutcome::QueueW30StepFocus => {
                     match shell.app.queue_w30_step_focus(timestamp_now()) {
-                        Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
+                        Some(crate::jam_app::QueueControlResult::Enqueued) => {
                             shell.set_error_status("queued W-30 focus step for next beat");
                         }
-                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyPending) => {
+                        Some(crate::jam_app::QueueControlResult::AlreadyPending) => {
                             shell.set_error_status("W-30 pad cue already queued");
                         }
-                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyInState) => {
+                        Some(crate::jam_app::QueueControlResult::AlreadyInState) => {
                             shell.set_error_status("W-30 focus already on the next stepped pad");
                         }
                         None => shell
@@ -277,13 +277,13 @@ fn run_event_loop(
                 }
                 ShellKeyOutcome::QueueW30SwapBank => {
                     match shell.app.queue_w30_swap_bank(timestamp_now()) {
-                        Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
+                        Some(crate::jam_app::QueueControlResult::Enqueued) => {
                             shell.set_error_status("queued W-30 bank swap for next bar");
                         }
-                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyPending) => {
+                        Some(crate::jam_app::QueueControlResult::AlreadyPending) => {
                             shell.set_error_status("W-30 pad cue already queued");
                         }
-                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyInState) => {
+                        Some(crate::jam_app::QueueControlResult::AlreadyInState) => {
                             shell.set_error_status("W-30 bank swap already on the next bank");
                         }
                         None => {
@@ -293,13 +293,13 @@ fn run_event_loop(
                 }
                 ShellKeyOutcome::QueueW30BrowseSlicePool => {
                     match shell.app.queue_w30_browse_slice_pool(timestamp_now()) {
-                        Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
+                        Some(crate::jam_app::QueueControlResult::Enqueued) => {
                             shell.set_error_status("queued W-30 slice-pool browse for next beat");
                         }
-                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyPending) => {
+                        Some(crate::jam_app::QueueControlResult::AlreadyPending) => {
                             shell.set_error_status("W-30 pad cue already queued");
                         }
-                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyInState) => {
+                        Some(crate::jam_app::QueueControlResult::AlreadyInState) => {
                             shell
                                 .set_error_status("W-30 slice pool already on the current capture");
                         }
@@ -310,13 +310,13 @@ fn run_event_loop(
                 }
                 ShellKeyOutcome::QueueW30ApplyDamageProfile => {
                     match shell.app.queue_w30_apply_damage_profile(timestamp_now()) {
-                        Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
+                        Some(crate::jam_app::QueueControlResult::Enqueued) => {
                             shell.set_error_status("queued W-30 damage profile for next bar");
                         }
-                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyPending) => {
+                        Some(crate::jam_app::QueueControlResult::AlreadyPending) => {
                             shell.set_error_status("W-30 pad cue already queued");
                         }
-                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyInState) => {
+                        Some(crate::jam_app::QueueControlResult::AlreadyInState) => {
                             shell.set_error_status("W-30 damage profile already active");
                         }
                         None => shell.set_error_status("no W-30 pad available for damage profile"),
@@ -324,13 +324,13 @@ fn run_event_loop(
                 }
                 ShellKeyOutcome::QueueW30LoopFreeze => {
                     match shell.app.queue_w30_loop_freeze(timestamp_now()) {
-                        Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
+                        Some(crate::jam_app::QueueControlResult::Enqueued) => {
                             shell.set_error_status("queued W-30 loop freeze for next phrase");
                         }
-                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyPending) => {
+                        Some(crate::jam_app::QueueControlResult::AlreadyPending) => {
                             shell.set_error_status("W-30 pad cue already queued");
                         }
-                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyInState) => {
+                        Some(crate::jam_app::QueueControlResult::AlreadyInState) => {
                             shell.set_error_status("W-30 loop freeze already in state");
                         }
                         None => shell.set_error_status("no committed W-30 pad available to freeze"),
@@ -338,13 +338,13 @@ fn run_event_loop(
                 }
                 ShellKeyOutcome::QueueW30LiveRecall => {
                     match shell.app.queue_w30_live_recall(timestamp_now()) {
-                        Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
+                        Some(crate::jam_app::QueueControlResult::Enqueued) => {
                             shell.set_error_status("queued W-30 live recall for next bar");
                         }
-                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyPending) => {
+                        Some(crate::jam_app::QueueControlResult::AlreadyPending) => {
                             shell.set_error_status("W-30 live recall already queued");
                         }
-                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyInState) => {
+                        Some(crate::jam_app::QueueControlResult::AlreadyInState) => {
                             shell.set_error_status("W-30 live recall already in state");
                         }
                         None => shell.set_error_status(
@@ -354,13 +354,13 @@ fn run_event_loop(
                 }
                 ShellKeyOutcome::QueueW30Audition => {
                     match shell.app.queue_w30_audition(timestamp_now()) {
-                        Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
+                        Some(crate::jam_app::QueueControlResult::Enqueued) => {
                             shell.set_error_status("queued W-30 audition for next bar");
                         }
-                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyPending) => {
+                        Some(crate::jam_app::QueueControlResult::AlreadyPending) => {
                             shell.set_error_status("W-30 pad cue already queued");
                         }
-                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyInState) => {
+                        Some(crate::jam_app::QueueControlResult::AlreadyInState) => {
                             shell.set_error_status("W-30 audition already in state");
                         }
                         None => {
@@ -370,13 +370,13 @@ fn run_event_loop(
                 }
                 ShellKeyOutcome::QueueW30Resample => {
                     match shell.app.queue_w30_internal_resample(timestamp_now()) {
-                        Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
+                        Some(crate::jam_app::QueueControlResult::Enqueued) => {
                             shell.set_error_status("queued W-30 internal resample for next phrase");
                         }
-                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyPending) => {
+                        Some(crate::jam_app::QueueControlResult::AlreadyPending) => {
                             shell.set_error_status("W-30 internal resample already queued");
                         }
-                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyInState) => {
+                        Some(crate::jam_app::QueueControlResult::AlreadyInState) => {
                             shell.set_error_status("W-30 internal resample already in state");
                         }
                         None => shell
@@ -395,28 +395,28 @@ fn run_event_loop(
                 ShellKeyOutcome::NavigateSourceMapPreviousBar => {
                     navigate_source_map(
                         &mut shell,
-                        riotbox_app::jam_app::SourceMapNavigationIntent::PreviousBar,
+                        crate::jam_app::SourceMapNavigationIntent::PreviousBar,
                         timestamp_now(),
                     );
                 }
                 ShellKeyOutcome::NavigateSourceMapNextBar => {
                     navigate_source_map(
                         &mut shell,
-                        riotbox_app::jam_app::SourceMapNavigationIntent::NextBar,
+                        crate::jam_app::SourceMapNavigationIntent::NextBar,
                         timestamp_now(),
                     );
                 }
                 ShellKeyOutcome::NavigateSourceMapPreviousPhrase => {
                     navigate_source_map(
                         &mut shell,
-                        riotbox_app::jam_app::SourceMapNavigationIntent::PreviousPhrase,
+                        crate::jam_app::SourceMapNavigationIntent::PreviousPhrase,
                         timestamp_now(),
                     );
                 }
                 ShellKeyOutcome::NavigateSourceMapNextPhrase => {
                     navigate_source_map(
                         &mut shell,
-                        riotbox_app::jam_app::SourceMapNavigationIntent::NextPhrase,
+                        crate::jam_app::SourceMapNavigationIntent::NextPhrase,
                         timestamp_now(),
                     );
                 }
