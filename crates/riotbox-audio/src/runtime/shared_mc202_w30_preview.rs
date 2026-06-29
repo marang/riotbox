@@ -3,6 +3,7 @@ use super::*;
 impl SharedTr909RenderState {
     pub(super) fn new(render_state: &Tr909RenderState) -> Self {
         let shared = Self {
+            revision: AtomicU64::new(0),
             mode: AtomicU32::new(0),
             routing: AtomicU32::new(0),
             source_support_profile: AtomicU32::new(0),
@@ -21,6 +22,7 @@ impl SharedTr909RenderState {
     }
 
     pub(super) fn update(&self, render_state: &Tr909RenderState) {
+        begin_coherent_snapshot_update(&self.revision);
         self.mode
             .store(mode_to_u32(render_state.mode), Ordering::Relaxed);
         self.routing
@@ -55,9 +57,21 @@ impl SharedTr909RenderState {
             .store(render_state.tempo_bpm.to_bits(), Ordering::Relaxed);
         self.position_beats_bits
             .store(render_state.position_beats.to_bits(), Ordering::Relaxed);
+        finish_coherent_snapshot_update(&self.revision);
     }
 
     pub(super) fn snapshot(&self) -> RealtimeTr909RenderState {
+        coherent_snapshot(&self.revision, || self.read_snapshot_fields())
+    }
+
+    pub(super) fn snapshot_or_previous(
+        &self,
+        previous: &RealtimeTr909RenderState,
+    ) -> RealtimeTr909RenderState {
+        coherent_snapshot_or(&self.revision, previous, || self.read_snapshot_fields())
+    }
+
+    fn read_snapshot_fields(&self) -> RealtimeTr909RenderState {
         RealtimeTr909RenderState {
             mode: mode_from_u32(self.mode.load(Ordering::Relaxed)),
             routing: routing_from_u32(self.routing.load(Ordering::Relaxed)),
@@ -121,6 +135,7 @@ impl From<RealtimeMc202RenderState> for Mc202RenderState {
 }
 
 pub(super) struct SharedMc202RenderState {
+    revision: AtomicU64,
     mode: AtomicU32,
     routing: AtomicU32,
     phrase_shape: AtomicU32,
@@ -146,6 +161,7 @@ pub(super) struct SharedMc202RenderState {
 impl SharedMc202RenderState {
     pub(super) fn new(render_state: &Mc202RenderState) -> Self {
         let shared = Self {
+            revision: AtomicU64::new(0),
             mode: AtomicU32::new(0),
             routing: AtomicU32::new(0),
             phrase_shape: AtomicU32::new(0),
@@ -172,6 +188,7 @@ impl SharedMc202RenderState {
     }
 
     pub(super) fn update(&self, render_state: &Mc202RenderState) {
+        begin_coherent_snapshot_update(&self.revision);
         self.mode
             .store(mc202_mode_to_u32(render_state.mode), Ordering::Relaxed);
         self.routing.store(
@@ -263,9 +280,21 @@ impl SharedMc202RenderState {
             .store(render_state.position_beats.to_bits(), Ordering::Relaxed);
         self.is_transport_running
             .store(render_state.is_transport_running, Ordering::Relaxed);
+        finish_coherent_snapshot_update(&self.revision);
     }
 
     pub(super) fn snapshot(&self) -> RealtimeMc202RenderState {
+        coherent_snapshot(&self.revision, || self.read_snapshot_fields())
+    }
+
+    pub(super) fn snapshot_or_previous(
+        &self,
+        previous: &RealtimeMc202RenderState,
+    ) -> RealtimeMc202RenderState {
+        coherent_snapshot_or(&self.revision, previous, || self.read_snapshot_fields())
+    }
+
+    fn read_snapshot_fields(&self) -> RealtimeMc202RenderState {
         RealtimeMc202RenderState {
             mode: mc202_mode_from_u32(self.mode.load(Ordering::Relaxed)),
             routing: mc202_routing_from_u32(self.routing.load(Ordering::Relaxed)),
@@ -474,6 +503,7 @@ impl Default for RealtimeW30PadPlaybackSampleWindow {
 }
 
 pub(super) struct SharedW30PreviewRenderState {
+    pub(super) revision: AtomicU64,
     pub(super) mode: AtomicU32,
     pub(super) routing: AtomicU32,
     pub(super) source_profile: AtomicU32,

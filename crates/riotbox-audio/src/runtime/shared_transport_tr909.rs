@@ -293,6 +293,12 @@ where
     let mut mix_buffer = Vec::<f32>::new();
     let sample_rate = config.sample_rate;
     let channel_count = usize::from(config.channels.max(1));
+    let mut last_transport_snapshot = callback_transport.snapshot();
+    let mut last_tr909_render_snapshot = shared.tr909_render.snapshot();
+    let mut last_mc202_render_snapshot = shared.mc202_render.snapshot();
+    let mut last_w30_preview_snapshot = shared.w30_preview.snapshot();
+    let mut last_w30_resample_snapshot = shared.w30_resample_tap.snapshot();
+    let mut last_source_monitor_snapshot = shared.source_monitor.snapshot();
 
     device.build_output_stream(
         config,
@@ -302,27 +308,45 @@ where
             }
 
             let frame_count = data.len() / channel_count.max(1);
+            let transport_snapshot =
+                callback_transport.snapshot_or_previous(&last_transport_snapshot);
+            last_transport_snapshot = transport_snapshot;
             let callback_timing = advance_transport_timing(
-                &callback_transport.snapshot(),
+                &transport_snapshot,
                 &mut transport_state,
                 sample_rate,
                 frame_count,
             );
-            let mut tr909_render_state = shared.tr909_render.snapshot();
+            let mut tr909_render_state = shared
+                .tr909_render
+                .snapshot_or_previous(&last_tr909_render_snapshot);
+            last_tr909_render_snapshot = tr909_render_state;
             tr909_render_state.is_transport_running = callback_timing.is_transport_running;
             tr909_render_state.tempo_bpm = callback_timing.tempo_bpm;
             tr909_render_state.position_beats = callback_timing.render_position_beats;
-            let mut mc202_render_state = shared.mc202_render.snapshot();
+            let mut mc202_render_state = shared
+                .mc202_render
+                .snapshot_or_previous(&last_mc202_render_snapshot);
+            last_mc202_render_snapshot = mc202_render_state;
             mc202_render_state.is_transport_running = callback_timing.is_transport_running;
             mc202_render_state.tempo_bpm = callback_timing.tempo_bpm;
             mc202_render_state.position_beats = callback_timing.render_position_beats;
-            let mut w30_preview_render_state = shared.w30_preview.snapshot();
+            let mut w30_preview_render_state = shared
+                .w30_preview
+                .snapshot_or_previous(&last_w30_preview_snapshot);
+            last_w30_preview_snapshot = w30_preview_render_state;
             w30_preview_render_state.is_transport_running = callback_timing.is_transport_running;
             w30_preview_render_state.tempo_bpm = callback_timing.tempo_bpm;
             w30_preview_render_state.position_beats = callback_timing.render_position_beats;
-            let mut w30_resample_render_state = shared.w30_resample_tap.snapshot();
+            let mut w30_resample_render_state = shared
+                .w30_resample_tap
+                .snapshot_or_previous(&last_w30_resample_snapshot);
+            last_w30_resample_snapshot = w30_resample_render_state;
             w30_resample_render_state.is_transport_running = callback_timing.is_transport_running;
-            let mut source_monitor_state = shared.source_monitor.snapshot();
+            let mut source_monitor_state = shared
+                .source_monitor
+                .snapshot_or_previous(&last_source_monitor_snapshot);
+            last_source_monitor_snapshot = source_monitor_state.clone();
             source_monitor_state.is_transport_running = callback_timing.is_transport_running;
             source_monitor_state.tempo_bpm = callback_timing.tempo_bpm;
             source_monitor_state.position_beats = callback_timing.render_position_beats;
@@ -380,6 +404,7 @@ pub(super) struct RealtimeTransportTimingState {
 }
 
 pub(super) struct SharedTransportTimingState {
+    revision: AtomicU64,
     is_transport_running: AtomicBool,
     tempo_bpm_bits: AtomicU32,
     position_beats_bits: AtomicU64,
@@ -388,6 +413,7 @@ pub(super) struct SharedTransportTimingState {
 impl SharedTransportTimingState {
     pub(super) fn new(is_transport_running: bool, tempo_bpm: f32, position_beats: f64) -> Self {
         Self {
+            revision: AtomicU64::new(0),
             is_transport_running: AtomicBool::new(is_transport_running),
             tempo_bpm_bits: AtomicU32::new(tempo_bpm.to_bits()),
             position_beats_bits: AtomicU64::new(position_beats.to_bits()),
@@ -395,15 +421,28 @@ impl SharedTransportTimingState {
     }
 
     pub(super) fn update(&self, is_transport_running: bool, tempo_bpm: f32, position_beats: f64) {
+        begin_coherent_snapshot_update(&self.revision);
         self.is_transport_running
             .store(is_transport_running, Ordering::Relaxed);
         self.tempo_bpm_bits
             .store(tempo_bpm.to_bits(), Ordering::Relaxed);
         self.position_beats_bits
             .store(position_beats.to_bits(), Ordering::Relaxed);
+        finish_coherent_snapshot_update(&self.revision);
     }
 
     pub(super) fn snapshot(&self) -> RealtimeTransportTimingState {
+        coherent_snapshot(&self.revision, || self.read_snapshot_fields())
+    }
+
+    pub(super) fn snapshot_or_previous(
+        &self,
+        previous: &RealtimeTransportTimingState,
+    ) -> RealtimeTransportTimingState {
+        coherent_snapshot_or(&self.revision, previous, || self.read_snapshot_fields())
+    }
+
+    fn read_snapshot_fields(&self) -> RealtimeTransportTimingState {
         RealtimeTransportTimingState {
             is_transport_running: self.is_transport_running.load(Ordering::Relaxed),
             tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::Relaxed)),
@@ -429,6 +468,7 @@ pub(super) struct RealtimeTr909RenderState {
 }
 
 pub(super) struct SharedTr909RenderState {
+    pub(super) revision: AtomicU64,
     pub(super) mode: AtomicU32,
     pub(super) routing: AtomicU32,
     pub(super) source_support_profile: AtomicU32,

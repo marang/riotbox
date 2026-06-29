@@ -104,6 +104,7 @@ impl SourceMonitorRenderState {
 }
 
 pub(super) struct SharedSourceMonitorRenderState {
+    revision: AtomicU64,
     mode: AtomicU32,
     source_gain_bits: AtomicU32,
     riotbox_gain_bits: AtomicU32,
@@ -116,6 +117,7 @@ pub(super) struct SharedSourceMonitorRenderState {
 impl SharedSourceMonitorRenderState {
     pub(super) fn new(render_state: &SourceMonitorRenderState) -> Self {
         let shared = Self {
+            revision: AtomicU64::new(0),
             mode: AtomicU32::new(source_monitor_mode_to_u32(render_state.mode)),
             source_gain_bits: AtomicU32::new(SOURCE_GAIN.to_bits()),
             riotbox_gain_bits: AtomicU32::new(1.0_f32.to_bits()),
@@ -129,6 +131,7 @@ impl SharedSourceMonitorRenderState {
     }
 
     pub(super) fn update(&self, render_state: &SourceMonitorRenderState) {
+        begin_coherent_snapshot_update(&self.revision);
         self.mode.store(
             source_monitor_mode_to_u32(render_state.mode),
             Ordering::Relaxed,
@@ -165,9 +168,21 @@ impl SharedSourceMonitorRenderState {
             render_state.source_anchor_position_beats.to_bits(),
             Ordering::Relaxed,
         );
+        finish_coherent_snapshot_update(&self.revision);
     }
 
     pub(super) fn snapshot(&self) -> RealtimeSourceMonitorRenderState {
+        coherent_snapshot(&self.revision, || self.read_snapshot_fields())
+    }
+
+    pub(super) fn snapshot_or_previous(
+        &self,
+        previous: &RealtimeSourceMonitorRenderState,
+    ) -> RealtimeSourceMonitorRenderState {
+        coherent_snapshot_or(&self.revision, previous, || self.read_snapshot_fields())
+    }
+
+    fn read_snapshot_fields(&self) -> RealtimeSourceMonitorRenderState {
         RealtimeSourceMonitorRenderState {
             mode: source_monitor_mode_from_u32(self.mode.load(Ordering::Relaxed)),
             source_gain: f32::from_bits(self.source_gain_bits.load(Ordering::Relaxed)),
