@@ -1,7 +1,9 @@
+use super::{Confidence, TimingModel};
 use crate::{
     ids::{AssetId, CandidateId, SceneId, SectionId, SourceId},
     transport::TransportClockState,
 };
+use serde::{Deserialize, Serialize};
 
 #[must_use]
 pub fn section_for_transport_bar<'a>(

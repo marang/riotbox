@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::super::*;
+    use crate::ids::{AssetId, CandidateId, SectionId, SourceId};
 
     #[test]
     fn counts_candidates_by_type() {

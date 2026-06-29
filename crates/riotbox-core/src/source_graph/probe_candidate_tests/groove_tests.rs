@@ -21,9 +21,11 @@ fn source_timing_probe_bpm_candidates_preserve_bounded_groove_residuals() {
         "expected weighted late-eighth feel, got {eighth:?}"
     );
     assert!(eighth.confidence > 0.4, "{eighth:?}");
-    assert!(primary
-        .provenance
-        .contains(&"source-timing-probe.groove-residual.v0".into()));
+    assert!(
+        primary
+            .provenance
+            .contains(&"source-timing-probe.groove-residual.v0".into())
+    );
 }
 
 #[test]
@@ -33,10 +35,12 @@ fn source_timing_probe_bpm_candidates_skip_groove_when_onsets_are_too_sparse() {
         SourceTimingProbeBpmCandidatePolicy::default(),
     );
 
-    assert!(timing
-        .primary_hypothesis()
-        .map(|hypothesis| hypothesis.groove.is_empty())
-        .unwrap_or(true));
+    assert!(
+        timing
+            .primary_hypothesis()
+            .map(|hypothesis| hypothesis.groove.is_empty())
+            .unwrap_or(true)
+    );
 }
 
 fn swung_eighth_onsets() -> (Vec<f32>, Vec<f32>) {

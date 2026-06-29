@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod mc202_phrase_feature_tests {
-    use super::*;
+    use super::super::*;
+    use crate::ids::{AssetId, CandidateId, SectionId, SourceId};
 
     #[test]
     fn mc202_source_phrase_features_are_deterministic_for_same_source_evidence() {
@@ -103,8 +104,7 @@ mod mc202_phrase_feature_tests {
             features
                 .provenance_refs
                 .iter()
-                .any(|reference| reference
-                    == "phrase_audio:mc202.phrase-audio-features.v0")
+                .any(|reference| reference == "phrase_audio:mc202.phrase-audio-features.v0")
         );
         assert!(features.has_musical_evidence());
     }

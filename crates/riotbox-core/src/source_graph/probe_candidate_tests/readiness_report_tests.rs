@@ -14,7 +14,10 @@ fn source_timing_probe_bpm_candidate_policies_separate_research_and_dance_loop_a
     assert_eq!(dance.max_bpm, 180.0);
     assert_eq!(dance.beat_period_ambiguity_margin, 0.001);
     assert_eq!(dance.min_onset_count, broad.min_onset_count);
-    assert_eq!(dance.downbeat_ambiguity_margin, broad.downbeat_ambiguity_margin);
+    assert_eq!(
+        dance.downbeat_ambiguity_margin,
+        broad.downbeat_ambiguity_margin
+    );
 }
 
 #[test]
@@ -37,21 +40,23 @@ fn source_timing_probe_readiness_report_summarizes_ready_candidate() {
     );
     assert!(!confidence.requires_manual_confirm);
 
-    let report = source_timing_probe_readiness_report(
-        &input,
-        policy,
-    );
+    let report = source_timing_probe_readiness_report(&input, policy);
 
     assert_eq!(report.schema, "riotbox.source_timing_probe_readiness.v1");
     assert_eq!(report.schema_version, 1);
     assert_eq!(report.source_id, "readiness-ready-120");
     assert_bpm_close(report.primary_bpm, 120.0);
     assert_eq!(report.primary_downbeat_offset_beats, Some(0));
-    assert!(report
-        .primary_downbeat_score
-        .is_some_and(|score| score >= 0.5));
+    assert!(
+        report
+            .primary_downbeat_score
+            .is_some_and(|score| score >= 0.5)
+    );
     assert_eq!(report.alternate_downbeat_phase_count, 0);
-    assert_eq!(report.beat_status, SourceTimingProbeBeatEvidenceStatus::Stable);
+    assert_eq!(
+        report.beat_status,
+        SourceTimingProbeBeatEvidenceStatus::Stable
+    );
     assert_eq!(
         report.downbeat_status,
         SourceTimingProbeDownbeatEvidenceStatus::Stable
@@ -60,7 +65,10 @@ fn source_timing_probe_readiness_report_summarizes_ready_candidate() {
         report.confidence_result,
         SourceTimingCandidateConfidenceResult::CandidateCautious
     );
-    assert_eq!(report.drift_status, SourceTimingCandidateDriftStatus::Stable);
+    assert_eq!(
+        report.drift_status,
+        SourceTimingCandidateDriftStatus::Stable
+    );
     assert_eq!(
         report.phrase_status,
         SourceTimingCandidatePhraseStatus::Stable
@@ -71,7 +79,10 @@ fn source_timing_probe_readiness_report_summarizes_ready_candidate() {
     assert!(report.warning_codes.is_empty());
     assert!(!report.requires_manual_confirm);
     assert_eq!(report.readiness, SourceTimingProbeReadinessStatus::Ready);
-    assert_eq!(source_timing_grid_use(&report), SourceTimingGridUse::LockedGrid);
+    assert_eq!(
+        source_timing_grid_use(&report),
+        SourceTimingGridUse::LockedGrid
+    );
 }
 
 #[test]
@@ -115,7 +126,10 @@ fn source_timing_probe_readiness_keeps_short_loop_manual_confirm_in_review() {
     );
 
     assert_bpm_close(report.primary_bpm, 120.0);
-    assert_eq!(report.beat_status, SourceTimingProbeBeatEvidenceStatus::Stable);
+    assert_eq!(
+        report.beat_status,
+        SourceTimingProbeBeatEvidenceStatus::Stable
+    );
     assert_eq!(
         report.downbeat_status,
         SourceTimingProbeDownbeatEvidenceStatus::Stable
@@ -126,9 +140,11 @@ fn source_timing_probe_readiness_keeps_short_loop_manual_confirm_in_review() {
     );
     assert_eq!(report.primary_phrase_count, 0);
     assert_eq!(report.primary_phrase_bar_count, 4);
-    assert!(report
-        .warning_codes
-        .contains(&TimingWarningCode::PhraseUncertain));
+    assert!(
+        report
+            .warning_codes
+            .contains(&TimingWarningCode::PhraseUncertain)
+    );
     assert!(report.requires_manual_confirm);
     assert_eq!(
         report.readiness,
@@ -203,9 +219,7 @@ fn source_timing_probe_readiness_report_summarizes_unavailable_weak_and_review_c
         weak.downbeat_status,
         SourceTimingProbeDownbeatEvidenceStatus::Weak
     );
-    assert!(weak
-        .primary_downbeat_score
-        .is_some_and(|score| score < 0.3));
+    assert!(weak.primary_downbeat_score.is_some_and(|score| score < 0.3));
     assert!(weak.requires_manual_confirm);
 
     let review_onsets = even_onsets(0.0, 0.5, 8);
@@ -266,7 +280,10 @@ fn source_timing_grid_use_policy_preserves_contract_labels() {
         SourceTimingCandidateConfidenceResult::CandidateCautious,
         0,
     );
-    assert_eq!(source_timing_grid_use(&locked), SourceTimingGridUse::LockedGrid);
+    assert_eq!(
+        source_timing_grid_use(&locked),
+        SourceTimingGridUse::LockedGrid
+    );
     assert_eq!(source_timing_grid_use(&locked).label(), "locked_grid");
 
     let manual_only = grid_use_policy_report(
@@ -281,7 +298,10 @@ fn source_timing_grid_use_policy_preserves_contract_labels() {
         source_timing_grid_use(&manual_only),
         SourceTimingGridUse::ManualConfirmOnly
     );
-    assert_eq!(source_timing_grid_use(&manual_only).label(), "manual_confirm_only");
+    assert_eq!(
+        source_timing_grid_use(&manual_only).label(),
+        "manual_confirm_only"
+    );
 
     let fallback = grid_use_policy_report(
         Some(128.0),

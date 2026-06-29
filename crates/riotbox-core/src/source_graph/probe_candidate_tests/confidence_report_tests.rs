@@ -13,7 +13,10 @@ fn source_timing_candidate_confidence_report_summarizes_ambiguous_candidate() {
 
     let report = source_timing_candidate_confidence_report(&timing);
 
-    assert_eq!(report.schema, "riotbox.source_timing_candidate_confidence.v1");
+    assert_eq!(
+        report.schema,
+        "riotbox.source_timing_candidate_confidence.v1"
+    );
     assert_eq!(report.schema_version, 1);
     assert_bpm_close(report.primary_bpm, 120.0);
     assert_eq!(
@@ -36,10 +39,16 @@ fn source_timing_candidate_confidence_report_summarizes_ambiguous_candidate() {
     assert_eq!(report.primary_drift_window_count, 0);
     assert_eq!(report.primary_drift_max_ms, None);
     assert!(report.requires_manual_confirm);
-    assert!(report.primary_downbeat_confidence.is_some_and(|value| value > 0.0));
-    assert!(report
-        .warning_codes
-        .contains(&TimingWarningCode::AmbiguousDownbeat));
+    assert!(
+        report
+            .primary_downbeat_confidence
+            .is_some_and(|value| value > 0.0)
+    );
+    assert!(
+        report
+            .warning_codes
+            .contains(&TimingWarningCode::AmbiguousDownbeat)
+    );
 }
 
 #[test]
@@ -69,9 +78,11 @@ fn source_timing_candidate_confidence_report_summarizes_degraded_probe() {
     assert_eq!(report.primary_phrase_bar_count, 0);
     assert_eq!(report.degraded_policy, TimingDegradedPolicy::Disabled);
     assert!(report.requires_manual_confirm);
-    assert!(report
-        .warning_codes
-        .contains(&TimingWarningCode::LowTimingConfidence));
+    assert!(
+        report
+            .warning_codes
+            .contains(&TimingWarningCode::LowTimingConfidence)
+    );
 }
 
 #[test]
@@ -103,28 +114,37 @@ fn source_timing_candidate_confidence_report_requires_confirm_for_ambiguous_peri
 
 #[test]
 fn source_timing_candidate_confidence_report_summarizes_primary_drift() {
-    let stable = source_timing_candidate_confidence_report(&timing_model_from_probe_bpm_candidates(
-        &candidate_input(
-            "report-stable-drift-120",
-            16.0,
-            &even_onsets(0.0, 0.5, 32),
-        ),
-        SourceTimingProbeBpmCandidatePolicy::default(),
-    ));
+    let stable =
+        source_timing_candidate_confidence_report(&timing_model_from_probe_bpm_candidates(
+            &candidate_input("report-stable-drift-120", 16.0, &even_onsets(0.0, 0.5, 32)),
+            SourceTimingProbeBpmCandidatePolicy::default(),
+        ));
 
     assert_eq!(
         stable.primary_drift_status,
         SourceTimingCandidateDriftStatus::Stable
     );
     assert_eq!(stable.primary_drift_window_count, 2);
-    assert!(stable.primary_drift_max_ms.is_some_and(|value| value <= 0.01));
-    assert!(stable
-        .primary_drift_mean_abs_ms
-        .is_some_and(|value| value <= 0.01));
-    assert!(stable.primary_drift_end_ms.is_some_and(|value| value <= 0.01));
-    assert!(stable
-        .primary_drift_confidence
-        .is_some_and(|value| value > 0.0));
+    assert!(
+        stable
+            .primary_drift_max_ms
+            .is_some_and(|value| value <= 0.01)
+    );
+    assert!(
+        stable
+            .primary_drift_mean_abs_ms
+            .is_some_and(|value| value <= 0.01)
+    );
+    assert!(
+        stable
+            .primary_drift_end_ms
+            .is_some_and(|value| value <= 0.01)
+    );
+    assert!(
+        stable
+            .primary_drift_confidence
+            .is_some_and(|value| value > 0.0)
+    );
 
     let mut drifting_onsets = even_onsets(0.0, 0.5, 32);
     for time_seconds in drifting_onsets.iter_mut().skip(16) {
@@ -140,10 +160,16 @@ fn source_timing_candidate_confidence_report_summarizes_primary_drift() {
         drifting.primary_drift_status,
         SourceTimingCandidateDriftStatus::High
     );
-    assert!(drifting
-        .primary_drift_max_ms
-        .is_some_and(|value| value > 100.0));
-    assert!(drifting.warning_codes.contains(&TimingWarningCode::DriftHigh));
+    assert!(
+        drifting
+            .primary_drift_max_ms
+            .is_some_and(|value| value > 100.0)
+    );
+    assert!(
+        drifting
+            .warning_codes
+            .contains(&TimingWarningCode::DriftHigh)
+    );
     assert_eq!(
         drifting.primary_phrase_status,
         SourceTimingCandidatePhraseStatus::HighDrift
@@ -154,15 +180,16 @@ fn source_timing_candidate_confidence_report_summarizes_primary_drift() {
 #[test]
 fn source_timing_candidate_confidence_report_summarizes_primary_phrase_grid() {
     let onsets = even_onsets(0.0, 0.5, 32);
-    let stable = source_timing_candidate_confidence_report(&timing_model_from_probe_bpm_candidates(
-        &weighted_candidate_input(
-            "report-stable-phrase-120",
-            16.0,
-            &onsets,
-            &downbeat_strengths(onsets.len(), 4),
-        ),
-        SourceTimingProbeBpmCandidatePolicy::default(),
-    ));
+    let stable =
+        source_timing_candidate_confidence_report(&timing_model_from_probe_bpm_candidates(
+            &weighted_candidate_input(
+                "report-stable-phrase-120",
+                16.0,
+                &onsets,
+                &downbeat_strengths(onsets.len(), 4),
+            ),
+            SourceTimingProbeBpmCandidatePolicy::default(),
+        ));
 
     assert_eq!(
         stable.primary_phrase_status,
@@ -170,12 +197,14 @@ fn source_timing_candidate_confidence_report_summarizes_primary_phrase_grid() {
     );
     assert_eq!(stable.primary_phrase_count, 2);
     assert_eq!(stable.primary_phrase_bar_count, 8);
-    assert!(stable
-        .primary_phrase_confidence
-        .is_some_and(|value| value >= 0.4));
+    assert!(
+        stable
+            .primary_phrase_confidence
+            .is_some_and(|value| value >= 0.4)
+    );
 
-    let ambiguous = source_timing_candidate_confidence_report(
-        &timing_model_from_probe_bpm_candidates(
+    let ambiguous =
+        source_timing_candidate_confidence_report(&timing_model_from_probe_bpm_candidates(
             &weighted_candidate_input(
                 "report-ambiguous-phrase-120",
                 16.0,
@@ -183,14 +212,15 @@ fn source_timing_candidate_confidence_report_summarizes_primary_phrase_grid() {
                 &vec![0.5; onsets.len()],
             ),
             SourceTimingProbeBpmCandidatePolicy::default(),
-        ),
-    );
+        ));
 
     assert_eq!(
         ambiguous.primary_phrase_status,
         SourceTimingCandidatePhraseStatus::AmbiguousDownbeat
     );
-    assert!(ambiguous
-        .warning_codes
-        .contains(&TimingWarningCode::AmbiguousDownbeat));
+    assert!(
+        ambiguous
+            .warning_codes
+            .contains(&TimingWarningCode::AmbiguousDownbeat)
+    );
 }

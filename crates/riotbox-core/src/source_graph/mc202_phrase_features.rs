@@ -1,3 +1,10 @@
+use super::{
+    Asset, AssetType, Candidate, CandidateType, Confidence, EnergyClass, MeterHint,
+    PhraseAudioFeatures, PhraseSpan, Section, SectionLabelHint, SourceGraph, SourceTimingAnchor,
+    SourceTimingAnchorType,
+};
+use serde::{Deserialize, Serialize};
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Mc202SourcePhraseFeatureVector {
     pub phrase_index: u32,
@@ -120,7 +127,10 @@ pub fn mc202_source_phrase_feature_vector(
     let mut backbeat_density = clamp01(
         average_anchor_strength(
             &phrase_anchors,
-            &[SourceTimingAnchorType::Snare, SourceTimingAnchorType::Backbeat],
+            &[
+                SourceTimingAnchorType::Snare,
+                SourceTimingAnchorType::Backbeat,
+            ],
         ) * 0.75
             + candidate_type_presence(&phrase_candidates, CandidateType::SnareAnchor) * 0.18
             + candidate_type_presence(&phrase_candidates, CandidateType::GhostHit) * 0.08,
@@ -188,13 +198,12 @@ pub fn mc202_source_phrase_feature_vector(
     );
     if let Some(audio) = measured_audio.filter(|audio| audio.has_measured_evidence()) {
         low_band_pressure = clamp01(
-            audio.low_band_rms * 2.2
-                + audio.low_mid_ratio * 0.22
-                + audio.low_band_movement * 0.34,
+            audio.low_band_rms * 2.2 + audio.low_mid_ratio * 0.22 + audio.low_band_movement * 0.34,
         );
         low_band_movement = clamp01(audio.low_band_movement);
         transient_density = clamp01(audio.transient_density);
-        backbeat_density = clamp01(audio.transient_density * 0.55 + audio.spectral_roughness * 0.12);
+        backbeat_density =
+            clamp01(audio.transient_density * 0.55 + audio.spectral_roughness * 0.12);
         offbeat_density = clamp01(audio.offbeat_onset_density);
         spectral_roughness = clamp01(audio.spectral_roughness);
         spectral_brightness = clamp01(audio.spectral_brightness);
@@ -276,7 +285,12 @@ fn phrase_audio_features_for_phrase<'a>(
         })
 }
 
-fn phrase_bar_ranges_overlap(left_start: u32, left_end: u32, right_start: u32, right_end: u32) -> bool {
+fn phrase_bar_ranges_overlap(
+    left_start: u32,
+    left_end: u32,
+    right_start: u32,
+    right_end: u32,
+) -> bool {
     left_start <= right_end && right_start <= left_end
 }
 

@@ -1,3 +1,9 @@
+use super::{
+    BarSpan, BeatPoint, Confidence, MeterHint, PhraseSpan, SourceTimingAnchor,
+    SourceTimingAnchorType, TimingDegradedPolicy, TimingDriftReport, TimingHypothesis,
+    TimingHypothesisKind, TimingModel, TimingQuality, TimingWarning, TimingWarningCode,
+};
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct SourceTimingAnalysisSeed {
     pub fixture_id: String,
@@ -88,7 +94,12 @@ fn timing_hypothesis_from_seed(
         meter: seed.meter,
         confidence,
         score: confidence,
-        beat_grid: beat_grid(seed.duration_seconds, bpm, confidence, seed.expected_beat_count_min),
+        beat_grid: beat_grid(
+            seed.duration_seconds,
+            bpm,
+            confidence,
+            seed.expected_beat_count_min,
+        ),
         bar_grid: bar_grid(seed.duration_seconds, bpm, confidence, seed),
         phrase_grid: phrase_grid(confidence, seed),
         anchors: timing_anchors(confidence, seed),
@@ -193,10 +204,7 @@ fn timing_anchors(
     }]
 }
 
-fn timing_drift(
-    seed: &SourceTimingAnalysisSeed,
-    confidence: Confidence,
-) -> Vec<TimingDriftReport> {
+fn timing_drift(seed: &SourceTimingAnalysisSeed, confidence: Confidence) -> Vec<TimingDriftReport> {
     if let Some(drift) = seed.drift {
         return vec![TimingDriftReport {
             window_bars: drift.window_bars,
