@@ -239,6 +239,10 @@ fn committed_mc202_answer_changes_candidate_family_between_pressure_and_hook_sou
         "pressure family did not project stronger bass articulation: pressure={pressure_render_plan:?} hook={hook_render_plan:?}"
     );
     assert!(
+        pressure_render_plan.bass_weight >= hook_render_plan.bass_weight + 0.20,
+        "pressure family bass articulation margin is too small for producer-grade low-end proof: pressure={pressure_render_plan:?} hook={hook_render_plan:?}"
+    );
+    assert!(
         hook_render_plan.stab_bite > pressure_render_plan.stab_bite,
         "hook answer family did not project stronger stab articulation: pressure={pressure_render_plan:?} hook={hook_render_plan:?}"
     );
@@ -247,9 +251,43 @@ fn committed_mc202_answer_changes_candidate_family_between_pressure_and_hook_sou
         "hook answer family did not project snappier gate articulation: pressure={pressure_render_plan:?} hook={hook_render_plan:?}"
     );
     let delta = signal_delta_metrics(&pressure_render, &hook_render);
+    let pressure_low = source_phrase_low_band_rms(&pressure_render);
+    let hook_low = source_phrase_low_band_rms(&hook_render);
+    let pressure_metrics = signal_metrics(&pressure_render);
+    let hook_metrics = signal_metrics(&hook_render);
+    let pressure_low_share = pressure_low / pressure_metrics.rms.max(f32::EPSILON);
+    let hook_low_share = hook_low / hook_metrics.rms.max(f32::EPSILON);
     assert!(
         delta.rms > 0.001,
         "source candidate families rendered too similarly: {delta:?}"
+    );
+    assert!(
+        pressure_low > hook_low * 1.30,
+        "pressure source did not render stronger low-band movement than hook source: pressure_low={pressure_low:.6} hook_low={hook_low:.6}"
+    );
+    assert!(
+        pressure_low_share > hook_low_share * 1.12,
+        "pressure source did not carry a larger low-band share than hook source: pressure_share={pressure_low_share:.6} hook_share={hook_low_share:.6}"
+    );
+
+    pressure_state
+        .session
+        .runtime_state
+        .lane_state
+        .mc202
+        .source_phrase_plan
+        .as_mut()
+        .expect("pressure plan for legacy projection")
+        .source_expression = None;
+    pressure_state.refresh_view();
+    let legacy_render_plan = pressure_state
+        .runtime
+        .mc202_render
+        .source_phrase_plan
+        .expect("legacy source-derived render plan");
+    assert!(
+        legacy_render_plan.bass_weight >= pressure_render_plan.bass_weight - 0.06,
+        "legacy source-derived pressure plan without source_expression lost bass body: original={pressure_render_plan:?} legacy={legacy_render_plan:?}"
     );
 }
 
@@ -396,4 +434,15 @@ fn provenance_step(
                 .and_then(|value| value.parse::<usize>().ok())
         })
         .unwrap_or_else(|| panic!("missing {prefix} provenance in {plan:?}"))
+}
+
+fn source_phrase_low_band_rms(buffer: &[f32]) -> f32 {
+    let mut low = 0.0_f32;
+    let mut energy = 0.0_f32;
+    let alpha = 0.018_f32;
+    for sample in buffer {
+        low += (*sample - low) * alpha;
+        energy += low * low;
+    }
+    (energy / buffer.len() as f32).sqrt()
 }

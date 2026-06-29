@@ -790,6 +790,12 @@ following:
   must keep `w30_contribution_margin >= 0.050`, and the tonal generated path
   raises source-derived W-30 presence instead of accepting barely audible hook
   contribution.
+- RIOTBOX-1301 tightens MC-202 source-composed bass movement proof at the
+  render seam: SubPressureShove projection now carries bass body from the
+  stored source-expression low-band contour / pressure evidence, pressure-vs-
+  hook source-family tests require a clear bass-articulation margin plus
+  stronger rendered low-band RMS/share, and neutralized source evidence must
+  remain silent instead of leaking fallback MC-202 output.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue
