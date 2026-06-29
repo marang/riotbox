@@ -1626,6 +1626,8 @@ def tr909_rendered_drum_pressure_summary(output: Path) -> dict[str, Any]:
         support = pressure.get("support_generated_to_source_rms_ratio")
         headroom = pressure.get("source_first_masking_headroom")
         low_band = pressure.get("tr909_low_band_rms")
+        min_contribution = pressure.get("min_required_support_mix_tr909_contribution_ratio")
+        min_low_band = pressure.get("min_required_tr909_low_band_rms")
         full_low = pressure.get("full_mix_low_band_rms")
         grid_hit = pressure.get("tr909_source_grid_hit_ratio")
         role = str(pressure.get("source_evidence_role") or "")
@@ -1639,6 +1641,8 @@ def tr909_rendered_drum_pressure_summary(output: Path) -> dict[str, Any]:
             and is_number(support)
             and is_number(headroom)
             and is_number(low_band)
+            and is_number(min_contribution)
+            and is_number(min_low_band)
             and is_number(full_low)
             and is_number(grid_hit)
         )
@@ -1653,6 +1657,10 @@ def tr909_rendered_drum_pressure_summary(output: Path) -> dict[str, Any]:
                 "support_generated_to_source_rms_ratio": number(support),
                 "source_first_masking_headroom": number(headroom),
                 "tr909_low_band_rms": number(low_band),
+                "min_required_support_mix_tr909_contribution_ratio": number(
+                    min_contribution
+                ),
+                "min_required_tr909_low_band_rms": number(min_low_band),
                 "full_mix_low_band_rms": number(full_low),
                 "tr909_source_grid_hit_ratio": number(grid_hit),
                 "has_required_tr909_rendered_drum_pressure_fields": has_required_fields,
@@ -1668,12 +1676,12 @@ def tr909_rendered_drum_pressure_summary(output: Path) -> dict[str, Any]:
         failures.append("tr909_rendered_drum_pressure_not_source_derived")
     if any(
         case["support_mix_tr909_contribution_ratio"]
-        < MIN_FERAL_TR909_RENDERED_SUPPORT_CONTRIBUTION_RATIO
+        < case["min_required_support_mix_tr909_contribution_ratio"]
         for case in cases
     ):
         failures.append("tr909_rendered_drum_pressure_too_buried")
     if any(
-        case["tr909_low_band_rms"] < MIN_FERAL_TR909_RENDERED_LOW_BAND_RMS
+        case["tr909_low_band_rms"] < case["min_required_tr909_low_band_rms"]
         for case in cases
     ):
         failures.append("tr909_rendered_drum_pressure_low_band_too_weak")
@@ -1698,6 +1706,17 @@ def tr909_rendered_drum_pressure_summary(output: Path) -> dict[str, Any]:
         ),
         "min_tr909_low_band_rms": min(
             (case["tr909_low_band_rms"] for case in cases), default=0.0
+        ),
+        "min_required_support_mix_tr909_contribution_ratio": min(
+            (
+                case["min_required_support_mix_tr909_contribution_ratio"]
+                for case in cases
+            ),
+            default=0.0,
+        ),
+        "min_required_tr909_low_band_rms": min(
+            (case["min_required_tr909_low_band_rms"] for case in cases),
+            default=0.0,
         ),
         "max_source_first_generated_to_source_rms_ratio": max(
             (case["source_first_generated_to_source_rms_ratio"] for case in cases),

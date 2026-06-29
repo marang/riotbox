@@ -68,7 +68,7 @@ fn derive_source_aware_tr909_profile(samples: &[f32], grid: &Grid) -> SourceAwar
             slam_intensity: 0.22,
             reason: "source_low_drive",
         }
-    } else if signal.event_density_per_bar >= 3.0 || spectral.high_band_energy_ratio >= 0.34 {
+    } else if signal.event_density_per_bar >= 3.0 && signal.crest_factor >= 3.0 {
         SourceAwareTr909Profile {
             signal_rms: signal.rms,
             low_band_rms: low_band.rms,

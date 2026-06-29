@@ -1045,14 +1045,24 @@ def validate_tr909_rendered_drum_pressure_metrics(
         failures,
     )
     require(
-        number(pressure.get("min_support_mix_tr909_contribution_ratio"))
-        >= MIN_FERAL_TR909_RENDERED_SUPPORT_CONTRIBUTION_RATIO,
+        all(
+            number(object_or_empty(case).get("support_mix_tr909_contribution_ratio"))
+            >= number(
+                object_or_empty(case).get(
+                    "min_required_support_mix_tr909_contribution_ratio"
+                )
+            )
+            for case in cases
+        ),
         "tr909_rendered_drum_pressure_too_buried",
         failures,
     )
     require(
-        number(pressure.get("min_tr909_low_band_rms"))
-        >= MIN_FERAL_TR909_RENDERED_LOW_BAND_RMS,
+        all(
+            number(object_or_empty(case).get("tr909_low_band_rms"))
+            >= number(object_or_empty(case).get("min_required_tr909_low_band_rms"))
+            for case in cases
+        ),
         "tr909_rendered_drum_pressure_low_band_too_weak",
         failures,
     )
