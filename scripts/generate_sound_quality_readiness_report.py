@@ -381,6 +381,9 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
     source_character_window_selection = object_or_empty(
         report.get("source_character_window_selection")
     )
+    tr909_rendered_drum_pressure = object_or_empty(
+        report.get("tr909_rendered_drum_pressure")
+    )
     strongest_elements = sorted(
         {
             str(value)
@@ -480,6 +483,30 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
             ),
             "matrix_strongest_audible_elements": list(
                 matrix.get("strongest_audible_elements") or []
+            ),
+            "tr909_rendered_result": str(
+                tr909_rendered_drum_pressure.get("result") or ""
+            ),
+            "tr909_rendered_case_count": int(
+                number(tr909_rendered_drum_pressure.get("case_count"))
+            ),
+            "tr909_rendered_min_support_mix_contribution_ratio": number(
+                tr909_rendered_drum_pressure.get(
+                    "min_support_mix_tr909_contribution_ratio"
+                )
+            ),
+            "tr909_rendered_min_low_band_rms": number(
+                tr909_rendered_drum_pressure.get("min_tr909_low_band_rms")
+            ),
+            "tr909_rendered_max_source_first_ratio": number(
+                tr909_rendered_drum_pressure.get(
+                    "max_source_first_generated_to_source_rms_ratio"
+                )
+            ),
+            "tr909_rendered_max_support_ratio": number(
+                tr909_rendered_drum_pressure.get(
+                    "max_support_generated_to_source_rms_ratio"
+                )
             ),
         },
         "bass_pressure": {
@@ -855,6 +882,39 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             "professional_suite_dense_pressure_transient_too_soft",
             failures,
         )
+        check(
+            drum_pressure.get("tr909_rendered_result") == "pass",
+            "professional_suite_tr909_rendered_drum_pressure_not_pass",
+            failures,
+        )
+        check(
+            number(drum_pressure.get("tr909_rendered_case_count")) >= 8,
+            "professional_suite_tr909_rendered_drum_pressure_case_count_too_low",
+            failures,
+        )
+        check(
+            number(
+                drum_pressure.get("tr909_rendered_min_support_mix_contribution_ratio")
+            )
+            >= 0.050,
+            "professional_suite_tr909_rendered_drum_pressure_too_buried",
+            failures,
+        )
+        check(
+            number(drum_pressure.get("tr909_rendered_min_low_band_rms")) >= 0.0030,
+            "professional_suite_tr909_rendered_low_band_too_weak",
+            failures,
+        )
+        check(
+            number(drum_pressure.get("tr909_rendered_max_source_first_ratio")) <= 0.08,
+            "professional_suite_tr909_rendered_masks_source_first",
+            failures,
+        )
+        check(
+            number(drum_pressure.get("tr909_rendered_max_support_ratio")) <= 0.46,
+            "professional_suite_tr909_rendered_support_masks_source",
+            failures,
+        )
         bass_pressure = object_or_empty(
             nested_value(report, "professional_output_suite", "bass_pressure")
         )
@@ -1183,6 +1243,13 @@ def markdown_report(report: dict[str, Any]) -> str:
                 f"score `{drum_pressure.get('dense_break_physical_drum_pressure_score')}`, "
                 "pressure transient/hook "
                 f"`{drum_pressure.get('dense_break_pressure_transient_to_hook_ratio')}`"
+            ),
+            (
+                "- TR-909 rendered pressure: "
+                f"`{drum_pressure.get('tr909_rendered_result')}`, cases "
+                f"`{drum_pressure.get('tr909_rendered_case_count')}`, support contribution min "
+                f"`{drum_pressure.get('tr909_rendered_min_support_mix_contribution_ratio')}`, "
+                f"low-band min `{drum_pressure.get('tr909_rendered_min_low_band_rms')}`"
             ),
             (
                 "- Mix balance: "

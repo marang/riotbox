@@ -834,6 +834,13 @@ following:
   and manifests, and keeps suite-level diagnostics for scanned/promoted cases
   so weak-head / stronger-later source material can move the rendered source
   decision without adding fallback product sound or claiming human quality.
+- RIOTBOX-1309 strengthens TR-909 drum pressure in the rendered support path:
+  the generated-support mix shifts more weight onto source-derived TR-909 body
+  while reducing MC-202 support weight enough to preserve the `0.46`
+  generated/source ceiling, and Feral reports now carry
+  `tr909_rendered_drum_pressure` so kick/accent/source-grid evidence, support
+  contribution, source-first headroom, and low-band output must all pass before
+  drum pressure counts as surviving the rendered mix.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue

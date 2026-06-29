@@ -253,6 +253,35 @@ mod manifest_assertions {
             .as_f64()
             .expect("tr909 source accent span budget");
         assert!(tr909_accent_span >= min_tr909_accent_span);
+        let tr909_rendered_pressure = &manifest["metrics"]["tr909_rendered_drum_pressure"];
+        assert_eq!(tr909_rendered_pressure["applied"], true);
+        assert_eq!(tr909_rendered_pressure["pattern_origin"], "source_derived");
+        assert_eq!(
+            tr909_rendered_pressure["source_evidence_role"],
+            "tr909_source_profile_accent_dynamics_and_rendered_mix_pressure"
+        );
+        assert!(
+            tr909_rendered_pressure["support_mix_tr909_contribution_ratio"]
+                .as_f64()
+                .expect("tr909 rendered support contribution")
+                >= tr909_rendered_pressure["min_required_support_mix_tr909_contribution_ratio"]
+                    .as_f64()
+                    .expect("tr909 rendered support contribution threshold")
+        );
+        assert!(
+            tr909_rendered_pressure["source_first_generated_to_source_rms_ratio"]
+                .as_f64()
+                .expect("tr909 rendered source-first ratio")
+                <= tr909_rendered_pressure["max_source_first_generated_to_source_rms_ratio"]
+                    .as_f64()
+                    .expect("tr909 rendered source-first threshold")
+        );
+        assert!(
+            tr909_rendered_pressure["tr909_source_grid_hit_ratio"]
+                .as_f64()
+                .expect("tr909 rendered grid hit ratio")
+                >= f64::from(SOURCE_GRID_OUTPUT_MIN_HIT_RATIO)
+        );
         super::manifest_mc202_assertions::assert_mc202_manifest(manifest);
         assert!(
             manifest["metrics"]["w30_source_chop_profile"]["preview_rms"]

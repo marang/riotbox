@@ -281,6 +281,16 @@ fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>
         .into());
     }
 
+    if !report.tr909_rendered_drum_pressure.applied {
+        return Err(format!(
+            "TR-909 rendered drum pressure was too weak or masked the source: contribution {:.6}, source-first ratio {:.6}, support ratio {:.6}",
+            report.tr909_rendered_drum_pressure.support_mix_tr909_contribution_ratio,
+            report.tr909_rendered_drum_pressure.source_first_generated_to_source_rms_ratio,
+            report.tr909_rendered_drum_pressure.support_generated_to_source_rms_ratio
+        )
+        .into());
+    }
+
     if !report.all_lane_mix_movement.applied {
         return Err(format!(
             "all-lane mix movement proof failed: delta {:.6}, correlation {:.6}, tr909 {:.6}, mc202 {:.6}, w30 {:.6}, generated/w30 {:.6}",

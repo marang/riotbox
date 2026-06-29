@@ -49,6 +49,8 @@ MIN_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.16
 MAX_FERAL_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO = 0.08
 MIN_FERAL_SOURCE_FIRST_MASKING_HEADROOM = 0.02
 MAX_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.46
+MIN_FERAL_TR909_RENDERED_SUPPORT_CONTRIBUTION_RATIO = 0.050
+MIN_FERAL_TR909_RENDERED_LOW_BAND_RMS = 0.0030
 MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_MARGIN = 0.10
 
 
@@ -135,6 +137,7 @@ def validate_report(report: dict[str, Any], output: Path) -> list[str]:
     validate_rebuild_balance_metrics(matrix, source_wav, failures)
     validate_feral_mix_balance_metrics(report, failures)
     validate_source_character_window_selection_metrics(report, failures)
+    validate_tr909_rendered_drum_pressure_metrics(report, failures)
     validate_artifacts(output, failures)
     return failures
 
@@ -1003,6 +1006,66 @@ def validate_source_character_window_selection_metrics(
             for case in cases
         ),
         "source_character_window_selection_unknown_reason",
+        failures,
+    )
+
+
+def validate_tr909_rendered_drum_pressure_metrics(
+    report: dict[str, Any], failures: list[str]
+) -> None:
+    pressure = object_or_empty(report.get("tr909_rendered_drum_pressure"))
+    cases = list_or_empty(pressure.get("cases"))
+    require(
+        pressure.get("result") == "pass",
+        "tr909_rendered_drum_pressure_not_pass",
+        failures,
+    )
+    require(
+        number(pressure.get("case_count")) >= 8,
+        "tr909_rendered_drum_pressure_case_count_too_low",
+        failures,
+    )
+    require(
+        all(
+            object_or_empty(case).get(
+                "has_required_tr909_rendered_drum_pressure_fields"
+            )
+            is True
+            for case in cases
+        ),
+        "tr909_rendered_drum_pressure_fields_missing",
+        failures,
+    )
+    require(
+        all(
+            object_or_empty(case).get("pattern_origin") == "source_derived"
+            for case in cases
+        ),
+        "tr909_rendered_drum_pressure_not_source_derived",
+        failures,
+    )
+    require(
+        number(pressure.get("min_support_mix_tr909_contribution_ratio"))
+        >= MIN_FERAL_TR909_RENDERED_SUPPORT_CONTRIBUTION_RATIO,
+        "tr909_rendered_drum_pressure_too_buried",
+        failures,
+    )
+    require(
+        number(pressure.get("min_tr909_low_band_rms"))
+        >= MIN_FERAL_TR909_RENDERED_LOW_BAND_RMS,
+        "tr909_rendered_drum_pressure_low_band_too_weak",
+        failures,
+    )
+    require(
+        number(pressure.get("max_source_first_generated_to_source_rms_ratio"))
+        <= MAX_FERAL_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO,
+        "tr909_rendered_drum_pressure_masks_source_first",
+        failures,
+    )
+    require(
+        number(pressure.get("max_support_generated_to_source_rms_ratio"))
+        <= MAX_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
+        "tr909_rendered_drum_pressure_support_masks_source",
         failures,
     )
 

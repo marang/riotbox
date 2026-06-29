@@ -17,13 +17,14 @@ use super::{
     ManifestW30SourceLoopClosureProof, ManifestW30SourceSliceChoiceProof,
     ManifestW30SourceTriggerVariationProof, PACK_ID, PackReport, RenderMetrics, SAMPLE_RATE,
     SourceCharacterWindowSelection, SourceGridOutputDriftMetrics, SourceTimingAnalysisForManifest,
-    SpectralEnergyMetrics, Tr909GrooveTimingPolicy, grid_bpm_decision_reason_label,
-    grid_bpm_source_label, manifest_mc202_bass_pressure_proof, manifest_mc202_source_contour_proof,
-    manifest_source_timing_readiness, manifest_tr909_kick_pressure_proof,
-    manifest_tr909_source_accent_dynamics_proof, manifest_tr909_source_profile,
-    manifest_w30_source_accent_dynamics_proof, manifest_w30_source_chop_profile,
-    manifest_w30_source_loop_closure_proof, manifest_w30_source_slice_choice_proof,
-    manifest_w30_source_trigger_variation_proof, metrics_path_for, verification_command,
+    SpectralEnergyMetrics, Tr909GrooveTimingPolicy, Tr909RenderedDrumPressureProof,
+    grid_bpm_decision_reason_label, grid_bpm_source_label, manifest_mc202_bass_pressure_proof,
+    manifest_mc202_source_contour_proof, manifest_source_timing_readiness,
+    manifest_tr909_kick_pressure_proof, manifest_tr909_source_accent_dynamics_proof,
+    manifest_tr909_source_profile, manifest_w30_source_accent_dynamics_proof,
+    manifest_w30_source_chop_profile, manifest_w30_source_loop_closure_proof,
+    manifest_w30_source_slice_choice_proof, manifest_w30_source_trigger_variation_proof,
+    metrics_path_for, verification_command,
 };
 
 #[derive(Serialize)]
@@ -98,6 +99,7 @@ struct ManifestPackMetrics {
     tr909_groove_timing: Tr909GrooveTimingPolicy,
     tr909_kick_pressure: ManifestTr909KickPressureProof,
     tr909_source_accent_dynamics: ManifestTr909SourceAccentDynamicsProof,
+    tr909_rendered_drum_pressure: Tr909RenderedDrumPressureProof,
     mc202_bass_pressure: ManifestMc202BassPressureProof,
     mc202_source_contour: ManifestMc202SourceContourProof,
     w30_source_chop_profile: ManifestW30SourceChopProfile,
@@ -195,6 +197,7 @@ pub(super) fn write_manifest(
             tr909_source_accent_dynamics: manifest_tr909_source_accent_dynamics_proof(
                 report.tr909_source_accent_dynamics,
             ),
+            tr909_rendered_drum_pressure: report.tr909_rendered_drum_pressure,
             mc202_bass_pressure: manifest_mc202_bass_pressure_proof(report.mc202_bass_pressure),
             mc202_source_contour: manifest_mc202_source_contour_proof(report.mc202_source_contour),
             w30_source_chop_profile: manifest_w30_source_chop_profile(
