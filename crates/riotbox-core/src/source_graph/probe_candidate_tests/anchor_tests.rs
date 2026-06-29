@@ -79,14 +79,18 @@ fn source_timing_probe_bpm_candidates_keep_anchor_classes_generic_when_downbeat_
 
     let primary = timing.primary_hypothesis().expect("primary hypothesis");
     assert!(has_warning(&timing, TimingWarningCode::AmbiguousDownbeat));
-    assert!(primary
-        .anchors
-        .iter()
-        .all(|anchor| anchor.anchor_type == SourceTimingAnchorType::TransientCluster));
-    assert!(primary
-        .anchors
-        .iter()
-        .all(|anchor| anchor.tags.contains(&"anchor_classified_v0".into())));
+    assert!(
+        primary
+            .anchors
+            .iter()
+            .all(|anchor| anchor.anchor_type == SourceTimingAnchorType::TransientCluster)
+    );
+    assert!(
+        primary
+            .anchors
+            .iter()
+            .all(|anchor| anchor.tags.contains(&"anchor_classified_v0".into()))
+    );
 }
 
 #[test]
@@ -101,16 +105,20 @@ fn source_timing_probe_bpm_candidates_keep_alternate_hypothesis_anchors_generic(
         SourceTimingProbeBpmCandidatePolicy::default(),
     );
 
-    assert!(timing
-        .primary_hypothesis()
-        .expect("primary hypothesis")
-        .anchors
-        .iter()
-        .any(|anchor| anchor.anchor_type == SourceTimingAnchorType::Kick));
-    assert!(timing
-        .hypotheses
-        .iter()
-        .filter(|hypothesis| hypothesis.kind != TimingHypothesisKind::Primary)
-        .flat_map(|hypothesis| hypothesis.anchors.iter())
-        .all(|anchor| anchor.anchor_type == SourceTimingAnchorType::TransientCluster));
+    assert!(
+        timing
+            .primary_hypothesis()
+            .expect("primary hypothesis")
+            .anchors
+            .iter()
+            .any(|anchor| anchor.anchor_type == SourceTimingAnchorType::Kick)
+    );
+    assert!(
+        timing
+            .hypotheses
+            .iter()
+            .filter(|hypothesis| hypothesis.kind != TimingHypothesisKind::Primary)
+            .flat_map(|hypothesis| hypothesis.anchors.iter())
+            .all(|anchor| anchor.anchor_type == SourceTimingAnchorType::TransientCluster)
+    );
 }

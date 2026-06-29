@@ -1,9 +1,14 @@
 use super::*;
 
+#[path = "probe_candidate_tests/anchor_tests.rs"]
 mod anchor_tests;
+#[path = "probe_candidate_tests/confidence_report_tests.rs"]
 mod confidence_report_tests;
+#[path = "probe_candidate_tests/evidence_report_tests.rs"]
 mod evidence_report_tests;
+#[path = "probe_candidate_tests/groove_tests.rs"]
 mod groove_tests;
+#[path = "probe_candidate_tests/readiness_report_tests.rs"]
 mod readiness_report_tests;
 
 #[test]
@@ -80,7 +85,9 @@ fn source_timing_probe_bpm_candidates_estimate_clean_synthetic_spacing() {
         TimingDegradedPolicy::Cautious
     );
     assert_eq!(
-        timing.primary_hypothesis().map(|hypothesis| hypothesis.kind),
+        timing
+            .primary_hypothesis()
+            .map(|hypothesis| hypothesis.kind),
         Some(TimingHypothesisKind::Primary)
     );
     assert!(!timing.beat_grid.is_empty());
@@ -88,12 +95,16 @@ fn source_timing_probe_bpm_candidates_estimate_clean_synthetic_spacing() {
     assert!(has_warning(&timing, TimingWarningCode::PhraseUncertain));
     let primary = timing.primary_hypothesis().expect("primary hypothesis");
     assert!(primary.score > 0.0);
-    assert!(primary
-        .provenance
-        .contains(&"source-timing-probe.beat-period-score.v0".into()));
-    assert!(primary
-        .provenance
-        .contains(&"source-timing-probe.downbeat-accent-score.v0".into()));
+    assert!(
+        primary
+            .provenance
+            .contains(&"source-timing-probe.beat-period-score.v0".into())
+    );
+    assert!(
+        primary
+            .provenance
+            .contains(&"source-timing-probe.downbeat-accent-score.v0".into())
+    );
 }
 
 #[test]
@@ -103,14 +114,18 @@ fn source_timing_probe_bpm_candidates_preserve_half_and_double_time_ambiguity() 
         SourceTimingProbeBpmCandidatePolicy::default(),
     );
 
-    assert!(timing
-        .hypotheses
-        .iter()
-        .any(|hypothesis| hypothesis.kind == TimingHypothesisKind::HalfTime));
-    assert!(timing
-        .hypotheses
-        .iter()
-        .any(|hypothesis| hypothesis.kind == TimingHypothesisKind::DoubleTime));
+    assert!(
+        timing
+            .hypotheses
+            .iter()
+            .any(|hypothesis| hypothesis.kind == TimingHypothesisKind::HalfTime)
+    );
+    assert!(
+        timing
+            .hypotheses
+            .iter()
+            .any(|hypothesis| hypothesis.kind == TimingHypothesisKind::DoubleTime)
+    );
     assert!(has_warning(&timing, TimingWarningCode::HalfTimePossible));
     assert!(has_warning(&timing, TimingWarningCode::DoubleTimePossible));
 }
@@ -127,17 +142,23 @@ fn source_timing_probe_bpm_candidates_preserve_period_score_ambiguity() {
     );
 
     assert_bpm_close(timing.bpm_estimate, 120.0);
-    assert!(timing
-        .hypotheses
-        .iter()
-        .any(|hypothesis| hypothesis.kind == TimingHypothesisKind::HalfTime));
-    assert!(timing
-        .hypotheses
-        .iter()
-        .any(|hypothesis| hypothesis.kind == TimingHypothesisKind::DoubleTime));
-    assert!(timing.hypotheses.iter().all(|hypothesis| hypothesis
-        .provenance
-        .contains(&"source-timing-probe.beat-period-score.v0".into())));
+    assert!(
+        timing
+            .hypotheses
+            .iter()
+            .any(|hypothesis| hypothesis.kind == TimingHypothesisKind::HalfTime)
+    );
+    assert!(
+        timing
+            .hypotheses
+            .iter()
+            .any(|hypothesis| hypothesis.kind == TimingHypothesisKind::DoubleTime)
+    );
+    assert!(timing.hypotheses.iter().all(|hypothesis| {
+        hypothesis
+            .provenance
+            .contains(&"source-timing-probe.beat-period-score.v0".into())
+    }));
 }
 
 #[test]
@@ -177,10 +198,12 @@ fn source_timing_probe_bpm_candidates_preserve_alternate_downbeat_phases() {
         .collect::<Vec<_>>();
     assert_eq!(alternate_downbeats.len(), 3);
     assert!(has_warning(&timing, TimingWarningCode::AmbiguousDownbeat));
-    assert!(alternate_downbeats.iter().all(|hypothesis| hypothesis
-        .bar_grid
-        .first()
-        .is_some_and(|bar| bar.start_seconds > 0.0)));
+    assert!(alternate_downbeats.iter().all(|hypothesis| {
+        hypothesis
+            .bar_grid
+            .first()
+            .is_some_and(|bar| bar.start_seconds > 0.0)
+    }));
 }
 
 #[test]
@@ -200,15 +223,19 @@ fn source_timing_probe_bpm_candidates_keep_primary_bar_grid_phase_when_clearer()
         primary.bar_grid.first().map(|bar| bar.start_seconds),
         Some(0.0)
     );
-    assert!(primary
-        .bar_grid
-        .first()
-        .is_some_and(|bar| bar.downbeat_confidence > 0.0));
+    assert!(
+        primary
+            .bar_grid
+            .first()
+            .is_some_and(|bar| bar.downbeat_confidence > 0.0)
+    );
     assert!(!has_warning(&timing, TimingWarningCode::AmbiguousDownbeat));
-    assert!(!timing
-        .hypotheses
-        .iter()
-        .any(|hypothesis| hypothesis.kind == TimingHypothesisKind::AlternateDownbeat));
+    assert!(
+        !timing
+            .hypotheses
+            .iter()
+            .any(|hypothesis| hypothesis.kind == TimingHypothesisKind::AlternateDownbeat)
+    );
 }
 
 #[test]
@@ -235,18 +262,16 @@ fn source_timing_probe_bpm_candidates_keep_ambiguous_downbeats_when_accents_are_
 #[test]
 fn source_timing_probe_bpm_candidates_report_stable_grid_drift() {
     let timing = timing_model_from_probe_bpm_candidates(
-        &candidate_input(
-            "stable-drift-120",
-            16.0,
-            &even_onsets(0.0, 0.5, 32),
-        ),
+        &candidate_input("stable-drift-120", 16.0, &even_onsets(0.0, 0.5, 32)),
         SourceTimingProbeBpmCandidatePolicy::default(),
     );
 
     let primary = timing.primary_hypothesis().expect("primary hypothesis");
-    assert!(primary
-        .provenance
-        .contains(&"source-timing-probe.drift-report.v0".into()));
+    assert!(
+        primary
+            .provenance
+            .contains(&"source-timing-probe.drift-report.v0".into())
+    );
     let four_bar = primary
         .drift
         .iter()
@@ -266,11 +291,7 @@ fn source_timing_probe_bpm_candidates_report_stable_grid_drift() {
 #[test]
 fn source_timing_probe_bpm_candidates_report_long_grid_drift_windows() {
     let timing = timing_model_from_probe_bpm_candidates(
-        &candidate_input(
-            "long-stable-drift-120",
-            64.0,
-            &even_onsets(0.0, 0.5, 128),
-        ),
+        &candidate_input("long-stable-drift-120", 64.0, &even_onsets(0.0, 0.5, 128)),
         SourceTimingProbeBpmCandidatePolicy::default(),
     );
 
@@ -281,10 +302,12 @@ fn source_timing_probe_bpm_candidates_report_long_grid_drift_windows() {
         .map(|report| report.window_bars)
         .collect::<Vec<_>>();
     assert_eq!(reported_windows, vec![4, 8, 16, 32]);
-    assert!(primary
-        .drift
-        .iter()
-        .all(|report| report.max_drift_ms <= 0.01));
+    assert!(
+        primary
+            .drift
+            .iter()
+            .all(|report| report.max_drift_ms <= 0.01)
+    );
     assert!(!has_warning(&timing, TimingWarningCode::DriftHigh));
 }
 
@@ -310,9 +333,11 @@ fn source_timing_probe_bpm_candidates_add_phrase_grid_when_bar_timing_is_stable(
         .map(|phrase| (phrase.phrase_index, phrase.start_bar, phrase.end_bar))
         .collect::<Vec<_>>();
     assert_eq!(phrase_spans, vec![(1, 1, 4), (2, 5, 8)]);
-    assert!(primary
-        .provenance
-        .contains(&"source-timing-probe.phrase-grid.v0".into()));
+    assert!(
+        primary
+            .provenance
+            .contains(&"source-timing-probe.phrase-grid.v0".into())
+    );
     assert!(!has_warning(&timing, TimingWarningCode::PhraseUncertain));
 }
 
@@ -330,11 +355,13 @@ fn source_timing_probe_bpm_candidates_keep_phrase_uncertain_for_short_material()
     );
 
     assert!(timing.phrase_grid.is_empty());
-    assert!(timing
-        .primary_hypothesis()
-        .expect("primary hypothesis")
-        .phrase_grid
-        .is_empty());
+    assert!(
+        timing
+            .primary_hypothesis()
+            .expect("primary hypothesis")
+            .phrase_grid
+            .is_empty()
+    );
     assert!(has_warning(&timing, TimingWarningCode::PhraseUncertain));
 }
 
@@ -350,7 +377,12 @@ fn source_timing_probe_bpm_candidates_warn_when_grid_drift_is_high() {
     );
 
     let primary = timing.primary_hypothesis().expect("primary hypothesis");
-    assert!(primary.drift.iter().any(|report| report.max_drift_ms > 100.0));
+    assert!(
+        primary
+            .drift
+            .iter()
+            .any(|report| report.max_drift_ms > 100.0)
+    );
     assert!(primary.phrase_grid.is_empty());
     assert!(has_warning(&timing, TimingWarningCode::DriftHigh));
     assert!(has_warning(&timing, TimingWarningCode::PhraseUncertain));
@@ -434,25 +466,13 @@ fn even_onsets(start_seconds: f32, period_seconds: f32, count: usize) -> Vec<f32
 
 fn downbeat_strengths(count: usize, beats_per_bar: usize) -> Vec<f32> {
     (0..count)
-        .map(|index| {
-            if index % beats_per_bar == 0 {
-                2.0
-            } else {
-                0.5
-            }
-        })
+        .map(|index| if index % beats_per_bar == 0 { 2.0 } else { 0.5 })
         .collect()
 }
 
 fn moderate_downbeat_strengths(count: usize, beats_per_bar: usize) -> Vec<f32> {
     (0..count)
-        .map(|index| {
-            if index % beats_per_bar == 0 {
-                0.8
-            } else {
-                0.5
-            }
-        })
+        .map(|index| if index % beats_per_bar == 0 { 0.8 } else { 0.5 })
         .collect()
 }
 

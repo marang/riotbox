@@ -1,3 +1,10 @@
+use super::{
+    Confidence, MeterHint, SourceTimingAlternativeSeed, SourceTimingAnalysisSeed,
+    SourceTimingDriftSeed, TimingDegradedPolicy, TimingHypothesisKind, TimingModel, TimingQuality,
+    TimingWarningCode,
+};
+use serde::{Deserialize, Serialize};
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TimingFixtureEvaluationTarget {
     pub fixture_id: String,
@@ -115,8 +122,9 @@ pub fn evaluate_timing_fixture_output(
     let mut issues = Vec::new();
     let primary_hypothesis = timing.primary_hypothesis();
     let primary_confidence = primary_hypothesis.map(|primary| primary.confidence);
-    let primary_max_mean_abs_drift_ms = primary_hypothesis
-        .and_then(|primary| max_drift_value(primary.drift.iter().map(|drift| drift.mean_abs_drift_ms)));
+    let primary_max_mean_abs_drift_ms = primary_hypothesis.and_then(|primary| {
+        max_drift_value(primary.drift.iter().map(|drift| drift.mean_abs_drift_ms))
+    });
     let primary_max_drift_ms = primary_hypothesis
         .and_then(|primary| max_drift_value(primary.drift.iter().map(|drift| drift.max_drift_ms)));
     let beat_count = timing_evaluation_grid_count(
@@ -295,7 +303,10 @@ fn timing_degraded_policy_from_label(
     }
 }
 
-fn timing_hypothesis_kind_from_label(fixture_id: &str, label: &str) -> Result<TimingHypothesisKind, String> {
+fn timing_hypothesis_kind_from_label(
+    fixture_id: &str,
+    label: &str,
+) -> Result<TimingHypothesisKind, String> {
     match label {
         "half_time" => Ok(TimingHypothesisKind::HalfTime),
         "double_time" => Ok(TimingHypothesisKind::DoubleTime),
@@ -309,7 +320,9 @@ fn source_timing_alternatives_from_expected(
     fixture_id: &str,
     expected: &serde_json::Value,
 ) -> Result<Vec<SourceTimingAlternativeSeed>, String> {
-    let Some(alternatives) = expected.get("alternatives").and_then(serde_json::Value::as_array)
+    let Some(alternatives) = expected
+        .get("alternatives")
+        .and_then(serde_json::Value::as_array)
     else {
         return Ok(Vec::new());
     };

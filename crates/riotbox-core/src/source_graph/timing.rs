@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 pub type Confidence = f32;
 
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]

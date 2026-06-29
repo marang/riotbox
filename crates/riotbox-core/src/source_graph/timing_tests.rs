@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod timing_tests {
-    use super::*;
+    use super::super::*;
 
     const TIMING_FIXTURE_CATALOG: &str =
         include_str!("../../tests/fixtures/source_timing/timing_fixture_catalog.json");
@@ -64,11 +64,7 @@ mod timing_tests {
         assert!(ambiguous_evaluation.passed, "{ambiguous_evaluation:?}");
         assert_eq!(
             ambiguous_timing.primary_hypothesis().map(|hypothesis| {
-                (
-                    hypothesis.kind,
-                    hypothesis.bpm,
-                    hypothesis.warnings[0].code,
-                )
+                (hypothesis.kind, hypothesis.bpm, hypothesis.warnings[0].code)
             }),
             Some((
                 TimingHypothesisKind::Primary,
@@ -77,7 +73,10 @@ mod timing_tests {
             ))
         );
         assert_eq!(ambiguous_timing.hypotheses.len(), 2);
-        assert_eq!(ambiguous_timing.hypotheses[1].kind, TimingHypothesisKind::HalfTime);
+        assert_eq!(
+            ambiguous_timing.hypotheses[1].kind,
+            TimingHypothesisKind::HalfTime
+        );
         assert_eq!(ambiguous_timing.hypotheses[1].bpm, 70.0);
         assert!(
             ambiguous_timing.hypotheses[1]
@@ -95,11 +94,7 @@ mod timing_tests {
         assert!(double_time_evaluation.passed, "{double_time_evaluation:?}");
         assert_eq!(
             double_time_timing.primary_hypothesis().map(|hypothesis| {
-                (
-                    hypothesis.kind,
-                    hypothesis.bpm,
-                    hypothesis.warnings[0].code,
-                )
+                (hypothesis.kind, hypothesis.bpm, hypothesis.warnings[0].code)
             }),
             Some((
                 TimingHypothesisKind::Primary,
@@ -108,7 +103,10 @@ mod timing_tests {
             ))
         );
         assert_eq!(double_time_timing.hypotheses.len(), 2);
-        assert_eq!(double_time_timing.hypotheses[1].kind, TimingHypothesisKind::DoubleTime);
+        assert_eq!(
+            double_time_timing.hypotheses[1].kind,
+            TimingHypothesisKind::DoubleTime
+        );
         assert_eq!(double_time_timing.hypotheses[1].bpm, 180.0);
 
         let high_drift_timing =
@@ -118,24 +116,34 @@ mod timing_tests {
             &evaluation_target_from_case(high_drift_case),
         );
         assert!(high_drift_evaluation.passed, "{high_drift_evaluation:?}");
-        assert_eq!(high_drift_timing.effective_timing_quality(), TimingQuality::Medium);
+        assert_eq!(
+            high_drift_timing.effective_timing_quality(),
+            TimingQuality::Medium
+        );
         assert_eq!(
             high_drift_timing.effective_degraded_policy(),
             TimingDegradedPolicy::ManualConfirm
         );
-        assert_eq!(high_drift_evaluation.primary_max_mean_abs_drift_ms, Some(45.0));
+        assert_eq!(
+            high_drift_evaluation.primary_max_mean_abs_drift_ms,
+            Some(45.0)
+        );
         assert_eq!(high_drift_evaluation.primary_max_drift_ms, Some(110.0));
-        assert!(high_drift_timing
-            .warnings
-            .iter()
-            .any(|warning| warning.code == TimingWarningCode::DriftHigh));
+        assert!(
+            high_drift_timing
+                .warnings
+                .iter()
+                .any(|warning| warning.code == TimingWarningCode::DriftHigh)
+        );
         let high_drift_primary = high_drift_timing
             .primary_hypothesis()
             .expect("high drift primary hypothesis");
-        assert!(high_drift_primary
-            .drift
-            .iter()
-            .any(|drift| drift.end_drift_ms.abs() > 70.0));
+        assert!(
+            high_drift_primary
+                .drift
+                .iter()
+                .any(|drift| drift.end_drift_ms.abs() > 70.0)
+        );
     }
 
     #[test]
@@ -165,26 +173,37 @@ mod timing_tests {
             evaluate_timing_fixture_output(&timing, &evaluation_target_from_case(clean_case));
 
         assert!(!evaluation.passed);
-        assert!(evaluation
-            .issues
-            .contains(&TimingFixtureEvaluationIssue::BpmOutsideTolerance));
-        assert!(evaluation
-            .issues
-            .contains(&TimingFixtureEvaluationIssue::BeatCountBelowMinimum));
-        assert!(evaluation
-            .issues
-            .contains(&TimingFixtureEvaluationIssue::PrimaryConfidenceBelowFloor));
-        assert!(evaluation
-            .issues
-            .contains(&TimingFixtureEvaluationIssue::BeatDriftOutsideTolerance));
-        assert!(evaluation
-            .issues
-            .contains(&TimingFixtureEvaluationIssue::DownbeatDriftOutsideTolerance));
+        assert!(
+            evaluation
+                .issues
+                .contains(&TimingFixtureEvaluationIssue::BpmOutsideTolerance)
+        );
+        assert!(
+            evaluation
+                .issues
+                .contains(&TimingFixtureEvaluationIssue::BeatCountBelowMinimum)
+        );
+        assert!(
+            evaluation
+                .issues
+                .contains(&TimingFixtureEvaluationIssue::PrimaryConfidenceBelowFloor)
+        );
+        assert!(
+            evaluation
+                .issues
+                .contains(&TimingFixtureEvaluationIssue::BeatDriftOutsideTolerance)
+        );
+        assert!(
+            evaluation
+                .issues
+                .contains(&TimingFixtureEvaluationIssue::DownbeatDriftOutsideTolerance)
+        );
         assert_eq!(evaluation.primary_confidence, Some(0.1));
         assert_eq!(evaluation.primary_max_mean_abs_drift_ms, Some(500.0));
         assert_eq!(evaluation.primary_max_drift_ms, Some(500.0));
 
-        let mut missing_drift_timing = analyze_source_timing_seed(&analysis_seed_from_case(clean_case));
+        let mut missing_drift_timing =
+            analyze_source_timing_seed(&analysis_seed_from_case(clean_case));
         let primary = missing_drift_timing
             .primary_hypothesis_id
             .clone()
@@ -206,9 +225,11 @@ mod timing_tests {
         assert_eq!(missing_drift_evaluation.primary_confidence, Some(0.85));
         assert_eq!(missing_drift_evaluation.primary_max_mean_abs_drift_ms, None);
         assert_eq!(missing_drift_evaluation.primary_max_drift_ms, None);
-        assert!(missing_drift_evaluation
-            .issues
-            .contains(&TimingFixtureEvaluationIssue::MissingTimingDrift));
+        assert!(
+            missing_drift_evaluation
+                .issues
+                .contains(&TimingFixtureEvaluationIssue::MissingTimingDrift)
+        );
     }
 
     #[test]
@@ -334,10 +355,7 @@ mod timing_tests {
         );
     }
 
-    fn case_by_id<'a>(
-        cases: &'a [serde_json::Value],
-        fixture_id: &str,
-    ) -> &'a serde_json::Value {
+    fn case_by_id<'a>(cases: &'a [serde_json::Value], fixture_id: &str) -> &'a serde_json::Value {
         cases
             .iter()
             .find(|case| {

@@ -1,3 +1,5 @@
+use super::{TimingDegradedPolicy, TimingModel, TimingQuality, TimingWarning, TimingWarningCode};
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct SourceTimingProbeDiagnosticInput {
     pub source_id: String,
@@ -102,7 +104,10 @@ fn probe_timing_warning_message(
 ) -> String {
     match code {
         TimingWarningCode::LowTimingConfidence => {
-            format!("probe evidence is too weak to lock timing for {}", input.source_id)
+            format!(
+                "probe evidence is too weak to lock timing for {}",
+                input.source_id
+            )
         }
         TimingWarningCode::SparseOnsets => {
             "probe has too few timing onsets to estimate a grid".into()
@@ -126,4 +131,5 @@ fn probe_timing_warning_message(
 }
 
 #[cfg(test)]
+#[path = "probe_diagnostic_tests.rs"]
 mod probe_diagnostic_tests;

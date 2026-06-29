@@ -3,33 +3,35 @@ use super::*;
 #[test]
 fn source_timing_probe_beat_evidence_report_summarizes_stable_candidate() {
     let report = source_timing_probe_beat_evidence_report(
-        &candidate_input(
-            "beat-evidence-stable-120",
-            16.0,
-            &even_onsets(0.0, 0.5, 32),
-        ),
+        &candidate_input("beat-evidence-stable-120", 16.0, &even_onsets(0.0, 0.5, 32)),
         focused_120_bpm_policy(),
     );
 
-    assert_eq!(report.schema, "riotbox.source_timing_probe_beat_evidence.v1");
+    assert_eq!(
+        report.schema,
+        "riotbox.source_timing_probe_beat_evidence.v1"
+    );
     assert_eq!(report.schema_version, 1);
     assert_eq!(report.source_id, "beat-evidence-stable-120");
     assert_eq!(report.onset_count, 32);
     assert_eq!(report.status, SourceTimingProbeBeatEvidenceStatus::Stable);
     assert_bpm_close(report.primary_bpm, 120.0);
     assert!(report.primary_score.is_some_and(|score| score >= 0.95));
-    assert!(report
-        .primary_matched_onset_ratio
-        .is_some_and(|ratio| ratio >= 0.95));
-    assert!(report
-        .primary_median_distance_ratio
-        .is_some_and(|ratio| ratio <= 0.01));
+    assert!(
+        report
+            .primary_matched_onset_ratio
+            .is_some_and(|ratio| ratio >= 0.95)
+    );
+    assert!(
+        report
+            .primary_median_distance_ratio
+            .is_some_and(|ratio| ratio <= 0.01)
+    );
     assert_eq!(report.alternate_candidate_count, 0);
 }
 
 #[test]
-fn source_timing_probe_beat_evidence_report_summarizes_unavailable_weak_and_ambiguous_candidates()
-{
+fn source_timing_probe_beat_evidence_report_summarizes_unavailable_weak_and_ambiguous_candidates() {
     let unavailable = source_timing_probe_beat_evidence_report(
         &candidate_input("beat-evidence-weak", 4.0, &[0.0, 1.0]),
         SourceTimingProbeBpmCandidatePolicy::default(),
@@ -94,7 +96,10 @@ fn source_timing_probe_downbeat_evidence_report_summarizes_stable_candidate() {
     );
     assert_eq!(report.schema_version, 1);
     assert_eq!(report.source_id, "downbeat-evidence-stable-120");
-    assert_eq!(report.status, SourceTimingProbeDownbeatEvidenceStatus::Stable);
+    assert_eq!(
+        report.status,
+        SourceTimingProbeDownbeatEvidenceStatus::Stable
+    );
     assert_eq!(report.phase_count, 4);
     assert_eq!(report.primary_offset_beats, Some(0));
     assert!(report.primary_score.is_some_and(|score| score >= 0.45));
@@ -115,12 +120,17 @@ fn source_timing_probe_downbeat_evidence_accepts_moderate_downbeat_contrast() {
         SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness(),
     );
 
-    assert_eq!(report.status, SourceTimingProbeDownbeatEvidenceStatus::Stable);
+    assert_eq!(
+        report.status,
+        SourceTimingProbeDownbeatEvidenceStatus::Stable
+    );
     assert_eq!(report.primary_offset_beats, Some(0));
     assert!(report.primary_score.is_some_and(|score| score >= 0.30));
-    assert!(report
-        .primary_margin_to_next_phase
-        .is_some_and(|margin| margin > SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness().downbeat_ambiguity_margin));
+    assert!(report.primary_margin_to_next_phase.is_some_and(|margin| {
+        margin
+            > SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness()
+                .downbeat_ambiguity_margin
+    }));
     assert_eq!(report.alternate_phase_count, 0);
 }
 
@@ -145,15 +155,17 @@ fn source_timing_probe_downbeat_evidence_reports_near_stable_phase_conflict_as_a
     assert!(report.primary_score.is_some_and(|score| {
         (MIN_AMBIGUOUS_DOWNBEAT_PHASE_SCORE..MIN_STABLE_DOWNBEAT_PHASE_SCORE).contains(&score)
     }));
-    assert!(report
-        .primary_margin_to_next_phase
-        .is_some_and(|margin| margin <= SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness().downbeat_ambiguity_margin));
+    assert!(report.primary_margin_to_next_phase.is_some_and(|margin| {
+        margin
+            <= SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness()
+                .downbeat_ambiguity_margin
+    }));
     assert!(report.alternate_phase_count > 0);
 }
 
 #[test]
-fn source_timing_probe_downbeat_evidence_report_summarizes_unavailable_weak_and_ambiguous_candidates(
-) {
+fn source_timing_probe_downbeat_evidence_report_summarizes_unavailable_weak_and_ambiguous_candidates()
+ {
     let unavailable = source_timing_probe_downbeat_evidence_report(
         &candidate_input("downbeat-evidence-unavailable", 4.0, &[]),
         120.0,
