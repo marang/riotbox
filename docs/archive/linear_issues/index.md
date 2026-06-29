@@ -1268,4 +1268,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Strengthen TR-909 drum pressure in rendered output path
 - [RIOTBOX-1310.md](./RIOTBOX-1310.md)
   P023: Tighten fixture thresholds for weak-output promotion boundaries
+- [RIOTBOX-1311.md](./RIOTBOX-1311.md)
+  P023: Expose source/timing confidence risk as musician-visible cue
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
