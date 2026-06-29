@@ -630,8 +630,10 @@ professional diagnostics, and tonal-hook fixture reports require
 `w30_contribution_margin >= 0.050` above their W-30 contribution floor.
 Dense-break and tonal-hook reports must prove that selected source offsets
 drive a non-static hit pattern with enough hit density, velocity contrast, at
-least one reverse gesture, and enough W-30 headroom above the hook-presence
-floor. Pad/noise and bad-timing source families must not use this W-30
+least two reverse gestures, and enough W-30 headroom above the hook-presence
+floor. Current dense/tonal diagnostics require at least four source offsets and
+seven riff hits before the hook/chop path may pass. Pad/noise and bad-timing
+source families must not use this W-30
 hook/chop riff as a hidden product fallback; they use their family-specific
 texture or timing-cue paths instead. These fields remain diagnostic and must
 keep `quality_proof: false` until structured listening review accepts the
