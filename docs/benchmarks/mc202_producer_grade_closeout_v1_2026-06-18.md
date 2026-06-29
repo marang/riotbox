@@ -52,6 +52,11 @@ The validator requires:
 - `parent_ticket_state: keep_open`
 - at least one dense and one non-dense MC-202 review candidate
 - source-composed evidence for the dense and sparse MC-202 candidates
+- per-candidate `mc202_role_evidence` proving the source-family-appropriate
+  MC-202 role: sparse bass-pressure material must prove source-derived bass
+  movement, while dense / tonal material must prove source-derived
+  pressure-answer, hook-restraint, or stab-answer evidence instead of relying
+  on a generic source-composed flag
 - any primitive/template-only candidates preserved as promotion blockers
 - real-source primitive controls marked as non-product output
 - all review candidates still `human_verdict: unverified`,

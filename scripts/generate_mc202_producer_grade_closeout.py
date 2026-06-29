@@ -124,9 +124,11 @@ def build_report(
 
 def candidate_summary(case: dict[str, Any]) -> dict[str, Any]:
     gate = object_field(case, MC202_GATE_FIELD, Path("<professional-pack>"))
+    metrics = object_field(gate, "metrics", Path("<professional-pack>"))
+    source_family = required_string(case, "source_family", Path("<professional-pack>"))
     return {
         "case_id": required_string(case, "case_id", Path("<professional-pack>")),
-        "source_family": required_string(case, "source_family", Path("<professional-pack>")),
+        "source_family": source_family,
         "candidate": required_string(case, "candidate", Path("<professional-pack>")),
         "candidate_sha256": required_string(case, "candidate_sha256", Path("<professional-pack>")),
         "review": required_string(case, "review", Path("<professional-pack>")),
@@ -142,8 +144,58 @@ def candidate_summary(case: dict[str, Any]) -> dict[str, Any]:
         "template_only_blocks_promotion": gate.get("template_only_blocks_promotion") is True,
         "gate_result": str(gate.get("result")),
         "gate_failure_codes": list(gate.get("failure_codes", [])),
-        "metrics": object_field(gate, "metrics", Path("<professional-pack>")),
+        "metrics": metrics,
+        "mc202_role_evidence": mc202_role_evidence(source_family, metrics),
     }
+
+
+def mc202_role_evidence(source_family: str, metrics: dict[str, Any]) -> dict[str, Any]:
+    if source_family == "sparse_bass_pressure":
+        role = "bass_pressure"
+        failure_codes = []
+        if number(metrics.get("bass_movement_source_derived")) < 1.0:
+            failure_codes.append("bass_movement_not_source_derived")
+        if number(metrics.get("sparse_bass_movement_static_distance_hz")) < 1.25:
+            failure_codes.append("bass_movement_static_distance_too_low")
+        if number(metrics.get("sparse_bass_movement_frequency_span_hz")) < 8.0:
+            failure_codes.append("bass_movement_span_too_low")
+        reason = "MC-202 bass pressure follows source-derived sparse low-end movement."
+    elif source_family == "tonal_hook":
+        role = "hook_restraint_stab_answer"
+        failure_codes = answer_role_failure_codes(metrics, min_scripted_distance=3.0)
+        reason = "MC-202 answers the tonal hook with source-derived pressure/stab restraint instead of fake bass movement."
+    elif source_family in {"dense_break", "non_dense_break"}:
+        role = "pressure_answer"
+        failure_codes = answer_role_failure_codes(metrics, min_scripted_distance=2.0)
+        reason = "MC-202 reinforces the break with source-derived pressure/answer movement."
+    else:
+        role = "unsupported_source_family"
+        failure_codes = ["unsupported_source_family"]
+        reason = "MC-202 role evidence is unavailable because the source family is not recognized."
+    return {
+        "role": role,
+        "result": "pass" if not failure_codes else "fail",
+        "source_family": source_family,
+        "source_derived": not failure_codes,
+        "quality_proof": False,
+        "failure_codes": failure_codes,
+        "musician_reason": reason,
+    }
+
+
+def answer_role_failure_codes(metrics: dict[str, Any], *, min_scripted_distance: float) -> list[str]:
+    failures = []
+    if number(metrics.get("pressure_lift_policy_decision_count")) < 6.0:
+        failures.append("answer_role_decision_count_too_low")
+    if number(metrics.get("arrangement_role_order_source_derived")) < 1.0:
+        failures.append("answer_role_not_source_derived")
+    if number(metrics.get("arrangement_scripted_role_distance")) < min_scripted_distance:
+        failures.append("answer_role_too_close_to_scripted_template")
+    if number(metrics.get("mc202_to_w30_rms_ratio")) < 0.16:
+        failures.append("answer_role_mc202_too_weak")
+    if number(metrics.get("pressure_low_band_lift_ratio")) < 1.50:
+        failures.append("answer_role_pressure_lift_too_weak")
+    return failures
 
 
 def real_source_scaffold_summary(
@@ -379,6 +431,7 @@ def validate_candidate(candidate: Any, index: int, failures: list[str]) -> None:
         "primitive_or_template_only",
         "promotion_blocked_until_human_pass",
         "template_only_blocks_promotion",
+        "mc202_role_evidence",
     ):
         check(field in candidate, f"{prefix}_{field}_missing", failures)
     check(candidate.get("human_verdict") == "unverified", f"{prefix}_human_verdict_not_unverified", failures)
@@ -391,8 +444,52 @@ def validate_candidate(candidate: Any, index: int, failures: list[str]) -> None:
         f"{prefix}_source_composed_primitive_state_ambiguous",
         failures,
     )
+    validate_role_evidence(candidate, prefix, failures)
     check(len(str(candidate.get("candidate_sha256", ""))) == 64, f"{prefix}_candidate_sha_invalid", failures)
     check(len(str(candidate.get("review_sha256", ""))) == 64, f"{prefix}_review_sha_invalid", failures)
+
+
+def validate_role_evidence(candidate: dict[str, Any], prefix: str, failures: list[str]) -> None:
+    role = object_or_empty(candidate.get("mc202_role_evidence"))
+    source_family = str(candidate.get("source_family"))
+    check(role.get("source_family") == source_family, f"{prefix}_mc202_role_source_family_mismatch", failures)
+    check(role.get("result") == "pass", f"{prefix}_mc202_role_evidence_not_pass", failures)
+    check(role.get("source_derived") is True, f"{prefix}_mc202_role_not_source_derived", failures)
+    check(role.get("quality_proof") is False, f"{prefix}_mc202_role_claims_quality", failures)
+    check(role.get("failure_codes") == [], f"{prefix}_mc202_role_failure_codes", failures)
+    check(
+        isinstance(role.get("musician_reason"), str) and bool(role["musician_reason"]),
+        f"{prefix}_mc202_role_musician_reason_missing",
+        failures,
+    )
+    if source_family == "sparse_bass_pressure":
+        check(role.get("role") == "bass_pressure", f"{prefix}_mc202_sparse_role_not_bass_pressure", failures)
+        metrics = object_or_empty(candidate.get("metrics"))
+        check(
+            number(metrics.get("bass_movement_source_derived")) >= 1.0,
+            f"{prefix}_mc202_sparse_bass_movement_not_source_derived",
+            failures,
+        )
+        check(
+            number(metrics.get("sparse_bass_movement_static_distance_hz")) >= 1.25,
+            f"{prefix}_mc202_sparse_bass_distance_too_low",
+            failures,
+        )
+        check(
+            number(metrics.get("sparse_bass_movement_frequency_span_hz")) >= 8.0,
+            f"{prefix}_mc202_sparse_bass_span_too_low",
+            failures,
+        )
+    elif source_family == "tonal_hook":
+        check(
+            role.get("role") == "hook_restraint_stab_answer",
+            f"{prefix}_mc202_tonal_role_not_answer_stab",
+            failures,
+        )
+    elif source_family in {"dense_break", "non_dense_break"}:
+        check(role.get("role") == "pressure_answer", f"{prefix}_mc202_dense_role_not_pressure_answer", failures)
+    else:
+        check(False, f"{prefix}_mc202_unsupported_source_family", failures)
 
 
 def validate_all_source_composed_candidates(report: dict[str, Any]) -> list[str]:
@@ -471,6 +568,34 @@ def run_mutation_fixtures(report: dict[str, Any]) -> None:
             candidate["source_composed_evidence"] = False
     fixtures.append(("ambiguous_candidate_state", mutated, "candidate_1_source_composed_primitive_state_ambiguous"))
 
+    mutated = json.loads(json.dumps(report))
+    mutated["review_candidates"][0].pop("mc202_role_evidence")
+    fixtures.append(("missing_role_evidence", mutated, "candidate_0_mc202_role_evidence_missing"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["review_candidates"][0]["source_family"] = "unknown_family"
+    fixtures.append(("unsupported_source_family", mutated, "candidate_0_mc202_unsupported_source_family"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["review_candidates"][0]["mc202_role_evidence"]["source_family"] = "stale_family"
+    fixtures.append(("role_source_family_mismatch", mutated, "candidate_0_mc202_role_source_family_mismatch"))
+
+    mutated = json.loads(json.dumps(report))
+    for index, candidate in enumerate(mutated["review_candidates"]):
+        if candidate["source_family"] == "sparse_bass_pressure":
+            candidate["mc202_role_evidence"]["role"] = "pressure_answer"
+            fixtures.append(
+                ("sparse_wrong_role", mutated, f"candidate_{index}_mc202_sparse_role_not_bass_pressure")
+            )
+            break
+
+    mutated = json.loads(json.dumps(report))
+    for index, candidate in enumerate(mutated["review_candidates"]):
+        if candidate["source_family"] == "tonal_hook":
+            candidate["mc202_role_evidence"]["role"] = "bass_pressure"
+            fixtures.append(("tonal_wrong_role", mutated, f"candidate_{index}_mc202_tonal_role_not_answer_stab"))
+            break
+
     for name, fixture, expected in fixtures:
         failures = validate_report(fixture)
         if expected not in failures:
@@ -497,11 +622,14 @@ def markdown_report(report: dict[str, Any]) -> str:
         "",
     ]
     for candidate in report["review_candidates"]:
+        role = candidate["mc202_role_evidence"]
         lines.extend(
             [
                 f"### `{candidate['case_id']}`",
                 "",
                 f"- Source family: `{candidate['source_family']}`",
+                f"- MC-202 role evidence: `{role['role']}` / `{role['result']}`",
+                f"- Musician role reason: {role['musician_reason']}",
                 f"- WAV: `{candidate['candidate']}`",
                 f"- Source-composed evidence: `{str(candidate['source_composed_evidence']).lower()}`",
                 f"- Primitive/template only: `{str(candidate['primitive_or_template_only']).lower()}`",
@@ -569,6 +697,10 @@ def object_field(value: dict[str, Any], field: str, path: Path) -> dict[str, Any
 
 def object_or_empty(value: Any) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
+
+
+def number(value: Any) -> float:
+    return float(value) if isinstance(value, (int, float)) else 0.0
 
 
 def required_string(value: dict[str, Any], field: str, path: Path) -> str:
