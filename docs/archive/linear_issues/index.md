@@ -1300,4 +1300,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Thin riotbox-app binary into library CLI modules
 - [RIOTBOX-1326.md](./RIOTBOX-1326.md)
   P023: Audit and harden the realtime audio callback hot path
+- [RIOTBOX-1327.md](./RIOTBOX-1327.md)
+  P023: Design coherent render-state snapshots for realtime audio
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.

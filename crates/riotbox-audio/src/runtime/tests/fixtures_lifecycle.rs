@@ -289,6 +289,37 @@ fn telemetry_tracks_callback_count_and_max_gap() {
 }
 
 #[test]
+fn coherent_snapshot_or_uses_previous_snapshot_during_active_update() {
+    let revision = AtomicU64::new(1);
+
+    let snapshot = coherent_snapshot_or(&revision, &17_u32, || 23_u32);
+
+    assert_eq!(snapshot, 17);
+}
+
+#[test]
+fn tr909_snapshot_or_previous_holds_last_complete_state_during_partial_update() {
+    let initial = Tr909RenderState {
+        mode: Tr909RenderMode::SourceSupport,
+        routing: Tr909RenderRouting::DrumBusSupport,
+        drum_bus_level: 0.82,
+        ..Tr909RenderState::default()
+    };
+    let shared = SharedTr909RenderState::new(&initial);
+    let previous = shared.snapshot();
+
+    begin_coherent_snapshot_update(&shared.revision);
+    shared
+        .mode
+        .store(mode_to_u32(Tr909RenderMode::Takeover), Ordering::Relaxed);
+
+    let snapshot = shared.snapshot_or_previous(&previous);
+
+    assert_eq!(snapshot, previous);
+    finish_coherent_snapshot_update(&shared.revision);
+}
+
+#[test]
 fn telemetry_tracks_callback_scratch_overflow_without_stream_error() {
     let telemetry = RuntimeTelemetry::new();
     telemetry.record_callback_scratch_overflow_at(100, &sample_timing(16.0));

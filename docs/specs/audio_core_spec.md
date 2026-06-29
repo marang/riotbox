@@ -285,6 +285,19 @@ Acceptable strategies include:
 - a seqlock-style snapshot where the audio thread detects partial updates
 - another documented lock-free or bounded handoff that preserves coherence
 
+Current implementation:
+
+- shared realtime render-state groups use a bounded seqlock-style revision
+  marker
+- control-plane updates mark the group revision odd before field writes and even
+  after the complete group is written
+- the realtime callback attempts a small fixed number of stable reads
+- if a stable read is unavailable because a control update is active, the
+  callback reuses the last complete snapshot for that group instead of rendering
+  a mixed old/new state
+- the callback must not spin without bound, block on locks, allocate, or call
+  the control plane while waiting for coherence
+
 Tests should cover partial-update and revision-mismatch cases before this
 becomes a broad lane-control surface.
 
