@@ -1270,4 +1270,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Tighten fixture thresholds for weak-output promotion boundaries
 - [RIOTBOX-1311.md](./RIOTBOX-1311.md)
   P023: Expose source/timing confidence risk as musician-visible cue
+- [RIOTBOX-1312.md](./RIOTBOX-1312.md)
+  P023: Make MC-202 closeout prove source-derived bass-or-answer role evidence
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
