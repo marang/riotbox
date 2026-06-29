@@ -317,6 +317,24 @@ Rules:
 - converge offline and realtime rendering around shared render functions where
   practical
 
+Current metric contract:
+
+- `OfflineAudioMetrics` reports `peak_abs`, `rms`, `dc_offset`,
+  `clip_count`, `near_clip_count`, and `headroom_to_full_scale`
+- `clip_count` counts samples at or beyond full scale
+- `near_clip_count` counts samples at or beyond the `0.98` near-clip threshold
+- `headroom_to_full_scale` may be negative when a render exceeds full scale;
+  reports must not hide that with post-hoc WAV clamping
+
+Current limiter policy:
+
+- no global master limiter is applied in the product render path yet
+- report pre-clamp metrics before WAV writers clamp to PCM range
+- treat `clip_count > 0` as a reportable controlled-clipping or failure signal,
+  not as something to hide with output-file clipping
+- add soft limiting only through a future shared master-bus seam that proves it
+  preserves weak-output, source-character, and fallback-collapse gates
+
 Offline and realtime-simulation renders should become comparable under the same
 state, with explicit tolerances where backend buffer boundaries or floating
 point differences make bit identity unrealistic.

@@ -4,6 +4,9 @@ fn write_metrics_markdown(path: &Path, metrics: OfflineAudioMetrics) -> std::io:
         format!(
             "# Feral Before / After Metrics\n\n\
              - Peak abs: `{:.6}`\n\
+             - Clip count: `{}`\n\
+             - Near clip count: `{}`\n\
+             - Headroom to full scale: `{:.6}`\n\
              - RMS: `{:.6}`\n\
              - Active samples: `{}`\n\
              - Sum: `{:.6}`\n\
@@ -16,6 +19,9 @@ fn write_metrics_markdown(path: &Path, metrics: OfflineAudioMetrics) -> std::io:
              - Onset count: `{}`\n\
              - Event density per bar: `{:.6}`\n",
             metrics.peak_abs,
+            metrics.clip_count,
+            metrics.near_clip_count,
+            metrics.headroom_to_full_scale,
             metrics.rms,
             metrics.active_samples,
             metrics.sum,

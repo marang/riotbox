@@ -76,6 +76,9 @@ pub struct ListeningPackRenderMetrics {
 pub struct ListeningPackSignalMetrics {
     pub active_samples: usize,
     pub peak_abs: f32,
+    pub clip_count: usize,
+    pub near_clip_count: usize,
+    pub headroom_to_full_scale: f32,
     pub rms: f32,
     pub sum: f32,
     pub mean_abs: f32,
@@ -93,6 +96,9 @@ impl From<OfflineAudioMetrics> for ListeningPackSignalMetrics {
         Self {
             active_samples: metrics.active_samples,
             peak_abs: metrics.peak_abs,
+            clip_count: metrics.clip_count,
+            near_clip_count: metrics.near_clip_count,
+            headroom_to_full_scale: metrics.headroom_to_full_scale,
             rms: metrics.rms,
             sum: metrics.sum,
             mean_abs: metrics.mean_abs,

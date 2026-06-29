@@ -41,6 +41,9 @@ pub struct AudioRuntimeHealth {
 pub struct OfflineAudioMetrics {
     pub active_samples: usize,
     pub peak_abs: f32,
+    pub clip_count: usize,
+    pub near_clip_count: usize,
+    pub headroom_to_full_scale: f32,
     pub rms: f32,
     pub sum: f32,
     pub mean_abs: f32,
@@ -249,6 +252,15 @@ pub fn signal_metrics(samples: &[f32]) -> OfflineAudioMetrics {
     let peak_abs = samples
         .iter()
         .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
+    let clip_count = samples
+        .iter()
+        .filter(|sample| sample.abs() >= CLIP_THRESHOLD)
+        .count();
+    let near_clip_count = samples
+        .iter()
+        .filter(|sample| sample.abs() >= NEAR_CLIP_THRESHOLD)
+        .count();
+    let headroom_to_full_scale = 1.0 - peak_abs;
     let sum = samples.iter().sum::<f32>();
     let mean_abs = if samples.is_empty() {
         0.0
@@ -289,6 +301,9 @@ pub fn signal_metrics(samples: &[f32]) -> OfflineAudioMetrics {
     OfflineAudioMetrics {
         active_samples,
         peak_abs,
+        clip_count,
+        near_clip_count,
+        headroom_to_full_scale,
         rms,
         sum,
         mean_abs,
@@ -335,6 +350,8 @@ pub fn signal_delta_metrics(left: &[f32], right: &[f32]) -> OfflineAudioMetrics 
 }
 
 const ACTIVE_THRESHOLD: f32 = 0.0001;
+const NEAR_CLIP_THRESHOLD: f32 = 0.98;
+const CLIP_THRESHOLD: f32 = 1.0;
 
 fn count_onsets(samples: &[f32], channel_count: usize) -> usize {
     if samples.is_empty() || channel_count == 0 {

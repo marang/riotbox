@@ -4,6 +4,9 @@ fn signal_metrics_reports_shape_metrics_beyond_level() {
 
     assert_eq!(metrics.active_samples, 4);
     assert_eq!(metrics.peak_abs, 0.5);
+    assert_eq!(metrics.clip_count, 0);
+    assert_eq!(metrics.near_clip_count, 0);
+    assert_eq!(metrics.headroom_to_full_scale, 0.5);
     assert_eq!(metrics.sum, 0.0);
     assert_eq!(metrics.mean_abs, 0.375);
     assert_eq!(metrics.zero_crossings, 3);
@@ -25,6 +28,16 @@ fn signal_metrics_reports_activity_ratio_silence_and_dc_offset() {
     assert_eq!(metrics.silence_ratio, 0.5);
     assert_eq!(metrics.dc_offset, 0.15);
     assert_eq!(metrics.onset_count, 1);
+}
+
+#[test]
+fn signal_metrics_reports_clip_counts_and_headroom() {
+    let metrics = signal_metrics(&[-1.2, -1.0, -0.985, 0.25, 0.99, 1.0, 1.15]);
+
+    assert_eq!(metrics.peak_abs, 1.2);
+    assert_eq!(metrics.clip_count, 4);
+    assert_eq!(metrics.near_clip_count, 6);
+    assert!((metrics.headroom_to_full_scale + 0.2).abs() < 0.000_001);
 }
 
 #[test]
