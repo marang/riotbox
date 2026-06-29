@@ -813,6 +813,11 @@ following:
   applies a measured body-emphasis pass, deeper pressure reinforcement, and
   manifest provenance while tonal/hold material remains unboosted, so bass
   pressure is less likely to read as a midrange melody.
+- RIOTBOX-1305 tightens W-30 hook/chop source-character policy for the first
+  two bars: source-derived riff starts now prefer stronger character contrast
+  when top-scoring candidates cluster too tightly, tonal-hook riff playback is
+  brought forward without claiming quality proof, and dense/sparse pressure
+  gates remain intact.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue

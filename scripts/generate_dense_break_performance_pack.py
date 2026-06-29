@@ -660,6 +660,11 @@ def hook_chop_policy_for(
                 "start": start,
                 "hook_score": float(hook_score),
                 "chop_score": float(chop_score),
+                "source_rms": float(source_rms),
+                "w30_rms": float(w30_rms),
+                "transient_score": float(transient),
+                "low_band_rms": float(low),
+                "high_band_ratio": float(high),
                 "source_character_score": float(character),
             }
         )
@@ -687,6 +692,7 @@ def hook_chop_policy_for(
         candidates,
         hook_start,
         chop_start,
+        source_family,
         min_separation=max(grain_len, int(MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES)),
     )
     selected_character_scores = source_character_scores_for_starts(candidates, riff_starts)
@@ -753,6 +759,7 @@ def source_derived_riff_starts(
     candidates: list[dict[str, float]],
     hook_start: int,
     chop_start: int,
+    source_family: str,
     min_separation: int,
 ) -> tuple[int, ...]:
     starts: list[int] = []
@@ -776,7 +783,75 @@ def source_derived_riff_starts(
         starts.append(start)
         if len(starts) >= 4:
             break
+    starts = source_character_contrast_riff_starts(
+        starts,
+        candidates,
+        source_family,
+        min_separation,
+    )
     return tuple(starts)
+
+
+def source_character_contrast_riff_starts(
+    starts: list[int],
+    candidates: list[dict[str, float]],
+    source_family: str,
+    min_separation: int,
+) -> list[int]:
+    current_scores = source_character_scores_for_starts(candidates, tuple(starts))
+    current_span = max(current_scores) - min(current_scores)
+    target_span = MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN * 1.35
+    if current_span >= target_span:
+        return starts
+
+    current_mean = float(np.mean(current_scores)) if current_scores else 0.0
+    family_metric = {
+        "tonal_hook": "low_band_rms",
+        "dense_break": "transient_score",
+        "sparse_bass_pressure": "source_rms",
+    }.get(source_family, "source_character_score")
+    ranked = sorted(
+        candidates,
+        key=lambda item: (
+            abs(float(item.get("source_character_score", 0.0)) - current_mean) * 1.25
+            + float(item.get(family_metric, 0.0)) * 0.75
+            + max(float(item.get("hook_score", 0.0)), float(item.get("chop_score", 0.0))) * 0.20
+        ),
+        reverse=True,
+    )
+    score_by_start = {
+        int(item["start"]): float(item.get("source_character_score", 0.0))
+        for item in candidates
+    }
+    min_character = (
+        MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR
+        if source_family in {"dense_break", "tonal_hook"}
+        else 0.0
+    )
+    for item in ranked:
+        start = int(item["start"])
+        if start in starts:
+            continue
+        character = float(item.get("source_character_score", 0.0))
+        if character < min_character:
+            continue
+        if len(starts) < 4:
+            if any(abs(start - existing) < min_separation for existing in starts):
+                continue
+            starts.append(start)
+            break
+        for replace_index in range(len(starts) - 1, -1, -1):
+            others = [existing for index, existing in enumerate(starts) if index != replace_index]
+            if any(abs(start - existing) < min_separation for existing in others):
+                continue
+            new_scores = [score_by_start.get(existing, 0.0) for existing in others] + [character]
+            if min(new_scores) < min_character:
+                continue
+            if max(new_scores) - min(new_scores) <= current_span + 0.020:
+                continue
+            starts[replace_index] = start
+            return starts
+    return starts
 
 
 def source_derived_riff_hit_pattern(
@@ -1977,7 +2052,7 @@ def render_performance(
         1.20 if tonal_hook_path and source_layer_gain <= 0.0 else 1.0
     )
     source_character_rebuild_pressure_boost = (
-        1.64 if tonal_hook_path and source_layer_gain <= 0.0 else 1.0
+        1.72 if tonal_hook_path and source_layer_gain <= 0.0 else 1.0
     )
     source_character_rebuild_restore_boost = (
         1.32 if tonal_hook_path and source_layer_gain <= 0.0 else 1.0
@@ -2942,7 +3017,11 @@ def render_w30_hook_riff_layer(
     source_family = source_policy.hook_chop_policy.source_family
     if source_family in {"bad_timing", "pad_noise"}:
         return layer
-    hook_impact = 1.0 if source_family == "sparse_bass_pressure" else 1.18
+    hook_impact = {
+        "dense_break": 1.18,
+        "tonal_hook": 1.30,
+        "sparse_bass_pressure": 1.0,
+    }.get(source_family, 1.12)
 
     grains = []
     for index, grain_start in enumerate(source_policy.hook_chop_policy.riff_start_frames):
@@ -2998,7 +3077,11 @@ def render_w30_hook_riff_layer(
             end = min(target + stab.shape[0], layer.shape[0])
             if end > target:
                 layer[target:end] += stab[: end - target] * gain * bar_gain
-    family_gain = 0.88 if source_family == "dense_break" else 1.0
+    family_gain = {
+        "dense_break": 0.88,
+        "tonal_hook": 1.08,
+        "sparse_bass_pressure": 1.0,
+    }.get(source_family, 1.0)
     return saturate(layer * family_gain, 1.35 * hook_impact)
 
 
