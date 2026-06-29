@@ -850,6 +850,12 @@ following:
   suite validates each Feral case against its manifest-recorded floors so weak
   evidence fails for the intended musical reason instead of being hidden by
   stale aggregate constants.
+- RIOTBOX-1311 exposes source/timing confidence risk as a musician-visible
+  cue on the existing Trust / Confidence surfaces: the cue derives from Source
+  Graph confidence plus Source Timing degraded policy / grid use, distinguishes
+  `trusted`, `degraded`, and `unavailable`, and tells the player whether grid
+  moves are performable, should be confirmed/listened first, or need source
+  recapture/loading.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue

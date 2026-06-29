@@ -142,8 +142,12 @@ pub(super) fn source_confidence_lines(shell: &JamShellState) -> Vec<Line<'static
                 graph.analysis_summary.hook_candidate_count
             )),
             Line::from(format!("jam trust {}", trust_summary(shell).headline)),
+            source_timing_perform_risk_line(shell),
         ],
-        None => vec![Line::from("no confidence summary available")],
+        None => vec![
+            Line::from("no confidence summary available"),
+            source_timing_perform_risk_line(shell),
+        ],
     }
 }
 
@@ -154,6 +158,13 @@ pub(super) struct TrustSummary {
     pub(super) timing_quality: &'static str,
     pub(super) section_quality: &'static str,
     pub(super) source_timing_warning: Option<String>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum SourceTimingPerformRisk {
+    Trusted,
+    Degraded,
+    Unavailable,
 }
 
 pub(super) fn trust_summary(shell: &JamShellState) -> TrustSummary {
@@ -185,6 +196,74 @@ pub(super) fn trust_summary(shell: &JamShellState) -> TrustSummary {
             section_quality: "unknown",
             source_timing_warning: None,
         },
+    }
+}
+
+pub(super) fn source_timing_perform_risk(shell: &JamShellState) -> SourceTimingPerformRisk {
+    let Some(graph) = shell.app.source_graph.as_ref() else {
+        return SourceTimingPerformRisk::Unavailable;
+    };
+    let timing = &shell.app.jam_view.source.timing;
+
+    if source_timing_grid_confirmed(shell) {
+        return SourceTimingPerformRisk::Trusted;
+    }
+    if matches!(timing.degraded_policy.as_str(), "disabled" | "unknown")
+        || timing.grid_use == "unavailable"
+    {
+        return SourceTimingPerformRisk::Unavailable;
+    }
+    if timing.degraded_policy == "locked"
+        && graph.analysis_summary.overall_confidence >= 0.62
+        && !matches!(
+            quality_label(&graph.analysis_summary.timing_quality),
+            "low" | "unknown"
+        )
+    {
+        return SourceTimingPerformRisk::Trusted;
+    }
+    SourceTimingPerformRisk::Degraded
+}
+
+pub(super) fn source_timing_perform_risk_line(shell: &JamShellState) -> Line<'static> {
+    let risk = source_timing_perform_risk(shell);
+    let (label, action, style) = match risk {
+        SourceTimingPerformRisk::Trusted => (
+            "trusted",
+            "play grid".to_string(),
+            style_confirmation_strong(),
+        ),
+        SourceTimingPerformRisk::Degraded => (
+            "degraded",
+            source_timing_perform_risk_action_compact(shell),
+            style_pending_cue(),
+        ),
+        SourceTimingPerformRisk::Unavailable => (
+            "unavailable",
+            "load source".to_string(),
+            style_low_emphasis(),
+        ),
+    };
+
+    Line::from(vec![
+        Span::styled("perform risk ", style_low_emphasis()),
+        Span::styled(label, style),
+        Span::styled(" | ", style_low_emphasis()),
+        Span::raw(action),
+    ])
+}
+
+fn source_timing_perform_risk_action_compact(shell: &JamShellState) -> String {
+    if source_timing_grid_confirmed(shell) {
+        return "confirmed".into();
+    }
+    match shell.app.jam_view.source.timing.actionability.as_str() {
+        "confirm grid first" => "confirm grid".into(),
+        "grid can steer moves" => "play grid".into(),
+        "listen first" => "listen first".into(),
+        "using safe fallback grid" => "fallback".into(),
+        "timing unavailable" => "load source".into(),
+        other => other.into(),
     }
 }
 

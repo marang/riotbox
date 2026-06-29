@@ -27,7 +27,11 @@ fn renders_more_musical_jam_shell_snapshot() {
     );
     assert!(rendered.contains("timing needs confirm | confirm grid"), "{rendered}");
     assert!(
-        rendered.contains("p0:b0/1/0"),
+        rendered.contains("perform risk degraded | confirm grid"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("manual_confirm_only"),
         "{rendered}"
     );
     assert!(rendered.contains("timing warning ambiguous_downbeat"));
@@ -98,6 +102,10 @@ fn renders_locked_source_timing_as_grid_locked_cue() {
     );
     assert!(
         rendered.contains("timing grid locked [===>] next bar"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("perform risk trusted | play grid"),
         "{rendered}"
     );
     assert!(
@@ -303,6 +311,10 @@ fn renders_missing_source_timing_clock_as_unavailable() {
     assert!(rendered.contains("clock unavailable"), "{rendered}");
     assert!(
         rendered.contains("timing not available | no clock"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("perform risk unavailable | load source"),
         "{rendered}"
     );
 }
