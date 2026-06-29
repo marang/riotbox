@@ -26,6 +26,7 @@ fn write_report(
              - TR-909 source low/high energy: `{:.6}` / `{:.6}`\n\
              - TR-909 kick pressure: `{}` origin `{}` evidence `{}` profile `{}` anchors `{}` gain `{:.6}` low-band ratio `{:.6}` delta `{:.6}` peak `{:.6}`\n\
              - TR-909 source-accent dynamics: `{}` origin `source_derived` distinct accents `{}` span `{:.6}` source-energy span `{:.6}`\n\
+             - TR-909 rendered drum pressure: `{}` origin `{}` evidence `{}` support contribution `{:.6}` source-first ratio `{:.6}` headroom `{:.6}` support ratio `{:.6}` low-band `{:.6}` full-low `{:.6}` grid-hit `{:.6}`\n\
              - MC-202 bass pressure: `{}` role `{}` origin `primitive_renderer` mode `{}` shape `{}` budget `{}` variation `{}` distinct bar profiles `{}` bar similarity `{:.6}` RMS `{:.6}` low-band `{:.6}` low/mid `{:.6}` low/high `{:.6}` reinforcement `{:.6}` touch `{:.3}` level `{:.3}` peak `{:.6}`\n\
              - MC-202 source contour: `{}` origin `source_derived_contour` contour `{}` budget `{}` delta RMS `{:.6}` touch boost `{:.3}` level boost `{:.3}` low/mid/high `{:.6}` / `{:.6}` / `{:.6}` density `{:.6}`\n\
              - W-30 source-chop reason: `{}`\n\
@@ -94,6 +95,22 @@ fn write_report(
             report.tr909_source_accent_dynamics.distinct_accent_count,
             report.tr909_source_accent_dynamics.accent_span,
             report.tr909_source_accent_dynamics.source_energy_span,
+            report.tr909_rendered_drum_pressure.reason,
+            report.tr909_rendered_drum_pressure.pattern_origin,
+            report.tr909_rendered_drum_pressure.source_evidence_role,
+            report
+                .tr909_rendered_drum_pressure
+                .support_mix_tr909_contribution_ratio,
+            report
+                .tr909_rendered_drum_pressure
+                .source_first_generated_to_source_rms_ratio,
+            report.tr909_rendered_drum_pressure.source_first_masking_headroom,
+            report
+                .tr909_rendered_drum_pressure
+                .support_generated_to_source_rms_ratio,
+            report.tr909_rendered_drum_pressure.tr909_low_band_rms,
+            report.tr909_rendered_drum_pressure.full_mix_low_band_rms,
+            report.tr909_rendered_drum_pressure.tr909_source_grid_hit_ratio,
             report.mc202_bass_pressure.reason,
             report.mc202_bass_pressure.pressure_role,
             report.mc202_bass_pressure.mode.label(),

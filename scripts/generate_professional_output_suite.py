@@ -25,6 +25,8 @@ MIN_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.16
 MAX_FERAL_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO = 0.08
 MIN_FERAL_SOURCE_FIRST_MASKING_HEADROOM = 0.02
 MAX_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.46
+MIN_FERAL_TR909_RENDERED_SUPPORT_CONTRIBUTION_RATIO = 0.050
+MIN_FERAL_TR909_RENDERED_LOW_BAND_RMS = 0.0030
 CHILDREN = {
     "dense_break": "riotbox.dense_break_performance_pack.v1",
     "pro_pressure_source_matrix": "riotbox.pro_pressure_source_matrix.v1",
@@ -260,8 +262,13 @@ def build_report(output: Path) -> dict[str, Any]:
     )
     feral_mix_balance = feral_mix_balance_summary(output)
     source_character_window_selection = source_character_window_selection_summary(output)
+    tr909_rendered_drum_pressure = tr909_rendered_drum_pressure_summary(output)
     failures = suite_failure_codes(
-        children, identity, feral_mix_balance, source_character_window_selection
+        children,
+        identity,
+        feral_mix_balance,
+        source_character_window_selection,
+        tr909_rendered_drum_pressure,
     )
     report = {
         "schema": SCHEMA,
@@ -276,6 +283,7 @@ def build_report(output: Path) -> dict[str, Any]:
         "listening_identity": identity,
         "feral_mix_balance": feral_mix_balance,
         "source_character_window_selection": source_character_window_selection,
+        "tr909_rendered_drum_pressure": tr909_rendered_drum_pressure,
         "failure_codes": failures,
     }
     return apply_evidence_boundary(
@@ -1602,11 +1610,124 @@ def source_character_window_selection_summary(output: Path) -> dict[str, Any]:
     }
 
 
+def tr909_rendered_drum_pressure_summary(output: Path) -> dict[str, Any]:
+    cases = []
+    failures = []
+    for manifest_path in sorted(output.rglob("manifest.json")):
+        data = read_json(manifest_path)
+        pressure = object_or_empty(
+            object_or_empty(data.get("metrics")).get("tr909_rendered_drum_pressure")
+        )
+        if not pressure:
+            continue
+        applied = pressure.get("applied")
+        contribution = pressure.get("support_mix_tr909_contribution_ratio")
+        source_first = pressure.get("source_first_generated_to_source_rms_ratio")
+        support = pressure.get("support_generated_to_source_rms_ratio")
+        headroom = pressure.get("source_first_masking_headroom")
+        low_band = pressure.get("tr909_low_band_rms")
+        full_low = pressure.get("full_mix_low_band_rms")
+        grid_hit = pressure.get("tr909_source_grid_hit_ratio")
+        role = str(pressure.get("source_evidence_role") or "")
+        origin = str(pressure.get("pattern_origin") or "")
+        has_required_fields = (
+            applied is True
+            and origin == "source_derived"
+            and bool(role)
+            and is_number(contribution)
+            and is_number(source_first)
+            and is_number(support)
+            and is_number(headroom)
+            and is_number(low_band)
+            and is_number(full_low)
+            and is_number(grid_hit)
+        )
+        cases.append(
+            {
+                "manifest": str(manifest_path.relative_to(output)),
+                "applied": applied is True,
+                "pattern_origin": origin,
+                "source_evidence_role": role,
+                "support_mix_tr909_contribution_ratio": number(contribution),
+                "source_first_generated_to_source_rms_ratio": number(source_first),
+                "support_generated_to_source_rms_ratio": number(support),
+                "source_first_masking_headroom": number(headroom),
+                "tr909_low_band_rms": number(low_band),
+                "full_mix_low_band_rms": number(full_low),
+                "tr909_source_grid_hit_ratio": number(grid_hit),
+                "has_required_tr909_rendered_drum_pressure_fields": has_required_fields,
+            }
+        )
+    if not cases:
+        failures.append("tr909_rendered_drum_pressure_missing")
+    if any(
+        not case["has_required_tr909_rendered_drum_pressure_fields"] for case in cases
+    ):
+        failures.append("tr909_rendered_drum_pressure_fields_missing")
+    if any(case["pattern_origin"] != "source_derived" for case in cases):
+        failures.append("tr909_rendered_drum_pressure_not_source_derived")
+    if any(
+        case["support_mix_tr909_contribution_ratio"]
+        < MIN_FERAL_TR909_RENDERED_SUPPORT_CONTRIBUTION_RATIO
+        for case in cases
+    ):
+        failures.append("tr909_rendered_drum_pressure_too_buried")
+    if any(
+        case["tr909_low_band_rms"] < MIN_FERAL_TR909_RENDERED_LOW_BAND_RMS
+        for case in cases
+    ):
+        failures.append("tr909_rendered_drum_pressure_low_band_too_weak")
+    if any(
+        case["source_first_generated_to_source_rms_ratio"]
+        > MAX_FERAL_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO
+        for case in cases
+    ):
+        failures.append("tr909_rendered_drum_pressure_masks_source_first")
+    if any(
+        case["support_generated_to_source_rms_ratio"]
+        > MAX_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO
+        for case in cases
+    ):
+        failures.append("tr909_rendered_drum_pressure_support_masks_source")
+    return {
+        "result": "pass" if not failures else "fail",
+        "case_count": len(cases),
+        "min_support_mix_tr909_contribution_ratio": min(
+            (case["support_mix_tr909_contribution_ratio"] for case in cases),
+            default=0.0,
+        ),
+        "min_tr909_low_band_rms": min(
+            (case["tr909_low_band_rms"] for case in cases), default=0.0
+        ),
+        "max_source_first_generated_to_source_rms_ratio": max(
+            (case["source_first_generated_to_source_rms_ratio"] for case in cases),
+            default=0.0,
+        ),
+        "max_support_generated_to_source_rms_ratio": max(
+            (case["support_generated_to_source_rms_ratio"] for case in cases),
+            default=0.0,
+        ),
+        "min_source_first_masking_headroom": min(
+            (case["source_first_masking_headroom"] for case in cases),
+            default=0.0,
+        ),
+        "thresholds": {
+            "min_support_mix_tr909_contribution_ratio": MIN_FERAL_TR909_RENDERED_SUPPORT_CONTRIBUTION_RATIO,
+            "min_tr909_low_band_rms": MIN_FERAL_TR909_RENDERED_LOW_BAND_RMS,
+            "max_source_first_generated_to_source_rms_ratio": MAX_FERAL_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO,
+            "max_support_generated_to_source_rms_ratio": MAX_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
+        },
+        "failure_codes": failures,
+        "cases": cases,
+    }
+
+
 def suite_failure_codes(
     children: list[dict[str, Any]],
     identity: dict[str, Any],
     feral_mix_balance: dict[str, Any],
     source_character_window_selection: dict[str, Any],
+    tr909_rendered_drum_pressure: dict[str, Any],
 ) -> list[str]:
     failures = []
     for child in children:
@@ -1640,6 +1761,11 @@ def suite_failure_codes(
         failures.extend(
             f"source_character_window_selection:{code}"
             for code in source_character_window_selection["failure_codes"]
+        )
+    if tr909_rendered_drum_pressure["result"] != "pass":
+        failures.extend(
+            f"tr909_rendered_drum_pressure:{code}"
+            for code in tr909_rendered_drum_pressure["failure_codes"]
         )
     return failures
 

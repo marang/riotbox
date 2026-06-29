@@ -197,6 +197,7 @@ struct PackReport {
     tr909_groove_timing: Tr909GrooveTimingPolicy,
     tr909_kick_pressure: Tr909KickPressureProof,
     tr909_source_accent_dynamics: Tr909SourceAccentDynamicsProof,
+    tr909_rendered_drum_pressure: Tr909RenderedDrumPressureProof,
     mc202_bass_pressure: Mc202BassPressureProof,
     mc202_source_contour: Mc202SourceContourProof,
     w30_source_chop_profile: W30SourceChopProfile,
@@ -332,6 +333,10 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let full_mix = render_generated_support_mix(&tr909, &mc202, &w30);
     let all_lane_mix_movement =
         all_lane_mix_movement_proof(&tr909, &mc202, &w30, &source_first_mix, &full_mix, &grid);
+    let source_first_generated_to_source_rms_ratio =
+        source_first_generated_to_source_rms_ratio(&tr909, &mc202, &w30, &grid);
+    let support_generated_to_source_rms_ratio =
+        support_generated_to_source_rms_ratio(&tr909, &mc202, &w30, &grid);
 
     assert_grid_len("tr909", &tr909, &grid);
     assert_grid_len("mc202", &mc202, &grid);
@@ -354,12 +359,24 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     let source_grid_alignment = source_grid_alignment_report(&tr909, &mc202, &w30, &full_mix, &grid);
+    let tr909_rendered_drum_pressure =
+        tr909_rendered_drum_pressure_proof(Tr909RenderedDrumPressureInput {
+            tr909_metrics: render_metrics(&tr909, &grid),
+            full_mix_metrics: render_metrics(&full_mix, &grid),
+            kick_pressure: tr909_kick_pressure,
+            accent_dynamics: tr909_source_accent_dynamics,
+            all_lane_mix_movement,
+            tr909_source_grid_alignment: source_grid_alignment.tr909_source_grid_alignment,
+            source_first_generated_to_source_rms_ratio,
+            support_generated_to_source_rms_ratio,
+        });
     let report = PackReport {
         source_character_window_selection,
         tr909_source_profile,
         tr909_groove_timing,
         tr909_kick_pressure,
         tr909_source_accent_dynamics,
+        tr909_rendered_drum_pressure,
         mc202_bass_pressure,
         mc202_source_contour,
         w30_source_chop_profile,
@@ -377,11 +394,8 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         mc202_source_grid_alignment: source_grid_alignment.mc202_source_grid_alignment,
         w30_source_grid_alignment: source_grid_alignment.w30_source_grid_alignment,
         source_grid_output_drift: source_grid_alignment.source_grid_output_drift,
-        source_first_generated_to_source_rms_ratio:
-            source_first_generated_to_source_rms_ratio(&tr909, &mc202, &w30, &grid),
-        support_generated_to_source_rms_ratio: support_generated_to_source_rms_ratio(
-            &tr909, &mc202, &w30, &grid,
-        ),
+        source_first_generated_to_source_rms_ratio,
+        support_generated_to_source_rms_ratio,
     };
     validate_report(&report)?;
     let report_path = output_dir.join("grid-report.md");
