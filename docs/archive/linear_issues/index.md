@@ -1280,4 +1280,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Move release-demo human-review queue fixture contract out of Justfile
 - [RIOTBOX-1316.md](./RIOTBOX-1316.md)
   P023: Fix Feral-grid source-collapse across different source examples
+- [RIOTBOX-1317.md](./RIOTBOX-1317.md)
+  P023: Strengthen W-30 hook/chop policy for routed weak outputs
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
