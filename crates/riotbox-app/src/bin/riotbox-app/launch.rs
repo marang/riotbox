@@ -12,7 +12,7 @@ use crossterm::{
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
 use ratatui::{Terminal, backend::CrosstermBackend};
-use riotbox_app::{
+use crate::{
     jam_app::{JamAppError, JamAppState, SessionRecoverySurface},
     observer::{compact_commit, key_code_label, observer_snapshot, shell_key_outcome_label},
     ui::{JamShellState, ShellKeyOutcome, ShellLaunchMode, render_jam_shell},
@@ -95,7 +95,7 @@ enum LaunchMode {
     },
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     let raw_args = env::args().collect::<Vec<_>>();
     let launch = parse_args(raw_args.iter().skip(1).cloned())?;
     if matches!(launch.mode, LaunchMode::StemPackageLocalCiDryRun { .. }) {

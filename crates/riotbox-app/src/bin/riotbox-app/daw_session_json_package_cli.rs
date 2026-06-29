@@ -1,4 +1,4 @@
-use riotbox_app::jam_app::{
+use crate::jam_app::{
     DAW_SESSION_JSON_PACKAGE_WRITER_BOUNDARY_ID, WrittenDawSessionJsonPackage,
     attach_daw_session_audible_output_proof_evidence_to_receipt,
     attach_daw_session_host_import_proof_evidence_to_receipt,
@@ -55,7 +55,7 @@ fn daw_session_json_package_execute_summary(
     };
     let session = riotbox_core::persistence::load_session_json(session_path)?;
     let surface_gate =
-        riotbox_app::jam_app::daw_session_export_surface_gate_for_session(&session);
+        crate::jam_app::daw_session_export_surface_gate_for_session(&session);
 
     match write_daw_session_json_package(&session, session_path.parent(), destination_path) {
         Ok(written) => {
@@ -126,7 +126,7 @@ fn daw_session_json_package_evidence_apply_summary(
         })
     else {
         let surface_gate =
-            riotbox_app::jam_app::daw_session_export_surface_gate_for_session(&session);
+            crate::jam_app::daw_session_export_surface_gate_for_session(&session);
         return Ok(json!({
             "mode": "daw_session_json_package_evidence_apply",
             "status": "blocked",
@@ -151,7 +151,7 @@ fn daw_session_json_package_evidence_apply_summary(
     .map_err(|error| format!("DAW session JSON package evidence apply failed: {error:?}"))?;
     riotbox_core::persistence::save_session_json(session_path, &session)?;
 
-    let surface_gate = riotbox_app::jam_app::daw_session_export_surface_gate_for_session(&session);
+    let surface_gate = crate::jam_app::daw_session_export_surface_gate_for_session(&session);
     let receipt = &session.export_receipts[receipt_index];
     Ok(json!({
         "mode": "daw_session_json_package_evidence_apply",
@@ -195,7 +195,7 @@ fn daw_session_host_import_proof_apply_summary(
         })
     else {
         let surface_gate =
-            riotbox_app::jam_app::daw_session_export_surface_gate_for_session(&session);
+            crate::jam_app::daw_session_export_surface_gate_for_session(&session);
         return Ok(json!({
             "mode": "daw_session_host_import_proof_apply",
             "status": "blocked",
@@ -220,7 +220,7 @@ fn daw_session_host_import_proof_apply_summary(
     .map_err(|error| format!("DAW session host import proof apply failed: {error:?}"))?;
     riotbox_core::persistence::save_session_json(session_path, &session)?;
 
-    let surface_gate = riotbox_app::jam_app::daw_session_export_surface_gate_for_session(&session);
+    let surface_gate = crate::jam_app::daw_session_export_surface_gate_for_session(&session);
     let receipt = &session.export_receipts[receipt_index];
     let ready = proof_report.ready_for_receipt(receipt);
     let readiness_blockers = proof_report.gate_blockers_for_receipt(receipt);
@@ -258,7 +258,7 @@ fn daw_session_audible_output_proof_apply_summary(
         receipt.export_scope == riotbox_core::export_readiness::ExportScope::DawSession
     }) else {
         let surface_gate =
-            riotbox_app::jam_app::daw_session_export_surface_gate_for_session(&session);
+            crate::jam_app::daw_session_export_surface_gate_for_session(&session);
         return Ok(json!({
             "mode": "daw_session_audible_output_proof_apply",
             "status": "blocked",
@@ -283,7 +283,7 @@ fn daw_session_audible_output_proof_apply_summary(
     .map_err(|error| format!("DAW session audible output proof apply failed: {error:?}"))?;
     riotbox_core::persistence::save_session_json(session_path, &session)?;
 
-    let surface_gate = riotbox_app::jam_app::daw_session_export_surface_gate_for_session(&session);
+    let surface_gate = crate::jam_app::daw_session_export_surface_gate_for_session(&session);
     let receipt = &session.export_receipts[receipt_index];
     let ready = proof_report.ready_for_receipt(receipt);
     let readiness_blockers = proof_report.gate_blockers_for_receipt(receipt);
@@ -318,7 +318,7 @@ fn written_daw_session_json_package_summary(written: &WrittenDawSessionJsonPacka
 }
 
 fn daw_session_surface_gate_summary(
-    gate: &riotbox_app::jam_app::DawSessionExportSurfaceGate,
+    gate: &crate::jam_app::DawSessionExportSurfaceGate,
 ) -> Value {
     json!({
         "status": gate.status.as_str(),

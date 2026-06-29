@@ -1,10 +1,10 @@
 fn navigate_source_map(
     shell: &mut JamShellState,
-    intent: riotbox_app::jam_app::SourceMapNavigationIntent,
+    intent: crate::jam_app::SourceMapNavigationIntent,
     requested_at: u64,
 ) {
     match shell.app.queue_source_map_navigation(intent, requested_at) {
-        riotbox_app::jam_app::SourceMapNavigationResult::Enqueued {
+        crate::jam_app::SourceMapNavigationResult::Enqueued {
             target_label,
             target_position_beats,
         } => {
@@ -27,13 +27,13 @@ fn navigate_source_map(
                 ));
             }
         }
-        riotbox_app::jam_app::SourceMapNavigationResult::AlreadyPending => {
+        crate::jam_app::SourceMapNavigationResult::AlreadyPending => {
             shell.set_error_status("source map navigation already queued");
         }
-        riotbox_app::jam_app::SourceMapNavigationResult::AlreadyAtBoundary { target_label } => {
+        crate::jam_app::SourceMapNavigationResult::AlreadyAtBoundary { target_label } => {
             shell.set_error_status(format!("source map already at {target_label}"));
         }
-        riotbox_app::jam_app::SourceMapNavigationResult::Unavailable { reason } => {
+        crate::jam_app::SourceMapNavigationResult::Unavailable { reason } => {
             shell.set_error_status(reason);
         }
     }

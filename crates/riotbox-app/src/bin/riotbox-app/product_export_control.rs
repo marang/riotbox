@@ -1,12 +1,12 @@
 fn queue_product_mix_export(shell: &mut JamShellState, requested_at: u64) {
     match shell.app.queue_product_mix_export(requested_at, None) {
-        riotbox_app::jam_app::QueueControlResult::Enqueued => {
+        crate::jam_app::QueueControlResult::Enqueued => {
             shell.set_error_status("queued export full_grid_mix | proof handoff writes receipt");
         }
-        riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+        crate::jam_app::QueueControlResult::AlreadyPending => {
             shell.set_error_status("export full_grid_mix already queued");
         }
-        riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+        crate::jam_app::QueueControlResult::AlreadyInState => {
             shell.set_error_status("export full_grid_mix already available");
         }
     }

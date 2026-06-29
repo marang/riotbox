@@ -1,13 +1,13 @@
 fn accept_current_ghost_suggestion(shell: &mut JamShellState, requested_at: u64) {
     match shell.app.accept_current_ghost_suggestion(requested_at) {
-        riotbox_app::jam_app::GhostSuggestionQueueResult::Enqueued(action_id) => {
+        crate::jam_app::GhostSuggestionQueueResult::Enqueued(action_id) => {
             shell.set_error_status(format!(
                 "accepted ghost suggestion | queued action {}",
                 action_id.0
             ));
         }
-        riotbox_app::jam_app::GhostSuggestionQueueResult::Rejected { reason } => {
-            if reason == riotbox_app::jam_app::NO_CURRENT_GHOST_SUGGESTION_REASON
+        crate::jam_app::GhostSuggestionQueueResult::Rejected { reason } => {
+            if reason == crate::jam_app::NO_CURRENT_GHOST_SUGGESTION_REASON
                 && shell.app.refresh_current_ghost_suggestion_from_jam_state()
                 && let Some(suggestion) = shell.app.runtime.current_ghost_suggestion.as_ref()
             {

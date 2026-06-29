@@ -1,4 +1,4 @@
-use riotbox_app::jam_app::{
+use crate::jam_app::{
     daw_export_operator_readiness_report, daw_session_export_surface_gate_for_session,
 };
 
