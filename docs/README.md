@@ -90,6 +90,8 @@ docs/
   research_decision_log.md
   engineering/
     module_policy.md
+    textual_include_allowlist.txt
+    textual_include_inventory_2026-06-29.md
   archive/
     linear_issues/
       README.md
@@ -160,6 +162,8 @@ docs/
 - `specs/technology_stack_spec.md`: Stack Freeze v1 captured with current timing-contract clarification
 - `specs/rust_engineering_guidelines.md`: Rust engineering guidelines captured
 - `engineering/module_policy.md`: semantic Rust module and textual include policy captured
+- `engineering/textual_include_inventory_2026-06-29.md`: RIOTBOX-1321 Rust textual include inventory captured
+- `engineering/textual_include_allowlist.txt`: current manual guardrail allowlist for textual include owners/counts captured
 - `specs/source_graph_spec.md`: Source Graph v1 contract captured
 - `specs/source_timing_intelligence_spec.md`: Rust-first all-lane timing contract captured
 - `specs/session_file_spec.md`: Session file and recovery boundary captured

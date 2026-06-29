@@ -79,7 +79,10 @@ should be visible as modules.
 
 ## Include Inventory And Guardrail
 
-The migration starts with an inventory:
+The initial RIOTBOX-1321 inventory lives in
+`docs/engineering/textual_include_inventory_2026-06-29.md`.
+
+To refresh the raw scan:
 
 ```bash
 rg 'include!' crates --glob '*.rs'
@@ -93,9 +96,18 @@ For each include site record:
 - generated/static/compatibility vs mechanical split
 - migration risk
 
-A manual guardrail should then reject unexpected new textual includes while the
-allowlist is still being reduced. It should start as an explicit developer check
-before becoming a hard CI gate.
+A manual guardrail rejects unexpected new textual include owners or changed
+include counts while the allowlist is still being reduced:
+
+```bash
+scripts/check_no_textual_includes.sh
+```
+
+The current allowlist is
+`docs/engineering/textual_include_allowlist.txt`. Update it only in PRs that
+intentionally remove or convert include sites, or after a reviewed exception.
+The guardrail should remain a developer check until the migration is far enough
+to make it a hard CI gate.
 
 ## Review Checklist
 
