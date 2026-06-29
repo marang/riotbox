@@ -766,6 +766,11 @@ following:
     path that rejects confident bar-locked policy while timing is
     `candidate_ambiguous` / `manual_confirm_only`; in both cases
     `quality_proof: false` remains mandatory
+  - RIOTBOX-1319 adds an explicit source-selection promotion gate for those
+    edge-source diagnostics: pad/noise and bad-timing cases now carry
+    per-case promotion blockers plus a suite/readiness summary, so risky
+    source material stays review/routing evidence instead of being promoted as
+    a strong demo while timing/source-selection risk remains.
 - generated demo packs include curated source, rendered WAV, metrics, review
   prompt, human verdict, and a short reason why the example is demo-worthy or
   not demo-worthy yet

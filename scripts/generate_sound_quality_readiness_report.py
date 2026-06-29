@@ -468,6 +468,22 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
             ),
             "max_score_lift": number(source_character_window_selection.get("max_score_lift")),
         },
+        "source_selection_risk": {
+            "edge_blocked_case_count": int(
+                number(edge.get("source_selection_promotion_blocked_case_count"))
+            ),
+            "edge_promotion_allowed": edge.get("source_selection_promotion_allowed"),
+            "blocked_source_families": list(
+                edge.get("source_selection_blocked_source_families") or []
+            ),
+            "promotion_blockers": list(
+                edge.get("source_selection_promotion_blockers") or []
+            ),
+            "musician_payoff": (
+                "Risky edge sources stay review/routing material instead of "
+                "being promoted as strong demos before source selection is trusted."
+            ),
+        },
         "drum_pressure": {
             "dense_strongest_audible_element": str(
                 dense.get("strongest_audible_element") or ""
@@ -630,6 +646,23 @@ def readiness_blockers(
                 "reason": "The P022 professional-output suite should be available as current diagnostic context.",
             }
         )
+    else:
+        source_selection_risk = object_or_empty(suite.get("source_selection_risk"))
+        if (
+            number(source_selection_risk.get("edge_blocked_case_count")) >= 1.0
+            and source_selection_risk.get("edge_promotion_allowed") is False
+        ):
+            blockers.append(
+                {
+                    "code": "edge_source_selection_promotion_blocked",
+                    "severity": "production_blocking",
+                    "families": list(source_selection_risk.get("blocked_source_families") or []),
+                    "reason": (
+                        "Bad-timing and pad/noise edge sources are correctly blocked "
+                        "from demo promotion until source-selection review or fixes land."
+                    ),
+                }
+            )
     if suite.get("scripted_generation") is True or suite.get("quality_proof") is False:
         blockers.append(
             {
@@ -743,6 +776,11 @@ def validate_report(report: dict[str, Any]) -> list[str]:
         "professional_output_suite",
         "source_character_window_selection",
     )
+    suite_source_selection_risk = nested_value(
+        report,
+        "professional_output_suite",
+        "source_selection_risk",
+    )
     suite_drum_pressure = nested_value(report, "professional_output_suite", "drum_pressure")
     suite_mix_balance = nested_value(report, "professional_output_suite", "mix_balance")
     suite_strongest = nested_list(
@@ -769,6 +807,33 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             "professional_suite_source_character_window_selection_missing",
             failures,
         )
+        check(
+            isinstance(suite_source_selection_risk, dict),
+            "professional_suite_source_selection_risk_missing",
+            failures,
+        )
+        if isinstance(suite_source_selection_risk, dict):
+            check(
+                number(suite_source_selection_risk.get("edge_blocked_case_count")) >= 2.0,
+                "professional_suite_source_selection_blocked_count_too_low",
+                failures,
+            )
+            check(
+                suite_source_selection_risk.get("edge_promotion_allowed") is False,
+                "professional_suite_source_selection_promotion_allowed",
+                failures,
+            )
+            blockers_list = list(suite_source_selection_risk.get("promotion_blockers") or [])
+            for blocker in (
+                "human_verdict_unverified",
+                "diagnostic_only_quality_proof_false",
+                "source_selection_fix_required",
+            ):
+                check(
+                    blocker in blockers_list,
+                    f"professional_suite_source_selection_{blocker}_missing",
+                    failures,
+                )
         check(
             isinstance(suite_mix_balance, dict),
             "professional_suite_mix_balance_missing",

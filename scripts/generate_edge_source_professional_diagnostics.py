@@ -115,6 +115,7 @@ def main() -> int:
                 "missing_source_family_metadata",
                 "bar_locked_policy_on_bad_timing",
             ],
+            "source_selection_promotion_summary": source_selection_promotion_summary(cases),
             "cases": cases,
             "failure_codes": failures,
             "boundary": (
@@ -363,6 +364,12 @@ def render_case(
         "proposed_next_fix_category": route["proposed_next_fix_category"],
         "proposed_fix_categories": route["proposed_fix_categories"],
         "routing_reasons": route["routing_reasons"],
+        "source_selection_promotion_gate": source_selection_promotion_gate(
+            spec,
+            source_timing,
+            pressure_lift_policy,
+            route,
+        ),
         "guarded_failure_classes": [
             "silence",
             "fallback_collapse",
@@ -387,6 +394,78 @@ def render_case(
         source_timing_backed=True,
         scripted_generation=True,
     )
+
+
+def source_selection_promotion_gate(
+    spec: dict[str, Any],
+    source_timing: dict[str, Any],
+    pressure_lift_policy: dict[str, Any],
+    route: dict[str, Any],
+) -> dict[str, Any]:
+    source_family = str(spec["source_family"])
+    blockers = [
+        "human_verdict_unverified",
+        "diagnostic_only_quality_proof_false",
+    ]
+    if source_family == "bad_timing":
+        blockers.extend(
+            [
+                "timing_grid_requires_manual_confirmation",
+                "bar_locked_moves_blocked_until_timing_confirmed",
+            ]
+        )
+    if source_family == "pad_noise":
+        blockers.extend(
+            [
+                "pad_noise_texture_requires_human_review",
+                "not_dense_break_promotion_material",
+            ]
+        )
+    if "source_selection" in list_or_empty(route.get("proposed_fix_categories")):
+        blockers.append("source_selection_fix_required")
+    return {
+        "promotion_allowed": False,
+        "promotion_state": "blocked_for_source_selection_review",
+        "source_family": source_family,
+        "pressure_policy_family": str(pressure_lift_policy.get("source_family") or ""),
+        "timing_confidence_result": source_timing.get("confidence_result"),
+        "timing_grid_use": source_timing.get("grid_use"),
+        "blockers": sorted(set(blockers)),
+        "musician_reason": (
+            "Timing/source risk is visible; review or select a better source window "
+            "before treating this as a demo-worthy Riotbox output."
+        ),
+    }
+
+
+def source_selection_promotion_summary(cases: list[dict[str, Any]]) -> dict[str, Any]:
+    gates = [
+        object_or_empty(case.get("source_selection_promotion_gate"))
+        for case in cases
+    ]
+    blocked = [gate for gate in gates if gate.get("promotion_allowed") is False]
+    blocker_set = sorted(
+        {
+            str(blocker)
+            for gate in blocked
+            for blocker in list_or_empty(gate.get("blockers"))
+        }
+    )
+    return {
+        "result": "pass",
+        "case_count": len(cases),
+        "blocked_case_count": len(blocked),
+        "blocked_source_families": sorted(
+            str(gate.get("source_family")) for gate in blocked
+        ),
+        "blockers": blocker_set,
+        "quality_proof": False,
+        "promotion_allowed": False,
+        "musician_reason": (
+            "Edge-source material is routed for source-selection review instead "
+            "of being promoted as a strong demo while timing/source risk remains."
+        ),
+    }
 
 
 def corpus_entry_for(corpus: dict[str, Any], case_id: str) -> dict[str, Any]:
@@ -625,6 +704,25 @@ def report_failure_codes(
         failures.append("case_count_mismatch")
     if report.get("weak_routed_case_count") != 2:
         failures.append("weak_routed_case_count_mismatch")
+    promotion = object_or_empty(report.get("source_selection_promotion_summary"))
+    if promotion.get("result") != "pass":
+        failures.append("source_selection_promotion_summary_not_pass")
+    if promotion.get("promotion_allowed") is not False:
+        failures.append("source_selection_promotion_allowed")
+    if promotion.get("quality_proof") is not False:
+        failures.append("source_selection_promotion_claims_quality")
+    if number(promotion.get("blocked_case_count")) < 2.0:
+        failures.append("source_selection_blocked_case_count_too_low")
+    if sorted(string_list(promotion.get("blocked_source_families"))) != ["bad_timing", "pad_noise"]:
+        failures.append("source_selection_blocked_family_coverage_mismatch")
+    summary_blockers = string_list(promotion.get("blockers"))
+    for required in (
+        "human_verdict_unverified",
+        "diagnostic_only_quality_proof_false",
+        "source_selection_fix_required",
+    ):
+        if required not in summary_blockers:
+            failures.append(f"source_selection_promotion_missing_{required}")
     cases = list_or_empty(report.get("cases"))
     if len(cases) < 2:
         failures.append("case_coverage_too_small")
@@ -744,6 +842,24 @@ def report_failure_codes(
             failures.append(f"{case_id}:rebuild_only_source_character_margin_too_low")
         if not case.get("proposed_fix_categories"):
             failures.append(f"{case_id}:missing_fix_routing")
+        promotion_gate = object_or_empty(case.get("source_selection_promotion_gate"))
+        if promotion_gate.get("promotion_allowed") is not False:
+            failures.append(f"{case_id}:source_selection_promotion_allowed")
+        if promotion_gate.get("promotion_state") != "blocked_for_source_selection_review":
+            failures.append(f"{case_id}:source_selection_promotion_state_mismatch")
+        if "human_verdict_unverified" not in string_list(promotion_gate.get("blockers")):
+            failures.append(f"{case_id}:source_selection_human_blocker_missing")
+        if (
+            "source_selection" in string_list(case.get("proposed_fix_categories"))
+            and "source_selection_fix_required" not in string_list(promotion_gate.get("blockers"))
+        ):
+            failures.append(f"{case_id}:source_selection_fix_blocker_missing")
+        if (
+            case.get("source_family") == "bad_timing"
+            and "timing_grid_requires_manual_confirmation"
+            not in string_list(promotion_gate.get("blockers"))
+        ):
+            failures.append(f"{case_id}:bad_timing_confirmation_blocker_missing")
         if require_artifacts:
             rendered_audio = Path(str(case.get("rendered_audio", "")))
             source_timing_path = Path(str(source_timing.get("report", "")))
@@ -850,6 +966,26 @@ def run_mutation_fixtures(report: dict[str, Any], report_path: Path) -> None:
             "fallback_collapse",
             mutated,
             "fallback_or_identical_output_collapse",
+        )
+    )
+
+    mutated = json.loads(json.dumps(report))
+    mutated["source_selection_promotion_summary"]["promotion_allowed"] = True
+    fixtures.append(
+        (
+            "promotion_allowed",
+            mutated,
+            "source_selection_promotion_allowed",
+        )
+    )
+
+    mutated = json.loads(json.dumps(report))
+    mutated["cases"][0]["source_selection_promotion_gate"]["promotion_allowed"] = True
+    fixtures.append(
+        (
+            "case_promotion_allowed",
+            mutated,
+            "source_selection_promotion_allowed",
         )
     )
 
