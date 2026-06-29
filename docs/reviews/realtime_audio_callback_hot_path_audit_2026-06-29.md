@@ -64,7 +64,8 @@ not yet the coherent snapshot handoff required by `audio_core_spec.md` section
 11.4. This should stay as a separate bounded slice because changing it touches
 all lane state handoff semantics and replay-facing behavior.
 
-Follow-up: RIOTBOX-1338.
+Follow-up: RIOTBOX-1327. The later RIOTBOX-1338 duplicate was closed into
+RIOTBOX-1327.
 
 ## Proof
 
