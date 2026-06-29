@@ -1466,16 +1466,31 @@ def tail_shape_policy_for(
         silence_bias = 0.020
         density_bias = -1
         restore_bias = 0.18
+        cut_depth_bias = 0.000
+        stutter_impact_bias = 0.00
+        restore_impact_bias = 0.00
+        step_min, step_max = 9, 17
+        silence_min, silence_max = 0.006, 0.020
     elif source_family == "tonal_hook":
         strategy = "source-derived-hook-readable-tail"
         silence_bias = 0.038
         density_bias = 0
         restore_bias = 0.24
+        cut_depth_bias = 0.004
+        stutter_impact_bias = 0.10
+        restore_impact_bias = 0.08
+        step_min, step_max = 10, 19
+        silence_min, silence_max = 0.003, 0.016
     else:
         strategy = "source-derived-break-snap-tail"
         silence_bias = 0.006
-        density_bias = 2
+        density_bias = 4
         restore_bias = 0.16
+        cut_depth_bias = 0.006
+        stutter_impact_bias = 0.16
+        restore_impact_bias = 0.10
+        step_min, step_max = 14, 22
+        silence_min, silence_max = 0.002, 0.014
 
     dropout_silence_fraction = float(
         np.clip(
@@ -1492,9 +1507,12 @@ def tail_shape_policy_for(
             fixed.dropout_silence_gain
             + low_norm * 0.002
             - transient_norm * 0.006
+            - high_norm * 0.002
+            - energy_span_norm * 0.002
+            - cut_depth_bias
             + (0.004 if source_family == "sparse_bass_pressure" else 0.0),
-            0.004,
-            0.020,
+            silence_min,
+            silence_max,
         )
     )
     derived_step = int(
@@ -1506,52 +1524,104 @@ def tail_shape_policy_for(
             + energy_span_norm * 1.2
         )
     )
-    stutter_step_divisor = int(np.clip(derived_step, 10, 20))
+    stutter_step_divisor = int(np.clip(derived_step, step_min, step_max))
     policy_values = {
         "dropout_silence_fraction": dropout_silence_fraction,
         "dropout_silence_gain": dropout_silence_gain,
         "stutter_step_divisor": stutter_step_divisor,
         "stutter_grain_gain": float(
             np.clip(
-                fixed.stutter_grain_gain + transient_norm * 0.52 + high_norm * 0.24,
+                fixed.stutter_grain_gain
+                + stutter_impact_bias
+                + transient_norm * 0.62
+                + high_norm * 0.30
+                + energy_span_norm * 0.08,
                 2.90,
-                4.30,
+                4.75,
             )
         ),
         "stutter_snap_gain": float(
             np.clip(
                 fixed.stutter_snap_gain
-                + transient_norm * 0.46
-                + high_norm * 0.20
+                + stutter_impact_bias
+                + transient_norm * 0.56
+                + high_norm * 0.25
+                + energy_span_norm * 0.08
                 + restore_bias * 0.42,
                 1.82,
-                3.55,
+                3.95,
             )
         ),
         "restore_source_gain": float(
-            np.clip(fixed.restore_source_gain + low_norm * 0.12 + restore_bias, 1.05, 1.68)
+            np.clip(
+                fixed.restore_source_gain
+                + low_norm * 0.12
+                + restore_bias
+                + restore_impact_bias * 0.40,
+                1.05,
+                1.78,
+            )
         ),
         "restore_snap_gain": float(
             np.clip(
-                fixed.restore_snap_gain + transient_norm * 0.88 + restore_bias * 1.10,
+                fixed.restore_snap_gain
+                + transient_norm * 0.98
+                + high_norm * 0.12
+                + restore_bias * 1.10
+                + restore_impact_bias,
                 4.30,
-                7.60,
+                8.10,
             )
         ),
         "restore_w30_gain": float(
-            np.clip(fixed.restore_w30_gain + w30_norm * 0.36 + restore_bias, 2.12, 3.26)
+            np.clip(
+                fixed.restore_w30_gain
+                + w30_norm * 0.36
+                + restore_bias
+                + restore_impact_bias * 0.25,
+                2.12,
+                3.38,
+            )
         ),
         "restore_mc202_gain": float(
-            np.clip(fixed.restore_mc202_gain + low_norm * 0.30 + restore_bias, 3.42, 4.86)
+            np.clip(
+                fixed.restore_mc202_gain
+                + low_norm * 0.30
+                + restore_bias
+                + restore_impact_bias * 0.35,
+                3.42,
+                5.02,
+            )
         ),
         "restore_tr909_gain": float(
-            np.clip(fixed.restore_tr909_gain + transient_norm * 0.34 + high_norm * 0.12, 2.92, 4.16)
+            np.clip(
+                fixed.restore_tr909_gain
+                + transient_norm * 0.38
+                + high_norm * 0.16
+                + restore_impact_bias * 0.25,
+                2.92,
+                4.28,
+            )
         ),
         "restore_drive": float(
-            np.clip(fixed.restore_drive + transient_norm * 0.08 + low_norm * 0.05, 1.88, 2.12)
+            np.clip(
+                fixed.restore_drive
+                + transient_norm * 0.09
+                + low_norm * 0.05
+                + restore_impact_bias * 0.10,
+                1.88,
+                2.18,
+            )
         ),
         "restore_slam": float(
-            np.clip(fixed.restore_slam + transient_norm * 0.035 + energy_span_norm * 0.020, 0.40, 0.52)
+            np.clip(
+                fixed.restore_slam
+                + transient_norm * 0.045
+                + energy_span_norm * 0.025
+                + restore_impact_bias * 0.10,
+                0.40,
+                0.56,
+            )
         ),
     }
     distance = float(
