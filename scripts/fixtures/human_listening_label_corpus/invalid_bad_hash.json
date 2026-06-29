@@ -15,7 +15,7 @@
         "performance_report_sha256": "not-a-sha",
         "agent_review_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "audio_sha256": {
-          "full_performance": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          "rebuild_only_performance": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
         }
       },
       "reason_tags": {

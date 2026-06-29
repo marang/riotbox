@@ -10,7 +10,7 @@
       "source_family": "dense_break",
       "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
       "rendered_wav": {
-        "path": "artifacts/audio_qa/release-demo-bank/dense-break-beat03/05_full_performance.wav",
+        "path": "artifacts/audio_qa/release-demo-bank/dense-break-beat03/05_rebuild_only_performance.wav",
         "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
       },
       "metrics": {
@@ -40,7 +40,7 @@
       "source_family": "dense_break",
       "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
       "rendered_wav": {
-        "path": "artifacts/audio_qa/release-demo-bank/dense-break-beat03-weak/05_full_performance.wav",
+        "path": "artifacts/audio_qa/release-demo-bank/dense-break-beat03-weak/05_rebuild_only_performance.wav",
         "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
       },
       "metrics": {
@@ -70,7 +70,7 @@
       "source_family": "dense_break",
       "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
       "rendered_wav": {
-        "path": "artifacts/audio_qa/release-demo-bank/dense-break-beat03-fail/05_full_performance.wav",
+        "path": "artifacts/audio_qa/release-demo-bank/dense-break-beat03-fail/05_rebuild_only_performance.wav",
         "sha256": "6666666666666666666666666666666666666666666666666666666666666666"
       },
       "metrics": {
@@ -100,7 +100,7 @@
       "source_family": "tonal_hook",
       "source_path": "data/test_audio/examples/DH_RushArp_120_A.wav",
       "rendered_wav": {
-        "path": "artifacts/audio_qa/release-demo-bank/tonal-rusharp/05_full_performance.wav",
+        "path": "artifacts/audio_qa/release-demo-bank/tonal-rusharp/05_rebuild_only_performance.wav",
         "sha256": "abababababababababababababababababababababababababababababababab"
       },
       "metrics": {
@@ -130,7 +130,7 @@
       "source_family": "sparse_bass_pressure",
       "source_path": "data/test_audio/examples/DH_BeatC_KickSnr_120-01.wav",
       "rendered_wav": {
-        "path": "artifacts/audio_qa/release-demo-bank/sparse-bass-pressure/05_full_performance.wav",
+        "path": "artifacts/audio_qa/release-demo-bank/sparse-bass-pressure/05_rebuild_only_performance.wav",
         "sha256": "3434343434343434343434343434343434343434343434343434343434343434"
       },
       "metrics": {
@@ -160,7 +160,7 @@
       "source_family": "tonal_pad",
       "source_path": "data/test_audio/examples/DH_Fadapad_120_A.wav",
       "rendered_wav": {
-        "path": "artifacts/audio_qa/local-edge-source-professional-diagnostics/pad_noise_fadapad_120/render/05_full_performance.wav",
+        "path": "artifacts/audio_qa/local-edge-source-professional-diagnostics/pad_noise_fadapad_120/render/05_rebuild_only_performance.wav",
         "sha256": "4545454545454545454545454545454545454545454545454545454545454545"
       },
       "metrics": {
@@ -191,7 +191,7 @@
       "source_family": "sparse_bass_pressure",
       "source_path": "data/test_audio/examples/DH_BeatC_KickSnr_120-01.wav",
       "rendered_wav": {
-        "path": "artifacts/audio_qa/local-professional-source-wav-pack/sparse_kicksnr_120/05_full_performance.wav",
+        "path": "artifacts/audio_qa/local-professional-source-wav-pack/sparse_kicksnr_120/05_rebuild_only_performance.wav",
         "sha256": "5656565656565656565656565656565656565656565656565656565656565656"
       },
       "metrics": {
@@ -222,7 +222,7 @@
       "source_family": "bad_timing",
       "source_path": "data/test_audio/examples/Beat20_128BPM(Full).wav",
       "rendered_wav": {
-        "path": "artifacts/audio_qa/local-edge-source-professional-diagnostics/bad_timing_beat20_128/render/05_full_performance.wav",
+        "path": "artifacts/audio_qa/local-edge-source-professional-diagnostics/bad_timing_beat20_128/render/05_rebuild_only_performance.wav",
         "sha256": "abababababababababababababababababababababababababababababababab"
       },
       "metrics": {
@@ -253,7 +253,7 @@
       "source_family": "other",
       "source_path": "data/test_audio/examples/Beat20_128BPM(Full).wav",
       "rendered_wav": {
-        "path": "artifacts/audio_qa/local-weak-output-fix-routing/generated-weak-source-character/05_full_performance.wav",
+        "path": "artifacts/audio_qa/local-weak-output-fix-routing/generated-weak-source-character/05_rebuild_only_performance.wav",
         "sha256": "dededededededededededededededededededededededededededededededede"
       },
       "metrics": {
@@ -284,7 +284,7 @@
       "source_family": "tonal_hook",
       "source_path": "data/test_audio/examples/DH_RushArp_120_A.wav",
       "rendered_wav": {
-        "path": "artifacts/audio_qa/local-professional-output-listening-pack/tonal_rusharp_120/05_full_performance.wav",
+        "path": "artifacts/audio_qa/local-professional-output-listening-pack/tonal_rusharp_120/05_rebuild_only_performance.wav",
         "sha256": "9999999999999999999999999999999999999999999999999999999999999999"
       },
       "metrics": {

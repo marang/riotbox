@@ -122,7 +122,7 @@ fi
 grep -q "cannot promote human_verdict unverified" "$tmp/unverified.out"
 
 stale_review="$tmp/stale-review.json"
-jq '.audio_judge_label.artifact_identity.audio_sha256.full_performance = "0000000000000000000000000000000000000000000000000000000000000000"' \
+jq '.audio_judge_label.artifact_identity.audio_sha256.rebuild_only_performance = "0000000000000000000000000000000000000000000000000000000000000000"' \
   "$pass_review" > "$stale_review"
 if python3 scripts/promote_listening_review_to_demo_bank.py \
   --review "$stale_review" \

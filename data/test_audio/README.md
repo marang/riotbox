@@ -32,6 +32,19 @@ Selected examples:
 
 These files are intended for local testing, not as repo-canonical assets.
 
+For reproducible CI/example diversity without adding unclear licensed audio,
+use:
+
+```bash
+just diverse-test-source-wavs
+```
+
+That command writes deterministic generated source WAVs under
+`artifacts/audio_qa/local-diverse-test-sources`. They cover dense break,
+sparse kick/snare, tonal hook, pad/noise, bass-pressure, and broken-timing
+cases. They are regression fixtures and example sources, not musical quality
+proof.
+
 P023 sound-excellence corpus mapping:
 
 - `Beat03_130BPM(Full).wav`: dense-break Golden Path source.

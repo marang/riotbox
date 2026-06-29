@@ -17,7 +17,7 @@
         "agent_review_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "audio_sha256": {
           "source_window": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-          "full_performance": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          "rebuild_only_performance": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
         }
       },
       "reason_tags": {
@@ -50,7 +50,7 @@
         "agent_review_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "audio_sha256": {
           "source_window": "1111111111111111111111111111111111111111111111111111111111111111",
-          "full_performance": "2222222222222222222222222222222222222222222222222222222222222222"
+          "rebuild_only_performance": "2222222222222222222222222222222222222222222222222222222222222222"
         }
       },
       "reason_tags": {
@@ -83,7 +83,7 @@
         "agent_review_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
         "audio_sha256": {
           "source_window": "5555555555555555555555555555555555555555555555555555555555555555",
-          "full_performance": "6666666666666666666666666666666666666666666666666666666666666666"
+          "rebuild_only_performance": "6666666666666666666666666666666666666666666666666666666666666666"
         }
       },
       "reason_tags": {
@@ -117,7 +117,7 @@
         "agent_review_sha256": "8888888888888888888888888888888888888888888888888888888888888888",
         "audio_sha256": {
           "source_window": "9999999999999999999999999999999999999999999999999999999999999999",
-          "full_performance": "abababababababababababababababababababababababababababababababab"
+          "rebuild_only_performance": "abababababababababababababababababababababababababababababababab"
         }
       },
       "reason_tags": {
@@ -150,7 +150,7 @@
         "agent_review_sha256": "efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
         "audio_sha256": {
           "source_window": "1212121212121212121212121212121212121212121212121212121212121212",
-          "full_performance": "3434343434343434343434343434343434343434343434343434343434343434"
+          "rebuild_only_performance": "3434343434343434343434343434343434343434343434343434343434343434"
         }
       },
       "reason_tags": {

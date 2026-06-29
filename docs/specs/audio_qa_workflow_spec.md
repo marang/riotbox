@@ -220,6 +220,19 @@ The current lightweight command is:
 just source-showcase-diversity "PACK_A PACK_B ..."
 ```
 
+Feral-grid renderer packs also have a direct WAV-level gate:
+
+```bash
+just feral-grid-render-diversity "PACK_A PACK_B ..."
+```
+
+This gate compares the rendered product roles themselves:
+`04_riotbox_source_first_mix.wav`, `05_riotbox_generated_support_mix.wav`,
+`stems/01_tr909_beat_fill.wav`, `stems/02_w30_feral_source_chop.wav`, and
+`stems/03_mc202_bass_pressure.wav`. It rejects identical hashes and
+near-identical cross-source waveforms, so a pair of different sources cannot
+pass if the result collapses into the same clicky or placeholder-like output.
+
 The deterministic synthetic showcase is a fixture / developer-QA pack, not a
 musician-facing listening demo:
 

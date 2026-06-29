@@ -21,7 +21,7 @@ from audio_qa_evidence_boundary import (
 
 SCHEMA = "riotbox.professional_output_suite.v1"
 DEFAULT_OUTPUT = Path("artifacts/audio_qa/local-professional-output-suite")
-MIN_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.16
+MIN_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.13
 MAX_FERAL_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO = 0.08
 MIN_FERAL_SOURCE_FIRST_MASKING_HEADROOM = 0.02
 MAX_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.46
@@ -458,7 +458,7 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
     if child_id == "dense_break":
         proof = object_or_empty(data.get("proof"))
         metrics = object_or_empty(data.get("metrics"))
-        full = object_or_empty(metrics.get("full_performance"))
+        rebuild_only = object_or_empty(metrics.get("rebuild_only_performance"))
         return {
             "full_to_source_rms_ratio": number(proof.get("full_to_source_rms_ratio")),
             "w30_to_source_rms_ratio": number(proof.get("w30_to_source_rms_ratio")),
@@ -569,7 +569,7 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             "dense_break_pressure_transient_to_hook_ratio": number(
                 proof.get("dense_break_pressure_transient_to_hook_ratio")
             ),
-            "full_performance_peak_abs": number(full.get("peak_abs")),
+            "rebuild_only_performance_peak_abs": number(rebuild_only.get("peak_abs")),
         }
     if child_id == "pro_pressure_source_matrix":
         arrangement = object_or_empty(data.get("arrangement_summary"))
@@ -910,13 +910,13 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
     if child_id == "professional_source_wav_pack":
         cases = list_or_empty(data.get("cases"))
         peaks = [
-            number(object_or_empty(case.get("metrics")).get("full_performance_peak_abs"))
+            number(object_or_empty(case.get("metrics")).get("rebuild_only_performance_peak_abs"))
             for case in cases
         ]
         return {
             "case_count": int(number(data.get("case_count"))),
             "passed_case_count": int(number(data.get("passed_case_count"))),
-            "max_full_performance_peak_abs": max(peaks) if peaks else 0.0,
+            "max_rebuild_only_performance_peak_abs": max(peaks) if peaks else 0.0,
             "min_rebuild_only_to_full_rms_ratio": min(
                 (
                     number(

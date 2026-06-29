@@ -100,7 +100,7 @@ def generate_dense_flat_stutter_case(repo: Path, output: Path) -> dict[str, Any]
     weak_pressure = render_pulse_train(duration, frequency=55.0, amplitude=0.042)
     flat_stutter = render_pulse_train(duration, frequency=98.0, amplitude=0.038)
     weak_restore = render_pulse_train(duration, frequency=70.0, amplitude=0.039)
-    full = normalize_length(source + weak_hook + weak_pressure + flat_stutter + weak_restore)
+    rebuild_only = normalize_length(weak_hook + weak_pressure + flat_stutter + weak_restore)
 
     files = {
         "source_window": "00_source_window.wav",
@@ -108,7 +108,7 @@ def generate_dense_flat_stutter_case(repo: Path, output: Path) -> dict[str, Any]
         "pressure_lift": "02_pressure_lift.wav",
         "dropout_stutter": "03_dropout_stutter.wav",
         "restore_hit": "04_restore_hit.wav",
-        "full_performance": "05_full_performance.wav",
+        "rebuild_only_performance": "05_rebuild_only_performance.wav",
     }
     audio = {
         "source_window": source,
@@ -116,7 +116,7 @@ def generate_dense_flat_stutter_case(repo: Path, output: Path) -> dict[str, Any]
         "pressure_lift": weak_pressure,
         "dropout_stutter": flat_stutter,
         "restore_hit": weak_restore,
-        "full_performance": full,
+        "rebuild_only_performance": rebuild_only,
     }
     for role, samples in audio.items():
         write_wav(case_dir / files[role], samples)

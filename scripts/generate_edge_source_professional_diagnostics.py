@@ -248,7 +248,7 @@ def render_case(
     source_policy = object_or_empty(performance_report.get("source_policy"))
     pressure_lift_policy = object_or_empty(source_policy.get("pressure_lift_policy"))
     source_window = render_dir / str(files.get("source_window", ""))
-    rendered_audio = render_dir / str(files.get("full_performance", ""))
+    rendered_audio = render_dir / str(files.get("rebuild_only_performance", ""))
     weak_signals = weak_output_signals(
         str(spec["source_family"]),
         source_timing,
@@ -348,11 +348,14 @@ def render_case(
             ),
         },
         "metrics": {
-            "full_performance_rms": number(
-                object_or_empty(metrics.get("full_performance")).get("rms")
+            "source_layered_reference_rms": number(
+                object_or_empty(metrics.get("source_layered_reference")).get("rms")
             ),
-            "full_performance_peak_abs": number(
-                object_or_empty(metrics.get("full_performance")).get("peak_abs")
+            "source_layered_reference_peak_abs": number(
+                object_or_empty(metrics.get("source_layered_reference")).get("peak_abs")
+            ),
+            "rebuild_only_performance_rms": number(
+                object_or_empty(metrics.get("rebuild_only_performance")).get("rms")
             ),
             "source_window_rms": number(object_or_empty(metrics.get("source_window")).get("rms")),
         },
@@ -532,8 +535,8 @@ def diagnostic_failure_codes(
             < MIN_BAD_TIMING_CONFIRMATION_CUE_TRANSIENT_SCORE
         ):
             failures.append("bad_timing_confirmation_cue_too_weak")
-    full = object_or_empty(metrics.get("full_performance"))
-    if number(full.get("rms")) <= 0.01:
+    rebuild_only = object_or_empty(metrics.get("rebuild_only_performance"))
+    if number(rebuild_only.get("rms")) <= 0.01:
         failures.append("rendered_audio_silent")
     if rendered_audio.is_file() and source_window.is_file() and sha256_file(rendered_audio) == sha256_file(source_window):
         failures.append("identical_output")
@@ -699,7 +702,7 @@ def report_failure_codes(
                 < MIN_BAD_TIMING_CONFIRMATION_CUE_TRANSIENT_SCORE
             ):
                 failures.append(f"{case_id}:bad_timing_confirmation_cue_too_weak")
-        if number(metrics.get("full_performance_rms")) <= 0.01:
+        if number(metrics.get("rebuild_only_performance_rms")) <= 0.01:
             failures.append(f"{case_id}:rendered_audio_silent")
         if case.get("rendered_audio_sha256") == case.get("source_window_sha256"):
             failures.append(f"{case_id}:identical_output")
@@ -763,7 +766,7 @@ def report_failure_codes(
 def run_mutation_fixtures(report: dict[str, Any], report_path: Path) -> None:
     fixtures = []
     mutated = json.loads(json.dumps(report))
-    mutated["cases"][0]["metrics"]["full_performance_rms"] = 0.0
+    mutated["cases"][0]["metrics"]["rebuild_only_performance_rms"] = 0.0
     fixtures.append(("silent_output", mutated, "rendered_audio_silent"))
 
     mutated = json.loads(json.dumps(report))

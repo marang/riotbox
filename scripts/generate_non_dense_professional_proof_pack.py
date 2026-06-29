@@ -208,7 +208,7 @@ def build_case(
     )
     validator_report = read_json(validator_json)
     fixture_manifest = repo / str(spec["fixture_manifest"])
-    audio_path = source_wav_pack / case_id / source_case["audio_files"]["full_performance"]
+    audio_path = source_wav_pack / case_id / source_case["audio_files"]["rebuild_only_performance"]
     source_report_path = source_wav_pack / case_id / "performance-report.json"
     review_prompt = case_dir / "review-prompt.md"
     review_prompt.write_text(render_review_prompt(spec, source_case, validator_report, audio_path))

@@ -12,12 +12,12 @@
   "failure_codes": [],
   "audio_files": {
     "source_window": "00_source_window.wav",
-    "full_performance": "05_full_performance.wav"
+    "rebuild_only_performance": "05_rebuild_only_performance.wav"
   },
   "visual_files": {
-    "full_performance": {
-      "waveform": "visuals/full_performance.waveform.png",
-      "spectrogram": "visuals/full_performance.spectrogram.png"
+    "rebuild_only_performance": {
+      "waveform": "visuals/rebuild_only_performance.waveform.png",
+      "spectrogram": "visuals/rebuild_only_performance.spectrogram.png"
     }
   },
   "review_focus": [

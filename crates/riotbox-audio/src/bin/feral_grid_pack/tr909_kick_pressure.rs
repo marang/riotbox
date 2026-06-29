@@ -192,7 +192,7 @@ fn apply_tr909_kick_pressure(
 }
 
 fn tr909_source_accent_for_beat(profile: SourceAwareTr909Profile, beat_in_bar: u32) -> f32 {
-    let density = (profile.event_density_per_bar / 5.0).clamp(0.0, 1.0);
+    let density = tr909_source_density_weight(profile);
     let low = profile.low_band_energy_ratio.clamp(0.0, 1.0);
     let mid = profile.mid_band_energy_ratio.clamp(0.0, 1.0);
     let high = profile.high_band_energy_ratio.clamp(0.0, 1.0);
@@ -282,29 +282,36 @@ struct Tr909KickPressurePolicy {
 }
 
 fn tr909_kick_pressure_policy(profile: SourceAwareTr909Profile) -> Tr909KickPressurePolicy {
+    let density = tr909_source_density_weight(profile);
+    let low = profile.low_band_energy_ratio.clamp(0.0, 1.0);
+    let high = profile.high_band_energy_ratio.clamp(0.0, 1.0);
     match profile.support_profile {
         Tr909SourceSupportProfile::DropDrive => Tr909KickPressurePolicy {
             gain: 0.018,
-            body_hz: 54.0,
+            body_hz: 49.0 + low * 7.0 + density * 8.5,
             tail_seconds: 0.180,
-            click_gain: 0.006,
+            click_gain: 0.005 + high * 0.006,
             reason: "tr909_low_drive_pressure",
         },
         Tr909SourceSupportProfile::BreakLift => Tr909KickPressurePolicy {
             gain: 0.012,
-            body_hz: 58.0,
+            body_hz: 56.0 + density * 5.0,
             tail_seconds: 0.150,
             click_gain: 0.010,
             reason: "tr909_break_lift_pressure",
         },
         Tr909SourceSupportProfile::SteadyPulse => Tr909KickPressurePolicy {
-            gain: 0.014,
-            body_hz: 52.0,
+            gain: 0.0155,
+            body_hz: 50.0 + density * 4.0,
             tail_seconds: 0.165,
             click_gain: 0.004,
             reason: "tr909_steady_pulse_pressure",
         },
     }
+}
+
+fn tr909_source_density_weight(profile: SourceAwareTr909Profile) -> f32 {
+    (profile.event_density_per_bar / 48.0).clamp(0.0, 1.0)
 }
 
 fn render_tr909_kick_pressure_anchor(

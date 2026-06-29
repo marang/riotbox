@@ -672,7 +672,11 @@ def load_source(entry: dict[str, Any], fixture_dir: Path) -> dict[str, Any]:
 def source_from_agent_review(path: Path) -> dict[str, Any]:
     report = read_json_object(path)
     audio_files = object_or_empty(report.get("audio_files"))
-    artifact = audio_files.get("full_performance") or audio_files.get("source_window") or str(path)
+    artifact = (
+        audio_files.get("rebuild_only_performance")
+        or audio_files.get("source_window")
+        or str(path)
+    )
     if isinstance(artifact, str) and not Path(artifact).is_absolute():
         artifact = str(path.parent / artifact)
     return {
@@ -707,9 +711,9 @@ def source_from_human_label(path: Path, label_id: str) -> dict[str, Any]:
     artifact_identity = object_or_empty(label.get("artifact_identity"))
     identity_audio = object_or_empty(artifact_identity.get("audio_sha256"))
     artifact = (
-        artifact_audio.get("full_performance")
+        artifact_audio.get("rebuild_only_performance")
         or artifact_paths.get("agent_review")
-        or identity_audio.get("full_performance")
+        or identity_audio.get("rebuild_only_performance")
         or label.get("review_pack_id")
         or str(path)
     )
@@ -763,7 +767,7 @@ def source_from_report(
 def source_from_dense_performance_report(path: Path) -> dict[str, Any]:
     report = read_json_object(path)
     files = object_or_empty(report.get("files"))
-    artifact = files.get("rebuild_only_performance") or files.get("full_performance") or str(path)
+    artifact = files.get("rebuild_only_performance") or str(path)
     if isinstance(artifact, str) and not Path(artifact).is_absolute():
         artifact = str(path.parent / artifact)
     source_policy = object_or_empty(report.get("source_policy"))

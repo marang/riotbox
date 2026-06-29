@@ -233,7 +233,6 @@ def render_case(repo: Path, output: Path, date: str, case: dict) -> dict:
             "pressure_lift": files["pressure_lift"],
             "dropout_stutter": files["dropout_stutter"],
             "restore_hit": files["restore_hit"],
-            "full_performance": files["full_performance"],
             "rebuild_only_performance": files["rebuild_only_performance"],
         },
         "proof": {
@@ -360,9 +359,6 @@ def render_case(repo: Path, output: Path, date: str, case: dict) -> dict:
             ],
         },
         "metrics": {
-            "full_performance_rms": metrics["full_performance"]["rms"],
-            "full_performance_dbfs": metrics["full_performance"]["dbfs"],
-            "full_performance_peak_abs": metrics["full_performance"]["peak_abs"],
             "chop_hook_dbfs": metrics["chop_hook"]["dbfs"],
             "pressure_lift_dbfs": metrics["pressure_lift"]["dbfs"],
             "restore_hit_dbfs": metrics["restore_hit"]["dbfs"],
@@ -390,12 +386,12 @@ def render_case(repo: Path, output: Path, date: str, case: dict) -> dict:
 
 
 def family_failure_codes(source_family: str, proof: dict, metrics: dict) -> list[str]:
-    full = metrics["full_performance"]
+    rebuild_only = metrics["rebuild_only_performance"]
     failures = []
-    if full["rms"] < 0.12:
-        failures.append("full_performance_too_quiet")
-    if full["peak_abs"] > 0.985:
-        failures.append("full_performance_near_clipping")
+    if rebuild_only["rms"] < 0.12:
+        failures.append("rebuild_only_performance_too_quiet")
+    if rebuild_only["peak_abs"] > 0.985:
+        failures.append("rebuild_only_performance_near_clipping")
     if not 0.20 <= proof["source_to_performance_correlation"] <= 0.80:
         failures.append("source_not_transformed_but_present")
     if proof["w30_to_source_rms_ratio"] < 0.18:
@@ -418,7 +414,7 @@ def family_failure_codes(source_family: str, proof: dict, metrics: dict) -> list
         if proof["pressure_to_hook_rms_ratio"] < 1.30:
             failures.append("sparse_pressure_not_stronger_than_hook")
         if proof["full_to_source_rms_ratio"] < 1.0:
-            failures.append("sparse_full_performance_not_assertive")
+            failures.append("sparse_rebuild_only_performance_not_assertive")
     else:
         failures.append("unsupported_source_family")
     return failures
@@ -528,8 +524,6 @@ def validate_report_case(
         failures.append(f"{prefix}:rebuild_only_too_source_masked")
     if number(proof.get("source_on_to_rebuild_only_correlation")) > 0.995:
         failures.append(f"{prefix}:source_layer_toggle_did_not_change_output")
-    if number(metrics.get("full_performance_peak_abs")) > 0.985:
-        failures.append(f"{prefix}:full_performance_near_clipping")
     if number(metrics.get("rebuild_only_performance_peak_abs")) > 0.985:
         failures.append(f"{prefix}:rebuild_only_performance_near_clipping")
     if number(proof.get("arrangement_role_order_source_derived")) < 1.0:
@@ -541,11 +535,10 @@ def validate_report_case(
     validate_common_source_character(case, prefix, proof, failures)
     if require_artifacts:
         output = Path(str(case.get("output", "")))
-        for role in ("full_performance", "rebuild_only_performance"):
+        for role in ("rebuild_only_performance",):
             if not str(audio_files.get(role, "")).endswith(".wav"):
                 failures.append(f"{prefix}:{role}_not_wav")
         for relative in (
-            audio_files.get("full_performance"),
             audio_files.get("rebuild_only_performance"),
             "performance-report.json",
         ):

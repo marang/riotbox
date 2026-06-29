@@ -70,13 +70,18 @@ fn render_w30_source_trigger_event(
 
     let trigger_frame = frames_for_beat_position(grid.bpm, event.beat_position);
     let event_frame_count = sample_count.saturating_mul(2);
+    let playback_profile = w30_source_playback_profile(source_window_preview);
     for frame_offset in 0..event_frame_count {
         let frame = trigger_frame.saturating_add(frame_offset);
         if frame >= grid.total_frames {
             break;
         }
 
-        let source_index = (event.source_offset_samples + frame_offset / 2) % sample_count;
+        let source_index = (
+            event.source_offset_samples
+                + playback_profile.phase_offset_samples
+                + frame_offset / playback_profile.stride_divisor
+        ) % sample_count;
         let previous_source_index = (source_index + sample_count - 1) % sample_count;
         let source_sample = source_window_preview.samples[source_index];
         let source_edge = source_sample - source_window_preview.samples[previous_source_index];
@@ -85,7 +90,8 @@ fn render_w30_source_trigger_event(
             * event.velocity
             * envelope
             * w30_source_trigger_gain(event.beat_position)
-            * profile_gain;
+            * profile_gain
+            * playback_profile.gain;
         let output_index = frame.saturating_mul(usize::from(CHANNEL_COUNT));
         output[output_index] += sample;
         output[output_index + 1] += sample * 0.98;
