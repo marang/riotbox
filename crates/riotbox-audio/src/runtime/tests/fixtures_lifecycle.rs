@@ -289,6 +289,42 @@ fn telemetry_tracks_callback_count_and_max_gap() {
 }
 
 #[test]
+fn telemetry_tracks_callback_scratch_overflow_without_stream_error() {
+    let telemetry = RuntimeTelemetry::new();
+    telemetry.record_callback_scratch_overflow_at(100, &sample_timing(16.0));
+
+    let snapshot = telemetry.snapshot();
+
+    assert_eq!(snapshot.callback_count, 1);
+    assert_eq!(snapshot.callback_scratch_overflow_count, 1);
+    assert_eq!(snapshot.stream_error_count, 0);
+    assert!(snapshot.last_stream_error.is_none());
+}
+
+#[test]
+fn callback_scratch_uses_configured_fixed_size_and_bounded_default() {
+    let fixed = cpal::StreamConfig {
+        channels: 2,
+        sample_rate: 44_100,
+        buffer_size: cpal::BufferSize::Fixed(512),
+    };
+    let default = cpal::StreamConfig {
+        channels: 2,
+        sample_rate: 44_100,
+        buffer_size: cpal::BufferSize::Default,
+    };
+
+    assert_eq!(
+        super::shared_transport_tr909::callback_scratch_sample_count(&fixed, 2),
+        1024
+    );
+    assert_eq!(
+        super::shared_transport_tr909::callback_scratch_sample_count(&default, 2),
+        8192
+    );
+}
+
+#[test]
 fn health_snapshot_reflects_faulted_runtime_state() {
     let telemetry = Arc::new(RuntimeTelemetry::new());
     let tr909_render_state = Arc::new(SharedTr909RenderState::new(&Tr909RenderState::default()));
@@ -324,6 +360,7 @@ fn health_snapshot_reflects_faulted_runtime_state() {
     assert_eq!(snapshot.lifecycle, AudioRuntimeLifecycle::Faulted);
     assert_eq!(snapshot.callback_count, 2);
     assert_eq!(snapshot.max_callback_gap_micros, Some(140));
+    assert_eq!(snapshot.callback_scratch_overflow_count, 0);
     assert_eq!(snapshot.stream_error_count, 1);
     assert_eq!(
         snapshot.last_stream_error.as_deref(),

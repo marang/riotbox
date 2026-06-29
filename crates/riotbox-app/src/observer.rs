@@ -36,6 +36,7 @@ pub fn observer_snapshot(shell: &JamShellState) -> Value {
         "runtime": {
             "audio_status": runtime.audio_status,
             "audio_callback_count": runtime.audio_callback_count,
+            "audio_callback_scratch_overflow_count": runtime.audio_callback_scratch_overflow_count,
             "audio_last_error": runtime.audio_last_error,
             "capture_length_intent": shell.app.session.runtime_state.capture.length_intent.to_string(),
             "sidecar_status": runtime.sidecar_status,

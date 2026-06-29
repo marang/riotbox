@@ -167,12 +167,12 @@ impl SharedSourceMonitorRenderState {
         );
     }
 
-    pub(super) fn snapshot(&self) -> RealtimeSourceMonitorRenderState {
+    pub(super) fn snapshot(&self) -> RealtimeSourceMonitorRenderState<'_> {
         RealtimeSourceMonitorRenderState {
             mode: source_monitor_mode_from_u32(self.mode.load(Ordering::Relaxed)),
             source_gain: f32::from_bits(self.source_gain_bits.load(Ordering::Relaxed)),
             riotbox_gain: f32::from_bits(self.riotbox_gain_bits.load(Ordering::Relaxed)),
-            source: self.source.clone(),
+            source: self.source.as_ref(),
             is_transport_running: false,
             tempo_bpm: 128.0,
             position_beats: 0.0,
@@ -189,11 +189,11 @@ impl SharedSourceMonitorRenderState {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub(super) struct RealtimeSourceMonitorRenderState {
+pub(super) struct RealtimeSourceMonitorRenderState<'a> {
     pub(super) mode: SourceMonitorMode,
     pub(super) source_gain: f32,
     pub(super) riotbox_gain: f32,
-    pub(super) source: Option<SourceMonitorAudioSource>,
+    pub(super) source: Option<&'a SourceMonitorAudioSource>,
     pub(super) is_transport_running: bool,
     pub(super) tempo_bpm: f32,
     pub(super) position_beats: f64,
@@ -290,14 +290,9 @@ pub fn apply_source_monitor_policy(
     data: &mut [f32],
     sample_rate: u32,
     channel_count: usize,
-    render: &RealtimeSourceMonitorRenderState,
+    render: &RealtimeSourceMonitorRenderState<'_>,
 ) -> SourceMonitorAudioRoute {
-    let route = source_monitor_route(
-        render.mode,
-        render.source.as_ref(),
-        sample_rate,
-        channel_count,
-    );
+    let route = source_monitor_route(render.mode, render.source, sample_rate, channel_count);
     if matches!(route, SourceMonitorAudioRoute::SourceUnavailable) {
         data.fill(0.0);
         return route;
@@ -359,7 +354,7 @@ pub fn render_source_monitor_mix_offline(
             SourceMonitorMode::Blend => BLEND_RIOTBOX_GAIN,
             SourceMonitorMode::Riotbox => 1.0,
         },
-        source: render_state.source.clone(),
+        source: render_state.source.as_ref(),
         is_transport_running: render_state.is_transport_running,
         tempo_bpm: render_state.tempo_bpm,
         position_beats: render_state.position_beats,
@@ -376,7 +371,7 @@ pub fn render_source_monitor_mix_offline(
 }
 
 fn source_start_frame(
-    render: &RealtimeSourceMonitorRenderState,
+    render: &RealtimeSourceMonitorRenderState<'_>,
     source: &SourceMonitorAudioSource,
 ) -> usize {
     if !render.is_transport_running
