@@ -16,8 +16,8 @@ rg -n 'include!' crates --glob '*.rs'
 
 Result:
 
-- 246 textual include sites after RIOTBOX-1322
-- 20 owning Rust files after RIOTBOX-1322
+- 243 textual include sites after RIOTBOX-1323
+- 19 owning Rust files after RIOTBOX-1323
 - no generated-code include site identified in this inventory
 - every current include is treated as legacy/mechanical until proven otherwise
 
@@ -43,7 +43,6 @@ sites. New include owners or changed counts fail the guardrail until reviewed.
 | Owner | Count | Included files / families | Purpose | Classification | Migration risk | Follow-up |
 | --- | ---: | --- | --- | --- | --- | --- |
 | `crates/riotbox-core/src/source_graph/timing_probe_candidates.rs` | 12 | `timing_probe_candidates/types`, confidence, period scoring, drift, groove, phrase, model, hypothesis, downbeat, grid, readiness, policy | Source timing candidate internals | mechanical product split | medium/high: timing confidence contract | RIOTBOX-1330 or Source Graph follow-up |
-| `crates/riotbox-core/src/session.rs` | 3 | `session/version_types`, `mc202_types`, `defaults` | Session model adjuncts | mechanical product split | high: serialization/replay compatibility | RIOTBOX-1323 |
 | `crates/riotbox-core/src/tr909_policy.rs` | 2 | `tr909_policy/render_policy`, tests | TR-909 policy and tests | mechanical product split | low/medium: policy API | RIOTBOX-1331 |
 | `crates/riotbox-core/src/view/jam.rs` | 8 | `jam/view_model_types`, source timing, source map, arrangement, builder, capture, scene, tests | Jam view model and projections | mechanical view split | medium: app/core UI contract | future UI/view module slice |
 | `crates/riotbox-core/src/view/jam/tests.rs` | 4 | jam test fixture and scenario shards | Jam view tests | mechanical test split | low/medium: test imports | future UI/view module slice |
@@ -83,3 +82,4 @@ of mixing them into the module move.
 | Owner | Former count | Migrated by | Notes |
 | --- | ---: | --- | --- |
 | `crates/riotbox-core/src/source_graph.rs` | 10 | RIOTBOX-1322 | Replaced by `crates/riotbox-core/src/source_graph/mod.rs` with real child modules and `pub use` compatibility exports. |
+| `crates/riotbox-core/src/session.rs` | 3 | RIOTBOX-1323 | Replaced by `crates/riotbox-core/src/session/mod.rs` with real child modules and `pub use` compatibility exports. |

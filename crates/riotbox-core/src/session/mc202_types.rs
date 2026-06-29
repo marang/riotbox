@@ -1,3 +1,5 @@
+use crate::ids::SourceId;
+
 #[derive(Clone, Debug, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Mc202LaneState {
     pub role: Option<Mc202RoleState>,

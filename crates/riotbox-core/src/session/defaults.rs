@@ -1,3 +1,9 @@
+use serde::{Deserialize, Serialize};
+
+use crate::action::GhostMode;
+
+use super::GhostState;
+
 impl Default for GhostState {
     fn default() -> Self {
         Self {
@@ -119,9 +125,10 @@ mod tests {
     use crate::{
         action::{
             Action, ActionCommand, ActionParams, ActionResult, ActionStatus, ActionTarget,
-            ActorType, GhostMode, Quantization, TargetScope, UndoPolicy,
+            ActorType, GhostMode, Quantization, SourceMonitorMode, TargetScope, UndoPolicy,
         },
         ids::{ActionId, BankId, CaptureId, PadId, SceneId, SnapshotId, SourceId},
+        session::*,
         source_graph::{
             DecodeProfile, GraphProvenance, SourceDescriptor, SourceGraph, SourceGraphVersion,
         },
@@ -142,8 +149,14 @@ mod tests {
         for (role, label, default_touch) in cases {
             assert_eq!(role.label(), label);
             assert_eq!(Mc202RoleState::from_label(label), Some(role));
-            assert_eq!(serde_json::to_string(&role).unwrap(), format!("\"{label}\""));
-            assert_eq!(serde_json::from_str::<Mc202RoleState>(&format!("\"{label}\"")).unwrap(), role);
+            assert_eq!(
+                serde_json::to_string(&role).unwrap(),
+                format!("\"{label}\"")
+            );
+            assert_eq!(
+                serde_json::from_str::<Mc202RoleState>(&format!("\"{label}\"")).unwrap(),
+                role
+            );
             assert!((role.default_touch() - default_touch).abs() < f32::EPSILON);
         }
     }
@@ -159,13 +172,19 @@ mod tests {
     fn mc202_phrase_intent_preserves_existing_mutation_variant_label() {
         assert_eq!(Mc202PhraseIntentState::Base.label(), "base");
         assert_eq!(Mc202PhraseIntentState::Base.phrase_variant(), None);
-        assert_eq!(Mc202PhraseIntentState::from_label("base"), Some(Mc202PhraseIntentState::Base));
+        assert_eq!(
+            Mc202PhraseIntentState::from_label("base"),
+            Some(Mc202PhraseIntentState::Base)
+        );
         assert_eq!(
             Mc202PhraseIntentState::from_phrase_variant(None),
             Mc202PhraseIntentState::Base
         );
 
-        assert_eq!(Mc202PhraseIntentState::MutatedDrive.label(), "mutated_drive");
+        assert_eq!(
+            Mc202PhraseIntentState::MutatedDrive.label(),
+            "mutated_drive"
+        );
         assert_eq!(
             Mc202PhraseIntentState::MutatedDrive.phrase_variant(),
             Some(Mc202PhraseVariantState::MutatedDrive)
@@ -175,7 +194,9 @@ mod tests {
             Some(Mc202PhraseIntentState::MutatedDrive)
         );
         assert_eq!(
-            Mc202PhraseIntentState::from_phrase_variant(Some(Mc202PhraseVariantState::MutatedDrive)),
+            Mc202PhraseIntentState::from_phrase_variant(Some(
+                Mc202PhraseVariantState::MutatedDrive
+            )),
             Mc202PhraseIntentState::MutatedDrive
         );
         assert_eq!(
@@ -380,7 +401,10 @@ mod tests {
         )
         .expect("deserialize session");
 
-        assert_eq!(decoded.runtime_state.source_timing, session.runtime_state.source_timing);
+        assert_eq!(
+            decoded.runtime_state.source_timing,
+            session.runtime_state.source_timing
+        );
         let confirmed = decoded
             .runtime_state
             .source_timing
@@ -421,9 +445,7 @@ mod tests {
         let before_log = session.action_log.actions.len();
         let before_scene = session.runtime_state.scene_state.clone();
 
-        assert!(session
-            .ghost_state
-            .accept_suggestion("ghost-proposal-1"));
+        assert!(session.ghost_state.accept_suggestion("ghost-proposal-1"));
 
         let record = &session.ghost_state.suggestion_history[0];
         assert_eq!(record.status(), GhostSuggestionStatus::Accepted);
@@ -447,9 +469,7 @@ mod tests {
                 rejected: false,
             });
 
-        assert!(!session
-            .ghost_state
-            .accept_suggestion("ghost-proposal-1"));
+        assert!(!session.ghost_state.accept_suggestion("ghost-proposal-1"));
 
         let record = &session.ghost_state.suggestion_history[0];
         assert_eq!(record.status(), GhostSuggestionStatus::Suggested);
@@ -470,9 +490,7 @@ mod tests {
                 rejected: false,
             });
 
-        assert!(session
-            .ghost_state
-            .reject_suggestion("ghost-proposal-1"));
+        assert!(session.ghost_state.reject_suggestion("ghost-proposal-1"));
 
         let record = &session.ghost_state.suggestion_history[0];
         assert_eq!(record.status(), GhostSuggestionStatus::Rejected);
@@ -494,12 +512,8 @@ mod tests {
                 rejected: false,
             });
 
-        assert!(session
-            .ghost_state
-            .reject_suggestion("ghost-proposal-1"));
-        assert!(!session
-            .ghost_state
-            .accept_suggestion("ghost-proposal-1"));
+        assert!(session.ghost_state.reject_suggestion("ghost-proposal-1"));
+        assert!(!session.ghost_state.accept_suggestion("ghost-proposal-1"));
 
         let record = &session.ghost_state.suggestion_history[0];
         assert_eq!(record.status(), GhostSuggestionStatus::Rejected);
