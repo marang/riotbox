@@ -1262,4 +1262,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Strengthen destructive gesture impact for stage-meaningful cuts
 - [RIOTBOX-1307.md](./RIOTBOX-1307.md)
   P023: Strengthen mix-bus source clarity against generated masking
+- [RIOTBOX-1308.md](./RIOTBOX-1308.md)
+  P023: Strengthen source-window character selection before output promotion
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
