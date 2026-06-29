@@ -404,6 +404,9 @@ fn write_metrics_markdown(
              - Samples: `{sample_count}`\n\
              - Active samples: `{}`\n\
              - Peak abs: `{:.6}`\n\
+             - Clip count: `{}`\n\
+             - Near clip count: `{}`\n\
+             - Headroom to full scale: `{:.6}`\n\
              - RMS: `{:.6}`\n\
              - Sum: `{:.6}`\n\
              - Mean abs: `{:.6}`\n\
@@ -420,6 +423,9 @@ fn write_metrics_markdown(
             args.duration_seconds,
             metrics.active_samples,
             metrics.peak_abs,
+            metrics.clip_count,
+            metrics.near_clip_count,
+            metrics.headroom_to_full_scale,
             metrics.rms,
             metrics.sum,
             metrics.mean_abs,
