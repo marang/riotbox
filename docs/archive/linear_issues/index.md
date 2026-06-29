@@ -1302,4 +1302,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Audit and harden the realtime audio callback hot path
 - [RIOTBOX-1327.md](./RIOTBOX-1327.md)
   P023: Design coherent render-state snapshots for realtime audio
+- [RIOTBOX-1328.md](./RIOTBOX-1328.md)
+  P023: Add master-bus gain staging, clip/DC metrics, and limiter policy
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
