@@ -478,6 +478,33 @@ def validate_edge_metrics(metrics: dict[str, Any], failures: list[str]) -> None:
     categories = list_or_empty(metrics.get("proposed_fix_categories"))
     require("source_selection" in categories, "edge_source_selection_fix_missing", failures)
     require("ui_cue" in categories, "edge_ui_cue_fix_missing", failures)
+    require(
+        int(number(metrics.get("source_selection_promotion_blocked_case_count"))) == 2,
+        "edge_source_selection_blocked_count_mismatch",
+        failures,
+    )
+    require(
+        metrics.get("source_selection_promotion_allowed") is False,
+        "edge_source_selection_promotion_allowed",
+        failures,
+    )
+    require(
+        sorted(str(item) for item in list_or_empty(metrics.get("source_selection_blocked_source_families")))
+        == EXPECTED_EDGE_FAMILIES,
+        "edge_source_selection_blocked_family_mismatch",
+        failures,
+    )
+    promotion_blockers = list_or_empty(metrics.get("source_selection_promotion_blockers"))
+    for blocker in (
+        "human_verdict_unverified",
+        "diagnostic_only_quality_proof_false",
+        "source_selection_fix_required",
+    ):
+        require(
+            blocker in promotion_blockers,
+            f"edge_source_selection_{blocker}_missing",
+            failures,
+        )
 
 
 def validate_hook_chop_metrics(

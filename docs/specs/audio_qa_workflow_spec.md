@@ -679,6 +679,14 @@ stable category is added. Rebuild-only source-character failures route first to
 `source_selection` because the musician-facing fix is to pick or expose source
 material whose identity survives the rebuild-only path.
 
+Edge-source diagnostics for pad/noise and bad-timing material must also carry a
+source-selection promotion gate. The gate must keep `promotion_allowed: false`,
+name the blocked source families, preserve `quality_proof: false`, and explain
+the musician-facing reason: risky timing/source material remains review or
+routing evidence until source selection, timing confirmation, or human listening
+clears it. The professional-output suite and P023 readiness report must surface
+that gate so these cases cannot silently become demo-ready examples.
+
 Professional output listening packs must include compact demo-readiness reasons
 for every review case:
 

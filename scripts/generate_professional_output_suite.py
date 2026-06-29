@@ -1268,6 +1268,7 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             ),
         }
     if child_id == "edge_source_professional_diagnostics":
+        promotion_summary = object_or_empty(data.get("source_selection_promotion_summary"))
         pad_cases = [
             case
             for case in list_or_empty(data.get("cases"))
@@ -1301,6 +1302,22 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                     for case in list_or_empty(data.get("cases"))
                     for category in list_or_empty(case.get("proposed_fix_categories"))
                 }
+            ),
+            "source_selection_promotion_blocked_case_count": int(
+                number(promotion_summary.get("blocked_case_count"))
+            ),
+            "source_selection_promotion_allowed": bool(
+                promotion_summary.get("promotion_allowed")
+            ),
+            "source_selection_blocked_source_families": sorted(
+                str(family)
+                for family in list_or_empty(
+                    promotion_summary.get("blocked_source_families")
+                )
+            ),
+            "source_selection_promotion_blockers": sorted(
+                str(blocker)
+                for blocker in list_or_empty(promotion_summary.get("blockers"))
             ),
             **strongest_audible_element_key_metrics(list_or_empty(data.get("cases"))),
             **rebuild_only_source_character_key_metrics(list_or_empty(data.get("cases"))),
