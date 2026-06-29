@@ -61,8 +61,8 @@ fn daw_session_audible_output_proof_apply_attaches_gate_without_enabling_export(
     fs::write(
         &proof_path,
         json!({
-            "schema_id": riotbox_app::jam_app::DAW_SESSION_AUDIBLE_OUTPUT_PROOF_SCHEMA_ID,
-            "schema_version": riotbox_app::jam_app::DAW_SESSION_AUDIBLE_OUTPUT_PROOF_SCHEMA_VERSION,
+            "schema_id": crate::jam_app::DAW_SESSION_AUDIBLE_OUTPUT_PROOF_SCHEMA_ID,
+            "schema_version": crate::jam_app::DAW_SESSION_AUDIBLE_OUTPUT_PROOF_SCHEMA_VERSION,
             "package_dir": "exports/daw-package/daw_session",
             "audible": false,
             "blockers": ["host_audio_capture_missing"]
@@ -92,8 +92,8 @@ fn daw_session_audible_output_proof_apply_attaches_gate_without_enabling_export(
     fs::write(
         &proof_path,
         json!({
-            "schema_id": riotbox_app::jam_app::DAW_SESSION_AUDIBLE_OUTPUT_PROOF_SCHEMA_ID,
-            "schema_version": riotbox_app::jam_app::DAW_SESSION_AUDIBLE_OUTPUT_PROOF_SCHEMA_VERSION,
+            "schema_id": crate::jam_app::DAW_SESSION_AUDIBLE_OUTPUT_PROOF_SCHEMA_ID,
+            "schema_version": crate::jam_app::DAW_SESSION_AUDIBLE_OUTPUT_PROOF_SCHEMA_VERSION,
             "package_dir": "exports/daw-package/daw_session",
             "audible": true,
             "blockers": []
@@ -219,8 +219,8 @@ fn daw_session_audible_output_proof_apply_blocks_without_daw_session_receipt() {
     fs::write(
         &proof_path,
         json!({
-            "schema_id": riotbox_app::jam_app::DAW_SESSION_AUDIBLE_OUTPUT_PROOF_SCHEMA_ID,
-            "schema_version": riotbox_app::jam_app::DAW_SESSION_AUDIBLE_OUTPUT_PROOF_SCHEMA_VERSION,
+            "schema_id": crate::jam_app::DAW_SESSION_AUDIBLE_OUTPUT_PROOF_SCHEMA_ID,
+            "schema_version": crate::jam_app::DAW_SESSION_AUDIBLE_OUTPUT_PROOF_SCHEMA_VERSION,
             "package_dir": "exports/daw-package/daw_session",
             "audible": true,
             "blockers": []

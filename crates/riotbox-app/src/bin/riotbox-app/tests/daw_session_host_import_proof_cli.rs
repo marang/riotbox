@@ -57,8 +57,8 @@ fn daw_session_host_import_proof_apply_attaches_gate_without_enabling_export() {
     fs::write(
         &proof_path,
         json!({
-            "schema_id": riotbox_app::jam_app::DAW_SESSION_HOST_IMPORT_PROOF_SCHEMA_ID,
-            "schema_version": riotbox_app::jam_app::DAW_SESSION_HOST_IMPORT_PROOF_SCHEMA_VERSION,
+            "schema_id": crate::jam_app::DAW_SESSION_HOST_IMPORT_PROOF_SCHEMA_ID,
+            "schema_version": crate::jam_app::DAW_SESSION_HOST_IMPORT_PROOF_SCHEMA_VERSION,
             "package_dir": "exports/daw-package/daw_session",
             "imported": false,
             "blockers": ["host_open_failed"]
@@ -87,8 +87,8 @@ fn daw_session_host_import_proof_apply_attaches_gate_without_enabling_export() {
     fs::write(
         &proof_path,
         json!({
-            "schema_id": riotbox_app::jam_app::DAW_SESSION_HOST_IMPORT_PROOF_SCHEMA_ID,
-            "schema_version": riotbox_app::jam_app::DAW_SESSION_HOST_IMPORT_PROOF_SCHEMA_VERSION,
+            "schema_id": crate::jam_app::DAW_SESSION_HOST_IMPORT_PROOF_SCHEMA_ID,
+            "schema_version": crate::jam_app::DAW_SESSION_HOST_IMPORT_PROOF_SCHEMA_VERSION,
             "package_dir": "exports/daw-package/daw_session",
             "imported": true,
             "blockers": []
@@ -203,8 +203,8 @@ fn daw_session_host_import_proof_apply_blocks_without_daw_session_receipt() {
     fs::write(
         &proof_path,
         json!({
-            "schema_id": riotbox_app::jam_app::DAW_SESSION_HOST_IMPORT_PROOF_SCHEMA_ID,
-            "schema_version": riotbox_app::jam_app::DAW_SESSION_HOST_IMPORT_PROOF_SCHEMA_VERSION,
+            "schema_id": crate::jam_app::DAW_SESSION_HOST_IMPORT_PROOF_SCHEMA_ID,
+            "schema_version": crate::jam_app::DAW_SESSION_HOST_IMPORT_PROOF_SCHEMA_VERSION,
             "package_dir": "exports/daw-package/daw_session",
             "imported": true,
             "blockers": []

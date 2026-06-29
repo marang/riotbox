@@ -1,4 +1,4 @@
-use riotbox_app::jam_app::daw_session_writer_plan;
+use crate::jam_app::daw_session_writer_plan;
 
 fn run_daw_session_writer_plan(launch: &AppLaunch) -> Result<(), Box<dyn std::error::Error>> {
     let summary = daw_session_writer_plan_summary(launch)?;

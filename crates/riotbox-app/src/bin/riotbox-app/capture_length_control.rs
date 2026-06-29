@@ -5,7 +5,7 @@ fn commit_capture_length_change(shell: &mut JamShellState, requested_at: u64, ne
         shell.app.queue_previous_capture_length_intent(requested_at)
     };
     match result {
-        riotbox_app::jam_app::QueueControlResult::Enqueued => {
+        crate::jam_app::QueueControlResult::Enqueued => {
             let transport = shell.app.runtime.transport.clone();
             let committed = shell.app.commit_ready_actions(
                 riotbox_core::transport::CommitBoundaryState {
@@ -26,10 +26,10 @@ fn commit_capture_length_change(shell: &mut JamShellState, requested_at: u64, ne
                 ));
             }
         }
-        riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+        crate::jam_app::QueueControlResult::AlreadyPending => {
             shell.set_error_status("capture length change already queued");
         }
-        riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+        crate::jam_app::QueueControlResult::AlreadyInState => {
             shell.set_error_status(format!(
                 "capture length already {}",
                 shell.app.session.runtime_state.capture.length_intent

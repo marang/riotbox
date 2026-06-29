@@ -1,4 +1,4 @@
-use riotbox_app::jam_app::{
+use crate::jam_app::{
     DAW_SESSION_LOCAL_PROJECT_WRITER_BOUNDARY_ID, WrittenDawSessionWriterProofSkeleton,
     attach_daw_session_writer_proof_evidence_to_receipt, daw_session_writer_proof_report,
     write_daw_session_writer_proof_skeleton,
@@ -34,7 +34,7 @@ fn daw_session_writer_proof_execute_summary(
     };
     let session = riotbox_core::persistence::load_session_json(session_path)?;
     let surface_gate =
-        riotbox_app::jam_app::daw_session_export_surface_gate_for_session(&session);
+        crate::jam_app::daw_session_export_surface_gate_for_session(&session);
 
     match write_daw_session_writer_proof_skeleton(
         &session,
@@ -95,7 +95,7 @@ fn daw_session_writer_proof_apply_summary(
         receipt.export_scope == riotbox_core::export_readiness::ExportScope::DawSession
     }) else {
         let surface_gate =
-            riotbox_app::jam_app::daw_session_export_surface_gate_for_session(&session);
+            crate::jam_app::daw_session_export_surface_gate_for_session(&session);
         return Ok(json!({
             "mode": "daw_session_writer_proof_apply",
             "status": "blocked",
@@ -119,7 +119,7 @@ fn daw_session_writer_proof_apply_summary(
     .map_err(|error| format!("DAW session writer proof apply failed: {error:?}"))?;
     riotbox_core::persistence::save_session_json(session_path, &session)?;
 
-    let surface_gate = riotbox_app::jam_app::daw_session_export_surface_gate_for_session(&session);
+    let surface_gate = crate::jam_app::daw_session_export_surface_gate_for_session(&session);
     let receipt = &session.export_receipts[receipt_index];
     Ok(json!({
         "mode": "daw_session_writer_proof_apply",
