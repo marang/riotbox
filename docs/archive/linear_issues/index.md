@@ -1282,4 +1282,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Fix Feral-grid source-collapse across different source examples
 - [RIOTBOX-1317.md](./RIOTBOX-1317.md)
   P023: Strengthen W-30 hook/chop policy for routed weak outputs
+- [RIOTBOX-1318.md](./RIOTBOX-1318.md)
+  P023: Strengthen bass-movement production fix for routed weak outputs
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
