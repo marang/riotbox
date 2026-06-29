@@ -1877,7 +1877,7 @@ def pressure_lift_policy_for(
             mc202_drive=1.02,
             bass_drive=1.00,
             bar4_intensity=0.94,
-            bar5_intensity=1.08,
+            bar5_intensity=1.110,
             bar4_bass_frequency_hz=38.0,
             bar5_bass_frequency_hz=45.0,
         )
@@ -1957,17 +1957,18 @@ def render_performance(
         1.0 if source_policy.hook_chop_policy.source_family == "sparse_bass_pressure" else 1.12
     )
     dense_drum_snap = source_policy.pressure_lift_policy.source_family == "dense_break"
+    sparse_bass_path = source_policy.pressure_lift_policy.source_family == "sparse_bass_pressure"
     tonal_hook_path = source_policy.pressure_lift_policy.source_family == "tonal_hook"
     bad_timing_cue_path = source_policy.pressure_lift_policy.source_family == "bad_timing"
     hook_tr909_gain = 0.76 if dense_drum_snap else (0.96 if bad_timing_cue_path else 0.62)
     chop_tr909_gain = 0.98 if dense_drum_snap else (1.15 if bad_timing_cue_path else 0.78)
-    pressure_tr909_base = 2.62 if dense_drum_snap else 2.28
+    pressure_tr909_base = 2.62 if dense_drum_snap else (2.10 if sparse_bass_path else 2.28)
     hook_break_snap_boost = 1.24 if dense_drum_snap else (1.39 if bad_timing_cue_path else 1.0)
     chop_break_snap_boost = 1.28 if dense_drum_snap else (1.46 if bad_timing_cue_path else 1.0)
     hook_break_snap_gain = mix_policy.hook_break_snap_gain * hook_break_snap_boost
     chop_break_snap_gain = mix_policy.chop_break_snap_gain * chop_break_snap_boost
     pressure_break_snap_gain = mix_policy.pressure_break_snap_gain * (
-        1.42 if dense_drum_snap else 1.0
+        1.42 if dense_drum_snap else (0.88 if sparse_bass_path else 1.0)
     )
     pad_noise_texture_path = source_policy.pressure_lift_policy.source_family == "pad_noise"
     hook_riff_hook_gain = 1.12 if dense_drum_snap else 1.62
@@ -1987,8 +1988,20 @@ def render_performance(
     pressure_hook_riff_gain = (
         lift_policy.hook_bleed_gain * (1.14 if dense_drum_snap else 1.0)
     )
-    pressure_mc202_gain = 2.30 if pad_noise_texture_path else 5.00 + lift_policy.mc202_drive * 1.42
-    pressure_bass_gain = 0.72 if pad_noise_texture_path else 1.14 + lift_policy.bass_drive * 0.62
+    pressure_mc202_gain = (
+        2.30
+        if pad_noise_texture_path
+        else 5.00 + lift_policy.mc202_drive * 1.42 + (0.46 if sparse_bass_path else 0.0)
+    )
+    pressure_bass_gain = (
+        0.72
+        if pad_noise_texture_path
+        else (
+            1.25 + lift_policy.bass_drive * 0.72
+            if sparse_bass_path
+            else 1.14 + lift_policy.bass_drive * 0.62
+        )
+    )
 
     def put_bar(bar: int, mix: np.ndarray) -> None:
         start = bar * bar_frames

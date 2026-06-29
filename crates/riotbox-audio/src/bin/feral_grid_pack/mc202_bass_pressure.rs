@@ -11,6 +11,7 @@ struct Mc202BassPressureProof {
     identical_bar_run_length: usize,
     touch: f32,
     music_bus_level: f32,
+    low_body_emphasis: f32,
     pressure_reinforcement_gain: f32,
     signal_rms: f32,
     low_band_rms: f32,
@@ -65,6 +66,7 @@ struct ManifestMc202BassPressureProof {
     max_bar_similarity: f32,
     touch: f32,
     music_bus_level: f32,
+    low_body_emphasis: f32,
     pressure_reinforcement_gain: f32,
     signal_rms: f32,
     low_band_rms: f32,
@@ -116,6 +118,7 @@ fn manifest_mc202_bass_pressure_proof(
         max_bar_similarity: MC202_BASS_PRESSURE_MAX_BAR_SIMILARITY,
         touch: proof.touch,
         music_bus_level: proof.music_bus_level,
+        low_body_emphasis: proof.low_body_emphasis,
         pressure_reinforcement_gain: proof.pressure_reinforcement_gain,
         signal_rms: proof.signal_rms,
         low_band_rms: proof.low_band_rms,
@@ -182,6 +185,7 @@ fn render_mc202_bass_pressure_with_source_contour(
         source_contour,
         tr909_profile.support_profile,
     );
+    let low_body_emphasis = apply_mc202_low_body_emphasis(&mut samples, source_contour);
     add_mc202_pressure_reinforcement(
         &mut samples,
         grid,
@@ -233,6 +237,7 @@ fn render_mc202_bass_pressure_with_source_contour(
             identical_bar_run_length: metrics.bar_variation.identical_bar_run_length,
             touch: primary_state.touch,
             music_bus_level: primary_state.music_bus_level,
+            low_body_emphasis,
             pressure_reinforcement_gain,
             signal_rms: metrics.signal.rms,
             low_band_rms: low_band_metrics.rms,
@@ -275,9 +280,7 @@ fn mc202_pressure_reinforcement_gain(
     source_contour: Mc202SourceContourProfile,
     support_profile: Tr909SourceSupportProfile,
 ) -> f32 {
-    let low_dominance = (source_contour.low_band_energy_ratio
-        - source_contour.mid_band_energy_ratio.max(source_contour.high_band_energy_ratio))
-    .max(0.0);
+    let low_dominance = mc202_source_low_dominance(source_contour);
     let profile_gain = match support_profile {
         Tr909SourceSupportProfile::DropDrive => 0.024,
         Tr909SourceSupportProfile::BreakLift => 0.014,
@@ -289,7 +292,7 @@ fn mc202_pressure_reinforcement_gain(
         Mc202ContourHint::Hold | Mc202ContourHint::Neutral => 0.020,
     };
 
-    (profile_gain + contour_gain + low_dominance * 0.020).clamp(0.010, 0.060)
+    (profile_gain + contour_gain + low_dominance * 0.032).clamp(0.010, 0.074)
 }
 
 fn add_mc202_pressure_reinforcement(
@@ -306,7 +309,7 @@ fn add_mc202_pressure_reinforcement(
     let sample_rate = SAMPLE_RATE as f32;
     let beat_frames = sample_rate * 60.0 / grid.bpm.max(1.0);
     let base_frequency_hz = match source_contour.contour_hint {
-        Mc202ContourHint::Drop => 43.65,
+        Mc202ContourHint::Drop => 38.75 + (1.0 - source_contour.low_band_energy_ratio) * 5.25,
         Mc202ContourHint::Lift => 55.00,
         Mc202ContourHint::Hold | Mc202ContourHint::Neutral => 49.00,
     };

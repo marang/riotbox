@@ -13,6 +13,7 @@ include!("feral_grid_pack/spectral_energy_metrics.rs");
 include!("feral_grid_pack/source_aware_tr909.rs");
 include!("feral_grid_pack/tr909_kick_pressure.rs");
 include!("feral_grid_pack/mc202_bass_pressure.rs");
+include!("feral_grid_pack/mc202_low_body_policy.rs");
 include!("feral_grid_pack/w30_source_chop.rs");
 include!("feral_grid_pack/w30_slice_choice.rs");
 include!("feral_grid_pack/w30_source_accent_dynamics.rs");
