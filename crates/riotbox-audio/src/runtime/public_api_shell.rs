@@ -32,6 +32,7 @@ pub struct AudioRuntimeHealth {
     pub output: Option<AudioOutputInfo>,
     pub callback_count: u64,
     pub max_callback_gap_micros: Option<u64>,
+    pub callback_scratch_overflow_count: u64,
     pub stream_error_count: u64,
     pub last_stream_error: Option<String>,
 }

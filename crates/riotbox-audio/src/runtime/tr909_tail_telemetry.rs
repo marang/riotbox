@@ -212,6 +212,7 @@ pub(super) const fn w30_source_profile_from_u32(value: u32) -> Option<W30Preview
 pub(super) struct RuntimeTelemetrySnapshot {
     pub(super) callback_count: u64,
     pub(super) max_callback_gap_micros: Option<u64>,
+    pub(super) callback_scratch_overflow_count: u64,
     pub(super) stream_error_count: u64,
     pub(super) last_stream_error: Option<String>,
     pub(super) timing: AudioRuntimeTimingSnapshot,
@@ -221,6 +222,7 @@ pub(super) struct RuntimeTelemetry {
     callback_count: AtomicU64,
     max_callback_gap_micros: AtomicU64,
     last_callback_micros: AtomicU64,
+    callback_scratch_overflow_count: AtomicU64,
     stream_error_count: AtomicU64,
     last_stream_error: Mutex<Option<String>>,
     is_transport_running: AtomicBool,
@@ -234,6 +236,7 @@ impl RuntimeTelemetry {
             callback_count: AtomicU64::new(0),
             max_callback_gap_micros: AtomicU64::new(0),
             last_callback_micros: AtomicU64::new(0),
+            callback_scratch_overflow_count: AtomicU64::new(0),
             stream_error_count: AtomicU64::new(0),
             last_stream_error: Mutex::new(None),
             is_transport_running: AtomicBool::new(false),
@@ -260,6 +263,16 @@ impl RuntimeTelemetry {
             .store(timing.completed_position_beats.to_bits(), Ordering::Relaxed);
     }
 
+    pub(super) fn record_callback_scratch_overflow_at(
+        &self,
+        now_micros: u64,
+        timing: &CallbackTimingSnapshot,
+    ) {
+        self.callback_scratch_overflow_count
+            .fetch_add(1, Ordering::Relaxed);
+        self.record_callback_at(now_micros, timing);
+    }
+
     pub(super) fn record_stream_error(&self, message: String) {
         self.stream_error_count.fetch_add(1, Ordering::Relaxed);
         *self
@@ -275,6 +288,9 @@ impl RuntimeTelemetry {
         RuntimeTelemetrySnapshot {
             callback_count,
             max_callback_gap_micros: (callback_count > 1).then_some(max_gap_micros),
+            callback_scratch_overflow_count: self
+                .callback_scratch_overflow_count
+                .load(Ordering::Relaxed),
             stream_error_count: self.stream_error_count.load(Ordering::Relaxed),
             last_stream_error: self
                 .last_stream_error
