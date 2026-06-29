@@ -2318,3 +2318,17 @@ Why: closing small technical slices as "done, but not final quality" created a m
 Evidence: RIOTBOX-1264 now owns the Level 4 MC-202 producer-grade target in `docs/plans/mc202_source_phrase_planning_plan.md`, with child tickets RIOTBOX-1265 through RIOTBOX-1270 covering the complete path from measured source evidence to listening-reviewed demo readiness.
 Consequences: future sound-feature PRs must distinguish merged implementation steps from complete product features. A ticket may be closed only for its scoped step, but parent sound-quality tracks stay open until source evidence, musical decision, product-spine representation, audible consequence, automated diversity / collapse gates, and structured listening review support the product claim.
 Status: accepted
+
+---
+
+### RBX-091
+
+Date: 2026-06-29
+Topic: Improvement README becomes split quality tracks, not a parallel roadmap
+Phase: Global / P023 Sound Excellence / Engineering Quality
+Question: how should Riotbox incorporate the temporary improvement README that proposed module refactors, audio-runtime hardening, musical algorithm work, sidecar hardening, QA layering, and UX work?
+Decision: accept the content as split work tracks in `docs/plans/riotbox_improvement_tracks_plan.md` and `docs/engineering/module_policy.md`, while keeping audible instrument quality as the primary product goal. Code quality is not optional: semantic module ownership, include-shell migration, realtime audio safety, and QA contracts must proceed in bounded slices that protect musical work rather than displacing it.
+Why: the README identified real weaknesses, especially textual `include!` splits and runtime/audio-QA hardening needs, but its broad PR sequence would over-prioritize refactoring and group too much musical work together. Riotbox needs both stronger sound and stronger code quality, with each slice scoped tightly enough to review and prove.
+Evidence: RIOTBOX-1320 incorporates the README into canonical docs, splits the broad musical quick-win proposal into separate TR-909, MC-202, W-30, Source Timing, Scene Brain, sidecar, QA, and UX tracks, and removes the temporary planning file after incorporation.
+Consequences: future agents should use the improvement tracks as backlog and guardrails, not as a reason to pause sound-product progress. Musical fallback output remains forbidden on product paths; unavailable or degraded source-backed material must be surfaced honestly instead of filled with synthetic replacement music.
+Status: accepted

@@ -28,6 +28,16 @@ Every phase must satisfy:
 - relevant automated tests pass
 - benchmark results recorded when applicable
 - major decisions captured in `docs/research_decision_log.md`
+- structural refactors preserve behavior unless the phase explicitly owns a
+  behavior change
+- Rust module work follows `docs/engineering/module_policy.md`; textual
+  `include!` migration must create semantic module ownership, not arbitrary
+  line-count shards
+- audio-producing work proves both control path and output path, and must not
+  introduce musical fallback output on product paths
+- scripted, fixture, primitive, fallback, or compatibility output remains
+  labeled as non-quality proof until source-backed evidence and listening
+  review justify promotion
 
 ---
 

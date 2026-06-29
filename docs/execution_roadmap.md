@@ -71,6 +71,10 @@ If a work item does not improve or unblock this spine, it should usually not be 
 - Keep realtime work measurable from the start.
 - Add Ghost autonomy only after action safety and replayability are real.
 - Add feral depth as policy on top of stable core contracts.
+- Keep audible instrument quality as the primary product goal, but do not let
+  code quality, module ownership, realtime safety, or QA contracts degrade while
+  pursuing it. Structural work should be small and behavior-preserving unless
+  it directly ships a product slice.
 
 ---
 
@@ -1063,6 +1067,23 @@ professional-output evidence and weak-output regressions; P023 owns the path to
 10/10 sound-product quality and the 20/10 idea backlog. These tracks should
 grow from real review packs, human labels, and reproducible audio artifacts,
 not from generic metrics alone.
+
+RIOTBOX-1320 accepts the improvement-track split in
+`docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a
+quality guardrail, not a replacement for the current sound-product priority:
+
+- semantic Rust module work and `include!` migration are important and should
+  start with inventory / guardrails, then proceed in behavior-preserving slices
+- the former broad "TR-909 / MC-202 / W-30 quick wins" idea must be split by
+  lane or seam so each ticket has a clear musical purpose and output proof
+- no musical fallback output may be introduced on Riotbox product paths; use
+  visible unavailable / degraded state or silence when trusted source-backed
+  material is missing
+- audio-runtime work on callback hot paths, coherent render-state snapshots,
+  gain staging, and offline/realtime parity protects instrument quality and
+  should be scheduled beside audible product work rather than after it
+- sidecar, QA, and first-playable UX follow-ups must keep stub/fallback/source
+  provenance visible to the musician and to release/demo gates
 
 The old initial Core Skeleton sequence is complete enough that new work should
 not restart from spec scaffolding. Use these live references instead:

@@ -252,6 +252,62 @@ Minimum QA gate:
 - comparison against raw source/capture artifact and synthetic fallback so the bus print cannot silently collapse to either control
 - docs or PR notes must state that full multitrack recording and export remain out of scope
 
+### 11.3 Callback hot-path contract
+
+The normal realtime callback path must not perform:
+
+- file I/O
+- JSON parsing or serialization
+- string formatting for product logs
+- sidecar or analysis calls
+- UI work
+- blocking locks
+- unbounded allocation or repeated buffer growth
+
+Buffer allocation and expensive state preparation belong on the control side.
+If the audio backend delivers variable buffer sizes, Riotbox should use a
+documented scratch strategy or perform controlled resizing outside the normal
+hot path.
+
+The callback hot path should be documented before adding more device-facing
+features, so future reviews can distinguish safe realtime work from control
+plane preparation.
+
+### 11.4 Coherent render-state snapshots
+
+Realtime render state must be read as a coherent snapshot, not as an accidental
+mix of old and new independent atomics.
+
+Acceptable strategies include:
+
+- a revisioned double buffer where the control thread writes a complete inactive
+  state and then swaps the active revision
+- a seqlock-style snapshot where the audio thread detects partial updates
+- another documented lock-free or bounded handoff that preserves coherence
+
+Tests should cover partial-update and revision-mismatch cases before this
+becomes a broad lane-control surface.
+
+### 11.5 Gain staging and offline/realtime parity
+
+Riotbox mixes source monitor, TR-909, MC-202, W-30, resample, and future FX
+material. The mix contract must keep this loud and physical without hiding
+failure modes.
+
+Rules:
+
+- use consistent gain conversion for lane and bus levels
+- add master-bus clipping protection or soft limiting where needed
+- measure peak, RMS, DC offset, and clip count in relevant offline reports
+- do not let master processing mask weak source-character or fallback-collapse
+  evidence
+- converge offline and realtime rendering around shared render functions where
+  practical
+
+Offline and realtime-simulation renders should become comparable under the same
+state, with explicit tolerances where backend buffer boundaries or floating
+point differences make bit identity unrealistic.
+
 ---
 
 ## 12. Health Telemetry

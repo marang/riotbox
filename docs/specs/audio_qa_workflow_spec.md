@@ -84,8 +84,8 @@ artifact must carry an explicit origin. The allowed origin labels are:
 - `primitive_renderer`: transparent engine or preset vocabulary, useful as a
   renderer/control surface but not proof of source-aware musical intelligence
 - `fixture`: deterministic QA material created to exercise one specific seam
-- `fallback`: degraded or safe placeholder chosen because better evidence is
-  unavailable
+- `fallback`: degraded, non-product, or explicitly silent placeholder chosen
+  because better evidence is unavailable
 - `compatibility_silent`: an output slot kept for manifest/schema continuity
   while the musical implementation is intentionally silent
 
@@ -97,6 +97,13 @@ If a fixed pattern is a renderer vocabulary or preset, label it as such; if a
 pattern is claimed to react to a source, prove the source relation in the
 manifest.
 
+The `fallback` label must not authorize musical replacement output on Riotbox
+product paths. If trusted source-backed material is unavailable, product output
+must expose unavailable / degraded state or silence rather than playing
+synthetic substitute music. Fallback audio may appear only as a clearly labeled
+non-product diagnostic control or compatibility artifact, and it must carry
+`quality_proof: false`.
+
 Any listening manifest that still contains `pattern_origin: "primitive_renderer"`
 must also include `primitive_renderer_boundary` with
 `evidence_role: non_product_diagnostic_control`,
@@ -105,6 +112,20 @@ must also include `primitive_renderer_boundary` with
 the primitive origins. Missing or stale primitive-boundary metadata is a
 manifest validation failure, because otherwise a hardcoded renderer can slip
 back into musician-facing proof as if it were source-derived output.
+
+### CI layers
+
+Broad validation should be layered so engineers get fast feedback without
+weakening audio proof:
+
+- fast layer: formatting, Rust tests, clippy, and lightweight contract checks
+- audio layer: deterministic offline renders, metrics, and targeted audio-QA
+  smokes for touched seams
+- full layer: broader report generation, listening-pack fixtures, and release
+  readiness diagnostics
+
+Running a smaller layer is not permission to skip relevant output-path proof for
+an audio-producing change. It only scopes the command set to the slice.
 
 ### 3.2.1 Source-derived rebuild gates
 
