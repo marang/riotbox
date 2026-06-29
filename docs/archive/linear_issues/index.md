@@ -1304,4 +1304,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Design coherent render-state snapshots for realtime audio
 - [RIOTBOX-1328.md](./RIOTBOX-1328.md)
   P023: Add master-bus gain staging, clip/DC metrics, and limiter policy
+- [RIOTBOX-1329.md](./RIOTBOX-1329.md)
+  P023: Add offline/realtime render parity seam
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
