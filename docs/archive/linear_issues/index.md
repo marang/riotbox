@@ -1254,4 +1254,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Derive MC-202 pressure contour from source low-band movement
 - [RIOTBOX-1303.md](./RIOTBOX-1303.md)
   P023: Select MC-202 candidates by production-impact score
+- [RIOTBOX-1304.md](./RIOTBOX-1304.md)
+  P023: Strengthen sparse MC-202 bass-pressure low-end body
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
