@@ -1256,4 +1256,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Select MC-202 candidates by production-impact score
 - [RIOTBOX-1304.md](./RIOTBOX-1304.md)
   P023: Strengthen sparse MC-202 bass-pressure low-end body
+- [RIOTBOX-1305.md](./RIOTBOX-1305.md)
+  P023: Strengthen W-30 hook/chop policy for first-two-bar impact
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
