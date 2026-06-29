@@ -898,6 +898,11 @@ following:
     professional proof gates: validators own source-family coverage,
     diagnostic-only boundaries, rendered-artifact checks, mutation fixtures,
     weak-routing checks, and no-quality-claim safeguards for those reports
+  - RIOTBOX-1315 applies the same extraction to the release-demo human-review
+    queue: the Python validator owns the fixture contract for key review
+    entries, blocker state, unverified verdict/readiness, quality-claim
+    rejection, and required listening-question mutations, while `Justfile`
+    keeps only the generator/validator smoke calls
   - RIOTBOX-1288 continues the extraction for the professional-source WAV
     pack: its generator validate mode owns tonal/sparse source-family gates,
     source-aware policy checks, source-character thresholds, rendered-artifact
