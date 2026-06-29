@@ -1284,4 +1284,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Strengthen W-30 hook/chop policy for routed weak outputs
 - [RIOTBOX-1318.md](./RIOTBOX-1318.md)
   P023: Strengthen bass-movement production fix for routed weak outputs
+- [RIOTBOX-1319.md](./RIOTBOX-1319.md)
+  P023: Strengthen source-selection gates for weak and bad-timing outputs
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
