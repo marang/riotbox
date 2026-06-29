@@ -64,10 +64,10 @@ MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO = 1.75
 MIN_HOOK_CHOP_SELECTION_CANDIDATES = 3
 MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES = 256.0
 MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES = 512.0
-MIN_HOOK_CHOP_RIFF_SOURCE_OFFSETS = 3
-MIN_HOOK_CHOP_RIFF_HIT_COUNT = 6
+MIN_HOOK_CHOP_RIFF_SOURCE_OFFSETS = 4
+MIN_HOOK_CHOP_RIFF_HIT_COUNT = 7
 MIN_HOOK_CHOP_RIFF_VELOCITY_SPAN = 0.20
-MIN_HOOK_CHOP_RIFF_REVERSE_COUNT = 1
+MIN_HOOK_CHOP_RIFF_REVERSE_COUNT = 2
 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR = 0.60
 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN = 0.10
 MIN_DESTRUCTIVE_GESTURE_CANDIDATES = 3
@@ -759,6 +759,7 @@ def source_derived_riff_starts(
     source_family: str,
     min_separation: int,
 ) -> tuple[int, ...]:
+    target_count = 5 if source_family in {"dense_break", "tonal_hook"} else 4
     starts: list[int] = []
     for start in (hook_start, chop_start):
         if start not in starts:
@@ -778,13 +779,14 @@ def source_derived_riff_starts(
         if any(abs(start - existing) < min_separation for existing in starts):
             continue
         starts.append(start)
-        if len(starts) >= 4:
+        if len(starts) >= target_count:
             break
     starts = source_character_contrast_riff_starts(
         starts,
         candidates,
         source_family,
         min_separation,
+        target_count,
     )
     return tuple(starts)
 
@@ -794,6 +796,7 @@ def source_character_contrast_riff_starts(
     candidates: list[dict[str, float]],
     source_family: str,
     min_separation: int,
+    target_count: int,
 ) -> list[int]:
     current_scores = source_character_scores_for_starts(candidates, tuple(starts))
     current_span = max(current_scores) - min(current_scores)
@@ -832,7 +835,7 @@ def source_character_contrast_riff_starts(
         character = float(item.get("source_character_score", 0.0))
         if character < min_character:
             continue
-        if len(starts) < 4:
+        if len(starts) < target_count:
             if any(abs(start - existing) < min_separation for existing in starts):
                 continue
             starts.append(start)
@@ -877,20 +880,32 @@ def source_derived_riff_hit_pattern(
         "dense_break": 0.00,
         "sparse_bass_pressure": 0.50,
     }.get(source_family, 0.25)
+    max_hits = 10 if source_family in {"dense_break", "tonal_hook"} else 8
+    min_reverse_count = 2 if source_family in {"dense_break", "tonal_hook"} else 1
     hits: list[tuple[float, float, bool]] = []
     for index, start in enumerate(riff_starts):
         start = int(start)
         source_phase = (start % bar_frames) / beat_frames
         primary = quantized_beat(source_phase + family_shift + (0.25 if index % 2 else 0.0))
         secondary = quantized_beat(primary + 1.25 + (0.25 * (index % 3)))
+        tertiary = quantized_beat(
+            primary + 2.25 + 0.25 * (((start // max(1, beat_frames // 2)) + index) % 3)
+        )
         score_norm = min(score_by_start.get(start, 0.0) / max(best_score, 1e-9), 1.25)
         character = min(character_by_start.get(start, 0.0), 1.4)
         primary_gain = float(np.clip(0.78 + score_norm * 0.26 + character * 0.10, 0.72, 1.28))
         secondary_gain = float(np.clip(0.52 + score_norm * 0.18 + character * 0.07, 0.46, 0.96))
+        tertiary_gain = float(np.clip(0.44 + score_norm * 0.16 + character * 0.08, 0.42, 0.86))
         reverse_primary = ((start // max(1, beat_frames // 2)) + index) % 3 == 0
         reverse_secondary = ((start // max(1, beat_frames // 4)) + index) % 4 == 0
+        reverse_tertiary = (
+            ((start // max(1, beat_frames // 3)) + index) % 2 == 0
+            and source_family in {"dense_break", "tonal_hook"}
+        )
         hits.append((primary, primary_gain, reverse_primary))
         hits.append((secondary, secondary_gain, reverse_secondary))
+        if source_family in {"dense_break", "tonal_hook"} or character >= 0.72:
+            hits.append((tertiary, tertiary_gain, reverse_tertiary))
     deduped: list[tuple[float, float, bool]] = []
     seen: set[tuple[float, bool]] = set()
     for beat, gain, reverse in sorted(hits, key=lambda item: (item[0], -item[1])):
@@ -899,10 +914,20 @@ def source_derived_riff_hit_pattern(
             continue
         seen.add(key)
         deduped.append((beat, gain, reverse))
-    if not any(reverse for _, _, reverse in deduped) and len(deduped) > 1:
-        beat, gain, _ = deduped[-1]
-        deduped[-1] = (beat, gain, True)
-    return tuple(deduped[:8])
+    deduped = deduped[:max_hits]
+    while sum(1 for _, _, reverse in deduped if reverse) < min_reverse_count and len(deduped) > 1:
+        changed = False
+        existing_reverse_beats = {beat for beat, _, reverse in deduped if reverse}
+        for index in range(len(deduped) - 1, -1, -1):
+            beat, gain, reverse = deduped[index]
+            if reverse or beat in existing_reverse_beats:
+                continue
+            deduped[index] = (beat, gain, True)
+            changed = True
+            break
+        if not changed:
+            break
+    return tuple(deduped)
 
 
 def quantized_beat(value: float) -> float:

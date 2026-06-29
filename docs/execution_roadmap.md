@@ -834,6 +834,12 @@ following:
   when top-scoring candidates cluster too tightly, tonal-hook riff playback is
   brought forward without claiming quality proof, and dense/sparse pressure
   gates remain intact.
+- RIOTBOX-1317 strengthens that W-30 hook/chop path for routed weak-output
+  `chop_policy` cases: dense-break and tonal-hook diagnostics now require a
+  richer source-derived riff response with at least four source offsets, seven
+  hits, stronger velocity spread, and two reverse gestures so the first two
+  bars read less like generic support and more like a hook/riff worth
+  retriggering.
 - RIOTBOX-1306 strengthens destructive gesture impact for stage-meaningful
   cuts: source-derived tail shaping now drives a deeper dropout silence, denser
   transient stutter, and slightly harder restore slam, while the professional
