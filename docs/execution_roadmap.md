@@ -813,6 +813,12 @@ following:
   applies a measured body-emphasis pass, deeper pressure reinforcement, and
   manifest provenance while tonal/hold material remains unboosted, so bass
   pressure is less likely to read as a midrange melody.
+- RIOTBOX-1312 tightens the MC-202 producer-grade closeout so a generic
+  source-composed flag is not enough: each review candidate now reports
+  `mc202_role_evidence`, sparse bass-pressure material must prove
+  source-derived bass movement, and dense / tonal material must prove
+  source-derived pressure-answer, hook-restraint, or stab-answer role evidence
+  before the closeout can pass.
 - RIOTBOX-1305 tightens W-30 hook/chop source-character policy for the first
   two bars: source-derived riff starts now prefer stronger character contrast
   when top-scoring candidates cluster too tightly, tonal-hook riff playback is
