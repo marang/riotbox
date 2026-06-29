@@ -113,7 +113,7 @@ mod tests {
 
         assert!(old_ratio >= MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO);
         assert!(source_first_ratio < MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO);
-        assert!(source_first_ratio <= 0.12);
+        assert!(source_first_ratio <= 0.08);
         assert!(support_ratio >= 0.16);
         assert!(support_ratio < MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO);
     }

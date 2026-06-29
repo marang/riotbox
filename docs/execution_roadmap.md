@@ -823,6 +823,11 @@ following:
   transient stutter, and slightly harder restore slam, while the professional
   destructive validator rejects the older flatter cut depth and keeps the
   evidence diagnostic-only until human listening accepts it.
+- RIOTBOX-1307 tightens source-first mix-bus clarity: the Feral source-first
+  path now uses less generated bleed and a stronger W-30/source weight, while
+  professional-suite/readiness/family validators reduce the generated/source
+  masking ceiling from `0.16` to `0.08` so generated support can hit hard
+  without hiding transformed source identity.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue
