@@ -240,6 +240,7 @@ fn runtime_view_updates_from_audio_and_sidecar_state() {
 
     assert_eq!(state.runtime_view.audio_status, "running");
     assert_eq!(state.runtime_view.audio_callback_count, 18);
+    assert_eq!(state.runtime_view.audio_callback_scratch_overflow_count, 0);
     assert_eq!(state.runtime_view.sidecar_status, "ready");
     assert_eq!(state.runtime_view.sidecar_version.as_deref(), Some("0.1.0"));
     assert_eq!(state.runtime_view.source_monitor_mode, "blend");
@@ -340,8 +341,10 @@ fn runtime_view_surfaces_faulted_and_degraded_states() {
     let graph = sample_graph();
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    let mut audio_health = sample_audio_health(AudioRuntimeLifecycle::Faulted);
+    audio_health.callback_scratch_overflow_count = 3;
 
-    state.set_audio_health(sample_audio_health(AudioRuntimeLifecycle::Faulted));
+    state.set_audio_health(audio_health);
     state.set_sidecar_state(SidecarState::Degraded {
         reason: "worker restart pending".into(),
     });
@@ -351,6 +354,7 @@ fn runtime_view_surfaces_faulted_and_degraded_states() {
         state.runtime_view.audio_last_error.as_deref(),
         Some("stream stalled")
     );
+    assert_eq!(state.runtime_view.audio_callback_scratch_overflow_count, 3);
     assert_eq!(state.runtime_view.sidecar_status, "degraded");
     assert!(
         state
@@ -366,6 +370,9 @@ fn runtime_view_surfaces_faulted_and_degraded_states() {
             .iter()
             .any(|warning| warning.contains("sidecar degraded"))
     );
+    assert!(state.runtime_view.runtime_warnings.iter().any(
+        |warning| warning == "audio callback scratch overflow: 3 buffers silenced"
+    ));
 }
 
 #[test]

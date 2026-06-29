@@ -502,6 +502,7 @@ fn headless_audio_health() -> AudioRuntimeHealth {
         output: None,
         callback_count: 0,
         max_callback_gap_micros: None,
+        callback_scratch_overflow_count: 0,
         stream_error_count: 0,
         last_stream_error: None,
     }

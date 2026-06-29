@@ -19,6 +19,7 @@ mod summaries;
 pub struct JamRuntimeView {
     pub audio_status: String,
     pub audio_callback_count: u64,
+    pub audio_callback_scratch_overflow_count: u64,
     pub audio_last_error: Option<String>,
     pub sidecar_status: String,
     pub sidecar_version: Option<String>,
@@ -68,7 +69,12 @@ impl JamRuntimeView {
         session: &SessionFile,
         source_graph: Option<&SourceGraph>,
     ) -> Self {
-        let (audio_status, audio_callback_count, audio_last_error) = match &runtime.audio {
+        let (
+            audio_status,
+            audio_callback_count,
+            audio_callback_scratch_overflow_count,
+            audio_last_error,
+        ) = match &runtime.audio {
             Some(health) => (
                 match health.lifecycle {
                     AudioRuntimeLifecycle::Idle => "idle".into(),
@@ -77,9 +83,10 @@ impl JamRuntimeView {
                     AudioRuntimeLifecycle::Faulted => "faulted".into(),
                 },
                 health.callback_count,
+                health.callback_scratch_overflow_count,
                 health.last_stream_error.clone(),
             ),
-            None => ("unknown".into(), 0, None),
+            None => ("unknown".into(), 0, 0, None),
         };
         let (sidecar_status, sidecar_version) = match &runtime.sidecar {
             SidecarState::Unknown => ("unknown".into(), None),
@@ -94,6 +101,7 @@ impl JamRuntimeView {
         Self {
             audio_status,
             audio_callback_count,
+            audio_callback_scratch_overflow_count,
             audio_last_error,
             sidecar_status,
             sidecar_version,

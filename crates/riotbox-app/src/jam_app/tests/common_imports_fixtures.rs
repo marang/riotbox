@@ -424,6 +424,7 @@ fn sample_audio_health(lifecycle: AudioRuntimeLifecycle) -> AudioRuntimeHealth {
         }),
         callback_count: 18,
         max_callback_gap_micros: Some(21_330),
+        callback_scratch_overflow_count: 0,
         stream_error_count: u64::from(matches!(lifecycle, AudioRuntimeLifecycle::Faulted)),
         last_stream_error: matches!(lifecycle, AudioRuntimeLifecycle::Faulted)
             .then(|| "stream stalled".into()),

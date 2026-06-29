@@ -173,9 +173,16 @@ fn source_monitor_shared_state_updates_scene_anchor_without_replacing_source() {
         source_anchor_position_beats: 16.0,
     };
     let shared = SharedSourceMonitorRenderState::new(&render);
+    let render_source_ptr = render
+        .source
+        .as_ref()
+        .expect("render source")
+        .interleaved_samples()
+        .as_ptr();
     let snapshot = shared.snapshot();
+    let snapshot_source = snapshot.source.expect("snapshot source");
 
-    assert!(snapshot.source.is_some());
+    assert_eq!(snapshot_source.interleaved_samples().as_ptr(), render_source_ptr);
     assert_eq!(snapshot.source_anchor_seconds, Some(4.0));
     assert_eq!(snapshot.source_anchor_position_beats, 16.0);
 

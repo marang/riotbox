@@ -25,6 +25,16 @@ pub(super) fn derive_runtime_warnings(
     ) {
         warnings.push("audio runtime faulted".into());
     }
+    if let Some(health) = runtime
+        .audio
+        .as_ref()
+        .filter(|health| health.callback_scratch_overflow_count > 0)
+    {
+        warnings.push(format!(
+            "audio callback scratch overflow: {} buffers silenced",
+            health.callback_scratch_overflow_count
+        ));
+    }
 
     match &runtime.sidecar {
         SidecarState::Unavailable { reason } => {

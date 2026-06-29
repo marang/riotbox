@@ -1,5 +1,7 @@
 use super::*;
 
+const DEFAULT_CALLBACK_SCRATCH_FRAMES: usize = 4096;
+
 impl AudioRuntimeShell {
     pub fn start_default_output() -> Result<Self, AudioRuntimeError> {
         Self::start_default_output_with_render_states(
@@ -193,6 +195,7 @@ impl AudioRuntimeShell {
             output: self.output.clone(),
             callback_count: telemetry.callback_count,
             max_callback_gap_micros: telemetry.max_callback_gap_micros,
+            callback_scratch_overflow_count: telemetry.callback_scratch_overflow_count,
             stream_error_count: telemetry.stream_error_count,
             last_stream_error: telemetry.last_stream_error,
         }
@@ -290,23 +293,19 @@ where
     let mut transport_state = TransportTimingCallbackState::default();
     let mut w30_preview_state = W30PreviewCallbackState::default();
     let mut w30_resample_state = W30ResampleTapCallbackState::default();
-    let mut mix_buffer = Vec::<f32>::new();
     let sample_rate = config.sample_rate;
     let channel_count = usize::from(config.channels.max(1));
+    let mut mix_buffer = vec![0.0; callback_scratch_sample_count(config, channel_count)];
     let mut last_transport_snapshot = callback_transport.snapshot();
     let mut last_tr909_render_snapshot = shared.tr909_render.snapshot();
     let mut last_mc202_render_snapshot = shared.mc202_render.snapshot();
     let mut last_w30_preview_snapshot = shared.w30_preview.snapshot();
     let mut last_w30_resample_snapshot = shared.w30_resample_tap.snapshot();
-    let mut last_source_monitor_snapshot = shared.source_monitor.snapshot();
+    let mut last_source_monitor_control_snapshot = shared.source_monitor.control_snapshot();
 
     device.build_output_stream(
         config,
         move |data: &mut [T], _| {
-            if mix_buffer.len() != data.len() {
-                mix_buffer.resize(data.len(), 0.0);
-            }
-
             let frame_count = data.len() / channel_count.max(1);
             let transport_snapshot =
                 callback_transport.snapshot_or_previous(&last_transport_snapshot);
@@ -317,6 +316,14 @@ where
                 sample_rate,
                 frame_count,
             );
+            let Some(mix_buffer) = mix_buffer.get_mut(..data.len()) else {
+                for output in data.iter_mut() {
+                    *output = T::from_sample(0.0);
+                }
+                let now = start.elapsed().as_micros() as u64;
+                callback_telemetry.record_callback_scratch_overflow_at(now, &callback_timing);
+                return;
+            };
             let mut tr909_render_state = shared
                 .tr909_render
                 .snapshot_or_previous(&last_tr909_render_snapshot);
@@ -343,16 +350,19 @@ where
                 .snapshot_or_previous(&last_w30_resample_snapshot);
             last_w30_resample_snapshot = w30_resample_render_state;
             w30_resample_render_state.is_transport_running = callback_timing.is_transport_running;
+            let source_monitor_control_snapshot = shared
+                .source_monitor
+                .control_snapshot_or_previous(&last_source_monitor_control_snapshot);
+            last_source_monitor_control_snapshot = source_monitor_control_snapshot;
             let mut source_monitor_state = shared
                 .source_monitor
-                .snapshot_or_previous(&last_source_monitor_snapshot);
-            last_source_monitor_snapshot = source_monitor_state.clone();
+                .render_snapshot_from_control(source_monitor_control_snapshot);
             source_monitor_state.is_transport_running = callback_timing.is_transport_running;
             source_monitor_state.tempo_bpm = callback_timing.tempo_bpm;
             source_monitor_state.position_beats = callback_timing.render_position_beats;
 
             render_mix_buffer(
-                &mut mix_buffer,
+                mix_buffer,
                 sample_rate,
                 channel_count,
                 &tr909_render_state,
@@ -366,7 +376,7 @@ where
                 },
             );
             apply_source_monitor_policy(
-                &mut mix_buffer,
+                mix_buffer,
                 sample_rate,
                 channel_count,
                 &source_monitor_state,
@@ -383,6 +393,17 @@ where
         },
         None,
     )
+}
+
+pub(super) fn callback_scratch_sample_count(
+    config: &cpal::StreamConfig,
+    channel_count: usize,
+) -> usize {
+    let frame_count = match config.buffer_size {
+        cpal::BufferSize::Fixed(frames) => usize::try_from(frames).unwrap_or(usize::MAX),
+        cpal::BufferSize::Default => DEFAULT_CALLBACK_SCRATCH_FRAMES,
+    };
+    frame_count.max(1).saturating_mul(channel_count.max(1))
 }
 
 #[derive(Clone)]
