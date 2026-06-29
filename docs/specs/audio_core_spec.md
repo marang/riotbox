@@ -339,6 +339,20 @@ Offline and realtime-simulation renders should become comparable under the same
 state, with explicit tolerances where backend buffer boundaries or floating
 point differences make bit identity unrealistic.
 
+Current parity seam:
+
+- `RuntimeMixRenderPlan` captures the transport plus TR-909, MC-202, W-30
+  preview, W-30 resample, and Source Monitor render state needed by the runtime
+  mix
+- `render_runtime_mix_offline` renders that plan as one deterministic offline
+  block through the same mix and Source Monitor policy functions used by the
+  callback
+- `render_runtime_mix_realtime_simulation_offline` renders the same plan in
+  bounded callback-sized blocks, advancing transport timing between blocks
+- parity tests compare the full-block render against the callback-blocked
+  simulation, so callback buffer boundaries cannot silently change runtime mix
+  audio
+
 ---
 
 ## 12. Health Telemetry

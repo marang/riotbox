@@ -7,3 +7,4 @@ include!("tests/mix_offline_tr909.rs");
 include!("tests/fixture_regressions_variations.rs");
 include!("tests/signal_metrics.rs");
 include!("tests/source_monitor.rs");
+include!("tests/render_parity.rs");

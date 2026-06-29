@@ -29,6 +29,7 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
 mod public_api_shell;
 mod render_tr909_w30_preview;
+mod runtime_mix_parity;
 mod shared_mc202_w30_preview;
 mod shared_transport_tr909;
 mod shared_w30_resample_callback;
@@ -40,6 +41,7 @@ pub use public_api_shell::*;
 use render_tr909_w30_preview::{
     render_tr909_buffer, render_w30_preview_buffer, render_w30_resample_tap_buffer,
 };
+pub use runtime_mix_parity::*;
 use shared_mc202_w30_preview::{
     RealtimeMc202RenderState, RealtimeW30PadPlaybackSampleWindow, RealtimeW30PreviewRenderState,
     RealtimeW30PreviewSampleWindow, SharedMc202RenderState, SharedW30PreviewRenderState,
