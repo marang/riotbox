@@ -1274,4 +1274,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Make MC-202 closeout prove source-derived bass-or-answer role evidence
 - [RIOTBOX-1313.md](./RIOTBOX-1313.md)
   P023: Thread MC-202 role evidence into producer review queue
+- [RIOTBOX-1314.md](./RIOTBOX-1314.md)
+  P023: Require MC-202 role evidence for demo-bank promotion
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
