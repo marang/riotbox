@@ -1290,4 +1290,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Incorporate improvement README into roadmap and follow-up backlog
 - [RIOTBOX-1321.md](./RIOTBOX-1321.md)
   P023: Inventory Rust textual includes and add module-policy guardrail
+- [RIOTBOX-1322.md](./RIOTBOX-1322.md)
+  P023: Migrate Source Graph include shell to semantic Rust modules
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
