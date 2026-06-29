@@ -731,6 +731,11 @@ following:
     low-band share and low/mid dominance gates through Source-WAV, Matrix, and
     professional-output suite validation, so a moving line cannot count as bass
     pressure unless the low band actually carries the section.
+  - RIOTBOX-1318 strengthens the same sparse-bass-pressure path for routed
+    `bass_movement` fixes: source-derived bass contour expansion now rejects
+    narrow quasi-static movement, sparse restore hits must stay bigger than the
+    pressure lift, and sparse pressure must clear stronger low-band share,
+    low/mid, and bass-dominance gates across Source-WAV and Matrix smokes.
   - the MC-202 source phrase planning track must turn that diagnostic bass
     movement into replayable Session/Core phrase plans before MC-202
     bass/answer behavior can count as source-derived product behavior; the
@@ -840,6 +845,13 @@ following:
   hits, stronger velocity spread, and two reverse gestures so the first two
   bars read less like generic support and more like a hook/riff worth
   retriggering.
+- RIOTBOX-1318 strengthens routed `bass_movement` cases: sparse-bass-pressure
+  diagnostics now expand source-feature-derived bass contours when they would
+  otherwise collapse into a narrow range, boost sparse restore impact after the
+  pressure section, and raise sparse low-band/bass-dominance gates in the
+  professional source-WAV pack. The generated diverse source corpus also grows
+  from six to twelve deterministic families for examples and regression tests;
+  it remains `quality_proof: false`.
 - RIOTBOX-1306 strengthens destructive gesture impact for stage-meaningful
   cuts: source-derived tail shaping now drives a deeper dropout silence, denser
   transient stutter, and slightly harder restore slam, while the professional

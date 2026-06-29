@@ -56,11 +56,11 @@ MIN_REBUILD_ONLY_SOURCE_SPECTRAL_SIMILARITY = 0.60
 MIN_REBUILD_ONLY_SOURCE_TRANSIENT_RETENTION = 0.45
 MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE = 0.70
 MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_MARGIN = 0.10
-MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 1.25
-MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 8.00
-MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 1.60
-MIN_SPARSE_PRESSURE_LOW_BAND_SHARE = 0.20
-MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO = 1.75
+MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 1.75
+MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 10.00
+MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 1.70
+MIN_SPARSE_PRESSURE_LOW_BAND_SHARE = 0.28
+MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO = 2.10
 MIN_HOOK_CHOP_SELECTION_CANDIDATES = 3
 MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES = 256.0
 MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES = 512.0
@@ -87,7 +87,7 @@ MIN_TAIL_SHAPE_FIXED_DISTANCE = 0.20
 MIN_TAIL_SHAPE_OUTPUT_CONTRAST = 3.00
 MIN_STRONGEST_AUDIBLE_ELEMENT_SCORE = 1.00
 MIN_STRONGEST_AUDIBLE_ELEMENT_MARGIN = 0.05
-MIN_SPARSE_BASS_DOMINANCE_MARGIN = 0.08
+MIN_SPARSE_BASS_DOMINANCE_MARGIN = 0.12
 MIN_DENSE_BREAK_SNARE_PRESSURE_SCORE = 1.93
 MIN_DENSE_BREAK_SNARE_PRESSURE_MARGIN = 0.22
 MIN_DENSE_BREAK_PHYSICAL_DRUM_PRESSURE_SCORE = 1.58
@@ -2309,6 +2309,8 @@ def render_performance(
                 restore_bar = apply_gain(restore_bar, 1.14)
             elif source_policy.pressure_lift_policy.source_family == "tonal_hook":
                 restore_bar = apply_gain(restore_bar, 1.08)
+            elif source_policy.pressure_lift_policy.source_family == "sparse_bass_pressure":
+                restore_bar = apply_gain(restore_bar, 1.06)
             put_bar(bar, restore_bar)
         else:
             raise ValueError(f"unsupported arrangement role: {role}")
@@ -2449,11 +2451,13 @@ def bass_movement_frequency_policy(
     reference = source[: min(max(1, 2 * bar_frames), source.shape[0])]
     reference_low = max(low_band_rms(reference), 1e-6)
     derived = {}
+    feature_scores = {}
     for bar, base_frequency in static.items():
         start = bar * bar_frames
         chunk = source_chunk_for_bar(source, start, bar_frames)
         if chunk.shape[0] == 0:
             derived[bar] = base_frequency
+            feature_scores[bar] = 0.0
             continue
         local_low = low_band_rms(chunk)
         mono = chunk.mean(axis=1)
@@ -2463,18 +2467,35 @@ def bass_movement_frequency_policy(
         if weight > 1e-9:
             positions = np.arange(low.shape[0], dtype=np.float32) / max(1, low.shape[0] - 1)
             centroid = float(np.sum(positions * low) / weight)
-        energy_offset = float(np.clip((local_low / reference_low - 1.0) * 7.0, -6.0, 6.0))
-        timing_offset = float(np.clip((centroid - 0.50) * 13.0, -5.5, 5.5))
+        energy_offset = float(np.clip((local_low / reference_low - 1.0) * 10.5, -8.2, 8.2))
+        timing_offset = float(np.clip((centroid - 0.50) * 18.0, -7.6, 7.6))
         timing_direction = -1.0 if centroid < 0.50 else 1.0
         transient_offset = float(
-            np.clip(transient_score(chunk) * 18.0, 0.0, 3.8) * timing_direction
+            np.clip(transient_score(chunk) * 26.0, 0.0, 5.4) * timing_direction
         )
         if source_policy.arrangement_policy.role_order[bar] == "restore":
-            timing_offset *= 0.72
-            transient_offset *= 0.76
+            timing_offset *= 0.80
+            transient_offset *= 0.82
         derived[bar] = float(
             np.clip(base_frequency + energy_offset + timing_offset + transient_offset, 32.0, 62.0)
         )
+        feature_scores[bar] = float(
+            (local_low / reference_low)
+            + abs(centroid - 0.50) * 1.6
+            + transient_score(chunk) * 4.2
+        )
+    if len(derived) >= 2:
+        frequencies = list(derived.values())
+        span = max(frequencies) - min(frequencies)
+        if span < MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ:
+            ranked = sorted(derived, key=lambda bar: (derived[bar], feature_scores.get(bar, 0.0)))
+            midpoint = (len(ranked) - 1) / 2.0
+            target_span = MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ + 0.65
+            expand = (target_span - span) / max(1.0, midpoint)
+            for index, bar in enumerate(ranked):
+                derived[bar] = float(
+                    np.clip(derived[bar] + (index - midpoint) * expand, 32.0, 62.0)
+                )
     return derived
 
 
@@ -3251,28 +3272,37 @@ def render_bass_pressure_layer(
         frames = bar_end - bar_start
         t = np.arange(frames, dtype=np.float32) / SAMPLE_RATE
         sine = np.sin(2.0 * np.pi * base_frequency * t).astype(np.float32)
+        is_sparse = source_policy.pressure_lift_policy.source_family == "sparse_bass_pressure"
+        sub = np.sin(2.0 * np.pi * base_frequency * 0.5 * t).astype(np.float32)
         harmonic = np.sin(2.0 * np.pi * base_frequency * 2.0 * t).astype(np.float32)
         envelope = np.zeros(frames, dtype=np.float32)
         beat_frames = max(1, bar_frames // BEATS_PER_BAR)
+        source_drive = low_band_rms(source_chunk_for_bar(source, bar_start, frames)) / 0.10
         for beat in range(BEATS_PER_BAR):
             start = beat * beat_frames
             end = min(start + beat_frames, frames)
             if start >= end:
                 continue
             beat_t = np.arange(end - start, dtype=np.float32) / max(1, end - start)
-            punch = np.exp(-beat_t * (5.4 if beat in (0, 2) else 7.2))
-            envelope[start:end] += punch * (1.0 if beat in (0, 2) else 0.62)
-        source_drive = low_band_rms(source_chunk_for_bar(source, bar_start, frames)) / 0.10
+            decay = 4.6 if is_sparse and beat in (0, 2) else (5.4 if beat in (0, 2) else 7.2)
+            punch = np.exp(-beat_t * decay)
+            sustain = 0.10 * float(np.clip(source_drive, 0.0, 1.4)) if is_sparse else 0.0
+            envelope[start:end] += (punch + sustain) * (1.0 if beat in (0, 2) else 0.62)
         role = source_policy.arrangement_policy.role_order[bar]
-        is_sparse = source_policy.pressure_lift_policy.source_family == "sparse_bass_pressure"
-        pressure_factor = 0.355 if is_sparse else 0.305
-        restore_factor = 0.285 if is_sparse else 0.245
+        pressure_factor = 0.405 if is_sparse else 0.305
+        restore_factor = 0.330 if is_sparse else 0.245
         gain = (
-            float(np.clip(source_drive, 0.44, 1.24))
+            float(np.clip(source_drive, 0.52, 1.36))
             * source_policy.bass_gain
             * (restore_factor if role == "restore" else pressure_factor)
         )
-        mono = (sine + harmonic * 0.18) * np.clip(envelope, 0.0, 1.0) * gain
+        harmonic_gain = 0.10 if is_sparse else 0.18
+        sub_gain = 0.30 if is_sparse else 0.0
+        mono = (
+            (sine + harmonic * harmonic_gain + sub * sub_gain)
+            * np.clip(envelope, 0.0, 1.08)
+            * gain
+        )
         layer[bar_start:bar_end, 0] = mono
         layer[bar_start:bar_end, 1] = mono * 0.98
     return layer
