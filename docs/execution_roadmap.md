@@ -802,6 +802,12 @@ following:
   the pressure-movement groove step in provenance, and tests high-vs-low
   low-band-movement pressure sources with the same source fingerprint basis for
   different phrase cells and rendered output.
+- RIOTBOX-1303 makes MC-202 candidate selection use an explicit
+  production-impact score: low-end impact, source-grid confidence, answer
+  contrast, hook avoidance, phrase memory, destructive usefulness, and role fit
+  now shape the winning candidate and are recorded in selected-candidate
+  provenance, with pressure-vs-pickup regression coverage proving different
+  source evidence chooses different phrase families and rendered output.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue

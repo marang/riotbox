@@ -49,6 +49,7 @@ include!("tests/w30_backfill_mc202_commits.rs");
 include!("tests/mc202_recipe_helpers.rs");
 include!("tests/mc202_source_phrase_candidate_families.rs");
 include!("tests/mc202_source_phrase_pressure_contours.rs");
+include!("tests/mc202_source_phrase_production_scoring.rs");
 include!("tests/mc202_source_phrase_articulation.rs");
 include!("tests/mc202_source_phrase_quality_gates.rs");
 include!("tests/mc202_source_phrase_feature_rejections.rs");

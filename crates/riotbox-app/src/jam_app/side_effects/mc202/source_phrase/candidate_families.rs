@@ -18,6 +18,7 @@ mod scoring;
 use groove_map::SourcePhraseGrooveMap;
 use scoring::{
     candidate_score, candidate_scorecards, phrase_memory_distance, phrase_memory_rejection_reason,
+    selected_candidate_dimension_refs,
 };
 
 pub(super) struct Mc202SourcePhraseCandidateSelection {
@@ -144,6 +145,7 @@ pub(super) fn choose_source_phrase_candidate(
         candidate_count,
         rejected_candidate_count,
         provenance_refs: candidate_provenance_refs(
+            role,
             features,
             expression,
             groove,
@@ -319,6 +321,7 @@ fn candidate_note_budget(
 }
 
 fn candidate_provenance_refs(
+    role: Mc202RoleState,
     features: &Mc202SourcePhraseFeatureVector,
     expression: &Mc202SourcePhraseExpressionState,
     groove: SourcePhraseGrooveMap,
@@ -335,6 +338,12 @@ fn candidate_provenance_refs(
     refs.push(format!(
         "phrase_memory_selected_distance:{:.3}",
         selected.phrase_memory.clamp(0.0, 1.0)
+    ));
+    refs.extend(selected_candidate_dimension_refs(
+        selected.family,
+        role,
+        expression,
+        selected.phrase_memory,
     ));
     refs.push(format!(
         "candidate_source_features:low={:.3}:transient={:.3}:offbeat={:.3}:hook={:.3}:strength={:.3}",

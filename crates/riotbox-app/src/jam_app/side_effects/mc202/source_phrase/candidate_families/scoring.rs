@@ -16,7 +16,67 @@ pub(super) fn candidate_score(
         return -1.0;
     }
 
-    let base = match family {
+    let source_fit = source_family_fit_score(family, expression);
+    let production_impact =
+        candidate_production_impact_score(family, role, expression, phrase_memory);
+
+    (source_fit * 0.42
+        + production_impact * 0.44
+        + phrase_memory.clamp(0.0, 1.0) * 0.06
+        + expression.confidence.clamp(0.0, 1.0) * 0.08)
+        .clamp(0.0, 1.0)
+}
+
+pub(super) fn candidate_production_impact_score(
+    family: Mc202SourcePhraseCandidateFamilyState,
+    role: Mc202RoleState,
+    expression: &Mc202SourcePhraseExpressionState,
+    phrase_memory: f32,
+) -> f32 {
+    if !family.is_source_derived() {
+        return 0.0;
+    }
+
+    let weights = production_weights(role);
+    (low_end_impact_score(family, expression) * weights.low_end
+        + answer_contrast_score(family, expression) * weights.answer
+        + hook_avoidance_score(family, expression) * weights.hook
+        + destructive_usefulness_score(family, expression) * weights.destructive
+        + expression.confidence.clamp(0.0, 1.0) * weights.source_grid
+        + phrase_memory.clamp(0.0, 1.0) * weights.phrase_memory
+        + role_fit_score(role, family) * weights.role_fit)
+        .clamp(0.0, 1.0)
+}
+
+pub(super) fn selected_candidate_dimension_refs(
+    family: Mc202SourcePhraseCandidateFamilyState,
+    role: Mc202RoleState,
+    expression: &Mc202SourcePhraseExpressionState,
+    phrase_memory: f32,
+) -> Vec<String> {
+    vec![
+        format!(
+            "candidate_production_impact_score:{:.3}",
+            candidate_production_impact_score(family, role, expression, phrase_memory)
+        ),
+        format!(
+            "candidate_selected_dimensions:low={:.3}:grid={:.3}:answer={:.3}:hook={:.3}:memory={:.3}:destructive={:.3}:role={:.3}",
+            low_end_impact_score(family, expression),
+            expression.confidence.clamp(0.0, 1.0),
+            answer_contrast_score(family, expression),
+            hook_avoidance_score(family, expression),
+            phrase_memory.clamp(0.0, 1.0),
+            destructive_usefulness_score(family, expression),
+            role_fit_score(role, family),
+        ),
+    ]
+}
+
+fn source_family_fit_score(
+    family: Mc202SourcePhraseCandidateFamilyState,
+    expression: &Mc202SourcePhraseExpressionState,
+) -> f32 {
+    match family {
         Mc202SourcePhraseCandidateFamilyState::SubPressureShove => {
             expression.bass_pressure * 0.50
                 + expression.low_pressure_contour * 0.16
@@ -48,13 +108,8 @@ pub(super) fn candidate_score(
             0.10 + expression.stay_out_pressure * 0.26 + expression.hook_restraint * 0.16
         }
         Mc202SourcePhraseCandidateFamilyState::FallbackControl => -1.0,
-    };
-
-    (base
-        + role_family_bias(role, family)
-        + phrase_memory.clamp(0.0, 1.0) * 0.12
-        + expression.confidence.clamp(0.0, 1.0) * 0.08)
-        .clamp(0.0, 1.0)
+    }
+    .clamp(0.0, 1.0)
 }
 
 pub(super) fn phrase_memory_distance(
@@ -126,11 +181,67 @@ pub(super) fn candidate_scorecards(
                 hook_avoidance: hook_avoidance_score(family, expression),
                 phrase_memory: candidate.phrase_memory.clamp(0.0, 1.0),
                 destructive_usefulness: destructive_usefulness_score(family, expression),
-                role_fit: (0.50 + role_family_bias(role, family)).clamp(0.0, 1.0),
+                role_fit: role_fit_score(role, family),
                 rejection_reason: candidate.rejection_reason.map(str::to_owned),
             }
         })
         .collect()
+}
+
+#[derive(Copy, Clone)]
+struct ProductionWeights {
+    low_end: f32,
+    answer: f32,
+    hook: f32,
+    destructive: f32,
+    source_grid: f32,
+    phrase_memory: f32,
+    role_fit: f32,
+}
+
+fn production_weights(role: Mc202RoleState) -> ProductionWeights {
+    match role {
+        Mc202RoleState::Pressure => ProductionWeights {
+            low_end: 0.34,
+            answer: 0.04,
+            hook: 0.10,
+            destructive: 0.20,
+            source_grid: 0.14,
+            phrase_memory: 0.08,
+            role_fit: 0.10,
+        },
+        Mc202RoleState::Answer => ProductionWeights {
+            low_end: 0.06,
+            answer: 0.32,
+            hook: 0.12,
+            destructive: 0.14,
+            source_grid: 0.14,
+            phrase_memory: 0.10,
+            role_fit: 0.12,
+        },
+        Mc202RoleState::Instigator => ProductionWeights {
+            low_end: 0.06,
+            answer: 0.10,
+            hook: 0.02,
+            destructive: 0.38,
+            source_grid: 0.10,
+            phrase_memory: 0.06,
+            role_fit: 0.28,
+        },
+        Mc202RoleState::Leader | Mc202RoleState::Follower => ProductionWeights {
+            low_end: 0.10,
+            answer: 0.22,
+            hook: 0.10,
+            destructive: 0.22,
+            source_grid: 0.16,
+            phrase_memory: 0.08,
+            role_fit: 0.12,
+        },
+    }
+}
+
+fn role_fit_score(role: Mc202RoleState, family: Mc202SourcePhraseCandidateFamilyState) -> f32 {
+    (0.50 + role_family_bias(role, family)).clamp(0.0, 1.0)
 }
 
 fn role_family_bias(role: Mc202RoleState, family: Mc202SourcePhraseCandidateFamilyState) -> f32 {
@@ -187,6 +298,9 @@ fn answer_contrast_score(
         }
         Mc202SourcePhraseCandidateFamilyState::CallBackStab => {
             expression.transient_backbeat * 0.36 + expression.offbeat_answer_space * 0.25
+        }
+        Mc202SourcePhraseCandidateFamilyState::FillPickupInstigator => {
+            expression.offbeat_answer_space * 0.32 + expression.transient_backbeat * 0.20
         }
         Mc202SourcePhraseCandidateFamilyState::StayOut => expression.stay_out_pressure,
         _ => expression.offbeat_answer_space * 0.20,
