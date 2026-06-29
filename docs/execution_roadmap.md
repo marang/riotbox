@@ -818,6 +818,11 @@ following:
   when top-scoring candidates cluster too tightly, tonal-hook riff playback is
   brought forward without claiming quality proof, and dense/sparse pressure
   gates remain intact.
+- RIOTBOX-1306 strengthens destructive gesture impact for stage-meaningful
+  cuts: source-derived tail shaping now drives a deeper dropout silence, denser
+  transient stutter, and slightly harder restore slam, while the professional
+  destructive validator rejects the older flatter cut depth and keeps the
+  evidence diagnostic-only until human listening accepts it.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue
