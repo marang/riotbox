@@ -104,6 +104,7 @@ impl SourceMonitorRenderState {
 }
 
 pub(super) struct SharedSourceMonitorRenderState {
+    revision: AtomicU64,
     mode: AtomicU32,
     source_gain_bits: AtomicU32,
     riotbox_gain_bits: AtomicU32,
@@ -116,6 +117,7 @@ pub(super) struct SharedSourceMonitorRenderState {
 impl SharedSourceMonitorRenderState {
     pub(super) fn new(render_state: &SourceMonitorRenderState) -> Self {
         let shared = Self {
+            revision: AtomicU64::new(0),
             mode: AtomicU32::new(source_monitor_mode_to_u32(render_state.mode)),
             source_gain_bits: AtomicU32::new(SOURCE_GAIN.to_bits()),
             riotbox_gain_bits: AtomicU32::new(1.0_f32.to_bits()),
@@ -129,6 +131,7 @@ impl SharedSourceMonitorRenderState {
     }
 
     pub(super) fn update(&self, render_state: &SourceMonitorRenderState) {
+        begin_coherent_snapshot_update(&self.revision);
         self.mode.store(
             source_monitor_mode_to_u32(render_state.mode),
             Ordering::Relaxed,
@@ -165,17 +168,47 @@ impl SharedSourceMonitorRenderState {
             render_state.source_anchor_position_beats.to_bits(),
             Ordering::Relaxed,
         );
+        finish_coherent_snapshot_update(&self.revision);
     }
 
+    #[cfg(test)]
     pub(super) fn snapshot(&self) -> RealtimeSourceMonitorRenderState<'_> {
+        self.render_snapshot_from_control(self.control_snapshot())
+    }
+
+    pub(super) fn control_snapshot(&self) -> RealtimeSourceMonitorControlSnapshot {
+        coherent_snapshot(&self.revision, || self.read_control_fields())
+    }
+
+    pub(super) fn control_snapshot_or_previous(
+        &self,
+        previous: &RealtimeSourceMonitorControlSnapshot,
+    ) -> RealtimeSourceMonitorControlSnapshot {
+        coherent_snapshot_or(&self.revision, previous, || self.read_control_fields())
+    }
+
+    pub(super) fn render_snapshot_from_control(
+        &self,
+        control: RealtimeSourceMonitorControlSnapshot,
+    ) -> RealtimeSourceMonitorRenderState<'_> {
         RealtimeSourceMonitorRenderState {
-            mode: source_monitor_mode_from_u32(self.mode.load(Ordering::Relaxed)),
-            source_gain: f32::from_bits(self.source_gain_bits.load(Ordering::Relaxed)),
-            riotbox_gain: f32::from_bits(self.riotbox_gain_bits.load(Ordering::Relaxed)),
+            mode: control.mode,
+            source_gain: control.source_gain,
+            riotbox_gain: control.riotbox_gain,
             source: self.source.as_ref(),
             is_transport_running: false,
             tempo_bpm: 128.0,
             position_beats: 0.0,
+            source_anchor_seconds: control.source_anchor_seconds,
+            source_anchor_position_beats: control.source_anchor_position_beats,
+        }
+    }
+
+    fn read_control_fields(&self) -> RealtimeSourceMonitorControlSnapshot {
+        RealtimeSourceMonitorControlSnapshot {
+            mode: source_monitor_mode_from_u32(self.mode.load(Ordering::Relaxed)),
+            source_gain: f32::from_bits(self.source_gain_bits.load(Ordering::Relaxed)),
+            riotbox_gain: f32::from_bits(self.riotbox_gain_bits.load(Ordering::Relaxed)),
             source_anchor_seconds: self
                 .source_anchor_present
                 .load(Ordering::Relaxed)
@@ -184,6 +217,27 @@ impl SharedSourceMonitorRenderState {
                 self.source_anchor_position_beats_bits
                     .load(Ordering::Relaxed),
             ),
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub(super) struct RealtimeSourceMonitorControlSnapshot {
+    pub(super) mode: SourceMonitorMode,
+    pub(super) source_gain: f32,
+    pub(super) riotbox_gain: f32,
+    pub(super) source_anchor_seconds: Option<f64>,
+    pub(super) source_anchor_position_beats: f64,
+}
+
+impl Default for RealtimeSourceMonitorControlSnapshot {
+    fn default() -> Self {
+        Self {
+            mode: SourceMonitorMode::Source,
+            source_gain: SOURCE_GAIN,
+            riotbox_gain: 0.0,
+            source_anchor_seconds: None,
+            source_anchor_position_beats: 0.0,
         }
     }
 }

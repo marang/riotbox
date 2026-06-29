@@ -3,6 +3,7 @@ use super::*;
 impl SharedW30PreviewRenderState {
     pub(super) fn new(render_state: &W30PreviewRenderState) -> Self {
         let shared = Self {
+            revision: AtomicU64::new(0),
             mode: AtomicU32::new(0),
             routing: AtomicU32::new(0),
             source_profile: AtomicU32::new(0),
@@ -28,6 +29,7 @@ impl SharedW30PreviewRenderState {
     }
 
     pub(super) fn update(&self, render_state: &W30PreviewRenderState) {
+        begin_coherent_snapshot_update(&self.revision);
         self.mode
             .store(w30_mode_to_u32(render_state.mode), Ordering::Relaxed);
         self.routing
@@ -52,9 +54,21 @@ impl SharedW30PreviewRenderState {
             .store(render_state.tempo_bpm.to_bits(), Ordering::Relaxed);
         self.position_beats_bits
             .store(render_state.position_beats.to_bits(), Ordering::Relaxed);
+        finish_coherent_snapshot_update(&self.revision);
     }
 
     pub(super) fn snapshot(&self) -> RealtimeW30PreviewRenderState {
+        coherent_snapshot(&self.revision, || self.read_snapshot_fields())
+    }
+
+    pub(super) fn snapshot_or_previous(
+        &self,
+        previous: &RealtimeW30PreviewRenderState,
+    ) -> RealtimeW30PreviewRenderState {
+        coherent_snapshot_or(&self.revision, previous, || self.read_snapshot_fields())
+    }
+
+    fn read_snapshot_fields(&self) -> RealtimeW30PreviewRenderState {
         RealtimeW30PreviewRenderState {
             mode: w30_mode_from_u32(self.mode.load(Ordering::Relaxed)),
             routing: w30_routing_from_u32(self.routing.load(Ordering::Relaxed)),
@@ -165,6 +179,7 @@ pub(super) struct RealtimeW30ResampleTapState {
 }
 
 pub(super) struct SharedW30ResampleTapState {
+    revision: AtomicU64,
     mode: AtomicU32,
     routing: AtomicU32,
     source_profile: AtomicU32,
@@ -178,6 +193,7 @@ pub(super) struct SharedW30ResampleTapState {
 impl SharedW30ResampleTapState {
     pub(super) fn new(render_state: &W30ResampleTapState) -> Self {
         let shared = Self {
+            revision: AtomicU64::new(0),
             mode: AtomicU32::new(0),
             routing: AtomicU32::new(0),
             source_profile: AtomicU32::new(0),
@@ -192,6 +208,7 @@ impl SharedW30ResampleTapState {
     }
 
     pub(super) fn update(&self, render_state: &W30ResampleTapState) {
+        begin_coherent_snapshot_update(&self.revision);
         self.mode.store(
             w30_resample_mode_to_u32(render_state.mode),
             Ordering::Relaxed,
@@ -216,9 +233,21 @@ impl SharedW30ResampleTapState {
             .store(render_state.grit_level.to_bits(), Ordering::Relaxed);
         self.is_transport_running
             .store(render_state.is_transport_running, Ordering::Relaxed);
+        finish_coherent_snapshot_update(&self.revision);
     }
 
     pub(super) fn snapshot(&self) -> RealtimeW30ResampleTapState {
+        coherent_snapshot(&self.revision, || self.read_snapshot_fields())
+    }
+
+    pub(super) fn snapshot_or_previous(
+        &self,
+        previous: &RealtimeW30ResampleTapState,
+    ) -> RealtimeW30ResampleTapState {
+        coherent_snapshot_or(&self.revision, previous, || self.read_snapshot_fields())
+    }
+
+    fn read_snapshot_fields(&self) -> RealtimeW30ResampleTapState {
         RealtimeW30ResampleTapState {
             mode: w30_resample_mode_from_u32(self.mode.load(Ordering::Relaxed)),
             routing: w30_resample_routing_from_u32(self.routing.load(Ordering::Relaxed)),
