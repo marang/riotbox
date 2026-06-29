@@ -43,8 +43,33 @@ jq -e '
     and (.fix_categories | length == 0)
     and .mc202_source_composed_review_gate.source_composed_evidence == true
     and .mc202_source_composed_review_gate.primitive_or_template_only == false
+    and .mc202_role_evidence.role == "pressure_answer"
+    and .mc202_role_evidence.proof_scope == "demo_bank_promotion_gate"
+    and .mc202_role_evidence.source_family == .source_family
+    and .mc202_role_evidence.quality_proof == false
   )
 ' "$tmp/demo-bank-pass.json" >/dev/null
+
+invalid_demo_bank_role="$tmp/demo-bank-invalid-role.json"
+jq '(.entries[] | select(.entry_id == "dense-beat03-promoted-fixture") | .mc202_role_evidence.role) = "bass_pressure"' \
+  "$tmp/demo-bank-pass.json" > "$invalid_demo_bank_role"
+if python3 scripts/validate_release_grade_demo_bank.py "$invalid_demo_bank_role" >"$tmp/invalid-demo-bank-role.out" 2>&1; then
+  cat "$tmp/invalid-demo-bank-role.out" >&2
+  echo "expected invalid demo-bank MC-202 role evidence to fail" >&2
+  exit 1
+fi
+grep -q "dense MC-202 promotion needs pressure_answer role" "$tmp/invalid-demo-bank-role.out"
+
+invalid_demo_bank_gate="$tmp/demo-bank-invalid-gate.json"
+jq '(.entries[] | select(.entry_id == "dense-beat03-promoted-fixture") | .mc202_source_composed_review_gate.source_composed_evidence) = false
+  | (.entries[] | select(.entry_id == "dense-beat03-promoted-fixture") | .mc202_source_composed_review_gate.primitive_or_template_only) = true' \
+  "$tmp/demo-bank-pass.json" > "$invalid_demo_bank_gate"
+if python3 scripts/validate_release_grade_demo_bank.py "$invalid_demo_bank_gate" >"$tmp/invalid-demo-bank-gate.out" 2>&1; then
+  cat "$tmp/invalid-demo-bank-gate.out" >&2
+  echo "expected invalid demo-bank MC-202 gate to fail" >&2
+  exit 1
+fi
+grep -q "MC-202 source-composed evidence is required" "$tmp/invalid-demo-bank-gate.out"
 
 weak_review="$tmp/pack/reviews/sparse_kicksnr_120/review.json"
 python3 scripts/listening_review_workflow.py record \
@@ -76,6 +101,9 @@ jq -e '
     and (.fix_categories == ["bass_movement"])
     and .mc202_source_composed_review_gate.source_composed_evidence == true
     and .mc202_source_composed_review_gate.metrics.bass_movement_source_derived == 1.0
+    and .mc202_role_evidence.role == "bass_pressure"
+    and .mc202_role_evidence.source_family == "sparse_bass_pressure"
+    and .mc202_role_evidence.proof_scope == "demo_bank_promotion_gate"
   )
 ' "$tmp/demo-bank-weak.json" >/dev/null
 
@@ -126,5 +154,51 @@ if python3 scripts/promote_listening_review_to_demo_bank.py \
   exit 1
 fi
 grep -q "MC-202 source-composed evidence is required" "$tmp/template-only.out"
+
+missing_role_review="$tmp/missing-role-review.json"
+jq 'del(.audio_judge_label.mc202_role_evidence)' "$pass_review" > "$missing_role_review"
+if python3 scripts/promote_listening_review_to_demo_bank.py \
+  --review "$missing_role_review" \
+  --demo-bank scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json \
+  --json-output "$tmp/demo-bank-missing-role.json" \
+  --entry-id dense-beat03-missing-role-fixture \
+  --demo-worthiness-note "This should not promote." \
+  --require-artifact-hashes >"$tmp/missing-role.out" 2>&1; then
+  cat "$tmp/missing-role.out" >&2
+  echo "expected missing MC-202 role promotion to fail" >&2
+  exit 1
+fi
+grep -q "missing mc202_role_evidence" "$tmp/missing-role.out"
+
+stale_role_review="$tmp/stale-role-review.json"
+jq '.audio_judge_label.mc202_role_evidence.source_family = "stale_family"' "$pass_review" > "$stale_role_review"
+if python3 scripts/promote_listening_review_to_demo_bank.py \
+  --review "$stale_role_review" \
+  --demo-bank scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json \
+  --json-output "$tmp/demo-bank-stale-role.json" \
+  --entry-id dense-beat03-stale-role-fixture \
+  --demo-worthiness-note "This should not promote." \
+  --require-artifact-hashes >"$tmp/stale-role.out" 2>&1; then
+  cat "$tmp/stale-role.out" >&2
+  echo "expected stale MC-202 role promotion to fail" >&2
+  exit 1
+fi
+grep -q "MC-202 role source_family mismatch" "$tmp/stale-role.out"
+
+wrong_role_review="$tmp/wrong-role-review.json"
+jq '.audio_judge_label.mc202_role_evidence.role = "pressure_answer"' "$weak_review" > "$wrong_role_review"
+if python3 scripts/promote_listening_review_to_demo_bank.py \
+  --review "$wrong_role_review" \
+  --demo-bank scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json \
+  --json-output "$tmp/demo-bank-wrong-role.json" \
+  --entry-id sparse-kicksnr-wrong-role-fixture \
+  --demo-worthiness-note "This should not promote." \
+  --fix-category bass_movement \
+  --require-artifact-hashes >"$tmp/wrong-role.out" 2>&1; then
+  cat "$tmp/wrong-role.out" >&2
+  echo "expected wrong MC-202 role promotion to fail" >&2
+  exit 1
+fi
+grep -q "sparse MC-202 promotion needs bass_pressure role" "$tmp/wrong-role.out"
 
 echo "demo-bank promotion fixture gate ok"

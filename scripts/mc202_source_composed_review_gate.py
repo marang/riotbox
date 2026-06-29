@@ -7,7 +7,9 @@ from typing import Any
 
 
 MC202_GATE_FIELD = "mc202_source_composed_review_gate"
+MC202_ROLE_FIELD = "mc202_role_evidence"
 CASE_GATE_SCHEMA = "riotbox.mc202_source_composed_review_gate.v1"
+ROLE_SCHEMA = "riotbox.mc202_role_evidence.v1"
 PACK_GATE_SCHEMA = "riotbox.mc202_source_composed_pack_gate.v1"
 MIN_MC202_TO_W30_RMS_RATIO = 0.16
 MIN_PRESSURE_LOW_BAND_LIFT_RATIO = 1.50
@@ -150,6 +152,86 @@ def validate_promotion_gate(gate: dict[str, Any], path: Path) -> None:
         f"{path}: MC-202 template-only promotion blocker missing",
     )
     require(isinstance(gate.get("source_family"), str) and gate["source_family"], f"{path}: MC-202 gate source_family missing")
+
+
+def role_evidence_for_gate(gate: dict[str, Any]) -> dict[str, Any]:
+    family = str(gate.get("source_family"))
+    metrics = gate.get("metrics") if isinstance(gate.get("metrics"), dict) else {}
+    if family == "sparse_bass_pressure":
+        role = "bass_pressure"
+        failure_codes = []
+        if number(metrics.get("bass_movement_source_derived")) < 1.0:
+            failure_codes.append("bass_movement_not_source_derived")
+        if number(metrics.get("sparse_bass_movement_static_distance_hz")) < MIN_SPARSE_BASS_STATIC_DISTANCE_HZ:
+            failure_codes.append("bass_movement_static_distance_too_low")
+        if number(metrics.get("sparse_bass_movement_frequency_span_hz")) < MIN_SPARSE_BASS_SPAN_HZ:
+            failure_codes.append("bass_movement_span_too_low")
+        reason = "Sparse source was reviewed for source-derived MC-202 bass pressure."
+    elif family == "tonal_hook":
+        role = "hook_restraint_stab_answer"
+        failure_codes = answer_role_failure_codes(metrics, min_scripted_distance=3.0)
+        reason = "Tonal source was reviewed for hook-restraint / stab-answer behavior."
+    elif family in {"dense_break", "non_dense_break"}:
+        role = "pressure_answer"
+        failure_codes = answer_role_failure_codes(metrics, min_scripted_distance=2.0)
+        reason = "Dense/non-dense source was reviewed for MC-202 pressure-answer behavior."
+    else:
+        role = "unsupported_source_family"
+        failure_codes = ["unsupported_source_family"]
+        reason = "Source family is not mapped to an MC-202 promotion role."
+    if gate.get("source_composed_evidence") is not True:
+        failure_codes.append("source_composed_evidence_missing")
+    if gate.get("primitive_or_template_only") is not False:
+        failure_codes.append("primitive_or_template_only")
+    return {
+        "schema": ROLE_SCHEMA,
+        "source_family": family,
+        "role": role,
+        "result": "pass" if not failure_codes else "fail",
+        "proof_scope": "demo_bank_promotion_gate",
+        "source_derived": not failure_codes,
+        "quality_proof": False,
+        "failure_codes": failure_codes,
+        "musician_reason": reason,
+    }
+
+
+def validate_role_evidence_for_promotion(role: dict[str, Any], gate: dict[str, Any], path: Path) -> None:
+    family = str(gate.get("source_family"))
+    require(role.get("schema") == ROLE_SCHEMA, f"{path}: MC-202 role evidence schema missing")
+    require(role.get("source_family") == family, f"{path}: MC-202 role source_family mismatch")
+    require(role.get("result") == "pass", f"{path}: MC-202 role evidence must pass")
+    require(
+        role.get("proof_scope") == "demo_bank_promotion_gate",
+        f"{path}: MC-202 role proof_scope invalid",
+    )
+    require(role.get("source_derived") is True, f"{path}: MC-202 role must be source-derived")
+    require(role.get("quality_proof") is False, f"{path}: MC-202 role must not claim quality proof")
+    require(role.get("failure_codes") == [], f"{path}: MC-202 role evidence has failure codes")
+    require(isinstance(role.get("musician_reason"), str) and role["musician_reason"], f"{path}: MC-202 role reason missing")
+    if family == "sparse_bass_pressure":
+        require(role.get("role") == "bass_pressure", f"{path}: sparse MC-202 promotion needs bass_pressure role")
+    elif family == "tonal_hook":
+        require(role.get("role") == "hook_restraint_stab_answer", f"{path}: tonal MC-202 promotion needs answer/stab role")
+    elif family in {"dense_break", "non_dense_break"}:
+        require(role.get("role") == "pressure_answer", f"{path}: dense MC-202 promotion needs pressure_answer role")
+    else:
+        require(False, f"{path}: unsupported MC-202 source family for promotion")
+
+
+def answer_role_failure_codes(metrics: dict[str, Any], *, min_scripted_distance: float) -> list[str]:
+    failures = []
+    if number(metrics.get("pressure_lift_policy_decision_count")) < 6.0:
+        failures.append("answer_role_decision_count_too_low")
+    if number(metrics.get("arrangement_role_order_source_derived")) < 1.0:
+        failures.append("answer_role_not_source_derived")
+    if number(metrics.get("arrangement_scripted_role_distance")) < min_scripted_distance:
+        failures.append("answer_role_too_close_to_scripted_template")
+    if number(metrics.get("mc202_to_w30_rms_ratio")) < MIN_MC202_TO_W30_RMS_RATIO:
+        failures.append("answer_role_mc202_too_weak")
+    if number(metrics.get("pressure_low_band_lift_ratio")) < MIN_PRESSURE_LOW_BAND_LIFT_RATIO:
+        failures.append("answer_role_pressure_lift_too_weak")
+    return failures
 
 
 def failure_codes_for(
