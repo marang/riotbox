@@ -1276,4 +1276,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Thread MC-202 role evidence into producer review queue
 - [RIOTBOX-1314.md](./RIOTBOX-1314.md)
   P023: Require MC-202 role evidence for demo-bank promotion
+- [RIOTBOX-1315.md](./RIOTBOX-1315.md)
+  P023: Move release-demo human-review queue fixture contract out of Justfile
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
