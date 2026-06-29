@@ -841,6 +841,15 @@ following:
   `tr909_rendered_drum_pressure` so kick/accent/source-grid evidence, support
   contribution, source-first headroom, and low-band output must all pass before
   drum pressure counts as surviving the rendered mix.
+- RIOTBOX-1310 tightens weak-output promotion boundaries without overfitting
+  tonal fixtures to dense-break thresholds: TR-909 rendered-pressure proof now
+  derives support-contribution and low-band floors from the source-aware TR-909
+  profile, `break_lift` keeps a transient/snare-appropriate low-band floor
+  separate from stricter `drop_drive`, continuous tonal/high material stays
+  `steady_pulse` unless it has real transient density, and the professional
+  suite validates each Feral case against its manifest-recorded floors so weak
+  evidence fails for the intended musical reason instead of being hidden by
+  stale aggregate constants.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue

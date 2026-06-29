@@ -361,6 +361,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let source_grid_alignment = source_grid_alignment_report(&tr909, &mc202, &w30, &full_mix, &grid);
     let tr909_rendered_drum_pressure =
         tr909_rendered_drum_pressure_proof(Tr909RenderedDrumPressureInput {
+            source_profile: tr909_source_profile,
             tr909_metrics: render_metrics(&tr909, &grid),
             full_mix_metrics: render_metrics(&full_mix, &grid),
             kick_pressure: tr909_kick_pressure,

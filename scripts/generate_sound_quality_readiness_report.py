@@ -498,6 +498,14 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
             "tr909_rendered_min_low_band_rms": number(
                 tr909_rendered_drum_pressure.get("min_tr909_low_band_rms")
             ),
+            "tr909_rendered_min_required_support_mix_contribution_ratio": number(
+                tr909_rendered_drum_pressure.get(
+                    "min_required_support_mix_tr909_contribution_ratio"
+                )
+            ),
+            "tr909_rendered_min_required_low_band_rms": number(
+                tr909_rendered_drum_pressure.get("min_required_tr909_low_band_rms")
+            ),
             "tr909_rendered_max_source_first_ratio": number(
                 tr909_rendered_drum_pressure.get(
                     "max_source_first_generated_to_source_rms_ratio"
@@ -896,12 +904,17 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             number(
                 drum_pressure.get("tr909_rendered_min_support_mix_contribution_ratio")
             )
-            >= 0.050,
+            >= number(
+                drum_pressure.get(
+                    "tr909_rendered_min_required_support_mix_contribution_ratio"
+                )
+            ),
             "professional_suite_tr909_rendered_drum_pressure_too_buried",
             failures,
         )
         check(
-            number(drum_pressure.get("tr909_rendered_min_low_band_rms")) >= 0.0030,
+            number(drum_pressure.get("tr909_rendered_min_low_band_rms"))
+            >= number(drum_pressure.get("tr909_rendered_min_required_low_band_rms")),
             "professional_suite_tr909_rendered_low_band_too_weak",
             failures,
         )

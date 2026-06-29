@@ -19,10 +19,14 @@ struct Tr909RenderedDrumPressureProof {
 }
 
 const TR909_RENDERED_DRUM_PRESSURE_MIN_SUPPORT_CONTRIBUTION_RATIO: f32 = 0.050;
+const TR909_RENDERED_DRUM_PRESSURE_MIN_STEADY_SUPPORT_CONTRIBUTION_RATIO: f32 = 0.035;
 const TR909_RENDERED_DRUM_PRESSURE_MIN_LOW_BAND_RMS: f32 = 0.0030;
+const TR909_RENDERED_DRUM_PRESSURE_MIN_BREAK_LIFT_LOW_BAND_RMS: f32 = 0.0020;
+const TR909_RENDERED_DRUM_PRESSURE_MIN_STEADY_LOW_BAND_RMS: f32 = 0.0014;
 
 #[derive(Clone, Copy, Debug)]
 struct Tr909RenderedDrumPressureInput {
+    source_profile: SourceAwareTr909Profile,
     tr909_metrics: RenderMetrics,
     full_mix_metrics: RenderMetrics,
     kick_pressure: Tr909KickPressureProof,
@@ -38,6 +42,10 @@ fn tr909_rendered_drum_pressure_proof(
 ) -> Tr909RenderedDrumPressureProof {
     let source_first_masking_headroom = MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO
         - input.source_first_generated_to_source_rms_ratio;
+    let min_required_support_mix_tr909_contribution_ratio =
+        tr909_rendered_drum_pressure_min_support_contribution(input.source_profile);
+    let min_required_tr909_low_band_rms =
+        tr909_rendered_drum_pressure_min_low_band_rms(input.source_profile);
     let support_mix_tr909_contribution_ratio =
         input.all_lane_mix_movement.tr909_contribution_ratio;
     let source_derived = input.kick_pressure.pattern_origin == "source_derived"
@@ -47,8 +55,8 @@ fn tr909_rendered_drum_pressure_proof(
         && input.accent_dynamics.applied
         && input.all_lane_mix_movement.applied
         && support_mix_tr909_contribution_ratio
-            >= TR909_RENDERED_DRUM_PRESSURE_MIN_SUPPORT_CONTRIBUTION_RATIO
-        && input.tr909_metrics.low_band.rms >= TR909_RENDERED_DRUM_PRESSURE_MIN_LOW_BAND_RMS
+            >= min_required_support_mix_tr909_contribution_ratio
+        && input.tr909_metrics.low_band.rms >= min_required_tr909_low_band_rms
         && input.full_mix_metrics.low_band.rms >= MIN_LOW_BAND_RMS
         && input.tr909_source_grid_alignment.hit_ratio >= SOURCE_GRID_OUTPUT_MIN_HIT_RATIO
         && input.source_first_generated_to_source_rms_ratio
@@ -83,12 +91,36 @@ fn tr909_rendered_drum_pressure_proof(
         max_tr909_source_grid_peak_offset_ms: input
             .tr909_source_grid_alignment
             .max_peak_offset_ms,
-        min_required_support_mix_tr909_contribution_ratio:
-            TR909_RENDERED_DRUM_PRESSURE_MIN_SUPPORT_CONTRIBUTION_RATIO,
-        min_required_tr909_low_band_rms: TR909_RENDERED_DRUM_PRESSURE_MIN_LOW_BAND_RMS,
+        min_required_support_mix_tr909_contribution_ratio,
+        min_required_tr909_low_band_rms,
         max_source_first_generated_to_source_rms_ratio:
             MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO,
         max_support_generated_to_source_rms_ratio: MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
+    }
+}
+
+fn tr909_rendered_drum_pressure_min_support_contribution(
+    profile: SourceAwareTr909Profile,
+) -> f32 {
+    match profile.support_profile {
+        Tr909SourceSupportProfile::DropDrive | Tr909SourceSupportProfile::BreakLift => {
+            TR909_RENDERED_DRUM_PRESSURE_MIN_SUPPORT_CONTRIBUTION_RATIO
+        }
+        Tr909SourceSupportProfile::SteadyPulse => {
+            TR909_RENDERED_DRUM_PRESSURE_MIN_STEADY_SUPPORT_CONTRIBUTION_RATIO
+        }
+    }
+}
+
+fn tr909_rendered_drum_pressure_min_low_band_rms(profile: SourceAwareTr909Profile) -> f32 {
+    match profile.support_profile {
+        Tr909SourceSupportProfile::DropDrive => TR909_RENDERED_DRUM_PRESSURE_MIN_LOW_BAND_RMS,
+        Tr909SourceSupportProfile::BreakLift => {
+            TR909_RENDERED_DRUM_PRESSURE_MIN_BREAK_LIFT_LOW_BAND_RMS
+        }
+        Tr909SourceSupportProfile::SteadyPulse => {
+            TR909_RENDERED_DRUM_PRESSURE_MIN_STEADY_LOW_BAND_RMS
+        }
     }
 }
 
@@ -101,6 +133,7 @@ mod tr909_rendered_drum_pressure_tests {
         let grid = Grid::new(128.0, 4, 2).expect("grid");
         let samples = low_pulse_samples(&grid, 0.040);
         let proof = tr909_rendered_drum_pressure_proof(Tr909RenderedDrumPressureInput {
+            source_profile: source_profile(Tr909SourceSupportProfile::DropDrive),
             tr909_metrics: render_metrics(&samples, &grid),
             full_mix_metrics: render_metrics(&samples, &grid),
             kick_pressure: source_derived_kick_pressure(true),
@@ -121,6 +154,7 @@ mod tr909_rendered_drum_pressure_tests {
         let grid = Grid::new(128.0, 4, 2).expect("grid");
         let samples = low_pulse_samples(&grid, 0.040);
         let proof = tr909_rendered_drum_pressure_proof(Tr909RenderedDrumPressureInput {
+            source_profile: source_profile(Tr909SourceSupportProfile::DropDrive),
             tr909_metrics: render_metrics(&samples, &grid),
             full_mix_metrics: render_metrics(&samples, &grid),
             kick_pressure: source_derived_kick_pressure(true),
@@ -135,6 +169,56 @@ mod tr909_rendered_drum_pressure_tests {
         assert_eq!(
             proof.reason,
             "tr909_rendered_drum_pressure_too_weak_or_masks_source"
+        );
+    }
+
+    #[test]
+    fn rendered_drum_pressure_allows_lower_steady_pulse_support_floor() {
+        let grid = Grid::new(128.0, 4, 2).expect("grid");
+        let samples = low_pulse_samples(&grid, 0.040);
+        let proof = tr909_rendered_drum_pressure_proof(Tr909RenderedDrumPressureInput {
+            source_profile: source_profile(Tr909SourceSupportProfile::SteadyPulse),
+            tr909_metrics: render_metrics(&samples, &grid),
+            full_mix_metrics: render_metrics(&samples, &grid),
+            kick_pressure: source_derived_kick_pressure(true),
+            accent_dynamics: source_derived_accent_dynamics(true),
+            all_lane_mix_movement: all_lane_mix_movement_with_tr909(0.037, true),
+            tr909_source_grid_alignment: grid_alignment(1.0),
+            source_first_generated_to_source_rms_ratio: 0.030,
+            support_generated_to_source_rms_ratio: 0.180,
+        });
+
+        assert!(proof.applied, "{proof:?}");
+        assert_eq!(
+            proof.min_required_support_mix_tr909_contribution_ratio,
+            TR909_RENDERED_DRUM_PRESSURE_MIN_STEADY_SUPPORT_CONTRIBUTION_RATIO
+        );
+        assert_eq!(
+            proof.min_required_tr909_low_band_rms,
+            TR909_RENDERED_DRUM_PRESSURE_MIN_STEADY_LOW_BAND_RMS
+        );
+    }
+
+    #[test]
+    fn rendered_drum_pressure_uses_break_lift_low_band_floor() {
+        let grid = Grid::new(128.0, 4, 2).expect("grid");
+        let samples = low_pulse_samples(&grid, 0.030);
+        let proof = tr909_rendered_drum_pressure_proof(Tr909RenderedDrumPressureInput {
+            source_profile: source_profile(Tr909SourceSupportProfile::BreakLift),
+            tr909_metrics: render_metrics(&samples, &grid),
+            full_mix_metrics: render_metrics(&low_pulse_samples(&grid, 0.060), &grid),
+            kick_pressure: source_derived_kick_pressure(true),
+            accent_dynamics: source_derived_accent_dynamics(true),
+            all_lane_mix_movement: all_lane_mix_movement_with_tr909(0.055, true),
+            tr909_source_grid_alignment: grid_alignment(1.0),
+            source_first_generated_to_source_rms_ratio: 0.030,
+            support_generated_to_source_rms_ratio: 0.180,
+        });
+
+        assert!(proof.applied, "{proof:?}");
+        assert_eq!(
+            proof.min_required_tr909_low_band_rms,
+            TR909_RENDERED_DRUM_PRESSURE_MIN_BREAK_LIFT_LOW_BAND_RMS
         );
     }
 
@@ -175,6 +259,25 @@ mod tr909_rendered_drum_pressure_tests {
             low_band_rms_ratio: 1.70,
             post_peak_abs: 0.10,
             reason: "tr909_low_drive_pressure",
+        }
+    }
+
+    fn source_profile(support_profile: Tr909SourceSupportProfile) -> SourceAwareTr909Profile {
+        SourceAwareTr909Profile {
+            signal_rms: 0.2,
+            low_band_rms: 0.1,
+            onset_count: 8,
+            event_density_per_bar: 4.0,
+            low_band_energy_ratio: 0.2,
+            mid_band_energy_ratio: 0.4,
+            high_band_energy_ratio: 0.4,
+            support_profile,
+            support_context: Tr909SourceSupportContext::TransportBar,
+            pattern_adoption: Tr909PatternAdoption::SupportPulse,
+            phrase_variation: Tr909PhraseVariation::PhraseAnchor,
+            drum_bus_level: 0.70,
+            slam_intensity: 0.16,
+            reason: "source_test_profile",
         }
     }
 

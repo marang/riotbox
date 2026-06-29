@@ -147,9 +147,11 @@ mod tests {
     fn source_aware_tr909_profile_changes_for_same_bpm_sources() {
         let grid = Grid::new(128.0, 4, 2).expect("grid");
         let low_source = tone_samples(80.0, frames_for_beats(128.0, 8));
-        let high_source = tone_samples(4_200.0, frames_for_beats(128.0, 8));
+        let tonal_high_source = tone_samples(4_200.0, frames_for_beats(128.0, 8));
+        let high_source = high_click_source(&grid);
 
         let low_profile = derive_source_aware_tr909_profile(&low_source, &grid);
+        let tonal_high_profile = derive_source_aware_tr909_profile(&tonal_high_source, &grid);
         let high_profile = derive_source_aware_tr909_profile(&high_source, &grid);
         let low_render = render_tr909_source_support(&grid, low_profile);
         let high_render = render_tr909_source_support(&grid, high_profile);
@@ -162,6 +164,10 @@ mod tests {
             render_mc202_bass_pressure_with_source_contour(&grid, low_profile, source_contour);
 
         assert_eq!(low_profile.support_profile, Tr909SourceSupportProfile::DropDrive);
+        assert_eq!(
+            tonal_high_profile.support_profile,
+            Tr909SourceSupportProfile::SteadyPulse
+        );
         assert_eq!(high_profile.support_profile, Tr909SourceSupportProfile::BreakLift);
         assert_ne!(low_profile.pattern_adoption, high_profile.pattern_adoption);
         assert_ne!(low_render, high_render);
@@ -492,6 +498,29 @@ mod tests {
             let sample = (phase * frequency_hz * std::f32::consts::TAU).sin() * 0.5;
             samples.push(sample);
             samples.push(sample);
+        }
+        samples
+    }
+
+    fn high_click_source(grid: &Grid) -> Vec<f32> {
+        let mut samples = vec![0.0; grid.total_frames * usize::from(CHANNEL_COUNT)];
+        let click_spacing = (grid.bar_frame_count(0) / 8).max(1);
+        for frame in (0..grid.total_frames).step_by(click_spacing) {
+            for offset in 0..96 {
+                let target = frame + offset;
+                if target >= grid.total_frames {
+                    break;
+                }
+                let envelope = 1.0 - offset as f32 / 96.0;
+                let sample = if offset.is_multiple_of(2) {
+                    0.55 * envelope
+                } else {
+                    -0.55 * envelope
+                };
+                let index = target * usize::from(CHANNEL_COUNT);
+                samples[index] = sample;
+                samples[index + 1] = sample;
+            }
         }
         samples
     }
