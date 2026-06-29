@@ -266,6 +266,14 @@ primitive A/B control that is explicitly non-product evidence. The control must
 keep `product_fallback_allowed: false`; it is not fallback music and cannot
 support a product-quality claim.
 
+Each MC-202 real-source listening-pack case must also carry a compact
+`mc202_role_evidence` review target. Sparse bass-pressure material is reviewed
+as source-derived bass pressure; dense/non-dense material is reviewed as a
+pressure-answer; tonal-hook material is reviewed as hook-restraint or
+stab-answer behavior. This field tells the human listener what musical job to
+judge, but it remains `quality_proof: false` and `human_verdict: unverified`
+until structured listening records a verdict.
+
 For MC-202 producer-grade closeout, run:
 
 ```bash

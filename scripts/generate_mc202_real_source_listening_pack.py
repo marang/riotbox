@@ -198,7 +198,7 @@ def render_case(repo: Path, output: Path, date: str, case: RenderCase) -> dict[s
         "--automated-musical-fitness-status",
         "unverified",
         "--expected",
-        expected_for_source(source),
+        expected_for_source(source, source_family(source["role"])),
     ]
     run_or_exit(repo, review_command, review_dir / "listening-pack.log")
 
@@ -231,6 +231,7 @@ def render_case(repo: Path, output: Path, date: str, case: RenderCase) -> dict[s
         "review_prompt": str(review_dir / "prompt.md"),
         "review_artifacts": review["artifacts"],
     }
+    case_report["mc202_role_evidence"] = mc202_role_evidence(case_report)
     return apply_evidence_boundary(
         case_report,
         evidence_role="listening_review_scaffold",
@@ -255,13 +256,75 @@ def source_family(role: str) -> str:
     return "non_dense_break"
 
 
-def expected_for_source(source: dict[str, Any]) -> str:
+def expected_for_source(source: dict[str, Any], family: str) -> str:
+    role = role_for_source_family(family)
     return (
         "Review whether MC-202 has source-specific bass/answer pressure, whether "
         "the MC-202 stem is audible against the mix, and whether the primitive "
         "control remains a labeled non-product comparison instead of fallback music. "
+        f"Role target: {role['role_label']} - {role['listening_focus']} "
         f"Source expectation: {source['expected_outcome']}"
     )
+
+
+def mc202_role_evidence(case: dict[str, Any]) -> dict[str, Any]:
+    family = str(case.get("source_family"))
+    role = role_for_source_family(family)
+    expression = object_or_empty(case.get("mc202_expression_summary"))
+    motif = object_or_empty(case.get("selected_motif"))
+    control = object_or_empty(case.get("primitive_ab_control"))
+    failure_codes = []
+    if expression.get("contour_origin") != "source_derived_contour":
+        failure_codes.append("role_target_contour_not_source_derived")
+    if number(motif.get("stem_rms")) <= 0.0005:
+        failure_codes.append("role_target_mc202_stem_too_quiet")
+    if control.get("ab_delta_passed") is not True:
+        failure_codes.append("role_target_ab_delta_missing")
+    if role["role"] == "unsupported_source_family":
+        failure_codes.append("role_target_unsupported_source_family")
+    return {
+        "role": role["role"],
+        "role_label": role["role_label"],
+        "source_family": family,
+        "result": "pass" if not failure_codes else "fail",
+        "proof_scope": "listening_review_target",
+        "source_derived": not failure_codes,
+        "quality_proof": False,
+        "human_verdict": "unverified",
+        "failure_codes": failure_codes,
+        "listening_focus": role["listening_focus"],
+        "musician_question": role["musician_question"],
+    }
+
+
+def role_for_source_family(family: str) -> dict[str, str]:
+    if family == "sparse_bass_pressure":
+        return {
+            "role": "bass_pressure",
+            "role_label": "source-derived bass pressure",
+            "listening_focus": "judge whether the MC-202 gives the source physical low-end movement.",
+            "musician_question": "Does the MC-202 push bass pressure that belongs to this sparse source?",
+        }
+    if family == "tonal_hook":
+        return {
+            "role": "hook_restraint_stab_answer",
+            "role_label": "hook-restraint/stab answer",
+            "listening_focus": "judge whether the MC-202 answers the tonal hook without faking bass movement.",
+            "musician_question": "Does the MC-202 leave room for the hook while adding a useful answer or stab?",
+        }
+    if family in {"dense_break", "non_dense_break"}:
+        return {
+            "role": "pressure_answer",
+            "role_label": "pressure answer",
+            "listening_focus": "judge whether the MC-202 reinforces the break with source-specific answer pressure.",
+            "musician_question": "Does the MC-202 answer the break with useful pressure instead of a generic phrase?",
+        }
+    return {
+        "role": "unsupported_source_family",
+        "role_label": "unsupported source family",
+        "listening_focus": "stop review until the source family has an explicit MC-202 role target.",
+        "musician_question": "Is this source family mapped to a valid MC-202 musical job?",
+    }
 
 
 def expression_summary(manifest: dict[str, Any]) -> dict[str, Any]:
@@ -451,6 +514,7 @@ def validate_case(index: int, case: dict[str, Any], failures: list[str]) -> None
     ):
         require(key in motif, f"{prefix}_motif_{key}_missing", failures)
     require(number(motif.get("stem_rms")) > 0.0005, f"{prefix}_mc202_stem_too_quiet", failures)
+    validate_role_evidence(prefix, case, failures)
 
     control = object_or_empty(case.get("primitive_ab_control"))
     require(control.get("control_kind") == "primitive_renderer_non_product_control", f"{prefix}_control_kind_invalid", failures)
@@ -468,6 +532,40 @@ def validate_case(index: int, case: dict[str, Any], failures: list[str]) -> None
         require(str(artifact.get("path", "")).strip() != "", f"{prefix}_{role}_path_missing", failures)
         require(len(str(artifact.get("sha256", ""))) == 64, f"{prefix}_{role}_sha_missing", failures)
         require(number(artifact.get("bytes")) > 0, f"{prefix}_{role}_empty", failures)
+
+
+def validate_role_evidence(prefix: str, case: dict[str, Any], failures: list[str]) -> None:
+    evidence = object_or_empty(case.get("mc202_role_evidence"))
+    family = str(case.get("source_family"))
+    require(evidence.get("source_family") == family, f"{prefix}_mc202_role_source_family_mismatch", failures)
+    require(evidence.get("result") == "pass", f"{prefix}_mc202_role_result_not_pass", failures)
+    require(
+        evidence.get("proof_scope") == "listening_review_target",
+        f"{prefix}_mc202_role_proof_scope_invalid",
+        failures,
+    )
+    require(evidence.get("source_derived") is True, f"{prefix}_mc202_role_not_source_derived", failures)
+    require(evidence.get("quality_proof") is False, f"{prefix}_mc202_role_claims_quality", failures)
+    require(evidence.get("human_verdict") == "unverified", f"{prefix}_mc202_role_human_verdict_not_unverified", failures)
+    require(evidence.get("failure_codes") == [], f"{prefix}_mc202_role_failure_codes", failures)
+    for field in ("role_label", "listening_focus", "musician_question"):
+        require(
+            isinstance(evidence.get(field), str) and bool(evidence[field].strip()),
+            f"{prefix}_mc202_role_{field}_missing",
+            failures,
+        )
+    if family == "sparse_bass_pressure":
+        require(evidence.get("role") == "bass_pressure", f"{prefix}_mc202_role_sparse_not_bass_pressure", failures)
+    elif family == "tonal_hook":
+        require(
+            evidence.get("role") == "hook_restraint_stab_answer",
+            f"{prefix}_mc202_role_tonal_not_answer_stab",
+            failures,
+        )
+    elif family in {"dense_break", "non_dense_break"}:
+        require(evidence.get("role") == "pressure_answer", f"{prefix}_mc202_role_dense_not_pressure_answer", failures)
+    else:
+        require(False, f"{prefix}_mc202_role_unsupported_source_family", failures)
 
 
 def run_mutation_fixtures(report: dict[str, Any]) -> None:
@@ -488,6 +586,43 @@ def run_mutation_fixtures(report: dict[str, Any]) -> None:
     mutated = json.loads(json.dumps(report))
     mutated["cases"][0]["selected_motif"]["stem_rms"] = 0.0
     fixtures.append(("silent_mc202", mutated, "mc202_stem_too_quiet"))
+
+    mutated = json.loads(json.dumps(report))
+    del mutated["cases"][0]["mc202_role_evidence"]
+    fixtures.append(("missing_role_evidence", mutated, "mc202_role_result_not_pass"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["cases"][0]["mc202_role_evidence"]["source_family"] = "stale_family"
+    fixtures.append(("stale_role_family", mutated, "mc202_role_source_family_mismatch"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["cases"][0]["mc202_role_evidence"]["quality_proof"] = True
+    fixtures.append(("role_claims_quality", mutated, "mc202_role_claims_quality"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["cases"][0]["mc202_role_evidence"]["proof_scope"] = "quality_proof"
+    fixtures.append(("role_bad_proof_scope", mutated, "mc202_role_proof_scope_invalid"))
+
+    mutated = json.loads(json.dumps(report))
+    for index, case in enumerate(mutated["cases"]):
+        if case["source_family"] == "dense_break":
+            case["mc202_role_evidence"]["role"] = "bass_pressure"
+            fixtures.append(("dense_wrong_role", mutated, f"case_{index}_mc202_role_dense_not_pressure_answer"))
+            break
+
+    mutated = json.loads(json.dumps(report))
+    for index, case in enumerate(mutated["cases"]):
+        if case["source_family"] == "sparse_bass_pressure":
+            case["mc202_role_evidence"]["role"] = "pressure_answer"
+            fixtures.append(("sparse_wrong_role", mutated, f"case_{index}_mc202_role_sparse_not_bass_pressure"))
+            break
+
+    mutated = json.loads(json.dumps(report))
+    for index, case in enumerate(mutated["cases"]):
+        if case["source_family"] == "tonal_hook":
+            case["mc202_role_evidence"]["role"] = "bass_pressure"
+            fixtures.append(("tonal_wrong_role", mutated, f"case_{index}_mc202_role_tonal_not_answer_stab"))
+            break
 
     mutated = json.loads(json.dumps(report))
     mutated["case_count"] = 999
@@ -561,14 +696,16 @@ def write_reports(output: Path, report: dict[str, Any]) -> None:
         "",
         "## Cases",
         "",
-        "| Case | Family | MC-202 Stem | Mix | Review | Motif | A/B Control |",
-        "| --- | --- | --- | --- | --- | --- | --- |",
+        "| Case | Family | Role target | MC-202 Stem | Mix | Review | Motif | A/B Control |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for case in report["cases"]:
         motif = case["selected_motif"]
         control = case["primitive_ab_control"]
+        role = case["mc202_role_evidence"]
         lines.append(
             f"| `{case['case_id']}` | `{case['source_family']}` | "
+            f"`{role['role']}` | "
             f"`{case['artifacts']['mc202_stem']['path']}` | "
             f"`{case['artifacts']['generated_support_mix']['path']}` | "
             f"`{case['review']}` | "
