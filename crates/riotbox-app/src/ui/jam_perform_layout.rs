@@ -57,9 +57,9 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
             "timing {} | sections {}",
             trust.timing_quality, trust.section_quality
         )),
+        source_timing_perform_risk_line(shell),
         source_timing_readiness_line(shell),
         arrangement_taste_line(shell),
-        Line::from(primary_warning_line(shell)),
     ])
     .block(Block::default().title("Trust").borders(Borders::ALL))
     .wrap(Wrap { trim: true });

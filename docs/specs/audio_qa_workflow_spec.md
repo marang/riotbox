@@ -1280,6 +1280,12 @@ Today the repo already has:
   come from the shared Jam source timing summary, not from a separate observer
   mapper. Beat/downbeat/phrase counts and full warning-code lists remain raw
   Source Graph diagnostics when included in the observer stream.
+- musician-visible performance risk cues should use the same shared Jam source
+  timing summary plus Source Graph confidence. The cue must distinguish
+  `trusted`, `degraded`, and `unavailable` states, and must point to a player
+  action such as performing grid moves, confirming/listening first, or
+  recapturing/loading source material instead of hiding source/timing risk in
+  logs.
 - observer/audio summaries can also compare compact observer-side and
   manifest-side Source Timing anchor evidence as
   `output_path.source_timing_anchor_alignment`; this records partial, aligned,
