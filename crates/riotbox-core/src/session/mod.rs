@@ -1,10 +1,13 @@
 mod arrangement_export_placement;
 mod daw_tempo_map;
+mod defaults;
 mod export_artifact_evidence;
 mod export_qa_gates;
 mod export_types;
 mod live_recording_host_audio;
 mod live_recording_readiness;
+mod mc202_types;
+mod version_types;
 
 pub use arrangement_export_placement::{
     ArrangementExportPlacementReadinessBlocker, ArrangementExportPlacementReadinessReport,
@@ -15,6 +18,7 @@ pub use daw_tempo_map::{
     DawTempoMapReadinessBlocker, DawTempoMapReadinessReport, DawTempoMapReadinessStatus,
     ExportDawTempoMapRef, validate_daw_tempo_map_readiness,
 };
+pub use defaults::{GhostBudgetState, GhostSuggestionRecord, GhostSuggestionStatus};
 pub use export_artifact_evidence::{
     ExportArtifactAudioMetrics, ExportArtifactFallbackComparisonEvidence,
     ExportArtifactFallbackComparisonKind, ExportArtifactSourceGraphRef,
@@ -41,8 +45,20 @@ pub use live_recording_readiness::{
     LiveRecordingHostAudioReadinessBlocker, LiveRecordingHostAudioReadinessReport,
     LiveRecordingHostAudioReadinessStatus, validate_live_recording_host_audio_readiness,
 };
-
-// Textual includes keep this large file split mechanical and behavior-preserving.
-include!("session/version_types.rs");
-include!("session/mc202_types.rs");
-include!("session/defaults.rs");
+pub use mc202_types::{
+    Mc202LaneState, Mc202PhraseIntentState, Mc202PhraseVariantState, Mc202RoleState,
+    Mc202SourcePhraseCandidateFamilyState, Mc202SourcePhraseCandidateScoreState,
+    Mc202SourcePhraseExpressionState, Mc202SourcePhraseNoteBudgetState, Mc202SourcePhrasePlanState,
+    Mc202SourcePhraseSlotState,
+};
+pub use version_types::{
+    ActionCommitRecord, ActionLog, CaptureRef, CaptureRuntimeState, CaptureSourceWindow,
+    CaptureTarget, CaptureType, GhostState, GraphStorageMode, LaneState, LockState, MacroState,
+    Mc202UndoSnapshotState, MixerState, PendingPolicy, ReplayPolicy, RuntimeState,
+    SceneMovementDirectionState, SceneMovementKindState, SceneMovementLaneIntentState,
+    SceneMovementState, SceneState, SessionFile, SessionVersion, Snapshot, SnapshotPayload,
+    SnapshotPayloadVersion, SourceGraphRef, SourceMonitorRuntimeState, SourceRef,
+    SourceTimingGridConfirmationState, SourceTimingRuntimeState, Tr909LaneState,
+    Tr909ReinforcementModeState, Tr909TakeoverProfileState, TransportRuntimeState,
+    UndoRuntimeState, W30LaneState, W30PreviewModeState,
+};

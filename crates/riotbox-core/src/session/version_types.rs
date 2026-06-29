@@ -1,11 +1,16 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    TimestampMs,
     action::{Action, CaptureLengthIntent, GhostMode, SourceMonitorMode},
     ids::{ActionId, BankId, CaptureId, PadId, SceneId, SnapshotId, SourceId},
     source_graph::{GraphProvenance, SourceGraph, SourceGraphVersion},
     transport::CommitBoundaryState,
-    TimestampMs,
+};
+
+use super::{
+    ExportReceiptState, GhostBudgetState, GhostSuggestionRecord, Mc202LaneState,
+    Mc202PhraseVariantState, Mc202RoleState, Mc202SourcePhrasePlanState,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -175,8 +180,7 @@ impl Mc202UndoSnapshotState {
         session.runtime_state.lane_state.mc202.role = self.role;
         session.runtime_state.lane_state.mc202.phrase_ref = self.phrase_ref.clone();
         session.runtime_state.lane_state.mc202.phrase_variant = self.phrase_variant;
-        session.runtime_state.lane_state.mc202.source_phrase_plan =
-            self.source_phrase_plan.clone();
+        session.runtime_state.lane_state.mc202.source_phrase_plan = self.source_phrase_plan.clone();
         session.runtime_state.macro_state.mc202_touch = self.touch;
     }
 }
