@@ -1272,4 +1272,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Expose source/timing confidence risk as musician-visible cue
 - [RIOTBOX-1312.md](./RIOTBOX-1312.md)
   P023: Make MC-202 closeout prove source-derived bass-or-answer role evidence
+- [RIOTBOX-1313.md](./RIOTBOX-1313.md)
+  P023: Thread MC-202 role evidence into producer review queue
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
