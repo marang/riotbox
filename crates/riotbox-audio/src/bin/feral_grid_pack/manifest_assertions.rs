@@ -79,6 +79,37 @@ mod manifest_assertions {
             MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
             "max_support_generated_to_source_rms_ratio",
         );
+        let source_character_window_selection =
+            &manifest["metrics"]["source_character_window_selection"];
+        assert!(
+            source_character_window_selection["selected_frame_count"]
+                .as_u64()
+                .expect("source-character selected frame count")
+                > 0
+        );
+        assert!(
+            source_character_window_selection["selected_score"]
+                .as_f64()
+                .expect("source-character selected score")
+                >= source_character_window_selection["requested_head_score"]
+                    .as_f64()
+                    .expect("source-character requested score")
+        );
+        assert!(
+            source_character_window_selection["scanned_candidate_count"]
+                .as_u64()
+                .expect("source-character scanned candidates")
+                >= 1
+        );
+        assert!(
+            matches!(
+                source_character_window_selection["reason"]
+                    .as_str()
+                    .expect("source-character selection reason"),
+                "requested_source_window_kept" | "source_character_window_promoted"
+            ),
+            "{source_character_window_selection:?}"
+        );
 
         let artifacts = manifest["artifacts"].as_array().expect("artifacts");
         assert_eq!(artifacts.len(), 7);

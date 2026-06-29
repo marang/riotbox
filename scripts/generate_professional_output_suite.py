@@ -259,7 +259,10 @@ def build_report(output: Path) -> dict[str, Any]:
         output / "professional-output-listening-pack" / "professional-output-listening-pack.json"
     )
     feral_mix_balance = feral_mix_balance_summary(output)
-    failures = suite_failure_codes(children, identity, feral_mix_balance)
+    source_character_window_selection = source_character_window_selection_summary(output)
+    failures = suite_failure_codes(
+        children, identity, feral_mix_balance, source_character_window_selection
+    )
     report = {
         "schema": SCHEMA,
         "schema_version": 1,
@@ -272,6 +275,7 @@ def build_report(output: Path) -> dict[str, Any]:
         "children": children,
         "listening_identity": identity,
         "feral_mix_balance": feral_mix_balance,
+        "source_character_window_selection": source_character_window_selection,
         "failure_codes": failures,
     }
     return apply_evidence_boundary(
@@ -1524,10 +1528,85 @@ def feral_mix_balance_summary(output: Path) -> dict[str, Any]:
     }
 
 
+def source_character_window_selection_summary(output: Path) -> dict[str, Any]:
+    cases = []
+    failures = []
+    for manifest_path in sorted(output.rglob("manifest.json")):
+        data = read_json(manifest_path)
+        selection = object_or_empty(
+            object_or_empty(data.get("metrics")).get("source_character_window_selection")
+        )
+        if not selection:
+            continue
+        requested_score = selection.get("requested_head_score")
+        selected_score = selection.get("selected_score")
+        scanned_count = selection.get("scanned_candidate_count")
+        reason = str(selection.get("reason") or "")
+        has_required_fields = (
+            is_number(selection.get("requested_start_seconds"))
+            and is_number(selection.get("selected_start_seconds"))
+            and is_number(selection.get("selected_duration_seconds"))
+            and is_number(requested_score)
+            and is_number(selected_score)
+            and is_number(selection.get("score_lift"))
+            and is_number(scanned_count)
+            and bool(reason)
+        )
+        cases.append(
+            {
+                "manifest": str(manifest_path.relative_to(output)),
+                "requested_start_seconds": number(
+                    selection.get("requested_start_seconds")
+                ),
+                "selected_start_seconds": number(selection.get("selected_start_seconds")),
+                "selected_duration_seconds": number(
+                    selection.get("selected_duration_seconds")
+                ),
+                "requested_head_score": number(requested_score),
+                "selected_score": number(selected_score),
+                "score_lift": number(selection.get("score_lift")),
+                "scanned_candidate_count": int(number(scanned_count)),
+                "reason": reason,
+                "has_required_source_character_window_fields": has_required_fields,
+            }
+        )
+    if not cases:
+        failures.append("source_character_window_selection_missing")
+    if any(
+        not case["has_required_source_character_window_fields"] for case in cases
+    ):
+        failures.append("source_character_window_selection_fields_missing")
+    if any(case["selected_score"] < case["requested_head_score"] for case in cases):
+        failures.append("source_character_window_selection_score_regressed")
+    if any(case["scanned_candidate_count"] < 1 for case in cases):
+        failures.append("source_character_window_selection_not_scanned")
+    if any(
+        case["reason"]
+        not in {"requested_source_window_kept", "source_character_window_promoted"}
+        for case in cases
+    ):
+        failures.append("source_character_window_selection_unknown_reason")
+    promoted_cases = [
+        case for case in cases if case["reason"] == "source_character_window_promoted"
+    ]
+    return {
+        "result": "pass" if not failures else "fail",
+        "case_count": len(cases),
+        "promoted_case_count": len(promoted_cases),
+        "max_selected_start_seconds": max(
+            (case["selected_start_seconds"] for case in cases), default=0.0
+        ),
+        "max_score_lift": max((case["score_lift"] for case in cases), default=0.0),
+        "failure_codes": failures,
+        "cases": cases,
+    }
+
+
 def suite_failure_codes(
     children: list[dict[str, Any]],
     identity: dict[str, Any],
     feral_mix_balance: dict[str, Any],
+    source_character_window_selection: dict[str, Any],
 ) -> list[str]:
     failures = []
     for child in children:
@@ -1556,6 +1635,11 @@ def suite_failure_codes(
     if feral_mix_balance["result"] != "pass":
         failures.extend(
             f"feral_mix_balance:{code}" for code in feral_mix_balance["failure_codes"]
+        )
+    if source_character_window_selection["result"] != "pass":
+        failures.extend(
+            f"source_character_window_selection:{code}"
+            for code in source_character_window_selection["failure_codes"]
         )
     return failures
 

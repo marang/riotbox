@@ -828,6 +828,12 @@ following:
   professional-suite/readiness/family validators reduce the generated/source
   masking ceiling from `0.16` to `0.08` so generated support can hit hard
   without hiding transformed source identity.
+- RIOTBOX-1308 starts source-window character selection before output
+  promotion: Feral now scores real source windows from the selected search
+  range, records the requested-vs-selected source-character window in reports
+  and manifests, and keeps suite-level diagnostics for scanned/promoted cases
+  so weak-head / stronger-later source material can move the rendered source
+  decision without adding fallback product sound or claiming human quality.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue

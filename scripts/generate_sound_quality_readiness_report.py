@@ -378,6 +378,9 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
     source_wav = metrics.get("professional_source_wav_pack", {})
     edge = metrics.get("edge_source_professional_diagnostics", {})
     feral_mix_balance = object_or_empty(report.get("feral_mix_balance"))
+    source_character_window_selection = object_or_empty(
+        report.get("source_character_window_selection")
+    )
     strongest_elements = sorted(
         {
             str(value)
@@ -450,6 +453,17 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
                 number(source_wav.get("min_rebuild_only_source_character_survival_margin")),
                 number(edge.get("min_rebuild_only_source_character_survival_margin")),
             ),
+        },
+        "source_character_window_selection": {
+            "result": str(source_character_window_selection.get("result") or ""),
+            "case_count": int(number(source_character_window_selection.get("case_count"))),
+            "promoted_case_count": int(
+                number(source_character_window_selection.get("promoted_case_count"))
+            ),
+            "max_selected_start_seconds": number(
+                source_character_window_selection.get("max_selected_start_seconds")
+            ),
+            "max_score_lift": number(source_character_window_selection.get("max_score_lift")),
         },
         "drum_pressure": {
             "dense_strongest_audible_element": str(
@@ -689,6 +703,11 @@ def validate_report(report: dict[str, Any]) -> list[str]:
         "professional_output_suite",
         "source_character_selection",
     )
+    suite_source_character_window = nested_value(
+        report,
+        "professional_output_suite",
+        "source_character_window_selection",
+    )
     suite_drum_pressure = nested_value(report, "professional_output_suite", "drum_pressure")
     suite_mix_balance = nested_value(report, "professional_output_suite", "mix_balance")
     suite_strongest = nested_list(
@@ -711,6 +730,11 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             failures,
         )
         check(
+            isinstance(suite_source_character_window, dict),
+            "professional_suite_source_character_window_selection_missing",
+            failures,
+        )
+        check(
             isinstance(suite_mix_balance, dict),
             "professional_suite_mix_balance_missing",
             failures,
@@ -721,6 +745,26 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             failures,
         )
         source_character = suite_source_character if isinstance(suite_source_character, dict) else {}
+        source_character_window = (
+            suite_source_character_window
+            if isinstance(suite_source_character_window, dict)
+            else {}
+        )
+        check(
+            source_character_window.get("result") == "pass",
+            "professional_suite_source_character_window_selection_not_pass",
+            failures,
+        )
+        check(
+            number(source_character_window.get("case_count")) >= 8,
+            "professional_suite_source_character_window_selection_case_count_too_low",
+            failures,
+        )
+        check(
+            number(source_character_window.get("promoted_case_count")) >= 0,
+            "professional_suite_source_character_window_selection_promoted_count_invalid",
+            failures,
+        )
         check(
             number(source_character.get("dense_hook_chop_score_floor")) >= 0.60,
             "professional_suite_dense_source_character_too_weak",
@@ -1110,6 +1154,9 @@ def markdown_report(report: dict[str, Any]) -> str:
         lines.append("- missing")
     suite = object_or_empty(report.get("professional_output_suite"))
     source_character = object_or_empty(suite.get("source_character_selection"))
+    source_character_window = object_or_empty(
+        suite.get("source_character_window_selection")
+    )
     drum_pressure = object_or_empty(suite.get("drum_pressure"))
     mix_balance = object_or_empty(suite.get("mix_balance"))
     lines.extend(
@@ -1122,6 +1169,13 @@ def markdown_report(report: dict[str, Any]) -> str:
                 "- Source-character floors: "
                 f"dense `{source_character.get('dense_hook_chop_score_floor')}`, "
                 f"tonal `{source_character.get('tonal_hook_chop_score_floor')}`"
+            ),
+            (
+                "- Source-window selection: "
+                f"`{source_character_window.get('result')}`, cases "
+                f"`{source_character_window.get('case_count')}`, promoted "
+                f"`{source_character_window.get('promoted_case_count')}`, max lift "
+                f"`{source_character_window.get('max_score_lift')}`"
             ),
             (
                 "- Drum pressure: "

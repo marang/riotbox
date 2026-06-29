@@ -19,6 +19,7 @@ fn write_report(
              - Total frames: `{}`\n\
              - Duration seconds: `{:.6}`\n\
              {}\
+             - Source-character window selection: `{}` selected `{:.3}s` for `{:.3}s` score `{:.6}` lift `{:.6}` scanned `{}` candidates\n\
              - TR-909 source reason: `{}`\n\
              - TR-909 support profile: `{}` / pattern `{}` / phrase `{}`\n\
              - TR-909 groove timing: `{}` applied `{}` offset `{:.3}` ms subdivision `{}`\n\
@@ -58,6 +59,18 @@ fn write_report(
             grid.total_frames,
             grid.duration_seconds(),
             source_timing_report_lines(timing_readiness, grid_bpm),
+            report.source_character_window_selection.reason,
+            report
+                .source_character_window_selection
+                .selected_start_seconds,
+            report
+                .source_character_window_selection
+                .selected_duration_seconds,
+            report.source_character_window_selection.selected_score,
+            report.source_character_window_selection.score_lift,
+            report
+                .source_character_window_selection
+                .scanned_candidate_count,
             report.tr909_source_profile.reason,
             report.tr909_source_profile.support_profile.label(),
             report.tr909_source_profile.pattern_adoption.label(),
@@ -205,6 +218,7 @@ fn write_readme(
     grid: &Grid,
     grid_bpm: GridBpmDecision,
     timing_readiness: &SourceTimingProbeReadinessReport,
+    source_character_window_selection: SourceCharacterWindowSelection,
 ) -> std::io::Result<()> {
     fs::write(
         output_dir.join("README.md"),
@@ -225,8 +239,10 @@ fn write_readme(
              - Bars: `{}`\n\
              - Beats per bar: `{}`\n\
              - Duration: `{:.3}s`\n\
-             - Source window start: `{:.3}s`\n\
-             - W-30 source window length: `{:.3}s`\n\n\
+             - Requested source window start: `{:.3}s`\n\
+             - Selected source-character window start: `{:.3}s`\n\
+             - W-30 source-character window length: `{:.3}s`\n\
+             - Source-character selection reason: `{}`\n\n\
              ## Files\n\n\
              - `stems/01_tr909_beat_fill.wav`: source-aware TR-909 support rendered on the same grid.\n\
              - `stems/02_w30_feral_source_chop.wav`: W-30 source-backed Feral chop with articulate source-window selection and bounded loudness normalization.\n\
@@ -255,7 +271,9 @@ fn write_readme(
             grid.beats_per_bar,
             grid.duration_seconds(),
             args.source_start_seconds,
-            args.source_window_seconds.min(grid.duration_seconds())
+            source_character_window_selection.selected_start_seconds,
+            source_character_window_selection.selected_duration_seconds,
+            source_character_window_selection.reason
         ),
     )
 }
