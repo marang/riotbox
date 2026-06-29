@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from release_demo_human_review_queue_fixtures import validate_mutation_fixtures
 import validate_source_family_release_demo_coverage as coverage
 
 
@@ -42,6 +43,7 @@ def main() -> int:
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--date", default="local-release-demo-human-review-queue")
     parser.add_argument("--validate-report", type=Path)
+    parser.add_argument("--mutation-fixtures", action="store_true")
     args = parser.parse_args()
 
     try:
@@ -66,6 +68,10 @@ def main() -> int:
         failures = validate_report(report)
         if failures:
             raise ValueError(", ".join(failures))
+        if args.mutation_fixtures:
+            failures = validate_mutation_fixtures(report, validate_report)
+            if failures:
+                raise ValueError(", ".join(failures))
     except (OSError, TypeError, ValueError, json.JSONDecodeError) as error:
         print(f"invalid release-demo human review queue: {error}", file=sys.stderr)
         return 1
