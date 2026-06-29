@@ -1260,4 +1260,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Strengthen W-30 hook/chop policy for first-two-bar impact
 - [RIOTBOX-1306.md](./RIOTBOX-1306.md)
   P023: Strengthen destructive gesture impact for stage-meaningful cuts
+- [RIOTBOX-1307.md](./RIOTBOX-1307.md)
+  P023: Strengthen mix-bus source clarity against generated masking
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
