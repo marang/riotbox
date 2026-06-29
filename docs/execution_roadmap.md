@@ -819,6 +819,11 @@ following:
   source-derived bass movement, and dense / tonal material must prove
   source-derived pressure-answer, hook-restraint, or stab-answer role evidence
   before the closeout can pass.
+- RIOTBOX-1313 threads the same MC-202 role distinction into the real-source
+  listening-pack handoff: reviewers now see whether each candidate should be
+  judged as bass pressure, pressure-answer, or hook-restraint / stab-answer,
+  while the report still blocks quality claims until structured human listening
+  records a verdict.
 - RIOTBOX-1305 tightens W-30 hook/chop source-character policy for the first
   two bars: source-derived riff starts now prefer stronger character contrast
   when top-scoring candidates cluster too tightly, tonal-hook riff playback is

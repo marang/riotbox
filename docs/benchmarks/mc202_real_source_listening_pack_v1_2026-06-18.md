@@ -16,6 +16,9 @@ Each case renders a local real source through the Feral-grid pack and records:
 - listening-review pack
 - MC-202 expression summary from source timing and source contour evidence
 - selected MC-202 motif metadata
+- per-case `mc202_role_evidence` that tells the reviewer whether the MC-202
+  candidate should be judged as bass pressure, pressure-answer, or
+  hook-restraint / stab-answer material
 - primitive A/B control metadata marked as non-product evidence
 
 The primitive control is not fallback music. It exists only to show that the
@@ -52,12 +55,19 @@ The validator requires:
 - `quality_proof: false`
 - source timing and source-contour expression fields
 - selected MC-202 motif fields
+- `mc202_role_evidence` with source-family-matched role targets:
+  sparse bass-pressure sources require `bass_pressure`, dense/non-dense sources
+  require `pressure_answer`, and tonal-hook sources require
+  `hook_restraint_stab_answer`
+- role evidence that remains `quality_proof: false` and
+  `human_verdict: unverified`, with `proof_scope: listening_review_target`
 - non-silent MC-202 stem evidence
 - primitive A/B control with `product_fallback_allowed: false`
 - source-contour A/B delta above the required threshold
 
 Mutation fixtures reject accidental quality claims, missing expression evidence,
-product-fallback controls, and silent MC-202 stems.
+product-fallback controls, silent MC-202 stems, missing/stale role evidence,
+and source-family-inappropriate MC-202 role targets.
 
 ## Boundary
 
