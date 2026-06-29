@@ -553,6 +553,22 @@ Minimum expectation today for an audio-producing slice:
 - a local real-session listening pass is done when the slice materially changes behavior that can already be heard
 - the PR or working notes say when the slice could not yet use a fuller offline WAV / listening-pack harness because that harness is still future work
 
+Audio-QA selection should be specific before it is broad:
+
+- first run the smallest real checks that cover the changed seam, such as the
+  affected fixture validator, pack smoke, promotion/import fixture, or render
+  comparison
+- do not treat all audio-QA smokes as the default proof for every small ticket;
+  long professional-output and demo-bank smokes rerender multiple real sources
+  through `feral_grid_pack` and should be paid for when their surface is touched
+  or when branch/merge risk justifies the broader gate
+- run `just ci` before PR or merge when the slice changes release gates,
+  promotion paths, source-derived quality claims, shared validators, core render
+  policy, or other cross-cutting behavior; otherwise document the narrower
+  command set that directly proves the slice
+- if a broad gate is skipped for a narrow slice, say why in the PR validation
+  notes instead of implying the full audio suite ran
+
 Do not close an audio-producing slice with only UI/log proof. If the feature is supposed to sound different, include a buffer regression, offline render comparison, source-vs-control metric check, or documented reason why the output seam is not yet operational.
 
 When manual TUI/audio verification is ambiguous enough that user input timing, unclear commit feedback, audio-device failure, and fallback-like output cannot be separated reliably, use the strongest observer path that exists before guessing. The current first slice is explicit and opt-in:

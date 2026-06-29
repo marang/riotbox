@@ -10,6 +10,13 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from mc202_source_composed_review_gate import (
+    MC202_GATE_FIELD,
+    MC202_ROLE_FIELD,
+    validate_promotion_gate,
+    validate_role_evidence_for_promotion,
+)
+
 
 SCHEMA = "riotbox.release_grade_demo_bank.v1"
 RUBRIC_SCHEMA = "riotbox.sound_product_readiness_rubric.v1"
@@ -129,6 +136,7 @@ def validate_entry(entry: dict[str, Any], path: Path, index: int) -> tuple[str, 
     validate_artifact_ref(object_field(entry, "metrics", prefix), "metrics", prefix, ".json")
     validate_artifact_ref(object_field(entry, "review_prompt", prefix), "review_prompt", prefix, ".md")
     validate_musical_summary(object_field(entry, "musical_summary", prefix), prefix)
+    validate_optional_mc202_role_evidence(entry, path, index)
 
     fix_categories = string_list(entry, "fix_categories", prefix, allow_empty=True)
     unknown_categories = sorted(set(fix_categories) - FIX_CATEGORIES)
@@ -145,6 +153,18 @@ def validate_entry(entry: dict[str, Any], path: Path, index: int) -> tuple[str, 
         require(not entry.get("quality_claim", False), f"{prefix}: unverified entries must not claim quality")
 
     return verdict, readiness
+
+
+def validate_optional_mc202_role_evidence(entry: dict[str, Any], path: Path, index: int) -> None:
+    gate = entry.get(MC202_GATE_FIELD)
+    role = entry.get(MC202_ROLE_FIELD)
+    if gate is None and role is None:
+        return
+    prefix = f"{path}: entries[{index}]"
+    require(isinstance(gate, dict), f"{prefix}.{MC202_GATE_FIELD} must be object")
+    require(isinstance(role, dict), f"{prefix}.{MC202_ROLE_FIELD} must be object")
+    validate_promotion_gate(gate, path)
+    validate_role_evidence_for_promotion(role, gate, path)
 
 
 def validate_artifact_ref(ref: dict[str, Any], field: str, prefix: str, suffix: str) -> None:

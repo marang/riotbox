@@ -14,6 +14,8 @@ from typing import Any
 from listening_review_workflow import validate_review
 from mc202_source_composed_review_gate import (
     MC202_GATE_FIELD,
+    MC202_ROLE_FIELD,
+    validate_role_evidence_for_promotion,
     validate_promotion_gate,
 )
 from validate_release_grade_demo_bank import validate_manifest as validate_demo_bank
@@ -97,6 +99,8 @@ def build_demo_bank_entry(
     metadata = object_field(review, LABEL_METADATA_FIELD, review_path)
     mc202_gate = object_field(metadata, MC202_GATE_FIELD, review_path)
     validate_promotion_gate(mc202_gate, review_path)
+    mc202_role = object_field(metadata, MC202_ROLE_FIELD, review_path)
+    validate_role_evidence_for_promotion(mc202_role, mc202_gate, review_path)
     identity = object_field(metadata, "artifact_identity", review_path)
     paths = object_field(metadata, "artifact_paths", review_path)
     audio_paths = object_field(paths, "audio", review_path)
@@ -164,6 +168,7 @@ def build_demo_bank_entry(
         "demo_worthiness_note": demo_worthiness_note,
         "fix_categories": categories,
         MC202_GATE_FIELD: mc202_gate,
+        MC202_ROLE_FIELD: mc202_role,
         "musical_summary": musical_summary(review, metadata, human_verdict),
     }
 

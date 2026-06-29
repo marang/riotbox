@@ -15,8 +15,10 @@ from pathlib import Path
 from audio_qa_evidence_boundary import apply_evidence_boundary
 from mc202_source_composed_review_gate import (
     MC202_GATE_FIELD,
+    MC202_ROLE_FIELD,
     case_gate as mc202_source_composed_case_gate,
     pack_gate as mc202_source_composed_pack_gate,
+    role_evidence_for_gate as mc202_role_evidence_for_gate,
 )
 
 
@@ -227,12 +229,14 @@ def create_review_pack(
     source_report_data = read_json(Path(case["source_report"]))
     demo_readiness = demo_readiness_reasons(case, source_report_data)
     mc202_gate = mc202_source_composed_case_gate(case, source_report_data)
+    mc202_role = mc202_role_evidence_for_gate(mc202_gate)
     review["demo_readiness"] = demo_readiness["demo_readiness"]
     review["demo_worthy_reason"] = demo_readiness["demo_worthy_reason"]
     review["not_demo_worthy_reason"] = demo_readiness["not_demo_worthy_reason"]
     review[MC202_GATE_FIELD] = mc202_gate
+    review[MC202_ROLE_FIELD] = mc202_role
     review["audio_judge_label"] = build_audio_judge_label(
-        output, case, label_created_at, mc202_gate
+        output, case, label_created_at, mc202_gate, mc202_role
     )
     review_path.write_text(json.dumps(review, indent=2) + "\n")
     append_demo_readiness_to_prompt(review_dir / "prompt.md", demo_readiness)
@@ -245,6 +249,7 @@ def create_review_pack(
         "human_verdict": review["human_verdict"],
         "review_artifacts": review["artifacts"],
         MC202_GATE_FIELD: mc202_gate,
+        MC202_ROLE_FIELD: mc202_role,
     }
     return apply_evidence_boundary(
         case_summary,
@@ -302,6 +307,7 @@ def build_audio_judge_label(
     case: dict,
     label_created_at: str,
     mc202_gate: dict,
+    mc202_role: dict,
 ) -> dict:
     source_report = Path(case["source_report"])
     source_report_data = read_json(source_report)
@@ -338,6 +344,7 @@ def build_audio_judge_label(
         },
         "reason_tags": tags,
         MC202_GATE_FIELD: mc202_gate,
+        MC202_ROLE_FIELD: mc202_role,
         "summary": default_label_summary(case["source_family"]),
     }
 

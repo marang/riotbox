@@ -824,6 +824,11 @@ following:
   judged as bass pressure, pressure-answer, or hook-restraint / stab-answer,
   while the report still blocks quality claims until structured human listening
   records a verdict.
+- RIOTBOX-1314 preserves MC-202 role evidence through demo-bank promotion:
+  MC-202-backed review imports now require source-family-matched
+  `mc202_role_evidence` with `proof_scope: demo_bank_promotion_gate`, and
+  promoted entries retain whether the human review covered bass pressure,
+  pressure-answer, or hook-restraint / stab-answer behavior.
 - RIOTBOX-1305 tightens W-30 hook/chop source-character policy for the first
   two bars: source-derived riff starts now prefer stronger character contrast
   when top-scoring candidates cluster too tightly, tonal-hook riff playback is

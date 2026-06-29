@@ -131,6 +131,13 @@ support as source-composed bass / answer behavior. The gate remains
 `quality_proof: false` inside the listening pack; only a structured human
 verdict can decide demo readiness.
 
+MC-202-backed promotion must also preserve `mc202_role_evidence` from the
+review metadata. The role evidence must match the source family, use
+`proof_scope: demo_bank_promotion_gate`, keep `quality_proof: false`, and
+identify whether the reviewed MC-202 contribution was bass pressure,
+pressure-answer, or hook-restraint / stab-answer material. Missing, stale, or
+source-family-inappropriate role evidence blocks promotion.
+
 ---
 
 ## 6. Non-Goals
