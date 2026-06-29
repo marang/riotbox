@@ -1292,4 +1292,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Inventory Rust textual includes and add module-policy guardrail
 - [RIOTBOX-1322.md](./RIOTBOX-1322.md)
   P023: Migrate Source Graph include shell to semantic Rust modules
+- [RIOTBOX-1323.md](./RIOTBOX-1323.md)
+  P023: Migrate Session include shell to semantic Rust modules
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
