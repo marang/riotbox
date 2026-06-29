@@ -20,7 +20,7 @@
     },
     "mix_balance": {
       "support_generated_to_source_rms_ratio": 0.24,
-      "source_first_generated_to_source_rms_ratio": 0.10
+      "source_first_generated_to_source_rms_ratio": 0.07
     },
     "identity_collapse": {
       "correlation": 0.89,

@@ -10,11 +10,11 @@ struct MixPolicy {
 }
 
 const SOURCE_FIRST_MIX_POLICY: MixPolicy = MixPolicy {
-    tr909_gain: 0.10,
-    tr909_low_gain: 0.04,
-    mc202_gain: 0.035,
-    mc202_low_gain: 0.015,
-    w30_gain: 1.24,
+    tr909_gain: 0.075,
+    tr909_low_gain: 0.030,
+    mc202_gain: 0.026,
+    mc202_low_gain: 0.010,
+    w30_gain: 1.28,
     drive: 1.18,
     output_gain: 0.88,
 };
