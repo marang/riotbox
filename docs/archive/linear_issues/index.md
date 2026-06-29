@@ -1264,4 +1264,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Strengthen mix-bus source clarity against generated masking
 - [RIOTBOX-1308.md](./RIOTBOX-1308.md)
   P023: Strengthen source-window character selection before output promotion
+- [RIOTBOX-1309.md](./RIOTBOX-1309.md)
+  P023: Strengthen TR-909 drum pressure in rendered output path
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
