@@ -26,30 +26,32 @@ This directory holds implementation-facing specifications, plans, reviews, bench
 3. [Architecture And Phase Map](./architecture_phase_map.md)
 4. [Technology Stack Spec](./specs/technology_stack_spec.md)
 5. [Rust Engineering Guidelines](./specs/rust_engineering_guidelines.md)
-6. [Source Graph Spec](./specs/source_graph_spec.md)
-7. [Session File Spec](./specs/session_file_spec.md)
-8. [Action Lexicon Spec](./specs/action_lexicon_spec.md)
-9. [Replay Model Spec](./specs/replay_model_spec.md)
-10. [Audio Core Spec](./specs/audio_core_spec.md)
-11. [TUI Screen Spec](./specs/tui_screen_spec.md)
-12. [Ghost API Spec](./specs/ghost_api_spec.md)
-13. [Preset & Style Spec](./specs/preset_style_spec.md)
-14. [Validation & Benchmark Spec](./specs/validation_benchmark_spec.md)
-15. [Fixture Corpus Spec](./specs/fixture_corpus_spec.md)
-16. [Audio QA Workflow Spec](./specs/audio_qa_workflow_spec.md)
-17. [Sound Product Readiness Rubric Spec](./specs/sound_product_readiness_rubric_spec.md)
-18. [Release-Grade Musician Demo Bank Spec](./specs/release_grade_musician_demo_bank_spec.md)
-19. [20/10 Sound-Product Future Ideas Spec](./specs/sound_product_2010_future_ideas_spec.md)
-20. [Source Timing Intelligence Spec](./specs/source_timing_intelligence_spec.md)
-21. [Arrangement / Scene System Spec](./specs/arrangement_scene_system_spec.md)
-22. [Recovery Notes](./recovery_notes.md)
-23. [Phase Definition of Done](./phase_definition_of_done.md)
-24. [Research / Decision Log](./research_decision_log.md)
-25. [Source Timing Intelligence Plan](./plans/source_timing_intelligence_plan.md)
-26. [Source Transport Map Capture Plan](./plans/source_transport_map_capture_plan.md)
-27. [MC-202 Source Phrase Planning Plan](./plans/mc202_source_phrase_planning_plan.md)
-28. [MC-202 Real-Source Listening Pack Benchmark](./benchmarks/mc202_real_source_listening_pack_v1_2026-06-18.md)
-29. [MC-202 Producer-Grade Closeout Benchmark](./benchmarks/mc202_producer_grade_closeout_v1_2026-06-18.md)
+6. [Module Policy](./engineering/module_policy.md)
+7. [Riotbox Improvement Tracks Plan](./plans/riotbox_improvement_tracks_plan.md)
+8. [Source Graph Spec](./specs/source_graph_spec.md)
+9. [Session File Spec](./specs/session_file_spec.md)
+10. [Action Lexicon Spec](./specs/action_lexicon_spec.md)
+11. [Replay Model Spec](./specs/replay_model_spec.md)
+12. [Audio Core Spec](./specs/audio_core_spec.md)
+13. [TUI Screen Spec](./specs/tui_screen_spec.md)
+14. [Ghost API Spec](./specs/ghost_api_spec.md)
+15. [Preset & Style Spec](./specs/preset_style_spec.md)
+16. [Validation & Benchmark Spec](./specs/validation_benchmark_spec.md)
+17. [Fixture Corpus Spec](./specs/fixture_corpus_spec.md)
+18. [Audio QA Workflow Spec](./specs/audio_qa_workflow_spec.md)
+19. [Sound Product Readiness Rubric Spec](./specs/sound_product_readiness_rubric_spec.md)
+20. [Release-Grade Musician Demo Bank Spec](./specs/release_grade_musician_demo_bank_spec.md)
+21. [20/10 Sound-Product Future Ideas Spec](./specs/sound_product_2010_future_ideas_spec.md)
+22. [Source Timing Intelligence Spec](./specs/source_timing_intelligence_spec.md)
+23. [Arrangement / Scene System Spec](./specs/arrangement_scene_system_spec.md)
+24. [Recovery Notes](./recovery_notes.md)
+25. [Phase Definition of Done](./phase_definition_of_done.md)
+26. [Research / Decision Log](./research_decision_log.md)
+27. [Source Timing Intelligence Plan](./plans/source_timing_intelligence_plan.md)
+28. [Source Transport Map Capture Plan](./plans/source_transport_map_capture_plan.md)
+29. [MC-202 Source Phrase Planning Plan](./plans/mc202_source_phrase_planning_plan.md)
+30. [MC-202 Real-Source Listening Pack Benchmark](./benchmarks/mc202_real_source_listening_pack_v1_2026-06-18.md)
+31. [MC-202 Producer-Grade Closeout Benchmark](./benchmarks/mc202_producer_grade_closeout_v1_2026-06-18.md)
 
 ## Why This Order
 
@@ -86,6 +88,8 @@ docs/
   recovery_notes.md
   phase_definition_of_done.md
   research_decision_log.md
+  engineering/
+    module_policy.md
   archive/
     linear_issues/
       README.md
@@ -98,6 +102,7 @@ docs/
     README.md
     jam_workflow_baseline_2026-04-17.md
   plans/
+    riotbox_improvement_tracks_plan.md
     source_timing_intelligence_plan.md
     source_transport_map_capture_plan.md
   reviews/
@@ -154,6 +159,7 @@ docs/
 - `recovery_notes.md`: current manual recovery and snapshot-payload label guidance captured
 - `specs/technology_stack_spec.md`: Stack Freeze v1 captured with current timing-contract clarification
 - `specs/rust_engineering_guidelines.md`: Rust engineering guidelines captured
+- `engineering/module_policy.md`: semantic Rust module and textual include policy captured
 - `specs/source_graph_spec.md`: Source Graph v1 contract captured
 - `specs/source_timing_intelligence_spec.md`: Rust-first all-lane timing contract captured
 - `specs/session_file_spec.md`: Session file and recovery boundary captured
@@ -177,6 +183,7 @@ docs/
   adaptive Source Map, monitor, and capture workflow plan captured
 - `plans/mc202_source_phrase_planning_plan.md`: RIOTBOX-1035 MC-202
   source-derived bass / answer phrase planning plan captured
+- `plans/riotbox_improvement_tracks_plan.md`: RIOTBOX-1320 improvement-track split captured for semantic modules, runtime audio quality, source-backed instrument work, sidecar/provenance, and QA/UX
 - `archive/linear_issues/README.md`: archive policy started
 - `archive/linear_issues/TEMPLATE.md`: archive template started
 - `archive/linear_issues/index.md`: archive index started

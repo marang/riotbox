@@ -74,6 +74,9 @@ Strategic context lives in `plan/riotbox_masterplan.md` and `plan/riotbox_liam_h
 - Repeated queue-draft construction and side-effect log-result mutation are acceptable while small; review for a narrow helper after the same shape appears across three or more lane paths.
 - Mechanical `include!` splits are not durable module ownership.
 - Convert included shards into real modules only when semantic boundary, visibility, tests, and review cost all improve.
+- Use `docs/engineering/module_policy.md` as the canonical module and textual
+  include policy. File size is a review signal, not a reason to create
+  arbitrary shards.
 - Do not add `JamAppState` state unless it is truly app-runtime state, does not need restore/replay, and has no better home in Session/Core.
 
 ## ActionCommand Rule
@@ -145,7 +148,10 @@ If a surface is intentionally not applicable, say why in the PR or working notes
 - Keep tests close to the modules they validate.
 - Avoid unnecessary dependencies during early model stabilization.
 - For Rust reviews, use `code-review`; Rust context should also apply `code-review-rust` when available.
-- Detailed Rust file-size, module-split, and test-organization rules live in `docs/specs/rust_engineering_guidelines.md`, `docs/workflow_conventions.md`, and the `code-review-rust` skill.
+- Detailed Rust file-size, module-split, textual-include, and test-organization
+  rules live in `docs/engineering/module_policy.md`,
+  `docs/specs/rust_engineering_guidelines.md`, `docs/workflow_conventions.md`,
+  and the `code-review-rust` skill.
 
 ## Documentation Rules
 
@@ -177,7 +183,8 @@ If a surface is intentionally not applicable, say why in the PR or working notes
   - architecture drift against `docs/` contracts
   - missing tests for new behavior
   - workflow/documentation gaps introduced by the slice
-  - growth of any Rust file beyond the 500-line budget
+  - growth of any Rust file beyond the soft review-size guidance, especially
+    when a semantic module split would reduce review risk
 - Run `review-codebase` regularly, not on every branch.
 - Default broad-review cadence: after every 5th finished feature branch.
 - Record important broad-review findings in:

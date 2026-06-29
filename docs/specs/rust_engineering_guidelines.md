@@ -115,6 +115,17 @@ These checks should pass locally before a PR update whenever practical, and they
 - Do not bury unrelated concepts in one giant file once the codebase grows.
 - Keep app orchestration separate from core domain models.
 - Keep sidecar-facing contracts explicit at crate boundaries.
+- Prefer real Rust modules over textual `include!` splits. `include!` is not a
+  normal tool for satisfying a line-count budget.
+- Treat the soft file-size budget as a review signal, not as a design goal.
+  Semantic ownership, visibility, test boundaries, and API compatibility matter
+  more than keeping every file below an exact line count.
+- When migrating an include shell, keep the first PR mechanical and
+  behavior-preserving. Preserve public exports with `pub use` where needed, and
+  defer naming or visibility cleanup to later slices unless it is required for
+  compilation.
+- Use `docs/engineering/module_policy.md` as the canonical module and textual
+  include policy.
 
 ---
 
