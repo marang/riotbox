@@ -1298,4 +1298,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Migrate audio MC-202 and source-audio include shells
 - [RIOTBOX-1325.md](./RIOTBOX-1325.md)
   P023: Thin riotbox-app binary into library CLI modules
+- [RIOTBOX-1326.md](./RIOTBOX-1326.md)
+  P023: Audit and harden the realtime audio callback hot path
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
