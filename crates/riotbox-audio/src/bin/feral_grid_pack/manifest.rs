@@ -16,9 +16,9 @@ use super::{
     ManifestW30SourceAccentDynamicsProof, ManifestW30SourceChopProfile,
     ManifestW30SourceLoopClosureProof, ManifestW30SourceSliceChoiceProof,
     ManifestW30SourceTriggerVariationProof, PACK_ID, PackReport, RenderMetrics, SAMPLE_RATE,
-    SourceGridOutputDriftMetrics, SourceTimingAnalysisForManifest, SpectralEnergyMetrics,
-    Tr909GrooveTimingPolicy, grid_bpm_decision_reason_label, grid_bpm_source_label,
-    manifest_mc202_bass_pressure_proof, manifest_mc202_source_contour_proof,
+    SourceCharacterWindowSelection, SourceGridOutputDriftMetrics, SourceTimingAnalysisForManifest,
+    SpectralEnergyMetrics, Tr909GrooveTimingPolicy, grid_bpm_decision_reason_label,
+    grid_bpm_source_label, manifest_mc202_bass_pressure_proof, manifest_mc202_source_contour_proof,
     manifest_source_timing_readiness, manifest_tr909_kick_pressure_proof,
     manifest_tr909_source_accent_dynamics_proof, manifest_tr909_source_profile,
     manifest_w30_source_accent_dynamics_proof, manifest_w30_source_chop_profile,
@@ -93,6 +93,7 @@ struct ManifestThresholds {
 
 #[derive(Serialize)]
 struct ManifestPackMetrics {
+    source_character_window_selection: SourceCharacterWindowSelection,
     tr909_source_profile: ManifestTr909SourceProfile,
     tr909_groove_timing: Tr909GrooveTimingPolicy,
     tr909_kick_pressure: ManifestTr909KickPressureProof,
@@ -187,6 +188,7 @@ pub(super) fn write_manifest(
             max_support_generated_to_source_rms_ratio: MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
         },
         metrics: ManifestPackMetrics {
+            source_character_window_selection: report.source_character_window_selection,
             tr909_source_profile: manifest_tr909_source_profile(report.tr909_source_profile),
             tr909_groove_timing: report.tr909_groove_timing,
             tr909_kick_pressure: manifest_tr909_kick_pressure_proof(report.tr909_kick_pressure),

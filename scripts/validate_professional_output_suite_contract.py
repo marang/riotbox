@@ -134,6 +134,7 @@ def validate_report(report: dict[str, Any], output: Path) -> list[str]:
     validate_source_character_metrics(dense, matrix, source_wav, edge, failures)
     validate_rebuild_balance_metrics(matrix, source_wav, failures)
     validate_feral_mix_balance_metrics(report, failures)
+    validate_source_character_window_selection_metrics(report, failures)
     validate_artifacts(output, failures)
     return failures
 
@@ -951,6 +952,57 @@ def validate_feral_mix_balance_metrics(report: dict[str, Any], failures: list[st
         number(balance.get("max_support_generated_to_source_rms_ratio"))
         <= MAX_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
         "feral_generated_support_masks_source",
+        failures,
+    )
+
+
+def validate_source_character_window_selection_metrics(
+    report: dict[str, Any], failures: list[str]
+) -> None:
+    selection = object_or_empty(report.get("source_character_window_selection"))
+    cases = list_or_empty(selection.get("cases"))
+    require(
+        selection.get("result") == "pass",
+        "source_character_window_selection_not_pass",
+        failures,
+    )
+    require(
+        number(selection.get("case_count")) >= 8,
+        "source_character_window_selection_case_count_too_low",
+        failures,
+    )
+    require(
+        all(
+            object_or_empty(case).get("has_required_source_character_window_fields") is True
+            for case in cases
+        ),
+        "source_character_window_selection_fields_missing",
+        failures,
+    )
+    require(
+        all(
+            number(object_or_empty(case).get("selected_score"))
+            >= number(object_or_empty(case).get("requested_head_score"))
+            for case in cases
+        ),
+        "source_character_window_selection_score_regressed",
+        failures,
+    )
+    require(
+        all(
+            number(object_or_empty(case).get("scanned_candidate_count")) >= 1
+            for case in cases
+        ),
+        "source_character_window_selection_not_scanned",
+        failures,
+    )
+    require(
+        all(
+            str(object_or_empty(case).get("reason"))
+            in {"requested_source_window_kept", "source_character_window_promoted"}
+            for case in cases
+        ),
+        "source_character_window_selection_unknown_reason",
         failures,
     )
 

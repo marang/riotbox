@@ -24,7 +24,9 @@ use riotbox_audio::{
         OfflineAudioMetrics, render_tr909_offline, render_w30_preview_offline,
         signal_metrics_with_grid,
     },
-    source_audio::{SourceAudioCache, SourceAudioError, write_interleaved_pcm16_wav},
+    source_audio::{
+        SourceAudioCache, SourceAudioError, SourceAudioWindow, write_interleaved_pcm16_wav,
+    },
     source_timing_probe::{SourceTimingProbeConfig, analyze_source_timing_probe},
     tr909::{
         Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
@@ -190,6 +192,7 @@ struct RenderMetrics {
 
 #[derive(Clone, Copy, Debug)]
 struct PackReport {
+    source_character_window_selection: SourceCharacterWindowSelection,
     tr909_source_profile: SourceAwareTr909Profile,
     tr909_groove_timing: Tr909GrooveTimingPolicy,
     tr909_kick_pressure: Tr909KickPressureProof,
@@ -213,14 +216,6 @@ struct PackReport {
     source_grid_output_drift: SourceGridOutputDriftMetrics,
     source_first_generated_to_source_rms_ratio: f32,
     support_generated_to_source_rms_ratio: f32,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-struct SourceGridAlignmentReport {
-    tr909_source_grid_alignment: SourceGridOutputDriftMetrics,
-    mc202_source_grid_alignment: SourceGridOutputDriftMetrics,
-    w30_source_grid_alignment: SourceGridOutputDriftMetrics,
-    source_grid_output_drift: SourceGridOutputDriftMetrics,
 }
 
 fn print_help() {
@@ -292,10 +287,18 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let grid_bpm = choose_grid_bpm(args, timing_readiness);
     let grid = Grid::new(grid_bpm.bpm, DEFAULT_BEATS_PER_BAR, args.bars)?;
 
-    let w30_source_window = source.window_by_seconds(
+    let requested_source_window = source.window_by_seconds(
         args.source_start_seconds,
         args.source_window_seconds.min(grid.duration_seconds()),
     );
+    let source_character_search_window =
+        source.window_by_seconds(args.source_start_seconds, grid.duration_seconds());
+    let (w30_source_window, source_character_window_selection) =
+        select_source_character_window(
+            &source,
+            requested_source_window,
+            source_character_search_window,
+        );
     let source_window_samples = source.window_samples(w30_source_window);
     let (w30_preview, w30_source_chop_profile) = source_chop_preview_from_interleaved(
         source_window_samples,
@@ -352,6 +355,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
 
     let source_grid_alignment = source_grid_alignment_report(&tr909, &mc202, &w30, &full_mix, &grid);
     let report = PackReport {
+        source_character_window_selection,
         tr909_source_profile,
         tr909_groove_timing,
         tr909_kick_pressure,
@@ -390,7 +394,14 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         &source_timing_analysis,
         grid_bpm,
     )?;
-    write_readme(&output_dir, args, &grid, grid_bpm, timing_readiness)?;
+    write_readme(
+        &output_dir,
+        args,
+        &grid,
+        grid_bpm,
+        timing_readiness,
+        source_character_window_selection,
+    )?;
 
     Ok(())
 }

@@ -1,6 +1,14 @@
 const SOURCE_GRID_OUTPUT_MAX_PEAK_OFFSET_MS: f32 = 70.0;
 const SOURCE_GRID_OUTPUT_MIN_HIT_RATIO: f32 = 0.50;
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct SourceGridAlignmentReport {
+    tr909_source_grid_alignment: SourceGridOutputDriftMetrics,
+    mc202_source_grid_alignment: SourceGridOutputDriftMetrics,
+    w30_source_grid_alignment: SourceGridOutputDriftMetrics,
+    source_grid_output_drift: SourceGridOutputDriftMetrics,
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize)]
 struct SourceGridOutputDriftMetrics {
     beat_count: u32,
