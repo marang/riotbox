@@ -262,6 +262,7 @@ mod tests {
             render_mc202_bass_pressure_with_source_contour(&grid, tr909_profile, source_contour);
 
         assert!(mc202_pressure.applied, "{mc202_pressure:?}");
+        assert_eq!(mc202_pressure.low_body_emphasis, 0.0);
         assert!(
             mc202_pressure.pressure_reinforcement_gain >= 0.038,
             "{mc202_pressure:?}"
@@ -272,6 +273,98 @@ mod tests {
         );
         assert!(mc202_source_contour.applied, "{mc202_source_contour:?}");
         assert!(signal_metrics(&mc202_render).rms >= 0.0055);
+    }
+
+    #[test]
+    fn low_dominant_drop_contour_gets_physical_mc202_body_without_affecting_hold() {
+        let grid = Grid::new(120.0, 4, 4).expect("grid");
+        let drop_contour = Mc202SourceContourProfile {
+            contour_hint: Mc202ContourHint::Drop,
+            note_budget: Mc202NoteBudget::Balanced,
+            touch_boost: 0.055,
+            music_bus_boost: 0.040,
+            low_band_energy_ratio: 0.86,
+            mid_band_energy_ratio: 0.12,
+            high_band_energy_ratio: 0.02,
+            event_density_per_bar: 1.0,
+            reason: "source_low_section_drop_contour",
+        };
+        let hold_contour = Mc202SourceContourProfile {
+            contour_hint: Mc202ContourHint::Hold,
+            note_budget: Mc202NoteBudget::Sparse,
+            touch_boost: 0.035,
+            music_bus_boost: 0.025,
+            low_band_energy_ratio: 0.24,
+            mid_band_energy_ratio: 0.72,
+            high_band_energy_ratio: 0.04,
+            event_density_per_bar: 0.5,
+            reason: "source_mid_section_hold_contour",
+        };
+        let drop_profile = SourceAwareTr909Profile {
+            signal_rms: 0.16,
+            low_band_rms: 0.14,
+            onset_count: 8,
+            event_density_per_bar: 1.0,
+            low_band_energy_ratio: 0.86,
+            mid_band_energy_ratio: 0.12,
+            high_band_energy_ratio: 0.02,
+            support_profile: Tr909SourceSupportProfile::DropDrive,
+            support_context: Tr909SourceSupportContext::TransportBar,
+            pattern_adoption: Tr909PatternAdoption::MainlineDrive,
+            phrase_variation: Tr909PhraseVariation::PhraseDrive,
+            drum_bus_level: 0.84,
+            slam_intensity: 0.22,
+            reason: "source_low_drive",
+        };
+        let hold_profile = SourceAwareTr909Profile {
+            signal_rms: 0.10,
+            low_band_rms: 0.04,
+            onset_count: 4,
+            event_density_per_bar: 0.5,
+            low_band_energy_ratio: 0.24,
+            mid_band_energy_ratio: 0.72,
+            high_band_energy_ratio: 0.04,
+            support_profile: Tr909SourceSupportProfile::SteadyPulse,
+            support_context: Tr909SourceSupportContext::TransportBar,
+            pattern_adoption: Tr909PatternAdoption::SupportPulse,
+            phrase_variation: Tr909PhraseVariation::PhraseAnchor,
+            drum_bus_level: 0.70,
+            slam_intensity: 0.16,
+            reason: "source_steady_pulse",
+        };
+
+        let (drop_render, drop_pressure, drop_source_contour) =
+            render_mc202_bass_pressure_with_source_contour(&grid, drop_profile, drop_contour);
+        let (hold_render, hold_pressure, hold_source_contour) =
+            render_mc202_bass_pressure_with_source_contour(&grid, hold_profile, hold_contour);
+        let drop_spectral = spectral_energy_metrics(&drop_render);
+        let hold_spectral = spectral_energy_metrics(&hold_render);
+
+        assert!(drop_pressure.applied, "{drop_pressure:?}");
+        assert!(hold_pressure.applied, "{hold_pressure:?}");
+        assert!(drop_source_contour.applied, "{drop_source_contour:?}");
+        assert!(hold_source_contour.applied, "{hold_source_contour:?}");
+        assert!(
+            drop_pressure.low_body_emphasis >= 0.34,
+            "{drop_pressure:?}"
+        );
+        assert_eq!(hold_pressure.low_body_emphasis, 0.0);
+        assert!(
+            drop_pressure.pressure_reinforcement_gain > hold_pressure.pressure_reinforcement_gain,
+            "drop={drop_pressure:?} hold={hold_pressure:?}"
+        );
+        assert!(
+            drop_pressure.low_band_rms > hold_pressure.low_band_rms * 1.45,
+            "drop={drop_pressure:?} hold={hold_pressure:?}"
+        );
+        assert!(
+            drop_spectral.low_band_energy_ratio > hold_spectral.low_band_energy_ratio,
+            "drop={drop_spectral:?} hold={hold_spectral:?}"
+        );
+        assert!(
+            drop_pressure.peak_abs < 0.12,
+            "{drop_pressure:?}"
+        );
     }
 
     #[test]

@@ -808,6 +808,11 @@ following:
   now shape the winning candidate and are recorded in selected-candidate
   provenance, with pressure-vs-pickup regression coverage proving different
   source evidence chooses different phrase families and rendered output.
+- RIOTBOX-1304 strengthens the MC-202 bass-pressure render seam for
+  low-dominant sparse/drop sources: source-derived low-band dominance now
+  applies a measured body-emphasis pass, deeper pressure reinforcement, and
+  manifest provenance while tonal/hold material remains unboosted, so bass
+  pressure is less likely to read as a midrange melody.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue
