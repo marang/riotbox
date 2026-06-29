@@ -166,12 +166,11 @@ fn build_candidate(
 
     match family {
         Mc202SourcePhraseCandidateFamilyState::SubPressureShove => {
-            cells[groove.pressure_step] = Some(-12);
-            cells[groove.secondary_pressure_step()] = Some(if expression.bass_pressure > 0.72 {
-                -15
-            } else {
-                -10
-            });
+            cells[groove.pressure_step] = Some(source_pressure_root(expression));
+            cells[groove.secondary_pressure_step()] = Some(source_pressure_secondary(expression));
+            if expression.low_pressure_contour > 0.54 && expression.bass_pressure > 0.56 {
+                cells[groove.pressure_movement_step()] = Some(source_pressure_movement(expression));
+            }
             if expression.offbeat_answer_space > 0.42 {
                 cells[groove.answer_step] = Some(-7);
             }
@@ -224,6 +223,36 @@ fn build_candidate(
         score: 0.0,
         rejection_reason,
         phrase_memory: 1.0,
+    }
+}
+
+fn source_pressure_root(expression: &Mc202SourcePhraseExpressionState) -> i8 {
+    if expression.bass_pressure > 0.78 && expression.low_pressure_contour > 0.52 {
+        -14
+    } else {
+        -12
+    }
+}
+
+fn source_pressure_secondary(expression: &Mc202SourcePhraseExpressionState) -> i8 {
+    if expression.low_pressure_contour > 0.78 {
+        -19
+    } else if expression.low_pressure_contour > 0.54 {
+        -16
+    } else if expression.bass_pressure > 0.72 {
+        -14
+    } else {
+        -10
+    }
+}
+
+fn source_pressure_movement(expression: &Mc202SourcePhraseExpressionState) -> i8 {
+    if expression.low_pressure_contour > 0.82 {
+        -22
+    } else if expression.low_pressure_contour > 0.66 {
+        -19
+    } else {
+        -16
     }
 }
 

@@ -796,6 +796,12 @@ following:
   hook source-family tests require a clear bass-articulation margin plus
   stronger rendered low-band RMS/share, and neutralized source evidence must
   remain silent instead of leaking fallback MC-202 output.
+- RIOTBOX-1302 moves MC-202 pressure composition beyond a fixed two-hit
+  contour: SubPressureShove now derives root, secondary, and optional movement
+  steps from source-expression low-band pressure / movement evidence, records
+  the pressure-movement groove step in provenance, and tests high-vs-low
+  low-band-movement pressure sources with the same source fingerprint basis for
+  different phrase cells and rendered output.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue

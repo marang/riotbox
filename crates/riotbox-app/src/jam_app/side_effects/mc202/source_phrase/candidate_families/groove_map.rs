@@ -95,6 +95,17 @@ impl SourcePhraseGrooveMap {
         )
     }
 
+    pub(super) fn pressure_movement_step(self) -> usize {
+        avoid_steps(
+            (self.pressure_step + 12) % 16,
+            &[
+                self.secondary_pressure_step(),
+                self.answer_step,
+                self.callback_step,
+            ],
+        )
+    }
+
     pub(super) fn backbeat_answer_step(self) -> usize {
         avoid_steps(
             (self.callback_step + 2) % 16,
@@ -123,6 +134,10 @@ impl SourcePhraseGrooveMap {
             format!("groove_callback_step:{}", self.callback_step),
             format!("groove_hook_safe_step:{}", self.hook_safe_step),
             format!("groove_fill_pickup_step:{}", self.fill_pickup_step),
+            format!(
+                "groove_pressure_movement_step:{}",
+                self.pressure_movement_step()
+            ),
         ]
     }
 }
