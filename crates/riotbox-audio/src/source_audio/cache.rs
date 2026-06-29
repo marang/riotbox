@@ -162,13 +162,13 @@ impl fmt::Display for SourceAudioError {
 impl Error for SourceAudioError {}
 
 #[derive(Debug)]
-struct DecodedPcmWave {
+pub(super) struct DecodedPcmWave {
     sample_rate: u32,
     channel_count: u16,
     samples: Vec<f32>,
 }
 
-fn decode_pcm_wav(bytes: &[u8]) -> Result<DecodedPcmWave, SourceAudioError> {
+pub(super) fn decode_pcm_wav(bytes: &[u8]) -> Result<DecodedPcmWave, SourceAudioError> {
     if bytes.len() < 12 {
         return Err(SourceAudioError::InvalidWave(
             "header shorter than RIFF/WAVE".into(),

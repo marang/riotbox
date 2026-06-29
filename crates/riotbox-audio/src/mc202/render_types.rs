@@ -1,3 +1,7 @@
+use super::source_phrase_sound_design::{
+    mc202_source_phrase_sample, mc202_source_phrase_sound_design,
+};
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Mc202RenderMode {
     Idle,
@@ -78,7 +82,6 @@ impl Mc202NoteBudget {
             Self::Wide => "wide",
         }
     }
-
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -202,7 +205,8 @@ pub fn render_mc202_buffer(
         if !within_hook_response(render.hook_response, sixteenth) {
             continue;
         }
-        let destructive_step = source_phrase_plan.destructive_mask & (1_u16 << (sixteenth % 16)) != 0;
+        let destructive_step =
+            source_phrase_plan.destructive_mask & (1_u16 << (sixteenth % 16)) != 0;
         let semitone = semitone
             + contour_offset(render.contour_hint, sixteenth)
             + hook_response_offset(render.hook_response, sixteenth);
@@ -211,9 +215,8 @@ pub fn render_mc202_buffer(
             mc202_source_phrase_sound_design(render, source_phrase_plan, destructive_step);
         let destructive_pitch_dive = sound_design.destructive_dive * f64::from(step_phase);
         let frequency = 110.0_f64
-            * 2.0_f64.powf(
-                (semitone as f64 + sound_design.octave_drop + destructive_pitch_dive) / 12.0,
-            );
+            * 2.0_f64
+                .powf((semitone as f64 + sound_design.octave_drop + destructive_pitch_dive) / 12.0);
         if step_phase > sound_design.gate_len {
             continue;
         }

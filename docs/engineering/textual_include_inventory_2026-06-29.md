@@ -16,8 +16,8 @@ rg -n 'include!' crates --glob '*.rs'
 
 Result:
 
-- 243 textual include sites after RIOTBOX-1323
-- 19 owning Rust files after RIOTBOX-1323
+- 236 textual include sites after RIOTBOX-1324
+- 17 owning Rust files after RIOTBOX-1324
 - no generated-code include site identified in this inventory
 - every current include is treated as legacy/mechanical until proven otherwise
 
@@ -46,8 +46,6 @@ sites. New include owners or changed counts fail the guardrail until reviewed.
 | `crates/riotbox-core/src/tr909_policy.rs` | 2 | `tr909_policy/render_policy`, tests | TR-909 policy and tests | mechanical product split | low/medium: policy API | RIOTBOX-1331 |
 | `crates/riotbox-core/src/view/jam.rs` | 8 | `jam/view_model_types`, source timing, source map, arrangement, builder, capture, scene, tests | Jam view model and projections | mechanical view split | medium: app/core UI contract | future UI/view module slice |
 | `crates/riotbox-core/src/view/jam/tests.rs` | 4 | jam test fixture and scenario shards | Jam view tests | mechanical test split | low/medium: test imports | future UI/view module slice |
-| `crates/riotbox-audio/src/mc202.rs` | 5 | `mc202/render_types`, sound design, tests | MC-202 audio rendering and tests | mechanical product split | high: audible output stability | RIOTBOX-1324 / RIOTBOX-1332 |
-| `crates/riotbox-audio/src/source_audio.rs` | 2 | `source_audio/cache`, tests | Source audio cache and tests | mechanical product split | medium: callback/cache boundary | RIOTBOX-1324 |
 | `crates/riotbox-audio/src/runtime/tests.rs` | 7 | runtime fixture, W-30, mix, metrics, monitor test shards | Audio runtime tests | mechanical test split | low/medium: test-only but broad | future runtime test module slice |
 | `crates/riotbox-audio/src/bin/feral_grid_pack.rs` | 29 | pack builder, metrics, TR-909, MC-202, W-30, mix, timing, manifest, render, tests | Feral grid QA/pack CLI | mechanical QA-bin split | medium: large QA surface | future QA-bin module slice |
 | `crates/riotbox-audio/src/bin/feral_before_after_pack.rs` | 2 | pack builder, metrics manifest | Feral before/after QA CLI | mechanical QA-bin split | low | future QA-bin module slice |
@@ -83,3 +81,5 @@ of mixing them into the module move.
 | --- | ---: | --- | --- |
 | `crates/riotbox-core/src/source_graph.rs` | 10 | RIOTBOX-1322 | Replaced by `crates/riotbox-core/src/source_graph/mod.rs` with real child modules and `pub use` compatibility exports. |
 | `crates/riotbox-core/src/session.rs` | 3 | RIOTBOX-1323 | Replaced by `crates/riotbox-core/src/session/mod.rs` with real child modules and `pub use` compatibility exports. |
+| `crates/riotbox-audio/src/mc202.rs` | 5 | RIOTBOX-1324 | Replaced by `crates/riotbox-audio/src/mc202/mod.rs` with render-type exports, internal sound-design module, and real test modules. |
+| `crates/riotbox-audio/src/source_audio.rs` | 2 | RIOTBOX-1324 | Replaced by `crates/riotbox-audio/src/source_audio/mod.rs` with cache exports and real test module. |
