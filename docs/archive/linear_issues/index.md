@@ -1294,4 +1294,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Migrate Source Graph include shell to semantic Rust modules
 - [RIOTBOX-1323.md](./RIOTBOX-1323.md)
   P023: Migrate Session include shell to semantic Rust modules
+- [RIOTBOX-1324.md](./RIOTBOX-1324.md)
+  P023: Migrate audio MC-202 and source-audio include shells
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
