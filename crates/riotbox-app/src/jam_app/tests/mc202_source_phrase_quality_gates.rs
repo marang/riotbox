@@ -207,6 +207,12 @@ fn committed_mc202_answer_rejects_template_collapse_when_source_features_are_neu
         neutral_state.runtime.mc202_render.source_phrase_plan.is_none(),
         "neutralized source leaked a rendered source phrase plan"
     );
+    let neutral_render = render_mc202_recipe_silent_buffer(&neutral_state.runtime.mc202_render);
+    let neutral_metrics = signal_metrics(&neutral_render);
+    assert_eq!(
+        neutral_metrics.active_samples, 0,
+        "neutralized source leaked audible MC-202 fallback output: {neutral_metrics:?}"
+    );
     assert!(
         source_phrase_plan_distance(measured_plan, neutral_plan) >= 0.45,
         "neutralized source collapsed to measured plan: measured={measured_plan:?} neutral={neutral_plan:?}"

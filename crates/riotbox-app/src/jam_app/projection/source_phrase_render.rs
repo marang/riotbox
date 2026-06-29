@@ -61,9 +61,11 @@ fn mc202_source_phrase_bass_weight(source_plan: &Mc202SourcePhrasePlanState) -> 
     let selected = selected_score(source_plan);
     match source_plan.candidate_family {
         Some(Family::SubPressureShove) => selected.map_or(0.70, |score| {
-            (score.low_end_impact * 0.78
-                + score.destructive_usefulness * 0.12
-                + source_plan.touch.clamp(0.0, 1.0) * 0.10)
+            let source_bass = source_expression_bass_body(source_plan, score.low_end_impact);
+            (score.low_end_impact * 0.52
+                + source_bass * 0.30
+                + score.destructive_usefulness * 0.10
+                + source_plan.touch.clamp(0.0, 1.0) * 0.08)
                 .clamp(0.0, 1.0)
         }),
         Some(Family::SparseOffbeatAnswer | Family::HookRestraintGhostAnswer) => selected
@@ -77,6 +79,19 @@ fn mc202_source_phrase_bass_weight(source_plan: &Mc202SourcePhrasePlanState) -> 
         }),
         Some(Family::StayOut | Family::FallbackControl) | None => 0.0,
     }
+}
+
+fn source_expression_bass_body(
+    source_plan: &Mc202SourcePhrasePlanState,
+    fallback_low_end_impact: f32,
+) -> f32 {
+    source_plan
+        .source_expression
+        .as_ref()
+        .map_or(fallback_low_end_impact.clamp(0.0, 1.0), |expression| {
+            (expression.bass_pressure * 0.72 + expression.low_pressure_contour * 0.28)
+                .clamp(0.0, 1.0)
+        })
 }
 
 fn mc202_source_phrase_stab_bite(source_plan: &Mc202SourcePhrasePlanState) -> f32 {
