@@ -1248,4 +1248,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Strengthen source-character selection survival proof
 - [RIOTBOX-1300.md](./RIOTBOX-1300.md)
   Strengthen hook/chop policy professional proof
+- [RIOTBOX-1301.md](./RIOTBOX-1301.md)
+  P023: Strengthen MC-202 source-composed bass movement render proof
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
