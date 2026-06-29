@@ -11,6 +11,12 @@ Shape Riotbox toward a specific production attitude, not toward imitation of any
 
 The product question is: would this make a musician want to keep triggering, muting, cutting, and abusing the box after the first eight bars?
 
+Use The Prodigy's full-era production arc as a quality reference class, not a
+copy target: early rave break urgency, mid-era big-beat/punk attack, later
+denser bass/drum pressure, vocal/stab hooks, harsh stops, and live-room impact.
+Riotbox must create its own source-backed output and identity, but the bar is
+that level of uncompromising pressure, hook clarity, and stage impact.
+
 ## Taste Model
 
 Prefer results that feel:

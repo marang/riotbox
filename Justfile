@@ -247,7 +247,7 @@ melodic-source-chop-showcase output="artifacts/audio_qa/local-melodic-source-cho
 
 diverse-test-source-wavs output="artifacts/audio_qa/local-diverse-test-sources" seconds="4.0":
     python3 scripts/write_diverse_test_source_wavs.py --output "{{output}}" --seconds "{{seconds}}"
-    jq -e '.schema == "riotbox.diverse_test_source_wavs.v1" and .result == "pass" and .case_count >= 6 and ([.entries[].source_family] | unique | length) >= 6 and all(.entries[]; .quality_proof == false and (.path | endswith(".wav")))' "{{output}}/manifest.json"
+    jq -e '.schema == "riotbox.diverse_test_source_wavs.v1" and .result == "pass" and .case_count >= 12 and ([.entries[].source_family] | unique | length) >= 12 and all(.entries[]; .quality_proof == false and (.path | endswith(".wav")))' "{{output}}/manifest.json"
     for wav in "{{output}}"/*.wav; do test -s "$wav"; done
 
 feral-grid-pack source date="local" bpm="auto" bars="8" source_window="1.0" start="0.0":
@@ -290,7 +290,7 @@ pro-pressure-source-matrix-smoke output="artifacts/audio_qa/local-pro-pressure-s
     jq -e 'any(.cases[]; .pressure_lift_policy.source_family == "dense_break" and .proof.hook_chop_riff_unique_source_offset_count >= 3.0)' "{{output}}/source-matrix-report.json"
     jq -e 'any(.cases[]; .pressure_lift_policy.source_family == "dense_break" and .proof.hook_chop_source_character_score_floor >= 0.60 and .proof.hook_chop_source_character_score_span >= 0.10)' "{{output}}/source-matrix-report.json"
     jq -e 'any(.cases[]; .pressure_lift_policy.source_family == "dense_break" and .proof.destructive_gesture_source_derived == 1.0 and .proof.destructive_static_distance_frames >= 256.0 and .proof.destructive_offset_distance_frames >= 512.0)' "{{output}}/source-matrix-report.json"
-    jq -e 'any(.cases[]; .pressure_lift_policy.source_family == "sparse_bass_pressure" and .proof.bass_movement_source_derived == 1.0 and .proof.sparse_bass_movement_static_distance_hz >= 1.25 and .proof.sparse_bass_movement_frequency_span_hz >= 8.0 and .proof.pressure_low_band_lift_ratio >= 1.60 and .proof.strongest_audible_element == "bass" and .proof.strongest_audible_element_margin >= 0.08)' "{{output}}/source-matrix-report.json"
+    jq -e 'any(.cases[]; .pressure_lift_policy.source_family == "sparse_bass_pressure" and .proof.bass_movement_source_derived == 1.0 and .proof.sparse_bass_movement_static_distance_hz >= 1.75 and .proof.sparse_bass_movement_frequency_span_hz >= 10.0 and .proof.pressure_low_band_lift_ratio >= 1.70 and .proof.sparse_pressure_low_band_share >= 0.28 and .proof.sparse_pressure_low_to_mid_ratio >= 2.10 and .proof.strongest_audible_element == "bass" and .proof.strongest_audible_element_margin >= 0.12)' "{{output}}/source-matrix-report.json"
 
 professional-source-wav-pack-smoke output="artifacts/audio_qa/local-professional-source-wav-pack":
     python3 scripts/generate_professional_source_wav_pack.py --output "{{output}}" --date "local-professional-source-wav-pack"

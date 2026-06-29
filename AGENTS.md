@@ -116,6 +116,11 @@ If a surface is intentionally not applicable, say why in the PR or working notes
 ## Musical Direction
 
 - Shape Riotbox toward aggressive sample-based rave/punk and breakbeat instrument behavior, not generic EDM preset browsing.
+- Use The Prodigy's full-era production arc as a quality reference class, not a
+  copy target: early rave break urgency, mid-era big-beat/punk attack, later
+  denser bass/drum pressure, vocal/stab hooks, harsh stops, and live-room
+  impact. Riotbox output must stay original, source-backed, and its own
+  identity, but the quality bar is uncompromising pressure and stage usefulness.
 - Prefer short, forceful loops with a memorable hook, stab, riff, break, bass gesture, vocal hit, or silence cut.
 - Make live gestures audibly dramatic: trigger, mute, choke, retrigger, reverse, pitch dive, filter slam, bitcrush, fill, and dropout should change the room immediately.
 - Do not implement hardcoded musical/audio fallback output as a product path.
