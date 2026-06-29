@@ -15,7 +15,7 @@
   "summary": "Fixture with an unknown professional-output failure code.",
   "failure_codes": ["mystery_professional_output_failure"],
   "audio_files": {
-    "full_performance": "missing-by-design.wav"
+    "rebuild_only_performance": "missing-by-design.wav"
   },
   "visual_files": {},
   "review_focus": [],

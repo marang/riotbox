@@ -9,7 +9,7 @@
       "source_family": "dense_break",
       "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
       "rendered_wav": {
-        "path": "artifacts/audio_qa/release-demo-bank/dense-break-weak/05_full_performance.wav",
+        "path": "artifacts/audio_qa/release-demo-bank/dense-break-weak/05_rebuild_only_performance.wav",
         "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
       },
       "metrics": {

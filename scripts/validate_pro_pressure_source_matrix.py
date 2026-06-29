@@ -307,8 +307,8 @@ def render_case(
                 "pressure_lift_dbfs": metrics["pressure_lift"]["dbfs"],
                 "dropout_stutter_dbfs": metrics["dropout_stutter"]["dbfs"],
                 "restore_hit_dbfs": metrics["restore_hit"]["dbfs"],
-                "full_performance_dbfs": metrics["full_performance"]["dbfs"],
-                "full_performance_peak_abs": metrics["full_performance"]["peak_abs"],
+                "source_layered_reference_dbfs": metrics["source_layered_reference"]["dbfs"],
+                "source_layered_reference_peak_abs": metrics["source_layered_reference"]["peak_abs"],
                 "rebuild_only_performance_dbfs": metrics["rebuild_only_performance"]["dbfs"],
                 "rebuild_only_performance_peak_abs": metrics[
                     "rebuild_only_performance"

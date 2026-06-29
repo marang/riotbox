@@ -19,6 +19,7 @@ include!("feral_grid_pack/w30_source_chop.rs");
 include!("feral_grid_pack/source_character_window_selection.rs");
 include!("feral_grid_pack/w30_slice_choice.rs");
 include!("feral_grid_pack/w30_source_accent_dynamics.rs");
+include!("feral_grid_pack/w30_source_playback_profile.rs");
 include!("feral_grid_pack/mix_policy.rs");
 include!("feral_grid_pack/grid_bpm_decision.rs");
 include!("feral_grid_pack/source_timing_policy_profile.rs");

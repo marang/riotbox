@@ -23,7 +23,7 @@ Generated artifacts:
 - `02_pressure_lift.wav`
 - `03_dropout_stutter.wav`
 - `04_restore_hit.wav`
-- `05_full_performance.wav`
+- `05_rebuild_only_performance.wav`
 - `performance-report.json`
 - `agent-review.json`
 - `agent-review.md`
@@ -50,11 +50,13 @@ bass-pressure lift, weak dropout/stutter contrast, weak restore transient,
 near-static bars, source-copy collapse, or buried bass pressure.
 
 The current pro-pressure render also gates against the older too-polite pass
-shape. The full performance must be assertive relative to the source window, the
-opening hook must carry real break transient, the pressure section must be
-louder than the hook, and the restore hit must be bigger than the pressure
-section. This keeps the Golden Path aimed at a room-moving source-backed
-instrument instead of a technically valid but underpowered fixture.
+shape. The rebuild-only performance is the review and promotion candidate: it
+must preserve source character without mixing the original source window back in
+as a masking layer. The opening hook must carry real break transient, the
+pressure section must be louder than the hook, and the restore hit must be
+bigger than the pressure section. This keeps the Golden Path aimed at a
+room-moving source-backed instrument instead of a technically valid but
+underpowered fixture.
 
 `agent_promising` is not a final musical pass, and this pack is not technical or
 musical quality proof for the product. The current pack now records a bounded

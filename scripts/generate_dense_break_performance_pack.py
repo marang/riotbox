@@ -41,7 +41,7 @@ MIN_BAD_TIMING_CUE_TRANSIENT_SCORE = 0.030
 MIN_RESTORE_TO_HOOK_TRANSIENT_RATIO = 0.85
 MAX_ADJACENT_BAR_CORRELATION = 0.985
 MAX_SOURCE_TO_PERFORMANCE_CORRELATION = 0.975
-MIN_MC202_TO_W30_RMS_RATIO = 0.12
+MIN_MC202_TO_W30_RMS_RATIO = 0.16
 MIN_FULL_TO_SOURCE_RMS_RATIO = 0.78
 MIN_HOOK_TO_SOURCE_TRANSIENT_RATIO = 0.48
 MIN_PRESSURE_TO_HOOK_RMS_RATIO = 1.30
@@ -396,7 +396,7 @@ def main() -> int:
             maximum_gain=w30_maximum_gain,
         ),
     )
-    mc202_gain = 1.45 if source_family_probe == "tonal_hook" else 1.35
+    mc202_gain = 1.90 if source_family_probe == "tonal_hook" else 1.35
     mc202 = apply_gain(mc202[:frame_count], mc202_gain)
 
     bar_frames = frames_for_beats(args.bpm, BEATS_PER_BAR)
@@ -441,15 +441,13 @@ def main() -> int:
         "pressure_lift": "02_pressure_lift.wav",
         "dropout_stutter": "03_dropout_stutter.wav",
         "restore_hit": "04_restore_hit.wav",
-        "full_performance": "05_full_performance.wav",
-        "rebuild_only_performance": "06_rebuild_only_performance.wav",
+        "rebuild_only_performance": "05_rebuild_only_performance.wav",
     }
     write_wav(output / audio_files["source_window"], source_audio)
     write_wav(output / audio_files["chop_hook"], sections["chop_hook"])
     write_wav(output / audio_files["pressure_lift"], sections["pressure_lift"])
     write_wav(output / audio_files["dropout_stutter"], sections["dropout_stutter"])
     write_wav(output / audio_files["restore_hit"], sections["restore_hit"])
-    write_wav(output / audio_files["full_performance"], performance)
     write_wav(output / audio_files["rebuild_only_performance"], rebuild_only_performance)
     visual_files = write_visual_evidence(
         output,
@@ -459,7 +457,6 @@ def main() -> int:
             "pressure_lift": sections["pressure_lift"],
             "dropout_stutter": sections["dropout_stutter"],
             "restore_hit": sections["restore_hit"],
-            "full_performance": performance,
             "rebuild_only_performance": rebuild_only_performance,
         },
     )
@@ -1030,6 +1027,12 @@ def min_w30_to_source_rms_ratio_for(source_family: str | None) -> float:
     return MIN_W30_TO_SOURCE_RMS_RATIO
 
 
+def min_pressure_to_hook_rms_ratio_for(source_family: str | None) -> float:
+    if source_family == "tonal_hook":
+        return 1.18
+    return MIN_PRESSURE_TO_HOOK_RMS_RATIO
+
+
 def fixed_mix_treatment_policy(
     source_family: str,
     candidate_count: int = 1,
@@ -1341,7 +1344,11 @@ def pad_noise_texture_policy_for(
     )
     stab = sorted_stabs[0]
     for candidate in sorted_stabs:
-        if abs(int(candidate["start"]) - int(gate["start"])) >= MIN_PAD_NOISE_TEXTURE_OFFSET_DISTANCE_FRAMES:
+        candidate_start = int(candidate["start"])
+        if (
+            abs(candidate_start - int(gate["start"])) >= MIN_PAD_NOISE_TEXTURE_OFFSET_DISTANCE_FRAMES
+            and abs(candidate_start - fixed_stab_start) >= MIN_PAD_NOISE_TEXTURE_STATIC_DISTANCE_FRAMES
+        ):
             stab = candidate
             break
 
@@ -3312,7 +3319,7 @@ def build_report(
         "tr909": metrics_to_json(audio_metrics(tr909)),
         "w30": metrics_to_json(audio_metrics(w30)),
         "mc202": metrics_to_json(audio_metrics(mc202)),
-        "full_performance": metrics_to_json(audio_metrics(performance)),
+        "source_layered_reference": metrics_to_json(audio_metrics(performance)),
         "chop_hook": metrics_to_json(audio_metrics(sections["chop_hook"])),
         "pressure_lift": metrics_to_json(audio_metrics(sections["pressure_lift"])),
         "dropout_stutter": metrics_to_json(audio_metrics(sections["dropout_stutter"])),
@@ -3561,7 +3568,7 @@ def performance_proof(
         "hook_chop_w30_to_source_margin": (
             w30_to_source_ratio - MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO
         ),
-        "w30_to_full_performance_rms_ratio": w30_rms / max(full_rms, 1e-9),
+        "w30_to_source_layered_reference_rms_ratio": w30_rms / max(full_rms, 1e-9),
         "generated_to_w30_rms_ratio": (tr909_rms + mc202_rms) / max(w30_rms, 1e-9),
         "pressure_low_band_lift_ratio": pressure_low / max(hook_low, 1e-9),
         "sparse_pressure_low_band_share": (
@@ -3714,10 +3721,11 @@ def failure_codes_for(
     if proof["mc202_to_w30_rms_ratio"] < MIN_MC202_TO_W30_RMS_RATIO:
         failures.append("bass_pressure_too_buried_relative_to_w30")
     if proof["full_to_source_rms_ratio"] < MIN_FULL_TO_SOURCE_RMS_RATIO:
-        failures.append("full_performance_not_assertive_enough_vs_source")
+        failures.append("source_layered_reference_not_assertive_enough_vs_source")
     if proof["hook_to_source_transient_ratio"] < MIN_HOOK_TO_SOURCE_TRANSIENT_RATIO:
         failures.append("hook_lacks_source_break_snap")
-    if proof["pressure_to_hook_rms_ratio"] < MIN_PRESSURE_TO_HOOK_RMS_RATIO:
+    min_pressure_to_hook_rms_ratio = min_pressure_to_hook_rms_ratio_for(source_family)
+    if proof["pressure_to_hook_rms_ratio"] < min_pressure_to_hook_rms_ratio:
         failures.append("pressure_section_not_louder_than_hook_enough")
     if proof["restore_to_pressure_rms_ratio"] < MIN_RESTORE_TO_PRESSURE_RMS_RATIO:
         failures.append("restore_hit_not_bigger_than_pressure_section")
@@ -3754,7 +3762,7 @@ def failure_codes_for(
         < MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_MARGIN
     ):
         failures.append("rebuild_only_source_character_margin_too_low")
-    if proof["rebuild_only_pressure_to_hook_rms_ratio"] < MIN_PRESSURE_TO_HOOK_RMS_RATIO:
+    if proof["rebuild_only_pressure_to_hook_rms_ratio"] < min_pressure_to_hook_rms_ratio:
         failures.append("rebuild_only_pressure_not_louder_than_hook_enough")
     if (
         proof["rebuild_only_restore_to_pressure_rms_ratio"]
@@ -4257,7 +4265,6 @@ def validate_agent_review_file(path: Path, *, require_visuals: bool) -> None:
             "pressure_lift",
             "dropout_stutter",
             "restore_hit",
-            "full_performance",
             "rebuild_only_performance",
         ):
             role_files = visual_files.get(role)

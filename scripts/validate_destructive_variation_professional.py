@@ -88,7 +88,9 @@ def build_report(performance_report: Path) -> dict[str, Any]:
         ),
         "dropout_stutter_rms": metric_number(metrics, "dropout_stutter", "rms"),
         "restore_hit_rms": metric_number(metrics, "restore_hit", "rms"),
-        "full_performance_peak_abs": metric_number(metrics, "full_performance", "peak_abs"),
+        "rebuild_only_performance_peak_abs": metric_number(
+            metrics, "rebuild_only_performance", "peak_abs"
+        ),
     }
     thresholds = {
         "max_dropout_to_stutter_rms_ratio": MAX_DROPOUT_TO_STUTTER_RMS_RATIO,
@@ -197,7 +199,10 @@ def failure_codes(source: dict[str, Any], metrics: dict[str, float]) -> list[str
         ),
         ("dropout_stutter_too_quiet", metrics["dropout_stutter_rms"] >= MIN_DROPOUT_STUTTER_RMS),
         ("restore_too_quiet_after_cut", metrics["restore_hit_rms"] >= MIN_RESTORE_RMS),
-        ("full_performance_near_clipping", metrics["full_performance_peak_abs"] <= MAX_FULL_PEAK_ABS),
+        (
+            "rebuild_only_performance_near_clipping",
+            metrics["rebuild_only_performance_peak_abs"] <= MAX_FULL_PEAK_ABS,
+        ),
     ]
     return [code for code, ok in checks if not ok]
 

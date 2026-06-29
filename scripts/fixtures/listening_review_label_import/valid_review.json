@@ -22,7 +22,7 @@
   "reviewer": "fixture-listener",
   "expected_audible_behavior": "Dense break should produce a hard source chop, bass pressure, dropout, and restore.",
   "artifacts": {
-    "candidate_audio": ["artifacts/audio_qa/local-agent-musical-review-pack-smoke/05_full_performance.wav"],
+    "candidate_audio": ["artifacts/audio_qa/local-agent-musical-review-pack-smoke/05_rebuild_only_performance.wav"],
     "source_audio": "data/test_audio/examples/Beat03_130BPM(Full).wav",
     "metrics_json": "metrics.json",
     "prompt_markdown": "prompt.md"
@@ -38,7 +38,7 @@
       "agent_review_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       "audio_sha256": {
         "source_window": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-        "full_performance": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        "rebuild_only_performance": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
       }
     },
     "reason_tags": {

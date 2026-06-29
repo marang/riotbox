@@ -106,9 +106,9 @@ def build_demo_bank_entry(
     audio_paths = object_field(paths, "audio", review_path)
     audio_identity = object_field(identity, "audio_sha256", review_path)
 
-    full_performance = resolve_review_path(
+    rebuild_only_performance = resolve_review_path(
         review_path,
-        string_field(audio_paths, "full_performance", review_path),
+        string_field(audio_paths, "rebuild_only_performance", review_path),
     )
     performance_report = resolve_review_path(
         review_path,
@@ -130,10 +130,10 @@ def build_demo_bank_entry(
             "agent_review_sha256",
         )
         assert_hash_matches(
-            full_performance,
-            audio_identity.get("full_performance"),
+            rebuild_only_performance,
+            audio_identity.get("rebuild_only_performance"),
             review_path,
-            "audio_sha256.full_performance",
+            "audio_sha256.rebuild_only_performance",
         )
         source_window_path = audio_paths.get("source_window")
         if source_window_path is not None:
@@ -152,8 +152,8 @@ def build_demo_bank_entry(
         "source_family": string_field(metadata, "source_family", review_path),
         "source_path": source_path_for(review, review_path),
         "rendered_wav": {
-            "path": str(full_performance),
-            "sha256": string_field(audio_identity, "full_performance", review_path),
+            "path": str(rebuild_only_performance),
+            "sha256": string_field(audio_identity, "rebuild_only_performance", review_path),
         },
         "metrics": {
             "path": str(performance_report),

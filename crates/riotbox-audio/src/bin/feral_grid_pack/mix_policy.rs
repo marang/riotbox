@@ -20,8 +20,8 @@ const SOURCE_FIRST_MIX_POLICY: MixPolicy = MixPolicy {
 };
 
 const GENERATED_SUPPORT_MIX_POLICY: MixPolicy = MixPolicy {
-    tr909_gain: 0.845,
-    tr909_low_gain: 0.330,
+    tr909_gain: 1.080,
+    tr909_low_gain: 0.430,
     mc202_gain: 0.400,
     mc202_low_gain: 0.120,
     w30_gain: 1.46,

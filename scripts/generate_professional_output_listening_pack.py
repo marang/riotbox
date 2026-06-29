@@ -156,7 +156,7 @@ def render_dense_case(repo: Path, output: Path, date: str) -> dict:
         "source_family": "dense_break",
         "source": "data/test_audio/examples/Beat03_130BPM(Full).wav",
         "output": str(case_dir),
-        "candidate": str(case_dir / report["files"]["full_performance"]),
+        "candidate": str(case_dir / report["files"]["rebuild_only_performance"]),
         "source_report": str(case_dir / "performance-report.json"),
         "source_report_sha256": sha256_file(case_dir / "performance-report.json"),
         "expected": "Dense break should hit with clear chop hook, pressure lift, destructive stutter, and bigger restore.",
@@ -176,7 +176,7 @@ def case_from_professional_report(base: Path, case: dict) -> dict:
         "source_family": case["source_family"],
         "source": case["source"],
         "output": str(case_dir),
-        "candidate": str(case_dir / case["audio_files"]["full_performance"]),
+        "candidate": str(case_dir / case["audio_files"]["rebuild_only_performance"]),
         "source_report": str(case_dir / "performance-report.json"),
         "source_report_sha256": sha256_file(case_dir / "performance-report.json"),
         "expected": expected_for_family(case["source_family"]),
@@ -313,12 +313,12 @@ def build_audio_judge_label(
     source_report_data = read_json(source_report)
     files = source_report_data["files"]
     source_window = source_report.parent / files["source_window"]
-    full_performance = Path(case["candidate"])
+    rebuild_only_performance = Path(case["candidate"])
     agent_review = source_report.with_name("agent-review.json")
     require_file(source_report)
     require_file(agent_review)
     require_file(source_window)
-    require_file(full_performance)
+    require_file(rebuild_only_performance)
     tags = reason_tags_for_family(case["source_family"])
     return {
         "created_at": label_created_at,
@@ -331,7 +331,7 @@ def build_audio_judge_label(
             "agent_review_sha256": sha256_file(agent_review),
             "audio_sha256": {
                 "source_window": sha256_file(source_window),
-                "full_performance": sha256_file(full_performance),
+                "rebuild_only_performance": sha256_file(rebuild_only_performance),
             },
         },
         "artifact_paths": {
@@ -339,7 +339,7 @@ def build_audio_judge_label(
             "agent_review": str(agent_review),
             "audio": {
                 "source_window": str(source_window),
-                "full_performance": str(full_performance),
+                "rebuild_only_performance": str(rebuild_only_performance),
             },
         },
         "reason_tags": tags,
