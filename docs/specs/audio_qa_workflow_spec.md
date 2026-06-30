@@ -646,7 +646,7 @@ P023 Hook/Chop riff playback diagnostics also expose
 `hook_chop_riff_hit_pattern_source_derived`,
 `hook_chop_riff_hit_count`, `hook_chop_riff_velocity_span`, and
 `hook_chop_riff_reverse_count`. P023 also requires
-`hook_chop_w30_to_source_margin >= 0.025` in dense/tonal generated
+`hook_chop_w30_to_source_margin >= 0.10` in dense/tonal generated
 professional diagnostics, and tonal-hook fixture reports require
 `w30_contribution_margin >= 0.050` above their W-30 contribution floor.
 Dense-break and tonal-hook reports must prove that selected source offsets

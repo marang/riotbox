@@ -32,7 +32,7 @@ SCHEMA = "riotbox.dense_break_performance_pack.v1"
 AGENT_REVIEW_SCHEMA = "riotbox.agent_musical_review_pack.v1"
 MIN_W30_TO_SOURCE_RMS_RATIO = 0.18
 MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO = 0.22
-MIN_HOOK_FORWARD_W30_TO_SOURCE_MARGIN = 0.025
+MIN_HOOK_FORWARD_W30_TO_SOURCE_MARGIN = 0.10
 MIN_PRESSURE_LOW_BAND_LIFT_RATIO = 1.12
 MAX_DROPOUT_TO_STUTTER_RMS_RATIO = 0.18
 MAX_DROPOUT_SILENCE_TO_STUTTER_RMS_RATIO = 0.08
@@ -380,13 +380,13 @@ def main() -> int:
     ).source_family
     w30_floor = min_w30_to_source_rms_ratio_for(source_family_probe)
     if source_family_probe == "tonal_hook":
-        w30_target_multiplier = 1.52
-        w30_minimum_gain = 1.58
-        w30_maximum_gain = 3.35
+        w30_target_multiplier = 1.72
+        w30_minimum_gain = 1.72
+        w30_maximum_gain = 3.80
     elif source_family_probe == "dense_break":
-        w30_target_multiplier = 1.20
-        w30_minimum_gain = 1.34
-        w30_maximum_gain = 2.70
+        w30_target_multiplier = 1.45
+        w30_minimum_gain = 1.50
+        w30_maximum_gain = 3.05
     else:
         w30_target_multiplier = 1.10
         w30_minimum_gain = 1.22
@@ -401,7 +401,7 @@ def main() -> int:
             maximum_gain=w30_maximum_gain,
         ),
     )
-    mc202_gain = 2.20 if source_family_probe == "tonal_hook" else 1.35
+    mc202_gain = 2.50 if source_family_probe == "tonal_hook" else 1.35
     mc202 = apply_gain(mc202[:frame_count], mc202_gain)
 
     bar_frames = frames_for_beats(args.bpm, BEATS_PER_BAR)
@@ -1178,7 +1178,7 @@ def mix_treatment_policy_for(
             )
         ),
         "hook_w30_gain": float(
-            np.clip(fixed.hook_w30_gain + w30_norm * 0.090 + hook_bias, 1.28, 1.58)
+            np.clip(fixed.hook_w30_gain + w30_norm * 0.120 + hook_bias, 1.34, 1.76)
         ),
         "hook_break_snap_gain": float(
             np.clip(
@@ -1202,7 +1202,7 @@ def mix_treatment_policy_for(
             )
         ),
         "chop_w30_gain": float(
-            np.clip(fixed.chop_w30_gain + w30_norm * 0.110 + chop_bias, 1.46, 1.78)
+            np.clip(fixed.chop_w30_gain + w30_norm * 0.145 + chop_bias, 1.54, 1.98)
         ),
         "chop_break_snap_gain": float(
             np.clip(
@@ -2172,6 +2172,12 @@ def render_performance(
     pad_noise_texture_path = source_policy.pressure_lift_policy.source_family == "pad_noise"
     hook_riff_hook_gain = 1.12 if dense_drum_snap else 1.62
     hook_riff_chop_gain = 1.20 if dense_drum_snap else 1.78
+    if dense_drum_snap:
+        hook_riff_hook_gain = 1.26
+        hook_riff_chop_gain = 1.38
+    elif tonal_hook_path:
+        hook_riff_hook_gain = 1.78
+        hook_riff_chop_gain = 1.96
     source_character_rebuild_hook_boost = (
         1.20 if tonal_hook_path and source_layer_gain <= 0.0 else 1.0
     )
@@ -3215,8 +3221,8 @@ def render_w30_hook_riff_layer(
     if source_family in {"bad_timing", "pad_noise"}:
         return layer
     hook_impact = {
-        "dense_break": 1.18,
-        "tonal_hook": 1.30,
+        "dense_break": 1.32,
+        "tonal_hook": 1.48,
         "sparse_bass_pressure": 1.0,
     }.get(source_family, 1.12)
 

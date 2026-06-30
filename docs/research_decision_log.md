@@ -170,6 +170,20 @@ Status: accepted
 
 ---
 
+### RBX-103
+
+Date: 2026-06-30
+Topic: W-30 hook/chop must stay forward enough to answer weak-output routing
+Phase: P023 Sound Excellence / Production Quality
+Question: how should Riotbox respond when weak-output routing names `chop_policy` as the top production-fix candidate?
+Decision: dense/tonal Hook/Chop diagnostics now require `hook_chop_w30_to_source_margin >= 0.10` and the source-derived W-30/riff render path pushes the selected source grains further forward. Tonal output also raises MC-202 support enough to keep the MC-202/W-30 mix-bus floor passing after the stronger W-30 hook lift.
+Why: the previous hook/chop path was source-derived and technically valid, but the weak-output router still had good evidence that some first-two-bar results read as generic support or hookless output. Raising only a report threshold would not help a musician; the rendered W-30/riff layer must cut through while preserving source character and MC-202 support.
+Evidence: RIOTBOX-1351 raises the dense pro-pressure W-30/source ratio from `0.309` to `0.346`, dense hook/chop margin from `0.089` to `0.126`, tonal hook/chop margin to `0.158`, and keeps tonal MC-202/W-30 support at `0.209`. `just pro-pressure-source-matrix-smoke`, `just professional-source-wav-pack-smoke`, `just professional-output-suite-smoke`, and `just weak-output-fix-routing-fixtures` pass with the stronger contract.
+Consequences: these remain scripted diagnostic outputs with `quality_proof: false` and `human_verdict: unverified`. Future W-30 hook/chop work should improve actual source-backed chop selection, transformation, and listening verdicts rather than lowering the hook-forward floor.
+Status: accepted
+
+---
+
 ### RBX-101
 
 Date: 2026-06-30
