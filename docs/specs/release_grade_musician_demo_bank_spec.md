@@ -123,6 +123,15 @@ preserved only as `not_demo_ready` entries with concrete fix categories.
 entries. When `--require-artifact-hashes` is used, stale or missing artifact
 hashes block promotion.
 
+MC-202 weak/fail promotion may consume the MC-202 producer-grade closeout report
+to derive fix categories from `mc202_producer_fix_candidates`. The promotion
+must match the exact review case and rendered WAV hash before using those
+categories. `human_listening` is a closeout-work category only; once a
+structured verdict exists, demo-bank `fix_categories` keep only the concrete
+production fixes such as `bass_movement`, `answer_bite`, `hook_restraint`,
+`mix_bus`, or `destructive_articulation`. A human pass still carries no fix
+categories and becomes demo-ready only when the other MC-202 gates pass.
+
 For MC-202-backed professional-output candidates, promotion also requires
 `mc202_source_composed_review_gate.source_composed_evidence == true` and
 `primitive_or_template_only == false`. This prevents a structured review from

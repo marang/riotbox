@@ -33,11 +33,15 @@ FIX_CATEGORIES = {
     "chop_policy",
     "drum_pressure",
     "bass_movement",
+    "answer_bite",
+    "hook_restraint",
     "mix_bus",
     "destructive_gesture",
+    "destructive_articulation",
     "fixture_threshold",
     "ui_cue",
 }
+NON_PROMOTION_FIX_CATEGORIES = {"human_listening"}
 SLUG_RE = re.compile(r"[^a-z0-9]+")
 
 
@@ -49,6 +53,8 @@ def main() -> int:
     parser.add_argument("--entry-id")
     parser.add_argument("--demo-worthiness-note", required=True)
     parser.add_argument("--fix-category", action="append", default=[])
+    parser.add_argument("--mc202-producer-closeout", type=Path)
+    parser.add_argument("--mc202-review-case-id")
     parser.add_argument("--require-artifact-hashes", action="store_true")
     args = parser.parse_args()
 
@@ -60,6 +66,8 @@ def main() -> int:
             entry_id=args.entry_id,
             demo_worthiness_note=args.demo_worthiness_note,
             fix_categories=args.fix_category,
+            mc202_producer_closeout=args.mc202_producer_closeout,
+            mc202_review_case_id=args.mc202_review_case_id,
             require_artifact_hashes=args.require_artifact_hashes,
         )
         manifest = read_json_object(args.demo_bank)
@@ -84,6 +92,8 @@ def build_demo_bank_entry(
     entry_id: str | None,
     demo_worthiness_note: str,
     fix_categories: list[str],
+    mc202_producer_closeout: Path | None,
+    mc202_review_case_id: str | None,
     require_artifact_hashes: bool,
 ) -> dict[str, Any]:
     require(review.get("schema") == LISTENING_REVIEW_SCHEMA, f"{review_path}: unexpected schema")
@@ -95,7 +105,6 @@ def build_demo_bank_entry(
     )
     validate_structured_review(review, review_path)
     human_verdict = VERDICT_MAP[human_verdict_raw]
-    categories = validate_fix_categories(fix_categories, human_verdict, review_path)
     metadata = object_field(review, LABEL_METADATA_FIELD, review_path)
     mc202_gate = object_field(metadata, MC202_GATE_FIELD, review_path)
     validate_promotion_gate(mc202_gate, review_path)
@@ -144,10 +153,29 @@ def build_demo_bank_entry(
                 "audio_sha256.source_window",
             )
     require(prompt_path.is_file(), f"{review_path}: missing review prompt artifact: {prompt_path}")
+    producer_fix_routing = None
+    if mc202_producer_closeout is not None:
+        closeout = read_json_object(mc202_producer_closeout)
+        producer_fix_routing = producer_fix_routing_for_review(
+            closeout=closeout,
+            closeout_path=mc202_producer_closeout,
+            review=review,
+            review_path=review_path,
+            explicit_case_id=mc202_review_case_id,
+            rendered_wav=rebuild_only_performance,
+            rendered_sha256=string_field(audio_identity, "rebuild_only_performance", review_path),
+            human_verdict=human_verdict,
+        )
+    categories = validate_fix_categories(
+        fix_categories,
+        human_verdict,
+        review_path,
+        producer_fix_routing,
+    )
 
     readiness = "demo_ready" if human_verdict == "pass" else "not_demo_ready"
     source_id = string_field(metadata, "source_id", review_path)
-    return {
+    entry = {
         "entry_id": entry_id or f"{slug(source_id)}-human-{human_verdict}",
         "source_family": string_field(metadata, "source_family", review_path),
         "source_path": source_path_for(review, review_path),
@@ -165,15 +193,35 @@ def build_demo_bank_entry(
         },
         "human_verdict": human_verdict,
         "demo_readiness": readiness,
+        "demo_readiness_consequence": demo_readiness_consequence(human_verdict),
         "demo_worthiness_note": demo_worthiness_note,
         "fix_categories": categories,
         MC202_GATE_FIELD: mc202_gate,
         MC202_ROLE_FIELD: mc202_role,
         "musical_summary": musical_summary(review, metadata, human_verdict),
     }
+    if producer_fix_routing is not None:
+        entry["mc202_producer_fix_routing"] = producer_fix_routing
+    return entry
 
 
-def validate_fix_categories(categories: list[str], human_verdict: str, path: Path) -> list[str]:
+def validate_fix_categories(
+    categories: list[str],
+    human_verdict: str,
+    path: Path,
+    producer_fix_routing: dict[str, Any] | None,
+) -> list[str]:
+    if producer_fix_routing is not None and human_verdict != "pass":
+        routed_categories = string_list_from_value(
+            producer_fix_routing.get("demo_bank_fix_categories")
+        )
+        if categories:
+            require(
+                sorted(categories) == sorted(routed_categories),
+                f"{path}: manual fix categories must match MC-202 producer closeout routing",
+            )
+        else:
+            categories = routed_categories
     unknown = sorted(set(categories) - FIX_CATEGORIES)
     require(not unknown, f"{path}: unknown fix categories: {', '.join(unknown)}")
     if human_verdict == "pass":
@@ -181,6 +229,88 @@ def validate_fix_categories(categories: list[str], human_verdict: str, path: Pat
     else:
         require(categories, f"{path}: weak/fail demo-bank entries need fix categories")
     return categories
+
+
+def producer_fix_routing_for_review(
+    closeout: dict[str, Any],
+    closeout_path: Path,
+    review: dict[str, Any],
+    review_path: Path,
+    explicit_case_id: str | None,
+    rendered_wav: Path,
+    rendered_sha256: str,
+    human_verdict: str,
+) -> dict[str, Any]:
+    require(
+        closeout.get("schema") == "riotbox.mc202_producer_grade_closeout.v1",
+        f"{closeout_path}: unexpected MC-202 closeout schema",
+    )
+    require(
+        closeout.get("quality_proof") is not True,
+        f"{closeout_path}: closeout must not claim quality proof",
+    )
+    require(
+        closeout.get("automated_musical_approval") is not True,
+        f"{closeout_path}: closeout must not claim automated musical approval",
+    )
+    metadata = object_field(review, LABEL_METADATA_FIELD, review_path)
+    case_id = explicit_case_id or string_field(metadata, "source_id", review_path)
+    review_candidate = find_case(closeout, "review_candidates", "case_id", case_id, closeout_path)
+    require(
+        Path(string_field(review_candidate, "candidate", closeout_path)).resolve()
+        == rendered_wav.resolve(),
+        f"{review_path}: MC-202 closeout candidate path does not match reviewed WAV",
+    )
+    require(
+        string_field(review_candidate, "candidate_sha256", closeout_path) == rendered_sha256,
+        f"{review_path}: MC-202 closeout candidate hash does not match reviewed WAV",
+    )
+    route = object_field(review_candidate, "mc202_producer_fix_route", review_path)
+    require(
+        route.get("quality_proof") is False,
+        f"{closeout_path}: MC-202 fix route claims quality",
+    )
+    require(
+        route.get("automated_musical_approval") is False,
+        f"{closeout_path}: MC-202 fix route claims automated approval",
+    )
+    routed_categories = string_list_from_value(route.get("proposed_fix_categories"))
+    aggregate_categories = [
+        str(candidate["category"])
+        for candidate in list_field(closeout, "mc202_producer_fix_candidates", closeout_path)
+        if isinstance(candidate, dict)
+        and case_id in string_list_from_value(candidate.get("case_ids"))
+    ]
+    require(
+        set(routed_categories).issubset(set(aggregate_categories)),
+        f"{closeout_path}: MC-202 aggregate fix candidates are stale for {case_id}",
+    )
+    demo_categories = [
+        category
+        for category in routed_categories
+        if category not in NON_PROMOTION_FIX_CATEGORIES
+    ]
+    if human_verdict == "pass":
+        demo_categories = []
+    require(
+        human_verdict == "pass" or bool(demo_categories),
+        f"{review_path}: MC-202 weak/fail verdict needs non-human producer fix categories",
+    )
+    return {
+        "schema": "riotbox.mc202_producer_fix_routing_for_human_verdict.v1",
+        "case_id": case_id,
+        "human_verdict": human_verdict,
+        "source_family": string_field(review_candidate, "source_family", closeout_path),
+        "candidate": str(rendered_wav),
+        "candidate_sha256": rendered_sha256,
+        "review_prompt": str(review_artifact_path(review, review_path, "prompt_markdown")),
+        "review_candidate_route": route,
+        "closeout_fix_categories": routed_categories,
+        "demo_bank_fix_categories": demo_categories,
+        "resolved_by_human_pass": human_verdict == "pass",
+        "quality_proof": False,
+        "automated_musical_approval": False,
+    }
 
 
 def musical_summary(review: dict[str, Any], metadata: dict[str, Any], human_verdict: str) -> dict[str, str]:
@@ -271,10 +401,38 @@ def object_field(data: dict[str, Any], field: str, path: Path) -> dict[str, Any]
     return value
 
 
+def list_field(data: dict[str, Any], field: str, path: Path) -> list[Any]:
+    value = data.get(field)
+    require(isinstance(value, list), f"{path}: missing {field}")
+    return value
+
+
 def string_field(data: dict[str, Any], field: str, path: Path) -> str:
     value = data.get(field)
     require(isinstance(value, str) and value.strip(), f"{path}: missing {field}")
     return value
+
+
+def string_list_from_value(value: Any) -> list[str]:
+    require(isinstance(value, list), "expected string array")
+    result = []
+    for item in value:
+        require(isinstance(item, str) and bool(item), "expected non-empty string array values")
+        result.append(item)
+    return result
+
+
+def find_case(
+    data: dict[str, Any],
+    list_name: str,
+    key: str,
+    expected: str,
+    path: Path,
+) -> dict[str, Any]:
+    for item in list_field(data, list_name, path):
+        if isinstance(item, dict) and item.get(key) == expected:
+            return item
+    raise ValueError(f"{path}: missing {list_name} entry for {key}={expected}")
 
 
 def slug(value: str) -> str:
@@ -284,6 +442,14 @@ def slug(value: str) -> str:
 def require(condition: bool, message: str) -> None:
     if not condition:
         raise ValueError(message)
+
+
+def demo_readiness_consequence(human_verdict: str) -> str:
+    return {
+        "pass": "human_pass_allows_demo_ready_candidate",
+        "weak": "human_weak_blocks_demo_ready_and_routes_fix",
+        "fail": "human_fail_blocks_demo_ready_and_routes_fix",
+    }[human_verdict]
 
 
 if __name__ == "__main__":
