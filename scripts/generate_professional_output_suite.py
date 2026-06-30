@@ -1078,6 +1078,18 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                 ),
                 default=0.0,
             ),
+            "tonal_mix_bus_mc202_to_w30_rms_ratio": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "mc202_to_w30_rms_ratio"
+                        )
+                    )
+                    for case in cases
+                    if case.get("source_family") == "tonal_hook"
+                ),
+                default=0.0,
+            ),
             "tonal_destructive_static_distance_frames": min(
                 (
                     number(

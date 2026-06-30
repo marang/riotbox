@@ -32,6 +32,7 @@ AUDIBLE_ELEMENTS = {"kick", "snare", "bass", "stab", "silence", "restore"}
 MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO = 0.22
 MIN_HOOK_FORWARD_W30_TO_SOURCE_MARGIN = 0.025
 MIN_TONAL_HOOK_RESTRAINT_PRESSURE_LIFT_RATIO = 2.20
+MIN_TONAL_MIX_BUS_MC202_TO_W30_RMS_RATIO = 0.20
 MIN_HOOK_CHOP_RIFF_HIT_COUNT = 6.0
 MIN_HOOK_CHOP_RIFF_VELOCITY_SPAN = 0.20
 MIN_HOOK_CHOP_RIFF_REVERSE_COUNT = 1.0
@@ -200,6 +201,16 @@ def validate_mutation_fixtures(report: dict[str, Any], output: Path) -> list[str
                 0.0,
             ),
             "source_wav_sparse_bass_dominance_margin_too_low",
+        ),
+        (
+            "weak_tonal_mc202_mix_bus",
+            lambda data: set_child_metric(
+                data,
+                "professional_source_wav_pack",
+                "tonal_mix_bus_mc202_to_w30_rms_ratio",
+                0.0,
+            ),
+            "source_wav_tonal_mix_bus_mc202_too_buried",
         ),
         (
             "weak_sparse_low_band_share",
@@ -662,6 +673,12 @@ def validate_hook_chop_metrics(
         number(source_wav.get("tonal_hook_restraint_pressure_lift_ratio"))
         >= MIN_TONAL_HOOK_RESTRAINT_PRESSURE_LIFT_RATIO,
         "source_wav_tonal_hook_restraint_pressure_lift_too_soft",
+        failures,
+    )
+    require(
+        number(source_wav.get("tonal_mix_bus_mc202_to_w30_rms_ratio"))
+        >= MIN_TONAL_MIX_BUS_MC202_TO_W30_RMS_RATIO,
+        "source_wav_tonal_mix_bus_mc202_too_buried",
         failures,
     )
     require(

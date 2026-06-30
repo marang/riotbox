@@ -92,38 +92,25 @@ python3 scripts/listening_review_workflow.py record \
   --strongest-element stab \
   --source-recognition source_transformed_but_present \
   --hook-after-two-bars weak \
-  --failure-reason "Tonal hook is useful but the MC-202 answer and mix are not demo-ready." \
-  --preferred-direction "keep the tonal hook clear while making the MC-202 answer bite harder" \
+  --failure-reason "Tonal hook is useful but still needs a human listening decision before demo readiness." \
+  --preferred-direction "keep the tonal hook clear and record a concrete listening verdict before promotion" \
   --avoid "buried answer,hook masking" \
-  --concrete-follow-up "route tonal weak output to mix balance after hook restraint clears" \
+  --concrete-follow-up "block weak tonal promotion until a concrete non-human producer fix category exists" \
   --reviewer "fixture-listener" >/dev/null
 
-python3 scripts/promote_listening_review_to_demo_bank.py \
+if python3 scripts/promote_listening_review_to_demo_bank.py \
   --review "$weak_review" \
   --demo-bank scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json \
   --json-output "$tmp/demo-bank-weak.json" \
   --entry-id tonal-rusharp-promoted-weak-fixture \
-  --demo-worthiness-note "Human weak review preserves the tonal example only as a concrete mix-bus fix target after hook restraint clears." \
+  --demo-worthiness-note "This should not promote without a concrete non-human producer fix category." \
   --mc202-producer-closeout "$closeout" \
-  --require-artifact-hashes >/dev/null
-
-jq -e '
-  any(.entries[];
-    .entry_id == "tonal-rusharp-promoted-weak-fixture"
-    and .human_verdict == "weak"
-    and .demo_readiness == "not_demo_ready"
-    and (.fix_categories == ["mix_bus"])
-    and .mc202_source_composed_review_gate.source_composed_evidence == true
-    and .mc202_role_evidence.role == "hook_restraint_stab_answer"
-    and .mc202_role_evidence.source_family == "tonal_hook"
-    and .mc202_role_evidence.proof_scope == "demo_bank_promotion_gate"
-    and .demo_readiness_consequence == "human_weak_blocks_demo_ready_and_routes_fix"
-    and .mc202_producer_fix_routing.case_id == "tonal_rusharp_120"
-    and (.mc202_producer_fix_routing.closeout_fix_categories | index("human_listening"))
-    and (.mc202_producer_fix_routing.closeout_fix_categories | index("mix_bus"))
-    and .mc202_producer_fix_routing.demo_bank_fix_categories == ["mix_bus"]
-  )
-' "$tmp/demo-bank-weak.json" >/dev/null
+  --require-artifact-hashes >"$tmp/demo-bank-weak.out" 2>&1; then
+  cat "$tmp/demo-bank-weak.out" >&2
+  echo "expected weak tonal promotion without concrete producer fix category to fail" >&2
+  exit 1
+fi
+grep -q "MC-202 weak/fail verdict needs non-human producer fix categories" "$tmp/demo-bank-weak.out"
 
 if python3 scripts/promote_listening_review_to_demo_bank.py \
   --review "$weak_review" \
@@ -138,7 +125,7 @@ if python3 scripts/promote_listening_review_to_demo_bank.py \
   echo "expected manual MC-202 fix category mismatch to fail" >&2
   exit 1
 fi
-grep -q "manual fix categories must match MC-202 producer closeout routing" "$tmp/manual-mismatch.out"
+grep -q "MC-202 weak/fail verdict needs non-human producer fix categories" "$tmp/manual-mismatch.out"
 
 stale_closeout="$tmp/stale-closeout.json"
 jq '(.review_candidates[] | select(.case_id == "tonal_rusharp_120") | .candidate_sha256) = "0000000000000000000000000000000000000000000000000000000000000000"' \
