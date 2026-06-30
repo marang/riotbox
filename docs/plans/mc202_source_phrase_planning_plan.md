@@ -317,6 +317,10 @@ chain is:
      the W-30 stab hook forward, source character survives, and the MC-202
      support now clears the 0.20 support-balance floor so producer routing can
      stop asking for another mix-bus pass and leave only structured listening.
+   - RIOTBOX-1349 turns the remaining `human_listening` closeout bucket into a
+     structured review queue. Each remaining MC-202 candidate must name the
+     exact WAV, review JSON, prompt, metrics, role evidence, hash identity, and
+     reason automated routing stops before any producer-grade quality claim.
 
 This chain is deliberately allowed to take multiple PRs. The quality standard
 does not shrink to fit a slice boundary: a merged slice can be useful

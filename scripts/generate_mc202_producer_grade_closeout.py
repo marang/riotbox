@@ -86,6 +86,7 @@ def build_report(
         real_source_pack,
         real_source_cases,
     )
+    review_queue = structured_listening_review_queue(candidates)
     blockers = closeout_blockers(gate, candidates, source_scaffold)
     technical_result = "pass" if gate["result"] == "pass" and not source_scaffold["failure_codes"] else "fail"
     promotion_result = "blocked_for_human_promotion" if blockers else "ready_for_human_promotion"
@@ -118,6 +119,8 @@ def build_report(
         },
         "real_source_listening_scaffold": source_scaffold,
         "review_candidates": candidates,
+        "structured_listening_review_queue_count": len(review_queue),
+        "structured_listening_review_queue": review_queue,
         "mc202_producer_fix_candidate_count": len(fix_candidates),
         "mc202_producer_fix_summary": mc202_producer_fix_routing.build_fix_summary(
             candidates,
@@ -134,13 +137,16 @@ def candidate_summary(case: dict[str, Any]) -> dict[str, Any]:
     gate = object_field(case, MC202_GATE_FIELD, Path("<professional-pack>"))
     metrics = object_field(gate, "metrics", Path("<professional-pack>"))
     source_family = required_string(case, "source_family", Path("<professional-pack>"))
+    review_artifacts = object_field(case, "review_artifacts", Path("<professional-pack>"))
     summary = {
         "case_id": required_string(case, "case_id", Path("<professional-pack>")),
         "source_family": source_family,
+        "source": required_string(case, "source", Path("<professional-pack>")),
         "candidate": required_string(case, "candidate", Path("<professional-pack>")),
         "candidate_sha256": required_string(case, "candidate_sha256", Path("<professional-pack>")),
         "review": required_string(case, "review", Path("<professional-pack>")),
         "review_sha256": required_string(case, "review_sha256", Path("<professional-pack>")),
+        "review_artifacts": review_artifacts,
         "human_verdict": str(case.get("human_verdict")),
         "demo_readiness": str(case.get("demo_readiness")),
         "quality_proof": case.get("quality_proof"),
@@ -157,6 +163,52 @@ def candidate_summary(case: dict[str, Any]) -> dict[str, Any]:
     }
     summary["mc202_producer_fix_route"] = mc202_producer_fix_routing.route_candidate(summary)
     return summary
+
+
+def structured_listening_review_queue(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    entries = []
+    for candidate in candidates:
+        route = object_or_empty(candidate.get("mc202_producer_fix_route"))
+        route_categories = string_list(route.get("proposed_fix_categories"))
+        if candidate["human_verdict"] != "unverified" and candidate["demo_readiness"] != "unverified":
+            continue
+        if "human_listening" not in route_categories:
+            continue
+        review_artifacts = object_or_empty(candidate.get("review_artifacts"))
+        review_dir = Path(candidate["review"]).parent
+        prompt = str(review_dir / str(review_artifacts.get("prompt_markdown", "prompt.md")))
+        metrics = str(review_dir / str(review_artifacts.get("metrics_json", "metrics.json")))
+        role = object_or_empty(candidate.get("mc202_role_evidence"))
+        entries.append(
+            {
+                "queue_id": f"mc202_human_listening_{candidate['case_id']}",
+                "case_id": candidate["case_id"],
+                "source_family": candidate["source_family"],
+                "source": candidate["source"],
+                "candidate": candidate["candidate"],
+                "candidate_sha256": candidate["candidate_sha256"],
+                "review": candidate["review"],
+                "review_sha256": candidate["review_sha256"],
+                "review_prompt": prompt,
+                "review_metrics": metrics,
+                "mc202_role": str(role.get("role", "")),
+                "mc202_role_reason": str(role.get("musician_reason", "")),
+                "producer_fix_categories": route_categories,
+                "producer_fix_reason": str(route.get("musician_fix_reason", "")),
+                "why_human_review_required": (
+                    "Automated source-composed checks can prove reviewability, "
+                    "but producer-grade quality needs a structured human listening verdict."
+                ),
+                "quality_proof": False,
+                "automated_musical_approval": False,
+                "allowed_human_verdicts": [
+                    "keep",
+                    "technically_ok_but_musically_weak",
+                    "reject",
+                ],
+            }
+        )
+    return entries
 
 
 def mc202_role_evidence(source_family: str, metrics: dict[str, Any]) -> dict[str, Any]:
@@ -471,6 +523,11 @@ def validate_report(report: dict[str, Any]) -> list[str]:
                 failures,
             )
     check(isinstance(report.get("next_actions"), list) and report["next_actions"], "next_actions_missing", failures)
+    validate_structured_listening_review_queue(
+        report,
+        candidates if isinstance(candidates, list) else [],
+        failures,
+    )
     summary = str(report.get("musician_summary", ""))
     check("not demo-ready" in summary and "human pass" in summary, "musician_summary_missing", failures)
     return failures
@@ -513,6 +570,116 @@ def validate_candidate(candidate: Any, index: int, failures: list[str]) -> None:
     mc202_producer_fix_routing.validate_candidate_fix_route(candidate, prefix, failures)
     check(len(str(candidate.get("candidate_sha256", ""))) == 64, f"{prefix}_candidate_sha_invalid", failures)
     check(len(str(candidate.get("review_sha256", ""))) == 64, f"{prefix}_review_sha_invalid", failures)
+
+
+def validate_structured_listening_review_queue(
+    report: dict[str, Any],
+    candidates: list[Any],
+    failures: list[str],
+) -> None:
+    queue = report.get("structured_listening_review_queue")
+    if not isinstance(queue, list):
+        failures.append("structured_listening_review_queue_missing")
+        return
+    check(
+        report.get("structured_listening_review_queue_count") == len(queue),
+        "structured_listening_review_queue_count_mismatch",
+        failures,
+    )
+    expected_ids = {
+        str(candidate.get("case_id"))
+        for candidate in candidates
+        if isinstance(candidate, dict)
+        and (
+            candidate.get("human_verdict") == "unverified"
+            or candidate.get("demo_readiness") == "unverified"
+        )
+        and "human_listening"
+        in string_list(
+            object_or_empty(candidate.get("mc202_producer_fix_route")).get(
+                "proposed_fix_categories"
+            )
+        )
+    }
+    queue_ids = {
+        str(entry.get("case_id"))
+        for entry in queue
+        if isinstance(entry, dict)
+    }
+    check(bool(queue), "structured_listening_review_queue_empty", failures)
+    check(queue_ids == expected_ids, "structured_listening_review_queue_case_ids_stale", failures)
+    candidate_by_id = {
+        str(candidate.get("case_id")): candidate
+        for candidate in candidates
+        if isinstance(candidate, dict)
+    }
+    for index, entry in enumerate(queue):
+        validate_structured_listening_review_queue_entry(
+            entry,
+            index,
+            candidate_by_id,
+            failures,
+        )
+
+
+def validate_structured_listening_review_queue_entry(
+    entry: Any,
+    index: int,
+    candidate_by_id: dict[str, Any],
+    failures: list[str],
+) -> None:
+    if not isinstance(entry, dict):
+        failures.append(f"structured_listening_review_queue_{index}_not_object")
+        return
+    prefix = f"structured_listening_review_queue_{index}"
+    case_id = str(entry.get("case_id", ""))
+    candidate = object_or_empty(candidate_by_id.get(case_id))
+    check(case_id in candidate_by_id, f"{prefix}_case_id_unknown", failures)
+    for field in (
+        "queue_id",
+        "source_family",
+        "source",
+        "candidate",
+        "candidate_sha256",
+        "review",
+        "review_sha256",
+        "review_prompt",
+        "review_metrics",
+        "mc202_role",
+        "mc202_role_reason",
+        "producer_fix_categories",
+        "producer_fix_reason",
+        "why_human_review_required",
+        "allowed_human_verdicts",
+    ):
+        check(bool(entry.get(field)), f"{prefix}_{field}_missing", failures)
+    check(entry.get("quality_proof") is False, f"{prefix}_claims_quality", failures)
+    check(
+        entry.get("automated_musical_approval") is False,
+        f"{prefix}_claims_automated_approval",
+        failures,
+    )
+    check(str(entry.get("candidate")) == str(candidate.get("candidate")), f"{prefix}_candidate_path_stale", failures)
+    check(str(entry.get("review")) == str(candidate.get("review")), f"{prefix}_review_path_stale", failures)
+    for field in ("candidate", "review", "review_prompt", "review_metrics"):
+        check(Path(str(entry.get(field, ""))).is_file(), f"{prefix}_{field}_missing_on_disk", failures)
+    check(
+        str(entry.get("source_family")) == str(candidate.get("source_family")),
+        f"{prefix}_source_family_stale",
+        failures,
+    )
+    check(len(str(entry.get("candidate_sha256", ""))) == 64, f"{prefix}_candidate_sha_invalid", failures)
+    check(len(str(entry.get("review_sha256", ""))) == 64, f"{prefix}_review_sha_invalid", failures)
+    categories = string_list(entry.get("producer_fix_categories"))
+    check("human_listening" in categories, f"{prefix}_human_listening_category_missing", failures)
+    verdicts = string_list(entry.get("allowed_human_verdicts"))
+    check("keep" in verdicts, f"{prefix}_keep_verdict_missing", failures)
+    check(
+        "technically_ok_but_musically_weak" in verdicts,
+        f"{prefix}_weak_verdict_missing",
+        failures,
+    )
+    check("reject" in verdicts, f"{prefix}_reject_verdict_missing", failures)
 
 
 def validate_role_evidence(candidate: dict[str, Any], prefix: str, failures: list[str]) -> None:
@@ -609,6 +776,26 @@ def run_mutation_fixtures(report: dict[str, Any]) -> None:
     mutated = json.loads(json.dumps(report))
     mutated["review_candidates"][0]["human_verdict"] = "pass"
     fixtures.append(("stale_human_verdict", mutated, "candidate_0_human_verdict_not_unverified"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["structured_listening_review_queue"] = []
+    fixtures.append(("missing_review_queue", mutated, "structured_listening_review_queue_empty"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["structured_listening_review_queue_count"] = 999
+    fixtures.append(("stale_review_queue_count", mutated, "structured_listening_review_queue_count_mismatch"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["structured_listening_review_queue"][0]["quality_proof"] = True
+    fixtures.append(("review_queue_claims_quality", mutated, "structured_listening_review_queue_0_claims_quality"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["structured_listening_review_queue"][0]["review_prompt"] = "/tmp/riotbox-missing-review-prompt.md"
+    fixtures.append(("review_queue_missing_prompt", mutated, "structured_listening_review_queue_0_review_prompt_missing_on_disk"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["structured_listening_review_queue"][0]["case_id"] = "missing_case"
+    fixtures.append(("review_queue_stale_case", mutated, "structured_listening_review_queue_case_ids_stale"))
 
     mutated = json.loads(json.dumps(report))
     mutated["real_source_listening_scaffold"]["primitive_controls_are_product_output"] = True
@@ -727,6 +914,22 @@ def markdown_report(report: dict[str, Any]) -> str:
                 "",
             ]
         )
+    lines.extend(["## Structured Listening Review Queue", ""])
+    for entry in report["structured_listening_review_queue"]:
+        lines.extend(
+            [
+                f"### `{entry['queue_id']}`",
+                "",
+                f"- Case: `{entry['case_id']}` / `{entry['source_family']}`",
+                f"- Candidate WAV: `{entry['candidate']}`",
+                f"- Review JSON: `{entry['review']}`",
+                f"- Review prompt: `{entry['review_prompt']}`",
+                f"- Review metrics: `{entry['review_metrics']}`",
+                f"- MC-202 role: `{entry['mc202_role']}`",
+                f"- Why human review is required: {entry['why_human_review_required']}",
+                "",
+            ]
+        )
     lines.extend(["## Producer Fix Candidates", ""])
     for fix in report["mc202_producer_fix_candidates"]:
         lines.extend(
@@ -805,6 +1008,12 @@ def object_or_empty(value: Any) -> dict[str, Any]:
 
 def number(value: Any) -> float:
     return float(value) if isinstance(value, (int, float)) else 0.0
+
+
+def string_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item) for item in value if isinstance(item, str)]
 
 
 def required_string(value: dict[str, Any], field: str, path: Path) -> str:

@@ -156,6 +156,20 @@ Status: accepted
 
 ---
 
+### RBX-101
+
+Date: 2026-06-30
+Topic: MC-202 human-listening closeout must be a concrete review queue
+Phase: P023 Sound Excellence / MC-202 Producer-Grade Track
+Question: how should the closeout represent remaining `human_listening` work after automated producer routing clears?
+Decision: `human_listening` is no longer sufficient as only a fix category. The MC-202 producer-grade closeout now emits a `structured_listening_review_queue` with one entry per unverified human-listening candidate, including exact candidate WAV, review JSON, prompt, metrics, hashes, source family, MC-202 role, route category, and why automated checks stop at human review.
+Why: once hook restraint, answer bite, bass movement, destructive articulation, and mix-bus routing clear, the remaining work must be auditable listening work, not a vague blocker. A musician or reviewer should be able to open the closeout and know exactly what to hear and which prompt to answer.
+Evidence: RIOTBOX-1349 adds three queue entries for dense, tonal, and sparse MC-202 candidates, validates that the listed WAV/review/prompt/metrics files exist, and mutation-tests stale counts, missing queue entries, quality claims, stale case IDs, and missing prompts. The closeout still keeps `quality_proof: false` and `automated_musical_approval: false`.
+Consequences: future closeout work may consume human verdicts from this queue, but must not turn automated reviewability into musical approval. Demo-bank promotion remains blocked until a structured human/calibrated verdict allows it.
+Status: accepted
+
+---
+
 ### RBX-100
 
 Date: 2026-06-30
