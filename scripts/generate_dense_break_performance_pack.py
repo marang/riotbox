@@ -57,9 +57,9 @@ MIN_REBUILD_ONLY_SOURCE_TRANSIENT_RETENTION = 0.45
 MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE = 0.70
 MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_MARGIN = 0.10
 MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 1.75
-MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 12.00
+MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 15.00
 MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 1.70
-MIN_SPARSE_PRESSURE_LOW_BAND_SHARE = 0.28
+MIN_SPARSE_PRESSURE_LOW_BAND_SHARE = 0.32
 MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO = 2.10
 MIN_HOOK_CHOP_SELECTION_CANDIDATES = 3
 MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES = 256.0
@@ -2120,16 +2120,16 @@ def pressure_lift_policy_for(
             source_family="sparse_bass_pressure",
             lift_shape="bass-rebuild lift",
             lift_intent="turn sparse source weight into a harder bass-pressure rise",
-            source_bleed_gain=0.045,
+            source_bleed_gain=0.070,
             hook_bleed_gain=0.62,
             tr909_drive=1.16,
             break_snap_drive=0.96,
-            mc202_drive=1.18,
-            bass_drive=1.12,
-            bar4_intensity=0.92,
-            bar5_intensity=1.08,
-            bar4_bass_frequency_hz=36.0,
-            bar5_bass_frequency_hz=43.0,
+            mc202_drive=1.24,
+            bass_drive=1.24,
+            bar4_intensity=0.96,
+            bar5_intensity=1.14,
+            bar4_bass_frequency_hz=34.0,
+            bar5_bass_frequency_hz=49.0,
         )
     raise AssertionError("pressure_lift_policy_for source-family classification is exhaustive")
 
@@ -2167,7 +2167,7 @@ def render_performance(
     hook_break_snap_gain = mix_policy.hook_break_snap_gain * hook_break_snap_boost
     chop_break_snap_gain = mix_policy.chop_break_snap_gain * chop_break_snap_boost
     pressure_break_snap_gain = mix_policy.pressure_break_snap_gain * (
-        1.42 if dense_drum_snap else (0.88 if sparse_bass_path else 1.0)
+        1.42 if dense_drum_snap else (0.78 if sparse_bass_path else 1.0)
     )
     pad_noise_texture_path = source_policy.pressure_lift_policy.source_family == "pad_noise"
     hook_riff_hook_gain = 1.12 if dense_drum_snap else 1.62
@@ -2190,6 +2190,7 @@ def render_performance(
     if tonal_hook_path and source_layer_gain <= 0.0:
         w30 = tonal_rebuild_source_character_focus(w30)
         hook_riff = tonal_rebuild_source_character_focus(hook_riff)
+    sparse_source_identity_boost = 1.62 if sparse_bass_path else 1.0
     pressure_hook_riff_gain = (
         lift_policy.hook_bleed_gain * (1.14 if dense_drum_snap else 1.0)
     )
@@ -2197,20 +2198,19 @@ def render_performance(
         2.30
         if pad_noise_texture_path
         else 5.00
-        + lift_policy.mc202_drive * 1.42
-        + (0.46 if sparse_bass_path else 0.0)
+        + lift_policy.mc202_drive * (1.18 if sparse_bass_path else 1.42)
         + (1.06 if tonal_hook_path else 0.0)
     )
     pressure_bass_gain = (
         0.72
         if pad_noise_texture_path
         else (
-            1.50 + lift_policy.bass_drive * 0.90
+            1.92 + lift_policy.bass_drive * 1.22
             if sparse_bass_path
             else 1.14 + lift_policy.bass_drive * 0.62 + (0.32 if tonal_hook_path else 0.0)
         )
     )
-    restore_bass_boost = 1.20 if sparse_bass_path else 1.0
+    restore_bass_boost = 1.42 if sparse_bass_path else 1.0
 
     def put_bar(bar: int, mix: np.ndarray) -> None:
         start = bar * bar_frames
@@ -2220,7 +2220,7 @@ def render_performance(
         performance[start:end] = mix[start:end]
 
     hook_mix = glue_bus(
-        source * (0.50 * source_layer_gain)
+        source * (0.50 * source_layer_gain * sparse_source_identity_boost)
         + w30 * (mix_policy.hook_w30_gain * source_character_rebuild_hook_boost)
         + hook_riff * (
             hook_riff_hook_gain * hook_forward_gain * source_character_rebuild_hook_boost
@@ -2233,7 +2233,7 @@ def render_performance(
         slam=mix_policy.hook_slam,
     )
     chop_mix = glue_bus(
-        source * (0.16 * source_layer_gain)
+        source * (0.16 * source_layer_gain * sparse_source_identity_boost)
         + w30 * (mix_policy.chop_w30_gain * source_character_rebuild_hook_boost)
         + hook_riff * (
             hook_riff_chop_gain
@@ -2270,7 +2270,7 @@ def render_performance(
         mix_policy.pressure_peak,
     )
     restore_mix = glue_bus(
-        source * (0.28 * source_layer_gain)
+        source * (0.28 * source_layer_gain * sparse_source_identity_boost)
         + w30 * (1.76 * source_character_rebuild_restore_boost)
         + hook_riff * (
             1.46 * hook_forward_gain * 0.97 * source_character_rebuild_restore_boost
@@ -2342,7 +2342,7 @@ def render_performance(
             elif source_policy.pressure_lift_policy.source_family == "tonal_hook":
                 restore_bar = apply_gain(restore_bar, 1.08)
             elif source_policy.pressure_lift_policy.source_family == "sparse_bass_pressure":
-                restore_bar = apply_gain(restore_bar, 1.06)
+                restore_bar = apply_gain(restore_bar, 1.22)
             put_bar(bar, restore_bar)
         else:
             raise ValueError(f"unsupported arrangement role: {role}")
@@ -2522,11 +2522,26 @@ def bass_movement_frequency_policy(
         if span < MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ:
             ranked = sorted(derived, key=lambda bar: (derived[bar], feature_scores.get(bar, 0.0)))
             midpoint = (len(ranked) - 1) / 2.0
-            target_span = MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ + 1.35
+            target_span = MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ + 1.60
             expand = (target_span - span) / max(1.0, midpoint)
             for index, bar in enumerate(ranked):
                 derived[bar] = float(
                     np.clip(derived[bar] + (index - midpoint) * expand, 32.0, 62.0)
+                )
+        distances = [abs(derived[bar] - static.get(bar, derived[bar])) for bar in derived]
+        mean_distance = float(np.mean(distances)) if distances else 0.0
+        if mean_distance < MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ:
+            ranked = sorted(derived, key=lambda bar: (derived[bar], feature_scores.get(bar, 0.0)))
+            midpoint = (len(ranked) - 1) / 2.0
+            target_distance = MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ + 0.45
+            expand = target_distance - mean_distance
+            for index, bar in enumerate(ranked):
+                contour = static.get(bar, derived[bar])
+                direction = -1.0 if derived[bar] < contour else 1.0
+                if abs(derived[bar] - contour) < 1e-6:
+                    direction = -1.0 if index < midpoint else 1.0
+                derived[bar] = float(
+                    np.clip(derived[bar] + direction * expand, 32.0, 62.0)
                 )
     return derived
 
@@ -3376,8 +3391,8 @@ def render_bass_pressure_layer(
             * source_policy.bass_gain
             * (restore_factor if role == "restore" else pressure_factor)
         )
-        harmonic_gain = 0.10 if is_sparse else 0.18
-        sub_gain = 0.30 if is_sparse else 0.0
+        harmonic_gain = 0.07 if is_sparse else 0.18
+        sub_gain = 0.44 if is_sparse else 0.0
         mono = (
             (sine + harmonic * harmonic_gain + sub * sub_gain)
             * np.clip(envelope, 0.0, 1.08)

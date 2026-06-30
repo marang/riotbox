@@ -320,7 +320,7 @@ def mc202_role_evidence(source_family: str, metrics: dict[str, Any]) -> dict[str
             failure_codes.append("bass_movement_not_source_derived")
         if number(metrics.get("sparse_bass_movement_static_distance_hz")) < 1.75:
             failure_codes.append("bass_movement_static_distance_too_low")
-        if number(metrics.get("sparse_bass_movement_frequency_span_hz")) < 12.0:
+        if number(metrics.get("sparse_bass_movement_frequency_span_hz")) < 15.0:
             failure_codes.append("bass_movement_span_too_low")
         reason = "MC-202 bass pressure follows source-derived sparse low-end movement."
     elif source_family == "tonal_hook":
@@ -865,7 +865,7 @@ def validate_role_evidence(candidate: dict[str, Any], prefix: str, failures: lis
             failures,
         )
         check(
-            number(metrics.get("sparse_bass_movement_frequency_span_hz")) >= 12.0,
+            number(metrics.get("sparse_bass_movement_frequency_span_hz")) >= 15.0,
             f"{prefix}_mc202_sparse_bass_span_too_low",
             failures,
         )

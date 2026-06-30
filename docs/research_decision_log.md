@@ -170,6 +170,20 @@ Status: accepted
 
 ---
 
+### RBX-104
+
+Date: 2026-06-30
+Topic: Sparse bass movement must not pass as barely moving low support
+Phase: P023 Sound Excellence / Production Quality
+Question: how should Riotbox respond when weak-output routing still names `bass_movement` after sparse bass-pressure diagnostics became source-derived?
+Decision: sparse-bass-pressure diagnostics now require `sparse_bass_movement_frequency_span_hz >= 15.0` and `sparse_pressure_low_band_share >= 0.32`. The sparse render path widens the source-feature-expanded contour and increases low-band bass pressure so the gate reflects audible output movement, not only a stronger validator.
+Why: the previous 12 Hz floor proved the path was not the old fixed contour, but several passing examples still sat close to the movement and low-band-share floors. A musician should hear the sparse section move with physical low-end pressure rather than a thin midrange contour that technically passes.
+Evidence: RIOTBOX-1352 updates the dense-break performance generator, professional source-WAV pack, professional-output suite contract, matrix smoke, MC-202 closeout, producer-fix routing, source-composed review gate, sound-readiness reporting, and roadmap/spec docs. The final source matrix keeps sparse cases above the new floor with minimum movement span `15.857 Hz`, low-band share `0.340`, low-band lift `2.991x`, restore/pressure `1.145x`, and bass dominance margin `0.490`. The professional source-WAV sparse case passes with source/performance correlation `0.203`, low-band share `0.462`, movement span `16.142 Hz`, and restore/pressure `1.166x`. The change remains diagnostic with `quality_proof: false` and `human_verdict: unverified`; structured listening review is still required before promotional claims.
+Consequences: future routed `bass_movement` fixes should improve source-derived contour selection, low-band rendering, and listening verdicts rather than lowering the sparse bass pressure floors.
+Status: accepted
+
+---
+
 ### RBX-103
 
 Date: 2026-06-30
