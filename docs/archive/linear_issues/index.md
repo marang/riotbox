@@ -1326,4 +1326,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Strengthen tonal MC-202 mix-bus balance from producer routing
 - [RIOTBOX-1349.md](./RIOTBOX-1349.md)
   P023: Turn MC-202 human-listening closeout into concrete review queue
+- [RIOTBOX-1350.md](./RIOTBOX-1350.md)
+  P023: Let MC-202 closeout consume structured listening verdict labels
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
