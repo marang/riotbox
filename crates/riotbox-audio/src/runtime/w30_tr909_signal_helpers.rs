@@ -144,7 +144,7 @@ pub(super) fn trigger_envelope(render: &RealtimeTr909RenderState) -> f32 {
             Some(Tr909TakeoverRenderProfile::ControlledPhrase) | None => 0.06,
             Some(Tr909TakeoverRenderProfile::SceneLock) => 0.1,
         },
-        Tr909RenderMode::Fill => 0.04,
+        Tr909RenderMode::Fill => 0.12,
         Tr909RenderMode::BreakReinforce => 0.02,
         Tr909RenderMode::Idle => 0.0,
     };
@@ -205,14 +205,14 @@ pub(super) fn trigger_frequency(render: &RealtimeTr909RenderState, step: i64) ->
         Tr909RenderMode::Idle => 0.0,
         Tr909RenderMode::SourceSupport => {
             let base = match render.source_support_profile {
-                Some(Tr909SourceSupportProfile::SteadyPulse) | None => 52.0,
-                Some(Tr909SourceSupportProfile::BreakLift) => 66.0,
-                Some(Tr909SourceSupportProfile::DropDrive) => 78.0,
+                Some(Tr909SourceSupportProfile::SteadyPulse) | None => 58.0,
+                Some(Tr909SourceSupportProfile::BreakLift) => 104.0,
+                Some(Tr909SourceSupportProfile::DropDrive) => 44.0,
             };
             base + accent + phrase_pitch + slam
         }
-        Tr909RenderMode::Fill => 78.0 + accent + phrase_pitch + slam,
-        Tr909RenderMode::BreakReinforce => 64.0 + accent + phrase_pitch + slam,
+        Tr909RenderMode::Fill => 112.0 + accent + phrase_pitch + slam,
+        Tr909RenderMode::BreakReinforce => 88.0 + accent + phrase_pitch + slam,
         Tr909RenderMode::Takeover => {
             let base = match render.takeover_profile {
                 Some(Tr909TakeoverRenderProfile::ControlledPhrase) | None => 92.0,
@@ -221,6 +221,144 @@ pub(super) fn trigger_frequency(render: &RealtimeTr909RenderState, step: i64) ->
             base + accent + phrase_pitch + slam
         }
     }
+}
+
+pub(super) fn tr909_step_waveform(render: &RealtimeTr909RenderState, step: i64, phase: f32) -> f32 {
+    let balance = tr909_voice_balance(render, step);
+    let kick = (std::f32::consts::TAU * phase).sin();
+    let snare = tr909_deterministic_noise(phase, step);
+    let hat_phase = phase.mul_add(11.0, step as f32 * 0.073);
+    let hat = (std::f32::consts::TAU * hat_phase).sin()
+        * (std::f32::consts::TAU * hat_phase * 0.37).cos().abs();
+
+    ((kick * balance.kick) + (snare * balance.snare) + (hat * balance.hat)).clamp(-1.0, 1.0)
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Tr909VoiceBalance {
+    kick: f32,
+    snare: f32,
+    hat: f32,
+}
+
+fn tr909_voice_balance(render: &RealtimeTr909RenderState, step: i64) -> Tr909VoiceBalance {
+    let subdivision = i64::from(render_subdivision(render)).max(1);
+    let bar_steps = subdivision * 4;
+    let step_in_bar = step.rem_euclid(bar_steps);
+    let on_beat = step_in_bar % subdivision == 0;
+    let downbeat = step_in_bar == 0;
+    let backbeat = step_in_bar == subdivision * 2;
+    let offbeat = !on_beat;
+
+    let mut balance = Tr909VoiceBalance {
+        kick: if downbeat {
+            1.0
+        } else if on_beat {
+            0.46
+        } else {
+            0.12
+        },
+        snare: if backbeat {
+            0.86
+        } else if offbeat {
+            0.28
+        } else {
+            0.12
+        },
+        hat: if offbeat { 0.72 } else { 0.24 },
+    };
+
+    if matches!(render.mode, Tr909RenderMode::SourceSupport) {
+        match render.source_support_profile {
+            Some(Tr909SourceSupportProfile::DropDrive) => {
+                balance.kick *= 1.65;
+                balance.snare *= 0.55;
+                balance.hat *= 0.55;
+            }
+            Some(Tr909SourceSupportProfile::BreakLift) => {
+                balance.kick *= 0.74;
+                balance.snare *= 1.68;
+                balance.hat *= 1.48;
+            }
+            Some(Tr909SourceSupportProfile::SteadyPulse) | None => {
+                balance.kick *= 1.0;
+                balance.snare *= 0.82;
+                balance.hat *= 0.64;
+            }
+        }
+    }
+
+    match render.pattern_adoption {
+        Some(Tr909PatternAdoption::MainlineDrive) => {
+            balance.kick *= 1.12;
+            balance.hat *= 0.92;
+        }
+        Some(Tr909PatternAdoption::TakeoverGrid) => {
+            balance.snare *= 1.16;
+            balance.hat *= 1.22;
+        }
+        Some(Tr909PatternAdoption::SupportPulse) | None => {}
+    }
+
+    match render.phrase_variation {
+        Some(Tr909PhraseVariation::PhraseLift) => {
+            balance.snare *= 1.14;
+            balance.hat *= 1.16;
+        }
+        Some(Tr909PhraseVariation::PhraseDrive) => {
+            if matches!(render.mode, Tr909RenderMode::SourceSupport) {
+                balance.kick *= 1.22;
+                balance.snare *= 0.92;
+                balance.hat *= 0.96;
+            } else {
+                balance.kick *= 1.10;
+                balance.hat *= 1.06;
+            }
+        }
+        Some(Tr909PhraseVariation::PhraseRelease) => {
+            if matches!(render.mode, Tr909RenderMode::SourceSupport) {
+                balance.kick *= 0.46;
+                balance.snare *= 1.04;
+                balance.hat *= 1.18;
+            } else {
+                balance.kick *= 0.80;
+                balance.snare *= 0.72;
+                balance.hat *= 0.54;
+            }
+        }
+        Some(Tr909PhraseVariation::PhraseAnchor) | None => {}
+    }
+
+    match render.mode {
+        Tr909RenderMode::Fill => {
+            balance.snare *= 1.40;
+            balance.hat *= 1.55;
+        }
+        Tr909RenderMode::BreakReinforce => {
+            balance.snare *= 1.22;
+            balance.hat *= 1.08;
+        }
+        Tr909RenderMode::Takeover => {
+            balance.kick *= 1.28;
+            balance.snare *= 1.24;
+            balance.hat *= 1.18;
+        }
+        Tr909RenderMode::Idle | Tr909RenderMode::SourceSupport => {}
+    }
+
+    let sum = balance.kick + balance.snare + balance.hat;
+    if sum > 2.20 {
+        let scale = 2.20 / sum;
+        balance.kick *= scale;
+        balance.snare *= scale;
+        balance.hat *= scale;
+    }
+    balance
+}
+
+fn tr909_deterministic_noise(phase: f32, step: i64) -> f32 {
+    let seeded = (phase * 12_989.0 + step as f32 * 78.233).sin() * 43_758.547;
+    ((seeded - seeded.floor()) * 2.0) - 1.0
 }
 
 pub(super) fn render_gain(render: &RealtimeTr909RenderState) -> f32 {
@@ -244,10 +382,29 @@ pub(super) fn render_gain(render: &RealtimeTr909RenderState) -> f32 {
         (Tr909RenderMode::SourceSupport, Some(Tr909SourceSupportContext::SceneTarget)) => 1.08,
         _ => 1.0,
     };
+    let source_profile_gain = match (render.mode, render.source_support_profile) {
+        (Tr909RenderMode::SourceSupport, Some(Tr909SourceSupportProfile::DropDrive)) => 1.42,
+        (Tr909RenderMode::SourceSupport, Some(Tr909SourceSupportProfile::BreakLift)) => 1.28,
+        (Tr909RenderMode::SourceSupport, Some(Tr909SourceSupportProfile::SteadyPulse) | None) => {
+            1.05
+        }
+        _ => 1.0,
+    };
+    let mode_gain = match render.mode {
+        Tr909RenderMode::Fill => 1.75,
+        Tr909RenderMode::BreakReinforce => 1.12,
+        Tr909RenderMode::Takeover => match render.takeover_profile {
+            Some(Tr909TakeoverRenderProfile::SceneLock) => 1.15,
+            Some(Tr909TakeoverRenderProfile::ControlledPhrase) | None => 1.36,
+        },
+        Tr909RenderMode::Idle | Tr909RenderMode::SourceSupport => 1.0,
+    };
     (routing_gain
         * pattern_gain
         * phrase_gain
         * context_gain
+        * source_profile_gain
+        * mode_gain
         * render.drum_bus_level.clamp(0.0, 1.0))
     .clamp(0.0, 0.25)
 }

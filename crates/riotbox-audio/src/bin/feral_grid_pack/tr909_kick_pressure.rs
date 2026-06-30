@@ -294,9 +294,9 @@ fn tr909_kick_pressure_policy(profile: SourceAwareTr909Profile) -> Tr909KickPres
             reason: "tr909_low_drive_pressure",
         },
         Tr909SourceSupportProfile::BreakLift => Tr909KickPressurePolicy {
-            gain: 0.012,
-            body_hz: 56.0 + density * 5.0,
-            tail_seconds: 0.150,
+            gain: 0.0175,
+            body_hz: 53.0 + density * 5.0,
+            tail_seconds: 0.170,
             click_gain: 0.010,
             reason: "tr909_break_lift_pressure",
         },
