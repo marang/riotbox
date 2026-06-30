@@ -10,6 +10,18 @@ mod manifest_mc202_assertions {
             mc202_bass_pressure["pressure_role"],
             "bass_pressure_with_source_contour"
         );
+        assert_eq!(
+            mc202_bass_pressure["source_expression_render_plan_applied"],
+            true
+        );
+        assert!(mc202_bass_pressure["source_expression_role"]
+            .as_str()
+            .is_some_and(|role| {
+                matches!(
+                    role,
+                    "bass_pressure" | "answer_lift" | "hook_restraint_hold"
+                )
+            }));
         assert_eq!(mc202_bass_pressure["phrase_variation_applied"], true);
         assert_eq!(
             mc202_bass_pressure["reason"],

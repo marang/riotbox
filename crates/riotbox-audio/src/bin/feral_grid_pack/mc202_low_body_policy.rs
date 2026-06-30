@@ -26,8 +26,8 @@ fn apply_mc202_low_body_emphasis(
 
     let cutoff_hz = 132.0 + source_contour.low_band_energy_ratio.clamp(0.0, 1.0) * 42.0;
     let low_body = one_pole_lowpass(samples, cutoff_hz);
-    let dry_gain = 1.0 - emphasis * 0.46;
-    let low_gain = 1.0 + emphasis * 1.05;
+    let dry_gain = 1.0 - emphasis * 0.60;
+    let low_gain = 1.0 + emphasis * 1.45;
 
     for (sample, low_sample) in samples.iter_mut().zip(low_body.iter()) {
         *sample = (*sample * dry_gain + *low_sample * low_gain * emphasis).clamp(-0.98, 0.98);

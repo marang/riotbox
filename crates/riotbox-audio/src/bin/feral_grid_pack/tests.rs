@@ -198,6 +198,8 @@ mod tests {
             mc202_pressure.pressure_role,
             "bass_pressure_with_source_contour"
         );
+        assert!(mc202_pressure.source_expression_render_plan_applied);
+        assert_eq!(mc202_pressure.source_expression_role, "bass_pressure");
         assert!(
             mc202_pressure.pressure_reinforcement_gain > 0.0,
             "{mc202_pressure:?}"
@@ -268,6 +270,11 @@ mod tests {
             render_mc202_bass_pressure_with_source_contour(&grid, tr909_profile, source_contour);
 
         assert!(mc202_pressure.applied, "{mc202_pressure:?}");
+        assert!(mc202_pressure.source_expression_render_plan_applied);
+        assert_eq!(
+            mc202_pressure.source_expression_role,
+            "hook_restraint_hold"
+        );
         assert_eq!(mc202_pressure.low_body_emphasis, 0.0);
         assert!(
             mc202_pressure.pressure_reinforcement_gain >= 0.038,
@@ -348,6 +355,10 @@ mod tests {
 
         assert!(drop_pressure.applied, "{drop_pressure:?}");
         assert!(hold_pressure.applied, "{hold_pressure:?}");
+        assert_eq!(drop_pressure.source_expression_role, "bass_pressure");
+        assert_eq!(hold_pressure.source_expression_role, "hook_restraint_hold");
+        assert!(drop_pressure.source_expression_render_plan_applied);
+        assert!(hold_pressure.source_expression_render_plan_applied);
         assert!(drop_source_contour.applied, "{drop_source_contour:?}");
         assert!(hold_source_contour.applied, "{hold_source_contour:?}");
         assert!(

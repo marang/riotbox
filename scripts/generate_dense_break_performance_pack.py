@@ -2174,11 +2174,12 @@ def render_performance(
         0.72
         if pad_noise_texture_path
         else (
-            1.25 + lift_policy.bass_drive * 0.72
+            1.50 + lift_policy.bass_drive * 0.90
             if sparse_bass_path
             else 1.14 + lift_policy.bass_drive * 0.62
         )
     )
+    restore_bass_boost = 1.20 if sparse_bass_path else 1.0
 
     def put_bar(bar: int, mix: np.ndarray) -> None:
         start = bar * bar_frames
@@ -2247,7 +2248,7 @@ def render_performance(
         + break_snap * mix_policy.restore_break_snap_gain
         + mc202 * 3.65
         + pad_noise_texture * 1.42
-        + bass_pressure * mix_policy.restore_bass_gain,
+        + bass_pressure * mix_policy.restore_bass_gain * restore_bass_boost,
         drive=mix_policy.restore_drive,
         slam=mix_policy.restore_slam,
     )
