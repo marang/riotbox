@@ -95,7 +95,7 @@ python3 scripts/listening_review_workflow.py record \
   --failure-reason "Tonal hook is useful but the MC-202 answer and mix are not demo-ready." \
   --preferred-direction "keep the tonal hook clear while making the MC-202 answer bite harder" \
   --avoid "buried answer,hook masking" \
-  --concrete-follow-up "route tonal weak output to hook restraint and mix balance" \
+  --concrete-follow-up "route tonal weak output to mix balance after hook restraint clears" \
   --reviewer "fixture-listener" >/dev/null
 
 python3 scripts/promote_listening_review_to_demo_bank.py \
@@ -103,7 +103,7 @@ python3 scripts/promote_listening_review_to_demo_bank.py \
   --demo-bank scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json \
   --json-output "$tmp/demo-bank-weak.json" \
   --entry-id tonal-rusharp-promoted-weak-fixture \
-  --demo-worthiness-note "Human weak review preserves the tonal example only as a concrete hook-restraint and mix-bus fix target." \
+  --demo-worthiness-note "Human weak review preserves the tonal example only as a concrete mix-bus fix target after hook restraint clears." \
   --mc202-producer-closeout "$closeout" \
   --require-artifact-hashes >/dev/null
 
@@ -112,7 +112,7 @@ jq -e '
     .entry_id == "tonal-rusharp-promoted-weak-fixture"
     and .human_verdict == "weak"
     and .demo_readiness == "not_demo_ready"
-    and (.fix_categories == ["hook_restraint", "mix_bus"])
+    and (.fix_categories == ["mix_bus"])
     and .mc202_source_composed_review_gate.source_composed_evidence == true
     and .mc202_role_evidence.role == "hook_restraint_stab_answer"
     and .mc202_role_evidence.source_family == "tonal_hook"
@@ -120,9 +120,8 @@ jq -e '
     and .demo_readiness_consequence == "human_weak_blocks_demo_ready_and_routes_fix"
     and .mc202_producer_fix_routing.case_id == "tonal_rusharp_120"
     and (.mc202_producer_fix_routing.closeout_fix_categories | index("human_listening"))
-    and (.mc202_producer_fix_routing.closeout_fix_categories | index("hook_restraint"))
     and (.mc202_producer_fix_routing.closeout_fix_categories | index("mix_bus"))
-    and .mc202_producer_fix_routing.demo_bank_fix_categories == ["hook_restraint", "mix_bus"]
+    and .mc202_producer_fix_routing.demo_bank_fix_categories == ["mix_bus"]
   )
 ' "$tmp/demo-bank-weak.json" >/dev/null
 
@@ -244,7 +243,6 @@ if python3 scripts/promote_listening_review_to_demo_bank.py \
   --json-output "$tmp/demo-bank-wrong-role.json" \
   --entry-id tonal-rusharp-wrong-role-fixture \
   --demo-worthiness-note "This should not promote." \
-  --fix-category hook_restraint \
   --fix-category mix_bus \
   --require-artifact-hashes >"$tmp/wrong-role.out" 2>&1; then
   cat "$tmp/wrong-role.out" >&2

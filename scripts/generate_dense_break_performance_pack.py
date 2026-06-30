@@ -2190,7 +2190,10 @@ def render_performance(
     pressure_mc202_gain = (
         2.30
         if pad_noise_texture_path
-        else 5.00 + lift_policy.mc202_drive * 1.42 + (0.46 if sparse_bass_path else 0.0)
+        else 5.00
+        + lift_policy.mc202_drive * 1.42
+        + (0.46 if sparse_bass_path else 0.0)
+        + (1.06 if tonal_hook_path else 0.0)
     )
     pressure_bass_gain = (
         0.72
@@ -2198,7 +2201,7 @@ def render_performance(
         else (
             1.50 + lift_policy.bass_drive * 0.90
             if sparse_bass_path
-            else 1.14 + lift_policy.bass_drive * 0.62
+            else 1.14 + lift_policy.bass_drive * 0.62 + (0.32 if tonal_hook_path else 0.0)
         )
     )
     restore_bass_boost = 1.20 if sparse_bass_path else 1.0
