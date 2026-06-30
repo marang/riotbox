@@ -1320,4 +1320,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Strengthen dense MC-202 answer bite from producer fix routing
 - [RIOTBOX-1346.md](./RIOTBOX-1346.md)
   P023: Strengthen dense destructive articulation from producer routing
+- [RIOTBOX-1347.md](./RIOTBOX-1347.md)
+  P023: Strengthen tonal MC-202 hook restraint from producer routing
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
