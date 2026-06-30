@@ -156,6 +156,20 @@ Status: accepted
 
 ---
 
+### RBX-102
+
+Date: 2026-06-30
+Topic: MC-202 closeout consumes structured listening labels without synthetic approval
+Phase: P023 Sound Excellence / MC-202 Producer-Grade Track
+Question: how can completed listening reviews resolve MC-202 review-queue entries without weakening quality boundaries?
+Decision: the MC-202 producer-grade closeout now accepts an optional `riotbox.human_listening_label_corpus.v1` input. A label can resolve a queue entry only when `source_id`, `source_family`, professional review-pack schema, and `audio_sha256.rebuild_only_performance` match the queued candidate. Resolved entries carry the human verdict and reviewer context, but keep `quality_proof: false` and `automated_musical_approval: false`.
+Why: the review queue should be executable work, not a permanent blocker. At the same time, the system must not treat a loose or stale label as approval for a different WAV or source family.
+Evidence: RIOTBOX-1350 adds `--label-corpus` to the MC-202 closeout, emits `structured_listening_label_corpus` counts, resolves only matching queue entries, leaves unmatched cases blocked, and adds a closeout smoke fixture that imports a dense pass review, resolves only `dense_beat03_130`, and keeps tonal/sparse in the `structured_human_verdict_missing` blocker.
+Consequences: future P023 work can record or import real listening verdicts and watch the closeout queue shrink. Weak/fail labels resolve review work but must still block producer-grade promotion; unverified or stale labels do not resolve anything.
+Status: accepted
+
+---
+
 ### RBX-101
 
 Date: 2026-06-30

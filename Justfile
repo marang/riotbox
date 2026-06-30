@@ -323,6 +323,7 @@ mc202-producer-grade-closeout-smoke output="artifacts/audio_qa/local-mc202-produ
     python3 scripts/generate_mc202_producer_grade_closeout.py --validate-report "{{output}}/mc202-producer-grade-closeout.json" --require-all-source-composed-candidates
     test -s "{{output}}/mc202-producer-grade-closeout.md"
     grep -q "MC-202 Producer-Grade Closeout" "{{output}}/mc202-producer-grade-closeout.md"
+    scripts/validate_mc202_closeout_label_corpus_fixture.sh
 
 sound-excellence-source-corpus-fixtures manifest="docs/benchmarks/sound_excellence_source_corpus_v1.json":
     python3 scripts/validate_sound_excellence_source_corpus.py "{{manifest}}"
