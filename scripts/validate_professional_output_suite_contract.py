@@ -31,6 +31,7 @@ EXPECTED_EDGE_FAMILIES = ["bad_timing", "pad_noise"]
 AUDIBLE_ELEMENTS = {"kick", "snare", "bass", "stab", "silence", "restore"}
 MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO = 0.22
 MIN_HOOK_FORWARD_W30_TO_SOURCE_MARGIN = 0.025
+MIN_TONAL_HOOK_RESTRAINT_PRESSURE_LIFT_RATIO = 2.20
 MIN_HOOK_CHOP_RIFF_HIT_COUNT = 6.0
 MIN_HOOK_CHOP_RIFF_VELOCITY_SPAN = 0.20
 MIN_HOOK_CHOP_RIFF_REVERSE_COUNT = 1.0
@@ -655,6 +656,12 @@ def validate_hook_chop_metrics(
         number(source_wav.get("tonal_hook_chop_w30_to_source_margin"))
         >= MIN_HOOK_FORWARD_W30_TO_SOURCE_MARGIN,
         "source_wav_tonal_hook_chop_w30_margin_too_low",
+        failures,
+    )
+    require(
+        number(source_wav.get("tonal_hook_restraint_pressure_lift_ratio"))
+        >= MIN_TONAL_HOOK_RESTRAINT_PRESSURE_LIFT_RATIO,
+        "source_wav_tonal_hook_restraint_pressure_lift_too_soft",
         failures,
     )
     require(

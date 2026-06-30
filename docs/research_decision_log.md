@@ -156,6 +156,20 @@ Status: accepted
 
 ---
 
+### RBX-099
+
+Date: 2026-06-30
+Topic: Tonal MC-202 hook restraint is a measured pressure-support floor
+Phase: P023 Sound Excellence / MC-202 Producer-Grade Track
+Question: should tonal-hook MC-202 candidates route to `hook_restraint` just because they are tonal?
+Decision: no. Tonal-hook MC-202 output now treats hook restraint as a measured producer floor: the source-derived pressure support must lift low-band pressure enough while the W-30 hook remains forward and source character survives. Producer routing emits `hook_restraint` only when that measured floor fails.
+Why: tonal material should keep the recognizable riff in front while the MC-202 adds a sharp support answer underneath. A broad tonal bucket hid whether the answer actually needed hook-restraint work or whether the remaining problem was mix balance.
+Evidence: RIOTBOX-1347 strengthens tonal-only pressure support, raises `pressure_low_band_lift_ratio` for `tonal_rusharp_120` from `2.031` to `2.241`, adds `tonal_hook_restraint_pressure_lift_ratio` to the professional-output suite contract, and removes unconditional tonal `hook_restraint` routing. The closeout now leaves tonal routed to `mix_bus`, not `hook_restraint`.
+Consequences: future tonal-hook MC-202 work should route to `hook_restraint` only when the measured tonal pressure-support floor fails. Passing this floor still does not claim human listening approval; `human_verdict` remains `unverified` until structured review is recorded.
+Status: accepted
+
+---
+
 ### RBX-061
 
 Date: 2026-05-31

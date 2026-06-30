@@ -46,25 +46,19 @@ def route_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
                 "sparse bass movement is close to the minimum span",
             )
     elif source_family == "tonal_hook":
-        add_fix_category(
-            categories,
-            reasons,
-            "hook_restraint",
-            "tonal source should be judged first on hook-safe restraint and stab answer",
-        )
+        if tonal_hook_restraint_below_floor(metrics):
+            add_fix_category(
+                categories,
+                reasons,
+                "hook_restraint",
+                "tonal hook-restraint pressure support is below the producer floor",
+            )
         if number(metrics.get("mc202_to_w30_rms_ratio")) < 0.20:
             add_fix_category(
                 categories,
                 reasons,
                 "mix_bus",
                 "MC-202 support sits close to the W-30 balance floor",
-            )
-        if number(metrics.get("pressure_low_band_lift_ratio")) < 2.20:
-            add_fix_category(
-                categories,
-                reasons,
-                "hook_restraint",
-                "tonal pressure lift is close to the review floor",
             )
     elif source_family == "dense_break":
         if dense_answer_bite_below_floor(metrics):
@@ -162,6 +156,10 @@ def dense_answer_bite_below_floor(metrics: dict[str, Any]) -> bool:
 
 def dense_destructive_articulation_below_floor(metrics: dict[str, Any]) -> bool:
     return number(metrics.get("pressure_lift_bar5_to_bar4_rms_ratio")) < 1.10
+
+
+def tonal_hook_restraint_below_floor(metrics: dict[str, Any]) -> bool:
+    return number(metrics.get("pressure_low_band_lift_ratio")) < 2.20
 
 
 def answer_role_below_floor(

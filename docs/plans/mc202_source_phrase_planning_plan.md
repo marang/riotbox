@@ -307,6 +307,11 @@ chain is:
      output pushes the second source-derived pressure bar clearly above the
      first and the router names that as a live-gesture articulation floor
      rather than a vague destructive-articulation bucket.
+   - RIOTBOX-1347 turns tonal MC-202 `hook_restraint` from a broad tonal bucket
+     into a measured pressure-support floor. Tonal output keeps the W-30 hook
+     forward and source character intact while lifting MC-202 pressure enough
+     that remaining producer routing can move on to `mix_bus` instead of
+     reworking hook restraint.
 
 This chain is deliberately allowed to take multiple PRs. The quality standard
 does not shrink to fit a slice boundary: a merged slice can be useful
