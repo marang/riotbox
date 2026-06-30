@@ -72,8 +72,8 @@ use tr909_tail_telemetry::{
     w30_source_profile_to_u32,
 };
 use w30_tr909_signal_helpers::{
-    render_gain, render_subdivision, should_trigger_step, trigger_envelope, trigger_frequency,
-    w30_envelope_decay, w30_preview_idle_bpm, w30_render_gain,
+    render_gain, render_subdivision, should_trigger_step, tr909_step_waveform, trigger_envelope,
+    trigger_frequency, w30_envelope_decay, w30_preview_idle_bpm, w30_render_gain,
 };
 
 const COHERENT_SNAPSHOT_READ_ATTEMPTS: usize = 3;

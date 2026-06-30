@@ -40,7 +40,7 @@ pub(super) fn render_tr909_buffer(
 
         let sample = if state.envelope > 0.0005 {
             let gain = render_gain(render);
-            let waveform = (std::f32::consts::TAU * state.oscillator_phase).sin();
+            let waveform = tr909_step_waveform(render, state.last_step, state.oscillator_phase);
             state.oscillator_phase =
                 (state.oscillator_phase + state.oscillator_hz / sample_rate.max(1) as f32).fract();
             let rendered = waveform * state.envelope * gain;

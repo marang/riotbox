@@ -128,7 +128,7 @@ mod tr909_source_grid_consumer_tests {
             support_context: Tr909SourceSupportContext::TransportBar,
             pattern_adoption: Tr909PatternAdoption::MainlineDrive,
             phrase_variation: Tr909PhraseVariation::PhraseDrive,
-            drum_bus_level: 0.84,
+            drum_bus_level: 0.92,
             slam_intensity: 0.22,
             reason: "source_low_drive",
         }

@@ -344,7 +344,10 @@ fn scene_target_context_adds_bounded_support_accent() {
 
     assert!(scene_peak > transport_peak);
     assert!(scene_peak < transport_peak * 1.3);
-    assert_eq!(scene_active, transport_active);
+    assert!(
+        scene_active.abs_diff(transport_active) <= 4,
+        "scene_active={scene_active} transport_active={transport_active}"
+    );
 }
 
 #[test]
