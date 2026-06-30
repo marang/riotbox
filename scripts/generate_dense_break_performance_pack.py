@@ -92,6 +92,11 @@ MIN_DENSE_BREAK_SNARE_PRESSURE_SCORE = 1.93
 MIN_DENSE_BREAK_SNARE_PRESSURE_MARGIN = 0.22
 MIN_DENSE_BREAK_PHYSICAL_DRUM_PRESSURE_SCORE = 1.58
 MIN_DENSE_BREAK_PRESSURE_TRANSIENT_TO_HOOK_RATIO = 0.70
+MIN_DENSE_ANSWER_SCRIPTED_ROLE_DISTANCE = 3.0
+MIN_DENSE_ANSWER_STAB_SCORE = 1.65
+MIN_DENSE_ANSWER_STAB_MARGIN = 0.15
+MIN_DENSE_ANSWER_PRESSURE_SNAP_RATIO = 1.06
+MIN_DENSE_ANSWER_BITE_SCORE = 1.0
 TARGET_PERFORMANCE_PEAK = 0.92
 MAX_PAD_NOISE_LOW_BAND_RMS = 0.030
 MIN_PAD_NOISE_HIGH_BAND_RATIO = 0.180
@@ -1944,14 +1949,31 @@ def arrangement_policy_for(
             arrangement_intent=scripted_intent,
         )
 
+    pressure_pool = list(candidates[1:])
+    if source_family == "dense_break":
+        scripted_pressure_bars = {
+            index
+            for index, role in enumerate(scripted_roles[:candidate_count])
+            if role == "pressure"
+        }
+        source_answer_pool = [
+            item for item in pressure_pool if int(item["bar"]) not in scripted_pressure_bars
+        ]
+        if len(source_answer_pool) >= 2:
+            pressure_pool = source_answer_pool
     pressure_bars = {
         int(item["bar"])
-        for item in sorted(candidates[1:], key=lambda item: item["pressure"], reverse=True)[:2]
+        for item in sorted(pressure_pool, key=lambda item: item["pressure"], reverse=True)[:2]
     }
     remaining = [item for item in candidates if int(item["bar"]) not in pressure_bars]
+    hook_pool = remaining
+    if source_family == "dense_break":
+        early_hook_pool = [item for item in remaining if int(item["bar"]) < 2]
+        if len(early_hook_pool) >= 2:
+            hook_pool = early_hook_pool
     hook_bars = {
         int(item["bar"])
-        for item in sorted(remaining, key=lambda item: item["hook"], reverse=True)[:2]
+        for item in sorted(hook_pool, key=lambda item: item["hook"], reverse=True)[:2]
     }
     roles = []
     for item in candidates:
@@ -2271,7 +2293,7 @@ def render_performance(
                 start = bar * bar_frames
                 end = min(start + frames_for_seconds(0.090), start + bar_frames, performance.shape[0])
                 if start < end:
-                    snap = tr909[start:end] * 1.02 + break_snap[start:end] * 1.52
+                    snap = tr909[start:end] * 1.08 + break_snap[start:end] * 1.62
                     pressure_bar_mix[start:end] = saturate(
                         pressure_bar_mix[start:end] + snap,
                         1.46,
@@ -2537,6 +2559,49 @@ def bass_movement_policy_proof(
             if is_sparse
             else 0.0
         ),
+    }
+
+
+def dense_answer_bite_policy_proof(
+    source_policy: DenseBreakSourcePolicy,
+    proof: dict[str, Any],
+) -> dict[str, float]:
+    if source_policy.pressure_lift_policy.source_family != "dense_break":
+        return {
+            "dense_answer_bite_source_derived": 0.0,
+            "dense_answer_bite_scripted_role_distance": 0.0,
+            "dense_answer_bite_stab_score": 0.0,
+            "dense_answer_bite_stab_margin": 0.0,
+            "dense_answer_bite_pressure_snap_ratio": 0.0,
+            "dense_answer_bite_score": 0.0,
+        }
+    stab_score = float(proof.get("strongest_audible_element_stab_score", 0.0))
+    competing_support = max(
+        float(proof.get("strongest_audible_element_bass_score", 0.0)),
+        float(proof.get("strongest_audible_element_restore_score", 0.0)),
+        float(proof.get("strongest_audible_element_silence_score", 0.0)),
+    )
+    stab_margin = stab_score - competing_support
+    scripted_distance = float(source_policy.arrangement_policy.scripted_role_distance)
+    snap_ratio = float(proof.get("pressure_lift_bar5_to_bar4_rms_ratio", 0.0))
+    bite_score = min(
+        scripted_distance / MIN_DENSE_ANSWER_SCRIPTED_ROLE_DISTANCE,
+        stab_score / MIN_DENSE_ANSWER_STAB_SCORE,
+        stab_margin / MIN_DENSE_ANSWER_STAB_MARGIN,
+        snap_ratio / MIN_DENSE_ANSWER_PRESSURE_SNAP_RATIO,
+    )
+    return {
+        "dense_answer_bite_source_derived": (
+            1.0
+            if source_policy.arrangement_policy.role_order_source_derived
+            and scripted_distance >= MIN_DENSE_ANSWER_SCRIPTED_ROLE_DISTANCE
+            else 0.0
+        ),
+        "dense_answer_bite_scripted_role_distance": scripted_distance,
+        "dense_answer_bite_stab_score": stab_score,
+        "dense_answer_bite_stab_margin": float(stab_margin),
+        "dense_answer_bite_pressure_snap_ratio": snap_ratio,
+        "dense_answer_bite_score": float(bite_score),
     }
 
 
@@ -3711,6 +3776,7 @@ def performance_proof(
     proof.update(pad_noise_texture_policy_proof(source_policy))
     proof.update(tail_shape_policy_proof(source_policy))
     proof.update(strongest_audible_element_proof(source, tr909, source_policy, sections))
+    proof.update(dense_answer_bite_policy_proof(source_policy, proof))
     proof.update(rebuild_only_source_character_proof(source, rebuild_only_performance))
     return proof
 
@@ -3874,6 +3940,24 @@ def failure_codes_for(
             < MIN_DENSE_BREAK_PRESSURE_TRANSIENT_TO_HOOK_RATIO
         ):
             failures.append("dense_break_pressure_transient_too_soft")
+        if proof.get("dense_answer_bite_source_derived", 0.0) < 1.0:
+            failures.append("dense_answer_bite_not_source_derived")
+        if (
+            proof.get("dense_answer_bite_scripted_role_distance", 0.0)
+            < MIN_DENSE_ANSWER_SCRIPTED_ROLE_DISTANCE
+        ):
+            failures.append("dense_answer_bite_too_close_to_scripted_template")
+        if proof.get("dense_answer_bite_stab_score", 0.0) < MIN_DENSE_ANSWER_STAB_SCORE:
+            failures.append("dense_answer_bite_stab_too_weak")
+        if proof.get("dense_answer_bite_stab_margin", 0.0) < MIN_DENSE_ANSWER_STAB_MARGIN:
+            failures.append("dense_answer_bite_stab_margin_too_low")
+        if (
+            proof.get("dense_answer_bite_pressure_snap_ratio", 0.0)
+            < MIN_DENSE_ANSWER_PRESSURE_SNAP_RATIO
+        ):
+            failures.append("dense_answer_bite_snap_too_soft")
+        if proof.get("dense_answer_bite_score", 0.0) < MIN_DENSE_ANSWER_BITE_SCORE:
+            failures.append("dense_answer_bite_score_too_low")
     if proof["arrangement_policy_decision_count"] < 8.0:
         failures.append("arrangement_policy_not_source_aware_enough")
     if source_family in ("dense_break", "tonal_hook", "sparse_bass_pressure"):
@@ -4187,6 +4271,12 @@ def run_mutation_fixtures(report_path: Path) -> None:
             ("proof", "arrangement_role_order_source_derived"),
             0.0,
             "arrangement_role_order_not_source_derived",
+        ),
+        (
+            "dense_answer_bite_weak",
+            ("proof", "dense_answer_bite_score"),
+            0.0,
+            "dense_answer_bite_score_too_low",
         ),
         (
             "mix_not_source",

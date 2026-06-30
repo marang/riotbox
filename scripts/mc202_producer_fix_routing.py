@@ -66,13 +66,29 @@ def route_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
                 "hook_restraint",
                 "tonal pressure lift is close to the review floor",
             )
-    elif source_family in {"dense_break", "non_dense_break"}:
-        add_fix_category(
-            categories,
-            reasons,
-            "answer_bite",
-            "break source should be judged first on pressure-answer bite",
-        )
+    elif source_family == "dense_break":
+        if dense_answer_bite_below_floor(metrics):
+            add_fix_category(
+                categories,
+                reasons,
+                "answer_bite",
+                "break pressure-answer bite is below the producer floor",
+            )
+        if number(metrics.get("pressure_lift_bar5_to_bar4_rms_ratio")) < 1.10:
+            add_fix_category(
+                categories,
+                reasons,
+                "destructive_articulation",
+                "pressure lift is close to the live-gesture impact floor",
+            )
+    elif source_family == "non_dense_break":
+        if answer_role_below_floor(metrics, min_scripted_distance=2.0):
+            add_fix_category(
+                categories,
+                reasons,
+                "answer_bite",
+                "non-dense break answer role is below the producer floor",
+            )
         if number(metrics.get("pressure_lift_bar5_to_bar4_rms_ratio")) < 1.10:
             add_fix_category(
                 categories,
@@ -131,6 +147,31 @@ def route_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
         "quality_proof": False,
         "automated_musical_approval": False,
     }
+
+
+def dense_answer_bite_below_floor(metrics: dict[str, Any]) -> bool:
+    return (
+        number(metrics.get("dense_answer_bite_source_derived")) < 1.0
+        or number(metrics.get("dense_answer_bite_scripted_role_distance")) < 3.0
+        or number(metrics.get("dense_answer_bite_stab_score")) < 1.65
+        or number(metrics.get("dense_answer_bite_stab_margin")) < 0.15
+        or number(metrics.get("dense_answer_bite_pressure_snap_ratio")) < 1.06
+        or number(metrics.get("dense_answer_bite_score")) < 1.0
+    )
+
+
+def answer_role_below_floor(
+    metrics: dict[str, Any],
+    *,
+    min_scripted_distance: float,
+) -> bool:
+    return (
+        number(metrics.get("pressure_lift_policy_decision_count")) < 6.0
+        or number(metrics.get("arrangement_role_order_source_derived")) < 1.0
+        or number(metrics.get("arrangement_scripted_role_distance")) < min_scripted_distance
+        or number(metrics.get("mc202_to_w30_rms_ratio")) < 0.16
+        or number(metrics.get("pressure_low_band_lift_ratio")) < 1.50
+    )
 
 
 def build_fix_candidates(review_candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:

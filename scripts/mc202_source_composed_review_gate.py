@@ -16,6 +16,11 @@ MIN_PRESSURE_LOW_BAND_LIFT_RATIO = 1.50
 MIN_PRESSURE_LIFT_BAR_MOVEMENT_RATIO = 1.03
 MIN_SPARSE_BASS_STATIC_DISTANCE_HZ = 1.75
 MIN_SPARSE_BASS_SPAN_HZ = 12.0
+MIN_DENSE_ANSWER_SCRIPTED_ROLE_DISTANCE = 3.0
+MIN_DENSE_ANSWER_STAB_SCORE = 1.65
+MIN_DENSE_ANSWER_STAB_MARGIN = 0.15
+MIN_DENSE_ANSWER_PRESSURE_SNAP_RATIO = 1.06
+MIN_DENSE_ANSWER_BITE_SCORE = 1.0
 
 
 def case_gate(case: dict[str, Any], source_report: dict[str, Any]) -> dict[str, Any]:
@@ -82,6 +87,24 @@ def case_gate(case: dict[str, Any], source_report: dict[str, Any]) -> dict[str, 
             "pressure_lift_policy_decision_count": decision_count,
             "arrangement_role_order_source_derived": arrangement_source_derived,
             "arrangement_scripted_role_distance": scripted_distance,
+            "dense_answer_bite_source_derived": number(
+                proof.get("dense_answer_bite_source_derived")
+            ),
+            "dense_answer_bite_scripted_role_distance": number(
+                proof.get("dense_answer_bite_scripted_role_distance")
+            ),
+            "dense_answer_bite_stab_score": number(
+                proof.get("dense_answer_bite_stab_score")
+            ),
+            "dense_answer_bite_stab_margin": number(
+                proof.get("dense_answer_bite_stab_margin")
+            ),
+            "dense_answer_bite_pressure_snap_ratio": number(
+                proof.get("dense_answer_bite_pressure_snap_ratio")
+            ),
+            "dense_answer_bite_score": number(
+                proof.get("dense_answer_bite_score")
+            ),
             "bass_movement_source_derived": sparse_source_derived,
             "sparse_bass_movement_static_distance_hz": sparse_static_distance,
             "sparse_bass_movement_frequency_span_hz": sparse_span,
@@ -174,6 +197,8 @@ def role_evidence_for_gate(gate: dict[str, Any]) -> dict[str, Any]:
     elif family in {"dense_break", "non_dense_break"}:
         role = "pressure_answer"
         failure_codes = answer_role_failure_codes(metrics, min_scripted_distance=2.0)
+        if family == "dense_break":
+            failure_codes.extend(dense_answer_bite_failure_codes(metrics))
         reason = "Dense/non-dense source was reviewed for MC-202 pressure-answer behavior."
     else:
         role = "unsupported_source_family"
@@ -231,6 +256,29 @@ def answer_role_failure_codes(metrics: dict[str, Any], *, min_scripted_distance:
         failures.append("answer_role_mc202_too_weak")
     if number(metrics.get("pressure_low_band_lift_ratio")) < MIN_PRESSURE_LOW_BAND_LIFT_RATIO:
         failures.append("answer_role_pressure_lift_too_weak")
+    return failures
+
+
+def dense_answer_bite_failure_codes(metrics: dict[str, Any]) -> list[str]:
+    failures = []
+    if number(metrics.get("dense_answer_bite_source_derived")) < 1.0:
+        failures.append("dense_answer_bite_not_source_derived")
+    if (
+        number(metrics.get("dense_answer_bite_scripted_role_distance"))
+        < MIN_DENSE_ANSWER_SCRIPTED_ROLE_DISTANCE
+    ):
+        failures.append("dense_answer_bite_too_close_to_scripted_template")
+    if number(metrics.get("dense_answer_bite_stab_score")) < MIN_DENSE_ANSWER_STAB_SCORE:
+        failures.append("dense_answer_bite_stab_too_weak")
+    if number(metrics.get("dense_answer_bite_stab_margin")) < MIN_DENSE_ANSWER_STAB_MARGIN:
+        failures.append("dense_answer_bite_stab_margin_too_low")
+    if (
+        number(metrics.get("dense_answer_bite_pressure_snap_ratio"))
+        < MIN_DENSE_ANSWER_PRESSURE_SNAP_RATIO
+    ):
+        failures.append("dense_answer_bite_snap_too_soft")
+    if number(metrics.get("dense_answer_bite_score")) < MIN_DENSE_ANSWER_BITE_SCORE:
+        failures.append("dense_answer_bite_score_too_low")
     return failures
 
 

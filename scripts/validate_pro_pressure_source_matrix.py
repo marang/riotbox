@@ -244,6 +244,24 @@ def render_case(
                 "strongest_audible_element_candidate_count": proof[
                     "strongest_audible_element_candidate_count"
                 ],
+                "dense_answer_bite_source_derived": proof[
+                    "dense_answer_bite_source_derived"
+                ],
+                "dense_answer_bite_scripted_role_distance": proof[
+                    "dense_answer_bite_scripted_role_distance"
+                ],
+                "dense_answer_bite_stab_score": proof[
+                    "dense_answer_bite_stab_score"
+                ],
+                "dense_answer_bite_stab_margin": proof[
+                    "dense_answer_bite_stab_margin"
+                ],
+                "dense_answer_bite_pressure_snap_ratio": proof[
+                    "dense_answer_bite_pressure_snap_ratio"
+                ],
+                "dense_answer_bite_score": proof[
+                    "dense_answer_bite_score"
+                ],
                 "bass_movement_source_derived": proof["bass_movement_source_derived"],
                 "pressure_low_band_lift_ratio": proof["pressure_low_band_lift_ratio"],
                 "sparse_bass_movement_static_distance_hz": proof[
