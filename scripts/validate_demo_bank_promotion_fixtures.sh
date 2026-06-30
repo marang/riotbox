@@ -85,44 +85,44 @@ if python3 scripts/validate_release_grade_demo_bank.py "$invalid_demo_bank_gate"
 fi
 grep -q "MC-202 source-composed evidence is required" "$tmp/invalid-demo-bank-gate.out"
 
-weak_review="$tmp/pack/reviews/sparse_kicksnr_120/review.json"
+weak_review="$tmp/pack/reviews/tonal_rusharp_120/review.json"
 python3 scripts/listening_review_workflow.py record \
   --review "$weak_review" \
   --human-verdict technically_ok_but_musically_weak \
-  --strongest-element bass \
+  --strongest-element stab \
   --source-recognition source_transformed_but_present \
   --hook-after-two-bars weak \
-  --failure-reason "Sparse pressure is useful but the hook and restore are not demo-ready." \
-  --preferred-direction "make sparse bass pressure more playable before demo promotion" \
-  --avoid "weak hook,soft restore" \
-  --concrete-follow-up "route sparse weak output to bass movement" \
+  --failure-reason "Tonal hook is useful but the MC-202 answer and mix are not demo-ready." \
+  --preferred-direction "keep the tonal hook clear while making the MC-202 answer bite harder" \
+  --avoid "buried answer,hook masking" \
+  --concrete-follow-up "route tonal weak output to hook restraint and mix balance" \
   --reviewer "fixture-listener" >/dev/null
 
 python3 scripts/promote_listening_review_to_demo_bank.py \
   --review "$weak_review" \
   --demo-bank scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json \
   --json-output "$tmp/demo-bank-weak.json" \
-  --entry-id sparse-kicksnr-promoted-weak-fixture \
-  --demo-worthiness-note "Human weak review preserves the sparse example only as a concrete bass-movement fix target." \
+  --entry-id tonal-rusharp-promoted-weak-fixture \
+  --demo-worthiness-note "Human weak review preserves the tonal example only as a concrete hook-restraint and mix-bus fix target." \
   --mc202-producer-closeout "$closeout" \
   --require-artifact-hashes >/dev/null
 
 jq -e '
   any(.entries[];
-    .entry_id == "sparse-kicksnr-promoted-weak-fixture"
+    .entry_id == "tonal-rusharp-promoted-weak-fixture"
     and .human_verdict == "weak"
     and .demo_readiness == "not_demo_ready"
-    and (.fix_categories == ["bass_movement"])
+    and (.fix_categories == ["hook_restraint", "mix_bus"])
     and .mc202_source_composed_review_gate.source_composed_evidence == true
-    and .mc202_source_composed_review_gate.metrics.bass_movement_source_derived == 1.0
-    and .mc202_role_evidence.role == "bass_pressure"
-    and .mc202_role_evidence.source_family == "sparse_bass_pressure"
+    and .mc202_role_evidence.role == "hook_restraint_stab_answer"
+    and .mc202_role_evidence.source_family == "tonal_hook"
     and .mc202_role_evidence.proof_scope == "demo_bank_promotion_gate"
     and .demo_readiness_consequence == "human_weak_blocks_demo_ready_and_routes_fix"
-    and .mc202_producer_fix_routing.case_id == "sparse_kicksnr_120"
+    and .mc202_producer_fix_routing.case_id == "tonal_rusharp_120"
     and (.mc202_producer_fix_routing.closeout_fix_categories | index("human_listening"))
-    and (.mc202_producer_fix_routing.closeout_fix_categories | index("bass_movement"))
-    and .mc202_producer_fix_routing.demo_bank_fix_categories == ["bass_movement"]
+    and (.mc202_producer_fix_routing.closeout_fix_categories | index("hook_restraint"))
+    and (.mc202_producer_fix_routing.closeout_fix_categories | index("mix_bus"))
+    and .mc202_producer_fix_routing.demo_bank_fix_categories == ["hook_restraint", "mix_bus"]
   )
 ' "$tmp/demo-bank-weak.json" >/dev/null
 
@@ -130,9 +130,9 @@ if python3 scripts/promote_listening_review_to_demo_bank.py \
   --review "$weak_review" \
   --demo-bank scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json \
   --json-output "$tmp/demo-bank-weak-manual-mismatch.json" \
-  --entry-id sparse-kicksnr-promoted-weak-mismatch-fixture \
+  --entry-id tonal-rusharp-promoted-weak-mismatch-fixture \
   --demo-worthiness-note "This should not promote." \
-  --fix-category mix_bus \
+  --fix-category bass_movement \
   --mc202-producer-closeout "$closeout" \
   --require-artifact-hashes >"$tmp/manual-mismatch.out" 2>&1; then
   cat "$tmp/manual-mismatch.out" >&2
@@ -142,13 +142,13 @@ fi
 grep -q "manual fix categories must match MC-202 producer closeout routing" "$tmp/manual-mismatch.out"
 
 stale_closeout="$tmp/stale-closeout.json"
-jq '(.review_candidates[] | select(.case_id == "sparse_kicksnr_120") | .candidate_sha256) = "0000000000000000000000000000000000000000000000000000000000000000"' \
+jq '(.review_candidates[] | select(.case_id == "tonal_rusharp_120") | .candidate_sha256) = "0000000000000000000000000000000000000000000000000000000000000000"' \
   "$closeout" > "$stale_closeout"
 if python3 scripts/promote_listening_review_to_demo_bank.py \
   --review "$weak_review" \
   --demo-bank scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json \
   --json-output "$tmp/demo-bank-weak-stale-closeout.json" \
-  --entry-id sparse-kicksnr-promoted-weak-stale-closeout-fixture \
+  --entry-id tonal-rusharp-promoted-weak-stale-closeout-fixture \
   --demo-worthiness-note "This should not promote." \
   --mc202-producer-closeout "$stale_closeout" \
   --require-artifact-hashes >"$tmp/stale-closeout.out" 2>&1; then
@@ -158,7 +158,7 @@ if python3 scripts/promote_listening_review_to_demo_bank.py \
 fi
 grep -q "MC-202 closeout candidate hash does not match reviewed WAV" "$tmp/stale-closeout.out"
 
-unverified_review="$tmp/pack/reviews/tonal_rusharp_120/review.json"
+unverified_review="$tmp/pack/reviews/sparse_kicksnr_120/review.json"
 if python3 scripts/promote_listening_review_to_demo_bank.py \
   --review "$unverified_review" \
   --demo-bank scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json \
@@ -237,19 +237,20 @@ fi
 grep -q "MC-202 role source_family mismatch" "$tmp/stale-role.out"
 
 wrong_role_review="$tmp/wrong-role-review.json"
-jq '.audio_judge_label.mc202_role_evidence.role = "pressure_answer"' "$weak_review" > "$wrong_role_review"
+jq '.audio_judge_label.mc202_role_evidence.role = "bass_pressure"' "$weak_review" > "$wrong_role_review"
 if python3 scripts/promote_listening_review_to_demo_bank.py \
   --review "$wrong_role_review" \
   --demo-bank scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json \
   --json-output "$tmp/demo-bank-wrong-role.json" \
-  --entry-id sparse-kicksnr-wrong-role-fixture \
+  --entry-id tonal-rusharp-wrong-role-fixture \
   --demo-worthiness-note "This should not promote." \
-  --fix-category bass_movement \
+  --fix-category hook_restraint \
+  --fix-category mix_bus \
   --require-artifact-hashes >"$tmp/wrong-role.out" 2>&1; then
   cat "$tmp/wrong-role.out" >&2
   echo "expected wrong MC-202 role promotion to fail" >&2
   exit 1
 fi
-grep -q "sparse MC-202 promotion needs bass_pressure role" "$tmp/wrong-role.out"
+grep -q "tonal MC-202 promotion needs answer/stab role" "$tmp/wrong-role.out"
 
 echo "demo-bank promotion fixture gate ok"

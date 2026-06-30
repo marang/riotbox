@@ -31,12 +31,13 @@ def route_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
         )
 
     if source_family == "sparse_bass_pressure":
-        add_fix_category(
-            categories,
-            reasons,
-            "bass_movement",
-            "sparse source should be judged first on bass-pressure movement",
-        )
+        if number(metrics.get("sparse_bass_movement_static_distance_hz")) < 2.25:
+            add_fix_category(
+                categories,
+                reasons,
+                "bass_movement",
+                "sparse bass movement stays too close to the fixed contour",
+            )
         if number(metrics.get("sparse_bass_movement_frequency_span_hz")) < 12.0:
             add_fix_category(
                 categories,

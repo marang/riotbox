@@ -57,7 +57,7 @@ MIN_REBUILD_ONLY_SOURCE_TRANSIENT_RETENTION = 0.45
 MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE = 0.70
 MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_MARGIN = 0.10
 MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 1.75
-MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 10.00
+MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 12.00
 MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 1.70
 MIN_SPARSE_PRESSURE_LOW_BAND_SHARE = 0.28
 MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO = 2.10
@@ -2491,7 +2491,7 @@ def bass_movement_frequency_policy(
         if span < MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ:
             ranked = sorted(derived, key=lambda bar: (derived[bar], feature_scores.get(bar, 0.0)))
             midpoint = (len(ranked) - 1) / 2.0
-            target_span = MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ + 0.65
+            target_span = MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ + 1.35
             expand = (target_span - span) / max(1.0, midpoint)
             for index, bar in enumerate(ranked):
                 derived[bar] = float(
@@ -2531,6 +2531,11 @@ def bass_movement_policy_proof(
         "sparse_bass_movement_static_distance_hz": float(np.mean(distances)) if is_sparse else 0.0,
         "sparse_bass_movement_frequency_span_hz": (
             float(max(frequencies) - min(frequencies)) if is_sparse else 0.0
+        ),
+        "sparse_bass_movement_span_margin_hz": (
+            float(max(frequencies) - min(frequencies) - MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ)
+            if is_sparse
+            else 0.0
         ),
     }
 

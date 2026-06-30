@@ -40,7 +40,7 @@ MIN_REBUILD_ONLY_SOURCE_TRANSIENT_RETENTION = 0.45
 MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE = 0.70
 MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_MARGIN = 0.10
 MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 1.75
-MIN_SPARSE_BASS_MOVEMENT_FREQUENCY_SPAN_HZ = 10.0
+MIN_SPARSE_BASS_MOVEMENT_FREQUENCY_SPAN_HZ = 12.0
 MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 1.70
 MIN_SPARSE_PRESSURE_LOW_BAND_SHARE = 0.28
 MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO = 2.10
@@ -321,6 +321,9 @@ def render_case(repo: Path, output: Path, date: str, case: dict) -> dict:
             ],
             "sparse_bass_movement_frequency_span_hz": proof[
                 "sparse_bass_movement_frequency_span_hz"
+            ],
+            "sparse_bass_movement_span_margin_hz": proof[
+                "sparse_bass_movement_span_margin_hz"
             ],
             "sparse_pressure_low_band_share": proof[
                 "sparse_pressure_low_band_share"
@@ -630,6 +633,8 @@ def validate_sparse_case(prefix: str, proof: dict[str, Any], failures: list[str]
         failures.append(f"{prefix}:sparse_bass_movement_collapsed_to_fixed_contour")
     if number(proof.get("sparse_bass_movement_frequency_span_hz")) < MIN_SPARSE_BASS_MOVEMENT_FREQUENCY_SPAN_HZ:
         failures.append(f"{prefix}:sparse_bass_movement_frequency_span_too_narrow")
+    if number(proof.get("sparse_bass_movement_span_margin_hz")) < 0.0:
+        failures.append(f"{prefix}:sparse_bass_movement_span_margin_too_low")
     if number(proof.get("pressure_low_band_lift_ratio")) < MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO:
         failures.append(f"{prefix}:sparse_pressure_lift_lacks_low_band_support")
     if number(proof.get("sparse_pressure_low_band_share")) < MIN_SPARSE_PRESSURE_LOW_BAND_SHARE:
@@ -670,6 +675,7 @@ def is_sparse_professional_case(case: dict[str, Any]) -> bool:
         and number(proof.get("bass_movement_source_derived")) >= 1.0
         and number(proof.get("sparse_bass_movement_static_distance_hz")) >= MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ
         and number(proof.get("sparse_bass_movement_frequency_span_hz")) >= MIN_SPARSE_BASS_MOVEMENT_FREQUENCY_SPAN_HZ
+        and number(proof.get("sparse_bass_movement_span_margin_hz")) >= 0.0
         and number(proof.get("pressure_low_band_lift_ratio")) >= MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO
         and number(proof.get("sparse_pressure_low_band_share")) >= MIN_SPARSE_PRESSURE_LOW_BAND_SHARE
         and number(proof.get("sparse_pressure_low_to_mid_ratio")) >= MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO
@@ -728,6 +734,24 @@ def run_mutation_fixtures(report: dict[str, Any]) -> None:
             "sparse_bass_static",
             mutated,
             "sparse_bass_movement_collapsed_to_fixed_contour",
+        )
+    )
+
+    mutated = mutate_case_proof(report, "sparse_bass_pressure", "sparse_bass_movement_frequency_span_hz", 0.0)
+    fixtures.append(
+        (
+            "sparse_bass_span",
+            mutated,
+            "sparse_bass_movement_frequency_span_too_narrow",
+        )
+    )
+
+    mutated = mutate_case_proof(report, "sparse_bass_pressure", "sparse_bass_movement_span_margin_hz", -0.1)
+    fixtures.append(
+        (
+            "sparse_bass_span_margin",
+            mutated,
+            "sparse_bass_movement_span_margin_too_low",
         )
     )
 
