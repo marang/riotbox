@@ -11,6 +11,8 @@ from typing import Any
 
 import mc202_producer_fix_routing
 from mc202_source_composed_review_gate import MC202_GATE_FIELD, pack_gate
+from validate_human_listening_label_corpus import SCHEMA as LABEL_CORPUS_SCHEMA
+from validate_human_listening_label_corpus import validate_manifest as validate_label_corpus
 
 
 SCHEMA = "riotbox.mc202_producer_grade_closeout.v1"
@@ -33,6 +35,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--professional-pack", type=Path, default=DEFAULT_PROFESSIONAL_PACK)
     parser.add_argument("--real-source-pack", type=Path, default=DEFAULT_REAL_SOURCE_PACK)
+    parser.add_argument("--label-corpus", type=Path)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--date", default="local-mc202-producer-grade-closeout")
     parser.add_argument("--validate-report", type=Path)
@@ -46,7 +49,8 @@ def main() -> int:
         else:
             professional_pack = read_json_object(args.professional_pack)
             real_source_pack = read_json_object(args.real_source_pack)
-            report = build_report(args, professional_pack, real_source_pack)
+            label_corpus = read_json_object(args.label_corpus) if args.label_corpus else None
+            report = build_report(args, professional_pack, real_source_pack, label_corpus)
             write_reports(args.output, report)
         failures = validate_report(report)
         if args.require_all_source_composed_candidates:
@@ -67,6 +71,7 @@ def build_report(
     args: argparse.Namespace,
     professional_pack: dict[str, Any],
     real_source_pack: dict[str, Any],
+    label_corpus: dict[str, Any] | None,
 ) -> dict[str, Any]:
     require(
         professional_pack.get("schema") == PACK_SCHEMA,
@@ -81,13 +86,24 @@ def build_report(
     gate = pack_gate(professional_cases)
     candidates = [candidate_summary(case) for case in professional_cases]
     fix_candidates = mc202_producer_fix_routing.build_fix_candidates(candidates)
+    label_summary = structured_label_corpus_summary(args.label_corpus, label_corpus)
     source_scaffold = real_source_scaffold_summary(
         args.real_source_pack,
         real_source_pack,
         real_source_cases,
     )
-    review_queue = structured_listening_review_queue(candidates)
-    blockers = closeout_blockers(gate, candidates, source_scaffold)
+    review_queue = structured_listening_review_queue(candidates, label_summary["labels"])
+    label_summary["matched_label_count"] = sum(
+        1
+        for entry in review_queue
+        if object_or_empty(entry.get("listening_label_resolution")).get("label_id")
+    )
+    label_summary["resolved_queue_count"] = sum(
+        1
+        for entry in review_queue
+        if object_or_empty(entry.get("listening_label_resolution")).get("status") == "resolved"
+    )
+    blockers = closeout_blockers(gate, candidates, source_scaffold, review_queue)
     technical_result = "pass" if gate["result"] == "pass" and not source_scaffold["failure_codes"] else "fail"
     promotion_result = "blocked_for_human_promotion" if blockers else "ready_for_human_promotion"
     parent_state = "keep_open" if blockers else "ready_to_close"
@@ -118,6 +134,9 @@ def build_report(
             "mc202_source_composed_review_gate": gate,
         },
         "real_source_listening_scaffold": source_scaffold,
+        "structured_listening_label_corpus": {
+            key: value for key, value in label_summary.items() if key != "labels"
+        },
         "review_candidates": candidates,
         "structured_listening_review_queue_count": len(review_queue),
         "structured_listening_review_queue": review_queue,
@@ -165,7 +184,42 @@ def candidate_summary(case: dict[str, Any]) -> dict[str, Any]:
     return summary
 
 
-def structured_listening_review_queue(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def structured_label_corpus_summary(
+    path: Path | None,
+    corpus: dict[str, Any] | None,
+) -> dict[str, Any]:
+    if corpus is None:
+        return {
+            "path": None,
+            "schema": LABEL_CORPUS_SCHEMA,
+            "label_count": 0,
+            "matched_label_count": 0,
+            "resolved_queue_count": 0,
+            "failure_codes": [],
+            "labels": [],
+        }
+    failures: list[str] = []
+    try:
+        summary = validate_label_corpus(corpus, path or Path("<label-corpus>"))
+    except (TypeError, ValueError) as error:
+        failures.append(f"label_corpus_invalid:{error}")
+        summary = {"label_count": 0}
+    labels = list_field(corpus, "labels", path or Path("<label-corpus>")) if not failures else []
+    return {
+        "path": str(path) if path else None,
+        "schema": corpus.get("schema"),
+        "label_count": int(number(summary.get("label_count"))),
+        "matched_label_count": 0,
+        "resolved_queue_count": 0,
+        "failure_codes": failures,
+        "labels": labels,
+    }
+
+
+def structured_listening_review_queue(
+    candidates: list[dict[str, Any]],
+    labels: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
     entries = []
     for candidate in candidates:
         route = object_or_empty(candidate.get("mc202_producer_fix_route"))
@@ -179,6 +233,7 @@ def structured_listening_review_queue(candidates: list[dict[str, Any]]) -> list[
         prompt = str(review_dir / str(review_artifacts.get("prompt_markdown", "prompt.md")))
         metrics = str(review_dir / str(review_artifacts.get("metrics_json", "metrics.json")))
         role = object_or_empty(candidate.get("mc202_role_evidence"))
+        label_resolution = listening_label_resolution(candidate, labels)
         entries.append(
             {
                 "queue_id": f"mc202_human_listening_{candidate['case_id']}",
@@ -195,6 +250,7 @@ def structured_listening_review_queue(candidates: list[dict[str, Any]]) -> list[
                 "mc202_role_reason": str(role.get("musician_reason", "")),
                 "producer_fix_categories": route_categories,
                 "producer_fix_reason": str(route.get("musician_fix_reason", "")),
+                "listening_label_resolution": label_resolution,
                 "why_human_review_required": (
                     "Automated source-composed checks can prove reviewability, "
                     "but producer-grade quality needs a structured human listening verdict."
@@ -209,6 +265,51 @@ def structured_listening_review_queue(candidates: list[dict[str, Any]]) -> list[
             }
         )
     return entries
+
+
+def listening_label_resolution(
+    candidate: dict[str, Any],
+    labels: list[dict[str, Any]],
+) -> dict[str, Any]:
+    matches = [
+        label
+        for label in labels
+        if label_matches_candidate(label, candidate)
+    ]
+    if not matches:
+        return {
+            "status": "unresolved",
+            "reason": "no matching structured listening label",
+            "quality_proof": False,
+            "automated_musical_approval": False,
+        }
+    label = matches[0]
+    verdict = str(label.get("human_verdict"))
+    accepted = verdict in {"pass", "weak", "fail"}
+    return {
+        "status": "resolved" if accepted else "unresolved",
+        "label_id": str(label.get("label_id", "")),
+        "human_verdict": verdict,
+        "reviewer": str(label.get("reviewer", "")),
+        "summary": str(label.get("summary", "")),
+        "failure_reason": str(label.get("failure_reason", "")),
+        "preferred_direction": str(label.get("preferred_direction", "")),
+        "reason_tags": object_or_empty(label.get("reason_tags")),
+        "matched_artifact_hash": True,
+        "quality_proof": False,
+        "automated_musical_approval": False,
+    }
+
+
+def label_matches_candidate(label: dict[str, Any], candidate: dict[str, Any]) -> bool:
+    identity = object_or_empty(label.get("artifact_identity"))
+    audio_hashes = object_or_empty(identity.get("audio_sha256"))
+    return (
+        label.get("source_id") == candidate.get("case_id")
+        and label.get("source_family") == candidate.get("source_family")
+        and label.get("review_pack_schema") == PACK_SCHEMA
+        and audio_hashes.get("rebuild_only_performance") == candidate.get("candidate_sha256")
+    )
 
 
 def mc202_role_evidence(source_family: str, metrics: dict[str, Any]) -> dict[str, Any]:
@@ -322,6 +423,7 @@ def closeout_blockers(
     gate: dict[str, Any],
     candidates: list[dict[str, Any]],
     source_scaffold: dict[str, Any],
+    review_queue: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     blockers: list[dict[str, Any]] = []
     if gate["result"] != "pass":
@@ -342,19 +444,33 @@ def closeout_blockers(
                 "failure_codes": source_scaffold["failure_codes"],
             }
         )
-    unverified = [
-        candidate["case_id"]
-        for candidate in candidates
-        if candidate["human_verdict"] == "unverified"
-        or candidate["demo_readiness"] == "unverified"
+    unresolved = [
+        str(entry["case_id"])
+        for entry in review_queue
+        if object_or_empty(entry.get("listening_label_resolution")).get("status") != "resolved"
     ]
-    if unverified:
+    if unresolved:
         blockers.append(
             {
                 "code": "structured_human_verdict_missing",
                 "severity": "producer_grade_blocking",
-                "case_ids": unverified,
+                "case_ids": unresolved,
                 "reason": "Producer-grade closeout needs structured listener verdicts before quality or demo-bank promotion.",
+            }
+        )
+    weak_or_fail = [
+        str(entry["case_id"])
+        for entry in review_queue
+        if object_or_empty(entry.get("listening_label_resolution")).get("human_verdict")
+        in {"weak", "fail"}
+    ]
+    if weak_or_fail:
+        blockers.append(
+            {
+                "code": "structured_human_verdict_not_pass",
+                "severity": "producer_grade_blocking",
+                "case_ids": weak_or_fail,
+                "reason": "Weak/fail structured listening verdicts resolve review work but block producer-grade promotion.",
             }
         )
     primitive_or_template = primitive_or_template_case_ids(candidates)
@@ -452,6 +568,9 @@ def validate_report(report: dict[str, Any]) -> list[str]:
     check(scaffold.get("failure_codes") == [], "real_source_scaffold_failures", failures)
 
     candidates = report.get("review_candidates")
+    label_corpus = object_or_empty(report.get("structured_listening_label_corpus"))
+    check(label_corpus.get("schema") == LABEL_CORPUS_SCHEMA, "label_corpus_schema_mismatch", failures)
+    check(label_corpus.get("failure_codes") == [], "label_corpus_failures", failures)
     check(isinstance(candidates, list) and len(candidates) >= 2, "review_candidates_missing", failures)
     if isinstance(candidates, list):
         families = {str(candidate.get("source_family")) for candidate in candidates if isinstance(candidate, dict)}
@@ -620,6 +739,28 @@ def validate_structured_listening_review_queue(
             candidate_by_id,
             failures,
         )
+    label_corpus = object_or_empty(report.get("structured_listening_label_corpus"))
+    check(
+        label_corpus.get("matched_label_count")
+        == sum(
+            1
+            for entry in queue
+            if object_or_empty(entry.get("listening_label_resolution")).get("label_id")
+        ),
+        "structured_listening_label_match_count_stale",
+        failures,
+    )
+    check(
+        label_corpus.get("resolved_queue_count")
+        == sum(
+            1
+            for entry in queue
+            if object_or_empty(entry.get("listening_label_resolution")).get("status")
+            == "resolved"
+        ),
+        "structured_listening_label_resolved_count_stale",
+        failures,
+    )
 
 
 def validate_structured_listening_review_queue_entry(
@@ -649,6 +790,7 @@ def validate_structured_listening_review_queue_entry(
         "mc202_role_reason",
         "producer_fix_categories",
         "producer_fix_reason",
+        "listening_label_resolution",
         "why_human_review_required",
         "allowed_human_verdicts",
     ):
@@ -680,6 +822,20 @@ def validate_structured_listening_review_queue_entry(
         failures,
     )
     check("reject" in verdicts, f"{prefix}_reject_verdict_missing", failures)
+    resolution = object_or_empty(entry.get("listening_label_resolution"))
+    check(resolution.get("quality_proof") is False, f"{prefix}_label_resolution_claims_quality", failures)
+    check(
+        resolution.get("automated_musical_approval") is False,
+        f"{prefix}_label_resolution_claims_automated_approval",
+        failures,
+    )
+    if resolution.get("status") == "resolved":
+        check(
+            resolution.get("human_verdict") in {"pass", "weak", "fail"},
+            f"{prefix}_label_resolution_verdict_invalid",
+            failures,
+        )
+        check(bool(resolution.get("label_id")), f"{prefix}_label_resolution_label_id_missing", failures)
 
 
 def validate_role_evidence(candidate: dict[str, Any], prefix: str, failures: list[str]) -> None:
@@ -788,6 +944,14 @@ def run_mutation_fixtures(report: dict[str, Any]) -> None:
     mutated = json.loads(json.dumps(report))
     mutated["structured_listening_review_queue"][0]["quality_proof"] = True
     fixtures.append(("review_queue_claims_quality", mutated, "structured_listening_review_queue_0_claims_quality"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["structured_listening_label_corpus"]["matched_label_count"] = 999
+    fixtures.append(("stale_label_match_count", mutated, "structured_listening_label_match_count_stale"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["structured_listening_review_queue"][0]["listening_label_resolution"]["quality_proof"] = True
+    fixtures.append(("label_resolution_claims_quality", mutated, "structured_listening_review_queue_0_label_resolution_claims_quality"))
 
     mutated = json.loads(json.dumps(report))
     mutated["structured_listening_review_queue"][0]["review_prompt"] = "/tmp/riotbox-missing-review-prompt.md"

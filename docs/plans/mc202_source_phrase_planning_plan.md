@@ -321,6 +321,11 @@ chain is:
      structured review queue. Each remaining MC-202 candidate must name the
      exact WAV, review JSON, prompt, metrics, role evidence, hash identity, and
      reason automated routing stops before any producer-grade quality claim.
+   - RIOTBOX-1350 lets that queue consume structured human listening label
+     corpora when they are available. A label resolves a queue item only when
+     source family, source id, professional review-pack schema, and candidate
+     WAV hash match; unresolved or weak/fail items remain producer-grade
+     blockers without creating automated musical approval.
 
 This chain is deliberately allowed to take multiple PRs. The quality standard
 does not shrink to fit a slice boundary: a merged slice can be useful
