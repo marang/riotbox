@@ -2,6 +2,8 @@
 struct Mc202BassPressureProof {
     applied: bool,
     pressure_role: &'static str,
+    source_expression_render_plan_applied: bool,
+    source_expression_role: &'static str,
     mode: Mc202RenderMode,
     phrase_shape: Mc202PhraseShape,
     note_budget: Mc202NoteBudget,
@@ -56,6 +58,8 @@ struct ManifestMc202BassPressureProof {
     pattern_origin: &'static str,
     applied: bool,
     pressure_role: &'static str,
+    source_expression_render_plan_applied: bool,
+    source_expression_role: &'static str,
     mode: &'static str,
     phrase_shape: &'static str,
     note_budget: &'static str,
@@ -108,6 +112,8 @@ fn manifest_mc202_bass_pressure_proof(
         pattern_origin: "primitive_renderer",
         applied: proof.applied,
         pressure_role: proof.pressure_role,
+        source_expression_render_plan_applied: proof.source_expression_render_plan_applied,
+        source_expression_role: proof.source_expression_role,
         mode: proof.mode.label(),
         phrase_shape: proof.phrase_shape.label(),
         note_budget: proof.note_budget.label(),
@@ -209,6 +215,9 @@ fn render_mc202_bass_pressure_with_source_contour(
         && metrics.low_band.rms >= MC202_BASS_PRESSURE_MIN_LOW_BAND_RMS
         && low_to_mid_energy_ratio >= MC202_BASS_PRESSURE_MIN_LOW_TO_MID_ENERGY_RATIO
         && pressure_reinforcement_gain > 0.0
+        && primary_state
+            .source_phrase_plan
+            .is_some_and(|plan| !plan.is_empty())
         && metrics.signal.peak_abs > 0.0;
     let active_sample_ratio = if samples.is_empty() {
         0.0
@@ -228,6 +237,10 @@ fn render_mc202_bass_pressure_with_source_contour(
             } else {
                 "bass_phrase_without_pressure"
             },
+            source_expression_render_plan_applied: primary_state
+                .source_phrase_plan
+                .is_some_and(|plan| !plan.is_empty()),
+            source_expression_role: mc202_source_expression_role(source_contour),
             mode: primary_state.mode,
             phrase_shape: primary_state.phrase_shape,
             note_budget: primary_state.note_budget,
@@ -343,6 +356,125 @@ fn add_mc202_pressure_reinforcement(
     }
 }
 
+fn mc202_source_expression_role(source_contour: Mc202SourceContourProfile) -> &'static str {
+    match source_contour.contour_hint {
+        Mc202ContourHint::Drop => "bass_pressure",
+        Mc202ContourHint::Lift => "answer_lift",
+        Mc202ContourHint::Hold | Mc202ContourHint::Neutral => "hook_restraint_hold",
+    }
+}
+
+fn mc202_source_expression_render_plan(
+    source_contour: Mc202SourceContourProfile,
+    support_profile: Tr909SourceSupportProfile,
+    bar: u32,
+) -> Mc202SourcePhraseRenderPlan {
+    let density = source_contour.event_density_per_bar.clamp(0.0, 8.0) / 8.0;
+    let low = source_contour.low_band_energy_ratio.clamp(0.0, 1.0);
+    let mid = source_contour.mid_band_energy_ratio.clamp(0.0, 1.0);
+    let high = source_contour.high_band_energy_ratio.clamp(0.0, 1.0);
+    let low_dominance = mc202_source_low_dominance(source_contour);
+    let bar_alt = if bar.is_multiple_of(2) { 0 } else { 1 };
+
+    let mut semitones = [0_i8; 16];
+    let (active_mask, accent_mask, destructive_mask, pressure, contrast, bass_weight, stab_bite, gate_snap) =
+        match source_contour.contour_hint {
+            Mc202ContourHint::Drop => {
+                semitones[0] = -24;
+                semitones[4] = -19 + bar_alt;
+                semitones[8] = -22;
+                semitones[12] = -17 - bar_alt;
+                if density > 0.18 {
+                    semitones[14] = -24;
+                }
+                (
+                    if density > 0.18 {
+                        0b0101_0001_0001_0001
+                    } else {
+                        0b0001_0001_0001_0001
+                    },
+                    0b0001_0000_0001_0001,
+                    if low_dominance > 0.42 {
+                        0b0000_0001_0000_0000
+                    } else {
+                        0
+                    },
+                    (0.72 + low * 0.22 + low_dominance * 0.18).clamp(0.0, 1.0),
+                    (0.42 + density * 0.24).clamp(0.0, 1.0),
+                    (0.74 + low * 0.24).clamp(0.0, 1.0),
+                    (0.12 + high * 0.18).clamp(0.0, 1.0),
+                    (0.10 + density * 0.18).clamp(0.0, 1.0),
+                )
+            }
+            Mc202ContourHint::Lift => {
+                semitones[2] = -7 + bar_alt;
+                semitones[6] = 0;
+                semitones[10] = 5;
+                semitones[14] = 7 - bar_alt;
+                if density > 0.42 {
+                    semitones[15] = 12;
+                }
+                (
+                    if density > 0.42 {
+                        0b1100_0100_0100_0100
+                    } else {
+                        0b0100_0100_0100_0100
+                    },
+                    0b0100_0100_0000_0100,
+                    if high > 0.38 {
+                        0b0000_0100_0000_0000
+                    } else {
+                        0
+                    },
+                    (0.38 + low * 0.18).clamp(0.0, 1.0),
+                    (0.58 + high * 0.28 + density * 0.16).clamp(0.0, 1.0),
+                    (0.24 + low * 0.18).clamp(0.0, 1.0),
+                    (0.54 + high * 0.36 + density * 0.12).clamp(0.0, 1.0),
+                    (0.42 + high * 0.30 + density * 0.18).clamp(0.0, 1.0),
+                )
+            }
+            Mc202ContourHint::Hold | Mc202ContourHint::Neutral => {
+                semitones[0] = -12;
+                semitones[8] = -7 + bar_alt;
+                if mid > 0.58 || density > 0.20 {
+                    semitones[11] = -5;
+                }
+                (
+                    if mid > 0.58 || density > 0.20 {
+                        0b0000_1001_0000_0001
+                    } else {
+                        0b0000_0001_0000_0001
+                    },
+                    0b0000_0001_0000_0001,
+                    0,
+                    (0.46 + low * 0.18).clamp(0.0, 1.0),
+                    (0.34 + mid * 0.18).clamp(0.0, 1.0),
+                    (0.38 + low * 0.18).clamp(0.0, 1.0),
+                    (0.22 + high * 0.24).clamp(0.0, 1.0),
+                    (0.18 + mid * 0.18).clamp(0.0, 1.0),
+                )
+            }
+        };
+
+    let profile_pressure = match support_profile {
+        Tr909SourceSupportProfile::DropDrive => 0.10,
+        Tr909SourceSupportProfile::BreakLift => 0.04,
+        Tr909SourceSupportProfile::SteadyPulse => 0.06,
+    };
+
+    Mc202SourcePhraseRenderPlan {
+        active_mask,
+        semitones,
+        accent_mask,
+        destructive_mask,
+        pressure: (pressure + profile_pressure).clamp(0.0, 1.0),
+        contrast,
+        bass_weight,
+        stab_bite,
+        gate_snap,
+    }
+}
+
 fn pressure_pulse_envelope(beat_in_bar: f32, low_source_weight: f32) -> f32 {
     const PULSES: [f32; 4] = [0.0, 1.5, 2.0, 3.5];
     PULSES
@@ -431,24 +563,24 @@ fn mc202_bass_pressure_state(
                 Mc202RenderMode::Pressure,
                 Mc202PhraseShape::FollowerDrive,
                 Mc202NoteBudget::Balanced,
-                0.68,
-                0.48,
+                0.46,
+                0.12,
                 Mc202ContourHint::Drop,
             ),
             Tr909SourceSupportProfile::BreakLift => (
                 Mc202RenderMode::Follower,
                 Mc202PhraseShape::FollowerDrive,
                 Mc202NoteBudget::Sparse,
-                0.66,
                 0.48,
+                0.11,
                 Mc202ContourHint::Lift,
             ),
             Tr909SourceSupportProfile::SteadyPulse => (
                 Mc202RenderMode::Follower,
                 Mc202PhraseShape::RootPulse,
                 Mc202NoteBudget::Balanced,
-                0.64,
-                0.46,
+                0.44,
+                0.10,
                 Mc202ContourHint::Neutral,
             ),
         };
@@ -464,6 +596,16 @@ fn mc202_bass_pressure_state(
     let music_bus_level = source_contour
         .map(|contour| (music_bus_level + contour.music_bus_boost).clamp(0.0, 1.0))
         .unwrap_or(music_bus_level);
+    let music_bus_level = if let Some(contour) = source_contour {
+        let source_expression_bus_scale = match contour.contour_hint {
+            Mc202ContourHint::Drop => 0.28,
+            Mc202ContourHint::Lift => 0.34,
+            Mc202ContourHint::Hold | Mc202ContourHint::Neutral => 0.46,
+        };
+        music_bus_level * source_expression_bus_scale
+    } else {
+        music_bus_level
+    };
     let phrase_shape = if bar % 2 == 1 {
         match primary_shape {
             Mc202PhraseShape::RootPulse => Mc202PhraseShape::FollowerDrive,
@@ -479,6 +621,9 @@ fn mc202_bass_pressure_state(
         phrase_shape,
         note_budget,
         contour_hint,
+        source_phrase_plan: source_contour.map(|contour| {
+            mc202_source_expression_render_plan(contour, profile.support_profile, bar)
+        }),
         touch,
         music_bus_level,
         tempo_bpm: grid.bpm,

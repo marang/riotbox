@@ -18,7 +18,7 @@ use riotbox_core::source_graph::{
 use riotbox_audio::{
     mc202::{
         Mc202ContourHint, Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting,
-        Mc202RenderState, render_mc202_buffer,
+        Mc202RenderState, Mc202SourcePhraseRenderPlan, render_mc202_buffer,
     },
     runtime::{
         OfflineAudioMetrics, render_tr909_offline, render_w30_preview_offline,
@@ -330,13 +330,30 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let (w30, w30_source_trigger_variation, w30_source_slice_choice, w30_source_accent_dynamics) =
         render_w30_source_chop_with_variation(&grid, &w30_preview);
     let source_first_mix = render_source_first_mix(&tr909, &mc202, &w30);
-    let full_mix = render_generated_support_mix(&tr909, &mc202, &w30);
-    let all_lane_mix_movement =
-        all_lane_mix_movement_proof(&tr909, &mc202, &w30, &source_first_mix, &full_mix, &grid);
+    let full_mix = render_generated_support_mix_for_source_contour(
+        &tr909,
+        &mc202,
+        &w30,
+        mc202_source_contour_profile,
+    );
+    let all_lane_mix_movement = all_lane_mix_movement_proof_for_source_contour(
+        &tr909,
+        &mc202,
+        &w30,
+        &source_first_mix,
+        &full_mix,
+        &grid,
+        mc202_source_contour_profile,
+    );
     let source_first_generated_to_source_rms_ratio =
         source_first_generated_to_source_rms_ratio(&tr909, &mc202, &w30, &grid);
-    let support_generated_to_source_rms_ratio =
-        support_generated_to_source_rms_ratio(&tr909, &mc202, &w30, &grid);
+    let support_generated_to_source_rms_ratio = support_generated_to_source_rms_ratio_for_source_contour(
+        &tr909,
+        &mc202,
+        &w30,
+        &grid,
+        mc202_source_contour_profile,
+    );
 
     assert_grid_len("tr909", &tr909, &grid);
     assert_grid_len("mc202", &mc202, &grid);

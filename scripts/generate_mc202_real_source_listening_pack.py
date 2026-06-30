@@ -358,6 +358,10 @@ def selected_motif(manifest: dict[str, Any]) -> dict[str, Any]:
     mix = metrics["all_lane_mix_movement"]
     return {
         "role": pressure["pressure_role"],
+        "source_expression_render_plan_applied": pressure[
+            "source_expression_render_plan_applied"
+        ],
+        "source_expression_role": pressure["source_expression_role"],
         "mode": pressure["mode"],
         "phrase_shape": pressure["phrase_shape"],
         "note_budget": pressure["note_budget"],
@@ -509,11 +513,24 @@ def validate_case(index: int, case: dict[str, Any], failures: list[str]) -> None
         "mode",
         "phrase_shape",
         "note_budget",
+        "source_expression_render_plan_applied",
+        "source_expression_role",
         "stem_rms",
         "mix_contribution_ratio",
     ):
         require(key in motif, f"{prefix}_motif_{key}_missing", failures)
     require(number(motif.get("stem_rms")) > 0.0005, f"{prefix}_mc202_stem_too_quiet", failures)
+    require(
+        motif.get("source_expression_render_plan_applied") is True,
+        f"{prefix}_motif_source_expression_render_plan_missing",
+        failures,
+    )
+    require(
+        motif.get("source_expression_role")
+        in {"bass_pressure", "answer_lift", "hook_restraint_hold"},
+        f"{prefix}_motif_source_expression_role_invalid",
+        failures,
+    )
     validate_role_evidence(prefix, case, failures)
 
     control = object_or_empty(case.get("primitive_ab_control"))

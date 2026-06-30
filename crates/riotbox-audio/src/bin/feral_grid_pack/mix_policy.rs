@@ -22,8 +22,8 @@ const SOURCE_FIRST_MIX_POLICY: MixPolicy = MixPolicy {
 const GENERATED_SUPPORT_MIX_POLICY: MixPolicy = MixPolicy {
     tr909_gain: 1.150,
     tr909_low_gain: 0.460,
-    mc202_gain: 0.360,
-    mc202_low_gain: 0.105,
+    mc202_gain: 0.210,
+    mc202_low_gain: 0.065,
     w30_gain: 1.50,
     drive: 2.18,
     output_gain: 0.94,
@@ -54,8 +54,50 @@ fn render_source_first_mix(tr909: &[f32], mc202: &[f32], w30: &[f32]) -> Vec<f32
     render_mix(tr909, mc202, w30, SOURCE_FIRST_MIX_POLICY)
 }
 
+#[cfg(test)]
 fn render_generated_support_mix(tr909: &[f32], mc202: &[f32], w30: &[f32]) -> Vec<f32> {
     render_mix(tr909, mc202, w30, GENERATED_SUPPORT_MIX_POLICY)
+}
+
+fn render_generated_support_mix_for_source_contour(
+    tr909: &[f32],
+    mc202: &[f32],
+    w30: &[f32],
+    source_contour: Mc202SourceContourProfile,
+) -> Vec<f32> {
+    render_mix(
+        tr909,
+        mc202,
+        w30,
+        generated_support_mix_policy_for_source_contour(source_contour),
+    )
+}
+
+fn generated_support_mix_policy_for_source_contour(
+    source_contour: Mc202SourceContourProfile,
+) -> MixPolicy {
+    let mut policy = GENERATED_SUPPORT_MIX_POLICY;
+    match source_contour.contour_hint {
+        Mc202ContourHint::Drop => {
+            policy.tr909_gain *= 1.012;
+            policy.tr909_low_gain *= 1.012;
+            policy.mc202_gain *= 1.012;
+            policy.mc202_low_gain *= 1.012;
+        }
+        Mc202ContourHint::Lift => {
+            policy.mc202_gain *= 1.16;
+            policy.mc202_low_gain *= 1.10;
+            policy.w30_gain *= 0.96;
+        }
+        Mc202ContourHint::Hold | Mc202ContourHint::Neutral => {
+            policy.tr909_gain *= 1.18;
+            policy.tr909_low_gain *= 1.12;
+            policy.mc202_gain *= 1.38;
+            policy.mc202_low_gain *= 1.22;
+            policy.w30_gain *= 0.86;
+        }
+    }
+    policy
 }
 
 fn render_mix(tr909: &[f32], mc202: &[f32], w30: &[f32], policy: MixPolicy) -> Vec<f32> {
@@ -81,6 +123,7 @@ fn render_mix(tr909: &[f32], mc202: &[f32], w30: &[f32], policy: MixPolicy) -> V
         .collect()
 }
 
+#[cfg(test)]
 fn all_lane_mix_movement_proof(
     tr909: &[f32],
     mc202: &[f32],
@@ -89,6 +132,46 @@ fn all_lane_mix_movement_proof(
     generated_support_mix: &[f32],
     grid: &Grid,
 ) -> AllLaneMixMovementProof {
+    all_lane_mix_movement_proof_with_policy(
+        tr909,
+        mc202,
+        w30,
+        source_first_mix,
+        generated_support_mix,
+        grid,
+        GENERATED_SUPPORT_MIX_POLICY,
+    )
+}
+
+fn all_lane_mix_movement_proof_for_source_contour(
+    tr909: &[f32],
+    mc202: &[f32],
+    w30: &[f32],
+    source_first_mix: &[f32],
+    generated_support_mix: &[f32],
+    grid: &Grid,
+    source_contour: Mc202SourceContourProfile,
+) -> AllLaneMixMovementProof {
+    all_lane_mix_movement_proof_with_policy(
+        tr909,
+        mc202,
+        w30,
+        source_first_mix,
+        generated_support_mix,
+        grid,
+        generated_support_mix_policy_for_source_contour(source_contour),
+    )
+}
+
+fn all_lane_mix_movement_proof_with_policy(
+    tr909: &[f32],
+    mc202: &[f32],
+    w30: &[f32],
+    source_first_mix: &[f32],
+    generated_support_mix: &[f32],
+    grid: &Grid,
+    generated_support_policy: MixPolicy,
+) -> AllLaneMixMovementProof {
     debug_assert_eq!(tr909.len(), mc202.len());
     debug_assert_eq!(tr909.len(), w30.len());
     debug_assert_eq!(tr909.len(), source_first_mix.len());
@@ -96,19 +179,19 @@ fn all_lane_mix_movement_proof(
 
     let tr909_contribution = mix_component_rms(
         tr909,
-        GENERATED_SUPPORT_MIX_POLICY.tr909_gain,
-        GENERATED_SUPPORT_MIX_POLICY.tr909_low_gain,
+        generated_support_policy.tr909_gain,
+        generated_support_policy.tr909_low_gain,
         grid,
     );
     let mc202_contribution = mix_component_rms(
         mc202,
-        GENERATED_SUPPORT_MIX_POLICY.mc202_gain,
-        GENERATED_SUPPORT_MIX_POLICY.mc202_low_gain,
+        generated_support_policy.mc202_gain,
+        generated_support_policy.mc202_low_gain,
         grid,
     );
     let w30_contribution = mix_source_component_rms(
         w30,
-        GENERATED_SUPPORT_MIX_POLICY.w30_gain,
+        generated_support_policy.w30_gain,
         grid,
     );
     let support_mix_rms = signal_metrics_with_grid(
@@ -233,6 +316,7 @@ fn source_first_generated_to_source_rms_ratio(
     generated_to_source_rms_ratio(tr909, mc202, w30, grid, SOURCE_FIRST_MIX_POLICY)
 }
 
+#[cfg(test)]
 fn support_generated_to_source_rms_ratio(
     tr909: &[f32],
     mc202: &[f32],
@@ -240,6 +324,22 @@ fn support_generated_to_source_rms_ratio(
     grid: &Grid,
 ) -> f32 {
     generated_to_source_rms_ratio(tr909, mc202, w30, grid, GENERATED_SUPPORT_MIX_POLICY)
+}
+
+fn support_generated_to_source_rms_ratio_for_source_contour(
+    tr909: &[f32],
+    mc202: &[f32],
+    w30: &[f32],
+    grid: &Grid,
+    source_contour: Mc202SourceContourProfile,
+) -> f32 {
+    generated_to_source_rms_ratio(
+        tr909,
+        mc202,
+        w30,
+        grid,
+        generated_support_mix_policy_for_source_contour(source_contour),
+    )
 }
 
 fn generated_to_source_rms_ratio(

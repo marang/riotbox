@@ -16,6 +16,12 @@ Each case renders a local real source through the Feral-grid pack and records:
 - listening-review pack
 - MC-202 expression summary from source timing and source contour evidence
 - selected MC-202 motif metadata
+  - `source_expression_render_plan_applied: true`
+  - `source_expression_role` naming the rendered motif role, currently
+    `bass_pressure`, `answer_lift`, or `hook_restraint_hold`
+- generated-support mix evidence rendered through the source-expression role
+  policy, so bass-pressure, answer-lift, and hook-restraint material remain
+  audible without turning source-first playback into generated-lane masking
 - per-case `mc202_role_evidence` that tells the reviewer whether the MC-202
   candidate should be judged as bass pressure, pressure-answer, or
   hook-restraint / stab-answer material
@@ -54,7 +60,8 @@ The validator requires:
 - `human_verdict: unverified`
 - `quality_proof: false`
 - source timing and source-contour expression fields
-- selected MC-202 motif fields
+- selected MC-202 motif fields, including applied source-expression render-plan
+  evidence and a bounded source-expression role
 - `mc202_role_evidence` with source-family-matched role targets:
   sparse bass-pressure sources require `bass_pressure`, dense/non-dense sources
   require `pressure_answer`, and tonal-hook sources require

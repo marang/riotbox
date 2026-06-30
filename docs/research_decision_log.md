@@ -56,6 +56,36 @@ Why: this keeps strategy, archive history, and implementation contracts separate
 Consequences: future spec work should land in `docs/`, not in new planning sprawl under `plan/`.  
 Status: accepted
 
+---
+
+### RBX-092
+
+Date: 2026-06-30
+Topic: MC-202 professional stems must carry source-expression render-plan evidence
+Phase: P023 Sound Excellence / MC-202 Producer-Grade Track
+Question: how should Riotbox strengthen the current MC-202 professional-output stem without prematurely flipping every legacy `primitive_renderer` contract?
+Decision: add a bounded source-expression `Mc202SourcePhraseRenderPlan` to the Feral/professional MC-202 render state and expose `source_expression_render_plan_applied` plus `source_expression_role` in listening-pack selected motif metadata. Keep the existing `pattern_origin: "primitive_renderer"` compatibility field until observer/export contracts are migrated in a dedicated follow-up.
+Why: the previous professional stem could pass source-contour and low-body diagnostics while the core MC-202 render state had no source phrase plan, leaving too much of the audible result to reinforcement rather than a rendered motif. A full origin-contract migration would be too broad for the sound slice, but review packs need to show that source-expression role evidence actually reaches the stem.
+Evidence: RIOTBOX-1341 adds the render-plan application, manifest/listening-pack fields, and gates them through Feral-pack and MC-202 real-source / producer-grade smokes while keeping `human_verdict: unverified` and `quality_proof: false`.
+Consequences: future MC-202 producer-grade work should migrate the legacy primitive-origin field only when observer, export, and manifest consumers can all distinguish non-product controls from source-expression product candidates without weakening no-fallback rules.
+Status: accepted
+
+---
+
+### RBX-093
+
+Date: 2026-06-30
+Topic: Generated-support mix balance follows MC-202 source-expression roles
+Phase: P023 Sound Excellence / MC-202 Producer-Grade Track
+Question: should the Feral/professional generated-support mix use one static gain policy for every source role?
+Decision: no. Product generated-support renders now use a bounded source-expression-aware mix policy derived from the same MC-202 source contour that drives the rendered motif role. Drop sources get only a minimal pressure lift to stay under the generated/source ceiling; hold/neutral sources reduce W-30 dominance and make TR-909 / MC-202 support audible enough for producer-grade review.
+Why: a static policy let tonal hold sources pass control-path evidence while burying generated support under the source-backed W-30 chop. Raising the global generated bus would break the synthetic support ceiling, so the product render must scale by source role rather than hidden fallback loudness.
+Evidence: RIOTBOX-1341 routes the generated-support WAV, all-lane movement proof, and support generated/source ratio through the source-expression policy. The professional-output suite passes with tonal hold support at 0.15897766 and the weakest Drop case at 0.13010876 while source-first generated/source remains below 0.08.
+Consequences: future mix-balance changes must keep generated-support WAVs, manifest ratios, and all-lane contribution proof on the same policy path. Static helper policies can remain as regression controls, but product renders should use source-role evidence.
+Status: accepted
+
+---
+
 ### RBX-061
 
 Date: 2026-05-31
