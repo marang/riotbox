@@ -211,10 +211,13 @@ mod manifest_assertions {
             .is_some_and(|reason| !reason.is_empty()));
         assert!(manifest["metrics"]["tr909_groove_timing"]["offset_ms"].is_number());
         let tr909_kick_pressure = &manifest["metrics"]["tr909_kick_pressure"];
-        assert_eq!(tr909_kick_pressure["pattern_origin"], "source_derived");
+        assert_eq!(
+            tr909_kick_pressure["pattern_origin"],
+            PATTERN_ORIGIN_SOURCE_DERIVED
+        );
         assert_eq!(
             tr909_kick_pressure["source_evidence_role"],
-            "tr909_source_profile_and_accent_dynamics"
+            TR909_SOURCE_EVIDENCE_ROLE_PROFILE_AND_ACCENT_DYNAMICS
         );
         assert!(
             tr909_kick_pressure["source_profile_reason"]
@@ -240,7 +243,10 @@ mod manifest_assertions {
                 <= f64::from(TR909_KICK_PRESSURE_MAX_PEAK_ABS)
         );
         let tr909_accent_dynamics = &manifest["metrics"]["tr909_source_accent_dynamics"];
-        assert_eq!(tr909_accent_dynamics["pattern_origin"], "source_derived");
+        assert_eq!(
+            tr909_accent_dynamics["pattern_origin"],
+            PATTERN_ORIGIN_SOURCE_DERIVED
+        );
         assert_eq!(tr909_accent_dynamics["applied"], true);
         let tr909_accent_count = tr909_accent_dynamics["distinct_accent_count"]
             .as_u64()
@@ -255,10 +261,13 @@ mod manifest_assertions {
         assert!(tr909_accent_span >= min_tr909_accent_span);
         let tr909_rendered_pressure = &manifest["metrics"]["tr909_rendered_drum_pressure"];
         assert_eq!(tr909_rendered_pressure["applied"], true);
-        assert_eq!(tr909_rendered_pressure["pattern_origin"], "source_derived");
+        assert_eq!(
+            tr909_rendered_pressure["pattern_origin"],
+            PATTERN_ORIGIN_SOURCE_DERIVED
+        );
         assert_eq!(
             tr909_rendered_pressure["source_evidence_role"],
-            "tr909_source_profile_accent_dynamics_and_rendered_mix_pressure"
+            TR909_RENDERED_DRUM_PRESSURE_SOURCE_EVIDENCE_ROLE
         );
         assert!(
             tr909_rendered_pressure["support_mix_tr909_contribution_ratio"]
@@ -302,7 +311,10 @@ mod manifest_assertions {
                 >= 0.85
         );
         let w30_trigger_variation = &manifest["metrics"]["w30_source_trigger_variation"];
-        assert_eq!(w30_trigger_variation["pattern_origin"], "source_derived");
+        assert_eq!(
+            w30_trigger_variation["pattern_origin"],
+            PATTERN_ORIGIN_SOURCE_DERIVED
+        );
         assert_eq!(w30_trigger_variation["applied"], true);
         assert_eq!(w30_trigger_variation["grid_subdivision"], 2);
         assert_eq!(w30_trigger_variation["offbeat_trigger_count"], 0);
@@ -339,7 +351,10 @@ mod manifest_assertions {
                 > 0
         );
         let w30_accent_dynamics = &manifest["metrics"]["w30_source_accent_dynamics"];
-        assert_eq!(w30_accent_dynamics["pattern_origin"], "source_derived");
+        assert_eq!(
+            w30_accent_dynamics["pattern_origin"],
+            PATTERN_ORIGIN_SOURCE_DERIVED
+        );
         assert_eq!(w30_accent_dynamics["applied"], true);
         assert!(
             w30_accent_dynamics["distinct_velocity_count"]

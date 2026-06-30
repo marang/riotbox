@@ -229,7 +229,7 @@ fn manifest_w30_source_trigger_variation_proof(
     proof: W30SourceTriggerVariationProof,
 ) -> ManifestW30SourceTriggerVariationProof {
     ManifestW30SourceTriggerVariationProof {
-        pattern_origin: "source_derived",
+        pattern_origin: PATTERN_ORIGIN_SOURCE_DERIVED,
         applied: proof.applied,
         grid_subdivision: proof.grid_subdivision,
         trigger_count: proof.trigger_count,

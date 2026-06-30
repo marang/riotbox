@@ -53,6 +53,8 @@ const MIN_LOW_BAND_RMS: f32 = 0.004;
 const MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO: f32 = 0.08;
 const MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO: f32 = 0.46;
 const SOURCE_TIMING_BPM_MATCH_TOLERANCE: f32 = 1.0;
+const PATTERN_ORIGIN_SOURCE_DERIVED: &str = "source_derived";
+const PATTERN_ORIGIN_PRIMITIVE_RENDERER: &str = "primitive_renderer";
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse(env::args().skip(1))?;

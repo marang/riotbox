@@ -30,6 +30,22 @@ DEFAULT_BARS = 8
 BEATS_PER_BAR = 4
 SCHEMA = "riotbox.dense_break_performance_pack.v1"
 AGENT_REVIEW_SCHEMA = "riotbox.agent_musical_review_pack.v1"
+SOURCE_FAMILY_BAD_TIMING = "bad_timing"
+SOURCE_FAMILY_DENSE_BREAK = "dense_break"
+SOURCE_FAMILY_PAD_NOISE = "pad_noise"
+SOURCE_FAMILY_SPARSE_BASS_PRESSURE = "sparse_bass_pressure"
+SOURCE_FAMILY_THIN_OR_UNCERTAIN = "thin_or_uncertain"
+SOURCE_FAMILY_TONAL_HOOK = "tonal_hook"
+SOURCE_FAMILIES_SOURCE_DERIVED = frozenset(
+    {
+        SOURCE_FAMILY_DENSE_BREAK,
+        SOURCE_FAMILY_TONAL_HOOK,
+        SOURCE_FAMILY_SPARSE_BASS_PRESSURE,
+    }
+)
+SOURCE_FAMILIES_HOOK_FORWARD = frozenset(
+    {SOURCE_FAMILY_DENSE_BREAK, SOURCE_FAMILY_TONAL_HOOK}
+)
 MIN_W30_TO_SOURCE_RMS_RATIO = 0.18
 MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO = 0.22
 MIN_HOOK_FORWARD_W30_TO_SOURCE_MARGIN = 0.10
@@ -379,11 +395,11 @@ def main() -> int:
         timing_grid_use=args.timing_grid_use,
     ).source_family
     w30_floor = min_w30_to_source_rms_ratio_for(source_family_probe)
-    if source_family_probe == "tonal_hook":
+    if source_family_probe == SOURCE_FAMILY_TONAL_HOOK:
         w30_target_multiplier = 1.72
         w30_minimum_gain = 1.72
         w30_maximum_gain = 3.80
-    elif source_family_probe == "dense_break":
+    elif source_family_probe == SOURCE_FAMILY_DENSE_BREAK:
         w30_target_multiplier = 1.45
         w30_minimum_gain = 1.50
         w30_maximum_gain = 3.05
@@ -401,7 +417,7 @@ def main() -> int:
             maximum_gain=w30_maximum_gain,
         ),
     )
-    mc202_gain = 2.50 if source_family_probe == "tonal_hook" else 1.35
+    mc202_gain = 2.50 if source_family_probe == SOURCE_FAMILY_TONAL_HOOK else 1.35
     mc202 = apply_gain(mc202[:frame_count], mc202_gain)
 
     bar_frames = frames_for_beats(args.bpm, BEATS_PER_BAR)
@@ -628,7 +644,7 @@ def hook_chop_policy_for(
         low = low_band_rms(source_chunk)
         high = high_band_ratio(source_chunk)
         character = source_character_score(source_chunk, source_rms_reference)
-        if source_family == "tonal_hook":
+        if source_family == SOURCE_FAMILY_TONAL_HOOK:
             hook_score = (
                 source_rms * 1.25
                 + w30_rms * 1.05
@@ -764,7 +780,7 @@ def source_derived_riff_starts(
     source_family: str,
     min_separation: int,
 ) -> tuple[int, ...]:
-    target_count = 5 if source_family in {"dense_break", "tonal_hook"} else 4
+    target_count = 5 if source_family in SOURCE_FAMILIES_HOOK_FORWARD else 4
     starts: list[int] = []
     for start in (hook_start, chop_start):
         if start not in starts:
@@ -811,9 +827,9 @@ def source_character_contrast_riff_starts(
 
     current_mean = float(np.mean(current_scores)) if current_scores else 0.0
     family_metric = {
-        "tonal_hook": "low_band_rms",
-        "dense_break": "transient_score",
-        "sparse_bass_pressure": "source_rms",
+        SOURCE_FAMILY_TONAL_HOOK: "low_band_rms",
+        SOURCE_FAMILY_DENSE_BREAK: "transient_score",
+        SOURCE_FAMILY_SPARSE_BASS_PRESSURE: "source_rms",
     }.get(source_family, "source_character_score")
     ranked = sorted(
         candidates,
@@ -830,7 +846,7 @@ def source_character_contrast_riff_starts(
     }
     min_character = (
         MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR
-        if source_family in {"dense_break", "tonal_hook"}
+        if source_family in SOURCE_FAMILIES_HOOK_FORWARD
         else 0.0
     )
     for item in ranked:
@@ -881,12 +897,12 @@ def source_derived_riff_hit_pattern(
     }
     best_score = max((score_by_start.get(int(start), 0.0) for start in riff_starts), default=1e-9)
     family_shift = {
-        "tonal_hook": 0.25,
-        "dense_break": 0.00,
-        "sparse_bass_pressure": 0.50,
+        SOURCE_FAMILY_TONAL_HOOK: 0.25,
+        SOURCE_FAMILY_DENSE_BREAK: 0.00,
+        SOURCE_FAMILY_SPARSE_BASS_PRESSURE: 0.50,
     }.get(source_family, 0.25)
-    max_hits = 10 if source_family in {"dense_break", "tonal_hook"} else 8
-    min_reverse_count = 2 if source_family in {"dense_break", "tonal_hook"} else 1
+    max_hits = 10 if source_family in SOURCE_FAMILIES_HOOK_FORWARD else 8
+    min_reverse_count = 2 if source_family in SOURCE_FAMILIES_HOOK_FORWARD else 1
     hits: list[tuple[float, float, bool]] = []
     for index, start in enumerate(riff_starts):
         start = int(start)
@@ -905,11 +921,11 @@ def source_derived_riff_hit_pattern(
         reverse_secondary = ((start // max(1, beat_frames // 4)) + index) % 4 == 0
         reverse_tertiary = (
             ((start // max(1, beat_frames // 3)) + index) % 2 == 0
-            and source_family in {"dense_break", "tonal_hook"}
+            and source_family in SOURCE_FAMILIES_HOOK_FORWARD
         )
         hits.append((primary, primary_gain, reverse_primary))
         hits.append((secondary, secondary_gain, reverse_secondary))
-        if source_family in {"dense_break", "tonal_hook"} or character >= 0.72:
+        if source_family in SOURCE_FAMILIES_HOOK_FORWARD or character >= 0.72:
             hits.append((tertiary, tertiary_gain, reverse_tertiary))
     deduped: list[tuple[float, float, bool]] = []
     seen: set[tuple[float, bool]] = set()
@@ -960,7 +976,7 @@ def destructive_gesture_policy_for(
     grain_len = max(128, bar_frames // 32)
     restore_len = min(frames_for_seconds(0.115), max(1, bar_frames // 4))
     scan_len = max(grain_len, restore_len)
-    source_eligible = source_family in ("dense_break", "tonal_hook", "sparse_bass_pressure")
+    source_eligible = source_family in SOURCE_FAMILIES_SOURCE_DERIVED
     scan_end = min(max(2 * bar_frames, scan_len), 4 * bar_frames, source.shape[0], w30.shape[0])
     if not source_eligible or scan_end <= scan_len:
         return DestructiveGesturePolicy(
@@ -991,11 +1007,11 @@ def destructive_gesture_policy_for(
         w30_rms = rms(w30_chunk)
         low = low_band_rms(restore_chunk)
         high = high_band_ratio(stutter_chunk)
-        if source_family == "tonal_hook":
+        if source_family == SOURCE_FAMILY_TONAL_HOOK:
             stutter_score = stutter_transient * 13.0 + w30_rms * 1.20 + high * 0.018
             restore_score = restore_transient * 12.0 + source_rms * 1.05 + low * 0.95
             strategy = "tonal-transient-stutter-sustain-restore"
-        elif source_family == "sparse_bass_pressure":
+        elif source_family == SOURCE_FAMILY_SPARSE_BASS_PRESSURE:
             stutter_score = stutter_transient * 15.0 + w30_rms * 1.05 + low * 0.65
             restore_score = restore_transient * 14.0 + low * 1.35 + source_rms * 0.85
             strategy = "sparse-pressure-stutter-lowband-restore"
@@ -1048,17 +1064,17 @@ def destructive_gesture_policy_for(
 
 
 def fixed_restore_bass_gain(source_family: str) -> float:
-    return 2.38 if source_family == "sparse_bass_pressure" else 1.86
+    return 2.38 if source_family == SOURCE_FAMILY_SPARSE_BASS_PRESSURE else 1.86
 
 
 def min_w30_to_source_rms_ratio_for(source_family: str | None) -> float:
-    if source_family in {"dense_break", "tonal_hook"}:
+    if source_family in SOURCE_FAMILIES_HOOK_FORWARD:
         return MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO
     return MIN_W30_TO_SOURCE_RMS_RATIO
 
 
 def min_pressure_to_hook_rms_ratio_for(source_family: str | None) -> float:
-    if source_family == "tonal_hook":
+    if source_family == SOURCE_FAMILY_TONAL_HOOK:
         return 1.18
     return MIN_PRESSURE_TO_HOOK_RMS_RATIO
 
@@ -1102,7 +1118,7 @@ def mix_treatment_policy_for(
     bar_frames: int,
     source_family: str,
 ) -> MixTreatmentPolicy:
-    eligible = source_family in ("dense_break", "tonal_hook", "sparse_bass_pressure")
+    eligible = source_family in SOURCE_FAMILIES_SOURCE_DERIVED
     candidate_count = min(6, max(0, source.shape[0] // max(1, bar_frames)))
     fixed = fixed_mix_treatment_policy(source_family, max(candidate_count, 1))
     if not eligible or candidate_count < MIN_MIX_TREATMENT_CANDIDATES:
@@ -1143,13 +1159,13 @@ def mix_treatment_policy_for(
     energy_span = float(max(source_rms_values) - min(source_rms_values))
     energy_span_norm = float(np.clip(energy_span / source_mean, 0.0, 1.25))
 
-    if source_family == "tonal_hook":
+    if source_family == SOURCE_FAMILY_TONAL_HOOK:
         strategy = "tonal-hook-readable-mix-treatment"
         hook_bias = 0.04
         chop_bias = 0.02
         pressure_bias = 0.12
         restore_bias = 0.26
-    elif source_family == "sparse_bass_pressure":
+    elif source_family == SOURCE_FAMILY_SPARSE_BASS_PRESSURE:
         strategy = "sparse-bass-pressure-mix-treatment"
         hook_bias = -0.02
         chop_bias = 0.02
@@ -1335,7 +1351,7 @@ def pad_noise_texture_policy_for(
     bar_frames: int,
     source_family: str,
 ) -> PadNoiseTexturePolicy:
-    if source_family != "pad_noise":
+    if source_family != SOURCE_FAMILY_PAD_NOISE:
         return fixed_pad_noise_texture_policy(source_family)
     window = min(frames_for_seconds(0.120), max(1, bar_frames // 6))
     step = max(1, bar_frames // 8)
@@ -1447,7 +1463,7 @@ def tail_shape_policy_for(
     stutter_step_divisor: int,
     restore_snap_gain: float,
 ) -> TailShapePolicy:
-    eligible = source_family in ("dense_break", "tonal_hook", "sparse_bass_pressure")
+    eligible = source_family in SOURCE_FAMILIES_SOURCE_DERIVED
     candidate_count = min(6, max(0, source.shape[0] // max(1, bar_frames)))
     fixed = fixed_tail_shape_policy(
         source_family,
@@ -1498,7 +1514,7 @@ def tail_shape_policy_for(
     energy_span = float(max(source_rms_values) - min(source_rms_values))
     energy_span_norm = float(np.clip(energy_span / source_mean, 0.0, 1.35))
 
-    if source_family == "sparse_bass_pressure":
+    if source_family == SOURCE_FAMILY_SPARSE_BASS_PRESSURE:
         strategy = "source-derived-bass-weighted-tail"
         silence_bias = 0.020
         density_bias = -1
@@ -1508,7 +1524,7 @@ def tail_shape_policy_for(
         restore_impact_bias = 0.00
         step_min, step_max = 9, 17
         silence_min, silence_max = 0.006, 0.020
-    elif source_family == "tonal_hook":
+    elif source_family == SOURCE_FAMILY_TONAL_HOOK:
         strategy = "source-derived-hook-readable-tail"
         silence_bias = 0.038
         density_bias = 0
@@ -1524,8 +1540,8 @@ def tail_shape_policy_for(
         density_bias = 4
         restore_bias = 0.16
         cut_depth_bias = 0.006
-        stutter_impact_bias = 0.16
-        restore_impact_bias = 0.10
+        stutter_impact_bias = 0.28
+        restore_impact_bias = 0.22
         step_min, step_max = 14, 22
         silence_min, silence_max = 0.002, 0.014
 
@@ -1547,7 +1563,7 @@ def tail_shape_policy_for(
             - high_norm * 0.002
             - energy_span_norm * 0.002
             - cut_depth_bias
-            + (0.004 if source_family == "sparse_bass_pressure" else 0.0),
+            + (0.004 if source_family == SOURCE_FAMILY_SPARSE_BASS_PRESSURE else 0.0),
             silence_min,
             silence_max,
         )
@@ -1716,35 +1732,35 @@ def dense_break_source_policy(
         pressure_lift_policy.source_family,
     )
 
-    if pressure_lift_policy.source_family == "dense_break":
+    if pressure_lift_policy.source_family == SOURCE_FAMILY_DENSE_BREAK:
         pressure_shape = "transient-forward break pressure"
         stutter_density = "tight sixteenth stutter"
         restore_hit_shape = "hard transient restore"
         stutter_step_divisor = 16
         stutter_grain_beat_offset = 0.50
         restore_snap_gain = 1.10
-    elif pressure_lift_policy.source_family == "sparse_bass_pressure":
+    elif pressure_lift_policy.source_family == SOURCE_FAMILY_SPARSE_BASS_PRESSURE:
         pressure_shape = "low-band shove"
         stutter_density = "wide eighth stutter"
         restore_hit_shape = "bass-weighted restore"
         stutter_step_divisor = 12
         stutter_grain_beat_offset = 1.00
         restore_snap_gain = 1.28
-    elif pressure_lift_policy.source_family == "tonal_hook":
+    elif pressure_lift_policy.source_family == SOURCE_FAMILY_TONAL_HOOK:
         pressure_shape = "tonal-hook support lift"
         stutter_density = "hook-preserving eighth stutter"
         restore_hit_shape = "hook-forward restore"
         stutter_step_divisor = 12
         stutter_grain_beat_offset = 0.75
         restore_snap_gain = 1.04
-    elif pressure_lift_policy.source_family == "pad_noise":
+    elif pressure_lift_policy.source_family == SOURCE_FAMILY_PAD_NOISE:
         pressure_shape = "gated pad/noise texture lift"
         stutter_density = "slow noise-gate stutter"
         restore_hit_shape = "texture stab restore"
         stutter_step_divisor = 12
         stutter_grain_beat_offset = 0.25
         restore_snap_gain = 1.30
-    elif pressure_lift_policy.source_family == "bad_timing":
+    elif pressure_lift_policy.source_family == SOURCE_FAMILY_BAD_TIMING:
         pressure_shape = "manual-confirm cautious lift"
         stutter_density = "cautious downbeat-check stutter"
         restore_hit_shape = "confirmation-cue restore"
@@ -1787,23 +1803,23 @@ def dense_break_source_policy(
         restore_snap_gain,
     )
 
-    if pressure_lift_policy.source_family == "tonal_hook":
+    if pressure_lift_policy.source_family == SOURCE_FAMILY_TONAL_HOOK:
         bass_restore = 51.5
         pressure_gain = 1.15
         bass_gain = 1.16
-    elif pressure_lift_policy.source_family == "sparse_bass_pressure":
+    elif pressure_lift_policy.source_family == SOURCE_FAMILY_SPARSE_BASS_PRESSURE:
         bass_restore = 46.0
         pressure_gain = 1.10
         bass_gain = 1.18
-    elif pressure_lift_policy.source_family == "dense_break":
+    elif pressure_lift_policy.source_family == SOURCE_FAMILY_DENSE_BREAK:
         bass_restore = 48.0
         pressure_gain = 0.96
         bass_gain = 0.98
-    elif pressure_lift_policy.source_family == "pad_noise":
+    elif pressure_lift_policy.source_family == SOURCE_FAMILY_PAD_NOISE:
         bass_restore = 55.0
         pressure_gain = 1.06
         bass_gain = 0.92
-    elif pressure_lift_policy.source_family == "bad_timing":
+    elif pressure_lift_policy.source_family == SOURCE_FAMILY_BAD_TIMING:
         bass_restore = 50.0
         pressure_gain = 1.10
         bass_gain = 0.96
@@ -1839,23 +1855,23 @@ def dense_break_source_policy(
 
 
 def scripted_arrangement_roles(source_family: str) -> tuple[tuple[str, ...], str, str]:
-    if source_family == "dense_break":
+    if source_family == SOURCE_FAMILY_DENSE_BREAK:
         roles = ("hook", "hook", "chop", "chop", "pressure", "pressure", "dropout", "restore")
         shape = "classic break slam"
         intent = "establish hook, build chop pressure, cut hard, then restore with impact"
-    elif source_family == "tonal_hook":
+    elif source_family == SOURCE_FAMILY_TONAL_HOOK:
         roles = ("hook", "chop", "hook", "chop", "pressure", "pressure", "dropout", "restore")
         shape = "hook-return lift"
         intent = "bring the tonal hook back before pressure so the riff stays readable"
-    elif source_family == "sparse_bass_pressure":
+    elif source_family == SOURCE_FAMILY_SPARSE_BASS_PRESSURE:
         roles = ("hook", "pressure", "chop", "hook", "chop", "pressure", "dropout", "restore")
         shape = "early bass shove"
         intent = "introduce bass pressure early, re-state the hook, then lift again before the cut"
-    elif source_family == "pad_noise":
+    elif source_family == SOURCE_FAMILY_PAD_NOISE:
         roles = ("hook", "chop", "hook", "chop", "pressure", "pressure", "dropout", "restore")
         shape = "texture gate caution"
         intent = "treat noisy pad material as a texture gate, not a proven breakbeat"
-    elif source_family == "bad_timing":
+    elif source_family == SOURCE_FAMILY_BAD_TIMING:
         roles = ("hook", "chop", "hook", "chop", "pressure", "pressure", "dropout", "restore")
         shape = "manual-confirm cautious cut"
         intent = "avoid confident bar-locked rearrangement until ambiguous downbeat timing is confirmed"
@@ -1873,7 +1889,7 @@ def arrangement_policy_for(
     source_family: str,
 ) -> ArrangementPolicy:
     scripted_roles, scripted_shape, scripted_intent = scripted_arrangement_roles(source_family)
-    eligible = source_family in ("dense_break", "tonal_hook", "sparse_bass_pressure")
+    eligible = source_family in SOURCE_FAMILIES_SOURCE_DERIVED
     candidate_count = min(6, max(0, source.shape[0] // max(1, bar_frames)))
     if not eligible or candidate_count < MIN_ARRANGEMENT_ROLE_CANDIDATES:
         return ArrangementPolicy(
@@ -1908,12 +1924,12 @@ def arrangement_policy_for(
         early_bias = max(0.0, (5.0 - float(bar))) * 0.004
         late_bias = float(bar) * 0.008
         middle_bias = (1.0 - abs(float(bar) - 2.5) / 2.5) * 0.006
-        if source_family == "tonal_hook":
+        if source_family == SOURCE_FAMILY_TONAL_HOOK:
             hook_score = source_rms * 1.22 + low * 0.90 + w30_rms * 0.82 + early_bias
             chop_score = transient * 12.0 + w30_rms * 1.18 + high * 0.018 + middle_bias
             pressure_score = low * 1.18 + source_rms * 0.82 + late_bias
             strategy = "tonal-section-hook-pressure-arrangement"
-        elif source_family == "sparse_bass_pressure":
+        elif source_family == SOURCE_FAMILY_SPARSE_BASS_PRESSURE:
             hook_score = transient * 7.0 + w30_rms * 0.95 + source_rms * 0.62 + early_bias
             chop_score = transient * 10.0 + w30_rms * 1.05 + high * 0.014 + middle_bias
             pressure_score = low * 1.55 + source_rms * 0.76 + late_bias
@@ -1950,7 +1966,7 @@ def arrangement_policy_for(
         )
 
     pressure_pool = list(candidates[1:])
-    if source_family == "dense_break":
+    if source_family == SOURCE_FAMILY_DENSE_BREAK:
         scripted_pressure_bars = {
             index
             for index, role in enumerate(scripted_roles[:candidate_count])
@@ -1967,7 +1983,7 @@ def arrangement_policy_for(
     }
     remaining = [item for item in candidates if int(item["bar"]) not in pressure_bars]
     hook_pool = remaining
-    if source_family == "dense_break":
+    if source_family == SOURCE_FAMILY_DENSE_BREAK:
         early_hook_pool = [item for item in remaining if int(item["bar"]) < 2]
         if len(early_hook_pool) >= 2:
             hook_pool = early_hook_pool
@@ -1991,10 +2007,10 @@ def arrangement_policy_for(
         for score in (float(item["hook"]), float(item["chop"]), float(item["pressure"]))
     ]
     scripted_distance = sum(1 for left, right in zip(roles, scripted_roles) if left != right)
-    if source_family == "tonal_hook":
+    if source_family == SOURCE_FAMILY_TONAL_HOOK:
         shape = "source-section hook return"
         intent = "place hook, chop, and pressure where tonal section evidence supports contrast"
-    elif source_family == "sparse_bass_pressure":
+    elif source_family == SOURCE_FAMILY_SPARSE_BASS_PRESSURE:
         shape = "source-section bass shove"
         intent = "place pressure where low-band source sections can carry the rebuild"
     else:
@@ -2028,7 +2044,7 @@ def pressure_lift_policy_for(
     if timing_confidence_result == "candidate_ambiguous" or timing_grid_use == "manual_confirm_only":
         return PressureLiftPolicy(
             source_aware=True,
-            source_family="bad_timing",
+            source_family=SOURCE_FAMILY_BAD_TIMING,
             lift_shape="manual-confirm cautious lift",
             lift_intent="keep the render audible but cue timing confirmation before confident bar-locked moves",
             source_bleed_gain=0.050,
@@ -2049,7 +2065,7 @@ def pressure_lift_policy_for(
     ):
         return PressureLiftPolicy(
             source_aware=True,
-            source_family="pad_noise",
+            source_family=SOURCE_FAMILY_PAD_NOISE,
             lift_shape="gated texture lift",
             lift_intent="gate noisy pad material as texture instead of promoting it to breakbeat proof",
             source_bleed_gain=0.030,
@@ -2066,7 +2082,7 @@ def pressure_lift_policy_for(
     if high_band_ratio >= 0.050 and transient_score >= 0.080:
         return PressureLiftPolicy(
             source_aware=True,
-            source_family="dense_break",
+            source_family=SOURCE_FAMILY_DENSE_BREAK,
             lift_shape="transient-pressure slam",
             lift_intent="snare and break transient hit with low-band shove",
             source_bleed_gain=0.050,
@@ -2083,7 +2099,7 @@ def pressure_lift_policy_for(
     if low_band_rms < 0.020 and high_band_ratio < 0.020 and transient_score < 0.020:
         return PressureLiftPolicy(
             source_aware=True,
-            source_family="thin_or_uncertain",
+            source_family=SOURCE_FAMILY_THIN_OR_UNCERTAIN,
             lift_shape="support-recovery lift",
             lift_intent="add pressure without pretending the weak source proved a strong lift",
             source_bleed_gain=0.075,
@@ -2100,7 +2116,7 @@ def pressure_lift_policy_for(
     if low_band_rms < 0.120:
         return PressureLiftPolicy(
             source_aware=True,
-            source_family="tonal_hook",
+            source_family=SOURCE_FAMILY_TONAL_HOOK,
             lift_shape="hook-support lift",
             lift_intent="keep the tonal hook readable while pressure rises underneath",
             source_bleed_gain=0.080,
@@ -2117,7 +2133,7 @@ def pressure_lift_policy_for(
     if low_band_rms >= 0.120:
         return PressureLiftPolicy(
             source_aware=True,
-            source_family="sparse_bass_pressure",
+            source_family=SOURCE_FAMILY_SPARSE_BASS_PRESSURE,
             lift_shape="bass-rebuild lift",
             lift_intent="turn sparse source weight into a harder bass-pressure rise",
             source_bleed_gain=0.070,
@@ -2153,12 +2169,12 @@ def render_performance(
     mix_policy = source_policy.mix_treatment_policy
     role_order = source_policy.arrangement_policy.role_order
     hook_forward_gain = (
-        1.0 if source_policy.hook_chop_policy.source_family == "sparse_bass_pressure" else 1.12
+        1.0 if source_policy.hook_chop_policy.source_family == SOURCE_FAMILY_SPARSE_BASS_PRESSURE else 1.12
     )
-    dense_drum_snap = source_policy.pressure_lift_policy.source_family == "dense_break"
-    sparse_bass_path = source_policy.pressure_lift_policy.source_family == "sparse_bass_pressure"
-    tonal_hook_path = source_policy.pressure_lift_policy.source_family == "tonal_hook"
-    bad_timing_cue_path = source_policy.pressure_lift_policy.source_family == "bad_timing"
+    dense_drum_snap = source_policy.pressure_lift_policy.source_family == SOURCE_FAMILY_DENSE_BREAK
+    sparse_bass_path = source_policy.pressure_lift_policy.source_family == SOURCE_FAMILY_SPARSE_BASS_PRESSURE
+    tonal_hook_path = source_policy.pressure_lift_policy.source_family == SOURCE_FAMILY_TONAL_HOOK
+    bad_timing_cue_path = source_policy.pressure_lift_policy.source_family == SOURCE_FAMILY_BAD_TIMING
     hook_tr909_gain = 0.76 if dense_drum_snap else (0.96 if bad_timing_cue_path else 0.62)
     chop_tr909_gain = 0.98 if dense_drum_snap else (1.15 if bad_timing_cue_path else 0.78)
     pressure_tr909_base = 2.62 if dense_drum_snap else (2.10 if sparse_bass_path else 2.28)
@@ -2169,7 +2185,7 @@ def render_performance(
     pressure_break_snap_gain = mix_policy.pressure_break_snap_gain * (
         1.42 if dense_drum_snap else (0.78 if sparse_bass_path else 1.0)
     )
-    pad_noise_texture_path = source_policy.pressure_lift_policy.source_family == "pad_noise"
+    pad_noise_texture_path = source_policy.pressure_lift_policy.source_family == SOURCE_FAMILY_PAD_NOISE
     hook_riff_hook_gain = 1.12 if dense_drum_snap else 1.62
     hook_riff_chop_gain = 1.20 if dense_drum_snap else 1.78
     if dense_drum_snap:
@@ -2283,7 +2299,7 @@ def render_performance(
         drive=mix_policy.restore_drive,
         slam=mix_policy.restore_slam,
     )
-    if source_policy.pressure_lift_policy.source_family == "pad_noise":
+    if source_policy.pressure_lift_policy.source_family == SOURCE_FAMILY_PAD_NOISE:
         hook_mix = apply_pad_noise_role_gate(hook_mix, source_policy, bar_frames, "hook")
         chop_mix = apply_pad_noise_role_gate(chop_mix, source_policy, bar_frames, "chop")
 
@@ -2337,11 +2353,11 @@ def render_performance(
                 bar_frames,
                 source_layer_gain=source_layer_gain,
             )
-            if source_policy.pressure_lift_policy.source_family == "dense_break":
-                restore_bar = apply_gain(restore_bar, 1.14)
-            elif source_policy.pressure_lift_policy.source_family == "tonal_hook":
+            if source_policy.pressure_lift_policy.source_family == SOURCE_FAMILY_DENSE_BREAK:
+                restore_bar = apply_gain(restore_bar, 1.28)
+            elif source_policy.pressure_lift_policy.source_family == SOURCE_FAMILY_TONAL_HOOK:
                 restore_bar = apply_gain(restore_bar, 1.08)
-            elif source_policy.pressure_lift_policy.source_family == "sparse_bass_pressure":
+            elif source_policy.pressure_lift_policy.source_family == SOURCE_FAMILY_SPARSE_BASS_PRESSURE:
                 restore_bar = apply_gain(restore_bar, 1.22)
             put_bar(bar, restore_bar)
         else:
@@ -2415,7 +2431,7 @@ def arrangement_structure(policy: ArrangementPolicy) -> list[dict[str, str]]:
 def arrangement_failure_codes(policy: ArrangementPolicy) -> list[str]:
     failures = []
     role_counts = {role: policy.role_order.count(role) for role in set(policy.role_order)}
-    eligible = policy.source_family in ("dense_break", "tonal_hook", "sparse_bass_pressure")
+    eligible = policy.source_family in SOURCE_FAMILIES_SOURCE_DERIVED
     if eligible and not policy.role_order_source_derived:
         failures.append("arrangement_role_order_not_source_derived")
     if eligible and policy.candidate_count < MIN_ARRANGEMENT_ROLE_CANDIDATES:
@@ -2477,7 +2493,7 @@ def bass_movement_frequency_policy(
     bar_frames: int,
 ) -> dict[int, float]:
     static = arrangement_role_frequency_policy(source_policy)
-    if source_policy.pressure_lift_policy.source_family != "sparse_bass_pressure":
+    if source_policy.pressure_lift_policy.source_family != SOURCE_FAMILY_SPARSE_BASS_PRESSURE:
         return static
 
     reference = source[: min(max(1, 2 * bar_frames), source.shape[0])]
@@ -2571,7 +2587,7 @@ def bass_movement_policy_proof(
         }
     distances = [abs(derived[bar] - static.get(bar, derived[bar])) for bar in derived]
     frequencies = list(derived.values())
-    is_sparse = source_policy.pressure_lift_policy.source_family == "sparse_bass_pressure"
+    is_sparse = source_policy.pressure_lift_policy.source_family == SOURCE_FAMILY_SPARSE_BASS_PRESSURE
     return {
         "bass_movement_source_derived": 1.0 if is_sparse else 0.0,
         "sparse_bass_movement_static_distance_hz": float(np.mean(distances)) if is_sparse else 0.0,
@@ -2590,7 +2606,7 @@ def dense_answer_bite_policy_proof(
     source_policy: DenseBreakSourcePolicy,
     proof: dict[str, Any],
 ) -> dict[str, float]:
-    if source_policy.pressure_lift_policy.source_family != "dense_break":
+    if source_policy.pressure_lift_policy.source_family != SOURCE_FAMILY_DENSE_BREAK:
         return {
             "dense_answer_bite_source_derived": 0.0,
             "dense_answer_bite_scripted_role_distance": 0.0,
@@ -2631,7 +2647,7 @@ def dense_answer_bite_policy_proof(
 
 def hook_chop_policy_proof(source_policy: DenseBreakSourcePolicy) -> dict[str, float]:
     policy = source_policy.hook_chop_policy
-    riff_playback_enabled = policy.source_family not in {"bad_timing", "pad_noise"}
+    riff_playback_enabled = policy.source_family not in {SOURCE_FAMILY_BAD_TIMING, SOURCE_FAMILY_PAD_NOISE}
     return {
         "hook_chop_selection_source_derived": 1.0 if policy.source_aware else 0.0,
         "hook_chop_selection_candidate_count": float(policy.candidate_count),
@@ -2810,20 +2826,20 @@ def strongest_audible_element_proof(
         "kick": normalized_element_score(kick_ratio),
     }
     source_family = source_policy.pressure_lift_policy.source_family
-    if source_family == "dense_break":
+    if source_family == SOURCE_FAMILY_DENSE_BREAK:
         scores["snare"] += 0.18
         scores["restore"] += 0.08
-    elif source_family == "sparse_bass_pressure":
+    elif source_family == SOURCE_FAMILY_SPARSE_BASS_PRESSURE:
         scores["bass"] += 0.60
         scores["snare"] -= 0.10
         scores["stab"] -= 0.10
-    elif source_family == "tonal_hook":
+    elif source_family == SOURCE_FAMILY_TONAL_HOOK:
         scores["stab"] += 0.15
         scores["snare"] += 0.08
-    elif source_family == "pad_noise":
+    elif source_family == SOURCE_FAMILY_PAD_NOISE:
         scores["stab"] += 0.35
         scores["silence"] += 0.10
-    elif source_family == "bad_timing":
+    elif source_family == SOURCE_FAMILY_BAD_TIMING:
         scores["snare"] += 0.12
         scores["restore"] += 0.12
 
@@ -2831,7 +2847,7 @@ def strongest_audible_element_proof(
     strongest, strongest_score = ranked[0]
     second_score = ranked[1][1] if len(ranked) > 1 else 0.0
     margin = strongest_score - second_score
-    if source_family == "dense_break":
+    if source_family == SOURCE_FAMILY_DENSE_BREAK:
         drum_pressure_score = (
             scores["snare"] * 0.55
             + scores["bass"] * 0.30
@@ -2864,7 +2880,7 @@ def strongest_audible_element_proof(
         "dense_break_physical_drum_pressure_score": float(drum_pressure_score),
         "dense_break_snare_pressure_margin": float(snare_pressure_margin),
         "dense_break_pressure_transient_to_hook_ratio": (
-            float(pressure_transient_ratio) if source_family == "dense_break" else 0.0
+            float(pressure_transient_ratio) if source_family == SOURCE_FAMILY_DENSE_BREAK else 0.0
         ),
     }
 
@@ -3058,7 +3074,7 @@ def render_dropout_stutter_bar(
     source_snap_grain *= impact_envelope(source_snap_grain.shape[0], decay=0.040)[:, None]
     source_snap_grain = normalize_peak(source_snap_grain, 0.78)
     cue_snap_grain = None
-    if source_policy.pressure_lift_policy.source_family == "bad_timing":
+    if source_policy.pressure_lift_policy.source_family == SOURCE_FAMILY_BAD_TIMING:
         cue_snap_grain = np.zeros_like(grain)
         click_len = min(cue_snap_grain.shape[0], 192)
         cue = np.linspace(1.0, -0.65, click_len, dtype=np.float32)
@@ -3073,9 +3089,17 @@ def render_dropout_stutter_bar(
         end = target + grain.shape[0]
         riff = hook_riff[min(source_start + target, hook_riff.shape[0] - 1)]
         snap = break_snap[min(source_start + target, break_snap.shape[0] - 1)]
-        bar[target:end] += grain * (tail_policy.stutter_grain_gain * decay * source_policy.pressure_gain)
+        dense_tail_hit = (
+            1.10 if source_policy.pressure_lift_policy.source_family == SOURCE_FAMILY_DENSE_BREAK else 1.0
+        )
+        bar[target:end] += grain * (
+            tail_policy.stutter_grain_gain
+            * decay
+            * source_policy.pressure_gain
+            * dense_tail_hit
+        )
         bar[target:end] += source_snap_grain[: end - target] * (
-            tail_policy.stutter_snap_gain * decay
+            tail_policy.stutter_snap_gain * decay * dense_tail_hit
         )
         if cue_snap_grain is not None:
             bar[target:end] += cue_snap_grain[: end - target] * (5.50 * decay)
@@ -3094,7 +3118,7 @@ def render_pad_noise_texture_layer(
 ) -> np.ndarray:
     policy = source_policy.pad_noise_texture_policy
     layer = np.zeros_like(source)
-    if not policy.source_aware or policy.source_family != "pad_noise":
+    if not policy.source_aware or policy.source_family != SOURCE_FAMILY_PAD_NOISE:
         return layer
 
     grain_len = min(frames_for_seconds(0.160), max(1, bar_frames // 5))
@@ -3233,12 +3257,12 @@ def render_w30_hook_riff_layer(
     if hook_end <= hook_start or chop_end <= chop_start:
         return layer
     source_family = source_policy.hook_chop_policy.source_family
-    if source_family in {"bad_timing", "pad_noise"}:
+    if source_family in {SOURCE_FAMILY_BAD_TIMING, SOURCE_FAMILY_PAD_NOISE}:
         return layer
     hook_impact = {
-        "dense_break": 1.32,
-        "tonal_hook": 1.48,
-        "sparse_bass_pressure": 1.0,
+        SOURCE_FAMILY_DENSE_BREAK: 1.32,
+        SOURCE_FAMILY_TONAL_HOOK: 1.48,
+        SOURCE_FAMILY_SPARSE_BASS_PRESSURE: 1.0,
     }.get(source_family, 1.12)
 
     grains = []
@@ -3296,9 +3320,9 @@ def render_w30_hook_riff_layer(
             if end > target:
                 layer[target:end] += stab[: end - target] * gain * bar_gain
     family_gain = {
-        "dense_break": 0.88,
-        "tonal_hook": 1.08,
-        "sparse_bass_pressure": 1.0,
+        SOURCE_FAMILY_DENSE_BREAK: 0.88,
+        SOURCE_FAMILY_TONAL_HOOK: 1.08,
+        SOURCE_FAMILY_SPARSE_BASS_PRESSURE: 1.0,
     }.get(source_family, 1.0)
     return saturate(layer * family_gain, 1.35 * hook_impact)
 
@@ -3367,7 +3391,7 @@ def render_bass_pressure_layer(
         frames = bar_end - bar_start
         t = np.arange(frames, dtype=np.float32) / SAMPLE_RATE
         sine = np.sin(2.0 * np.pi * base_frequency * t).astype(np.float32)
-        is_sparse = source_policy.pressure_lift_policy.source_family == "sparse_bass_pressure"
+        is_sparse = source_policy.pressure_lift_policy.source_family == SOURCE_FAMILY_SPARSE_BASS_PRESSURE
         sub = np.sin(2.0 * np.pi * base_frequency * 0.5 * t).astype(np.float32)
         harmonic = np.sin(2.0 * np.pi * base_frequency * 2.0 * t).astype(np.float32)
         envelope = np.zeros(frames, dtype=np.float32)
@@ -3724,13 +3748,13 @@ def performance_proof(
         "sparse_pressure_low_band_share": (
             pressure_low_share
             if source_policy.pressure_lift_policy.source_family
-            == "sparse_bass_pressure"
+            == SOURCE_FAMILY_SPARSE_BASS_PRESSURE
             else 0.0
         ),
         "sparse_pressure_low_to_mid_ratio": (
             pressure_low_share / max(pressure_mid_share, 1e-9)
             if source_policy.pressure_lift_policy.source_family
-            == "sparse_bass_pressure"
+            == SOURCE_FAMILY_SPARSE_BASS_PRESSURE
             else 0.0
         ),
         "dropout_to_stutter_rms_ratio": rms(dropout_first) / max(rms(dropout_second), 1e-9),
@@ -3819,7 +3843,7 @@ def failure_codes_for(
     if proof["w30_to_source_rms_ratio"] < min_w30_to_source_rms_ratio_for(source_family):
         failures.append("w30_hook_not_present_enough")
     if (
-        source_family in ("dense_break", "tonal_hook")
+        source_family in SOURCE_FAMILIES_HOOK_FORWARD
         and proof.get("hook_chop_w30_to_source_margin", 0.0)
         < MIN_HOOK_FORWARD_W30_TO_SOURCE_MARGIN
     ):
@@ -3833,10 +3857,10 @@ def failure_codes_for(
         > MAX_DROPOUT_SILENCE_TO_STUTTER_RMS_RATIO
     ):
         failures.append("dropout_silence_not_deep_enough_before_stutter")
-    if source_family == "bad_timing":
+    if source_family == SOURCE_FAMILY_BAD_TIMING:
         if proof["manual_confirm_cue_transient_score"] < MIN_BAD_TIMING_CUE_TRANSIENT_SCORE:
             failures.append("bad_timing_confirmation_cue_too_weak")
-    elif source_family == "pad_noise":
+    elif source_family == SOURCE_FAMILY_PAD_NOISE:
         if proof.get("pad_noise_texture_source_derived", 0.0) < 1.0:
             failures.append("pad_noise_texture_not_source_derived")
         if proof.get("pad_noise_texture_candidate_count", 0.0) < MIN_PAD_NOISE_TEXTURE_CANDIDATES:
@@ -3941,7 +3965,7 @@ def failure_codes_for(
         < MIN_STRONGEST_AUDIBLE_ELEMENT_MARGIN
     ):
         failures.append("strongest_audible_element_ambiguous")
-    if source_family == "dense_break":
+    if source_family == SOURCE_FAMILY_DENSE_BREAK:
         if proof.get("strongest_audible_element") != "snare":
             failures.append("dense_break_snare_not_strongest")
         if (
@@ -3984,7 +4008,7 @@ def failure_codes_for(
             failures.append("dense_answer_bite_score_too_low")
     if proof["arrangement_policy_decision_count"] < 8.0:
         failures.append("arrangement_policy_not_source_aware_enough")
-    if source_family in ("dense_break", "tonal_hook", "sparse_bass_pressure"):
+    if source_family in SOURCE_FAMILIES_SOURCE_DERIVED:
         if proof.get("arrangement_role_order_source_derived", 0.0) < 1.0:
             failures.append("arrangement_role_order_not_source_derived")
         if proof.get("arrangement_role_candidate_count", 0.0) < MIN_ARRANGEMENT_ROLE_CANDIDATES:
@@ -4018,7 +4042,7 @@ def failure_codes_for(
         failures.append("arrangement_destructive_restore_tail_missing")
     if proof["arrangement_failure_count"] > 0.0:
         failures.append("arrangement_policy_contract_failed")
-    if source_family in ("dense_break", "tonal_hook"):
+    if source_family in SOURCE_FAMILIES_HOOK_FORWARD:
         if proof.get("hook_chop_selection_source_derived", 0.0) < 1.0:
             failures.append("hook_chop_selection_not_source_derived")
         if proof.get("hook_chop_selection_candidate_count", 0.0) < MIN_HOOK_CHOP_SELECTION_CANDIDATES:
@@ -4064,7 +4088,7 @@ def failure_codes_for(
             < MIN_DESTRUCTIVE_OFFSET_DISTANCE_FRAMES
         ):
             failures.append("destructive_gesture_not_enough_offset_contrast")
-    if source_family == "sparse_bass_pressure":
+    if source_family == SOURCE_FAMILY_SPARSE_BASS_PRESSURE:
         if proof["pressure_low_band_lift_ratio"] < MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO:
             failures.append("sparse_pressure_lift_lacks_low_band_support")
         if (
@@ -4173,7 +4197,7 @@ def validate_report_file(path: Path) -> None:
         else:
             if pressure_lift_policy.get("source_aware") is not True:
                 explicit_failures.append("pressure_lift_policy_not_source_aware")
-            if pressure_lift_policy.get("source_family") != "dense_break":
+            if pressure_lift_policy.get("source_family") != SOURCE_FAMILY_DENSE_BREAK:
                 explicit_failures.append("pressure_lift_policy_not_dense_break")
             if pressure_lift_policy.get("lift_shape") != "transient-pressure slam":
                 explicit_failures.append("pressure_lift_shape_mismatch")
@@ -4189,7 +4213,7 @@ def validate_report_file(path: Path) -> None:
                 explicit_failures.append("arrangement_policy_not_source_aware")
             if arrangement_policy.get("role_order_source_derived") is not True:
                 explicit_failures.append("arrangement_policy_not_source_derived")
-            if arrangement_policy.get("source_family") != "dense_break":
+            if arrangement_policy.get("source_family") != SOURCE_FAMILY_DENSE_BREAK:
                 explicit_failures.append("arrangement_policy_not_dense_break")
             if (
                 numeric_field(arrangement_policy, "candidate_count")

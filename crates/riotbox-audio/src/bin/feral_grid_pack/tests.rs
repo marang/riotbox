@@ -196,10 +196,13 @@ mod tests {
         );
         assert_eq!(
             mc202_pressure.pressure_role,
-            "bass_pressure_with_source_contour"
+            MC202_PRESSURE_ROLE_WITH_SOURCE_CONTOUR
         );
         assert!(mc202_pressure.source_expression_render_plan_applied);
-        assert_eq!(mc202_pressure.source_expression_role, "bass_pressure");
+        assert_eq!(
+            mc202_pressure.source_expression_role,
+            MC202_SOURCE_EXPRESSION_ROLE_BASS_PRESSURE
+        );
         assert!(
             mc202_pressure.pressure_reinforcement_gain > 0.0,
             "{mc202_pressure:?}"
@@ -224,7 +227,7 @@ mod tests {
         );
         assert_eq!(
             mc202_pressure.reason,
-            "mc202_source_grid_proof_renderer"
+            MC202_REASON_SOURCE_GRID_PROOF_RENDERER
         );
         assert!(signal_metrics(&low_render).rms > MIN_SIGNAL_RMS);
         assert!(signal_metrics(&high_render).rms > MIN_SIGNAL_RMS);
@@ -247,7 +250,7 @@ mod tests {
             mid_band_energy_ratio: 0.73,
             high_band_energy_ratio: 0.04,
             event_density_per_bar: 0.5,
-            reason: "source_mid_section_hold_contour",
+            reason: MC202_REASON_MID_SECTION_HOLD_CONTOUR,
         };
         let tr909_profile = SourceAwareTr909Profile {
             signal_rms: 0.10,
@@ -273,7 +276,7 @@ mod tests {
         assert!(mc202_pressure.source_expression_render_plan_applied);
         assert_eq!(
             mc202_pressure.source_expression_role,
-            "hook_restraint_hold"
+            MC202_SOURCE_EXPRESSION_ROLE_HOOK_RESTRAINT_HOLD
         );
         assert_eq!(mc202_pressure.low_body_emphasis, 0.0);
         assert!(
@@ -300,7 +303,7 @@ mod tests {
             mid_band_energy_ratio: 0.12,
             high_band_energy_ratio: 0.02,
             event_density_per_bar: 1.0,
-            reason: "source_low_section_drop_contour",
+            reason: MC202_REASON_LOW_SECTION_DROP_CONTOUR,
         };
         let hold_contour = Mc202SourceContourProfile {
             contour_hint: Mc202ContourHint::Hold,
@@ -311,7 +314,7 @@ mod tests {
             mid_band_energy_ratio: 0.72,
             high_band_energy_ratio: 0.04,
             event_density_per_bar: 0.5,
-            reason: "source_mid_section_hold_contour",
+            reason: MC202_REASON_MID_SECTION_HOLD_CONTOUR,
         };
         let drop_profile = SourceAwareTr909Profile {
             signal_rms: 0.16,
@@ -355,8 +358,14 @@ mod tests {
 
         assert!(drop_pressure.applied, "{drop_pressure:?}");
         assert!(hold_pressure.applied, "{hold_pressure:?}");
-        assert_eq!(drop_pressure.source_expression_role, "bass_pressure");
-        assert_eq!(hold_pressure.source_expression_role, "hook_restraint_hold");
+        assert_eq!(
+            drop_pressure.source_expression_role,
+            MC202_SOURCE_EXPRESSION_ROLE_BASS_PRESSURE
+        );
+        assert_eq!(
+            hold_pressure.source_expression_role,
+            MC202_SOURCE_EXPRESSION_ROLE_HOOK_RESTRAINT_HOLD
+        );
         assert!(drop_pressure.source_expression_render_plan_applied);
         assert!(hold_pressure.source_expression_render_plan_applied);
         assert!(drop_source_contour.applied, "{drop_source_contour:?}");

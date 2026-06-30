@@ -62,6 +62,9 @@ const TR909_KICK_PRESSURE_MIN_LOW_BAND_RATIO: f32 = 1.06;
 const TR909_KICK_PRESSURE_MAX_PEAK_ABS: f32 = 0.95;
 const TR909_SOURCE_ACCENT_MIN_ACCENT_SPAN: f32 = 0.22;
 const TR909_SOURCE_ACCENT_MIN_DISTINCT_ACCENTS: usize = 3;
+const TR909_SOURCE_EVIDENCE_ROLE_PROFILE_AND_ACCENT_DYNAMICS: &str =
+    "tr909_source_profile_and_accent_dynamics";
+const TR909_SOURCE_EVIDENCE_ROLE_PRIMITIVE_CONTROL_ONLY: &str = "tr909_primitive_control_only";
 
 #[allow(dead_code)]
 fn render_tr909_source_support(grid: &Grid, profile: SourceAwareTr909Profile) -> Vec<f32> {
@@ -161,14 +164,14 @@ fn apply_tr909_kick_pressure(
     (
         Tr909KickPressureProof {
             pattern_origin: if accent_dynamics.applied {
-                "source_derived"
+                PATTERN_ORIGIN_SOURCE_DERIVED
             } else {
-                "primitive_renderer"
+                PATTERN_ORIGIN_PRIMITIVE_RENDERER
             },
             source_evidence_role: if accent_dynamics.applied {
-                "tr909_source_profile_and_accent_dynamics"
+                TR909_SOURCE_EVIDENCE_ROLE_PROFILE_AND_ACCENT_DYNAMICS
             } else {
-                "tr909_primitive_control_only"
+                TR909_SOURCE_EVIDENCE_ROLE_PRIMITIVE_CONTROL_ONLY
             },
             source_profile_reason: profile.reason,
             applied,
@@ -222,7 +225,7 @@ fn tr909_source_accent_dynamics_proof(
 ) -> Tr909SourceAccentDynamicsProof {
     if accents.is_empty() {
         return Tr909SourceAccentDynamicsProof {
-            pattern_origin: "source_derived",
+            pattern_origin: PATTERN_ORIGIN_SOURCE_DERIVED,
             applied: false,
             anchor_count: 0,
             distinct_accent_count: 0,
@@ -255,7 +258,7 @@ fn tr909_source_accent_dynamics_proof(
         && accent_span >= TR909_SOURCE_ACCENT_MIN_ACCENT_SPAN;
 
     Tr909SourceAccentDynamicsProof {
-        pattern_origin: "source_derived",
+        pattern_origin: PATTERN_ORIGIN_SOURCE_DERIVED,
         applied,
         anchor_count: accents.len(),
         distinct_accent_count,
