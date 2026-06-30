@@ -1,14 +1,22 @@
 #[cfg(test)]
 mod manifest_mc202_assertions {
-    use super::MIN_SIGNAL_RMS;
+    use super::{
+        MC202_PATTERN_ORIGIN_PRIMITIVE_RENDERER, MC202_PATTERN_ORIGIN_SOURCE_DERIVED_CONTOUR,
+        MC202_PRESSURE_ROLE_WITH_SOURCE_CONTOUR, MC202_REASON_SOURCE_GRID_PROOF_RENDERER,
+        MC202_SOURCE_EXPRESSION_ROLE_ANSWER_LIFT, MC202_SOURCE_EXPRESSION_ROLE_BASS_PRESSURE,
+        MC202_SOURCE_EXPRESSION_ROLE_HOOK_RESTRAINT_HOLD, MIN_SIGNAL_RMS,
+    };
 
     pub(super) fn assert_mc202_manifest(manifest: &serde_json::Value) {
         let mc202_bass_pressure = &manifest["metrics"]["mc202_bass_pressure"];
-        assert_eq!(mc202_bass_pressure["pattern_origin"], "primitive_renderer");
+        assert_eq!(
+            mc202_bass_pressure["pattern_origin"],
+            MC202_PATTERN_ORIGIN_PRIMITIVE_RENDERER
+        );
         assert_eq!(mc202_bass_pressure["applied"], true);
         assert_eq!(
             mc202_bass_pressure["pressure_role"],
-            "bass_pressure_with_source_contour"
+            MC202_PRESSURE_ROLE_WITH_SOURCE_CONTOUR
         );
         assert_eq!(
             mc202_bass_pressure["source_expression_render_plan_applied"],
@@ -19,13 +27,15 @@ mod manifest_mc202_assertions {
             .is_some_and(|role| {
                 matches!(
                     role,
-                    "bass_pressure" | "answer_lift" | "hook_restraint_hold"
+                    MC202_SOURCE_EXPRESSION_ROLE_BASS_PRESSURE
+                        | MC202_SOURCE_EXPRESSION_ROLE_ANSWER_LIFT
+                        | MC202_SOURCE_EXPRESSION_ROLE_HOOK_RESTRAINT_HOLD
                 )
             }));
         assert_eq!(mc202_bass_pressure["phrase_variation_applied"], true);
         assert_eq!(
             mc202_bass_pressure["reason"],
-            "mc202_source_grid_proof_renderer"
+            MC202_REASON_SOURCE_GRID_PROOF_RENDERER
         );
         assert!(
             mc202_bass_pressure["pressure_reinforcement_gain"]
@@ -45,7 +55,7 @@ mod manifest_mc202_assertions {
         let mc202_source_contour = &manifest["metrics"]["mc202_source_contour"];
         assert_eq!(
             mc202_source_contour["pattern_origin"],
-            "source_derived_contour"
+            MC202_PATTERN_ORIGIN_SOURCE_DERIVED_CONTOUR
         );
         assert_eq!(mc202_source_contour["applied"], true);
         assert!(mc202_source_contour["reason"]

@@ -104,12 +104,24 @@ const MC202_BASS_PRESSURE_MIN_SIGNAL_RMS: f32 = 0.003;
 const MC202_BASS_PRESSURE_MIN_LOW_BAND_RMS: f32 = 0.001;
 const MC202_BASS_PRESSURE_MIN_LOW_TO_MID_ENERGY_RATIO: f32 = 1.20;
 const MC202_SOURCE_CONTOUR_MIN_DELTA_RMS: f32 = 0.00025;
+const MC202_PATTERN_ORIGIN_PRIMITIVE_RENDERER: &str = PATTERN_ORIGIN_PRIMITIVE_RENDERER;
+const MC202_PATTERN_ORIGIN_SOURCE_DERIVED_CONTOUR: &str = "source_derived_contour";
+const MC202_PRESSURE_ROLE_WITH_SOURCE_CONTOUR: &str = "bass_pressure_with_source_contour";
+const MC202_PRESSURE_ROLE_WITHOUT_PRESSURE: &str = "bass_phrase_without_pressure";
+const MC202_SOURCE_EXPRESSION_ROLE_BASS_PRESSURE: &str = "bass_pressure";
+const MC202_SOURCE_EXPRESSION_ROLE_ANSWER_LIFT: &str = "answer_lift";
+const MC202_SOURCE_EXPRESSION_ROLE_HOOK_RESTRAINT_HOLD: &str = "hook_restraint_hold";
+const MC202_REASON_SOURCE_GRID_PROOF_RENDERER: &str = "mc202_source_grid_proof_renderer";
+const MC202_REASON_SOURCE_GRID_PROOF_TOO_WEAK: &str = "mc202_source_grid_proof_too_weak";
+const MC202_REASON_LOW_SECTION_DROP_CONTOUR: &str = "source_low_section_drop_contour";
+const MC202_REASON_BUSY_SECTION_LIFT_CONTOUR: &str = "source_busy_section_lift_contour";
+const MC202_REASON_MID_SECTION_HOLD_CONTOUR: &str = "source_mid_section_hold_contour";
 
 fn manifest_mc202_bass_pressure_proof(
     proof: Mc202BassPressureProof,
 ) -> ManifestMc202BassPressureProof {
     ManifestMc202BassPressureProof {
-        pattern_origin: "primitive_renderer",
+        pattern_origin: MC202_PATTERN_ORIGIN_PRIMITIVE_RENDERER,
         applied: proof.applied,
         pressure_role: proof.pressure_role,
         source_expression_render_plan_applied: proof.source_expression_render_plan_applied,
@@ -141,7 +153,7 @@ fn manifest_mc202_source_contour_proof(
     proof: Mc202SourceContourProof,
 ) -> ManifestMc202SourceContourProof {
     ManifestMc202SourceContourProof {
-        pattern_origin: "source_derived_contour",
+        pattern_origin: MC202_PATTERN_ORIGIN_SOURCE_DERIVED_CONTOUR,
         applied: proof.applied,
         contour_hint: proof.contour_hint.label(),
         note_budget: proof.note_budget.label(),
@@ -233,9 +245,9 @@ fn render_mc202_bass_pressure_with_source_contour(
         Mc202BassPressureProof {
             applied,
             pressure_role: if applied {
-                "bass_pressure_with_source_contour"
+                MC202_PRESSURE_ROLE_WITH_SOURCE_CONTOUR
             } else {
-                "bass_phrase_without_pressure"
+                MC202_PRESSURE_ROLE_WITHOUT_PRESSURE
             },
             source_expression_render_plan_applied: primary_state
                 .source_phrase_plan
@@ -259,9 +271,9 @@ fn render_mc202_bass_pressure_with_source_contour(
             active_sample_ratio,
             peak_abs: metrics.signal.peak_abs,
             reason: if applied {
-                "mc202_source_grid_proof_renderer"
+                MC202_REASON_SOURCE_GRID_PROOF_RENDERER
             } else {
-                "mc202_source_grid_proof_too_weak"
+                MC202_REASON_SOURCE_GRID_PROOF_TOO_WEAK
             },
         },
         Mc202SourceContourProof {
@@ -358,9 +370,11 @@ fn add_mc202_pressure_reinforcement(
 
 fn mc202_source_expression_role(source_contour: Mc202SourceContourProfile) -> &'static str {
     match source_contour.contour_hint {
-        Mc202ContourHint::Drop => "bass_pressure",
-        Mc202ContourHint::Lift => "answer_lift",
-        Mc202ContourHint::Hold | Mc202ContourHint::Neutral => "hook_restraint_hold",
+        Mc202ContourHint::Drop => MC202_SOURCE_EXPRESSION_ROLE_BASS_PRESSURE,
+        Mc202ContourHint::Lift => MC202_SOURCE_EXPRESSION_ROLE_ANSWER_LIFT,
+        Mc202ContourHint::Hold | Mc202ContourHint::Neutral => {
+            MC202_SOURCE_EXPRESSION_ROLE_HOOK_RESTRAINT_HOLD
+        }
     }
 }
 
@@ -519,7 +533,7 @@ impl Mc202SourceContourProfile {
                 mid_band_energy_ratio: spectral.mid_band_energy_ratio,
                 high_band_energy_ratio: spectral.high_band_energy_ratio,
                 event_density_per_bar: signal.event_density_per_bar,
-                reason: "source_low_section_drop_contour",
+                reason: MC202_REASON_LOW_SECTION_DROP_CONTOUR,
             }
         } else if signal.event_density_per_bar >= 3.0
             || spectral.high_band_energy_ratio >= spectral.mid_band_energy_ratio
@@ -533,7 +547,7 @@ impl Mc202SourceContourProfile {
                 mid_band_energy_ratio: spectral.mid_band_energy_ratio,
                 high_band_energy_ratio: spectral.high_band_energy_ratio,
                 event_density_per_bar: signal.event_density_per_bar,
-                reason: "source_busy_section_lift_contour",
+                reason: MC202_REASON_BUSY_SECTION_LIFT_CONTOUR,
             }
         } else {
             Self {
@@ -545,7 +559,7 @@ impl Mc202SourceContourProfile {
                 mid_band_energy_ratio: spectral.mid_band_energy_ratio,
                 high_band_energy_ratio: spectral.high_band_energy_ratio,
                 event_density_per_bar: signal.event_density_per_bar,
-                reason: "source_mid_section_hold_contour",
+                reason: MC202_REASON_MID_SECTION_HOLD_CONTOUR,
             }
         }
     }

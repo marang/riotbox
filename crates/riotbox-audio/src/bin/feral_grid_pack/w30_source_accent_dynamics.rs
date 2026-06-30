@@ -38,7 +38,7 @@ fn manifest_w30_source_accent_dynamics_proof(
     proof: W30SourceAccentDynamicsProof,
 ) -> ManifestW30SourceAccentDynamicsProof {
     ManifestW30SourceAccentDynamicsProof {
-        pattern_origin: "source_derived",
+        pattern_origin: PATTERN_ORIGIN_SOURCE_DERIVED,
         applied: proof.applied,
         trigger_count: proof.trigger_count,
         distinct_velocity_count: proof.distinct_velocity_count,

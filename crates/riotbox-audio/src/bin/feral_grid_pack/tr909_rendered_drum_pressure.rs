@@ -23,6 +23,10 @@ const TR909_RENDERED_DRUM_PRESSURE_MIN_STEADY_SUPPORT_CONTRIBUTION_RATIO: f32 = 
 const TR909_RENDERED_DRUM_PRESSURE_MIN_LOW_BAND_RMS: f32 = 0.0030;
 const TR909_RENDERED_DRUM_PRESSURE_MIN_BREAK_LIFT_LOW_BAND_RMS: f32 = 0.0020;
 const TR909_RENDERED_DRUM_PRESSURE_MIN_STEADY_LOW_BAND_RMS: f32 = 0.0014;
+const TR909_RENDERED_DRUM_PRESSURE_SOURCE_EVIDENCE_ROLE: &str =
+    "tr909_source_profile_accent_dynamics_and_rendered_mix_pressure";
+const TR909_RENDERED_DRUM_PRESSURE_PRIMITIVE_EVIDENCE_ROLE: &str =
+    "tr909_primitive_control_only";
 
 #[derive(Clone, Copy, Debug)]
 struct Tr909RenderedDrumPressureInput {
@@ -48,8 +52,8 @@ fn tr909_rendered_drum_pressure_proof(
         tr909_rendered_drum_pressure_min_low_band_rms(input.source_profile);
     let support_mix_tr909_contribution_ratio =
         input.all_lane_mix_movement.tr909_contribution_ratio;
-    let source_derived = input.kick_pressure.pattern_origin == "source_derived"
-        && input.accent_dynamics.pattern_origin == "source_derived";
+    let source_derived = input.kick_pressure.pattern_origin == PATTERN_ORIGIN_SOURCE_DERIVED
+        && input.accent_dynamics.pattern_origin == PATTERN_ORIGIN_SOURCE_DERIVED;
     let applied = source_derived
         && input.kick_pressure.applied
         && input.accent_dynamics.applied
@@ -71,14 +75,14 @@ fn tr909_rendered_drum_pressure_proof(
             "tr909_rendered_drum_pressure_too_weak_or_masks_source"
         },
         pattern_origin: if source_derived {
-            "source_derived"
+            PATTERN_ORIGIN_SOURCE_DERIVED
         } else {
-            "primitive_renderer"
+            PATTERN_ORIGIN_PRIMITIVE_RENDERER
         },
         source_evidence_role: if source_derived {
-            "tr909_source_profile_accent_dynamics_and_rendered_mix_pressure"
+            TR909_RENDERED_DRUM_PRESSURE_SOURCE_EVIDENCE_ROLE
         } else {
-            "tr909_primitive_control_only"
+            TR909_RENDERED_DRUM_PRESSURE_PRIMITIVE_EVIDENCE_ROLE
         },
         support_mix_tr909_contribution_ratio,
         support_generated_to_source_rms_ratio: input.support_generated_to_source_rms_ratio,
@@ -145,7 +149,7 @@ mod tr909_rendered_drum_pressure_tests {
         });
 
         assert!(proof.applied, "{proof:?}");
-        assert_eq!(proof.pattern_origin, "source_derived");
+        assert_eq!(proof.pattern_origin, PATTERN_ORIGIN_SOURCE_DERIVED);
         assert!(proof.support_mix_tr909_contribution_ratio >= 0.050);
     }
 
@@ -247,8 +251,8 @@ mod tr909_rendered_drum_pressure_tests {
 
     fn source_derived_kick_pressure(applied: bool) -> Tr909KickPressureProof {
         Tr909KickPressureProof {
-            pattern_origin: "source_derived",
-            source_evidence_role: "tr909_source_profile_and_accent_dynamics",
+            pattern_origin: PATTERN_ORIGIN_SOURCE_DERIVED,
+            source_evidence_role: TR909_SOURCE_EVIDENCE_ROLE_PROFILE_AND_ACCENT_DYNAMICS,
             source_profile_reason: "source_low_drive",
             applied,
             anchor_count: 8,
@@ -283,7 +287,7 @@ mod tr909_rendered_drum_pressure_tests {
 
     fn source_derived_accent_dynamics(applied: bool) -> Tr909SourceAccentDynamicsProof {
         Tr909SourceAccentDynamicsProof {
-            pattern_origin: "source_derived",
+            pattern_origin: PATTERN_ORIGIN_SOURCE_DERIVED,
             applied,
             anchor_count: 8,
             distinct_accent_count: 3,

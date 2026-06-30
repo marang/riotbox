@@ -226,6 +226,15 @@ fn issue_label(evaluation: &TimingFixtureEvaluation) -> String {
 mod tests {
     use super::*;
 
+    const CATEGORY_CLEAN_RHYTHM: &str = "clean_rhythm";
+    const CATEGORY_DENSE_BREAK: &str = "dense_break";
+    const CATEGORY_HOOK_FORWARD: &str = "hook_forward";
+    const CATEGORY_HALF_TIME_AMBIGUITY: &str = "half_time_ambiguity";
+    const CATEGORY_DOUBLE_TIME_AMBIGUITY: &str = "double_time_ambiguity";
+    const CATEGORY_HIGH_DRIFT: &str = "high_drift";
+    const CATEGORY_WEAK_TIMING: &str = "weak_timing";
+    const FIXTURE_CLEAN_128_4X4: &str = "fx_timing_clean_128_4x4";
+
     #[test]
     fn parses_default_and_custom_catalog_args() {
         assert_eq!(
@@ -267,16 +276,16 @@ mod tests {
         assert_eq!(report_json["schema_version"], 1);
         assert_eq!(report_json["passed"], true);
         assert!(report.case_count >= 7);
-        assert_category_covered(&report, "clean_rhythm");
-        assert_category_covered(&report, "dense_break");
-        assert_category_covered(&report, "hook_forward");
-        assert_category_covered(&report, "half_time_ambiguity");
-        assert_category_covered(&report, "double_time_ambiguity");
-        assert_category_covered(&report, "high_drift");
-        assert_category_covered(&report, "weak_timing");
+        assert_category_covered(&report, CATEGORY_CLEAN_RHYTHM);
+        assert_category_covered(&report, CATEGORY_DENSE_BREAK);
+        assert_category_covered(&report, CATEGORY_HOOK_FORWARD);
+        assert_category_covered(&report, CATEGORY_HALF_TIME_AMBIGUITY);
+        assert_category_covered(&report, CATEGORY_DOUBLE_TIME_AMBIGUITY);
+        assert_category_covered(&report, CATEGORY_HIGH_DRIFT);
+        assert_category_covered(&report, CATEGORY_WEAK_TIMING);
         assert_eq!(
             report_json["evaluations"][0]["fixture_id"],
-            "fx_timing_clean_128_4x4"
+            FIXTURE_CLEAN_128_4X4
         );
         assert_eq!(report_json["evaluations"][0]["passed"], true);
         assert!(report_json["evaluations"][0]["primary_confidence"].is_number());
@@ -292,13 +301,13 @@ mod tests {
             catalog_path: "fixtures/catalog.json".into(),
             case_count: 1,
             category_coverage: vec![CategoryCoverage {
-                category: "clean_rhythm".into(),
+                category: CATEGORY_CLEAN_RHYTHM.into(),
                 case_count: 1,
                 passed: true,
             }],
             passed: true,
             evaluations: vec![TimingFixtureEvaluation {
-                fixture_id: "fx_timing_clean_128_4x4".into(),
+                fixture_id: FIXTURE_CLEAN_128_4X4.into(),
                 passed: true,
                 bpm_error: 0.397,
                 beat_count: 32,
@@ -317,8 +326,8 @@ mod tests {
         assert!(markdown.contains("## Category Coverage"));
         assert!(markdown.contains("| `clean_rhythm` | `1` | `pass` |"));
         assert!(markdown.contains("## Fixture Evaluations"));
-        assert!(markdown.contains("fx_timing_clean_128_4x4"));
-        assert!(markdown.contains("| `fx_timing_clean_128_4x4` | `pass` |"));
+        assert!(markdown.contains(FIXTURE_CLEAN_128_4X4));
+        assert!(markdown.contains(&format!("| `{FIXTURE_CLEAN_128_4X4}` | `pass` |")));
         assert!(markdown.contains("`none`"));
     }
 
@@ -349,7 +358,7 @@ mod tests {
             .as_array_mut()
             .expect("cases")
             .iter_mut()
-            .find(|case| case["fixture_id"] == "fx_timing_clean_128_4x4")
+            .find(|case| case["fixture_id"] == FIXTURE_CLEAN_128_4X4)
             .expect("clean fixture");
         clean_case["expected"]["timing_quality"] = serde_json::json!("pretty_good");
         let path = write_temp_catalog("unknown-quality", &catalog);
@@ -357,7 +366,7 @@ mod tests {
         let error = build_report(&path).expect_err("unknown timing quality rejected");
 
         let _ = std::fs::remove_file(&path);
-        assert!(error.contains("fx_timing_clean_128_4x4"));
+        assert!(error.contains(FIXTURE_CLEAN_128_4X4));
         assert!(error.contains("unknown timing_quality"));
         assert!(error.contains("pretty_good"));
     }
@@ -369,7 +378,7 @@ mod tests {
             .as_array_mut()
             .expect("cases")
             .iter_mut()
-            .find(|case| case["fixture_id"] == "fx_timing_clean_128_4x4")
+            .find(|case| case["fixture_id"] == FIXTURE_CLEAN_128_4X4)
             .expect("clean fixture");
         clean_case["expected"]["degraded_policy"] = serde_json::json!("mostly_locked");
         let path = write_temp_catalog("unknown-policy", &catalog);
@@ -377,7 +386,7 @@ mod tests {
         let error = build_report(&path).expect_err("unknown degraded policy rejected");
 
         let _ = std::fs::remove_file(&path);
-        assert!(error.contains("fx_timing_clean_128_4x4"));
+        assert!(error.contains(FIXTURE_CLEAN_128_4X4));
         assert!(error.contains("unknown degraded_policy"));
         assert!(error.contains("mostly_locked"));
     }
