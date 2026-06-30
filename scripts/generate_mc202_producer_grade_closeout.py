@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import mc202_producer_fix_routing
 from mc202_source_composed_review_gate import MC202_GATE_FIELD, pack_gate
 
 
@@ -79,6 +80,7 @@ def build_report(
     real_source_cases = list_field(real_source_pack, "cases", args.real_source_pack)
     gate = pack_gate(professional_cases)
     candidates = [candidate_summary(case) for case in professional_cases]
+    fix_candidates = mc202_producer_fix_routing.build_fix_candidates(candidates)
     source_scaffold = real_source_scaffold_summary(
         args.real_source_pack,
         real_source_pack,
@@ -116,8 +118,14 @@ def build_report(
         },
         "real_source_listening_scaffold": source_scaffold,
         "review_candidates": candidates,
+        "mc202_producer_fix_candidate_count": len(fix_candidates),
+        "mc202_producer_fix_summary": mc202_producer_fix_routing.build_fix_summary(
+            candidates,
+            fix_candidates,
+        ),
+        "mc202_producer_fix_candidates": fix_candidates,
         "blockers": blockers,
-        "next_actions": next_actions(blockers, candidates),
+        "next_actions": next_actions(blockers, candidates, fix_candidates),
         "musician_summary": musician_summary(blockers),
     }
 
@@ -126,7 +134,7 @@ def candidate_summary(case: dict[str, Any]) -> dict[str, Any]:
     gate = object_field(case, MC202_GATE_FIELD, Path("<professional-pack>"))
     metrics = object_field(gate, "metrics", Path("<professional-pack>"))
     source_family = required_string(case, "source_family", Path("<professional-pack>"))
-    return {
+    summary = {
         "case_id": required_string(case, "case_id", Path("<professional-pack>")),
         "source_family": source_family,
         "candidate": required_string(case, "candidate", Path("<professional-pack>")),
@@ -147,6 +155,8 @@ def candidate_summary(case: dict[str, Any]) -> dict[str, Any]:
         "metrics": metrics,
         "mc202_role_evidence": mc202_role_evidence(source_family, metrics),
     }
+    summary["mc202_producer_fix_route"] = mc202_producer_fix_routing.route_candidate(summary)
+    return summary
 
 
 def mc202_role_evidence(source_family: str, metrics: dict[str, Any]) -> dict[str, Any]:
@@ -289,7 +299,11 @@ def closeout_blockers(
     return blockers
 
 
-def next_actions(blockers: list[dict[str, Any]], candidates: list[dict[str, Any]]) -> list[dict[str, str]]:
+def next_actions(
+    blockers: list[dict[str, Any]],
+    candidates: list[dict[str, Any]],
+    fix_candidates: list[dict[str, Any]],
+) -> list[dict[str, str]]:
     actions: list[dict[str, str]] = []
     if any(blocker["code"] == "structured_human_verdict_missing" for blocker in blockers):
         actions.append(
@@ -316,6 +330,16 @@ def next_actions(blockers: list[dict[str, Any]], candidates: list[dict[str, Any]
                 "target": "candidate_wavs_and_prompts",
                 "software_benefit": "Preserves exact WAV, metrics, prompt, and source-composed gate identities.",
                 "musician_payoff": "Listening decisions can focus on hook, pressure, source character, and replay value.",
+            }
+        )
+    if fix_candidates:
+        top = fix_candidates[0]
+        actions.append(
+            {
+                "category": "producer_fix_candidate",
+                "target": str(top["candidate_id"]),
+                "software_benefit": str(top["software_next_step"]),
+                "musician_payoff": str(top["musician_payoff"]),
             }
         )
     return actions
@@ -388,6 +412,27 @@ def validate_report(report: dict[str, Any]) -> list[str]:
         )
         for index, candidate in enumerate(candidates):
             validate_candidate(candidate, index, failures)
+    fix_candidates = report.get("mc202_producer_fix_candidates")
+    fix_summary = object_or_empty(report.get("mc202_producer_fix_summary"))
+    check(
+        report.get("mc202_producer_fix_candidate_count") == len(fix_candidates)
+        if isinstance(fix_candidates, list)
+        else False,
+        "mc202_fix_candidate_count_mismatch",
+        failures,
+    )
+    check(
+        isinstance(fix_candidates, list) and bool(fix_candidates),
+        "mc202_fix_candidates_missing",
+        failures,
+    )
+    if isinstance(fix_candidates, list):
+        mc202_producer_fix_routing.validate_fix_candidates(
+            fix_candidates,
+            candidates if isinstance(candidates, list) else [],
+            fix_summary,
+            failures,
+        )
     blockers = report.get("blockers")
     check(isinstance(blockers, list) and bool(blockers), "blockers_missing", failures)
     if isinstance(blockers, list):
@@ -432,6 +477,7 @@ def validate_candidate(candidate: Any, index: int, failures: list[str]) -> None:
         "promotion_blocked_until_human_pass",
         "template_only_blocks_promotion",
         "mc202_role_evidence",
+        "mc202_producer_fix_route",
     ):
         check(field in candidate, f"{prefix}_{field}_missing", failures)
     check(candidate.get("human_verdict") == "unverified", f"{prefix}_human_verdict_not_unverified", failures)
@@ -445,6 +491,7 @@ def validate_candidate(candidate: Any, index: int, failures: list[str]) -> None:
         failures,
     )
     validate_role_evidence(candidate, prefix, failures)
+    mc202_producer_fix_routing.validate_candidate_fix_route(candidate, prefix, failures)
     check(len(str(candidate.get("candidate_sha256", ""))) == 64, f"{prefix}_candidate_sha_invalid", failures)
     check(len(str(candidate.get("review_sha256", ""))) == 64, f"{prefix}_review_sha_invalid", failures)
 
@@ -573,6 +620,26 @@ def run_mutation_fixtures(report: dict[str, Any]) -> None:
     fixtures.append(("missing_role_evidence", mutated, "candidate_0_mc202_role_evidence_missing"))
 
     mutated = json.loads(json.dumps(report))
+    mutated["review_candidates"][0].pop("mc202_producer_fix_route")
+    fixtures.append(("missing_fix_route", mutated, "candidate_0_mc202_producer_fix_route_missing"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["mc202_producer_fix_candidate_count"] = 0
+    fixtures.append(("stale_fix_count", mutated, "mc202_fix_candidate_count_mismatch"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["mc202_producer_fix_candidates"][0]["quality_proof"] = True
+    fixtures.append(("fix_candidate_claims_quality", mutated, "mc202_fix_candidate_0_claims_quality"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["mc202_producer_fix_candidates"][0]["category"] = "generic_quality"
+    fixtures.append(("fix_candidate_bad_category", mutated, "mc202_fix_candidate_0_category_invalid"))
+
+    mutated = json.loads(json.dumps(report))
+    mutated["mc202_producer_fix_summary"]["candidate_count"] = 0
+    fixtures.append(("stale_fix_summary", mutated, "mc202_fix_summary_candidate_count_stale"))
+
+    mutated = json.loads(json.dumps(report))
     mutated["review_candidates"][0]["source_family"] = "unknown_family"
     fixtures.append(("unsupported_source_family", mutated, "candidate_0_mc202_unsupported_source_family"))
 
@@ -630,12 +697,30 @@ def markdown_report(report: dict[str, Any]) -> str:
                 f"- Source family: `{candidate['source_family']}`",
                 f"- MC-202 role evidence: `{role['role']}` / `{role['result']}`",
                 f"- Musician role reason: {role['musician_reason']}",
+                f"- Producer fix route: `{candidate['mc202_producer_fix_route']['proposed_next_fix_category']}`",
+                f"- Producer fix reason: {candidate['mc202_producer_fix_route']['musician_fix_reason']}",
                 f"- WAV: `{candidate['candidate']}`",
                 f"- Source-composed evidence: `{str(candidate['source_composed_evidence']).lower()}`",
                 f"- Primitive/template only: `{str(candidate['primitive_or_template_only']).lower()}`",
                 f"- Human verdict: `{candidate['human_verdict']}`",
                 f"- Demo readiness: `{candidate['demo_readiness']}`",
                 f"- Not demo-ready: {candidate['not_demo_worthy_reason']}",
+                "",
+            ]
+        )
+    lines.extend(["## Producer Fix Candidates", ""])
+    for fix in report["mc202_producer_fix_candidates"]:
+        lines.extend(
+            [
+                f"### `{fix['candidate_id']}`",
+                "",
+                f"- Category: `{fix['category']}`",
+                f"- Cases: `{', '.join(fix['case_ids'])}`",
+                f"- Primary cases: `{', '.join(fix['primary_case_ids']) or 'none'}`",
+                f"- Source families: `{', '.join(fix['source_families'])}`",
+                f"- Software next step: {fix['software_next_step']}",
+                f"- Musician payoff: {fix['musician_payoff']}",
+                f"- Artifacts: `{', '.join(fix['artifact_refs'])}`",
                 "",
             ]
         )
