@@ -46,10 +46,18 @@ FIX_CATEGORIES = {
     "chop_policy",
     "drum_pressure",
     "bass_movement",
+    "answer_bite",
+    "hook_restraint",
     "mix_bus",
     "destructive_gesture",
+    "destructive_articulation",
     "fixture_threshold",
     "ui_cue",
+}
+DEMO_READINESS_CONSEQUENCES = {
+    "human_pass_allows_demo_ready_candidate",
+    "human_weak_blocks_demo_ready_and_routes_fix",
+    "human_fail_blocks_demo_ready_and_routes_fix",
 }
 HEX_64_RE = re.compile(r"^[0-9a-f]{64}$")
 
@@ -130,6 +138,13 @@ def validate_entry(entry: dict[str, Any], path: Path, index: int) -> tuple[str, 
     require(source_path.endswith(".wav"), f"{prefix}.source_path must point to a WAV source")
     verdict = require_enum(entry, "human_verdict", HUMAN_VERDICTS, prefix)
     readiness = require_enum(entry, "demo_readiness", DEMO_READINESS, prefix)
+    if "demo_readiness_consequence" in entry:
+        require_enum(
+            entry,
+            "demo_readiness_consequence",
+            DEMO_READINESS_CONSEQUENCES,
+            prefix,
+        )
     non_empty_string(entry.get("demo_worthiness_note"), f"{prefix}.demo_worthiness_note")
 
     validate_artifact_ref(object_field(entry, "rendered_wav", prefix), "rendered_wav", prefix, ".wav")
@@ -141,6 +156,7 @@ def validate_entry(entry: dict[str, Any], path: Path, index: int) -> tuple[str, 
     fix_categories = string_list(entry, "fix_categories", prefix, allow_empty=True)
     unknown_categories = sorted(set(fix_categories) - FIX_CATEGORIES)
     require(not unknown_categories, f"{prefix}.fix_categories unknown: {', '.join(unknown_categories)}")
+    validate_optional_mc202_producer_fix_routing(entry, fix_categories, path, index)
 
     if verdict == "pass":
         require(readiness == "demo_ready", f"{prefix}: pass entries must be demo_ready")
@@ -153,6 +169,52 @@ def validate_entry(entry: dict[str, Any], path: Path, index: int) -> tuple[str, 
         require(not entry.get("quality_claim", False), f"{prefix}: unverified entries must not claim quality")
 
     return verdict, readiness
+
+
+def validate_optional_mc202_producer_fix_routing(
+    entry: dict[str, Any],
+    fix_categories: list[str],
+    path: Path,
+    index: int,
+) -> None:
+    routing = entry.get("mc202_producer_fix_routing")
+    if routing is None:
+        return
+    prefix = f"{path}: entries[{index}].mc202_producer_fix_routing"
+    require(isinstance(routing, dict), f"{prefix} must be object")
+    require(
+        routing.get("schema") == "riotbox.mc202_producer_fix_routing_for_human_verdict.v1",
+        f"{prefix}.schema invalid",
+    )
+    non_empty_string(routing.get("case_id"), f"{prefix}.case_id")
+    require_enum(routing, "human_verdict", {"pass", "weak", "fail"}, prefix)
+    require_enum(routing, "source_family", SOURCE_FAMILIES, prefix)
+    non_empty_string(routing.get("candidate"), f"{prefix}.candidate")
+    require_hash(routing.get("candidate_sha256"), f"{prefix}.candidate_sha256")
+    non_empty_string(routing.get("review_prompt"), f"{prefix}.review_prompt")
+    closeout_categories = string_list(routing, "closeout_fix_categories", prefix)
+    demo_categories = string_list(
+        routing,
+        "demo_bank_fix_categories",
+        prefix,
+        allow_empty=routing.get("human_verdict") == "pass",
+    )
+    unknown_closeout = sorted(set(closeout_categories) - FIX_CATEGORIES - {"human_listening"})
+    require(
+        not unknown_closeout,
+        f"{prefix}.closeout_fix_categories unknown: {', '.join(unknown_closeout)}",
+    )
+    unknown_demo = sorted(set(demo_categories) - FIX_CATEGORIES)
+    require(not unknown_demo, f"{prefix}.demo_bank_fix_categories unknown: {', '.join(unknown_demo)}")
+    require(
+        sorted(demo_categories) == sorted(fix_categories),
+        f"{prefix}.demo_bank_fix_categories must match entry fix_categories",
+    )
+    require(routing.get("quality_proof") is False, f"{prefix}.quality_proof must be false")
+    require(
+        routing.get("automated_musical_approval") is False,
+        f"{prefix}.automated_musical_approval must be false",
+    )
 
 
 def validate_optional_mc202_role_evidence(entry: dict[str, Any], path: Path, index: int) -> None:

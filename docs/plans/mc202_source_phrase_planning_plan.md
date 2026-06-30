@@ -286,6 +286,11 @@ chain is:
      `hook_restraint`, `source_selection`, `mix_bus`,
      `destructive_articulation`, or `human_listening`, with the exact WAV
      artifact, software next step, musician payoff, and `quality_proof: false`.
+   - RIOTBOX-1343 consumes those fix candidates during structured human-verdict
+     promotion. Promotion must match the exact case and rendered WAV hash before
+     deriving demo-bank `fix_categories`; `human_listening` is dropped once a
+     human verdict exists, while weak/fail verdicts preserve the concrete
+     producer fix categories and remain `not_demo_ready`.
 
 This chain is deliberately allowed to take multiple PRs. The quality standard
 does not shrink to fit a slice boundary: a merged slice can be useful

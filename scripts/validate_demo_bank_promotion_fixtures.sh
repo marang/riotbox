@@ -10,6 +10,15 @@ trap 'rm -rf "$tmp"' EXIT
 python3 scripts/generate_professional_output_listening_pack.py \
   --output "$tmp/pack" \
   --date "local-demo-bank-promotion-fixtures" >/dev/null
+python3 scripts/generate_mc202_real_source_listening_pack.py \
+  --output "$tmp/real-source" \
+  --date "local-demo-bank-promotion-fixtures-real-source" >/dev/null
+python3 scripts/generate_mc202_producer_grade_closeout.py \
+  --professional-pack "$tmp/pack/professional-output-listening-pack.json" \
+  --real-source-pack "$tmp/real-source/mc202-real-source-listening-pack.json" \
+  --output "$tmp/closeout" \
+  --date "local-demo-bank-promotion-fixtures-closeout" >/dev/null
+closeout="$tmp/closeout/mc202-producer-grade-closeout.json"
 
 pass_review="$tmp/pack/reviews/dense_beat03_130/review.json"
 python3 scripts/listening_review_workflow.py record \
@@ -29,6 +38,7 @@ python3 scripts/promote_listening_review_to_demo_bank.py \
   --json-output "$tmp/demo-bank-pass.json" \
   --entry-id dense-beat03-promoted-fixture \
   --demo-worthiness-note "Human pass confirms the dense break has a clear hook, pressure lift, destructive contrast, and replay value." \
+  --mc202-producer-closeout "$closeout" \
   --require-artifact-hashes >/dev/null
 
 jq -e '
@@ -47,6 +57,10 @@ jq -e '
     and .mc202_role_evidence.proof_scope == "demo_bank_promotion_gate"
     and .mc202_role_evidence.source_family == .source_family
     and .mc202_role_evidence.quality_proof == false
+    and .demo_readiness_consequence == "human_pass_allows_demo_ready_candidate"
+    and .mc202_producer_fix_routing.case_id == "dense_beat03_130"
+    and .mc202_producer_fix_routing.demo_bank_fix_categories == []
+    and .mc202_producer_fix_routing.quality_proof == false
   )
 ' "$tmp/demo-bank-pass.json" >/dev/null
 
@@ -90,7 +104,7 @@ python3 scripts/promote_listening_review_to_demo_bank.py \
   --json-output "$tmp/demo-bank-weak.json" \
   --entry-id sparse-kicksnr-promoted-weak-fixture \
   --demo-worthiness-note "Human weak review preserves the sparse example only as a concrete bass-movement fix target." \
-  --fix-category bass_movement \
+  --mc202-producer-closeout "$closeout" \
   --require-artifact-hashes >/dev/null
 
 jq -e '
@@ -104,8 +118,45 @@ jq -e '
     and .mc202_role_evidence.role == "bass_pressure"
     and .mc202_role_evidence.source_family == "sparse_bass_pressure"
     and .mc202_role_evidence.proof_scope == "demo_bank_promotion_gate"
+    and .demo_readiness_consequence == "human_weak_blocks_demo_ready_and_routes_fix"
+    and .mc202_producer_fix_routing.case_id == "sparse_kicksnr_120"
+    and (.mc202_producer_fix_routing.closeout_fix_categories | index("human_listening"))
+    and (.mc202_producer_fix_routing.closeout_fix_categories | index("bass_movement"))
+    and .mc202_producer_fix_routing.demo_bank_fix_categories == ["bass_movement"]
   )
 ' "$tmp/demo-bank-weak.json" >/dev/null
+
+if python3 scripts/promote_listening_review_to_demo_bank.py \
+  --review "$weak_review" \
+  --demo-bank scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json \
+  --json-output "$tmp/demo-bank-weak-manual-mismatch.json" \
+  --entry-id sparse-kicksnr-promoted-weak-mismatch-fixture \
+  --demo-worthiness-note "This should not promote." \
+  --fix-category mix_bus \
+  --mc202-producer-closeout "$closeout" \
+  --require-artifact-hashes >"$tmp/manual-mismatch.out" 2>&1; then
+  cat "$tmp/manual-mismatch.out" >&2
+  echo "expected manual MC-202 fix category mismatch to fail" >&2
+  exit 1
+fi
+grep -q "manual fix categories must match MC-202 producer closeout routing" "$tmp/manual-mismatch.out"
+
+stale_closeout="$tmp/stale-closeout.json"
+jq '(.review_candidates[] | select(.case_id == "sparse_kicksnr_120") | .candidate_sha256) = "0000000000000000000000000000000000000000000000000000000000000000"' \
+  "$closeout" > "$stale_closeout"
+if python3 scripts/promote_listening_review_to_demo_bank.py \
+  --review "$weak_review" \
+  --demo-bank scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json \
+  --json-output "$tmp/demo-bank-weak-stale-closeout.json" \
+  --entry-id sparse-kicksnr-promoted-weak-stale-closeout-fixture \
+  --demo-worthiness-note "This should not promote." \
+  --mc202-producer-closeout "$stale_closeout" \
+  --require-artifact-hashes >"$tmp/stale-closeout.out" 2>&1; then
+  cat "$tmp/stale-closeout.out" >&2
+  echo "expected stale MC-202 closeout hash to fail" >&2
+  exit 1
+fi
+grep -q "MC-202 closeout candidate hash does not match reviewed WAV" "$tmp/stale-closeout.out"
 
 unverified_review="$tmp/pack/reviews/tonal_rusharp_120/review.json"
 if python3 scripts/promote_listening_review_to_demo_bank.py \

@@ -100,6 +100,20 @@ Status: accepted
 
 ---
 
+### RBX-095
+
+Date: 2026-06-30
+Topic: MC-202 human-verdict promotion consumes producer fix routing by exact artifact
+Phase: P023 Sound Excellence / MC-202 Producer-Grade Track
+Question: how should structured MC-202 human verdicts reuse producer fix candidates without promoting unverified closeout evidence as quality proof?
+Decision: demo-bank promotion may consume `mc202_producer_fix_candidates` from the MC-202 producer-grade closeout only after matching the review case and rendered WAV SHA-256. Weak/fail verdicts derive concrete demo-bank `fix_categories` from the matched closeout route, while `human_listening` remains closeout-only and is dropped once a human verdict exists. Human pass verdicts still carry no fix categories.
+Why: the closeout report is good at selecting next work, but it is not a musical approval. The promotion path needs the closeout's exact artifact routing to avoid free-form follow-up categories while preserving the rule that only structured listening can decide demo readiness.
+Evidence: RIOTBOX-1343 extends `scripts/promote_listening_review_to_demo_bank.py`, `scripts/validate_release_grade_demo_bank.py`, `scripts/listening_review_workflow.py`, and the demo-bank promotion fixtures. The fixtures now prove closeout-derived weak categories, pass-with-routing metadata, manual category mismatch rejection, stale closeout hash rejection, primitive/template-only rejection, and stale artifact hash rejection.
+Consequences: future MC-202 demo-bank entries can explain the exact software fix and musician payoff for weak/fail outputs without claiming `quality_proof`. Producers get a concrete category such as `bass_movement`, `answer_bite`, `hook_restraint`, `mix_bus`, or `destructive_articulation`; unverified closeout evidence remains non-promotional.
+Status: accepted
+
+---
+
 ### RBX-061
 
 Date: 2026-05-31

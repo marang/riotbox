@@ -42,6 +42,13 @@ HOOK_VERDICTS = {
     "inconclusive",
     "unverified",
 }
+DEMO_READINESS_CONSEQUENCES = {
+    "unverified_until_human_verdict",
+    "human_pass_allows_demo_ready_candidate",
+    "human_weak_blocks_demo_ready_and_routes_fix",
+    "human_fail_blocks_demo_ready_and_routes_fix",
+    "inconclusive_blocks_demo_ready_until_relisten",
+}
 
 
 def main() -> int:
@@ -108,6 +115,7 @@ def create_pack(args: argparse.Namespace) -> None:
         "avoid": [],
         "concrete_follow_up": "",
         "reviewer": None,
+        "demo_readiness_consequence": "unverified_until_human_verdict",
         "expected_audible_behavior": args.expected
         or "State the expected audible behavior before listening.",
         "artifacts": {
@@ -153,6 +161,9 @@ def record_verdict(args: argparse.Namespace) -> None:
     review["avoid"] = split_csv(args.avoid)
     review["concrete_follow_up"] = args.concrete_follow_up
     review["reviewer"] = empty_to_none(args.reviewer)
+    review["demo_readiness_consequence"] = demo_readiness_consequence(
+        review["human_verdict"]
+    )
     validate_review(review)
     write_json(args.review, review)
     summary_path = args.review.with_name("review-summary.md")
@@ -203,6 +214,12 @@ def validate_review(review: dict[str, Any], allow_unverified: bool = False) -> N
         raise SystemExit("avoid must be an array")
     if not isinstance(review["artifacts"], dict):
         raise SystemExit("artifacts must be an object")
+    if "demo_readiness_consequence" in review:
+        require_enum(
+            "demo_readiness_consequence",
+            review["demo_readiness_consequence"],
+            DEMO_READINESS_CONSEQUENCES,
+        )
 
 
 def build_metrics(source_file: Path | None, candidates: list[Path]) -> dict[str, Any]:
@@ -291,6 +308,8 @@ def render_summary(review: dict[str, Any]) -> str:
         f"- Preferred direction: {review['preferred_direction'] or 'none'}\n"
         f"- Avoid: {', '.join(review['avoid']) if review['avoid'] else 'none'}\n"
         f"- Concrete follow-up: {review['concrete_follow_up'] or 'none'}\n"
+        "- Demo-readiness consequence: "
+        f"`{review.get('demo_readiness_consequence', 'unknown')}`\n"
     )
 
 
@@ -321,6 +340,15 @@ def split_csv(value: str) -> list[str]:
 
 def empty_to_none(value: str) -> str | None:
     return value if value else None
+
+
+def demo_readiness_consequence(human_verdict: str) -> str:
+    return {
+        "keep": "human_pass_allows_demo_ready_candidate",
+        "technically_ok_but_musically_weak": "human_weak_blocks_demo_ready_and_routes_fix",
+        "reject": "human_fail_blocks_demo_ready_and_routes_fix",
+        "inconclusive": "inconclusive_blocks_demo_ready_until_relisten",
+    }[human_verdict]
 
 
 if __name__ == "__main__":

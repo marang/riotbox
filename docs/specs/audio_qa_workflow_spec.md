@@ -700,6 +700,14 @@ stable category is added. Rebuild-only source-character failures route first to
 `source_selection` because the musician-facing fix is to pick or expose source
 material whose identity survives the rebuild-only path.
 
+MC-202 producer-grade closeout routing extends that category vocabulary for the
+MC-202 lane with `answer_bite`, `hook_restraint`, and
+`destructive_articulation`. Structured demo-bank promotion may consume
+`mc202_producer_fix_candidates` only after matching the exact review case and
+rendered WAV hash. The closeout category `human_listening` is allowed in the
+closeout worklist but must not become a demo-bank production fix after a human
+verdict has been recorded.
+
 Edge-source diagnostics for pad/noise and bad-timing material must also carry a
 source-selection promotion gate. The gate must keep `promotion_allowed: false`,
 name the blocked source families, preserve `quality_proof: false`, and explain
