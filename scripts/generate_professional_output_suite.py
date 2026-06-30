@@ -524,6 +524,9 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             "destructive_offset_distance_frames": number(
                 proof.get("destructive_offset_distance_frames")
             ),
+            "dense_destructive_pressure_lift_ratio": number(
+                proof.get("pressure_lift_bar5_to_bar4_rms_ratio")
+            ),
             "arrangement_role_order_source_derived": number(
                 proof.get("arrangement_role_order_source_derived")
             ),

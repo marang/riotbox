@@ -74,12 +74,12 @@ def route_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
                 "answer_bite",
                 "break pressure-answer bite is below the producer floor",
             )
-        if number(metrics.get("pressure_lift_bar5_to_bar4_rms_ratio")) < 1.10:
+        if dense_destructive_articulation_below_floor(metrics):
             add_fix_category(
                 categories,
                 reasons,
                 "destructive_articulation",
-                "pressure lift is close to the live-gesture impact floor",
+                "dense pressure lift is below the live-gesture articulation floor",
             )
     elif source_family == "non_dense_break":
         if answer_role_below_floor(metrics, min_scripted_distance=2.0):
@@ -158,6 +158,10 @@ def dense_answer_bite_below_floor(metrics: dict[str, Any]) -> bool:
         or number(metrics.get("dense_answer_bite_pressure_snap_ratio")) < 1.06
         or number(metrics.get("dense_answer_bite_score")) < 1.0
     )
+
+
+def dense_destructive_articulation_below_floor(metrics: dict[str, Any]) -> bool:
+    return number(metrics.get("pressure_lift_bar5_to_bar4_rms_ratio")) < 1.10
 
 
 def answer_role_below_floor(

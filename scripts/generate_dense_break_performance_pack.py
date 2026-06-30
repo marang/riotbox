@@ -2075,8 +2075,8 @@ def pressure_lift_policy_for(
             break_snap_drive=1.22,
             mc202_drive=1.02,
             bass_drive=1.00,
-            bar4_intensity=0.94,
-            bar5_intensity=1.110,
+            bar4_intensity=0.92,
+            bar5_intensity=1.18,
             bar4_bass_frequency_hz=38.0,
             bar5_bass_frequency_hz=45.0,
         )
