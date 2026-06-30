@@ -1310,4 +1310,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Make TR-909 a source-derived differentiated drum lane
 - [RIOTBOX-1341.md](./RIOTBOX-1341.md)
   P023: Strengthen MC-202 source-expression role in rendered motifs
+- [RIOTBOX-1342.md](./RIOTBOX-1342.md)
+  P023: Route MC-202 listening weaknesses into producer-grade fix candidates
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
