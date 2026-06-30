@@ -1316,4 +1316,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Record structured MC-202 human verdicts for demo-bank promotion
 - [RIOTBOX-1344.md](./RIOTBOX-1344.md)
   P023: Strengthen sparse MC-202 bass movement from producer fix routing
+- [RIOTBOX-1345.md](./RIOTBOX-1345.md)
+  P023: Strengthen dense MC-202 answer bite from producer fix routing
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
