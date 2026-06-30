@@ -280,6 +280,12 @@ chain is:
    - Primitive/template-only MC-202 candidates remain blockers and production
      fix inputs. They cannot be counted as producer-grade proof, even when the
      render and source-composed pack are otherwise green.
+   - RIOTBOX-1342 adds MC-202 producer fix routing to that closeout gate.
+     Every weak or still-unverified review candidate must expose a concrete
+     next fix category such as `bass_movement`, `answer_bite`,
+     `hook_restraint`, `source_selection`, `mix_bus`,
+     `destructive_articulation`, or `human_listening`, with the exact WAV
+     artifact, software next step, musician payoff, and `quality_proof: false`.
 
 This chain is deliberately allowed to take multiple PRs. The quality standard
 does not shrink to fit a slice boundary: a merged slice can be useful

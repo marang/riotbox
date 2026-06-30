@@ -86,6 +86,20 @@ Status: accepted
 
 ---
 
+### RBX-094
+
+Date: 2026-06-30
+Topic: MC-202 closeout must route weak or unverified candidates into producer fix work
+Phase: P023 Sound Excellence / MC-202 Producer-Grade Track
+Question: what should happen when MC-202 candidates are source-composed and technically reviewable but still lack human verdicts or expose weak margins?
+Decision: the MC-202 producer-grade closeout report now emits per-candidate `mc202_producer_fix_route` fields and aggregate `mc202_producer_fix_candidates`. Routes cover `bass_movement`, `answer_bite`, `hook_restraint`, `source_selection`, `mix_bus`, `destructive_articulation`, and `human_listening`, each with exact artifact refs, software next step, musician payoff, and quality-proof boundaries.
+Why: a green technical closeout can still leave the product unclear if weak or unverified musical results become prose notes. P023 needs a machine-readable path from review candidates to the next implementation work, without pretending unverified/scripted diagnostics are producer-grade proof.
+Evidence: RIOTBOX-1342 extends `scripts/generate_mc202_producer_grade_closeout.py`, its mutation fixtures, and the MC-202 plan. The closeout smoke now rejects missing/stale fix routes, quality-proof claims, invalid categories, and stale summaries while keeping `quality_proof: false` and `automated_musical_approval: false`.
+Consequences: future MC-202 review and demo-bank work should consume these fix candidates before creating free-form follow-up tickets. Human listening remains the promotion gate; producer fix candidates are work-selection evidence, not musical approval.
+Status: accepted
+
+---
+
 ### RBX-061
 
 Date: 2026-05-31
