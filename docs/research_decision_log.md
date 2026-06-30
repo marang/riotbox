@@ -128,6 +128,20 @@ Status: accepted
 
 ---
 
+### RBX-097
+
+Date: 2026-06-30
+Topic: Dense MC-202 answer bite is a measured producer floor
+Phase: P023 Sound Excellence / MC-202 Producer-Grade Track
+Question: should dense-break MC-202 candidates route to `answer_bite` just because they are dense break sources?
+Decision: no. Dense-break MC-202 output now exposes `dense_answer_bite_*` proof for source-derived answer placement, scripted-role distance, stab score, stab margin, pressure snap, and aggregate bite score. Producer routing emits `answer_bite` only when those metrics are weak; otherwise dense candidates can move on to the next concrete fix category.
+Why: a musician needs the MC-202 answer to cut back at the break with a memorable shove or stab, not merely satisfy a generic pressure-answer role. The software also needs to distinguish "answer still too polite/template-like" from "answer is good enough; now fix live gesture articulation or listen".
+Evidence: RIOTBOX-1345 changes dense arrangement selection to keep the opening hook stable while placing pressure/answer bars from source-ranked non-scripted evidence, adds Dense Answer Bite proof and mutation coverage, hardens the pro-pressure matrix and professional-output suite contracts, and removes the unconditional dense `answer_bite` producer route.
+Consequences: future dense-break MC-202 quality work should route to `answer_bite` only when the measured bite floor fails. Passing automated answer-bite metrics still do not claim human listening approval; `human_verdict` remains `unverified` until structured review is recorded.
+Status: accepted
+
+---
+
 ### RBX-061
 
 Date: 2026-05-31

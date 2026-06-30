@@ -296,6 +296,12 @@ chain is:
      ranks bars from source low-band / timing / transient evidence, but expands
      the selected pressure/restore frequencies far enough that the musician
      hears bass pressure movement rather than a polite midrange trace.
+   - RIOTBOX-1345 turns dense MC-202 `answer_bite` from a default routing
+     category into a measured producer floor. Dense break arrangements keep
+     the opening hook stable, place pressure/answer bars from source-ranked
+     non-scripted evidence, and expose bite, stab, snap, and scripted-distance
+     metrics before the producer router decides whether `answer_bite` still
+     needs work.
 
 This chain is deliberately allowed to take multiple PRs. The quality standard
 does not shrink to fit a slice boundary: a merged slice can be useful

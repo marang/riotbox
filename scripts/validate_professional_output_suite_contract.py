@@ -40,6 +40,11 @@ MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 1.70
 MIN_SPARSE_PRESSURE_LOW_BAND_SHARE = 0.28
 MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO = 2.10
 MIN_SPARSE_BASS_DOMINANCE_MARGIN = 0.12
+MIN_DENSE_ANSWER_SCRIPTED_ROLE_DISTANCE = 3.0
+MIN_DENSE_ANSWER_STAB_SCORE = 1.65
+MIN_DENSE_ANSWER_STAB_MARGIN = 0.15
+MIN_DENSE_ANSWER_PRESSURE_SNAP_RATIO = 1.06
+MIN_DENSE_ANSWER_BITE_SCORE = 1.0
 MAX_DESTRUCTIVE_DROPOUT_TO_STUTTER_RMS_RATIO = 0.10
 MAX_DESTRUCTIVE_DROPOUT_SILENCE_TO_STUTTER_RMS_RATIO = 0.08
 MIN_DESTRUCTIVE_STUTTER_TO_HOOK_TRANSIENT_RATIO = 1.20
@@ -840,6 +845,12 @@ def validate_arrangement_metrics(
     require(number(dense.get("arrangement_role_order_source_derived")) == 1.0, "dense_arrangement_not_source_derived", failures)
     require(number(dense.get("arrangement_role_candidate_count")) >= 6.0, "dense_arrangement_candidate_count_too_low", failures)
     require(number(dense.get("arrangement_scripted_role_distance")) >= 1.0, "dense_arrangement_scripted_distance_too_low", failures)
+    require(number(dense.get("dense_answer_bite_source_derived")) == 1.0, "dense_answer_bite_not_source_derived", failures)
+    require(number(dense.get("dense_answer_bite_scripted_role_distance")) >= MIN_DENSE_ANSWER_SCRIPTED_ROLE_DISTANCE, "dense_answer_bite_scripted_distance_too_low", failures)
+    require(number(dense.get("dense_answer_bite_stab_score")) >= MIN_DENSE_ANSWER_STAB_SCORE, "dense_answer_bite_stab_score_too_low", failures)
+    require(number(dense.get("dense_answer_bite_stab_margin")) >= MIN_DENSE_ANSWER_STAB_MARGIN, "dense_answer_bite_stab_margin_too_low", failures)
+    require(number(dense.get("dense_answer_bite_pressure_snap_ratio")) >= MIN_DENSE_ANSWER_PRESSURE_SNAP_RATIO, "dense_answer_bite_snap_too_soft", failures)
+    require(number(dense.get("dense_answer_bite_score")) >= MIN_DENSE_ANSWER_BITE_SCORE, "dense_answer_bite_score_too_low", failures)
     require(number(matrix.get("min_source_derived_arrangement_role_candidate_count")) >= 6.0, "matrix_arrangement_candidate_count_too_low", failures)
     require(number(matrix.get("min_source_derived_arrangement_scripted_role_distance")) >= 1.0, "matrix_arrangement_scripted_distance_too_low", failures)
     require(number(source_wav.get("min_source_derived_arrangement_role_candidate_count")) >= 6.0, "source_wav_arrangement_candidate_count_too_low", failures)

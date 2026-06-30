@@ -533,6 +533,24 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             "arrangement_scripted_role_distance": number(
                 proof.get("arrangement_scripted_role_distance")
             ),
+            "dense_answer_bite_source_derived": number(
+                proof.get("dense_answer_bite_source_derived")
+            ),
+            "dense_answer_bite_scripted_role_distance": number(
+                proof.get("dense_answer_bite_scripted_role_distance")
+            ),
+            "dense_answer_bite_stab_score": number(
+                proof.get("dense_answer_bite_stab_score")
+            ),
+            "dense_answer_bite_stab_margin": number(
+                proof.get("dense_answer_bite_stab_margin")
+            ),
+            "dense_answer_bite_pressure_snap_ratio": number(
+                proof.get("dense_answer_bite_pressure_snap_ratio")
+            ),
+            "dense_answer_bite_score": number(
+                proof.get("dense_answer_bite_score")
+            ),
             "mix_treatment_source_derived": number(
                 proof.get("mix_treatment_source_derived")
             ),

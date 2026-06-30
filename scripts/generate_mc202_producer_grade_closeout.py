@@ -177,6 +177,8 @@ def mc202_role_evidence(source_family: str, metrics: dict[str, Any]) -> dict[str
     elif source_family in {"dense_break", "non_dense_break"}:
         role = "pressure_answer"
         failure_codes = answer_role_failure_codes(metrics, min_scripted_distance=2.0)
+        if source_family == "dense_break":
+            failure_codes.extend(dense_answer_bite_failure_codes(metrics))
         reason = "MC-202 reinforces the break with source-derived pressure/answer movement."
     else:
         role = "unsupported_source_family"
@@ -205,6 +207,23 @@ def answer_role_failure_codes(metrics: dict[str, Any], *, min_scripted_distance:
         failures.append("answer_role_mc202_too_weak")
     if number(metrics.get("pressure_low_band_lift_ratio")) < 1.50:
         failures.append("answer_role_pressure_lift_too_weak")
+    return failures
+
+
+def dense_answer_bite_failure_codes(metrics: dict[str, Any]) -> list[str]:
+    failures = []
+    if number(metrics.get("dense_answer_bite_source_derived")) < 1.0:
+        failures.append("dense_answer_bite_not_source_derived")
+    if number(metrics.get("dense_answer_bite_scripted_role_distance")) < 3.0:
+        failures.append("dense_answer_bite_too_close_to_scripted_template")
+    if number(metrics.get("dense_answer_bite_stab_score")) < 1.65:
+        failures.append("dense_answer_bite_stab_too_weak")
+    if number(metrics.get("dense_answer_bite_stab_margin")) < 0.15:
+        failures.append("dense_answer_bite_stab_margin_too_low")
+    if number(metrics.get("dense_answer_bite_pressure_snap_ratio")) < 1.06:
+        failures.append("dense_answer_bite_snap_too_soft")
+    if number(metrics.get("dense_answer_bite_score")) < 1.0:
+        failures.append("dense_answer_bite_score_too_low")
     return failures
 
 
