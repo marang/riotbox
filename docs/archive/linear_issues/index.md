@@ -1308,4 +1308,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Add offline/realtime render parity seam
 - [RIOTBOX-1331.md](./RIOTBOX-1331.md)
   P023: Make TR-909 a source-derived differentiated drum lane
+- [RIOTBOX-1341.md](./RIOTBOX-1341.md)
+  P023: Strengthen MC-202 source-expression role in rendered motifs
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
