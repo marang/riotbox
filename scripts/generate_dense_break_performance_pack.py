@@ -401,7 +401,7 @@ def main() -> int:
             maximum_gain=w30_maximum_gain,
         ),
     )
-    mc202_gain = 1.90 if source_family_probe == "tonal_hook" else 1.35
+    mc202_gain = 2.20 if source_family_probe == "tonal_hook" else 1.35
     mc202 = apply_gain(mc202[:frame_count], mc202_gain)
 
     bar_frames = frames_for_beats(args.bpm, BEATS_PER_BAR)

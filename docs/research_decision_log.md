@@ -156,6 +156,20 @@ Status: accepted
 
 ---
 
+### RBX-100
+
+Date: 2026-06-30
+Topic: Tonal MC-202 mix-bus balance is a measured support floor
+Phase: P023 Sound Excellence / MC-202 Producer-Grade Track
+Question: when should tonal-hook MC-202 candidates keep routing to `mix_bus` after hook restraint clears?
+Decision: tonal-hook `mix_bus` routing remains only when measured MC-202 support is too buried against the W-30 hook. The professional source WAV pack and suite now expose `tonal_mix_bus_mc202_to_w30_rms_ratio`, and the producer router continues to use a 0.20 floor for tonal `mc202_to_w30_rms_ratio`.
+Why: tonal material needs the W-30 riff/stab to stay recognizable, but the MC-202 answer must still be audible as a supporting role. A hidden closeout-only ratio made it too easy to remove routing without proving the musician can hear the MC-202 role.
+Evidence: RIOTBOX-1348 raises tonal `mc202_to_w30_rms_ratio` for `tonal_rusharp_120` from `0.180` to `0.208`, keeps `w30_to_source_rms_ratio` at `0.334`, keeps the W-30 hook margin at `0.114`, keeps the strongest tonal element as `stab`, and leaves `rebuild_only_source_character_survival_score` at `0.848`. The MC-202 producer closeout now drops `mix_bus` and routes only to `human_listening`.
+Consequences: future tonal mix work must not silence the W-30 hook to inflate MC-202 audibility. Passing this floor is still automated producer-routing evidence only; `quality_proof` remains false and `human_verdict` remains `unverified` until structured listening review accepts the candidate.
+Status: accepted
+
+---
+
 ### RBX-099
 
 Date: 2026-06-30

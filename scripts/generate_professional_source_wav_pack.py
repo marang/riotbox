@@ -27,6 +27,7 @@ MIN_HOOK_CHOP_RIFF_VELOCITY_SPAN = 0.20
 MIN_HOOK_CHOP_RIFF_REVERSE_COUNT = 1.0
 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR = 0.60
 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN = 0.10
+MIN_TONAL_MC202_TO_W30_RMS_RATIO = 0.20
 MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES = 256.0
 MIN_DESTRUCTIVE_OFFSET_DISTANCE_FRAMES = 512.0
 MIN_MIX_TREATMENT_FIXED_DISTANCE = 0.08
@@ -239,6 +240,7 @@ def render_case(repo: Path, output: Path, date: str, case: dict) -> dict:
             "w30_to_source_rms_ratio": proof["w30_to_source_rms_ratio"],
             "hook_chop_w30_to_source_margin": proof["hook_chop_w30_to_source_margin"],
             "full_to_source_rms_ratio": proof["full_to_source_rms_ratio"],
+            "mc202_to_w30_rms_ratio": proof["mc202_to_w30_rms_ratio"],
             "hook_to_source_transient_ratio": proof["hook_to_source_transient_ratio"],
             "pressure_low_band_lift_ratio": proof["pressure_low_band_lift_ratio"],
             "pressure_to_hook_rms_ratio": proof["pressure_to_hook_rms_ratio"],
@@ -413,6 +415,8 @@ def family_failure_codes(source_family: str, proof: dict, metrics: dict) -> list
             failures.append("tonal_hook_lacks_source_transient")
         if proof["pressure_to_hook_rms_ratio"] < 1.05:
             failures.append("tonal_pressure_support_too_buried")
+        if proof["mc202_to_w30_rms_ratio"] < MIN_TONAL_MC202_TO_W30_RMS_RATIO:
+            failures.append("tonal_mc202_support_too_buried")
     elif source_family == "sparse_bass_pressure":
         if proof["pressure_to_hook_rms_ratio"] < 1.30:
             failures.append("sparse_pressure_not_stronger_than_hook")
@@ -604,6 +608,8 @@ def validate_tonal_case(prefix: str, proof: dict[str, Any], failures: list[str])
         failures.append(f"{prefix}:tonal_w30_source_chop_too_weak")
     if number(proof.get("hook_chop_w30_to_source_margin")) < MIN_PROFESSIONAL_W30_TO_SOURCE_MARGIN:
         failures.append(f"{prefix}:tonal_w30_source_chop_margin_too_low")
+    if number(proof.get("mc202_to_w30_rms_ratio")) < MIN_TONAL_MC202_TO_W30_RMS_RATIO:
+        failures.append(f"{prefix}:tonal_mc202_support_too_buried")
     if number(proof.get("hook_chop_riff_unique_source_offset_count")) < MIN_HOOK_CHOP_RIFF_UNIQUE_SOURCE_OFFSET_COUNT:
         failures.append(f"{prefix}:hook_chop_riff_source_offsets_too_narrow")
     if number(proof.get("hook_chop_riff_hit_pattern_source_derived")) < 1.0:
@@ -655,6 +661,7 @@ def is_tonal_professional_case(case: dict[str, Any]) -> bool:
         and number(proof.get("hook_chop_static_distance_frames")) >= MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES
         and number(proof.get("hook_chop_offset_distance_frames")) >= MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES
         and number(proof.get("w30_to_source_rms_ratio")) >= MIN_PROFESSIONAL_W30_TO_SOURCE_RMS_RATIO
+        and number(proof.get("mc202_to_w30_rms_ratio")) >= MIN_TONAL_MC202_TO_W30_RMS_RATIO
         and number(proof.get("hook_chop_riff_unique_source_offset_count")) >= MIN_HOOK_CHOP_RIFF_UNIQUE_SOURCE_OFFSET_COUNT
         and number(proof.get("hook_chop_riff_hit_pattern_source_derived")) >= 1.0
         and number(proof.get("hook_chop_riff_hit_count")) >= MIN_HOOK_CHOP_RIFF_HIT_COUNT
@@ -724,6 +731,9 @@ def run_mutation_fixtures(report: dict[str, Any]) -> None:
             "destructive_gesture_collapsed_to_fixed_choice",
         )
     )
+
+    mutated = mutate_case_proof(report, "tonal_hook", "mc202_to_w30_rms_ratio", 0.0)
+    fixtures.append(("tonal_mc202_buried", mutated, "tonal_mc202_support_too_buried"))
 
     mutated = mutate_case_proof(report, "sparse_bass_pressure", "bass_movement_source_derived", 0.0)
     fixtures.append(("sparse_bass_not_source_derived", mutated, "sparse_bass_movement_not_source_derived"))

@@ -312,6 +312,11 @@ chain is:
      forward and source character intact while lifting MC-202 pressure enough
      that remaining producer routing can move on to `mix_bus` instead of
      reworking hook restraint.
+   - RIOTBOX-1348 turns tonal MC-202 `mix_bus` from an implicit closeout
+     warning into an explicit MC-202/W-30 support floor. The tonal source keeps
+     the W-30 stab hook forward, source character survives, and the MC-202
+     support now clears the 0.20 support-balance floor so producer routing can
+     stop asking for another mix-bus pass and leave only structured listening.
 
 This chain is deliberately allowed to take multiple PRs. The quality standard
 does not shrink to fit a slice boundary: a merged slice can be useful

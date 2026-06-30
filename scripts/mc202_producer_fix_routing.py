@@ -53,7 +53,7 @@ def route_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
                 "hook_restraint",
                 "tonal hook-restraint pressure support is below the producer floor",
             )
-        if number(metrics.get("mc202_to_w30_rms_ratio")) < 0.20:
+        if tonal_mix_bus_below_floor(metrics):
             add_fix_category(
                 categories,
                 reasons,
@@ -160,6 +160,10 @@ def dense_destructive_articulation_below_floor(metrics: dict[str, Any]) -> bool:
 
 def tonal_hook_restraint_below_floor(metrics: dict[str, Any]) -> bool:
     return number(metrics.get("pressure_low_band_lift_ratio")) < 2.20
+
+
+def tonal_mix_bus_below_floor(metrics: dict[str, Any]) -> bool:
+    return number(metrics.get("mc202_to_w30_rms_ratio")) < 0.20
 
 
 def answer_role_below_floor(
