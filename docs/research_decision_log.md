@@ -114,6 +114,20 @@ Status: accepted
 
 ---
 
+### RBX-096
+
+Date: 2026-06-30
+Topic: Sparse MC-202 bass movement uses a 12 Hz producer floor
+Phase: P023 Sound Excellence / MC-202 Producer-Grade Track
+Question: how should Riotbox respond when sparse MC-202 bass pressure is source-composed but still routed as weak bass movement?
+Decision: sparse MC-202 bass movement now targets and validates at least a 12 Hz source-derived frequency span instead of the earlier 10 Hz diagnostic floor. The policy still ranks pressure/restore bars from source low-band energy, timing centroid, and transient evidence, then expands the selected frequencies only when the source-derived span would otherwise be too narrow.
+Why: the previous `sparse_kicksnr_120` candidate was technically source-composed and bass-dominant, but the producer-fix router correctly marked it as close to the movement floor. A musician should hear bass pressure push and move, not merely a polite line that barely satisfies old diagnostics.
+Evidence: RIOTBOX-1344 updates the dense/professional sparse-bass render policy, MC-202 source-composed gate, pro-pressure source-matrix smoke, producer-grade closeout, professional-output suite validator, sound-readiness validator, and MC-202 plan. The rendered proof now exposes `sparse_bass_movement_span_margin_hz` so the output path shows margin over the producer floor.
+Consequences: future sparse-bass MC-202 claims must satisfy the stronger 12 Hz floor across source-WAV, matrix, closeout, and readiness surfaces. If the source-derived policy cannot reach that floor without trusted source evidence, it should remain weak-routed rather than using fallback music.
+Status: accepted
+
+---
+
 ### RBX-061
 
 Date: 2026-05-31

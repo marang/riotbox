@@ -291,6 +291,11 @@ chain is:
      deriving demo-bank `fix_categories`; `human_listening` is dropped once a
      human verdict exists, while weak/fail verdicts preserve the concrete
      producer fix categories and remain `not_demo_ready`.
+   - RIOTBOX-1344 raises sparse MC-202 bass movement from a barely-passing
+     10 Hz diagnostic span to a 12 Hz producer floor. The sparse policy still
+     ranks bars from source low-band / timing / transient evidence, but expands
+     the selected pressure/restore frequencies far enough that the musician
+     hears bass pressure movement rather than a polite midrange trace.
 
 This chain is deliberately allowed to take multiple PRs. The quality standard
 does not shrink to fit a slice boundary: a merged slice can be useful

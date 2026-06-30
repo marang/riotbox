@@ -252,6 +252,9 @@ def render_case(
                 "sparse_bass_movement_frequency_span_hz": proof[
                     "sparse_bass_movement_frequency_span_hz"
                 ],
+                "sparse_bass_movement_span_margin_hz": proof[
+                    "sparse_bass_movement_span_margin_hz"
+                ],
                 "sparse_pressure_low_band_share": proof[
                     "sparse_pressure_low_band_share"
                 ],
