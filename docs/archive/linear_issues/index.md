@@ -1330,4 +1330,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Let MC-202 closeout consume structured listening verdict labels
 - [RIOTBOX-1351.md](./RIOTBOX-1351.md)
   P023: Strengthen W-30 hook/chop policy from weak-output routing
+- [RIOTBOX-1352.md](./RIOTBOX-1352.md)
+  P023: Strengthen bass movement from weak-output routing
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
