@@ -302,6 +302,11 @@ chain is:
      non-scripted evidence, and expose bite, stab, snap, and scripted-distance
      metrics before the producer router decides whether `answer_bite` still
      needs work.
+   - RIOTBOX-1346 strengthens dense MC-202 destructive articulation from the
+     producer routing loop. After the answer-bite floor passes, dense break
+     output pushes the second source-derived pressure bar clearly above the
+     first and the router names that as a live-gesture articulation floor
+     rather than a vague destructive-articulation bucket.
 
 This chain is deliberately allowed to take multiple PRs. The quality standard
 does not shrink to fit a slice boundary: a merged slice can be useful

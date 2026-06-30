@@ -45,6 +45,7 @@ MIN_DENSE_ANSWER_STAB_SCORE = 1.65
 MIN_DENSE_ANSWER_STAB_MARGIN = 0.15
 MIN_DENSE_ANSWER_PRESSURE_SNAP_RATIO = 1.06
 MIN_DENSE_ANSWER_BITE_SCORE = 1.0
+MIN_DENSE_DESTRUCTIVE_PRESSURE_LIFT_RATIO = 1.10
 MAX_DESTRUCTIVE_DROPOUT_TO_STUTTER_RMS_RATIO = 0.10
 MAX_DESTRUCTIVE_DROPOUT_SILENCE_TO_STUTTER_RMS_RATIO = 0.08
 MIN_DESTRUCTIVE_STUTTER_TO_HOOK_TRANSIENT_RATIO = 1.20
@@ -751,6 +752,7 @@ def validate_destructive_metrics(
     require(number(dense.get("destructive_gesture_source_derived")) == 1.0, "dense_destructive_not_source_derived", failures)
     require(number(dense.get("destructive_static_distance_frames")) >= 256.0, "dense_destructive_collapsed_to_static", failures)
     require(number(dense.get("destructive_offset_distance_frames")) >= 512.0, "dense_destructive_offset_distance_too_low", failures)
+    require(number(dense.get("dense_destructive_pressure_lift_ratio")) >= MIN_DENSE_DESTRUCTIVE_PRESSURE_LIFT_RATIO, "dense_destructive_pressure_lift_too_soft", failures)
     require(number(matrix.get("min_dense_destructive_static_distance_frames")) >= 256.0, "matrix_dense_destructive_collapsed_to_static", failures)
     require(number(matrix.get("min_dense_destructive_offset_distance_frames")) >= 512.0, "matrix_dense_destructive_offset_distance_too_low", failures)
     require(number(source_wav.get("tonal_destructive_static_distance_frames")) >= 256.0, "source_wav_tonal_destructive_collapsed_to_static", failures)

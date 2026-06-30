@@ -142,6 +142,20 @@ Status: accepted
 
 ---
 
+### RBX-098
+
+Date: 2026-06-30
+Topic: Dense MC-202 destructive articulation routes from a live-gesture floor
+Phase: P023 Sound Excellence / MC-202 Producer-Grade Track
+Question: should dense-break MC-202 candidates keep routing to `destructive_articulation` after the answer-bite floor passes?
+Decision: only when the measured dense pressure-lift articulation remains weak. Dense-break MC-202 output now pushes the second source-derived pressure bar clearly above the first and the producer router names that check as a dense destructive-articulation floor instead of a generic pressure-lift comparison.
+Why: after RIOTBOX-1345, the dense MC-202 answer was source-derived and passing, but the closeout still routed the case to destructive articulation because the live-gesture lift was just under the producer floor. A musician needs the second pressure/answer hit to feel like a room-changing shove, not merely a technically valid continuation.
+Evidence: RIOTBOX-1346 strengthens the dense pressure-lift policy from `0.94 -> 1.110` to `0.92 -> 1.18`, raising `pressure_lift_bar5_to_bar4_rms_ratio` from `1.0885` to `1.1536` while keeping Dense Answer Bite and destructive dropout/stutter gates green. The MC-202 closeout now drops `destructive_articulation` for `dense_beat03_130`; dense routes only to `human_listening`.
+Consequences: future dense-break destructive-articulation work should name the producer floor it is testing. Passing automated lift/articulation metrics still do not claim human listening approval; `human_verdict` remains `unverified` until structured review is recorded.
+Status: accepted
+
+---
+
 ### RBX-061
 
 Date: 2026-05-31
