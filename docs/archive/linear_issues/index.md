@@ -1306,4 +1306,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Add master-bus gain staging, clip/DC metrics, and limiter policy
 - [RIOTBOX-1329.md](./RIOTBOX-1329.md)
   P023: Add offline/realtime render parity seam
+- [RIOTBOX-1331.md](./RIOTBOX-1331.md)
+  P023: Make TR-909 a source-derived differentiated drum lane
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
