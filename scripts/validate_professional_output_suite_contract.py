@@ -36,6 +36,8 @@ MIN_TONAL_MIX_BUS_MC202_TO_W30_RMS_RATIO = 0.20
 MIN_HOOK_CHOP_RIFF_HIT_COUNT = 6.0
 MIN_HOOK_CHOP_RIFF_VELOCITY_SPAN = 0.20
 MIN_HOOK_CHOP_RIFF_REVERSE_COUNT = 1.0
+MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR = 0.64
+MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN = 0.10
 MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 1.75
 MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 15.00
 MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 1.70
@@ -601,12 +603,14 @@ def validate_hook_chop_metrics(
         failures,
     )
     require(
-        number(dense.get("hook_chop_source_character_score_floor")) >= 0.60,
+        number(dense.get("hook_chop_source_character_score_floor"))
+        >= MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR,
         "dense_hook_chop_source_character_too_weak",
         failures,
     )
     require(
-        number(dense.get("hook_chop_source_character_score_span")) >= 0.10,
+        number(dense.get("hook_chop_source_character_score_span"))
+        >= MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN,
         "dense_hook_chop_source_character_too_narrow",
         failures,
     )
@@ -662,12 +666,14 @@ def validate_hook_chop_metrics(
         failures,
     )
     require(
-        number(matrix.get("min_dense_hook_chop_source_character_score_floor")) >= 0.60,
+        number(matrix.get("min_dense_hook_chop_source_character_score_floor"))
+        >= MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR,
         "matrix_dense_hook_chop_source_character_too_weak",
         failures,
     )
     require(
-        number(matrix.get("min_dense_hook_chop_source_character_score_span")) >= 0.10,
+        number(matrix.get("min_dense_hook_chop_source_character_score_span"))
+        >= MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN,
         "matrix_dense_hook_chop_source_character_too_narrow",
         failures,
     )
@@ -735,12 +741,14 @@ def validate_hook_chop_metrics(
         failures,
     )
     require(
-        number(source_wav.get("tonal_hook_chop_source_character_score_floor")) >= 0.60,
+        number(source_wav.get("tonal_hook_chop_source_character_score_floor"))
+        >= MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR,
         "source_wav_tonal_hook_chop_source_character_too_weak",
         failures,
     )
     require(
-        number(source_wav.get("tonal_hook_chop_source_character_score_span")) >= 0.10,
+        number(source_wav.get("tonal_hook_chop_source_character_score_span"))
+        >= MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN,
         "source_wav_tonal_hook_chop_source_character_too_narrow",
         failures,
     )

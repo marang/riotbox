@@ -114,6 +114,20 @@ Status: accepted
 
 ---
 
+### RBX-109
+
+Date: 2026-07-01
+Topic: Tonal hook/chop replacement must preserve source-character floor
+Phase: P023 Sound Excellence / Production Quality
+Question: how should routed `chop_policy` fixes improve hook/riff quality when the W-30 level floor already passes?
+Decision: dense-break and tonal-hook professional diagnostics must require `hook_chop_source_character_score_floor >= 0.64`. Tonal hook/chop replacement may not replace an already selected source-character floor with a weaker grain merely to widen source-character span.
+Why: weak-output routing still names `chop_policy`, and the tonal case was technically passing but barely above the old source-character floor (`0.608`). The product goal is not louder generic support; the first two bars need a source-backed hook/riff with enough character to be worth triggering again.
+Evidence: RIOTBOX-1358 changes the tonal replacement guard in the dense-break performance generator, raises the hook-forward floor in the generator, professional source-WAV pack, and professional-output suite contract, and passes `just professional-source-wav-pack-smoke`, `just pro-pressure-source-matrix-smoke`, and `just professional-output-suite-smoke`. The tonal source-WAV case reports `hook_chop_source_character_score_floor=0.644205`, `hook_chop_source_character_score_span=0.101409`, and `hook_to_source_transient_ratio=4.981806`; dense remains above the floor at `0.771178`.
+Consequences: future hook/chop work should prefer better source-backed grain selection and transformation over simple gain boosts. These diagnostics remain scripted, `quality_proof: false`, and `human_verdict: unverified`.
+Status: accepted
+
+---
+
 ### RBX-092
 
 Date: 2026-06-30
