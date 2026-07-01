@@ -82,9 +82,9 @@ MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO = 2.10
 MIN_HOOK_CHOP_SELECTION_CANDIDATES = 3
 MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES = 256.0
 MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES = 512.0
-MIN_HOOK_CHOP_RIFF_SOURCE_OFFSETS = 4
-MIN_HOOK_CHOP_RIFF_HIT_COUNT = 7
-MIN_HOOK_CHOP_RIFF_VELOCITY_SPAN = 0.20
+MIN_HOOK_CHOP_RIFF_SOURCE_OFFSETS = 6
+MIN_HOOK_CHOP_RIFF_HIT_COUNT = 10
+MIN_HOOK_CHOP_RIFF_VELOCITY_SPAN = 0.25
 MIN_HOOK_CHOP_RIFF_REVERSE_COUNT = 2
 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR = 0.64
 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN = 0.10
@@ -793,7 +793,7 @@ def source_derived_riff_starts(
     source_family: str,
     min_separation: int,
 ) -> tuple[int, ...]:
-    target_count = 5 if source_family in SOURCE_FAMILIES_HOOK_FORWARD else 4
+    target_count = 6 if source_family in SOURCE_FAMILIES_HOOK_FORWARD else 4
     starts: list[int] = []
     for start in (hook_start, chop_start):
         if start not in starts:
@@ -920,7 +920,7 @@ def source_derived_riff_hit_pattern(
         SOURCE_FAMILY_DENSE_BREAK: 0.00,
         SOURCE_FAMILY_SPARSE_BASS_PRESSURE: 0.50,
     }.get(source_family, 0.25)
-    max_hits = 10 if source_family in SOURCE_FAMILIES_HOOK_FORWARD else 8
+    max_hits = 12 if source_family in SOURCE_FAMILIES_HOOK_FORWARD else 8
     min_reverse_count = 2 if source_family in SOURCE_FAMILIES_HOOK_FORWARD else 1
     hits: list[tuple[float, float, bool]] = []
     for index, start in enumerate(riff_starts):
@@ -2197,8 +2197,8 @@ def render_performance(
     hook_tr909_gain = 0.76 if dense_drum_snap else (0.96 if bad_timing_cue_path else 0.62)
     chop_tr909_gain = 0.98 if dense_drum_snap else (1.15 if bad_timing_cue_path else 0.78)
     pressure_tr909_base = 2.62 if dense_drum_snap else (2.10 if sparse_bass_path else 2.28)
-    hook_break_snap_boost = 1.24 if dense_drum_snap else (1.39 if bad_timing_cue_path else 1.0)
-    chop_break_snap_boost = 1.28 if dense_drum_snap else (1.46 if bad_timing_cue_path else 1.0)
+    hook_break_snap_boost = 1.30 if dense_drum_snap else (1.39 if bad_timing_cue_path else 1.0)
+    chop_break_snap_boost = 1.34 if dense_drum_snap else (1.46 if bad_timing_cue_path else 1.0)
     hook_break_snap_gain = mix_policy.hook_break_snap_gain * hook_break_snap_boost
     chop_break_snap_gain = mix_policy.chop_break_snap_gain * chop_break_snap_boost
     pressure_break_snap_gain = mix_policy.pressure_break_snap_gain * (
@@ -3353,7 +3353,7 @@ def render_w30_hook_riff_layer(
             if end > target:
                 layer[target:end] += stab[: end - target] * gain * bar_gain
     family_gain = {
-        SOURCE_FAMILY_DENSE_BREAK: 0.88,
+        SOURCE_FAMILY_DENSE_BREAK: 0.72,
         SOURCE_FAMILY_TONAL_HOOK: 1.08,
         SOURCE_FAMILY_SPARSE_BASS_PRESSURE: 1.0,
     }.get(source_family, 1.0)

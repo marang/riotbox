@@ -128,6 +128,20 @@ Status: accepted
 
 ---
 
+### RBX-111
+
+Date: 2026-07-01
+Topic: W-30 hook/chop diversity must increase without masking drum pressure
+Phase: P023 Sound Excellence / Production Quality
+Question: how should routed `chop_policy` fixes prove the first two bars are a source-derived riff instead of a repeated chop?
+Decision: hook-forward generated diagnostics must require at least six source offsets, ten riff hits, and `hook_chop_riff_velocity_span >= 0.25`. The dense-break generator targets six source-derived riff starts and up to twelve source-derived hits, but trims dense W-30 riff-layer gain so richer chop density does not mask snare/break pressure.
+Why: after RIOTBOX-1359, weak-output routing still named `chop_policy` as the top category and specifically called out too few W-30 trigger patterns, too few unique source offsets, flat accent dynamics, weak dominance, and missing response signature. Simply making W-30 louder would hide drum pressure; the fix needs more source-backed riff movement while preserving the physical snare/break hit.
+Evidence: RIOTBOX-1360 raises the generator and professional Source-WAV / Matrix / Suite gates. Current suite evidence reports dense/matrix `hook_chop_riff_unique_source_offset_count=6`, `hook_chop_riff_hit_count=12`, `hook_chop_riff_velocity_span=0.576`, `hook_chop_w30_to_source_margin=0.126`, and `dense_break_snare_pressure_margin=0.2245`; tonal source-WAV reports `6` offsets, `12` hits, velocity span `0.536`, and W-30/source margin `0.158`.
+Consequences: future chop-policy work should improve source-derived offset selection, hit placement, accent dynamics, and response signature before adding generic gain. These diagnostics remain scripted, `quality_proof: false`, and `human_verdict: unverified`; structured listening is still required before claiming musical approval.
+Status: accepted
+
+---
+
 ### RBX-109
 
 Date: 2026-07-01
