@@ -642,6 +642,19 @@ hook/chop/riff windows were selected from windows with enough source identity
 and enough variation across selected offsets. They are a bounded selection
 contract, not a musical pass.
 
+P023 source-character window selection also exposes
+`source_character_window_selection` in Feral grid manifests and professional
+suite/readiness summaries. A valid promotion must scan more than the requested
+window, raise the source-character score, and keep
+`rms_retention_ratio >= min_rms_retention_ratio` (`0.98` today) so the selector
+does not chase a weak transient peak. The professional suite requires at least
+three searched cases and at least one promoted case, and the readiness report
+mirrors those gates. Source-family policy may still request a longer window
+for tonal-hook or bad-timing review material when a short request would damage
+the family-specific hook/caution contract. These metrics prove source-window
+selection is active and energy-preserving; they remain diagnostic evidence with
+`quality_proof: false`.
+
 P023 Hook/Chop riff playback diagnostics also expose
 `hook_chop_riff_hit_pattern_source_derived`,
 `hook_chop_riff_hit_count`, `hook_chop_riff_velocity_span`, and

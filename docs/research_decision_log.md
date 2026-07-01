@@ -72,6 +72,20 @@ Status: accepted
 
 ---
 
+### RBX-106
+
+Date: 2026-07-01
+Topic: Source-character window promotion needs score lift and RMS retention
+Phase: P023 Sound Excellence / Production Quality
+Question: how should source-selection fixes prove they selected better source material instead of always rendering the beginning of a source or chasing a weak transient peak?
+Decision: Feral grid source-character window selection may promote a later window only after scanning the available source, improving the source-character score, and preserving source energy with `rms_retention_ratio >= 0.98`. Professional-suite/readiness gates must require searched cases and at least one promotion, while family-specific diagnostics may keep longer requested windows when a short window would damage tonal-hook or bad-timing review contracts.
+Why: prior suite runs reported source-window selection but every case scanned exactly one candidate and promoted nothing. That let source-selection blockers remain reporting artifacts instead of becoming an audible selection contract.
+Evidence: RIOTBOX-1355 adds manifest retention/search fields, opens Feral grid search over available source audio, makes dense/sparse/pad diagnostics request shorter windows where selection is useful, keeps tonal-hook and bad-timing context when needed, and validates 8 searched cases / 7 promoted cases with observed retention at or above `1.0`.
+Consequences: future source-selection work should preserve explicit search and retention evidence. Scripted diagnostic examples remain `quality_proof: false`; promotion metrics prove the selector is active and energy-preserving, not that the output has passed human musical review.
+Status: accepted
+
+---
+
 ### RBX-092
 
 Date: 2026-06-30

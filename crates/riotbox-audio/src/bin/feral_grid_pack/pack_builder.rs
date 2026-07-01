@@ -295,8 +295,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         args.source_start_seconds,
         args.source_window_seconds.min(grid.duration_seconds()),
     );
-    let source_character_search_window =
-        source.window_by_seconds(args.source_start_seconds, grid.duration_seconds());
+    let source_character_search_window = source_character_search_window(&source, args, &grid);
     let (w30_source_window, source_character_window_selection) =
         select_source_character_window(
             &source,
@@ -440,6 +439,19 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     Ok(())
+}
+
+fn source_character_search_window(
+    source: &SourceAudioCache,
+    args: &Args,
+    grid: &Grid,
+) -> SourceAudioWindow {
+    let available_seconds =
+        (source.duration_seconds() - args.source_start_seconds).max(args.source_window_seconds);
+    source.window_by_seconds(
+        args.source_start_seconds,
+        available_seconds.max(grid.duration_seconds()),
+    )
 }
 
 impl Grid {

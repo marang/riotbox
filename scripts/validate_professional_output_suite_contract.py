@@ -59,6 +59,9 @@ MIN_FERAL_SOURCE_FIRST_MASKING_HEADROOM = 0.04
 MAX_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.46
 MIN_FERAL_TR909_RENDERED_SUPPORT_CONTRIBUTION_RATIO = 0.050
 MIN_FERAL_TR909_RENDERED_LOW_BAND_RMS = 0.0030
+MIN_SOURCE_CHARACTER_WINDOW_RMS_RETENTION_RATIO = 0.98
+MIN_SOURCE_CHARACTER_WINDOW_SEARCHED_CASE_COUNT = 3
+MIN_SOURCE_CHARACTER_WINDOW_PROMOTED_CASE_COUNT = 1
 MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_MARGIN = 0.10
 
 
@@ -1039,6 +1042,25 @@ def validate_source_character_window_selection_metrics(
         failures,
     )
     require(
+        number(selection.get("searched_case_count"))
+        >= MIN_SOURCE_CHARACTER_WINDOW_SEARCHED_CASE_COUNT,
+        "source_character_window_selection_search_coverage_too_low",
+        failures,
+    )
+    require(
+        number(selection.get("promoted_case_count"))
+        >= MIN_SOURCE_CHARACTER_WINDOW_PROMOTED_CASE_COUNT,
+        "source_character_window_selection_promoted_count_too_low",
+        failures,
+    )
+    require(
+        number(selection.get("min_observed_rms_retention_ratio"))
+        + 1e-6
+        >= MIN_SOURCE_CHARACTER_WINDOW_RMS_RETENTION_RATIO,
+        "source_character_window_selection_rms_retention_too_low",
+        failures,
+    )
+    require(
         all(
             object_or_empty(case).get("has_required_source_character_window_fields") is True
             for case in cases
@@ -1061,6 +1083,17 @@ def validate_source_character_window_selection_metrics(
             for case in cases
         ),
         "source_character_window_selection_not_scanned",
+        failures,
+    )
+    require(
+        all(
+            number(object_or_empty(case).get("rms_retention_ratio"))
+            + 1e-6
+            >= number(object_or_empty(case).get("min_rms_retention_ratio"))
+            for case in cases
+            if str(object_or_empty(case).get("reason")) == "source_character_window_promoted"
+        ),
+        "source_character_window_selection_promoted_rms_retention_too_low",
         failures,
     )
     require(

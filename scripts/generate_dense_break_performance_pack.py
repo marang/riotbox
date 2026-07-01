@@ -27,6 +27,7 @@ DEFAULT_OUTPUT = Path("artifacts/audio_qa/local-dense-break-performance-pack")
 DEFAULT_DATE = "local-dense-break-performance-pack"
 DEFAULT_BPM = 130.0
 DEFAULT_BARS = 8
+SOURCE_CHARACTER_REQUEST_WINDOW_SECONDS = 1.0
 BEATS_PER_BAR = 4
 SCHEMA = "riotbox.dense_break_performance_pack.v1"
 AGENT_REVIEW_SCHEMA = "riotbox.agent_musical_review_pack.v1"
@@ -314,6 +315,11 @@ def main() -> int:
     parser.add_argument("--bpm", type=float, default=DEFAULT_BPM)
     parser.add_argument("--bars", type=int, default=DEFAULT_BARS)
     parser.add_argument("--source-start-seconds", type=float, default=0.0)
+    parser.add_argument(
+        "--source-character-request-window-seconds",
+        type=float,
+        default=SOURCE_CHARACTER_REQUEST_WINDOW_SECONDS,
+    )
     parser.add_argument("--keep-output", action="store_true")
     parser.add_argument("--validate-report", type=Path)
     parser.add_argument("--validate-agent-review", type=Path)
@@ -357,7 +363,13 @@ def main() -> int:
     available_source_window = max(0.0, wav_duration(source) - args.source_start_seconds)
     if available_source_window <= 0.0:
         raise SystemExit(f"source start exceeds source duration: {args.source_start_seconds}")
-    render_source_window_seconds = min(duration, available_source_window)
+    if args.source_character_request_window_seconds <= 0.0:
+        raise SystemExit("--source-character-request-window-seconds must be greater than zero")
+    render_source_window_seconds = min(
+        args.source_character_request_window_seconds,
+        duration,
+        available_source_window,
+    )
     render_dir = output / "_feral_grid_render"
     render_feral_grid_pack(
         repo,

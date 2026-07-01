@@ -5,6 +5,8 @@ const SOURCE_CHARACTER_MIN_RMS_RETENTION: f32 = 0.98;
 struct SourceCharacterWindowSelection {
     requested_start_seconds: f32,
     requested_duration_seconds: f32,
+    search_start_seconds: f32,
+    search_duration_seconds: f32,
     selected_start_seconds: f32,
     selected_duration_seconds: f32,
     selected_start_frame: u64,
@@ -12,6 +14,10 @@ struct SourceCharacterWindowSelection {
     requested_head_score: f32,
     selected_score: f32,
     score_lift: f32,
+    requested_head_rms: f32,
+    selected_rms: f32,
+    rms_retention_ratio: f32,
+    min_rms_retention_ratio: f32,
     scanned_candidate_count: u32,
     reason: &'static str,
 }
@@ -23,6 +29,8 @@ fn select_source_character_window(
 ) -> (SourceAudioWindow, SourceCharacterWindowSelection) {
     let requested_duration_seconds = requested.frame_count as f32 / source.sample_rate as f32;
     let requested_start_seconds = requested.start_frame as f32 / source.sample_rate as f32;
+    let search_start_seconds = search.start_frame as f32 / source.sample_rate as f32;
+    let search_duration_seconds = search.frame_count as f32 / source.sample_rate as f32;
     let candidate_frame_count = requested.frame_count.min(search.frame_count);
     if candidate_frame_count == 0 {
         return (
@@ -30,6 +38,8 @@ fn select_source_character_window(
             SourceCharacterWindowSelection {
                 requested_start_seconds,
                 requested_duration_seconds,
+                search_start_seconds,
+                search_duration_seconds,
                 selected_start_seconds: requested_start_seconds,
                 selected_duration_seconds: requested_duration_seconds,
                 selected_start_frame: requested.start_frame as u64,
@@ -37,6 +47,10 @@ fn select_source_character_window(
                 requested_head_score: 0.0,
                 selected_score: 0.0,
                 score_lift: 0.0,
+                requested_head_rms: 0.0,
+                selected_rms: 0.0,
+                rms_retention_ratio: 1.0,
+                min_rms_retention_ratio: SOURCE_CHARACTER_MIN_RMS_RETENTION,
                 scanned_candidate_count: 0,
                 reason: "source_window_empty",
             },
@@ -101,6 +115,9 @@ fn select_source_character_window(
     } else {
         requested_head_score
     };
+    let selected_rms =
+        source_character_window_rms(source, selected_window.start_frame, selected_window.frame_count);
+    let rms_retention_ratio = source_character_rms_retention_ratio(selected_rms, requested_head_rms);
     let selected_start_seconds = selected_window.start_frame as f32 / source.sample_rate as f32;
     let selected_duration_seconds = selected_window.frame_count as f32 / source.sample_rate as f32;
 
@@ -109,6 +126,8 @@ fn select_source_character_window(
         SourceCharacterWindowSelection {
             requested_start_seconds,
             requested_duration_seconds,
+            search_start_seconds,
+            search_duration_seconds,
             selected_start_seconds,
             selected_duration_seconds,
             selected_start_frame: selected_window.start_frame as u64,
@@ -116,6 +135,10 @@ fn select_source_character_window(
             requested_head_score,
             selected_score,
             score_lift: selected_score - requested_head_score,
+            requested_head_rms,
+            selected_rms,
+            rms_retention_ratio,
+            min_rms_retention_ratio: SOURCE_CHARACTER_MIN_RMS_RETENTION,
             scanned_candidate_count,
             reason: if selected_window.start_frame == requested_start {
                 "requested_source_window_kept"
@@ -124,6 +147,14 @@ fn select_source_character_window(
             },
         },
     )
+}
+
+fn source_character_rms_retention_ratio(selected_rms: f32, requested_head_rms: f32) -> f32 {
+    if requested_head_rms <= f32::EPSILON {
+        1.0
+    } else {
+        selected_rms / requested_head_rms
+    }
 }
 
 fn source_character_window_rms(
@@ -221,6 +252,9 @@ mod source_character_window_selection_tests {
         assert!(proof.score_lift >= SOURCE_CHARACTER_MIN_SCORE_LIFT);
         assert_eq!(proof.reason, "source_character_window_promoted");
         assert!(proof.selected_score > proof.requested_head_score);
+        assert!(proof.rms_retention_ratio >= proof.min_rms_retention_ratio);
+        assert!(proof.selected_rms >= proof.requested_head_rms * SOURCE_CHARACTER_MIN_RMS_RETENTION);
+        assert!(proof.search_duration_seconds > proof.requested_duration_seconds);
         assert!(proof.scanned_candidate_count >= 2);
     }
 
@@ -263,6 +297,7 @@ mod source_character_window_selection_tests {
         assert_eq!(selected.start_frame, requested.start_frame, "{proof:?}");
         assert_eq!(proof.reason, "requested_source_window_kept");
         assert_eq!(proof.score_lift, 0.0);
+        assert_eq!(proof.rms_retention_ratio, 1.0);
         assert!(proof.scanned_candidate_count >= 2);
     }
 }

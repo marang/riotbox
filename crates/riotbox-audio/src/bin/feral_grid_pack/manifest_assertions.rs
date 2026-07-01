@@ -100,6 +100,22 @@ mod manifest_assertions {
                     .as_f64()
                     .expect("source-character requested score")
         );
+        if source_character_window_selection["reason"]
+            .as_str()
+            .expect("source-character selection reason")
+            == "source_character_window_promoted"
+        {
+            assert!(
+                source_character_window_selection["rms_retention_ratio"]
+                    .as_f64()
+                    .expect("source-character RMS retention")
+                    + 1e-6
+                    >= source_character_window_selection["min_rms_retention_ratio"]
+                        .as_f64()
+                        .expect("source-character min RMS retention"),
+                "{source_character_window_selection:?}"
+            );
+        }
         assert!(
             source_character_window_selection["scanned_candidate_count"]
                 .as_u64()
