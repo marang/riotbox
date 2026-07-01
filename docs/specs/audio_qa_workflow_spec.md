@@ -703,6 +703,11 @@ The same rule applies to `destructive_gesture`: flat-stutter negative fixtures
 remain regression controls, but they should not stay current priority when
 current dropout/stutter silence, stutter transient, and restore-impact gates
 all pass.
+The same rule applies to `mix_bus`: source-masked or support-buried negative
+fixtures remain regression controls, but they should not stay current priority
+when current professional-suite generated support is loud enough, source-first
+masking stays below the ceiling, masking headroom stays above the floor, and
+support never overwhelms the source.
 This preserves regression controls without letting old hookless examples hide
 the instrument's current audible state.
 

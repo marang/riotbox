@@ -1018,6 +1018,12 @@ following:
   stutter transient, and restore-impact gates pass. This keeps implementation
   pointed at the next current audible product gap instead of old static cut
   controls.
+- RIOTBOX-1367 extends that reconciliation to `mix_bus`: stale source-masked or
+  support-buried weak fixtures remain regression controls, but readiness must
+  mark mix bus as stale fixture-only when current professional-suite generated
+  support is present, source-first masking has enough headroom, and support does
+  not overwhelm the source. This prevents old mix controls from hiding the next
+  current product gap.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue
