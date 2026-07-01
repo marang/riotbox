@@ -53,6 +53,7 @@ DEFAULT_CASES = [
         "source_family": "tonal_hook",
         "source": "data/test_audio/examples/DH_RushArp_120_A.wav",
         "bpm": 120.0,
+        "source_character_request_window_seconds": 4.0,
     },
     {
         "case_id": "sparse_kicksnr_120",
@@ -175,6 +176,14 @@ def render_case(repo: Path, output: Path, date: str, case: dict) -> dict:
         "--date",
         f"{date}-{case['case_id']}",
     ]
+    request_window_seconds = case.get("source_character_request_window_seconds")
+    if request_window_seconds is not None:
+        command.extend(
+            [
+                "--source-character-request-window-seconds",
+                f"{float(request_window_seconds):.6f}",
+            ]
+        )
     result = subprocess.run(
         command,
         cwd=repo,

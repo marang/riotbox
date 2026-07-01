@@ -460,8 +460,14 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
         "source_character_window_selection": {
             "result": str(source_character_window_selection.get("result") or ""),
             "case_count": int(number(source_character_window_selection.get("case_count"))),
+            "searched_case_count": int(
+                number(source_character_window_selection.get("searched_case_count"))
+            ),
             "promoted_case_count": int(
                 number(source_character_window_selection.get("promoted_case_count"))
+            ),
+            "min_observed_rms_retention_ratio": number(
+                source_character_window_selection.get("min_observed_rms_retention_ratio")
             ),
             "max_selected_start_seconds": number(
                 source_character_window_selection.get("max_selected_start_seconds")
@@ -861,8 +867,19 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             failures,
         )
         check(
-            number(source_character_window.get("promoted_case_count")) >= 0,
-            "professional_suite_source_character_window_selection_promoted_count_invalid",
+            number(source_character_window.get("searched_case_count")) >= 3,
+            "professional_suite_source_character_window_selection_search_coverage_too_low",
+            failures,
+        )
+        check(
+            number(source_character_window.get("promoted_case_count")) >= 1,
+            "professional_suite_source_character_window_selection_promoted_count_too_low",
+            failures,
+        )
+        check(
+            number(source_character_window.get("min_observed_rms_retention_ratio")) + 1e-6
+            >= 0.98,
+            "professional_suite_source_character_window_selection_rms_retention_too_low",
             failures,
         )
         check(
@@ -1312,8 +1329,10 @@ def markdown_report(report: dict[str, Any]) -> str:
                 "- Source-window selection: "
                 f"`{source_character_window.get('result')}`, cases "
                 f"`{source_character_window.get('case_count')}`, promoted "
-                f"`{source_character_window.get('promoted_case_count')}`, max lift "
-                f"`{source_character_window.get('max_score_lift')}`"
+                f"`{source_character_window.get('promoted_case_count')}`, searched "
+                f"`{source_character_window.get('searched_case_count')}`, min RMS retention "
+                f"`{source_character_window.get('min_observed_rms_retention_ratio')}`, "
+                f"max lift `{source_character_window.get('max_score_lift')}`"
             ),
             (
                 "- Drum pressure: "

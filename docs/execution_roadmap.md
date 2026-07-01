@@ -813,6 +813,15 @@ following:
   `hook_chop_w30_to_source_margin >= 0.10`, and the source-derived W-30/riff
   render path is pushed forward so the first two bars read as a hook instead of
   background support.
+- RIOTBOX-1355 turns source-selection blockers into an active
+  source-character window-selection contract: Feral grid packs now report
+  search duration, selected RMS, requested RMS, retention ratio, and minimum
+  retention; professional-suite/readiness gates require real searched cases,
+  at least one promotion, and `0.98` RMS retention for promoted windows. The
+  dense/break and sparse/pad diagnostic paths may request short source windows
+  so Riotbox can choose stronger source material, while tonal-hook and
+  bad-timing review paths can keep longer context when that preserves their
+  family-specific hook/caution contract.
 - RIOTBOX-1301 tightens MC-202 source-composed bass movement proof at the
   render seam: SubPressureShove projection now carries bass body from the
   stored source-expression low-band contour / pressure evidence, pressure-vs-

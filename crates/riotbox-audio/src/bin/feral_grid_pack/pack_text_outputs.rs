@@ -19,7 +19,7 @@ fn write_report(
              - Total frames: `{}`\n\
              - Duration seconds: `{:.6}`\n\
              {}\
-             - Source-character window selection: `{}` selected `{:.3}s` for `{:.3}s` score `{:.6}` lift `{:.6}` scanned `{}` candidates\n\
+             - Source-character window selection: `{}` selected `{:.3}s` for `{:.3}s` score `{:.6}` lift `{:.6}` RMS retention `{:.6}` scanned `{}` candidates\n\
              - TR-909 source reason: `{}`\n\
              - TR-909 support profile: `{}` / pattern `{}` / phrase `{}`\n\
              - TR-909 groove timing: `{}` applied `{}` offset `{:.3}` ms subdivision `{}`\n\
@@ -70,6 +70,7 @@ fn write_report(
                 .selected_duration_seconds,
             report.source_character_window_selection.selected_score,
             report.source_character_window_selection.score_lift,
+            report.source_character_window_selection.rms_retention_ratio,
             report
                 .source_character_window_selection
                 .scanned_candidate_count,

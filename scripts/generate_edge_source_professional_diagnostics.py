@@ -54,6 +54,7 @@ CASES = [
         "expected_timing_confidence": "candidate_ambiguous",
         "expected_grid_use": "manual_confirm_only",
         "expected_policy_risk": "ambiguous downbeat material must route to timing/UI confirmation before bar-locked moves",
+        "source_character_request_window_seconds": 4.0,
     },
 ]
 
@@ -221,24 +222,33 @@ def render_case(
     )
     source_timing = read_json(source_timing_path)
     render_dir = case_dir / "render"
+    command = [
+        sys.executable,
+        "scripts/generate_dense_break_performance_pack.py",
+        "--source",
+        source,
+        "--bpm",
+        f"{bpm:.6f}",
+        "--output",
+        str(render_dir),
+        "--date",
+        f"{date}-{spec['case_id']}",
+        "--timing-confidence-result",
+        str(source_timing.get("confidence_result") or ""),
+        "--timing-grid-use",
+        str(source_timing.get("grid_use") or ""),
+    ]
+    request_window_seconds = spec.get("source_character_request_window_seconds")
+    if request_window_seconds is not None:
+        command.extend(
+            [
+                "--source-character-request-window-seconds",
+                f"{float(request_window_seconds):.6f}",
+            ]
+        )
     run_or_exit(
         repo,
-        [
-            sys.executable,
-            "scripts/generate_dense_break_performance_pack.py",
-            "--source",
-            source,
-            "--bpm",
-            f"{bpm:.6f}",
-            "--output",
-            str(render_dir),
-            "--date",
-            f"{date}-{spec['case_id']}",
-            "--timing-confidence-result",
-            str(source_timing.get("confidence_result") or ""),
-            "--timing-grid-use",
-            str(source_timing.get("grid_use") or ""),
-        ],
+        command,
         case_dir / "render.log",
     )
     performance_report_path = render_dir / "performance-report.json"

@@ -27,6 +27,9 @@ MIN_FERAL_SOURCE_FIRST_MASKING_HEADROOM = 0.04
 MAX_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.46
 MIN_FERAL_TR909_RENDERED_SUPPORT_CONTRIBUTION_RATIO = 0.050
 MIN_FERAL_TR909_RENDERED_LOW_BAND_RMS = 0.0030
+MIN_SOURCE_CHARACTER_WINDOW_RMS_RETENTION_RATIO = 0.98
+MIN_SOURCE_CHARACTER_WINDOW_SEARCHED_CASE_COUNT = 3
+MIN_SOURCE_CHARACTER_WINDOW_PROMOTED_CASE_COUNT = 1
 CHILDREN = {
     "dense_break": "riotbox.dense_break_performance_pack.v1",
     "pro_pressure_source_matrix": "riotbox.pro_pressure_source_matrix.v1",
@@ -1612,13 +1615,25 @@ def source_character_window_selection_summary(output: Path) -> dict[str, Any]:
         selected_score = selection.get("selected_score")
         scanned_count = selection.get("scanned_candidate_count")
         reason = str(selection.get("reason") or "")
+        requested_rms = selection.get("requested_head_rms")
+        selected_rms = selection.get("selected_rms")
+        retention_ratio = selection.get("rms_retention_ratio")
+        min_retention_ratio = selection.get("min_rms_retention_ratio")
+        search_duration = selection.get("search_duration_seconds")
+        selected_duration = selection.get("selected_duration_seconds")
         has_required_fields = (
             is_number(selection.get("requested_start_seconds"))
             and is_number(selection.get("selected_start_seconds"))
-            and is_number(selection.get("selected_duration_seconds"))
+            and is_number(selected_duration)
+            and is_number(selection.get("search_start_seconds"))
+            and is_number(search_duration)
             and is_number(requested_score)
             and is_number(selected_score)
             and is_number(selection.get("score_lift"))
+            and is_number(requested_rms)
+            and is_number(selected_rms)
+            and is_number(retention_ratio)
+            and is_number(min_retention_ratio)
             and is_number(scanned_count)
             and bool(reason)
         )
@@ -1635,6 +1650,12 @@ def source_character_window_selection_summary(output: Path) -> dict[str, Any]:
                 "requested_head_score": number(requested_score),
                 "selected_score": number(selected_score),
                 "score_lift": number(selection.get("score_lift")),
+                "requested_head_rms": number(requested_rms),
+                "selected_rms": number(selected_rms),
+                "rms_retention_ratio": number(retention_ratio),
+                "min_rms_retention_ratio": number(min_retention_ratio),
+                "search_start_seconds": number(selection.get("search_start_seconds")),
+                "search_duration_seconds": number(search_duration),
                 "scanned_candidate_count": int(number(scanned_count)),
                 "reason": reason,
                 "has_required_source_character_window_fields": has_required_fields,
@@ -1651,18 +1672,39 @@ def source_character_window_selection_summary(output: Path) -> dict[str, Any]:
     if any(case["scanned_candidate_count"] < 1 for case in cases):
         failures.append("source_character_window_selection_not_scanned")
     if any(
+        case["rms_retention_ratio"] + 1e-6 < case["min_rms_retention_ratio"]
+        for case in cases
+        if case["reason"] == "source_character_window_promoted"
+    ):
+        failures.append("source_character_window_selection_rms_retention_too_low")
+    if any(
         case["reason"]
         not in {"requested_source_window_kept", "source_character_window_promoted"}
         for case in cases
     ):
         failures.append("source_character_window_selection_unknown_reason")
+    searched_cases = [
+        case
+        for case in cases
+        if case["scanned_candidate_count"] >= 2
+        and case["search_duration_seconds"] > case["selected_duration_seconds"] + 1e-6
+    ]
     promoted_cases = [
         case for case in cases if case["reason"] == "source_character_window_promoted"
     ]
+    if len(searched_cases) < MIN_SOURCE_CHARACTER_WINDOW_SEARCHED_CASE_COUNT:
+        failures.append("source_character_window_selection_search_coverage_too_low")
+    if len(promoted_cases) < MIN_SOURCE_CHARACTER_WINDOW_PROMOTED_CASE_COUNT:
+        failures.append("source_character_window_selection_promoted_count_too_low")
     return {
         "result": "pass" if not failures else "fail",
         "case_count": len(cases),
+        "searched_case_count": len(searched_cases),
         "promoted_case_count": len(promoted_cases),
+        "min_required_rms_retention_ratio": MIN_SOURCE_CHARACTER_WINDOW_RMS_RETENTION_RATIO,
+        "min_observed_rms_retention_ratio": min(
+            (case["rms_retention_ratio"] for case in cases), default=0.0
+        ),
         "max_selected_start_seconds": max(
             (case["selected_start_seconds"] for case in cases), default=0.0
         ),
