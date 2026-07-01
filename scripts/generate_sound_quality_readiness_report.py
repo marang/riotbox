@@ -43,6 +43,12 @@ MIN_SPARSE_BASS_DOMINANCE_MARGIN = 0.20
 MIN_MIX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.13
 MAX_MIX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO = 0.08
 MAX_MIX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.46
+MAX_DESTRUCTIVE_DROPOUT_TO_STUTTER_RMS_RATIO = 0.0065
+MAX_DESTRUCTIVE_DROPOUT_SILENCE_TO_STUTTER_RMS_RATIO = 0.0065
+MIN_DESTRUCTIVE_STUTTER_TO_HOOK_TRANSIENT_RATIO = 1.55
+MIN_DESTRUCTIVE_RESTORE_TO_HOOK_TRANSIENT_RATIO = 1.60
+MIN_DESTRUCTIVE_RESTORE_TO_PRESSURE_RMS_RATIO = 1.36
+MIN_DESTRUCTIVE_RESTORE_TO_DROPOUT_SILENCE_RMS_RATIO = 6.00
 EXPECTED_SOURCE_SELECTION_DEMOTION_REASONS = [
     "diagnostic_only_not_quality_proof",
     "texture_review_required",
@@ -394,6 +400,7 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
     dense = metrics.get("dense_break", {})
     matrix = metrics.get("pro_pressure_source_matrix", {})
     source_wav = metrics.get("professional_source_wav_pack", {})
+    destructive = metrics.get("destructive_variation", {})
     edge = metrics.get("edge_source_professional_diagnostics", {})
     feral_mix_balance = object_or_empty(report.get("feral_mix_balance"))
     source_character_window_selection = object_or_empty(
@@ -635,6 +642,26 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
                 source_wav.get("sparse_bass_dominance_margin")
             ),
         },
+        "destructive_gesture": {
+            "dropout_to_stutter_rms_ratio": number(
+                destructive.get("dropout_to_stutter_rms_ratio")
+            ),
+            "dropout_silence_to_stutter_rms_ratio": number(
+                destructive.get("dropout_silence_to_stutter_rms_ratio")
+            ),
+            "stutter_to_hook_transient_ratio": number(
+                destructive.get("stutter_to_hook_transient_ratio")
+            ),
+            "restore_to_hook_transient_ratio": number(
+                destructive.get("restore_to_hook_transient_ratio")
+            ),
+            "restore_to_pressure_rms_ratio": number(
+                destructive.get("restore_to_pressure_rms_ratio")
+            ),
+            "restore_to_dropout_silence_rms_ratio": number(
+                destructive.get("restore_to_dropout_silence_rms_ratio")
+            ),
+        },
         "mix_balance": {
             "result": str(feral_mix_balance.get("result") or ""),
             "min_support_generated_to_source_rms_ratio": number(
@@ -732,6 +759,40 @@ def current_evidence_reconciliation(
         if bass_passed:
             stale_fixture_only_categories.append("bass_movement")
 
+    destructive_passed = destructive_gesture_current_evidence_passed(suite)
+    if "destructive_gesture" in candidate_categories:
+        category_reconciliations.append(
+            {
+                "category": "destructive_gesture",
+                "weak_evidence_role": "negative_control_fixture",
+                "current_professional_suite_status": (
+                    "current_destructive_gesture_gates_passed"
+                    if destructive_passed
+                    else "current_destructive_gesture_still_risky"
+                ),
+                "priority_state": (
+                    "stale_fixture_only_top_risk"
+                    if destructive_passed
+                    else "current_product_risk"
+                ),
+                "software_next_step": (
+                    "Use stale flat-stutter fixtures as regression controls; do not "
+                    "treat them as the current top product gap while dropout, "
+                    "stutter, and restore gesture gates pass."
+                    if destructive_passed
+                    else "Keep destructive gesture work as current product priority."
+                ),
+                "musician_payoff": (
+                    "Old flat-stutter examples stop hiding the next audible gap once "
+                    "current cut/stutter/restore gestures already hit."
+                    if destructive_passed
+                    else "Cuts, stutters, and restores still need stronger stage impact."
+                ),
+            }
+        )
+        if destructive_passed:
+            stale_fixture_only_categories.append("destructive_gesture")
+
     current_product_categories = [
         category
         for category in candidate_categories
@@ -812,6 +873,27 @@ def bass_movement_current_evidence_passed(suite: dict[str, Any]) -> bool:
         >= MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO,
         number(bass_pressure.get("source_wav_sparse_bass_dominance_margin"))
         >= MIN_SPARSE_BASS_DOMINANCE_MARGIN,
+    ]
+    return all(checks)
+
+
+def destructive_gesture_current_evidence_passed(suite: dict[str, Any]) -> bool:
+    if suite.get("available") is not True or suite.get("result") != "pass":
+        return False
+    destructive = object_or_empty(suite.get("destructive_gesture"))
+    checks = [
+        number(destructive.get("dropout_to_stutter_rms_ratio"))
+        <= MAX_DESTRUCTIVE_DROPOUT_TO_STUTTER_RMS_RATIO,
+        number(destructive.get("dropout_silence_to_stutter_rms_ratio"))
+        <= MAX_DESTRUCTIVE_DROPOUT_SILENCE_TO_STUTTER_RMS_RATIO,
+        number(destructive.get("stutter_to_hook_transient_ratio"))
+        >= MIN_DESTRUCTIVE_STUTTER_TO_HOOK_TRANSIENT_RATIO,
+        number(destructive.get("restore_to_hook_transient_ratio"))
+        >= MIN_DESTRUCTIVE_RESTORE_TO_HOOK_TRANSIENT_RATIO,
+        number(destructive.get("restore_to_pressure_rms_ratio"))
+        >= MIN_DESTRUCTIVE_RESTORE_TO_PRESSURE_RMS_RATIO,
+        number(destructive.get("restore_to_dropout_silence_rms_ratio"))
+        >= MIN_DESTRUCTIVE_RESTORE_TO_DROPOUT_SILENCE_RMS_RATIO,
     ]
     return all(checks)
 
@@ -1555,6 +1637,37 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             "current_evidence_reconciliation_bass_movement_status_missing",
             failures,
         )
+    if (
+        list_contains(weak_categories, "destructive_gesture")
+        and destructive_gesture_current_evidence_passed(suite_summary)
+    ):
+        check(
+            list_contains(
+                current_evidence.get("stale_fixture_only_categories"),
+                "destructive_gesture",
+            ),
+            "current_evidence_reconciliation_destructive_gesture_not_reconciled",
+            failures,
+        )
+        check(
+            current_evidence.get("current_product_top_candidate_category")
+            != "destructive_gesture",
+            "current_evidence_reconciliation_current_top_still_destructive_gesture",
+            failures,
+        )
+        reconciliations = list_or_empty(current_evidence.get("category_reconciliations"))
+        check(
+            any(
+                isinstance(item, dict)
+                and item.get("category") == "destructive_gesture"
+                and item.get("current_professional_suite_status")
+                == "current_destructive_gesture_gates_passed"
+                and item.get("priority_state") == "stale_fixture_only_top_risk"
+                for item in reconciliations
+            ),
+            "current_evidence_reconciliation_destructive_gesture_status_missing",
+            failures,
+        )
 
     validate_current_p023_contract(report, blockers, failures)
 
@@ -1758,6 +1871,7 @@ def markdown_report(report: dict[str, Any]) -> str:
     )
     source_selection_risk = object_or_empty(suite.get("source_selection_risk"))
     drum_pressure = object_or_empty(suite.get("drum_pressure"))
+    destructive = object_or_empty(suite.get("destructive_gesture"))
     mix_balance = object_or_empty(suite.get("mix_balance"))
     lines.extend(
         [
@@ -1795,6 +1909,19 @@ def markdown_report(report: dict[str, Any]) -> str:
                 f"`{current_evidence.get('current_product_top_candidate_category')}`, "
                 "stale controls "
                 f"`{', '.join(current_evidence.get('stale_fixture_only_categories', []))}`"
+            ),
+            (
+                "- Destructive gesture: "
+                "dropout/stutter "
+                f"`{destructive.get('dropout_to_stutter_rms_ratio')}`, "
+                "dropout-silence/stutter "
+                f"`{destructive.get('dropout_silence_to_stutter_rms_ratio')}`, "
+                "stutter/hook transient "
+                f"`{destructive.get('stutter_to_hook_transient_ratio')}`, "
+                "restore/hook transient "
+                f"`{destructive.get('restore_to_hook_transient_ratio')}`, "
+                "restore/pressure "
+                f"`{destructive.get('restore_to_pressure_rms_ratio')}`"
             ),
             (
                 "- Drum pressure: "
