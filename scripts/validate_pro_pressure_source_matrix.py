@@ -204,6 +204,15 @@ def render_case(
                 "hook_chop_source_character_score_span": proof[
                     "hook_chop_source_character_score_span"
                 ],
+                "hook_chop_response_delta_ratio": proof[
+                    "hook_chop_response_delta_ratio"
+                ],
+                "hook_chop_response_correlation": proof[
+                    "hook_chop_response_correlation"
+                ],
+                "hook_chop_response_transient_ratio": proof[
+                    "hook_chop_response_transient_ratio"
+                ],
                 "destructive_gesture_source_derived": proof[
                     "destructive_gesture_source_derived"
                 ],

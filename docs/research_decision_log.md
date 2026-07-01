@@ -156,6 +156,20 @@ Status: accepted
 
 ---
 
+### RBX-113
+
+Date: 2026-07-01
+Topic: W-30 hook/chop response must prove transformed signature, not only diversity
+Phase: P023 Sound Excellence / Production Quality
+Question: how should routed `chop_policy` fixes prove that stronger W-30 hook/chop output is a transformed response rather than a louder or more varied source copy?
+Decision: dense-break and tonal-hook professional diagnostics must expose and gate `hook_chop_response_delta_ratio`, `hook_chop_response_correlation`, and `hook_chop_response_transient_ratio`. Current gates require response delta `>= 0.35`, source-copy correlation `<= 0.92`, and response transient ratio `>= 0.58` across dense, matrix, tonal source-WAV, professional-suite, readiness, and matrix smoke surfaces. The rendered W-30 riff layer may add source-derived shifted/reversed transient response material, but dense-break must trim the hook layer enough that snare/break pressure remains the strongest element.
+Why: after RIOTBOX-1360, `chop_policy` still routed as a top production fix. Offset count, hit count, and velocity spread prove movement, but they do not by themselves reject a source copy or a hookless response. The musician-facing target is a hook/riff response worth retriggering without burying the physical break.
+Evidence: RIOTBOX-1362 passes the professional source-WAV, matrix, suite, and readiness smokes with dense/matrix response delta/correlation/transient `1.038` / `0.619` / `3.632`, tonal source-WAV response `1.085` / `0.496` / `5.529`, and dense snare margin `0.2234` above the `0.22` floor.
+Consequences: future chop-policy work should improve source-derived transformed response signature and listening verdicts before adding generic W-30 gain. These diagnostics remain scripted, `quality_proof: false`, and `human_verdict: unverified`; structured listening is still required before claiming musical approval.
+Status: accepted
+
+---
+
 ### RBX-109
 
 Date: 2026-07-01

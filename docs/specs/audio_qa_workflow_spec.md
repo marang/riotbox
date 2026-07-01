@@ -696,6 +696,14 @@ offsets, ten riff hits, and `hook_chop_riff_velocity_span >= 0.25` before the
 hook/chop path may pass. The rendered W-30 riff layer must not buy that
 diversity by masking dense-break drum pressure; dense-break diagnostics still
 require snare/break to stay the strongest element with its documented margin.
+P023 response-signature diagnostics additionally expose
+`hook_chop_response_delta_ratio`, `hook_chop_response_correlation`, and
+`hook_chop_response_transient_ratio`. Dense-break and tonal-hook reports must
+prove that the rendered hook/chop response differs audibly from a raw source
+copy while still carrying source transient attack: current floors are response
+delta `>= 0.35`, response correlation `<= 0.92`, and response transient ratio
+`>= 0.58`. These gates reject source-copy or hookless output; they remain
+scripted diagnostic evidence, not a musical approval.
 Pad/noise and bad-timing
 source families must not use this W-30
 hook/chop riff as a hidden product fallback; they use their family-specific

@@ -88,6 +88,9 @@ MIN_HOOK_CHOP_RIFF_VELOCITY_SPAN = 0.25
 MIN_HOOK_CHOP_RIFF_REVERSE_COUNT = 2
 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR = 0.64
 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN = 0.10
+MIN_HOOK_CHOP_RESPONSE_DELTA_RATIO = 0.35
+MAX_HOOK_CHOP_RESPONSE_CORRELATION = 0.92
+MIN_HOOK_CHOP_RESPONSE_TRANSIENT_RATIO = 0.58
 MIN_DESTRUCTIVE_GESTURE_CANDIDATES = 3
 MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES = 256.0
 MIN_DESTRUCTIVE_OFFSET_DISTANCE_FRAMES = 512.0
@@ -3305,9 +3308,20 @@ def render_w30_hook_riff_layer(
         if grain_end <= grain_start:
             continue
         grain = w30[grain_start:grain_end].copy()
-        grain += transient_emphasis(source[grain_start:grain_end]) * (
-            (0.40 + index * 0.06) * hook_impact
+        source_grain = source[grain_start:grain_end]
+        source_snap = transient_emphasis(source_grain)
+        shift_frames = min(
+            max(1, frames_for_seconds(0.006 + 0.002 * float(index))),
+            max(1, source_snap.shape[0] - 1),
         )
+        shifted_snap = np.roll(source_snap, shift_frames, axis=0)
+        reverse_snap = source_snap[::-1]
+        grain += source_snap * ((0.40 + index * 0.06) * hook_impact)
+        if source_family in SOURCE_FAMILIES_HOOK_FORWARD:
+            grain += shifted_snap * ((0.16 + index * 0.018) * hook_impact)
+            grain += reverse_snap * (
+                (0.07 + (0.025 if index % 2 else 0.0)) * hook_impact
+            )
         grain *= decay_envelope(
             grain.shape[0],
             attack=0.010 if index == 0 else 0.006,
@@ -3353,7 +3367,7 @@ def render_w30_hook_riff_layer(
             if end > target:
                 layer[target:end] += stab[: end - target] * gain * bar_gain
     family_gain = {
-        SOURCE_FAMILY_DENSE_BREAK: 0.72,
+        SOURCE_FAMILY_DENSE_BREAK: 0.60,
         SOURCE_FAMILY_TONAL_HOOK: 1.08,
         SOURCE_FAMILY_SPARSE_BASS_PRESSURE: 1.0,
     }.get(source_family, 1.0)
@@ -3688,6 +3702,11 @@ def build_report(
             "min_hook_chop_source_character_score_span": (
                 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN
             ),
+            "min_hook_chop_response_delta_ratio": MIN_HOOK_CHOP_RESPONSE_DELTA_RATIO,
+            "max_hook_chop_response_correlation": MAX_HOOK_CHOP_RESPONSE_CORRELATION,
+            "min_hook_chop_response_transient_ratio": (
+                MIN_HOOK_CHOP_RESPONSE_TRANSIENT_RATIO
+            ),
             "min_hook_chop_w30_to_source_margin": (
                 MIN_HOOK_FORWARD_W30_TO_SOURCE_MARGIN
             ),
@@ -3781,6 +3800,12 @@ def performance_proof(
     )
     hook_transient = transient_score(sections["chop_hook"])
     source_hook_window = source[: min(source.shape[0], sections["chop_hook"].shape[0])]
+    hook_response_delta = normalized_rms_delta(source_hook_window, sections["chop_hook"])
+    hook_response_correlation = waveform_correlation(source_hook_window, sections["chop_hook"])
+    hook_response_transient_ratio = hook_transient / max(
+        transient_score(source_hook_window),
+        1e-9,
+    )
     dropout = sections["dropout_stutter"]
     dropout_first = dropout[: dropout.shape[0] // 2]
     dropout_second = dropout[dropout.shape[0] // 2 :]
@@ -3802,6 +3827,9 @@ def performance_proof(
         ),
         "w30_to_source_layered_reference_rms_ratio": w30_rms / max(full_rms, 1e-9),
         "generated_to_w30_rms_ratio": (tr909_rms + mc202_rms) / max(w30_rms, 1e-9),
+        "hook_chop_response_delta_ratio": hook_response_delta,
+        "hook_chop_response_correlation": hook_response_correlation,
+        "hook_chop_response_transient_ratio": hook_response_transient_ratio,
         "pressure_low_band_lift_ratio": pressure_low / max(hook_low, 1e-9),
         "sparse_pressure_low_band_share": (
             pressure_low_share
@@ -3868,8 +3896,7 @@ def performance_proof(
         "tail_shape_output_contrast_ratio": (
             (rms(tail_stutter) + restore_rms) / max(rms(tail_silence), 1e-9)
         ),
-        "pad_noise_texture_transient_ratio": hook_transient
-        / max(transient_score(source_hook_window), 1e-9),
+        "pad_noise_texture_transient_ratio": hook_response_transient_ratio,
         "pad_noise_texture_high_band_ratio": high_band_ratio(sections["chop_hook"]),
         "source_policy_pressure_gain": source_policy.pressure_gain,
         "source_policy_bass_gain": source_policy.bass_gain,
@@ -4135,6 +4162,21 @@ def failure_codes_for(
             < MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN
         ):
             failures.append("hook_chop_source_character_too_narrow")
+        if (
+            proof.get("hook_chop_response_delta_ratio", 0.0)
+            < MIN_HOOK_CHOP_RESPONSE_DELTA_RATIO
+        ):
+            failures.append("hook_chop_response_delta_too_small")
+        if (
+            proof.get("hook_chop_response_correlation", 1.0)
+            > MAX_HOOK_CHOP_RESPONSE_CORRELATION
+        ):
+            failures.append("hook_chop_response_too_source_copied")
+        if (
+            proof.get("hook_chop_response_transient_ratio", 0.0)
+            < MIN_HOOK_CHOP_RESPONSE_TRANSIENT_RATIO
+        ):
+            failures.append("hook_chop_response_transient_too_weak")
         if proof.get("destructive_gesture_source_derived", 0.0) < 1.0:
             failures.append("destructive_gesture_not_source_derived")
         if proof.get("destructive_gesture_candidate_count", 0.0) < MIN_DESTRUCTIVE_GESTURE_CANDIDATES:
@@ -5131,6 +5173,14 @@ def waveform_correlation(left: np.ndarray, right: np.ndarray) -> float:
     if denom <= 1e-12:
         return 1.0
     return float(np.dot(left_mono, right_mono) / denom)
+
+
+def normalized_rms_delta(left: np.ndarray, right: np.ndarray) -> float:
+    count = min(left.shape[0], right.shape[0])
+    if count < 1:
+        return 0.0
+    delta = right[:count] - left[:count]
+    return rms(delta) / max(rms(left[:count]), 1e-9)
 
 
 def mono_envelope(samples: np.ndarray) -> np.ndarray:

@@ -899,6 +899,17 @@ following:
   velocity span `0.576`, W-30/source margin `0.126`, snare margin `0.2245`,
   and tonal source-WAV `6` offsets, `12` hits, velocity span `0.536`, and
   W-30/source margin `0.158`.
+- RIOTBOX-1362 continues routed `chop_policy` hardening by adding rendered
+  hook response-signature gates instead of only counting source offsets:
+  dense/tonal generated diagnostics now require hook/chop response delta
+  `>= 0.35`, source-copy correlation `<= 0.92`, and response transient ratio
+  `>= 0.58`. The W-30 riff renderer adds source-derived shifted/reversed
+  transient response material, while dense-break trims the hook layer to keep
+  snare/break pressure in front. Current suite/readiness evidence reports
+  dense/matrix response delta/correlation/transient `1.038` / `0.619` /
+  `3.632`, tonal source-WAV `1.085` / `0.496` / `5.529`, and dense snare
+  margin `0.2234`; evidence remains `quality_proof: false` and
+  `human_verdict: unverified`.
 - RIOTBOX-1318 strengthens routed `bass_movement` cases: sparse-bass-pressure
   diagnostics now expand source-feature-derived bass contours when they would
   otherwise collapse into a narrow range, boost sparse restore impact after the

@@ -31,6 +31,9 @@ DEFAULT_WEAK_ROUTING = Path("artifacts/audio_qa/local-weak-output-fix-routing/we
 DEFAULT_PROFESSIONAL_SUITE = Path("artifacts/audio_qa/local-professional-output-suite/professional-output-suite.json")
 DEFAULT_OUTPUT = Path("artifacts/audio_qa/local-sound-quality-readiness-report")
 MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO = 0.22
+MIN_HOOK_CHOP_RESPONSE_DELTA_RATIO = 0.35
+MAX_HOOK_CHOP_RESPONSE_CORRELATION = 0.92
+MIN_HOOK_CHOP_RESPONSE_TRANSIENT_RATIO = 0.58
 MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 1.75
 MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 17.00
 MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 2.70
@@ -422,6 +425,15 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
             "dense_hook_chop_score_span": number(
                 dense.get("hook_chop_source_character_score_span")
             ),
+            "dense_hook_chop_response_delta_ratio": number(
+                dense.get("hook_chop_response_delta_ratio")
+            ),
+            "dense_hook_chop_response_correlation": number(
+                dense.get("hook_chop_response_correlation")
+            ),
+            "dense_hook_chop_response_transient_ratio": number(
+                dense.get("hook_chop_response_transient_ratio")
+            ),
             "matrix_dense_hook_chop_score_floor": number(
                 matrix.get("min_dense_hook_chop_source_character_score_floor")
             ),
@@ -434,6 +446,15 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
             "matrix_dense_hook_chop_w30_to_source_margin": number(
                 matrix.get("min_dense_hook_chop_w30_to_source_margin")
             ),
+            "matrix_dense_hook_chop_response_delta_ratio": number(
+                matrix.get("min_dense_hook_chop_response_delta_ratio")
+            ),
+            "matrix_dense_hook_chop_response_correlation": number(
+                matrix.get("max_dense_hook_chop_response_correlation")
+            ),
+            "matrix_dense_hook_chop_response_transient_ratio": number(
+                matrix.get("min_dense_hook_chop_response_transient_ratio")
+            ),
             "tonal_w30_to_source_rms_ratio": number(
                 source_wav.get("tonal_w30_to_source_rms_ratio")
             ),
@@ -445,6 +466,15 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
             ),
             "tonal_hook_chop_score_span": number(
                 source_wav.get("tonal_hook_chop_source_character_score_span")
+            ),
+            "tonal_hook_chop_response_delta_ratio": number(
+                source_wav.get("tonal_hook_chop_response_delta_ratio")
+            ),
+            "tonal_hook_chop_response_correlation": number(
+                source_wav.get("tonal_hook_chop_response_correlation")
+            ),
+            "tonal_hook_chop_response_transient_ratio": number(
+                source_wav.get("tonal_hook_chop_response_transient_ratio")
             ),
             "min_rebuild_only_source_character_survival_score": min(
                 number(dense.get("rebuild_only_source_character_survival_score")),
@@ -919,6 +949,24 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             failures,
         )
         check(
+            number(source_character.get("dense_hook_chop_response_delta_ratio"))
+            >= MIN_HOOK_CHOP_RESPONSE_DELTA_RATIO,
+            "professional_suite_dense_hook_chop_response_delta_too_small",
+            failures,
+        )
+        check(
+            number(source_character.get("dense_hook_chop_response_correlation"))
+            <= MAX_HOOK_CHOP_RESPONSE_CORRELATION,
+            "professional_suite_dense_hook_chop_response_too_source_copied",
+            failures,
+        )
+        check(
+            number(source_character.get("dense_hook_chop_response_transient_ratio"))
+            >= MIN_HOOK_CHOP_RESPONSE_TRANSIENT_RATIO,
+            "professional_suite_dense_hook_chop_response_transient_too_weak",
+            failures,
+        )
+        check(
             number(source_character.get("matrix_dense_w30_to_source_rms_ratio"))
             >= MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO,
             "professional_suite_matrix_dense_hook_chop_w30_too_weak",
@@ -928,6 +976,24 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             number(source_character.get("matrix_dense_hook_chop_w30_to_source_margin"))
             >= 0.025,
             "professional_suite_matrix_dense_hook_chop_w30_margin_too_low",
+            failures,
+        )
+        check(
+            number(source_character.get("matrix_dense_hook_chop_response_delta_ratio"))
+            >= MIN_HOOK_CHOP_RESPONSE_DELTA_RATIO,
+            "professional_suite_matrix_dense_hook_chop_response_delta_too_small",
+            failures,
+        )
+        check(
+            number(source_character.get("matrix_dense_hook_chop_response_correlation"))
+            <= MAX_HOOK_CHOP_RESPONSE_CORRELATION,
+            "professional_suite_matrix_dense_hook_chop_response_too_source_copied",
+            failures,
+        )
+        check(
+            number(source_character.get("matrix_dense_hook_chop_response_transient_ratio"))
+            >= MIN_HOOK_CHOP_RESPONSE_TRANSIENT_RATIO,
+            "professional_suite_matrix_dense_hook_chop_response_transient_too_weak",
             failures,
         )
         check(
@@ -950,6 +1016,24 @@ def validate_report(report: dict[str, Any]) -> list[str]:
         check(
             number(source_character.get("tonal_hook_chop_score_span")) >= 0.10,
             "professional_suite_tonal_source_character_too_narrow",
+            failures,
+        )
+        check(
+            number(source_character.get("tonal_hook_chop_response_delta_ratio"))
+            >= MIN_HOOK_CHOP_RESPONSE_DELTA_RATIO,
+            "professional_suite_tonal_hook_chop_response_delta_too_small",
+            failures,
+        )
+        check(
+            number(source_character.get("tonal_hook_chop_response_correlation"))
+            <= MAX_HOOK_CHOP_RESPONSE_CORRELATION,
+            "professional_suite_tonal_hook_chop_response_too_source_copied",
+            failures,
+        )
+        check(
+            number(source_character.get("tonal_hook_chop_response_transient_ratio"))
+            >= MIN_HOOK_CHOP_RESPONSE_TRANSIENT_RATIO,
+            "professional_suite_tonal_hook_chop_response_transient_too_weak",
             failures,
         )
         check(
