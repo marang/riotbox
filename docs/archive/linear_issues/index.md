@@ -1348,4 +1348,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Strengthen bass movement from weak-output routing
 - [RIOTBOX-1360.md](./RIOTBOX-1360.md)
   P023: Strengthen source-derived W-30 chop diversity
+- [RIOTBOX-1361.md](./RIOTBOX-1361.md)
+  P023: Strengthen routed low-end pressure evidence
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
