@@ -33,8 +33,10 @@ DEFAULT_OUTPUT = Path("artifacts/audio_qa/local-sound-quality-readiness-report")
 MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO = 0.22
 MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 1.75
 MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 17.00
-MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 1.70
-MIN_SPARSE_BASS_DOMINANCE_MARGIN = 0.12
+MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 2.70
+MIN_SPARSE_PRESSURE_LOW_BAND_SHARE = 0.36
+MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO = 2.45
+MIN_SPARSE_BASS_DOMINANCE_MARGIN = 0.20
 MIN_MIX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.13
 MAX_MIX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO = 0.08
 MAX_MIX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.46
@@ -549,6 +551,12 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
             "matrix_sparse_pressure_low_band_lift_ratio": number(
                 matrix.get("min_sparse_pressure_low_band_lift_ratio")
             ),
+            "matrix_sparse_pressure_low_band_share": number(
+                matrix.get("min_sparse_pressure_low_band_share")
+            ),
+            "matrix_sparse_pressure_low_to_mid_ratio": number(
+                matrix.get("min_sparse_pressure_low_to_mid_ratio")
+            ),
             "matrix_sparse_bass_dominance_margin": number(
                 matrix.get("min_sparse_bass_dominance_margin")
             ),
@@ -560,6 +568,12 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
             ),
             "source_wav_sparse_pressure_low_band_lift_ratio": number(
                 source_wav.get("sparse_pressure_low_band_lift_ratio")
+            ),
+            "source_wav_sparse_pressure_low_band_share": number(
+                source_wav.get("sparse_pressure_low_band_share")
+            ),
+            "source_wav_sparse_pressure_low_to_mid_ratio": number(
+                source_wav.get("sparse_pressure_low_to_mid_ratio")
             ),
             "source_wav_sparse_bass_dominance_margin": number(
                 source_wav.get("sparse_bass_dominance_margin")
@@ -1032,6 +1046,18 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             failures,
         )
         check(
+            number(bass_pressure.get("matrix_sparse_pressure_low_band_share"))
+            >= MIN_SPARSE_PRESSURE_LOW_BAND_SHARE,
+            "professional_suite_matrix_sparse_pressure_low_band_share_too_low",
+            failures,
+        )
+        check(
+            number(bass_pressure.get("matrix_sparse_pressure_low_to_mid_ratio"))
+            >= MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO,
+            "professional_suite_matrix_sparse_pressure_reads_as_midrange_phrase",
+            failures,
+        )
+        check(
             number(bass_pressure.get("matrix_sparse_bass_dominance_margin"))
             >= MIN_SPARSE_BASS_DOMINANCE_MARGIN,
             "professional_suite_matrix_sparse_bass_dominance_margin_too_low",
@@ -1053,6 +1079,18 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             number(bass_pressure.get("source_wav_sparse_pressure_low_band_lift_ratio"))
             >= MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO,
             "professional_suite_source_wav_sparse_pressure_low_band_too_weak",
+            failures,
+        )
+        check(
+            number(bass_pressure.get("source_wav_sparse_pressure_low_band_share"))
+            >= MIN_SPARSE_PRESSURE_LOW_BAND_SHARE,
+            "professional_suite_source_wav_sparse_pressure_low_band_share_too_low",
+            failures,
+        )
+        check(
+            number(bass_pressure.get("source_wav_sparse_pressure_low_to_mid_ratio"))
+            >= MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO,
+            "professional_suite_source_wav_sparse_pressure_reads_as_midrange_phrase",
             failures,
         )
         check(

@@ -76,9 +76,9 @@ MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE = 0.70
 MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_MARGIN = 0.10
 MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 1.75
 MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 17.00
-MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 1.70
-MIN_SPARSE_PRESSURE_LOW_BAND_SHARE = 0.32
-MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO = 2.10
+MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 2.70
+MIN_SPARSE_PRESSURE_LOW_BAND_SHARE = 0.36
+MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO = 2.45
 MIN_HOOK_CHOP_SELECTION_CANDIDATES = 3
 MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES = 256.0
 MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES = 512.0
@@ -105,7 +105,7 @@ MIN_TAIL_SHAPE_FIXED_DISTANCE = 0.20
 MIN_TAIL_SHAPE_OUTPUT_CONTRAST = 3.00
 MIN_STRONGEST_AUDIBLE_ELEMENT_SCORE = 1.00
 MIN_STRONGEST_AUDIBLE_ELEMENT_MARGIN = 0.05
-MIN_SPARSE_BASS_DOMINANCE_MARGIN = 0.12
+MIN_SPARSE_BASS_DOMINANCE_MARGIN = 0.20
 MIN_DENSE_BREAK_SNARE_PRESSURE_SCORE = 1.93
 MIN_DENSE_BREAK_SNARE_PRESSURE_MARGIN = 0.22
 MIN_DENSE_BREAK_PHYSICAL_DRUM_PRESSURE_SCORE = 1.58
@@ -3441,15 +3441,15 @@ def render_bass_pressure_layer(
             sustain = 0.10 * float(np.clip(source_drive, 0.0, 1.4)) if is_sparse else 0.0
             envelope[start:end] += (punch + sustain) * (1.0 if beat in (0, 2) else 0.62)
         role = source_policy.arrangement_policy.role_order[bar]
-        pressure_factor = 0.405 if is_sparse else 0.305
-        restore_factor = 0.330 if is_sparse else 0.245
+        pressure_factor = 0.435 if is_sparse else 0.305
+        restore_factor = 0.355 if is_sparse else 0.245
         gain = (
             float(np.clip(source_drive, 0.52, 1.36))
             * source_policy.bass_gain
             * (restore_factor if role == "restore" else pressure_factor)
         )
-        harmonic_gain = 0.07 if is_sparse else 0.18
-        sub_gain = 0.44 if is_sparse else 0.0
+        harmonic_gain = 0.055 if is_sparse else 0.18
+        sub_gain = 0.54 if is_sparse else 0.0
         mono = (
             (sine + harmonic * harmonic_gain + sub * sub_gain)
             * np.clip(envelope, 0.0, 1.08)
