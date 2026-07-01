@@ -1352,4 +1352,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Strengthen routed low-end pressure evidence
 - [RIOTBOX-1362.md](./RIOTBOX-1362.md)
   P023: Strengthen W-30 hook response signature
+- [RIOTBOX-1363.md](./RIOTBOX-1363.md)
+  P023: Strengthen source-selection promotion and demotion evidence
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
