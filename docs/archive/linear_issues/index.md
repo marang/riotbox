@@ -1338,4 +1338,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Strengthen mix-bus impact without source masking
 - [RIOTBOX-1355.md](./RIOTBOX-1355.md)
   P023: Strengthen source-selection promotion blockers into source-window fixes
+- [RIOTBOX-1356.md](./RIOTBOX-1356.md)
+  P023: Strengthen TR-909 drum pressure from weak-output routing
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
