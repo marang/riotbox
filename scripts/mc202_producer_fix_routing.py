@@ -38,7 +38,7 @@ def route_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
                 "bass_movement",
                 "sparse bass movement stays too close to the fixed contour",
             )
-        if number(metrics.get("sparse_bass_movement_frequency_span_hz")) < 15.0:
+        if number(metrics.get("sparse_bass_movement_frequency_span_hz")) < 17.0:
             add_fix_category(
                 categories,
                 reasons,

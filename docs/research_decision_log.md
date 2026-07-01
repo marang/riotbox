@@ -114,6 +114,20 @@ Status: accepted
 
 ---
 
+### RBX-110
+
+Date: 2026-07-01
+Topic: Sparse bass movement must clear a stronger source-derived contour span
+Phase: P023 Sound Excellence / Production Quality
+Question: how should routed `bass_movement` fixes make sparse bass pressure more musician-useful without adding fallback bass output?
+Decision: sparse-bass-pressure diagnostics must require `sparse_bass_movement_frequency_span_hz >= 17.0` across the generator, professional source-WAV pack, professional-output suite, matrix smoke, MC-202 closeout, producer-fix routing, source-composed review gate, and sound-readiness report. The generator uses the same contract when expanding source-feature-derived sparse bass contours, so this is a rendered-output change, not only a stricter validator.
+Why: after RIOTBOX-1358, readiness still routed `bass_movement` as a top weak-output category. The old `15.0 Hz` sparse contour floor let real sparse cases pass with little headroom, which can read as midrange phrase support instead of room-carrying low-end pressure.
+Evidence: RIOTBOX-1359 raises the sparse contour span contract and passes `just professional-source-wav-pack-smoke` plus `just pro-pressure-source-matrix-smoke`. The sparse source-WAV case reports `sparse_bass_movement_frequency_span_hz=18.6`, `sparse_pressure_low_band_share=0.425415`, and `strongest_audible_element=bass`; matrix sparse cases report `18.6` span with bass dominance margins between about `0.484` and `0.533`.
+Consequences: future bass-movement work should improve source-derived contour and pressure projection before raising simple gain. These diagnostics remain scripted, `quality_proof: false`, and `human_verdict: unverified`.
+Status: accepted
+
+---
+
 ### RBX-109
 
 Date: 2026-07-01

@@ -741,7 +741,7 @@ following:
     pressure lift, and sparse pressure must clear stronger low-band share,
     low/mid, and bass-dominance gates across Source-WAV and Matrix smokes.
   - RIOTBOX-1352 raises the routed sparse-bass movement bar again: the scripted
-    diagnostic path must now clear a `15.0 Hz` source-derived contour span and
+    diagnostic path must now clear a `17.0 Hz` source-derived contour span and
     `0.32` pressure low-band share, with the rendered sparse bass layer pushed
     harder in the low band instead of passing by a barely moving phrase.
   - the MC-202 source phrase planning track must turn that diagnostic bass
@@ -902,6 +902,15 @@ following:
   span floor is mirrored through matrix smoke, MC-202 closeout, producer-fix
   routing, source-composed review gate, and sound-readiness reporting so later
   QA surfaces cannot silently keep the old 12 Hz contract.
+- RIOTBOX-1359 raises that sparse-bass movement contract again from routed
+  weak-output evidence: source-derived sparse-bass pressure diagnostics now
+  require `sparse_bass_movement_frequency_span_hz >= 17.0`, and the same
+  contract is mirrored through matrix smoke, professional source-WAV, MC-202
+  closeout, producer-fix routing, source-composed review, professional-suite,
+  and readiness reporting. The generator uses the same floor for its
+  source-feature contour expansion, so the sparse matrix/source-WAV cases now
+  render `18.6 Hz` movement span instead of merely accepting the old `15.0 Hz`
+  threshold.
 - RIOTBOX-1306 strengthens destructive gesture impact for stage-meaningful
   cuts: source-derived tail shaping now drives a deeper dropout silence, denser
   transient stutter, and slightly harder restore slam, while the professional
