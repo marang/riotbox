@@ -439,7 +439,7 @@ Early P011 guardrail defaults:
   a hook-forward policy meant for dense/tonal material.
 - Sparse-bass-pressure diagnostics must prove more than source-derived
   movement: movement must be at least `1.75 Hz` away from the fixed contour,
-  span at least `15.0 Hz`, keep pressure low-band lift at or above `1.70`, and
+  span at least `17.0 Hz`, keep pressure low-band lift at or above `1.70`, and
   leave bass as the strongest audible element with at least `0.12` dominance
   margin. These remain scripted diagnostic gates, not musical-pass claims.
 - Destructive-variation professional diagnostics require a hard dropout/stutter
@@ -703,7 +703,7 @@ P023 sparse-bass-pressure diagnostics also expose
 movement fields. Sparse reports must prove that the pressure section is not
 only a moving midrange phrase: the low band must carry enough of the pressure
 section and must dominate the mid band by the documented ratio. Current sparse
-diagnostics require at least `1.75 Hz` fixed-contour distance, `15.0 Hz`
+diagnostics require at least `1.75 Hz` fixed-contour distance, `17.0 Hz`
 frequency span, `1.70x` low-band lift, `0.32` low-band share, `2.10x`
 low/mid ratio, and `0.12` strongest-element dominance margin before this path
 can pass. These are technical pressure-shape gates, not musical approval.
