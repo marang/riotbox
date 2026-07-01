@@ -212,6 +212,20 @@ Status: accepted
 
 ---
 
+### RBX-117
+
+Date: 2026-07-01
+Topic: Destructive weak-output priority must be reconciled with current gesture evidence
+Phase: P023 / Sound Excellence / Production Quality
+Question: should old flat-stutter weak fixtures keep driving `destructive_gesture` priority when current professional-suite cut/stutter/restore gates pass?
+Decision: no. As with W-30 hook/chop and sparse bass, destructive weak fixtures remain negative controls, but P023 readiness must reconcile them against current dropout-to-stutter silence, stutter-to-hook transient, restore-to-hook transient, restore-to-pressure, and restore-to-dropout-silence evidence. When those gates pass, `destructive_gesture` is marked stale fixture-only and the current product top category advances.
+Why: stale flat-stutter artifacts are useful regression examples, but they should not keep the implementation loop on destructive gestures after current diagnostics already prove stage-meaningful cut/stutter/restore contrast.
+Evidence: RIOTBOX-1366 extends `current_evidence_reconciliation` to `destructive_gesture`, validates the stale-control state against current destructive gesture metrics, and surfaces destructive gesture context in readiness JSON/Markdown.
+Consequences: future P023 prioritization should continue separating negative controls from current product gaps across recurring weak-output categories. Reconciliation remains diagnostic and cannot claim quality proof or human musical approval.
+Status: accepted
+
+---
+
 ### RBX-109
 
 Date: 2026-07-01

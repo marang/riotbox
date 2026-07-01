@@ -699,6 +699,10 @@ The same rule applies to `bass_movement`: sparse-bass negative fixtures remain
 regression controls, but they should not stay current priority when matrix and
 source-WAV sparse movement, low-band lift/share, low-to-mid ratio, and bass
 dominance gates all pass.
+The same rule applies to `destructive_gesture`: flat-stutter negative fixtures
+remain regression controls, but they should not stay current priority when
+current dropout/stutter silence, stutter transient, and restore-impact gates
+all pass.
 This preserves regression controls without letting old hookless examples hide
 the instrument's current audible state.
 
