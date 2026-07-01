@@ -1299,6 +1299,9 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             "stutter_to_hook_transient_ratio": number(
                 metrics.get("stutter_to_hook_transient_ratio")
             ),
+            "restore_to_hook_transient_ratio": number(
+                metrics.get("restore_to_hook_transient_ratio")
+            ),
             "restore_to_pressure_rms_ratio": number(
                 metrics.get("restore_to_pressure_rms_ratio")
             ),

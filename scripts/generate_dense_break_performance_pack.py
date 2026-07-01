@@ -53,9 +53,9 @@ MIN_HOOK_FORWARD_W30_TO_SOURCE_MARGIN = 0.10
 MIN_PRESSURE_LOW_BAND_LIFT_RATIO = 1.12
 MAX_DROPOUT_TO_STUTTER_RMS_RATIO = 0.18
 MAX_DROPOUT_SILENCE_TO_STUTTER_RMS_RATIO = 0.08
-MIN_STUTTER_TO_HOOK_TRANSIENT_RATIO = 0.58
+MIN_STUTTER_TO_HOOK_TRANSIENT_RATIO = 0.80
 MIN_BAD_TIMING_CUE_TRANSIENT_SCORE = 0.030
-MIN_RESTORE_TO_HOOK_TRANSIENT_RATIO = 0.85
+MIN_RESTORE_TO_HOOK_TRANSIENT_RATIO = 1.00
 MAX_ADJACENT_BAR_CORRELATION = 0.985
 MAX_SOURCE_TO_PERFORMANCE_CORRELATION = 0.975
 MIN_MC202_TO_W30_RMS_RATIO = 0.16
@@ -63,6 +63,7 @@ MIN_FULL_TO_SOURCE_RMS_RATIO = 0.78
 MIN_HOOK_TO_SOURCE_TRANSIENT_RATIO = 0.48
 MIN_PRESSURE_TO_HOOK_RMS_RATIO = 1.30
 MIN_RESTORE_TO_PRESSURE_RMS_RATIO = 1.12
+MIN_DENSE_RESTORE_TO_PRESSURE_RMS_RATIO = 1.18
 MIN_RESTORE_TO_DROPOUT_SILENCE_RMS_RATIO = 6.00
 MIN_REBUILD_ONLY_TO_FULL_RMS_RATIO = 0.42
 MIN_REBUILD_ONLY_TO_SOURCE_RMS_RATIO = 0.30
@@ -1552,8 +1553,8 @@ def tail_shape_policy_for(
         density_bias = 4
         restore_bias = 0.16
         cut_depth_bias = 0.006
-        stutter_impact_bias = 0.28
-        restore_impact_bias = 0.22
+        stutter_impact_bias = 0.42
+        restore_impact_bias = 0.34
         step_min, step_max = 14, 22
         silence_min, silence_max = 0.002, 0.014
 
@@ -1571,9 +1572,9 @@ def tail_shape_policy_for(
         np.clip(
             fixed.dropout_silence_gain
             + low_norm * 0.002
-            - transient_norm * 0.006
-            - high_norm * 0.002
-            - energy_span_norm * 0.002
+            - transient_norm * 0.0075
+            - high_norm * 0.0025
+            - energy_span_norm * 0.0035
             - cut_depth_bias
             + (0.004 if source_family == SOURCE_FAMILY_SPARSE_BASS_PRESSURE else 0.0),
             silence_min,
@@ -1602,7 +1603,7 @@ def tail_shape_policy_for(
                 + high_norm * 0.30
                 + energy_span_norm * 0.08,
                 2.90,
-                4.75,
+                5.05,
             )
         ),
         "stutter_snap_gain": float(
@@ -1614,7 +1615,7 @@ def tail_shape_policy_for(
                 + energy_span_norm * 0.08
                 + restore_bias * 0.42,
                 1.82,
-                3.95,
+                4.25,
             )
         ),
         "restore_source_gain": float(
@@ -1624,7 +1625,7 @@ def tail_shape_policy_for(
                 + restore_bias
                 + restore_impact_bias * 0.40,
                 1.05,
-                1.78,
+                1.92,
             )
         ),
         "restore_snap_gain": float(
@@ -1635,7 +1636,7 @@ def tail_shape_policy_for(
                 + restore_bias * 1.10
                 + restore_impact_bias,
                 4.30,
-                8.10,
+                8.80,
             )
         ),
         "restore_w30_gain": float(
@@ -1645,7 +1646,7 @@ def tail_shape_policy_for(
                 + restore_bias
                 + restore_impact_bias * 0.25,
                 2.12,
-                3.38,
+                3.72,
             )
         ),
         "restore_mc202_gain": float(
@@ -1655,7 +1656,7 @@ def tail_shape_policy_for(
                 + restore_bias
                 + restore_impact_bias * 0.35,
                 3.42,
-                5.02,
+                5.45,
             )
         ),
         "restore_tr909_gain": float(
@@ -1665,7 +1666,7 @@ def tail_shape_policy_for(
                 + high_norm * 0.16
                 + restore_impact_bias * 0.25,
                 2.92,
-                4.28,
+                4.72,
             )
         ),
         "restore_drive": float(
@@ -1675,7 +1676,7 @@ def tail_shape_policy_for(
                 + low_norm * 0.05
                 + restore_impact_bias * 0.10,
                 1.88,
-                2.18,
+                2.32,
             )
         ),
         "restore_slam": float(
@@ -1685,7 +1686,7 @@ def tail_shape_policy_for(
                 + energy_span_norm * 0.025
                 + restore_impact_bias * 0.10,
                 0.40,
-                0.56,
+                0.64,
             )
         ),
     }
@@ -3021,6 +3022,12 @@ def pressure_role_count(source_policy: DenseBreakSourcePolicy) -> int:
     return source_policy.arrangement_policy.role_order.count("pressure")
 
 
+def min_restore_to_pressure_rms_ratio_for(source_family: str | None) -> float:
+    if source_family == SOURCE_FAMILY_DENSE_BREAK:
+        return MIN_DENSE_RESTORE_TO_PRESSURE_RMS_RATIO
+    return MIN_RESTORE_TO_PRESSURE_RMS_RATIO
+
+
 def destructive_role_count(source_policy: DenseBreakSourcePolicy) -> int:
     roles = source_policy.arrangement_policy.role_order
     return roles.count("dropout") + roles.count("restore")
@@ -3071,7 +3078,7 @@ def render_dropout_stutter_bar(
     dropout_end = max(1, min(bar_frames - 1, dropout_end))
     bar[:dropout_end] *= tail_policy.dropout_silence_gain
 
-    grain_len = max(128, bar_frames // 32)
+    grain_len = max(128, bar_frames // 40)
     beat_frames = max(1, bar_frames // BEATS_PER_BAR)
     if source_policy.destructive_gesture_policy.source_aware:
         grain_source_start = source_policy.destructive_gesture_policy.stutter_start_frames
@@ -3083,8 +3090,8 @@ def render_dropout_stutter_bar(
     grain = w30[grain_source_start:grain_source_end].copy()
     grain *= hann_envelope(grain.shape[0])[:, None]
     source_snap_grain = transient_emphasis(source[grain_source_start:grain_source_end].copy())
-    source_snap_grain *= impact_envelope(source_snap_grain.shape[0], decay=0.040)[:, None]
-    source_snap_grain = normalize_peak(source_snap_grain, 0.78)
+    source_snap_grain *= impact_envelope(source_snap_grain.shape[0], decay=0.030)[:, None]
+    source_snap_grain = normalize_peak(source_snap_grain, 0.86)
     cue_snap_grain = None
     if source_policy.pressure_lift_policy.source_family == SOURCE_FAMILY_BAD_TIMING:
         cue_snap_grain = np.zeros_like(grain)
@@ -3111,12 +3118,20 @@ def render_dropout_stutter_bar(
             * dense_tail_hit
         )
         bar[target:end] += source_snap_grain[: end - target] * (
-            tail_policy.stutter_snap_gain * decay * dense_tail_hit
+            tail_policy.stutter_snap_gain * decay * dense_tail_hit * 1.14
         )
         if cue_snap_grain is not None:
             bar[target:end] += cue_snap_grain[: end - target] * (5.50 * decay)
-        bar[target : min(target + 96, bar.shape[0])] += accent * (0.58 * decay)
-        bar[target : min(target + 160, bar.shape[0])] += (riff + snap) * (1.02 * decay)
+        attack_end = min(target + 56, bar.shape[0])
+        if attack_end > target:
+            attack_env = impact_envelope(attack_end - target, decay=0.010)[:, None]
+            bar[target:attack_end] += (
+                source_snap_grain[: attack_end - target] * 1.25
+                + accent[: attack_end - target] * 0.86
+                + snap[: attack_end - target] * 0.94
+            ) * attack_env * decay
+        bar[target : min(target + 96, bar.shape[0])] += accent * (0.62 * decay)
+        bar[target : min(target + 160, bar.shape[0])] += (riff + snap) * (1.10 * decay)
 
     return normalize_peak(saturate(bar, 1.78), 0.90)
 
@@ -3455,7 +3470,11 @@ def restore_with_hit(
     if start >= end:
         return restored
     tail_policy = source_policy.tail_shape_policy
-    hit_frames = min(frames_for_seconds(0.115), end - start)
+    is_sparse = (
+        source_policy.pressure_lift_policy.source_family == SOURCE_FAMILY_SPARSE_BASS_PRESSURE
+    )
+    hit_seconds = 0.125 if is_sparse else 0.090
+    hit_frames = min(frames_for_seconds(hit_seconds), end - start)
     source_hit_start = 0
     if source_policy.destructive_gesture_policy.source_aware:
         source_hit_start = min(
@@ -3466,16 +3485,29 @@ def restore_with_hit(
     if source_hit_end <= source_hit_start:
         return restored
     hit_frames = min(hit_frames, source_hit_end - source_hit_start)
-    envelope = np.linspace(1.0, 0.0, hit_frames, dtype=np.float32)[:, None]
+    envelope_decay = 0.066 if is_sparse else 0.034
+    envelope = impact_envelope(hit_frames, decay=envelope_decay)[:, None]
+    attack_frames = min(hit_frames, frames_for_seconds(0.024))
     source_hit = source[source_hit_start:source_hit_end]
     w30_hit = w30[source_hit_start:source_hit_end]
     snap = transient_emphasis(source_hit)
+    if attack_frames > 0:
+        attack_env = impact_envelope(attack_frames, decay=0.010)[:, None]
+        restored[start : start + attack_frames] += (
+            snap[:attack_frames] * (tail_policy.restore_snap_gain * (0.62 if is_sparse else 0.78))
+            + tr909[start : start + attack_frames]
+            * (tail_policy.restore_tr909_gain * (0.58 if is_sparse else 0.72))
+            + w30_hit[:attack_frames] * (tail_policy.restore_w30_gain * (0.54 if is_sparse else 0.40))
+        ) * attack_env
     restored[start : start + hit_frames] += (
-        source_hit * (tail_policy.restore_source_gain * source_layer_gain)
-        + snap * tail_policy.restore_snap_gain
-        + w30_hit * tail_policy.restore_w30_gain
-        + mc202[start : start + hit_frames] * tail_policy.restore_mc202_gain
-        + tr909[start : start + hit_frames] * tail_policy.restore_tr909_gain
+        source_hit
+        * (tail_policy.restore_source_gain * source_layer_gain * (1.18 if is_sparse else 1.05))
+        + snap * (tail_policy.restore_snap_gain * (1.05 if is_sparse else 1.18))
+        + w30_hit * (tail_policy.restore_w30_gain * (1.18 if is_sparse else 1.0))
+        + mc202[start : start + hit_frames]
+        * (tail_policy.restore_mc202_gain * (1.28 if is_sparse else 1.08))
+        + tr909[start : start + hit_frames]
+        * (tail_policy.restore_tr909_gain * (1.02 if is_sparse else 1.10))
     ) * envelope
     return normalize_peak(
         glue_bus(restored, drive=tail_policy.restore_drive, slam=tail_policy.restore_slam),
@@ -3597,6 +3629,14 @@ def build_report(
             "min_hook_to_source_transient_ratio": MIN_HOOK_TO_SOURCE_TRANSIENT_RATIO,
             "min_pressure_to_hook_rms_ratio": MIN_PRESSURE_TO_HOOK_RMS_RATIO,
             "min_restore_to_pressure_rms_ratio": MIN_RESTORE_TO_PRESSURE_RMS_RATIO,
+            "min_dense_restore_to_pressure_rms_ratio": (
+                MIN_DENSE_RESTORE_TO_PRESSURE_RMS_RATIO
+            ),
+            "active_min_restore_to_pressure_rms_ratio": (
+                min_restore_to_pressure_rms_ratio_for(
+                    source_policy.pressure_lift_policy.source_family
+                )
+            ),
             "min_restore_to_dropout_silence_rms_ratio": (
                 MIN_RESTORE_TO_DROPOUT_SILENCE_RMS_RATIO
             ),
@@ -3914,7 +3954,10 @@ def failure_codes_for(
     min_pressure_to_hook_rms_ratio = min_pressure_to_hook_rms_ratio_for(source_family)
     if proof["pressure_to_hook_rms_ratio"] < min_pressure_to_hook_rms_ratio:
         failures.append("pressure_section_not_louder_than_hook_enough")
-    if proof["restore_to_pressure_rms_ratio"] < MIN_RESTORE_TO_PRESSURE_RMS_RATIO:
+    if (
+        proof["restore_to_pressure_rms_ratio"]
+        < min_restore_to_pressure_rms_ratio_for(source_family)
+    ):
         failures.append("restore_hit_not_bigger_than_pressure_section")
     if (
         proof["restore_to_dropout_silence_rms_ratio"]

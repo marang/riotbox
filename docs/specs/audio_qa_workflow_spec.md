@@ -443,15 +443,21 @@ Early P011 guardrail defaults:
   leave bass as the strongest audible element with at least `0.12` dominance
   margin. These remain scripted diagnostic gates, not musical-pass claims.
 - Destructive-variation professional diagnostics require a hard dropout/stutter
-  contrast and an impact restore: `dropout_to_stutter_rms_ratio <= 0.10`,
-  `dropout_silence_to_stutter_rms_ratio <= 0.08`,
-  `stutter_to_hook_transient_ratio >= 1.20`,
-  `restore_to_pressure_rms_ratio >= 1.22`, and
+  contrast and an impact restore: `dropout_to_stutter_rms_ratio <= 0.0065`,
+  `dropout_silence_to_stutter_rms_ratio <= 0.0065`,
+  `stutter_to_hook_transient_ratio >= 1.55`,
+  `restore_to_hook_transient_ratio >= 1.60`,
+  `restore_to_pressure_rms_ratio >= 1.36`, and
   `restore_to_dropout_silence_rms_ratio >= 6.00`. These thresholds prove the
   diagnostic output did not collapse to a flat edit: the cut must actually get
   out of the way, the stutter must hit, and the restore must slam back from the
   cut. They do not approve the render as product-quality audio without human
   listening.
+- Dense-break render reports use a stronger active restore/pressure floor
+  (`1.18`) than the generic floor (`1.12`). Sparse-bass-pressure diagnostics keep
+  the generic floor because their pressure section is intentionally large; the
+  dedicated destructive-variation report carries the stricter `1.36` floor for
+  the stage-meaningful cut/restore proof.
 - Feral grid W-30 source-chop output must expose source-derived accent dynamics
   under `metrics.w30_source_accent_dynamics`. The proof checks that selected
   source offsets produce multiple trigger velocities and enough velocity span
