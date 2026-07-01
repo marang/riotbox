@@ -1358,4 +1358,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Reconcile weak-output priority with current W-30 response evidence
 - [RIOTBOX-1365.md](./RIOTBOX-1365.md)
   P023: Reconcile weak-output bass priority with current pressure evidence
+- [RIOTBOX-1366.md](./RIOTBOX-1366.md)
+  P023: Reconcile weak-output destructive priority with current gesture evidence
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
