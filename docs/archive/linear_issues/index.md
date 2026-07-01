@@ -1362,4 +1362,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Reconcile weak-output destructive priority with current gesture evidence
 - [RIOTBOX-1367.md](./RIOTBOX-1367.md)
   P023: Reconcile weak-output mix-bus priority with current support evidence
+- [RIOTBOX-1368.md](./RIOTBOX-1368.md)
+  P023: Make source-selection priority actionable after stale controls reconcile
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
