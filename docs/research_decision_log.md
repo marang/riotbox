@@ -86,6 +86,20 @@ Status: accepted
 
 ---
 
+### RBX-107
+
+Date: 2026-07-01
+Topic: Rendered TR-909 drum pressure must not pass as decorative support
+Phase: P023 Sound Excellence / Production Quality
+Question: how should routed `drum_pressure` fixes prove the drum lane survives the rendered output path without masking the source?
+Decision: Professional-output TR-909 rendered-pressure proof must require at least `0.05` support-mix TR-909 contribution for every source support profile. Drop-drive and break-lift profiles keep a `0.0030` low-band RMS floor; break-lift and steady-pulse profiles are strengthened in the kick-pressure renderer, and steady-pulse must reach at least `0.0017` low-band RMS. Existing source-first masking and generated-support ceilings remain active.
+Why: weak-output routing still identified `drum_pressure` as a recurring production fix. The previous steady-pulse contribution floor of `0.035` allowed restrained tonal/pad material to pass while the drum lane risked becoming decorative.
+Evidence: RIOTBOX-1356 raises break-lift and steady-pulse TR-909 kick body and tightens rendered-pressure floors. The professional-suite/readiness aggregate now reports minimum support contribution `0.057182`, minimum TR-909 low-band RMS `0.001890`, maximum source-first generated/source ratio `0.027283`, and maximum support/source ratio `0.376061`; the syncopated-source showcase also stays above the break-lift `0.0030` low-band floor.
+Consequences: future drum-pressure changes should improve physical drum impact at the rendered seam and report masking headroom at the same time. These metrics remain diagnostic and do not replace human listening approval.
+Status: accepted
+
+---
+
 ### RBX-092
 
 Date: 2026-06-30

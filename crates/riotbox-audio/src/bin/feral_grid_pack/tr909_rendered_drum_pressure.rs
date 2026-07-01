@@ -19,10 +19,8 @@ struct Tr909RenderedDrumPressureProof {
 }
 
 const TR909_RENDERED_DRUM_PRESSURE_MIN_SUPPORT_CONTRIBUTION_RATIO: f32 = 0.050;
-const TR909_RENDERED_DRUM_PRESSURE_MIN_STEADY_SUPPORT_CONTRIBUTION_RATIO: f32 = 0.035;
 const TR909_RENDERED_DRUM_PRESSURE_MIN_LOW_BAND_RMS: f32 = 0.0030;
-const TR909_RENDERED_DRUM_PRESSURE_MIN_BREAK_LIFT_LOW_BAND_RMS: f32 = 0.0020;
-const TR909_RENDERED_DRUM_PRESSURE_MIN_STEADY_LOW_BAND_RMS: f32 = 0.0014;
+const TR909_RENDERED_DRUM_PRESSURE_MIN_STEADY_LOW_BAND_RMS: f32 = 0.0017;
 const TR909_RENDERED_DRUM_PRESSURE_SOURCE_EVIDENCE_ROLE: &str =
     "tr909_source_profile_accent_dynamics_and_rendered_mix_pressure";
 const TR909_RENDERED_DRUM_PRESSURE_PRIMITIVE_EVIDENCE_ROLE: &str =
@@ -107,20 +105,18 @@ fn tr909_rendered_drum_pressure_min_support_contribution(
     profile: SourceAwareTr909Profile,
 ) -> f32 {
     match profile.support_profile {
-        Tr909SourceSupportProfile::DropDrive | Tr909SourceSupportProfile::BreakLift => {
+        Tr909SourceSupportProfile::DropDrive
+        | Tr909SourceSupportProfile::BreakLift
+        | Tr909SourceSupportProfile::SteadyPulse => {
             TR909_RENDERED_DRUM_PRESSURE_MIN_SUPPORT_CONTRIBUTION_RATIO
-        }
-        Tr909SourceSupportProfile::SteadyPulse => {
-            TR909_RENDERED_DRUM_PRESSURE_MIN_STEADY_SUPPORT_CONTRIBUTION_RATIO
         }
     }
 }
 
 fn tr909_rendered_drum_pressure_min_low_band_rms(profile: SourceAwareTr909Profile) -> f32 {
     match profile.support_profile {
-        Tr909SourceSupportProfile::DropDrive => TR909_RENDERED_DRUM_PRESSURE_MIN_LOW_BAND_RMS,
-        Tr909SourceSupportProfile::BreakLift => {
-            TR909_RENDERED_DRUM_PRESSURE_MIN_BREAK_LIFT_LOW_BAND_RMS
+        Tr909SourceSupportProfile::DropDrive | Tr909SourceSupportProfile::BreakLift => {
+            TR909_RENDERED_DRUM_PRESSURE_MIN_LOW_BAND_RMS
         }
         Tr909SourceSupportProfile::SteadyPulse => {
             TR909_RENDERED_DRUM_PRESSURE_MIN_STEADY_LOW_BAND_RMS
@@ -177,7 +173,7 @@ mod tr909_rendered_drum_pressure_tests {
     }
 
     #[test]
-    fn rendered_drum_pressure_allows_lower_steady_pulse_support_floor() {
+    fn rendered_drum_pressure_requires_steady_pulse_support_to_hit_normal_floor() {
         let grid = Grid::new(128.0, 4, 2).expect("grid");
         let samples = low_pulse_samples(&grid, 0.040);
         let proof = tr909_rendered_drum_pressure_proof(Tr909RenderedDrumPressureInput {
@@ -186,16 +182,16 @@ mod tr909_rendered_drum_pressure_tests {
             full_mix_metrics: render_metrics(&samples, &grid),
             kick_pressure: source_derived_kick_pressure(true),
             accent_dynamics: source_derived_accent_dynamics(true),
-            all_lane_mix_movement: all_lane_mix_movement_with_tr909(0.037, true),
+            all_lane_mix_movement: all_lane_mix_movement_with_tr909(0.049, true),
             tr909_source_grid_alignment: grid_alignment(1.0),
             source_first_generated_to_source_rms_ratio: 0.030,
             support_generated_to_source_rms_ratio: 0.180,
         });
 
-        assert!(proof.applied, "{proof:?}");
+        assert!(!proof.applied, "{proof:?}");
         assert_eq!(
             proof.min_required_support_mix_tr909_contribution_ratio,
-            TR909_RENDERED_DRUM_PRESSURE_MIN_STEADY_SUPPORT_CONTRIBUTION_RATIO
+            TR909_RENDERED_DRUM_PRESSURE_MIN_SUPPORT_CONTRIBUTION_RATIO
         );
         assert_eq!(
             proof.min_required_tr909_low_band_rms,
@@ -222,7 +218,7 @@ mod tr909_rendered_drum_pressure_tests {
         assert!(proof.applied, "{proof:?}");
         assert_eq!(
             proof.min_required_tr909_low_band_rms,
-            TR909_RENDERED_DRUM_PRESSURE_MIN_BREAK_LIFT_LOW_BAND_RMS
+            TR909_RENDERED_DRUM_PRESSURE_MIN_LOW_BAND_RMS
         );
     }
 
