@@ -129,6 +129,11 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     weak_summary = weak_routing_summary(weak_routing, args.weak_routing)
     suite_summary = professional_suite_summary(professional_suite, args.professional_output_suite)
     current_evidence = current_evidence_reconciliation(weak_summary, suite_summary)
+    source_selection_priority = source_selection_priority_detail(
+        weak_summary,
+        suite_summary,
+        current_evidence,
+    )
     review_summary = human_review_queue_summary(human_review_queue, args.human_review_queue)
     blockers = readiness_blockers(
         source_families,
@@ -173,6 +178,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "weak_output_routing": weak_summary,
         "professional_output_suite": suite_summary,
         "current_evidence_reconciliation": current_evidence,
+        "source_selection_priority": source_selection_priority,
         "human_review_queue": review_summary,
         "blockers": blockers,
         "next_actions": next_actions(
@@ -358,7 +364,7 @@ def weak_routing_summary(report: dict[str, Any] | None, path: Path) -> dict[str,
     }
 
 
-def weak_routing_candidates(report: dict[str, Any], path: Path) -> list[dict[str, str]]:
+def weak_routing_candidates(report: dict[str, Any], path: Path) -> list[dict[str, Any]]:
     raw_count = report.get("production_fix_candidate_count", 0)
     raw_candidates = report.get("production_fix_candidates", [])
     require(isinstance(raw_count, int), f"{path}: production_fix_candidate_count must be integer")
@@ -371,6 +377,10 @@ def weak_routing_candidates(report: dict[str, Any], path: Path) -> list[dict[str
             {
                 "candidate_id": required_string(candidate, "candidate_id", path, index),
                 "category": required_string(candidate, "category", path, index),
+                "case_ids": string_list(candidate.get("case_ids")),
+                "primary_case_ids": string_list(candidate.get("primary_case_ids")),
+                "source_families": string_list(candidate.get("source_families")),
+                "artifact_refs": string_list(candidate.get("artifact_refs")),
                 "software_next_step": required_string(candidate, "software_next_step", path, index),
                 "musician_payoff": required_string(candidate, "musician_payoff", path, index),
             }
@@ -954,6 +964,184 @@ def mix_bus_current_evidence_passed(suite: dict[str, Any]) -> bool:
     return all(checks)
 
 
+def validate_source_selection_priority(
+    detail: dict[str, Any],
+    failures: list[str],
+) -> None:
+    check(
+        detail.get("category") == "source_selection",
+        "source_selection_priority_category_missing",
+        failures,
+    )
+    check(
+        detail.get("available") is True,
+        "source_selection_priority_missing",
+        failures,
+    )
+    check(
+        detail.get("priority_state") == "current_product_risk",
+        "source_selection_priority_not_current_product_risk",
+        failures,
+    )
+    check(
+        detail.get("quality_proof") is False,
+        "source_selection_priority_claims_quality_proof",
+        failures,
+    )
+    check(
+        detail.get("automated_musical_approval") is False,
+        "source_selection_priority_claims_approval",
+        failures,
+    )
+    check(
+        bool(str(detail.get("candidate_id") or "")),
+        "source_selection_priority_candidate_missing",
+        failures,
+    )
+    check(
+        bool(string_list(detail.get("case_ids"))),
+        "source_selection_priority_cases_missing",
+        failures,
+    )
+    check(
+        bool(string_list(detail.get("primary_case_ids"))),
+        "source_selection_priority_primary_cases_missing",
+        failures,
+    )
+    check(
+        bool(string_list(detail.get("source_families"))),
+        "source_selection_priority_source_families_missing",
+        failures,
+    )
+    check(
+        bool(string_list(detail.get("artifact_refs"))),
+        "source_selection_priority_artifacts_missing",
+        failures,
+    )
+    check(
+        bool(string_list(detail.get("demotion_reasons"))),
+        "source_selection_priority_demotion_reasons_missing",
+        failures,
+    )
+    check(
+        bool(string_list(detail.get("required_review_actions"))),
+        "source_selection_priority_review_actions_missing",
+        failures,
+    )
+    check(
+        detail.get("actionable_for_musician") is True,
+        "source_selection_priority_not_actionable",
+        failures,
+    )
+    software_next_step = str(detail.get("software_next_step") or "")
+    generic_upstream_step = str(detail.get("generic_upstream_next_step") or "")
+    check(
+        len(software_next_step) >= 80
+        and software_next_step != generic_upstream_step
+        and "source-window/source-character" in software_next_step
+        and "review actions" in software_next_step,
+        "source_selection_priority_next_step_too_generic",
+        failures,
+    )
+    musician_action = str(detail.get("musician_action") or "")
+    check(
+        len(musician_action) >= 80
+        and "unavailable/degraded" in musician_action
+        and "diagnostics" in musician_action,
+        "source_selection_priority_musician_action_too_generic",
+        failures,
+    )
+
+
+def source_selection_priority_detail(
+    weak: dict[str, Any],
+    suite: dict[str, Any],
+    current_evidence: dict[str, Any],
+) -> dict[str, Any]:
+    candidate = next(
+        (
+            item
+            for item in list_or_empty(weak.get("production_fix_candidates"))
+            if isinstance(item, dict) and item.get("category") == "source_selection"
+        ),
+        {},
+    )
+    risk = object_or_empty(suite.get("source_selection_risk"))
+    is_current_top = (
+        current_evidence.get("current_product_top_candidate_category")
+        == "source_selection"
+    )
+    case_ids = string_list(candidate.get("case_ids"))
+    primary_case_ids = string_list(candidate.get("primary_case_ids"))
+    source_families = string_list(candidate.get("source_families"))
+    artifact_refs = string_list(candidate.get("artifact_refs"))
+    demotion_reasons = string_list(risk.get("demotion_reasons"))
+    review_actions = string_list(risk.get("required_review_actions"))
+    blocked_families = string_list(risk.get("blocked_source_families"))
+    generic_step = str(candidate.get("software_next_step") or "")
+    return {
+        "category": "source_selection",
+        "available": bool(candidate),
+        "priority_state": "current_product_risk" if is_current_top else "not_current_top",
+        "evidence_role": "production_priority_detail",
+        "quality_proof": False,
+        "automated_musical_approval": False,
+        "candidate_id": str(candidate.get("candidate_id") or ""),
+        "case_ids": case_ids,
+        "primary_case_ids": primary_case_ids,
+        "source_families": source_families,
+        "artifact_refs": artifact_refs,
+        "generic_upstream_next_step": generic_step,
+        "software_next_step": source_selection_software_next_step(
+            primary_case_ids,
+            source_families,
+            demotion_reasons,
+            review_actions,
+        ),
+        "musician_action": source_selection_musician_action(
+            blocked_families,
+            review_actions,
+        ),
+        "source_selection_surface": "source_window_character_and_edge_source_policy",
+        "blocked_source_families": blocked_families,
+        "promotion_blockers": string_list(risk.get("promotion_blockers")),
+        "demotion_reasons": demotion_reasons,
+        "demotion_reason_counts": object_or_empty(risk.get("demotion_reason_counts")),
+        "required_review_actions": review_actions,
+        "required_review_action_count": len(review_actions),
+        "actionable_for_musician": bool(review_actions and blocked_families),
+    }
+
+
+def source_selection_software_next_step(
+    primary_case_ids: list[str],
+    source_families: list[str],
+    demotion_reasons: list[str],
+    review_actions: list[str],
+) -> str:
+    cases = ", ".join(primary_case_ids) if primary_case_ids else "source-selection weak cases"
+    families = ", ".join(source_families) if source_families else "unknown families"
+    reasons = ", ".join(demotion_reasons) if demotion_reasons else "missing demotion reasons"
+    actions = ", ".join(review_actions) if review_actions else "missing review actions"
+    return (
+        f"Route {cases} through source-window/source-character review for {families}; "
+        f"preserve demotion reasons ({reasons}) and require review actions ({actions}) "
+        "before any edge source can become demo or quality material."
+    )
+
+
+def source_selection_musician_action(
+    blocked_families: list[str],
+    review_actions: list[str],
+) -> str:
+    families = ", ".join(blocked_families) if blocked_families else "risky sources"
+    actions = ", ".join(review_actions) if review_actions else "explicit review"
+    return (
+        f"Treat {families} as unavailable/degraded for promotion: {actions}. "
+        "Use them for diagnostics until timing, texture, and human verdict are trusted."
+    )
+
+
 def readiness_blockers(
     coverage: dict[str, Any],
     demo: dict[str, Any],
@@ -1157,6 +1345,7 @@ def validate_report(report: dict[str, Any]) -> list[str]:
     weak_available = nested_value(report, "weak_output_routing", "available")
     weak_fix_summary = nested_value(report, "weak_output_routing", "production_fix_summary")
     current_evidence = object_or_empty(report.get("current_evidence_reconciliation"))
+    source_selection_priority = object_or_empty(report.get("source_selection_priority"))
     suite_available = nested_value(report, "professional_output_suite", "available")
     suite_scripted = nested_value(report, "professional_output_suite", "scripted_generation")
     suite_quality = nested_value(report, "professional_output_suite", "quality_proof")
@@ -1760,6 +1949,8 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             "current_evidence_reconciliation_mix_bus_status_missing",
             failures,
         )
+    if current_evidence.get("current_product_top_candidate_category") == "source_selection":
+        validate_source_selection_priority(source_selection_priority, failures)
 
     validate_current_p023_contract(report, blockers, failures)
 
@@ -1957,6 +2148,7 @@ def markdown_report(report: dict[str, Any]) -> str:
         lines.append("- missing")
     suite = object_or_empty(report.get("professional_output_suite"))
     current_evidence = object_or_empty(report.get("current_evidence_reconciliation"))
+    source_selection_priority = object_or_empty(report.get("source_selection_priority"))
     source_character = object_or_empty(suite.get("source_character_selection"))
     source_character_window = object_or_empty(
         suite.get("source_character_window_selection")
@@ -2001,6 +2193,15 @@ def markdown_report(report: dict[str, Any]) -> str:
                 f"`{current_evidence.get('current_product_top_candidate_category')}`, "
                 "stale controls "
                 f"`{', '.join(current_evidence.get('stale_fixture_only_categories', []))}`"
+            ),
+            (
+                "- Source-selection priority: "
+                f"`{source_selection_priority.get('priority_state')}`, cases "
+                f"`{', '.join(source_selection_priority.get('primary_case_ids', []))}`, "
+                "families "
+                f"`{', '.join(source_selection_priority.get('source_families', []))}`, "
+                "actions "
+                f"`{', '.join(source_selection_priority.get('required_review_actions', []))}`"
             ),
             (
                 "- Destructive gesture: "
@@ -2076,6 +2277,10 @@ def list_field(data: dict[str, Any], field: str, path: Path) -> list[Any]:
 
 def list_or_empty(value: Any) -> list[Any]:
     return value if isinstance(value, list) else []
+
+
+def string_list(value: Any) -> list[str]:
+    return [str(item) for item in list_or_empty(value) if str(item)]
 
 
 def string_list_field(data: dict[str, Any], field: str, path: Path) -> list[str]:

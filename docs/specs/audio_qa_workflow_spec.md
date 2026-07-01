@@ -689,6 +689,13 @@ suite/readiness reports therefore require blocked edge families, demotion reason
 counts, and concrete review actions such as confirming timing before bar-locked
 moves or auditioning pad/noise texture before demo promotion. This is a
 musician-facing safety boundary, not a musical approval gate.
+When `source_selection` becomes the current P023 product priority, the readiness
+report must also expose a concrete priority detail instead of only a generic
+category: triggering case ids, primary case ids, source families, artifact refs,
+demotion/review reason linkage, software next step, and musician-facing action.
+The detail must preserve `quality_proof: false` and
+`automated_musical_approval: false` until source choice is proven by output and
+human verdict.
 
 P023 readiness may keep static weak-output fixtures as negative controls, but
 it must reconcile their routing priority against current professional-suite

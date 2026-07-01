@@ -1024,6 +1024,12 @@ following:
   support is present, source-first masking has enough headroom, and support does
   not overwhelm the source. This prevents old mix controls from hiding the next
   current product gap.
+- RIOTBOX-1368 makes the resulting `source_selection` priority actionable:
+  readiness must expose triggering case ids, primary cases, source families,
+  artifact refs, demotion/review reason linkage, software next step, and
+  musician-facing action instead of a generic source-window/source-character
+  bucket. Edge sources remain unavailable/degraded for promotion until timing,
+  texture, and human verdict are trusted.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue
