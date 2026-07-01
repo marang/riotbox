@@ -30,6 +30,15 @@ MIN_REBUILD_ONLY_SOURCE_SPECTRAL_SIMILARITY = 0.60
 MIN_REBUILD_ONLY_SOURCE_TRANSIENT_RETENTION = 0.45
 MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE = 0.70
 MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_MARGIN = 0.10
+SOURCE_FAMILY_BAD_TIMING = "bad_timing"
+SOURCE_FAMILY_PAD_NOISE = "pad_noise"
+PROMOTION_STATE_BLOCKED_FOR_REVIEW = "blocked_for_source_selection_review"
+DEMOTION_REASON_TIMING_REVIEW_REQUIRED = "timing_review_required"
+DEMOTION_REASON_TEXTURE_REVIEW_REQUIRED = "texture_review_required"
+DEMOTION_REASON_DIAGNOSTIC_ONLY = "diagnostic_only_not_quality_proof"
+REVIEW_ACTION_CONFIRM_TIMING = "confirm_timing_before_bar_locked_moves"
+REVIEW_ACTION_AUDITION_TEXTURE = "audition_pad_noise_texture_before_demo_promotion"
+REVIEW_ACTION_KEEP_DIAGNOSTIC = "keep_as_diagnostic_until_human_verdict"
 ALLOWED_STRONGEST_AUDIBLE_ELEMENTS = {
     "kick",
     "snare",
@@ -41,7 +50,7 @@ ALLOWED_STRONGEST_AUDIBLE_ELEMENTS = {
 CASES = [
     {
         "case_id": "pad_noise_fadapad_120",
-        "source_family": "pad_noise",
+        "source_family": SOURCE_FAMILY_PAD_NOISE,
         "corpus_case_id": "pad_noise_fadapad_120",
         "expected_timing_confidence": "degraded",
         "expected_grid_use": "unavailable",
@@ -49,7 +58,7 @@ CASES = [
     },
     {
         "case_id": "bad_timing_beat20_128",
-        "source_family": "bad_timing",
+        "source_family": SOURCE_FAMILY_BAD_TIMING,
         "corpus_case_id": "bad_timing_beat20_128",
         "expected_timing_confidence": "candidate_ambiguous",
         "expected_grid_use": "manual_confirm_only",
@@ -417,25 +426,34 @@ def source_selection_promotion_gate(
         "human_verdict_unverified",
         "diagnostic_only_quality_proof_false",
     ]
-    if source_family == "bad_timing":
+    demotion_reasons = [DEMOTION_REASON_DIAGNOSTIC_ONLY]
+    review_actions = [REVIEW_ACTION_KEEP_DIAGNOSTIC]
+    if source_family == SOURCE_FAMILY_BAD_TIMING:
         blockers.extend(
             [
                 "timing_grid_requires_manual_confirmation",
                 "bar_locked_moves_blocked_until_timing_confirmed",
             ]
         )
-    if source_family == "pad_noise":
+        demotion_reasons.append(DEMOTION_REASON_TIMING_REVIEW_REQUIRED)
+        review_actions.append(REVIEW_ACTION_CONFIRM_TIMING)
+    if source_family == SOURCE_FAMILY_PAD_NOISE:
         blockers.extend(
             [
                 "pad_noise_texture_requires_human_review",
                 "not_dense_break_promotion_material",
             ]
         )
+        demotion_reasons.append(DEMOTION_REASON_TEXTURE_REVIEW_REQUIRED)
+        review_actions.append(REVIEW_ACTION_AUDITION_TEXTURE)
     if "source_selection" in list_or_empty(route.get("proposed_fix_categories")):
         blockers.append("source_selection_fix_required")
     return {
         "promotion_allowed": False,
-        "promotion_state": "blocked_for_source_selection_review",
+        "promotion_state": PROMOTION_STATE_BLOCKED_FOR_REVIEW,
+        "demotion_reasons": sorted(set(demotion_reasons)),
+        "required_review_actions": sorted(set(review_actions)),
+        "actionable_for_musician": True,
         "source_family": source_family,
         "pressure_policy_family": str(pressure_lift_policy.get("source_family") or ""),
         "timing_confidence_result": source_timing.get("confidence_result"),
@@ -461,14 +479,42 @@ def source_selection_promotion_summary(cases: list[dict[str, Any]]) -> dict[str,
             for blocker in list_or_empty(gate.get("blockers"))
         }
     )
+    demotion_reasons = sorted(
+        {
+            str(reason)
+            for gate in blocked
+            for reason in list_or_empty(gate.get("demotion_reasons"))
+        }
+    )
+    required_review_actions = sorted(
+        {
+            str(action)
+            for gate in blocked
+            for action in list_or_empty(gate.get("required_review_actions"))
+        }
+    )
+    demotion_reason_counts = {
+        reason: sum(
+            1
+            for gate in blocked
+            if reason in list_or_empty(gate.get("demotion_reasons"))
+        )
+        for reason in demotion_reasons
+    }
     return {
         "result": "pass",
         "case_count": len(cases),
         "blocked_case_count": len(blocked),
+        "demoted_case_count": len(blocked),
         "blocked_source_families": sorted(
             str(gate.get("source_family")) for gate in blocked
         ),
         "blockers": blocker_set,
+        "demotion_reasons": demotion_reasons,
+        "demotion_reason_counts": demotion_reason_counts,
+        "required_review_actions": required_review_actions,
+        "required_review_action_count": len(required_review_actions),
+        "actionable_demotions": bool(blocked) and bool(required_review_actions),
         "quality_proof": False,
         "promotion_allowed": False,
         "musician_reason": (
@@ -501,8 +547,8 @@ def weak_output_signals(
         signals.append(grid_use)
     signals.extend(warnings)
     policy_family = str(pressure_lift_policy.get("source_family") or "")
-    if source_family == "pad_noise":
-        if policy_family == "pad_noise":
+    if source_family == SOURCE_FAMILY_PAD_NOISE:
+        if policy_family == SOURCE_FAMILY_PAD_NOISE:
             signals.append("pad_noise_policy_path")
             signals.append("pad_noise_texture_gate")
         else:
@@ -510,8 +556,8 @@ def weak_output_signals(
             if policy_family == "dense_break":
                 signals.append("pad_noise_misclassified_as_dense_break")
             signals.append("source_not_transformed_for_pad_noise")
-    if source_family == "bad_timing":
-        if policy_family == "bad_timing":
+    if source_family == SOURCE_FAMILY_BAD_TIMING:
+        if policy_family == SOURCE_FAMILY_BAD_TIMING:
             signals.append("bad_timing_cautious_arrangement_path")
             signals.append("confirm_timing_before_bar_locked_moves")
         else:
@@ -524,7 +570,7 @@ def weak_output_signals(
 
 
 def reason_tags_for_case(source_family: str) -> dict[str, str]:
-    if source_family == "pad_noise":
+    if source_family == SOURCE_FAMILY_PAD_NOISE:
         return {
             "hook_clarity": "weak",
             "source_character": "source_lost",
@@ -542,7 +588,7 @@ def timing_policy_for_case(
     source_timing: dict[str, Any],
     pressure_lift_policy: dict[str, Any],
 ) -> dict[str, Any]:
-    if source_family == "bad_timing":
+    if source_family == SOURCE_FAMILY_BAD_TIMING:
         cautious = (
             source_timing.get("confidence_result") == "candidate_ambiguous"
             or source_timing.get("grid_use") == "manual_confirm_only"
@@ -585,9 +631,12 @@ def diagnostic_failure_codes(
         failures.append("source_timing_grid_use_unexpected")
     if not pressure_lift_policy.get("source_family"):
         failures.append("pressure_lift_source_family_missing")
-    if spec.get("source_family") == "pad_noise" and pressure_lift_policy.get("source_family") != "pad_noise":
+    if (
+        spec.get("source_family") == SOURCE_FAMILY_PAD_NOISE
+        and pressure_lift_policy.get("source_family") != SOURCE_FAMILY_PAD_NOISE
+    ):
         failures.append("pad_noise_policy_not_applied")
-    if spec.get("source_family") == "pad_noise":
+    if spec.get("source_family") == SOURCE_FAMILY_PAD_NOISE:
         if number(proof.get("pad_noise_texture_source_derived")) < 1.0:
             failures.append("pad_noise_texture_not_source_derived")
         if number(proof.get("pad_noise_texture_candidate_count")) < MIN_PAD_NOISE_TEXTURE_CANDIDATES:
@@ -612,8 +661,8 @@ def diagnostic_failure_codes(
             < MIN_PAD_NOISE_TEXTURE_TRANSIENT_RATIO
         ):
             failures.append("pad_noise_texture_lacks_transient_shape")
-    if spec.get("source_family") == "bad_timing":
-        if pressure_lift_policy.get("source_family") != "bad_timing":
+    if spec.get("source_family") == SOURCE_FAMILY_BAD_TIMING:
+        if pressure_lift_policy.get("source_family") != SOURCE_FAMILY_BAD_TIMING:
             failures.append("bad_timing_cautious_policy_not_applied")
         if timing_policy.get("bar_locked_policy_allowed") is not False:
             failures.append("bad_timing_bar_locked_policy_allowed")
@@ -664,7 +713,7 @@ def diagnostic_failure_codes(
 
 def case_failure_codes(cases: list[dict[str, Any]]) -> list[str]:
     failures = []
-    expected_families = ["bad_timing", "pad_noise"]
+    expected_families = [SOURCE_FAMILY_BAD_TIMING, SOURCE_FAMILY_PAD_NOISE]
     families = sorted(str(case.get("source_family", "")) for case in cases)
     if families != expected_families:
         failures.append("source_family_coverage_mismatch")
@@ -723,7 +772,10 @@ def report_failure_codes(
         failures.append("source_selection_promotion_claims_quality")
     if number(promotion.get("blocked_case_count")) < 2.0:
         failures.append("source_selection_blocked_case_count_too_low")
-    if sorted(string_list(promotion.get("blocked_source_families"))) != ["bad_timing", "pad_noise"]:
+    if sorted(string_list(promotion.get("blocked_source_families"))) != [
+        SOURCE_FAMILY_BAD_TIMING,
+        SOURCE_FAMILY_PAD_NOISE,
+    ]:
         failures.append("source_selection_blocked_family_coverage_mismatch")
     summary_blockers = string_list(promotion.get("blockers"))
     for required in (
@@ -733,6 +785,24 @@ def report_failure_codes(
     ):
         if required not in summary_blockers:
             failures.append(f"source_selection_promotion_missing_{required}")
+    summary_demotions = string_list(promotion.get("demotion_reasons"))
+    for reason in (
+        DEMOTION_REASON_DIAGNOSTIC_ONLY,
+        DEMOTION_REASON_TIMING_REVIEW_REQUIRED,
+        DEMOTION_REASON_TEXTURE_REVIEW_REQUIRED,
+    ):
+        if reason not in summary_demotions:
+            failures.append(f"source_selection_demotion_missing_{reason}")
+    summary_actions = string_list(promotion.get("required_review_actions"))
+    for action in (
+        REVIEW_ACTION_KEEP_DIAGNOSTIC,
+        REVIEW_ACTION_CONFIRM_TIMING,
+        REVIEW_ACTION_AUDITION_TEXTURE,
+    ):
+        if action not in summary_actions:
+            failures.append(f"source_selection_review_action_missing_{action}")
+    if promotion.get("actionable_demotions") is not True:
+        failures.append("source_selection_demotions_not_actionable")
     cases = list_or_empty(report.get("cases"))
     if len(cases) < 2:
         failures.append("case_coverage_too_small")
@@ -754,12 +824,12 @@ def report_failure_codes(
         if len(str(case.get("source_window_sha256", ""))) != 64:
             failures.append(f"{case_id}:source_window_sha_invalid")
         if (
-            case.get("source_family") == "pad_noise"
+            case.get("source_family") == SOURCE_FAMILY_PAD_NOISE
             and object_or_empty(case.get("pressure_lift_policy")).get("source_family")
-            != "pad_noise"
+            != SOURCE_FAMILY_PAD_NOISE
         ):
             failures.append(f"{case_id}:pad_noise_policy_not_applied")
-        if case.get("source_family") == "pad_noise":
+        if case.get("source_family") == SOURCE_FAMILY_PAD_NOISE:
             if source_timing.get("confidence_result") != "degraded":
                 failures.append(f"{case_id}:pad_noise_timing_confidence_unexpected")
             if source_timing.get("grid_use") != "unavailable":
@@ -789,14 +859,14 @@ def report_failure_codes(
             ):
                 failures.append(f"{case_id}:pad_noise_texture_lacks_transient_shape")
         timing_policy = object_or_empty(case.get("timing_policy"))
-        if case.get("source_family") == "bad_timing":
+        if case.get("source_family") == SOURCE_FAMILY_BAD_TIMING:
             if source_timing.get("confidence_result") != "candidate_ambiguous":
                 failures.append(f"{case_id}:bad_timing_confidence_unexpected")
             if source_timing.get("grid_use") != "manual_confirm_only":
                 failures.append(f"{case_id}:bad_timing_grid_use_unexpected")
             if (
                 object_or_empty(case.get("pressure_lift_policy")).get("source_family")
-                != "bad_timing"
+                != SOURCE_FAMILY_BAD_TIMING
             ):
                 failures.append(f"{case_id}:bad_timing_cautious_policy_not_applied")
             if timing_policy.get("policy") != "manual_confirm_cautious_arrangement":
@@ -855,7 +925,7 @@ def report_failure_codes(
         promotion_gate = object_or_empty(case.get("source_selection_promotion_gate"))
         if promotion_gate.get("promotion_allowed") is not False:
             failures.append(f"{case_id}:source_selection_promotion_allowed")
-        if promotion_gate.get("promotion_state") != "blocked_for_source_selection_review":
+        if promotion_gate.get("promotion_state") != PROMOTION_STATE_BLOCKED_FOR_REVIEW:
             failures.append(f"{case_id}:source_selection_promotion_state_mismatch")
         if "human_verdict_unverified" not in string_list(promotion_gate.get("blockers")):
             failures.append(f"{case_id}:source_selection_human_blocker_missing")
@@ -865,11 +935,15 @@ def report_failure_codes(
         ):
             failures.append(f"{case_id}:source_selection_fix_blocker_missing")
         if (
-            case.get("source_family") == "bad_timing"
+            case.get("source_family") == SOURCE_FAMILY_BAD_TIMING
             and "timing_grid_requires_manual_confirmation"
             not in string_list(promotion_gate.get("blockers"))
         ):
             failures.append(f"{case_id}:bad_timing_confirmation_blocker_missing")
+        if not string_list(promotion_gate.get("demotion_reasons")):
+            failures.append(f"{case_id}:source_selection_demotion_reason_missing")
+        if not string_list(promotion_gate.get("required_review_actions")):
+            failures.append(f"{case_id}:source_selection_review_action_missing")
         if require_artifacts:
             rendered_audio = Path(str(case.get("rendered_audio", "")))
             source_timing_path = Path(str(source_timing.get("report", "")))
@@ -884,7 +958,7 @@ def report_failure_codes(
         if case.get("quality_proof") is not False:
             failures.append(f"{case_id}:quality_proof_not_false")
     families = sorted(str(case.get("source_family", "")) for case in cases)
-    if families != ["bad_timing", "pad_noise"]:
+    if families != [SOURCE_FAMILY_BAD_TIMING, SOURCE_FAMILY_PAD_NOISE]:
         failures.append("source_family_coverage_mismatch")
     return sorted(set(failures))
 

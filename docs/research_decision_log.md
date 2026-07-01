@@ -170,6 +170,20 @@ Status: accepted
 
 ---
 
+### RBX-114
+
+Date: 2026-07-01
+Topic: Source-selection edge material needs actionable demotion evidence
+Phase: P023 / Sound Excellence / Production Quality
+Question: is it enough for P023 diagnostics to mark bad-timing and pad/noise edge sources as blocked from promotion?
+Decision: no. Edge-source promotion summaries must also carry demotion reasons, reason counts, and concrete review actions. Bad-timing material must point to timing confirmation before bar-locked moves; pad/noise material must point to texture audition before demo promotion; all diagnostic edge cases stay `quality_proof: false` and `human_verdict: unverified`.
+Why: a plain blocked flag protects against false quality claims, but it does not tell the musician or implementer what must happen next. Source-selection risk should be visible as actionable product state, not a vague backlog bucket or a hidden fallback path.
+Evidence: RIOTBOX-1363 adds source-selection demotion fields to edge-source diagnostics, lifts them through the professional-output suite and sound-quality readiness report, and validates the required reasons/actions in the suite and readiness gates.
+Consequences: future source-selection fixes must preserve the no-promotion boundary for risky edge sources until source evidence, timing confidence, human verdict, and audible result are good enough. Demotion evidence is a routing/protection contract, not a musical approval gate.
+Status: accepted
+
+---
+
 ### RBX-109
 
 Date: 2026-07-01

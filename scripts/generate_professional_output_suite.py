@@ -1454,6 +1454,28 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                 str(blocker)
                 for blocker in list_or_empty(promotion_summary.get("blockers"))
             ),
+            "source_selection_demotion_reasons": sorted(
+                str(reason)
+                for reason in list_or_empty(promotion_summary.get("demotion_reasons"))
+            ),
+            "source_selection_demotion_reason_counts": {
+                str(reason): int(number(count))
+                for reason, count in object_or_empty(
+                    promotion_summary.get("demotion_reason_counts")
+                ).items()
+            },
+            "source_selection_required_review_actions": sorted(
+                str(action)
+                for action in list_or_empty(
+                    promotion_summary.get("required_review_actions")
+                )
+            ),
+            "source_selection_required_review_action_count": int(
+                number(promotion_summary.get("required_review_action_count"))
+            ),
+            "source_selection_actionable_demotions": bool(
+                promotion_summary.get("actionable_demotions")
+            ),
             **strongest_audible_element_key_metrics(list_or_empty(data.get("cases"))),
             **rebuild_only_source_character_key_metrics(list_or_empty(data.get("cases"))),
             "pad_noise_texture_source_derived_count": sum(
