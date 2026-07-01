@@ -31,8 +31,9 @@ const GENERATED_SUPPORT_MIX_POLICY: MixPolicy = MixPolicy {
 
 const ALL_LANE_MIX_MIN_RMS_DELTA: f32 = 0.012;
 const ALL_LANE_MIX_MAX_CORRELATION: f32 = 0.999;
-const ALL_LANE_MIX_MIN_LANE_CONTRIBUTION_RATIO: f32 = 0.015;
-const ALL_LANE_MIX_MIN_GENERATED_TO_W30_RATIO: f32 = 0.08;
+const ALL_LANE_MIX_MIN_LANE_CONTRIBUTION_RATIO: f32 = 0.020;
+const ALL_LANE_MIX_MIN_GENERATED_TO_W30_RATIO: f32 = 0.145;
+const DROP_SUPPORT_TARGET_GENERATED_TO_SOURCE_RMS_RATIO: f32 = 0.147;
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize)]
 struct AllLaneMixMovementProof {
@@ -63,26 +64,41 @@ fn render_generated_support_mix_for_source_contour(
     tr909: &[f32],
     mc202: &[f32],
     w30: &[f32],
+    grid: &Grid,
     source_contour: Mc202SourceContourProfile,
 ) -> Vec<f32> {
     render_mix(
         tr909,
         mc202,
         w30,
-        generated_support_mix_policy_for_source_contour(source_contour),
+        generated_support_mix_policy_for_source_contour_and_stems(
+            tr909,
+            mc202,
+            w30,
+            grid,
+            source_contour,
+        ),
     )
 }
 
-fn generated_support_mix_policy_for_source_contour(
+fn generated_support_mix_policy_for_source_contour_and_stems(
+    tr909: &[f32],
+    mc202: &[f32],
+    w30: &[f32],
+    grid: &Grid,
     source_contour: Mc202SourceContourProfile,
 ) -> MixPolicy {
     let mut policy = GENERATED_SUPPORT_MIX_POLICY;
     match source_contour.contour_hint {
         Mc202ContourHint::Drop => {
-            policy.tr909_gain *= 1.012;
-            policy.tr909_low_gain *= 1.012;
-            policy.mc202_gain *= 1.012;
-            policy.mc202_low_gain *= 1.012;
+            policy = boost_generated_support_to_floor(
+                tr909,
+                mc202,
+                w30,
+                grid,
+                policy,
+                DROP_SUPPORT_TARGET_GENERATED_TO_SOURCE_RMS_RATIO,
+            );
         }
         Mc202ContourHint::Lift => {
             policy.mc202_gain *= 1.16;
@@ -97,6 +113,27 @@ fn generated_support_mix_policy_for_source_contour(
             policy.w30_gain *= 0.86;
         }
     }
+    policy
+}
+
+fn boost_generated_support_to_floor(
+    tr909: &[f32],
+    mc202: &[f32],
+    w30: &[f32],
+    grid: &Grid,
+    mut policy: MixPolicy,
+    target_ratio: f32,
+) -> MixPolicy {
+    let current_ratio = generated_to_source_rms_ratio(tr909, mc202, w30, grid, policy);
+    if current_ratio <= f32::EPSILON || current_ratio >= target_ratio {
+        return policy;
+    }
+
+    let multiplier = target_ratio / current_ratio;
+    policy.tr909_gain *= multiplier;
+    policy.tr909_low_gain *= multiplier;
+    policy.mc202_gain *= multiplier;
+    policy.mc202_low_gain *= multiplier;
     policy
 }
 
@@ -159,7 +196,13 @@ fn all_lane_mix_movement_proof_for_source_contour(
         source_first_mix,
         generated_support_mix,
         grid,
-        generated_support_mix_policy_for_source_contour(source_contour),
+        generated_support_mix_policy_for_source_contour_and_stems(
+            tr909,
+            mc202,
+            w30,
+            grid,
+            source_contour,
+        ),
     )
 }
 
@@ -338,7 +381,13 @@ fn support_generated_to_source_rms_ratio_for_source_contour(
         mc202,
         w30,
         grid,
-        generated_support_mix_policy_for_source_contour(source_contour),
+        generated_support_mix_policy_for_source_contour_and_stems(
+            tr909,
+            mc202,
+            w30,
+            grid,
+            source_contour,
+        ),
     )
 }
 

@@ -10,10 +10,10 @@ use riotbox_audio::listening_manifest::{
 use super::{
     AllLaneMixMovementProof, Args, BarVariationMetrics, CHANNEL_COUNT, Grid, GridBpmDecision,
     MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO, MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
-    MIN_LOW_BAND_RMS, MIN_SIGNAL_RMS, ManifestMc202BassPressureProof,
-    ManifestMc202SourceContourProof, ManifestSourceTimingReadiness, ManifestTr909KickPressureProof,
-    ManifestTr909SourceAccentDynamicsProof, ManifestTr909SourceProfile,
-    ManifestW30SourceAccentDynamicsProof, ManifestW30SourceChopProfile,
+    MIN_LOW_BAND_RMS, MIN_SIGNAL_RMS, MIN_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
+    ManifestMc202BassPressureProof, ManifestMc202SourceContourProof, ManifestSourceTimingReadiness,
+    ManifestTr909KickPressureProof, ManifestTr909SourceAccentDynamicsProof,
+    ManifestTr909SourceProfile, ManifestW30SourceAccentDynamicsProof, ManifestW30SourceChopProfile,
     ManifestW30SourceLoopClosureProof, ManifestW30SourceSliceChoiceProof,
     ManifestW30SourceTriggerVariationProof, PACK_ID, PackReport, RenderMetrics, SAMPLE_RATE,
     SourceCharacterWindowSelection, SourceGridOutputDriftMetrics, SourceTimingAnalysisForManifest,
@@ -88,6 +88,7 @@ struct ManifestPrimitiveRendererBoundary {
 struct ManifestThresholds {
     min_signal_rms: f32,
     min_low_band_rms: f32,
+    min_support_generated_to_source_rms_ratio: f32,
     max_source_first_generated_to_source_rms_ratio: f32,
     max_support_generated_to_source_rms_ratio: f32,
 }
@@ -185,6 +186,7 @@ pub(super) fn write_manifest(
         thresholds: ManifestThresholds {
             min_signal_rms: MIN_SIGNAL_RMS,
             min_low_band_rms: MIN_LOW_BAND_RMS,
+            min_support_generated_to_source_rms_ratio: MIN_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
             max_source_first_generated_to_source_rms_ratio:
                 MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO,
             max_support_generated_to_source_rms_ratio: MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,

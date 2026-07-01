@@ -58,6 +58,20 @@ Status: accepted
 
 ---
 
+### RBX-105
+
+Date: 2026-06-30
+Topic: Mix-bus impact must rise with source-masking headroom intact
+Phase: P023 Sound Excellence / Production Quality
+Question: how should routed `mix_bus` weak-output fixes increase musical impact without hiding the transformed source?
+Decision: generated-support mix fixes may raise TR-909/MC-202 impact only when source-first masking remains tightly bounded. The P023 professional-output suite now treats source-first generated/source ratio above `0.08` as masking, requires at least `0.04` source-first masking headroom, and raises the useful generated-support floor to `0.145` while preserving the `0.46` support/source ceiling.
+Why: weak-output routing showed support could be too buried or source-masking depending on family. A mix-bus fix that only makes generated support louder risks hiding the W-30/source identity; a fix that only lowers support stays polite. The gate must require useful impact and preserved source character together.
+Evidence: RIOTBOX-1354 strengthens drop-contour generated-support shaping and mirrors the stricter support/headroom contract through the professional-output generator, validator, audio QA spec, and readiness aggregation.
+Consequences: future mix-bus work should report both musician payoff and masking risk. Scripted diagnostic evidence remains `quality_proof: false` and cannot be promoted as musical approval without structured listening.
+Status: accepted
+
+---
+
 ### RBX-092
 
 Date: 2026-06-30

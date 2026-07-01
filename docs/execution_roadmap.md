@@ -887,6 +887,12 @@ following:
   professional-suite/readiness/family validators reduce the generated/source
   masking ceiling from `0.16` to `0.08` so generated support can hit hard
   without hiding transformed source identity.
+- RIOTBOX-1354 strengthens that mix-bus path from routed weak-output evidence:
+  drop-contour generated support now carries more TR-909/MC-202 impact, the
+  professional suite raises the minimum useful support ratio to `0.145`, and
+  source-first masking headroom must stay at least `0.04` below the `0.08`
+  masking ceiling. The result should make the strongest element clearer without
+  burying transformed source character; evidence remains diagnostic-only.
 - RIOTBOX-1308 starts source-window character selection before output
   promotion: Feral now scores real source windows from the selected search
   range, records the requested-vs-selected source-character window in reports
