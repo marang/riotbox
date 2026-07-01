@@ -813,6 +813,13 @@ following:
   `hook_chop_w30_to_source_margin >= 0.10`, and the source-derived W-30/riff
   render path is pushed forward so the first two bars read as a hook instead of
   background support.
+- RIOTBOX-1358 tightens that same routed `chop_policy` path around source
+  character instead of raw loudness: tonal hook/chop replacement may no longer
+  swap a high-character source grain for a weaker one merely to widen
+  source-character span, and dense/tonal professional diagnostics now require
+  `hook_chop_source_character_score_floor >= 0.64`. The tonal source-WAV case
+  raises its hook/chop floor from about `0.608` to `0.644` while keeping
+  `hook_chop_source_character_score_span >= 0.10`.
 - RIOTBOX-1355 turns source-selection blockers into an active
   source-character window-selection contract: Feral grid packs now report
   search duration, selected RMS, requested RMS, retention ratio, and minimum

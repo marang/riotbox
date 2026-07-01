@@ -86,7 +86,7 @@ MIN_HOOK_CHOP_RIFF_SOURCE_OFFSETS = 4
 MIN_HOOK_CHOP_RIFF_HIT_COUNT = 7
 MIN_HOOK_CHOP_RIFF_VELOCITY_SPAN = 0.20
 MIN_HOOK_CHOP_RIFF_REVERSE_COUNT = 2
-MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR = 0.60
+MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR = 0.64
 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN = 0.10
 MIN_DESTRUCTIVE_GESTURE_CANDIDATES = 3
 MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES = 256.0
@@ -834,6 +834,7 @@ def source_character_contrast_riff_starts(
 ) -> list[int]:
     current_scores = source_character_scores_for_starts(candidates, tuple(starts))
     current_span = max(current_scores) - min(current_scores)
+    current_floor = min(current_scores) if current_scores else 0.0
     target_span = MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN * 1.35
     if current_span >= target_span:
         return starts
@@ -880,6 +881,11 @@ def source_character_contrast_riff_starts(
                 continue
             new_scores = [score_by_start.get(existing, 0.0) for existing in others] + [character]
             if min(new_scores) < min_character:
+                continue
+            if (
+                source_family == SOURCE_FAMILY_TONAL_HOOK
+                and min(new_scores) < current_floor - 0.005
+            ):
                 continue
             if max(new_scores) - min(new_scores) <= current_span + 0.020:
                 continue

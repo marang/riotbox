@@ -661,7 +661,10 @@ P023 Hook/Chop source selection may also expose
 `hook_chop_source_character_score_span`. These fields prove that source-backed
 hook/chop/riff windows were selected from windows with enough source identity
 and enough variation across selected offsets. They are a bounded selection
-contract, not a musical pass.
+contract, not a musical pass. Dense-break and tonal-hook professional
+diagnostics must keep `hook_chop_source_character_score_floor >= 0.64`; tonal
+replacement logic must not trade away the existing selected source-character
+floor merely to widen the span.
 
 P023 source-character window selection also exposes
 `source_character_window_selection` in Feral grid manifests and professional
