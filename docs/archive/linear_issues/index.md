@@ -1342,4 +1342,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Strengthen TR-909 drum pressure from weak-output routing
 - [RIOTBOX-1357.md](./RIOTBOX-1357.md)
   P023: Strengthen destructive gestures from weak-output routing
+- [RIOTBOX-1358.md](./RIOTBOX-1358.md)
+  P023: Strengthen W-30 hook/chop from weak-output routing
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
