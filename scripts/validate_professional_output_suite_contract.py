@@ -28,6 +28,16 @@ EXPECTED_LISTENING_FAMILIES = [
     "tonal_hook",
 ]
 EXPECTED_EDGE_FAMILIES = ["bad_timing", "pad_noise"]
+EXPECTED_SOURCE_SELECTION_DEMOTION_REASONS = [
+    "diagnostic_only_not_quality_proof",
+    "texture_review_required",
+    "timing_review_required",
+]
+EXPECTED_SOURCE_SELECTION_REVIEW_ACTIONS = [
+    "audition_pad_noise_texture_before_demo_promotion",
+    "confirm_timing_before_bar_locked_moves",
+    "keep_as_diagnostic_until_human_verdict",
+]
 AUDIBLE_ELEMENTS = {"kick", "snare", "bass", "stab", "silence", "restore"}
 MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO = 0.22
 MIN_HOOK_FORWARD_W30_TO_SOURCE_MARGIN = 0.10
@@ -543,6 +553,37 @@ def validate_edge_metrics(metrics: dict[str, Any], failures: list[str]) -> None:
             f"edge_source_selection_{blocker}_missing",
             failures,
         )
+    demotion_reasons = list_or_empty(metrics.get("source_selection_demotion_reasons"))
+    for reason in EXPECTED_SOURCE_SELECTION_DEMOTION_REASONS:
+        require(
+            reason in demotion_reasons,
+            f"edge_source_selection_demotion_{reason}_missing",
+            failures,
+        )
+    demotion_counts = object_or_empty(metrics.get("source_selection_demotion_reason_counts"))
+    for reason in EXPECTED_SOURCE_SELECTION_DEMOTION_REASONS:
+        require(
+            number(demotion_counts.get(reason)) >= 1.0,
+            f"edge_source_selection_demotion_{reason}_count_missing",
+            failures,
+        )
+    review_actions = list_or_empty(metrics.get("source_selection_required_review_actions"))
+    for action in EXPECTED_SOURCE_SELECTION_REVIEW_ACTIONS:
+        require(
+            action in review_actions,
+            f"edge_source_selection_review_action_{action}_missing",
+            failures,
+        )
+    require(
+        number(metrics.get("source_selection_required_review_action_count")) >= 3.0,
+        "edge_source_selection_review_action_count_too_low",
+        failures,
+    )
+    require(
+        metrics.get("source_selection_actionable_demotions") is True,
+        "edge_source_selection_demotions_not_actionable",
+        failures,
+    )
 
 
 def validate_hook_chop_metrics(

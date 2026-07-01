@@ -43,6 +43,16 @@ MIN_SPARSE_BASS_DOMINANCE_MARGIN = 0.20
 MIN_MIX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.13
 MAX_MIX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO = 0.08
 MAX_MIX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.46
+EXPECTED_SOURCE_SELECTION_DEMOTION_REASONS = [
+    "diagnostic_only_not_quality_proof",
+    "texture_review_required",
+    "timing_review_required",
+]
+EXPECTED_SOURCE_SELECTION_REVIEW_ACTIONS = [
+    "audition_pad_noise_texture_before_demo_promotion",
+    "confirm_timing_before_bar_locked_moves",
+    "keep_as_diagnostic_until_human_verdict",
+]
 
 CORPUS_TO_DEMO_FAMILIES = {
     "dense_break": {"dense_break"},
@@ -517,6 +527,19 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
             "promotion_blockers": list(
                 edge.get("source_selection_promotion_blockers") or []
             ),
+            "demotion_reasons": list(
+                edge.get("source_selection_demotion_reasons") or []
+            ),
+            "demotion_reason_counts": dict(
+                edge.get("source_selection_demotion_reason_counts") or {}
+            ),
+            "required_review_actions": list(
+                edge.get("source_selection_required_review_actions") or []
+            ),
+            "required_review_action_count": int(
+                number(edge.get("source_selection_required_review_action_count"))
+            ),
+            "actionable_demotions": edge.get("source_selection_actionable_demotions"),
             "musician_payoff": (
                 "Risky edge sources stay review/routing material instead of "
                 "being promoted as strong demos before source selection is trusted."
@@ -884,6 +907,44 @@ def validate_report(report: dict[str, Any]) -> list[str]:
                     f"professional_suite_source_selection_{blocker}_missing",
                     failures,
                 )
+            demotion_reasons = list(
+                suite_source_selection_risk.get("demotion_reasons") or []
+            )
+            for reason in EXPECTED_SOURCE_SELECTION_DEMOTION_REASONS:
+                check(
+                    reason in demotion_reasons,
+                    f"professional_suite_source_selection_demotion_{reason}_missing",
+                    failures,
+                )
+            demotion_counts = object_or_empty(
+                suite_source_selection_risk.get("demotion_reason_counts")
+            )
+            for reason in EXPECTED_SOURCE_SELECTION_DEMOTION_REASONS:
+                check(
+                    number(demotion_counts.get(reason)) >= 1.0,
+                    f"professional_suite_source_selection_demotion_{reason}_count_missing",
+                    failures,
+                )
+            review_actions = list(
+                suite_source_selection_risk.get("required_review_actions") or []
+            )
+            for action in EXPECTED_SOURCE_SELECTION_REVIEW_ACTIONS:
+                check(
+                    action in review_actions,
+                    f"professional_suite_source_selection_review_action_{action}_missing",
+                    failures,
+                )
+            check(
+                number(suite_source_selection_risk.get("required_review_action_count"))
+                >= 3.0,
+                "professional_suite_source_selection_review_action_count_too_low",
+                failures,
+            )
+            check(
+                suite_source_selection_risk.get("actionable_demotions") is True,
+                "professional_suite_source_selection_demotions_not_actionable",
+                failures,
+            )
         check(
             isinstance(suite_mix_balance, dict),
             "professional_suite_mix_balance_missing",
@@ -1434,6 +1495,7 @@ def markdown_report(report: dict[str, Any]) -> str:
     source_character_window = object_or_empty(
         suite.get("source_character_window_selection")
     )
+    source_selection_risk = object_or_empty(suite.get("source_selection_risk"))
     drum_pressure = object_or_empty(suite.get("drum_pressure"))
     mix_balance = object_or_empty(suite.get("mix_balance"))
     lines.extend(
@@ -1455,6 +1517,15 @@ def markdown_report(report: dict[str, Any]) -> str:
                 f"`{source_character_window.get('searched_case_count')}`, min RMS retention "
                 f"`{source_character_window.get('min_observed_rms_retention_ratio')}`, "
                 f"max lift `{source_character_window.get('max_score_lift')}`"
+            ),
+            (
+                "- Source-selection risk: "
+                f"blocked `{source_selection_risk.get('edge_blocked_case_count')}`, "
+                f"families `{', '.join(source_selection_risk.get('blocked_source_families', []))}`, "
+                "demotions "
+                f"`{', '.join(source_selection_risk.get('demotion_reasons', []))}`, "
+                "review actions "
+                f"`{', '.join(source_selection_risk.get('required_review_actions', []))}`"
             ),
             (
                 "- Drum pressure: "

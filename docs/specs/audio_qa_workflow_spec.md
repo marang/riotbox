@@ -681,6 +681,15 @@ the family-specific hook/caution contract. These metrics prove source-window
 selection is active and energy-preserving; they remain diagnostic evidence with
 `quality_proof: false`.
 
+P023 source-selection risk must also expose actionable demotion evidence for
+edge material. Bad-timing and pad/noise diagnostics may stay source-backed, but
+they must not be promoted as release-quality demos while timing confidence,
+texture suitability, or human verdict state remains unresolved. Professional
+suite/readiness reports therefore require blocked edge families, demotion reason
+counts, and concrete review actions such as confirming timing before bar-locked
+moves or auditioning pad/noise texture before demo promotion. This is a
+musician-facing safety boundary, not a musical approval gate.
+
 P023 Hook/Chop riff playback diagnostics also expose
 `hook_chop_riff_hit_pattern_source_derived`,
 `hook_chop_riff_hit_count`, `hook_chop_riff_velocity_span`, and

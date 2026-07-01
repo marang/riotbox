@@ -995,6 +995,12 @@ following:
   `trusted`, `degraded`, and `unavailable`, and tells the player whether grid
   moves are performable, should be confirmed/listened first, or need source
   recapture/loading.
+- RIOTBOX-1363 strengthens source-selection promotion/demotion evidence for
+  P023 edge sources: bad-timing and pad/noise material remains blocked from demo
+  promotion, but professional-suite/readiness reports now require demotion
+  reason counts and concrete review actions so the musician sees whether the
+  next step is timing confirmation, pad/noise texture audition, or keeping the
+  artifact diagnostic until human verdict.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue
