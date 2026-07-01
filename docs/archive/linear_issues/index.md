@@ -1334,4 +1334,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Strengthen bass movement from weak-output routing
 - [RIOTBOX-1353.md](./RIOTBOX-1353.md)
   P023: Strengthen destructive gesture from weak-output routing
+- [RIOTBOX-1354.md](./RIOTBOX-1354.md)
+  P023: Strengthen mix-bus impact without source masking
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
