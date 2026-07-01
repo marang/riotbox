@@ -518,6 +518,15 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             "hook_chop_source_character_score_span": number(
                 proof.get("hook_chop_source_character_score_span")
             ),
+            "hook_chop_response_delta_ratio": number(
+                proof.get("hook_chop_response_delta_ratio")
+            ),
+            "hook_chop_response_correlation": number(
+                proof.get("hook_chop_response_correlation")
+            ),
+            "hook_chop_response_transient_ratio": number(
+                proof.get("hook_chop_response_transient_ratio")
+            ),
             "destructive_gesture_source_derived": number(
                 proof.get("destructive_gesture_source_derived")
             ),
@@ -729,6 +738,45 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                     number(
                         object_or_empty(case.get("proof")).get(
                             "hook_chop_source_character_score_span"
+                        )
+                    )
+                    for case in cases
+                    if object_or_empty(case.get("pressure_lift_policy")).get("source_family")
+                    == "dense_break"
+                ),
+                default=0.0,
+            ),
+            "min_dense_hook_chop_response_delta_ratio": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "hook_chop_response_delta_ratio"
+                        )
+                    )
+                    for case in cases
+                    if object_or_empty(case.get("pressure_lift_policy")).get("source_family")
+                    == "dense_break"
+                ),
+                default=0.0,
+            ),
+            "max_dense_hook_chop_response_correlation": max(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "hook_chop_response_correlation"
+                        )
+                    )
+                    for case in cases
+                    if object_or_empty(case.get("pressure_lift_policy")).get("source_family")
+                    == "dense_break"
+                ),
+                default=1.0,
+            ),
+            "min_dense_hook_chop_response_transient_ratio": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "hook_chop_response_transient_ratio"
                         )
                     )
                     for case in cases
@@ -1042,6 +1090,42 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                     number(
                         object_or_empty(case.get("proof")).get(
                             "hook_chop_source_character_score_span"
+                        )
+                    )
+                    for case in cases
+                    if case.get("source_family") == "tonal_hook"
+                ),
+                default=0.0,
+            ),
+            "tonal_hook_chop_response_delta_ratio": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "hook_chop_response_delta_ratio"
+                        )
+                    )
+                    for case in cases
+                    if case.get("source_family") == "tonal_hook"
+                ),
+                default=0.0,
+            ),
+            "tonal_hook_chop_response_correlation": max(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "hook_chop_response_correlation"
+                        )
+                    )
+                    for case in cases
+                    if case.get("source_family") == "tonal_hook"
+                ),
+                default=1.0,
+            ),
+            "tonal_hook_chop_response_transient_ratio": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "hook_chop_response_transient_ratio"
                         )
                     )
                     for case in cases

@@ -39,6 +39,9 @@ MIN_HOOK_CHOP_RIFF_VELOCITY_SPAN = 0.25
 MIN_HOOK_CHOP_RIFF_REVERSE_COUNT = 1.0
 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR = 0.64
 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN = 0.10
+MIN_HOOK_CHOP_RESPONSE_DELTA_RATIO = 0.35
+MAX_HOOK_CHOP_RESPONSE_CORRELATION = 0.92
+MIN_HOOK_CHOP_RESPONSE_TRANSIENT_RATIO = 0.58
 MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 1.75
 MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 17.00
 MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 2.70
@@ -617,6 +620,24 @@ def validate_hook_chop_metrics(
         failures,
     )
     require(
+        number(dense.get("hook_chop_response_delta_ratio"))
+        >= MIN_HOOK_CHOP_RESPONSE_DELTA_RATIO,
+        "dense_hook_chop_response_delta_too_small",
+        failures,
+    )
+    require(
+        number(dense.get("hook_chop_response_correlation"))
+        <= MAX_HOOK_CHOP_RESPONSE_CORRELATION,
+        "dense_hook_chop_response_too_source_copied",
+        failures,
+    )
+    require(
+        number(dense.get("hook_chop_response_transient_ratio"))
+        >= MIN_HOOK_CHOP_RESPONSE_TRANSIENT_RATIO,
+        "dense_hook_chop_response_transient_too_weak",
+        failures,
+    )
+    require(
         number(matrix.get("min_dense_w30_to_source_rms_ratio"))
         >= MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO,
         "matrix_dense_hook_chop_w30_too_weak",
@@ -678,6 +699,24 @@ def validate_hook_chop_metrics(
         number(matrix.get("min_dense_hook_chop_source_character_score_span"))
         >= MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN,
         "matrix_dense_hook_chop_source_character_too_narrow",
+        failures,
+    )
+    require(
+        number(matrix.get("min_dense_hook_chop_response_delta_ratio"))
+        >= MIN_HOOK_CHOP_RESPONSE_DELTA_RATIO,
+        "matrix_dense_hook_chop_response_delta_too_small",
+        failures,
+    )
+    require(
+        number(matrix.get("max_dense_hook_chop_response_correlation"))
+        <= MAX_HOOK_CHOP_RESPONSE_CORRELATION,
+        "matrix_dense_hook_chop_response_too_source_copied",
+        failures,
+    )
+    require(
+        number(matrix.get("min_dense_hook_chop_response_transient_ratio"))
+        >= MIN_HOOK_CHOP_RESPONSE_TRANSIENT_RATIO,
+        "matrix_dense_hook_chop_response_transient_too_weak",
         failures,
     )
     require(
@@ -754,6 +793,24 @@ def validate_hook_chop_metrics(
         number(source_wav.get("tonal_hook_chop_source_character_score_span"))
         >= MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN,
         "source_wav_tonal_hook_chop_source_character_too_narrow",
+        failures,
+    )
+    require(
+        number(source_wav.get("tonal_hook_chop_response_delta_ratio"))
+        >= MIN_HOOK_CHOP_RESPONSE_DELTA_RATIO,
+        "source_wav_tonal_hook_chop_response_delta_too_small",
+        failures,
+    )
+    require(
+        number(source_wav.get("tonal_hook_chop_response_correlation"))
+        <= MAX_HOOK_CHOP_RESPONSE_CORRELATION,
+        "source_wav_tonal_hook_chop_response_too_source_copied",
+        failures,
+    )
+    require(
+        number(source_wav.get("tonal_hook_chop_response_transient_ratio"))
+        >= MIN_HOOK_CHOP_RESPONSE_TRANSIENT_RATIO,
+        "source_wav_tonal_hook_chop_response_transient_too_weak",
         failures,
     )
 

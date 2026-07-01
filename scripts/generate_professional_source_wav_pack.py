@@ -27,6 +27,9 @@ MIN_HOOK_CHOP_RIFF_VELOCITY_SPAN = 0.25
 MIN_HOOK_CHOP_RIFF_REVERSE_COUNT = 1.0
 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR = 0.64
 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN = 0.10
+MIN_HOOK_CHOP_RESPONSE_DELTA_RATIO = 0.35
+MAX_HOOK_CHOP_RESPONSE_CORRELATION = 0.92
+MIN_HOOK_CHOP_RESPONSE_TRANSIENT_RATIO = 0.58
 MIN_TONAL_MC202_TO_W30_RMS_RATIO = 0.20
 MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES = 256.0
 MIN_DESTRUCTIVE_OFFSET_DISTANCE_FRAMES = 512.0
@@ -291,6 +294,15 @@ def render_case(repo: Path, output: Path, date: str, case: dict) -> dict:
             ],
             "hook_chop_source_character_score_span": proof[
                 "hook_chop_source_character_score_span"
+            ],
+            "hook_chop_response_delta_ratio": proof[
+                "hook_chop_response_delta_ratio"
+            ],
+            "hook_chop_response_correlation": proof[
+                "hook_chop_response_correlation"
+            ],
+            "hook_chop_response_transient_ratio": proof[
+                "hook_chop_response_transient_ratio"
             ],
             "destructive_gesture_source_derived": proof[
                 "destructive_gesture_source_derived"
@@ -633,6 +645,12 @@ def validate_tonal_case(prefix: str, proof: dict[str, Any], failures: list[str])
         failures.append(f"{prefix}:hook_chop_source_character_too_weak")
     if number(proof.get("hook_chop_source_character_score_span")) < MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN:
         failures.append(f"{prefix}:hook_chop_source_character_too_flat")
+    if number(proof.get("hook_chop_response_delta_ratio")) < MIN_HOOK_CHOP_RESPONSE_DELTA_RATIO:
+        failures.append(f"{prefix}:hook_chop_response_delta_too_small")
+    if number(proof.get("hook_chop_response_correlation")) > MAX_HOOK_CHOP_RESPONSE_CORRELATION:
+        failures.append(f"{prefix}:hook_chop_response_too_source_copied")
+    if number(proof.get("hook_chop_response_transient_ratio")) < MIN_HOOK_CHOP_RESPONSE_TRANSIENT_RATIO:
+        failures.append(f"{prefix}:hook_chop_response_transient_too_weak")
     if number(proof.get("destructive_gesture_source_derived")) < 1.0:
         failures.append(f"{prefix}:destructive_gesture_not_source_derived")
     if number(proof.get("destructive_static_distance_frames")) < MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES:
