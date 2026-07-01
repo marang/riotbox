@@ -226,6 +226,20 @@ Status: accepted
 
 ---
 
+### RBX-118
+
+Date: 2026-07-01
+Topic: Mix-bus weak-output priority must be reconciled with current support evidence
+Phase: P023 / Sound Excellence / Production Quality
+Question: should old source-masked or support-buried weak fixtures keep driving `mix_bus` priority when current professional-suite mix-balance gates pass?
+Decision: no. As with W-30 hook/chop, sparse bass, and destructive gestures, mix-bus weak fixtures remain negative controls, but P023 readiness must reconcile them against current generated-support/source RMS balance, source-first masking ceiling, source-first masking headroom, and support/source ceiling. When those gates pass, `mix_bus` is marked stale fixture-only and the current product top category advances.
+Why: stale source-masking artifacts are useful regression examples, but they should not keep the implementation loop on mix-bus treatment after current diagnostics already prove useful generated support without burying source character.
+Evidence: RIOTBOX-1367 extends `current_evidence_reconciliation` to `mix_bus`, validates the stale-control state against current mix-balance metrics, and surfaces mix headroom context in readiness JSON/Markdown.
+Consequences: future P023 prioritization should continue separating negative controls from current product gaps across recurring weak-output categories. Reconciliation remains diagnostic and cannot claim quality proof or human musical approval.
+Status: accepted
+
+---
+
 ### RBX-109
 
 Date: 2026-07-01

@@ -40,8 +40,9 @@ MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 2.70
 MIN_SPARSE_PRESSURE_LOW_BAND_SHARE = 0.36
 MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO = 2.45
 MIN_SPARSE_BASS_DOMINANCE_MARGIN = 0.20
-MIN_MIX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.13
+MIN_MIX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.145
 MAX_MIX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO = 0.08
+MIN_MIX_SOURCE_FIRST_MASKING_HEADROOM = 0.04
 MAX_MIX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.46
 MAX_DESTRUCTIVE_DROPOUT_TO_STUTTER_RMS_RATIO = 0.0065
 MAX_DESTRUCTIVE_DROPOUT_SILENCE_TO_STUTTER_RMS_RATIO = 0.0065
@@ -670,6 +671,9 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
             "max_source_first_generated_to_source_rms_ratio": number(
                 feral_mix_balance.get("max_source_first_generated_to_source_rms_ratio")
             ),
+            "min_source_first_masking_headroom": number(
+                feral_mix_balance.get("min_source_first_masking_headroom")
+            ),
             "max_support_generated_to_source_rms_ratio": number(
                 feral_mix_balance.get("max_support_generated_to_source_rms_ratio")
             ),
@@ -793,6 +797,40 @@ def current_evidence_reconciliation(
         if destructive_passed:
             stale_fixture_only_categories.append("destructive_gesture")
 
+    mix_passed = mix_bus_current_evidence_passed(suite)
+    if "mix_bus" in candidate_categories:
+        category_reconciliations.append(
+            {
+                "category": "mix_bus",
+                "weak_evidence_role": "negative_control_fixture",
+                "current_professional_suite_status": (
+                    "current_mix_balance_gates_passed"
+                    if mix_passed
+                    else "current_mix_balance_still_risky"
+                ),
+                "priority_state": (
+                    "stale_fixture_only_top_risk"
+                    if mix_passed
+                    else "current_product_risk"
+                ),
+                "software_next_step": (
+                    "Use stale source-masked mix fixtures as regression controls; "
+                    "do not treat them as the current top product gap while generated "
+                    "support is loud enough and source-first masking stays bounded."
+                    if mix_passed
+                    else "Keep mix-bus balance and generated-support masking as current product priority."
+                ),
+                "musician_payoff": (
+                    "Old masked-source examples stop hiding the next audible gap once "
+                    "current support is present without burying the source."
+                    if mix_passed
+                    else "The strongest element still needs clearer balance without losing source character."
+                ),
+            }
+        )
+        if mix_passed:
+            stale_fixture_only_categories.append("mix_bus")
+
     current_product_categories = [
         category
         for category in candidate_categories
@@ -894,6 +932,24 @@ def destructive_gesture_current_evidence_passed(suite: dict[str, Any]) -> bool:
         >= MIN_DESTRUCTIVE_RESTORE_TO_PRESSURE_RMS_RATIO,
         number(destructive.get("restore_to_dropout_silence_rms_ratio"))
         >= MIN_DESTRUCTIVE_RESTORE_TO_DROPOUT_SILENCE_RMS_RATIO,
+    ]
+    return all(checks)
+
+
+def mix_bus_current_evidence_passed(suite: dict[str, Any]) -> bool:
+    if suite.get("available") is not True or suite.get("result") != "pass":
+        return False
+    mix_balance = object_or_empty(suite.get("mix_balance"))
+    checks = [
+        mix_balance.get("result") == "pass",
+        number(mix_balance.get("min_support_generated_to_source_rms_ratio"))
+        >= MIN_MIX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
+        number(mix_balance.get("max_source_first_generated_to_source_rms_ratio"))
+        <= MAX_MIX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO,
+        number(mix_balance.get("min_source_first_masking_headroom"))
+        >= MIN_MIX_SOURCE_FIRST_MASKING_HEADROOM,
+        number(mix_balance.get("max_support_generated_to_source_rms_ratio"))
+        <= MAX_MIX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
     ]
     return all(checks)
 
@@ -1528,6 +1584,12 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             failures,
         )
         check(
+            number(mix_balance.get("min_source_first_masking_headroom"))
+            >= MIN_MIX_SOURCE_FIRST_MASKING_HEADROOM,
+            "professional_suite_source_first_masking_headroom_too_low",
+            failures,
+        )
+        check(
             number(mix_balance.get("max_support_generated_to_source_rms_ratio"))
             <= MAX_MIX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
             "professional_suite_mix_support_masks_source",
@@ -1666,6 +1728,36 @@ def validate_report(report: dict[str, Any]) -> list[str]:
                 for item in reconciliations
             ),
             "current_evidence_reconciliation_destructive_gesture_status_missing",
+            failures,
+        )
+    if (
+        list_contains(weak_categories, "mix_bus")
+        and mix_bus_current_evidence_passed(suite_summary)
+    ):
+        check(
+            list_contains(
+                current_evidence.get("stale_fixture_only_categories"),
+                "mix_bus",
+            ),
+            "current_evidence_reconciliation_mix_bus_not_reconciled",
+            failures,
+        )
+        check(
+            current_evidence.get("current_product_top_candidate_category") != "mix_bus",
+            "current_evidence_reconciliation_current_top_still_mix_bus",
+            failures,
+        )
+        reconciliations = list_or_empty(current_evidence.get("category_reconciliations"))
+        check(
+            any(
+                isinstance(item, dict)
+                and item.get("category") == "mix_bus"
+                and item.get("current_professional_suite_status")
+                == "current_mix_balance_gates_passed"
+                and item.get("priority_state") == "stale_fixture_only_top_risk"
+                for item in reconciliations
+            ),
+            "current_evidence_reconciliation_mix_bus_status_missing",
             failures,
         )
 
@@ -1940,7 +2032,13 @@ def markdown_report(report: dict[str, Any]) -> str:
             (
                 "- Mix balance: "
                 f"`{mix_balance.get('result')}`, support min "
-                f"`{mix_balance.get('min_support_generated_to_source_rms_ratio')}`"
+                f"`{mix_balance.get('min_support_generated_to_source_rms_ratio')}`, "
+                "source-first max "
+                f"`{mix_balance.get('max_source_first_generated_to_source_rms_ratio')}`, "
+                "headroom min "
+                f"`{mix_balance.get('min_source_first_masking_headroom')}`, "
+                "support max "
+                f"`{mix_balance.get('max_support_generated_to_source_rms_ratio')}`"
             ),
         ]
     )
