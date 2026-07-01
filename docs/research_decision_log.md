@@ -240,6 +240,20 @@ Status: accepted
 
 ---
 
+### RBX-119
+
+Date: 2026-07-01
+Topic: Source-selection priority must be actionable after stale controls reconcile
+Phase: P023 / Sound Excellence / Production Quality
+Question: what should readiness expose when `source_selection` becomes the current product priority after stale weak-output controls have been reconciled?
+Decision: expose a concrete `source_selection_priority` detail in the P023 readiness report. It must include triggering case ids, primary case ids, source families, artifact refs, demotion reasons, required review actions, a non-generic software next step, and a musician-facing unavailable/degraded action. The detail remains diagnostic and must preserve `quality_proof: false` and `automated_musical_approval: false`.
+Why: once old chop, bass, destructive, and mix controls are correctly demoted to stale regression controls, a generic “review source-window and source-character policy” bucket is too vague to drive implementation or musician trust. The next slice needs exact evidence and actions without promoting risky edge sources.
+Evidence: RIOTBOX-1368 adds source-selection priority detail to sound-quality readiness, validates that it is non-generic and evidence-backed when `source_selection` is current top, and surfaces the priority in Markdown.
+Consequences: future source-selection work should use this detail to decide whether to improve source-window/character choice, timing confirmation, texture review, or human verdict import. Edge sources remain diagnostic/unavailable for promotion until their explicit review actions resolve.
+Status: accepted
+
+---
+
 ### RBX-109
 
 Date: 2026-07-01
