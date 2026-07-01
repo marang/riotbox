@@ -142,6 +142,20 @@ Status: accepted
 
 ---
 
+### RBX-112
+
+Date: 2026-07-01
+Topic: Sparse bass pressure must prove low-band projection, not only movement
+Phase: P023 Sound Excellence / Production Quality
+Question: how should routed `bass_movement` fixes prove sparse pressure reads as physical low end rather than a moving midrange phrase?
+Decision: sparse-bass-pressure diagnostics must keep the `17.0 Hz` source-derived movement span floor and also require `pressure_low_band_lift_ratio >= 2.70`, `sparse_pressure_low_band_share >= 0.36`, `sparse_pressure_low_to_mid_ratio >= 2.45`, and `strongest_audible_element_margin >= 0.20` across matrix, professional source-WAV, professional-output suite, and sound-readiness reporting. The sparse render path carries more sub pressure and less harmonic midrange support so this is a rendered-output change, not a validator-only gate.
+Why: after RIOTBOX-1360, weak-output routing still reported `bass_movement`; the previous sparse pressure floors could pass moving bass evidence even when the pressure section risked reading as a melodic or midrange answer phrase instead of room-carrying bass pressure.
+Evidence: RIOTBOX-1361 passes the professional source-WAV, matrix, suite, and readiness smokes with source-WAV sparse pressure lift/share/low-mid/dominance at `2.828` / `0.431` / `2.517` / `0.455`, matrix minimums at `3.076` / `0.377` / `2.513` / `0.493`, and readiness aggregate source-WAV/matrix lift at `2.765` / `3.002`.
+Consequences: future bass-pressure work should improve source-derived contour and low-band projection together, and must not hide weak musicality behind generic gain. This remains scripted diagnostic evidence with `quality_proof: false` and `human_verdict: unverified` until structured listening accepts it.
+Status: accepted
+
+---
+
 ### RBX-109
 
 Date: 2026-07-01

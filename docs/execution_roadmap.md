@@ -922,6 +922,15 @@ following:
   source-feature contour expansion, so the sparse matrix/source-WAV cases now
   render `18.6 Hz` movement span instead of merely accepting the old `15.0 Hz`
   threshold.
+- RIOTBOX-1361 strengthens routed low-end pressure evidence on top of that
+  movement contract: sparse-bass-pressure output now carries more sub pressure
+  and less midrange harmonic support, while matrix/source-WAV/suite/readiness
+  gates require `2.70x` low-band lift, `0.36` low-band share, `2.45x` low/mid
+  pressure ratio, and `0.20` bass dominance. Current evidence reports
+  source-WAV lift/share/low-mid/dominance of `2.828` / `0.431` / `2.517` /
+  `0.455`, matrix minimums of `3.076` / `0.377` / `2.513` / `0.493`, and keeps
+  the result diagnostic-only with `quality_proof: false` and
+  `human_verdict: unverified`.
 - RIOTBOX-1306 strengthens destructive gesture impact for stage-meaningful
   cuts: source-derived tail shaping now drives a deeper dropout silence, denser
   transient stutter, and slightly harder restore slam, while the professional
