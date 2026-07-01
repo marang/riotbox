@@ -48,10 +48,11 @@ MIN_DENSE_ANSWER_STAB_MARGIN = 0.15
 MIN_DENSE_ANSWER_PRESSURE_SNAP_RATIO = 1.06
 MIN_DENSE_ANSWER_BITE_SCORE = 1.0
 MIN_DENSE_DESTRUCTIVE_PRESSURE_LIFT_RATIO = 1.10
-MAX_DESTRUCTIVE_DROPOUT_TO_STUTTER_RMS_RATIO = 0.10
-MAX_DESTRUCTIVE_DROPOUT_SILENCE_TO_STUTTER_RMS_RATIO = 0.08
-MIN_DESTRUCTIVE_STUTTER_TO_HOOK_TRANSIENT_RATIO = 1.20
-MIN_DESTRUCTIVE_RESTORE_TO_PRESSURE_RMS_RATIO = 1.22
+MAX_DESTRUCTIVE_DROPOUT_TO_STUTTER_RMS_RATIO = 0.0065
+MAX_DESTRUCTIVE_DROPOUT_SILENCE_TO_STUTTER_RMS_RATIO = 0.0065
+MIN_DESTRUCTIVE_STUTTER_TO_HOOK_TRANSIENT_RATIO = 1.55
+MIN_DESTRUCTIVE_RESTORE_TO_HOOK_TRANSIENT_RATIO = 1.60
+MIN_DESTRUCTIVE_RESTORE_TO_PRESSURE_RMS_RATIO = 1.36
 MIN_DESTRUCTIVE_RESTORE_TO_DROPOUT_SILENCE_RMS_RATIO = 6.00
 MIN_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.145
 MAX_FERAL_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO = 0.08
@@ -264,6 +265,16 @@ def validate_mutation_fixtures(report: dict[str, Any], output: Path) -> list[str
                 1.0,
             ),
             "destructive_restore_does_not_slam_out_of_cut",
+        ),
+        (
+            "weak_destructive_restore_transient",
+            lambda data: set_child_metric(
+                data,
+                "destructive_variation",
+                "restore_to_hook_transient_ratio",
+                0.0,
+            ),
+            "destructive_restore_lacks_transient_impact",
         ),
         (
             "generated_support_masks_source",
@@ -760,6 +771,12 @@ def validate_destructive_metrics(
         number(destructive.get("stutter_to_hook_transient_ratio"))
         >= MIN_DESTRUCTIVE_STUTTER_TO_HOOK_TRANSIENT_RATIO,
         "destructive_stutter_lacks_transient_impact",
+        failures,
+    )
+    require(
+        number(destructive.get("restore_to_hook_transient_ratio"))
+        >= MIN_DESTRUCTIVE_RESTORE_TO_HOOK_TRANSIENT_RATIO,
+        "destructive_restore_lacks_transient_impact",
         failures,
     )
     require(

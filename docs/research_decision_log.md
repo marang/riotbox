@@ -100,6 +100,20 @@ Status: accepted
 
 ---
 
+### RBX-108
+
+Date: 2026-07-01
+Topic: Destructive gestures need dense-specific cut/restore impact without punishing sparse pressure
+Phase: P023 Sound Excellence / Production Quality
+Question: how should routed `destructive_gesture` weak-output fixes strengthen stage-meaningful cuts while keeping sparse-bass-pressure diagnostics honest?
+Decision: dense-break destructive diagnostics must use a tighter source-transient stutter and harder source/drum restore attack, and the destructive validator must require `dropout_to_stutter_rms_ratio <= 0.0065`, `dropout_silence_to_stutter_rms_ratio <= 0.0065`, `stutter_to_hook_transient_ratio >= 1.55`, `restore_to_hook_transient_ratio >= 1.60`, and `restore_to_pressure_rms_ratio >= 1.36`. The dense generator reports an active restore/pressure floor of `1.18`, while sparse-bass-pressure keeps the generic `1.12` floor because its pressure section is intentionally large.
+Why: weak-output routing still identified destructive gesture weakness, but a single global restore/pressure floor punished sparse cases for doing the right thing: carrying heavy pressure before the cut. The product needs dense cuts and restores to hit harder without mislabeling strong sparse pressure as a failed destructive gesture.
+Evidence: RIOTBOX-1357 updates the dense-break performance generator, destructive-variation validator, professional-output suite aggregator, suite contract, audio QA spec, and roadmap. The professional suite passes with destructive metrics `dropout_to_stutter_rms_ratio=0.004930`, `dropout_silence_to_stutter_rms_ratio=0.005194`, `stutter_to_hook_transient_ratio=1.574247`, `restore_to_hook_transient_ratio=1.654569`, `restore_to_pressure_rms_ratio=1.366160`, and `restore_to_dropout_silence_rms_ratio=261.537586`.
+Consequences: future destructive-gesture work should keep dense impact and sparse pressure contracts separate, surface the active family floor in reports, and avoid treating scripted diagnostic renders as musical approval. `quality_proof` remains false until structured listening review accepts the result.
+Status: accepted
+
+---
+
 ### RBX-092
 
 Date: 2026-06-30

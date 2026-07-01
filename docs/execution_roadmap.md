@@ -900,6 +900,15 @@ following:
   transient stutter, and slightly harder restore slam, while the professional
   destructive validator rejects the older flatter cut depth and keeps the
   evidence diagnostic-only until human listening accepts it.
+- RIOTBOX-1357 continues the routed `destructive_gesture` hardening from
+  weak-output evidence: dense-break dropout/stutter now uses a tighter,
+  source-transient attack shape, restore uses a harder source/drum attack, and
+  sparse-bass-pressure keeps a family-specific restore floor so strong pressure
+  sections are not misclassified as failed dense destructive gestures. The
+  destructive validator now rejects flatter cuts with
+  `dropout_to_stutter_rms_ratio > 0.0065`, weak stutter below `1.55`, restore
+  transient below `1.60`, and restore/pressure below `1.36`; the professional
+  suite mirrors those gates while keeping `quality_proof: false`.
 - RIOTBOX-1307 tightens source-first mix-bus clarity: the Feral source-first
   path now uses less generated bleed and a stronger W-30/source weight, while
   professional-suite/readiness/family validators reduce the generated/source
