@@ -888,6 +888,17 @@ following:
   hits, stronger velocity spread, and two reverse gestures so the first two
   bars read less like generic support and more like a hook/riff worth
   retriggering.
+- RIOTBOX-1360 strengthens the same routed `chop_policy` path around
+  source-derived W-30 diversity: hook-forward generated diagnostics now require
+  at least six source offsets, ten riff hits, and
+  `hook_chop_riff_velocity_span >= 0.25`, while the generator targets six
+  source-derived riff starts and up to twelve hits. Dense-break keeps snare as
+  the strongest audible element by trimming the dense W-30 riff layer after
+  adding hit density, so the richer hook does not mask physical drum pressure.
+  Current suite evidence reports dense/matrix `6` offsets, `12` hits,
+  velocity span `0.576`, W-30/source margin `0.126`, snare margin `0.2245`,
+  and tonal source-WAV `6` offsets, `12` hits, velocity span `0.536`, and
+  W-30/source margin `0.158`.
 - RIOTBOX-1318 strengthens routed `bass_movement` cases: sparse-bass-pressure
   diagnostics now expand source-feature-derived bass contours when they would
   otherwise collapse into a narrow range, boost sparse restore impact after the

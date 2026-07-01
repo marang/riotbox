@@ -689,8 +689,12 @@ professional diagnostics, and tonal-hook fixture reports require
 Dense-break and tonal-hook reports must prove that selected source offsets
 drive a non-static hit pattern with enough hit density, velocity contrast, at
 least two reverse gestures, and enough W-30 headroom above the hook-presence
-floor. Current dense/tonal diagnostics require at least four source offsets and
-seven riff hits before the hook/chop path may pass. Pad/noise and bad-timing
+floor. Current dense/tonal generated diagnostics require at least six source
+offsets, ten riff hits, and `hook_chop_riff_velocity_span >= 0.25` before the
+hook/chop path may pass. The rendered W-30 riff layer must not buy that
+diversity by masking dense-break drum pressure; dense-break diagnostics still
+require snare/break to stay the strongest element with its documented margin.
+Pad/noise and bad-timing
 source families must not use this W-30
 hook/chop riff as a hidden product fallback; they use their family-specific
 texture or timing-cue paths instead. These fields remain diagnostic and must
