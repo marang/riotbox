@@ -75,6 +75,11 @@ mod manifest_assertions {
             "max_source_first_generated_to_source_rms_ratio",
         );
         assert_manifest_f32(
+            &manifest["thresholds"]["min_support_generated_to_source_rms_ratio"],
+            MIN_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
+            "min_support_generated_to_source_rms_ratio",
+        );
+        assert_manifest_f32(
             &manifest["thresholds"]["max_support_generated_to_source_rms_ratio"],
             MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
             "max_support_generated_to_source_rms_ratio",
@@ -399,6 +404,12 @@ mod manifest_assertions {
                 .as_f64()
                 .expect("source-first generated/source ratio")
                 < f64::from(MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO)
+        );
+        assert!(
+            manifest["metrics"]["mix_balance"]["support_generated_to_source_rms_ratio"]
+                .as_f64()
+                .expect("support generated/source ratio")
+                >= f64::from(MIN_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO)
         );
         assert!(
             manifest["metrics"]["mix_balance"]["support_generated_to_source_rms_ratio"]

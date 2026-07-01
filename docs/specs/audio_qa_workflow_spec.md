@@ -378,10 +378,10 @@ Early P011 guardrail defaults:
   spectral-energy evidence is available or the spectral-energy distance is also
   below `0.02`
 - full-mix waveform correlation at or above `0.995` is treated as too similar
-- source-first feral mixes with generated/source-backed RMS ratio above `0.16`
+- source-first feral mixes with generated/source-backed RMS ratio above `0.08`
   are treated as masking the source-backed W-30 lane
 - generated-support feral mixes must keep generated/source-backed RMS ratio
-  between `0.16` and `0.46`, so support stays audible without becoming a
+  between `0.145` and `0.46`, so support stays audible without becoming a
   source-masking render
 - Feral grid packs expose explicit lane stems plus two listening mixes so source
   extraction is not judged from a drum-dominant render:
@@ -412,8 +412,8 @@ Early P011 guardrail defaults:
   across its child manifests. It must fail when source-first renders let
   generated support mask the source, when generated-support renders bury support
   below a useful audible floor, or when generated support dominates the source
-  window. Source-first renders must also keep at least `0.09` headroom below
-  the `0.16` generated/source masking ceiling, so a barely-passing source-first
+  window. Source-first renders must also keep at least `0.04` headroom below
+  the `0.08` generated/source masking ceiling, so a barely-passing source-first
   mix cannot hide source character risk. This remains diagnostic evidence, not
   an automated musical pass.
 - Feral grid MC-202 support must expose bounded source-section contour evidence

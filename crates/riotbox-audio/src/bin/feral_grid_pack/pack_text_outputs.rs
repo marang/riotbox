@@ -36,7 +36,7 @@ fn write_report(
              - W-30 slice choice: `{}` unique offsets `{}` span `{}` samples min `{}` max `{}`\n\
              - W-30 source-accent dynamics: `{}` origin `source_derived` distinct velocities `{}` span `{:.6}` source-energy span `{:.6}`\n\
              - Source-first generated/source RMS ratio: `{:.6}` (max `{MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO:.6}`)\n\
-             - Support generated/source RMS ratio: `{:.6}` (max `{MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO:.6}`)\n\
+             - Support generated/source RMS ratio: `{:.6}` (min `{MIN_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO:.6}`, max `{MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO:.6}`)\n\
              - All-lane mix movement: `{}` source-first/support delta `{:.6}` correlation `{:.6}` TR-909 `{:.6}` MC-202 `{:.6}` W-30 `{:.6}` generated/W-30 `{:.6}`\n\
              - Generated-support mix low-band RMS: `{:.6}`\n\
              - Generated-support mix clip count: `{}` near clip count `{}` headroom `{:.6}`\n\

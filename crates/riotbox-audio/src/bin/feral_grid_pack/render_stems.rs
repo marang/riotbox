@@ -245,6 +245,15 @@ fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>
         .into());
     }
 
+    if report.support_generated_to_source_rms_ratio < MIN_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO {
+        return Err(format!(
+            "generated-support mix generated/source RMS ratio {:.6} is below {:.6}",
+            report.support_generated_to_source_rms_ratio,
+            MIN_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO
+        )
+        .into());
+    }
+
     if report.support_generated_to_source_rms_ratio >= MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO {
         return Err(format!(
             "generated-support mix generated/source RMS ratio {:.6} exceeds {:.6}",
@@ -289,7 +298,7 @@ fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>
 
     if !report.tr909_rendered_drum_pressure.applied {
         return Err(format!(
-            "TR-909 rendered drum pressure was too weak or masked the source: profile {}, contribution {:.6}, min {:.6}, tr909 low {:.6}, low min {:.6}, full low {:.6}, grid hit {:.6}, source-first ratio {:.6}, support ratio {:.6}",
+            "TR-909 rendered drum pressure was too weak or masked the source: profile {}, contribution {:.6}, min {:.6}, tr909 low {:.6}, low min {:.6}, full low {:.6}, grid hit {:.6}, source-first ratio {:.6}, support ratio {:.6}, all-lane applied {}, generated/w30 {:.6}, generated/w30 min {:.6}, mc202 contribution {:.6}, lane min {:.6}",
             report.tr909_source_profile.reason,
             report.tr909_rendered_drum_pressure.support_mix_tr909_contribution_ratio,
             report
@@ -302,7 +311,18 @@ fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>
             report.tr909_rendered_drum_pressure.full_mix_low_band_rms,
             report.tr909_rendered_drum_pressure.tr909_source_grid_hit_ratio,
             report.tr909_rendered_drum_pressure.source_first_generated_to_source_rms_ratio,
-            report.tr909_rendered_drum_pressure.support_generated_to_source_rms_ratio
+            report.tr909_rendered_drum_pressure.support_generated_to_source_rms_ratio,
+            report.all_lane_mix_movement.applied,
+            report
+                .all_lane_mix_movement
+                .generated_to_w30_contribution_ratio,
+            report
+                .all_lane_mix_movement
+                .min_required_generated_to_w30_ratio,
+            report.all_lane_mix_movement.mc202_contribution_ratio,
+            report
+                .all_lane_mix_movement
+                .min_required_lane_contribution_ratio
         )
         .into());
     }

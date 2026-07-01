@@ -50,6 +50,7 @@ const DEFAULT_SOURCE_START_SECONDS: f32 = 0.0;
 const DEFAULT_SOURCE_WINDOW_SECONDS: f32 = 1.0;
 const MIN_SIGNAL_RMS: f32 = 0.001;
 const MIN_LOW_BAND_RMS: f32 = 0.004;
+const MIN_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO: f32 = 0.145;
 const MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO: f32 = 0.08;
 const MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO: f32 = 0.46;
 const SOURCE_TIMING_BPM_MATCH_TOLERANCE: f32 = 1.0;
@@ -336,6 +337,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         &tr909,
         &mc202,
         &w30,
+        &grid,
         mc202_source_contour_profile,
     );
     let all_lane_mix_movement = all_lane_mix_movement_proof_for_source_contour(
