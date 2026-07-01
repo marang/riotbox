@@ -822,6 +822,15 @@ following:
   so Riotbox can choose stronger source material, while tonal-hook and
   bad-timing review paths can keep longer context when that preserves their
   family-specific hook/caution contract.
+- RIOTBOX-1356 strengthens routed `drum_pressure` evidence at the rendered
+  TR-909 seam: break-lift and steady-pulse kick pressure now carry more body,
+  every rendered TR-909 case must keep at least `0.05` support-mix
+  contribution, and steady-pulse low-band RMS must reach `0.0017` while
+  drop-drive/break-lift stay at `0.0030`. The professional-suite/readiness
+  aggregate now reports a `0.057182` minimum support contribution and
+  `0.001890` minimum low-band RMS without violating source-first masking or
+  generated-support ceilings, and the syncopated-source showcase remains above
+  the break-lift low-band floor.
 - RIOTBOX-1301 tightens MC-202 source-composed bass movement proof at the
   render seam: SubPressureShove projection now carries bass body from the
   stored source-expression low-band contour / pressure evidence, pressure-vs-

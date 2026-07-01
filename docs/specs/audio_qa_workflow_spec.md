@@ -622,6 +622,21 @@ section instead of becoming only low-band support. These fields prove that the
 current scripted render has a dominant snare/break transient with low-band
 support; they still do not turn the artifact into a musical quality proof.
 
+P023 rendered TR-909 drum pressure must also survive the generated-support
+mix, not only the isolated dense-break scorecard. Feral grid manifests expose
+`tr909_rendered_drum_pressure` with source-derived origin, support-mix
+contribution, low-band RMS, source-first masking headroom, support/source
+ratio, and source-grid alignment. The professional suite currently requires
+every rendered TR-909 case to keep support contribution at or above `0.05`.
+Drop-drive and break-lift profiles require low-band RMS at or above `0.0030`;
+steady-pulse profiles require at least `0.0017` after their lighter source
+role is strengthened. Break-lift policy must also carry enough low body for
+syncopated/high-transient sources instead of passing as click-only lift.
+Source-first generated/source masking must stay under `0.08` and
+generated-support source ratio under `0.46`. These gates prove the drum
+support is not decorative or buried, while still keeping the evidence
+diagnostic and `quality_proof: false`.
+
 P022 rebuild-only/source-layer-off diagnostics may expose transformed-source
 survival evidence. The current bounded fields are
 `rebuild_only_source_spectral_similarity`,
