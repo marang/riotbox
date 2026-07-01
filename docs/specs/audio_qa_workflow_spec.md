@@ -690,6 +690,14 @@ counts, and concrete review actions such as confirming timing before bar-locked
 moves or auditioning pad/noise texture before demo promotion. This is a
 musician-facing safety boundary, not a musical approval gate.
 
+P023 readiness may keep static weak-output fixtures as negative controls, but
+it must reconcile their routing priority against current professional-suite
+evidence. If a weak fixture still routes `chop_policy` while dense, matrix, and
+tonal W-30 response gates pass, readiness should mark that category as a stale
+fixture-only risk and point implementation toward the next current product gap.
+This preserves regression controls without letting old hookless examples hide
+the instrument's current audible state.
+
 P023 Hook/Chop riff playback diagnostics also expose
 `hook_chop_riff_hit_pattern_source_derived`,
 `hook_chop_riff_hit_count`, `hook_chop_riff_velocity_span`, and

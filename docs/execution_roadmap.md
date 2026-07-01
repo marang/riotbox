@@ -1001,6 +1001,12 @@ following:
   reason counts and concrete review actions so the musician sees whether the
   next step is timing confirmation, pad/noise texture audition, or keeping the
   artifact diagnostic until human verdict.
+- RIOTBOX-1364 reconciles weak-output production priority against current
+  professional-suite evidence: old hookless/static weak fixtures remain negative
+  controls, but P023 readiness must mark `chop_policy` as stale fixture-only
+  when current dense/matrix/tonal W-30 response gates pass, so the next
+  implementation slice follows the current audible product gap instead of stale
+  regression data.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue

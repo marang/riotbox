@@ -121,6 +121,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     demo_summary = demo_bank_summary(demo_bank, args.demo_bank)
     weak_summary = weak_routing_summary(weak_routing, args.weak_routing)
     suite_summary = professional_suite_summary(professional_suite, args.professional_output_suite)
+    current_evidence = current_evidence_reconciliation(weak_summary, suite_summary)
     review_summary = human_review_queue_summary(human_review_queue, args.human_review_queue)
     blockers = readiness_blockers(
         source_families,
@@ -164,6 +165,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "demo_bank": demo_summary,
         "weak_output_routing": weak_summary,
         "professional_output_suite": suite_summary,
+        "current_evidence_reconciliation": current_evidence,
         "human_review_queue": review_summary,
         "blockers": blockers,
         "next_actions": next_actions(
@@ -171,6 +173,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             demo_summary,
             weak_summary,
             suite_summary,
+            current_evidence,
             review_summary,
         ),
         "next_fix_categories": next_fix_categories,
@@ -647,6 +650,105 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
     }
 
 
+def current_evidence_reconciliation(
+    weak: dict[str, Any],
+    suite: dict[str, Any],
+) -> dict[str, Any]:
+    weak_summary = object_or_empty(weak.get("production_fix_summary"))
+    weak_top = str(weak_summary.get("top_candidate_category") or "none")
+    candidate_categories = [
+        str(candidate.get("category"))
+        for candidate in list(weak.get("production_fix_candidates") or [])
+        if isinstance(candidate, dict) and candidate.get("category")
+    ]
+    stale_fixture_only_categories = []
+    category_reconciliations = []
+
+    chop_passed = chop_policy_current_evidence_passed(suite)
+    if "chop_policy" in candidate_categories:
+        category_reconciliations.append(
+            {
+                "category": "chop_policy",
+                "weak_evidence_role": "negative_control_fixture",
+                "current_professional_suite_status": (
+                    "current_w30_response_gates_passed"
+                    if chop_passed
+                    else "current_w30_response_still_risky"
+                ),
+                "priority_state": (
+                    "stale_fixture_only_top_risk"
+                    if chop_passed
+                    else "current_product_risk"
+                ),
+                "software_next_step": (
+                    "Use stale hookless fixtures as regression controls; do not "
+                    "treat them as the current top product gap while dense, matrix, "
+                    "and tonal W-30 response gates pass."
+                    if chop_passed
+                    else "Keep W-30 hook/chop work as current product priority."
+                ),
+                "musician_payoff": (
+                    "Old hookless examples stop hiding the next audible gap once "
+                    "current W-30 response already moves."
+                    if chop_passed
+                    else "The first two bars still need a stronger current hook or riff."
+                ),
+            }
+        )
+        if chop_passed:
+            stale_fixture_only_categories.append("chop_policy")
+
+    current_product_categories = [
+        category
+        for category in candidate_categories
+        if category not in stale_fixture_only_categories
+    ]
+    return {
+        "weak_top_candidate_category": weak_top,
+        "current_product_top_candidate_category": (
+            current_product_categories[0] if current_product_categories else "none"
+        ),
+        "stale_fixture_only_categories": stale_fixture_only_categories,
+        "category_reconciliations": category_reconciliations,
+        "quality_proof": False,
+        "automated_musical_approval": False,
+        "musician_payoff": (
+            "Readiness can keep negative controls while steering engineers toward "
+            "the next audible product gap shown by current evidence."
+        ),
+    }
+
+
+def chop_policy_current_evidence_passed(suite: dict[str, Any]) -> bool:
+    if suite.get("available") is not True or suite.get("result") != "pass":
+        return False
+    source_character = object_or_empty(suite.get("source_character_selection"))
+    checks = [
+        number(source_character.get("dense_hook_chop_score_floor")) >= 0.64,
+        number(source_character.get("matrix_dense_hook_chop_score_floor")) >= 0.64,
+        number(source_character.get("tonal_hook_chop_score_floor")) >= 0.64,
+        number(source_character.get("dense_hook_chop_response_delta_ratio"))
+        >= MIN_HOOK_CHOP_RESPONSE_DELTA_RATIO,
+        number(source_character.get("matrix_dense_hook_chop_response_delta_ratio"))
+        >= MIN_HOOK_CHOP_RESPONSE_DELTA_RATIO,
+        number(source_character.get("tonal_hook_chop_response_delta_ratio"))
+        >= MIN_HOOK_CHOP_RESPONSE_DELTA_RATIO,
+        number(source_character.get("dense_hook_chop_response_correlation"))
+        <= MAX_HOOK_CHOP_RESPONSE_CORRELATION,
+        number(source_character.get("matrix_dense_hook_chop_response_correlation"))
+        <= MAX_HOOK_CHOP_RESPONSE_CORRELATION,
+        number(source_character.get("tonal_hook_chop_response_correlation"))
+        <= MAX_HOOK_CHOP_RESPONSE_CORRELATION,
+        number(source_character.get("dense_hook_chop_response_transient_ratio"))
+        >= MIN_HOOK_CHOP_RESPONSE_TRANSIENT_RATIO,
+        number(source_character.get("matrix_dense_hook_chop_response_transient_ratio"))
+        >= MIN_HOOK_CHOP_RESPONSE_TRANSIENT_RATIO,
+        number(source_character.get("tonal_hook_chop_response_transient_ratio"))
+        >= MIN_HOOK_CHOP_RESPONSE_TRANSIENT_RATIO,
+    ]
+    return all(checks)
+
+
 def readiness_blockers(
     coverage: dict[str, Any],
     demo: dict[str, Any],
@@ -769,6 +871,7 @@ def next_actions(
     demo: dict[str, Any],
     weak: dict[str, Any],
     suite: dict[str, Any],
+    current_evidence: dict[str, Any],
     review_queue: dict[str, Any],
 ) -> list[dict[str, Any]]:
     actions: list[dict[str, Any]] = []
@@ -786,6 +889,18 @@ def next_actions(
                 "category": category,
                 "target": "weak output",
                 "action": f"Implement the next bounded production fix for {category}.",
+            }
+        )
+    current_top = str(current_evidence.get("current_product_top_candidate_category") or "")
+    if current_top and current_top != "none":
+        actions.append(
+            {
+                "category": current_top,
+                "target": "current evidence priority",
+                "action": (
+                    "Use current professional-suite reconciliation before choosing "
+                    "the next weak-output production slice."
+                ),
             }
         )
     if not suite["available"]:
@@ -836,6 +951,7 @@ def validate_report(report: dict[str, Any]) -> list[str]:
     weak_entries = nested_list(report, "demo_bank", "weak_or_fail_entries")
     weak_available = nested_value(report, "weak_output_routing", "available")
     weak_fix_summary = nested_value(report, "weak_output_routing", "production_fix_summary")
+    current_evidence = object_or_empty(report.get("current_evidence_reconciliation"))
     suite_available = nested_value(report, "professional_output_suite", "available")
     suite_scripted = nested_value(report, "professional_output_suite", "scripted_generation")
     suite_quality = nested_value(report, "professional_output_suite", "quality_proof")
@@ -1296,6 +1412,50 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             failures,
         )
 
+    check(
+        current_evidence.get("quality_proof") is False,
+        "current_evidence_reconciliation_claims_quality_proof",
+        failures,
+    )
+    check(
+        current_evidence.get("automated_musical_approval") is False,
+        "current_evidence_reconciliation_claims_approval",
+        failures,
+    )
+    check(
+        isinstance(current_evidence.get("weak_top_candidate_category"), str)
+        and bool(current_evidence.get("weak_top_candidate_category")),
+        "current_evidence_reconciliation_weak_top_missing",
+        failures,
+    )
+    if current_evidence.get("weak_top_candidate_category") == "chop_policy":
+        check(
+            list_contains(
+                current_evidence.get("stale_fixture_only_categories"),
+                "chop_policy",
+            ),
+            "current_evidence_reconciliation_chop_policy_not_reconciled",
+            failures,
+        )
+        check(
+            current_evidence.get("current_product_top_candidate_category") != "chop_policy",
+            "current_evidence_reconciliation_current_top_still_chop_policy",
+            failures,
+        )
+        reconciliations = list_or_empty(current_evidence.get("category_reconciliations"))
+        check(
+            any(
+                isinstance(item, dict)
+                and item.get("category") == "chop_policy"
+                and item.get("current_professional_suite_status")
+                == "current_w30_response_gates_passed"
+                and item.get("priority_state") == "stale_fixture_only_top_risk"
+                for item in reconciliations
+            ),
+            "current_evidence_reconciliation_chop_policy_status_missing",
+            failures,
+        )
+
     validate_current_p023_contract(report, blockers, failures)
 
     if release_readiness == "release_ready":
@@ -1491,6 +1651,7 @@ def markdown_report(report: dict[str, Any]) -> str:
     else:
         lines.append("- missing")
     suite = object_or_empty(report.get("professional_output_suite"))
+    current_evidence = object_or_empty(report.get("current_evidence_reconciliation"))
     source_character = object_or_empty(suite.get("source_character_selection"))
     source_character_window = object_or_empty(
         suite.get("source_character_window_selection")
@@ -1526,6 +1687,14 @@ def markdown_report(report: dict[str, Any]) -> str:
                 f"`{', '.join(source_selection_risk.get('demotion_reasons', []))}`, "
                 "review actions "
                 f"`{', '.join(source_selection_risk.get('required_review_actions', []))}`"
+            ),
+            (
+                "- Current evidence reconciliation: "
+                f"weak top `{current_evidence.get('weak_top_candidate_category')}`, "
+                "current top "
+                f"`{current_evidence.get('current_product_top_candidate_category')}`, "
+                "stale controls "
+                f"`{', '.join(current_evidence.get('stale_fixture_only_categories', []))}`"
             ),
             (
                 "- Drum pressure: "

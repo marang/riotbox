@@ -184,6 +184,20 @@ Status: accepted
 
 ---
 
+### RBX-115
+
+Date: 2026-07-01
+Topic: Weak-output priority must be reconciled with current professional evidence
+Phase: P023 / Sound Excellence / Production Quality
+Question: should stale/static weak-output fixtures keep driving the top P023 production category when current generated diagnostics already pass the related professional-suite gates?
+Decision: no. Weak-output fixtures stay valuable as negative controls, but P023 readiness must reconcile their priority against current professional-output evidence. If `chop_policy` remains top only from hookless/static fixtures while dense, matrix, and tonal W-30 response gates pass, readiness marks it as stale fixture-only risk and surfaces the next current product category.
+Why: otherwise the implementation loop can keep chasing old fixture failures after the actual W-30 response path has already improved, hiding the next audible product gap from musicians and implementers.
+Evidence: RIOTBOX-1364 adds `current_evidence_reconciliation` to the sound-quality readiness report, validates the `chop_policy` stale-control state against current W-30 response metrics, and surfaces the current product top category in JSON/Markdown.
+Consequences: negative fixtures must not be deleted or treated as pass, but they also must not outrank current professional-suite evidence without an explicit remaining-current-risk reason. Reconciliation remains diagnostic and does not claim musical approval or quality proof.
+Status: accepted
+
+---
+
 ### RBX-109
 
 Date: 2026-07-01
