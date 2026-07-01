@@ -1007,6 +1007,11 @@ following:
   when current dense/matrix/tonal W-30 response gates pass, so the next
   implementation slice follows the current audible product gap instead of stale
   regression data.
+- RIOTBOX-1365 extends that reconciliation to `bass_movement`: stale sparse-bass
+  weak fixtures remain regression controls, but readiness must mark bass as
+  stale fixture-only when current matrix/source-WAV sparse movement, low-band
+  pressure, low-to-mid ratio, and dominance gates pass. This prevents old weak
+  bass artifacts from hiding the next current product gap.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue

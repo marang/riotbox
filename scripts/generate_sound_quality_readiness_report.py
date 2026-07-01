@@ -698,6 +698,40 @@ def current_evidence_reconciliation(
         if chop_passed:
             stale_fixture_only_categories.append("chop_policy")
 
+    bass_passed = bass_movement_current_evidence_passed(suite)
+    if "bass_movement" in candidate_categories:
+        category_reconciliations.append(
+            {
+                "category": "bass_movement",
+                "weak_evidence_role": "negative_control_fixture",
+                "current_professional_suite_status": (
+                    "current_sparse_pressure_gates_passed"
+                    if bass_passed
+                    else "current_sparse_pressure_still_risky"
+                ),
+                "priority_state": (
+                    "stale_fixture_only_top_risk"
+                    if bass_passed
+                    else "current_product_risk"
+                ),
+                "software_next_step": (
+                    "Use stale sparse-bass fixtures as regression controls; do not "
+                    "treat them as the current top product gap while matrix and "
+                    "source-WAV sparse pressure gates pass."
+                    if bass_passed
+                    else "Keep bass movement and pressure work as current product priority."
+                ),
+                "musician_payoff": (
+                    "Old weak-bass examples stop hiding the next audible gap once "
+                    "current low-end pressure already carries."
+                    if bass_passed
+                    else "Low-end pressure still needs to hit harder in current output."
+                ),
+            }
+        )
+        if bass_passed:
+            stale_fixture_only_categories.append("bass_movement")
+
     current_product_categories = [
         category
         for category in candidate_categories
@@ -745,6 +779,39 @@ def chop_policy_current_evidence_passed(suite: dict[str, Any]) -> bool:
         >= MIN_HOOK_CHOP_RESPONSE_TRANSIENT_RATIO,
         number(source_character.get("tonal_hook_chop_response_transient_ratio"))
         >= MIN_HOOK_CHOP_RESPONSE_TRANSIENT_RATIO,
+    ]
+    return all(checks)
+
+
+def bass_movement_current_evidence_passed(suite: dict[str, Any]) -> bool:
+    if suite.get("available") is not True or suite.get("result") != "pass":
+        return False
+    bass_pressure = object_or_empty(suite.get("bass_pressure"))
+    checks = [
+        number(bass_pressure.get("matrix_sparse_bass_movement_static_distance_hz"))
+        >= MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ,
+        number(bass_pressure.get("matrix_sparse_bass_movement_frequency_span_hz"))
+        >= MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ,
+        number(bass_pressure.get("matrix_sparse_pressure_low_band_lift_ratio"))
+        >= MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO,
+        number(bass_pressure.get("matrix_sparse_pressure_low_band_share"))
+        >= MIN_SPARSE_PRESSURE_LOW_BAND_SHARE,
+        number(bass_pressure.get("matrix_sparse_pressure_low_to_mid_ratio"))
+        >= MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO,
+        number(bass_pressure.get("matrix_sparse_bass_dominance_margin"))
+        >= MIN_SPARSE_BASS_DOMINANCE_MARGIN,
+        number(bass_pressure.get("source_wav_sparse_bass_movement_static_distance_hz"))
+        >= MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ,
+        number(bass_pressure.get("source_wav_sparse_bass_movement_frequency_span_hz"))
+        >= MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ,
+        number(bass_pressure.get("source_wav_sparse_pressure_low_band_lift_ratio"))
+        >= MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO,
+        number(bass_pressure.get("source_wav_sparse_pressure_low_band_share"))
+        >= MIN_SPARSE_PRESSURE_LOW_BAND_SHARE,
+        number(bass_pressure.get("source_wav_sparse_pressure_low_to_mid_ratio"))
+        >= MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO,
+        number(bass_pressure.get("source_wav_sparse_bass_dominance_margin"))
+        >= MIN_SPARSE_BASS_DOMINANCE_MARGIN,
     ]
     return all(checks)
 
@@ -1453,6 +1520,39 @@ def validate_report(report: dict[str, Any]) -> list[str]:
                 for item in reconciliations
             ),
             "current_evidence_reconciliation_chop_policy_status_missing",
+            failures,
+        )
+    weak_categories = list_or_empty(weak_summary.get("categories"))
+    suite_summary = object_or_empty(report.get("professional_output_suite"))
+    if (
+        list_contains(weak_categories, "bass_movement")
+        and bass_movement_current_evidence_passed(suite_summary)
+    ):
+        check(
+            list_contains(
+                current_evidence.get("stale_fixture_only_categories"),
+                "bass_movement",
+            ),
+            "current_evidence_reconciliation_bass_movement_not_reconciled",
+            failures,
+        )
+        check(
+            current_evidence.get("current_product_top_candidate_category")
+            != "bass_movement",
+            "current_evidence_reconciliation_current_top_still_bass_movement",
+            failures,
+        )
+        reconciliations = list_or_empty(current_evidence.get("category_reconciliations"))
+        check(
+            any(
+                isinstance(item, dict)
+                and item.get("category") == "bass_movement"
+                and item.get("current_professional_suite_status")
+                == "current_sparse_pressure_gates_passed"
+                and item.get("priority_state") == "stale_fixture_only_top_risk"
+                for item in reconciliations
+            ),
+            "current_evidence_reconciliation_bass_movement_status_missing",
             failures,
         )
 

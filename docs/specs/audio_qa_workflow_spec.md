@@ -695,6 +695,10 @@ it must reconcile their routing priority against current professional-suite
 evidence. If a weak fixture still routes `chop_policy` while dense, matrix, and
 tonal W-30 response gates pass, readiness should mark that category as a stale
 fixture-only risk and point implementation toward the next current product gap.
+The same rule applies to `bass_movement`: sparse-bass negative fixtures remain
+regression controls, but they should not stay current priority when matrix and
+source-WAV sparse movement, low-band lift/share, low-to-mid ratio, and bass
+dominance gates all pass.
 This preserves regression controls without letting old hookless examples hide
 the instrument's current audible state.
 

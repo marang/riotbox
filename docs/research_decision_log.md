@@ -198,6 +198,20 @@ Status: accepted
 
 ---
 
+### RBX-116
+
+Date: 2026-07-01
+Topic: Bass weak-output priority must be reconciled with current pressure evidence
+Phase: P023 / Sound Excellence / Production Quality
+Question: should old sparse-bass weak fixtures keep driving `bass_movement` priority when current professional-suite sparse pressure gates pass?
+Decision: no. As with W-30 hook/chop, sparse-bass weak fixtures remain negative controls, but P023 readiness must reconcile them against current matrix and source-WAV sparse movement, low-band lift/share, low-to-mid ratio, and bass-dominance evidence. When those gates pass, `bass_movement` is marked stale fixture-only and the current product top category advances.
+Why: stale weak-bass artifacts are useful regression examples, but they should not keep the implementation loop on a bass-pressure slice after current diagnostics already prove physical sparse low-end projection.
+Evidence: RIOTBOX-1365 extends `current_evidence_reconciliation` to `bass_movement`, validates the stale-control state against current sparse pressure metrics, and surfaces the next current product top category in readiness JSON/Markdown.
+Consequences: future P023 prioritization should distinguish negative controls from current product gaps for each recurring weak-output category. Reconciliation remains diagnostic and cannot claim quality proof or human musical approval.
+Status: accepted
+
+---
+
 ### RBX-109
 
 Date: 2026-07-01
