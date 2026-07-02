@@ -1380,4 +1380,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Surface unavailable/degraded perform-risk cue before live moves
 - [RIOTBOX-1376.md](./RIOTBOX-1376.md)
   P023: Reconcile shipped perform-risk cue in readiness
+- [RIOTBOX-1377.md](./RIOTBOX-1377.md)
+  P023: Reconcile stale fixture-threshold routing after current destructive proof
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
