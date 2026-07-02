@@ -8,8 +8,12 @@ use riotbox_core::{
 };
 
 use super::{
-    JamShellState, scene_countdown_cue, style_confirmation_strong, style_low_emphasis,
-    style_pending_cue, style_pending_detail,
+    JamShellState,
+    perform_risk_cue_contract::{
+        PERFORM_RISK_BAR_LIVE_CUE, PERFORM_RISK_DEGRADED_LABEL, PERFORM_RISK_UNAVAILABLE_LABEL,
+    },
+    scene_countdown_cue, style_confirmation_strong, style_low_emphasis, style_pending_cue,
+    style_pending_detail,
 };
 
 mod arrangement;
@@ -234,13 +238,15 @@ pub(super) fn source_timing_perform_risk_line(shell: &JamShellState) -> Line<'st
             style_confirmation_strong(),
         ),
         SourceTimingPerformRisk::Degraded => (
-            "degraded",
+            PERFORM_RISK_DEGRADED_LABEL,
             source_timing_perform_risk_action_compact(shell),
             style_pending_cue(),
         ),
-        SourceTimingPerformRisk::Unavailable => {
-            ("unavailable", "bar/live?".to_string(), style_low_emphasis())
-        }
+        SourceTimingPerformRisk::Unavailable => (
+            PERFORM_RISK_UNAVAILABLE_LABEL,
+            PERFORM_RISK_BAR_LIVE_CUE.to_string(),
+            style_low_emphasis(),
+        ),
     };
 
     Line::from(vec![
@@ -256,11 +262,11 @@ fn source_timing_perform_risk_action_compact(shell: &JamShellState) -> String {
         return "confirmed".into();
     }
     match shell.app.jam_view.source.timing.actionability.as_str() {
-        "confirm grid first" => "bar/live?".into(),
+        "confirm grid first" => PERFORM_RISK_BAR_LIVE_CUE.into(),
         "grid can steer moves" => "play grid".into(),
-        "listen first" => "bar/live?".into(),
-        "using safe fallback grid" => "bar/live?".into(),
-        "timing unavailable" => "bar/live?".into(),
+        "listen first" => PERFORM_RISK_BAR_LIVE_CUE.into(),
+        "using safe fallback grid" => PERFORM_RISK_BAR_LIVE_CUE.into(),
+        "timing unavailable" => PERFORM_RISK_BAR_LIVE_CUE.into(),
         other => other.into(),
     }
 }
