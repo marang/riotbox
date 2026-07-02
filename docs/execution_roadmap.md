@@ -1095,6 +1095,11 @@ following:
   the candidate id, priority, demo-worthy reason, not-demo-ready reason, and
   required verdict state so the next work item is an explicit listening/review
   task rather than a generic source-selection reminder.
+- RIOTBOX-1380 carries that handoff all the way to local review artifacts:
+  readiness queue summaries and matching source-family actions preserve the
+  rendered WAV, metrics, and review-prompt refs from the release-demo
+  human-review queue so the reviewer can open the exact candidate evidence
+  directly from the readiness report.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue

@@ -2036,6 +2036,9 @@ def next_actions(
                     "demo_worthy_reason": candidate.get("demo_worthy_reason"),
                     "not_demo_ready_reason": candidate.get("not_demo_ready_reason"),
                     "required_verdict_current_state": candidate.get("required_verdict_current_state"),
+                    "rendered_wav": candidate.get("rendered_wav"),
+                    "metrics": candidate.get("metrics"),
+                    "review_prompt": candidate.get("review_prompt"),
                     "action": (
                         f"Review {candidate_id} before demo promotion; "
                         f"{candidate.get('demo_worthy_reason')} "
@@ -3217,10 +3220,26 @@ def validate_current_next_actions(
             and action.get("not_demo_ready_reason") == candidate.get("not_demo_ready_reason")
             and action.get("required_verdict_current_state")
             == candidate.get("required_verdict_current_state")
+            and artifact_ref_matches(action.get("rendered_wav"), candidate.get("rendered_wav"))
+            and artifact_ref_matches(action.get("metrics"), candidate.get("metrics"))
+            and artifact_ref_matches(action.get("review_prompt"), candidate.get("review_prompt"))
             and str(candidate.get("entry_id") or "") in str(action.get("action") or ""),
             f"next_actions_{family}_review_candidate_context_missing",
             failures,
         )
+
+
+def artifact_ref_matches(left: Any, right: Any) -> bool:
+    return (
+        isinstance(left, dict)
+        and isinstance(right, dict)
+        and isinstance(left.get("path"), str)
+        and bool(left["path"])
+        and isinstance(left.get("sha256"), str)
+        and len(left["sha256"]) == 64
+        and left.get("path") == right.get("path")
+        and left.get("sha256") == right.get("sha256")
+    )
 
 
 def write_report(output: Path, report: dict[str, Any]) -> None:

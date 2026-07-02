@@ -62,6 +62,9 @@ def human_review_queue_summary(report: dict[str, Any] | None, path: Path) -> dic
                 "human_verdict": required_queue_string(entry, "human_verdict", path, index),
                 "demo_readiness": required_queue_string(entry, "demo_readiness", path, index),
                 "quality_claim": entry.get("quality_claim"),
+                "rendered_wav": queue_artifact_ref(entry, "rendered_wav", path, index),
+                "metrics": queue_artifact_ref(entry, "metrics", path, index),
+                "review_prompt": queue_artifact_ref(entry, "review_prompt", path, index),
                 "strongest_audible_element": required_queue_string(
                     entry,
                     "strongest_audible_element",
@@ -173,6 +176,12 @@ def validate_review_queue_candidate(candidate: Any, index: int, failures: list[s
             f"human_review_queue_candidate_{index}_{field}_missing",
             failures,
         )
+    for field in ["rendered_wav", "metrics", "review_prompt"]:
+        check(
+            valid_artifact_ref(candidate.get(field)),
+            f"human_review_queue_candidate_{index}_{field}_invalid",
+            failures,
+        )
     check(
         candidate.get("human_verdict") == "unverified",
         f"human_review_queue_candidate_{index}_not_unverified",
@@ -238,6 +247,28 @@ def required_queue_string(data: dict[str, Any], field: str, path: Path, index: i
         f"{path}: review_queue[{index}].{field} must be non-empty string",
     )
     return value
+
+
+def queue_artifact_ref(data: dict[str, Any], field: str, path: Path, index: int) -> dict[str, str]:
+    artifact = data.get(field)
+    require(
+        valid_artifact_ref(artifact),
+        f"{path}: review_queue[{index}].{field} must include path and sha256",
+    )
+    return {
+        "path": str(artifact["path"]),
+        "sha256": str(artifact["sha256"]),
+    }
+
+
+def valid_artifact_ref(value: Any) -> bool:
+    return (
+        isinstance(value, dict)
+        and isinstance(value.get("path"), str)
+        and bool(value["path"])
+        and isinstance(value.get("sha256"), str)
+        and len(value["sha256"]) == 64
+    )
 
 
 def number(value: Any) -> float:
