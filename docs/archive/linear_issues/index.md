@@ -1384,4 +1384,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Reconcile stale fixture-threshold routing after current destructive proof
 - [RIOTBOX-1378.md](./RIOTBOX-1378.md)
   P023: Prioritize source-family review actions after weak-output reconciliation
+- [RIOTBOX-1379.md](./RIOTBOX-1379.md)
+  P023: Make source-family readiness actions point at concrete review candidates
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
