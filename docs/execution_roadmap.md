@@ -1090,6 +1090,11 @@ following:
   `current_product_top_candidate_category` is `none`, stale weak-output
   categories stay visible only as regression controls and the main Next Actions
   prioritize source-family review plus structured human/demo coverage.
+- RIOTBOX-1379 makes those source-family actions concrete: when a matching
+  release-demo human-review queue candidate exists, the readiness action carries
+  the candidate id, priority, demo-worthy reason, not-demo-ready reason, and
+  required verdict state so the next work item is an explicit listening/review
+  task rather than a generic source-selection reminder.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue

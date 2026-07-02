@@ -2015,14 +2015,35 @@ def next_actions(
     review_queue: dict[str, Any],
 ) -> list[dict[str, Any]]:
     actions: list[dict[str, Any]] = []
+    review_candidate_by_family = {
+        str(candidate.get("source_family")): candidate
+        for candidate in list_or_empty(review_queue.get("candidates"))
+        if isinstance(candidate, dict) and candidate.get("source_family")
+    }
     for family in coverage["missing_demo_ready_families"]:
-        actions.append(
-            {
-                "category": "source_selection",
-                "target": family,
-                "action": "Create or promote a real-source candidate with structured human listening evidence.",
-            }
-        )
+        candidate = review_candidate_by_family.get(str(family))
+        action = {
+            "category": "source_selection",
+            "target": family,
+            "action": "Create or promote a real-source candidate with structured human listening evidence.",
+        }
+        if candidate:
+            candidate_id = str(candidate.get("entry_id") or "")
+            action.update(
+                {
+                    "candidate_id": candidate_id,
+                    "review_priority": candidate.get("review_priority"),
+                    "demo_worthy_reason": candidate.get("demo_worthy_reason"),
+                    "not_demo_ready_reason": candidate.get("not_demo_ready_reason"),
+                    "required_verdict_current_state": candidate.get("required_verdict_current_state"),
+                    "action": (
+                        f"Review {candidate_id} before demo promotion; "
+                        f"{candidate.get('demo_worthy_reason')} "
+                        f"Not demo-ready yet: {candidate.get('not_demo_ready_reason')}"
+                    ),
+                }
+            )
+        actions.append(action)
     stale_categories = set(
         string_list(current_evidence.get("stale_fixture_only_categories"))
     )
@@ -3172,6 +3193,34 @@ def validate_current_next_actions(
         "next_actions_source_family_review_coverage_missing",
         failures,
     )
+    review_queue = object_or_empty(report.get("human_review_queue"))
+    candidates_by_family = {
+        str(candidate.get("source_family")): candidate
+        for candidate in list_or_empty(review_queue.get("candidates"))
+        if isinstance(candidate, dict) and candidate.get("source_family")
+    }
+    actions_by_family = {
+        str(action.get("target")): action
+        for action in source_family_actions
+        if isinstance(action, dict) and action.get("target")
+    }
+    for family in {"bad_timing", "pad_noise", "sparse_drums", "weak_source"}:
+        candidate = candidates_by_family.get(family)
+        action = actions_by_family.get(family)
+        if not candidate:
+            continue
+        check(
+            isinstance(action, dict)
+            and action.get("candidate_id") == candidate.get("entry_id")
+            and action.get("review_priority") == candidate.get("review_priority")
+            and action.get("demo_worthy_reason") == candidate.get("demo_worthy_reason")
+            and action.get("not_demo_ready_reason") == candidate.get("not_demo_ready_reason")
+            and action.get("required_verdict_current_state")
+            == candidate.get("required_verdict_current_state")
+            and str(candidate.get("entry_id") or "") in str(action.get("action") or ""),
+            f"next_actions_{family}_review_candidate_context_missing",
+            failures,
+        )
 
 
 def write_report(output: Path, report: dict[str, Any]) -> None:
