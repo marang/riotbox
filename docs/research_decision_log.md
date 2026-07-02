@@ -394,6 +394,20 @@ Status: accepted
 
 ---
 
+### RBX-130
+
+Date: 2026-07-02
+Topic: Source-family readiness actions must point at concrete review candidates
+Phase: P023 Sound Excellence / Production Quality
+Question: how should P023 readiness guide the next loop once source-family review is the remaining blocker?
+Decision: when current weak-output reconciliation leaves no active production-fix bucket, source-family Next Actions must link missing demo-ready families to matching release-demo human-review queue candidates when available.
+Why: generic "create or promote a candidate" actions hide the fact that Riotbox already has candidate ids, priorities, blocker reasons, and review prompts. The team and musician need an actionable listening/review task, not another abstract source-selection reminder.
+Evidence: RIOTBOX-1379 enriches readiness source-selection actions with candidate id, review priority, demo-worthy reason, not-demo-ready reason, and required verdict state, and validates that candidate context cannot be removed while a matching queue entry exists.
+Consequences: readiness remains claim-blocked and `quality_proof: false`, but the next implementation/review loop can move directly to structured listening or candidate fix routing for each source family.
+Status: accepted
+
+---
+
 ### RBX-109
 
 Date: 2026-07-01

@@ -929,6 +929,12 @@ state, missing review blockers, or any queued candidate with
 `quality_claim: true`. This makes the readiness report useful as a release
 blocker and reviewer worklist without turning unreviewed artifacts into quality
 proof.
+When current weak-output reconciliation leaves no active production-fix bucket,
+the main source-family Next Actions must also link missing demo-ready families
+to matching human-review queue candidates when available. The action must carry
+the candidate id, priority, demo-worthy reason, not-demo-ready reason, and
+required verdict state so the next loop is an actionable listening task rather
+than a generic "create/promote candidate" reminder.
 
 Large professional-output JSON contracts belong in named repo-local validators,
 not in oversized inline `jq` blocks inside `Justfile`. `just` recipes may keep
