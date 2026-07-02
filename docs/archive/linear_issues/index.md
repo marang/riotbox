@@ -1368,4 +1368,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Apply source-selection priority to source-window policy
 - [RIOTBOX-1370.md](./RIOTBOX-1370.md)
   P023: Reconcile destructive priority with source-referenced destructive proof
+- [RIOTBOX-1371.md](./RIOTBOX-1371.md)
+  P023: Gate source-selection priority on policy family coverage
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
