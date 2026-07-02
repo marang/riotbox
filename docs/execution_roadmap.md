@@ -1069,6 +1069,10 @@ following:
   cues required before confident bar-locked or live-trigger moves. This keeps
   UI-cue work from becoming a vague bucket after sound-output priorities are
   reconciled.
+- RIOTBOX-1375 connects that priority to the Jam Trust perform-risk line:
+  degraded and unavailable state labels now carry the compact `bar/live?` cue
+  before the player treats the grid as perform-ready. This is a visible trust
+  cue, not a new action system.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue

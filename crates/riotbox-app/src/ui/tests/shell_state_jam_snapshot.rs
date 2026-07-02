@@ -27,7 +27,7 @@ fn renders_more_musical_jam_shell_snapshot() {
     );
     assert!(rendered.contains("timing needs confirm | confirm grid"), "{rendered}");
     assert!(
-        rendered.contains("perform risk degraded | confirm grid"),
+        rendered.contains("perform risk degraded | bar/live?"),
         "{rendered}"
     );
     assert!(
@@ -314,7 +314,8 @@ fn renders_missing_source_timing_clock_as_unavailable() {
         "{rendered}"
     );
     assert!(
-        rendered.contains("perform risk unavailable | load source"),
+        rendered.contains("perform risk unavailable | bar/live?"),
         "{rendered}"
     );
+    assert!(rendered.contains("load source"), "{rendered}");
 }

@@ -110,6 +110,12 @@ It must expose:
   grid-use, and selected phase over repeating source timing quality or anchor
   class; the Source and Help surfaces should retain the fuller quality/anchor
   wording.
+- The Jam perform-risk line must make risky live/bar trust explicit. Degraded
+  timing should keep the `degraded` state label and a compact bar/live trust
+  cue such as `bar/live?`; unavailable timing should keep the `unavailable`
+  state label and the same compact bar/live cue. The concrete action remains in
+  the adjacent timing/actionability line, such as `confirm grid first` or
+  `timing unavailable`.
 - Jam Help, Start Here, and Source timing panels should read the actionability
   phrase from the shared Jam source timing summary instead of matching local
   degraded-policy strings.

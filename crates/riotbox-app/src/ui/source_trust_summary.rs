@@ -238,11 +238,9 @@ pub(super) fn source_timing_perform_risk_line(shell: &JamShellState) -> Line<'st
             source_timing_perform_risk_action_compact(shell),
             style_pending_cue(),
         ),
-        SourceTimingPerformRisk::Unavailable => (
-            "unavailable",
-            "load source".to_string(),
-            style_low_emphasis(),
-        ),
+        SourceTimingPerformRisk::Unavailable => {
+            ("unavailable", "bar/live?".to_string(), style_low_emphasis())
+        }
     };
 
     Line::from(vec![
@@ -258,11 +256,11 @@ fn source_timing_perform_risk_action_compact(shell: &JamShellState) -> String {
         return "confirmed".into();
     }
     match shell.app.jam_view.source.timing.actionability.as_str() {
-        "confirm grid first" => "confirm grid".into(),
+        "confirm grid first" => "bar/live?".into(),
         "grid can steer moves" => "play grid".into(),
-        "listen first" => "listen first".into(),
-        "using safe fallback grid" => "fallback".into(),
-        "timing unavailable" => "load source".into(),
+        "listen first" => "bar/live?".into(),
+        "using safe fallback grid" => "bar/live?".into(),
+        "timing unavailable" => "bar/live?".into(),
         other => other.into(),
     }
 }
