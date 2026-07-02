@@ -1100,6 +1100,10 @@ following:
   rendered WAV, metrics, and review-prompt refs from the release-demo
   human-review queue so the reviewer can open the exact candidate evidence
   directly from the readiness report.
+- RIOTBOX-1381 makes the Markdown readiness report carry the same review
+  handoff as JSON: source-family Next Actions and Human Review Queue entries
+  print rendered WAV, metrics, and review-prompt refs so the report itself is a
+  usable listening worklist.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue

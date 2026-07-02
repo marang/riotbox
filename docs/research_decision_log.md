@@ -422,6 +422,20 @@ Status: accepted
 
 ---
 
+### RBX-132
+
+Date: 2026-07-02
+Topic: Readiness Markdown must render source-family review artifact refs
+Phase: P023 Sound Excellence / Production Quality
+Question: should review artifact refs live only in JSON, or also in the human-readable readiness report?
+Decision: the Markdown readiness report must render rendered-WAV, metrics, and review-prompt refs for concrete source-family Next Actions and Human Review Queue entries when those refs exist in JSON.
+Why: the Markdown report is the artifact a reviewer will read first. If it names the candidate but hides the WAV and prompt paths, the handoff remains incomplete and the reviewer has to reverse-engineer JSON.
+Evidence: RIOTBOX-1381 renders artifact refs through `append_artifact_ref_lines` and adds smoke checks for the bad-timing rendered WAV and review prompt paths in `sound-quality-readiness-report.md`.
+Consequences: readiness remains unverified and quality-claim blocked, but the human-readable report now acts as a practical listening worklist.
+Status: accepted
+
+---
+
 ### RBX-109
 
 Date: 2026-07-01

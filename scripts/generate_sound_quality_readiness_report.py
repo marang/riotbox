@@ -3266,6 +3266,7 @@ def markdown_report(report: dict[str, Any]) -> str:
     lines.extend(["", "## Next Actions", ""])
     for action in report["next_actions"]:
         lines.append(f"- `{action['category']}` / {action['target']}: {action['action']}")
+        append_artifact_ref_lines(lines, action, indent="  ")
     if not report["next_actions"]:
         lines.append("- none")
     review_queue = object_or_empty(report.get("human_review_queue"))
@@ -3294,6 +3295,7 @@ def markdown_report(report: dict[str, Any]) -> str:
                     f"- Required verdict state: `{candidate['required_verdict_current_state']}`",
                 ]
             )
+            append_artifact_ref_lines(lines, candidate)
     else:
         lines.append("- missing")
     suite = object_or_empty(report.get("professional_output_suite"))
@@ -3424,6 +3426,26 @@ def markdown_report(report: dict[str, Any]) -> str:
     )
     lines.extend(["", "## Evidence Boundary", "", report["evidence_boundary"], ""])
     return "\n".join(lines)
+
+
+def append_artifact_ref_lines(
+    lines: list[str],
+    data: dict[str, Any],
+    *,
+    indent: str = "",
+) -> None:
+    for field, label in [
+        ("rendered_wav", "Rendered WAV"),
+        ("metrics", "Metrics"),
+        ("review_prompt", "Review prompt"),
+    ]:
+        artifact = data.get(field)
+        if not isinstance(artifact, dict):
+            continue
+        path = artifact.get("path")
+        sha256 = artifact.get("sha256")
+        if isinstance(path, str) and path and isinstance(sha256, str) and len(sha256) == 64:
+            lines.append(f"{indent}- {label}: `{path}` (`{sha256}`)")
 
 
 def read_json_object(path: Path) -> dict[str, Any]:
