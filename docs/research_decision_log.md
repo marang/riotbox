@@ -268,6 +268,20 @@ Status: accepted
 
 ---
 
+### RBX-121
+
+Date: 2026-07-02
+Topic: P023 readiness must reconcile destructive priority with source-referenced proof
+Phase: P023 Sound Excellence / Production Quality
+Question: should sound-quality readiness demote stale destructive-gesture weak fixtures when the current professional suite passes destructive gates via source-referenced transient evidence rather than hook-referenced ratios?
+Decision: yes. Destructive readiness now uses the same transient contract as the professional suite: stutter and restore pass through hook-referenced ratios or source-referenced ratios when selected source hooks raise the hook baseline.
+Why: otherwise stale flat-stutter controls can remain the current top product gap even after the current dense product output proves dropout/stutter silence, restore pressure, and source-referenced transient impact.
+Evidence: RIOTBOX-1370 carries source-referenced destructive ratios into the readiness summary, updates destructive reconciliation, and adds a mutation smoke that fails validation when stale destructive demotion lacks current source-referenced proof.
+Consequences: destructive weak fixtures remain regression controls, not release quality proof. Readiness can advance to the next current product gap only when the report contains current destructive evidence that matches the professional-suite contract.
+Status: accepted
+
+---
+
 ### RBX-109
 
 Date: 2026-07-01
