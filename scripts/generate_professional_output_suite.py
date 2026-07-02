@@ -1925,6 +1925,16 @@ def source_selection_policy_summary(output: Path) -> dict[str, Any]:
     return {
         "result": "pass" if not failures else "fail",
         "case_count": len(cases),
+        "source_families": sorted(
+            {case["source_family"] for case in cases if case["source_family"]}
+        ),
+        "promotion_allowed_source_families": sorted(
+            {
+                case["source_family"]
+                for case in cases
+                if case["source_family"] and case["promotion_allowed"]
+            }
+        ),
         "promotion_allowed_case_count": sum(
             1 for case in cases if case["promotion_allowed"]
         ),

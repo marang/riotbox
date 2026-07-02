@@ -1046,6 +1046,11 @@ following:
   transient evidence. A mutation smoke now proves missing source-referenced
   destructive proof fails validation instead of silently advancing the top
   product gap.
+- RIOTBOX-1371 tightens the remaining `source_selection` priority: readiness
+  must compare source-selection candidate families with policy-covered families,
+  so dense-only policy evidence cannot hide an uncovered tonal-hook or other
+  family gap. This keeps source selection actionable without pretending the
+  current diagnostic policy is broad musical approval.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue

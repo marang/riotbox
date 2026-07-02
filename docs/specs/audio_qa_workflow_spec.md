@@ -692,6 +692,11 @@ failing candidate-count gates. Candidate-count floors apply only when the search
 duration is larger than the selected window. The policy must preserve
 `quality_proof: false` and `automated_musical_approval: false`; it proves
 source-window policy execution, not human musical approval.
+When readiness keeps `source_selection` as the current product priority, it
+must compare the candidate's source families with policy-covered families.
+Dense-only policy evidence is not enough to imply tonal-hook or other family
+coverage; uncovered families must stay explicit in the priority detail and next
+implementation step.
 
 P023 source-selection risk must also expose actionable demotion evidence for
 edge material. Bad-timing and pad/noise diagnostics may stay source-backed, but
