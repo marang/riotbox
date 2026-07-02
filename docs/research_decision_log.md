@@ -408,6 +408,20 @@ Status: accepted
 
 ---
 
+### RBX-131
+
+Date: 2026-07-02
+Topic: Readiness source-family review actions must carry artifact refs
+Phase: P023 Sound Excellence / Production Quality
+Question: how should a reviewer find the concrete WAV and prompt for a source-family readiness action?
+Decision: readiness human-review queue summaries and matching source-family Next Actions must preserve the release-demo queue's rendered WAV, metrics, and review-prompt artifact refs as `path` plus SHA-256.
+Why: a readiness action that names a candidate but drops the WAV/prompt path still forces the reviewer to reverse-engineer the queue report. The product loop needs direct handoff from release blocker to exact listening artifact.
+Evidence: RIOTBOX-1380 carries `rendered_wav`, `metrics`, and `review_prompt` through the readiness queue summary into enriched source-selection actions, and validates that refs cannot disappear while the queue has them.
+Consequences: readiness still does not claim quality proof, but it now functions as a concrete review worklist: each blocked source family points at the candidate, reason, verdict state, WAV, metrics, and prompt.
+Status: accepted
+
+---
+
 ### RBX-109
 
 Date: 2026-07-01
