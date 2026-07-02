@@ -403,6 +403,9 @@ def weak_routing_summary(report: dict[str, Any] | None, path: Path) -> dict[str,
                 "case_id": str(case.get("case_id")),
                 "artifact_to_hear": str(case.get("artifact_to_hear")),
                 "proposed_next_fix_category": str(case.get("proposed_next_fix_category")),
+                "proposed_fix_categories": string_list(case.get("proposed_fix_categories")),
+                "failure_codes": string_list(case.get("failure_codes")),
+                "matched_known_routing_signal": case.get("matched_known_routing_signal"),
                 "musician_fix_reason": str(case.get("musician_fix_reason")),
             }
             for case in cases
@@ -1089,6 +1092,45 @@ def current_evidence_reconciliation(
         if ui_cue_passed:
             stale_fixture_only_categories.append("ui_cue")
 
+    fixture_threshold_passed = fixture_threshold_current_evidence_passed(
+        candidate_categories,
+        weak,
+        suite,
+    )
+    if "fixture_threshold" in candidate_categories:
+        category_reconciliations.append(
+            {
+                "category": "fixture_threshold",
+                "weak_evidence_role": "negative_control_fixture",
+                "current_professional_suite_status": (
+                    "current_fixture_threshold_negative_control_covered"
+                    if fixture_threshold_passed
+                    else "current_fixture_threshold_still_risky"
+                ),
+                "priority_state": (
+                    "stale_fixture_only_top_risk"
+                    if fixture_threshold_passed
+                    else "current_product_risk"
+                ),
+                "software_next_step": (
+                    "Use stale fixture-threshold routes as regression controls; "
+                    "do not treat them as the current product gap while they are "
+                    "secondary negative-control evidence and current destructive "
+                    "gesture proof passes."
+                    if fixture_threshold_passed
+                    else "Keep fixture-threshold work current until the route is proven to be secondary negative-control evidence covered by current output proof."
+                ),
+                "musician_payoff": (
+                    "Old expected-fail fixture taxonomy stops hiding the next "
+                    "musician-facing blocker once current destructive output already lands."
+                    if fixture_threshold_passed
+                    else "Weak audio or ambiguous fixtures still need threshold work before the musician can trust the evidence."
+                ),
+            }
+        )
+        if fixture_threshold_passed:
+            stale_fixture_only_categories.append("fixture_threshold")
+
     current_product_categories = [
         category
         for category in candidate_categories
@@ -1298,6 +1340,53 @@ def ui_cue_current_evidence_passed(perform_risk_cue: dict[str, Any]) -> bool:
         any("unavailable/degraded" in cue for cue in required_cues),
         any("bar-locked" in cue for cue in required_cues),
         any("live-trigger" in cue for cue in required_cues),
+    ]
+    return all(checks)
+
+
+def fixture_threshold_current_evidence_passed(
+    candidate_categories: list[str],
+    weak: dict[str, Any],
+    suite: dict[str, Any],
+) -> bool:
+    if "fixture_threshold" not in candidate_categories:
+        return False
+    if not destructive_gesture_current_evidence_passed(suite):
+        return False
+    candidate = next(
+        (
+            item
+            for item in list_or_empty(weak.get("production_fix_candidates"))
+            if isinstance(item, dict) and item.get("category") == "fixture_threshold"
+        ),
+        {},
+    )
+    case_ids = string_list(candidate.get("case_ids"))
+    primary_case_ids = string_list(candidate.get("primary_case_ids"))
+    if not case_ids or primary_case_ids:
+        return False
+    cases = {
+        str(case.get("case_id")): case
+        for case in list_or_empty(weak.get("cases"))
+        if isinstance(case, dict)
+    }
+    selected_cases = [cases.get(case_id, {}) for case_id in case_ids]
+    checks = [
+        bool(selected_cases),
+        all(case for case in selected_cases),
+        all(
+            "fixture_threshold" in string_list(case.get("proposed_fix_categories"))
+            for case in selected_cases
+        ),
+        all(
+            str(case.get("proposed_next_fix_category")) != "fixture_threshold"
+            for case in selected_cases
+        ),
+        all(
+            "source_report_not_passed" in string_list(case.get("failure_codes"))
+            for case in selected_cases
+        ),
+        all(case.get("matched_known_routing_signal") is True for case in selected_cases),
     ]
     return all(checks)
 
@@ -2831,6 +2920,57 @@ def validate_report(report: dict[str, Any]) -> list[str]:
                 "current_evidence_reconciliation_ui_cue_stale_without_tui_contract",
                 failures,
             )
+    if fixture_threshold_current_evidence_passed(
+        weak_categories,
+        weak_routing,
+        suite_summary,
+    ):
+        check(
+            list_contains(
+                current_evidence.get("stale_fixture_only_categories"),
+                "fixture_threshold",
+            ),
+            "current_evidence_reconciliation_fixture_threshold_not_reconciled",
+            failures,
+        )
+        check(
+            current_evidence.get("current_product_top_candidate_category")
+            != "fixture_threshold",
+            "current_evidence_reconciliation_current_top_still_fixture_threshold",
+            failures,
+        )
+        reconciliations = list_or_empty(current_evidence.get("category_reconciliations"))
+        check(
+            any(
+                isinstance(item, dict)
+                and item.get("category") == "fixture_threshold"
+                and item.get("current_professional_suite_status")
+                == "current_fixture_threshold_negative_control_covered"
+                and item.get("priority_state") == "stale_fixture_only_top_risk"
+                for item in reconciliations
+            ),
+            "current_evidence_reconciliation_fixture_threshold_status_missing",
+            failures,
+        )
+    for item in list_or_empty(current_evidence.get("category_reconciliations")):
+        if (
+            isinstance(item, dict)
+            and item.get("category") == "fixture_threshold"
+            and (
+                item.get("current_professional_suite_status")
+                == "current_fixture_threshold_negative_control_covered"
+                or item.get("priority_state") == "stale_fixture_only_top_risk"
+            )
+        ):
+            check(
+                fixture_threshold_current_evidence_passed(
+                    weak_categories,
+                    weak_routing,
+                    suite_summary,
+                ),
+                "current_evidence_reconciliation_fixture_threshold_stale_without_negative_control_proof",
+                failures,
+            )
     if current_evidence.get("current_product_top_candidate_category") == "source_selection":
         validate_source_selection_priority(source_selection_priority, failures)
     if current_evidence.get("current_product_top_candidate_category") == "ui_cue":
@@ -2956,8 +3096,8 @@ def validate_current_p023_contract(
         failures,
     )
     check(
-        list_contains(report.get("next_fix_categories"), "fixture_threshold"),
-        "p023_contract_fixture_threshold_next_fix_missing",
+        not list_contains(report.get("next_fix_categories"), "fixture_threshold"),
+        "p023_contract_stale_fixture_threshold_next_fix_present",
         failures,
     )
     check(

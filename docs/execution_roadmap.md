@@ -1080,6 +1080,12 @@ following:
   passes. The current non-stale implementation gap then advances to
   `fixture_threshold`, while release readiness remains blocked by human/demo
   source-family coverage and review evidence.
+- RIOTBOX-1377 reconciles that final `fixture_threshold` bucket: secondary
+  expected-fail fixture routes are stale regression controls when they have no
+  primary cases and current destructive/output evidence already passes. Fresh
+  readiness therefore reports no current weak-output product gap; the remaining
+  P023 path is source-selection, structured human listening, and demo-family
+  coverage, with quality claims still blocked.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue
