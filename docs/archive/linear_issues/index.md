@@ -1376,4 +1376,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Reconcile drum-pressure priority with current TR-909 pressure proof
 - [RIOTBOX-1374.md](./RIOTBOX-1374.md)
   P023: Make current UI-cue priority actionable in readiness
+- [RIOTBOX-1375.md](./RIOTBOX-1375.md)
+  P023: Surface unavailable/degraded perform-risk cue before live moves
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
