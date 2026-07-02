@@ -366,6 +366,20 @@ Status: accepted
 
 ---
 
+### RBX-128
+
+Date: 2026-07-02
+Topic: Fixture-threshold routes must not hide current output proof
+Phase: P023 Sound Excellence / Production Quality
+Question: when should `fixture_threshold` stop being the current P023 implementation gap?
+Decision: demote `fixture_threshold` only when it is secondary negative-control routing, has no primary case ids, includes the expected `source_report_not_passed` fixture signal, and current destructive/output evidence already passes. Otherwise it remains current.
+Why: the final fixture-threshold route came from an expected-fail negative diagnostic, not a new musician-facing sound failure. Treating that as the top product gap would keep implementation stuck on fixture taxonomy instead of source-family review and demo coverage.
+Evidence: RIOTBOX-1377 adds fixture-threshold current-evidence reconciliation, validates the negative-control proof shape, and adds a mutation smoke that fails if a primary fixture-threshold case is incorrectly demoted.
+Consequences: weak-output categories can all be stale regression controls. P023 readiness now advances to source-selection and structured human/demo coverage while still blocking release and quality claims.
+Status: accepted
+
+---
+
 ### RBX-109
 
 Date: 2026-07-01

@@ -843,6 +843,12 @@ unavailable timing both expose `bar/live?` on the Trust surface, with
 contract is missing or the cue regresses, `ui_cue` remains the current product
 risk; if it passes, `ui_cue` becomes a stale regression control and readiness
 advances to the next non-stale gap.
+`fixture_threshold` must follow the same current-evidence discipline. A
+fixture-threshold route may be demoted only when it is secondary
+negative-control evidence, has no primary routed cases, carries the expected
+`source_report_not_passed` fixture signal, and the related current output proof
+already passes. A primary threshold case, unknown routing, or missing current
+proof keeps `fixture_threshold` as the current implementation risk.
 
 MC-202 producer-grade closeout routing extends that category vocabulary for the
 MC-202 lane with `answer_bite`, `hook_restraint`, and
