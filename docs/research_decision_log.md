@@ -338,6 +338,20 @@ Status: accepted
 
 ---
 
+### RBX-126
+
+Date: 2026-07-02
+Topic: Jam perform-risk must name degraded or unavailable bar/live trust
+Phase: P023 Sound Excellence / Production Quality
+Question: how should the current UI-cue priority become visible on the instrument surface without adding a new action system?
+Decision: update the existing Jam Trust perform-risk line. Degraded timing keeps the `degraded` state label and adds the compact `bar/live?` trust cue; unavailable timing keeps the `unavailable` state label and the same bar/live cue. Trusted or user-confirmed timing remains playable/trusted.
+Why: `confirm grid` alone is a useful action, but it does not say why the musician should avoid confident bar-locked or live-trigger moves. The product needs the Trust line to carry unavailable/degraded meaning before risky source/timing material is promoted, without wrapping and hiding the adjacent timing/actionability line.
+Evidence: RIOTBOX-1375 updates `source_timing_perform_risk_line`, adjusts Jam snapshot tests for degraded and unavailable timing, and documents the TUI language.
+Consequences: this remains a visible trust cue on the existing Jam surface, not a second timing state or action path. Future UI-cue work should keep using the shared source-timing summary and observer evidence.
+Status: accepted
+
+---
+
 ### RBX-109
 
 Date: 2026-07-01
