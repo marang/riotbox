@@ -849,6 +849,12 @@ negative-control evidence, has no primary routed cases, carries the expected
 `source_report_not_passed` fixture signal, and the related current output proof
 already passes. A primary threshold case, unknown routing, or missing current
 proof keeps `fixture_threshold` as the current implementation risk.
+When all weak-output categories are stale and
+`current_product_top_candidate_category` is `none`, the readiness report's main
+Next Actions must prioritize source-family review and human/demo coverage. Stale
+weak-output categories remain visible as regression controls in current-evidence
+reconciliation, but they must not obscure the active review path in the main
+action list.
 
 MC-202 producer-grade closeout routing extends that category vocabulary for the
 MC-202 lane with `answer_bite`, `hook_restraint`, and

@@ -380,6 +380,20 @@ Status: accepted
 
 ---
 
+### RBX-129
+
+Date: 2026-07-02
+Topic: Post-reconciliation readiness actions must prioritize source-family review
+Phase: P023 Sound Excellence / Production Quality
+Question: what should the P023 readiness report recommend after every weak-output category is stale?
+Decision: when `current_product_top_candidate_category` is `none`, keep stale weak-output categories visible only as regression controls and make the main Next Actions source-family review plus structured human/demo coverage.
+Why: after weak-output reconciliation, listing every stale category as a next action makes the implementation loop look stuck on already-covered fixture work. The musician-facing blocker is review and demo coverage, not another stale weak-output fix.
+Evidence: RIOTBOX-1378 filters stale weak-output controls out of main Next Actions when no current weak-output product gap remains and validates that source-family actions remain visible.
+Consequences: release readiness and quality claims remain blocked until human/demo evidence exists, but the next engineering/review path is no longer obscured by stale regression controls.
+Status: accepted
+
+---
+
 ### RBX-109
 
 Date: 2026-07-01
