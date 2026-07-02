@@ -1063,6 +1063,12 @@ following:
   support contribution, low-band body, and source-masking ceilings all pass.
   This keeps the implementation loop moving to the next current audible gap
   without treating old weak drum-pressure artifacts as quality proof.
+- RIOTBOX-1374 makes the resulting `ui_cue` priority actionable: readiness must
+  expose the exact weak cases, source families, artifact refs, cue surface, cue
+  reasons, software next step, musician action, and unavailable/degraded player
+  cues required before confident bar-locked or live-trigger moves. This keeps
+  UI-cue work from becoming a vague bucket after sound-output priorities are
+  reconciled.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue

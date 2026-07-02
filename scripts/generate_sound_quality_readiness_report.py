@@ -145,6 +145,11 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         suite_summary,
         current_evidence,
     )
+    ui_cue_priority = ui_cue_priority_detail(
+        weak_summary,
+        suite_summary,
+        current_evidence,
+    )
     review_summary = human_review_queue_summary(human_review_queue, args.human_review_queue)
     blockers = readiness_blockers(
         source_families,
@@ -190,6 +195,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "professional_output_suite": suite_summary,
         "current_evidence_reconciliation": current_evidence,
         "source_selection_priority": source_selection_priority,
+        "ui_cue_priority": ui_cue_priority,
         "human_review_queue": review_summary,
         "blockers": blockers,
         "next_actions": next_actions(
@@ -1295,6 +1301,100 @@ def validate_source_selection_priority(
     )
 
 
+def validate_ui_cue_priority(
+    detail: dict[str, Any],
+    failures: list[str],
+) -> None:
+    check(
+        detail.get("category") == "ui_cue",
+        "ui_cue_priority_category_missing",
+        failures,
+    )
+    check(
+        detail.get("available") is True,
+        "ui_cue_priority_missing",
+        failures,
+    )
+    check(
+        detail.get("priority_state") == "current_product_risk",
+        "ui_cue_priority_not_current_product_risk",
+        failures,
+    )
+    check(
+        detail.get("quality_proof") is False,
+        "ui_cue_priority_claims_quality_proof",
+        failures,
+    )
+    check(
+        detail.get("automated_musical_approval") is False,
+        "ui_cue_priority_claims_approval",
+        failures,
+    )
+    check(
+        bool(str(detail.get("candidate_id") or "")),
+        "ui_cue_priority_candidate_missing",
+        failures,
+    )
+    check(
+        bool(string_list(detail.get("case_ids"))),
+        "ui_cue_priority_cases_missing",
+        failures,
+    )
+    check(
+        bool(string_list(detail.get("source_families"))),
+        "ui_cue_priority_source_families_missing",
+        failures,
+    )
+    check(
+        bool(string_list(detail.get("artifact_refs"))),
+        "ui_cue_priority_artifacts_missing",
+        failures,
+    )
+    check(
+        detail.get("cue_surface") == "timing_source_risk_before_confident_moves",
+        "ui_cue_priority_surface_missing",
+        failures,
+    )
+    required_cues = string_list(detail.get("required_player_cues"))
+    check(
+        len(required_cues) >= 3
+        and any("unavailable/degraded" in cue for cue in required_cues)
+        and any("bar-locked" in cue for cue in required_cues)
+        and any("live-trigger" in cue for cue in required_cues),
+        "ui_cue_priority_player_cues_too_weak",
+        failures,
+    )
+    check(
+        bool(string_list(detail.get("cue_reasons"))),
+        "ui_cue_priority_reasons_missing",
+        failures,
+    )
+    check(
+        detail.get("actionable_for_musician") is True,
+        "ui_cue_priority_not_actionable",
+        failures,
+    )
+    software_next_step = str(detail.get("software_next_step") or "")
+    generic_upstream_step = str(detail.get("generic_upstream_next_step") or "")
+    check(
+        len(software_next_step) >= 100
+        and software_next_step != generic_upstream_step
+        and "unavailable/degraded" in software_next_step
+        and "bar-locked" in software_next_step
+        and "live-trigger" in software_next_step,
+        "ui_cue_priority_next_step_too_generic",
+        failures,
+    )
+    musician_action = str(detail.get("musician_action") or "")
+    check(
+        len(musician_action) >= 90
+        and "unavailable/degraded" in musician_action
+        and "diagnostics" in musician_action,
+        "ui_cue_priority_musician_action_too_generic",
+        failures,
+    )
+
+
 def source_selection_priority_detail(
     weak: dict[str, Any],
     suite: dict[str, Any],
@@ -1417,6 +1517,93 @@ def source_selection_musician_action(
     return (
         f"Treat {families} as unavailable/degraded for promotion: {actions}. "
         "Use them for diagnostics until timing, texture, and human verdict are trusted."
+    )
+
+
+def ui_cue_priority_detail(
+    weak: dict[str, Any],
+    suite: dict[str, Any],
+    current_evidence: dict[str, Any],
+) -> dict[str, Any]:
+    candidate = next(
+        (
+            item
+            for item in list_or_empty(weak.get("production_fix_candidates"))
+            if isinstance(item, dict) and item.get("category") == "ui_cue"
+        ),
+        {},
+    )
+    risk = object_or_empty(suite.get("source_selection_risk"))
+    is_current_top = (
+        current_evidence.get("current_product_top_candidate_category") == "ui_cue"
+    )
+    case_ids = string_list(candidate.get("case_ids"))
+    source_families = string_list(candidate.get("source_families"))
+    artifact_refs = string_list(candidate.get("artifact_refs"))
+    review_actions = string_list(risk.get("required_review_actions"))
+    blocked_families = string_list(risk.get("blocked_source_families"))
+    generic_step = str(candidate.get("software_next_step") or "")
+    cue_reasons = sorted(
+        set(review_actions)
+        | set(string_list(risk.get("demotion_reasons")))
+        | set(string_list(risk.get("promotion_blockers")))
+    )
+    return {
+        "category": "ui_cue",
+        "available": bool(candidate),
+        "priority_state": "current_product_risk" if is_current_top else "not_current_top",
+        "evidence_role": "production_priority_detail",
+        "quality_proof": False,
+        "automated_musical_approval": False,
+        "candidate_id": str(candidate.get("candidate_id") or ""),
+        "case_ids": case_ids,
+        "primary_case_ids": string_list(candidate.get("primary_case_ids")),
+        "source_families": source_families,
+        "artifact_refs": artifact_refs,
+        "generic_upstream_next_step": generic_step,
+        "software_next_step": ui_cue_software_next_step(
+            case_ids,
+            source_families,
+            cue_reasons,
+        ),
+        "musician_action": ui_cue_musician_action(source_families, review_actions),
+        "cue_surface": "timing_source_risk_before_confident_moves",
+        "required_player_cues": [
+            "show unavailable/degraded state before confident bar-locked moves",
+            "show unavailable/degraded state before live-trigger promotion",
+            "show timing/source-risk reason instead of generic failure text",
+        ],
+        "blocked_source_families": blocked_families,
+        "cue_reasons": cue_reasons,
+        "required_review_actions": review_actions,
+        "actionable_for_musician": bool(case_ids and source_families),
+    }
+
+
+def ui_cue_software_next_step(
+    case_ids: list[str],
+    source_families: list[str],
+    cue_reasons: list[str],
+) -> str:
+    cases = ", ".join(case_ids) if case_ids else "UI-cue weak cases"
+    families = ", ".join(source_families) if source_families else "unknown families"
+    reasons = ", ".join(cue_reasons) if cue_reasons else "missing risk reasons"
+    return (
+        f"Route {cases} for {families} through a visible unavailable/degraded "
+        "cue before confident bar-locked or live-trigger moves; show the timing "
+        f"or source-risk reason ({reasons}) instead of a generic weak-output bucket."
+    )
+
+
+def ui_cue_musician_action(
+    source_families: list[str],
+    review_actions: list[str],
+) -> str:
+    families = ", ".join(source_families) if source_families else "risky sources"
+    actions = ", ".join(review_actions) if review_actions else "diagnostics first"
+    return (
+        f"When {families} are risky, show unavailable/degraded before promotion "
+        f"or live-trigger confidence; keep the move in diagnostics and ask for {actions}."
     )
 
 
@@ -1634,6 +1821,7 @@ def validate_report(report: dict[str, Any]) -> list[str]:
     weak_fix_summary = nested_value(report, "weak_output_routing", "production_fix_summary")
     current_evidence = object_or_empty(report.get("current_evidence_reconciliation"))
     source_selection_priority = object_or_empty(report.get("source_selection_priority"))
+    ui_cue_priority = object_or_empty(report.get("ui_cue_priority"))
     suite_available = nested_value(report, "professional_output_suite", "available")
     suite_scripted = nested_value(report, "professional_output_suite", "scripted_generation")
     suite_quality = nested_value(report, "professional_output_suite", "quality_proof")
@@ -2404,6 +2592,8 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             )
     if current_evidence.get("current_product_top_candidate_category") == "source_selection":
         validate_source_selection_priority(source_selection_priority, failures)
+    if current_evidence.get("current_product_top_candidate_category") == "ui_cue":
+        validate_ui_cue_priority(ui_cue_priority, failures)
 
     validate_current_p023_contract(report, blockers, failures)
 
@@ -2602,6 +2792,7 @@ def markdown_report(report: dict[str, Any]) -> str:
     suite = object_or_empty(report.get("professional_output_suite"))
     current_evidence = object_or_empty(report.get("current_evidence_reconciliation"))
     source_selection_priority = object_or_empty(report.get("source_selection_priority"))
+    ui_cue_priority = object_or_empty(report.get("ui_cue_priority"))
     source_character = object_or_empty(suite.get("source_character_selection"))
     source_character_window = object_or_empty(
         suite.get("source_character_window_selection")
@@ -2659,6 +2850,16 @@ def markdown_report(report: dict[str, Any]) -> str:
                 f"`{', '.join(source_selection_priority.get('source_window_policy_uncovered_families', []))}`, "
                 "actions "
                 f"`{', '.join(source_selection_priority.get('required_review_actions', []))}`"
+            ),
+            (
+                "- UI-cue priority: "
+                f"`{ui_cue_priority.get('priority_state')}`, cases "
+                f"`{', '.join(ui_cue_priority.get('case_ids', []))}`, "
+                "families "
+                f"`{', '.join(ui_cue_priority.get('source_families', []))}`, "
+                "surface "
+                f"`{ui_cue_priority.get('cue_surface')}`, cues "
+                f"`{', '.join(ui_cue_priority.get('required_player_cues', []))}`"
             ),
             (
                 "- Destructive gesture: "
