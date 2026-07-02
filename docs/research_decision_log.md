@@ -254,6 +254,20 @@ Status: accepted
 
 ---
 
+### RBX-120
+
+Date: 2026-07-02
+Topic: Source-selection priority must become a family-specific source-window policy
+Phase: P023 / Sound Excellence / Production Quality
+Question: how should Riotbox implement the current `source_selection` priority without promoting edge sources or chasing the wrong transient peak?
+Decision: apply `source_selection_policy` to the product dense source-window path and keep it separate from edge-source demotion. Dense-break selection may rescue the requested head to a stronger source-character/transient window only when high-band/stab tilt stays bounded; sparse-bass-pressure selection prioritizes low-band share and low/mid weight over generic transient score; tonal-hook full-window material may keep a one-candidate verified window when no extra searchable source duration exists. Candidate-count floors apply only when the search window is larger than the selected window.
+Why: a generic source-character score picked a transient-rich dense window that weakened snare/stab separation and a sparse-bass window that read too much like midrange. Source selection must improve the musician-facing result for the source family, not just raise a single metric.
+Evidence: RIOTBOX-1369 updates the dense performance generator, professional-output suite, suite contract, destructive-variation validator, sound-quality readiness report, audio-QA spec, and roadmap. `just dense-break-performance-pack-smoke`, `just professional-output-suite-smoke`, and `just sound-quality-readiness-report-smoke artifacts/audio_qa/local-riotbox-1369-readiness` pass. The professional suite reports dense source selection `selected_start_seconds=1.5`, `candidate_count=7`, `score_lift=1.091212`, and `rms_retention_ratio=0.985980`; destructive review now also accepts source-referenced transient proof when a source-selected hook raises the hook baseline.
+Consequences: future source-selection work must preserve family-specific scoring and keep edge-source `promotion_allowed: false` until timing, texture, and human verdict are trusted. `source_selection_policy` remains diagnostic with `quality_proof: false` and `automated_musical_approval: false`; it proves policy execution and output-path gates, not human musical approval.
+Status: accepted
+
+---
+
 ### RBX-109
 
 Date: 2026-07-01

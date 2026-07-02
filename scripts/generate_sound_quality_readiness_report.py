@@ -60,6 +60,9 @@ EXPECTED_SOURCE_SELECTION_REVIEW_ACTIONS = [
     "confirm_timing_before_bar_locked_moves",
     "keep_as_diagnostic_until_human_verdict",
 ]
+MIN_SOURCE_SELECTION_POLICY_CANDIDATES = 3
+MIN_SOURCE_SELECTION_RMS_RETENTION_RATIO = 0.60
+MIN_SOURCE_SELECTION_SCORE_LIFT = 0.0
 
 CORPUS_TO_DEMO_FAMILIES = {
     "dense_break": {"dense_break"},
@@ -417,6 +420,7 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
     source_character_window_selection = object_or_empty(
         report.get("source_character_window_selection")
     )
+    source_selection_policy = object_or_empty(report.get("source_selection_policy"))
     tr909_rendered_drum_pressure = object_or_empty(
         report.get("tr909_rendered_drum_pressure")
     )
@@ -536,6 +540,21 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
                 source_character_window_selection.get("max_selected_start_seconds")
             ),
             "max_score_lift": number(source_character_window_selection.get("max_score_lift")),
+        },
+        "source_selection_policy": {
+            "result": str(source_selection_policy.get("result") or ""),
+            "case_count": int(number(source_selection_policy.get("case_count"))),
+            "promotion_allowed_case_count": int(
+                number(source_selection_policy.get("promotion_allowed_case_count"))
+            ),
+            "min_candidate_count": int(
+                number(source_selection_policy.get("min_candidate_count"))
+            ),
+            "min_observed_rms_retention_ratio": number(
+                source_selection_policy.get("min_observed_rms_retention_ratio")
+            ),
+            "max_score_lift": number(source_selection_policy.get("max_score_lift")),
+            "failure_codes": list(source_selection_policy.get("failure_codes") or []),
         },
         "source_selection_risk": {
             "edge_blocked_case_count": int(
@@ -1033,6 +1052,33 @@ def validate_source_selection_priority(
         "source_selection_priority_not_actionable",
         failures,
     )
+    check(
+        detail.get("source_window_policy_state") == "dense_source_policy_applied",
+        "source_selection_priority_window_policy_not_applied",
+        failures,
+    )
+    check(
+        number(detail.get("source_window_policy_case_count")) >= 1,
+        "source_selection_priority_window_policy_case_count_too_low",
+        failures,
+    )
+    check(
+        number(detail.get("source_window_policy_promotion_allowed_count")) >= 1,
+        "source_selection_priority_window_policy_promotion_count_too_low",
+        failures,
+    )
+    check(
+        number(detail.get("source_window_policy_min_candidate_count"))
+        >= MIN_SOURCE_SELECTION_POLICY_CANDIDATES,
+        "source_selection_priority_window_policy_candidate_count_too_low",
+        failures,
+    )
+    check(
+        number(detail.get("source_window_policy_min_rms_retention_ratio")) + 1e-6
+        >= MIN_SOURCE_SELECTION_RMS_RETENTION_RATIO,
+        "source_selection_priority_window_policy_rms_retention_too_low",
+        failures,
+    )
     software_next_step = str(detail.get("software_next_step") or "")
     generic_upstream_step = str(detail.get("generic_upstream_next_step") or "")
     check(
@@ -1067,6 +1113,7 @@ def source_selection_priority_detail(
         {},
     )
     risk = object_or_empty(suite.get("source_selection_risk"))
+    source_policy = object_or_empty(suite.get("source_selection_policy"))
     is_current_top = (
         current_evidence.get("current_product_top_candidate_category")
         == "source_selection"
@@ -1103,6 +1150,21 @@ def source_selection_priority_detail(
             review_actions,
         ),
         "source_selection_surface": "source_window_character_and_edge_source_policy",
+        "source_window_policy_state": (
+            "dense_source_policy_applied"
+            if source_policy.get("result") == "pass"
+            else "source_window_policy_missing_or_failed"
+        ),
+        "source_window_policy_case_count": int(number(source_policy.get("case_count"))),
+        "source_window_policy_promotion_allowed_count": int(
+            number(source_policy.get("promotion_allowed_case_count"))
+        ),
+        "source_window_policy_min_candidate_count": int(
+            number(source_policy.get("min_candidate_count"))
+        ),
+        "source_window_policy_min_rms_retention_ratio": number(
+            source_policy.get("min_observed_rms_retention_ratio")
+        ),
         "blocked_source_families": blocked_families,
         "promotion_blockers": string_list(risk.get("promotion_blockers")),
         "demotion_reasons": demotion_reasons,
@@ -1359,6 +1421,11 @@ def validate_report(report: dict[str, Any]) -> list[str]:
         "professional_output_suite",
         "source_character_window_selection",
     )
+    suite_source_selection_policy = nested_value(
+        report,
+        "professional_output_suite",
+        "source_selection_policy",
+    )
     suite_source_selection_risk = nested_value(
         report,
         "professional_output_suite",
@@ -1388,6 +1455,11 @@ def validate_report(report: dict[str, Any]) -> list[str]:
         check(
             isinstance(suite_source_character_window, dict),
             "professional_suite_source_character_window_selection_missing",
+            failures,
+        )
+        check(
+            isinstance(suite_source_selection_policy, dict),
+            "professional_suite_source_selection_policy_missing",
             failures,
         )
         check(
@@ -1471,6 +1543,11 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             if isinstance(suite_source_character_window, dict)
             else {}
         )
+        source_selection_policy = (
+            suite_source_selection_policy
+            if isinstance(suite_source_selection_policy, dict)
+            else {}
+        )
         check(
             source_character_window.get("result") == "pass",
             "professional_suite_source_character_window_selection_not_pass",
@@ -1495,6 +1572,39 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             number(source_character_window.get("min_observed_rms_retention_ratio")) + 1e-6
             >= 0.98,
             "professional_suite_source_character_window_selection_rms_retention_too_low",
+            failures,
+        )
+        check(
+            source_selection_policy.get("result") == "pass",
+            "professional_suite_source_selection_policy_not_pass",
+            failures,
+        )
+        check(
+            number(source_selection_policy.get("case_count")) >= 1,
+            "professional_suite_source_selection_policy_case_count_too_low",
+            failures,
+        )
+        check(
+            number(source_selection_policy.get("promotion_allowed_case_count")) >= 1,
+            "professional_suite_source_selection_policy_promotion_count_too_low",
+            failures,
+        )
+        check(
+            number(source_selection_policy.get("min_candidate_count"))
+            >= MIN_SOURCE_SELECTION_POLICY_CANDIDATES,
+            "professional_suite_source_selection_policy_candidate_count_too_low",
+            failures,
+        )
+        check(
+            number(source_selection_policy.get("min_observed_rms_retention_ratio")) + 1e-6
+            >= MIN_SOURCE_SELECTION_RMS_RETENTION_RATIO,
+            "professional_suite_source_selection_policy_rms_retention_too_low",
+            failures,
+        )
+        check(
+            number(source_selection_policy.get("max_score_lift"))
+            >= MIN_SOURCE_SELECTION_SCORE_LIFT,
+            "professional_suite_source_selection_policy_score_lift_negative",
             failures,
         )
         check(
