@@ -1086,6 +1086,10 @@ following:
   readiness therefore reports no current weak-output product gap; the remaining
   P023 path is source-selection, structured human listening, and demo-family
   coverage, with quality claims still blocked.
+- RIOTBOX-1378 makes that handoff explicit in the readiness report: once
+  `current_product_top_candidate_category` is `none`, stale weak-output
+  categories stay visible only as regression controls and the main Next Actions
+  prioritize source-family review plus structured human/demo coverage.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue

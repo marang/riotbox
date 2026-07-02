@@ -2026,7 +2026,10 @@ def next_actions(
     stale_categories = set(
         string_list(current_evidence.get("stale_fixture_only_categories"))
     )
+    current_top = str(current_evidence.get("current_product_top_candidate_category") or "")
     for category in sorted(set(weak["fix_categories"]) | set(demo["weak_fix_categories"])):
+        if category in stale_categories and current_top in {"", "none"}:
+            continue
         actions.append(
             {
                 "category": category,
@@ -2040,7 +2043,6 @@ def next_actions(
                 ),
             }
         )
-    current_top = str(current_evidence.get("current_product_top_candidate_category") or "")
     if current_top and current_top != "none":
         actions.append(
             {
@@ -2976,7 +2978,9 @@ def validate_report(report: dict[str, Any]) -> list[str]:
     if current_evidence.get("current_product_top_candidate_category") == "ui_cue":
         validate_ui_cue_priority(ui_cue_priority, failures)
 
+    next_action_items = list_or_empty(report.get("next_actions"))
     validate_current_p023_contract(report, blockers, failures)
+    validate_current_next_actions(report, next_action_items, failures)
 
     if release_readiness == "release_ready":
         check(not missing_candidates, "release_ready_without_demo_candidates", failures)
@@ -3117,6 +3121,55 @@ def validate_current_p023_contract(
             "human_review_queue_unverified_candidates_present",
         }.issubset(blocker_codes),
         "p023_contract_required_blockers_missing",
+        failures,
+    )
+
+
+def validate_current_next_actions(
+    report: dict[str, Any],
+    actions: list[Any],
+    failures: list[str],
+) -> None:
+    current_top = str(
+        nested_value(
+            report,
+            "current_evidence_reconciliation",
+            "current_product_top_candidate_category",
+        )
+        or ""
+    )
+    if current_top != "none":
+        return
+    stale_categories = set(
+        nested_list(
+            report,
+            "current_evidence_reconciliation",
+            "stale_fixture_only_categories",
+        )
+    )
+    weak_stale_actions = [
+        action
+        for action in actions
+        if isinstance(action, dict)
+        and action.get("target") == "weak output"
+        and action.get("category") in stale_categories
+    ]
+    check(
+        not weak_stale_actions,
+        "next_actions_stale_weak_output_controls_obscure_review_work",
+        failures,
+    )
+    source_family_actions = [
+        action
+        for action in actions
+        if isinstance(action, dict)
+        and action.get("category") == "source_selection"
+        and str(action.get("target") or "")
+        in {"bad_timing", "pad_noise", "sparse_drums", "weak_source"}
+    ]
+    check(
+        len(source_family_actions) >= 4,
+        "next_actions_source_family_review_coverage_missing",
         failures,
     )
 
