@@ -324,6 +324,20 @@ Status: accepted
 
 ---
 
+### RBX-125
+
+Date: 2026-07-02
+Topic: Current UI-cue priority must be concrete and musician-facing
+Phase: P023 Sound Excellence / Production Quality
+Question: what should readiness expose when stale sound-output categories are reconciled and `ui_cue` becomes the current product priority?
+Decision: expose a dedicated `ui_cue_priority` detail. It must include the routed candidate, case ids, source families, artifact refs, cue surface, cue reasons, software next step, musician action, and required player cues. The cue surface is timing/source risk before confident bar-locked or live-trigger moves, and it must use unavailable/degraded language rather than a generic weak-output bucket.
+Why: once current sound-output evidence demotes old chop, bass, drum, destructive, mix, and source-selection controls, the next risk is musician trust. A vague `ui_cue` category does not tell the team what the player should see before acting on risky timing or source material.
+Evidence: RIOTBOX-1374 adds `ui_cue_priority` to the sound-quality readiness report, validates it when `ui_cue` is current top, emits it in Markdown, and adds a mutation smoke for missing current UI-cue detail.
+Consequences: UI-cue priority remains diagnostic with `quality_proof: false` and `automated_musical_approval: false`; it tells implementation what cue to build next, not that the sound is release-ready.
+Status: accepted
+
+---
+
 ### RBX-109
 
 Date: 2026-07-01

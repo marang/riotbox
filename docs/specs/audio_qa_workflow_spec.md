@@ -827,6 +827,14 @@ unknown weak/fail codes must fail routing with an unknown-route error until a
 stable category is added. Rebuild-only source-character failures route first to
 `source_selection` because the musician-facing fix is to pick or expose source
 material whose identity survives the rebuild-only path.
+When readiness reports `ui_cue` as the current product priority, it must expose
+`ui_cue_priority` rather than only a generic category. The detail must name the
+case ids, source families, artifact refs, cue surface, cue reasons, software
+next step, musician-facing action, and required player cues. The required cue
+surface is timing/source risk before confident bar-locked or live-trigger moves:
+Riotbox should show unavailable/degraded state and the reason before a musician
+trusts a risky move. This remains diagnostic prioritization with
+`quality_proof: false` and `automated_musical_approval: false`.
 
 MC-202 producer-grade closeout routing extends that category vocabulary for the
 MC-202 lane with `answer_bite`, `hook_restraint`, and
