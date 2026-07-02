@@ -1378,4 +1378,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Make current UI-cue priority actionable in readiness
 - [RIOTBOX-1375.md](./RIOTBOX-1375.md)
   P023: Surface unavailable/degraded perform-risk cue before live moves
+- [RIOTBOX-1376.md](./RIOTBOX-1376.md)
+  P023: Reconcile shipped perform-risk cue in readiness
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
