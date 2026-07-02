@@ -746,6 +746,15 @@ fixtures remain regression controls, but they should not stay current priority
 when current professional-suite generated support is loud enough, source-first
 masking stays below the ceiling, masking headroom stays above the floor, and
 support never overwhelms the source.
+The same rule applies to `drum_pressure`: old weak drum-pressure fixtures remain
+regression controls, but they should not stay current priority when current
+dense-break snare pressure and rendered TR-909 gates pass. The required current
+proof is the same bounded professional-suite contract: strongest dense element
+is `snare`, dense pressure score/margin/transient floors pass, rendered TR-909
+support contribution and low-band RMS meet their required floors, and generated
+support stays below the source-masking ceilings. This demotion is only
+diagnostic prioritization; it does not claim human musical approval or release
+quality.
 This preserves regression controls without letting old hookless examples hide
 the instrument's current audible state.
 

@@ -65,6 +65,12 @@ EXPECTED_SOURCE_SELECTION_REVIEW_ACTIONS = [
 MIN_SOURCE_SELECTION_POLICY_CANDIDATES = 3
 MIN_SOURCE_SELECTION_RMS_RETENTION_RATIO = 0.60
 MIN_SOURCE_SELECTION_SCORE_LIFT = 0.0
+MIN_DENSE_DRUM_PRESSURE_SCORE = 1.58
+MIN_DENSE_SNARE_PRESSURE_MARGIN = 0.22
+MIN_DENSE_PRESSURE_TRANSIENT_TO_HOOK_RATIO = 0.70
+MIN_TR909_RENDERED_DRUM_PRESSURE_CASES = 8
+MAX_TR909_RENDERED_SOURCE_FIRST_RATIO = 0.08
+MAX_TR909_RENDERED_SUPPORT_RATIO = 0.46
 
 CORPUS_TO_DEMO_FAMILIES = {
     "dense_break": {"dense_break"},
@@ -832,6 +838,40 @@ def current_evidence_reconciliation(
         if bass_passed:
             stale_fixture_only_categories.append("bass_movement")
 
+    drum_passed = drum_pressure_current_evidence_passed(suite)
+    if "drum_pressure" in candidate_categories:
+        category_reconciliations.append(
+            {
+                "category": "drum_pressure",
+                "weak_evidence_role": "negative_control_fixture",
+                "current_professional_suite_status": (
+                    "current_drum_pressure_gates_passed"
+                    if drum_passed
+                    else "current_drum_pressure_still_risky"
+                ),
+                "priority_state": (
+                    "stale_fixture_only_top_risk"
+                    if drum_passed
+                    else "current_product_risk"
+                ),
+                "software_next_step": (
+                    "Use stale weak drum-pressure fixtures as regression controls; "
+                    "do not treat them as the current top product gap while dense "
+                    "snare pressure and rendered TR-909 support gates pass."
+                    if drum_passed
+                    else "Keep TR-909 pressure and dense snare/break impact as current product priority."
+                ),
+                "musician_payoff": (
+                    "Old weak drum examples stop hiding the next audible gap once "
+                    "current kick/snare/TR-909 pressure already lands."
+                    if drum_passed
+                    else "Kick, snare, or break pressure still needs to feel physical in current output."
+                ),
+            }
+        )
+        if drum_passed:
+            stale_fixture_only_categories.append("drum_pressure")
+
     destructive_passed = destructive_gesture_current_evidence_passed(suite)
     if "destructive_gesture" in candidate_categories:
         category_reconciliations.append(
@@ -1018,6 +1058,35 @@ def bass_movement_current_evidence_passed(suite: dict[str, Any]) -> bool:
         >= MIN_SPARSE_PRESSURE_LOW_TO_MID_RATIO,
         number(bass_pressure.get("source_wav_sparse_bass_dominance_margin"))
         >= MIN_SPARSE_BASS_DOMINANCE_MARGIN,
+    ]
+    return all(checks)
+
+
+def drum_pressure_current_evidence_passed(suite: dict[str, Any]) -> bool:
+    if suite.get("available") is not True or suite.get("result") != "pass":
+        return False
+    drum_pressure = object_or_empty(suite.get("drum_pressure"))
+    checks = [
+        drum_pressure.get("dense_strongest_audible_element") == "snare",
+        number(drum_pressure.get("dense_break_physical_drum_pressure_score"))
+        >= MIN_DENSE_DRUM_PRESSURE_SCORE,
+        number(drum_pressure.get("dense_break_snare_pressure_margin"))
+        >= MIN_DENSE_SNARE_PRESSURE_MARGIN,
+        number(drum_pressure.get("dense_break_pressure_transient_to_hook_ratio"))
+        >= MIN_DENSE_PRESSURE_TRANSIENT_TO_HOOK_RATIO,
+        drum_pressure.get("tr909_rendered_result") == "pass",
+        number(drum_pressure.get("tr909_rendered_case_count"))
+        >= MIN_TR909_RENDERED_DRUM_PRESSURE_CASES,
+        number(drum_pressure.get("tr909_rendered_min_support_mix_contribution_ratio"))
+        >= number(
+            drum_pressure.get("tr909_rendered_min_required_support_mix_contribution_ratio")
+        ),
+        number(drum_pressure.get("tr909_rendered_min_low_band_rms"))
+        >= number(drum_pressure.get("tr909_rendered_min_required_low_band_rms")),
+        number(drum_pressure.get("tr909_rendered_max_source_first_ratio"))
+        <= MAX_TR909_RENDERED_SOURCE_FIRST_RATIO,
+        number(drum_pressure.get("tr909_rendered_max_support_ratio"))
+        <= MAX_TR909_RENDERED_SUPPORT_RATIO,
     ]
     return all(checks)
 
@@ -1485,12 +1554,21 @@ def next_actions(
                 "action": "Create or promote a real-source candidate with structured human listening evidence.",
             }
         )
+    stale_categories = set(
+        string_list(current_evidence.get("stale_fixture_only_categories"))
+    )
     for category in sorted(set(weak["fix_categories"]) | set(demo["weak_fix_categories"])):
         actions.append(
             {
                 "category": category,
                 "target": "weak output",
-                "action": f"Implement the next bounded production fix for {category}.",
+                "action": (
+                    f"Keep stale {category} fixtures as regression controls; "
+                    "do not choose them as the next implementation slice unless "
+                    "current evidence regresses."
+                    if category in stale_categories
+                    else f"Implement the next bounded production fix for {category}."
+                ),
             }
         )
     current_top = str(current_evidence.get("current_product_top_candidate_category") or "")
@@ -1884,18 +1962,20 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             failures,
         )
         check(
-            number(drum_pressure.get("dense_break_physical_drum_pressure_score")) >= 1.58,
+            number(drum_pressure.get("dense_break_physical_drum_pressure_score"))
+            >= MIN_DENSE_DRUM_PRESSURE_SCORE,
             "professional_suite_dense_drum_pressure_too_weak",
             failures,
         )
         check(
-            number(drum_pressure.get("dense_break_snare_pressure_margin")) >= 0.22,
+            number(drum_pressure.get("dense_break_snare_pressure_margin"))
+            >= MIN_DENSE_SNARE_PRESSURE_MARGIN,
             "professional_suite_dense_snare_pressure_ambiguous",
             failures,
         )
         check(
             number(drum_pressure.get("dense_break_pressure_transient_to_hook_ratio"))
-            >= 0.70,
+            >= MIN_DENSE_PRESSURE_TRANSIENT_TO_HOOK_RATIO,
             "professional_suite_dense_pressure_transient_too_soft",
             failures,
         )
@@ -1905,7 +1985,8 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             failures,
         )
         check(
-            number(drum_pressure.get("tr909_rendered_case_count")) >= 8,
+            number(drum_pressure.get("tr909_rendered_case_count"))
+            >= MIN_TR909_RENDERED_DRUM_PRESSURE_CASES,
             "professional_suite_tr909_rendered_drum_pressure_case_count_too_low",
             failures,
         )
@@ -1928,12 +2009,14 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             failures,
         )
         check(
-            number(drum_pressure.get("tr909_rendered_max_source_first_ratio")) <= 0.08,
+            number(drum_pressure.get("tr909_rendered_max_source_first_ratio"))
+            <= MAX_TR909_RENDERED_SOURCE_FIRST_RATIO,
             "professional_suite_tr909_rendered_masks_source_first",
             failures,
         )
         check(
-            number(drum_pressure.get("tr909_rendered_max_support_ratio")) <= 0.46,
+            number(drum_pressure.get("tr909_rendered_max_support_ratio"))
+            <= MAX_TR909_RENDERED_SUPPORT_RATIO,
             "professional_suite_tr909_rendered_support_masks_source",
             failures,
         )
@@ -2146,6 +2229,52 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             "current_evidence_reconciliation_bass_movement_status_missing",
             failures,
         )
+    if (
+        list_contains(weak_categories, "drum_pressure")
+        and drum_pressure_current_evidence_passed(suite_summary)
+    ):
+        check(
+            list_contains(
+                current_evidence.get("stale_fixture_only_categories"),
+                "drum_pressure",
+            ),
+            "current_evidence_reconciliation_drum_pressure_not_reconciled",
+            failures,
+        )
+        check(
+            current_evidence.get("current_product_top_candidate_category")
+            != "drum_pressure",
+            "current_evidence_reconciliation_current_top_still_drum_pressure",
+            failures,
+        )
+        reconciliations = list_or_empty(current_evidence.get("category_reconciliations"))
+        check(
+            any(
+                isinstance(item, dict)
+                and item.get("category") == "drum_pressure"
+                and item.get("current_professional_suite_status")
+                == "current_drum_pressure_gates_passed"
+                and item.get("priority_state") == "stale_fixture_only_top_risk"
+                for item in reconciliations
+            ),
+            "current_evidence_reconciliation_drum_pressure_status_missing",
+            failures,
+        )
+    for item in list_or_empty(current_evidence.get("category_reconciliations")):
+        if (
+            isinstance(item, dict)
+            and item.get("category") == "drum_pressure"
+            and (
+                item.get("current_professional_suite_status")
+                == "current_drum_pressure_gates_passed"
+                or item.get("priority_state") == "stale_fixture_only_top_risk"
+            )
+        ):
+            check(
+                drum_pressure_current_evidence_passed(suite_summary),
+                "current_evidence_reconciliation_drum_pressure_stale_without_current_proof",
+                failures,
+            )
     if (
         list_contains(weak_categories, "destructive_gesture")
         and destructive_gesture_current_evidence_passed(suite_summary)

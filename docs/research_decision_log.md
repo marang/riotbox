@@ -310,6 +310,20 @@ Status: accepted
 
 ---
 
+### RBX-124
+
+Date: 2026-07-02
+Topic: Drum-pressure priority must reconcile against current rendered TR-909 proof
+Phase: P023 Sound Excellence / Production Quality
+Question: should stale weak drum-pressure fixtures stay the current product gap when current dense snare pressure and rendered TR-909 drum-pressure gates pass?
+Decision: no. Weak drum-pressure fixtures remain negative controls, but readiness may demote `drum_pressure` only when the current professional suite proves dense snare/break pressure plus rendered TR-909 support contribution, low-band body, and bounded generated/source masking.
+Why: old weak drum artifacts are useful regression examples, but they should not keep the implementation loop on drum pressure after current output-path evidence already proves the drum lane lands with enough physical support and without burying the source.
+Evidence: RIOTBOX-1373 adds drum-pressure current-evidence reconciliation to the sound-quality readiness report and a mutation smoke that fails validation when stale drum-pressure demotion lacks current rendered TR-909 support proof.
+Consequences: drum-pressure reconciliation remains diagnostic and `quality_proof: false`; it advances prioritization only when the report carries current dense and rendered drum-pressure evidence that matches the professional-suite contract.
+Status: accepted
+
+---
+
 ### RBX-109
 
 Date: 2026-07-01
