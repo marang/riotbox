@@ -423,6 +423,27 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
         report.get("source_character_window_selection")
     )
     source_selection_policy = object_or_empty(report.get("source_selection_policy"))
+    source_selection_policy_cases = list_or_empty(source_selection_policy.get("cases"))
+    source_selection_policy_families = string_list(
+        source_selection_policy.get("source_families")
+    ) or sorted(
+        {
+            str(case.get("source_family"))
+            for case in source_selection_policy_cases
+            if isinstance(case, dict) and str(case.get("source_family") or "")
+        }
+    )
+    source_selection_policy_promotion_families = string_list(
+        source_selection_policy.get("promotion_allowed_source_families")
+    ) or sorted(
+        {
+            str(case.get("source_family"))
+            for case in source_selection_policy_cases
+            if isinstance(case, dict)
+            and str(case.get("source_family") or "")
+            and case.get("promotion_allowed") is True
+        }
+    )
     tr909_rendered_drum_pressure = object_or_empty(
         report.get("tr909_rendered_drum_pressure")
     )
@@ -546,6 +567,8 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
         "source_selection_policy": {
             "result": str(source_selection_policy.get("result") or ""),
             "case_count": int(number(source_selection_policy.get("case_count"))),
+            "source_families": source_selection_policy_families,
+            "promotion_allowed_source_families": source_selection_policy_promotion_families,
             "promotion_allowed_case_count": int(
                 number(source_selection_policy.get("promotion_allowed_case_count"))
             ),
@@ -1071,8 +1094,18 @@ def validate_source_selection_priority(
         failures,
     )
     check(
-        detail.get("source_window_policy_state") == "dense_source_policy_applied",
+        detail.get("source_window_policy_state") == "source_selection_policy_family_gap",
         "source_selection_priority_window_policy_not_applied",
+        failures,
+    )
+    check(
+        bool(string_list(detail.get("source_window_policy_covered_families"))),
+        "source_selection_priority_window_policy_families_missing",
+        failures,
+    )
+    check(
+        bool(string_list(detail.get("source_window_policy_uncovered_families"))),
+        "source_selection_priority_uncovered_families_missing",
         failures,
     )
     check(
@@ -1143,6 +1176,12 @@ def source_selection_priority_detail(
     demotion_reasons = string_list(risk.get("demotion_reasons"))
     review_actions = string_list(risk.get("required_review_actions"))
     blocked_families = string_list(risk.get("blocked_source_families"))
+    covered_policy_families = string_list(
+        source_policy.get("promotion_allowed_source_families")
+    ) or string_list(source_policy.get("source_families"))
+    uncovered_policy_families = [
+        family for family in source_families if family not in covered_policy_families
+    ]
     generic_step = str(candidate.get("software_next_step") or "")
     return {
         "category": "source_selection",
@@ -1162,6 +1201,7 @@ def source_selection_priority_detail(
             source_families,
             demotion_reasons,
             review_actions,
+            uncovered_policy_families,
         ),
         "musician_action": source_selection_musician_action(
             blocked_families,
@@ -1169,10 +1209,16 @@ def source_selection_priority_detail(
         ),
         "source_selection_surface": "source_window_character_and_edge_source_policy",
         "source_window_policy_state": (
-            "dense_source_policy_applied"
-            if source_policy.get("result") == "pass"
-            else "source_window_policy_missing_or_failed"
+            "source_selection_policy_family_gap"
+            if source_policy.get("result") == "pass" and uncovered_policy_families
+            else (
+                "source_selection_policy_candidate_families_covered"
+                if source_policy.get("result") == "pass"
+                else "source_window_policy_missing_or_failed"
+            )
         ),
+        "source_window_policy_covered_families": covered_policy_families,
+        "source_window_policy_uncovered_families": uncovered_policy_families,
         "source_window_policy_case_count": int(number(source_policy.get("case_count"))),
         "source_window_policy_promotion_allowed_count": int(
             number(source_policy.get("promotion_allowed_case_count"))
@@ -1198,13 +1244,20 @@ def source_selection_software_next_step(
     source_families: list[str],
     demotion_reasons: list[str],
     review_actions: list[str],
+    uncovered_policy_families: list[str],
 ) -> str:
     cases = ", ".join(primary_case_ids) if primary_case_ids else "source-selection weak cases"
     families = ", ".join(source_families) if source_families else "unknown families"
     reasons = ", ".join(demotion_reasons) if demotion_reasons else "missing demotion reasons"
     actions = ", ".join(review_actions) if review_actions else "missing review actions"
+    uncovered = (
+        ", ".join(uncovered_policy_families)
+        if uncovered_policy_families
+        else "no uncovered policy families"
+    )
     return (
         f"Route {cases} through source-window/source-character review for {families}; "
+        f"add explicit source-selection policy coverage for {uncovered}; "
         f"preserve demotion reasons ({reasons}) and require review actions ({actions}) "
         "before any edge source can become demo or quality material."
     )
@@ -2343,6 +2396,10 @@ def markdown_report(report: dict[str, Any]) -> str:
                 f"`{', '.join(source_selection_priority.get('primary_case_ids', []))}`, "
                 "families "
                 f"`{', '.join(source_selection_priority.get('source_families', []))}`, "
+                "covered "
+                f"`{', '.join(source_selection_priority.get('source_window_policy_covered_families', []))}`, "
+                "uncovered "
+                f"`{', '.join(source_selection_priority.get('source_window_policy_uncovered_families', []))}`, "
                 "actions "
                 f"`{', '.join(source_selection_priority.get('required_review_actions', []))}`"
             ),

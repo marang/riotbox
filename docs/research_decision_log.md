@@ -282,6 +282,20 @@ Status: accepted
 
 ---
 
+### RBX-122
+
+Date: 2026-07-02
+Topic: Source-selection priority must expose policy family coverage
+Phase: P023 Sound Excellence / Production Quality
+Question: may P023 readiness treat dense-only source-window policy evidence as covering a `source_selection` priority whose weak-output candidate also names tonal or other source families?
+Decision: no. When `source_selection` is the current product priority, readiness must compare candidate source families with policy-covered source-selection families and surface any uncovered families directly in the priority detail.
+Why: a strong dense-break source-window policy is useful, but it does not prove tonal-hook or other family source selection is handled. Without explicit coverage, the dashboard can make the next source-selection work look more complete than it is.
+Evidence: RIOTBOX-1371 adds source-selection policy family lists to the professional-output suite/readiness path, identifies uncovered candidate families such as `tonal_hook`, and adds a mutation smoke for missing uncovered-family evidence.
+Consequences: source-selection family coverage remains diagnostic with `quality_proof: false` and `automated_musical_approval: false`. Covered families show where policy evidence exists; uncovered families drive the next implementation slice.
+Status: accepted
+
+---
+
 ### RBX-109
 
 Date: 2026-07-01
