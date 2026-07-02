@@ -48,6 +48,8 @@ MAX_DESTRUCTIVE_DROPOUT_TO_STUTTER_RMS_RATIO = 0.0065
 MAX_DESTRUCTIVE_DROPOUT_SILENCE_TO_STUTTER_RMS_RATIO = 0.0065
 MIN_DESTRUCTIVE_STUTTER_TO_HOOK_TRANSIENT_RATIO = 1.55
 MIN_DESTRUCTIVE_RESTORE_TO_HOOK_TRANSIENT_RATIO = 1.60
+MIN_DESTRUCTIVE_STUTTER_TO_SOURCE_TRANSIENT_RATIO = 5.50
+MIN_DESTRUCTIVE_RESTORE_TO_SOURCE_TRANSIENT_RATIO = 6.00
 MIN_DESTRUCTIVE_RESTORE_TO_PRESSURE_RMS_RATIO = 1.36
 MIN_DESTRUCTIVE_RESTORE_TO_DROPOUT_SILENCE_RMS_RATIO = 6.00
 EXPECTED_SOURCE_SELECTION_DEMOTION_REASONS = [
@@ -682,8 +684,14 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
             "stutter_to_hook_transient_ratio": number(
                 destructive.get("stutter_to_hook_transient_ratio")
             ),
+            "stutter_to_source_transient_ratio": number(
+                destructive.get("stutter_to_source_transient_ratio")
+            ),
             "restore_to_hook_transient_ratio": number(
                 destructive.get("restore_to_hook_transient_ratio")
+            ),
+            "restore_to_source_transient_ratio": number(
+                destructive.get("restore_to_source_transient_ratio")
             ),
             "restore_to_pressure_rms_ratio": number(
                 destructive.get("restore_to_pressure_rms_ratio")
@@ -948,15 +956,25 @@ def destructive_gesture_current_evidence_passed(suite: dict[str, Any]) -> bool:
     if suite.get("available") is not True or suite.get("result") != "pass":
         return False
     destructive = object_or_empty(suite.get("destructive_gesture"))
+    stutter_transient_passed = (
+        number(destructive.get("stutter_to_hook_transient_ratio"))
+        >= MIN_DESTRUCTIVE_STUTTER_TO_HOOK_TRANSIENT_RATIO
+        or number(destructive.get("stutter_to_source_transient_ratio"))
+        >= MIN_DESTRUCTIVE_STUTTER_TO_SOURCE_TRANSIENT_RATIO
+    )
+    restore_transient_passed = (
+        number(destructive.get("restore_to_hook_transient_ratio"))
+        >= MIN_DESTRUCTIVE_RESTORE_TO_HOOK_TRANSIENT_RATIO
+        or number(destructive.get("restore_to_source_transient_ratio"))
+        >= MIN_DESTRUCTIVE_RESTORE_TO_SOURCE_TRANSIENT_RATIO
+    )
     checks = [
         number(destructive.get("dropout_to_stutter_rms_ratio"))
         <= MAX_DESTRUCTIVE_DROPOUT_TO_STUTTER_RMS_RATIO,
         number(destructive.get("dropout_silence_to_stutter_rms_ratio"))
         <= MAX_DESTRUCTIVE_DROPOUT_SILENCE_TO_STUTTER_RMS_RATIO,
-        number(destructive.get("stutter_to_hook_transient_ratio"))
-        >= MIN_DESTRUCTIVE_STUTTER_TO_HOOK_TRANSIENT_RATIO,
-        number(destructive.get("restore_to_hook_transient_ratio"))
-        >= MIN_DESTRUCTIVE_RESTORE_TO_HOOK_TRANSIENT_RATIO,
+        stutter_transient_passed,
+        restore_transient_passed,
         number(destructive.get("restore_to_pressure_rms_ratio"))
         >= MIN_DESTRUCTIVE_RESTORE_TO_PRESSURE_RMS_RATIO,
         number(destructive.get("restore_to_dropout_silence_rms_ratio"))
@@ -2029,6 +2047,21 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             "current_evidence_reconciliation_destructive_gesture_status_missing",
             failures,
         )
+    for item in list_or_empty(current_evidence.get("category_reconciliations")):
+        if (
+            isinstance(item, dict)
+            and item.get("category") == "destructive_gesture"
+            and (
+                item.get("current_professional_suite_status")
+                == "current_destructive_gesture_gates_passed"
+                or item.get("priority_state") == "stale_fixture_only_top_risk"
+            )
+        ):
+            check(
+                destructive_gesture_current_evidence_passed(suite_summary),
+                "current_evidence_reconciliation_destructive_gesture_stale_without_current_proof",
+                failures,
+            )
     if (
         list_contains(weak_categories, "mix_bus")
         and mix_bus_current_evidence_passed(suite_summary)
@@ -2321,8 +2354,12 @@ def markdown_report(report: dict[str, Any]) -> str:
                 f"`{destructive.get('dropout_silence_to_stutter_rms_ratio')}`, "
                 "stutter/hook transient "
                 f"`{destructive.get('stutter_to_hook_transient_ratio')}`, "
+                "stutter/source transient "
+                f"`{destructive.get('stutter_to_source_transient_ratio')}`, "
                 "restore/hook transient "
                 f"`{destructive.get('restore_to_hook_transient_ratio')}`, "
+                "restore/source transient "
+                f"`{destructive.get('restore_to_source_transient_ratio')}`, "
                 "restore/pressure "
                 f"`{destructive.get('restore_to_pressure_rms_ratio')}`"
             ),

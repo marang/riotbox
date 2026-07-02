@@ -1040,6 +1040,12 @@ following:
   separately from edge-source demotion, and destructive validation accepts
   source-referenced transient proof when a selected hook raises the hook
   baseline.
+- RIOTBOX-1370 reconciles P023 sound-quality readiness with that destructive
+  proof: stale flat-stutter fixtures may be demoted only when the readiness
+  summary carries either hook-referenced or source-referenced stutter/restore
+  transient evidence. A mutation smoke now proves missing source-referenced
+  destructive proof fails validation instead of silently advancing the top
+  product gap.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue
