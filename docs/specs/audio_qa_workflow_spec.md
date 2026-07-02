@@ -697,6 +697,14 @@ must compare the candidate's source families with policy-covered families.
 Dense-only policy evidence is not enough to imply tonal-hook or other family
 coverage; uncovered families must stay explicit in the priority detail and next
 implementation step.
+Professional-output source-selection policy coverage must aggregate the dense
+product path and professional source-WAV policy cases for tonal-hook and
+sparse-bass-pressure material. Candidate-count floors apply only to cases whose
+search window is larger than the selected window; a verified full-window tonal
+case may have one candidate when no additional searchable source duration
+exists. Once promotion-allowed policy families cover the current
+source-selection candidate families, `source_selection` becomes a stale
+regression control rather than the current product gap.
 
 P023 source-selection risk must also expose actionable demotion evidence for
 edge material. Bad-timing and pad/noise diagnostics may stay source-backed, but

@@ -1051,6 +1051,12 @@ following:
   so dense-only policy evidence cannot hide an uncovered tonal-hook or other
   family gap. This keeps source selection actionable without pretending the
   current diagnostic policy is broad musical approval.
+- RIOTBOX-1372 reconciles that priority after non-dense policy coverage:
+  professional-output source-selection summaries aggregate dense-break plus
+  professional source-WAV tonal/sparse policies, candidate-count floors only
+  apply to expanded searches, and readiness demotes `source_selection` once the
+  current candidate families are covered. The current P023 product gap advances
+  to `drum_pressure`.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue

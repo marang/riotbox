@@ -444,6 +444,11 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
             and case.get("promotion_allowed") is True
         }
     )
+    source_selection_policy_required_candidate_counts = [
+        int(number(case.get("candidate_count")))
+        for case in source_selection_policy_cases
+        if isinstance(case, dict) and case.get("candidate_floor_required") is True
+    ]
     tr909_rendered_drum_pressure = object_or_empty(
         report.get("tr909_rendered_drum_pressure")
     )
@@ -574,6 +579,10 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
             ),
             "min_candidate_count": int(
                 number(source_selection_policy.get("min_candidate_count"))
+            ),
+            "min_required_candidate_count": min(
+                source_selection_policy_required_candidate_counts,
+                default=0,
             ),
             "min_observed_rms_retention_ratio": number(
                 source_selection_policy.get("min_observed_rms_retention_ratio")
@@ -891,6 +900,44 @@ def current_evidence_reconciliation(
         if mix_passed:
             stale_fixture_only_categories.append("mix_bus")
 
+    source_selection_passed = source_selection_current_evidence_passed(
+        candidate_categories,
+        weak,
+        suite,
+    )
+    if "source_selection" in candidate_categories:
+        category_reconciliations.append(
+            {
+                "category": "source_selection",
+                "weak_evidence_role": "negative_control_fixture",
+                "current_professional_suite_status": (
+                    "current_source_selection_candidate_families_covered"
+                    if source_selection_passed
+                    else "current_source_selection_family_gap"
+                ),
+                "priority_state": (
+                    "stale_fixture_only_top_risk"
+                    if source_selection_passed
+                    else "current_product_risk"
+                ),
+                "software_next_step": (
+                    "Use stale source-selection fixtures as regression controls; "
+                    "do not treat them as the current top product gap while all "
+                    "candidate families have promotion-allowed policy coverage."
+                    if source_selection_passed
+                    else "Keep source-selection work current until candidate-family policy coverage is complete."
+                ),
+                "musician_payoff": (
+                    "Old source-lost examples stop hiding the next audible gap once "
+                    "current source-window policy covers the relevant source families."
+                    if source_selection_passed
+                    else "Source choice still needs family-specific coverage before the musician can trust promotion."
+                ),
+            }
+        )
+        if source_selection_passed:
+            stale_fixture_only_categories.append("source_selection")
+
     current_product_categories = [
         category
         for category in candidate_categories
@@ -1022,6 +1069,35 @@ def mix_bus_current_evidence_passed(suite: dict[str, Any]) -> bool:
         <= MAX_MIX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
     ]
     return all(checks)
+
+
+def source_selection_current_evidence_passed(
+    candidate_categories: list[str],
+    weak: dict[str, Any],
+    suite: dict[str, Any],
+) -> bool:
+    if "source_selection" not in candidate_categories:
+        return False
+    if suite.get("available") is not True or suite.get("result") != "pass":
+        return False
+    candidate = next(
+        (
+            item
+            for item in list_or_empty(weak.get("production_fix_candidates"))
+            if isinstance(item, dict) and item.get("category") == "source_selection"
+        ),
+        {},
+    )
+    candidate_families = set(string_list(candidate.get("source_families")))
+    source_policy = object_or_empty(suite.get("source_selection_policy"))
+    covered_families = set(
+        string_list(source_policy.get("promotion_allowed_source_families"))
+    )
+    return (
+        source_policy.get("result") == "pass"
+        and bool(candidate_families)
+        and candidate_families.issubset(covered_families)
+    )
 
 
 def validate_source_selection_priority(
@@ -1475,6 +1551,7 @@ def validate_report(report: dict[str, Any]) -> list[str]:
     missing_families = nested_list(report, "source_family_coverage", "missing_demo_ready_families")
     unverified = nested_list(report, "demo_bank", "unverified_candidate_ids")
     weak_entries = nested_list(report, "demo_bank", "weak_or_fail_entries")
+    weak_routing = object_or_empty(report.get("weak_output_routing"))
     weak_available = nested_value(report, "weak_output_routing", "available")
     weak_fix_summary = nested_value(report, "weak_output_routing", "production_fix_summary")
     current_evidence = object_or_empty(report.get("current_evidence_reconciliation"))
@@ -1661,7 +1738,7 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             failures,
         )
         check(
-            number(source_selection_policy.get("min_candidate_count"))
+            number(source_selection_policy.get("min_required_candidate_count"))
             >= MIN_SOURCE_SELECTION_POLICY_CANDIDATES,
             "professional_suite_source_selection_policy_candidate_count_too_low",
             failures,
@@ -2145,6 +2222,57 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             "current_evidence_reconciliation_mix_bus_status_missing",
             failures,
         )
+    if source_selection_current_evidence_passed(
+        weak_categories,
+        weak_routing,
+        suite_summary,
+    ):
+        check(
+            list_contains(
+                current_evidence.get("stale_fixture_only_categories"),
+                "source_selection",
+            ),
+            "current_evidence_reconciliation_source_selection_not_reconciled",
+            failures,
+        )
+        check(
+            current_evidence.get("current_product_top_candidate_category")
+            != "source_selection",
+            "current_evidence_reconciliation_current_top_still_source_selection",
+            failures,
+        )
+        reconciliations = list_or_empty(current_evidence.get("category_reconciliations"))
+        check(
+            any(
+                isinstance(item, dict)
+                and item.get("category") == "source_selection"
+                and item.get("current_professional_suite_status")
+                == "current_source_selection_candidate_families_covered"
+                and item.get("priority_state") == "stale_fixture_only_top_risk"
+                for item in reconciliations
+            ),
+            "current_evidence_reconciliation_source_selection_status_missing",
+            failures,
+        )
+    for item in list_or_empty(current_evidence.get("category_reconciliations")):
+        if (
+            isinstance(item, dict)
+            and item.get("category") == "source_selection"
+            and (
+                item.get("current_professional_suite_status")
+                == "current_source_selection_candidate_families_covered"
+                or item.get("priority_state") == "stale_fixture_only_top_risk"
+            )
+        ):
+            check(
+                source_selection_current_evidence_passed(
+                    weak_categories,
+                    weak_routing,
+                    suite_summary,
+                ),
+                "current_evidence_reconciliation_source_selection_stale_without_candidate_family_coverage",
+                failures,
+            )
     if current_evidence.get("current_product_top_candidate_category") == "source_selection":
         validate_source_selection_priority(source_selection_priority, failures)
 

@@ -1839,6 +1839,9 @@ def source_selection_policy_summary(output: Path) -> dict[str, Any]:
     cases = []
     failures = []
     report_paths = [output / "dense-break" / "performance-report.json"]
+    report_paths.extend(
+        sorted((output / "professional-source-wav-pack").glob("*/performance-report.json"))
+    )
     for report_path in report_paths:
         if not report_path.is_file():
             continue
@@ -1885,6 +1888,8 @@ def source_selection_policy_summary(output: Path) -> dict[str, Any]:
                 ),
                 "search_start_seconds": number(policy.get("search_start_seconds")),
                 "search_duration_seconds": number(policy.get("search_duration_seconds")),
+                "candidate_floor_required": number(policy.get("search_duration_seconds"))
+                > number(policy.get("selected_duration_seconds")) + 1e-6,
                 "requested_score": number(policy.get("requested_score")),
                 "selected_score": number(policy.get("selected_score")),
                 "score_lift": number(policy.get("score_lift")),
@@ -1907,13 +1912,15 @@ def source_selection_policy_summary(output: Path) -> dict[str, Any]:
         failures.append("source_selection_policy_not_applied")
     if any(not case["promotion_allowed"] for case in cases):
         failures.append("source_selection_policy_not_promotion_allowed")
-    if any(case["source_family"] != "dense_break" for case in cases):
-        failures.append("source_selection_policy_not_dense_break")
     if any(case["quality_proof"] for case in cases):
         failures.append("source_selection_policy_claims_quality_proof")
     if any(case["automated_musical_approval"] for case in cases):
         failures.append("source_selection_policy_claims_musical_approval")
-    if any(case["candidate_count"] < MIN_SOURCE_SELECTION_POLICY_CANDIDATES for case in cases):
+    if any(
+        case["candidate_floor_required"]
+        and case["candidate_count"] < MIN_SOURCE_SELECTION_POLICY_CANDIDATES
+        for case in cases
+    ):
         failures.append("source_selection_policy_not_enough_candidates")
     if any(
         case["rms_retention_ratio"] + 1e-6 < MIN_SOURCE_SELECTION_RMS_RETENTION_RATIO

@@ -296,6 +296,20 @@ Status: accepted
 
 ---
 
+### RBX-123
+
+Date: 2026-07-02
+Topic: Source-selection priority is resolved only after candidate-family policy coverage
+Phase: P023 Sound Excellence / Production Quality
+Question: when may P023 readiness stop treating `source_selection` as the current product gap?
+Decision: readiness may demote `source_selection` only when the professional-output source-selection policy covers all source families named by the current source-selection candidate. Coverage aggregates dense-break product-path policy plus professional source-WAV tonal-hook and sparse-bass-pressure policy cases.
+Why: RIOTBOX-1371 exposed the family gap, but the suite already had non-dense policy evidence that was not aggregated. Keeping source-selection current after candidate-family coverage is present would keep engineers on stale controls instead of the next audible gap.
+Evidence: RIOTBOX-1372 adds non-dense source-selection policy cases to the professional-output summary, treats one-candidate tonal full-window policy as valid when no expanded search exists, reconciles source-selection as stale once candidate families are covered, and adds a mutation smoke for missing tonal coverage.
+Consequences: source-selection policy coverage remains diagnostic and `quality_proof: false`; it resolves prioritization, not human musical approval. The current P023 readiness gap advances to `drum_pressure`.
+Status: accepted
+
+---
+
 ### RBX-109
 
 Date: 2026-07-01

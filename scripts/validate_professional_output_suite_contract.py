@@ -1276,19 +1276,36 @@ def validate_source_selection_policy_metrics(
         failures,
     )
     require(
-        number(policy.get("case_count")) >= 1,
+        number(policy.get("case_count")) >= len(EXPECTED_LISTENING_FAMILIES),
         "source_selection_policy_case_count_too_low",
         failures,
     )
     require(
-        number(policy.get("promotion_allowed_case_count")) >= 1,
+        number(policy.get("promotion_allowed_case_count"))
+        >= len(EXPECTED_LISTENING_FAMILIES),
         "source_selection_policy_promotion_allowed_count_too_low",
         failures,
     )
     require(
-        number(policy.get("min_candidate_count"))
-        >= MIN_SOURCE_SELECTION_POLICY_CANDIDATES,
+        all(
+            not object_or_empty(case).get("candidate_floor_required")
+            or number(object_or_empty(case).get("candidate_count"))
+            >= MIN_SOURCE_SELECTION_POLICY_CANDIDATES
+            for case in cases
+        ),
         "source_selection_policy_not_enough_candidates",
+        failures,
+    )
+    require(
+        sorted(string_list(policy.get("source_families")))
+        == EXPECTED_LISTENING_FAMILIES,
+        "source_selection_policy_family_coverage_mismatch",
+        failures,
+    )
+    require(
+        sorted(string_list(policy.get("promotion_allowed_source_families")))
+        == EXPECTED_LISTENING_FAMILIES,
+        "source_selection_policy_promotion_family_coverage_mismatch",
         failures,
     )
     require(
@@ -1322,8 +1339,9 @@ def validate_source_selection_policy_metrics(
         failures,
     )
     require(
-        all(str(object_or_empty(case).get("source_family")) == "dense_break" for case in cases),
-        "source_selection_policy_not_dense_break",
+        sorted(str(object_or_empty(case).get("source_family")) for case in cases)
+        == EXPECTED_LISTENING_FAMILIES,
+        "source_selection_policy_case_family_coverage_mismatch",
         failures,
     )
     require(
@@ -1509,6 +1527,10 @@ def object_or_empty(value: Any) -> dict[str, Any]:
 
 def list_or_empty(value: Any) -> list[Any]:
     return value if isinstance(value, list) else []
+
+
+def string_list(value: Any) -> list[str]:
+    return [str(item) for item in list_or_empty(value) if str(item)]
 
 
 def number(value: Any) -> float:
