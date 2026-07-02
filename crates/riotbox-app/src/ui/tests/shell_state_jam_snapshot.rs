@@ -1,4 +1,22 @@
 #[test]
+fn jam_perform_risk_cue_contract_matches_rendered_trust_surface() {
+    let contract = perform_risk_cue_contract::perform_risk_cue_contract();
+    assert_eq!(contract.result, "pass");
+    assert_eq!(
+        contract.cue_surface,
+        "timing_source_risk_before_confident_moves"
+    );
+    assert_eq!(contract.degraded_state_label, "degraded");
+    assert_eq!(contract.degraded_action, "bar/live?");
+    assert_eq!(contract.unavailable_state_label, "unavailable");
+    assert_eq!(contract.unavailable_action, "bar/live?");
+    assert!(contract.required_player_cues.iter().any(|cue| cue.contains("bar-locked")));
+    assert!(contract.required_player_cues.iter().any(|cue| cue.contains("live-trigger")));
+    assert!(!contract.quality_proof);
+    assert!(!contract.automated_musical_approval);
+}
+
+#[test]
 fn renders_more_musical_jam_shell_snapshot() {
     let shell = sample_shell_state();
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);

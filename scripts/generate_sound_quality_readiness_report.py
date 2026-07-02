@@ -29,6 +29,9 @@ DEFAULT_SOURCE_CORPUS = Path("docs/benchmarks/sound_excellence_source_corpus_v1.
 DEFAULT_DEMO_BANK = Path("scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json")
 DEFAULT_WEAK_ROUTING = Path("artifacts/audio_qa/local-weak-output-fix-routing/weak-output-fix-routing.json")
 DEFAULT_PROFESSIONAL_SUITE = Path("artifacts/audio_qa/local-professional-output-suite/professional-output-suite.json")
+DEFAULT_PERFORM_RISK_CUE_CONTRACT = Path(
+    "artifacts/audio_qa/local-jam-perform-risk-cue-contract/jam-perform-risk-cue-contract.json"
+)
 DEFAULT_OUTPUT = Path("artifacts/audio_qa/local-sound-quality-readiness-report")
 MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO = 0.22
 MIN_HOOK_CHOP_RESPONSE_DELTA_RATIO = 0.35
@@ -81,6 +84,8 @@ CORPUS_TO_DEMO_FAMILIES = {
     "bad_timing": {"bad_timing"},
 }
 
+PERFORM_RISK_CUE_SCHEMA = "riotbox.jam_perform_risk_cue_contract.v1"
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--rubric", type=Path, default=DEFAULT_RUBRIC)
@@ -88,6 +93,7 @@ def main() -> int:
     parser.add_argument("--demo-bank", type=Path, default=DEFAULT_DEMO_BANK)
     parser.add_argument("--weak-routing", type=Path, default=DEFAULT_WEAK_ROUTING)
     parser.add_argument("--professional-output-suite", type=Path, default=DEFAULT_PROFESSIONAL_SUITE)
+    parser.add_argument("--perform-risk-cue-contract", type=Path, default=DEFAULT_PERFORM_RISK_CUE_CONTRACT)
     parser.add_argument("--human-review-queue", type=Path, default=DEFAULT_HUMAN_REVIEW_QUEUE)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--date", default="local-sound-quality-readiness-report")
@@ -123,6 +129,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     demo_bank = read_json_object(args.demo_bank)
     weak_routing = read_optional_json_object(args.weak_routing)
     professional_suite = read_optional_json_object(args.professional_output_suite)
+    perform_risk_cue_contract = read_optional_json_object(args.perform_risk_cue_contract)
     human_review_queue = read_optional_json_object(args.human_review_queue)
 
     require(rubric.get("schema") == RUBRIC_SCHEMA, f"{args.rubric}: schema must be {RUBRIC_SCHEMA}")
@@ -139,7 +146,15 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     demo_summary = demo_bank_summary(demo_bank, args.demo_bank)
     weak_summary = weak_routing_summary(weak_routing, args.weak_routing)
     suite_summary = professional_suite_summary(professional_suite, args.professional_output_suite)
-    current_evidence = current_evidence_reconciliation(weak_summary, suite_summary)
+    perform_risk_cue_summary = perform_risk_cue_contract_summary(
+        perform_risk_cue_contract,
+        args.perform_risk_cue_contract,
+    )
+    current_evidence = current_evidence_reconciliation(
+        weak_summary,
+        suite_summary,
+        perform_risk_cue_summary,
+    )
     source_selection_priority = source_selection_priority_detail(
         weak_summary,
         suite_summary,
@@ -161,7 +176,20 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
 
     release_readiness = "release_ready" if not blockers else "blocked"
     quality_claim_allowed = release_readiness == "release_ready"
-    next_fix_categories = sorted(set(weak_summary["fix_categories"]) | set(demo_summary["weak_fix_categories"]))
+    stale_categories = set(
+        string_list(current_evidence.get("stale_fixture_only_categories"))
+    )
+    raw_next_fix_categories = set(weak_summary["fix_categories"]) | set(
+        demo_summary["weak_fix_categories"]
+    )
+    next_fix_categories = sorted(
+        category for category in raw_next_fix_categories if category not in stale_categories
+    )
+    if (
+        source_families["missing_human_verdict_families"]
+        or source_families["missing_demo_ready_families"]
+    ):
+        next_fix_categories = sorted(set(next_fix_categories) | {"source_selection"})
     if not next_fix_categories and blockers:
         next_fix_categories = ["source_selection", "fixture_threshold"]
 
@@ -193,6 +221,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "demo_bank": demo_summary,
         "weak_output_routing": weak_summary,
         "professional_output_suite": suite_summary,
+        "jam_perform_risk_cue_contract": perform_risk_cue_summary,
         "current_evidence_reconciliation": current_evidence,
         "source_selection_priority": source_selection_priority,
         "ui_cue_priority": ui_cue_priority,
@@ -762,9 +791,51 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
     }
 
 
+def perform_risk_cue_contract_summary(
+    report: dict[str, Any] | None,
+    path: Path,
+) -> dict[str, Any]:
+    if report is None:
+        return {
+            "path": str(path),
+            "available": False,
+            "result": "missing",
+            "schema": "",
+            "cue_surface": "",
+            "evidence_role": "",
+            "quality_proof": None,
+            "automated_musical_approval": None,
+            "degraded_state_label": "",
+            "degraded_action": "",
+            "unavailable_state_label": "",
+            "unavailable_action": "",
+            "required_player_cues": [],
+        }
+    require(
+        report.get("schema") == PERFORM_RISK_CUE_SCHEMA,
+        f"{path}: schema must be {PERFORM_RISK_CUE_SCHEMA}",
+    )
+    return {
+        "path": str(path),
+        "available": True,
+        "result": str(report.get("result") or ""),
+        "schema": str(report.get("schema") or ""),
+        "cue_surface": str(report.get("cue_surface") or ""),
+        "evidence_role": str(report.get("evidence_role") or ""),
+        "quality_proof": report.get("quality_proof"),
+        "automated_musical_approval": report.get("automated_musical_approval"),
+        "degraded_state_label": str(report.get("degraded_state_label") or ""),
+        "degraded_action": str(report.get("degraded_action") or ""),
+        "unavailable_state_label": str(report.get("unavailable_state_label") or ""),
+        "unavailable_action": str(report.get("unavailable_action") or ""),
+        "required_player_cues": string_list(report.get("required_player_cues")),
+    }
+
+
 def current_evidence_reconciliation(
     weak: dict[str, Any],
     suite: dict[str, Any],
+    perform_risk_cue: dict[str, Any],
 ) -> dict[str, Any]:
     weak_summary = object_or_empty(weak.get("production_fix_summary"))
     weak_top = str(weak_summary.get("top_candidate_category") or "none")
@@ -984,6 +1055,40 @@ def current_evidence_reconciliation(
         if source_selection_passed:
             stale_fixture_only_categories.append("source_selection")
 
+    ui_cue_passed = ui_cue_current_evidence_passed(perform_risk_cue)
+    if "ui_cue" in candidate_categories:
+        category_reconciliations.append(
+            {
+                "category": "ui_cue",
+                "weak_evidence_role": "negative_control_fixture",
+                "current_professional_suite_status": (
+                    "current_tui_perform_risk_cue_passed"
+                    if ui_cue_passed
+                    else "current_tui_perform_risk_cue_missing"
+                ),
+                "priority_state": (
+                    "stale_fixture_only_top_risk"
+                    if ui_cue_passed
+                    else "current_product_risk"
+                ),
+                "software_next_step": (
+                    "Use stale UI-cue fixtures as regression controls; do not "
+                    "treat them as the current top product gap while the Jam Trust "
+                    "perform-risk contract exposes degraded/unavailable bar/live risk."
+                    if ui_cue_passed
+                    else "Keep perform-risk cue work current until the Jam Trust surface proves degraded/unavailable bar/live risk."
+                ),
+                "musician_payoff": (
+                    "Old UI-cue weak-output examples stop asking for the same "
+                    "warning once the instrument already shows bar/live risk."
+                    if ui_cue_passed
+                    else "The musician still needs a visible warning before trusting bar-locked or live-trigger moves."
+                ),
+            }
+        )
+        if ui_cue_passed:
+            stale_fixture_only_categories.append("ui_cue")
+
     current_product_categories = [
         category
         for category in candidate_categories
@@ -1172,6 +1277,94 @@ def source_selection_current_evidence_passed(
         source_policy.get("result") == "pass"
         and bool(candidate_families)
         and candidate_families.issubset(covered_families)
+    )
+
+
+def ui_cue_current_evidence_passed(perform_risk_cue: dict[str, Any]) -> bool:
+    required_cues = string_list(perform_risk_cue.get("required_player_cues"))
+    checks = [
+        perform_risk_cue.get("available") is True,
+        perform_risk_cue.get("result") == "pass",
+        perform_risk_cue.get("schema") == PERFORM_RISK_CUE_SCHEMA,
+        perform_risk_cue.get("cue_surface") == "timing_source_risk_before_confident_moves",
+        perform_risk_cue.get("evidence_role") == "current_tui_contract",
+        perform_risk_cue.get("quality_proof") is False,
+        perform_risk_cue.get("automated_musical_approval") is False,
+        perform_risk_cue.get("degraded_state_label") == "degraded",
+        perform_risk_cue.get("degraded_action") == "bar/live?",
+        perform_risk_cue.get("unavailable_state_label") == "unavailable",
+        perform_risk_cue.get("unavailable_action") == "bar/live?",
+        len(required_cues) >= 3,
+        any("unavailable/degraded" in cue for cue in required_cues),
+        any("bar-locked" in cue for cue in required_cues),
+        any("live-trigger" in cue for cue in required_cues),
+    ]
+    return all(checks)
+
+
+def validate_perform_risk_cue_contract(
+    detail: dict[str, Any],
+    failures: list[str],
+) -> None:
+    check(detail.get("available") is True, "jam_perform_risk_cue_contract_missing", failures)
+    check(
+        detail.get("result") == "pass",
+        "jam_perform_risk_cue_contract_not_pass",
+        failures,
+    )
+    check(
+        detail.get("schema") == PERFORM_RISK_CUE_SCHEMA,
+        "jam_perform_risk_cue_contract_schema_mismatch",
+        failures,
+    )
+    check(
+        detail.get("cue_surface") == "timing_source_risk_before_confident_moves",
+        "jam_perform_risk_cue_contract_surface_missing",
+        failures,
+    )
+    check(
+        detail.get("evidence_role") == "current_tui_contract",
+        "jam_perform_risk_cue_contract_role_missing",
+        failures,
+    )
+    check(
+        detail.get("quality_proof") is False,
+        "jam_perform_risk_cue_contract_claims_quality",
+        failures,
+    )
+    check(
+        detail.get("automated_musical_approval") is False,
+        "jam_perform_risk_cue_contract_claims_approval",
+        failures,
+    )
+    check(
+        detail.get("degraded_state_label") == "degraded",
+        "jam_perform_risk_cue_contract_degraded_label_missing",
+        failures,
+    )
+    check(
+        detail.get("degraded_action") == "bar/live?",
+        "jam_perform_risk_cue_contract_degraded_action_missing",
+        failures,
+    )
+    check(
+        detail.get("unavailable_state_label") == "unavailable",
+        "jam_perform_risk_cue_contract_unavailable_label_missing",
+        failures,
+    )
+    check(
+        detail.get("unavailable_action") == "bar/live?",
+        "jam_perform_risk_cue_contract_unavailable_action_missing",
+        failures,
+    )
+    required_cues = string_list(detail.get("required_player_cues"))
+    check(
+        len(required_cues) >= 3
+        and any("unavailable/degraded" in cue for cue in required_cues)
+        and any("bar-locked" in cue for cue in required_cues)
+        and any("live-trigger" in cue for cue in required_cues),
+        "jam_perform_risk_cue_contract_player_cues_too_weak",
+        failures,
     )
 
 
@@ -1822,6 +2015,10 @@ def validate_report(report: dict[str, Any]) -> list[str]:
     current_evidence = object_or_empty(report.get("current_evidence_reconciliation"))
     source_selection_priority = object_or_empty(report.get("source_selection_priority"))
     ui_cue_priority = object_or_empty(report.get("ui_cue_priority"))
+    perform_risk_cue = object_or_empty(report.get("jam_perform_risk_cue_contract"))
+    perform_risk_cue_contract = object_or_empty(
+        report.get("jam_perform_risk_cue_contract")
+    )
     suite_available = nested_value(report, "professional_output_suite", "available")
     suite_scripted = nested_value(report, "professional_output_suite", "scripted_generation")
     suite_quality = nested_value(report, "professional_output_suite", "quality_proof")
@@ -2538,7 +2735,7 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             ),
             "current_evidence_reconciliation_mix_bus_status_missing",
             failures,
-        )
+            )
     if source_selection_current_evidence_passed(
         weak_categories,
         weak_routing,
@@ -2588,6 +2785,50 @@ def validate_report(report: dict[str, Any]) -> list[str]:
                     suite_summary,
                 ),
                 "current_evidence_reconciliation_source_selection_stale_without_candidate_family_coverage",
+                failures,
+            )
+    if list_contains(weak_categories, "ui_cue"):
+        validate_perform_risk_cue_contract(perform_risk_cue_contract, failures)
+    if (
+        list_contains(weak_categories, "ui_cue")
+        and ui_cue_current_evidence_passed(perform_risk_cue_contract)
+    ):
+        check(
+            list_contains(current_evidence.get("stale_fixture_only_categories"), "ui_cue"),
+            "current_evidence_reconciliation_ui_cue_not_reconciled",
+            failures,
+        )
+        check(
+            current_evidence.get("current_product_top_candidate_category") != "ui_cue",
+            "current_evidence_reconciliation_current_top_still_ui_cue",
+            failures,
+        )
+        reconciliations = list_or_empty(current_evidence.get("category_reconciliations"))
+        check(
+            any(
+                isinstance(item, dict)
+                and item.get("category") == "ui_cue"
+                and item.get("current_professional_suite_status")
+                == "current_tui_perform_risk_cue_passed"
+                and item.get("priority_state") == "stale_fixture_only_top_risk"
+                for item in reconciliations
+            ),
+            "current_evidence_reconciliation_ui_cue_status_missing",
+            failures,
+        )
+    for item in list_or_empty(current_evidence.get("category_reconciliations")):
+        if (
+            isinstance(item, dict)
+            and item.get("category") == "ui_cue"
+            and (
+                item.get("current_professional_suite_status")
+                == "current_tui_perform_risk_cue_passed"
+                or item.get("priority_state") == "stale_fixture_only_top_risk"
+            )
+        ):
+            check(
+                ui_cue_current_evidence_passed(perform_risk_cue_contract),
+                "current_evidence_reconciliation_ui_cue_stale_without_tui_contract",
                 failures,
             )
     if current_evidence.get("current_product_top_candidate_category") == "source_selection":
@@ -2715,8 +2956,13 @@ def validate_current_p023_contract(
         failures,
     )
     check(
-        list_contains(report.get("next_fix_categories"), "destructive_gesture"),
-        "p023_contract_destructive_gesture_next_fix_missing",
+        list_contains(report.get("next_fix_categories"), "fixture_threshold"),
+        "p023_contract_fixture_threshold_next_fix_missing",
+        failures,
+    )
+    check(
+        not list_contains(report.get("next_fix_categories"), "ui_cue"),
+        "p023_contract_stale_ui_cue_next_fix_present",
         failures,
     )
     check(
@@ -2793,6 +3039,7 @@ def markdown_report(report: dict[str, Any]) -> str:
     current_evidence = object_or_empty(report.get("current_evidence_reconciliation"))
     source_selection_priority = object_or_empty(report.get("source_selection_priority"))
     ui_cue_priority = object_or_empty(report.get("ui_cue_priority"))
+    perform_risk_cue = object_or_empty(report.get("jam_perform_risk_cue_contract"))
     source_character = object_or_empty(suite.get("source_character_selection"))
     source_character_window = object_or_empty(
         suite.get("source_character_window_selection")
@@ -2860,6 +3107,15 @@ def markdown_report(report: dict[str, Any]) -> str:
                 "surface "
                 f"`{ui_cue_priority.get('cue_surface')}`, cues "
                 f"`{', '.join(ui_cue_priority.get('required_player_cues', []))}`"
+            ),
+            (
+                "- Jam perform-risk cue contract: "
+                f"`{perform_risk_cue.get('result')}`, surface "
+                f"`{perform_risk_cue.get('cue_surface')}`, degraded "
+                f"`{perform_risk_cue.get('degraded_state_label')} | "
+                f"{perform_risk_cue.get('degraded_action')}`, unavailable "
+                f"`{perform_risk_cue.get('unavailable_state_label')} | "
+                f"{perform_risk_cue.get('unavailable_action')}`"
             ),
             (
                 "- Destructive gesture: "

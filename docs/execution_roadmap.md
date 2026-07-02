@@ -1073,6 +1073,13 @@ following:
   degraded and unavailable state labels now carry the compact `bar/live?` cue
   before the player treats the grid as perform-ready. This is a visible trust
   cue, not a new action system.
+- RIOTBOX-1376 makes that shipped cue count as current evidence instead of
+  leaving readiness stuck on `ui_cue`: the app emits a Jam perform-risk cue
+  contract, readiness validates degraded and unavailable `bar/live?` trust cues,
+  and `ui_cue` is demoted to a stale regression control only while that contract
+  passes. The current non-stale implementation gap then advances to
+  `fixture_threshold`, while release readiness remains blocked by human/demo
+  source-family coverage and review evidence.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue

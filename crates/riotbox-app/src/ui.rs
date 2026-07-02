@@ -8,6 +8,7 @@ mod footer_lane_perform_lines;
 mod footer_renderer;
 #[path = "ui/jam_landed_warnings_source/scene_commit_cues.rs"]
 mod jam_scene_commit_cues;
+pub mod perform_risk_cue_contract;
 mod recovery_prompt;
 #[path = "ui/scene_timing_rail/labels.rs"]
 mod scene_timing_labels;

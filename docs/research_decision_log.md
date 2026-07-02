@@ -352,6 +352,20 @@ Status: accepted
 
 ---
 
+### RBX-127
+
+Date: 2026-07-02
+Topic: Shipped perform-risk cue must be reconciled by app-emitted evidence
+Phase: P023 Sound Excellence / Production Quality
+Question: how should readiness know that `ui_cue` is no longer the current product gap after the Jam Trust cue ships?
+Decision: the app must emit `riotbox.jam_perform_risk_cue_contract.v1` with the Trust cue surface, degraded and unavailable state labels, `bar/live?` actions, required player cues, and explicit non-quality-proof flags. P023 readiness consumes that contract and demotes `ui_cue` to a stale regression control only when the contract passes.
+Why: a manually updated plan would let readiness drift away from the instrument. The report should stop asking for the same UI cue only when the product surface proves the musician sees degraded/unavailable bar/live risk.
+Evidence: RIOTBOX-1376 adds the app-side contract emitter, centralizes the `bar/live?` cue constant, validates the contract in sound-quality readiness, and adds a mutation smoke that fails if the unavailable cue regresses.
+Consequences: `ui_cue` remains a regression guard, not release-quality proof. The current non-stale P023 implementation gap advances to `fixture_threshold`, while release readiness remains blocked by human/demo coverage and review evidence.
+Status: accepted
+
+---
+
 ### RBX-109
 
 Date: 2026-07-01

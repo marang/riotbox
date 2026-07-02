@@ -835,6 +835,14 @@ surface is timing/source risk before confident bar-locked or live-trigger moves:
 Riotbox should show unavailable/degraded state and the reason before a musician
 trusts a risky move. This remains diagnostic prioritization with
 `quality_proof: false` and `automated_musical_approval: false`.
+Once that cue is implemented, readiness must not demote `ui_cue` merely because
+the plan says so. It must consume a current Jam perform-risk cue contract from
+the app (`riotbox.jam_perform_risk_cue_contract.v1`) proving degraded and
+unavailable timing both expose `bar/live?` on the Trust surface, with
+`quality_proof: false` and `automated_musical_approval: false`. If that
+contract is missing or the cue regresses, `ui_cue` remains the current product
+risk; if it passes, `ui_cue` becomes a stale regression control and readiness
+advances to the next non-stale gap.
 
 MC-202 producer-grade closeout routing extends that category vocabulary for the
 MC-202 lane with `answer_bite`, `hook_restraint`, and
