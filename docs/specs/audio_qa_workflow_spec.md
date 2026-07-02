@@ -681,6 +681,18 @@ the family-specific hook/caution contract. These metrics prove source-window
 selection is active and energy-preserving; they remain diagnostic evidence with
 `quality_proof: false`.
 
+P023 dense-break product-path source-window policy must also expose
+`source_selection_policy` in the dense performance report, professional-output
+suite, and readiness report. This policy is family-specific: dense-break rescue
+may move to a higher-character transient window only when it avoids excessive
+high-band/stab tilt, sparse-bass-pressure selection prioritizes low-band share
+and low/mid weight over generic transient score, and tonal-hook material with no
+extra searchable source duration may keep its requested full window without
+failing candidate-count gates. Candidate-count floors apply only when the search
+duration is larger than the selected window. The policy must preserve
+`quality_proof: false` and `automated_musical_approval: false`; it proves
+source-window policy execution, not human musical approval.
+
 P023 source-selection risk must also expose actionable demotion evidence for
 edge material. Bad-timing and pad/noise diagnostics may stay source-backed, but
 they must not be promoted as release-quality demos while timing confidence,
@@ -693,6 +705,8 @@ When `source_selection` becomes the current P023 product priority, the readiness
 report must also expose a concrete priority detail instead of only a generic
 category: triggering case ids, primary case ids, source families, artifact refs,
 demotion/review reason linkage, software next step, and musician-facing action.
+It must also show that the dense product-path source-window policy is applied
+while edge source families remain unavailable/degraded for promotion.
 The detail must preserve `quality_proof: false` and
 `automated_musical_approval: false` until source choice is proven by output and
 human verdict.
@@ -709,7 +723,11 @@ dominance gates all pass.
 The same rule applies to `destructive_gesture`: flat-stutter negative fixtures
 remain regression controls, but they should not stay current priority when
 current dropout/stutter silence, stutter transient, and restore-impact gates
-all pass.
+all pass. If a source-selected dense hook raises the hook transient baseline,
+destructive review may also satisfy the transient contract with source-referenced
+floors: `stutter_to_source_transient_ratio >= 5.50` and
+`restore_to_source_transient_ratio >= 6.00`, with high rebuild-only
+source-character survival proving the source is still transformed but present.
 The same rule applies to `mix_bus`: source-masked or support-buried negative
 fixtures remain regression controls, but they should not stay current priority
 when current professional-suite generated support is loud enough, source-first

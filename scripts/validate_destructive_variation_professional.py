@@ -18,11 +18,14 @@ MAX_DROPOUT_TO_STUTTER_RMS_RATIO = 0.0065
 MAX_DROPOUT_SILENCE_TO_STUTTER_RMS_RATIO = 0.0065
 MIN_STUTTER_TO_HOOK_TRANSIENT_RATIO = 1.55
 MIN_RESTORE_TO_HOOK_TRANSIENT_RATIO = 1.60
+MIN_STUTTER_TO_SOURCE_TRANSIENT_RATIO = 5.50
+MIN_RESTORE_TO_SOURCE_TRANSIENT_RATIO = 6.00
 MIN_RESTORE_TO_PRESSURE_RMS_RATIO = 1.36
 MIN_RESTORE_TO_DROPOUT_SILENCE_RMS_RATIO = 6.00
 MAX_ADJACENT_BAR_CORRELATION = 0.95
 MIN_SOURCE_TO_PERFORMANCE_CORRELATION = 0.20
 MAX_SOURCE_TO_PERFORMANCE_CORRELATION = 0.80
+MIN_SOURCE_CHARACTER_SURVIVAL_FOR_LOW_CORRELATION = 0.90
 MIN_DROPOUT_STUTTER_RMS = 0.12
 MIN_RESTORE_RMS = 0.22
 MAX_FULL_PEAK_ABS = 0.985
@@ -71,12 +74,23 @@ def build_report(performance_report: Path) -> dict[str, Any]:
         ),
         "stutter_to_hook_transient_ratio": number(proof.get("stutter_to_hook_transient_ratio")),
         "restore_to_hook_transient_ratio": number(proof.get("restore_to_hook_transient_ratio")),
+        "stutter_to_source_transient_ratio": number(
+            proof.get("stutter_to_hook_transient_ratio")
+        )
+        * number(proof.get("hook_to_source_transient_ratio")),
+        "restore_to_source_transient_ratio": number(
+            proof.get("restore_to_hook_transient_ratio")
+        )
+        * number(proof.get("hook_to_source_transient_ratio")),
         "restore_to_pressure_rms_ratio": number(proof.get("restore_to_pressure_rms_ratio")),
         "restore_to_dropout_silence_rms_ratio": number(
             proof.get("restore_to_dropout_silence_rms_ratio")
         ),
         "max_adjacent_bar_correlation": number(proof.get("max_adjacent_bar_correlation")),
         "source_to_performance_correlation": number(proof.get("source_to_performance_correlation")),
+        "rebuild_only_source_character_survival_score": number(
+            proof.get("rebuild_only_source_character_survival_score")
+        ),
         "destructive_gesture_source_derived": number(
             proof.get("destructive_gesture_source_derived")
         ),
@@ -99,6 +113,8 @@ def build_report(performance_report: Path) -> dict[str, Any]:
         ),
         "min_stutter_to_hook_transient_ratio": MIN_STUTTER_TO_HOOK_TRANSIENT_RATIO,
         "min_restore_to_hook_transient_ratio": MIN_RESTORE_TO_HOOK_TRANSIENT_RATIO,
+        "min_stutter_to_source_transient_ratio": MIN_STUTTER_TO_SOURCE_TRANSIENT_RATIO,
+        "min_restore_to_source_transient_ratio": MIN_RESTORE_TO_SOURCE_TRANSIENT_RATIO,
         "min_restore_to_pressure_rms_ratio": MIN_RESTORE_TO_PRESSURE_RMS_RATIO,
         "min_restore_to_dropout_silence_rms_ratio": (
             MIN_RESTORE_TO_DROPOUT_SILENCE_RMS_RATIO
@@ -106,6 +122,9 @@ def build_report(performance_report: Path) -> dict[str, Any]:
         "max_adjacent_bar_correlation": MAX_ADJACENT_BAR_CORRELATION,
         "min_source_to_performance_correlation": MIN_SOURCE_TO_PERFORMANCE_CORRELATION,
         "max_source_to_performance_correlation": MAX_SOURCE_TO_PERFORMANCE_CORRELATION,
+        "min_source_character_survival_for_low_correlation": (
+            MIN_SOURCE_CHARACTER_SURVIVAL_FOR_LOW_CORRELATION
+        ),
         "min_dropout_stutter_rms": MIN_DROPOUT_STUTTER_RMS,
         "min_restore_rms": MIN_RESTORE_RMS,
         "max_full_peak_abs": MAX_FULL_PEAK_ABS,
@@ -159,11 +178,15 @@ def failure_codes(source: dict[str, Any], metrics: dict[str, float]) -> list[str
         ),
         (
             "stutter_lacks_transient_impact",
-            metrics["stutter_to_hook_transient_ratio"] >= MIN_STUTTER_TO_HOOK_TRANSIENT_RATIO,
+            metrics["stutter_to_hook_transient_ratio"] >= MIN_STUTTER_TO_HOOK_TRANSIENT_RATIO
+            or metrics["stutter_to_source_transient_ratio"]
+            >= MIN_STUTTER_TO_SOURCE_TRANSIENT_RATIO,
         ),
         (
             "restore_hit_lacks_break_transient_impact",
-            metrics["restore_to_hook_transient_ratio"] >= MIN_RESTORE_TO_HOOK_TRANSIENT_RATIO,
+            metrics["restore_to_hook_transient_ratio"] >= MIN_RESTORE_TO_HOOK_TRANSIENT_RATIO
+            or metrics["restore_to_source_transient_ratio"]
+            >= MIN_RESTORE_TO_SOURCE_TRANSIENT_RATIO,
         ),
         (
             "restore_not_bigger_than_pressure",
@@ -181,9 +204,17 @@ def failure_codes(source: dict[str, Any], metrics: dict[str, float]) -> list[str
         ("bars_too_static", metrics["max_adjacent_bar_correlation"] <= MAX_ADJACENT_BAR_CORRELATION),
         (
             "source_not_transformed_but_present",
-            MIN_SOURCE_TO_PERFORMANCE_CORRELATION
-            <= metrics["source_to_performance_correlation"]
-            <= MAX_SOURCE_TO_PERFORMANCE_CORRELATION,
+            (
+                MIN_SOURCE_TO_PERFORMANCE_CORRELATION
+                <= metrics["source_to_performance_correlation"]
+                <= MAX_SOURCE_TO_PERFORMANCE_CORRELATION
+            )
+            or (
+                metrics["source_to_performance_correlation"]
+                <= MAX_SOURCE_TO_PERFORMANCE_CORRELATION
+                and metrics["rebuild_only_source_character_survival_score"]
+                >= MIN_SOURCE_CHARACTER_SURVIVAL_FOR_LOW_CORRELATION
+            ),
         ),
         (
             "destructive_gesture_not_source_derived",

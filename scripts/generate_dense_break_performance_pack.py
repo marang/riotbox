@@ -122,6 +122,9 @@ TARGET_PERFORMANCE_PEAK = 0.92
 MAX_PAD_NOISE_LOW_BAND_RMS = 0.030
 MIN_PAD_NOISE_HIGH_BAND_RATIO = 0.180
 MIN_PAD_NOISE_TRANSIENT_SCORE = 0.050
+MIN_SOURCE_SELECTION_POLICY_CANDIDATES = 3
+MIN_SOURCE_SELECTION_RMS_RETENTION_RATIO = 0.60
+MIN_SOURCE_SELECTION_SCORE_LIFT = 0.0
 
 np = None
 
@@ -286,6 +289,37 @@ class TailShapePolicy:
 
 
 @dataclass(frozen=True)
+class SourceSelectionPolicy:
+    applied: bool
+    source_family: str
+    promotion_allowed: bool
+    selection_strategy: str
+    reason: str
+    requested_start_seconds: float
+    selected_start_seconds: float
+    selected_duration_seconds: float
+    search_start_seconds: float
+    search_duration_seconds: float
+    requested_score: float
+    selected_score: float
+    score_lift: float
+    requested_rms: float
+    selected_rms: float
+    rms_retention_ratio: float
+    min_rms_retention_ratio: float
+    requested_transient_score: float
+    selected_transient_score: float
+    requested_high_band_ratio: float
+    selected_high_band_ratio: float
+    candidate_count: int
+    edge_review_state: str
+    demotion_reasons: tuple[str, ...]
+    required_review_actions: tuple[str, ...]
+    quality_proof: bool
+    automated_musical_approval: bool
+
+
+@dataclass(frozen=True)
 class DenseBreakSourcePolicy:
     source_aware: bool
     pressure_shape: str
@@ -298,6 +332,7 @@ class DenseBreakSourcePolicy:
     mix_treatment_policy: MixTreatmentPolicy
     pad_noise_texture_policy: PadNoiseTexturePolicy
     tail_shape_policy: TailShapePolicy
+    source_selection_policy: SourceSelectionPolicy
     bass_bar4_frequency_hz: float
     bass_bar5_frequency_hz: float
     bass_restore_frequency_hz: float
@@ -374,6 +409,14 @@ def main() -> int:
         duration,
         available_source_window,
     )
+    source_selection_policy = source_selection_policy_for(
+        source,
+        requested_start_seconds=args.source_start_seconds,
+        selected_duration_seconds=render_source_window_seconds,
+        timing_confidence_result=args.timing_confidence_result,
+        timing_grid_use=args.timing_grid_use,
+    )
+    selected_source_start_seconds = source_selection_policy.selected_start_seconds
     render_dir = output / "_feral_grid_render"
     render_feral_grid_pack(
         repo,
@@ -382,11 +425,11 @@ def main() -> int:
         args.date,
         args.bpm,
         args.bars,
-        args.source_start_seconds,
+        selected_source_start_seconds,
         render_source_window_seconds,
     )
 
-    source_audio = read_wav_window_looped(source, args.source_start_seconds, duration)
+    source_audio = read_wav_window_looped(source, selected_source_start_seconds, duration)
     tr909 = read_wav(render_dir / "stems" / "01_tr909_beat_fill.wav")
     w30 = read_wav(render_dir / "stems" / "02_w30_feral_source_chop.wav")
     mc202 = read_wav(render_dir / "stems" / "03_mc202_bass_pressure.wav")
@@ -441,6 +484,7 @@ def main() -> int:
         source_audio,
         w30,
         bar_frames,
+        source_selection_policy=source_selection_policy,
         timing_confidence_result=args.timing_confidence_result,
         timing_grid_use=args.timing_grid_use,
     )
@@ -1729,6 +1773,7 @@ def dense_break_source_policy(
     w30: np.ndarray,
     bar_frames: int,
     *,
+    source_selection_policy: SourceSelectionPolicy,
     timing_confidence_result: str | None = None,
     timing_grid_use: str | None = None,
 ) -> DenseBreakSourcePolicy:
@@ -1862,6 +1907,7 @@ def dense_break_source_policy(
         mix_treatment_policy=mix_treatment_policy,
         pad_noise_texture_policy=pad_noise_texture_policy,
         tail_shape_policy=tail_shape_policy,
+        source_selection_policy=source_selection_policy,
         bass_bar4_frequency_hz=pressure_lift_policy.bar4_bass_frequency_hz,
         bass_bar5_frequency_hz=pressure_lift_policy.bar5_bass_frequency_hz,
         bass_restore_frequency_hz=bass_restore,
@@ -2170,6 +2216,185 @@ def pressure_lift_policy_for(
             bar5_bass_frequency_hz=49.0,
         )
     raise AssertionError("pressure_lift_policy_for source-family classification is exhaustive")
+
+
+def source_selection_policy_for(
+    source: Path,
+    *,
+    requested_start_seconds: float,
+    selected_duration_seconds: float,
+    timing_confidence_result: str | None,
+    timing_grid_use: str | None,
+) -> SourceSelectionPolicy:
+    source_duration = wav_duration(source)
+    search_start = requested_start_seconds
+    max_search_duration = max(0.0, source_duration - search_start)
+    search_duration = min(
+        max_search_duration,
+        max(selected_duration_seconds * 4.0, selected_duration_seconds),
+    )
+    if search_duration <= 0.0:
+        raise SystemExit(f"source selection search window is empty: {source}")
+    requested_audio = read_wav_window_looped(
+        source,
+        requested_start_seconds,
+        selected_duration_seconds,
+    )
+    requested_metrics = audio_metrics(requested_audio)
+    requested_family = pressure_lift_policy_for(
+        low_band_rms=requested_metrics.low_band_rms,
+        high_band_ratio=requested_metrics.high_band_ratio,
+        transient_score=requested_metrics.transient_score,
+        timing_confidence_result=timing_confidence_result,
+        timing_grid_use=timing_grid_use,
+    ).source_family
+
+    candidate_step = min(0.50, max(0.125, selected_duration_seconds / 2.0))
+    max_start = max(search_start, search_start + search_duration - selected_duration_seconds)
+    candidate_starts: list[float] = []
+    cursor = search_start
+    while cursor <= max_start + 1e-9:
+        candidate_starts.append(round(cursor, 6))
+        cursor += candidate_step
+    if max_start not in candidate_starts:
+        candidate_starts.append(round(max_start, 6))
+    candidate_starts = sorted(set(candidate_starts))
+
+    rms_reference = max(requested_metrics.rms, 1e-9)
+    candidates = []
+    for start in candidate_starts:
+        audio = read_wav_window_looped(source, start, selected_duration_seconds)
+        metrics = audio_metrics(audio)
+        character = source_character_score(audio, rms_reference)
+        if requested_family == SOURCE_FAMILY_TONAL_HOOK:
+            score = (
+                character * 1.05
+                + min(metrics.rms / rms_reference, 1.8) * 0.35
+                + metrics.low_band_rms * 1.10
+                + metrics.transient_score * 3.0
+            )
+        elif requested_family == SOURCE_FAMILY_SPARSE_BASS_PRESSURE:
+            low_share, mid_share, _ = band_energy_ratios(audio)
+            score = (
+                low_share * 3.0
+                + metrics.low_band_rms * 1.0
+                + (low_share / max(mid_share, 1e-9)) * 0.20
+                + character * 0.20
+                + metrics.transient_score * 0.20
+                + min(metrics.rms / rms_reference, 1.8) * 0.10
+                - metrics.high_band_ratio * 0.50
+            )
+        else:
+            score = (
+                character * 1.10
+                + metrics.transient_score * 5.0
+                + metrics.high_band_ratio * 0.40
+                + min(metrics.rms / rms_reference, 1.8) * 0.25
+            )
+        candidates.append(
+            {
+                "start": start,
+                "score": float(score),
+                "metrics": metrics,
+            }
+        )
+
+    selected = min(
+        candidates,
+        key=lambda item: abs(float(item["start"]) - requested_start_seconds),
+    )
+    requested_score = float(selected["score"])
+    promotion_allowed = requested_family in SOURCE_FAMILIES_SOURCE_DERIVED
+    edge_review_state = "trusted_source_selection"
+    demotion_reasons: tuple[str, ...] = ()
+    review_actions: tuple[str, ...] = ()
+    reason = "requested_source_window_kept"
+    strategy = "source-character-window-score"
+
+    if requested_family == SOURCE_FAMILY_BAD_TIMING:
+        promotion_allowed = False
+        edge_review_state = "manual_confirm_required"
+        demotion_reasons = ("timing_review_required", "diagnostic_only_not_quality_proof")
+        review_actions = (
+            "confirm_timing_before_bar_locked_moves",
+            "keep_as_diagnostic_until_human_verdict",
+        )
+        reason = "timing_review_required"
+        strategy = "edge-source-timing-review"
+    elif requested_family == SOURCE_FAMILY_PAD_NOISE:
+        promotion_allowed = False
+        edge_review_state = "texture_review_required"
+        demotion_reasons = ("texture_review_required", "diagnostic_only_not_quality_proof")
+        review_actions = (
+            "audition_pad_noise_texture_before_demo_promotion",
+            "keep_as_diagnostic_until_human_verdict",
+        )
+        reason = "texture_review_required"
+        strategy = "edge-source-texture-review"
+    else:
+        ranked = sorted(candidates, key=lambda item: item["score"], reverse=True)
+        eligible_ranked = ranked
+        if requested_family == SOURCE_FAMILY_DENSE_BREAK:
+            high_band_ceiling = max(
+                requested_metrics.high_band_ratio * 1.45,
+                requested_metrics.high_band_ratio + 0.025,
+            )
+            dense_eligible_ranked = [
+                candidate
+                for candidate in ranked
+                if candidate["metrics"].high_band_ratio <= high_band_ceiling
+            ]
+            if dense_eligible_ranked:
+                eligible_ranked = dense_eligible_ranked
+        requested_rms = max(requested_metrics.rms, 1e-9)
+        for candidate in eligible_ranked:
+            candidate_metrics = candidate["metrics"]
+            retention = candidate_metrics.rms / requested_rms
+            if retention + 1e-6 < MIN_SOURCE_SELECTION_RMS_RETENTION_RATIO:
+                continue
+            selected = candidate
+            break
+        selected_metrics = selected["metrics"]
+        score_lift = float(selected["score"]) - requested_score
+        if abs(float(selected["start"]) - requested_start_seconds) > 1e-6 and score_lift >= 0.0:
+            reason = "source_character_rescue"
+            strategy = "source-character-transient-rms-rescue"
+        else:
+            reason = "requested_source_window_kept"
+            strategy = "source-character-requested-window-verified"
+
+    selected_metrics = selected["metrics"]
+    selected_start = float(selected["start"])
+    selected_score = float(selected["score"])
+    return SourceSelectionPolicy(
+        applied=True,
+        source_family=requested_family,
+        promotion_allowed=promotion_allowed,
+        selection_strategy=strategy,
+        reason=reason,
+        requested_start_seconds=requested_start_seconds,
+        selected_start_seconds=selected_start,
+        selected_duration_seconds=selected_duration_seconds,
+        search_start_seconds=search_start,
+        search_duration_seconds=search_duration,
+        requested_score=requested_score,
+        selected_score=selected_score,
+        score_lift=selected_score - requested_score,
+        requested_rms=requested_metrics.rms,
+        selected_rms=selected_metrics.rms,
+        rms_retention_ratio=selected_metrics.rms / max(requested_metrics.rms, 1e-9),
+        min_rms_retention_ratio=MIN_SOURCE_SELECTION_RMS_RETENTION_RATIO,
+        requested_transient_score=requested_metrics.transient_score,
+        selected_transient_score=selected_metrics.transient_score,
+        requested_high_band_ratio=requested_metrics.high_band_ratio,
+        selected_high_band_ratio=selected_metrics.high_band_ratio,
+        candidate_count=len(candidates),
+        edge_review_state=edge_review_state,
+        demotion_reasons=demotion_reasons,
+        required_review_actions=review_actions,
+        quality_proof=False,
+        automated_musical_approval=False,
+    )
 
 
 def render_performance(
@@ -2784,6 +3009,53 @@ def tail_shape_policy_proof(source_policy: DenseBreakSourcePolicy) -> dict[str, 
     }
 
 
+def source_selection_policy_proof(source_policy: DenseBreakSourcePolicy) -> dict[str, float]:
+    policy = source_policy.source_selection_policy
+    return {
+        "source_selection_policy_applied": 1.0 if policy.applied else 0.0,
+        "source_selection_policy_promotion_allowed": (
+            1.0 if policy.promotion_allowed else 0.0
+        ),
+        "source_selection_policy_quality_proof": 1.0 if policy.quality_proof else 0.0,
+        "source_selection_policy_automated_musical_approval": (
+            1.0 if policy.automated_musical_approval else 0.0
+        ),
+        "source_selection_policy_candidate_count": float(policy.candidate_count),
+        "source_selection_policy_window_changed": (
+            1.0
+            if abs(policy.selected_start_seconds - policy.requested_start_seconds) > 1e-6
+            else 0.0
+        ),
+        "source_selection_policy_search_expanded": (
+            1.0
+            if policy.search_duration_seconds > policy.selected_duration_seconds + 1e-6
+            else 0.0
+        ),
+        "source_selection_policy_score_lift": float(policy.score_lift),
+        "source_selection_policy_rms_retention_ratio": float(policy.rms_retention_ratio),
+        "source_selection_policy_requested_score": float(policy.requested_score),
+        "source_selection_policy_selected_score": float(policy.selected_score),
+        "source_selection_policy_requested_rms": float(policy.requested_rms),
+        "source_selection_policy_selected_rms": float(policy.selected_rms),
+        "source_selection_policy_requested_transient_score": float(
+            policy.requested_transient_score
+        ),
+        "source_selection_policy_selected_transient_score": float(
+            policy.selected_transient_score
+        ),
+        "source_selection_policy_requested_high_band_ratio": float(
+            policy.requested_high_band_ratio
+        ),
+        "source_selection_policy_selected_high_band_ratio": float(
+            policy.selected_high_band_ratio
+        ),
+        "source_selection_policy_demotion_count": float(len(policy.demotion_reasons)),
+        "source_selection_policy_required_review_action_count": float(
+            len(policy.required_review_actions)
+        ),
+    }
+
+
 def normalized_element_score(value: float) -> float:
     return float(1.0 + math.atan(value - 1.0) * 0.55)
 
@@ -3118,7 +3390,9 @@ def render_dropout_stutter_bar(
         riff = hook_riff[min(source_start + target, hook_riff.shape[0] - 1)]
         snap = break_snap[min(source_start + target, break_snap.shape[0] - 1)]
         dense_tail_hit = (
-            1.10 if source_policy.pressure_lift_policy.source_family == SOURCE_FAMILY_DENSE_BREAK else 1.0
+            1.16
+            if source_policy.pressure_lift_policy.source_family == SOURCE_FAMILY_DENSE_BREAK
+            else 1.0
         )
         bar[target:end] += grain * (
             tail_policy.stutter_grain_gain
@@ -3127,15 +3401,17 @@ def render_dropout_stutter_bar(
             * dense_tail_hit
         )
         bar[target:end] += source_snap_grain[: end - target] * (
-            tail_policy.stutter_snap_gain * decay * dense_tail_hit * 1.14
+            tail_policy.stutter_snap_gain * decay * dense_tail_hit * 1.22
         )
         if cue_snap_grain is not None:
             bar[target:end] += cue_snap_grain[: end - target] * (5.50 * decay)
         attack_end = min(target + 56, bar.shape[0])
         if attack_end > target:
             attack_env = impact_envelope(attack_end - target, decay=0.010)[:, None]
+            source_edge = transient_emphasis(source_snap_grain[: attack_end - target])
             bar[target:attack_end] += (
-                source_snap_grain[: attack_end - target] * 1.25
+                source_snap_grain[: attack_end - target] * 1.34
+                + source_edge * 1.10
                 + accent[: attack_end - target] * 0.86
                 + snap[: attack_end - target] * 0.94
             ) * attack_env * decay
@@ -3513,16 +3789,19 @@ def restore_with_hit(
     snap = transient_emphasis(source_hit)
     if attack_frames > 0:
         attack_env = impact_envelope(attack_frames, decay=0.010)[:, None]
+        snap_edge = transient_emphasis(snap[:attack_frames])
         restored[start : start + attack_frames] += (
-            snap[:attack_frames] * (tail_policy.restore_snap_gain * (0.62 if is_sparse else 0.78))
+            snap[:attack_frames] * (tail_policy.restore_snap_gain * (0.62 if is_sparse else 0.86))
+            + snap_edge
+            * (tail_policy.restore_snap_gain * (0.18 if is_sparse else 0.55))
             + tr909[start : start + attack_frames]
             * (tail_policy.restore_tr909_gain * (0.58 if is_sparse else 0.72))
             + w30_hit[:attack_frames] * (tail_policy.restore_w30_gain * (0.54 if is_sparse else 0.40))
         ) * attack_env
     restored[start : start + hit_frames] += (
         source_hit
-        * (tail_policy.restore_source_gain * source_layer_gain * (1.18 if is_sparse else 1.05))
-        + snap * (tail_policy.restore_snap_gain * (1.05 if is_sparse else 1.18))
+        * (tail_policy.restore_source_gain * source_layer_gain * (1.18 if is_sparse else 1.14))
+        + snap * (tail_policy.restore_snap_gain * (1.05 if is_sparse else 1.30))
         + w30_hit * (tail_policy.restore_w30_gain * (1.18 if is_sparse else 1.0))
         + mc202[start : start + hit_frames]
         * (tail_policy.restore_mc202_gain * (1.28 if is_sparse else 1.08))
@@ -3619,6 +3898,7 @@ def build_report(
             "mix_treatment_policy": asdict(source_policy.mix_treatment_policy),
             "pad_noise_texture_policy": asdict(source_policy.pad_noise_texture_policy),
             "tail_shape_policy": asdict(source_policy.tail_shape_policy),
+            "source_selection_policy": asdict(source_policy.source_selection_policy),
             "arrangement_failure_routes": arrangement_failure_routes(
                 arrangement_failure_codes(source_policy.arrangement_policy)
             ),
@@ -3739,6 +4019,13 @@ def build_report(
             "min_dense_break_pressure_transient_to_hook_ratio": (
                 MIN_DENSE_BREAK_PRESSURE_TRANSIENT_TO_HOOK_RATIO
             ),
+            "min_source_selection_policy_candidates": (
+                MIN_SOURCE_SELECTION_POLICY_CANDIDATES
+            ),
+            "min_source_selection_rms_retention_ratio": (
+                MIN_SOURCE_SELECTION_RMS_RETENTION_RATIO
+            ),
+            "min_source_selection_score_lift": MIN_SOURCE_SELECTION_SCORE_LIFT,
             "target_performance_peak": TARGET_PERFORMANCE_PEAK,
         },
         "files": audio_files,
@@ -3908,6 +4195,7 @@ def performance_proof(
     proof.update(mix_treatment_policy_proof(source_policy))
     proof.update(pad_noise_texture_policy_proof(source_policy))
     proof.update(tail_shape_policy_proof(source_policy))
+    proof.update(source_selection_policy_proof(source_policy))
     proof.update(strongest_audible_element_proof(source, tr909, source_policy, sections))
     proof.update(dense_answer_bite_policy_proof(source_policy, proof))
     proof.update(rebuild_only_source_character_proof(source, rebuild_only_performance))
@@ -4097,6 +4385,26 @@ def failure_codes_for(
     if proof["arrangement_policy_decision_count"] < 8.0:
         failures.append("arrangement_policy_not_source_aware_enough")
     if source_family in SOURCE_FAMILIES_SOURCE_DERIVED:
+        if proof.get("source_selection_policy_applied", 0.0) < 1.0:
+            failures.append("source_selection_policy_not_applied")
+        if proof.get("source_selection_policy_promotion_allowed", 0.0) < 1.0:
+            failures.append("source_selection_policy_not_promotion_allowed")
+        if (
+            proof.get("source_selection_policy_search_expanded", 0.0) >= 1.0
+            and proof.get("source_selection_policy_candidate_count", 0.0)
+            < MIN_SOURCE_SELECTION_POLICY_CANDIDATES
+        ):
+            failures.append("source_selection_policy_not_enough_candidates")
+        if (
+            proof.get("source_selection_policy_rms_retention_ratio", 0.0)
+            < MIN_SOURCE_SELECTION_RMS_RETENTION_RATIO
+        ):
+            failures.append("source_selection_policy_rms_retention_too_low")
+        if (
+            proof.get("source_selection_policy_score_lift", 0.0)
+            < MIN_SOURCE_SELECTION_SCORE_LIFT
+        ):
+            failures.append("source_selection_policy_score_lift_negative")
         if proof.get("arrangement_role_order_source_derived", 0.0) < 1.0:
             failures.append("arrangement_role_order_not_source_derived")
         if proof.get("arrangement_role_candidate_count", 0.0) < MIN_ARRANGEMENT_ROLE_CANDIDATES:
@@ -4330,6 +4638,41 @@ def validate_report_file(path: Path) -> None:
                 explicit_failures.append("arrangement_policy_collapsed_to_scripted")
             if not isinstance(arrangement_policy.get("role_order_signature"), str):
                 explicit_failures.append("arrangement_role_signature_missing")
+        source_selection_policy = source_policy.get("source_selection_policy")
+        if not isinstance(source_selection_policy, dict):
+            explicit_failures.append("source_selection_policy_missing")
+        else:
+            if source_selection_policy.get("applied") is not True:
+                explicit_failures.append("source_selection_policy_not_applied")
+            if source_selection_policy.get("source_family") != SOURCE_FAMILY_DENSE_BREAK:
+                explicit_failures.append("source_selection_policy_not_dense_break")
+            if source_selection_policy.get("promotion_allowed") is not True:
+                explicit_failures.append("source_selection_policy_not_promotion_allowed")
+            if source_selection_policy.get("quality_proof") is not False:
+                explicit_failures.append("source_selection_policy_quality_proof_not_false")
+            if source_selection_policy.get("automated_musical_approval") is not False:
+                explicit_failures.append(
+                    "source_selection_policy_automated_approval_not_false"
+                )
+            if (
+                numeric_field(source_selection_policy, "candidate_count")
+                < MIN_SOURCE_SELECTION_POLICY_CANDIDATES
+            ):
+                explicit_failures.append("source_selection_policy_not_enough_candidates")
+            if (
+                numeric_field(source_selection_policy, "rms_retention_ratio")
+                < MIN_SOURCE_SELECTION_RMS_RETENTION_RATIO
+            ):
+                explicit_failures.append("source_selection_policy_rms_retention_too_low")
+            if (
+                numeric_field(source_selection_policy, "score_lift")
+                < MIN_SOURCE_SELECTION_SCORE_LIFT
+            ):
+                explicit_failures.append("source_selection_policy_score_lift_negative")
+            if not isinstance(source_selection_policy.get("selection_strategy"), str):
+                explicit_failures.append("source_selection_policy_strategy_missing")
+            if not isinstance(source_selection_policy.get("reason"), str):
+                explicit_failures.append("source_selection_policy_reason_missing")
     boundary_failures = evidence_boundary_failure_codes(report)
     fallback_strategy_failures = fallback_selection_strategy_failure_codes(report)
     source_family = None
@@ -4440,6 +4783,30 @@ def run_mutation_fixtures(report_path: Path) -> None:
             ("proof", "tail_shape_source_derived"),
             0.0,
             "tail_shape_not_source_derived",
+        ),
+        (
+            "source_selection_not_applied",
+            ("proof", "source_selection_policy_applied"),
+            0.0,
+            "source_selection_policy_not_applied",
+        ),
+        (
+            "source_selection_too_few_candidates",
+            ("proof", "source_selection_policy_candidate_count"),
+            0.0,
+            "source_selection_policy_not_enough_candidates",
+        ),
+        (
+            "source_selection_low_rms_retention",
+            ("proof", "source_selection_policy_rms_retention_ratio"),
+            0.0,
+            "source_selection_policy_rms_retention_too_low",
+        ),
+        (
+            "source_selection_negative_score_lift",
+            ("proof", "source_selection_policy_score_lift"),
+            -1.0,
+            "source_selection_policy_score_lift_negative",
         ),
         (
             "fixed_tail",
@@ -4849,7 +5216,10 @@ def agent_review_record(report: dict) -> dict:
         "agent_verdict": report["agent_verdict"],
         "human_verdict": report["human_verdict"],
         "strongest_element": strongest,
-        "source_recognition": source_recognition_label(proof["source_to_performance_correlation"]),
+        "source_recognition": source_recognition_label(
+            proof["source_to_performance_correlation"],
+            proof.get("rebuild_only_source_character_survival_score", 0.0),
+        ),
         "hook_after_two_bars": "present" if proof["w30_to_source_rms_ratio"] >= 0.18 else "weak",
         "summary": summary,
         "failure_codes": report["failure_codes"],
@@ -4868,6 +5238,9 @@ def agent_review_record(report: dict) -> dict:
             "restore_to_hook_transient_ratio": proof["restore_to_hook_transient_ratio"],
             "max_adjacent_bar_correlation": proof["max_adjacent_bar_correlation"],
             "source_to_performance_correlation": proof["source_to_performance_correlation"],
+            "rebuild_only_source_character_survival_score": proof[
+                "rebuild_only_source_character_survival_score"
+            ],
             "full_to_source_rms_ratio": proof["full_to_source_rms_ratio"],
             "hook_to_source_transient_ratio": proof["hook_to_source_transient_ratio"],
             "pressure_to_hook_rms_ratio": proof["pressure_to_hook_rms_ratio"],
@@ -4891,10 +5264,13 @@ def agent_review_record(report: dict) -> dict:
     )
 
 
-def source_recognition_label(correlation: float) -> str:
+def source_recognition_label(
+    correlation: float,
+    source_character_survival_score: float,
+) -> str:
     if correlation >= 0.90:
         return "source_too_close_to_original"
-    if correlation >= 0.20:
+    if correlation >= 0.20 or source_character_survival_score >= 0.90:
         return "source_transformed_but_present"
     return "source_character_at_risk"
 

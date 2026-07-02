@@ -68,6 +68,8 @@ MAX_DESTRUCTIVE_DROPOUT_TO_STUTTER_RMS_RATIO = 0.0065
 MAX_DESTRUCTIVE_DROPOUT_SILENCE_TO_STUTTER_RMS_RATIO = 0.0065
 MIN_DESTRUCTIVE_STUTTER_TO_HOOK_TRANSIENT_RATIO = 1.55
 MIN_DESTRUCTIVE_RESTORE_TO_HOOK_TRANSIENT_RATIO = 1.60
+MIN_DESTRUCTIVE_STUTTER_TO_SOURCE_TRANSIENT_RATIO = 5.50
+MIN_DESTRUCTIVE_RESTORE_TO_SOURCE_TRANSIENT_RATIO = 6.00
 MIN_DESTRUCTIVE_RESTORE_TO_PRESSURE_RMS_RATIO = 1.36
 MIN_DESTRUCTIVE_RESTORE_TO_DROPOUT_SILENCE_RMS_RATIO = 6.00
 MIN_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.145
@@ -79,6 +81,9 @@ MIN_FERAL_TR909_RENDERED_LOW_BAND_RMS = 0.0030
 MIN_SOURCE_CHARACTER_WINDOW_RMS_RETENTION_RATIO = 0.98
 MIN_SOURCE_CHARACTER_WINDOW_SEARCHED_CASE_COUNT = 3
 MIN_SOURCE_CHARACTER_WINDOW_PROMOTED_CASE_COUNT = 1
+MIN_SOURCE_SELECTION_POLICY_CANDIDATES = 3
+MIN_SOURCE_SELECTION_RMS_RETENTION_RATIO = 0.60
+MIN_SOURCE_SELECTION_SCORE_LIFT = 0.0
 MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_MARGIN = 0.10
 
 
@@ -165,6 +170,7 @@ def validate_report(report: dict[str, Any], output: Path) -> list[str]:
     validate_rebuild_balance_metrics(matrix, source_wav, failures)
     validate_feral_mix_balance_metrics(report, failures)
     validate_source_character_window_selection_metrics(report, failures)
+    validate_source_selection_policy_metrics(report, failures)
     validate_tr909_rendered_drum_pressure_metrics(report, failures)
     validate_artifacts(output, failures)
     return failures
@@ -259,6 +265,12 @@ def validate_mutation_fixtures(report: dict[str, Any], output: Path) -> list[str
                 "destructive_variation",
                 "stutter_to_hook_transient_ratio",
                 0.0,
+            )
+            and set_child_metric(
+                data,
+                "destructive_variation",
+                "stutter_to_source_transient_ratio",
+                0.0,
             ),
             "destructive_stutter_lacks_transient_impact",
         ),
@@ -288,6 +300,12 @@ def validate_mutation_fixtures(report: dict[str, Any], output: Path) -> list[str
                 data,
                 "destructive_variation",
                 "restore_to_hook_transient_ratio",
+                0.0,
+            )
+            and set_child_metric(
+                data,
+                "destructive_variation",
+                "restore_to_source_transient_ratio",
                 0.0,
             ),
             "destructive_restore_lacks_transient_impact",
@@ -319,6 +337,15 @@ def validate_mutation_fixtures(report: dict[str, Any], output: Path) -> list[str
                 0.0,
             ),
             "dense_source_character_margin_too_low",
+        ),
+        (
+            "source_selection_policy_missing",
+            lambda data: set_nested_value(
+                data,
+                ["source_selection_policy", "case_count"],
+                0,
+            ),
+            "source_selection_policy_case_count_too_low",
         ),
         (
             "soft_dense_drum_transient",
@@ -879,13 +906,17 @@ def validate_destructive_metrics(
     )
     require(
         number(destructive.get("stutter_to_hook_transient_ratio"))
-        >= MIN_DESTRUCTIVE_STUTTER_TO_HOOK_TRANSIENT_RATIO,
+        >= MIN_DESTRUCTIVE_STUTTER_TO_HOOK_TRANSIENT_RATIO
+        or number(destructive.get("stutter_to_source_transient_ratio"))
+        >= MIN_DESTRUCTIVE_STUTTER_TO_SOURCE_TRANSIENT_RATIO,
         "destructive_stutter_lacks_transient_impact",
         failures,
     )
     require(
         number(destructive.get("restore_to_hook_transient_ratio"))
-        >= MIN_DESTRUCTIVE_RESTORE_TO_HOOK_TRANSIENT_RATIO,
+        >= MIN_DESTRUCTIVE_RESTORE_TO_HOOK_TRANSIENT_RATIO
+        or number(destructive.get("restore_to_source_transient_ratio"))
+        >= MIN_DESTRUCTIVE_RESTORE_TO_SOURCE_TRANSIENT_RATIO,
         "destructive_restore_lacks_transient_impact",
         failures,
     )
@@ -1230,6 +1261,82 @@ def validate_source_character_window_selection_metrics(
             for case in cases
         ),
         "source_character_window_selection_unknown_reason",
+        failures,
+    )
+
+
+def validate_source_selection_policy_metrics(
+    report: dict[str, Any], failures: list[str]
+) -> None:
+    policy = object_or_empty(report.get("source_selection_policy"))
+    cases = list_or_empty(policy.get("cases"))
+    require(
+        policy.get("result") == "pass",
+        "source_selection_policy_not_pass",
+        failures,
+    )
+    require(
+        number(policy.get("case_count")) >= 1,
+        "source_selection_policy_case_count_too_low",
+        failures,
+    )
+    require(
+        number(policy.get("promotion_allowed_case_count")) >= 1,
+        "source_selection_policy_promotion_allowed_count_too_low",
+        failures,
+    )
+    require(
+        number(policy.get("min_candidate_count"))
+        >= MIN_SOURCE_SELECTION_POLICY_CANDIDATES,
+        "source_selection_policy_not_enough_candidates",
+        failures,
+    )
+    require(
+        number(policy.get("min_observed_rms_retention_ratio"))
+        + 1e-6
+        >= MIN_SOURCE_SELECTION_RMS_RETENTION_RATIO,
+        "source_selection_policy_rms_retention_too_low",
+        failures,
+    )
+    require(
+        number(policy.get("max_score_lift")) >= MIN_SOURCE_SELECTION_SCORE_LIFT,
+        "source_selection_policy_score_lift_negative",
+        failures,
+    )
+    require(
+        all(
+            object_or_empty(case).get("has_required_source_selection_policy_fields") is True
+            for case in cases
+        ),
+        "source_selection_policy_fields_missing",
+        failures,
+    )
+    require(
+        all(object_or_empty(case).get("applied") is True for case in cases),
+        "source_selection_policy_not_applied",
+        failures,
+    )
+    require(
+        all(object_or_empty(case).get("promotion_allowed") is True for case in cases),
+        "source_selection_policy_not_promotion_allowed",
+        failures,
+    )
+    require(
+        all(str(object_or_empty(case).get("source_family")) == "dense_break" for case in cases),
+        "source_selection_policy_not_dense_break",
+        failures,
+    )
+    require(
+        all(object_or_empty(case).get("quality_proof") is False for case in cases),
+        "source_selection_policy_claims_quality_proof",
+        failures,
+    )
+    require(
+        all(
+            object_or_empty(case).get("automated_musical_approval") is False
+            for case in cases
+        ),
+        "source_selection_policy_claims_musical_approval",
         failures,
     )
 

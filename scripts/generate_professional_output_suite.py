@@ -30,6 +30,9 @@ MIN_FERAL_TR909_RENDERED_LOW_BAND_RMS = 0.0030
 MIN_SOURCE_CHARACTER_WINDOW_RMS_RETENTION_RATIO = 0.98
 MIN_SOURCE_CHARACTER_WINDOW_SEARCHED_CASE_COUNT = 3
 MIN_SOURCE_CHARACTER_WINDOW_PROMOTED_CASE_COUNT = 1
+MIN_SOURCE_SELECTION_POLICY_CANDIDATES = 3
+MIN_SOURCE_SELECTION_RMS_RETENTION_RATIO = 0.60
+MIN_SOURCE_SELECTION_SCORE_LIFT = 0.0
 CHILDREN = {
     "dense_break": "riotbox.dense_break_performance_pack.v1",
     "pro_pressure_source_matrix": "riotbox.pro_pressure_source_matrix.v1",
@@ -265,12 +268,14 @@ def build_report(output: Path) -> dict[str, Any]:
     )
     feral_mix_balance = feral_mix_balance_summary(output)
     source_character_window_selection = source_character_window_selection_summary(output)
+    source_selection_policy = source_selection_policy_summary(output)
     tr909_rendered_drum_pressure = tr909_rendered_drum_pressure_summary(output)
     failures = suite_failure_codes(
         children,
         identity,
         feral_mix_balance,
         source_character_window_selection,
+        source_selection_policy,
         tr909_rendered_drum_pressure,
     )
     report = {
@@ -286,6 +291,7 @@ def build_report(output: Path) -> dict[str, Any]:
         "listening_identity": identity,
         "feral_mix_balance": feral_mix_balance,
         "source_character_window_selection": source_character_window_selection,
+        "source_selection_policy": source_selection_policy,
         "tr909_rendered_drum_pressure": tr909_rendered_drum_pressure,
         "failure_codes": failures,
     }
@@ -1383,8 +1389,14 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             "stutter_to_hook_transient_ratio": number(
                 metrics.get("stutter_to_hook_transient_ratio")
             ),
+            "stutter_to_source_transient_ratio": number(
+                metrics.get("stutter_to_source_transient_ratio")
+            ),
             "restore_to_hook_transient_ratio": number(
                 metrics.get("restore_to_hook_transient_ratio")
+            ),
+            "restore_to_source_transient_ratio": number(
+                metrics.get("restore_to_source_transient_ratio")
             ),
             "restore_to_pressure_rms_ratio": number(
                 metrics.get("restore_to_pressure_rms_ratio")
@@ -1823,6 +1835,109 @@ def source_character_window_selection_summary(output: Path) -> dict[str, Any]:
     }
 
 
+def source_selection_policy_summary(output: Path) -> dict[str, Any]:
+    cases = []
+    failures = []
+    report_paths = [output / "dense-break" / "performance-report.json"]
+    for report_path in report_paths:
+        if not report_path.is_file():
+            continue
+        data = read_json(report_path)
+        policy = object_or_empty(
+            object_or_empty(data.get("source_policy")).get("source_selection_policy")
+        )
+        proof = object_or_empty(data.get("proof"))
+        if not policy:
+            continue
+        source_family = str(policy.get("source_family") or "")
+        promotion_allowed = policy.get("promotion_allowed") is True
+        has_required_fields = (
+            policy.get("applied") is True
+            and bool(source_family)
+            and isinstance(policy.get("selection_strategy"), str)
+            and isinstance(policy.get("reason"), str)
+            and is_number(policy.get("requested_start_seconds"))
+            and is_number(policy.get("selected_start_seconds"))
+            and is_number(policy.get("selected_duration_seconds"))
+            and is_number(policy.get("search_start_seconds"))
+            and is_number(policy.get("search_duration_seconds"))
+            and is_number(policy.get("requested_score"))
+            and is_number(policy.get("selected_score"))
+            and is_number(policy.get("score_lift"))
+            and is_number(policy.get("requested_rms"))
+            and is_number(policy.get("selected_rms"))
+            and is_number(policy.get("rms_retention_ratio"))
+            and is_number(policy.get("candidate_count"))
+            and is_number(proof.get("source_selection_policy_applied"))
+        )
+        cases.append(
+            {
+                "report": str(report_path.relative_to(output)),
+                "source_family": source_family,
+                "applied": policy.get("applied") is True,
+                "promotion_allowed": promotion_allowed,
+                "selection_strategy": str(policy.get("selection_strategy") or ""),
+                "reason": str(policy.get("reason") or ""),
+                "requested_start_seconds": number(policy.get("requested_start_seconds")),
+                "selected_start_seconds": number(policy.get("selected_start_seconds")),
+                "selected_duration_seconds": number(
+                    policy.get("selected_duration_seconds")
+                ),
+                "search_start_seconds": number(policy.get("search_start_seconds")),
+                "search_duration_seconds": number(policy.get("search_duration_seconds")),
+                "requested_score": number(policy.get("requested_score")),
+                "selected_score": number(policy.get("selected_score")),
+                "score_lift": number(policy.get("score_lift")),
+                "requested_rms": number(policy.get("requested_rms")),
+                "selected_rms": number(policy.get("selected_rms")),
+                "rms_retention_ratio": number(policy.get("rms_retention_ratio")),
+                "candidate_count": int(number(policy.get("candidate_count"))),
+                "quality_proof": policy.get("quality_proof") is True,
+                "automated_musical_approval": (
+                    policy.get("automated_musical_approval") is True
+                ),
+                "has_required_source_selection_policy_fields": has_required_fields,
+            }
+        )
+    if not cases:
+        failures.append("source_selection_policy_missing")
+    if any(not case["has_required_source_selection_policy_fields"] for case in cases):
+        failures.append("source_selection_policy_fields_missing")
+    if any(not case["applied"] for case in cases):
+        failures.append("source_selection_policy_not_applied")
+    if any(not case["promotion_allowed"] for case in cases):
+        failures.append("source_selection_policy_not_promotion_allowed")
+    if any(case["source_family"] != "dense_break" for case in cases):
+        failures.append("source_selection_policy_not_dense_break")
+    if any(case["quality_proof"] for case in cases):
+        failures.append("source_selection_policy_claims_quality_proof")
+    if any(case["automated_musical_approval"] for case in cases):
+        failures.append("source_selection_policy_claims_musical_approval")
+    if any(case["candidate_count"] < MIN_SOURCE_SELECTION_POLICY_CANDIDATES for case in cases):
+        failures.append("source_selection_policy_not_enough_candidates")
+    if any(
+        case["rms_retention_ratio"] + 1e-6 < MIN_SOURCE_SELECTION_RMS_RETENTION_RATIO
+        for case in cases
+    ):
+        failures.append("source_selection_policy_rms_retention_too_low")
+    if any(case["score_lift"] < MIN_SOURCE_SELECTION_SCORE_LIFT for case in cases):
+        failures.append("source_selection_policy_score_lift_negative")
+    return {
+        "result": "pass" if not failures else "fail",
+        "case_count": len(cases),
+        "promotion_allowed_case_count": sum(
+            1 for case in cases if case["promotion_allowed"]
+        ),
+        "min_candidate_count": min((case["candidate_count"] for case in cases), default=0),
+        "min_observed_rms_retention_ratio": min(
+            (case["rms_retention_ratio"] for case in cases), default=0.0
+        ),
+        "max_score_lift": max((case["score_lift"] for case in cases), default=0.0),
+        "failure_codes": failures,
+        "cases": cases,
+    }
+
+
 def tr909_rendered_drum_pressure_summary(output: Path) -> dict[str, Any]:
     cases = []
     failures = []
@@ -1959,6 +2074,7 @@ def suite_failure_codes(
     identity: dict[str, Any],
     feral_mix_balance: dict[str, Any],
     source_character_window_selection: dict[str, Any],
+    source_selection_policy: dict[str, Any],
     tr909_rendered_drum_pressure: dict[str, Any],
 ) -> list[str]:
     failures = []
@@ -1993,6 +2109,11 @@ def suite_failure_codes(
         failures.extend(
             f"source_character_window_selection:{code}"
             for code in source_character_window_selection["failure_codes"]
+        )
+    if source_selection_policy["result"] != "pass":
+        failures.extend(
+            f"source_selection_policy:{code}"
+            for code in source_selection_policy["failure_codes"]
         )
     if tr909_rendered_drum_pressure["result"] != "pass":
         failures.extend(

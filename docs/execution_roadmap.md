@@ -1030,6 +1030,16 @@ following:
   musician-facing action instead of a generic source-window/source-character
   bucket. Edge sources remain unavailable/degraded for promotion until timing,
   texture, and human verdict are trusted.
+- RIOTBOX-1369 applies that priority to the dense product source-window policy:
+  dense-break rescue scans source windows and moves from the requested head to a
+  stronger transient/source-character window only when it avoids excessive
+  high-band/stab tilt; sparse-bass-pressure selection prioritizes low-band
+  share and low/mid weight; tonal-hook full-window material is not failed for a
+  one-candidate search when no additional source duration exists. The
+  professional suite and readiness report now surface `source_selection_policy`
+  separately from edge-source demotion, and destructive validation accepts
+  source-referenced transient proof when a selected hook raises the hook
+  baseline.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue
