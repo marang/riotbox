@@ -1372,4 +1372,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Gate source-selection priority on policy family coverage
 - [RIOTBOX-1372.md](./RIOTBOX-1372.md)
   P023: Reconcile source-selection priority after non-dense policy coverage
+- [RIOTBOX-1373.md](./RIOTBOX-1373.md)
+  P023: Reconcile drum-pressure priority with current TR-909 pressure proof
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
