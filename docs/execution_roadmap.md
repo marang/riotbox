@@ -1057,6 +1057,12 @@ following:
   apply to expanded searches, and readiness demotes `source_selection` once the
   current candidate families are covered. The current P023 product gap advances
   to `drum_pressure`.
+- RIOTBOX-1373 reconciles `drum_pressure` against current dense and rendered
+  TR-909 evidence: stale weak drum fixtures remain regression controls, but
+  readiness must demote them only when dense snare pressure, rendered TR-909
+  support contribution, low-band body, and source-masking ceilings all pass.
+  This keeps the implementation loop moving to the next current audible gap
+  without treating old weak drum-pressure artifacts as quality proof.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue
