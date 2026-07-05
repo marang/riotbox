@@ -1398,4 +1398,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Generate review packs from release-demo queue
 - [RIOTBOX-1385.md](./RIOTBOX-1385.md)
   P023: Surface review-pack refs in readiness report
+- [RIOTBOX-1386.md](./RIOTBOX-1386.md)
+  P023: Extract sound-quality readiness smoke validator
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
