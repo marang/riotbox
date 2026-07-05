@@ -1406,4 +1406,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Extract rendered weak professional output smoke validator
 - [RIOTBOX-1389.md](./RIOTBOX-1389.md)
   P023: Extract destructive variation professional smoke validator
+- [RIOTBOX-1390.md](./RIOTBOX-1390.md)
+  P023: Extract professional output listening verdict import fixtures
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
