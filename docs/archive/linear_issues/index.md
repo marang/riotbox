@@ -1388,4 +1388,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Make source-family readiness actions point at concrete review candidates
 - [RIOTBOX-1380.md](./RIOTBOX-1380.md)
   P023: Carry review artifact refs into source-family readiness actions
+- [RIOTBOX-1381.md](./RIOTBOX-1381.md)
+  P023: Render review artifact refs in readiness markdown
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
