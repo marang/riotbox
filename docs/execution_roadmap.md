@@ -1164,6 +1164,10 @@ following:
     verdict import fixtures: a named validator owns keep-verdict import checks,
     human-label corpus field checks, unverified-review rejection, and stale
     artifact-hash rejection while `Justfile` keeps only the validator handoff
+  - RIOTBOX-1391 applies the same extraction to general listening-review label
+    import fixtures: a named validator owns valid weak-label import checks,
+    human-label corpus validation, and missing-metadata rejection while
+    `Justfile` keeps only the validator handoff
   - RIOTBOX-1288 continues the extraction for the professional-source WAV
     pack: its generator validate mode owns tonal/sparse source-family gates,
     source-aware policy checks, source-character thresholds, rendered-artifact
