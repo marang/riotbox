@@ -1155,6 +1155,11 @@ following:
     required destructive failure codes, stale case-count mutations, quality-claim
     rejection, and required rendered-artifact checks while `Justfile` keeps only
     the generator and validator handoff
+  - RIOTBOX-1389 applies the same extraction to destructive-variation
+    professional smoke: a named validator owns diagnostic evidence boundaries,
+    destructive threshold comparisons, stale metric mutations, quality-claim
+    rejection, Markdown boundary checks, and invalid flat-stutter failure-code
+    checks while `Justfile` keeps only report generation and validator handoff
   - RIOTBOX-1288 continues the extraction for the professional-source WAV
     pack: its generator validate mode owns tonal/sparse source-family gates,
     source-aware policy checks, source-character thresholds, rendered-artifact

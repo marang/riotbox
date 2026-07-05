@@ -970,6 +970,13 @@ diagnostic report and call
 `scripts/validate_rendered_weak_professional_outputs_smoke.py`; evidence-boundary
 checks, required destructive failure codes, stale-count mutations,
 quality-claim rejection, and rendered-artifact checks belong in that validator.
+Destructive-variation professional smoke follows the same rule:
+`just destructive-variation-professional-smoke` should generate the dense-break
+performance report, generate the destructive-variation report, and call
+`scripts/validate_destructive_variation_professional_smoke.py`; destructive
+threshold comparisons, diagnostic-boundary checks, invalid flat-stutter
+failure-code checks, stale metric mutations, quality-claim rejection, and
+Markdown boundary checks belong in that validator.
 
 The P023 professional-source WAV pack, edge-source diagnostics, non-dense
 professional proof pack, dense-break performance pack, and agent musical review
