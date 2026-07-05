@@ -937,7 +937,9 @@ required verdict state so the next loop is an actionable listening task rather
 than a generic "create/promote candidate" reminder. The readiness queue summary
 and matching source-family action must also preserve the queue's rendered WAV,
 metrics, and review-prompt artifact refs (`path` plus SHA-256), so a reviewer
-can open the exact files without reverse-engineering the queue report.
+can open the exact files without reverse-engineering the queue report. The
+Markdown readiness report must render those refs in both the relevant Next
+Action and Human Review Queue sections, not only keep them in JSON.
 
 Large professional-output JSON contracts belong in named repo-local validators,
 not in oversized inline `jq` blocks inside `Justfile`. `just` recipes may keep
