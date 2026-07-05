@@ -1402,4 +1402,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Extract sound-quality readiness smoke validator
 - [RIOTBOX-1387.md](./RIOTBOX-1387.md)
   P023: Extract weak-output routing smoke validator
+- [RIOTBOX-1388.md](./RIOTBOX-1388.md)
+  P023: Extract rendered weak professional output smoke validator
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
