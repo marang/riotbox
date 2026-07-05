@@ -977,6 +977,11 @@ performance report, generate the destructive-variation report, and call
 threshold comparisons, diagnostic-boundary checks, invalid flat-stutter
 failure-code checks, stale metric mutations, quality-claim rejection, and
 Markdown boundary checks belong in that validator.
+Professional-output listening verdict import fixtures follow the same rule:
+`just professional-output-listening-verdict-import-fixtures` should call
+`scripts/validate_professional_output_listening_verdict_import_fixtures.py`;
+keep-verdict import checks, human-label corpus field checks, unverified-review
+rejection, and stale artifact-hash rejection belong in that validator.
 
 The P023 professional-source WAV pack, edge-source diagnostics, non-dense
 professional proof pack, dense-break performance pack, and agent musical review
