@@ -1140,6 +1140,11 @@ following:
     entries, blocker state, unverified verdict/readiness, quality-claim
     rejection, and required listening-question mutations, while `Justfile`
     keeps only the generator/validator smoke calls
+  - RIOTBOX-1386 applies the same extraction to the sound-quality readiness
+    smoke: a named validator owns Markdown worklist checks, stale-evidence
+    mutations, human-review queue failures, and release-demo review-pack
+    candidate-context failures while `Justfile` keeps only the generation and
+    validator handoff
   - RIOTBOX-1288 continues the extraction for the professional-source WAV
     pack: its generator validate mode owns tonal/sparse source-family gates,
     source-aware policy checks, source-character thresholds, rendered-artifact

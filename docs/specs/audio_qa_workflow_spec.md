@@ -953,6 +953,11 @@ small smoke assertions and compact negative mutations, but cross-report musical
 thresholds, evidence-boundary checks, artifact existence checks, and failure-code
 names should live in validator scripts so future sound-quality gates stay
 reviewable without weakening proof.
+The sound-quality readiness smoke follows the same rule: the `Justfile` recipe
+should generate the current artifacts and call
+`scripts/validate_sound_quality_readiness_smoke.py`; Markdown worklist checks
+and stale/missing-context mutation fixtures belong in that validator, not as a
+large inline shell block.
 
 The P023 professional-source WAV pack, edge-source diagnostics, non-dense
 professional proof pack, dense-break performance pack, and agent musical review
