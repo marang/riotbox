@@ -369,9 +369,7 @@ tonal-hook-professional-fixtures:
     tmp="$(mktemp -d)" && if python3 scripts/validate_tonal_hook_professional.py scripts/fixtures/tonal_hook_professional/invalid_hookless/manifest.json >"$tmp/invalid.out" 2>&1; then cat "$tmp/invalid.out" >&2; rm -rf "$tmp"; echo "expected hookless tonal fixture to fail" >&2; exit 1; fi && grep -q "w30_hook_not_dominant" "$tmp/invalid.out" && grep -q "w30_hook_margin_too_low" "$tmp/invalid.out" && grep -q "source_copy_not_transformed_enough" "$tmp/invalid.out" && rm -rf "$tmp"
 
 human-listening-label-corpus-fixtures:
-    tmp="$(mktemp)" && python3 scripts/validate_human_listening_label_corpus.py --json-output "$tmp" scripts/fixtures/human_listening_label_corpus/valid_dense_break.json && jq -e '.schema == "riotbox.human_listening_label_corpus.v1" and .result == "pass" and .label_count == 5 and .verdict_counts.pass == 2 and .verdict_counts.weak == 2 and .verdict_counts.fail == 1 and (.source_families == ["dense_break", "sparse_bass_pressure", "tonal_hook"])' "$tmp" && rm "$tmp"
-    if python3 scripts/validate_human_listening_label_corpus.py scripts/fixtures/human_listening_label_corpus/invalid_bad_hash.json; then echo "expected invalid bad-hash label corpus fixture to fail" >&2; exit 1; fi
-    if python3 scripts/validate_human_listening_label_corpus.py scripts/fixtures/human_listening_label_corpus/invalid_weak_missing_reason.json; then echo "expected invalid weak-missing-reason label corpus fixture to fail" >&2; exit 1; fi
+    python3 scripts/validate_human_listening_label_corpus_fixtures.py
 
 listening-review-label-import-fixtures:
     python3 scripts/validate_listening_review_label_import_fixtures.py

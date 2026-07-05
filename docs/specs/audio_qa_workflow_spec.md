@@ -987,6 +987,11 @@ General listening-review label import fixtures follow the same rule:
 `scripts/validate_listening_review_label_import_fixtures.py`; valid label import
 checks, human-label corpus validation, and missing-metadata rejection belong in
 that validator.
+Human-listening label corpus fixtures follow the same rule:
+`just human-listening-label-corpus-fixtures` should call
+`scripts/validate_human_listening_label_corpus_fixtures.py`; valid corpus
+summary checks, verdict-count checks, source-family checks, and invalid-corpus
+rejection belong in that validator.
 
 The P023 professional-source WAV pack, edge-source diagnostics, non-dense
 professional proof pack, dense-break performance pack, and agent musical review
