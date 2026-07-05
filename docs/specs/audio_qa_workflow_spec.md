@@ -940,6 +940,12 @@ metrics, and review-prompt artifact refs (`path` plus SHA-256), so a reviewer
 can open the exact files without reverse-engineering the queue report. The
 Markdown readiness report must render those refs in both the relevant Next
 Action and Human Review Queue sections, not only keep them in JSON.
+When local release-demo listening-review packs exist, the readiness report must
+also aggregate them under `release_demo_review_packs`, cross-check each queued
+candidate against a matching pack, and render the pack directory, `review.json`,
+and prompt path in the Release-Demo Review Worklist. Pack refs remain handoff
+artifacts only: validation must reject missing candidate-pack context, stale
+non-`unverified` verdict/readiness state, or `quality_claim: true`.
 
 Large professional-output JSON contracts belong in named repo-local validators,
 not in oversized inline `jq` blocks inside `Justfile`. `just` recipes may keep

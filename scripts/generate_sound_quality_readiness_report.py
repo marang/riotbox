@@ -23,6 +23,7 @@ SOURCE_CORPUS_SCHEMA = "riotbox.sound_excellence_source_corpus.v1"
 DEMO_BANK_SCHEMA = "riotbox.release_grade_demo_bank.v1"
 WEAK_ROUTING_SCHEMA = "riotbox.weak_output_fix_routing.v1"
 PROFESSIONAL_SUITE_SCHEMA = "riotbox.professional_output_suite.v1"
+RELEASE_DEMO_REVIEW_PACKS_SCHEMA = "riotbox.release_demo_listening_review_packs.v1"
 
 DEFAULT_RUBRIC = Path("scripts/fixtures/sound_product_readiness_rubric/rubric_v1.json")
 DEFAULT_SOURCE_CORPUS = Path("docs/benchmarks/sound_excellence_source_corpus_v1.json")
@@ -31,6 +32,9 @@ DEFAULT_WEAK_ROUTING = Path("artifacts/audio_qa/local-weak-output-fix-routing/we
 DEFAULT_PROFESSIONAL_SUITE = Path("artifacts/audio_qa/local-professional-output-suite/professional-output-suite.json")
 DEFAULT_PERFORM_RISK_CUE_CONTRACT = Path(
     "artifacts/audio_qa/local-jam-perform-risk-cue-contract/jam-perform-risk-cue-contract.json"
+)
+DEFAULT_RELEASE_DEMO_REVIEW_PACKS = Path(
+    "artifacts/audio_qa/local-release-demo-listening-review-packs/release-demo-listening-review-packs.json"
 )
 DEFAULT_OUTPUT = Path("artifacts/audio_qa/local-sound-quality-readiness-report")
 MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO = 0.22
@@ -95,6 +99,7 @@ def main() -> int:
     parser.add_argument("--professional-output-suite", type=Path, default=DEFAULT_PROFESSIONAL_SUITE)
     parser.add_argument("--perform-risk-cue-contract", type=Path, default=DEFAULT_PERFORM_RISK_CUE_CONTRACT)
     parser.add_argument("--human-review-queue", type=Path, default=DEFAULT_HUMAN_REVIEW_QUEUE)
+    parser.add_argument("--release-demo-review-packs", type=Path, default=DEFAULT_RELEASE_DEMO_REVIEW_PACKS)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--date", default="local-sound-quality-readiness-report")
     parser.add_argument("--validate-report", type=Path)
@@ -131,6 +136,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     professional_suite = read_optional_json_object(args.professional_output_suite)
     perform_risk_cue_contract = read_optional_json_object(args.perform_risk_cue_contract)
     human_review_queue = read_optional_json_object(args.human_review_queue)
+    release_demo_review_packs = read_optional_json_object(args.release_demo_review_packs)
 
     require(rubric.get("schema") == RUBRIC_SCHEMA, f"{args.rubric}: schema must be {RUBRIC_SCHEMA}")
     require(
@@ -166,6 +172,10 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         current_evidence,
     )
     review_summary = human_review_queue_summary(human_review_queue, args.human_review_queue)
+    review_pack_summary = release_demo_review_pack_summary(
+        release_demo_review_packs,
+        args.release_demo_review_packs,
+    )
     blockers = readiness_blockers(
         source_families,
         demo_summary,
@@ -226,6 +236,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "source_selection_priority": source_selection_priority,
         "ui_cue_priority": ui_cue_priority,
         "human_review_queue": review_summary,
+        "release_demo_review_packs": review_pack_summary,
         "blockers": blockers,
         "next_actions": next_actions(
             source_families,
@@ -357,6 +368,57 @@ def demo_bank_summary(demo_bank: dict[str, Any], path: Path) -> dict[str, Any]:
         "unverified_candidate_ids": unverified,
         "weak_or_fail_entries": weak_or_fail,
         "weak_fix_categories": weak_fix_categories,
+    }
+
+
+def release_demo_review_pack_summary(report: dict[str, Any] | None, path: Path) -> dict[str, Any]:
+    if report is None:
+        return {
+            "path": str(path),
+            "available": False,
+            "result": "missing",
+            "review_pack_count": 0,
+            "high_priority_count": 0,
+            "packs": [],
+        }
+    require(
+        report.get("schema") == RELEASE_DEMO_REVIEW_PACKS_SCHEMA,
+        f"{path}: schema must be {RELEASE_DEMO_REVIEW_PACKS_SCHEMA}",
+    )
+    packs = list_field(report, "packs", path)
+    summary_packs = []
+    high_priority_count = 0
+    for index, pack in enumerate(packs):
+        require(isinstance(pack, dict), f"{path}: packs[{index}] must be object")
+        priority = required_string(pack, "review_priority", path, index)
+        if priority == "high":
+            high_priority_count += 1
+        summary_packs.append(
+            {
+                "entry_id": required_string(pack, "entry_id", path, index),
+                "review_priority": priority,
+                "source_family": required_string(pack, "source_family", path, index),
+                "review_pack": required_string(pack, "review_pack", path, index),
+                "review_json": required_string(pack, "review_json", path, index),
+                "metrics_json": required_string(pack, "metrics_json", path, index),
+                "prompt_markdown": required_string(pack, "prompt_markdown", path, index),
+                "human_verdict": required_string(pack, "human_verdict", path, index),
+                "demo_readiness": required_string(pack, "demo_readiness", path, index),
+                "quality_claim": pack.get("quality_claim"),
+            }
+        )
+    require(report.get("quality_claim_allowed") is False, f"{path}: quality claims must be blocked")
+    require(
+        report.get("review_pack_count") == len(summary_packs),
+        f"{path}: review_pack_count mismatch",
+    )
+    return {
+        "path": str(path),
+        "available": True,
+        "result": str(report.get("result")),
+        "review_pack_count": len(summary_packs),
+        "high_priority_count": high_priority_count,
+        "packs": summary_packs,
     }
 
 
@@ -2166,6 +2228,7 @@ def validate_report(report: dict[str, Any]) -> list[str]:
     )
     review_queue = object_or_empty(report.get("human_review_queue"))
     review_candidates = review_queue.get("candidates", [])
+    review_packs = object_or_empty(report.get("release_demo_review_packs"))
 
     if suite_available is True:
         check(
@@ -2627,6 +2690,7 @@ def validate_report(report: dict[str, Any]) -> list[str]:
         )
 
     validate_human_review_queue_section(review_queue, blockers, failures)
+    validate_release_demo_review_packs_section(review_queue, review_packs, failures)
 
     if weak_available is True:
         check(
@@ -3229,6 +3293,87 @@ def validate_current_next_actions(
         )
 
 
+def validate_release_demo_review_packs_section(
+    review_queue: dict[str, Any],
+    review_packs: dict[str, Any],
+    failures: list[str],
+) -> None:
+    check(
+        review_packs.get("available") is True,
+        "release_demo_review_packs_unavailable",
+        failures,
+    )
+    packs = list_or_empty(review_packs.get("packs"))
+    check(bool(packs), "release_demo_review_packs_missing", failures)
+    check(
+        review_packs.get("review_pack_count") == len(packs),
+        "release_demo_review_packs_count_mismatch",
+        failures,
+    )
+    check(
+        number(review_packs.get("high_priority_count")) >= 1.0,
+        "release_demo_review_packs_high_priority_missing",
+        failures,
+    )
+    packs_by_entry = {
+        str(pack.get("entry_id")): pack
+        for pack in packs
+        if isinstance(pack, dict) and isinstance(pack.get("entry_id"), str)
+    }
+    for index, pack in enumerate(packs):
+        if not isinstance(pack, dict):
+            failures.append(f"release_demo_review_pack_{index}_not_object")
+            continue
+        for field in [
+            "entry_id",
+            "review_priority",
+            "source_family",
+            "review_pack",
+            "review_json",
+            "metrics_json",
+            "prompt_markdown",
+            "human_verdict",
+            "demo_readiness",
+        ]:
+            check(
+                isinstance(pack.get(field), str) and bool(str(pack.get(field)).strip()),
+                f"release_demo_review_pack_{index}_{field}_missing",
+                failures,
+            )
+        check(
+            pack.get("human_verdict") == "unverified",
+            f"release_demo_review_pack_{index}_human_verdict_not_unverified",
+            failures,
+        )
+        check(
+            pack.get("demo_readiness") == "unverified",
+            f"release_demo_review_pack_{index}_demo_readiness_not_unverified",
+            failures,
+        )
+        check(
+            pack.get("quality_claim") is False,
+            f"release_demo_review_pack_{index}_quality_claim_not_false",
+            failures,
+        )
+    if review_queue.get("available") is not True:
+        return
+    for candidate in list_or_empty(review_queue.get("candidates")):
+        if not isinstance(candidate, dict):
+            continue
+        entry_id = str(candidate.get("entry_id") or "")
+        pack = packs_by_entry.get(entry_id)
+        check(
+            isinstance(pack, dict)
+            and pack.get("review_priority") == candidate.get("review_priority")
+            and pack.get("source_family") == candidate.get("source_family")
+            and pack.get("human_verdict") == "unverified"
+            and pack.get("demo_readiness") == "unverified"
+            and pack.get("quality_claim") is False,
+            f"release_demo_review_pack_{entry_id}_candidate_context_missing",
+            failures,
+        )
+
+
 def artifact_ref_matches(left: Any, right: Any) -> bool:
     return (
         isinstance(left, dict)
@@ -3270,7 +3415,8 @@ def markdown_report(report: dict[str, Any]) -> str:
     if not report["next_actions"]:
         lines.append("- none")
     review_queue = object_or_empty(report.get("human_review_queue"))
-    lines.extend(release_demo_review_worklist_lines(review_queue))
+    review_packs = object_or_empty(report.get("release_demo_review_packs"))
+    lines.extend(release_demo_review_worklist_lines(review_queue, review_packs))
     lines.extend(["", "## Human Review Queue", ""])
     if review_queue.get("available"):
         lines.extend(
@@ -3429,10 +3575,29 @@ def markdown_report(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def release_demo_review_worklist_lines(review_queue: dict[str, Any]) -> list[str]:
+def release_demo_review_worklist_lines(
+    review_queue: dict[str, Any],
+    review_packs: dict[str, Any],
+) -> list[str]:
     lines = ["", "## Release-Demo Review Worklist", ""]
     if not review_queue.get("available"):
         return lines + ["- missing"]
+    packs = list_or_empty(review_packs.get("packs"))
+    packs_by_entry = {
+        str(pack.get("entry_id")): pack
+        for pack in packs
+        if isinstance(pack, dict) and isinstance(pack.get("entry_id"), str)
+    }
+    if review_packs.get("available"):
+        lines.extend(
+            [
+                f"- Generated review packs: `{review_packs.get('review_pack_count')}`",
+                f"- High-priority packs: `{review_packs.get('high_priority_count')}`",
+                "",
+            ]
+        )
+    else:
+        lines.extend(["- Generated review packs: `missing`", ""])
     candidates = sorted(
         list_or_empty(review_queue.get("candidates")),
         key=review_worklist_sort_key,
@@ -3460,6 +3625,17 @@ def release_demo_review_worklist_lines(review_queue: dict[str, Any]) -> list[str
                 f"- Why it is not demo-ready yet: {candidate.get('not_demo_ready_reason')}",
             ]
         )
+        pack = packs_by_entry.get(str(candidate.get("entry_id") or ""))
+        if isinstance(pack, dict):
+            lines.extend(
+                [
+                    f"- Review pack: `{pack.get('review_pack')}`",
+                    f"- Review JSON: `{pack.get('review_json')}`",
+                    f"- Pack prompt: `{pack.get('prompt_markdown')}`",
+                ]
+            )
+        else:
+            lines.append("- Review pack: `missing`")
         append_artifact_ref_lines(lines, candidate)
         questions = [
             str(question)
