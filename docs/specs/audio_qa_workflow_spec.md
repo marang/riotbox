@@ -1022,6 +1022,16 @@ exists, whether a human verdict was recorded, or why the change remains
 musical fitness; it does not replace deterministic metrics, and it must not be
 stored only in agent memory.
 
+P023 release-demo review queues can also be materialized into local listening
+review packs with `just release-demo-listening-review-packs-fixtures` /
+`scripts/generate_release_demo_listening_review_packs.py`. These packs preserve
+the queued candidate id, priority, source family, artifact refs, blockers,
+verdict state, and required listening questions so a reviewer can execute the
+same worklist without hand-copying JSON. They remain handoff artifacts:
+`human_verdict` and `demo_readiness` stay `unverified`, `quality_claim` stays
+`false`, and no release/demo-ready claim is allowed until a human records a
+structured verdict.
+
 Human labels intended for future audio-judge calibration must use
 `riotbox.human_listening_label_corpus.v1`. The corpus stores labels by
 review-pack identity and SHA-256 artifact hashes so local source audio does not

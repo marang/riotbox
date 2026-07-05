@@ -88,6 +88,14 @@ prompt ref, and the next review action. The queue exists to focus human
 listening; it must not promote `human_verdict: unverified` material into
 demo-ready or product-quality claims.
 
+The queue can be materialized into local listening-review packs with
+`scripts/generate_release_demo_listening_review_packs.py`. These packs exist so
+reviewers can open a concrete prompt, `review.json`, and metrics file for each
+queued candidate without losing artifact refs or verdict context. They are not
+demo-bank entries and must keep `human_verdict: unverified`,
+`demo_readiness: unverified`, and `quality_claim: false` until a structured
+human verdict is recorded.
+
 The MC-202 producer-grade closeout gate is stricter about language for the
 MC-202 lane. It may pass the technical closeout when dense and non-dense
 source-composed candidates are reviewable, but it must keep
