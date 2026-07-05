@@ -1150,6 +1150,11 @@ following:
     integrity, recurring-category summaries, stale-count mutations, unknown
     case/manifest failures, and duplicate-category rejection while `Justfile`
     keeps only the route generation and validator handoff
+  - RIOTBOX-1388 applies the same extraction to rendered weak professional
+    outputs: a named validator owns negative-diagnostic evidence boundaries,
+    required destructive failure codes, stale case-count mutations, quality-claim
+    rejection, and required rendered-artifact checks while `Justfile` keeps only
+    the generator and validator handoff
   - RIOTBOX-1288 continues the extraction for the professional-source WAV
     pack: its generator validate mode owns tonal/sparse source-family gates,
     source-aware policy checks, source-character thresholds, rendered-artifact
