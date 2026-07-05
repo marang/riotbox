@@ -19,6 +19,8 @@ Each case renders a local real source through the Feral-grid pack and records:
   - `source_expression_render_plan_applied: true`
   - `source_expression_role` naming the rendered motif role, currently
     `bass_pressure`, `answer_lift`, or `hook_restraint_hold`
+  - `rhythm_signature`, a folded 16-step RMS signature of the rendered MC-202
+    stem, plus active-slot and syncopation summary fields
 - generated-support mix evidence rendered through the source-expression role
   policy, so bass-pressure, answer-lift, and hook-restraint material remain
   audible without turning source-first playback into generated-lane masking
@@ -62,6 +64,8 @@ The validator requires:
 - source timing and source-contour expression fields
 - selected MC-202 motif fields, including applied source-expression render-plan
   evidence and a bounded source-expression role
+- `mc202_rhythm_diversity` with at least two unique MC-202 rhythm signatures
+  across the real-source cases and no repeated signatures in the default pack
 - `mc202_role_evidence` with source-family-matched role targets:
   sparse bass-pressure sources require `bass_pressure`, dense/non-dense sources
   require `pressure_answer`, and tonal-hook sources require
@@ -73,8 +77,9 @@ The validator requires:
 - source-contour A/B delta above the required threshold
 
 Mutation fixtures reject accidental quality claims, missing expression evidence,
-product-fallback controls, silent MC-202 stems, missing/stale role evidence,
-and source-family-inappropriate MC-202 role targets.
+product-fallback controls, silent MC-202 stems, collapsed rhythm signatures,
+missing/stale role evidence, and source-family-inappropriate MC-202 role
+targets.
 
 ## Boundary
 

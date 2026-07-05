@@ -750,6 +750,13 @@ following:
     positions, so offbeat / pickup evidence can change the committed
     source-derived rhythm cells and rendered MC-202 buffer instead of collapsing
     into the same reusable answer feel.
+  - RIOTBOX-1394 carries that concern into the real-source listening pack:
+    MC-202 review candidates now expose a folded 16-step stem rhythm signature
+    plus report-level cross-source diversity, and the gate rejects repeated
+    signatures across dense / sparse / tonal real-source cases. This caught the
+    dense-break and sparse-bass-pressure MC-202 stems sharing the same rhythm
+    signature before the Drop render plan was split into dense transient and
+    low-heavy pressure movement variants.
   - the MC-202 source phrase planning track must turn that diagnostic bass
     movement into replayable Session/Core phrase plans before MC-202
     bass/answer behavior can count as source-derived product behavior; the
