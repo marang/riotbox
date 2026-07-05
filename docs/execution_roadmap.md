@@ -1160,6 +1160,10 @@ following:
     destructive threshold comparisons, stale metric mutations, quality-claim
     rejection, Markdown boundary checks, and invalid flat-stutter failure-code
     checks while `Justfile` keeps only report generation and validator handoff
+  - RIOTBOX-1390 applies the same extraction to professional-output listening
+    verdict import fixtures: a named validator owns keep-verdict import checks,
+    human-label corpus field checks, unverified-review rejection, and stale
+    artifact-hash rejection while `Justfile` keeps only the validator handoff
   - RIOTBOX-1288 continues the extraction for the professional-source WAV
     pack: its generator validate mode owns tonal/sparse source-family gates,
     source-aware policy checks, source-character thresholds, rendered-artifact
