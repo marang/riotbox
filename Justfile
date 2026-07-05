@@ -80,6 +80,7 @@ _audio-qa-ci-unlocked:
     just professional-output-suite-smoke
     just source-family-release-demo-coverage-fixtures
     just release-demo-human-review-queue-fixtures
+    just release-demo-listening-review-packs-fixtures
     just sound-quality-readiness-report-smoke
     just sparse-bass-pressure-professional-fixtures
     just tonal-hook-professional-fixtures
@@ -461,6 +462,9 @@ release-demo-human-review-queue-fixtures output="artifacts/audio_qa/local-releas
     grep -q "Release-Demo Human Review Queue" "{{output}}/release-demo-human-review-queue.md"
     grep -q "Required listening questions" "{{output}}/release-demo-human-review-queue.md"
 
+release-demo-listening-review-packs-fixtures output="artifacts/audio_qa/local-release-demo-listening-review-packs":
+    scripts/validate_release_demo_listening_review_packs_fixtures.sh "{{output}}"
+
 demo-bank-promotion-fixtures:
     scripts/validate_demo_bank_promotion_fixtures.sh
 
@@ -516,6 +520,7 @@ listening-review-record review verdict strongest source_recognition hook failure
 
 listening-review-fixtures:
     tmp="$(mktemp -d)" && python3 scripts/listening_review_workflow.py pack --ticket RIOTBOX-DRYRUN --output "$tmp/review" --candidate scripts/fixtures/automated_musical_fitness/valid/manifest.json --technical-status pass --automated-musical-fitness-status pass --expected "A dry-run fixture should prove structured review shape without audio hardware." && jq -e '.schema == "riotbox.listening_review.v1" and .human_verdict == "unverified" and .automated_musical_fitness_status == "pass"' "$tmp/review/review.json" && python3 scripts/listening_review_workflow.py record --review "$tmp/review/review.json" --human-verdict technically_ok_but_musically_weak --strongest-element chop --source-recognition source_transformed_but_present --hook-after-two-bars weak --failure-reason "dry run weak hook" --preferred-direction "harder chop contrast" --avoid "polite loop,source masking" --concrete-follow-up "tighten chop fixture" --reviewer "fixture" && python3 scripts/listening_review_workflow.py validate "$tmp/review/review.json" && jq -e '.human_verdict == "technically_ok_but_musically_weak" and .strongest_element == "chop" and .source_recognition == "source_transformed_but_present" and .hook_after_two_bars == "weak" and (.avoid | length == 2)' "$tmp/review/review.json" && grep -q "Human verdict" "$tmp/review/review-summary.md" && rm -rf "$tmp"
+    tmp="$(mktemp -d)" && python3 scripts/listening_review_workflow.py pack --ticket RIOTBOX-RESTORE --output "$tmp/review" --candidate scripts/fixtures/automated_musical_fitness/valid/manifest.json --expected "A restore-led review should accept restore as the strongest element." && python3 scripts/listening_review_workflow.py record --review "$tmp/review/review.json" --human-verdict keep --strongest-element restore --source-recognition source_transformed_but_present --hook-after-two-bars clear --preferred-direction "keep the restore impact obvious" --concrete-follow-up "preserve restore verdict support" --reviewer "fixture" && python3 scripts/listening_review_workflow.py validate "$tmp/review/review.json" && jq -e '.human_verdict == "keep" and .strongest_element == "restore"' "$tmp/review/review.json" && rm -rf "$tmp"
 
 observer-audio-correlation-notes target="artifacts/audio_qa/local/observer_audio_correlation.md":
     mkdir -p "$(dirname "{{target}}")"

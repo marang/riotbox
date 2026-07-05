@@ -25,6 +25,7 @@ STRONGEST_ELEMENTS = {
     "chop",
     "vocal",
     "silence",
+    "restore",
     "none",
 }
 SOURCE_RECOGNITION = {
