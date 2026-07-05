@@ -1,6 +1,8 @@
 use riotbox_core::{
     session::Mc202SourcePhraseExpressionState,
-    source_graph::{PhraseSpan, SourceGraph, SourceTimingAnchor, SourceTimingAnchorType},
+    source_graph::{
+        BeatPoint, PhraseSpan, SourceGraph, SourceTimingAnchor, SourceTimingAnchorType,
+    },
 };
 
 use super::super::{Mc202SourcePhraseFingerprint, feature_step};
@@ -162,18 +164,43 @@ fn strongest_anchor_step(
         .max_by(|left, right| {
             (left.strength * left.confidence).total_cmp(&(right.strength * right.confidence))
         })
-        .and_then(|anchor| source_anchor_step(anchor, phrase_slot, beats_per_bar))
+        .and_then(|anchor| {
+            source_anchor_step(
+                anchor,
+                phrase_slot,
+                beats_per_bar,
+                hypothesis.bpm,
+                &hypothesis.beat_grid,
+            )
+        })
 }
 
 fn source_anchor_step(
     anchor: &SourceTimingAnchor,
     phrase_slot: &PhraseSpan,
     beats_per_bar: u32,
+    bpm: f32,
+    beat_grid: &[BeatPoint],
 ) -> Option<usize> {
     if let Some(beat_index) = anchor.beat_index {
         let phrase_start_beat = phrase_slot.start_bar.saturating_mul(beats_per_bar);
         let relative_beat = beat_index.saturating_sub(phrase_start_beat);
-        return Some(((relative_beat * 4) as usize) % 16);
+        let coarse_step = i32::try_from(relative_beat.saturating_mul(4)).unwrap_or(i32::MAX);
+        if bpm.is_finite()
+            && bpm > 0.0
+            && anchor.time_seconds.is_finite()
+            && let Some(beat) = beat_grid
+                .iter()
+                .find(|beat| beat.beat_index == beat_index && beat.time_seconds.is_finite())
+        {
+            let seconds_per_step = (60.0 / bpm) / 4.0;
+            if seconds_per_step.is_finite() && seconds_per_step > 0.0 {
+                let subbeat_step =
+                    ((anchor.time_seconds - beat.time_seconds) / seconds_per_step).round() as i32;
+                return Some((coarse_step + subbeat_step).rem_euclid(16) as usize);
+            }
+        }
+        return Some(coarse_step.rem_euclid(16) as usize);
     }
     anchor.bar_index.map(|bar| {
         let relative_bar = bar.saturating_sub(phrase_slot.start_bar);

@@ -744,6 +744,12 @@ following:
     diagnostic path must now clear a `17.0 Hz` source-derived contour span and
     `0.32` pressure low-band share, with the rendered sparse bass layer pushed
     harder in the low band instead of passing by a barely moving phrase.
+  - RIOTBOX-1393 tightens MC-202 source phrase rhythmic diversity at the
+    composer seam: source timing anchors with the same coarse beat index but
+    different sub-beat `time_seconds` now map to different 16-step phrase
+    positions, so offbeat / pickup evidence can change the committed
+    source-derived rhythm cells and rendered MC-202 buffer instead of collapsing
+    into the same reusable answer feel.
   - the MC-202 source phrase planning track must turn that diagnostic bass
     movement into replayable Session/Core phrase plans before MC-202
     bass/answer behavior can count as source-derived product behavior; the

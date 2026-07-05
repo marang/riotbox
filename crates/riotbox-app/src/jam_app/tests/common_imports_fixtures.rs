@@ -65,7 +65,7 @@ use riotbox_core::{
         Tr909ReinforcementModeState, Tr909TakeoverProfileState, W30PreviewModeState,
     },
     source_graph::{
-        AnalysisSummary, AnalysisWarning, Asset, AssetType, Candidate, CandidateType,
+        AnalysisSummary, AnalysisWarning, Asset, AssetType, BeatPoint, Candidate, CandidateType,
         DecodeProfile, EnergyClass, GraphProvenance, MeterHint, QualityClass, Relationship,
         PhraseAudioFeatures, RelationshipType, Section, SectionLabelHint, SourceDescriptor, SourceGraph,
         SourceGraphVersion, SourceTimingAnchorType, TimingDegradedPolicy, TimingHypothesis,
