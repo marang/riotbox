@@ -271,6 +271,33 @@ fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>
         .into());
     }
 
+    for (name, limiter) in [
+        (
+            "source-first mix",
+            report.source_first_master_bus_limiter,
+        ),
+        (
+            "generated-support mix",
+            report.full_mix_master_bus_limiter,
+        ),
+    ] {
+        if limiter.post.clip_count > 0 || limiter.post.peak_abs > limiter.ceiling + 0.000_001 {
+            return Err(format!(
+                "{name} master bus limiter failed to control output: post peak {:.6}, post clips {}",
+                limiter.post.peak_abs, limiter.post.clip_count
+            )
+            .into());
+        }
+
+        if limiter.post.rms <= MIN_SIGNAL_RMS {
+            return Err(format!(
+                "{name} master bus limiter collapsed output to near silence: post RMS {:.6}",
+                limiter.post.rms
+            )
+            .into());
+        }
+    }
+
     if report.tr909_source_grid_alignment.hit_ratio < SOURCE_GRID_OUTPUT_MIN_HIT_RATIO {
         return Err(format!(
             "TR-909 source-grid alignment hit ratio {:.6} is below {:.6}",

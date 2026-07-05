@@ -78,3 +78,30 @@ fn signal_delta_metrics_counts_unmatched_tail_samples() {
     assert_eq!(metrics.peak_abs, 0.75);
     assert_eq!(metrics.zero_crossings, 1);
 }
+
+#[test]
+fn master_bus_limiter_controls_clips_without_flattening_transients() {
+    let mut samples = [0.0, 0.25, 0.94, 1.20, -1.12, 0.55, -0.97, 0.12];
+    let report = apply_master_bus_soft_limiter_with_report(&mut samples);
+
+    assert!(report.applied);
+    assert!(report.limited_sample_count >= 4);
+    assert_eq!(report.pre.clip_count, 2);
+    assert_eq!(report.post.clip_count, 0);
+    assert!(report.post.peak_abs <= master_bus_limiter_ceiling() + 0.000_001);
+    assert!(report.post.peak_abs > master_bus_limiter_threshold());
+    assert!(report.post.rms > report.pre.rms * 0.80);
+    assert_eq!(samples[1], 0.25);
+}
+
+#[test]
+fn master_bus_limiter_does_not_mask_weak_or_silent_output() {
+    let mut weak = [0.0, 0.000_05, -0.000_04, 0.000_03];
+    let report = apply_master_bus_soft_limiter_with_report(&mut weak);
+
+    assert!(!report.applied);
+    assert_eq!(report.limited_sample_count, 0);
+    assert_eq!(report.pre.rms, report.post.rms);
+    assert_eq!(report.pre.active_samples, report.post.active_samples);
+    assert!(report.post.rms < 0.001);
+}

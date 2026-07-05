@@ -40,6 +40,7 @@ fn write_report(
              - All-lane mix movement: `{}` source-first/support delta `{:.6}` correlation `{:.6}` TR-909 `{:.6}` MC-202 `{:.6}` W-30 `{:.6}` generated/W-30 `{:.6}`\n\
              - Generated-support mix low-band RMS: `{:.6}`\n\
              - Generated-support mix clip count: `{}` near clip count `{}` headroom `{:.6}`\n\
+             {}\
              - Minimum full mix low-band RMS: `{MIN_LOW_BAND_RMS:.6}`\n\
              - TR-909 source-grid alignment hit ratio: `{:.6}` (min `{SOURCE_GRID_OUTPUT_MIN_HIT_RATIO:.6}`), max peak offset `{:.3}` ms\n\
              - MC-202 source-grid alignment hit ratio: `{:.6}` (min `{SOURCE_GRID_OUTPUT_MIN_HIT_RATIO:.6}`), max peak offset `{:.3}` ms\n\
@@ -181,6 +182,7 @@ fn write_report(
             report.full_mix.signal.clip_count,
             report.full_mix.signal.near_clip_count,
             report.full_mix.signal.headroom_to_full_scale,
+            master_bus_limiter_report_lines(&report),
             report.tr909_source_grid_alignment.hit_ratio,
             report.tr909_source_grid_alignment.max_peak_offset_ms,
             report.mc202_source_grid_alignment.hit_ratio,
@@ -235,6 +237,29 @@ fn write_report(
             report.full_mix.spectral_energy.mid_band_energy_ratio,
             report.full_mix.spectral_energy.high_band_energy_ratio
         ),
+    )
+}
+
+fn master_bus_limiter_report_lines(report: &PackReport) -> String {
+    format!(
+        "- Source-first master bus limiter: `{}` limited `{}` pre peak `{:.6}` post peak `{:.6}` pre clips `{}` post clips `{}` pre RMS `{:.6}` post RMS `{:.6}`\n\
+         - Generated-support master bus limiter: `{}` limited `{}` pre peak `{:.6}` post peak `{:.6}` pre clips `{}` post clips `{}` pre RMS `{:.6}` post RMS `{:.6}`\n",
+        report.source_first_master_bus_limiter.applied,
+        report.source_first_master_bus_limiter.limited_sample_count,
+        report.source_first_master_bus_limiter.pre.peak_abs,
+        report.source_first_master_bus_limiter.post.peak_abs,
+        report.source_first_master_bus_limiter.pre.clip_count,
+        report.source_first_master_bus_limiter.post.clip_count,
+        report.source_first_master_bus_limiter.pre.rms,
+        report.source_first_master_bus_limiter.post.rms,
+        report.full_mix_master_bus_limiter.applied,
+        report.full_mix_master_bus_limiter.limited_sample_count,
+        report.full_mix_master_bus_limiter.pre.peak_abs,
+        report.full_mix_master_bus_limiter.post.peak_abs,
+        report.full_mix_master_bus_limiter.pre.clip_count,
+        report.full_mix_master_bus_limiter.post.clip_count,
+        report.full_mix_master_bus_limiter.pre.rms,
+        report.full_mix_master_bus_limiter.post.rms
     )
 }
 

@@ -328,12 +328,16 @@ Current metric contract:
 
 Current limiter policy:
 
-- no global master limiter is applied in the product render path yet
-- report pre-clamp metrics before WAV writers clamp to PCM range
-- treat `clip_count > 0` as a reportable controlled-clipping or failure signal,
-  not as something to hide with output-file clipping
-- add soft limiting only through a future shared master-bus seam that proves it
-  preserves weak-output, source-character, and fallback-collapse gates
+- product runtime mixes and Feral-grid product mixes pass through the shared
+  master-bus soft-limiter seam after source-monitor / lane mix policy and
+  before device or WAV output
+- the limiter is stateless and in-place so realtime rendering does not allocate,
+  block, log, or call analysis/model code
+- reports keep pre-limiter and post-limiter metrics for controlled mixes so
+  `clip_count > 0`, weak RMS, source-character collapse, or fallback-like output
+  remain visible instead of being hidden by output-file clipping
+- the limiter may reduce hot transient peaks but must not boost weak, silent, or
+  source-characterless output; those remain QA failures
 
 Offline and realtime-simulation renders should become comparable under the same
 state, with explicit tolerances where backend buffer boundaries or floating
