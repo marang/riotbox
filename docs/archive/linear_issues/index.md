@@ -1418,4 +1418,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Gate MC-202 real-source rhythm diversity in listening packs
 - [RIOTBOX-1332.md](./RIOTBOX-1332.md)
   P023: Strengthen MC-202 acid/bass role semantics and expression
+- [RIOTBOX-1339.md](./RIOTBOX-1339.md)
+  P023: Add shared master-bus soft limiter without masking weak-output gates
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
