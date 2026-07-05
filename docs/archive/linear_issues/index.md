@@ -1392,4 +1392,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Render review artifact refs in readiness markdown
 - [RIOTBOX-1382.md](./RIOTBOX-1382.md)
   Repo: Add CodeRabbit review configuration
+- [RIOTBOX-1383.md](./RIOTBOX-1383.md)
+  P023: Render release-demo review worklist
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
