@@ -982,6 +982,11 @@ Professional-output listening verdict import fixtures follow the same rule:
 `scripts/validate_professional_output_listening_verdict_import_fixtures.py`;
 keep-verdict import checks, human-label corpus field checks, unverified-review
 rejection, and stale artifact-hash rejection belong in that validator.
+General listening-review label import fixtures follow the same rule:
+`just listening-review-label-import-fixtures` should call
+`scripts/validate_listening_review_label_import_fixtures.py`; valid label import
+checks, human-label corpus validation, and missing-metadata rejection belong in
+that validator.
 
 The P023 professional-source WAV pack, edge-source diagnostics, non-dense
 professional proof pack, dense-break performance pack, and agent musical review
