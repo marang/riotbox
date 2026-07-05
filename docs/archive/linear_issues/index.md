@@ -1394,4 +1394,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Repo: Add CodeRabbit review configuration
 - [RIOTBOX-1383.md](./RIOTBOX-1383.md)
   P023: Render release-demo review worklist
+- [RIOTBOX-1384.md](./RIOTBOX-1384.md)
+  P023: Generate review packs from release-demo queue
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
