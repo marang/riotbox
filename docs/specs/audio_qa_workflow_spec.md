@@ -307,6 +307,11 @@ pressure-answer; tonal-hook material is reviewed as hook-restraint or
 stab-answer behavior. This field tells the human listener what musical job to
 judge, but it remains `quality_proof: false` and `human_verdict: unverified`
 until structured listening records a verdict.
+The same pack must expose `selected_motif.rhythm_signature` for the rendered
+MC-202 stem and report-level `mc202_rhythm_diversity`. This is a folded 16-step
+RMS signature, not a taste verdict: it catches repeated MC-202 rhythm feel
+across dense, sparse, and tonal real-source cases while preserving
+`quality_proof: false` and `human_verdict: unverified`.
 
 For MC-202 producer-grade closeout, run:
 

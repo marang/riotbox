@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import shutil
+import struct
 import subprocess
 import sys
 import wave
@@ -379,6 +380,82 @@ def selected_motif(manifest: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def attach_mc202_rhythm_signature(case: dict[str, Any]) -> None:
+    stem_path = Path(case["artifacts"]["mc202_stem"]["path"])
+    signature = mc202_rhythm_signature(stem_path, int(case["bars"]))
+    case["selected_motif"].update(signature)
+
+
+def mc202_rhythm_signature(path: Path, bars: int) -> dict[str, Any]:
+    samples, channels, sample_rate = read_wav_mono(path)
+    if not samples or channels <= 0 or sample_rate <= 0:
+        return {
+            "rhythm_signature": "empty",
+            "rhythm_slot_count": 16,
+            "rhythm_active_slot_count": 0,
+            "rhythm_peak_slot": None,
+            "rhythm_syncopation_score": 0.0,
+        }
+    total_steps = max(16, bars * 16)
+    frames_per_step = max(1, len(samples) // total_steps)
+    slot_energy = [0.0 for _ in range(16)]
+    slot_hits = [0 for _ in range(16)]
+    for step in range(total_steps):
+        start = step * frames_per_step
+        end = len(samples) if step == total_steps - 1 else min(len(samples), start + frames_per_step)
+        if start >= len(samples) or end <= start:
+            continue
+        rms = (sum(sample * sample for sample in samples[start:end]) / (end - start)) ** 0.5
+        slot = step % 16
+        slot_energy[slot] += rms
+        slot_hits[slot] += 1
+    folded = [
+        energy / hits if hits else 0.0 for energy, hits in zip(slot_energy, slot_hits, strict=True)
+    ]
+    peak = max(folded)
+    if peak <= 0.0:
+        normalized = [0.0 for _ in folded]
+    else:
+        normalized = [value / peak for value in folded]
+    mean = sum(normalized) / len(normalized)
+    threshold = max(0.18, mean * 1.10)
+    active = [index for index, value in enumerate(normalized) if value >= threshold]
+    if not active and peak > 0.0:
+        active = [max(range(16), key=lambda index: normalized[index])]
+    signature = "".join("1" if index in active else "0" for index in range(16))
+    offbeat_active = sum(1 for index in active if index % 4 != 0)
+    syncopation = offbeat_active / max(1, len(active))
+    return {
+        "rhythm_signature": signature,
+        "rhythm_slot_count": 16,
+        "rhythm_active_slot_count": len(active),
+        "rhythm_peak_slot": max(range(16), key=lambda index: normalized[index]) if peak > 0.0 else None,
+        "rhythm_syncopation_score": syncopation,
+    }
+
+
+def read_wav_mono(path: Path) -> tuple[list[float], int, int]:
+    with wave.open(str(path), "rb") as handle:
+        channels = handle.getnchannels()
+        sample_width = handle.getsampwidth()
+        sample_rate = handle.getframerate()
+        frames = handle.readframes(handle.getnframes())
+    if channels <= 0:
+        return [], channels, sample_rate
+    if sample_width == 2:
+        values = struct.unpack("<" + "h" * (len(frames) // 2), frames)
+        scale = 32768.0
+    elif sample_width == 4:
+        values = struct.unpack("<" + "i" * (len(frames) // 4), frames)
+        scale = 2147483648.0
+    else:
+        raise ValueError(f"unsupported WAV sample width for rhythm signature: {sample_width}")
+    mono = []
+    for frame in range(0, len(values), channels):
+        mono.append(sum(values[frame : frame + channels]) / channels / scale)
+    return mono, channels, sample_rate
+
+
 def primitive_ab_control(manifest: dict[str, Any]) -> dict[str, Any]:
     metrics = manifest["metrics"]
     pressure = metrics["mc202_bass_pressure"]
@@ -427,8 +504,11 @@ def artifact_record(path: Path) -> dict[str, Any]:
 
 
 def build_report(manifest_path: Path, cases: list[dict[str, Any]]) -> dict[str, Any]:
+    for case in cases:
+        attach_mc202_rhythm_signature(case)
     dense_count = sum(1 for case in cases if case["source_family"] == "dense_break")
     non_dense_count = len(cases) - dense_count
+    rhythm_diversity = mc202_rhythm_diversity(cases)
     report = {
         "schema": SCHEMA,
         "schema_version": 1,
@@ -441,6 +521,7 @@ def build_report(manifest_path: Path, cases: list[dict[str, Any]]) -> dict[str, 
         "case_count": len(cases),
         "dense_case_count": dense_count,
         "non_dense_case_count": non_dense_count,
+        "mc202_rhythm_diversity": rhythm_diversity,
         "cases": cases,
     }
     return apply_evidence_boundary(
@@ -479,10 +560,64 @@ def validate_report(report: dict[str, Any]) -> None:
     require(report.get("non_dense_case_count") == non_dense_count, "non_dense_case_count_mismatch", failures)
     require(report.get("dense_case_count", 0) >= 1, "dense_case_missing", failures)
     require(report.get("non_dense_case_count", 0) >= 1, "non_dense_case_missing", failures)
+    validate_rhythm_diversity(report, cases, failures)
     for index, case in enumerate(cases):
         validate_case(index, case, failures)
     if failures:
         raise ValueError(",".join(failures))
+
+
+def mc202_rhythm_diversity(cases: list[dict[str, Any]]) -> dict[str, Any]:
+    signatures: dict[str, list[str]] = {}
+    for case in cases:
+        signature = str(object_or_empty(case.get("selected_motif")).get("rhythm_signature") or "")
+        signatures.setdefault(signature, []).append(str(case.get("case_id")))
+    repeated = {
+        signature: case_ids
+        for signature, case_ids in sorted(signatures.items())
+        if signature and len(case_ids) > 1
+    }
+    unique_count = len([signature for signature in signatures if signature and signature != "empty"])
+    result = "pass" if unique_count >= 2 and not repeated else "fail"
+    return {
+        "result": result,
+        "proof_scope": "listening_review_scaffold",
+        "quality_proof": False,
+        "human_verdict": "unverified",
+        "metric": "folded_mc202_stem_16_step_rms_signature",
+        "unique_signature_count": unique_count,
+        "required_unique_signature_count": 2,
+        "repeated_signatures": repeated,
+        "signatures": sorted(signature for signature in signatures if signature),
+    }
+
+
+def validate_rhythm_diversity(
+    report: dict[str, Any],
+    cases: list[dict[str, Any]],
+    failures: list[str],
+) -> None:
+    diversity = object_or_empty(report.get("mc202_rhythm_diversity"))
+    require(diversity.get("result") == "pass", "mc202_rhythm_diversity_not_pass", failures)
+    require(
+        diversity.get("proof_scope") == "listening_review_scaffold",
+        "mc202_rhythm_diversity_proof_scope_invalid",
+        failures,
+    )
+    require(diversity.get("quality_proof") is False, "mc202_rhythm_diversity_claims_quality", failures)
+    require(diversity.get("human_verdict") == "unverified", "mc202_rhythm_diversity_human_verdict_invalid", failures)
+    signatures = [
+        str(object_or_empty(case.get("selected_motif")).get("rhythm_signature") or "")
+        for case in cases
+    ]
+    unique_count = len(set(signature for signature in signatures if signature and signature != "empty"))
+    require(
+        number(diversity.get("unique_signature_count")) == float(unique_count),
+        "mc202_rhythm_diversity_unique_count_mismatch",
+        failures,
+    )
+    require(unique_count >= 2, "mc202_rhythm_diversity_unique_count_too_low", failures)
+    require(diversity.get("repeated_signatures") == {}, "mc202_rhythm_diversity_repeated_signature", failures)
 
 
 def validate_case(index: int, case: dict[str, Any], failures: list[str]) -> None:
@@ -517,6 +652,10 @@ def validate_case(index: int, case: dict[str, Any], failures: list[str]) -> None
         "source_expression_role",
         "stem_rms",
         "mix_contribution_ratio",
+        "rhythm_signature",
+        "rhythm_slot_count",
+        "rhythm_active_slot_count",
+        "rhythm_syncopation_score",
     ):
         require(key in motif, f"{prefix}_motif_{key}_missing", failures)
     require(number(motif.get("stem_rms")) > 0.0005, f"{prefix}_mc202_stem_too_quiet", failures)
@@ -531,6 +670,14 @@ def validate_case(index: int, case: dict[str, Any], failures: list[str]) -> None
         f"{prefix}_motif_source_expression_role_invalid",
         failures,
     )
+    require(
+        isinstance(motif.get("rhythm_signature"), str)
+        and len(motif["rhythm_signature"]) == 16
+        and set(motif["rhythm_signature"]) <= {"0", "1"},
+        f"{prefix}_motif_rhythm_signature_invalid",
+        failures,
+    )
+    require(number(motif.get("rhythm_active_slot_count")) >= 1, f"{prefix}_motif_rhythm_inactive", failures)
     validate_role_evidence(prefix, case, failures)
 
     control = object_or_empty(case.get("primitive_ab_control"))
@@ -603,6 +750,13 @@ def run_mutation_fixtures(report: dict[str, Any]) -> None:
     mutated = json.loads(json.dumps(report))
     mutated["cases"][0]["selected_motif"]["stem_rms"] = 0.0
     fixtures.append(("silent_mc202", mutated, "mc202_stem_too_quiet"))
+
+    mutated = json.loads(json.dumps(report))
+    first_signature = mutated["cases"][0]["selected_motif"]["rhythm_signature"]
+    for case in mutated["cases"]:
+        case["selected_motif"]["rhythm_signature"] = first_signature
+    mutated["mc202_rhythm_diversity"] = mc202_rhythm_diversity(mutated["cases"])
+    fixtures.append(("collapsed_rhythm_signatures", mutated, "mc202_rhythm_diversity_not_pass"))
 
     mutated = json.loads(json.dumps(report))
     del mutated["cases"][0]["mc202_role_evidence"]
@@ -710,11 +864,12 @@ def write_reports(output: Path, report: dict[str, Any]) -> None:
         f"- Quality proof: `{str(report['quality_proof']).lower()}`",
         f"- Cases: `{report['case_count']}`",
         f"- Dense / non-dense: `{report['dense_case_count']}` / `{report['non_dense_case_count']}`",
+        f"- MC-202 rhythm signatures: `{report['mc202_rhythm_diversity']['unique_signature_count']}` unique",
         "",
         "## Cases",
         "",
-        "| Case | Family | Role target | MC-202 Stem | Mix | Review | Motif | A/B Control |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- |",
+        "| Case | Family | Role target | MC-202 Stem | Mix | Review | Motif | Rhythm | A/B Control |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for case in report["cases"]:
         motif = case["selected_motif"]
@@ -727,6 +882,7 @@ def write_reports(output: Path, report: dict[str, Any]) -> None:
             f"`{case['artifacts']['generated_support_mix']['path']}` | "
             f"`{case['review']}` | "
             f"`{motif['mode']}/{motif['phrase_shape']}/{motif['note_budget']}` | "
+            f"`{motif['rhythm_signature']}` | "
             f"`delta {control['source_contour_delta_rms']:.6f}` |"
         )
     lines.extend(
