@@ -958,6 +958,12 @@ should generate the current artifacts and call
 `scripts/validate_sound_quality_readiness_smoke.py`; Markdown worklist checks
 and stale/missing-context mutation fixtures belong in that validator, not as a
 large inline shell block.
+Weak-output routing fixtures follow the same rule:
+`just weak-output-fix-routing-fixtures` should generate the routing report and
+call `scripts/validate_weak_output_fix_routing_smoke.py`; routed-case checks,
+production-fix candidate checks, Markdown assertions, stale-count mutations,
+unknown-case/manifest fixtures, and duplicate-category rejection belong in that
+validator.
 
 The P023 professional-source WAV pack, edge-source diagnostics, non-dense
 professional proof pack, dense-break performance pack, and agent musical review

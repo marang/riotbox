@@ -1145,6 +1145,11 @@ following:
     mutations, human-review queue failures, and release-demo review-pack
     candidate-context failures while `Justfile` keeps only the generation and
     validator handoff
+  - RIOTBOX-1387 applies the same extraction to weak-output routing: a named
+    validator owns routed-case category checks, production-fix candidate
+    integrity, recurring-category summaries, stale-count mutations, unknown
+    case/manifest failures, and duplicate-category rejection while `Justfile`
+    keeps only the route generation and validator handoff
   - RIOTBOX-1288 continues the extraction for the professional-source WAV
     pack: its generator validate mode owns tonal/sparse source-family gates,
     source-aware policy checks, source-character thresholds, rendered-artifact
