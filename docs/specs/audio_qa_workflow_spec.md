@@ -964,6 +964,12 @@ call `scripts/validate_weak_output_fix_routing_smoke.py`; routed-case checks,
 production-fix candidate checks, Markdown assertions, stale-count mutations,
 unknown-case/manifest fixtures, and duplicate-category rejection belong in that
 validator.
+Rendered weak professional-output fixtures follow the same rule:
+`just rendered-weak-professional-output-fixtures` should generate the negative
+diagnostic report and call
+`scripts/validate_rendered_weak_professional_outputs_smoke.py`; evidence-boundary
+checks, required destructive failure codes, stale-count mutations,
+quality-claim rejection, and rendered-artifact checks belong in that validator.
 
 The P023 professional-source WAV pack, edge-source diagnostics, non-dense
 professional proof pack, dense-break performance pack, and agent musical review

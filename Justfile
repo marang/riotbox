@@ -346,8 +346,7 @@ destructive-variation-professional-smoke output="artifacts/audio_qa/local-destru
 
 rendered-weak-professional-output-fixtures output="artifacts/audio_qa/local-rendered-weak-professional-outputs":
     python3 scripts/generate_rendered_weak_professional_outputs.py --output "{{output}}"
-    jq -e '.schema == "riotbox.rendered_weak_professional_outputs.v1" and .result == "pass" and .human_verdict == "unverified" and .evidence_role == "negative_diagnostic" and .source_backed == false and .source_timing_backed == false and .scripted_generation == true and .quality_proof == false and .case_count == 1 and .cases[0].evidence_role == "negative_diagnostic" and .cases[0].quality_proof == false and .cases[0].validator_result == "expected_fail" and (.cases[0].failure_codes | index("dropout_not_contrasting_with_stutter")) and (.cases[0].failure_codes | index("dropout_silence_not_deep_enough_before_stutter")) and (.cases[0].failure_codes | index("restore_not_bigger_than_pressure")) and (.cases[0].failure_codes | index("restore_does_not_slam_out_of_cut"))' "{{output}}/rendered-weak-professional-outputs.json"
-    test -s "{{output}}/dense_flat_stutter/05_rebuild_only_performance.wav"; test -s "{{output}}/dense_flat_stutter/destructive-validation.json"
+    python3 scripts/validate_rendered_weak_professional_outputs_smoke.py --output "{{output}}"
 
 weak-output-fix-routing-fixtures output="artifacts/audio_qa/local-weak-output-fix-routing":
     python3 scripts/route_weak_output_fixes.py --output "{{output}}" --date "local-weak-output-fix-routing"
