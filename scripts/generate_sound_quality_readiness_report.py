@@ -3270,6 +3270,7 @@ def markdown_report(report: dict[str, Any]) -> str:
     if not report["next_actions"]:
         lines.append("- none")
     review_queue = object_or_empty(report.get("human_review_queue"))
+    lines.extend(release_demo_review_worklist_lines(review_queue))
     lines.extend(["", "## Human Review Queue", ""])
     if review_queue.get("available"):
         lines.extend(
@@ -3426,6 +3427,61 @@ def markdown_report(report: dict[str, Any]) -> str:
     )
     lines.extend(["", "## Evidence Boundary", "", report["evidence_boundary"], ""])
     return "\n".join(lines)
+
+
+def release_demo_review_worklist_lines(review_queue: dict[str, Any]) -> list[str]:
+    lines = ["", "## Release-Demo Review Worklist", ""]
+    if not review_queue.get("available"):
+        return lines + ["- missing"]
+    candidates = sorted(
+        list_or_empty(review_queue.get("candidates")),
+        key=review_worklist_sort_key,
+    )
+    if not candidates:
+        return lines + ["- none"]
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        lines.extend(
+            [
+                f"### `{candidate.get('entry_id')}`",
+                "",
+                (
+                    f"- Priority: `{candidate.get('review_priority')}`; "
+                    f"source family: `{candidate.get('source_family')}`"
+                ),
+                (
+                    "- Verdict target: record `pass`, `weak`, or `fail`; "
+                    f"current state `{candidate.get('required_verdict_current_state')}`"
+                ),
+                f"- What to judge: {candidate.get('strongest_audible_element')}",
+                f"- Source-character expectation: {candidate.get('source_character')}",
+                f"- Why it is worth hearing: {candidate.get('demo_worthy_reason')}",
+                f"- Why it is not demo-ready yet: {candidate.get('not_demo_ready_reason')}",
+            ]
+        )
+        append_artifact_ref_lines(lines, candidate)
+        questions = [
+            str(question)
+            for question in list_or_empty(candidate.get("required_listening_questions"))
+            if isinstance(question, str) and question
+        ]
+        if questions:
+            lines.extend(["- Listening questions:"])
+            lines.extend(f"  - {question}" for question in questions)
+        lines.append("")
+    return lines
+
+
+def review_worklist_sort_key(candidate: Any) -> tuple[int, str, str]:
+    if not isinstance(candidate, dict):
+        return (99, "", "")
+    priority_order = {"high": 0, "medium": 1, "low": 2}
+    return (
+        priority_order.get(str(candidate.get("review_priority")), 50),
+        str(candidate.get("source_family") or ""),
+        str(candidate.get("entry_id") or ""),
+    )
 
 
 def append_artifact_ref_lines(
