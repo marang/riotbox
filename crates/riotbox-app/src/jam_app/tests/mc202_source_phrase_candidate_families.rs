@@ -292,6 +292,86 @@ fn committed_mc202_answer_changes_candidate_family_between_pressure_and_hook_sou
 }
 
 #[test]
+fn committed_mc202_answer_preserves_sub_beat_source_anchor_timing() {
+    let mut straight_graph =
+        source_phrase_test_graph("src-subbeat-straight", "hash-subbeat", 132.0, 73, 2);
+    add_phrase_audio_features(
+        &mut straight_graph,
+        2,
+        0.12,
+        0.20,
+        0.18,
+        0.36,
+        0.78,
+        0.30,
+        0.18,
+        0.15,
+    );
+    set_source_phrase_anchors_with_subbeat_offsets(
+        &mut straight_graph,
+        &[
+            (SourceTimingAnchorType::Kick, 8, 32, 0.00, 0.92),
+            (SourceTimingAnchorType::AnswerSlot, 8, 33, 0.00, 0.95),
+        ],
+    );
+    let mut pushed_graph = straight_graph.clone();
+    pushed_graph.source.source_id = SourceId::from("src-subbeat-pushed");
+    set_source_phrase_anchors_with_subbeat_offsets(
+        &mut pushed_graph,
+        &[
+            (SourceTimingAnchorType::Kick, 8, 32, 0.00, 0.92),
+            (SourceTimingAnchorType::AnswerSlot, 8, 33, 0.50, 0.95),
+        ],
+    );
+    let mut straight_state = confirmed_source_phrase_state(straight_graph);
+    let mut pushed_state = confirmed_source_phrase_state(pushed_graph);
+
+    let straight_render = commit_source_derived_answer(&mut straight_state);
+    let pushed_render = commit_source_derived_answer(&mut pushed_state);
+    let straight_plan = straight_state
+        .session
+        .runtime_state
+        .lane_state
+        .mc202
+        .source_phrase_plan
+        .as_ref()
+        .expect("straight sub-beat source phrase plan");
+    let pushed_plan = pushed_state
+        .session
+        .runtime_state
+        .lane_state
+        .mc202
+        .source_phrase_plan
+        .as_ref()
+        .expect("pushed sub-beat source phrase plan");
+
+    assert!(straight_plan.is_source_derived(), "{straight_plan:?}");
+    assert!(pushed_plan.is_source_derived(), "{pushed_plan:?}");
+    assert_eq!(
+        straight_plan.candidate_family,
+        Some(Mc202SourcePhraseCandidateFamilyState::SparseOffbeatAnswer)
+    );
+    assert_eq!(
+        pushed_plan.candidate_family,
+        Some(Mc202SourcePhraseCandidateFamilyState::SparseOffbeatAnswer)
+    );
+    assert_ne!(
+        provenance_step(straight_plan, "groove_answer_step"),
+        provenance_step(pushed_plan, "groove_answer_step"),
+        "sub-beat answer timing collapsed to the same MC-202 answer step: straight={straight_plan:?} pushed={pushed_plan:?}"
+    );
+    assert_ne!(
+        straight_plan.rhythm_cells, pushed_plan.rhythm_cells,
+        "sub-beat answer timing did not change MC-202 source phrase rhythm cells"
+    );
+    let delta = signal_delta_metrics(&straight_render, &pushed_render);
+    assert!(
+        delta.rms > 0.0005,
+        "sub-beat source anchor timing did not materially change rendered MC-202 output: {delta:?}"
+    );
+}
+
+#[test]
 fn committed_mc202_answer_changes_or_rejects_candidates_when_measured_audio_is_removed() {
     let mut measured_graph =
         source_phrase_test_graph("src-measured", "hash-measured", 132.0, 31, 2);
@@ -383,28 +463,52 @@ fn set_source_phrase_anchors(
     graph: &mut SourceGraph,
     anchors: &[(SourceTimingAnchorType, u32, u32, f32)],
 ) {
+    let anchors_with_offsets = anchors
+        .iter()
+        .map(|(anchor_type, bar_index, beat_index, strength)| {
+            (*anchor_type, *bar_index, *beat_index, 0.0, *strength)
+        })
+        .collect::<Vec<_>>();
+    set_source_phrase_anchors_with_subbeat_offsets(graph, &anchors_with_offsets);
+}
+
+fn set_source_phrase_anchors_with_subbeat_offsets(
+    graph: &mut SourceGraph,
+    anchors: &[(SourceTimingAnchorType, u32, u32, f32, f32)],
+) {
+    let bpm = graph.timing.bpm_estimate.unwrap_or(132.0);
+    let seconds_per_beat = 60.0 / bpm.max(1.0);
     graph.timing.primary_hypothesis_id = Some("primary-mc202-groove".into());
     graph.timing.hypotheses = vec![TimingHypothesis {
         hypothesis_id: "primary-mc202-groove".into(),
         kind: TimingHypothesisKind::Primary,
-        bpm: graph.timing.bpm_estimate.unwrap_or(132.0),
+        bpm,
         meter: MeterHint {
             beats_per_bar: 4,
             beat_unit: 4,
         },
         confidence: 0.94,
         score: 0.94,
-        beat_grid: Vec::new(),
+        beat_grid: anchors
+            .iter()
+            .map(
+                |(_anchor_type, _bar_index, beat_index, _beat_offset, _strength)| BeatPoint {
+                    beat_index: *beat_index,
+                    time_seconds: *beat_index as f32 * seconds_per_beat,
+                    confidence: 0.94,
+                },
+            )
+            .collect(),
         bar_grid: Vec::new(),
         phrase_grid: graph.timing.phrase_grid.clone(),
         anchors: anchors
             .iter()
             .enumerate()
-            .map(|(index, (anchor_type, bar_index, beat_index, strength))| {
+            .map(|(index, (anchor_type, bar_index, beat_index, beat_offset, strength))| {
                 riotbox_core::source_graph::SourceTimingAnchor {
                     anchor_id: format!("mc202-groove-anchor-{index}"),
                     anchor_type: *anchor_type,
-                    time_seconds: *beat_index as f32 * 0.45,
+                    time_seconds: (*beat_index as f32 + *beat_offset) * seconds_per_beat,
                     bar_index: Some(*bar_index),
                     beat_index: Some(*beat_index),
                     confidence: 0.94,

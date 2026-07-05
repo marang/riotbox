@@ -121,6 +121,12 @@ yet" than to hear a reusable fallback phrase that appears to be product output.
      steps are derived from source timing anchors and phrase evidence before a
      family writes its 16-step cell plan. This keeps MC-202 placement tied to
      Source Graph evidence instead of only fixed offsets plus feature buckets.
+   - RIOTBOX-1393 preserves sub-beat source-anchor timing in that groove map:
+     when BPM and anchor `time_seconds` are available, MC-202 converts anchors
+     into 16-step positions from their measured timing rather than only their
+     integer beat index. This lets offbeat, pickup, and pushed-answer evidence
+     change rhythm cells and rendered buffers without adding a second sequencer
+     or fallback phrase path.
 
 4. Score and commit one plan through the existing action path.
    - Prefer source-grid lock, low-end impact, answer contrast, hook avoidance,
