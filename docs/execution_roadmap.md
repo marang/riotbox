@@ -757,6 +757,12 @@ following:
     dense-break and sparse-bass-pressure MC-202 stems sharing the same rhythm
     signature before the Drop render plan was split into dense transient and
     low-heavy pressure movement variants.
+  - RIOTBOX-1332 strengthens source-composed MC-202 role projection: the same
+    trusted source phrase now renders Pressure as deeper low-band body, Answer
+    as leaner stab/gate bite, and Instigator as a more destructive spike. The
+    regression drives the queue/commit path for each role from the same
+    source-backed graph and requires both render-plan separation and audible
+    buffer deltas instead of accepting role labels alone.
   - the MC-202 source phrase planning track must turn that diagnostic bass
     movement into replayable Session/Core phrase plans before MC-202
     bass/answer behavior can count as source-derived product behavior; the

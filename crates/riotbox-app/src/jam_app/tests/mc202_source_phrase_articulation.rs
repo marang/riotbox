@@ -116,3 +116,109 @@ fn committed_mc202_hook_restraint_ghost_answer_avoids_downbeat_template_slots() 
         "{plan:?}"
     );
 }
+
+#[test]
+fn committed_mc202_source_phrase_roles_render_distinct_acid_bass_expression() {
+    let mut graph =
+        source_phrase_test_graph("src-role-expression", "hash-role-expression", 132.0, 149, 2);
+    add_phrase_audio_features(
+        &mut graph, 2, 0.30, 0.76, 0.84, 0.48, 0.58, 0.52, 0.26, 0.16,
+    );
+    set_source_phrase_anchors(
+        &mut graph,
+        &[
+            (SourceTimingAnchorType::Kick, 8, 32, 0.96),
+            (SourceTimingAnchorType::Backbeat, 8, 34, 0.92),
+            (SourceTimingAnchorType::AnswerSlot, 8, 35, 0.94),
+            (SourceTimingAnchorType::Fill, 8, 39, 0.86),
+        ],
+    );
+
+    let mut pressure_state = confirmed_source_phrase_state(graph.clone());
+    let mut answer_state = confirmed_source_phrase_state(graph.clone());
+    let mut instigator_state = confirmed_source_phrase_state(graph);
+    let pressure_render = commit_source_derived_role(&mut pressure_state, Mc202RoleState::Pressure);
+    let answer_render = commit_source_derived_role(&mut answer_state, Mc202RoleState::Answer);
+    let instigator_render =
+        commit_source_derived_role(&mut instigator_state, Mc202RoleState::Instigator);
+    let pressure_plan = pressure_state
+        .runtime
+        .mc202_render
+        .source_phrase_plan
+        .expect("pressure role render plan");
+    let answer_plan = answer_state
+        .runtime
+        .mc202_render
+        .source_phrase_plan
+        .expect("answer role render plan");
+    let instigator_plan = instigator_state
+        .runtime
+        .mc202_render
+        .source_phrase_plan
+        .expect("instigator role render plan");
+
+    assert!(
+        pressure_plan.bass_weight > answer_plan.bass_weight + 0.22,
+        "pressure role did not project stronger bass body than answer: pressure={pressure_plan:?} answer={answer_plan:?}"
+    );
+    assert!(
+        answer_plan.stab_bite > pressure_plan.stab_bite + 0.20,
+        "answer role did not project sharper stab bite than pressure: pressure={pressure_plan:?} answer={answer_plan:?}"
+    );
+    assert!(
+        answer_plan.gate_snap > pressure_plan.gate_snap + 0.24,
+        "answer role did not project tighter gate than pressure: pressure={pressure_plan:?} answer={answer_plan:?}"
+    );
+    assert!(
+        instigator_plan.destructive_mask != 0
+            && instigator_plan.gate_snap > answer_plan.gate_snap
+            && instigator_plan.stab_bite >= answer_plan.stab_bite,
+        "instigator role did not project a destructive spike above answer: instigator={instigator_plan:?} answer={answer_plan:?}"
+    );
+    assert!(
+        source_phrase_low_band_rms(&pressure_render) > source_phrase_low_band_rms(&answer_render) * 1.25,
+        "pressure role did not render stronger low-band body than answer"
+    );
+    assert!(
+        signal_delta_metrics(&pressure_render, &answer_render).rms > 0.0015,
+        "pressure and answer roles rendered too similarly"
+    );
+    assert!(
+        signal_delta_metrics(&answer_render, &instigator_render).rms > 0.0015,
+        "answer and instigator roles rendered too similarly"
+    );
+}
+
+fn commit_source_derived_role(state: &mut JamAppState, role: Mc202RoleState) -> Vec<f32> {
+    let result = match role {
+        Mc202RoleState::Leader => panic!("leader source phrase role is not covered by this helper"),
+        Mc202RoleState::Follower => state.queue_mc202_generate_follower(300),
+        Mc202RoleState::Answer => state.queue_mc202_generate_answer(300),
+        Mc202RoleState::Pressure => state.queue_mc202_generate_pressure(300),
+        Mc202RoleState::Instigator => state.queue_mc202_generate_instigator(300),
+    };
+    assert_eq!(result, QueueControlResult::Enqueued);
+    let committed = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Phrase,
+            beat_index: 32,
+            bar_index: 8,
+            phrase_index: 2,
+            scene_id: Some(SceneId::from("scene-role-expression")),
+        },
+        400,
+    );
+
+    assert_eq!(committed.len(), 1);
+    let plan = state
+        .session
+        .runtime_state
+        .lane_state
+        .mc202
+        .source_phrase_plan
+        .as_ref()
+        .expect("source phrase role plan");
+    assert_eq!(plan.role, role);
+    assert!(plan.is_source_derived(), "{plan:?}");
+    render_mc202_recipe_buffer(&state.runtime.mc202_render)
+}
