@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "en-US"
+tone_instructions: "Be concise, direct, and pragmatic. Prioritize correctness, architecture drift, missing tests, and musician-facing product risk over style nits."
+
+reviews:
+  profile: "assertive"
+  request_changes_workflow: false
+  high_level_summary: true
+  review_status: true
+  review_details: false
+  commit_status: true
+  fail_commit_status: false
+  collapse_walkthrough: true
+  changed_files_summary: true
+  estimate_code_review_effort: true
+  poem: false
+  auto_review:
+    enabled: true
+    drafts: false
+    auto_incremental_review: true
+    auto_pause_after_reviewed_commits: 5
+  path_filters:
+    - "!artifacts/**"
+    - "!target/**"
+    - "!docs/archive/linear_issues/**"
+  path_instructions:
+    - path: "**/*.rs"
+      instructions: "Review Rust changes against Riotbox core contracts: Source Graph, Session model, Action Lexicon, queue/commit semantics, replay/restore truth, and realtime audio isolation. Flag blocking I/O, hidden state, stringly product behavior, and untested ActionCommand surfaces."
+    - path: "scripts/**/*.py"
+      instructions: "Review Python tooling for deterministic reports, explicit schema/field validation, mutation coverage, bounded output, and clear diagnostic-vs-quality-proof boundaries."
+    - path: "docs/specs/**"
+      instructions: "Review spec changes for consistency with AGENTS.md, execution roadmap, and workflow conventions. Flag wording that promotes scripted, fallback, or diagnostic output as product-quality proof."
+
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "docs/workflow_conventions.md"

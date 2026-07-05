@@ -202,6 +202,35 @@ with a clear lock message instead of racing on shared artifacts. For concurrent
 experiments, run narrower recipes with explicit unique `output=...` arguments
 or wait for the broad gate to finish.
 
+## 3.2 CodeRabbit Reviews
+
+CodeRabbit is configured through `.coderabbit.yaml` as an advisory PR reviewer.
+It does not replace the Riotbox branch-level review, local validation, GitHub
+Actions, Linear-first issue loop, or ticket closeout workflow.
+
+Initial policy:
+
+- keep CodeRabbit automatic PR review enabled
+- keep `request_changes_workflow` disabled until the team explicitly promotes
+  CodeRabbit to a merge gate
+- do not idle on every PR while waiting for CodeRabbit; if CI is clean and no
+  blocking review is present, continue the next Linear-first implementation
+  slice
+- do not forget CodeRabbit after moving on: re-check open PRs for CodeRabbit
+  comments during the normal PR polling loop and before merge
+- treat CodeRabbit findings like any other review signal: fix clear defects,
+  convert useful product/QA findings into tickets or specs, and ignore noise
+  only after checking it against AGENTS.md and the relevant docs
+- if a CodeRabbit finding is relevant but too large or out of scope for the
+  current PR, create or link a follow-up Linear ticket before closing the PR
+- do not let CodeRabbit comments promote scripted diagnostics, hardcoded
+  fallback output, or unverified listening candidates into quality proof
+
+GitHub App installation is an external permission step. A GitHub repository
+owner or organization owner must install CodeRabbit for `marang/riotbox` through
+the CodeRabbit/GitHub UI and grant access only to the Riotbox repository unless
+broader access is intentionally approved.
+
 ---
 
 ## 4. Ambiguous Feedback Handling
@@ -322,6 +351,8 @@ Once a PR is open for a ticket:
 - do not let an open or in-flight PR stall the main implementation lane by default
 - if the current PR is clean locally and CI is still running or already green, continue on the next bounded backlog slice instead of idling
 - re-check open PRs periodically and merge them as soon as their gates are clean
+- include CodeRabbit comments in that periodic PR re-check; relevant findings
+  must be fixed on the PR or captured as follow-up tickets before merge
 - small follow-up fixes on the same PR are fine
 - do not silently bundle the next unrelated slice into the same PR
 
