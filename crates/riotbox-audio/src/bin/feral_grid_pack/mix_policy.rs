@@ -51,23 +51,32 @@ struct AllLaneMixMovementProof {
     min_required_generated_to_w30_ratio: f32,
 }
 
+#[cfg(test)]
 fn render_source_first_mix(tr909: &[f32], mc202: &[f32], w30: &[f32]) -> Vec<f32> {
-    render_mix(tr909, mc202, w30, SOURCE_FIRST_MIX_POLICY)
+    render_mix_with_master_bus_report(tr909, mc202, w30, SOURCE_FIRST_MIX_POLICY).0
+}
+
+fn render_source_first_mix_with_master_bus_report(
+    tr909: &[f32],
+    mc202: &[f32],
+    w30: &[f32],
+) -> (Vec<f32>, MasterBusLimiterReport) {
+    render_mix_with_master_bus_report(tr909, mc202, w30, SOURCE_FIRST_MIX_POLICY)
 }
 
 #[cfg(test)]
 fn render_generated_support_mix(tr909: &[f32], mc202: &[f32], w30: &[f32]) -> Vec<f32> {
-    render_mix(tr909, mc202, w30, GENERATED_SUPPORT_MIX_POLICY)
+    render_mix_with_master_bus_report(tr909, mc202, w30, GENERATED_SUPPORT_MIX_POLICY).0
 }
 
-fn render_generated_support_mix_for_source_contour(
+fn render_generated_support_mix_with_master_bus_report(
     tr909: &[f32],
     mc202: &[f32],
     w30: &[f32],
     grid: &Grid,
     source_contour: Mc202SourceContourProfile,
-) -> Vec<f32> {
-    render_mix(
+) -> (Vec<f32>, MasterBusLimiterReport) {
+    render_mix_with_master_bus_report(
         tr909,
         mc202,
         w30,
@@ -137,7 +146,23 @@ fn boost_generated_support_to_floor(
     policy
 }
 
-fn render_mix(tr909: &[f32], mc202: &[f32], w30: &[f32], policy: MixPolicy) -> Vec<f32> {
+fn render_mix_with_master_bus_report(
+    tr909: &[f32],
+    mc202: &[f32],
+    w30: &[f32],
+    policy: MixPolicy,
+) -> (Vec<f32>, MasterBusLimiterReport) {
+    let mut mix = render_mix_pre_master_bus_limiter(tr909, mc202, w30, policy);
+    let report = apply_master_bus_soft_limiter_with_report(&mut mix);
+    (mix, report)
+}
+
+fn render_mix_pre_master_bus_limiter(
+    tr909: &[f32],
+    mc202: &[f32],
+    w30: &[f32],
+    policy: MixPolicy,
+) -> Vec<f32> {
     debug_assert_eq!(tr909.len(), w30.len());
     debug_assert_eq!(tr909.len(), mc202.len());
 

@@ -15,16 +15,16 @@ use super::{
     ManifestTr909KickPressureProof, ManifestTr909SourceAccentDynamicsProof,
     ManifestTr909SourceProfile, ManifestW30SourceAccentDynamicsProof, ManifestW30SourceChopProfile,
     ManifestW30SourceLoopClosureProof, ManifestW30SourceSliceChoiceProof,
-    ManifestW30SourceTriggerVariationProof, PACK_ID, PackReport, RenderMetrics, SAMPLE_RATE,
-    SourceCharacterWindowSelection, SourceGridOutputDriftMetrics, SourceTimingAnalysisForManifest,
-    SpectralEnergyMetrics, Tr909GrooveTimingPolicy, Tr909RenderedDrumPressureProof,
-    grid_bpm_decision_reason_label, grid_bpm_source_label, manifest_mc202_bass_pressure_proof,
-    manifest_mc202_source_contour_proof, manifest_source_timing_readiness,
-    manifest_tr909_kick_pressure_proof, manifest_tr909_source_accent_dynamics_proof,
-    manifest_tr909_source_profile, manifest_w30_source_accent_dynamics_proof,
-    manifest_w30_source_chop_profile, manifest_w30_source_loop_closure_proof,
-    manifest_w30_source_slice_choice_proof, manifest_w30_source_trigger_variation_proof,
-    metrics_path_for, verification_command,
+    ManifestW30SourceTriggerVariationProof, MasterBusLimiterReport, PACK_ID, PackReport,
+    RenderMetrics, SAMPLE_RATE, SourceCharacterWindowSelection, SourceGridOutputDriftMetrics,
+    SourceTimingAnalysisForManifest, SpectralEnergyMetrics, Tr909GrooveTimingPolicy,
+    Tr909RenderedDrumPressureProof, grid_bpm_decision_reason_label, grid_bpm_source_label,
+    manifest_mc202_bass_pressure_proof, manifest_mc202_source_contour_proof,
+    manifest_source_timing_readiness, manifest_tr909_kick_pressure_proof,
+    manifest_tr909_source_accent_dynamics_proof, manifest_tr909_source_profile,
+    manifest_w30_source_accent_dynamics_proof, manifest_w30_source_chop_profile,
+    manifest_w30_source_loop_closure_proof, manifest_w30_source_slice_choice_proof,
+    manifest_w30_source_trigger_variation_proof, metrics_path_for, verification_command,
 };
 
 #[derive(Serialize)]
@@ -114,6 +114,8 @@ struct ManifestPackMetrics {
     w30_feral_source_chop: ManifestRenderMetrics,
     source_first_mix: ManifestRenderMetrics,
     full_grid_mix: ManifestRenderMetrics,
+    source_first_master_bus_limiter: ManifestMasterBusLimiterMetrics,
+    full_grid_master_bus_limiter: ManifestMasterBusLimiterMetrics,
     mix_balance: ManifestMixBalanceMetrics,
     tr909_source_grid_alignment: SourceGridOutputDriftMetrics,
     mc202_source_grid_alignment: SourceGridOutputDriftMetrics,
@@ -145,6 +147,24 @@ struct ManifestSpectralEnergyMetrics {
 struct ManifestMixBalanceMetrics {
     source_first_generated_to_source_rms_ratio: f32,
     support_generated_to_source_rms_ratio: f32,
+}
+
+#[derive(Serialize)]
+struct ManifestMasterBusLimiterMetrics {
+    applied: bool,
+    threshold: f32,
+    ceiling: f32,
+    limited_sample_count: usize,
+    pre_peak_abs: f32,
+    post_peak_abs: f32,
+    pre_clip_count: usize,
+    post_clip_count: usize,
+    pre_near_clip_count: usize,
+    post_near_clip_count: usize,
+    pre_headroom_to_full_scale: f32,
+    post_headroom_to_full_scale: f32,
+    pre_rms: f32,
+    post_rms: f32,
 }
 
 pub(super) fn write_manifest(
@@ -223,6 +243,12 @@ pub(super) fn write_manifest(
             w30_feral_source_chop: manifest_render_metrics(report.w30),
             source_first_mix: manifest_render_metrics(report.source_first_mix),
             full_grid_mix: manifest_render_metrics(report.full_mix),
+            source_first_master_bus_limiter: manifest_master_bus_limiter_metrics(
+                report.source_first_master_bus_limiter,
+            ),
+            full_grid_master_bus_limiter: manifest_master_bus_limiter_metrics(
+                report.full_mix_master_bus_limiter,
+            ),
             mix_balance: ManifestMixBalanceMetrics {
                 source_first_generated_to_source_rms_ratio: report
                     .source_first_generated_to_source_rms_ratio,
@@ -326,5 +352,26 @@ fn manifest_render_metrics(metrics: RenderMetrics) -> ManifestRenderMetrics {
     ManifestRenderMetrics {
         signal: metrics.signal.into(),
         low_band: metrics.low_band.into(),
+    }
+}
+
+fn manifest_master_bus_limiter_metrics(
+    report: MasterBusLimiterReport,
+) -> ManifestMasterBusLimiterMetrics {
+    ManifestMasterBusLimiterMetrics {
+        applied: report.applied,
+        threshold: report.threshold,
+        ceiling: report.ceiling,
+        limited_sample_count: report.limited_sample_count,
+        pre_peak_abs: report.pre.peak_abs,
+        post_peak_abs: report.post.peak_abs,
+        pre_clip_count: report.pre.clip_count,
+        post_clip_count: report.post.clip_count,
+        pre_near_clip_count: report.pre.near_clip_count,
+        post_near_clip_count: report.post.near_clip_count,
+        pre_headroom_to_full_scale: report.pre.headroom_to_full_scale,
+        post_headroom_to_full_scale: report.post.headroom_to_full_scale,
+        pre_rms: report.pre.rms,
+        post_rms: report.post.rms,
     }
 }

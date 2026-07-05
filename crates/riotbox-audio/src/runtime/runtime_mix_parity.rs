@@ -5,7 +5,7 @@ use crate::{
 };
 
 use super::{
-    public_api_shell::AudioRuntimeTimingSnapshot,
+    public_api_shell::{AudioRuntimeTimingSnapshot, apply_master_bus_soft_limiter},
     shared_mc202_w30_preview::{SharedMc202RenderState, SharedW30PreviewRenderState},
     shared_transport_tr909::{RealtimeTransportTimingState, SharedTr909RenderState},
     shared_w30_resample_callback::{
@@ -143,6 +143,7 @@ fn render_runtime_mix_in_callback_blocks(
             },
         );
         apply_source_monitor_policy(block, sample_rate, channel_count, &source_monitor_render);
+        apply_master_bus_soft_limiter(block);
     }
 
     output

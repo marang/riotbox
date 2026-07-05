@@ -56,6 +56,16 @@ pub struct OfflineAudioMetrics {
     pub event_density_per_bar: f32,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct MasterBusLimiterReport {
+    pub applied: bool,
+    pub threshold: f32,
+    pub ceiling: f32,
+    pub limited_sample_count: usize,
+    pub pre: OfflineAudioMetrics,
+    pub post: OfflineAudioMetrics,
+}
+
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct AudioRuntimeTimingSnapshot {
     pub is_transport_running: bool,
@@ -349,9 +359,61 @@ pub fn signal_delta_metrics(left: &[f32], right: &[f32]) -> OfflineAudioMetrics 
     signal_metrics(&delta)
 }
 
+#[must_use]
+pub fn master_bus_limiter_threshold() -> f32 {
+    MASTER_BUS_LIMITER_THRESHOLD
+}
+
+#[must_use]
+pub fn master_bus_limiter_ceiling() -> f32 {
+    MASTER_BUS_LIMITER_CEILING
+}
+
+pub fn apply_master_bus_soft_limiter(samples: &mut [f32]) -> usize {
+    let mut limited_sample_count = 0;
+    for sample in samples {
+        let limited = master_bus_limited_sample(*sample);
+        if (limited - *sample).abs() > f32::EPSILON {
+            limited_sample_count += 1;
+            *sample = limited;
+        }
+    }
+    limited_sample_count
+}
+
+pub fn apply_master_bus_soft_limiter_with_report(samples: &mut [f32]) -> MasterBusLimiterReport {
+    let pre = signal_metrics(samples);
+    let limited_sample_count = apply_master_bus_soft_limiter(samples);
+    let post = signal_metrics(samples);
+
+    MasterBusLimiterReport {
+        applied: limited_sample_count > 0,
+        threshold: MASTER_BUS_LIMITER_THRESHOLD,
+        ceiling: MASTER_BUS_LIMITER_CEILING,
+        limited_sample_count,
+        pre,
+        post,
+    }
+}
+
 const ACTIVE_THRESHOLD: f32 = 0.0001;
 const NEAR_CLIP_THRESHOLD: f32 = 0.98;
 const CLIP_THRESHOLD: f32 = 1.0;
+const MASTER_BUS_LIMITER_THRESHOLD: f32 = 0.92;
+const MASTER_BUS_LIMITER_CEILING: f32 = 0.985;
+
+fn master_bus_limited_sample(sample: f32) -> f32 {
+    let magnitude = sample.abs();
+    if magnitude <= MASTER_BUS_LIMITER_THRESHOLD {
+        return sample;
+    }
+
+    let knee_width = MASTER_BUS_LIMITER_CEILING - MASTER_BUS_LIMITER_THRESHOLD;
+    let shaped_excess = ((magnitude - MASTER_BUS_LIMITER_THRESHOLD) / knee_width).tanh();
+    let limited_magnitude =
+        (MASTER_BUS_LIMITER_THRESHOLD + knee_width * shaped_excess).min(MASTER_BUS_LIMITER_CEILING);
+    sample.signum() * limited_magnitude
+}
 
 fn count_onsets(samples: &[f32], channel_count: usize) -> usize {
     if samples.is_empty() || channel_count == 0 {

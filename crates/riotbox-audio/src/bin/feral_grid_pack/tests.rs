@@ -456,9 +456,34 @@ mod tests {
         let manifest = fs::read_to_string(output_dir.join("manifest.json")).expect("manifest");
         let manifest: serde_json::Value = serde_json::from_str(&manifest).expect("parse manifest");
         super::manifest_assertions::assert_manifest_smoke_gate(&manifest, &output_dir);
+        let metrics = manifest
+            .get("metrics")
+            .and_then(serde_json::Value::as_object)
+            .expect("manifest metrics object");
+        for key in [
+            "source_first_master_bus_limiter",
+            "full_grid_master_bus_limiter",
+        ] {
+            let limiter = metrics
+                .get(key)
+                .and_then(serde_json::Value::as_object)
+                .expect("master bus limiter metrics");
+            assert!(limiter.contains_key("pre_peak_abs"));
+            assert!(limiter.contains_key("post_peak_abs"));
+            assert!(limiter.contains_key("pre_clip_count"));
+            assert!(limiter.contains_key("post_clip_count"));
+            assert_eq!(
+                limiter
+                    .get("post_clip_count")
+                    .and_then(serde_json::Value::as_u64),
+                Some(0)
+            );
+        }
 
         let report = fs::read_to_string(output_dir.join("grid-report.md")).expect("report");
         let readme = fs::read_to_string(output_dir.join("README.md")).expect("readme");
+        assert!(report.contains("Source-first master bus limiter"));
+        assert!(report.contains("Generated-support master bus limiter"));
         for text in [&report, &readme] {
             assert!(text.contains("Source timing readiness: `"));
             assert!(text.contains("Source timing downbeat: `"));

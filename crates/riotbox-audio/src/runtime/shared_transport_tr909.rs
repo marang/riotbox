@@ -381,6 +381,7 @@ where
                 channel_count,
                 &source_monitor_state,
             );
+            apply_master_bus_soft_limiter(mix_buffer);
             for (output, sample) in data.iter_mut().zip(mix_buffer.iter().copied()) {
                 *output = T::from_sample(sample);
             }
