@@ -1414,4 +1414,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Extract human listening label corpus fixtures
 - [RIOTBOX-1393.md](./RIOTBOX-1393.md)
   P023: Make MC-202 source phrase groove map use sub-beat anchor timing
+- [RIOTBOX-1394.md](./RIOTBOX-1394.md)
+  P023: Gate MC-202 real-source rhythm diversity in listening packs
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
