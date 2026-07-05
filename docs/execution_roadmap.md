@@ -1104,6 +1104,11 @@ following:
   handoff as JSON: source-family Next Actions and Human Review Queue entries
   print rendered WAV, metrics, and review-prompt refs so the report itself is a
   usable listening worklist.
+- RIOTBOX-1385 closes the next handoff gap: the sound-quality readiness report
+  now ingests generated release-demo listening-review packs, cross-checks them
+  against the human-review queue, and prints pack directory, `review.json`, and
+  prompt refs in the Release-Demo Review Worklist while keeping all pack
+  evidence `human_verdict: unverified` and `quality_claim: false`.
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue
