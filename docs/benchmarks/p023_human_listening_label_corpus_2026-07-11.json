@@ -1,0 +1,97 @@
+{
+  "schema": "riotbox.human_listening_label_corpus.v1",
+  "schema_version": 1,
+  "description": "Real human listening labels recorded by Markus for RIOTBOX-1398 against the existing professional-output listening pack.",
+  "labels": [
+    {
+      "label_id": "riotbox-1398-dense-beat03-weak",
+      "created_at": "2026-07-11",
+      "reviewer": "Markus",
+      "human_verdict": "weak",
+      "source_family": "dense_break",
+      "source_id": "dense_beat03_130",
+      "review_pack_schema": "riotbox.professional_output_listening_pack.v1",
+      "review_pack_id": "professional-output-listening-pack:dense_beat03_130",
+      "artifact_identity": {
+        "performance_report_sha256": "6613660dcdd4387df95c89bfc945b7a8c4064a240a2eec522daae7d569c19700",
+        "agent_review_sha256": "f2922a0b5295bec9a155753a34a36cb22e8696ffdbfac54aa5680027af642b0f",
+        "audio_sha256": {
+          "source_window": "88516403516c58435fdd9dc3181dd473702498f808da01a40431cf5368e4ce2a",
+          "rebuild_only_performance": "a1d26c02b0ba16e00e03370edbc643f4fa09a3ec13754313f16e6fe4851de8fa"
+        }
+      },
+      "reason_tags": {
+        "hook_clarity": "weak",
+        "hardest_hit": "none",
+        "bass_pressure": "missing",
+        "destructive_contrast": "weak",
+        "source_character": "source_transformed_but_present",
+        "replay_value_after_eight_bars": "inconclusive"
+      },
+      "summary": "The transformed source remains recognizable, but no element leads and the MC-202 bass is practically inaudible.",
+      "failure_reason": "MC-202 bass is practically inaudible and adds no pressure; hook and drum support remain too weak to improve the source.",
+      "preferred_direction": "Make one source-backed hook dominant and give the bass immediate physical pressure without masking the transformed break.",
+      "avoid": ["inaudible bass", "weak generic support", "layering without a leading element"]
+    },
+    {
+      "label_id": "riotbox-1398-tonal-rusharp-weak",
+      "created_at": "2026-07-11",
+      "reviewer": "Markus",
+      "human_verdict": "weak",
+      "source_family": "tonal_hook",
+      "source_id": "tonal_rusharp_120",
+      "review_pack_schema": "riotbox.professional_output_listening_pack.v1",
+      "review_pack_id": "professional-output-listening-pack:tonal_rusharp_120",
+      "artifact_identity": {
+        "performance_report_sha256": "acb2de425de2853badeb89406b2e4bcd58c3e88b7ba31721fd303af59a70ed6d",
+        "agent_review_sha256": "fd6988d5ec9c83e554b3ec5dac7986b1882a75cbb8195ee266cae64e79b232ad",
+        "audio_sha256": {
+          "source_window": "35bee646b4618449baa5b7dafe74f037ec2112c6cf7920a01772498db188ee7f",
+          "rebuild_only_performance": "65e2c1a13c12621aa614b3e9b4d5782e5bf8b07787dc048109f531869d069707"
+        }
+      },
+      "reason_tags": {
+        "hook_clarity": "clear",
+        "hardest_hit": "chop",
+        "bass_pressure": "missing",
+        "destructive_contrast": "weak",
+        "source_character": "source_transformed_but_present",
+        "replay_value_after_eight_bars": "inconclusive"
+      },
+      "summary": "The melodic transformation sounds advanced and produces a good hook, but the intended bass support is not audible.",
+      "failure_reason": "The melodic transformation sounds advanced and the hook is good, but the intended bass pressure is not audible.",
+      "preferred_direction": "Preserve the strong transformed arpeggio hook while adding tight, clearly audible bass support underneath it.",
+      "avoid": ["inaudible bass", "masking the melodic hook", "adding weak generic layers"]
+    },
+    {
+      "label_id": "riotbox-1398-sparse-kicksnr-weak",
+      "created_at": "2026-07-11",
+      "reviewer": "Markus",
+      "human_verdict": "weak",
+      "source_family": "sparse_bass_pressure",
+      "source_id": "sparse_kicksnr_120",
+      "review_pack_schema": "riotbox.professional_output_listening_pack.v1",
+      "review_pack_id": "professional-output-listening-pack:sparse_kicksnr_120",
+      "artifact_identity": {
+        "performance_report_sha256": "2a1a19507742c666d0db635624b546124de0b0690f8f12b77c2335969fea60a5",
+        "agent_review_sha256": "5f1f3db9243b04835467585afde8dd782e27d429eeeccb2d19d24d97e7fd102f",
+        "audio_sha256": {
+          "source_window": "6a10ff4a84ac5cc8dc8bfa0504fe7d9513605276fdff93193864c5e9aa2274e1",
+          "rebuild_only_performance": "c0e01b1cb49981fc520b8af670bb04362a92380f40f5741f97a029b2ee46c44c"
+        }
+      },
+      "reason_tags": {
+        "hook_clarity": "clear",
+        "hardest_hit": "snare",
+        "bass_pressure": "weak",
+        "destructive_contrast": "weak",
+        "source_character": "source_transformed_but_present",
+        "replay_value_after_eight_bars": "inconclusive"
+      },
+      "summary": "A recognizable drum hook survives and bass is audible, but the bass drones and remains too weak for physical pressure.",
+      "failure_reason": "The drum hook is recognizable and bass is audible, but the bass is droning and still too weak to deliver physical pressure.",
+      "preferred_direction": "Keep the recognizable drum hook and make the bass tighter, more physical, and less droning while preserving some source character.",
+      "avoid": ["droning bass", "weak low-end pressure", "masking the source drum identity"]
+    }
+  ]
+}

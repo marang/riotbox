@@ -232,6 +232,7 @@ docs/
 - `benchmarks/dense_break_performance_pack_v1_2026-06-04.md`: dense-break 8-bar sound-quality Golden Path captured
 - `benchmarks/agent_musical_review_pack_v1_2026-06-04.md`: agent-facing dense-break audio review pack captured
 - `benchmarks/human_listening_label_corpus_v1_2026-06-04.md`: human listening label corpus contract captured
+- `benchmarks/p023_human_listening_label_corpus_2026-07-11.json`: RIOTBOX-1398 real dense, tonal, and sparse human labels captured by artifact hash
 - `benchmarks/audio_judge_spike_v1_2026-06-04.md`: CLAP/MERT-style audio judge spike boundary captured
 - `benchmarks/musical_pass_gate_policy_v1_2026-06-04.md`: agent/human musical-pass verdict policy captured
 - `benchmarks/sound_excellence_source_corpus_v1_2026-06-05.md`: P023 real-source coverage contract captured
@@ -250,6 +251,7 @@ docs/
   exit review captured
 - `reviews/p016_export_action_boundary_2026-05-31.md`: P016 export action
   boundary before file-writing workflow captured
+- `reviews/riotbox_1398_human_listening_review_2026-07-11.md`: RIOTBOX-1398 real human verdicts and the selected bass-pressure follow-up captured
 - `benchmarks/product_export_reproducibility_boundary_2026-05-07.md`: normalized product-export reproducibility boundary captured
 - `benchmarks/stage_style_stability_proof_2026-05-07.md`: normalized stage-style repeated-run stability proof captured
 - `benchmarks/jam_footer_color_hierarchy_baseline_2026-04-25.md`: Jam footer color hierarchy readability baseline captured
