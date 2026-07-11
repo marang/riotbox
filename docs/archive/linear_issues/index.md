@@ -1422,4 +1422,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Add shared master-bus soft limiter without masking weak-output gates
 - [RIOTBOX-1397.md](./RIOTBOX-1397.md)
   P023: Reset active phase and operating rules around audible verticals
+- [RIOTBOX-1406.md](./RIOTBOX-1406.md)
+  P023: Align concrete execution order with audible Golden Path priority
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
