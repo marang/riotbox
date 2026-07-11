@@ -1426,4 +1426,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Align concrete execution order with audible Golden Path priority
 - [RIOTBOX-1398.md](./RIOTBOX-1398.md)
   P023: Record real human verdicts for current sound candidates
+- [RIOTBOX-1330.md](./RIOTBOX-1330.md)
+  P023: Wire trusted Rust timing into live source ingest and confirmation
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
