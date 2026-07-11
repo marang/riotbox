@@ -22,6 +22,25 @@ For every feature, prove both:
 
 Do not claim an audio feature works from UI/log/state assertions alone.
 
+A nearest downstream render seam is partial evidence. When a slice claims
+musician-facing instrument progress and the live path is in scope, require the
+exact live runtime / mixer path before calling it complete.
+
+## Work Classes
+
+Classify each slice before implementation:
+
+- `audible_vertical_slice`: changes what the musician can hear or play; prove
+  the product path, musician action, audible consequence, and listening state
+- `contract_enabler`: changes a prerequisite contract; name exactly one
+  directly enabled audible follow-up issue and outcome
+- `maintenance/regression`: preserves behavior; do not present it as musical or
+  instrument progress
+
+Do not chain contract enablers without landing the named audible follow-up.
+Offline binaries, scripted packs, fixtures, reports, and validators stay
+diagnostic until their behavior is promoted into product ownership.
+
 ## Product Intelligence Rule
 
 Riotbox must not confuse scaffolding with intelligence.
@@ -73,9 +92,20 @@ For audio-producing work, use this minimum gate:
 - source-vs-control comparison when a source-backed feature could silently collapse to fallback
 - local listening or explicit note that the audible seam is not operational yet
 
+Default to this order: implement the audible product behavior, render or capture
+the narrow seam, listen, then freeze the smallest regression that catches the
+observed failure. Add new QA infrastructure first only when the current behavior
+cannot otherwise be evaluated honestly.
+
 If a user says two gestures sound the same, prefer adding or tightening an output comparison before adding more UI/log assertions.
 
 If output metrics pass but the musician-facing result is still weak, treat the feature as technically partial, not done.
+
+After at most two consecutive generations of a review-ready candidate that
+still has `human_verdict: unverified`, stop generation for that candidate and
+perform or explicitly hand off structured human listening. Do not continue with
+another report, threshold, fixture, queue, or validator unless the current
+failure is genuinely unobservable.
 
 ## Structured Listening Review
 
@@ -98,7 +128,10 @@ Treat it as an audio QA incident. Produce an audio evidence packet before declar
    - comparison metric against a fallback/control/baseline/source-backed render: duration delta, loudness delta, RMS difference, normalized correlation or spectral difference, and byte/hash identity only as a quick duplicate check.
 6. Interpret the measurements in prose. Say whether they support the user's report, contradict it, or reveal a different failure. Raw command output is not enough.
 7. If a required analysis tool is unavailable, install/request it when appropriate or name the missing evidence and use the nearest available fallback. Do not silently skip the output-path check or replace it with log inspection.
-8. Convert the finding into one concrete follow-up: fixture, automated threshold, regression render, UX cue, audio policy change, fallback guard, or implementation fix.
+8. Convert the finding into one concrete follow-up. Prefer the audio policy or
+   implementation fix when the failure is already observable; use a fixture,
+   threshold, regression render, or UX cue when it closes a real evidence or
+   musician-understanding blind spot.
 
 When possible, keep or add a reproducible fixture that would fail for silence, fallback collapse, identical output, or repeated placeholder tones.
 

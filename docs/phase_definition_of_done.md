@@ -1,7 +1,7 @@
 # Riotbox Phase Definition of Done
 
-Version: 0.1  
-Status: Draft  
+Version: 0.2
+Status: Active
 Audience: product, engineering, QA
 
 ---
@@ -339,12 +339,66 @@ Current review:
   `just p014-scene-movement-observer-probe`,
   `just p012-all-lane-source-grid-output-proof`,
   `just representative-source-showcase-musical-quality` after regenerating a
-  stale local representative showcase, and `just ci` before review. P016 is now
-  the active implementation phase.
+  stale local representative showcase, and `just ci` before review. P015 stays
+  a closed regression baseline while P023 is the active implementation phase.
 
 ---
 
-## 15. Feral Layer Done Criteria
+## 15. P023 - Usable Musical Alpha
+
+Boundary:
+
+- `P023 | Sound Excellence / Production Quality` is the single active product
+  priority until `RIOTBOX-1396` closes.
+- The first exit supports one trusted dense-break Golden Path through the exact
+  live `riotbox-app` runtime and mixer. Offline binaries, scripted packs,
+  fixtures, reports, and validators are diagnostic evidence only.
+- P016, P021, and P022 are deferred unless a ticket names the exact P023 blocker
+  it removes.
+- Broad positive source-family expansion and negative-source coverage do not
+  block this first exit.
+
+Done when:
+
+- one real dense-break source reaches a strong hook through the exact live
+  product path within five minutes from a fresh session
+- timing is trusted or explicitly confirmed and the same committed timing
+  identity drives W-30, TR-909, MC-202, transport, Session, and replay
+- W-30 plays recognizable transformed source audio, TR-909 supplies physical
+  drum pressure, and MC-202 takes a source-related bass / answer / stay-out role
+- one element clearly hits hardest, the hook appears within two bars, and at
+  least four live gestures create immediate audible contrast including one
+  destructive stop / drop / retrigger
+- no silent collapse, clipping, source-fake output, or synthetic replacement
+  fallback reaches the product output path
+- capture, audition, promote / save, restart, recall, trigger, and deterministic
+  replay preserve the accepted musical result
+- README and one short Jam recipe state what to load, press, see, and hear
+  without requiring Log or source-code knowledge
+- a real structured listening review records strongest element, source
+  recognition, hook, main failure / preferred direction, eight-bar replay
+  value, and final `human_verdict: pass`
+
+Not sufficient for exit:
+
+- a control-path, queue, log, or observer assertion without live output proof
+- a nearest offline render seam without the exact live product path
+- scripted or fixture-backed `pass` data
+- another unverified review pack, readiness report, threshold, or validator
+  when a review-ready candidate is already waiting for human listening
+
+After exit:
+
+- tonal and sparse positive sources may expand the human-passed live policy
+- `weak_source` and `bad_timing` pass their family contract through reviewed
+  correct degraded / unavailable / reject behavior when trusted generation is
+  not possible; they do not need demo-ready music
+- P016 and the wider P021/P022/P023 quality ladder may resume from the accepted
+  live baseline
+
+---
+
+## 16. Feral Layer Done Criteria
 
 The feral layer is done for MVP purposes when:
 
@@ -362,7 +416,7 @@ Current review:
 
 ---
 
-## 15. 1.0 / Stage-Ready Product Readiness
+## 17. 1.0 / Stage-Ready Product Readiness
 
 Riotbox is close to product-ready when:
 

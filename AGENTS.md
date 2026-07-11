@@ -28,6 +28,10 @@ If Riotbox work reveals a recurring product failure mode or better QA pattern, u
   scaffolds or controls until source evidence actually changes musical choice
   and output.
 - Do not close an audio-producing slice with only UI/log proof. If sound should change, prove the output path.
+- A nearest offline render seam is partial evidence; product-facing instrument
+  progress requires the exact live runtime / mixer path when that path is in
+  scope.
+- Fixture verdicts never count as human listening coverage.
 - For every new `ActionCommand`, account for queue, commit/side-effect, Session/replay, user/observer, and QA surfaces.
 - Treat `JamAppState` as an app facade, not a second product truth.
 - Run branch-level review before PRs when the `code-review` skill is available.
@@ -79,6 +83,21 @@ Strategic context lives in `plan/riotbox_masterplan.md` and `plan/riotbox_liam_h
   arbitrary shards.
 - Do not add `JamAppState` state unless it is truly app-runtime state, does not need restore/replay, and has no better home in Session/Core.
 
+## Work Classification
+
+Classify P023 work before implementation:
+
+- `audible_vertical_slice`: prove the musician action, exact product path,
+  audible consequence, and listening state
+- `contract_enabler`: name exactly one directly enabled audible follow-up issue
+  and outcome
+- `maintenance/regression`: preserve behavior and do not claim musical or
+  instrument progress
+
+Do not chain contract enablers without landing the named audible follow-up.
+Offline binaries, scripted packs, fixtures, reports, and validators remain
+diagnostic until the behavior is promoted into product ownership.
+
 ## ActionCommand Rule
 
 Every new `ActionCommand` must explicitly account for:
@@ -114,6 +133,11 @@ If a surface is intentionally not applicable, say why in the PR or working notes
   - explicit PR or working-context notes when a stronger audio QA layer is still aspirational
 - For PRs that affect audible behavior, state whether a structured listening-review
   pack/verdict exists, or why the change remains `human_verdict: unverified`.
+- After at most two consecutive generations of a review-ready candidate that
+  remains `human_verdict: unverified`, stop generation for that candidate and
+  perform or explicitly hand off structured human listening. Do not replace the
+  missing verdict with another report/validator layer unless the failure is
+  genuinely unobservable.
 - When fuller harnesses land, tighten this rule to the spec's stronger release gates.
 
 ## Musical Direction
@@ -125,6 +149,8 @@ If a surface is intentionally not applicable, say why in the PR or working notes
   impact. Riotbox output must stay original, source-backed, and its own
   identity, but the quality bar is uncompromising pressure and stage usefulness.
 - Prefer short, forceful loops with a memorable hook, stab, riff, break, bass gesture, vocal hit, or silence cut.
+- Establish one supported Golden Path with a clear hook and hardest element
+  before widening source-family coverage or multiplying variations.
 - Make live gestures audibly dramatic: trigger, mute, choke, retrigger, reverse, pitch dive, filter slam, bitcrush, fill, and dropout should change the room immediately.
 - Do not implement hardcoded musical/audio fallback output as a product path.
   When source-backed generation cannot produce trusted material, surface
@@ -141,6 +167,9 @@ If a surface is intentionally not applicable, say why in the PR or working notes
   scaffold, but it is not quality proof and must be labeled accordingly in
   manifests, PRs, specs, and demos.
 - Tie taste critique to one concrete implementation or QA follow-up: sample transform, drum policy, trigger behavior, preset change, fixture, threshold, or UI cue.
+- Positive demo families need real human musical passes. Weak or bad-timing
+  sources may satisfy their product contract through reviewed degraded /
+  unavailable / reject behavior instead of forced demo-ready music.
 
 ## Rust Guidance
 
@@ -186,7 +215,10 @@ If a surface is intentionally not applicable, say why in the PR or working notes
   - growth of any Rust file beyond the soft review-size guidance, especially
     when a semantic module split would reduce review risk
 - Run `review-codebase` regularly, not on every branch.
-- Default broad-review cadence: after every 5th finished feature branch.
+- Default broad-review cadence: after every 5th substantive feature branch or
+  at an active phase checkpoint. Docs-only, archive-only, fixture-only, and
+  mechanical maintenance branches do not advance the counter unless they
+  materially change architecture or product contracts.
 - Record important broad-review findings in:
   - `docs/reviews/`
   - `docs/research_decision_log.md`
@@ -220,6 +252,9 @@ Hard rules that must stay true:
 - Derive the next ticket from `docs/execution_roadmap.md`,
   `docs/phase_definition_of_done.md`, the active spec, and actual repo state;
   prefer the smallest coherent slice on the product spine.
+- While P023 is active, prefer a waiting structured human review, then the next
+  unblocked audible Golden Path slice. Select P016/P021/P022 work only when its
+  issue names the exact P023 blocker it removes.
 
 ## Commands
 

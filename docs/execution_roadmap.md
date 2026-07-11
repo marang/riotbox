@@ -1,7 +1,7 @@
 # Riotbox Execution Roadmap
 
-Version: 0.1  
-Status: Draft  
+Version: 0.2
+Status: Active
 Audience: product, realtime, MIR/ML, TUI, QA
 
 Derived from:
@@ -283,7 +283,7 @@ Near-next roadmap-aligned work:
 6. keep the P011 aggregate gate, P012 all-lane source-grid proof, P013
    representative musical-quality gate, P014 scene-movement observer/audio
    proof, and P015 Jam taste/proof gate green as regression baselines while
-   P016 starts from the existing product spine
+   P023 drives one live, human-passed Usable Musical Alpha
 
 Linear project / phase map:
 
@@ -293,24 +293,24 @@ Linear project / phase map:
 4. `P014 | Arrangement / Scene System` - closed bounded Arrangement / Scene
    exit
 5. `P015 | Productization Alpha` - closed bounded Productization Alpha baseline
-6. `P016 | Pro Workflow / Export` - active immediate track
+6. `P016 | Pro Workflow / Export` - deferred unless it directly blocks the
+   P023 Golden Path
 7. `P017 | Live Performance Readiness`
 8. `P018 | Ghost + Feral Autonomy Expansion`
 9. `P019 | Beta / Release Hardening`
 10. `P020 | Riotbox 1.0 Release Cut`
-11. `P021 | Audio Judge / Musical Fitness` - planned calibrated audio-quality
-   judging track
-12. `P022 | Professional Sound Output` - active professional-output proof
-    track for source-backed rendered examples, listening verdicts, and weak
-    output regression fixtures
-13. `P023 | Sound Excellence / Production Quality` - planned 10/10
-    sound-product track for release-grade musical output, demo quality, and the
-    failure-to-fix loop beyond technical audio correctness
+11. `P021 | Audio Judge / Musical Fitness` - deferred calibration support;
+    proceed only when it directly blocks the P023 Golden Path
+12. `P022 | Professional Sound Output` - deferred diagnostic baseline for
+    source-backed rendered examples and weak-output regressions
+13. `P023 | Sound Excellence / Production Quality` - active immediate track;
+    first exit is the `RIOTBOX-1396` live, human-passed Usable Musical Alpha
 
 This is a project / phase overview, not a ticket list. Keep P012, P013, P014,
-and P015 as regression baselines and keep P017-P020 coarse while P016 turns the
-bounded product spine toward pro workflow and export behavior. P021, P022, and
-P023 are the explicit quality ladder:
+and P015 as regression baselines and keep P017-P020 coarse while P023 turns the
+bounded product spine into one usable live instrument path. P016, P021, and
+P022 stay available as support tracks but do not outrank the active P023 exit.
+The quality ladder remains:
 
 - P021 makes the technical audio-QA and musical-fitness judge calibrated enough
   to reject silence, clipping, fallback collapse, repeated placeholders, weak
@@ -325,7 +325,9 @@ P023 are the explicit quality ladder:
 
 P021 must not replace human listening or become a hidden taste oracle without
 labeled Riotbox examples. P022 and P023 must not bypass Source Graph, Session,
-Action Lexicon, queue / commit, replay, or existing audio-QA contracts.
+Action Lexicon, queue / commit, replay, or existing audio-QA contracts. Work in
+P016, P021, or P022 is eligible during the active P023 phase only when the issue
+names the exact Golden Path blocker it removes.
 
 ### Product Intelligence Contract
 
@@ -647,9 +649,13 @@ fixture `scripts/fixtures/sound_product_readiness_rubric/rubric_v1.json`.
 The release-grade sound path is clear only when P022 and P023 prove all of the
 following:
 
-- real-source output regularly earns structured human `pass` verdicts across
-  dense breaks, sparse drums, tonal riffs, pad / noise material, weak sources,
-  and bad-timing sources
+- the first bounded product exit is one dense-break source that earns a
+  structured human `pass` through the exact live product path
+- later positive-source expansion earns structured human `pass` verdicts for
+  sparse drums and tonal riffs without collapsing to the dense-break policy
+- weak and bad-timing sources satisfy their family contract through reviewed,
+  musician-readable degraded / unavailable / reject behavior when trusted
+  generation is not possible; they are not required to become demo-ready music
 - a strong output has an identifiable hook within two bars: stab, riff, break,
   bass gesture, vocal hit, silence cut, or destructive transition
 - the hardest musical element is obvious by ear and backed by metrics:
@@ -804,10 +810,12 @@ following:
 - the release-grade demo-bank contract is versioned in
   `docs/specs/release_grade_musician_demo_bank_spec.md` and validated by
   `scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json`
-- source-family release-demo coverage must compare the P023 real-source corpus
-  with the demo bank and block release-ready claims while any source family
-  lacks a demo candidate, human verdict, or demo-ready human-pass entry; the
-  gate must remain CI-safe without ignored local WAV files
+- source-family release coverage must compare the P023 real-source corpus with
+  the demo bank and the reviewed product-handling evidence: positive demo
+  families need a real candidate, human verdict, and demo-ready human pass;
+  `weak_source` and `bad_timing` need reviewed correct degraded / unavailable /
+  reject behavior instead of a forced demo-ready pass; the gate must remain
+  CI-safe without ignored local WAV files
 - hardcoded or scripted audio generation may be used only as smoke, regression,
   or diagnostic evidence; it must not be presented as technical or musical
   quality proof until the relevant behavior is source-aware, policy-owned, and
@@ -1313,21 +1321,36 @@ release gate unless a future issue promotes it into normal roadmap scope.
 
 ## 15. Next Concrete Step
 
-The immediate execution track is `P016 | Pro Workflow / Export`: start from the
-P011 replay/recovery/export hardening baseline plus the P012, P013, P014, and
-P015 product-spine proof surfaces, then add bounded pro workflow / export
-behavior without weakening replay, timing, musical-depth, scene, or Jam
-taste/proof regression gates.
+The immediate execution track is
+`P023 | Sound Excellence / Production Quality`. Its first bounded exit is
+`RIOTBOX-1396`: ship one live,
+human-passed Usable Musical Alpha before resuming export, broad corpus, or
+additional QA-infrastructure work.
 
-As of 2026-06-05, product-quality work should prioritize the dense-break
-8-bar source-backed performance Golden Path and the P021/P022/P023 quality
-ladder before further TUI/export polish: the thing Riotbox delivers must sound
-stronger before downstream workflow surfaces become valuable. P021 is the
-future calibration layer for agent-assisted musical judgment; P022 captures
-professional-output evidence and weak-output regressions; P023 owns the path to
-10/10 sound-product quality and the 20/10 idea backlog. These tracks should
-grow from real review packs, human labels, and reproducible audio artifacts,
-not from generic metrics alone.
+Execute that exit in this order:
+
+1. `RIOTBOX-1397` synchronizes the active phase, work classes, listening stop
+   rule, and honest demo-family outcomes.
+2. `RIOTBOX-1398` records real human verdicts for the strongest current dense,
+   tonal, and sparse candidates; `RIOTBOX-1403` prevents fixture evidence from
+   driving live readiness; `RIOTBOX-1399` narrows routine PR validation without
+   weakening the broad phase gate.
+3. `RIOTBOX-1330`, `RIOTBOX-1333`, and `RIOTBOX-1335` land trusted live timing,
+   real W-30 source playback, and a reachable Blend / four-gesture musician
+   path.
+4. `RIOTBOX-1400` promotes the minimum dense-break performance policy from
+   bin-local / scripted diagnostics into shared library and live-runtime
+   ownership.
+5. `RIOTBOX-1401` adds one curated Feral Break Alpha state with capture,
+   recall, replay, and a short real-source recipe.
+6. `RIOTBOX-1402` runs the exact live journey and closes only with a structured
+   human `pass`. A weak or rejected result routes to one highest-value audio or
+   policy fix before another review; it does not open another report layer.
+
+Only after that exit may `RIOTBOX-1404` expand the human-passed live path to
+tonal and sparse material and `RIOTBOX-1405` prove correct degraded / reject
+behavior for weak and bad-timing sources. P016, P021, and P022 remain deferred
+unless an issue names the exact Golden Path blocker it removes.
 
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a
@@ -1373,7 +1396,9 @@ spine and P013 musical-depth baseline:
 - keep Jam / Source / observer timing language aligned through the shared Jam
   Source Timing summary whenever timing evidence is surfaced
 
-P016 work may now proceed, but it must preserve the P015 bounded exit: no
-automatic arranger, second Scene Graph, hidden replay/timing truth, product
-taste oracle, host-audio soak claim, or full DAW/stem export claim without a new
-Action Lexicon, Session/replay, observer, and output-QA contract.
+P016 work is deferred until the P023 Usable Musical Alpha exit unless it
+directly removes a named Golden Path blocker. When it resumes, it must preserve
+the P015 bounded exit: no automatic arranger, second Scene Graph, hidden
+replay/timing truth, product taste oracle, host-audio soak claim, or full
+DAW/stem export claim without a new Action Lexicon, Session/replay, observer,
+and output-QA contract.

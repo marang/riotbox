@@ -2908,3 +2908,19 @@ Why: the README identified real weaknesses, especially textual `include!` splits
 Evidence: RIOTBOX-1320 incorporates the README into canonical docs, splits the broad musical quick-win proposal into separate TR-909, MC-202, W-30, Source Timing, Scene Brain, sidecar, QA, and UX tracks, and removes the temporary planning file after incorporation.
 Consequences: future agents should use the improvement tracks as backlog and guardrails, not as a reason to pause sound-product progress. Musical fallback output remains forbidden on product paths; unavailable or degraded source-backed material must be surfaced honestly instead of filled with synthetic replacement music.
 Status: accepted
+
+---
+
+### RBX-133
+
+Date: 2026-07-11
+Topic: P023 becomes the single active product priority until one live human-passed Usable Musical Alpha exists
+Phase: P023 Sound Excellence / Production Quality
+Question: how should Riotbox convert its large diagnostic, QA, and offline-render investment into a genuinely usable instrument without weakening the product spine or audio-QA honesty?
+Options considered: keep P016 active while treating quality as a parallel ladder; create a new P024 project for the musical alpha; keep producing P023 readiness infrastructure; or make the existing P023 project own one bounded live human-passed exit.
+Decision: make `RIOTBOX-1396` the bounded active exit and defer P016, P021, and P022 unless a ticket names the exact Golden Path blocker it removes. Classify work as `audible_vertical_slice`, `contract_enabler`, or `maintenance/regression`; require exact live runtime / mixer proof for product-facing instrument progress; stop after at most two review-ready but still unverified candidate generations and perform or explicitly hand off structured human listening. Require positive demo families to earn human passes, while weak and bad-timing sources may satisfy their family contract through reviewed degraded / unavailable / reject behavior.
+Why: repository evidence showed high delivery velocity but low conversion into live musician value: strong sound policy remained concentrated in offline diagnostics, all current listening-review artifacts remained unverified, and conflicting active-phase language let automatic ticket selection prefer the next machine-verifiable report gap. Reusing P023 avoids another project split while preserving replay, realtime, provenance, and negative-fixture strengths.
+Evidence: Linear project P023 is urgent and active with `RIOTBOX-1396` as parent outcome; `RIOTBOX-1397` through `RIOTBOX-1405` encode the ordered reset, real listening, live timing / W-30 / performance path, capture / replay, human pass, and later controlled expansion. The roadmap, phase DoD, architecture map, workflow, demo-bank spec, AGENTS guardrails, and project skills carry the same bounded direction.
+Consequences: offline packs, fixtures, reports, and validators remain valuable diagnostic evidence but cannot close an instrument-progress claim. A contract enabler names exactly one audible follow-up. A waiting human review outranks another report layer. Broader source-family and export work resumes only after the dense-break live alpha earns a structured human pass, except for a directly named blocker.
+Follow-up: complete `RIOTBOX-1397`, then record real candidate verdicts in `RIOTBOX-1398` before selecting another sound-policy fix.
+Status: accepted
