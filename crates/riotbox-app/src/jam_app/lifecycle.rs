@@ -138,11 +138,11 @@ impl JamAppState {
             cache,
         );
         render.is_transport_running = self.runtime.transport.is_playing;
-        render.tempo_bpm = self
-            .source_graph
-            .as_ref()
-            .and_then(|graph| graph.timing.bpm_estimate)
-            .unwrap_or(self.runtime.tr909_render.tempo_bpm);
+        render.tempo_bpm = super::transport_helpers::trusted_source_timing_bpm(
+            &self.session,
+            self.source_graph.as_ref(),
+        )
+        .unwrap_or(0.0);
         render.position_beats = self.runtime.transport.position_beats;
         if let Some(anchor) = source_monitor_scene_anchor(&self.session, self.source_graph.as_ref())
         {

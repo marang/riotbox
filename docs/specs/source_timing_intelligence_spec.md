@@ -284,6 +284,25 @@ Rules:
   source-window reuse; unconfirmed manual-confirm timing must remain visible as
   `needs_user_confirmation` and must not silently create bar-accurate source
   windows.
+- live `riotbox-app --source` ingest must replace sidecar timing fields with the
+  deterministic Rust source-timing probe before the Source Graph and Session
+  graph reference are hashed or persisted. Sidecar-derived sections, assets,
+  candidates, source features, and provider provenance remain intact, while
+  graph provenance must name the Rust timing provider. The ingest work is
+  control-plane analysis and must stay outside the realtime callback.
+- TR-909, MC-202, W-30 preview, Source Monitor timing, and transport
+  meter/phrase projection must consume one readiness-gated timing authority.
+  Analyzer-locked or matching user-confirmed timing may expose a positive BPM;
+  manual-confirm, fallback, unavailable, non-finite, and non-positive timing
+  must expose no live lane BPM until trust changes through the existing Session
+  action path.
+- `riotbox-app --source-bpm <bpm>` is a bounded explicit confirmation, not an
+  arbitrary BPM override or a second grid generator. It may commit
+  `source_timing.confirm_grid` only when the Rust probe produced a primary grid
+  within 1 BPM of the supplied positive finite value. Missing or mismatched
+  candidates fail before ingest persistence; successful confirmation retains
+  source id, hypothesis id, action id, and timestamp through Session restore and
+  replay.
 - confirmation is explicitly revertible through `source_timing.revert_grid`;
   that action clears a matching `runtime_state.source_timing.confirmed_grid`
   value through queue / commit / replay rather than deleting or weakening the

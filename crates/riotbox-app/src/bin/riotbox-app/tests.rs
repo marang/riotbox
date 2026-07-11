@@ -71,6 +71,34 @@ mod tests {
     }
 
     #[test]
+    fn parse_args_accepts_explicit_source_bpm_only_for_ingest() {
+        let launch = parse_args([
+            "--source".into(),
+            "input.wav".into(),
+            "--source-bpm".into(),
+            "130.0".into(),
+        ])
+        .expect("parse explicit source BPM");
+
+        match launch.mode {
+            LaunchMode::Ingest {
+                explicit_source_bpm,
+                ..
+            } => assert_eq!(explicit_source_bpm, Some(130.0)),
+            _ => panic!("expected ingest mode"),
+        }
+
+        let error = parse_args([
+            "--session".into(),
+            "session.json".into(),
+            "--source-bpm".into(),
+            "130.0".into(),
+        ])
+        .expect_err("source BPM requires ingest");
+        assert!(error.contains("--source-bpm requires --source"));
+    }
+
+    #[test]
     fn parse_args_defaults_ingest_to_embedded_graph_storage() {
         let mode = parse_args([
             "--source".into(),

@@ -5,6 +5,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     let mut source_graph_path = None;
     let mut sidecar_script_path = Some(PathBuf::from(DEFAULT_SIDECAR_PATH));
     let mut analysis_seed = 19_u64;
+    let mut explicit_source_bpm = None;
     let mut saw_session_flag = false;
     let mut saw_sidecar_flag = false;
     let mut saw_seed_flag = false;
@@ -116,9 +117,25 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
                     .parse::<u64>()
                     .map_err(|_| format!("invalid seed value: {value}"))?;
             }
+            "--source-bpm" => {
+                let value = args
+                    .next()
+                    .ok_or_else(|| "missing value for --source-bpm".to_string())?;
+                let bpm = value
+                    .parse::<f32>()
+                    .map_err(|_| format!("invalid source BPM value: {value}"))?;
+                if !bpm.is_finite() || bpm <= 0.0 {
+                    return Err(format!("invalid source BPM value: {value}"));
+                }
+                explicit_source_bpm = Some(bpm);
+            }
             "--help" | "-h" => return Err(help_text()),
             other => return Err(format!("unknown argument: {other}\n\n{}", help_text())),
         }
+    }
+
+    if explicit_source_bpm.is_some() && source_path.is_none() {
+        return Err("--source-bpm requires --source <audio.wav>".into());
     }
 
     let stem_package_mode_count = [
@@ -362,6 +379,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             sidecar_script_path: sidecar_script_path
                 .unwrap_or_else(|| PathBuf::from(DEFAULT_SIDECAR_PATH)),
             analysis_seed,
+            explicit_source_bpm,
         },
         None => {
             if !saw_session_flag {
