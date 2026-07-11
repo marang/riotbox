@@ -1330,11 +1330,10 @@ additional QA-infrastructure work.
 Execute that exit in this order:
 
 1. `RIOTBOX-1397` synchronizes the active phase, work classes, listening stop
-   rule, and honest demo-family outcomes.
+   rule, and honest demo-family outcomes; `RIOTBOX-1406` corrects the concrete
+   order to match those selection rules.
 2. `RIOTBOX-1398` records real human verdicts for the strongest current dense,
-   tonal, and sparse candidates; `RIOTBOX-1403` prevents fixture evidence from
-   driving live readiness; `RIOTBOX-1399` narrows routine PR validation without
-   weakening the broad phase gate.
+   tonal, and sparse candidates and sets the immediate sound-policy direction.
 3. `RIOTBOX-1330`, `RIOTBOX-1333`, and `RIOTBOX-1335` land trusted live timing,
    real W-30 source playback, and a reachable Blend / four-gesture musician
    path.
@@ -1348,9 +1347,12 @@ Execute that exit in this order:
    policy fix before another review; it does not open another report layer.
 
 Only after that exit may `RIOTBOX-1404` expand the human-passed live path to
-tonal and sparse material and `RIOTBOX-1405` prove correct degraded / reject
-behavior for weak and bad-timing sources. P016, P021, and P022 remain deferred
-unless an issue names the exact Golden Path blocker it removes.
+tonal and sparse material. `RIOTBOX-1403` then separates fixture evidence from
+live readiness before `RIOTBOX-1405` proves correct degraded / reject behavior
+for weak and bad-timing sources. `RIOTBOX-1399` remains post-alpha workflow
+optimization unless measured validation cost is recorded as an explicit blocker
+of the live path. P016, P021, and P022 remain deferred unless an issue names the
+exact Golden Path blocker it removes.
 
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a
