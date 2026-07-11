@@ -117,9 +117,7 @@ pub(super) fn build_tr909_render_state(
 ) -> Tr909RenderState {
     let tr909 = &session.runtime_state.lane_state.tr909;
     let mixer = &session.runtime_state.mixer_state;
-    let tempo_bpm = source_graph
-        .and_then(|graph| graph.timing.bpm_estimate)
-        .unwrap_or(0.0);
+    let tempo_bpm = trusted_source_timing_bpm(session, source_graph).unwrap_or(0.0);
     let scene_context = session
         .runtime_state
         .scene_state
@@ -202,9 +200,7 @@ pub(super) fn build_mc202_render_state(
     let current_section = mc202_current_section(source_graph, transport, scene_context(session));
     let hook_response =
         mc202_hook_response_for_role_graph_and_section(role, source_graph, current_section);
-    let tempo_bpm = source_graph
-        .and_then(|graph| graph.timing.bpm_estimate)
-        .unwrap_or(0.0);
+    let tempo_bpm = trusted_source_timing_bpm(session, source_graph).unwrap_or(0.0);
 
     let movement = active_scene_movement(session);
     let touch = scene_movement_mc202_touch(
@@ -416,9 +412,7 @@ pub(super) fn build_w30_preview_render_state(
             _ => W30PreviewSourceProfile::PromotedRecall,
         }),
     };
-    let tempo_bpm = source_graph
-        .and_then(|graph| graph.timing.bpm_estimate)
-        .unwrap_or(0.0);
+    let tempo_bpm = trusted_source_timing_bpm(session, source_graph).unwrap_or(0.0);
     let source_window_preview = if !matches!(mode, W30PreviewRenderMode::Idle) {
         capture.and_then(|capture| {
             build_w30_capture_artifact_preview(capture, capture_audio_cache).or_else(|| {

@@ -2924,3 +2924,17 @@ Evidence: Linear project P023 is urgent and active with `RIOTBOX-1396` as parent
 Consequences: offline packs, fixtures, reports, and validators remain valuable diagnostic evidence but cannot close an instrument-progress claim. A contract enabler names exactly one audible follow-up. A waiting human review outranks another report layer. Broader source-family and export work resumes only after the dense-break live alpha earns a structured human pass, except for a directly named blocker.
 Follow-up: complete `RIOTBOX-1397`, then record real candidate verdicts in `RIOTBOX-1398` before selecting another sound-policy fix.
 Status: accepted
+
+---
+
+### RBX-134
+
+Date: 2026-07-11
+Topic: live source ingest and all live lane timing consumers share the Rust Source Timing trust boundary
+Phase: P023 / Live Musical Alpha
+Question: how should Riotbox move the stronger offline Rust timing evidence into the live instrument without creating a second timing truth or trusting weak estimates silently?
+Decision: live `riotbox-app --source` ingest replaces only the sidecar timing payload with the deterministic Rust source-timing model before graph hashing and persistence. TR-909, MC-202, W-30 preview, Source Monitor timing, and transport meter/phrase projection read one readiness-gated helper backed by Source Graph plus Session confirmation. `--source-bpm` is a confirmation of a matching Rust primary hypothesis within 1 BPM, not an arbitrary override; it commits the existing `source_timing.confirm_grid` action and fails before persistence when no matching grid exists.
+Why: the offline detector, Session confirmation action, and replay identity already existed, but the live ingest still persisted weaker sidecar timing and audio projections read raw compatibility BPM fields. That allowed untrusted timing to reach the instrument and split the effective timing authority.
+Evidence: RIOTBOX-1330 adds live Rust-probe enrichment and provenance, same-source stability and cross-source identity tests, unavailable/manual-confirm gating, shared lane-consumer assertions, explicit confirmation mismatch rejection, and ingest/save/restore confirmation coverage.
+Consequences: timing analysis remains outside the realtime callback; Source Graph remains analysis truth and Session remains musician trust truth. This enables the real-source W-30 sampler slice but does not claim production-grade arbitrary-audio detection or audible quality by itself.
+Status: accepted

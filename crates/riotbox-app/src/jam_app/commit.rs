@@ -264,7 +264,9 @@ impl JamAppState {
             ActionCommand::TransportPlay
             | ActionCommand::TransportPause
             | ActionCommand::TransportStop
-            | ActionCommand::TransportSeek => {
+            | ActionCommand::TransportSeek
+            | ActionCommand::SourceTimingConfirmGrid
+            | ActionCommand::SourceTimingRevertGrid => {
                 self.runtime.transport = super::transport_helpers::transport_clock_from_state(
                     &self.session,
                     self.source_graph.as_ref(),

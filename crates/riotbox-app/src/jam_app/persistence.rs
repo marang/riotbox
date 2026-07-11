@@ -58,12 +58,35 @@ impl JamAppState {
         sidecar_script_path: impl AsRef<Path>,
         analysis_seed: u64,
     ) -> Result<Self, JamAppError> {
+        Self::analyze_source_file_to_json_with_source_bpm_confirmation(
+            source_path,
+            session_path,
+            source_graph_path,
+            sidecar_script_path,
+            analysis_seed,
+            None,
+        )
+    }
+
+    pub fn analyze_source_file_to_json_with_source_bpm_confirmation(
+        source_path: impl AsRef<Path>,
+        session_path: impl AsRef<Path>,
+        source_graph_path: Option<PathBuf>,
+        sidecar_script_path: impl AsRef<Path>,
+        analysis_seed: u64,
+        explicit_source_bpm: Option<f32>,
+    ) -> Result<Self, JamAppError> {
         let source_path = source_path.as_ref().canonicalize()?;
         let session_path = session_path.as_ref().to_path_buf();
 
         let mut client = StdioSidecarClient::spawn_python(sidecar_script_path)?;
         let pong = client.ping()?;
-        let graph = client.analyze_source_file(&source_path, analysis_seed)?;
+        let mut graph = client.analyze_source_file(&source_path, analysis_seed)?;
+        drop(client);
+        enrich_graph_with_rust_source_timing(&mut graph, &source_path)?;
+        if let Some(explicit_source_bpm) = explicit_source_bpm {
+            validate_explicit_source_bpm(&graph, explicit_source_bpm)?;
+        }
 
         let session =
             session_from_ingested_graph(&graph, &source_path, source_graph_path.as_deref())?;
@@ -73,6 +96,10 @@ impl JamAppState {
         save_session_json(&session_path, &session)?;
 
         let mut state = Self::from_json_files(&session_path, source_graph_path.as_deref())?;
+        if let Some(explicit_source_bpm) = explicit_source_bpm {
+            confirm_explicit_source_bpm(&mut state, explicit_source_bpm)?;
+            state.save()?;
+        }
         state.set_sidecar_state(SidecarState::Ready {
             version: Some(pong.sidecar_version),
             transport: "stdio-ndjson".into(),

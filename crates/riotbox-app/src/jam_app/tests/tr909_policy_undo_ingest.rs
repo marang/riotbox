@@ -303,13 +303,19 @@ fn ingests_source_file_through_sidecar_and_persists_state() {
     let persisted_graph = load_source_graph_json(&graph_path).expect("reload graph");
     assert_eq!(
         persisted_graph.provenance.provider_set,
-        vec!["decoded.wav_baseline"]
+        vec![
+            "decoded.wav_baseline",
+            "riotbox-rust-source-timing-probe"
+        ]
     );
     assert_eq!(persisted_graph.provenance.analysis_seed, 29);
     assert_eq!(persisted_graph.source.sample_rate, 44_100);
     assert_eq!(persisted_graph.source.channel_count, 2);
     assert!(persisted_graph.source.duration_seconds >= 1.9);
-    assert!(persisted_graph.timing.bpm_estimate.is_some());
+    assert!(
+        persisted_graph.timing.bpm_estimate.is_none(),
+        "a steady diagnostic tone must remain timing-unavailable instead of inheriting sidecar BPM"
+    );
     let persisted_session = load_session_json(&session_path).expect("reload session");
     assert_eq!(
         persisted_session
@@ -381,4 +387,3 @@ fn ingest_surfaces_missing_source_file_as_sidecar_error() {
         other => panic!("unexpected error: {other}"),
     }
 }
-

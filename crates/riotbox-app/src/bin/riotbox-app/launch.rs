@@ -37,6 +37,7 @@ enum LaunchMode {
         source_graph_path: Option<PathBuf>,
         sidecar_script_path: PathBuf,
         analysis_seed: u64,
+        explicit_source_bpm: Option<f32>,
     },
     StemPackageLocalCiDryRun {
         destination_path: PathBuf,
@@ -214,12 +215,14 @@ fn load_state(mode: LaunchMode) -> Result<JamAppState, JamAppError> {
             source_graph_path,
             sidecar_script_path,
             analysis_seed,
-        } => JamAppState::analyze_source_file_to_json(
+            explicit_source_bpm,
+        } => JamAppState::analyze_source_file_to_json_with_source_bpm_confirmation(
             source_path,
             session_path,
             source_graph_path,
             sidecar_script_path,
             analysis_seed,
+            explicit_source_bpm,
         ),
         LaunchMode::StemPackageLocalCiDryRun { .. } => Err(JamAppError::InvalidSession(
             "stem package local CI dry-run does not load app state".into(),

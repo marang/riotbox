@@ -1,9 +1,28 @@
+use riotbox_core::view::jam::source_timing_consumer_readiness;
 use riotbox_core::{
     ids::SceneId,
     session::SessionFile,
     source_graph::{SectionLabelHint, SourceGraph},
     transport::{CommitBoundaryState, TransportClockState},
 };
+
+pub(in crate::jam_app) fn trusted_source_timing_bpm(
+    session: &SessionFile,
+    source_graph: Option<&SourceGraph>,
+) -> Option<f32> {
+    let graph = source_graph?;
+    source_timing_consumer_readiness(Some(graph), session)
+        .can_use_source_window_grid()
+        .then(|| {
+            graph
+                .timing
+                .primary_hypothesis()
+                .map(|hypothesis| hypothesis.bpm)
+                .or(graph.timing.bpm_estimate)
+        })
+        .flatten()
+        .filter(|bpm| bpm.is_finite() && *bpm > 0.0)
+}
 
 pub(in crate::jam_app) fn normalize_scene_candidates(
     session: &mut SessionFile,
@@ -73,11 +92,13 @@ pub(in crate::jam_app) fn transport_clock_from_state(
     session: &SessionFile,
     source_graph: Option<&SourceGraph>,
 ) -> TransportClockState {
+    let trusted_graph =
+        source_graph.filter(|_| trusted_source_timing_bpm(session, source_graph).is_some());
     transport_clock_for_state(
         session.runtime_state.transport.position_beats,
         session.runtime_state.transport.is_playing,
         session.runtime_state.transport.current_scene.clone(),
-        source_graph,
+        trusted_graph,
     )
 }
 
