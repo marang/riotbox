@@ -11,6 +11,21 @@ This directory holds implementation-facing specifications, plans, reviews, bench
 - `plan/riotbox_liam_howlett_feral_addendum.md`
   Source of truth for the `feral_rebuild` profile and its backlog deltas.
 
+## Current Active Direction
+
+`P023 | Sound Excellence / Production Quality` is the single active product
+priority. Its bounded exit is the `RIOTBOX-1396` Usable Musical Alpha: one
+trusted dense-break source must reach a strong hook through the exact live
+`riotbox-app` path, expose playable contrast, survive capture / recall / replay,
+and earn a structured human `pass`.
+
+`P016`, `P021`, and `P022` are deferred unless a slice directly blocks that
+Golden Path. Offline renderers, scripted packs, fixture verdicts, reports, and
+validators remain diagnostic evidence; they do not count as instrument
+progress until the behavior lands in the live product path. Broader positive
+source-family coverage and negative-source handling follow only after the first
+live human-passed alpha.
+
 ## Documentation Rules
 
 - Stable core contracts live in `docs/`.

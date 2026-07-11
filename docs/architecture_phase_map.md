@@ -62,10 +62,11 @@ flowchart LR
     Ghost --> JamView
 ```
 
-P014 sits on the existing Source Graph, Source Timing, Session, Action Lexicon,
-queue / commit, replay, Jam view, and audio QA contracts. It must not introduce
-a second arrangement truth. P012 and P013 remain regression baselines while P014
-adds arrangement / scene behavior.
+P023 sits on the existing Source Graph, Source Timing, Session, Action Lexicon,
+queue / commit, replay, Jam view, audio runtime, and audio QA contracts. Its
+Usable Musical Alpha must promote source-aware decisions into that exact live
+spine rather than opening a second Feral renderer, persistence truth, or
+arrangement path. P011-P015 remain regression baselines.
 
 ## Phase Boundaries
 
@@ -92,15 +93,21 @@ flowchart TB
         P011["P011 Pro Hardening"]
         P012["P012 Source Timing Intelligence"]
         P013["P013 All-Lane Musical Depth"]
+        P014["P014 Arrangement / Scene System"]
+        P015["P015 Productization Alpha"]
     end
 
-    subgraph active["Active arrangement phase"]
-        P014["P014 Arrangement / Scene System"]
+    subgraph active["Active product phase"]
+        P023["P023 Usable Musical Alpha / Sound Excellence"]
+    end
+
+    subgraph deferred["Deferred support tracks"]
+        P016["P016 Pro Workflow / Export"]
+        P021["P021 Audio Judge / Musical Fitness"]
+        P022["P022 Professional Sound Output"]
     end
 
     subgraph later["Later product phases"]
-        P015["P015 Productization Alpha"]
-        P016["P016 Pro Workflow / Export"]
         P017["P017 Live Performance Readiness"]
         P018["P018 Ghost + Feral Autonomy Expansion"]
         P019["P019 Beta / Release Hardening"]
@@ -108,6 +115,7 @@ flowchart TB
     end
 
     foundation --> lanes --> baselines --> active --> later
+    deferred -. direct blocker only .-> active
 ```
 
 ## Phase To Contract Map
@@ -117,9 +125,10 @@ flowchart LR
     subgraph phases["Phase bands"]
         Foundation["P000-P004 foundation"]
         LaneMvp["P005-P010 lane / scene / policy MVPs"]
-        ClosedBase["P011-P013 regression baselines"]
-        P014["P014 active arrangement"]
-        Product["P015-P020 productization / release"]
+        ClosedBase["P011-P015 regression baselines"]
+        P023["P023 active Usable Musical Alpha"]
+        Deferred["P016 / P021 / P022 deferred support"]
+        Product["P017-P020 later productization / release"]
     end
 
     subgraph contracts["Primary contracts touched"]
@@ -140,11 +149,14 @@ flowchart LR
     LaneMvp --> Core
     ClosedBase --> Timing
     ClosedBase --> MusicalQA
+    ClosedBase --> Arrangement
     ClosedBase --> ExportLive
-    P014 --> Arrangement
-    P014 --> Core
-    P014 --> Timing
-    P014 --> MusicalQA
+    P023 --> Core
+    P023 --> Device
+    P023 --> Timing
+    P023 --> MusicalQA
+    Deferred --> ExportLive
+    Deferred --> MusicalQA
     Product --> ExportLive
     Product --> Assist
     Product --> MusicalQA

@@ -1,7 +1,7 @@
 # Riotbox Workflow Conventions
 
-Version: 0.1  
-Status: Draft  
+Version: 0.2
+Status: Active
 Audience: contributors, reviewers, coding agents
 
 ---
@@ -612,6 +612,38 @@ That observer records launch, keypress, queue / commit, transport, and runtime e
 
 As the repo gains the missing audio QA harnesses, tighten this section toward the stronger release gates defined in the audio QA workflow spec instead of leaving it as a light note.
 
+## 8.2.2 Audible Work Classes And Listening Stop
+
+Classify every P023 slice before implementation:
+
+- `audible_vertical_slice`: changes the musician journey and must prove the
+  exact live runtime / mixer path when it claims instrument progress
+- `contract_enabler`: changes a prerequisite contract and must name exactly one
+  directly enabled audible follow-up issue and outcome
+- `maintenance/regression`: preserves behavior and must not be presented as
+  musical or instrument progress
+
+A nearest offline render seam is useful partial evidence. It cannot close a
+product-facing audible vertical when the exact live path is operationally in
+scope. Scripted packs, fixture verdicts, reports, and validators stay
+diagnostic until the behavior they measure is owned by the product path.
+
+Use this default sequence for audible work:
+
+1. implement the smallest product-path behavior that should sound different
+2. render or capture the affected output and run the narrow health checks
+3. listen and record the structured verdict when the behavior is review-ready
+4. route a weak / rejected result to one highest-value audio or policy fix
+5. freeze only the smallest regression proof needed to catch that failure again
+
+After at most two consecutive generations of a review-ready candidate that
+still has `human_verdict: unverified`, stop generation for that candidate and
+perform or explicitly hand off structured human listening. Do not continue by
+adding another report, queue, threshold, fixture, or validator unless the
+current failure is genuinely unobservable. Waiting for the required human
+verdict is an allowed stop condition; state the exact review artifact and next
+human action.
+
 ## 8.3 Periodic Whole-Codebase Review
 
 Branch-level review is not enough on its own.
@@ -620,7 +652,11 @@ On a regular cadence, run the `review-codebase` skill for a broader whole-repo r
 
 Default cadence:
 
-- after every 5th finished feature branch
+- after every 5th substantive feature branch or at an active phase checkpoint,
+  whichever comes first
+- docs-only, archive-only, fixture-only, and mechanical maintenance branches do
+  not advance the counter unless they materially change architecture or product
+  contracts
 
 Purpose:
 
@@ -765,6 +801,19 @@ Backlog hygiene supports that rule: when a ticket loop closes and no documented
 stop condition applies, the agent must choose the next smallest coherent
 roadmap-aligned slice from the active backlog or derive one from the roadmap,
 active specs, Linear, and actual repo state.
+
+For P023, `roadmap-aligned` means aligned with the named active phase exit, not
+merely adjacent to the latest measurable report gap. Select work in this order:
+
+1. a waiting structured human review when a review-ready candidate exists
+2. the next unblocked `audible_vertical_slice` on the active Golden Path
+3. a `contract_enabler` only when it names the exact next audible issue it
+   unlocks
+4. maintenance / regression work only when current risk justifies delaying the
+   audible path
+
+Do not select deferred P016, P021, or P022 work unless the issue names the exact
+P023 Golden Path blocker it removes.
 
 This preserves momentum without bypassing roadmap discipline. Continue one
 ticket at a time; do not open multiple parallel tickets merely to avoid

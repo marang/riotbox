@@ -1,7 +1,7 @@
 # Release-Grade Musician Demo Bank Spec
 
-Version: 0.1
-Status: Draft
+Version: 0.2
+Status: Active
 Audience: audio, QA, product, agents
 
 ---
@@ -43,10 +43,19 @@ Each demo-bank entry records:
 
 The bank must include at least one dense-break entry and at least one
 non-dense-break entry before it is considered structurally complete. P023
-release-demo coverage is stricter: every required source family from
-`docs/benchmarks/sound_excellence_source_corpus_v1.json` must map to a
-demo-bank candidate, a structured human verdict, and a demo-ready human-pass
-entry before release-ready claims are allowed.
+release coverage is outcome-aware rather than uniformly demo-oriented:
+
+- positive demo families need a real candidate, a structured human verdict,
+  and a demo-ready human-pass entry before they count as demo coverage
+- `weak_source` and `bad_timing` count as covered when the real product path has
+  a structured review proving correct degraded / unavailable / reject behavior
+  and no synthetic replacement fallback; they do not require demo-ready music
+- `pad_noise` may satisfy either path depending on trusted timing / source
+  evidence and the reviewed product decision
+
+The first bounded P023 Usable Musical Alpha exit requires one dense-break human
+pass through the exact live product path. Broader family coverage remains a
+later release gate and must not block that first supported path.
 
 ---
 
@@ -60,6 +69,11 @@ mix bus, destructive gesture, fixture threshold, or UI cue.
 
 `human_verdict: unverified` entries can be indexed as candidates, but they must
 stay `demo_readiness: unverified` and must not claim product quality.
+
+Fixture reviewers, fixture hashes, and calibration labels never count as human
+coverage. Fixture mode may validate schema and negative behavior, but live
+readiness must use an explicitly supplied real demo bank or report zero real
+human passes and a missing-evidence state.
 
 ---
 
@@ -77,9 +91,11 @@ If an audible PR references only generated, scripted, or unverified candidate
 artifacts, the PR must say `human_verdict: unverified` and avoid demo-ready or
 release-ready language.
 
-The source-family release-demo coverage gate is the machine-readable place to
-see which source families are missing candidates, human verdicts, or demo-ready
-human-pass evidence. It runs without requiring ignored local WAV files.
+The source-family release coverage gate is the machine-readable place to see
+which positive families are missing candidates, human verdicts, or demo-ready
+human-pass evidence and which negative families are missing reviewed product
+handling. It runs without requiring ignored local WAV files and must not use
+fixture pass entries as live readiness evidence.
 
 The release-demo human review queue is the machine-readable handoff from
 candidate coverage to human listening work. It lists every unverified candidate

@@ -54,7 +54,10 @@ For any audible Riotbox feature, answer these before calling it musically good:
 When generating or reviewing patterns, slices, demos, or presets:
 
 - favor short, forceful loops with a clear riff or drum identity
-- create at least one destructive variation: choke, reverse, retrigger, pitch dive, filter slam, bitcrush, or silence cut
+- establish the hook and clearly hardest element on one supported Golden Path
+  before widening source-family coverage or multiplying variations
+- after that core loop works, create at least one destructive variation: choke,
+  reverse, retrigger, pitch dive, filter slam, bitcrush, or silence cut
 - do not make fallback sounds part of the product path; absence of trusted
   material must become visible unavailable / degraded state or silence
 - do not use hardcoded musical fallback sounds as product output; when a lane
@@ -69,6 +72,9 @@ When generating or reviewing patterns, slices, demos, or presets:
 - treat stay-out, dropout, restraint, and silence as valid musical choices only
   when they are chosen from source context and improve impact, not when they
   hide weak generation
+- require positive demo families to earn a real human pass, but allow weak or
+  bad-timing material to succeed through reviewed degraded / unavailable /
+  reject behavior instead of forcing demo-ready music
 
 ## Engineering Implications
 
@@ -79,6 +85,9 @@ Use this taste model to shape implementation choices:
 - add fixtures that catch boring or collapsed output when feasible: silence, identical renders, fallback-only renders, no transient change, no source-derived energy
 - provide demo recipes from real source files, not only synthetic tones
 - when adding randomness, constrain it so repeated use creates attitude, not mush
+- when a weak result is already audible and measurable, prefer the sample,
+  drum, bass, mix, trigger, or arrangement-policy fix before adding another
+  fixture, threshold, report, or UI cue
 
 ## Review Language
 
