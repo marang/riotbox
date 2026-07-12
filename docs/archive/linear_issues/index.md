@@ -1428,4 +1428,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Record real human verdicts for current sound candidates
 - [RIOTBOX-1330.md](./RIOTBOX-1330.md)
   P023: Wire trusted Rust timing into live source ingest and confirmation
+- [RIOTBOX-1333.md](./RIOTBOX-1333.md)
+  P023: Play real source audio through a duration-aware W-30 sampler path
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
