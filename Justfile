@@ -232,7 +232,7 @@ w30-smoke-source-qa source date="local" start="0.0" source_duration="0.25" durat
 w30-smoke-source-diff source date="local-source-diff" start="0.0" source_duration="0.25" duration="2.0":
     just w30-smoke-baseline "{{date}}" "{{duration}}"
     just w30-smoke-source-candidate "{{source}}" "{{date}}" "{{start}}" "{{source_duration}}" "{{duration}}"
-    cargo run -p riotbox-audio --bin w30_preview_compare -- --date "{{date}}" --min-rms-delta 0.001 --min-sum-delta 1.0 --max-active-samples-delta 200000 --max-peak-delta 1.0 --max-rms-delta 1.0 --max-sum-delta 1000.0
+    cargo run -p riotbox-audio --bin w30_preview_compare -- --date "{{date}}" --min-rms-delta 0.001 --min-sum-delta 1.0 --max-active-samples-delta 200000 --max-peak-delta 1.0 --max-rms-delta 1.0 --max-sum-delta 1200.0
 
 w30-smoke-generated-source-diff:
     scripts/validate_generated_w30_source_diff.sh

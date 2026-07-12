@@ -379,6 +379,18 @@ Done when:
   recognition, hook, main failure / preferred direction, eight-bar replay
   value, and final `human_verdict: pass`
 
+Current landed evidence:
+
+- RIOTBOX-1333 provides the first human-passed exact-path W-30 element: trusted
+  dense-break ingest, timing-aligned one-bar capture, committed promotion and
+  trigger / damage actions, duration-aware callback-safe artifact playback,
+  transient-derived chop retriggers, exact live-mixer offline simulation, and
+  deterministic artifact replay. The separately auditioned normal hook and
+  destructive variation both received `human_verdict: pass` on 2026-07-12.
+- This closes the W-30 sampler slice only. It does not by itself close the P023
+  Golden Path, which still requires the all-lane instrument, gesture, recipe,
+  restart / recall, and aggregate structured-review exit evidence above.
+
 Not sufficient for exit:
 
 - a control-path, queue, log, or observer assertion without live output proof

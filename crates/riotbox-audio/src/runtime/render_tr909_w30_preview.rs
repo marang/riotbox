@@ -85,7 +85,8 @@ pub(super) fn render_w30_preview_buffer(
         state.oscillator_phase = 0.0;
         state.lfo_phase = 0.0;
         state.source_sample_cursor = 0.0;
-        state.pad_playback_cursor = 0.0;
+        state.pad_playback_cursor = w30_chop_slice_cursor(render, state.last_step);
+        state.pad_playback_age_frames = 0;
         state.last_source_window_signature = w30_source_window_signature(render);
         state.last_pad_playback_signature = w30_pad_playback_signature(render);
         state.last_trigger_revision = render.trigger_revision;
@@ -100,7 +101,8 @@ pub(super) fn render_w30_preview_buffer(
     let pad_playback_signature = w30_pad_playback_signature(render);
     if pad_playback_signature != state.last_pad_playback_signature {
         state.last_pad_playback_signature = pad_playback_signature;
-        state.pad_playback_cursor = 0.0;
+        state.pad_playback_cursor = w30_chop_slice_cursor(render, state.last_step);
+        state.pad_playback_age_frames = 0;
     }
 
     if render.trigger_revision > state.last_trigger_revision {
@@ -109,7 +111,8 @@ pub(super) fn render_w30_preview_buffer(
             w30_trigger_envelope(render) * (0.85 + render.trigger_velocity.clamp(0.0, 1.0) * 0.3),
         );
         state.oscillator_phase = 0.0;
-        state.pad_playback_cursor = 0.0;
+        state.pad_playback_cursor = w30_chop_slice_cursor(render, state.last_step);
+        state.pad_playback_age_frames = 0;
     }
 
     let frame_count = data.len() / channel_count.max(1);
@@ -130,6 +133,10 @@ pub(super) fn render_w30_preview_buffer(
                     if w30_source_window_active(render) {
                         state.source_sample_cursor = 0.0;
                     }
+                    if w30_pad_playback_active(render) {
+                        state.pad_playback_cursor = w30_chop_slice_cursor(render, step);
+                        state.pad_playback_age_frames = 0;
+                    }
                 }
             }
         } else {
@@ -142,10 +149,10 @@ pub(super) fn render_w30_preview_buffer(
             state.lfo_phase = (state.lfo_phase + 1.8 / sample_rate.max(1) as f32).fract();
             0.45 + 0.55 * ((std::f32::consts::TAU * state.lfo_phase).sin() * 0.5 + 0.5)
         };
-        let waveform = w30_preview_waveform_for_frame(render, state);
+        let waveform = w30_preview_waveform_for_frame(render, state, sample_rate);
         let sample =
             waveform * state.envelope * tremolo * w30_render_gain(render, transport_running);
-        if transport_running {
+        if transport_running && !w30_pad_playback_active(render) {
             state.envelope *= w30_envelope_decay(render);
         }
 
@@ -161,9 +168,10 @@ pub(super) fn render_w30_preview_buffer(
 fn w30_preview_waveform_for_frame(
     render: &RealtimeW30PreviewRenderState,
     state: &mut W30PreviewCallbackState,
+    sample_rate: u32,
 ) -> f32 {
     if w30_pad_playback_active(render) {
-        let sample = w30_pad_playback_sample(&render.pad_playback, state);
+        let sample = w30_pad_playback_sample(&render.pad_playback, state, sample_rate);
         let grit = render.grit_level.clamp(0.0, 1.0);
         return (sample * (1.0 + grit * 0.35)).clamp(-1.0, 1.0);
     }
@@ -186,27 +194,98 @@ fn w30_pad_playback_active(render: &RealtimeW30PreviewRenderState) -> bool {
     !matches!(render.mode, W30PreviewRenderMode::Idle) && render.pad_playback.sample_count > 0
 }
 
-fn w30_pad_playback_sample(
+pub(super) fn w30_pad_playback_sample(
     window: &RealtimeW30PadPlaybackSampleWindow,
     state: &mut W30PreviewCallbackState,
+    output_sample_rate: u32,
 ) -> f32 {
     let sample_count = window.sample_count.min(W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN);
     if sample_count == 0 {
         return 0.0;
     }
 
-    let cursor = state.pad_playback_cursor as usize;
-    let clamped_cursor = if window.loop_enabled {
-        cursor % sample_count
+    let source_sample_rate = window.source_sample_rate.max(1);
+    let playback_frame_count = window.playback_frame_count.max(1);
+    let output_frame_count = (playback_frame_count as f64 * f64::from(output_sample_rate.max(1))
+        / f64::from(source_sample_rate))
+    .max(1.0);
+    let cursor_increment = (sample_count as f64 / output_frame_count
+        * f64::from(window.playback_rate.clamp(0.25, 4.0))) as f32;
+    let logical_cursor = state.pad_playback_cursor;
+    if !window.loop_enabled && logical_cursor >= sample_count as f32 {
+        return 0.0;
+    }
+
+    let wrapped_cursor = if window.loop_enabled {
+        logical_cursor % sample_count as f32
     } else {
-        cursor.min(sample_count - 1)
+        logical_cursor.min(sample_count.saturating_sub(1) as f32)
     };
+    let sample = interpolated_pad_sample(window, sample_count, wrapped_cursor);
+    let sample = apply_pad_loop_crossfade(window, sample_count, wrapped_cursor, sample);
+    let sample = apply_pad_edge_envelope(window, state, sample_count, wrapped_cursor, sample);
     state.pad_playback_cursor = if window.loop_enabled {
-        (state.pad_playback_cursor + 1.0) % sample_count as f32
+        (logical_cursor + cursor_increment) % sample_count as f32
     } else {
-        (state.pad_playback_cursor + 1.0).min(sample_count.saturating_sub(1) as f32)
+        logical_cursor + cursor_increment
     };
-    window.samples[clamped_cursor]
+    state.pad_playback_age_frames = state.pad_playback_age_frames.saturating_add(1);
+    sample
+}
+
+fn interpolated_pad_sample(
+    window: &RealtimeW30PadPlaybackSampleWindow,
+    sample_count: usize,
+    cursor: f32,
+) -> f32 {
+    let base = cursor.floor() as usize % sample_count;
+    let next = (base + 1).min(sample_count - 1);
+    let fraction = cursor.fract();
+    let index = if window.reverse {
+        sample_count - 1 - base
+    } else {
+        base
+    };
+    let next_index = if window.reverse {
+        sample_count - 1 - next
+    } else {
+        next
+    };
+    window.samples[index] + (window.samples[next_index] - window.samples[index]) * fraction
+}
+
+fn apply_pad_loop_crossfade(
+    window: &RealtimeW30PadPlaybackSampleWindow,
+    sample_count: usize,
+    cursor: f32,
+    sample: f32,
+) -> f32 {
+    let crossfade = window.loop_crossfade_sample_count.min(sample_count / 2);
+    if !window.loop_enabled || crossfade == 0 || cursor < (sample_count - crossfade) as f32 {
+        return sample;
+    }
+
+    let fade_position = cursor - (sample_count - crossfade) as f32;
+    let mix = (fade_position / crossfade as f32).clamp(0.0, 1.0);
+    let head = interpolated_pad_sample(window, sample_count, fade_position);
+    sample * (1.0 - mix) + head * mix
+}
+
+fn apply_pad_edge_envelope(
+    window: &RealtimeW30PadPlaybackSampleWindow,
+    state: &W30PreviewCallbackState,
+    sample_count: usize,
+    cursor: f32,
+    sample: f32,
+) -> f32 {
+    const EDGE_FRAMES: f32 = 64.0;
+    let attack = (state.pad_playback_age_frames as f32 / EDGE_FRAMES).clamp(0.0, 1.0);
+    let release = if window.loop_enabled {
+        1.0
+    } else {
+        ((sample_count as f32 - cursor) / EDGE_FRAMES).clamp(0.0, 1.0)
+    };
+    sample * attack.min(release)
 }
 
 fn w30_source_window_sample(
@@ -232,14 +311,47 @@ fn w30_source_window_signature(render: &RealtimeW30PreviewRenderState) -> u64 {
         .wrapping_add(render.source_window_preview.sample_count as u64)
 }
 
-fn w30_pad_playback_signature(render: &RealtimeW30PreviewRenderState) -> u64 {
-    render
+pub(super) fn w30_pad_playback_signature(render: &RealtimeW30PreviewRenderState) -> u64 {
+    let base = render
         .pad_playback
         .source_start_frame
         .wrapping_mul(31)
         .wrapping_add(render.pad_playback.source_end_frame)
         .wrapping_add(render.pad_playback.sample_count as u64)
         .wrapping_add(u64::from(render.pad_playback.loop_enabled))
+        .wrapping_add(u64::from(render.pad_playback.reverse).wrapping_mul(17))
+        .wrapping_add(u64::from(render.pad_playback.playback_rate.to_bits()).wrapping_mul(19))
+        .wrapping_add((render.pad_playback.chop_slice_count as u64).wrapping_mul(23));
+    render
+        .pad_playback
+        .chop_slice_starts
+        .iter()
+        .take(
+            render
+                .pad_playback
+                .chop_slice_count
+                .min(W30_PAD_CHOP_SLICE_COUNT),
+        )
+        .fold(base, |signature, start| {
+            signature.wrapping_mul(31).wrapping_add(u64::from(*start))
+        })
+}
+
+pub(super) fn w30_chop_slice_cursor(render: &RealtimeW30PreviewRenderState, step: i64) -> f32 {
+    let count = render
+        .pad_playback
+        .chop_slice_count
+        .min(W30_PAD_CHOP_SLICE_COUNT);
+    if count == 0 {
+        return 0.0;
+    }
+    let sequence_index = if render.pad_playback.playback_rate < 0.95 {
+        step.saturating_mul(3).rem_euclid(count as i64) as usize
+    } else {
+        step.rem_euclid(count as i64) as usize
+    };
+    render.pad_playback.chop_slice_starts[sequence_index]
+        .min(render.pad_playback.sample_count.saturating_sub(1) as u32) as f32
 }
 
 pub(super) fn render_w30_resample_tap_buffer(
@@ -399,6 +511,13 @@ fn w30_current_step(position_beats: f64, render: &RealtimeW30PreviewRenderState)
 }
 
 fn w30_preview_subdivision(render: &RealtimeW30PreviewRenderState) -> u32 {
+    if w30_pad_playback_active(render) {
+        return if render.pad_playback.playback_rate < 0.95 {
+            4
+        } else {
+            2
+        };
+    }
     match render.source_profile {
         Some(W30PreviewSourceProfile::PinnedRecall) => 1,
         Some(W30PreviewSourceProfile::PromotedRecall) | None => 2,
@@ -408,7 +527,11 @@ fn w30_preview_subdivision(render: &RealtimeW30PreviewRenderState) -> u32 {
     }
 }
 
-fn should_trigger_w30_step(render: &RealtimeW30PreviewRenderState, step: i64) -> bool {
+pub(super) fn should_trigger_w30_step(render: &RealtimeW30PreviewRenderState, step: i64) -> bool {
+    if w30_pad_playback_active(render) {
+        return render.pad_playback.playback_rate >= 0.95
+            || !matches!(step.rem_euclid(16), 3 | 7 | 11);
+    }
     match render.source_profile {
         Some(W30PreviewSourceProfile::PinnedRecall) => true,
         Some(W30PreviewSourceProfile::PromotedRecall) | None => step.rem_euclid(2) == 0,

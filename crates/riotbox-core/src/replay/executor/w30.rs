@@ -147,11 +147,6 @@ pub(super) fn apply_w30_artifact_hydrated_cue(
     session.runtime_state.lane_state.w30.focused_pad = Some(pad_id);
     session.runtime_state.lane_state.w30.preview_mode = Some(W30PreviewModeState::LiveRecall);
     session.runtime_state.lane_state.w30.last_capture = Some(hydration.produced_capture_id);
-    session.runtime_state.macro_state.w30_grit = session
-        .runtime_state
-        .macro_state
-        .w30_grit
-        .max(w30_grit_or(action, 0.78));
 
     Ok(())
 }

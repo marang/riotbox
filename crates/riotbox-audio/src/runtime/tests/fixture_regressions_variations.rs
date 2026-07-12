@@ -102,17 +102,17 @@ fn offline_w30_preview_render_produces_reviewable_metrics() {
         metrics.active_samples
     );
     assert!(
-        (0.019..=0.04).contains(&metrics.rms),
+        (0.07..=0.12).contains(&metrics.rms),
         "unexpected RMS: got {}",
         metrics.rms
     );
     assert!(
-        (6.0..=18.0).contains(&metrics.sum),
+        (38.0..=58.0).contains(&metrics.sum),
         "unexpected sum: got {}",
         metrics.sum
     );
     assert!(
-        (0.015..=0.08).contains(&metrics.peak_abs),
+        (0.08..=0.12).contains(&metrics.peak_abs),
         "unexpected peak: got {}",
         metrics.peak_abs
     );

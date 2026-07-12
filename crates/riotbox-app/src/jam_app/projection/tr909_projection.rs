@@ -12,7 +12,8 @@ use riotbox_audio::{
         Tr909TakeoverRenderProfile,
     },
     w30::{
-        W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN, W30_PREVIEW_SAMPLE_WINDOW_LEN,
+        W30_PAD_CHOP_SLICE_COUNT, W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN,
+        W30_PREVIEW_SAMPLE_WINDOW_LEN,
         W30PadPlaybackSampleWindow, W30PreviewRenderMode, W30PreviewRenderRouting,
         W30PreviewRenderState, W30PreviewSampleWindow, W30PreviewSourceProfile, W30ResampleTapMode,
         W30ResampleTapRouting, W30ResampleTapSourceProfile, W30ResampleTapState,
@@ -423,8 +424,10 @@ pub(super) fn build_w30_preview_render_state(
         None
     };
     let pad_playback = if !matches!(mode, W30PreviewRenderMode::Idle) {
-        capture
-            .and_then(|capture| build_w30_capture_artifact_playback(capture, capture_audio_cache))
+        let transform = w30_pad_playback_transform(session);
+        capture.and_then(|capture| {
+            build_w30_capture_artifact_playback(capture, capture_audio_cache, transform)
+        })
     } else {
         None
     };

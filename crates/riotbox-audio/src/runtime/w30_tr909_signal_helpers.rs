@@ -6,9 +6,9 @@ pub(super) fn w30_render_gain(
 ) -> f32 {
     let base = match render.mode {
         W30PreviewRenderMode::Idle => 0.0,
-        W30PreviewRenderMode::LiveRecall => 0.12,
-        W30PreviewRenderMode::RawCaptureAudition => 0.15,
-        W30PreviewRenderMode::PromotedAudition => 0.18,
+        W30PreviewRenderMode::LiveRecall => 0.62,
+        W30PreviewRenderMode::RawCaptureAudition => 0.70,
+        W30PreviewRenderMode::PromotedAudition => 0.76,
     };
     let profile_gain = match render.source_profile {
         Some(W30PreviewSourceProfile::PinnedRecall) => 1.0,
@@ -23,7 +23,7 @@ pub(super) fn w30_render_gain(
         * transport_gain
         * render.music_bus_level.clamp(0.0, 1.0)
         * (1.0 + render.grit_level.clamp(0.0, 1.0) * 0.2))
-        .clamp(0.0, 0.28)
+        .clamp(0.0, 0.90)
 }
 
 pub(super) fn w30_envelope_decay(render: &RealtimeW30PreviewRenderState) -> f32 {

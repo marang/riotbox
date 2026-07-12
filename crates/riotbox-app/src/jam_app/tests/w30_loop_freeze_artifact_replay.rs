@@ -164,6 +164,28 @@ fn w30_snapshot_payload_restore_hydrates_loop_freeze_artifact_preview_output() {
         replayed_state.runtime.w30_preview.capture_id,
         committed_state.runtime.w30_preview.capture_id
     );
+    assert_eq!(
+        replayed_pad_playback.chop_slice_starts,
+        committed_pad_playback.chop_slice_starts,
+        "loop-freeze restore must preserve the source-derived chop decision"
+    );
+    assert_eq!(
+        (
+            replayed_state.runtime.w30_preview.is_transport_running,
+            replayed_state.runtime.w30_preview.tempo_bpm,
+            replayed_state.runtime.w30_preview.position_beats,
+            replayed_state.runtime.w30_preview.grit_level,
+            replayed_state.runtime.w30_preview.music_bus_level,
+        ),
+        (
+            committed_state.runtime.w30_preview.is_transport_running,
+            committed_state.runtime.w30_preview.tempo_bpm,
+            committed_state.runtime.w30_preview.position_beats,
+            committed_state.runtime.w30_preview.grit_level,
+            committed_state.runtime.w30_preview.music_bus_level,
+        ),
+        "loop-freeze restore must preserve W-30 render timing and gain state"
+    );
     assert_recipe_buffers_match(
         "snapshot payload restore loop-freeze artifact -> committed loop-freeze",
         &replayed_buffer,

@@ -203,7 +203,26 @@ fn committed_w30_damage_profile_updates_grit_and_log_result() {
     state.session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
     state.session.runtime_state.lane_state.w30.preview_mode = Some(W30PreviewModeState::LiveRecall);
     state.session.runtime_state.macro_state.w30_grit = 0.4;
+    state.capture_audio_cache.insert(
+        CaptureId::from("cap-01"),
+        SourceAudioCache::from_interleaved_samples(
+            "captures/cap-01.wav",
+            48_000,
+            1,
+            (0..48_000)
+                .map(|frame| (frame as f32 / 48_000.0 * std::f32::consts::TAU * 110.0).sin())
+                .collect(),
+        )
+        .expect("damage profile capture audio"),
+    );
     state.refresh_view();
+    assert!(!state
+        .runtime
+        .w30_preview
+        .pad_playback
+        .as_ref()
+        .expect("undamaged pad playback")
+        .reverse);
 
     assert_eq!(
         state.queue_w30_apply_damage_profile(620),
@@ -228,6 +247,14 @@ fn committed_w30_damage_profile_updates_grit_and_log_result() {
     );
     assert_eq!(state.jam_view.lanes.w30_pending_damage_profile_target, None);
     assert_eq!(state.runtime_view.w30_preview_mode, "live_recall");
+    let damaged_playback = state
+        .runtime
+        .w30_preview
+        .pad_playback
+        .as_ref()
+        .expect("damaged pad playback");
+    assert!(!damaged_playback.reverse);
+    assert!((damaged_playback.playback_rate - 0.7786).abs() < 0.0001);
     assert_eq!(
         state
             .session
@@ -238,6 +265,68 @@ fn committed_w30_damage_profile_updates_grit_and_log_result() {
             .map(|result| result.summary.as_str()),
         Some("applied shred damage profile to cap-01 on W-30 pad bank-a/pad-01")
     );
+}
+
+#[test]
+fn duration_aware_w30_pad_output_changes_with_capture_source() {
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    state.session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+        bank_id: BankId::from("bank-a"),
+        pad_id: PadId::from("pad-01"),
+    });
+    state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
+    state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-01"));
+    state.session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
+    state.session.runtime_state.lane_state.w30.preview_mode = Some(W30PreviewModeState::LiveRecall);
+
+    state.capture_audio_cache.insert(
+        CaptureId::from("cap-01"),
+        source_cache_for_w30_diversity(73.0),
+    );
+    state.refresh_view();
+    assert!(state.runtime.w30_preview.pad_playback.is_some());
+    assert_eq!(
+        state.runtime.w30_preview.routing,
+        W30PreviewRenderRouting::MusicBusPreview
+    );
+    let first = render_w30_preview_offline(&state.runtime.w30_preview, 48_000, 2, 48_000);
+
+    state.capture_audio_cache.insert(
+        CaptureId::from("cap-01"),
+        source_cache_for_w30_diversity(181.0),
+    );
+    state.refresh_view();
+    let second = render_w30_preview_offline(&state.runtime.w30_preview, 48_000, 2, 48_000);
+    let delta = signal_delta_metrics(&first, &second);
+
+    let first_metrics = signal_metrics(&first);
+    let second_metrics = signal_metrics(&second);
+    assert!(first_metrics.rms > 0.005, "first metrics: {first_metrics:?}");
+    assert!(second_metrics.rms > 0.005, "second metrics: {second_metrics:?}");
+    assert!(
+        delta.rms > 0.008 && delta.rms > first_metrics.rms * 0.8,
+        "different captures collapsed: delta={}, first={}",
+        delta.rms,
+        first_metrics.rms
+    );
+}
+
+fn source_cache_for_w30_diversity(frequency: f32) -> SourceAudioCache {
+    SourceAudioCache::from_interleaved_samples(
+        format!("capture-{frequency}.wav"),
+        48_000,
+        1,
+        (0..96_000)
+            .map(|frame| {
+                let phase = frame as f32 / 48_000.0 * std::f32::consts::TAU * frequency;
+                let transient = if frame % 12_000 < 96 { 0.55 } else { 0.0 };
+                phase.sin() * 0.42 + transient
+            })
+            .collect(),
+    )
+    .expect("W-30 diversity source cache")
 }
 
 #[test]

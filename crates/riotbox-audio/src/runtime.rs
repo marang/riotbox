@@ -18,10 +18,11 @@ use crate::{
         Tr909TakeoverRenderProfile,
     },
     w30::{
-        W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN, W30_PREVIEW_SAMPLE_WINDOW_LEN,
-        W30PadPlaybackSampleWindow, W30PreviewRenderMode, W30PreviewRenderRouting,
-        W30PreviewRenderState, W30PreviewSampleWindow, W30PreviewSourceProfile, W30ResampleTapMode,
-        W30ResampleTapRouting, W30ResampleTapSourceProfile, W30ResampleTapState,
+        W30_PAD_CHOP_SLICE_COUNT, W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN,
+        W30_PREVIEW_SAMPLE_WINDOW_LEN, W30PadPlaybackSampleWindow, W30PreviewRenderMode,
+        W30PreviewRenderRouting, W30PreviewRenderState, W30PreviewSampleWindow,
+        W30PreviewSourceProfile, W30ResampleTapMode, W30ResampleTapRouting,
+        W30ResampleTapSourceProfile, W30ResampleTapState,
     },
 };
 
@@ -40,6 +41,11 @@ mod w30_tr909_signal_helpers;
 pub use public_api_shell::*;
 use render_tr909_w30_preview::{
     render_tr909_buffer, render_w30_preview_buffer, render_w30_resample_tap_buffer,
+};
+#[cfg(test)]
+use render_tr909_w30_preview::{
+    should_trigger_w30_step, w30_chop_slice_cursor, w30_pad_playback_sample,
+    w30_pad_playback_signature,
 };
 pub use runtime_mix_parity::*;
 use shared_mc202_w30_preview::{

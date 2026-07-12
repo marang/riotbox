@@ -95,8 +95,15 @@ fn w30_pad_playback_uses_duration_window_beyond_fixed_preview_len() {
         pad_playback: RealtimeW30PadPlaybackSampleWindow {
             source_start_frame: 0,
             source_end_frame: W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN as u64,
+            source_sample_rate: 48_000,
+            playback_frame_count: W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN as u64,
             sample_count: W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN,
             loop_enabled: true,
+            playback_rate: 1.0,
+            reverse: false,
+            loop_crossfade_sample_count: 128,
+            chop_slice_count: 0,
+            chop_slice_starts: [0; W30_PAD_CHOP_SLICE_COUNT],
             samples: pad_samples,
         },
         music_bus_level: 0.64,
@@ -133,6 +140,195 @@ fn w30_pad_playback_uses_duration_window_beyond_fixed_preview_len() {
         "duration-aware W-30 pad playback did not reach samples beyond the fixed preview window"
     );
     assert_ne!(duration_buffer, fixed_preview_buffer);
+}
+
+#[test]
+fn w30_pad_playback_cursor_preserves_full_capture_duration() {
+    let mut samples = [0.0; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN];
+    for (index, sample) in samples.iter_mut().enumerate() {
+        *sample = index as f32 / W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN as f32;
+    }
+    let window = RealtimeW30PadPlaybackSampleWindow {
+        source_start_frame: 0,
+        source_end_frame: 48_000,
+        source_sample_rate: 48_000,
+        playback_frame_count: 48_000,
+        sample_count: W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN,
+        loop_enabled: true,
+        playback_rate: 1.0,
+        reverse: false,
+        loop_crossfade_sample_count: 128,
+        chop_slice_count: 0,
+        chop_slice_starts: [0; W30_PAD_CHOP_SLICE_COUNT],
+        samples,
+    };
+    let mut state = W30PreviewCallbackState::default();
+
+    for _ in 0..24_000 {
+        w30_pad_playback_sample(&window, &mut state, 48_000);
+    }
+
+    assert!(
+        (state.pad_playback_cursor - W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN as f32 / 2.0).abs()
+            < 1.0,
+        "duration-aware cursor advanced to {} instead of the capture midpoint",
+        state.pad_playback_cursor
+    );
+}
+
+#[test]
+fn w30_transport_steps_select_source_derived_chop_slices() {
+    let shared = SharedW30PreviewRenderState::new(&W30PreviewRenderState::default());
+    let mut normal = shared.snapshot();
+    normal.mode = W30PreviewRenderMode::LiveRecall;
+    normal.routing = W30PreviewRenderRouting::MusicBusPreview;
+    normal.pad_playback = RealtimeW30PadPlaybackSampleWindow {
+        sample_count: 8_192,
+        playback_rate: 1.0,
+        chop_slice_count: 4,
+        chop_slice_starts: [100, 900, 2_100, 4_700, 0, 0, 0, 0],
+        ..Default::default()
+    };
+    let damaged = RealtimeW30PreviewRenderState {
+        pad_playback: RealtimeW30PadPlaybackSampleWindow {
+            playback_rate: 0.78,
+            ..normal.pad_playback
+        },
+        ..normal
+    };
+
+    assert_eq!(w30_chop_slice_cursor(&normal, 2), 2_100.0);
+    assert_eq!(w30_chop_slice_cursor(&damaged, 2), 2_100.0);
+    assert_eq!(w30_chop_slice_cursor(&damaged, 3), 900.0);
+    assert!(!should_trigger_w30_step(&damaged, 3));
+    assert!(should_trigger_w30_step(&damaged, 4));
+}
+
+#[test]
+fn w30_pad_signature_tracks_every_active_chop_slice() {
+    let shared = SharedW30PreviewRenderState::new(&W30PreviewRenderState::default());
+    let mut first = shared.snapshot();
+    first.pad_playback.sample_count = 8_192;
+    first.pad_playback.chop_slice_count = 3;
+    first.pad_playback.chop_slice_starts = [100, 900, 2_100, 0, 0, 0, 0, 0];
+    let mut second = first;
+    second.pad_playback.chop_slice_starts[2] = 4_700;
+
+    assert_ne!(
+        w30_pad_playback_signature(&first),
+        w30_pad_playback_signature(&second)
+    );
+}
+
+#[test]
+fn w30_damage_direction_and_rate_change_sample_motion() {
+    let mut samples = [0.0; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN];
+    for (index, sample) in samples.iter_mut().enumerate() {
+        *sample = index as f32 / W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN as f32 * 2.0 - 1.0;
+    }
+    let base = RealtimeW30PadPlaybackSampleWindow {
+        source_start_frame: 0,
+        source_end_frame: 48_000,
+        source_sample_rate: 48_000,
+        playback_frame_count: 48_000,
+        sample_count: W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN,
+        loop_enabled: true,
+        playback_rate: 1.0,
+        reverse: false,
+        loop_crossfade_sample_count: 128,
+        chop_slice_count: 0,
+        chop_slice_starts: [0; W30_PAD_CHOP_SLICE_COUNT],
+        samples,
+    };
+    let damaged = RealtimeW30PadPlaybackSampleWindow {
+        playback_rate: 0.82,
+        reverse: true,
+        ..base
+    };
+    let mut forward_state = W30PreviewCallbackState {
+        pad_playback_cursor: 128.0,
+        pad_playback_age_frames: 256,
+        ..Default::default()
+    };
+    let mut damaged_state = W30PreviewCallbackState {
+        pad_playback_cursor: 128.0,
+        pad_playback_age_frames: 256,
+        ..Default::default()
+    };
+
+    let forward = w30_pad_playback_sample(&base, &mut forward_state, 48_000);
+    let reverse = w30_pad_playback_sample(&damaged, &mut damaged_state, 48_000);
+
+    assert!(forward < -0.9, "forward ramp sample was {forward}");
+    assert!(reverse > 0.9, "reverse ramp sample was {reverse}");
+    assert!(
+        damaged_state.pad_playback_cursor < forward_state.pad_playback_cursor,
+        "damage pitch-rate should advance more slowly"
+    );
+}
+
+#[test]
+fn w30_loop_crossfade_keeps_wrap_boundary_click_safe() {
+    let mut samples = [0.0; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN];
+    for (index, sample) in samples.iter_mut().enumerate() {
+        *sample = index as f32 / W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN as f32 * 2.0 - 1.0;
+    }
+    let window = RealtimeW30PadPlaybackSampleWindow {
+        source_start_frame: 0,
+        source_end_frame: W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN as u64,
+        source_sample_rate: 48_000,
+        playback_frame_count: W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN as u64,
+        sample_count: W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN,
+        loop_enabled: true,
+        playback_rate: 1.0,
+        reverse: false,
+        loop_crossfade_sample_count: 128,
+        chop_slice_count: 0,
+        chop_slice_starts: [0; W30_PAD_CHOP_SLICE_COUNT],
+        samples,
+    };
+    let mut state = W30PreviewCallbackState {
+        pad_playback_cursor: W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN as f32 - 0.5,
+        pad_playback_age_frames: 256,
+        ..Default::default()
+    };
+
+    let before_wrap = w30_pad_playback_sample(&window, &mut state, 48_000);
+    let after_wrap = w30_pad_playback_sample(&window, &mut state, 48_000);
+
+    assert!(
+        (before_wrap - after_wrap).abs() < 0.05,
+        "loop boundary jumped from {before_wrap} to {after_wrap}"
+    );
+}
+
+#[test]
+fn w30_pad_trigger_attack_fades_in_once_without_loop_wrap_dropout() {
+    let window = RealtimeW30PadPlaybackSampleWindow {
+        source_start_frame: 0,
+        source_end_frame: 1_024,
+        source_sample_rate: 48_000,
+        playback_frame_count: 1_024,
+        sample_count: 1_024,
+        loop_enabled: true,
+        playback_rate: 1.0,
+        reverse: false,
+        loop_crossfade_sample_count: 64,
+        chop_slice_count: 0,
+        chop_slice_starts: [0; W30_PAD_CHOP_SLICE_COUNT],
+        samples: [0.8; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN],
+    };
+    let mut state = W30PreviewCallbackState::default();
+
+    let first = w30_pad_playback_sample(&window, &mut state, 48_000);
+    for _ in 0..80 {
+        w30_pad_playback_sample(&window, &mut state, 48_000);
+    }
+    state.pad_playback_cursor = 0.0;
+    let after_wrap = w30_pad_playback_sample(&window, &mut state, 48_000);
+
+    assert_eq!(first, 0.0);
+    assert!(after_wrap > 0.75, "loop wrap incorrectly retriggered attack: {after_wrap}");
 }
 
 #[test]
