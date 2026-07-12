@@ -2938,3 +2938,17 @@ Why: the offline detector, Session confirmation action, and replay identity alre
 Evidence: RIOTBOX-1330 adds live Rust-probe enrichment and provenance, same-source stability and cross-source identity tests, unavailable/manual-confirm gating, shared lane-consumer assertions, explicit confirmation mismatch rejection, and ingest/save/restore confirmation coverage.
 Consequences: timing analysis remains outside the realtime callback; Source Graph remains analysis truth and Session remains musician trust truth. This enables the real-source W-30 sampler slice but does not claim production-grade arbitrary-audio detection or audible quality by itself.
 Status: accepted
+
+---
+
+### RBX-135
+
+Date: 2026-07-12
+Topic: focused W-30 pads use duration-aware capture playback with a source-derived chop plan
+Phase: P023 / Live Musical Alpha
+Question: how should a committed real-source capture become a playable hook without streaming or analysis work in the realtime callback, inventing fallback music, or losing replay identity?
+Decision: project the complete capture outside the callback into a bounded 16384-sample mono representation carrying original duration and sample-rate identity. Derive eight deterministic chop starts from quantized short-time source-energy rises, then let transport and pad triggers select that prepared plan. Normal recall forms an eighth-note source chop; the committed damage action selects a denser policy with reordered slices, retrigger omissions, and moderate pitch-down. Preserve click-safe trigger attack and loop crossfade. Artifact replay preserves committed macro state and must not invent a default grit mutation.
+Why: straight full-capture playback was technically correct but earned repeated human `weak` verdicts because it behaved like a quiet loop rather than an instrument. Single-sample onset selection was also too sensitive to persisted PCM rounding. The bounded energy-rise plan is source-dependent, callback-safe, stable through PCM16 artifact hydration, and immediately playable.
+Evidence: RIOTBOX-1333 proves same-source stability, cross-source diversity, full-duration cursor behavior, rate / reverse capability, click-safe loop and trigger edges, coherent control-to-callback state, exact callback-block mixer parity, committed action / artifact replay, and no silent or clipping collapse. Exact-path candidate `local-riotbox-1333-live-w30-v8` received separate human `pass` verdicts for the normal chop hook and destructive variation on 2026-07-12.
+Consequences: this is one mono focused-pad sampler seam, not a full streaming pad-bank engine or general source-intelligence claim. The fixed riff vocabulary remains a bounded sampler policy whose slice material is source-derived; multi-pad polyphony, stereo playback, broader codecs, and richer musician-editable chop sequencing remain later slices. P023 remains open until the all-lane Golden Path passes its complete exit contract.
+Status: accepted

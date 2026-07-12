@@ -178,6 +178,14 @@ fn focused_w30_pad_trigger_uses_capture_artifact_preview_when_source_cache_unava
         u64::try_from(artifact.frame_count()).expect("artifact frame count fits u64")
     );
     assert!(pad_playback.loop_enabled);
+    assert_eq!(pad_playback.source_sample_rate, artifact.sample_rate);
+    assert_eq!(
+        pad_playback.playback_frame_count,
+        u64::try_from(artifact.frame_count()).expect("artifact frame count fits u64")
+    );
+    assert_eq!(pad_playback.playback_rate, 1.0);
+    assert!(!pad_playback.reverse);
+    assert!(pad_playback.loop_crossfade_sample_count > 0);
     assert_eq!(
         pad_playback.sample_count,
         artifact

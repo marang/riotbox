@@ -123,6 +123,11 @@ fn w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_outpu
         replayed_state.runtime.w30_preview.source_profile,
         committed_state.runtime.w30_preview.source_profile
     );
+    assert_eq!(
+        replayed_pad_playback.chop_slice_starts,
+        committed_pad_playback.chop_slice_starts,
+        "resample restore must preserve the source-derived chop decision"
+    );
     assert_recipe_buffers_match(
         "snapshot payload restore promote.resample artifact -> committed resample",
         &replayed_buffer,

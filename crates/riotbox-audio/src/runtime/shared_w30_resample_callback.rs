@@ -15,8 +15,15 @@ impl SharedW30PreviewRenderState {
             source_samples: std::array::from_fn(|_| AtomicU32::new(0.0_f32.to_bits())),
             pad_start_frame: AtomicU64::new(0),
             pad_end_frame: AtomicU64::new(0),
+            pad_source_sample_rate: AtomicU32::new(0),
+            pad_playback_frame_count: AtomicU64::new(0),
             pad_sample_count: AtomicU32::new(0),
             pad_loop_enabled: AtomicBool::new(false),
+            pad_playback_rate_bits: AtomicU32::new(1.0_f32.to_bits()),
+            pad_reverse: AtomicBool::new(false),
+            pad_loop_crossfade_sample_count: AtomicU32::new(0),
+            pad_chop_slice_count: AtomicU32::new(0),
+            pad_chop_slice_starts: std::array::from_fn(|_| AtomicU32::new(0)),
             pad_samples: std::array::from_fn(|_| AtomicU32::new(0.0_f32.to_bits())),
             music_bus_level_bits: AtomicU32::new(0),
             grit_level_bits: AtomicU32::new(0),
@@ -133,8 +140,26 @@ impl SharedW30PreviewRenderState {
                 .store(pad_playback.source_start_frame, Ordering::Relaxed);
             self.pad_end_frame
                 .store(pad_playback.source_end_frame, Ordering::Relaxed);
+            self.pad_source_sample_rate
+                .store(pad_playback.source_sample_rate, Ordering::Relaxed);
+            self.pad_playback_frame_count
+                .store(pad_playback.playback_frame_count, Ordering::Relaxed);
             self.pad_loop_enabled
                 .store(pad_playback.loop_enabled, Ordering::Relaxed);
+            self.pad_playback_rate_bits
+                .store(pad_playback.playback_rate.to_bits(), Ordering::Relaxed);
+            self.pad_reverse
+                .store(pad_playback.reverse, Ordering::Relaxed);
+            self.pad_loop_crossfade_sample_count.store(
+                pad_playback.loop_crossfade_sample_count.min(sample_count) as u32,
+                Ordering::Relaxed,
+            );
+            let chop_slice_count = pad_playback.chop_slice_count.min(W30_PAD_CHOP_SLICE_COUNT);
+            for (index, start) in pad_playback.chop_slice_starts.iter().copied().enumerate() {
+                self.pad_chop_slice_starts[index].store(start, Ordering::Relaxed);
+            }
+            self.pad_chop_slice_count
+                .store(chop_slice_count as u32, Ordering::Relaxed);
             for (index, sample) in pad_playback.samples.iter().copied().enumerate() {
                 self.pad_samples[index].store(sample.to_bits(), Ordering::Relaxed);
             }
@@ -144,7 +169,15 @@ impl SharedW30PreviewRenderState {
             self.pad_sample_count.store(0, Ordering::Relaxed);
             self.pad_start_frame.store(0, Ordering::Relaxed);
             self.pad_end_frame.store(0, Ordering::Relaxed);
+            self.pad_source_sample_rate.store(0, Ordering::Relaxed);
+            self.pad_playback_frame_count.store(0, Ordering::Relaxed);
             self.pad_loop_enabled.store(false, Ordering::Relaxed);
+            self.pad_playback_rate_bits
+                .store(1.0_f32.to_bits(), Ordering::Relaxed);
+            self.pad_reverse.store(false, Ordering::Relaxed);
+            self.pad_loop_crossfade_sample_count
+                .store(0, Ordering::Relaxed);
+            self.pad_chop_slice_count.store(0, Ordering::Relaxed);
         }
     }
 
@@ -155,12 +188,29 @@ impl SharedW30PreviewRenderState {
         for (index, sample) in samples.iter_mut().enumerate() {
             *sample = f32::from_bits(self.pad_samples[index].load(Ordering::Relaxed));
         }
+        let chop_slice_count = (self.pad_chop_slice_count.load(Ordering::Relaxed) as usize)
+            .min(W30_PAD_CHOP_SLICE_COUNT);
+        let chop_slice_starts = std::array::from_fn(|index| {
+            self.pad_chop_slice_starts[index]
+                .load(Ordering::Relaxed)
+                .min(sample_count.saturating_sub(1) as u32)
+        });
 
         RealtimeW30PadPlaybackSampleWindow {
             source_start_frame: self.pad_start_frame.load(Ordering::Relaxed),
             source_end_frame: self.pad_end_frame.load(Ordering::Relaxed),
+            source_sample_rate: self.pad_source_sample_rate.load(Ordering::Relaxed),
+            playback_frame_count: self.pad_playback_frame_count.load(Ordering::Relaxed),
             sample_count,
             loop_enabled: self.pad_loop_enabled.load(Ordering::Relaxed),
+            playback_rate: f32::from_bits(self.pad_playback_rate_bits.load(Ordering::Relaxed)),
+            reverse: self.pad_reverse.load(Ordering::Relaxed),
+            loop_crossfade_sample_count: (self
+                .pad_loop_crossfade_sample_count
+                .load(Ordering::Relaxed) as usize)
+                .min(sample_count),
+            chop_slice_count,
+            chop_slice_starts,
             samples,
         }
     }
@@ -340,6 +390,7 @@ pub(super) struct W30PreviewCallbackState {
     pub(super) lfo_phase: f32,
     pub(super) source_sample_cursor: f32,
     pub(super) pad_playback_cursor: f32,
+    pub(super) pad_playback_age_frames: u64,
     pub(super) last_source_window_signature: u64,
     pub(super) last_pad_playback_signature: u64,
     pub(super) envelope: f32,

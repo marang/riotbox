@@ -474,8 +474,15 @@ pub(super) struct RealtimeW30PreviewSampleWindow {
 pub(super) struct RealtimeW30PadPlaybackSampleWindow {
     pub(super) source_start_frame: u64,
     pub(super) source_end_frame: u64,
+    pub(super) source_sample_rate: u32,
+    pub(super) playback_frame_count: u64,
     pub(super) sample_count: usize,
     pub(super) loop_enabled: bool,
+    pub(super) playback_rate: f32,
+    pub(super) reverse: bool,
+    pub(super) loop_crossfade_sample_count: usize,
+    pub(super) chop_slice_count: usize,
+    pub(super) chop_slice_starts: [u32; W30_PAD_CHOP_SLICE_COUNT],
     pub(super) samples: [f32; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN],
 }
 
@@ -495,8 +502,15 @@ impl Default for RealtimeW30PadPlaybackSampleWindow {
         Self {
             source_start_frame: 0,
             source_end_frame: 0,
+            source_sample_rate: 0,
+            playback_frame_count: 0,
             sample_count: 0,
             loop_enabled: false,
+            playback_rate: 1.0,
+            reverse: false,
+            loop_crossfade_sample_count: 0,
+            chop_slice_count: 0,
+            chop_slice_starts: [0; W30_PAD_CHOP_SLICE_COUNT],
             samples: [0.0; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN],
         }
     }
@@ -515,8 +529,15 @@ pub(super) struct SharedW30PreviewRenderState {
     pub(super) source_samples: [AtomicU32; W30_PREVIEW_SAMPLE_WINDOW_LEN],
     pub(super) pad_start_frame: AtomicU64,
     pub(super) pad_end_frame: AtomicU64,
+    pub(super) pad_source_sample_rate: AtomicU32,
+    pub(super) pad_playback_frame_count: AtomicU64,
     pub(super) pad_sample_count: AtomicU32,
     pub(super) pad_loop_enabled: AtomicBool,
+    pub(super) pad_playback_rate_bits: AtomicU32,
+    pub(super) pad_reverse: AtomicBool,
+    pub(super) pad_loop_crossfade_sample_count: AtomicU32,
+    pub(super) pad_chop_slice_count: AtomicU32,
+    pub(super) pad_chop_slice_starts: [AtomicU32; W30_PAD_CHOP_SLICE_COUNT],
     pub(super) pad_samples: [AtomicU32; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN],
     pub(super) music_bus_level_bits: AtomicU32,
     pub(super) grit_level_bits: AtomicU32,

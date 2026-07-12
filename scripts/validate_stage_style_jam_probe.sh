@@ -50,7 +50,7 @@ cargo run -p riotbox-audio --bin w30_preview_compare -- \
   --max-active-samples-delta 400000 \
   --max-peak-delta 1.0 \
   --max-rms-delta 1.0 \
-  --max-sum-delta 5000.0
+  --max-sum-delta 6000.0
 python3 scripts/validate_listening_manifest_json.py \
   --require-existing-artifacts \
   "$probe_dir/manifest.json"

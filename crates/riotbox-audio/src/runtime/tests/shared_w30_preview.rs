@@ -153,7 +153,20 @@ fn shared_w30_preview_state_tracks_updates() {
         trigger_revision: 3,
         trigger_velocity: 0.78,
         source_window_preview: None,
-        pad_playback: None,
+        pad_playback: Some(W30PadPlaybackSampleWindow {
+            source_start_frame: 24_000,
+            source_end_frame: 120_000,
+            source_sample_rate: 48_000,
+            playback_frame_count: 96_000,
+            sample_count: W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN,
+            loop_enabled: true,
+            playback_rate: 0.82,
+            reverse: true,
+            loop_crossfade_sample_count: 128,
+            chop_slice_count: 2,
+            chop_slice_starts: [512, 2_048, 0, 0, 0, 0, 0, 0],
+            samples: [0.2; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN],
+        }),
         music_bus_level: 0.55,
         grit_level: 0.68,
         is_transport_running: true,
@@ -171,6 +184,15 @@ fn shared_w30_preview_state_tracks_updates() {
     );
     assert_eq!(snapshot.trigger_revision, 3);
     assert_eq!(snapshot.trigger_velocity, 0.78);
+    assert_eq!(snapshot.pad_playback.source_start_frame, 24_000);
+    assert_eq!(snapshot.pad_playback.source_end_frame, 120_000);
+    assert_eq!(snapshot.pad_playback.source_sample_rate, 48_000);
+    assert_eq!(snapshot.pad_playback.playback_frame_count, 96_000);
+    assert_eq!(snapshot.pad_playback.playback_rate, 0.82);
+    assert!(snapshot.pad_playback.reverse);
+    assert_eq!(snapshot.pad_playback.loop_crossfade_sample_count, 128);
+    assert_eq!(snapshot.pad_playback.chop_slice_count, 2);
+    assert_eq!(snapshot.pad_playback.chop_slice_starts[..2], [512, 2_048]);
     assert_eq!(snapshot.music_bus_level, 0.55);
     assert_eq!(snapshot.grit_level, 0.68);
     assert_eq!(snapshot.tempo_bpm, 128.0);

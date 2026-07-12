@@ -1,5 +1,6 @@
 pub const W30_PREVIEW_SAMPLE_WINDOW_LEN: usize = 2_048;
 pub const W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN: usize = 16_384;
+pub const W30_PAD_CHOP_SLICE_COUNT: usize = 8;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum W30PreviewRenderMode {
@@ -140,8 +141,15 @@ pub struct W30PreviewSampleWindow {
 pub struct W30PadPlaybackSampleWindow {
     pub source_start_frame: u64,
     pub source_end_frame: u64,
+    pub source_sample_rate: u32,
+    pub playback_frame_count: u64,
     pub sample_count: usize,
     pub loop_enabled: bool,
+    pub playback_rate: f32,
+    pub reverse: bool,
+    pub loop_crossfade_sample_count: usize,
+    pub chop_slice_count: usize,
+    pub chop_slice_starts: [u32; W30_PAD_CHOP_SLICE_COUNT],
     pub samples: [f32; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN],
 }
 

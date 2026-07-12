@@ -218,17 +218,20 @@ The bounded early seam is a non-realtime source-audio cache:
 - expose bounded sample-window access for source-backed W-30 preview paths
 - project a small fixed-size preview window from `CaptureRef.source_window` into callback-safe W-30 preview state
 - write committed source-window captures as PCM16 WAV artifacts outside the realtime callback when the app has a session path and decoded source cache
-- prefer loaded committed capture artifacts for focused W-30 pad preview / trigger state, falling back to source-window projection when no artifact is available
-- current W-30 preview window size is `2048` mono samples, deliberately bounded so it can sound more like captured material without becoming full callback-side sample streaming
+- prefer loaded committed capture artifacts for focused W-30 pad playback / trigger state, falling back to source-window projection only for bounded audition surfaces when no artifact is available
+- keep the `2048`-sample mono preview window for bounded audition diagnostics
+- project focused committed pad artifacts into a separate callback-safe `16384`-sample mono representation that spans the full capture duration and carries original sample-rate / frame-count identity, playback rate, direction, loop crossfade, and a bounded source-derived chop plan
+- derive chop slice starts outside the callback from quantized short-time energy rises in the real capture; realtime transport and pad triggers may only select and retrigger the prepared bounded plan
+- preserve the action-derived damage transform and capture-artifact identity across Session replay; artifact hydration must not invent macro / grit state that the committed action did not set
 - keep cache loading and source-window projection outside the realtime callback
 
 Current limitation:
 
 - the initial cache supports PCM 16-bit and PCM 24-bit WAV fixture input
 - committed source-backed capture artifacts are PCM16 WAV files for the first app path
-- the current raw, promoted, and recall preview paths use a bounded preview excerpt, not a full pad-bank sampler engine
-- focused pad playback is still one bounded preview seam, but it now consumes capture artifacts when available instead of treating `storage_path` as decorative metadata
-- broader codec support and true W-30 sample playback remain separate implementation slices
+- raw audition without a committed artifact still uses a bounded preview excerpt
+- focused committed pad playback is duration-aware and source-backed, but remains one mono pad seam rather than a full multi-pad streaming sampler engine
+- the callback representation is a bounded full-duration proxy, not unbounded file streaming; broader codec support, stereo pad playback, multi-pad polyphony, and a full bank engine remain separate implementation slices
 
 ### 11.2 Bounded W-30 internal bus print seam
 

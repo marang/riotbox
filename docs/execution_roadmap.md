@@ -693,6 +693,12 @@ following:
     requiring snare/break to be the strongest audible element and by reporting
     bounded snare-margin and combined drum-pressure scores; this protects
     harder break impact without claiming a musical pass.
+  - RIOTBOX-1333 moves one W-30 element beyond diagnostic-only proof: the exact
+    live ingest / action / mixer path plays a duration-aware committed capture
+    as a transient-derived chop hook, reconstructs the same source decision on
+    artifact replay, and earned separate human `pass` verdicts for its normal
+    and destructive variants. This is a passed instrument slice, not yet the
+    full all-lane P023 exit.
   - current P022 diagnostic coverage also writes rebuild-only/source-layer-off
     professional-output WAVs and gates them for non-silence, useful RMS,
     source correlation, distinct source-on/source-off output, and a bounded

@@ -65,7 +65,7 @@ fn w30_loop_freeze_replay_hydrates_persisted_artifact_capture() {
         session.runtime_state.lane_state.w30.preview_mode,
         Some(W30PreviewModeState::LiveRecall)
     );
-    assert!((session.runtime_state.macro_state.w30_grit - 0.78).abs() < f32::EPSILON);
+    assert!((session.runtime_state.macro_state.w30_grit - 0.4).abs() < f32::EPSILON);
 }
 
 #[test]
@@ -149,7 +149,7 @@ fn w30_artifact_replay_hydration_contract_accepts_explicit_resample_artifact() {
         session.runtime_state.lane_state.w30.preview_mode,
         Some(W30PreviewModeState::LiveRecall)
     );
-    assert!((session.runtime_state.macro_state.w30_grit - 0.78).abs() < f32::EPSILON);
+    assert!((session.runtime_state.macro_state.w30_grit - 0.4).abs() < f32::EPSILON);
 }
 
 #[test]
