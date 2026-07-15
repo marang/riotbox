@@ -255,12 +255,13 @@ def render_case(
                 f"{float(request_window_seconds):.6f}",
             ]
         )
+    performance_report_path = render_dir / "performance-report.json"
     run_or_exit(
         repo,
         command,
         case_dir / "render.log",
+        allow_failure_with_artifact=performance_report_path,
     )
-    performance_report_path = render_dir / "performance-report.json"
     performance_report = read_json(performance_report_path)
     files = object_or_empty(performance_report.get("files"))
     proof = object_or_empty(performance_report.get("proof"))
@@ -309,6 +310,8 @@ def render_case(
         "source_window_sha256": sha256_file(source_window),
         "performance_report": str(performance_report_path),
         "performance_report_sha256": sha256_file(performance_report_path),
+        "performance_result": performance_report.get("result"),
+        "performance_failure_codes": string_list(performance_report.get("failure_codes")),
         "pressure_lift_policy": pressure_lift_policy,
         "timing_policy": timing_policy,
         "proof": {
@@ -388,6 +391,7 @@ def render_case(
             source_timing,
             pressure_lift_policy,
             route,
+            performance_report,
         ),
         "guarded_failure_classes": [
             "silence",
@@ -420,6 +424,7 @@ def source_selection_promotion_gate(
     source_timing: dict[str, Any],
     pressure_lift_policy: dict[str, Any],
     route: dict[str, Any],
+    performance_report: dict[str, Any],
 ) -> dict[str, Any]:
     source_family = str(spec["source_family"])
     blockers = [
@@ -428,6 +433,8 @@ def source_selection_promotion_gate(
     ]
     demotion_reasons = [DEMOTION_REASON_DIAGNOSTIC_ONLY]
     review_actions = [REVIEW_ACTION_KEEP_DIAGNOSTIC]
+    if performance_report.get("result") != "pass":
+        blockers.append("performance_contract_failed")
     if source_family == SOURCE_FAMILY_BAD_TIMING:
         blockers.extend(
             [
@@ -944,6 +951,13 @@ def report_failure_codes(
             failures.append(f"{case_id}:source_selection_demotion_reason_missing")
         if not string_list(promotion_gate.get("required_review_actions")):
             failures.append(f"{case_id}:source_selection_review_action_missing")
+        if case.get("performance_result") != "pass":
+            if not string_list(case.get("performance_failure_codes")):
+                failures.append(f"{case_id}:performance_failure_codes_missing")
+            if "performance_contract_failed" not in string_list(
+                promotion_gate.get("blockers")
+            ):
+                failures.append(f"{case_id}:performance_failure_blocker_missing")
         if require_artifacts:
             rendered_audio = Path(str(case.get("rendered_audio", "")))
             source_timing_path = Path(str(source_timing.get("report", "")))
@@ -1089,6 +1103,7 @@ def run_or_exit(
     stdout_path: Path,
     *,
     stderr_path: Path | None = None,
+    allow_failure_with_artifact: Path | None = None,
 ) -> None:
     result = subprocess.run(
         command,
@@ -1105,7 +1120,9 @@ def run_or_exit(
         stderr_path.write_text(result.stderr)
     elif result.stderr:
         stdout_path.write_text(result.stdout + ("\n" if result.stdout else "") + result.stderr)
-    if result.returncode != 0:
+    if result.returncode != 0 and not (
+        allow_failure_with_artifact is not None and allow_failure_with_artifact.is_file()
+    ):
         raise ValueError(f"command failed; see {stdout_path}")
 
 

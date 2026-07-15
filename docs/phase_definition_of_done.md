@@ -390,6 +390,21 @@ Current landed evidence:
 - This closes the W-30 sampler slice only. It does not by itself close the P023
   Golden Path, which still requires the all-lane instrument, gesture, recipe,
   restart / recall, and aggregate structured-review exit evidence above.
+- RIOTBOX-1400 establishes typed shared live-performance projection and explicit
+  bass ownership across the exact W-30 / TR-909 / MC-202 render path, with the
+  reproducible `just dense-break-live-path-smoke` gate. Human
+  review accepted the stronger dense hook/instigator direction but rejected the
+  Beat08 MC-202 bass candidate as boring and non-loopable. That source now
+  resolves to `bass_owner=unassigned`; this is honest degraded role selection,
+  not a P023 bass-quality pass. A true MC-202 bass-pressure pass still requires
+  a trusted source with sufficient low-band movement evidence.
+- RIOTBOX-1400 is therefore a `contract_enabler`, not an audible Golden Path
+  completion. Its Beat03 all-lane v2 was stronger and punchier than v1 but
+  remained human-rejected as less useful than the source: the render was quiet,
+  lost substantial high-band energy, repeated its short unit nearly unchanged,
+  and did not establish recognizable Riotbox character. It directly enables
+  RIOTBOX-1401 to implement and human-review a source-derived eight-bar arc with
+  hook establishment, pressure lift, destructive contrast, and changed return.
 
 Not sufficient for exit:
 

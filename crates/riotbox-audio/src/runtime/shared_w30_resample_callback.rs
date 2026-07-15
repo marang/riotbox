@@ -372,6 +372,7 @@ pub(super) struct Tr909CallbackState {
 #[derive(Debug, Default)]
 pub(super) struct TransportTimingCallbackState {
     pub(super) beat_position: f64,
+    pub(super) last_control_position_beats: f64,
     pub(super) was_running: bool,
 }
 
@@ -476,6 +477,7 @@ pub(super) fn advance_transport_timing(
     if !transport_running {
         state.was_running = false;
         state.beat_position = control.position_beats;
+        state.last_control_position_beats = control.position_beats;
         return CallbackTimingSnapshot {
             is_transport_running: false,
             tempo_bpm: control.tempo_bpm,
@@ -484,10 +486,16 @@ pub(super) fn advance_transport_timing(
         };
     }
 
-    if !state.was_running || (state.beat_position - control.position_beats).abs() > 0.125 {
+    let control_position_changed =
+        (state.last_control_position_beats - control.position_beats).abs() > f64::EPSILON;
+    if !state.was_running
+        || (control_position_changed
+            && (state.beat_position - control.position_beats).abs() > 0.125)
+    {
         state.beat_position = control.position_beats;
         state.was_running = true;
     }
+    state.last_control_position_beats = control.position_beats;
 
     let render_position_beats = state.beat_position;
     let beats_per_sample = f64::from(control.tempo_bpm) / 60.0 / f64::from(sample_rate.max(1));

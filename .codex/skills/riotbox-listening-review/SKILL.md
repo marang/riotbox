@@ -23,6 +23,29 @@ just listening-review-fixtures
 
 The canonical implementation is `scripts/listening_review_workflow.py`; the contract is documented in `docs/specs/audio_qa_workflow_spec.md`.
 
+## Pre-Playback Brief
+
+Do not play a review artifact without first telling the listener what the
+artifact is intended to do. Before every playback, provide a compact brief
+that states:
+
+- the playback context: isolated stem, full mix, source, baseline, or comparison
+- the selected product role or candidate family
+- the intended musical function and expected audible effect
+- important properties that are explicitly not expected, such as bass pressure
+  from an answer / punctuation stem
+- the dimensions the listener should judge for this artifact
+
+Keep the brief factual and do not prime the listener toward a positive verdict.
+If role assignment is unresolved or contradictory, do not request a taste
+verdict; fix or surface the decision first.
+
+For interactive local playback, show a conspicuous listening-check line and
+wait for an explicit readiness confirmation before each playback. A previous
+confirmation does not carry over to the next artifact or repeat. Treat any
+playback started without that confirmation as unheard and do not record a human
+verdict from it.
+
 ## PR Rule
 
 For audible PRs, state briefly whether a structured listening pack/verdict exists or why `human_verdict` remains `unverified`.

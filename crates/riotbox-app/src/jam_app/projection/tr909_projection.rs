@@ -22,6 +22,7 @@ use riotbox_audio::{
 use riotbox_core::{
     action::{Action, ActionCommand, ActionParams, ActionStatus},
     ids::{CaptureId, SceneId},
+    live_performance_policy::{LivePerformanceMc202Intent, derive_live_performance_policy},
     session::{
         Mc202PhraseIntentState, Mc202RoleState, SceneMovementDirectionState,
         SceneMovementLaneIntentState, SceneMovementState, SessionFile, W30PreviewModeState,
@@ -131,6 +132,7 @@ pub(super) fn build_tr909_render_state(
         source_graph,
         scene_context,
     );
+    let live_policy = source_graph.and_then(|graph| derive_live_performance_policy(session, graph));
 
     Tr909RenderState {
         mode: audio_tr909_render_mode(policy.mode),
@@ -142,9 +144,19 @@ pub(super) fn build_tr909_render_state(
         phrase_variation: scene_movement_tr909_variation(session)
             .or_else(|| audio_tr909_phrase_variation(policy.phrase_variation)),
         takeover_profile: audio_tr909_takeover_profile(policy.takeover_profile),
-        drum_bus_level: mixer.drum_level.clamp(0.0, 1.0),
+        drum_bus_level: live_policy
+            .as_ref()
+            .map_or(mixer.drum_level, |policy| {
+                mixer.drum_level.max(policy.tr909_drum_level)
+            })
+            .clamp(0.0, 1.0),
         slam_intensity: scene_movement_tr909_slam(session)
             .max(session.runtime_state.macro_state.tr909_slam)
+            .max(
+                live_policy
+                    .as_ref()
+                    .map_or(0.0, |policy| policy.tr909_slam_floor),
+            )
             .clamp(0.0, 1.0),
         is_transport_running: transport.is_playing,
         tempo_bpm,
@@ -190,9 +202,24 @@ pub(super) fn build_mc202_render_state(
     transport: &TransportClockState,
     source_graph: Option<&SourceGraph>,
 ) -> Mc202RenderState {
+    let tempo_bpm = trusted_source_timing_bpm(session, source_graph).unwrap_or(0.0);
+    let silent_render_state = || Mc202RenderState {
+        tempo_bpm,
+        position_beats: transport.position_beats,
+        is_transport_running: transport.is_playing,
+        ..Mc202RenderState::default()
+    };
     let mc202 = &session.runtime_state.lane_state.mc202;
-    let Some(role) = mc202.role else {
-        return Mc202RenderState::default();
+    let Some(requested_role) = mc202.role else {
+        return silent_render_state();
+    };
+    let live_policy = source_graph.and_then(|graph| derive_live_performance_policy(session, graph));
+    let role = match live_policy.as_ref().map(|policy| policy.mc202_intent) {
+        Some(LivePerformanceMc202Intent::BassPressure) => Mc202RoleState::Pressure,
+        Some(LivePerformanceMc202Intent::Punctuate) => Mc202RoleState::Answer,
+        Some(LivePerformanceMc202Intent::Instigate) => Mc202RoleState::Instigator,
+        Some(LivePerformanceMc202Intent::StayOut) => return silent_render_state(),
+        None => requested_role,
     };
 
     let (mode, base_phrase_shape) = mc202_render_mode_and_shape(role);
@@ -201,8 +228,6 @@ pub(super) fn build_mc202_render_state(
     let current_section = mc202_current_section(source_graph, transport, scene_context(session));
     let hook_response =
         mc202_hook_response_for_role_graph_and_section(role, source_graph, current_section);
-    let tempo_bpm = trusted_source_timing_bpm(session, source_graph).unwrap_or(0.0);
-
     let movement = active_scene_movement(session);
     let touch = scene_movement_mc202_touch(
         session
@@ -214,7 +239,6 @@ pub(super) fn build_mc202_render_state(
     );
     let contour_hint = scene_movement_mc202_contour(movement)
         .unwrap_or_else(|| mc202_contour_hint(current_section));
-
     Mc202RenderState {
         mode,
         routing: mc202_routing_for_source_plan(mc202.source_phrase_plan.as_ref()),
@@ -230,11 +254,15 @@ pub(super) fn build_mc202_render_state(
         contour_hint,
         hook_response,
         source_phrase_plan: mc202_source_phrase_render_plan(mc202.source_phrase_plan.as_ref()),
-        touch,
-        music_bus_level: session
-            .runtime_state
-            .mixer_state
-            .music_level
+        touch: live_policy
+            .as_ref()
+            .map_or(touch, |policy| touch.max(policy.mc202_touch_floor)),
+        music_bus_level: live_policy
+            .as_ref()
+            .map_or_else(
+                || session.runtime_state.mixer_state.music_level,
+                |policy| policy.mc202_music_level,
+            )
             .clamp(0.0, 1.0),
         tempo_bpm,
         position_beats: transport.position_beats,
@@ -437,6 +465,7 @@ pub(super) fn build_w30_preview_render_state(
     } else {
         W30PreviewRenderRouting::Silent
     };
+    let live_policy = source_graph.and_then(|graph| derive_live_performance_policy(session, graph));
 
     W30PreviewRenderState {
         mode,
@@ -455,10 +484,12 @@ pub(super) fn build_w30_preview_render_state(
         source_window_preview,
         pad_playback,
         music_bus_level: if has_preview_material {
-            session
-                .runtime_state
-                .mixer_state
-                .music_level
+            live_policy
+                .as_ref()
+                .map_or_else(
+                    || session.runtime_state.mixer_state.music_level,
+                    |policy| policy.w30_music_level,
+                )
                 .clamp(0.0, 1.0)
         } else {
             0.0

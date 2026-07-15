@@ -212,7 +212,7 @@ pub(super) fn trigger_frequency(render: &RealtimeTr909RenderState, step: i64) ->
             base + accent + phrase_pitch + slam
         }
         Tr909RenderMode::Fill => 112.0 + accent + phrase_pitch + slam,
-        Tr909RenderMode::BreakReinforce => 88.0 + accent + phrase_pitch + slam,
+        Tr909RenderMode::BreakReinforce => 62.0 + accent + phrase_pitch + slam,
         Tr909RenderMode::Takeover => {
             let base = match render.takeover_profile {
                 Some(Tr909TakeoverRenderProfile::ControlledPhrase) | None => 92.0,
@@ -335,8 +335,9 @@ fn tr909_voice_balance(render: &RealtimeTr909RenderState, step: i64) -> Tr909Voi
             balance.hat *= 1.55;
         }
         Tr909RenderMode::BreakReinforce => {
-            balance.snare *= 1.22;
-            balance.hat *= 1.08;
+            balance.kick *= 1.45;
+            balance.snare *= 1.38;
+            balance.hat *= 0.70;
         }
         Tr909RenderMode::Takeover => {
             balance.kick *= 1.28;
@@ -399,12 +400,23 @@ pub(super) fn render_gain(render: &RealtimeTr909RenderState) -> f32 {
         },
         Tr909RenderMode::Idle | Tr909RenderMode::SourceSupport => 1.0,
     };
+    let performance_gain = if matches!(render.mode, Tr909RenderMode::BreakReinforce) {
+        1.0 + render.slam_intensity.clamp(0.0, 1.0) * 5.0
+    } else {
+        1.0
+    };
+    let max_gain = if matches!(render.mode, Tr909RenderMode::BreakReinforce) {
+        0.60
+    } else {
+        0.25
+    };
     (routing_gain
         * pattern_gain
         * phrase_gain
         * context_gain
         * source_profile_gain
         * mode_gain
+        * performance_gain
         * render.drum_bus_level.clamp(0.0, 1.0))
-    .clamp(0.0, 0.25)
+    .clamp(0.0, max_gain)
 }

@@ -100,6 +100,37 @@ fn offline_tr909_render_produces_reviewable_metrics_for_fill() {
 }
 
 #[test]
+fn break_reinforce_slam_carries_physical_transient_and_body() {
+    let buffer = render_tr909_offline(
+        &Tr909RenderState {
+            mode: Tr909RenderMode::BreakReinforce,
+            routing: Tr909RenderRouting::DrumBusSupport,
+            pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
+            phrase_variation: Some(Tr909PhraseVariation::PhraseLift),
+            drum_bus_level: 0.80,
+            slam_intensity: 0.66,
+            is_transport_running: true,
+            tempo_bpm: 130.0,
+            position_beats: 0.0,
+            ..Tr909RenderState::default()
+        },
+        48_000,
+        2,
+        48_000,
+    );
+
+    let metrics = signal_metrics(&buffer);
+
+    assert!(metrics.peak_abs > 0.22, "drum peak stayed too polite: {metrics:?}");
+    assert!(metrics.rms > 0.012, "drum body stayed too weak: {metrics:?}");
+    assert!(
+        metrics.active_sample_ratio > 0.12,
+        "drum envelope collapsed to click-sized support: {metrics:?}"
+    );
+    assert_eq!(metrics.clip_count, 0, "drum support clipped: {metrics:?}");
+}
+
+#[test]
 fn offline_mc202_render_stays_silent_until_source_phrase_exists() {
     let follower = render_mc202_offline(
         &Mc202RenderState {

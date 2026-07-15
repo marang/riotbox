@@ -103,6 +103,9 @@ const MC202_BASS_PRESSURE_MAX_BAR_SIMILARITY: f32 = 0.985;
 const MC202_BASS_PRESSURE_MIN_SIGNAL_RMS: f32 = 0.003;
 const MC202_BASS_PRESSURE_MIN_LOW_BAND_RMS: f32 = 0.001;
 const MC202_BASS_PRESSURE_MIN_LOW_TO_MID_ENERGY_RATIO: f32 = 1.20;
+const MC202_BASS_PRESSURE_DIAGNOSTIC_MAX_PEAK: f32 = 0.085;
+const MC202_DENSE_DROP_DIAGNOSTIC_MAX_PEAK: f32 = 0.050;
+const MC202_DENSE_DROP_MIN_EVENTS_PER_BAR: f32 = 70.0;
 const MC202_SOURCE_CONTOUR_MIN_DELTA_RMS: f32 = 0.00025;
 const MC202_PATTERN_ORIGIN_PRIMITIVE_RENDERER: &str = PATTERN_ORIGIN_PRIMITIVE_RENDERER;
 const MC202_PATTERN_ORIGIN_SOURCE_DERIVED_CONTOUR: &str = "source_derived_contour";
@@ -210,6 +213,7 @@ fn render_mc202_bass_pressure_with_source_contour(
         source_contour,
         pressure_reinforcement_gain,
     );
+    apply_mc202_diagnostic_headroom(&mut samples, &mut control_samples, source_contour);
 
     let metrics = render_metrics(&samples, grid);
     let low_band_metrics = metrics.low_band;
@@ -295,6 +299,29 @@ fn render_mc202_bass_pressure_with_source_contour(
             },
         },
     )
+}
+
+fn apply_mc202_diagnostic_headroom(
+    samples: &mut [f32],
+    control_samples: &mut [f32],
+    source_contour: Mc202SourceContourProfile,
+) {
+    let max_peak = if source_contour.contour_hint == Mc202ContourHint::Drop
+        && source_contour.event_density_per_bar >= MC202_DENSE_DROP_MIN_EVENTS_PER_BAR
+    {
+        MC202_DENSE_DROP_DIAGNOSTIC_MAX_PEAK
+    } else {
+        MC202_BASS_PRESSURE_DIAGNOSTIC_MAX_PEAK
+    };
+    let peak = samples.iter().copied().map(f32::abs).fold(0.0, f32::max);
+    if peak <= max_peak || peak <= f32::EPSILON {
+        return;
+    }
+
+    let gain = max_peak / peak;
+    for sample in samples.iter_mut().chain(control_samples.iter_mut()) {
+        *sample *= gain;
+    }
 }
 
 fn band_ratio(numerator: f32, denominator: f32) -> f32 {

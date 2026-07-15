@@ -2,6 +2,8 @@ target/
 __pycache__/
 *.py[cod]
 artifacts/audio_qa/
+# Local reference audio and downloads must never enter repository history.
+.download-examples/
 # Retired local semantic-memory artifacts; keep stale generated data untracked.
 .mempalace/cache/
 .mempalace/palace/

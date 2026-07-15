@@ -335,7 +335,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let (w30, w30_source_trigger_variation, w30_source_slice_choice, w30_source_accent_dynamics) =
         render_w30_source_chop_with_variation(&grid, &w30_preview);
     let (source_first_mix, source_first_master_bus_limiter) =
-        render_source_first_mix_with_master_bus_report(&tr909, &mc202, &w30);
+        render_source_first_mix_with_master_bus_report(&tr909, &mc202, &w30, &grid);
     let full_mix_with_limiter = render_generated_support_mix_with_master_bus_report(
         &tr909,
         &mc202,

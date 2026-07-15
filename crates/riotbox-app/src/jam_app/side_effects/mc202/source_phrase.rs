@@ -39,14 +39,14 @@ pub(super) fn derive_mc202_source_phrase_plan(
     let phrase_slot = source_phrase_slot_for_boundary(graph, boundary)?;
 
     let section = section_for_transport_bar(graph, &transport_clock_from_boundary(boundary));
-    let features = mc202_source_phrase_feature_vector(graph, phrase_slot);
+    let features = mc202_source_phrase_feature_vector(graph, &phrase_slot);
     let source_expression = mc202_source_phrase_expression_state(&features);
     let source_fallback_reason = source_phrase_fallback_reason(&features, &source_expression);
     let candidate_selection = choose_source_phrase_candidate(
         graph,
         role,
         section,
-        phrase_slot,
+        &phrase_slot,
         &features,
         &source_expression,
         session
@@ -63,7 +63,7 @@ pub(super) fn derive_mc202_source_phrase_plan(
         } else {
             [None; 16]
         };
-    let confidence = source_phrase_confidence(graph, section, phrase_slot, &features);
+    let confidence = source_phrase_confidence(graph, section, &phrase_slot, &features);
 
     Some(Mc202SourcePhrasePlanState {
         source_id: graph.source.source_id.clone(),
@@ -88,16 +88,29 @@ pub(super) fn derive_mc202_source_phrase_plan(
     })
 }
 
-fn source_phrase_slot_for_boundary<'a>(
-    graph: &'a SourceGraph,
+fn source_phrase_slot_for_boundary(
+    graph: &SourceGraph,
     boundary: &CommitBoundaryState,
-) -> Option<&'a PhraseSpan> {
+) -> Option<PhraseSpan> {
     let bar_index = boundary.bar_index as u32;
     graph
         .timing
         .phrase_grid
         .iter()
         .find(|phrase| bar_index >= phrase.start_bar && bar_index <= phrase.end_bar)
+        .cloned()
+        .or_else(|| {
+            let hypothesis = graph.timing.primary_hypothesis()?;
+            let phrase_index = boundary.phrase_index.try_into().ok()?;
+            let start_bar = hypothesis.bar_grid.first()?.bar_index;
+            let end_bar = hypothesis.bar_grid.last()?.bar_index;
+            (bar_index >= start_bar && bar_index <= end_bar).then_some(PhraseSpan {
+                phrase_index,
+                start_bar,
+                end_bar,
+                confidence: hypothesis.confidence,
+            })
+        })
 }
 
 fn transport_clock_from_boundary(boundary: &CommitBoundaryState) -> TransportClockState {

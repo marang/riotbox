@@ -170,7 +170,12 @@ fn build_candidate(
         Mc202SourcePhraseCandidateFamilyState::SubPressureShove => {
             cells[groove.pressure_step] = Some(source_pressure_root(expression));
             cells[groove.secondary_pressure_step()] = Some(source_pressure_secondary(expression));
-            if expression.low_pressure_contour > 0.54 && expression.bass_pressure > 0.56 {
+            let source_wants_pressure_movement = (expression.low_pressure_contour > 0.54
+                && expression.bass_pressure > 0.56)
+                || (expression.bass_pressure >= 0.48
+                    && expression.phrase_density >= 0.60
+                    && expression.transient_backbeat >= 0.65);
+            if source_wants_pressure_movement {
                 cells[groove.pressure_movement_step()] = Some(source_pressure_movement(expression));
             }
             if expression.offbeat_answer_space > 0.42 {
@@ -253,8 +258,10 @@ fn source_pressure_movement(expression: &Mc202SourcePhraseExpressionState) -> i8
         -22
     } else if expression.low_pressure_contour > 0.66 {
         -19
-    } else {
+    } else if expression.low_pressure_contour > 0.42 {
         -16
+    } else {
+        -7
     }
 }
 
@@ -263,10 +270,11 @@ fn candidate_rejection_reason(
     expression: &Mc202SourcePhraseExpressionState,
 ) -> Option<&'static str> {
     match family {
-        Mc202SourcePhraseCandidateFamilyState::SubPressureShove => {
-            (expression.bass_pressure < 0.48 || expression.stay_out_pressure > 0.78)
-                .then_some("insufficient_low_band_source_pressure")
-        }
+        Mc202SourcePhraseCandidateFamilyState::SubPressureShove => (expression.bass_pressure
+            < 0.52
+            || (expression.low_pressure_contour < 0.28 && expression.bass_pressure < 0.64)
+            || expression.stay_out_pressure > 0.78)
+            .then_some("insufficient_low_band_source_pressure"),
         Mc202SourcePhraseCandidateFamilyState::SparseOffbeatAnswer => {
             (expression.offbeat_answer_space < 0.25 || expression.hook_restraint >= 0.80)
                 .then_some("insufficient_offbeat_answer_space")

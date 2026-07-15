@@ -94,6 +94,41 @@ fn manual_confirm_timing_stays_silent_until_explicit_bpm_confirmation_commits() 
 }
 
 #[test]
+fn committed_mc202_fallback_stays_silent_without_losing_trusted_transport_timing() {
+    let graph = manual_confirm_source_window_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    confirm_explicit_source_bpm(&mut state, 126.0).expect("confirm explicit BPM");
+    state.session.runtime_state.lane_state.mc202.source_phrase_plan =
+        Some(Mc202SourcePhrasePlanState {
+            source_id: SourceId::from("src-1"),
+            phrase_slot: Mc202SourcePhraseSlotState {
+                phrase_index: 0,
+                start_bar: 1,
+                end_bar: 8,
+            },
+            source_expression: None,
+            role: Mc202RoleState::Follower,
+            rhythm_cells: [None; 16],
+            note_budget: Mc202SourcePhraseNoteBudgetState::Sparse,
+            touch: 0.0,
+            confidence: 0.0,
+            candidate_family: Some(Mc202SourcePhraseCandidateFamilyState::FallbackControl),
+            candidate_count: 0,
+            rejected_candidate_count: 0,
+            candidate_provenance_refs: Vec::new(),
+            candidate_scorecards: Vec::new(),
+            phrase_memory_distance: 0.0,
+            fallback_reason: Some("source_evidence_untrusted".into()),
+        });
+    state.refresh_view();
+
+    assert_eq!(state.runtime.mc202_render.tempo_bpm, 126.0);
+    assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Idle);
+    assert_eq!(state.runtime.mc202_render.routing, Mc202RenderRouting::Silent);
+}
+
+#[test]
 fn explicit_bpm_rejects_a_mismatched_probe_grid() {
     let graph = manual_confirm_source_window_graph();
     let session = sample_session(&graph);

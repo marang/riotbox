@@ -66,6 +66,7 @@ _audio-qa-ci-unlocked:
     just representative-source-showcase-musical-quality-fixtures
     just automated-musical-fitness-fixtures
     just agent-musical-review-pack-smoke
+    just dense-break-live-path-smoke
     just pro-pressure-source-matrix-smoke
     just professional-source-wav-pack-smoke
     just edge-source-professional-diagnostics-smoke
@@ -264,6 +265,9 @@ dense-break-performance-pack source="data/test_audio/examples/Beat03_130BPM(Full
 dense-break-performance-pack-smoke output="artifacts/audio_qa/local-dense-break-performance-pack-smoke":
     python3 scripts/generate_dense_break_performance_pack.py --output "{{output}}" --date "local-dense-break-performance-pack-smoke"
     python3 scripts/generate_dense_break_performance_pack.py --validate-report "{{output}}/performance-report.json" --mutation-fixtures
+
+dense-break-live-path-smoke output="artifacts/audio_qa/local-dense-break-live-path-smoke" bpm="132":
+    scripts/validate_dense_break_live_path.sh "{{output}}" "{{bpm}}"
 
 dense-break-weak-source-character-fixture-smoke output="artifacts/audio_qa/local-dense-break-weak-source-character-fixture":
     tmp="$(mktemp)" && if python3 scripts/generate_dense_break_performance_pack.py --output "{{output}}" --date "local-dense-break-weak-source-character-fixture" --weak-source-character-fixture >"$tmp" 2>&1; then cat "$tmp" >&2; rm "$tmp"; echo "expected weak source-character dense-break fixture to fail" >&2; exit 1; fi && grep -q "rebuild_only_source_character_not_surviving" "$tmp" && grep -q "rebuild_only_source_character_margin_too_low" "$tmp" && rm "$tmp"

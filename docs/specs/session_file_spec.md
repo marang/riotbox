@@ -271,6 +271,14 @@ The stable candidate-family labels are `sub_pressure_shove`,
 QA states, but they must not project as audible source-derived MC-202 render
 plans.
 
+The dense-break live performance projection is derived from this persisted
+candidate-family decision, the matching Source Graph, and confirmed timing. It
+is intentionally not stored as another Session object. In particular, MC-202
+owns bass only when the persisted family is `sub_pressure_shove`; answer,
+callback, pickup, stay-out, and fallback families leave bass ownership
+unassigned. A requested compatibility role may remain recorded for action and
+replay identity, but it does not override the selected family's audible role.
+
 When `source_timing.revert_grid` clears a matching confirmed grid, any
 MC-202 `source_phrase_plan` tied to that source id must also be cleared in
 live side effects and replay. A stale source-derived plan must not keep

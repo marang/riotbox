@@ -91,7 +91,7 @@
         "known_risk": "simple kick/snare material can pass timing while sounding under-produced"
       },
       "expected_musical_payoff": [
-        "bass pressure and kick body should be obvious",
+        "kick body and explicit low-end ownership should be obvious; MC-202 bass pressure requires separate trusted source evidence",
         "sparse source should leave room for destructive contrast",
         "support should add weight without busy filler"
       ],

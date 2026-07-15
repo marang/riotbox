@@ -131,7 +131,7 @@ mod tests {
                 frame > bar_frames / 3 && frame < bar_frames / 3 + bar_frames / 6
             }
         });
-        let source_first = render_source_first_mix(&tr909, &mc202, &w30);
+        let source_first = render_source_first_mix(&tr909, &mc202, &w30, &grid);
         let support = render_generated_support_mix(&tr909, &mc202, &w30);
         let proof = all_lane_mix_movement_proof(&tr909, &mc202, &w30, &source_first, &support, &grid);
         let collapsed = all_lane_mix_movement_proof(&tr909, &mc202, &w30, &support, &support, &grid);
@@ -384,12 +384,16 @@ mod tests {
             "drop={drop_pressure:?} hold={hold_pressure:?}"
         );
         assert!(
-            drop_spectral.low_band_energy_ratio > hold_spectral.low_band_energy_ratio,
-            "drop={drop_spectral:?} hold={hold_spectral:?}"
+            drop_spectral.low_band_energy_ratio > 0.85,
+            "pressure body stopped being low-band dominant: drop={drop_spectral:?}"
+        );
+        assert!(
+            drop_spectral.mid_band_energy_ratio > hold_spectral.mid_band_energy_ratio,
+            "pressure body did not gain perceptible upper-bass translation: drop={drop_spectral:?} hold={hold_spectral:?}"
         );
         assert!(
             drop_pressure.peak_abs < 0.12,
-            "{drop_pressure:?}"
+            "translated bass body exceeded the offline proof headroom: {drop_pressure:?}"
         );
     }
 

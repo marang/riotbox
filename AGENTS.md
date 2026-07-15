@@ -151,6 +151,14 @@ If a surface is intentionally not applicable, say why in the PR or working notes
 - Prefer short, forceful loops with a memorable hook, stab, riff, break, bass gesture, vocal hit, or silence cut.
 - Establish one supported Golden Path with a clear hook and hardest element
   before widening source-family coverage or multiplying variations.
+- Require that Golden Path to develop across the listening window: a
+  near-identical short loop repeated for eight bars fails unless the mode
+  explicitly promises a held loop and its hook already has a human pass.
+  Micro-dropouts do not count as macro development; prefer a source-derived
+  hook, pressure lift, destructive role swap or drop, and changed return.
+- Do not confuse a cleaner, louder, darker, or busier render with recognizable
+  Riotbox character. The character claim requires a memorable source-backed
+  hook, physical pressure, dramatic contrast, and stage-useful playability.
 - Make live gestures audibly dramatic: trigger, mute, choke, retrigger, reverse, pitch dive, filter slam, bitcrush, fill, and dropout should change the room immediately.
 - Do not implement hardcoded musical/audio fallback output as a product path.
   When source-backed generation cannot produce trusted material, surface
@@ -167,6 +175,12 @@ If a surface is intentionally not applicable, say why in the PR or working notes
   scaffold, but it is not quality proof and must be labeled accordingly in
   manifests, PRs, specs, and demos.
 - Tie taste critique to one concrete implementation or QA follow-up: sample transform, drum policy, trigger behavior, preset change, fixture, threshold, or UI cue.
+- State the typed bass owner before judging bass pressure. Relative low-band
+  share alone is insufficient; an assigned bass lane needs absolute low-band
+  energy or lift, while `unassigned` must not be failed for absent bass.
+- Keep commercial reference recordings local, ignored, and uncommitted. Use
+  them only for listening and measurement comparison, never as Riotbox product
+  sources, fixtures, generated assets, or redistributed material.
 - Positive demo families need real human musical passes. Weak or bad-timing
   sources may satisfy their product contract through reviewed degraded /
   unavailable / reject behavior instead of forced demo-ready music.

@@ -54,6 +54,41 @@ fn runtime_mix_realtime_simulation_matches_full_block_offline_render() {
 }
 
 #[test]
+fn realtime_transport_progress_reaches_late_mc202_source_steps() {
+    let mut source_plan = runtime_mix_parity_source_plan();
+    source_plan.active_mask = 1_u16 << 7;
+    source_plan.accent_mask = 1_u16 << 7;
+    source_plan.semitones[7] = -12;
+    let plan = RuntimeMixRenderPlan {
+        transport: AudioRuntimeTimingSnapshot {
+            is_transport_running: true,
+            tempo_bpm: 130.0,
+            position_beats: 0.0,
+        },
+        mc202_render: Mc202RenderState {
+            mode: Mc202RenderMode::Pressure,
+            routing: Mc202RenderRouting::MusicBusBass,
+            source_phrase_plan: Some(source_plan),
+            touch: 0.84,
+            music_bus_level: 0.82,
+            ..Mc202RenderState::default()
+        },
+        source_monitor_render: SourceMonitorRenderState::control_only(
+            riotbox_core::action::SourceMonitorMode::Riotbox,
+        ),
+        ..RuntimeMixRenderPlan::default()
+    };
+    let frame_count = 48_000;
+
+    let rendered =
+        render_runtime_mix_realtime_simulation_offline(&plan, 48_000, 2, frame_count, 128);
+    let metrics = signal_metrics(&rendered);
+
+    assert!(metrics.active_samples > 1_000);
+    assert!(metrics.rms > 0.005);
+}
+
+#[test]
 fn duration_aware_w30_pad_matches_exact_realtime_mix_path() {
     let frame_count = 48_000;
     let w30_render = W30PreviewRenderState {
