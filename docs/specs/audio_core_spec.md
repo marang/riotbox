@@ -171,6 +171,36 @@ Rules:
   but they must not produce hardcoded musical fallback output when no
   source-derived plan exists.
 
+### 9.1 Source-backed live performance projection
+
+For the trusted dense-break path, the control plane may derive one typed
+`LivePerformancePolicy` from the confirmed source timing, the current Source
+Graph, and the committed MC-202 `source_phrase_plan`. This is a shared render
+projection consumed by W-30, TR-909, and MC-202; it is not a second arrangement,
+action, or persistence system.
+
+Rules:
+
+- the selected MC-202 candidate family determines the audible intent
+  (`bass_pressure`, `punctuate`, `instigate`, or `stay_out`); a legacy/requested
+  role must not force a source candidate to behave as bass
+- bass ownership is explicit: only a trusted `sub_pressure_shove` candidate may
+  assign it to MC-202; all other candidates report `unassigned` rather than
+  implying that a weak answer or pickup is the bass lane
+- the policy may set bounded W-30, TR-909, and MC-202 level/touch/slam floors so
+  the selected all-lane hierarchy survives the live mixer
+- the policy remains unavailable without matching confirmed timing, a trusted
+  dense-break window, and a matching committed MC-202 source-phrase decision;
+  a committed degraded / fallback decision projects `stay_out` rather than
+  reviving the originally requested role
+- unavailable or unassigned ownership must not synthesize replacement bass or
+  other fallback music
+
+The persisted Source Graph, timing confirmation, and MC-202 source phrase plan
+remain replay truth. `LivePerformancePolicy` is rederived after load/replay from
+that truth so the callback receives a coherent render snapshot without storing
+another mutable product truth.
+
 ---
 
 ## 10. Bus Graph

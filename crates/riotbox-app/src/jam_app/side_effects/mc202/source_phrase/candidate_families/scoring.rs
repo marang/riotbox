@@ -99,8 +99,8 @@ fn source_family_fit_score(
                 + (1.0 - expression.bass_pressure).max(0.0) * 0.08
         }
         Mc202SourcePhraseCandidateFamilyState::FillPickupInstigator => {
-            expression.transient_backbeat * 0.24
-                + expression.offbeat_answer_space * 0.26
+            expression.transient_backbeat * 0.34
+                + expression.offbeat_answer_space * 0.16
                 + expression.phrase_density * 0.14
                 + expression.stab_bite * 0.08
         }

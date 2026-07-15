@@ -419,7 +419,8 @@ fn commit_source_derived_answer(state: &mut JamAppState) -> Vec<f32> {
 
 #[test]
 fn mc202_recipe_replay_proves_control_and_audio_path() {
-    let graph = sample_graph();
+    let mut graph = sample_graph();
+    graph.analysis_summary.break_rebuild_potential = QualityClass::Medium;
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
@@ -669,7 +670,8 @@ fn mc202_restore_does_not_resurrect_persisted_plan_after_source_timing_trust_is_
 
 #[test]
 fn undo_mc202_phrase_move_restores_lane_state_and_audio_path() {
-    let graph = sample_graph();
+    let mut graph = sample_graph();
+    graph.analysis_summary.break_rebuild_potential = QualityClass::Medium;
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 

@@ -75,6 +75,29 @@ These checks validate behavior against product intent rather than "beauty":
   distance from fixed recipes, and output contrast instead of passing as one
   hardcoded destructive ending
 
+For Golden Path review, variation must include musical macro-development, not
+only sample-level motion or short silence gaps. A near-identical short loop
+repeated across an eight-bar review window fails unless the reviewed mode
+explicitly promises a held loop and the underlying hook has already earned a
+human pass. The preferred proof establishes a source-derived hook, raises
+pressure, creates a destructive role swap or drop, and returns with a materially
+changed payoff. A render that is merely cleaner, louder, darker, or busier does
+not prove recognizable Riotbox character.
+
+Bass-pressure review must name the typed bass owner first. When bass is
+assigned, report absolute low-band energy or lift as well as relative spectral
+share; a high relative low-band ratio can otherwise describe a quiet, dull mix.
+When bass ownership is `unassigned`, absent bass pressure is not itself a
+failure. Source comparison should also catch unintended high-band collapse.
+Where practical, provide both raw-level and loudness-matched A/B renders: the
+matched render isolates timbre and arrangement, while the raw render preserves
+the product-level gain verdict.
+
+Commercial reference recordings are local listening and measurement material
+only. They must stay ignored and uncommitted and must never become Riotbox
+product sources, fixtures, generated assets, or redistributed review-pack
+content.
+
 Every musical pattern used by a listening pack, benchmark, demo, or generated
 artifact must carry an explicit origin. The allowed origin labels are:
 
@@ -1031,6 +1054,16 @@ Manual listening is required because:
 - timing can be technically valid but still feel awkward
 - variation can exist numerically but still feel trivial or annoying
 - support layers can pass signal checks while still sounding cheap
+
+Before every interactive playback, give the listener a compact factual brief:
+the playback context (isolated stem, full mix, source, baseline, or comparison),
+the selected product role or candidate family, the intended musical function,
+the expected audible effect, important properties that are not expected, and
+the dimensions to judge. Do not ask for a taste verdict while role assignment
+is unresolved or contradictory. Show a conspicuous listening check and wait
+for explicit readiness before each artifact or repeat; readiness does not carry
+over between playbacks. Playback without that confirmation is treated as
+unheard and cannot support a recorded human verdict.
 
 Structured listening review records the human layer as explicit artifact data,
 not chat memory and not CI-only truth. For audio-producing slices, the local

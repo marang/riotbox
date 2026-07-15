@@ -133,8 +133,8 @@
     "expected": {
       "min_active_samples": 260,
       "max_active_samples": 512,
-      "min_peak_abs": 0.01,
-      "max_peak_abs": 0.11
+      "min_peak_abs": 0.12,
+      "max_peak_abs": 0.20
     }
   },
   {

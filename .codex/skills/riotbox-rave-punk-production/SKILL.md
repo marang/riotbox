@@ -48,6 +48,8 @@ For any audible Riotbox feature, answer these before calling it musically good:
 - Does the source material survive as character, or did the system collapse into a placeholder?
 - Is there a reason to keep listening after eight bars?
 - If this were triggered too many times, would it still feel intentional or just annoying?
+- Does the output already have a recognizable Riotbox character, or is it only
+  cleaner, louder, darker, or more technically active than the previous render?
 
 ## Pattern And Slice Policy
 
@@ -75,6 +77,12 @@ When generating or reviewing patterns, slices, demos, or presets:
 - require positive demo families to earn a real human pass, but allow weak or
   bad-timing material to succeed through reviewed degraded / unavailable /
   reject behavior instead of forcing demo-ready music
+- reject a review window made from a near-identical short loop unless the mode
+  explicitly promises a held loop and the underlying hook has already earned a
+  human pass; micro-dropouts do not substitute for macro development
+- for Golden Path review, prefer a source-derived eight-bar arc that establishes
+  the hook, lifts pressure, creates a destructive role swap or drop, and returns
+  with a materially changed payoff
 
 ## Engineering Implications
 
@@ -88,6 +96,15 @@ Use this taste model to shape implementation choices:
 - when a weak result is already audible and measurable, prefer the sample,
   drum, bass, mix, trigger, or arrangement-policy fix before adding another
   fixture, threshold, report, or UI cue
+- do not infer bass pressure from relative low-band share alone; first state the
+  typed bass owner, then require absolute low-band energy or lift when bass is
+  assigned, and do not demand bass pressure when ownership is unassigned
+- compare audible candidates both raw and loudness-matched when practical;
+  matching gain may expose character and arrangement differences, but it must
+  not conceal a product path that is still materially too quiet
+- keep commercial reference recordings local and uncommitted. They are
+  listening and measurement references only, never Riotbox product sources,
+  fixtures, generated assets, or redistribution material
 
 ## Review Language
 

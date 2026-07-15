@@ -169,6 +169,12 @@ Current implementation:
   reconstruction may still be used by higher app restore helpers, but it is not
   allowed to invent fallback audio or preserve stale source phrase state when
   the commit record does not carry a plan.
+- The shared dense-break `LivePerformancePolicy` is derived projection, not
+  replay truth. After the Source Graph, timing confirmation, and committed
+  source phrase plan are restored, app projection must derive the same lane
+  hierarchy, MC-202 intent, explicit bass ownership, and bounded live mixer
+  floors. Replay must not restore a stale cached policy or infer bass ownership
+  from the requested MC-202 role alone.
 
 ### 7.3 Minimal replay executor boundary
 

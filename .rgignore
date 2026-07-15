@@ -8,6 +8,7 @@ plan/conversation_creating_*.txt
 
 # Audio/data outputs are already gitignored, but keep ripgrep behavior explicit.
 artifacts/
+.download-examples/
 data/sessions/
 data/test_audio/examples/*.wav
 data/test_audio/examples/*.mp3

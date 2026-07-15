@@ -10,7 +10,7 @@ pub(super) fn envelope_decay(render: &RealtimeTr909RenderState) -> f32 {
             Some(Tr909SourceSupportProfile::DropDrive) => 0.986 - (slam * 0.004),
         },
         Tr909RenderMode::Fill => 0.988 - (slam * 0.003),
-        Tr909RenderMode::BreakReinforce => 0.989 - (slam * 0.003),
+        Tr909RenderMode::BreakReinforce => 0.9975 - (slam * 0.0006),
         Tr909RenderMode::Takeover => match render.takeover_profile {
             Some(Tr909TakeoverRenderProfile::ControlledPhrase) | None => 0.986 - (slam * 0.004),
             Some(Tr909TakeoverRenderProfile::SceneLock) => 0.982 - (slam * 0.005),

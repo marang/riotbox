@@ -52,16 +52,33 @@ struct AllLaneMixMovementProof {
 }
 
 #[cfg(test)]
-fn render_source_first_mix(tr909: &[f32], mc202: &[f32], w30: &[f32]) -> Vec<f32> {
-    render_mix_with_master_bus_report(tr909, mc202, w30, SOURCE_FIRST_MIX_POLICY).0
+fn render_source_first_mix(
+    tr909: &[f32],
+    mc202: &[f32],
+    w30: &[f32],
+    grid: &Grid,
+) -> Vec<f32> {
+    render_mix_with_master_bus_report(
+        tr909,
+        mc202,
+        w30,
+        source_first_mix_policy_for_stems(tr909, mc202, w30, grid),
+    )
+    .0
 }
 
 fn render_source_first_mix_with_master_bus_report(
     tr909: &[f32],
     mc202: &[f32],
     w30: &[f32],
+    grid: &Grid,
 ) -> (Vec<f32>, MasterBusLimiterReport) {
-    render_mix_with_master_bus_report(tr909, mc202, w30, SOURCE_FIRST_MIX_POLICY)
+    render_mix_with_master_bus_report(
+        tr909,
+        mc202,
+        w30,
+        source_first_mix_policy_for_stems(tr909, mc202, w30, grid),
+    )
 }
 
 #[cfg(test)]
@@ -122,7 +139,14 @@ fn generated_support_mix_policy_for_source_contour_and_stems(
             policy.w30_gain *= 0.86;
         }
     }
-    policy
+    cap_generated_support_to_ceiling(
+        tr909,
+        mc202,
+        w30,
+        grid,
+        policy,
+        MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO * 0.98,
+    )
 }
 
 fn boost_generated_support_to_floor(
@@ -135,6 +159,43 @@ fn boost_generated_support_to_floor(
 ) -> MixPolicy {
     let current_ratio = generated_to_source_rms_ratio(tr909, mc202, w30, grid, policy);
     if current_ratio <= f32::EPSILON || current_ratio >= target_ratio {
+        return policy;
+    }
+
+    let multiplier = target_ratio / current_ratio;
+    policy.tr909_gain *= multiplier;
+    policy.tr909_low_gain *= multiplier;
+    policy.mc202_gain *= multiplier;
+    policy.mc202_low_gain *= multiplier;
+    policy
+}
+
+fn source_first_mix_policy_for_stems(
+    tr909: &[f32],
+    mc202: &[f32],
+    w30: &[f32],
+    grid: &Grid,
+) -> MixPolicy {
+    cap_generated_support_to_ceiling(
+        tr909,
+        mc202,
+        w30,
+        grid,
+        SOURCE_FIRST_MIX_POLICY,
+        MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO * 0.95,
+    )
+}
+
+fn cap_generated_support_to_ceiling(
+    tr909: &[f32],
+    mc202: &[f32],
+    w30: &[f32],
+    grid: &Grid,
+    mut policy: MixPolicy,
+    target_ratio: f32,
+) -> MixPolicy {
+    let current_ratio = generated_to_source_rms_ratio(tr909, mc202, w30, grid, policy);
+    if current_ratio <= target_ratio || current_ratio <= f32::EPSILON {
         return policy;
     }
 
@@ -381,7 +442,13 @@ fn source_first_generated_to_source_rms_ratio(
     w30: &[f32],
     grid: &Grid,
 ) -> f32 {
-    generated_to_source_rms_ratio(tr909, mc202, w30, grid, SOURCE_FIRST_MIX_POLICY)
+    generated_to_source_rms_ratio(
+        tr909,
+        mc202,
+        w30,
+        grid,
+        source_first_mix_policy_for_stems(tr909, mc202, w30, grid),
+    )
 }
 
 #[cfg(test)]

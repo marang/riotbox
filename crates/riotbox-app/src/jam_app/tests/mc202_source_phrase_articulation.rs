@@ -175,9 +175,21 @@ fn committed_mc202_source_phrase_roles_render_distinct_acid_bass_expression() {
             && instigator_plan.stab_bite >= answer_plan.stab_bite,
         "instigator role did not project a destructive spike above answer: instigator={instigator_plan:?} answer={answer_plan:?}"
     );
+    let pressure_low_band_rms = source_phrase_low_band_rms(&pressure_render);
+    let answer_low_band_rms = source_phrase_low_band_rms(&answer_render);
+    let pressure_metrics = signal_metrics(&pressure_render);
+    let answer_metrics = signal_metrics(&answer_render);
+    let pressure_low_band_share = pressure_low_band_rms / pressure_metrics.rms.max(f32::EPSILON);
+    let answer_low_band_share = answer_low_band_rms / answer_metrics.rms.max(f32::EPSILON);
     assert!(
-        source_phrase_low_band_rms(&pressure_render) > source_phrase_low_band_rms(&answer_render) * 1.25,
-        "pressure role did not render stronger low-band body than answer"
+        pressure_low_band_rms > answer_low_band_rms * 1.10,
+        "pressure role did not render stronger absolute low-band body than answer: pressure_low={pressure_low_band_rms:.6} answer_low={answer_low_band_rms:.6}"
+    );
+    assert!(
+        pressure_low_band_share > answer_low_band_share + 0.02,
+        "pressure role did not render a larger low-band share than answer: pressure_share={pressure_low_band_share:.6} answer_share={answer_low_band_share:.6} pressure_rms={:.6} answer_rms={:.6}",
+        pressure_metrics.rms,
+        answer_metrics.rms,
     );
     assert!(
         signal_delta_metrics(&pressure_render, &answer_render).rms > 0.0015,

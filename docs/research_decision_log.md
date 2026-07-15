@@ -2952,3 +2952,32 @@ Why: straight full-capture playback was technically correct but earned repeated 
 Evidence: RIOTBOX-1333 proves same-source stability, cross-source diversity, full-duration cursor behavior, rate / reverse capability, click-safe loop and trigger edges, coherent control-to-callback state, exact callback-block mixer parity, committed action / artifact replay, and no silent or clipping collapse. Exact-path candidate `local-riotbox-1333-live-w30-v8` received separate human `pass` verdicts for the normal chop hook and destructive variation on 2026-07-12.
 Consequences: this is one mono focused-pad sampler seam, not a full streaming pad-bank engine or general source-intelligence claim. The fixed riff vocabulary remains a bounded sampler policy whose slice material is source-derived; multi-pad polyphony, stereo playback, broader codecs, and richer musician-editable chop sequencing remain later slices. P023 remains open until the all-lane Golden Path passes its complete exit contract.
 Status: accepted
+
+---
+
+### RBX-136
+
+Date: 2026-07-14
+Topic: dense live policy uses selected candidate ownership and may leave bass unassigned
+Phase: P023 / Live Musical Alpha
+Question: when an MC-202 action requested pressure but source evidence selects an answer or pickup candidate, should Riotbox keep treating MC-202 as the bass lane and continue polishing its timbre until it sounds larger?
+Decision: no. Derive one typed shared `LivePerformancePolicy` from matching confirmed timing, the dense Source Graph, and the committed MC-202 source phrase plan. The selected candidate family determines the audible MC-202 intent. Only `sub_pressure_shove` assigns `bass_owner=mc202`; answer, callback, pickup, stay-out, and fallback candidates assign `bass_owner=unassigned`. The requested compatibility role remains action/replay context but cannot force bass behavior. The derived policy may apply bounded W-30, TR-909, and MC-202 level/touch/slam floors, but it must never generate replacement bass.
+Why: repeated Beat08 iterations made the sound louder, harder, and technically cleaner, yet human listening still rejected it as boring and not loopable. The source evidence was marginal for bass pressure, so further oscillator polishing would have hidden a wrong musical ownership decision. An instrument must first decide whether bass is actually needed and which lane has evidence to own it before evaluating bass pressure.
+Evidence: RIOTBOX-1400 moves the dense policy into core/shared live projection, fixes callback-block transport continuity, strengthens physical TR-909 projection, and renders exact live-path lane stems. Structured listening found the Beat03 instigator direction materially improved, while Beat08 bass v1-v8 remained weak/rejected. Tightened `sub_pressure_shove` eligibility makes Beat08 select `fill_pickup_instigator` with `bass_owner=unassigned`; exact-path and MC-202 tests prove the non-silent selected role without claiming a bass pass.
+Consequences: future reviews must state intended lane role and bass owner before asking a listener to judge pressure. `unassigned` is an honest product decision, not an automatic failure and not permission for fallback sound. A human-passed MC-202 bass candidate requires a separate trusted, legally usable source with confirmed timing and strong low-band movement evidence; Beat08 must not be recycled as that proof.
+Status: accepted
+
+---
+
+### RBX-137
+
+Date: 2026-07-15
+Topic: Golden Path review requires macro-development and absolute pressure evidence
+Phase: P023 / Live Musical Alpha
+Question: what did the rejected RIOTBOX-1400 all-lane candidate reveal about judging musical progress, bass pressure, and reference comparison?
+Decision: treat RIOTBOX-1400 as a contract enabler and make RIOTBOX-1401 own the next audible slice. Golden Path candidates must develop across an eight-bar review window through a source-derived hook, pressure lift, destructive role swap or drop, and materially changed return. A near-identical short loop fails unless an explicit held-loop mode and an already human-passed hook justify it. Bass review names the typed owner first and uses absolute low-band energy or lift in addition to relative spectral share. Raw-level and loudness-matched A/B renders serve different verdicts and must not conceal weak product gain. Commercial reference recordings remain local, ignored comparison material only.
+Why: Beat03 v2 was audibly stronger and punchier than v1, but the listener still preferred the source and rejected the candidate as unusable. Measurement showed that a high relative low-band share hid essentially no absolute low lift, high-band energy collapsed relative to the source, and repeated two-bar units were nearly identical. Short gaps created activity but no larger dramatic arc or recognizable Riotbox character.
+Evidence: RIOTBOX-1400 exact live-path renders, structured human verdicts, same-tool source/candidate spectral and loudness measurements, and repeated-block similarity analysis.
+Consequences: louder or cleaner processing alone is not musical-alpha progress. The next slice must change source-backed arrangement ownership and return behavior rather than continue polishing the same short loop. Commercial references cannot enter product sources, fixtures, generated artifacts, commits, or redistribution paths.
+Follow-up: RIOTBOX-1401 implements and reviews the bounded source-derived eight-bar Golden Path arc.
+Status: accepted

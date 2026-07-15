@@ -199,29 +199,51 @@ pub fn render_mc202_buffer(
         let beat = render.position_beats + frame as f64 * tempo_bpm / 60.0 / sample_rate;
         let sixteenth = (beat * 4.0).floor() as usize;
         let step_phase = (beat * 4.0).fract() as f32;
-        let Some(semitone) = source_plan_step_semitone(source_phrase_plan, sixteenth) else {
+        let Some(source_step) = source_plan_voice(source_phrase_plan, render.mode, sixteenth)
+        else {
             continue;
         };
         if !within_hook_response(render.hook_response, sixteenth) {
             continue;
         }
+        if should_omit_source_step_for_phrase_variation(
+            render.mode,
+            source_phrase_plan,
+            beat,
+            source_step.origin_sixteenth,
+        ) {
+            continue;
+        }
+        let source_step_phase = source_step.distance as f32 + step_phase;
+        let source_step_in_bar = source_step.origin_sixteenth % 16;
         let destructive_step =
-            source_phrase_plan.destructive_mask & (1_u16 << (sixteenth % 16)) != 0;
-        let semitone = semitone
-            + contour_offset(render.contour_hint, sixteenth)
-            + hook_response_offset(render.hook_response, sixteenth);
+            source_phrase_plan.destructive_mask & (1_u16 << source_step_in_bar) != 0;
+        let semitone = source_step.semitone
+            + contour_offset(render.contour_hint, source_step.origin_sixteenth)
+            + hook_response_offset(render.hook_response, source_step.origin_sixteenth)
+            + pressure_two_bar_turnaround(
+                render.mode,
+                source_phrase_plan,
+                beat,
+                source_step_in_bar,
+            );
 
         let sound_design =
             mc202_source_phrase_sound_design(render, source_phrase_plan, destructive_step);
-        let destructive_pitch_dive = sound_design.destructive_dive * f64::from(step_phase);
+        let destructive_pitch_dive = if render.mode == Mc202RenderMode::Pressure {
+            sound_design.destructive_dive
+                * f64::from((source_step_phase / sound_design.gate_len).clamp(0.0, 1.0))
+        } else {
+            sound_design.destructive_dive * f64::from(source_step_phase)
+        };
         let frequency = 110.0_f64
             * 2.0_f64
                 .powf((semitone as f64 + sound_design.octave_drop + destructive_pitch_dive) / 12.0);
-        if step_phase > sound_design.gate_len {
+        if source_step_phase > sound_design.gate_len {
             continue;
         }
 
-        let source_accent = source_phrase_plan.accent_mask & (1_u16 << (sixteenth % 16)) != 0;
+        let source_accent = source_phrase_plan.accent_mask & (1_u16 << source_step_in_bar) != 0;
         let accent = if source_accent {
             1.18 + touch * 0.45 + source_phrase_plan.pressure.clamp(0.0, 1.0) * 0.45
         } else if sixteenth.is_multiple_of(8) {
@@ -231,9 +253,25 @@ pub fn render_mc202_buffer(
         } else {
             0.82
         };
-        let note_seconds = f64::from(step_phase) * 60.0 / tempo_bpm / 4.0;
-        let phase = (note_seconds * frequency).fract();
-        let sample = mc202_source_phrase_sample(phase, step_phase, accent, sound_design);
+        let note_seconds = f64::from(source_step_phase) * 60.0 / tempo_bpm / 4.0;
+        let phase = if render.mode == Mc202RenderMode::Pressure && !destructive_step {
+            pressure_pitch_punch_phase(
+                frequency,
+                note_seconds,
+                tempo_bpm,
+                source_phrase_plan.pressure,
+            )
+        } else {
+            note_seconds * frequency
+        };
+        let phase_increment = (frequency / sample_rate).clamp(0.0, 0.5) as f32;
+        let sample = mc202_source_phrase_sample(
+            phase,
+            phase_increment,
+            source_step_phase,
+            accent,
+            sound_design,
+        );
 
         for channel in 0..channel_count {
             buffer[frame * channel_count + channel] += sample;
@@ -241,13 +279,89 @@ pub fn render_mc202_buffer(
     }
 }
 
-fn source_plan_step_semitone(plan: Mc202SourcePhraseRenderPlan, sixteenth: usize) -> Option<i8> {
-    let step = sixteenth % 16;
-    if plan.active_mask & (1_u16 << step) == 0 {
-        return None;
+fn pressure_pitch_punch_phase(
+    target_frequency: f64,
+    note_seconds: f64,
+    tempo_bpm: f64,
+    pressure: f32,
+) -> f64 {
+    let punch_semitones = 2.0 + f64::from(pressure.clamp(0.0, 1.0)) * 2.0;
+    let start_frequency = target_frequency * 2.0_f64.powf(punch_semitones / 12.0);
+    let sixteenth_seconds = 60.0 / tempo_bpm.max(1.0) / 4.0;
+    let punch_seconds = (sixteenth_seconds * 0.48).clamp(0.035, 0.075);
+    if note_seconds <= punch_seconds {
+        return start_frequency * note_seconds
+            + 0.5 * (target_frequency - start_frequency) * note_seconds.powi(2) / punch_seconds;
     }
 
-    Some(plan.semitones[step])
+    0.5 * (start_frequency + target_frequency) * punch_seconds
+        + target_frequency * (note_seconds - punch_seconds)
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+struct SourcePlanVoice {
+    semitone: i8,
+    origin_sixteenth: usize,
+    distance: usize,
+}
+
+fn source_plan_voice(
+    plan: Mc202SourcePhraseRenderPlan,
+    mode: Mc202RenderMode,
+    sixteenth: usize,
+) -> Option<SourcePlanVoice> {
+    let max_hold_steps = if mode == Mc202RenderMode::Pressure {
+        2
+    } else {
+        0
+    };
+    for distance in 0..=max_hold_steps.min(sixteenth) {
+        let origin_sixteenth = sixteenth - distance;
+        let step = origin_sixteenth % 16;
+        if plan.active_mask & (1_u16 << step) != 0 {
+            return Some(SourcePlanVoice {
+                semitone: plan.semitones[step],
+                origin_sixteenth,
+                distance,
+            });
+        }
+    }
+
+    None
+}
+
+fn pressure_two_bar_turnaround(
+    mode: Mc202RenderMode,
+    plan: Mc202SourcePhraseRenderPlan,
+    beat: f64,
+    source_step_in_bar: usize,
+) -> i8 {
+    let bar_index = (beat / 4.0).floor() as u64;
+    if mode != Mc202RenderMode::Pressure || bar_index.is_multiple_of(2) || source_step_in_bar < 8 {
+        return 0;
+    }
+
+    (plan.contrast.clamp(0.0, 1.0) * 12.0)
+        .round()
+        .clamp(2.0, 7.0) as i8
+}
+
+fn should_omit_source_step_for_phrase_variation(
+    mode: Mc202RenderMode,
+    plan: Mc202SourcePhraseRenderPlan,
+    beat: f64,
+    sixteenth: usize,
+) -> bool {
+    if !matches!(
+        mode,
+        Mc202RenderMode::Answer | Mc202RenderMode::Pressure | Mc202RenderMode::Instigator
+    ) {
+        return false;
+    }
+
+    let bar_index = (beat / 4.0).floor() as u64;
+    let source_marks_step_as_destructive = plan.destructive_mask & (1_u16 << (sixteenth % 16)) != 0;
+    bar_index % 2 == 1 && source_marks_step_as_destructive
 }
 
 fn contour_offset(hint: Mc202ContourHint, sixteenth: usize) -> i8 {

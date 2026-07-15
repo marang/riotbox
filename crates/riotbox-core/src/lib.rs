@@ -6,6 +6,7 @@ pub mod export_qa;
 pub mod export_readiness;
 pub mod ghost;
 pub mod ids;
+pub mod live_performance_policy;
 pub mod persistence;
 pub mod queue;
 pub mod replay;
