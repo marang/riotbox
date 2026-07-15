@@ -1430,4 +1430,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Wire trusted Rust timing into live source ingest and confirmation
 - [RIOTBOX-1333.md](./RIOTBOX-1333.md)
   P023: Play real source audio through a duration-aware W-30 sampler path
+- [RIOTBOX-1400.md](./RIOTBOX-1400.md)
+  P023: Promote dense-break performance policy into the shared live runtime
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
