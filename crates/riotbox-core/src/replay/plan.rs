@@ -5,7 +5,9 @@ use std::{
 
 use crate::{
     TimestampMs,
-    action::{Action, ActionStatus, CommitBoundary},
+    action::{
+        Action, ActionCommand, ActionParams, ActionStatus, CommitBoundary, Quantization, UndoPolicy,
+    },
     ids::ActionId,
     session::{ActionCommitRecord, ActionLog, Snapshot},
     transport::CommitBoundaryState,
@@ -29,6 +31,9 @@ pub enum ReplayPlanError {
     DuplicateActionRecord {
         action_id: ActionId,
     },
+    DuplicateActionId {
+        action_id: ActionId,
+    },
     DuplicateCommitSequence {
         boundary: CommitBoundaryState,
         commit_sequence: u32,
@@ -40,6 +45,18 @@ pub enum ReplayPlanError {
     ReplayTargetCursorOutOfBounds {
         target_action_cursor: usize,
         action_count: usize,
+    },
+    SnapshotContainsUndoneAction {
+        snapshot_id: crate::ids::SnapshotId,
+        action_id: ActionId,
+    },
+    HistoricalReplayTargetContainsUndoneAction {
+        target_action_cursor: usize,
+        action_id: ActionId,
+    },
+    InvalidUndoTargetRelation {
+        undo_action_id: ActionId,
+        target_action_id: Option<ActionId>,
     },
     CommittedAtMismatch {
         action_id: ActionId,
@@ -73,7 +90,8 @@ pub fn build_committed_replay_plan(
     action_log: &ActionLog,
 ) -> Result<Vec<ReplayPlanEntry<'_>>, ReplayPlanError> {
     let mut entries = Vec::with_capacity(action_log.commit_records.len());
-    let action_by_id = action_index_by_id(&action_log.actions);
+    let action_by_id = action_index_by_id(&action_log.actions)?;
+    validate_typed_undo_relations(action_log)?;
     let mut seen_action_ids = BTreeSet::new();
     let mut seen_boundary_sequences = BTreeSet::new();
 
@@ -103,7 +121,9 @@ pub fn build_committed_replay_plan(
             });
         };
 
-        if action.status != ActionStatus::Committed {
+        if action.status != ActionStatus::Committed
+            && !(action.status == ActionStatus::Undone && action.command.has_typed_undo_semantics())
+        {
             return Err(ReplayPlanError::NonCommittedAction {
                 action_id: action.id,
                 status: action.status,
@@ -122,6 +142,22 @@ pub fn build_committed_replay_plan(
                 record_committed_at: commit_record.committed_at,
                 action_committed_at,
             });
+        }
+
+        if action.command == ActionCommand::UndoLast {
+            continue;
+        }
+
+        if action.status == ActionStatus::Undone {
+            continue;
+        }
+
+        if action
+            .result
+            .as_ref()
+            .is_some_and(|result| !result.accepted)
+        {
+            continue;
         }
 
         entries.push(ReplayPlanEntry {
@@ -144,8 +180,16 @@ pub fn build_snapshot_replay_plan_comparison<'a>(
             action_count: action_log.actions.len(),
         });
     }
-
     let origin = build_committed_replay_plan(action_log)?;
+    if let Some(action_id) =
+        first_unresolved_undone_action_before_cursor(action_log, snapshot.action_cursor)
+    {
+        return Err(ReplayPlanError::SnapshotContainsUndoneAction {
+            snapshot_id: snapshot.snapshot_id.clone(),
+            action_id,
+        });
+    }
+
     let applied_action_ids = action_ids_before_cursor(&action_log.actions, snapshot.action_cursor);
     let snapshot_suffix = origin
         .iter()
@@ -206,9 +250,19 @@ pub fn build_replay_target_plan<'a>(
     snapshots: &'a [Snapshot],
     target_action_cursor: usize,
 ) -> Result<ReplayTargetPlan<'a>, ReplayPlanError> {
-    let anchor =
-        select_replay_snapshot_anchor(snapshots, target_action_cursor, action_log.actions.len())?;
     let origin = build_committed_replay_plan(action_log)?;
+    let anchor = select_safe_replay_snapshot_anchor(action_log, snapshots, target_action_cursor)?;
+    if target_action_cursor < action_log.actions.len()
+        && let Some(action_id) =
+            first_unresolved_undone_action_before_cursor(action_log, target_action_cursor)
+    {
+        return Err(
+            ReplayPlanError::HistoricalReplayTargetContainsUndoneAction {
+                target_action_cursor,
+                action_id,
+            },
+        );
+    }
     let anchor_cursor = anchor.map_or(0, |snapshot| snapshot.action_cursor);
     let skipped_action_ids = action_ids_before_cursor(&action_log.actions, anchor_cursor);
     let target_action_ids = action_ids_before_cursor(&action_log.actions, target_action_cursor);
@@ -227,12 +281,195 @@ pub fn build_replay_target_plan<'a>(
     })
 }
 
-fn action_index_by_id(actions: &[Action]) -> BTreeMap<ActionId, &Action> {
+fn select_safe_replay_snapshot_anchor<'a>(
+    action_log: &ActionLog,
+    snapshots: &'a [Snapshot],
+    target_action_cursor: usize,
+) -> Result<Option<&'a Snapshot>, ReplayPlanError> {
+    // Preserve the public selector's complete cursor validation before applying
+    // the stricter payload-safety rule below.
+    select_replay_snapshot_anchor(snapshots, target_action_cursor, action_log.actions.len())?;
+
+    let mut selected: Option<(usize, &Snapshot)> = None;
+    for (index, snapshot) in snapshots.iter().enumerate() {
+        if snapshot.action_cursor > target_action_cursor
+            || first_unresolved_undone_action_before_cursor(action_log, snapshot.action_cursor)
+                .is_some()
+        {
+            continue;
+        }
+
+        let should_select = match selected {
+            Some((selected_index, selected_snapshot)) => {
+                snapshot.action_cursor > selected_snapshot.action_cursor
+                    || (snapshot.action_cursor == selected_snapshot.action_cursor
+                        && index > selected_index)
+            }
+            None => true,
+        };
+        if should_select {
+            selected = Some((index, snapshot));
+        }
+    }
+
+    Ok(selected.map(|(_, snapshot)| snapshot))
+}
+
+fn first_unresolved_undone_action_before_cursor(
+    action_log: &ActionLog,
+    cursor: usize,
+) -> Option<ActionId> {
+    action_log
+        .actions
+        .iter()
+        .take(cursor)
+        .enumerate()
+        .find(|(target_index, action)| {
+            action.status == ActionStatus::Undone
+                && !undo_marker_resolves_target_before_cursor(
+                    action_log,
+                    *target_index,
+                    action.id,
+                    cursor,
+                )
+        })
+        .map(|(_, action)| action.id)
+}
+
+fn undo_marker_resolves_target_before_cursor(
+    action_log: &ActionLog,
+    target_index: usize,
+    target_action_id: ActionId,
+    cursor: usize,
+) -> bool {
+    action_log
+        .actions
+        .iter()
+        .enumerate()
+        .take(cursor)
+        .skip(target_index.saturating_add(1))
+        .any(|(_, marker)| {
+            marker.command == ActionCommand::UndoLast
+                && marker.status == ActionStatus::Committed
+                && marker.result.as_ref().is_some_and(|result| result.accepted)
+                && matches!(
+                    &marker.params,
+                    ActionParams::Undo {
+                        target_action_id: marker_target
+                    } if *marker_target == target_action_id
+                )
+                && action_log
+                    .commit_records
+                    .iter()
+                    .any(|record| record.action_id == marker.id)
+        })
+}
+
+fn validate_typed_undo_relations(action_log: &ActionLog) -> Result<(), ReplayPlanError> {
+    let mut active_typed_actions = Vec::new();
+    let mut resolved_targets = BTreeSet::new();
+
+    for action in &action_log.actions {
+        if action.command != ActionCommand::UndoLast {
+            if matches!(
+                action.status,
+                ActionStatus::Committed | ActionStatus::Undone
+            ) && action.command.has_typed_undo_semantics()
+                && matches!(action.undo_policy, UndoPolicy::Undoable)
+                && action.result.as_ref().is_some_and(|result| result.accepted)
+            {
+                active_typed_actions.push(action.id);
+            }
+            continue;
+        }
+
+        let target_action_id = match &action.params {
+            ActionParams::Undo { target_action_id } => Some(*target_action_id),
+            _ => None,
+        };
+
+        // Old untyped markers had no target or commit record. They remain
+        // untrusted historical state: they cannot establish a safe snapshot
+        // boundary, but their legacy target may still be replayed from the
+        // materialized Session state. A marker that claims the new typed shape
+        // must satisfy the complete RBX-142 relation below.
+        let Some(target_action_id) = target_action_id else {
+            if action_log
+                .commit_records
+                .iter()
+                .any(|record| record.action_id == action.id)
+            {
+                return Err(ReplayPlanError::InvalidUndoTargetRelation {
+                    undo_action_id: action.id,
+                    target_action_id: None,
+                });
+            }
+            if action.status == ActionStatus::Committed
+                && let Some(target_id) = active_typed_actions.last().copied()
+                && action_log.actions.iter().any(|candidate| {
+                    candidate.id == target_id && candidate.status == ActionStatus::Undone
+                })
+            {
+                active_typed_actions.pop();
+            }
+            continue;
+        };
+
+        let marker_record = action_log
+            .commit_records
+            .iter()
+            .find(|record| record.action_id == action.id);
+        let target = action_log
+            .actions
+            .iter()
+            .find(|candidate| candidate.id == target_action_id);
+        let target_record = action_log
+            .commit_records
+            .iter()
+            .find(|record| record.action_id == target_action_id);
+        let latest_active_target = active_typed_actions.last().copied();
+        let valid = marker_record.zip(target).zip(target_record).is_some_and(
+            |((marker_record, target), _target_record)| {
+                action.status == ActionStatus::Committed
+                    && action.quantization == Quantization::Immediate
+                    && matches!(action.undo_policy, UndoPolicy::NotUndoable { .. })
+                    && action.result.as_ref().is_some_and(|result| result.accepted)
+                    && marker_record.boundary.kind == CommitBoundary::Immediate
+                    && target.status == ActionStatus::Undone
+                    && target.command.has_typed_undo_semantics()
+                    && matches!(target.undo_policy, UndoPolicy::Undoable)
+                    && target.result.as_ref().is_some_and(|result| result.accepted)
+                    && matches!(
+                        (target.committed_at, action.committed_at),
+                        (Some(target_at), Some(marker_at)) if target_at <= marker_at
+                    )
+                    && latest_active_target == Some(target_action_id)
+                    && resolved_targets.insert(target_action_id)
+            },
+        );
+
+        if !valid {
+            return Err(ReplayPlanError::InvalidUndoTargetRelation {
+                undo_action_id: action.id,
+                target_action_id: Some(target_action_id),
+            });
+        }
+        active_typed_actions.pop();
+    }
+
+    Ok(())
+}
+
+fn action_index_by_id(actions: &[Action]) -> Result<BTreeMap<ActionId, &Action>, ReplayPlanError> {
     let mut index = BTreeMap::new();
     for action in actions {
-        index.entry(action.id).or_insert(action);
+        if index.insert(action.id, action).is_some() {
+            return Err(ReplayPlanError::DuplicateActionId {
+                action_id: action.id,
+            });
+        }
     }
-    index
+    Ok(index)
 }
 
 fn action_ids_before_cursor(actions: &[Action], cursor: usize) -> BTreeSet<ActionId> {

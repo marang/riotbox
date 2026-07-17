@@ -75,6 +75,67 @@ These checks validate behavior against product intent rather than "beauty":
   distance from fixed recipes, and output contrast instead of passing as one
   hardcoded destructive ending
 
+Explicit live gestures must be measured in a short, role-appropriate window
+against the immediate no-gesture counterfactual. Report both an absolute signal
+delta and a relative delta so a quiet but proportionally different gesture and
+a loud but perceptually buried gesture cannot pass the same coarse whole-render
+gate. Shared pressure, level, or slam floors must not erase the explicit
+gesture; a fill, slam, trigger, launch, or restore needs its own audible
+articulation rather than only a raised baseline.
+
+The dense-break live Fill must earn its contrast through arrangement
+articulation rather than a global TR-909 gain increase. Its exact RuntimeMix
+counterfactual keeps source, W-30, MC-202, transport, and pre-Fill state fixed;
+the final-beat review must show the source and non-TR-909 bed moving out of the
+way without using global Fill gain. Also prove that Source-only output is
+sample-identical, non-Fill and silent/wrong-route states do not duck, the
+envelope resets at the bar boundary without a hard edge, and full-block/offline
+versus canonical callback-block rendering agrees.
+
+If the confirmed source bar has a non-zero transport phase, preflight must
+prove that both the Fill recipe and its focus envelope consume the same
+confirmed anchor. A four-beat recipe must remain ordered as build-up followed
+by final-beat pause/payoff inside the source bar; a transport-zero rotation
+that places the payoff first is a product-path failure even when every event
+and aggregate metric remains valid. The manifest records the derived anchor,
+resolved render input, and affected RuntimeMix phase path.
+
+The exposed `PhraseDrive` drum phrase must then be judged separately from the
+arrangement cut. Its trigger proof counts sounding owners rather than null
+events, preserves the intentional trigger-policy rests, distinguishes a
+non-sounding callback-local choke from a sounding owner, and checks
+independently decaying kick, snare, and hat voices. For the supported
+`MainlineDrive + PhraseDrive` signature close, preflight must additionally
+prove a click-safe three-hit setup into a callback-local choke, two real rest
+slots, a late pitch-diving kick, the fixed delayed snare crack, and a smooth
+RuntimeMix bed pocket that reaches silence before the stomp. Compare the
+isolated final beat against the rejected composite control using absolute
+40-120 Hz drum-thump, 120-500 Hz drum-body, and 2-10 kHz attack evidence; a
+better relative spectral share alone is insufficient. A candidate replacing a
+reviewed weak recipe must also use a phase-identical exact RuntimeMix control
+and report the time-local silence duration, pause RMS ratio, payoff RMS, and
+payoff body/attack deltas. Prove clean pre-limiter headroom, deterministic
+127/128-frame rendering, fresh Fill-to-Fill and Fill-to-Break boundaries, and
+sample-exact legacy output for non-Fill modes. These checks prove deterministic
+contrast and physical drum structure, not musical quality or live usefulness.
+Unless the typed policy assigns a bass owner separately, 40-120 Hz drum thump
+is not a bass-pressure claim.
+
+After a gain/accent hierarchy passes measurement but earns repeated human
+"no difference" feedback, do not iterate another small trigger-weight change.
+The next candidate must alter at least two perceptual dimensions such as
+rhythm/space, pitch trajectory, timbre, or articulation. Its exact A/B
+preflight must focus on the locally changed slots as well as whole-render
+metrics and state plainly what event the listener should be able to identify.
+
+For explicit drum gestures, a peak-only delta is insufficient. The exact
+audible Blend counterfactual must also report loudness-aware waveform
+correlation and the share of 10 ms windows whose delta RMS exceeds both 10% of
+the candidate-window RMS and an absolute `1e-5` floor. The dense-break Golden
+Path currently requires fill coverage `>= 0.15` and slam coverage `>= 0.10`,
+with correlation `<= 0.99` for both. These are deterministic anti-collapse
+gates, not musical-quality proof; structured human listening remains required.
+
 For Golden Path review, variation must include musical macro-development, not
 only sample-level motion or short silence gaps. A near-identical short loop
 repeated across an eight-bar review window fails unless the reviewed mode
@@ -97,6 +158,13 @@ Commercial reference recordings are local listening and measurement material
 only. They must stay ignored and uncommitted and must never become Riotbox
 product sources, fixtures, generated assets, or redistributed review-pack
 content.
+
+Pack-level `source_backed: true` states that source audio, availability, or
+timing participates in the tested path; it does not imply that every musical
+pattern in that pack was selected from source evidence. Pattern-level
+provenance remains authoritative. In particular, a source-backed pack whose
+fixed Fill is timed but not selected by source evidence must still label that
+Fill `primitive_renderer` and carry the matching promotion boundary.
 
 Every musical pattern used by a listening pack, benchmark, demo, or generated
 artifact must carry an explicit origin. The allowed origin labels are:
@@ -127,14 +195,48 @@ synthetic substitute music. Fallback audio may appear only as a clearly labeled
 non-product diagnostic control or compatibility artifact, and it must carry
 `quality_proof: false`.
 
-Any listening manifest that still contains `pattern_origin: "primitive_renderer"`
-must also include `primitive_renderer_boundary` with
-`evidence_role: non_product_diagnostic_control`,
-`product_output_allowed: false`, `demo_readiness: unverified`,
-`quality_proof: false`, `promotion_blocked: true`, and exact affected paths for
-the primitive origins. Missing or stale primitive-boundary metadata is a
-manifest validation failure, because otherwise a hardcoded renderer can slip
-back into musician-facing proof as if it were source-derived output.
+Any listening manifest that contains `pattern_origin: "primitive_renderer"`
+must also include `primitive_renderer_boundary`. Two roles are valid:
+
+- `non_product_diagnostic_control` keeps `product_output_allowed: false`
+- `product_primitive_vocabulary` permits `product_output_allowed: true` only
+  for a typed, versioned instrument vocabulary reached by an explicit committed
+  performer gesture. Every primitive record must also carry a versioned
+  primitive schema registered for product output by a schema-specific shared
+  validator, versioned recipe ID, non-empty typed selection inputs, a
+  JSON-pointer activation reference resolving to the committed command, action
+  ID, boundary, and candidate WAV, and affected artifacts declared by the
+  manifest. The schema-specific validator rejects unknown version-looking
+  schemas or recipes and enforces the registered input combinations, committed
+  performer command, exact RuntimeMix paths, and candidate-artifact linkage.
+  Source-modulated product primitives use
+  `riotbox.primitive_renderer_boundary.v2`, which distinguishes fixed recipe
+  provenance (`recipe_derivation_claimed: false` and
+  `pattern_selection_claimed: false`) from truthful source-responsive output
+  (`source_output_modulation_claimed: true`). Its registered modulation object
+  names the source feature, derived policy values, resolved render inputs, and
+  every affected pressure/focus path. The boundary also records
+  `source_failure_fallback: false`, the exact activation references and
+  promotion target, the affected RuntimeMix paths, and the same artifact set.
+
+Both roles keep `demo_readiness: unverified`, `quality_proof: false`, and
+`promotion_blocked: true`; for product primitive vocabulary the blocked target
+is `source_derived_musical_intelligence`, not basic performer-triggered product
+output. The boundary's `affected_paths` are exact JSON paths to every
+`primitive_renderer` origin in the manifest, while `affected_runtime_paths` and
+`affected_artifacts` identify the actual live seam and WAVs. Missing or stale
+primitive-boundary metadata is a manifest validation failure, because otherwise
+a fixed renderer can slip into musician-facing proof as if it were source-derived
+output.
+
+Product primitive vocabulary is not a fallback exception. It must never start
+automatically because source evidence is absent, and it must not be described as
+source-selected, source-composed, or proof of Riotbox musical intelligence. A
+source-derived pressure or timbre modulation is allowed only when declared as
+such; it does not turn a fixed step recipe into source-selected composition. A
+fixed drum-machine Fill explicitly committed by the musician may be a valid
+instrument gesture; the same Fill silently substituted for unavailable source
+material is forbidden fallback output.
 
 ### CI layers
 
@@ -1055,15 +1157,39 @@ Manual listening is required because:
 - variation can exist numerically but still feel trivial or annoying
 - support layers can pass signal checks while still sounding cheap
 
-Before every interactive playback, give the listener a compact factual brief:
+Before every human playback, preflight the exact WAV or A/B artifact that will
+be played rather than relying on a sibling render or report. Verify artifact
+paths and segment order; use hashes or sample-exact segment identity where
+assignment could be ambiguous; inspect format, sample rate, channels, duration,
+and frame count with `ffprobe`; and report peak, RMS, LUFS when available,
+silence, and clipping. A/B review must also report role-appropriate time-local
+absolute and relative deltas, waveform correlation, and frequency-domain deltas
+for the expected owner or function. Whole-render aggregates alone do not prove
+that a short gesture is audible.
+
+Interpret that evidence before involving the listener: state what changed,
+what stayed unchanged, whether the intended role survives the full mix, and
+whether the artifact is correctly assigned. Invalid or misassigned artifacts
+must be fixed; artifacts demonstrably too similar for their claimed effect must
+be regenerated or labeled weak before requesting a taste verdict. This
+technical gate screens and explains the sample but does not replace human
+listening.
+
+Only then give the listener a compact factual brief:
 the playback context (isolated stem, full mix, source, baseline, or comparison),
 the selected product role or candidate family, the intended musical function,
 the expected audible effect, important properties that are not expected, and
-the dimensions to judge. Do not ask for a taste verdict while role assignment
-is unresolved or contradictory. Show a conspicuous listening check and wait
-for explicit readiness before each artifact or repeat; readiness does not carry
-over between playbacks. Playback without that confirmation is treated as
-unheard and cannot support a recorded human verdict.
+the dimensions to judge. `Pressure` must never stand alone as a review target:
+the brief must distinguish bass/low-end pressure, drum/transient pressure,
+midrange/hook aggression, and arrangement/performance impact, name the owning
+lane or policy when applicable, and state which domains are not expected. If
+bass pressure is the intended target but no recognizable bass is audible, that
+is a bass-pressure failure even when drums, loudness, or general bus energy feel
+forceful. Do not ask for a taste verdict while role assignment is unresolved or
+contradictory. Show a conspicuous listening check and wait for explicit
+readiness before each artifact or repeat; readiness does not carry over between
+playbacks. Playback without that confirmation is treated as unheard and cannot
+support a recorded human verdict.
 
 Structured listening review records the human layer as explicit artifact data,
 not chat memory and not CI-only truth. For audio-producing slices, the local
@@ -1539,7 +1665,28 @@ Today the repo already has:
 - an initial local W-30 preview smoke metrics comparison helper for baseline-vs-candidate Markdown metrics that writes local `comparison.md` and `manifest.json` reports
 - a W-30 source-vs-control wrapper that renders a synthetic non-product baseline, source-backed WAV preview as candidate, and requires minimum RMS / sum deltas so control collapse is caught
 - a CI-safe generated W-30 source-vs-control smoke that uses deterministic synthetic source material, checks minimum source-vs-control deltas, validates the generated listening manifest, and runs under `just audio-qa-ci`; existing command names may still say `source-vs-fallback` for compatibility, but the baseline is diagnostic control only
-- a CI-safe first-playable Jam probe, `just first-playable-jam-probe`, that combines synthetic source material, W-30 source-vs-control output evidence, and a generated app-level observer probe for the current `space -> capture -> raw audition -> promote -> W-30 hit` user path
+- a CI-safe first-playable Jam probe, `just first-playable-jam-probe`, that
+  checks a generated app-level observer journey for
+  `source -> capture -> audition -> promote -> blend -> w/f/s/y -> Y restore`
+  alongside the exact callback-block RuntimeMix dense-break pack; correlation
+  is explicitly limited to the typed action contract because source fixture,
+  Session, and transport timeline differ. The pack proves
+  `source`, `blend`, and `riotbox` routes plus per-gesture counterfactual deltas
+  through Source Monitor and the master limiter, while remaining
+  `evidence_role: diagnostic`, `scripted_generation: true`,
+  `quality_proof: false`, and `human_verdict: unverified`
+  - every exact-mixer monitor mode, performance stage, gesture counterfactual /
+    candidate, full mix, and isolated lane stem carries pre- and post-limiter
+    metrics plus changed-sample count; the current clean-path gate permits no
+    limiter activity, so post-limiter `clip_count == 0` cannot conceal a hot mix
+  - Source, Blend, and Riotbox monitor references each render four bars so a
+    human reviewer can judge balance and source character without extrapolating
+    from a too-short one-bar excerpt
+  - the legacy full-mix and isolated-lane regression is frozen immediately after
+    the committed `w` hit while TR-909 is still `break_reinforce`, before the
+    later live `f`, `s`, `y`, and `Y` gestures; the TR-909 pressure stem keeps
+    its established minimum RMS gate instead of validating the later fill/slam
+    state under the old filename
 - a CI-safe source timing confirmation probe, `just source-timing-confirmation-probe`, that presses the real `C` control against a manual-confirm Source Graph, validates the normal observer stream, asserts the immediate `source_timing.confirm_grid` commit, and proves `grid_confirmed` runtime state appears without changing analyzer cue / warning evidence
 - a CI-safe source transport map/capture probe, `just source-transport-map-capture-probe`, that starts in manual-confirm listen-first mode, confirms the grid, seeks the Source Map, captures a bar-aligned source window, raw-auditions, promotes, triggers W-30, and correlates the observer path with W-30 source-vs-control output evidence
 - a CI-safe stage-style Jam probe, `just stage-style-jam-probe`, that uses generated app-level multi-boundary observer evidence, generated W-30 source-vs-control output evidence, and summary-level commit boundary assertions for `Phrase`, `Bar`, and `Beat`
@@ -1693,7 +1840,12 @@ Today the repo already has:
   asserts locked observer grid use, locked manifest grid use, aligned
   grid-use compatibility, aligned anchor evidence, and aligned groove evidence
   before `just audio-qa-ci` can pass
-- observer/audio strict JSON correlation also accepts W-30 preview source-diff manifests as output-path evidence, using candidate RMS, active-sample ratio, and RMS delta to reject silent or fallback-collapsed first-playable output
+- observer/audio strict JSON correlation also accepts W-30 preview source-diff
+  manifests as output-path evidence for the narrower W-30 probes, using
+  candidate RMS, active-sample ratio, and RMS delta to reject silent or
+  diagnostic-control-collapsed output; the first-playable Jam probe no longer
+  substitutes that narrower seam for its Blend / multi-gesture product-mixer
+  evidence
 - the listening manifest v1 field-level JSON contract is documented in `docs/benchmarks/listening_manifest_v1_json_contract_2026-04-29.md`
 - a repo-local `scripts/validate_listening_manifest_json.py` helper and `just listening-manifest-validator-fixtures` fixture matrix validate the listening manifest v1 envelope without freezing pack-specific metrics
 - `just audio-qa-ci` validates freshly generated W-30 preview, lane recipe, Feral before/after, and Feral grid manifests against the listening manifest v1 envelope

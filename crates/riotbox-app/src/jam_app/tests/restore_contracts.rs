@@ -244,6 +244,215 @@ fn sample_commit_record(action_id: ActionId, commit_sequence: u32) -> ActionComm
     }
 }
 
+fn sample_immediate_commit_record(
+    action_id: ActionId,
+    commit_sequence: u32,
+    committed_at: TimestampMs,
+) -> ActionCommitRecord {
+    ActionCommitRecord {
+        action_id,
+        boundary: CommitBoundaryState {
+            kind: CommitBoundary::Immediate,
+            beat_index: 8,
+            bar_index: 3,
+            phrase_index: 1,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        commit_sequence,
+        committed_at,
+        mc202_source_phrase_plan: None,
+    }
+}
+
+fn persisted_source_monitor_action(
+    id: u64,
+    status: ActionStatus,
+    committed_at: TimestampMs,
+) -> Action {
+    Action {
+        id: ActionId(id),
+        actor: ActorType::User,
+        command: ActionCommand::SourceMonitorSetMode,
+        params: ActionParams::SourceMonitor {
+            mode: Some(SourceMonitorMode::Blend),
+        },
+        target: ActionTarget {
+            scope: Some(TargetScope::Session),
+            ..Default::default()
+        },
+        requested_at: committed_at.saturating_sub(10),
+        quantization: Quantization::Immediate,
+        status,
+        committed_at: Some(committed_at),
+        result: Some(ActionResult {
+            accepted: true,
+            summary: "monitor blend committed".into(),
+        }),
+        undo_policy: UndoPolicy::Undoable,
+        explanation: None,
+    }
+}
+
+fn persisted_undo_marker(
+    id: u64,
+    params: ActionParams,
+    committed_at: TimestampMs,
+) -> Action {
+    Action {
+        id: ActionId(id),
+        actor: ActorType::User,
+        command: ActionCommand::UndoLast,
+        params,
+        target: ActionTarget {
+            scope: Some(TargetScope::Session),
+            ..Default::default()
+        },
+        requested_at: committed_at,
+        quantization: Quantization::Immediate,
+        status: ActionStatus::Committed,
+        committed_at: Some(committed_at),
+        result: Some(ActionResult {
+            accepted: true,
+            summary: "undo marker".into(),
+        }),
+        undo_policy: UndoPolicy::NotUndoable {
+            reason: "undo marker".into(),
+        },
+        explanation: None,
+    }
+}
+
+#[test]
+fn legacy_monitor_commit_without_snapshot_is_loaded_as_not_undoable_and_roundtrips() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("legacy-monitor-session.json");
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session
+        .action_log
+        .actions
+        .push(persisted_source_monitor_action(2, ActionStatus::Committed, 210));
+    session
+        .action_log
+        .commit_records
+        .push(sample_immediate_commit_record(ActionId(2), 1, 210));
+    let mut legacy_json = serde_json::to_value(&session).expect("serialize legacy session");
+    let undo_state = legacy_json["runtime_state"]["undo_state"]
+        .as_object_mut()
+        .expect("undo state object");
+    undo_state.remove("source_monitor_snapshots");
+    undo_state.remove("tr909_fill_snapshots");
+    std::fs::write(
+        &session_path,
+        serde_json::to_vec_pretty(&legacy_json).expect("encode legacy session"),
+    )
+    .expect("write legacy session");
+
+    let state = JamAppState::from_json_files(&session_path, None::<&Path>)
+        .expect("legacy committed monitor history should degrade safely");
+    let monitor = state
+        .session
+        .action_log
+        .actions
+        .iter()
+        .find(|action| action.id == ActionId(2))
+        .expect("legacy monitor action");
+    assert!(matches!(monitor.undo_policy, UndoPolicy::NotUndoable { .. }));
+
+    state.save().expect("roundtrip normalized legacy session");
+    let persisted = load_session_json(&session_path).expect("reload normalized session");
+    assert!(matches!(
+        persisted.action_log.actions[1].undo_policy,
+        UndoPolicy::NotUndoable { .. }
+    ));
+    assert!(
+        persisted
+            .runtime_state
+            .undo_state
+            .source_monitor_snapshots
+            .is_empty()
+    );
+    assert!(
+        persisted
+            .runtime_state
+            .undo_state
+            .tr909_fill_snapshots
+            .is_empty()
+    );
+}
+
+#[test]
+fn rejects_legacy_undone_monitor_without_trusted_typed_marker() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("legacy-undone-monitor-session.json");
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session
+        .action_log
+        .actions
+        .push(persisted_source_monitor_action(2, ActionStatus::Undone, 210));
+    session
+        .action_log
+        .actions
+        .push(persisted_undo_marker(3, ActionParams::Empty, 220));
+    session
+        .action_log
+        .commit_records
+        .push(sample_immediate_commit_record(ActionId(2), 1, 210));
+    save_session_json(&session_path, &session).expect("save legacy undone monitor session");
+
+    let error = JamAppState::from_json_files(&session_path, None::<&Path>)
+        .expect_err("legacy monitor rollback was not trustworthy");
+
+    match error {
+        JamAppError::InvalidSession(message) => {
+            assert!(message.contains("legacy undone source_monitor.set_mode action a-0002"));
+            assert!(message.contains("no trusted typed undo marker"));
+        }
+        other => panic!("unexpected error: {other}"),
+    }
+}
+
+#[test]
+fn rejects_typed_undo_marker_with_undoable_policy_during_json_restore() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("malformed-typed-undo-session.json");
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session
+        .action_log
+        .actions
+        .push(persisted_source_monitor_action(2, ActionStatus::Undone, 210));
+    let mut marker = persisted_undo_marker(
+        3,
+        ActionParams::Undo {
+            target_action_id: ActionId(2),
+        },
+        220,
+    );
+    marker.undo_policy = UndoPolicy::Undoable;
+    session.action_log.actions.push(marker);
+    session
+        .action_log
+        .commit_records
+        .push(sample_immediate_commit_record(ActionId(2), 1, 210));
+    session
+        .action_log
+        .commit_records
+        .push(sample_immediate_commit_record(ActionId(3), 2, 220));
+    save_session_json(&session_path, &session).expect("save malformed typed undo session");
+
+    let error = JamAppState::from_json_files(&session_path, None::<&Path>)
+        .expect_err("malformed typed marker must fail restore");
+
+    match error {
+        JamAppError::InvalidSession(message) => {
+            assert!(message.contains("InvalidUndoTargetRelation"));
+        }
+        other => panic!("unexpected error: {other}"),
+    }
+}
+
 #[test]
 fn loads_session_with_commit_record_referencing_persisted_action() {
     let dir = tempdir().expect("create temp dir");
@@ -315,7 +524,7 @@ fn rejects_session_with_commit_record_for_uncommitted_action() {
     match error {
         JamAppError::InvalidSession(message) => {
             assert!(message.contains(
-                "commit record references action a-0001 with non-committed status Queued"
+                "commit record references action a-0001 with invalid committed-history status Queued"
             ));
         }
         other => panic!("unexpected error: {other}"),
@@ -452,6 +661,27 @@ fn rejects_session_with_duplicate_commit_record_for_same_action() {
     match error {
         JamAppError::InvalidSession(message) => {
             assert!(message.contains("commit record is duplicated for action a-0001"));
+        }
+        other => panic!("unexpected error: {other}"),
+    }
+}
+
+#[test]
+fn rejects_session_with_duplicate_action_ids() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("jam-session.json");
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    let duplicate = session.action_log.actions[0].clone();
+    session.action_log.actions.push(duplicate);
+    save_session_json(&session_path, &session).expect("save duplicate action-id session");
+
+    let error =
+        JamAppState::from_json_files(&session_path, None::<&Path>).expect_err("load should fail");
+
+    match error {
+        JamAppError::InvalidSession(message) => {
+            assert!(message.contains("duplicate action id a-0001"));
         }
         other => panic!("unexpected error: {other}"),
     }

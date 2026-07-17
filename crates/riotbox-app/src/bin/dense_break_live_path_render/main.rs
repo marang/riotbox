@@ -1,0 +1,83 @@
+mod live_flow;
+mod manifest;
+mod model;
+mod rendering;
+
+use std::{env, fs, path::PathBuf};
+
+const MIN_SOURCE_BPM_HINT: f32 = 20.0;
+const MAX_SOURCE_BPM_HINT: f32 = 400.0;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args = env::args().skip(1).collect::<Vec<_>>();
+    let source_path = required_path(&args, "--source")?;
+    let output_dir = required_path(&args, "--output")?;
+    let cli_bpm_hint = required_bpm(&args)?;
+    for directory in ["stems", "monitor", "gestures", "gestures/proofs"] {
+        fs::create_dir_all(output_dir.join(directory))?;
+    }
+
+    let prepared = live_flow::prepare(&source_path, &output_dir, cli_bpm_hint)?;
+    let rendered = rendering::render_live_path(&prepared)?;
+    manifest::write_pack(prepared, rendered, &source_path, &output_dir)
+}
+
+fn required_bpm(args: &[String]) -> Result<f32, Box<dyn std::error::Error>> {
+    let value = required_value(args, "--bpm")?;
+    let bpm = value
+        .parse::<f32>()
+        .map_err(|_| format!("invalid BPM value: {value}"))?;
+    if !bpm.is_finite() || !(MIN_SOURCE_BPM_HINT..=MAX_SOURCE_BPM_HINT).contains(&bpm) {
+        return Err(format!(
+            "invalid BPM value: {value}; expected a finite source-confirmation hint in {MIN_SOURCE_BPM_HINT}..={MAX_SOURCE_BPM_HINT}"
+        )
+        .into());
+    }
+    Ok(bpm)
+}
+
+fn required_path(args: &[String], flag: &str) -> Result<PathBuf, Box<dyn std::error::Error>> {
+    Ok(PathBuf::from(required_value(args, flag)?))
+}
+
+fn required_value<'a>(
+    args: &'a [String],
+    flag: &str,
+) -> Result<&'a str, Box<dyn std::error::Error>> {
+    let index = args
+        .iter()
+        .position(|arg| arg == flag)
+        .ok_or(flag.to_string())?;
+    args.get(index + 1)
+        .map(String::as_str)
+        .ok_or_else(|| format!("missing value for {flag}").into())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn bpm_args(value: &str) -> Vec<String> {
+        vec!["--bpm".into(), value.into()]
+    }
+
+    #[test]
+    fn accepts_finite_bpm_in_diagnostic_render_range() {
+        assert_eq!(required_bpm(&bpm_args("132")).unwrap(), 132.0);
+        assert_eq!(required_bpm(&bpm_args("20")).unwrap(), 20.0);
+        assert_eq!(required_bpm(&bpm_args("400")).unwrap(), 400.0);
+    }
+
+    #[test]
+    fn rejects_out_of_range_or_non_finite_bpm() {
+        for value in ["0", "-1", "19.99", "400.01", "NaN", "inf", "-inf"] {
+            let error = required_bpm(&bpm_args(value)).expect_err("BPM must be rejected");
+            assert!(
+                error
+                    .to_string()
+                    .contains("expected a finite source-confirmation hint"),
+                "unexpected error for {value}: {error}"
+            );
+        }
+    }
+}

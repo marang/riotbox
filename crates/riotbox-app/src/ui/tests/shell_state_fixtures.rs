@@ -1,6 +1,7 @@
 fn sample_shell_state() -> JamShellState {
     let mut session = SessionFile::new("session-1", "0.1.0", "2026-04-12T00:00:00Z");
-    session.runtime_state.transport.position_beats = 32.0;
+    // Cursor 31 is the final beat of one-based bar 8; cursor 32 starts bar 9.
+    session.runtime_state.transport.position_beats = 31.0;
     session.runtime_state.transport.current_scene = Some(SceneId::from("scene-a"));
     session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-a"));
     session.runtime_state.macro_state.source_retain = 0.7;
@@ -341,6 +342,128 @@ fn first_run_shell_state() -> JamShellState {
         ActionQueue::new(),
     );
     JamShellState::new(app, ShellLaunchMode::Ingest)
+}
+
+fn first_run_captured_shell_state(source_ready: bool) -> JamShellState {
+    let mut shell = first_run_shell_state();
+    shell.app.session.runtime_state.lane_state.w30.focused_pad = Some("pad-01".into());
+    shell
+        .app
+        .session
+        .captures
+        .push(riotbox_core::session::CaptureRef {
+            capture_id: "cap-first".into(),
+            capture_type: riotbox_core::session::CaptureType::Pad,
+            source_origin_refs: vec!["src-1".into(), "asset-a".into()],
+            source_window: source_ready.then_some(riotbox_core::session::CaptureSourceWindow {
+                source_id: "src-1".into(),
+                start_seconds: 0.0,
+                end_seconds: 1.0,
+                start_frame: 0,
+                end_frame: 44_100,
+            }),
+            lineage_capture_refs: Vec::new(),
+            resample_generation_depth: 0,
+            created_from_action: Some(ActionId(1)),
+            storage_path: "captures/cap-first.wav".into(),
+            assigned_target: None,
+            is_pinned: false,
+            notes: Some("first-run keeper".into()),
+        });
+    shell.app.session.runtime_state.lane_state.w30.last_capture = Some("cap-first".into());
+    shell.app.refresh_view();
+    shell
+}
+
+fn first_run_promoted_shell_state(
+    mode: riotbox_core::action::SourceMonitorMode,
+    route: SourceMonitorAudioRoute,
+) -> JamShellState {
+    let mut shell = first_run_captured_shell_state(true);
+    shell.app.session.captures[0].assigned_target =
+        Some(riotbox_core::session::CaptureTarget::W30Pad {
+            bank_id: "bank-a".into(),
+            pad_id: "pad-01".into(),
+        });
+    shell.app.session.action_log.actions.push(Action {
+        id: ActionId(2),
+        actor: ActorType::User,
+        command: ActionCommand::PromoteCaptureToPad,
+        params: ActionParams::Promotion {
+            capture_id: Some("cap-first".into()),
+            destination: Some("w30:bank-a/pad-01".into()),
+        },
+        target: ActionTarget {
+            scope: Some(TargetScope::LaneW30),
+            bank_id: Some("bank-a".into()),
+            pad_id: Some("pad-01".into()),
+            ..Default::default()
+        },
+        requested_at: 220,
+        quantization: Quantization::NextBar,
+        status: ActionStatus::Committed,
+        committed_at: Some(240),
+        result: Some(ActionResult {
+            accepted: true,
+            summary: "promoted first keeper".into(),
+        }),
+        undo_policy: UndoPolicy::Undoable,
+        explanation: Some("first-run promotion".into()),
+    });
+    shell.app.session.runtime_state.source_monitor.mode = mode;
+    if mode != riotbox_core::action::SourceMonitorMode::Source {
+        shell.app.session.action_log.actions.push(Action {
+            id: ActionId(3),
+            actor: ActorType::User,
+            command: ActionCommand::SourceMonitorSetMode,
+            params: ActionParams::SourceMonitor { mode: Some(mode) },
+            target: ActionTarget {
+                scope: Some(TargetScope::Session),
+                ..Default::default()
+            },
+            requested_at: 241,
+            quantization: Quantization::Immediate,
+            status: ActionStatus::Committed,
+            committed_at: Some(241),
+            result: Some(ActionResult {
+                accepted: true,
+                summary: format!("monitor changed to {mode}"),
+            }),
+            undo_policy: UndoPolicy::Undoable,
+            explanation: Some("first-run monitor handoff".into()),
+        });
+    }
+    shell.app.refresh_view();
+    set_first_run_audio_runtime(&mut shell, Some(AudioRuntimeLifecycle::Running), route);
+    shell
+}
+
+fn set_first_run_audio_runtime(
+    shell: &mut JamShellState,
+    lifecycle: Option<AudioRuntimeLifecycle>,
+    route: SourceMonitorAudioRoute,
+) {
+    shell.app.runtime.audio = lifecycle.map(|lifecycle| AudioRuntimeHealth {
+        lifecycle,
+        output: Some(AudioOutputInfo {
+            host_name: "Alsa".into(),
+            device_name: "test-output".into(),
+            sample_format: "f32".into(),
+            sample_rate: 48_000,
+            channel_count: 2,
+            buffer_size: "256".into(),
+            supported_output_config_count: Some(1),
+        }),
+        callback_count: u64::from(lifecycle == AudioRuntimeLifecycle::Running),
+        max_callback_gap_micros: None,
+        callback_scratch_overflow_count: 0,
+        stream_error_count: u64::from(lifecycle == AudioRuntimeLifecycle::Faulted),
+        last_stream_error: (lifecycle == AudioRuntimeLifecycle::Faulted)
+            .then(|| "test output fault".into()),
+    });
+    shell.app.refresh_view();
+    shell.app.runtime.source_monitor_audio_route = route;
+    shell.app.runtime_view.source_monitor_audio_route = route.label().into();
 }
 
 fn first_result_shell_state() -> JamShellState {

@@ -99,9 +99,17 @@ Use this taste model to shape implementation choices:
 - do not infer bass pressure from relative low-band share alone; first state the
   typed bass owner, then require absolute low-band energy or lift when bass is
   assigned, and do not demand bass pressure when ownership is unassigned
+- do not use `pressure` as a generic success label: distinguish bass/low-end,
+  drum/transient, midrange/hook, and arrangement/performance pressure; failure
+  in the intended domain cannot be rescued by an unrelated kind of pressure
 - compare audible candidates both raw and loudness-matched when practical;
   matching gain may expose character and arrangement differences, but it must
   not conceal a product path that is still materially too quiet
+- prove each explicit live gesture in a short time-local window against its
+  immediate counterfactual, using both an absolute delta and a relative delta;
+  global pressure floors must not erase the gesture, and a slam, fill, trigger,
+  or scene move needs its own audible articulation rather than only more
+  baseline gain
 - keep commercial reference recordings local and uncommitted. They are
   listening and measurement references only, never Riotbox product sources,
   fixtures, generated assets, or redistribution material

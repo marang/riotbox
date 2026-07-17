@@ -104,48 +104,46 @@ fn footer_scene_affordance_cue(shell: &JamShellState) -> Option<String> {
 }
 
 fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
-    let popup = centered_rect(60, 85, area);
+    let popup = centered_rect(100, 100, area);
     let mut lines = vec![
         Line::from("Jam shell keys"),
-        line_with_primary_key_prefixes("q or Esc: quit"),
-        line_with_primary_key_prefixes("? or h: toggle help"),
+        line_with_primary_key_prefixes("q: quit | Esc / ? / h: close help"),
         line_with_primary_key_prefixes(
             "1: Jam screen | 2: Log screen | 3: Source screen | 4: Capture screen | Tab: next screen",
         ),
         line_with_primary_key_prefixes(
             "i: open inspect from Jam | press i again to return to perform",
         ),
+        Line::from(""),
+        Line::from("Primary gestures"),
+        line_with_primary_key_prefixes(format!(
+            "M: monitor {} -> {} | {}",
+            shell.app.session.runtime_state.source_monitor.mode,
+            shell.app.session.runtime_state.source_monitor.mode.next(),
+            source_monitor_route_help_label(shell),
+        )),
+        line_with_primary_key_prefixes(format!(
+            "space: play / pause | {}",
+            render_help_primary_gesture_items(shell)
+        )),
+        line_with_primary_key_prefixes(
+            "y: request next scene (when ready) | Y: restore prior scene",
+        ),
+        line_with_primary_key_prefixes(format!(
+            "{} | 2: action trail (optional)",
+            render_gesture_items(HELP_PRIMARY_CONFIRM_GESTURES, ": ")
+        )),
     ];
 
-    if let Some(stage) = first_run_onramp_stage(shell) {
+    if first_run_onramp_stage(shell).is_some() {
         lines.push(Line::from(""));
         lines.push(Line::from("First run"));
         lines.push(source_timing_help_line(shell));
-        match stage {
-            FirstRunOnrampStage::Start => {
-                lines.push(line_with_primary_key_prefixes("space: start transport"));
-                lines.push(line_with_primary_key_prefixes("f: queue one first fill"));
-                lines.push(line_with_primary_key_prefixes(
-                    "2: switch to Log and watch it land",
-                ));
-            }
-            FirstRunOnrampStage::QueuedFirstMove => {
-                lines.push(Line::from("let transport cross the next bar"));
-                lines.push(line_with_primary_key_prefixes(
-                    "2: confirm the first landed action in Log",
-                ));
-                lines.push(line_with_primary_key_prefixes("c: capture it | u: undo it"));
-            }
-            FirstRunOnrampStage::FirstResult => {
-                lines.push(line_with_primary_key_prefixes(
-                    "c: capture the first keeper",
-                ));
-                lines.push(line_with_primary_key_prefixes("u: undo it if it missed"));
-                lines.push(line_with_primary_key_prefixes(
-                    "y / g / w: try one more gesture",
-                ));
-            }
-        }
+        lines.extend(
+            first_run_onramp_lines(shell)
+                .into_iter()
+                .map(line_with_primary_key_prefixes),
+        );
         lines.push(Line::from(
             "After first loop: Recipe 16 taste/proof | Recipe 2/5 gestures/sources",
         ));
@@ -169,16 +167,6 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
     lines.extend(arrangement_help_lines(shell));
 
     lines.extend([
-        Line::from(""),
-        Line::from("Primary gestures"),
-        line_with_primary_key_prefixes(format!(
-            "space: play / pause | {}",
-            render_help_primary_gesture_items(shell)
-        )),
-        line_with_primary_key_prefixes(format!(
-            "{} | 2: confirm in Log",
-            render_gesture_items(HELP_PRIMARY_CONFIRM_GESTURES, ": ")
-        )),
         Line::from(""),
         Line::from("Advanced / lane gestures"),
         line_with_primary_key_prefixes(format!("r: {}", shell.launch_mode.refresh_verb())),

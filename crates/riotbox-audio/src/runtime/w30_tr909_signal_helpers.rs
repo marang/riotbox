@@ -1,4 +1,4 @@
-use super::*;
+use super::{tr909_fill_recipe::fill_step, *};
 
 pub(super) fn w30_render_gain(
     render: &RealtimeW30PreviewRenderState,
@@ -70,7 +70,7 @@ pub(super) const fn render_subdivision(render: &RealtimeTr909RenderState) -> u32
         }
     };
 
-    match render.phrase_variation {
+    let phrase_subdivision = match render.phrase_variation {
         Some(Tr909PhraseVariation::PhraseAnchor) | None => base,
         Some(Tr909PhraseVariation::PhraseLift) => {
             if base < 2 {
@@ -93,10 +93,27 @@ pub(super) const fn render_subdivision(render: &RealtimeTr909RenderState) -> u32
                 base
             }
         }
+    };
+
+    if matches!(render.mode, Tr909RenderMode::Fill)
+        && matches!(
+            render.phrase_variation,
+            Some(Tr909PhraseVariation::PhraseDrive)
+        )
+    {
+        8
+    } else if matches!(render.mode, Tr909RenderMode::Fill) && phrase_subdivision < 4 {
+        4
+    } else {
+        phrase_subdivision
     }
 }
 
 pub(super) fn should_trigger_step(render: &RealtimeTr909RenderState, step: i64) -> bool {
+    if matches!(render.mode, Tr909RenderMode::Fill) {
+        return fill_step(render, render_subdivision(render), step).is_sounding();
+    }
+
     let base = if let Some(adoption) = render.pattern_adoption {
         match adoption {
             Tr909PatternAdoption::SupportPulse => step % 2 == 0,
@@ -163,12 +180,14 @@ pub(super) fn trigger_envelope(render: &RealtimeTr909RenderState) -> f32 {
         (Tr909RenderMode::SourceSupport, Some(Tr909SourceSupportContext::SceneTarget)) => 0.035,
         _ => 0.0,
     };
+    let performance_slam_boost = performance_slam(render) * 0.25;
     (base
         + profile_boost
         + pattern_boost
         + phrase_boost
         + context_boost
-        + (render.slam_intensity * 0.2))
+        + (render.slam_intensity * 0.2)
+        + performance_slam_boost)
         .clamp(0.0, 0.8)
 }
 
@@ -211,8 +230,12 @@ pub(super) fn trigger_frequency(render: &RealtimeTr909RenderState, step: i64) ->
             };
             base + accent + phrase_pitch + slam
         }
-        Tr909RenderMode::Fill => 112.0 + accent + phrase_pitch + slam,
-        Tr909RenderMode::BreakReinforce => 62.0 + accent + phrase_pitch + slam,
+        Tr909RenderMode::Fill => {
+            112.0 + accent + phrase_pitch + slam - fill_performance_slam(render) * 68.0
+        }
+        Tr909RenderMode::BreakReinforce => {
+            62.0 + accent + phrase_pitch + slam - break_performance_slam(render) * 34.0
+        }
         Tr909RenderMode::Takeover => {
             let base = match render.takeover_profile {
                 Some(Tr909TakeoverRenderProfile::ControlledPhrase) | None => 92.0,
@@ -331,13 +354,16 @@ fn tr909_voice_balance(render: &RealtimeTr909RenderState, step: i64) -> Tr909Voi
 
     match render.mode {
         Tr909RenderMode::Fill => {
-            balance.snare *= 1.40;
-            balance.hat *= 1.55;
+            let performance_slam = fill_performance_slam(render);
+            balance.kick *= 1.0 + performance_slam * 2.4;
+            balance.snare *= 1.40 * (1.0 + performance_slam * 0.25);
+            balance.hat *= 1.55 * (1.0 - performance_slam * 0.55);
         }
         Tr909RenderMode::BreakReinforce => {
-            balance.kick *= 1.45;
-            balance.snare *= 1.38;
-            balance.hat *= 0.70;
+            let performance_slam = break_performance_slam(render);
+            balance.kick *= 1.45 * (1.0 + performance_slam * 1.55);
+            balance.snare *= 1.38 * (1.0 + performance_slam * 0.18);
+            balance.hat *= 0.70 * (1.0 - performance_slam * 0.58);
         }
         Tr909RenderMode::Takeover => {
             balance.kick *= 1.28;
@@ -354,10 +380,39 @@ fn tr909_voice_balance(render: &RealtimeTr909RenderState, step: i64) -> Tr909Voi
         balance.snare *= scale;
         balance.hat *= scale;
     }
+    if matches!(render.mode, Tr909RenderMode::Fill) && step_in_bar >= subdivision * 3 {
+        balance.kick *= 1.12;
+        balance.snare *= 1.12;
+        balance.hat *= 1.12;
+    }
     balance
 }
 
-fn tr909_deterministic_noise(phase: f32, step: i64) -> f32 {
+pub(super) fn fill_performance_slam(render: &RealtimeTr909RenderState) -> f32 {
+    if matches!(render.mode, Tr909RenderMode::Fill) {
+        performance_slam(render)
+    } else {
+        0.0
+    }
+}
+
+pub(super) fn break_performance_slam(render: &RealtimeTr909RenderState) -> f32 {
+    if matches!(render.mode, Tr909RenderMode::BreakReinforce) {
+        performance_slam(render)
+    } else {
+        0.0
+    }
+}
+
+fn performance_slam(render: &RealtimeTr909RenderState) -> f32 {
+    if render.slam_enabled {
+        ((render.slam_intensity.clamp(0.0, 1.0) - 0.55) / 0.30).clamp(0.0, 1.0)
+    } else {
+        0.0
+    }
+}
+
+pub(super) fn tr909_deterministic_noise(phase: f32, step: i64) -> f32 {
     let seeded = (phase * 12_989.0 + step as f32 * 78.233).sin() * 43_758.547;
     ((seeded - seeded.floor()) * 2.0) - 1.0
 }
@@ -392,7 +447,7 @@ pub(super) fn render_gain(render: &RealtimeTr909RenderState) -> f32 {
         _ => 1.0,
     };
     let mode_gain = match render.mode {
-        Tr909RenderMode::Fill => 1.75,
+        Tr909RenderMode::Fill => 1.68,
         Tr909RenderMode::BreakReinforce => 1.12,
         Tr909RenderMode::Takeover => match render.takeover_profile {
             Some(Tr909TakeoverRenderProfile::SceneLock) => 1.15,
@@ -400,15 +455,24 @@ pub(super) fn render_gain(render: &RealtimeTr909RenderState) -> f32 {
         },
         Tr909RenderMode::Idle | Tr909RenderMode::SourceSupport => 1.0,
     };
-    let performance_gain = if matches!(render.mode, Tr909RenderMode::BreakReinforce) {
-        1.0 + render.slam_intensity.clamp(0.0, 1.0) * 5.0
-    } else {
-        1.0
+    let slam = render.slam_intensity.clamp(0.0, 1.0);
+    // `slam_intensity` carries the bounded source-/policy-derived pressure floor for
+    // BreakReinforce. Fill gets only explicit live-slam headroom here; its normal live
+    // contrast comes from the typed FillFocus arrangement articulation.
+    let baseline_pressure_gain = 1.0 + slam * 5.0;
+    let performance_gain = match render.mode {
+        Tr909RenderMode::Fill => {
+            let live_slam = fill_performance_slam(render);
+            1.0 + live_slam
+        }
+        Tr909RenderMode::BreakReinforce => baseline_pressure_gain,
+        Tr909RenderMode::Idle | Tr909RenderMode::SourceSupport | Tr909RenderMode::Takeover => 1.0,
     };
-    let max_gain = if matches!(render.mode, Tr909RenderMode::BreakReinforce) {
-        0.60
-    } else {
-        0.25
+    let max_gain = match render.mode {
+        Tr909RenderMode::Fill if fill_performance_slam(render) > 0.0 => 0.60,
+        Tr909RenderMode::Fill => 0.46,
+        Tr909RenderMode::BreakReinforce => 0.60,
+        Tr909RenderMode::Idle | Tr909RenderMode::SourceSupport | Tr909RenderMode::Takeover => 0.25,
     };
     (routing_gain
         * pattern_gain

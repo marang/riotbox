@@ -2,17 +2,20 @@ fn run_event_loop(
     terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
     mut shell: JamShellState,
     launch: AppLaunch,
-    mut audio_runtime: Option<&mut AudioRuntimeShell>,
+    audio_runtime: &mut Option<AudioRuntimeShell>,
     mut observer: Option<&mut UserSessionObserver>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     loop {
-        if let Some(audio_runtime) = audio_runtime.as_deref_mut() {
+        if let Some(audio_runtime) = audio_runtime.as_mut() {
             let now = timestamp_now();
             let committed = shell
                 .app
                 .apply_audio_timing_snapshot(audio_runtime.timing_snapshot(), now);
             if !committed.is_empty() {
-                shell.set_error_status("committed queued actions on transport boundary");
+                shell.set_error_status(
+                    source_monitor_commit_status(&shell, &committed)
+                        .unwrap_or_else(|| "committed queued actions on transport boundary".into()),
+                );
                 if let Some(observer) = observer.as_deref_mut() {
                     observer.record_transport_commit(now, &committed, &shell)?;
                 }
@@ -39,6 +42,7 @@ fn run_event_loop(
         {
             let key_label = key_code_label(key.code);
             let outcome = shell.handle_key_code(key.code);
+            let mut immediate_observer_commit = None;
             match outcome {
                 ShellKeyOutcome::Quit => {
                     if let Some(observer) = observer.as_deref_mut() {
@@ -60,6 +64,14 @@ fn run_event_loop(
                     } else {
                         "transport paused"
                     });
+                }
+                ShellKeyOutcome::QueueSourceMonitorMode(mode) => {
+                    let requested_at = timestamp_now();
+                    let committed =
+                        queue_and_commit_source_monitor_mode(&mut shell, mode, requested_at);
+                    if !committed.is_empty() {
+                        immediate_observer_commit = Some((requested_at, committed));
+                    }
                 }
                 ShellKeyOutcome::QueueSceneMutation => {
                     shell.app.queue_scene_mutation(timestamp_now());
@@ -464,7 +476,31 @@ fn run_event_loop(
                 }
                 ShellKeyOutcome::RequestRefresh => match load_state(launch.mode.clone()) {
                     Ok(state) => {
-                        shell.replace_app_state(state);
+                        let audio_refresh = replace_app_state_after_refresh(
+                            &mut shell,
+                            state,
+                            audio_runtime.is_some(),
+                        );
+                        drop(audio_runtime.take());
+                        let success_state = match audio_refresh {
+                            AudioRuntimeRefreshAction::Restart => "restarted",
+                            AudioRuntimeRefreshAction::RetryUnavailable => "started",
+                        };
+                        *audio_runtime = start_audio_runtime_for_shell(
+                            &mut shell,
+                            observer.as_deref_mut(),
+                            success_state,
+                        )?;
+                        if audio_runtime.is_some() {
+                            shell.set_error_status(match audio_refresh {
+                                AudioRuntimeRefreshAction::Restart => {
+                                    "refresh loaded; audio runtime restarted"
+                                }
+                                AudioRuntimeRefreshAction::RetryUnavailable => {
+                                    "refresh loaded; audio runtime recovered"
+                                }
+                            });
+                        }
                         refresh_recovery_surface_for_launch(&mut shell, &launch.mode);
                     }
                     Err(error) => shell.set_error_status(format!("refresh failed: {error}")),
@@ -472,11 +508,19 @@ fn run_event_loop(
             }
 
             if let Some(observer) = observer.as_deref_mut() {
-                observer.record_key_event(
-                    timestamp_now(),
+                let timestamp_ms = immediate_observer_commit
+                    .as_ref()
+                    .map_or_else(timestamp_now, |(requested_at, _)| *requested_at);
+                let immediate_committed = immediate_observer_commit
+                    .as_ref()
+                    .map_or(&[][..], |(_, committed)| committed.as_slice());
+                record_key_outcome_then_immediate_commit(
+                    observer,
+                    timestamp_ms,
                     &key_label,
-                    shell_key_outcome_label(outcome),
+                    outcome,
                     &shell,
+                    immediate_committed,
                 )?;
             }
         }

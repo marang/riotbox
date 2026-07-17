@@ -1,6 +1,6 @@
 use riotbox_core::{
     action::{Action, ActionCommand, ActionParams, ActionResult},
-    replay::derive_scene_movement_state,
+    replay::{apply_scene_audio_projection_transition, derive_scene_movement_state},
     session::SessionFile,
     source_graph::SourceGraph,
     transport::CommitBoundaryState,
@@ -45,13 +45,7 @@ pub(in crate::jam_app) fn apply_scene_side_effects(
         .clone()
         .or_else(|| session.runtime_state.transport.current_scene.clone());
 
-    session.runtime_state.scene_state.active_scene = Some(scene_id.clone());
-    session.runtime_state.transport.current_scene = Some(scene_id.clone());
-    session.runtime_state.scene_state.restore_scene = previous_scene
-        .as_ref()
-        .filter(|previous_scene| **previous_scene != scene_id)
-        .cloned();
-    session.runtime_state.scene_state.last_movement = boundary.and_then(|boundary| {
+    let movement = boundary.and_then(|boundary| {
         source_graph.and_then(|source_graph| {
             derive_scene_movement_state(
                 action,
@@ -62,6 +56,24 @@ pub(in crate::jam_app) fn apply_scene_side_effects(
             )
         })
     });
+
+    session.runtime_state.scene_state.active_scene = Some(scene_id.clone());
+    session.runtime_state.transport.current_scene = Some(scene_id.clone());
+    session.runtime_state.scene_state.restore_scene = previous_scene
+        .as_ref()
+        .filter(|previous_scene| **previous_scene != scene_id)
+        .cloned();
+    apply_scene_audio_projection_transition(
+        &mut session.runtime_state.scene_state,
+        action.command,
+        if action.command == ActionCommand::SceneLaunch {
+            movement.clone()
+        } else {
+            None
+        },
+        &scene_id,
+    );
+    session.runtime_state.scene_state.last_movement = movement;
 
     if let Some(logged_action) = session
         .action_log

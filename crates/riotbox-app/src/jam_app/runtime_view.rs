@@ -106,7 +106,7 @@ impl JamRuntimeView {
             sidecar_status,
             sidecar_version,
             source_monitor_mode: session.runtime_state.source_monitor.mode.as_str().into(),
-            source_monitor_audio_route: runtime.source_monitor_audio_route.clone(),
+            source_monitor_audio_route: runtime.source_monitor_audio_route.label().into(),
             tr909_render_mode: runtime.tr909_render.mode.label().into(),
             tr909_render_routing: runtime.tr909_render.routing.label().into(),
             tr909_render_profile: tr909_render_profile_label(&runtime.tr909_render).into(),

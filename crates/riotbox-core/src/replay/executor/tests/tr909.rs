@@ -108,6 +108,41 @@ fn snapshot_suffix_replay_converges_with_origin_for_tr909_support_moves() {
 }
 
 #[test]
+fn fill_replay_retains_the_typed_reinforcement_mode_for_post_bar_return() {
+    let action_log = action_log(vec![
+        action(
+            1,
+            ActionCommand::Tr909ReinforceBreak,
+            ActionParams::Empty,
+            100,
+        ),
+        action(2, ActionCommand::Tr909FillNext, ActionParams::Empty, 200),
+    ]);
+    let plan = build_replay_target_plan(&action_log, &[], 2).expect("replay plan");
+    let mut session = SessionFile::new("session-1", "riotbox-test", "2026-07-15T00:00:00Z");
+
+    apply_replay_plan_to_session(&mut session, &plan.suffix).expect("TR-909 replay succeeds");
+
+    assert_eq!(
+        session.runtime_state.lane_state.tr909.last_fill_bar,
+        Some(2)
+    );
+    assert_eq!(
+        session.runtime_state.lane_state.tr909.reinforcement_mode,
+        Some(Tr909ReinforcementModeState::BreakReinforce)
+    );
+    assert_eq!(
+        session
+            .runtime_state
+            .lane_state
+            .tr909
+            .pattern_ref
+            .as_deref(),
+        Some("reinforce-phrase-0")
+    );
+}
+
+#[test]
 fn tr909_scene_lock_and_reinforce_use_boundary_context() {
     let action_log = action_log(vec![
         action(

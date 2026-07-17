@@ -46,10 +46,26 @@ diagnostic until their behavior is promoted into product ownership.
 Riotbox must not confuse scaffolding with intelligence.
 
 Hardcoded phrases, fixed templates, scripted demo paths, fingerprint-only
-variation, and source-aware mutations are useful only as controls, regression
-scaffolds, or architecture proofs. They are not product-quality source-derived
-behavior until source evidence changes the musical decision and the audible
-output.
+variation, and source-aware mutations are controls, regression scaffolds, or
+architecture proofs; they are not product-quality source-derived behavior until
+source evidence changes the musical decision and the audible output.
+
+A narrow product-instrument exception exists for fixed, typed, versioned
+vocabulary explicitly committed by the performer. Such vocabulary must be
+identified by a stable schema and recipe ID, carry its typed selection inputs,
+and link to the actual committed Action/Boundary and affected RuntimeMix
+artifacts. It remains `primitive_renderer`, must never activate as a
+missing-source fallback, and cannot claim source-derived recipe selection,
+composition, or quality proof. If source evidence audibly modulates fixed
+vocabulary without selecting its recipe, record that separately under a
+versioned product-primitive boundary: exact source feature, derived policy
+values, resolved render inputs, all affected RuntimeMix paths, and
+`source_evidence_selects_pattern: false`. Never hide source-responsive pressure
+or timbre behind an `availability_and_timing_only` claim.
+The primitive schema must be explicitly registered for product output in the
+shared listening-manifest validator. A version-looking schema or recipe string
+without schema-specific recipe/input, source-modulation, activation, RuntimeMix, and candidate-WAV
+checks remains diagnostic-only and cannot authorize product sound.
 
 Do not implement hardcoded musical/audio fallback output as a Riotbox product
 path. If source-backed generation cannot produce trusted material, surface

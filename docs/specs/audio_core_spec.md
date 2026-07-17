@@ -106,7 +106,26 @@ Transport is the timing authority for playback.
 
 The Source Graph informs musical alignment, but callback timing belongs to the audio core.
 
-### 7.1 Source monitor playback
+### 7.1 Transport position and musical-index convention
+
+- `AudioRuntimeTimingSnapshot.position_beats` and source-monitor anchor positions
+  are zero-based continuous cursors: `0.0` is the start of the first beat and
+  `4.0` is the start of bar 2 in 4/4.
+- Session V1 `TransportClockState.beat_index` and
+  `CommitBoundaryState.beat_index` remain zero-based integral transport
+  cursors. Their `bar_index` and `phrase_index` are one-based musical
+  identities. Current code must not reinterpret old boundary values.
+- Source Graph `BeatPoint.beat_index` is a separate one-based grid identity.
+  A transport cursor must add one only when looking up a Source Graph beat;
+  BPM fallback math continues to use the zero-based cursor directly.
+- The canonical 4/4 conversion therefore maps cursor `4.0` to beat index 4 /
+  bar 2, cursor `8.0` to beat index 8 / bar 3, and cursor `16.0` to beat index
+  16 / bar 5 / phrase 2 (with the established four-bar phrase fallback).
+- Code crossing between these representations must use the shared transport
+  conversion helpers. It must not reuse a one-based Source Graph beat identity
+  as a zero-based source-monitor or callback cursor.
+
+### 7.2 Source monitor playback
 
 Source monitor playback is a transport feature, not an external player.
 
@@ -117,9 +136,20 @@ Rules:
 - map transport position to source frame position through the selected timing /
   source-time contract outside expensive callback work
 - source seek updates callback-consumable cursor state without file I/O
+- a prepared source may differ from the output-device sample rate; the callback
+  performs only bounded, allocation-free interpolation from the prepared PCM
+  buffer and must not mark a valid 44.1 kHz source unavailable on a 48 kHz
+  device (or vice versa)
 - monitor presets are `source`, `blend`, and `riotbox`
+- when source material is genuinely unavailable, `source` is explicitly silent
+  and degraded while `blend` preserves its real Riotbox-lane component and is
+  still surfaced as degraded; it must never claim that source audio is present
 - source end behavior clamps / stops by default; looping or wrapping requires an
   explicit future mode
+- monitor mode changes, transport start/stop, and source-anchor jumps retain
+  callback-local transition state and use a short allocation-free gain ramp or
+  source-cursor crossfade; source EOF fades over at most 5 ms (and no more than
+  one sixteenth of a very short source) instead of producing a hard edge
 - the source monitor must not mask weak generated-lane QA; source-only and
   source-layer states must be explicit
 
@@ -189,12 +219,87 @@ Rules:
   implying that a weak answer or pickup is the bass lane
 - the policy may set bounded W-30, TR-909, and MC-202 level/touch/slam floors so
   the selected all-lane hierarchy survives the live mixer
+- those shared floors must preserve headroom for explicit performer gestures;
+  a fill, slam, trigger, launch, or restore must project a distinct bounded
+  articulation instead of collapsing into the policy baseline
+- the live TR-909 Fill may derive one callback-local `FillFocus` articulation
+  from the existing typed render projection; it is active only for a running,
+  audible `Fill` on `DrumBusSupport` and is not new Session, replay, action, or
+  app state
+- when the trusted source timing supplies a non-zero bar phase, the shared live
+  policy projects that confirmed zero-based anchor into the TR-909 render state.
+  Both the Fill recipe step grid and `FillFocus` subtract the same anchor before
+  evaluating their bar-local positions. Missing or non-finite derived anchors
+  retain legacy zero-phase behavior; the audio crate must not infer a separate
+  downbeat
+- for the supported `MainlineDrive + PhraseDrive` Fill, `FillFocus` uses one
+  sample-position-derived, click-safe envelope to lower the non-TR-909 music
+  bed for the final half bar. Its bounded pre-ramp begins before beat three so
+  the bed is absent when the drum-owned call starts, stays absent through the
+  beat-four rush and choke, and releases after the late DiveStomp at beat
+  `3.75`; it is not a second mute or arrangement system.
+  `blend` applies the envelope to its source layer, `riotbox` applies it only
+  to W-30 / MC-202 / resample material, and `source` remains sample-identical
+  and unaffected
+- `FillFocus` leaves the TR-909 signal and gain unchanged, returns fully at the
+  next bar, and must remain deterministic across realtime callback partitions
+  and the exact offline RuntimeMix seam; a silent or wrongly routed drum lane
+  must never duck the arrangement
+- the supported dense-break `MainlineDrive + PhraseDrive` Fill uses fixed
+  callback-local, independently decaying kick, snare-body/noise, and
+  metallic-hat voices. The current
+  `PhraseDriveBreakCutStompV1` four-beat arc has `1 / 2 / 6 / 5` sounding
+  events. Beats one and two preserve context; beat three becomes a syncopated
+  kick/snare/hat call after the bed cut; beat four answers with
+  `kick+hat / snare / kick+snare / hat / choke / rest / pitch-dive
+  kick+snare flam / rest`. The choke removes existing voice tails through a
+  bounded click-safe callback-local release but is not a sounding trigger.
+  Historical `PhraseDriveChokeDiveStompV1` and
+  `PhraseDriveLongChokeDiveStompV2` remain registered listening controls but
+  are no longer selected by the current Mainline Golden Path
+- the fixed Fill arc, its paired `FillFocus`, and its voice triggers come from
+  one typed, versioned callback-safe recipe authority. This recipe is a
+  versioned `primitive_renderer` Golden-Path vocabulary: the explicit committed
+  performer Fill gesture may use it on the product path, while confirmed source
+  evidence makes the path available and supplies timing but does not yet select
+  or compose its rhythm or articulation. It therefore proves live instrument
+  reachability, not source-derived musical intelligence; the manifest must name
+  the selected recipe and inputs, and that promotion requires a later
+  source-evidence-owned recipe-selection slice
+- the signature DiveStomp must change articulation rather than only trigger
+  gain: its kick falls from a high drum onset toward low kick body, its snare
+  schedules one deterministic delayed crack, and the preceding choke plus
+  deeper `FillFocus` pocket must remain audible in the exact RuntimeMix Blend.
+  These fixed-size counters and envelopes are private realtime state derived
+  from the typed existing policy, never Session, replay, or action truth
+- this is a Golden Path contract, not evidence that `PhraseDrive` already
+  expresses distinct musical ownership for every pattern-adoption profile;
+  TakeoverGrid-specific Fill orchestration remains a later audible slice
+- the Fill voice sum releases to zero at the bar edge and clears hidden voice
+  tails before the next downbeat. Fill-to-Fill, Fill-to-non-Fill, exact
+  one-subdivision seeks, and 127/128-frame callback partitions must neither
+  restore stale tails nor leak the Fill subdivision into the legacy renderer.
+  Non-Fill TR-909 modes stay sample-identical to their established composite
+  path
 - the policy remains unavailable without matching confirmed timing, a trusted
   dense-break window, and a matching committed MC-202 source-phrase decision;
   a committed degraded / fallback decision projects `stay_out` rather than
   reviving the originally requested role
 - unavailable or unassigned ownership must not synthesize replacement bass or
   other fallback music
+- when a committed MC-202 plan has typed `source_section_id` ownership and a
+  landed Scene targets another section, MC-202 must stay silent until a trusted
+  plan for that section exists; the live performance policy must report bass
+  ownership as unassigned and must not reuse the previous section's expression
+  floors for TR-909 or W-30. Provenance labels must not control this branch
+- Scene launch may install a source-backed lane projection, while Scene restore
+  must recover the projection paired with the restored scene. The latest
+  restore transition remains anchor/observer truth but is not itself a new
+  persistent lane profile.
+- Scene Source Monitor repositioning uses the target section's matching primary
+  bar-grid downbeat. Raw section timestamps are descriptive evidence, not a
+  playable anchor; a missing matching primary-grid bar leaves repositioning
+  unavailable rather than introducing an off-grid source jump.
 
 The persisted Source Graph, timing confirmation, and MC-202 source phrase plan
 remain replay truth. `LivePerformancePolicy` is rederived after load/replay from
@@ -364,6 +469,9 @@ Current limiter policy:
 - product runtime mixes and Feral-grid product mixes pass through the shared
   master-bus soft-limiter seam after source-monitor / lane mix policy and
   before device or WAV output
+- Source Monitor `blend` exposes its unclamped generated-plus-source sum to
+  that master seam; it must not hard-clamp inside the monitor policy, because
+  doing so flattens transients and hides the pre-limiter overload evidence
 - the limiter is stateless and in-place so realtime rendering does not allocate,
   block, log, or call analysis/model code
 - reports keep pre-limiter and post-limiter metrics for controlled mixes so
@@ -386,9 +494,18 @@ Current parity seam:
   callback
 - `render_runtime_mix_realtime_simulation_offline` renders the same plan in
   bounded callback-sized blocks, advancing transport timing between blocks
+- `render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report`
+  retains callback state across plan steps and returns the audible samples plus
+  exact aggregate pre-limiter metrics, post-limiter metrics, and the count of
+  samples changed by the limiter; this reporting allocation is offline-only and
+  does not change the live callback's allocation-free contract
 - parity tests compare the full-block render against the callback-blocked
   simulation, so callback buffer boundaries cannot silently change runtime mix
   audio
+- exact-mixer diagnostic packs gate pre-limiter clipping, limiter activity, and
+  post-limiter clipping separately. A clean-path proof must not pass merely
+  because the master limiter hid a hot product mix; its maximum accepted
+  limited-sample count is explicit in the manifest
 
 ---
 

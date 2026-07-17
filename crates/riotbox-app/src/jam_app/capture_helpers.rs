@@ -128,7 +128,7 @@ fn capture_source_window(
         return None;
     }
 
-    let start_seconds = seconds_for_beat(graph, boundary.beat_index)?
+    let start_seconds = seconds_for_beat_cursor(graph, boundary.beat_index)?
         .max(0.0)
         .min(graph.source.duration_seconds);
     let beats_per_bar = graph
@@ -138,8 +138,8 @@ fn capture_source_window(
         .or(graph.timing.meter_hint)
         .map_or(4_u64, |meter| u64::from(meter.beats_per_bar));
     let end_beat = capture_end_beat(session, graph, action, boundary, beats_per_bar);
-    let end_seconds = seconds_for_beat(graph, end_beat)
-        .unwrap_or_else(|| seconds_for_beat_estimate(graph, end_beat))
+    let end_seconds = seconds_for_beat_cursor(graph, end_beat)
+        .unwrap_or_else(|| seconds_for_beat_cursor_estimate(graph, end_beat))
         .min(graph.source.duration_seconds)
         .max(start_seconds);
 
@@ -185,11 +185,7 @@ fn phrase_capture_end_beat(
     boundary: &CommitBoundaryState,
     beats_per_bar: u64,
 ) -> Option<u64> {
-    let start_bar = boundary
-        .beat_index
-        .checked_div(beats_per_bar.max(1))
-        .unwrap_or(0)
-        .saturating_add(1);
+    let start_bar = boundary.bar_index;
     let phrase_grid = graph
         .timing
         .primary_hypothesis()
@@ -207,28 +203,54 @@ fn phrase_capture_end_beat(
                 .iter()
                 .find(|phrase| u64::from(phrase.start_bar) >= start_bar)
         })
-        .map(|phrase| u64::from(phrase.end_bar).saturating_mul(beats_per_bar))
+        .and_then(|phrase| {
+            let bar_after_phrase = u64::from(phrase.end_bar).saturating_add(1);
+            if let Some(primary) = graph.timing.primary_hypothesis()
+                && !primary.bar_grid.is_empty()
+            {
+                primary.bar_start_beat_cursor(bar_after_phrase)
+            } else {
+                Some(u64::from(phrase.end_bar).saturating_mul(beats_per_bar))
+            }
+        })
         .filter(|end_beat| *end_beat > boundary.beat_index)
 }
 
-fn seconds_for_beat(graph: &SourceGraph, beat_index: u64) -> Option<f32> {
+fn seconds_for_beat_cursor(graph: &SourceGraph, beat_cursor: u64) -> Option<f32> {
+    let source_graph_beat_index = beat_cursor.saturating_add(1);
+    let beat_grid = graph
+        .timing
+        .primary_hypothesis()
+        .map(|hypothesis| hypothesis.beat_grid.as_slice())
+        .filter(|grid| !grid.is_empty())
+        .unwrap_or(graph.timing.beat_grid.as_slice());
+    beat_grid
+        .iter()
+        .find(|beat| u64::from(beat.beat_index) == source_graph_beat_index)
+        .map(|beat| beat.time_seconds)
+        .or_else(|| {
+            preferred_beat_cursor_bpm(graph)
+                .map(|_| seconds_for_beat_cursor_estimate(graph, beat_cursor))
+        })
+}
+
+fn seconds_for_beat_cursor_estimate(graph: &SourceGraph, beat_cursor: u64) -> f32 {
+    let bpm = preferred_beat_cursor_bpm(graph).unwrap_or(120.0);
+    beat_cursor as f32 * 60.0 / bpm
+}
+
+fn preferred_beat_cursor_bpm(graph: &SourceGraph) -> Option<f32> {
     graph
         .timing
-        .beat_grid
-        .iter()
-        .find(|beat| u64::from(beat.beat_index) == beat_index)
-        .map(|beat| beat.time_seconds)
+        .primary_hypothesis()
+        .map(|hypothesis| hypothesis.bpm)
+        .filter(|bpm| bpm.is_finite() && *bpm > 0.0)
         .or_else(|| {
             graph
                 .timing
                 .bpm_estimate
-                .map(|_| seconds_for_beat_estimate(graph, beat_index))
+                .filter(|bpm| bpm.is_finite() && *bpm > 0.0)
         })
-}
-
-fn seconds_for_beat_estimate(graph: &SourceGraph, beat_index: u64) -> f32 {
-    let bpm = graph.timing.bpm_estimate.unwrap_or(120.0).max(1.0);
-    beat_index as f32 * 60.0 / bpm
 }
 
 fn seconds_to_frame(seconds: f32, sample_rate: u32) -> u64 {

@@ -52,6 +52,34 @@ fn source_map_navigation_clamps_at_source_map_edges() {
     );
 }
 
+#[test]
+fn source_map_navigation_targets_selected_nonzero_downbeat_phase() {
+    let mut graph = source_map_navigation_graph();
+    let primary = graph
+        .timing
+        .hypotheses
+        .first_mut()
+        .expect("primary hypothesis");
+    primary.beat_grid = (4..=35)
+        .map(|beat_index| BeatPoint {
+            beat_index,
+            time_seconds: (beat_index - 4) as f32 * 0.5,
+            confidence: 0.9,
+        })
+        .collect();
+    let mut session = sample_session(&graph);
+    session.runtime_state.transport.position_beats = 4.0;
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    assert_eq!(
+        state.queue_source_map_navigation(SourceMapNavigationIntent::NextPhrase, 100),
+        SourceMapNavigationResult::Enqueued {
+            target_position_beats: 19,
+            target_label: "phrase 2 bar 5".into(),
+        }
+    );
+}
+
 fn source_map_navigation_graph() -> SourceGraph {
     let mut graph = sample_graph();
     graph.source.duration_seconds = 16.0;
@@ -97,7 +125,13 @@ fn source_map_navigation_graph() -> SourceGraph {
         },
         confidence: 0.9,
         score: 0.9,
-        beat_grid: Vec::new(),
+        beat_grid: (1..=32)
+            .map(|beat_index| BeatPoint {
+                beat_index,
+                time_seconds: (beat_index - 1) as f32 * 0.5,
+                confidence: 0.9,
+            })
+            .collect(),
         bar_grid: (0..8)
             .map(|index| BarSpan {
                 bar_index: index + 1,

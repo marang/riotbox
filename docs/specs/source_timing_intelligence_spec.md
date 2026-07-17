@@ -329,6 +329,33 @@ grids only when the primary hypothesis lacks the relevant grid. This keeps
 musician-facing and observer surfaces aligned with the same selected hypothesis
 that supplies anchor, groove, and downbeat-phase evidence.
 
+Consumers that place source anchors into musical bars must keep that selected
+hypothesis's meter, `bar_grid`, and `beat_grid` together. In particular, MC-202
+offbeat classification and phrase-step mapping resolve a bar start through its
+`BarSpan` and matching `BeatPoint`, so a non-zero downbeat phase is preserved.
+Arithmetic bar/beat fallback is allowed only when no bar grid exists; a present
+but inconsistent bar/beat grid is unavailable evidence rather than permission
+to invent a phase.
+
+The same phase contract applies to the normal Jam transport clock, quantized
+commit boundaries, Source Map next-bar capture preview, and exact RuntimeMix QA
+timelines. These consumers derive a shared zero-based transport anchor from the
+selected primary hypothesis's one-based downbeat `BeatPoint`; they must not
+restart bar arithmetic at transport cursor zero. Exact-path manifests record
+the source beat identity, converted transport cursor, source bar identity, and
+meter, then assert the committed gesture cursors against that phase.
+
+Bar-local audio vocabulary is also a phase consumer. In particular, the live
+TR-909 Fill step grid and its paired `FillFocus` envelope must subtract the
+same confirmed transport anchor before evaluating positions within the bar.
+Aligning only the Fill action/window while leaving the audio recipe on
+transport-zero phase rotates the musical arc and is invalid.
+
+Phrase consumers also select a non-empty phrase grid from the selected primary
+hypothesis before consulting the top-level compatibility grid. A divergent
+top-level phrase grid must not override the hypothesis that supplied the active
+bar/downbeat evidence.
+
 Grid-use policy helpers that classify compact Jam/observer labels such as
 `short_loop_manual_confirm` should follow the same selected-primary-hypothesis
 precedence before falling back to top-level `TimingModel` grids, so policy

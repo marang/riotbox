@@ -40,18 +40,31 @@ pub(in crate::jam_app) fn apply_mc202_side_effects(
             };
             let role_label = role.label();
 
-            session.runtime_state.lane_state.mc202.role = Some(role);
-            session.runtime_state.lane_state.mc202.phrase_ref =
-                Some(boundary_phrase_ref(boundary, role_label));
-            session.runtime_state.lane_state.mc202.phrase_variant = None;
-
             let touch = match &action.params {
                 ActionParams::Mutation { intensity, .. } => intensity.clamp(0.0, 1.0),
                 _ => mc202_set_role_default_touch(role),
             };
+            let source_phrase_plan =
+                match derive_mc202_source_phrase_plan(session, source_graph, boundary, role, touch)
+                {
+                    Ok(plan) => plan,
+                    Err(reason) => {
+                        set_logged_mc202_result(
+                            session,
+                            action,
+                            false,
+                            format!("MC-202 role unavailable: {reason}"),
+                        );
+                        return;
+                    }
+                };
+
+            session.runtime_state.lane_state.mc202.role = Some(role);
+            session.runtime_state.lane_state.mc202.phrase_ref =
+                Some(boundary_phrase_ref(boundary, role_label));
+            session.runtime_state.lane_state.mc202.phrase_variant = None;
             session.runtime_state.macro_state.mc202_touch = touch;
-            session.runtime_state.lane_state.mc202.source_phrase_plan =
-                derive_mc202_source_phrase_plan(session, source_graph, boundary, role, touch);
+            session.runtime_state.lane_state.mc202.source_phrase_plan = source_phrase_plan;
 
             set_logged_mc202_result(
                 session,
@@ -121,19 +134,31 @@ pub(in crate::jam_app) fn apply_mc202_side_effects(
                 _ => 0.88,
             };
 
+            let effective_touch = session.runtime_state.macro_state.mc202_touch.max(touch);
+            let source_phrase_plan = match derive_mc202_source_phrase_plan(
+                session,
+                source_graph,
+                boundary,
+                current_role,
+                effective_touch,
+            ) {
+                Ok(plan) => plan,
+                Err(reason) => {
+                    set_logged_mc202_result(
+                        session,
+                        action,
+                        false,
+                        format!("MC-202 phrase mutation unavailable: {reason}"),
+                    );
+                    return;
+                }
+            };
+
             session.runtime_state.lane_state.mc202.role = Some(current_role);
             session.runtime_state.lane_state.mc202.phrase_ref = Some(phrase_ref.clone());
             session.runtime_state.lane_state.mc202.phrase_variant = intent.phrase_variant();
-            session.runtime_state.macro_state.mc202_touch =
-                session.runtime_state.macro_state.mc202_touch.max(touch);
-            session.runtime_state.lane_state.mc202.source_phrase_plan =
-                derive_mc202_source_phrase_plan(
-                    session,
-                    source_graph,
-                    boundary,
-                    current_role,
-                    session.runtime_state.macro_state.mc202_touch,
-                );
+            session.runtime_state.macro_state.mc202_touch = effective_touch;
+            session.runtime_state.lane_state.mc202.source_phrase_plan = source_phrase_plan;
 
             set_logged_mc202_result(
                 session,
@@ -160,18 +185,31 @@ fn apply_generated_role(
         _ => role.default_touch(),
     };
 
-    session.runtime_state.lane_state.mc202.role = Some(role);
-    session.runtime_state.lane_state.mc202.phrase_ref = Some(phrase_ref.clone());
-    session.runtime_state.lane_state.mc202.phrase_variant = None;
-    session.runtime_state.macro_state.mc202_touch =
-        session.runtime_state.macro_state.mc202_touch.max(touch);
-    session.runtime_state.lane_state.mc202.source_phrase_plan = derive_mc202_source_phrase_plan(
+    let effective_touch = session.runtime_state.macro_state.mc202_touch.max(touch);
+    let source_phrase_plan = match derive_mc202_source_phrase_plan(
         session,
         source_graph,
         boundary,
         role,
-        session.runtime_state.macro_state.mc202_touch,
-    );
+        effective_touch,
+    ) {
+        Ok(plan) => plan,
+        Err(reason) => {
+            set_logged_mc202_result(
+                session,
+                action,
+                false,
+                format!("MC-202 {role_label} unavailable: {reason}"),
+            );
+            return;
+        }
+    };
+
+    session.runtime_state.lane_state.mc202.role = Some(role);
+    session.runtime_state.lane_state.mc202.phrase_ref = Some(phrase_ref.clone());
+    session.runtime_state.lane_state.mc202.phrase_variant = None;
+    session.runtime_state.macro_state.mc202_touch = effective_touch;
+    session.runtime_state.lane_state.mc202.source_phrase_plan = source_phrase_plan;
 
     set_logged_mc202_result(
         session,
@@ -179,7 +217,7 @@ fn apply_generated_role(
         true,
         format!(
             "generated MC-202 {role_label} phrase {phrase_ref} at {:.2}",
-            session.runtime_state.macro_state.mc202_touch
+            effective_touch
         ),
     );
 }

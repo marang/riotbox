@@ -7,7 +7,7 @@ use riotbox_audio::runtime::{
 use riotbox_core::{
     queue::ActionQueue,
     session::SessionFile,
-    source_graph::{SourceGraph, section_for_projected_scene},
+    source_graph::{SourceGraph, primary_grid_anchor_seconds_for_projected_scene},
     transport::CommitBoundaryState,
     view::jam::{JamViewModel, source_timing_consumer_readiness},
 };
@@ -31,6 +31,7 @@ impl JamAppState {
         mut queue: ActionQueue,
     ) -> Self {
         normalize_w30_preview_mode(&mut session);
+        super::helpers::normalize_missing_typed_undo_policies(&mut session);
         normalize_scene_candidates(&mut session, source_graph.as_ref());
         queue.reserve_action_ids_after(max_action_id(&session));
         let transport = transport_clock_from_state(&session, source_graph.as_ref());
@@ -100,9 +101,7 @@ impl JamAppState {
                 self.session.runtime_state.source_monitor.mode,
                 self.source_audio_cache.as_ref(),
             ),
-        }
-        .label()
-        .into();
+        };
         self.jam_view = JamViewModel::build(&self.session, &self.queue, self.source_graph.as_ref());
         self.runtime_view =
             JamRuntimeView::build(&self.runtime, &self.session, self.source_graph.as_ref());
@@ -178,7 +177,6 @@ fn source_monitor_scene_anchor(
         return None;
     }
 
-    let section = section_for_projected_scene(graph, &movement.to_scene)?;
     let commit_record = session
         .action_log
         .commit_records
@@ -186,7 +184,11 @@ fn source_monitor_scene_anchor(
         .find(|record| record.action_id == movement.action_id)?;
 
     Some(SourceMonitorSceneAnchor {
-        source_start_seconds: f64::from(section.start_seconds),
+        source_start_seconds: primary_grid_anchor_seconds_for_projected_scene(
+            graph,
+            &movement.to_scene,
+        )?,
+        // Session V1 commit boundaries persist this as the zero-based cursor.
         transport_position_beats: commit_record.boundary.beat_index as f64,
     })
 }

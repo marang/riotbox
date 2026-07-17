@@ -269,6 +269,14 @@ mod tests {
                 source_phrase_plan: None,
                 touch: 0.78,
             });
+        session
+            .runtime_state
+            .undo_state
+            .source_monitor_snapshots
+            .push(SourceMonitorUndoSnapshotState {
+                action_id: ActionId(3),
+                mode: SourceMonitorMode::Source,
+            });
         session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
         session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-01"));
         session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
@@ -379,6 +387,38 @@ mod tests {
         assert_eq!(
             decoded.runtime_state.source_monitor.mode,
             SourceMonitorMode::Source
+        );
+    }
+
+    #[test]
+    fn legacy_undo_state_without_monitor_or_fill_snapshots_defaults_empty() {
+        let session = SessionFile::new("session-1", "0.1.0", "2026-05-23T08:02:00Z");
+        let mut value = serde_json::to_value(&session).expect("serialize session");
+        value["runtime_state"]["undo_state"]
+            .as_object_mut()
+            .expect("undo state object")
+            .remove("source_monitor_snapshots");
+        value["runtime_state"]["undo_state"]
+            .as_object_mut()
+            .expect("undo state object")
+            .remove("tr909_fill_snapshots");
+
+        let decoded: SessionFile =
+            serde_json::from_value(value).expect("deserialize legacy session");
+
+        assert!(
+            decoded
+                .runtime_state
+                .undo_state
+                .source_monitor_snapshots
+                .is_empty()
+        );
+        assert!(
+            decoded
+                .runtime_state
+                .undo_state
+                .tr909_fill_snapshots
+                .is_empty()
         );
     }
 

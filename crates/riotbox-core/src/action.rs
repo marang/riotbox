@@ -162,6 +162,15 @@ impl SourceMonitorMode {
             Self::Riotbox => "riotbox",
         }
     }
+
+    #[must_use]
+    pub const fn next(self) -> Self {
+        match self {
+            Self::Source => Self::Blend,
+            Self::Blend => Self::Riotbox,
+            Self::Riotbox => Self::Source,
+        }
+    }
 }
 
 impl Display for SourceMonitorMode {
@@ -246,6 +255,9 @@ pub enum ActionParams {
     },
     Snapshot {
         label: Option<String>,
+    },
+    Undo {
+        target_action_id: ActionId,
     },
     Ghost {
         mode: Option<GhostMode>,
@@ -433,6 +445,18 @@ pub enum ActionReplayCoverage {
     Unsupported,
 }
 
+/// Persisted runtime-state region restored by typed live Undo.
+///
+/// This is intentionally narrower than a lane identity: TR-909 Fill Undo, for
+/// example, restores only Fill scheduling state and must not be blocked by an
+/// unrelated Slam control change.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum TypedUndoStateDomain {
+    Mc202Lane,
+    SourceMonitorMode,
+    Tr909FillWindow,
+}
+
 impl ActionCommand {
     pub const ALL: &'static [Self] = &[
         Self::TransportPlay,
@@ -500,6 +524,50 @@ impl ActionCommand {
     #[must_use]
     pub const fn all() -> &'static [Self] {
         Self::ALL
+    }
+
+    /// Whether live undo has typed state restoration and replay may therefore
+    /// omit a historical commit marked `Undone` without diverging from runtime.
+    #[must_use]
+    pub const fn has_typed_undo_semantics(self) -> bool {
+        self.typed_undo_state_domain().is_some()
+    }
+
+    #[must_use]
+    pub const fn typed_undo_state_domain(self) -> Option<TypedUndoStateDomain> {
+        match self {
+            Self::Mc202SetRole
+            | Self::Mc202GenerateFollower
+            | Self::Mc202GenerateAnswer
+            | Self::Mc202GeneratePressure
+            | Self::Mc202GenerateInstigator
+            | Self::Mc202MutatePhrase => Some(TypedUndoStateDomain::Mc202Lane),
+            Self::SourceMonitorSetMode => Some(TypedUndoStateDomain::SourceMonitorMode),
+            Self::Tr909FillNext => Some(TypedUndoStateDomain::Tr909FillWindow),
+            _ => None,
+        }
+    }
+
+    /// Whether a committed action can invalidate an older typed Undo snapshot
+    /// for the given domain.
+    #[must_use]
+    pub const fn mutates_typed_undo_state_domain(self, domain: TypedUndoStateDomain) -> bool {
+        match domain {
+            TypedUndoStateDomain::Mc202Lane => {
+                matches!(
+                    self.typed_undo_state_domain(),
+                    Some(TypedUndoStateDomain::Mc202Lane)
+                ) || matches!(self, Self::SourceTimingRevertGrid)
+            }
+            TypedUndoStateDomain::SourceMonitorMode => matches!(
+                self.typed_undo_state_domain(),
+                Some(TypedUndoStateDomain::SourceMonitorMode)
+            ),
+            TypedUndoStateDomain::Tr909FillWindow => matches!(
+                self.typed_undo_state_domain(),
+                Some(TypedUndoStateDomain::Tr909FillWindow)
+            ),
+        }
     }
 
     #[must_use]
@@ -700,13 +768,23 @@ impl ActionDraft {
         quantization: Quantization,
         target: ActionTarget,
     ) -> Self {
+        let undo_policy = if command.has_typed_undo_semantics() {
+            UndoPolicy::Undoable
+        } else {
+            UndoPolicy::NotUndoable {
+                reason: format!(
+                    "{} has no typed live state-restoration contract",
+                    command.as_str()
+                ),
+            }
+        };
         Self {
             actor,
             command,
             params: ActionParams::Empty,
             target,
             quantization,
-            undo_policy: UndoPolicy::Undoable,
+            undo_policy,
             explanation: None,
         }
     }

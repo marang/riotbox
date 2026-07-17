@@ -367,10 +367,10 @@ fn audio_timing_snapshot_commits_crossed_bar_boundary() {
 
     state.update_transport_clock(TransportClockState {
         is_playing: false,
-        position_beats: 28.0,
-        beat_index: 28,
-        bar_index: 7,
-        phrase_index: 1,
+        position_beats: 32.0,
+        beat_index: 32,
+        bar_index: 9,
+        phrase_index: 3,
         current_scene: Some(SceneId::from("scene-1")),
     });
     state.set_transport_playing(true);
@@ -380,7 +380,7 @@ fn audio_timing_snapshot_commits_crossed_bar_boundary() {
         AudioRuntimeTimingSnapshot {
             is_transport_running: true,
             tempo_bpm: 124.0,
-            position_beats: 32.0,
+            position_beats: 36.0,
         },
         3_100,
     );
@@ -433,3 +433,32 @@ fn audio_timing_snapshot_advances_transport_from_callback_position() {
     );
 }
 
+#[test]
+fn audio_timing_snapshot_keeps_zero_based_beat_and_one_based_bar_phrase_indices() {
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    state.runtime.transport.is_playing = false;
+
+    for (position_beats, beat_index, bar_index, phrase_index) in [
+        (0.0, 0, 1, 1),
+        (3.999, 3, 1, 1),
+        (4.0, 4, 2, 1),
+        (8.0, 8, 3, 1),
+        (16.0, 16, 5, 2),
+    ] {
+        state.apply_audio_timing_snapshot(
+            AudioRuntimeTimingSnapshot {
+                is_transport_running: true,
+                tempo_bpm: 124.0,
+                position_beats,
+            },
+            4_000,
+        );
+
+        assert_eq!(state.runtime.transport.position_beats, position_beats);
+        assert_eq!(state.runtime.transport.beat_index, beat_index);
+        assert_eq!(state.runtime.transport.bar_index, bar_index);
+        assert_eq!(state.runtime.transport.phrase_index, phrase_index);
+    }
+}

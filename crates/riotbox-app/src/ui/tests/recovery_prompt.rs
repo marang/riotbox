@@ -37,6 +37,14 @@ fn renders_manual_recovery_prompt_in_warnings_and_help() {
     assert!(rendered.contains("manual review only"), "{rendered}");
     assert!(!rendered.contains("Warnings clear"), "{rendered}");
 
+    let narrow = render_jam_shell_snapshot(&shell, 80, 24);
+    assert!(narrow.contains("Keys:"), "{narrow}");
+    assert!(narrow.contains("Primary:"), "{narrow}");
+    assert!(narrow.contains("Status:"), "{narrow}");
+    assert!(narrow.contains("Warning: recovery:"), "{narrow}");
+    assert!(!narrow.contains("Advanced:"), "{narrow}");
+    assert!(!narrow.contains("Lane ops:"), "{narrow}");
+
     shell.show_help = true;
     let rendered = render_jam_shell_snapshot(&shell, 120, 38);
 

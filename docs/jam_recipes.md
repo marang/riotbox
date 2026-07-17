@@ -5,9 +5,10 @@ Concrete practice flows for learning Riotbox with the current TUI.
 These recipes are meant for the current prototype state:
 
 - the shell is already capable
-- the first-run path is intentionally narrow
+- the first-run path is a bounded but audible performance flow
 - different lanes already do different things
-- `Log` is still the fastest place to confirm what really landed
+- `Jam` keeps queue / commit state visible while you play
+- `Log` remains the detailed history for ambiguous results
 
 Use one recipe at a time. Do not try to memorize the whole keymap first.
 
@@ -44,7 +45,56 @@ Useful screens:
 
 Useful rule:
 
-- unsure whether something worked -> press `2`
+- normal performance -> follow pending / committed state on `Jam`
+- unsure why something landed or failed -> press `2` for the full `Log`
+
+## First-Playable Golden Path
+
+Goal: hear the source first, turn one captured moment into a playable pad, then
+make several obvious live changes without treating the action log as the
+instrument.
+
+1. load a source WAV and stay on `Jam`
+2. check the source readiness and monitor route; leave monitor mode on `Source`
+3. press `Space` and confirm that the original source is audible
+4. press `c` and wait until the capture commits
+5. press `o`, wait for it to land, and hear the raw capture
+6. press `p` to promote it to the focused W-30 pad and wait for that commit
+7. only when source playback is ready, press `M` once to select `Blend`
+8. press `w`, wait for the promoted hit to land, and listen for the source-backed
+   W-30 gesture
+9. press `f`, wait for the next bar, and listen for the fill
+10. press `s`, wait for the next beat, and listen for the harder drum slam
+11. press `y`, wait for the scene jump, and listen for the changed source / lane
+    relationship
+12. after that jump has landed, press `Y` and listen for the previous scene to
+    return
+
+What to see:
+
+- `Source`, `Blend`, and `Riotbox` are monitor choices, not separate product
+  modes; `M` cycles through them
+- `Jam` shows whether a gesture is pending and when it commits, so `Log` is
+  optional during normal playing
+- `c`, `o`, `p`, `M`, `w`, `f`, `s`, `y`, and `Y` all travel through the
+  documented action / queue / commit path
+- `Y` is not ready until a scene jump has landed
+
+What to hear:
+
+- `Source` is the source-only listening anchor without Riotbox lanes; monitor
+  gain and the master limiter still apply
+- `Blend` keeps that anchor audible while the W-30 and drum / scene gestures
+  enter around it
+- `w`, `f`, `s`, and `y` should not be four different labels for the same
+  buffer; each should create an obvious performance contrast, and `Y` should
+  make the return legible
+
+If the source route is unavailable or the audio runtime is degraded, stop the
+audible assessment there. Riotbox should show the degraded state and remain
+silent where it lacks trusted material; it must not fill the gap with synthetic
+replacement music. Use another trusted source or repair the audio route before
+judging the Golden Path.
 
 ## Read The Timing Cues
 
@@ -337,18 +387,16 @@ What to learn:
 If you want one slightly longer practice run:
 
 1. load `Beat08_128BPM(Full).wav`
-2. press `Space`
-3. press `f`
-4. press `2` and confirm the fill landed
-5. press `c`
-6. press `4`
-7. wait until `Capture` shows the stored capture
-8. press `o` to audition the raw capture
-9. press `p`
-10. wait until promotion lands
-11. press `w`
-12. press `2`
-13. press `u`
+2. verify `Source` monitor readiness, press `Space`, and hear the source
+3. press `c` and wait until the capture lands
+4. press `o`, wait for it to land, and hear the raw capture
+5. press `p` and wait until promotion lands
+6. press `M` once to select `Blend`
+7. press `w`, then wait and listen
+8. press `f`, then wait and listen
+9. press `s`, then wait and listen
+10. press `y`, wait for the scene jump, then press `Y` to restore
+11. open `2` only if you want to inspect the complete commit trail
 
 What this teaches:
 
@@ -358,9 +406,11 @@ What this teaches:
 - audition
 - promote
 - reuse
-- undo
+- monitor handoff
+- live contrast
+- scene restore
 
-That is already enough to understand much more of Riotbox than the tiny first-run loop.
+That is the supported Golden Path including its explicit scene restore.
 
 What this is not:
 
@@ -671,7 +721,9 @@ What this teaches:
 
 ## Recipe 14: Probe The First-Playable Jam Path
 
-Goal: run one CI-safe control-plus-output check for the first source-backed Jam loop without relying on a live audio device.
+Goal: run one CI-safe control-plus-output check for the Golden Path through the
+same RuntimeMix seam used by the live product mixer, without claiming a live
+audio-device or human listening pass.
 
 Run:
 
@@ -681,23 +733,46 @@ just first-playable-jam-probe
 
 Expected result:
 
-- the probe renders a W-30 diagnostic-control baseline and source-backed candidate WAVs from deterministic synthetic material
-- it validates the generated `manifest.json`
-- it generates and validates an app-level observer probe for `space`, `c`, `o`, `p`, and `w`
-- it correlates that generated control evidence with the W-30 output evidence
-- it fails if the output is silent, missing, or collapsed back to the fallback-like source-diff metrics
+- the app-level observer drives `Space`, `c`, `o`, `p`, `M`, `w`, `f`, `s`,
+  `y`, and `Y` through queue / commit, including the immediate monitor commit
+  and the beat / bar / phrase boundaries used by the gestures
+- the companion dense-break live-path pack renders the exact RuntimeMix
+  realtime-simulation seam, rather than substituting a standalone W-30 preview
+  renderer for product-mixer evidence
+- the pack contains non-silent monitor stages for `Source`, `Blend`, and
+  `Riotbox`
+- the performance sequence preserves callback state and records measurable
+  output deltas for the promoted-pad hit (`w`), fill (`f`), slam (`s`), scene
+  jump (`y`), and restore (`Y`)
+- the generated manifest records the route / scene context, validates the WAV
+  artifacts and deltas, and keeps `human_verdict: unverified` and
+  `quality_proof: false`
+- the probe fails when an expected route or gesture render is missing, silent,
+  clipped beyond its bound, or collapsed below the required delta
 
 What this proves:
 
-- the current first-playable path has committed control evidence
-- capture / raw audition / promote / promoted hit intent is present in generated observer evidence
-- the W-30 output seam is source-backed enough to produce measurable candidate audio and diagnostic-control delta
+- the first-playable actions reach the product spine and commit in the intended
+  order
+- the observer proves the typed action family and commit order, while the
+  companion pack proves `Source -> Blend -> Riotbox` and `w/f/s/y/Y` can reach
+  the exact live-mixer render seam with bounded, measurable consequences
+- the machine-readable correlation scope is `action_contract_only`: the two
+  deterministic scenarios intentionally do not claim the same source fixture,
+  transport timeline, Session, or sample-exact observer-to-audio causality
 
 What it does not prove yet:
 
-- full live TUI usability
-- device-level playback on the host
-- finished sampler/sequencer behavior
+- a device-level playback pass on the host
+- sample-exact correlation between the observer journey and the companion
+  dense-break render
+- a human usability or musical-taste pass; `human_verdict` remains `unverified`
+- that the generated dense-break diagnostic source is release-quality music or
+  that every real source will produce the same contrast
+- finished sampler, mixer, or arrangement behavior
+
+The generated dense-break source is QA input only. It is not a fallback that
+Riotbox may play when real source-backed material is unavailable.
 
 ## Planned Recipe: Source Transport Map Capture
 
@@ -910,11 +985,14 @@ So if two runs feel similar:
 - use `Recipe 11` if you want to check whether W-30 capture reuse is source-backed, artifact-backed, or unavailable
 - use `Recipe 12` if you want to understand the new `feral ready` gesture path
 - use `Recipe 13` if you want an offline W-30 source-vs-control proof before judging the live TUI path
-- use `Recipe 14` if you want a CI-safe first-playable control-plus-output probe
+- use `Recipe 14` if you want the first-playable observer path paired with its
+  exact RuntimeMix dense-break output pack
 - use `Recipe 15` if you want a local Feral grid listening pack and need to choose `auto` versus explicit BPM honestly
 - use `Recipe 16` if you want the fastest Jam taste/proof read before trusting
   a scene or lane gesture
 - use capture/reuse instead of only the first fill
-- look at `Log` to understand what actually happened
+- stay on `Jam` while playing; use `Log` when you need the complete action trail
 
-The shell already supports more exploration than the minimal quickstart suggests. These recipes are the best way to get past that first narrow loop.
+The shell already supports more exploration than the bounded Golden Path. These
+recipes are the best way to move from a first playable loop into deliberate
+source, lane, scene, and capture experiments.

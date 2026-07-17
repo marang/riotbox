@@ -41,11 +41,13 @@ fn tr909_source_support_profiles_shape_distinct_drum_voice_balance() {
     assert!(break_delta.rms > 0.002, "break delta {break_delta:?}");
     assert!(drop_delta.rms > 0.002, "drop delta {drop_delta:?}");
     assert!(
-        tr909_low_band_rms(&drop_drive) > tr909_low_band_rms(&break_lift) * 1.03,
+        tr909_low_band_rms(&drop_drive, 44_100, 2)
+            > tr909_low_band_rms(&break_lift, 44_100, 2) * 1.03,
         "drop profile should carry more kick/low pressure"
     );
     assert!(
-        tr909_high_band_proxy_rms(&break_lift) > tr909_high_band_proxy_rms(&steady) * 1.08,
+        tr909_high_band_proxy_rms(&break_lift, 44_100, 2)
+            > tr909_high_band_proxy_rms(&steady, 44_100, 2) * 1.08,
         "break profile should carry more snare/hat energy"
     );
     assert!(drop_metrics.rms > steady_metrics.rms);
@@ -131,12 +133,22 @@ fn tr909_source_support_state(
     }
 }
 
-fn tr909_low_band_rms(samples: &[f32]) -> f32 {
-    signal_metrics(&tr909_one_pole_lowpass(samples, 145.0)).rms
+fn tr909_low_band_rms(samples: &[f32], sample_rate: u32, channel_count: usize) -> f32 {
+    signal_metrics(&tr909_one_pole_lowpass(
+        samples,
+        145.0,
+        sample_rate,
+        channel_count,
+    ))
+    .rms
 }
 
-fn tr909_high_band_proxy_rms(samples: &[f32]) -> f32 {
-    let low = tr909_one_pole_lowpass(samples, 1_800.0);
+fn tr909_high_band_proxy_rms(
+    samples: &[f32],
+    sample_rate: u32,
+    channel_count: usize,
+) -> f32 {
+    let low = tr909_one_pole_lowpass(samples, 1_800.0, sample_rate, channel_count);
     let high = samples
         .iter()
         .zip(low.iter())
@@ -145,16 +157,26 @@ fn tr909_high_band_proxy_rms(samples: &[f32]) -> f32 {
     signal_metrics(&high).rms
 }
 
-fn tr909_one_pole_lowpass(samples: &[f32], cutoff_hz: f32) -> Vec<f32> {
+fn tr909_one_pole_lowpass(
+    samples: &[f32],
+    cutoff_hz: f32,
+    sample_rate: u32,
+    channel_count: usize,
+) -> Vec<f32> {
+    if sample_rate == 0 || channel_count == 0 {
+        return vec![0.0; samples.len()];
+    }
     let rc = 1.0 / (std::f32::consts::TAU * cutoff_hz.max(1.0));
-    let dt = 1.0 / 44_100.0;
+    let dt = 1.0 / sample_rate as f32;
     let alpha = dt / (rc + dt);
-    let mut previous = 0.0;
+    let mut previous = vec![0.0; channel_count];
     samples
         .iter()
-        .map(|sample| {
-            previous += alpha * (sample - previous);
-            previous
+        .enumerate()
+        .map(|(index, sample)| {
+            let channel = index % channel_count;
+            previous[channel] += alpha * (sample - previous[channel]);
+            previous[channel]
         })
         .collect()
 }

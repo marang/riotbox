@@ -127,6 +127,7 @@ fn plan_executor_applies_supported_structural_actions_in_commit_order() {
 fn source_phrase_plan(source_id: &str) -> Mc202SourcePhrasePlanState {
     Mc202SourcePhrasePlanState {
         source_id: SourceId::from(source_id),
+        source_section_id: None,
         phrase_slot: Mc202SourcePhraseSlotState {
             phrase_index: 1,
             start_bar: 0,

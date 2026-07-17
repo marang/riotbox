@@ -42,3 +42,111 @@ fn scene_select_unavailable_status(shell: &JamShellState) -> &'static str {
         }
     }
 }
+
+fn queue_and_commit_source_monitor_mode(
+    shell: &mut JamShellState,
+    mode: SourceMonitorMode,
+    requested_at: u64,
+) -> Vec<CommittedActionRef> {
+    match shell.app.queue_source_monitor_mode(mode, requested_at) {
+        crate::jam_app::QueueControlResult::Enqueued => {
+            let transport = shell.app.runtime.transport.clone();
+            let committed = shell.app.commit_ready_actions(
+                riotbox_core::transport::CommitBoundaryState {
+                    kind: riotbox_core::action::CommitBoundary::Immediate,
+                    beat_index: transport.beat_index,
+                    bar_index: transport.bar_index,
+                    phrase_index: transport.phrase_index,
+                    scene_id: transport.current_scene,
+                },
+                requested_at,
+            );
+            shell.set_error_status(
+                source_monitor_commit_status(shell, &committed)
+                    .unwrap_or_else(|| format!("monitor {mode} queued; immediate commit pending")),
+            );
+            committed
+        }
+        crate::jam_app::QueueControlResult::AlreadyPending => {
+            shell.set_error_status("source monitor change already queued");
+            Vec::new()
+        }
+        crate::jam_app::QueueControlResult::AlreadyInState => {
+            shell.set_error_status(format!("monitor already {mode}"));
+            Vec::new()
+        }
+    }
+}
+
+fn source_monitor_commit_status(
+    shell: &JamShellState,
+    committed: &[riotbox_core::queue::CommittedActionRef],
+) -> Option<String> {
+    let monitor_landed = committed.iter().any(|committed| {
+        shell
+            .app
+            .queue
+            .history_action(committed.action_id)
+            .is_some_and(|action| action.command == ActionCommand::SourceMonitorSetMode)
+    });
+
+    monitor_landed.then(|| {
+        format!(
+            "monitor {} landed | route {}",
+            shell.app.runtime_view.source_monitor_mode,
+            shell.app.runtime_view.source_monitor_audio_route
+        )
+    })
+}
+
+fn record_key_outcome_then_immediate_commit(
+    observer: &mut UserSessionObserver,
+    timestamp_ms: u64,
+    key_label: &str,
+    outcome: ShellKeyOutcome,
+    shell: &JamShellState,
+    immediate_committed: &[CommittedActionRef],
+) -> io::Result<()> {
+    observer.record_key_event(
+        timestamp_ms,
+        key_label,
+        shell_key_outcome_label(outcome),
+        shell,
+    )?;
+
+    if !immediate_committed.is_empty() {
+        observer.record_transport_commit(timestamp_ms, immediate_committed, shell)?;
+    }
+
+    Ok(())
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum AudioRuntimeRefreshAction {
+    RetryUnavailable,
+    Restart,
+}
+
+fn replace_app_state_after_refresh(
+    shell: &mut JamShellState,
+    mut refreshed: JamAppState,
+    has_audio_runtime: bool,
+) -> AudioRuntimeRefreshAction {
+    if !has_audio_runtime
+        && let Some(faulted_health) = shell
+            .app
+            .runtime
+            .audio
+            .as_ref()
+            .filter(|health| health.lifecycle == AudioRuntimeLifecycle::Faulted)
+            .cloned()
+    {
+        refreshed.set_audio_health(faulted_health);
+    }
+    shell.replace_app_state(refreshed);
+    if has_audio_runtime {
+        AudioRuntimeRefreshAction::Restart
+    } else {
+        AudioRuntimeRefreshAction::RetryUnavailable
+    }
+}

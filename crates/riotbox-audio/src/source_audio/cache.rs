@@ -2,6 +2,7 @@ use std::{
     error::Error,
     fmt, fs,
     path::{Path, PathBuf},
+    sync::Arc,
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -9,7 +10,7 @@ pub struct SourceAudioCache {
     pub path: PathBuf,
     pub sample_rate: u32,
     pub channel_count: u16,
-    samples: Vec<f32>,
+    samples: Arc<Vec<f32>>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -52,7 +53,7 @@ impl SourceAudioCache {
             path: path.into(),
             sample_rate,
             channel_count,
-            samples,
+            samples: Arc::new(samples),
         })
     }
 
@@ -65,7 +66,7 @@ impl SourceAudioCache {
             path: path.to_path_buf(),
             sample_rate: decoded.sample_rate,
             channel_count: decoded.channel_count,
-            samples: decoded.samples,
+            samples: Arc::new(decoded.samples),
         })
     }
 
@@ -79,6 +80,10 @@ impl SourceAudioCache {
 
     pub fn interleaved_samples(&self) -> &[f32] {
         &self.samples
+    }
+
+    pub(crate) fn shared_interleaved_samples(&self) -> Arc<Vec<f32>> {
+        Arc::clone(&self.samples)
     }
 
     pub fn window_by_seconds(

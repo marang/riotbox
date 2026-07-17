@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "pack_id": "product-primitive-contract-fixture",
+  "result": "pass",
+  "quality_proof": false,
+  "artifacts": [
+    {
+      "role": "committed_fill",
+      "kind": "wav",
+      "path": "fill.wav",
+      "metrics_path": null,
+      "case_id": "fill"
+    }
+  ],
+  "gesture_transitions": [
+    {
+      "command": "tr909.fill_next",
+      "actor": "performer",
+      "status": "committed",
+      "action_id": 12,
+      "boundary": "Bar",
+      "candidate_artifact": "fill.wav",
+      "control_values": {
+        "tr909_mode_after": "fill",
+        "tr909_drum_bus_level_after": 0.8,
+        "tr909_slam_after": 0.66,
+        "tr909_slam_enabled_after": false
+      }
+    }
+  ],
+  "pattern_provenance": {
+    "tr909_fill": {
+      "pattern_origin": "primitive_renderer",
+      "primitive_schema": "riotbox.tr909_fill_recipe.v1",
+      "recipe_id": "phrase_drive_break_cut_stomp_v1",
+      "source_evidence_role": "availability_timing_and_pressure_modulation",
+      "source_evidence_selects_pattern": false,
+      "source_evidence_modulates_output": true,
+      "selection_inputs": {
+        "mode": "fill",
+        "routing": "drum_bus_support",
+        "pattern_adoption": "mainline_drive",
+        "phrase_variation": "phrase_drive"
+      },
+      "source_modulation": {
+        "schema": "riotbox.tr909_fill_source_modulation.v2",
+        "source_feature_path": "session.runtime_state.lane_state.mc202.source_phrase_plan.source_expression.transient_backbeat",
+        "source_feature_value": 0.75,
+        "source_timing_path": "source_graph.timing.primary_hypothesis.transport_bar_grid_anchor.beat_cursor",
+        "derived_policy": {
+          "tr909_drum_level": 0.8,
+          "tr909_slam_floor": 0.66,
+          "source_bar_grid_anchor_beat_cursor": 3
+        },
+        "resolved_render_inputs": {
+          "drum_bus_level": 0.8,
+          "slam_intensity": 0.66,
+          "slam_enabled": false,
+          "source_bar_grid_anchor_position_beats": 3.0
+        },
+        "affected_runtime_parameters": [
+          "runtime_mix.tr909.drum_bus_level",
+          "runtime_mix.tr909.slam_intensity",
+          "runtime_mix.tr909.source_bar_grid_phase"
+        ],
+        "pattern_selection_changed": false
+      },
+      "activation_ref": "/gesture_transitions/0",
+      "affected_artifacts": [
+        "fill.wav"
+      ]
+    }
+  },
+  "primitive_renderer_boundary": {
+    "schema": "riotbox.primitive_renderer_boundary.v2",
+    "evidence_role": "product_primitive_vocabulary",
+    "product_output_allowed": true,
+    "quality_proof": false,
+    "demo_readiness": "unverified",
+    "promotion_blocked": true,
+    "promotion_target": "source_derived_musical_intelligence",
+    "promotion_target_scope": "recipe_and_pattern_selection",
+    "recipe_derivation_claimed": false,
+    "pattern_selection_claimed": false,
+    "source_output_modulation_claimed": true,
+    "source_failure_fallback": false,
+    "activation": {
+      "kind": "explicit_committed_performer_gesture",
+      "references": [
+        "/gesture_transitions/0"
+      ]
+    },
+    "affected_paths": [
+      "pattern_provenance.tr909_fill.pattern_origin"
+    ],
+    "affected_runtime_paths": [
+      "runtime_mix.tr909.fill_recipe",
+      "runtime_mix.tr909.drum_bus_level",
+      "runtime_mix.tr909.slam_intensity",
+      "runtime_mix.tr909.source_bar_grid_phase",
+      "runtime_mix.non_tr909_bed.fill_focus",
+      "runtime_mix.source_monitor.blend_fill_focus"
+    ],
+    "affected_artifacts": [
+      "fill.wav"
+    ],
+    "musician_message": "Typed performer-owned recipe with explicit source pressure modulation and focus paths; not source-selected pattern intelligence or fallback output."
+  }
+}

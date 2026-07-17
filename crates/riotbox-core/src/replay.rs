@@ -25,8 +25,8 @@ pub use plan::{
     select_replay_snapshot_anchor,
 };
 pub use scene_movement::{
-    apply_graph_aware_replay_plan_to_session, derive_scene_movement_for_replay_entry,
-    derive_scene_movement_state,
+    apply_graph_aware_replay_plan_to_session, apply_scene_audio_projection_transition,
+    derive_scene_movement_for_replay_entry, derive_scene_movement_state,
 };
 pub use summary::{
     LatestSnapshotReplayConvergenceSummary, ReplayTargetDryRunSummary, SnapshotPayloadReadiness,

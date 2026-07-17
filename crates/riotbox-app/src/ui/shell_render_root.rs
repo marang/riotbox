@@ -22,6 +22,21 @@ impl JamShellState {
     }
 
     pub fn handle_key_code(&mut self, code: KeyCode) -> ShellKeyOutcome {
+        if self.show_help {
+            return match code {
+                KeyCode::Char('q') => ShellKeyOutcome::Quit,
+                KeyCode::Esc | KeyCode::Char('?') | KeyCode::Char('h') => {
+                    self.show_help = false;
+                    self.status_message = "help overlay closed".into();
+                    ShellKeyOutcome::Continue
+                }
+                _ => {
+                    self.status_message = "help open | Esc, ? or h closes it".into();
+                    ShellKeyOutcome::Continue
+                }
+            };
+        }
+
         match code {
             KeyCode::Esc | KeyCode::Char('q') => ShellKeyOutcome::Quit,
             KeyCode::Tab | KeyCode::BackTab => {
@@ -53,13 +68,14 @@ impl JamShellState {
                 self.status_message = "transport toggle requested".into();
                 ShellKeyOutcome::ToggleTransport
             }
+            KeyCode::Char('M') => {
+                let mode = self.app.session.runtime_state.source_monitor.mode.next();
+                self.status_message = format!("queue monitor {mode} for immediate commit");
+                ShellKeyOutcome::QueueSourceMonitorMode(mode)
+            }
             KeyCode::Char('?') | KeyCode::Char('h') => {
-                self.show_help = !self.show_help;
-                self.status_message = if self.show_help {
-                    "help overlay opened".into()
-                } else {
-                    "help overlay closed".into()
-                };
+                self.show_help = true;
+                self.status_message = "help overlay opened".into();
                 ShellKeyOutcome::Continue
             }
             KeyCode::Char('i') => {

@@ -245,7 +245,10 @@ Session v1 persisted JSON. Current examples include `leader`, `follower`,
 bass / answer / support behavior that was derived from a trusted Source Graph
 phrase slot. It records the source id, source phrase slot, role, bounded
 sixteen-step rhythm/interval cells, note budget, touch, confidence, and any
-explicit fallback reason. It also records the selected source-phrase candidate
+explicit fallback reason. When known, typed `source_section_id` records the
+section whose features actually shaped the phrase decision; it is not inferred
+later from a provenance string or the current transport bar. Older plans may
+omit it. It also records the selected source-phrase candidate
 family, generated candidate count, rejected candidate count, and provenance refs
 for the source features / candidate rejections that led to the committed plan.
 Candidate scorecards record the winning and losing families with total score,
@@ -319,6 +322,17 @@ The migration boundary is documented in
 - active scene
 - scene list or scene references
 - restore pointers
+- latest movement event for observer and source-anchor truth
+- active and restore audio-projection movements paired with their scene
+  pointers
+
+The latest movement and active audio projection are intentionally separate.
+`scene.restore` remains the latest committed transition for replay/observer and
+Source Monitor repositioning, while its lane projection returns to the state
+that belonged to the restored scene. A restore must not persist the newly
+derived inverse movement as replacement musical state. Older sessions default
+the projection fields to absent and may recover a prior launch projection from
+`last_movement`; a prior restore movement is never treated as that fallback.
 
 ### 8.6 Lock state
 
@@ -334,12 +348,39 @@ Current MVP use:
 - MC-202 commit-time lane snapshots keyed by action id
 - previous role, phrase reference, phrase variant, source phrase plan, and
   touch
+- Source Monitor commit-time snapshots keyed by action id, storing the previous
+  typed monitor mode; older sessions default this snapshot list to empty
+- TR-909 Fill commit-time snapshots keyed by action id, storing the previous
+  committed `last_fill_bar`; these snapshots never persist or resurrect the
+  queue-only Fill pending state
 
 Rules:
 
 - snapshots must be explicit session state, not callback-local memory
 - snapshots are only for undo restore, not a second arrangement or phrase system
 - undo must refresh the typed render projection after applying a snapshot
+- only commands with implemented typed undo semantics may persist an `undone`
+  action beside its historical commit record; restore rejects unsupported
+  status mutation instead of treating every `undone` marker as invertible
+- each new `undo.last` marker persists a typed `target_action_id` and its own
+  Immediate commit record; post-undo snapshot safety is derived from that
+  cursor-local relation, not from result text
+- typed marker validation also requires a successful non-undoable marker, a
+  successful `Undoable` latest-active target, one marker per target, and one
+  structured commit record per side of the relation
+- boundary commit sequences continue from the persisted maximum across queue
+  drains, structural Undo, and direct side-effect commits at the same transport
+  point
+- on load, a committed typed action without an accepted result, exactly one
+  commit record, or its pre-state snapshot becomes explicitly `NotUndoable`;
+  a legacy undone Source Monitor or TR-909 Fill action without a valid typed
+  marker invalidates the Session
+- typed restore domains prevent stale snapshot resurrection across newer
+  overlapping mutations. `source_timing.revert_grid` is an MC-202-domain
+  barrier because it clears source phrase plans whose timing trust was removed;
+  unrelated newer mutations do not block a supported Undo target
+- action ids are unique across committed, pending-derived, and structural undo
+  actions; duplicate persisted ids invalidate the session
 
 ### 8.8 Export receipts
 

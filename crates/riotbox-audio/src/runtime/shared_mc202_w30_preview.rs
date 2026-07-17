@@ -12,10 +12,13 @@ impl SharedTr909RenderState {
             phrase_variation: AtomicU32::new(0),
             takeover_profile: AtomicU32::new(0),
             drum_bus_level_bits: AtomicU32::new(0),
+            slam_enabled: AtomicBool::new(false),
             slam_intensity_bits: AtomicU32::new(0),
             is_transport_running: AtomicBool::new(false),
             tempo_bpm_bits: AtomicU32::new(0),
             position_beats_bits: AtomicU64::new(0),
+            source_bar_grid_anchor_present: AtomicBool::new(false),
+            source_bar_grid_anchor_position_beats_bits: AtomicU64::new(0),
         };
         shared.update(render_state);
         shared
@@ -49,6 +52,8 @@ impl SharedTr909RenderState {
         );
         self.drum_bus_level_bits
             .store(render_state.drum_bus_level.to_bits(), Ordering::Relaxed);
+        self.slam_enabled
+            .store(render_state.slam_enabled, Ordering::Relaxed);
         self.slam_intensity_bits
             .store(render_state.slam_intensity.to_bits(), Ordering::Relaxed);
         self.is_transport_running
@@ -57,6 +62,17 @@ impl SharedTr909RenderState {
             .store(render_state.tempo_bpm.to_bits(), Ordering::Relaxed);
         self.position_beats_bits
             .store(render_state.position_beats.to_bits(), Ordering::Relaxed);
+        self.source_bar_grid_anchor_present.store(
+            render_state.source_bar_grid_anchor_position_beats.is_some(),
+            Ordering::Relaxed,
+        );
+        self.source_bar_grid_anchor_position_beats_bits.store(
+            render_state
+                .source_bar_grid_anchor_position_beats
+                .unwrap_or(0.0)
+                .to_bits(),
+            Ordering::Relaxed,
+        );
         finish_coherent_snapshot_update(&self.revision);
     }
 
@@ -91,10 +107,20 @@ impl SharedTr909RenderState {
                 self.takeover_profile.load(Ordering::Relaxed),
             ),
             drum_bus_level: f32::from_bits(self.drum_bus_level_bits.load(Ordering::Relaxed)),
+            slam_enabled: self.slam_enabled.load(Ordering::Relaxed),
             slam_intensity: f32::from_bits(self.slam_intensity_bits.load(Ordering::Relaxed)),
             is_transport_running: self.is_transport_running.load(Ordering::Relaxed),
             tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::Relaxed)),
             position_beats: f64::from_bits(self.position_beats_bits.load(Ordering::Relaxed)),
+            source_bar_grid_anchor_position_beats: self
+                .source_bar_grid_anchor_present
+                .load(Ordering::Relaxed)
+                .then(|| {
+                    f64::from_bits(
+                        self.source_bar_grid_anchor_position_beats_bits
+                            .load(Ordering::Relaxed),
+                    )
+                }),
         }
     }
 }

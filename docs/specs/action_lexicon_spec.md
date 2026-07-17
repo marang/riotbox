@@ -63,6 +63,10 @@ commits, the session `ActionLog` records a structured commit record keyed by
 action id with the musical boundary, commit sequence within that boundary, and
 commit timestamp.
 
+Action ids have one allocator across queued actions and directly committed
+control markers. Persisted action ids must be unique; restore rejects duplicate
+ids instead of allowing commit/replay lookup to select an arbitrary action.
+
 ### 3.1 Actor types
 
 - `user`
@@ -78,6 +82,11 @@ commit timestamp.
 - `rejected`
 - `undone`
 - `failed`
+
+`committed` records boundary/history truth. If a product-side precondition is
+resolved only at that boundary, the durable action may remain `committed` with
+`result.accepted: false`; in that case its side effect must be an atomic no-op,
+it must not create an undoable state delta, and executable replay omits it.
 
 ---
 
@@ -148,7 +157,9 @@ Source monitor and timing-trust actions:
 - `source_timing.revert_grid`
 
 `source_monitor.set_mode` changes the persisted listening mode between `source`,
-`blend`, and `riotbox`.
+`blend`, and `riotbox`. Before the side effect lands, the session stores a typed
+snapshot of the previous monitor mode keyed by action id; `undo.last` consumes
+that snapshot and refreshes the derived audio route.
 
 `source_timing.confirm_grid` records that the user accepted the currently
 selected timing hypothesis after source audition. It uses `session` scope,
@@ -920,6 +931,39 @@ Everything else may exist later, but this set should be enough to support the MV
 ### 9.1 Undoable by default
 
 All state-changing committed actions should be undoable unless explicitly marked otherwise.
+
+Current implementation is deliberately stricter than that product goal:
+
+- `ActionDraft` advertises `Undoable` only when the command has an implemented
+  typed pre-state snapshot and restoration path. Other commands are explicitly
+  `NotUndoable` until their inverse exists.
+- `undo.last` selects the latest committed, accepted action with that typed
+  contract. A newer action in an unrelated typed restore domain does not
+  falsely block restoration of an earlier supported action, but a newer action
+  that mutates the same domain is an explicit conflict barrier. For example,
+  `source_timing.revert_grid` blocks restoration of an older MC-202 source plan
+  whose timing trust it revoked.
+- the committed `undo.last` marker carries
+  `ActionParams::Undo { target_action_id }`, is itself non-undoable, and owns an
+  Immediate `ActionCommitRecord`. The marker never relies on result prose to
+  identify its target.
+- a typed marker is valid only when it successfully targets the latest still
+  active, accepted, typed-undoable action. The marker and target must carry
+  their truthful opposing undo policies, each target may be consumed once,
+  and both actions must own their structured commit evidence.
+- commit sequence allocation is Session-boundary-wide, not local to one queue
+  drain. Separate normal, structural Undo, and side-effect commit calls at an
+  unchanged transport boundary continue from the persisted maximum sequence.
+- a loaded committed action whose accepted result, unique commit record, or
+  typed pre-state snapshot is missing is normalized to `NotUndoable`. A
+  malformed newer mutation still blocks older restoration in the same typed
+  domain rather than letting Undo resurrect stale state.
+  Historical undone Source Monitor or TR-909 Fill actions without a trusted
+  typed marker are rejected because their old rollback behavior is not
+  replay-convergent.
+- `tr909.fill_next` stores only the previous committed Fill performance window
+  (`last_fill_bar`). Undo must not recreate the already-consumed queue-only
+  pending Fill state.
 
 ### 9.2 Undo payload requirements
 

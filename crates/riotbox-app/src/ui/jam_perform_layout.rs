@@ -40,7 +40,11 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         )),
         Line::from(scene_restore_contrast_line(shell)),
     ])
-    .block(Block::default().title("Now").borders(Borders::ALL))
+    .block(
+        Block::default()
+            .title(format!("Now | {}", source_monitor_perform_compact(shell)))
+            .borders(Borders::ALL),
+    )
     .wrap(Wrap { trim: true });
 
     let next = Paragraph::new(next_panel_lines(shell))
@@ -146,27 +150,15 @@ fn render_perform_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) 
 }
 
 fn render_first_run_onramp_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
-    let lines = match first_run_onramp_stage(shell) {
-        Some(FirstRunOnrampStage::Start) => vec![
-            Line::from("1 [Space] start transport"),
-            Line::from("2 [f] queue one first fill"),
-            Line::from("3 [2] watch Log when it lands on the next bar"),
-            source_timing_help_line(shell),
-        ],
-        Some(FirstRunOnrampStage::QueuedFirstMove) => vec![
-            Line::from("Your first move is armed."),
-            Line::from("Let transport cross the next bar so the fill can actually land."),
-            Line::from("Then [2] confirm it in Log and decide: [c] capture it or [u] undo it."),
-            source_timing_help_line(shell),
-        ],
-        Some(FirstRunOnrampStage::FirstResult) => vec![
-            Line::from(format!("What changed: {}", latest_landed_text(shell))),
-            Line::from("What next: [c] capture it or [u] undo it if it missed."),
-            Line::from(first_result_next_move_line(shell)),
-            source_timing_help_line(shell),
-        ],
-        None => Vec::new(),
+    let guidance = if area.width < 100 || area.height < 6 {
+        first_run_onramp_compact_lines(shell)
+    } else {
+        first_run_onramp_lines(shell)
     };
+    let lines = guidance
+        .into_iter()
+        .map(Line::from)
+        .collect::<Vec<_>>();
 
     let paragraph = Paragraph::new(lines)
         .block(Block::default().title("Start Here").borders(Borders::ALL))
@@ -175,25 +167,14 @@ fn render_first_run_onramp_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShe
     frame.render_widget(paragraph, area);
 }
 
-fn first_result_next_move_line(shell: &JamShellState) -> &'static str {
-    match shell.app.jam_view.scene.arrangement_contract.readiness {
-        ArrangementSceneContractReadinessView::Ready => {
-            "Then try one more move: [y] jump or [g] follow."
-        }
-        ArrangementSceneContractReadinessView::NeedsTimingConfirmation => {
-            "Then try [g] follow or [f] fill; use [y] after grid trust."
-        }
-        ArrangementSceneContractReadinessView::FallbackTimingOnly => {
-            "Then try [g] follow or [f] fill; scene timing is fallback."
-        }
-        ArrangementSceneContractReadinessView::NeedsSceneMaterial => {
-            "Then try [g] follow or [f] fill; scene jump waits for material."
-        }
-        ArrangementSceneContractReadinessView::NeedsTimingEvidence
-        | ArrangementSceneContractReadinessView::MissingSourceGraph => {
-            "Then try [g] follow or [f] fill; scene timing is unknown."
-        }
-    }
+fn source_monitor_perform_compact(shell: &JamShellState) -> String {
+    let mode = shell.app.session.runtime_state.source_monitor.mode;
+    format!(
+        "M {}>{}/{}",
+        source_monitor_mode_compact_label(mode),
+        source_monitor_mode_compact_label(mode.next()),
+        source_monitor_route_compact_label(shell)
+    )
 }
 
 fn render_action_rows(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {

@@ -293,6 +293,7 @@ where
     let mut transport_state = TransportTimingCallbackState::default();
     let mut w30_preview_state = W30PreviewCallbackState::default();
     let mut w30_resample_state = W30ResampleTapCallbackState::default();
+    let mut source_monitor_callback_state = SourceMonitorCallbackState::default();
     let sample_rate = config.sample_rate;
     let channel_count = usize::from(config.channels.max(1));
     let mut mix_buffer = vec![0.0; callback_scratch_sample_count(config, channel_count)];
@@ -375,11 +376,13 @@ where
                     resample_state: &mut w30_resample_state,
                 },
             );
-            apply_source_monitor_policy(
+            apply_source_monitor_policy_with_state_and_fill_focus(
                 mix_buffer,
                 sample_rate,
                 channel_count,
                 &source_monitor_state,
+                FillFocusRenderState::from_tr909(&tr909_render_state),
+                &mut source_monitor_callback_state,
             );
             apply_master_bus_soft_limiter(mix_buffer);
             for (output, sample) in data.iter_mut().zip(mix_buffer.iter().copied()) {
@@ -483,10 +486,12 @@ pub(super) struct RealtimeTr909RenderState {
     pub(super) phrase_variation: Option<Tr909PhraseVariation>,
     pub(super) takeover_profile: Option<Tr909TakeoverRenderProfile>,
     pub(super) drum_bus_level: f32,
+    pub(super) slam_enabled: bool,
     pub(super) slam_intensity: f32,
     pub(super) is_transport_running: bool,
     pub(super) tempo_bpm: f32,
     pub(super) position_beats: f64,
+    pub(super) source_bar_grid_anchor_position_beats: Option<f64>,
 }
 
 pub(super) struct SharedTr909RenderState {
@@ -499,8 +504,11 @@ pub(super) struct SharedTr909RenderState {
     pub(super) phrase_variation: AtomicU32,
     pub(super) takeover_profile: AtomicU32,
     pub(super) drum_bus_level_bits: AtomicU32,
+    pub(super) slam_enabled: AtomicBool,
     pub(super) slam_intensity_bits: AtomicU32,
     pub(super) is_transport_running: AtomicBool,
     pub(super) tempo_bpm_bits: AtomicU32,
     pub(super) position_beats_bits: AtomicU64,
+    pub(super) source_bar_grid_anchor_present: AtomicBool,
+    pub(super) source_bar_grid_anchor_position_beats_bits: AtomicU64,
 }

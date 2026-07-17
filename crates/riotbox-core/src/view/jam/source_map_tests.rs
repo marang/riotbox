@@ -2,9 +2,9 @@ use crate::{
     action::CaptureLengthIntent,
     ids::{ActionId, SectionId, SourceId},
     queue::ActionQueue,
-    session::{SessionFile, SourceTimingGridConfirmationState},
+    session::{CaptureSourceWindow, SessionFile, SourceTimingGridConfirmationState},
     source_graph::{
-        BarSpan, DecodeProfile, EnergyClass, GraphProvenance, MeterHint, Section,
+        BarSpan, BeatPoint, DecodeProfile, EnergyClass, GraphProvenance, MeterHint, Section,
         SectionLabelHint, SourceDescriptor, SourceGraph, SourceMapBucket, SourceMapPeakClass,
         TimingDegradedPolicy, TimingHypothesis, TimingHypothesisKind, TimingQuality,
     },
@@ -163,6 +163,125 @@ fn source_map_capture_range_starts_at_next_bar_boundary() {
         vm.source.source_map.capture_range_row,
         "................[=======]......."
     );
+}
+
+#[test]
+fn source_map_capture_preview_rounds_to_selected_nonzero_downbeat_phase() {
+    let mut graph = source_map_test_graph(TimingDegradedPolicy::Locked, TimingQuality::High);
+    let primary = graph
+        .timing
+        .hypotheses
+        .first_mut()
+        .expect("primary timing hypothesis");
+    primary.beat_grid = (4..=19)
+        .map(|beat_index| BeatPoint {
+            beat_index,
+            time_seconds: (beat_index - 4) as f32 * 0.5,
+            confidence: 0.95,
+        })
+        .collect();
+    primary.bar_grid = (1..=4)
+        .map(|bar_index| BarSpan {
+            bar_index,
+            start_seconds: (bar_index - 1) as f32 * 2.0,
+            end_seconds: bar_index as f32 * 2.0,
+            downbeat_confidence: 0.95,
+            phrase_index: Some(1),
+        })
+        .collect();
+    let mut session = SessionFile::new("session-1", "0.1.0", "2026-05-23T00:00:00Z");
+    session.runtime_state.transport.position_beats = 4.0;
+    session.runtime_state.capture.length_intent = CaptureLengthIntent::OneBar;
+
+    assert_eq!(source_map_capture_range_seconds(&graph, &session), Some((2.0, 4.0)));
+}
+
+#[test]
+fn source_map_capture_preview_matches_capture_window_on_one_based_preferred_grid() {
+    let mut graph = source_map_test_graph(TimingDegradedPolicy::Locked, TimingQuality::High);
+    graph.source.duration_seconds = 12.0;
+    graph.timing.beat_grid = vec![
+        BeatPoint {
+            beat_index: 16,
+            time_seconds: 2.0,
+            confidence: 0.9,
+        },
+        BeatPoint {
+            beat_index: 17,
+            time_seconds: 2.5,
+            confidence: 0.9,
+        },
+        BeatPoint {
+            beat_index: 18,
+            time_seconds: 3.0,
+            confidence: 0.9,
+        },
+    ];
+    let primary = graph
+        .timing
+        .hypotheses
+        .first_mut()
+        .expect("primary timing hypothesis");
+    primary.beat_grid = vec![
+        BeatPoint {
+            beat_index: 16,
+            time_seconds: 7.5,
+            confidence: 0.9,
+        },
+        BeatPoint {
+            beat_index: 17,
+            time_seconds: 8.0,
+            confidence: 0.9,
+        },
+        BeatPoint {
+            beat_index: 18,
+            time_seconds: 8.5,
+            confidence: 0.9,
+        },
+    ];
+    let mut session = SessionFile::new("session-1", "0.1.0", "2026-05-23T00:00:00Z");
+    session.runtime_state.transport.position_beats = 15.0;
+    session.runtime_state.capture.length_intent = CaptureLengthIntent::OneBeat;
+    let capture_window = CaptureSourceWindow {
+        source_id: graph.source.source_id.clone(),
+        start_seconds: 8.0,
+        end_seconds: 8.5,
+        start_frame: 384_000,
+        end_frame: 408_000,
+    };
+
+    let preview_range = source_map_capture_range_seconds(&graph, &session);
+
+    assert_eq!(
+        preview_range,
+        Some((capture_window.start_seconds, capture_window.end_seconds))
+    );
+}
+
+#[test]
+fn source_map_playhead_and_region_follow_selected_primary_timing() {
+    let mut graph = source_map_test_graph(TimingDegradedPolicy::Locked, TimingQuality::High);
+    graph.timing.bpm_estimate = Some(60.0);
+    let primary = graph
+        .timing
+        .hypotheses
+        .first_mut()
+        .expect("primary timing hypothesis");
+    primary.bpm = 120.0;
+    primary.beat_grid = (1..=17)
+        .map(|beat_index| BeatPoint {
+            beat_index,
+            time_seconds: (beat_index - 1) as f32 * 0.5,
+            confidence: 0.9,
+        })
+        .collect();
+    let mut session = SessionFile::new("session-1", "0.1.0", "2026-05-23T00:00:00Z");
+    session.runtime_state.transport.position_beats = 8.0;
+
+    let vm = JamViewModel::build(&session, &ActionQueue::new(), Some(&graph));
+
+    assert_eq!(vm.source.source_map.playhead_column, Some(16));
+    assert_eq!(vm.source.source_map.current_region_label, "now bar 3 | drop");
 }
 
 #[test]

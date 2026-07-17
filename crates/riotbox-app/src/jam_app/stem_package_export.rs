@@ -11,9 +11,8 @@ use riotbox_core::{
     ids::ActionId,
     queue::QueueEnqueueResult,
     session::{
-        ActionCommitRecord, ExportArtifactFallbackComparisonEvidence,
-        ExportArtifactFallbackComparisonKind, ExportArtifactRole, ExportArtifactSourceGraphRef,
-        ExportReceiptState,
+        ExportArtifactFallbackComparisonEvidence, ExportArtifactFallbackComparisonKind,
+        ExportArtifactRole, ExportArtifactSourceGraphRef, ExportReceiptState,
     },
     source_graph::SourceGraphVersion,
     transport::CommitBoundaryState,
@@ -245,7 +244,7 @@ impl JamAppState {
             phrase_index: self.runtime.transport.phrase_index,
             scene_id: self.runtime.transport.current_scene.clone(),
         };
-        let committed_ref = self
+        let mut committed_ref = self
             .queue
             .commit_pending_after_side_effect(
                 action_id,
@@ -269,17 +268,7 @@ impl JamAppState {
                 ))
             })?;
 
-        self.session.action_log.actions.push(action);
-        self.session
-            .action_log
-            .commit_records
-            .push(ActionCommitRecord {
-                action_id,
-                boundary: committed_ref.boundary,
-                commit_sequence: committed_ref.commit_sequence,
-                committed_at: requested_at,
-                mc202_source_phrase_plan: None,
-            });
+        self.record_committed_action(action, &mut committed_ref, requested_at);
         self.session.export_receipts.push(receipt);
         update_logged_action_result(&mut self.session, action_id, result_summary);
         self.runtime.last_commit_boundary = Some(boundary);

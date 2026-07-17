@@ -42,9 +42,83 @@ fn committed_tr909_fill_and_reinforce_write_log_results() {
 }
 
 #[test]
+fn fill_owns_only_its_commit_bar_then_slam_articulates_break_reinforcement() {
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session.runtime_state.lane_state.tr909.reinforcement_mode =
+        Some(Tr909ReinforcementModeState::BreakReinforce);
+    session.runtime_state.lane_state.tr909.pattern_ref = Some("reinforce-scene-1".into());
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    let scene = Some(SceneId::from("scene-1"));
+
+    state.update_transport_clock(TransportClockState {
+        is_playing: true,
+        position_beats: 12.0,
+        beat_index: 12,
+        bar_index: 4,
+        phrase_index: 1,
+        current_scene: scene.clone(),
+    });
+    state.queue_tr909_fill(300);
+    let fill = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Bar,
+            beat_index: 12,
+            bar_index: 4,
+            phrase_index: 1,
+            scene_id: scene.clone(),
+        },
+        400,
+    );
+
+    assert_eq!(fill.len(), 1);
+    assert_eq!(state.runtime.tr909_render.mode, Tr909RenderMode::Fill);
+    assert_eq!(
+        state.session.runtime_state.lane_state.tr909.reinforcement_mode,
+        Some(Tr909ReinforcementModeState::BreakReinforce)
+    );
+
+    state.update_transport_clock(TransportClockState {
+        is_playing: true,
+        position_beats: 16.0,
+        beat_index: 16,
+        bar_index: 5,
+        phrase_index: 2,
+        current_scene: scene.clone(),
+    });
+    assert_eq!(
+        state.runtime.tr909_render.mode,
+        Tr909RenderMode::BreakReinforce
+    );
+    assert!(!state.runtime.tr909_render.slam_enabled);
+
+    assert!(state.queue_tr909_slam_toggle(500));
+    let slam = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Beat,
+            beat_index: 16,
+            bar_index: 5,
+            phrase_index: 2,
+            scene_id: scene,
+        },
+        600,
+    );
+
+    assert_eq!(slam.len(), 1);
+    assert_eq!(
+        state.runtime.tr909_render.mode,
+        Tr909RenderMode::BreakReinforce
+    );
+    assert!(state.runtime.tr909_render.slam_enabled);
+    assert!(state.runtime.tr909_render.slam_intensity >= 0.85);
+}
+
+#[test]
 fn committed_tr909_takeover_and_release_update_lane_state() {
     let graph = sample_graph();
-    let session = sample_session(&graph);
+    let mut session = sample_session(&graph);
+    // Controlled takeover's lift case is phrase 1, not bar 8 / phrase 2.
+    session.runtime_state.transport.position_beats = 15.0;
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(

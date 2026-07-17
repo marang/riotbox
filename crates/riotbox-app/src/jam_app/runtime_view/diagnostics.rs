@@ -4,7 +4,7 @@ use super::super::{
 };
 use riotbox_audio::{
     mc202::{Mc202RenderMode, Mc202RenderRouting, Mc202RenderState},
-    runtime::AudioRuntimeLifecycle,
+    runtime::{AudioRuntimeLifecycle, SourceMonitorAudioRoute},
     tr909::{Tr909RenderMode, Tr909RenderRouting, Tr909RenderState},
     w30::{
         W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewRenderState, W30ResampleTapMode,
@@ -77,7 +77,7 @@ fn derive_source_audio_warnings(runtime: &AppRuntimeState, session: &SessionFile
             channel_count,
             frame_count,
             ..
-        } if runtime.source_monitor_audio_route == "source_unavailable" => {
+        } if runtime.source_monitor_audio_route == SourceMonitorAudioRoute::SourceUnavailable => {
             vec![format!(
                 "source monitor unavailable: source audio format is {sample_rate} Hz, {channel_count} ch, {frame_count} frames"
             )]

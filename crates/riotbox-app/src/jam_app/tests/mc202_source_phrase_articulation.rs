@@ -17,9 +17,9 @@ fn committed_mc202_answer_places_sparse_answer_from_source_answer_slot() {
     set_source_phrase_anchors(
         &mut early_answer_graph,
         &[
-            (SourceTimingAnchorType::Kick, 8, 32, 0.94),
-            (SourceTimingAnchorType::Backbeat, 8, 34, 0.88),
-            (SourceTimingAnchorType::AnswerSlot, 8, 33, 0.97),
+            (SourceTimingAnchorType::Kick, 8, 29, 0.94),
+            (SourceTimingAnchorType::Backbeat, 8, 31, 0.88),
+            (SourceTimingAnchorType::AnswerSlot, 8, 30, 0.97),
         ],
     );
     let mut late_answer_graph = early_answer_graph.clone();
@@ -29,9 +29,9 @@ fn committed_mc202_answer_places_sparse_answer_from_source_answer_slot() {
     set_source_phrase_anchors(
         &mut late_answer_graph,
         &[
-            (SourceTimingAnchorType::Kick, 8, 32, 0.94),
-            (SourceTimingAnchorType::Backbeat, 8, 34, 0.88),
-            (SourceTimingAnchorType::AnswerSlot, 8, 35, 0.97),
+            (SourceTimingAnchorType::Kick, 8, 29, 0.94),
+            (SourceTimingAnchorType::Backbeat, 8, 31, 0.88),
+            (SourceTimingAnchorType::AnswerSlot, 8, 32, 0.97),
         ],
     );
     let mut early_state = confirmed_source_phrase_state(early_answer_graph);
@@ -175,8 +175,8 @@ fn committed_mc202_source_phrase_roles_render_distinct_acid_bass_expression() {
             && instigator_plan.stab_bite >= answer_plan.stab_bite,
         "instigator role did not project a destructive spike above answer: instigator={instigator_plan:?} answer={answer_plan:?}"
     );
-    let pressure_low_band_rms = source_phrase_low_band_rms(&pressure_render);
-    let answer_low_band_rms = source_phrase_low_band_rms(&answer_render);
+    let pressure_low_band_rms = source_phrase_low_band_rms(&pressure_render, 44_100, 2);
+    let answer_low_band_rms = source_phrase_low_band_rms(&answer_render, 44_100, 2);
     let pressure_metrics = signal_metrics(&pressure_render);
     let answer_metrics = signal_metrics(&answer_render);
     let pressure_low_band_share = pressure_low_band_rms / pressure_metrics.rms.max(f32::EPSILON);

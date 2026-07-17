@@ -70,6 +70,36 @@ fn writes_source_transport_map_capture_observer_stream() {
         "src-source-transport-map-capture"
     );
 
+    let beat_sixteen_event = parsed
+        .iter()
+        .filter(|event| event["event"] == "transport_commit")
+        .find(|event| {
+            event["committed"]
+                .as_array()
+                .expect("committed refs")
+                .iter()
+                .any(|committed| committed["beat_index"] == 16)
+        })
+        .expect("beat-cursor 16 commit event");
+    let beat_sixteen_commit = beat_sixteen_event["committed"]
+        .as_array()
+        .expect("committed refs")
+        .iter()
+        .find(|committed| committed["beat_index"] == 16)
+        .expect("beat-cursor 16 commit");
+    assert_eq!(beat_sixteen_commit["beat_index"], 16);
+    assert_eq!(beat_sixteen_commit["bar_index"], 5);
+    assert_eq!(beat_sixteen_commit["phrase_index"], 2);
+    assert_eq!(
+        beat_sixteen_event["snapshot"]["transport"]["beat_index"],
+        16
+    );
+    assert_eq!(beat_sixteen_event["snapshot"]["transport"]["bar_index"], 5);
+    assert_eq!(
+        beat_sixteen_event["snapshot"]["transport"]["phrase_index"],
+        2
+    );
+
     let final_commit = parsed
         .iter()
         .rev()

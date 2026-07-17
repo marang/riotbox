@@ -38,9 +38,9 @@ fn renders_more_musical_jam_shell_snapshot() {
         rendered.contains("need output evidence"),
         "{rendered}"
     );
-    assert!(rendered.contains("idle @ 32.0 | source b- bar8 p-"));
+    assert!(rendered.contains("idle @ 31.0 | source b- bar8 p-"));
     assert!(
-        rendered.contains("timing needs confirm [===>] next bar"),
+        rendered.contains("timing needs confirm [==>-] next bar"),
         "{rendered}"
     );
     assert!(rendered.contains("timing needs confirm | confirm grid"), "{rendered}");
@@ -62,13 +62,14 @@ fn renders_more_musical_jam_shell_snapshot() {
     assert!(rendered.contains("Suggested gestures"));
     assert!(rendered.contains("Pending / landed"));
     assert!(rendered.contains("next fill"));
-    assert!(rendered.contains("wait [===>] next bar"), "{rendered}");
+    assert!(rendered.contains("wait [==>-] next bar"), "{rendered}");
     assert!(
-        rendered.contains("Primary: y scene jump | g follow | f fill"),
+        rendered.contains("Primary: w hit | f fill | s slam | y scene jump"),
         "{rendered}"
     );
     assert!(
-        rendered.contains("Advanced: Y restore | a answer | b voice | P pressure | I instigate"),
+        rendered
+            .contains("Advanced: Y restore | g follow | a answer | b voice | P pressure | I instigate"),
         "{rendered}"
     );
     assert!(!rendered.contains("Sections"), "{rendered}");
@@ -86,11 +87,11 @@ fn source_timing_performance_rail_styles_current_clock_and_next_bar() {
 
     assert_eq!(
         rendered,
-        "timing needs confirm [===>] next bar"
+        "timing needs confirm [==>-] next bar"
     );
     assert_eq!(line.spans[1].content.as_ref(), "needs confirm");
     assert_eq!(line.spans[1].style.fg, Some(Color::Yellow));
-    assert_eq!(line.spans[3].content.as_ref(), "[===>]");
+    assert_eq!(line.spans[3].content.as_ref(), "[==>-]");
     assert_eq!(line.spans[3].style.fg, Some(Color::Yellow));
     assert!(
         line.spans[3].style.add_modifier.contains(Modifier::BOLD),
@@ -119,7 +120,7 @@ fn renders_locked_source_timing_as_grid_locked_cue() {
         "{rendered}"
     );
     assert!(
-        rendered.contains("timing grid locked [===>] next bar"),
+        rendered.contains("timing grid locked [==>-] next bar"),
         "{rendered}"
     );
     assert!(
@@ -281,8 +282,8 @@ fn source_timing_clock_shows_full_position_when_grid_counts_exist() {
     }];
     shell.app.refresh_view();
 
-    assert_eq!(source_timing_clock_compact(&shell), "source b32 bar8 p1");
-    assert_eq!(source_timing_clock_line(&shell), "source clock beat 32 | bar 8 | phrase 1");
+    assert_eq!(source_timing_clock_compact(&shell), "source b31 bar8 p2");
+    assert_eq!(source_timing_clock_line(&shell), "source clock beat 31 | bar 8 | phrase 2");
 
     let help_line = source_timing_help_line(&shell);
     let rendered = help_line
@@ -290,7 +291,7 @@ fn source_timing_clock_shows_full_position_when_grid_counts_exist() {
         .iter()
         .map(|span| span.content.as_ref())
         .collect::<String>();
-    assert!(rendered.contains("b32 bar8 p1"), "{rendered}");
+    assert!(rendered.contains("b31 bar8 p2"), "{rendered}");
 }
 
 #[test]

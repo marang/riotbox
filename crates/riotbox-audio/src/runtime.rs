@@ -28,6 +28,7 @@ use crate::{
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
+mod fill_focus;
 mod public_api_shell;
 mod render_tr909_w30_preview;
 mod runtime_mix_parity;
@@ -35,9 +36,12 @@ mod shared_mc202_w30_preview;
 mod shared_transport_tr909;
 mod shared_w30_resample_callback;
 mod source_monitor;
+mod tr909_fill_recipe;
+mod tr909_fill_voice;
 mod tr909_tail_telemetry;
 mod w30_tr909_signal_helpers;
 
+use fill_focus::{FillFocusRenderState, apply_fill_focus_to_non_tr909_bed};
 pub use public_api_shell::*;
 use render_tr909_w30_preview::{
     render_tr909_buffer, render_w30_preview_buffer, render_w30_resample_tap_buffer,
@@ -63,12 +67,18 @@ use shared_w30_resample_callback::{
     Tr909CallbackState, TransportTimingCallbackState, W30MixRenderState, W30PreviewCallbackState,
     W30ResampleTapCallbackState, advance_transport_timing, render_mix_buffer,
 };
-use source_monitor::{SharedSourceMonitorRenderState, apply_source_monitor_policy};
+#[cfg(test)]
+use source_monitor::apply_source_monitor_policy_with_state;
+use source_monitor::{
+    SharedSourceMonitorRenderState, SourceMonitorCallbackState,
+    apply_source_monitor_policy_with_state_and_fill_focus,
+};
 pub use source_monitor::{
     SourceMonitorAudioRoute, SourceMonitorAudioSource, SourceMonitorRenderState,
     render_source_monitor_mix_offline, source_monitor_route_for_cache,
     source_monitor_route_for_output,
 };
+use tr909_fill_voice::{Tr909FillVoiceState, render_tr909_fill_buffer};
 use tr909_tail_telemetry::{
     RuntimeTelemetry, envelope_decay, mode_from_u32, mode_to_u32, pattern_adoption_from_u32,
     pattern_adoption_to_u32, phrase_variation_from_u32, phrase_variation_to_u32, routing_from_u32,
@@ -78,8 +88,9 @@ use tr909_tail_telemetry::{
     w30_source_profile_to_u32,
 };
 use w30_tr909_signal_helpers::{
-    render_gain, render_subdivision, should_trigger_step, tr909_step_waveform, trigger_envelope,
-    trigger_frequency, w30_envelope_decay, w30_preview_idle_bpm, w30_render_gain,
+    break_performance_slam, fill_performance_slam, render_gain, render_subdivision,
+    should_trigger_step, tr909_step_waveform, trigger_envelope, trigger_frequency,
+    w30_envelope_decay, w30_preview_idle_bpm, w30_render_gain,
 };
 
 const COHERENT_SNAPSHOT_READ_ATTEMPTS: usize = 3;

@@ -3,7 +3,10 @@ use riotbox_core::{
     ids::SceneId,
     session::SessionFile,
     source_graph::{SectionLabelHint, SourceGraph},
-    transport::{CommitBoundaryState, TransportClockState},
+    transport::{
+        CommitBoundaryState, DEFAULT_BARS_PER_PHRASE, DEFAULT_BEATS_PER_BAR, TransportClockState,
+        TransportGridPosition,
+    },
 };
 
 pub(in crate::jam_app) fn trusted_source_timing_bpm(
@@ -108,40 +111,45 @@ pub(in crate::jam_app) fn transport_clock_for_state(
     current_scene: Option<SceneId>,
     source_graph: Option<&SourceGraph>,
 ) -> TransportClockState {
-    let beat_index = position_beats.floor() as u64;
-    let beats_per_bar = source_graph
-        .and_then(|graph| {
-            graph
-                .timing
-                .meter_hint
-                .as_ref()
+    let grid_position = source_graph
+        .and_then(|graph| graph.timing.primary_hypothesis())
+        .and_then(|hypothesis| hypothesis.transport_grid_position(position_beats))
+        .unwrap_or_else(|| {
+            let beats_per_bar = source_graph
+                .and_then(|graph| graph.timing.meter_hint)
                 .map(|meter| u64::from(meter.beats_per_bar))
-        })
-        .filter(|beats| *beats > 0)
-        .unwrap_or(4);
-    let bar_index = ((beat_index.saturating_sub(1)) / beats_per_bar).saturating_add(1);
+                .filter(|beats| *beats > 0)
+                .unwrap_or(DEFAULT_BEATS_PER_BAR);
+            TransportGridPosition::from_zero_based_position_beats(
+                position_beats,
+                beats_per_bar,
+                DEFAULT_BARS_PER_PHRASE,
+            )
+        });
     let phrase_index = source_graph
         .and_then(|graph| {
-            graph
+            let phrase_grid = graph
                 .timing
-                .phrase_grid
+                .primary_hypothesis()
+                .map(|hypothesis| hypothesis.phrase_grid.as_slice())
+                .filter(|phrases| !phrases.is_empty())
+                .unwrap_or(graph.timing.phrase_grid.as_slice());
+            phrase_grid
                 .iter()
                 .find(|phrase| {
-                    let start_beat = (u64::from(phrase.start_bar).saturating_sub(1)
-                        * beats_per_bar)
-                        .saturating_add(1);
-                    let end_beat = u64::from(phrase.end_bar) * beats_per_bar;
-                    beat_index >= start_beat && beat_index <= end_beat
+                    let start_bar = u64::from(phrase.start_bar);
+                    let end_bar = u64::from(phrase.end_bar);
+                    grid_position.bar_index >= start_bar && grid_position.bar_index <= end_bar
                 })
                 .map(|phrase| u64::from(phrase.phrase_index))
         })
-        .unwrap_or_else(|| ((bar_index.saturating_sub(1)) / 8).saturating_add(1));
+        .unwrap_or(grid_position.phrase_index);
 
     TransportClockState {
         is_playing,
         position_beats,
-        beat_index,
-        bar_index,
+        beat_index: grid_position.beat_cursor,
+        bar_index: grid_position.bar_index,
         phrase_index,
         current_scene,
     }

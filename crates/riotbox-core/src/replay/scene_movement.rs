@@ -4,7 +4,7 @@ use crate::{
     ids::SceneId,
     session::{
         SceneMovementDirectionState, SceneMovementKindState, SceneMovementLaneIntentState,
-        SceneMovementState, SessionFile,
+        SceneMovementState, SceneState, SessionFile,
     },
     source_graph::{EnergyClass, SourceGraph, section_for_projected_scene},
     transport::CommitBoundaryState,
@@ -25,6 +25,12 @@ pub fn apply_graph_aware_replay_plan_to_session(
             entry.action.command,
             ActionCommand::SceneLaunch | ActionCommand::SceneRestore
         ) {
+            if entry.action.command == ActionCommand::SceneLaunch {
+                // The graph-free executor has already preserved the previous projection
+                // in the restore slot. Hydrate only the new launch projection here.
+                working.runtime_state.scene_state.active_projection_movement =
+                    scene_movement.clone();
+            }
             working.runtime_state.scene_state.last_movement = scene_movement;
         }
         applied_action_ids.push(entry.action.id);
@@ -32,6 +38,41 @@ pub fn apply_graph_aware_replay_plan_to_session(
 
     *session = working;
     Ok(ReplayExecutionReport { applied_action_ids })
+}
+
+/// Moves the persistent lane-audio projection alongside the Scene restore pointer.
+///
+/// `last_movement` remains the latest transition/anchor event. The projection is
+/// separate because restoring a scene must restore its former lane state rather
+/// than treating the inverse transition as a new persistent musical profile.
+pub fn apply_scene_audio_projection_transition(
+    scene_state: &mut SceneState,
+    command: ActionCommand,
+    launch_movement: Option<SceneMovementState>,
+    target_scene: &SceneId,
+) {
+    if !matches!(
+        command,
+        ActionCommand::SceneLaunch | ActionCommand::SceneRestore
+    ) {
+        return;
+    }
+    let previous_projection = scene_state.active_projection_movement.take();
+    match command {
+        ActionCommand::SceneLaunch => {
+            scene_state.active_projection_movement =
+                launch_movement.filter(|movement| movement.to_scene == *target_scene);
+            scene_state.restore_projection_movement = previous_projection;
+        }
+        ActionCommand::SceneRestore => {
+            scene_state.active_projection_movement = scene_state
+                .restore_projection_movement
+                .take()
+                .filter(|movement| movement.to_scene == *target_scene);
+            scene_state.restore_projection_movement = previous_projection;
+        }
+        _ => {}
+    }
 }
 
 pub fn derive_scene_movement_for_replay_entry(

@@ -17,8 +17,15 @@ use crate::{
     observer::{compact_commit, key_code_label, observer_snapshot, shell_key_outcome_label},
     ui::{JamShellState, ShellKeyOutcome, ShellLaunchMode, render_jam_shell},
 };
-use riotbox_audio::runtime::AudioRuntimeShell;
-use riotbox_core::{session::ExportArtifactRole, view::jam::SceneJumpAvailabilityView};
+use riotbox_audio::runtime::{
+    AudioRuntimeError, AudioRuntimeHealth, AudioRuntimeLifecycle, AudioRuntimeShell,
+};
+use riotbox_core::{
+    action::{ActionCommand, SourceMonitorMode},
+    queue::CommittedActionRef,
+    session::ExportArtifactRole,
+    view::jam::SceneJumpAvailabilityView,
+};
 use serde_json::{Value, json};
 
 const DEFAULT_SESSION_PATH: &str = "data/sessions/jam-session.json";
@@ -290,7 +297,26 @@ fn run_terminal_ui(
         None => None,
     };
     let mut terminal = ManagedTerminal::enter()?;
-    let mut audio_runtime = match AudioRuntimeShell::start_default_output_with_render_states_and_source_monitor(
+    let mut audio_runtime = start_audio_runtime_for_shell(
+        &mut shell,
+        observer.as_mut(),
+        "started",
+    )?;
+    run_event_loop(
+        terminal.terminal_mut(),
+        shell,
+        launch,
+        &mut audio_runtime,
+        observer.as_mut(),
+    )
+}
+
+fn start_audio_runtime_for_shell(
+    shell: &mut JamShellState,
+    observer: Option<&mut UserSessionObserver>,
+    success_state: &str,
+) -> Result<Option<AudioRuntimeShell>, Box<dyn std::error::Error>> {
+    let audio_runtime = match AudioRuntimeShell::start_default_output_with_render_states_and_source_monitor(
         shell.app.runtime.tr909_render.clone(),
         shell.app.runtime.mc202_render,
         shell.app.runtime.w30_preview.clone(),
@@ -304,26 +330,33 @@ fn run_terminal_ui(
                 shell.app.runtime.transport.position_beats,
             );
             shell.app.set_audio_health(runtime.health_snapshot());
-            if let Some(observer) = observer.as_mut() {
-                observer.record_audio_runtime("started", None, &shell)?;
+            if let Some(observer) = observer {
+                observer.record_audio_runtime(success_state, None, shell)?;
             }
             Some(runtime)
         }
         Err(error) => {
+            shell.app.set_audio_health(audio_start_failure_health(&error));
             shell.set_error_status(format!("audio unavailable: {error}"));
-            if let Some(observer) = observer.as_mut() {
-                observer.record_audio_runtime("unavailable", Some(&error.to_string()), &shell)?;
+            if let Some(observer) = observer {
+                observer.record_audio_runtime("unavailable", Some(&error.to_string()), shell)?;
             }
             None
         }
     };
-    run_event_loop(
-        terminal.terminal_mut(),
-        shell,
-        launch,
-        audio_runtime.as_mut(),
-        observer.as_mut(),
-    )
+    Ok(audio_runtime)
+}
+
+fn audio_start_failure_health(error: &AudioRuntimeError) -> AudioRuntimeHealth {
+    AudioRuntimeHealth {
+        lifecycle: AudioRuntimeLifecycle::Faulted,
+        output: None,
+        callback_count: 0,
+        max_callback_gap_micros: None,
+        callback_scratch_overflow_count: 0,
+        stream_error_count: 1,
+        last_stream_error: Some(error.to_string()),
+    }
 }
 
 struct ManagedTerminal {

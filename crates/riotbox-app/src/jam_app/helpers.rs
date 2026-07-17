@@ -1,7 +1,7 @@
 use riotbox_core::{
     action::{
-        ActionCommand, ActionDraft, ActionParams, ActionResult, ActionTarget, ActorType,
-        Quantization, TargetScope,
+        Action, ActionCommand, ActionDraft, ActionParams, ActionResult, ActionStatus, ActionTarget,
+        ActorType, Quantization, TargetScope, UndoPolicy,
     },
     ids::ActionId,
     session::{CaptureRef, SessionFile},
@@ -26,14 +26,6 @@ pub(in crate::jam_app) fn append_capture_note(capture: &mut CaptureRef, detail: 
     });
 }
 
-pub(in crate::jam_app) fn next_action_id_from_session(session: &SessionFile) -> ActionId {
-    ActionId(
-        max_action_id(session)
-            .map(|id| id.0.saturating_add(1))
-            .unwrap_or(1),
-    )
-}
-
 pub(in crate::jam_app) fn max_action_id(session: &SessionFile) -> Option<ActionId> {
     session
         .action_log
@@ -41,6 +33,109 @@ pub(in crate::jam_app) fn max_action_id(session: &SessionFile) -> Option<ActionI
         .iter()
         .map(|action| action.id)
         .max()
+}
+
+pub(in crate::jam_app) fn action_has_typed_undo_snapshot(
+    session: &SessionFile,
+    action: &Action,
+) -> bool {
+    if is_mc202_phrase_action(action.command) {
+        return session
+            .runtime_state
+            .undo_state
+            .mc202_snapshots
+            .iter()
+            .any(|snapshot| snapshot.action_id == action.id);
+    }
+    if action.command == ActionCommand::SourceMonitorSetMode {
+        return session
+            .runtime_state
+            .undo_state
+            .source_monitor_snapshots
+            .iter()
+            .any(|snapshot| snapshot.action_id == action.id);
+    }
+    if action.command == ActionCommand::Tr909FillNext {
+        return session
+            .runtime_state
+            .undo_state
+            .tr909_fill_snapshots
+            .iter()
+            .any(|snapshot| snapshot.action_id == action.id);
+    }
+    false
+}
+
+pub(in crate::jam_app) fn normalize_missing_typed_undo_policies(session: &mut SessionFile) -> bool {
+    let mc202_snapshot_ids = session
+        .runtime_state
+        .undo_state
+        .mc202_snapshots
+        .iter()
+        .map(|snapshot| snapshot.action_id)
+        .collect::<std::collections::BTreeSet<_>>();
+    let monitor_snapshot_ids = session
+        .runtime_state
+        .undo_state
+        .source_monitor_snapshots
+        .iter()
+        .map(|snapshot| snapshot.action_id)
+        .collect::<std::collections::BTreeSet<_>>();
+    let fill_snapshot_ids = session
+        .runtime_state
+        .undo_state
+        .tr909_fill_snapshots
+        .iter()
+        .map(|snapshot| snapshot.action_id)
+        .collect::<std::collections::BTreeSet<_>>();
+    let commit_record_counts = session.action_log.commit_records.iter().fold(
+        std::collections::BTreeMap::<ActionId, usize>::new(),
+        |mut counts, record| {
+            *counts.entry(record.action_id).or_default() += 1;
+            counts
+        },
+    );
+
+    let mut changed = false;
+    for action in &mut session.action_log.actions {
+        if action.status != ActionStatus::Committed
+            || !matches!(action.undo_policy, UndoPolicy::Undoable)
+            || !action.command.has_typed_undo_semantics()
+        {
+            continue;
+        }
+
+        let invalid_contract_reason =
+            if !action.result.as_ref().is_some_and(|result| result.accepted) {
+                Some("commit has no accepted persisted result")
+            } else if commit_record_counts.get(&action.id).copied() != Some(1) {
+                Some("commit does not have exactly one persisted commit record")
+            } else {
+                None
+            };
+
+        let missing_snapshot = if is_mc202_phrase_action(action.command) {
+            !mc202_snapshot_ids.contains(&action.id)
+        } else {
+            match action.command {
+                ActionCommand::SourceMonitorSetMode => !monitor_snapshot_ids.contains(&action.id),
+                ActionCommand::Tr909FillNext => !fill_snapshot_ids.contains(&action.id),
+                _ => false,
+            }
+        };
+        if let Some(reason) = invalid_contract_reason {
+            action.undo_policy = UndoPolicy::NotUndoable {
+                reason: reason.into(),
+            };
+            changed = true;
+        } else if missing_snapshot {
+            action.undo_policy = UndoPolicy::NotUndoable {
+                reason: "commit has no persisted typed pre-state snapshot".into(),
+            };
+            changed = true;
+        }
+    }
+    changed
 }
 
 pub(in crate::jam_app) fn update_logged_action_result(

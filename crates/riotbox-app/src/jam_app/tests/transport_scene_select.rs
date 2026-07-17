@@ -75,9 +75,9 @@ fn reconstructs_bar_and_phrase_indices_from_loaded_state() {
     let session = sample_session(&graph);
     let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    assert_eq!(state.runtime.transport.beat_index, 32);
+    assert_eq!(state.runtime.transport.beat_index, 31);
     assert_eq!(state.runtime.transport.bar_index, 8);
-    assert_eq!(state.runtime.transport.phrase_index, 1);
+    assert_eq!(state.runtime.transport.phrase_index, 2);
 }
 
 #[test]
@@ -95,7 +95,7 @@ fn default_tr909_render_state_stays_idle_until_lane_state_requests_support() {
     assert_eq!(state.runtime.tr909_render.drum_bus_level, 0.72);
     assert!(state.runtime.tr909_render.is_transport_running);
     assert_eq!(state.runtime.tr909_render.tempo_bpm, 126.0);
-    assert_eq!(state.runtime.tr909_render.position_beats, 32.0);
+    assert_eq!(state.runtime.tr909_render.position_beats, 31.0);
     assert_eq!(
         state.runtime.tr909_render.current_scene_id.as_deref(),
         Some("scene-1")

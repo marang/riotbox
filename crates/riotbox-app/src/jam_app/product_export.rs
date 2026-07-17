@@ -17,7 +17,7 @@ use riotbox_core::{
     },
     ids::ActionId,
     queue::QueueEnqueueResult,
-    session::{ActionCommitRecord, ExportArtifactRole, ExportArtifactSetEntry, ExportReceiptState},
+    session::{ExportArtifactRole, ExportArtifactSetEntry, ExportReceiptState},
     transport::CommitBoundaryState,
 };
 use sha2::{Digest, Sha256};
@@ -353,7 +353,7 @@ impl JamAppState {
             written.contract.export_sha256
         );
 
-        let committed_ref = self
+        let mut committed_ref = self
             .queue
             .commit_pending_after_side_effect(
                 action_id,
@@ -377,17 +377,7 @@ impl JamAppState {
                 ))
             })?;
 
-        self.session.action_log.actions.push(action);
-        self.session
-            .action_log
-            .commit_records
-            .push(ActionCommitRecord {
-                action_id,
-                boundary: committed_ref.boundary,
-                commit_sequence: committed_ref.commit_sequence,
-                committed_at: requested_at,
-                mc202_source_phrase_plan: None,
-            });
+        self.record_committed_action(action, &mut committed_ref, requested_at);
         self.session.export_receipts.push(receipt.clone());
         update_logged_action_result(&mut self.session, action_id, result_summary);
         self.runtime.last_commit_boundary = Some(boundary);

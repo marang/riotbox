@@ -177,7 +177,7 @@ fn stage_style_snapshot_payload_restore_converges_supported_multi_lane_suffix() 
         "stage-style run leaves initial mixed output",
         &before_stage_run,
         &replayed_final_mix,
-        0.003,
+        0.002,
     );
     assert_recipe_buffers_differ(
         "stage-style suffix changes the snapshot anchor mix",

@@ -3,6 +3,13 @@ use std::collections::BTreeSet;
 use super::*;
 
 #[test]
+fn source_monitor_mode_cycles_through_all_reachable_modes() {
+    assert_eq!(SourceMonitorMode::Source.next(), SourceMonitorMode::Blend);
+    assert_eq!(SourceMonitorMode::Blend.next(), SourceMonitorMode::Riotbox);
+    assert_eq!(SourceMonitorMode::Riotbox.next(), SourceMonitorMode::Source);
+}
+
+#[test]
 fn action_command_lexicon_labels_are_unique_and_complete() {
     assert_eq!(ActionCommand::all().len(), 60);
 
@@ -25,6 +32,52 @@ fn action_command_replay_coverage_is_declared_for_every_command() {
 
     assert_eq!(supported, 42);
     assert_eq!(unsupported, 18);
+}
+
+#[test]
+fn typed_undo_semantics_are_limited_to_restorable_runtime_state() {
+    for command in [
+        ActionCommand::Mc202SetRole,
+        ActionCommand::Mc202GenerateFollower,
+        ActionCommand::Mc202GenerateAnswer,
+        ActionCommand::Mc202GeneratePressure,
+        ActionCommand::Mc202GenerateInstigator,
+        ActionCommand::Mc202MutatePhrase,
+        ActionCommand::Tr909FillNext,
+        ActionCommand::SourceMonitorSetMode,
+    ] {
+        assert!(command.has_typed_undo_semantics(), "{command}");
+    }
+
+    for command in [
+        ActionCommand::SceneLaunch,
+        ActionCommand::W30TriggerPad,
+        ActionCommand::CaptureNow,
+    ] {
+        assert!(!command.has_typed_undo_semantics(), "{command}");
+    }
+}
+
+#[test]
+fn action_draft_only_advertises_undo_when_typed_restoration_exists() {
+    let typed = ActionDraft::new(
+        ActorType::User,
+        ActionCommand::Tr909FillNext,
+        Quantization::NextBar,
+        ActionTarget::default(),
+    );
+    assert_eq!(typed.undo_policy, UndoPolicy::Undoable);
+
+    let unsupported = ActionDraft::new(
+        ActorType::User,
+        ActionCommand::SceneLaunch,
+        Quantization::NextBar,
+        ActionTarget::default(),
+    );
+    assert!(matches!(
+        unsupported.undo_policy,
+        UndoPolicy::NotUndoable { .. }
+    ));
 }
 
 #[test]

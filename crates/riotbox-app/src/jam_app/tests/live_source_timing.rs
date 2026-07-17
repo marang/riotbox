@@ -70,6 +70,64 @@ fn different_live_sources_do_not_reuse_stale_timing_or_identity() {
 }
 
 #[test]
+fn jam_transport_uses_selected_primary_downbeat_phase_and_phrase_grid() {
+    let mut graph = sample_graph();
+    let seconds_per_beat = 0.5_f32;
+    graph.timing.phrase_grid = vec![riotbox_core::source_graph::PhraseSpan {
+        phrase_index: 2,
+        start_bar: 5,
+        end_bar: 8,
+        confidence: 0.5,
+    }];
+    graph.timing.primary_hypothesis_id = Some("phase-three".into());
+    graph.timing.hypotheses = vec![TimingHypothesis {
+        hypothesis_id: "phase-three".into(),
+        kind: TimingHypothesisKind::Primary,
+        bpm: 120.0,
+        meter: MeterHint {
+            beats_per_bar: 4,
+            beat_unit: 4,
+        },
+        confidence: 0.95,
+        score: 0.95,
+        beat_grid: (4..=43)
+            .map(|beat_index| BeatPoint {
+                beat_index,
+                time_seconds: (beat_index - 4) as f32 * seconds_per_beat,
+                confidence: 0.95,
+            })
+            .collect(),
+        bar_grid: (1..=10)
+            .map(|bar_index| riotbox_core::source_graph::BarSpan {
+                bar_index,
+                start_seconds: (bar_index - 1) as f32 * 4.0 * seconds_per_beat,
+                end_seconds: bar_index as f32 * 4.0 * seconds_per_beat,
+                downbeat_confidence: 0.95,
+                phrase_index: Some((bar_index - 1) / 4 + 1),
+            })
+            .collect(),
+        phrase_grid: vec![riotbox_core::source_graph::PhraseSpan {
+            phrase_index: 9,
+            start_bar: 5,
+            end_bar: 8,
+            confidence: 0.95,
+        }],
+        anchors: Vec::new(),
+        drift: Vec::new(),
+        groove: Vec::new(),
+        quality: TimingQuality::High,
+        warnings: Vec::new(),
+        provenance: vec!["test:phase-three".into()],
+    }];
+
+    let clock = super::transport_helpers::transport_clock_for_state(19.0, true, None, Some(&graph));
+
+    assert_eq!(clock.beat_index, 19);
+    assert_eq!(clock.bar_index, 5);
+    assert_eq!(clock.phrase_index, 9);
+}
+
+#[test]
 fn manual_confirm_timing_stays_silent_until_explicit_bpm_confirmation_commits() {
     let graph = manual_confirm_source_window_graph();
     let session = sample_session(&graph);
@@ -102,6 +160,7 @@ fn committed_mc202_fallback_stays_silent_without_losing_trusted_transport_timing
     state.session.runtime_state.lane_state.mc202.source_phrase_plan =
         Some(Mc202SourcePhrasePlanState {
             source_id: SourceId::from("src-1"),
+            source_section_id: None,
             phrase_slot: Mc202SourcePhraseSlotState {
                 phrase_index: 0,
                 start_bar: 1,

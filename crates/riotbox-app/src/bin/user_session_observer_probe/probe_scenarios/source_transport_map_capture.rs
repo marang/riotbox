@@ -10,12 +10,12 @@ use riotbox_core::{
         DecodeProfile, GraphProvenance, SourceDescriptor, SourceGraph, TimingDegradedPolicy,
         TimingQuality,
     },
-    transport::CommitBoundaryState,
+    transport::{CommitBoundaryState, TransportClockState},
 };
 
 use super::{
     NdjsonWriter, apply_probe_key, locked_timing_grid::attach_locked_timing_grid, probe_shell,
-    record_probe_start,
+    record_probe_start, source_aware_grid_position,
 };
 
 const SOURCE_PATH: &str = "synthetic-source-transport-map-capture.wav";
@@ -218,12 +218,21 @@ fn commit_at_beat(
     beat_index: u64,
     expected_count: usize,
 ) -> io::Result<()> {
+    let grid_position = source_aware_grid_position(shell, beat_index);
+    shell.app.update_transport_clock(TransportClockState {
+        is_playing: shell.app.runtime.transport.is_playing,
+        position_beats: grid_position.beat_cursor as f64,
+        beat_index: grid_position.beat_cursor,
+        bar_index: grid_position.bar_index,
+        phrase_index: grid_position.phrase_index,
+        current_scene: None,
+    });
     let committed = shell.app.commit_ready_actions(
         CommitBoundaryState {
             kind,
-            beat_index,
-            bar_index: beat_index / 4,
-            phrase_index: beat_index / 16,
+            beat_index: grid_position.beat_cursor,
+            bar_index: grid_position.bar_index,
+            phrase_index: grid_position.phrase_index,
             scene_id: None,
         },
         timestamp_ms,

@@ -25,10 +25,14 @@ mod w30_resample_labels;
 #[path = "ui/w30_capture_source_helpers/slice_pool.rs"]
 mod w30_slice_pool_helpers;
 
+#[cfg(test)]
+use first_run_capture::FirstRunOnrampStage;
 use first_run_capture::{
-    FirstRunOnrampStage, capture_do_next_lines, capture_latest_lines, capture_lines,
-    capture_provenance_lines, capture_readiness_lines, capture_routing_lines,
-    first_run_onramp_stage, pending_capture_lines, recent_capture_items,
+    capture_do_next_lines, capture_latest_lines, capture_lines, capture_provenance_lines,
+    capture_readiness_lines, capture_routing_lines, first_run_onramp_compact_lines,
+    first_run_onramp_lines, first_run_onramp_stage, pending_capture_lines, recent_capture_items,
+    source_monitor_mode_compact_label, source_monitor_route_compact_label,
+    source_monitor_route_help_label,
 };
 #[cfg(test)]
 use first_run_capture::{capture_pending_detail_line, capture_pending_intent_line};

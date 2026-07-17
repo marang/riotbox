@@ -10,12 +10,42 @@ optional QA contracts such as Feral scorecards are validated when present.
 from __future__ import annotations
 
 import json
+import math
+import re
 import sys
 from pathlib import Path
 from typing import Any
 
 
 SCHEMA_VERSION = 1
+VERSIONED_PRIMITIVE_SCHEMA = re.compile(
+    r"^riotbox\.[a-z0-9][a-z0-9_.-]*\.v[1-9][0-9]*$"
+)
+VERSIONED_RECIPE_ID = re.compile(r"^[a-z0-9]+(?:_[a-z0-9]+)*_v[1-9][0-9]*$")
+CANONICAL_GESTURE_TRANSITION_REF = re.compile(
+    r"^/gesture_transitions/(?:0|[1-9][0-9]*)$"
+)
+TR909_FILL_PRIMITIVE_SCHEMA = "riotbox.tr909_fill_recipe.v1"
+TR909_FILL_SOURCE_MODULATION_SCHEMA = "riotbox.tr909_fill_source_modulation.v2"
+TR909_FILL_RUNTIME_PATHS = {
+    "runtime_mix.tr909.fill_recipe",
+    "runtime_mix.tr909.drum_bus_level",
+    "runtime_mix.tr909.slam_intensity",
+    "runtime_mix.tr909.source_bar_grid_phase",
+    "runtime_mix.non_tr909_bed.fill_focus",
+    "runtime_mix.source_monitor.blend_fill_focus",
+}
+TR909_FILL_MODULATION_RUNTIME_PARAMETERS = {
+    "runtime_mix.tr909.drum_bus_level",
+    "runtime_mix.tr909.slam_intensity",
+    "runtime_mix.tr909.source_bar_grid_phase",
+}
+TR909_FILL_SELECTION_KEYS = {
+    "mode",
+    "routing",
+    "pattern_adoption",
+    "phrase_variation",
+}
 SOURCE_TIMING_BPM_MATCH_TOLERANCE = 1.0
 EPSILON = 0.000001
 SOURCE_TIMING_POLICY_PROFILES = {
@@ -199,18 +229,40 @@ def validate_feral_scorecard(scorecard: Any) -> None:
 
 
 def validate_primitive_renderer_boundary(manifest: dict[str, Any]) -> None:
-    primitive_paths = sorted(find_string_value_paths(manifest, "primitive_renderer"))
-    if not primitive_paths:
+    primitive_records = find_string_value_records(manifest, "primitive_renderer")
+    if not primitive_records:
         return
+    primitive_paths = sorted(path for path, _record in primitive_records)
 
     boundary = require_object_field(manifest, "primitive_renderer_boundary")
-    require_equal(boundary, "schema", "riotbox.primitive_renderer_boundary.v1")
-    require_equal(boundary, "evidence_role", "non_product_diagnostic_control")
-    require_equal(boundary, "product_output_allowed", False)
     require_equal(boundary, "quality_proof", False)
     require_equal(boundary, "demo_readiness", "unverified")
     require_equal(boundary, "promotion_blocked", True)
     require_string(boundary, "musician_message", "primitive_renderer_boundary musician_message")
+    evidence_role = boundary.get("evidence_role")
+    if evidence_role == "non_product_diagnostic_control":
+        require_equal(boundary, "schema", "riotbox.primitive_renderer_boundary.v1")
+        require_equal(boundary, "product_output_allowed", False)
+    elif evidence_role == "product_primitive_vocabulary":
+        require_equal(boundary, "schema", "riotbox.primitive_renderer_boundary.v2")
+        require_equal(boundary, "product_output_allowed", True)
+        require_equal(boundary, "recipe_derivation_claimed", False)
+        require_equal(boundary, "pattern_selection_claimed", False)
+        require_equal(boundary, "source_output_modulation_claimed", True)
+        require_equal(boundary, "source_failure_fallback", False)
+        require_equal(
+            boundary,
+            "promotion_target",
+            "source_derived_musical_intelligence",
+        )
+        require_equal(boundary, "promotion_target_scope", "recipe_and_pattern_selection")
+        validate_product_primitive_vocabulary(manifest, boundary, primitive_records)
+    else:
+        raise ValueError(
+            "primitive_renderer_boundary evidence_role must be "
+            "'non_product_diagnostic_control' or 'product_primitive_vocabulary', "
+            f"got {evidence_role!r}"
+        )
     affected_paths = require_non_empty_string_list(
         boundary,
         "affected_paths",
@@ -223,21 +275,479 @@ def validate_primitive_renderer_boundary(manifest: dict[str, Any]) -> None:
         )
 
 
-def find_string_value_paths(value: Any, needle: str, path: str = "") -> list[str]:
+def validate_product_primitive_vocabulary(
+    manifest: dict[str, Any],
+    boundary: dict[str, Any],
+    primitive_records: list[tuple[str, dict[str, Any]]],
+) -> None:
+    require_equal(manifest, "quality_proof", False)
+    if "demo_readiness" in manifest:
+        require_equal(manifest, "demo_readiness", "unverified")
+    for field in ("source_derivation_claimed", "source_failure_fallback"):
+        if field in manifest:
+            require_equal(manifest, field, False)
+
+    boundary_runtime_paths = require_non_empty_string_list(
+        boundary,
+        "affected_runtime_paths",
+        "primitive_renderer_boundary affected_runtime_paths",
+    )
+    boundary_artifacts = require_non_empty_string_list(
+        boundary,
+        "affected_artifacts",
+        "primitive_renderer_boundary affected_artifacts",
+    )
+    activation = require_object_field(boundary, "activation")
+    require_equal(activation, "kind", "explicit_committed_performer_gesture")
+    boundary_activation_refs = require_non_empty_string_list(
+        activation,
+        "references",
+        "primitive_renderer_boundary activation references",
+    )
+    if len(boundary_activation_refs) != len(set(boundary_activation_refs)):
+        raise ValueError("primitive_renderer_boundary activation references must be unique")
+
+    manifest_artifact_paths = {artifact["path"] for artifact in manifest["artifacts"]}
+    record_activation_refs: set[str] = set()
+    record_artifacts: set[str] = set()
+    registered_runtime_paths: set[str] = set()
+    for path, record in primitive_records:
+        require_string(record, "primitive_schema", f"{path} primitive_schema")
+        primitive_schema = record["primitive_schema"]
+        if not VERSIONED_PRIMITIVE_SCHEMA.fullmatch(primitive_schema):
+            raise ValueError(
+                f"{path} primitive_schema must be a versioned riotbox schema, "
+                f"got {primitive_schema!r}"
+            )
+        require_string(record, "recipe_id", f"{path} recipe_id")
+        recipe_id = record["recipe_id"]
+        if not VERSIONED_RECIPE_ID.fullmatch(recipe_id):
+            raise ValueError(
+                f"{path} recipe_id must end in a positive _vN version, got {recipe_id!r}"
+            )
+        selection_inputs = require_object_field(record, "selection_inputs")
+        if not selection_inputs:
+            raise ValueError(f"{path} selection_inputs must not be empty")
+        for key, value in selection_inputs.items():
+            if not key.strip():
+                raise ValueError(f"{path} selection_inputs keys must not be empty")
+            if isinstance(value, str):
+                if not value.strip():
+                    raise ValueError(
+                        f"{path} selection_inputs.{key} must not be an empty string"
+                    )
+            elif isinstance(value, bool):
+                pass
+            elif isinstance(value, (int, float)) and not isinstance(value, bool):
+                if not math.isfinite(float(value)):
+                    raise ValueError(
+                        f"{path} selection_inputs.{key} must be finite"
+                    )
+            else:
+                raise TypeError(
+                    f"{path} selection_inputs.{key} must be a typed scalar"
+                )
+
+        require_string(record, "activation_ref", f"{path} activation_ref")
+        activation_ref = record["activation_ref"]
+        if not CANONICAL_GESTURE_TRANSITION_REF.fullmatch(activation_ref):
+            raise ValueError(
+                f"{path} activation_ref must target the canonical gesture_transitions "
+                f"collection, got {activation_ref!r}"
+            )
+        activation_record = require_object(
+            resolve_json_pointer(manifest, activation_ref),
+            f"{path} activation_ref target",
+        )
+        require_string(activation_record, "command", f"{path} activation command")
+        require_non_negative_int(
+            activation_record,
+            "action_id",
+            f"{path} activation",
+        )
+        require_string(activation_record, "boundary", f"{path} activation boundary")
+        record_activation_refs.add(activation_ref)
+
+        affected_artifacts = require_non_empty_string_list(
+            record,
+            "affected_artifacts",
+            f"{path} affected_artifacts",
+        )
+        if len(affected_artifacts) != len(set(affected_artifacts)):
+            raise ValueError(f"{path} affected_artifacts must be unique")
+        for artifact_path in affected_artifacts:
+            if artifact_path not in manifest_artifact_paths:
+                raise ValueError(
+                    f"{path} affected artifact is not declared in artifacts: {artifact_path}"
+                )
+            record_artifacts.add(artifact_path)
+        registered_runtime_paths.update(
+            validate_registered_product_primitive(
+                path,
+                record,
+                selection_inputs,
+                activation_record,
+                affected_artifacts,
+                manifest["artifacts"],
+            )
+        )
+
+    if sorted(boundary_activation_refs) != sorted(record_activation_refs):
+        raise ValueError(
+            "primitive_renderer_boundary activation references must exactly match "
+            f"primitive activation_ref values: expected {sorted(record_activation_refs)!r}, "
+            f"got {sorted(boundary_activation_refs)!r}"
+        )
+    if sorted(boundary_runtime_paths) != sorted(registered_runtime_paths):
+        raise ValueError(
+            "primitive_renderer_boundary affected_runtime_paths must exactly match "
+            f"registered primitive schemas: expected {sorted(registered_runtime_paths)!r}, "
+            f"got {sorted(boundary_runtime_paths)!r}"
+        )
+    if len(boundary_artifacts) != len(set(boundary_artifacts)):
+        raise ValueError("primitive_renderer_boundary affected_artifacts must be unique")
+    if sorted(boundary_artifacts) != sorted(record_artifacts):
+        raise ValueError(
+            "primitive_renderer_boundary affected_artifacts must exactly match primitive "
+            f"records: expected {sorted(record_artifacts)!r}, "
+            f"got {sorted(boundary_artifacts)!r}"
+        )
+
+
+def validate_registered_product_primitive(
+    path: str,
+    record: dict[str, Any],
+    selection_inputs: dict[str, Any],
+    activation_record: dict[str, Any],
+    affected_artifacts: list[str],
+    manifest_artifacts: list[dict[str, Any]],
+) -> set[str]:
+    primitive_schema = record["primitive_schema"]
+    if primitive_schema != TR909_FILL_PRIMITIVE_SCHEMA:
+        raise ValueError(
+            f"{path} primitive_schema is not registered for product output: "
+            f"{primitive_schema!r}"
+        )
+
+    require_equal(
+        record,
+        "source_evidence_role",
+        "availability_timing_and_pressure_modulation",
+    )
+    require_equal(record, "source_evidence_selects_pattern", False)
+    require_equal(record, "source_evidence_modulates_output", True)
+    for field in ("source_derivation_claimed", "source_failure_fallback"):
+        if field in record:
+            require_equal(record, field, False)
+    for field, expected in (
+        ("quality_proof", False),
+        ("demo_readiness", "unverified"),
+        ("product_output_allowed", True),
+        ("evidence_role", "product_primitive_vocabulary"),
+    ):
+        if field in record:
+            require_equal(record, field, expected)
+
+    input_keys = set(selection_inputs)
+    if input_keys != TR909_FILL_SELECTION_KEYS:
+        raise ValueError(
+            f"{path} selection_inputs keys must exactly match the registered "
+            f"{TR909_FILL_PRIMITIVE_SCHEMA} contract: expected "
+            f"{sorted(TR909_FILL_SELECTION_KEYS)!r}, got {sorted(input_keys)!r}"
+        )
+    require_equal(selection_inputs, "mode", "fill")
+    require_equal(selection_inputs, "routing", "drum_bus_support")
+    validate_tr909_fill_source_modulation(path, record, activation_record)
+
+    recipe_id = record["recipe_id"]
+    adoption = selection_inputs["pattern_adoption"]
+    variation = selection_inputs["phrase_variation"]
+    if recipe_id in {
+        "phrase_drive_choke_dive_stomp_v1",
+        "phrase_drive_long_choke_dive_stomp_v2",
+        "phrase_drive_break_cut_stomp_v1",
+    }:
+        if adoption != "mainline_drive" or variation != "phrase_drive":
+            raise ValueError(
+                f"{path} recipe_id {recipe_id!r} requires "
+                "pattern_adoption='mainline_drive' and phrase_variation='phrase_drive'"
+            )
+    elif recipe_id == "phrase_drive_accent_ghost_v1":
+        if adoption not in {"support_pulse", "takeover_grid"} or variation != "phrase_drive":
+            raise ValueError(
+                f"{path} recipe_id {recipe_id!r} requires support/takeover adoption "
+                "and phrase_variation='phrase_drive'"
+            )
+    elif recipe_id == "generic_fill_v1":
+        if adoption not in {"support_pulse", "mainline_drive", "takeover_grid"}:
+            raise ValueError(
+                f"{path} recipe_id {recipe_id!r} has an unsupported pattern_adoption "
+                f"{adoption!r}"
+            )
+        if variation not in {"phrase_anchor", "phrase_lift", "phrase_release"}:
+            raise ValueError(
+                f"{path} recipe_id {recipe_id!r} has an unsupported phrase_variation "
+                f"{variation!r}"
+            )
+    else:
+        raise ValueError(
+            f"{path} recipe_id is not registered for {TR909_FILL_PRIMITIVE_SCHEMA}: "
+            f"{recipe_id!r}"
+        )
+
+    require_equal(activation_record, "command", "tr909.fill_next")
+    require_equal(activation_record, "actor", "performer")
+    require_equal(activation_record, "status", "committed")
+    require_equal(activation_record, "boundary", "Bar")
+    if activation_record["action_id"] <= 0:
+        raise ValueError(f"{path} activation action_id must be a positive integer")
+
+    require_string(
+        activation_record,
+        "candidate_artifact",
+        f"{path} activation candidate_artifact",
+    )
+    candidate_artifact = activation_record["candidate_artifact"]
+    if candidate_artifact not in affected_artifacts:
+        raise ValueError(
+            f"{path} activation candidate_artifact must be included in affected_artifacts: "
+            f"{candidate_artifact!r}"
+        )
+    artifacts_by_path: dict[str, list[dict[str, Any]]] = {}
+    for artifact in manifest_artifacts:
+        artifacts_by_path.setdefault(artifact["path"], []).append(artifact)
+    allowed_roles = {
+        "candidate",
+        "committed_fill",
+        "performance_stage",
+        "continuous_performance_sequence",
+    }
+    for artifact_path in affected_artifacts:
+        artifact_records = artifacts_by_path.get(artifact_path, [])
+        if len(artifact_records) != 1:
+            raise ValueError(
+                f"{path} affected artifact must resolve to exactly one declared artifact, "
+                f"got {len(artifact_records)} for {artifact_path!r}"
+            )
+        artifact_record = artifact_records[0]
+        if artifact_record["role"] not in allowed_roles:
+            raise ValueError(
+                f"{path} affected artifact has a role outside the registered Fill output "
+                f"contract: {artifact_record['role']!r}"
+            )
+        if artifact_record["kind"] not in {"wav", "audio_wav"} or not artifact_path.endswith(
+            ".wav"
+        ):
+            raise ValueError(f"{path} affected artifact must be a declared WAV artifact")
+
+    candidate_records = artifacts_by_path.get(candidate_artifact, [])
+    if len(candidate_records) != 1:
+        raise ValueError(
+            f"{path} activation candidate_artifact must resolve to exactly one declared "
+            f"artifact, got {len(candidate_records)} for {candidate_artifact!r}"
+        )
+    candidate_record = candidate_records[0]
+    if candidate_record["role"] not in {"candidate", "committed_fill"}:
+        raise ValueError(
+            f"{path} activation candidate_artifact must have candidate/committed_fill role, "
+            f"got {candidate_record['role']!r}"
+        )
+
+    return TR909_FILL_RUNTIME_PATHS
+
+
+def validate_tr909_fill_source_modulation(
+    path: str,
+    record: dict[str, Any],
+    activation_record: dict[str, Any],
+) -> None:
+    modulation = require_object_field(record, "source_modulation")
+    require_exact_keys(
+        modulation,
+        {
+            "schema",
+            "source_feature_path",
+            "source_feature_value",
+            "source_timing_path",
+            "derived_policy",
+            "resolved_render_inputs",
+            "affected_runtime_parameters",
+            "pattern_selection_changed",
+        },
+        f"{path} source_modulation",
+    )
+    require_equal(modulation, "schema", TR909_FILL_SOURCE_MODULATION_SCHEMA)
+    require_equal(
+        modulation,
+        "source_feature_path",
+        "session.runtime_state.lane_state.mc202.source_phrase_plan."
+        "source_expression.transient_backbeat",
+    )
+    require_equal(
+        modulation,
+        "source_timing_path",
+        "source_graph.timing.primary_hypothesis.transport_bar_grid_anchor.beat_cursor",
+    )
+    transient_backbeat = require_finite_unit_number(
+        modulation,
+        "source_feature_value",
+        f"{path} source_modulation source_feature_value",
+    )
+    require_equal(modulation, "pattern_selection_changed", False)
+    affected_parameters = require_non_empty_string_list(
+        modulation,
+        "affected_runtime_parameters",
+        f"{path} source_modulation affected_runtime_parameters",
+    )
+    if len(affected_parameters) != len(set(affected_parameters)) or set(
+        affected_parameters
+    ) != TR909_FILL_MODULATION_RUNTIME_PARAMETERS:
+        raise ValueError(
+            f"{path} source_modulation affected_runtime_parameters must exactly match "
+            f"{sorted(TR909_FILL_MODULATION_RUNTIME_PARAMETERS)!r}"
+        )
+
+    derived_policy = require_object_field(modulation, "derived_policy")
+    require_exact_keys(
+        derived_policy,
+        {
+            "tr909_drum_level",
+            "tr909_slam_floor",
+            "source_bar_grid_anchor_beat_cursor",
+        },
+        f"{path} source_modulation derived_policy",
+    )
+    tr909_drum_level = require_finite_unit_number(
+        derived_policy,
+        "tr909_drum_level",
+        f"{path} source_modulation derived tr909_drum_level",
+    )
+    tr909_slam_floor = require_finite_unit_number(
+        derived_policy,
+        "tr909_slam_floor",
+        f"{path} source_modulation derived tr909_slam_floor",
+    )
+    require_non_negative_int(
+        derived_policy,
+        "source_bar_grid_anchor_beat_cursor",
+        f"{path} source_modulation derived policy",
+    )
+    source_bar_anchor = derived_policy["source_bar_grid_anchor_beat_cursor"]
+    expected_drum_level = 0.68 + transient_backbeat * 0.16
+    expected_slam_floor = 0.54 + transient_backbeat * 0.16
+    if abs(tr909_drum_level - expected_drum_level) > 0.00001:
+        raise ValueError(
+            f"{path} derived tr909_drum_level does not match registered source policy"
+        )
+    if abs(tr909_slam_floor - expected_slam_floor) > 0.00001:
+        raise ValueError(
+            f"{path} derived tr909_slam_floor does not match registered source policy"
+        )
+
+    resolved = require_object_field(modulation, "resolved_render_inputs")
+    require_exact_keys(
+        resolved,
+        {
+            "drum_bus_level",
+            "slam_intensity",
+            "slam_enabled",
+            "source_bar_grid_anchor_position_beats",
+        },
+        f"{path} source_modulation resolved_render_inputs",
+    )
+    resolved_drum_level = require_finite_unit_number(
+        resolved,
+        "drum_bus_level",
+        f"{path} source_modulation resolved drum_bus_level",
+    )
+    resolved_slam_intensity = require_finite_unit_number(
+        resolved,
+        "slam_intensity",
+        f"{path} source_modulation resolved slam_intensity",
+    )
+    require_bool(resolved, "slam_enabled", f"{path} source_modulation resolved")
+    resolved_source_bar_anchor = require_number(
+        resolved,
+        "source_bar_grid_anchor_position_beats",
+        f"{path} source_modulation resolved",
+    )
+    if not math.isfinite(resolved_source_bar_anchor) or resolved_source_bar_anchor < 0.0:
+        raise ValueError(f"{path} resolved source-bar phase must be finite and non-negative")
+    if resolved_source_bar_anchor != source_bar_anchor:
+        raise ValueError(
+            f"{path} resolved source-bar phase drifted from the derived confirmed anchor"
+        )
+    if resolved_drum_level + EPSILON < tr909_drum_level:
+        raise ValueError(f"{path} resolved drum_bus_level lost its source-derived floor")
+    if resolved_slam_intensity + EPSILON < tr909_slam_floor:
+        raise ValueError(f"{path} resolved slam_intensity lost its source-derived floor")
+
+    controls = require_object_field(activation_record, "control_values")
+    require_equal(controls, "tr909_mode_after", "fill")
+    activation_drum_level = require_finite_unit_number(
+        controls,
+        "tr909_drum_bus_level_after",
+        f"{path} activation tr909_drum_bus_level_after",
+    )
+    activation_slam_intensity = require_finite_unit_number(
+        controls,
+        "tr909_slam_after",
+        f"{path} activation tr909_slam_after",
+    )
+    require_bool(controls, "tr909_slam_enabled_after", f"{path} activation controls")
+    if abs(activation_drum_level - resolved_drum_level) > EPSILON:
+        raise ValueError(
+            f"{path} source modulation drum_bus_level does not match activation render state"
+        )
+    if abs(activation_slam_intensity - resolved_slam_intensity) > EPSILON:
+        raise ValueError(
+            f"{path} source modulation slam_intensity does not match activation render state"
+        )
+    if controls["tr909_slam_enabled_after"] != resolved["slam_enabled"]:
+        raise ValueError(
+            f"{path} source modulation slam_enabled does not match activation render state"
+        )
+
+
+def resolve_json_pointer(value: Any, pointer: str) -> Any:
+    if not pointer.startswith("/"):
+        raise ValueError(f"activation_ref must be an absolute JSON pointer, got {pointer!r}")
+    current = value
+    for raw_token in pointer[1:].split("/"):
+        token = raw_token.replace("~1", "/").replace("~0", "~")
+        if isinstance(current, dict):
+            if token not in current:
+                raise ValueError(f"activation_ref path does not exist: {pointer}")
+            current = current[token]
+        elif isinstance(current, list):
+            if not token.isdigit() or int(token) >= len(current):
+                raise ValueError(f"activation_ref array index does not exist: {pointer}")
+            current = current[int(token)]
+        else:
+            raise ValueError(f"activation_ref traverses a scalar value: {pointer}")
+    return current
+
+
+def find_string_value_records(
+    value: Any,
+    needle: str,
+    path: str = "",
+) -> list[tuple[str, dict[str, Any]]]:
     if isinstance(value, dict):
-        paths = []
+        records = []
         for key, child in value.items():
             child_path = f"{path}.{key}" if path else str(key)
-            paths.extend(find_string_value_paths(child, needle, child_path))
-        return paths
+            if child == needle:
+                records.append((child_path, value))
+            else:
+                records.extend(find_string_value_records(child, needle, child_path))
+        return records
     if isinstance(value, list):
-        paths = []
+        records = []
         for index, child in enumerate(value):
             child_path = f"{path}[{index}]"
-            paths.extend(find_string_value_paths(child, needle, child_path))
-        return paths
-    if value == needle:
-        return [path]
+            records.extend(find_string_value_records(child, needle, child_path))
+        return records
     return []
 
 
@@ -724,6 +1234,14 @@ def require_object_field(parent: dict[str, Any], field: str) -> dict[str, Any]:
     return require_object(parent.get(field), field)
 
 
+def require_exact_keys(value: dict[str, Any], expected: set[str], name: str) -> None:
+    actual = set(value)
+    if actual != expected:
+        raise ValueError(
+            f"{name} keys must exactly match {sorted(expected)!r}, got {sorted(actual)!r}"
+        )
+
+
 def require_equal(parent: dict[str, Any], field: str, expected: Any) -> None:
     value = parent.get(field)
     if value != expected:
@@ -777,6 +1295,13 @@ def require_number(parent: dict[str, Any], field: str, name: str) -> float:
     if not isinstance(value, (int, float)) or isinstance(value, bool):
         raise TypeError(f"{name} must be a number")
     return float(value)
+
+
+def require_finite_unit_number(parent: dict[str, Any], field: str, name: str) -> float:
+    value = require_number(parent, field, name)
+    if not math.isfinite(value) or not 0.0 <= value <= 1.0:
+        raise ValueError(f"{name} must be finite and between 0 and 1")
+    return value
 
 
 def require_non_negative_number(parent: dict[str, Any], field: str, name: str) -> None:

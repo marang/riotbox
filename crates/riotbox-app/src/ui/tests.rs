@@ -7,6 +7,7 @@ include!("tests/regression_fixture_types.rs");
 include!("tests/w30_fixture_helpers.rs");
 include!("tests/shell_state_fixtures.rs");
 include!("tests/shell_state_keys.rs");
+mod p023_first_playable_ui;
 include!("tests/shell_state_jam_snapshot.rs");
 include!("tests/shell_state_ghost_controls.rs");
 include!("tests/shell_state_inspect_snapshot.rs");

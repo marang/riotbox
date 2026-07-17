@@ -9,8 +9,10 @@ pub(super) fn envelope_decay(render: &RealtimeTr909RenderState) -> f32 {
             Some(Tr909SourceSupportProfile::BreakLift) => 0.989 - (slam * 0.003),
             Some(Tr909SourceSupportProfile::DropDrive) => 0.986 - (slam * 0.004),
         },
-        Tr909RenderMode::Fill => 0.988 - (slam * 0.003),
-        Tr909RenderMode::BreakReinforce => 0.9975 - (slam * 0.0006),
+        Tr909RenderMode::Fill => 0.99855 + fill_performance_slam(render) * 0.0007,
+        Tr909RenderMode::BreakReinforce => {
+            0.9975 - (slam * 0.0006) + break_performance_slam(render) * 0.00075
+        }
         Tr909RenderMode::Takeover => match render.takeover_profile {
             Some(Tr909TakeoverRenderProfile::ControlledPhrase) | None => 0.986 - (slam * 0.004),
             Some(Tr909TakeoverRenderProfile::SceneLock) => 0.982 - (slam * 0.005),
@@ -27,7 +29,12 @@ pub(super) fn envelope_decay(render: &RealtimeTr909RenderState) -> f32 {
         Some(Tr909PhraseVariation::PhraseDrive) => -0.003,
         Some(Tr909PhraseVariation::PhraseRelease) => 0.01,
     };
-    (base - pattern_decay - phrase_decay).clamp(0.0, 1.0)
+    let variation_scale = if matches!(render.mode, Tr909RenderMode::Fill) {
+        0.06
+    } else {
+        1.0
+    };
+    (base - pattern_decay * variation_scale - phrase_decay * variation_scale).clamp(0.0, 1.0)
 }
 
 pub(super) const fn mode_to_u32(mode: Tr909RenderMode) -> u32 {

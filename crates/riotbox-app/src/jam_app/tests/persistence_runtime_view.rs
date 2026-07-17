@@ -251,12 +251,16 @@ fn runtime_view_updates_from_audio_and_sidecar_state() {
 }
 
 #[test]
-fn source_monitor_audio_route_tracks_source_cache_and_output_format() {
+fn source_monitor_audio_route_accepts_resampleable_source_and_output_formats() {
     let graph = sample_graph();
     let mut session = sample_session(&graph);
     session.runtime_state.source_monitor.mode = SourceMonitorMode::Source;
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
+    assert_eq!(
+        state.runtime.source_monitor_audio_route,
+        SourceMonitorAudioRoute::SourceUnavailable
+    );
     assert_eq!(state.runtime_view.source_monitor_audio_route, "source_unavailable");
 
     state.source_audio_cache = Some(
@@ -270,6 +274,10 @@ fn source_monitor_audio_route_tracks_source_cache_and_output_format() {
     );
     state.refresh_view();
 
+    assert_eq!(
+        state.runtime.source_monitor_audio_route,
+        SourceMonitorAudioRoute::SourceOnly
+    );
     assert_eq!(state.runtime_view.source_monitor_audio_route, "source_only");
 
     state.set_audio_health(sample_audio_health(AudioRuntimeLifecycle::Running));
@@ -282,15 +290,12 @@ fn source_monitor_audio_route_tracks_source_cache_and_output_format() {
         .sample_rate = 48_000;
     state.refresh_view();
 
-    assert_eq!(state.runtime_view.source_monitor_audio_route, "source_unavailable");
-    assert!(
-        state
-            .runtime_view
-            .runtime_warnings
-            .iter()
-            .any(|warning| warning.contains("source monitor unavailable")
-                && warning.contains("48000 Hz"))
-    );
+    assert_eq!(state.runtime_view.source_monitor_audio_route, "source_only");
+    assert!(!state
+        .runtime_view
+        .runtime_warnings
+        .iter()
+        .any(|warning| warning.contains("source monitor unavailable")));
 }
 
 #[test]
@@ -379,6 +384,8 @@ fn runtime_view_surfaces_faulted_and_degraded_states() {
 fn runtime_view_surfaces_tr909_render_diagnostics() {
     let graph = sample_graph();
     let mut session = sample_session(&graph);
+    // Preserve the explicit phrase-lift diagnostic on phrase 1.
+    session.runtime_state.transport.position_beats = 15.0;
     session.runtime_state.lane_state.tr909.takeover_enabled = true;
     session.runtime_state.lane_state.tr909.takeover_profile =
         Some(Tr909TakeoverProfileState::ControlledPhraseTakeover);
@@ -417,7 +424,7 @@ fn runtime_view_surfaces_tr909_render_diagnostics() {
         state
             .runtime_view
             .tr909_render_transport_summary
-            .contains("running @ 32.0 beats")
+            .contains("running @ 15.0 beats")
     );
     assert!(
         state
@@ -466,7 +473,7 @@ fn runtime_view_surfaces_mc202_render_diagnostics() {
         state
             .runtime_view
             .mc202_render_transport_summary
-            .contains("running @ 32.0 beats")
+            .contains("running @ 31.0 beats")
     );
     assert!(
         state.runtime_view.runtime_warnings.iter().any(

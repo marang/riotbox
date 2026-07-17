@@ -638,10 +638,12 @@ fn render_buffer_produces_audible_samples_for_support_mode() {
             phrase_variation: None,
             takeover_profile: None,
             drum_bus_level: 0.8,
+            slam_enabled: false,
             slam_intensity: 0.6,
             is_transport_running: true,
             tempo_bpm: 128.0,
             position_beats: 0.0,
+            source_bar_grid_anchor_position_beats: None,
         },
         &mut state,
     );
