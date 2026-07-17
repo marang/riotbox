@@ -24,6 +24,7 @@ impl StyleProfileId {
 #[serde(rename_all = "snake_case")]
 pub enum PerformancePresetId {
     FeralBreakAlphaV1,
+    FeralBreakAlphaV2,
 }
 
 impl PerformancePresetId {
@@ -31,6 +32,7 @@ impl PerformancePresetId {
     pub const fn label(self) -> &'static str {
         match self {
             Self::FeralBreakAlphaV1 => "Feral Break Alpha",
+            Self::FeralBreakAlphaV2 => "Feral Break Alpha v2",
         }
     }
 
@@ -38,13 +40,14 @@ impl PerformancePresetId {
     pub const fn contract_id(self) -> &'static str {
         match self {
             Self::FeralBreakAlphaV1 => "feral_break_alpha_v1",
+            Self::FeralBreakAlphaV2 => "feral_break_alpha_v2",
         }
     }
 
     #[must_use]
     pub const fn definition(self) -> PerformancePresetDefinition {
         match self {
-            Self::FeralBreakAlphaV1 => PerformancePresetDefinition {
+            Self::FeralBreakAlphaV1 | Self::FeralBreakAlphaV2 => PerformancePresetDefinition {
                 profile_id: StyleProfileId::FeralRebuild,
                 w30_role: PresetW30Role::SourceHookLead,
                 tr909_role: PresetTr909Role::BreakPressure,

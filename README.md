@@ -63,7 +63,7 @@ in, perform obvious contrasts, and restore the scene**.
 
 For the one curated P023 starting state, use the same capture path but press
 `F` after promotion instead of reconstructing lane gains and macros by hand.
-`F` activates the versioned `Feral Break Alpha` preset, selects `Blend`, and
+`F` activates the versioned `Feral Break Alpha v2` preset, selects `Blend`, and
 shows the active `feral_rebuild` profile and preset in the Jam header.
 
 With the trusted dense-break source, the supported eight-bar practice arc is:

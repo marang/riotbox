@@ -196,7 +196,7 @@ fn cursor_20_phrase_drive_fill_builds_to_a_clear_close_against_break_reinforceme
         mode: Tr909RenderMode::BreakReinforce,
         routing: Tr909RenderRouting::DrumBusSupport,
         pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
-        phrase_variation: Some(Tr909PhraseVariation::PhraseDrive),
+        phrase_variation: Some(Tr909PhraseVariation::PhraseDriveHardCut),
         drum_bus_level: 0.799_204_35,
         slam_enabled: false,
         slam_intensity: 0.659_204_36,
@@ -246,7 +246,7 @@ fn confirmed_source_bar_anchor_preserves_the_complete_fill_order_on_an_offset_gr
         mode: Tr909RenderMode::Fill,
         routing: Tr909RenderRouting::DrumBusSupport,
         pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
-        phrase_variation: Some(Tr909PhraseVariation::PhraseDrive),
+        phrase_variation: Some(Tr909PhraseVariation::PhraseDriveHardCut),
         drum_bus_level: 0.799_204_35,
         slam_enabled: false,
         slam_intensity: 0.659_204_36,
@@ -289,7 +289,7 @@ fn cursor_20_phrase_drive_fill_builds_then_takes_over_for_a_choke_to_stomp_close
         source_support_profile: None,
         source_support_context: None,
         pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
-        phrase_variation: Some(Tr909PhraseVariation::PhraseDrive),
+        phrase_variation: Some(Tr909PhraseVariation::PhraseDriveHardCut),
         takeover_profile: None,
         drum_bus_level: 0.799_204_35,
         slam_enabled: false,
@@ -329,20 +329,22 @@ fn cursor_20_phrase_drive_fill_builds_then_takes_over_for_a_choke_to_stomp_close
     assert_eq!(render_subdivision(&fill), 8);
     assert_eq!(
         fill_triggered,
-        vec![0, 8, 12, 16, 18, 19, 20, 22, 23, 24, 25, 26, 27, 30]
+        vec![0, 8, 12, 16, 18, 19, 20, 22, 23, 30]
     );
-    assert_eq!(fill_hits_per_beat, [1, 2, 6, 5]);
+    assert_eq!(fill_hits_per_beat, [1, 2, 6, 1]);
     assert_eq!(render_subdivision(&break_reinforce), 4);
     assert_eq!(break_triggered, (0_i64..16).collect::<Vec<_>>());
     assert_eq!(break_hits_per_beat, [4, 4, 4, 4]);
     assert_eq!(
-        tr909_fill_recipe::fill_step(&fill, render_subdivision(&fill), 28),
+        tr909_fill_recipe::fill_step(&fill, render_subdivision(&fill), 24),
         tr909_fill_recipe::Tr909FillStep::Choke
     );
-    assert_eq!(
-        tr909_fill_recipe::fill_step(&fill, render_subdivision(&fill), 29),
-        tr909_fill_recipe::Tr909FillStep::Rest
-    );
+    for step in 25..30 {
+        assert_eq!(
+            tr909_fill_recipe::fill_step(&fill, render_subdivision(&fill), step),
+            tr909_fill_recipe::Tr909FillStep::Rest
+        );
+    }
     assert!(matches!(
         tr909_fill_recipe::fill_step(&fill, render_subdivision(&fill), 30),
         tr909_fill_recipe::Tr909FillStep::DiveStomp(_)
@@ -383,10 +385,10 @@ fn phrase_drive_fill_assigns_the_contour_to_distinct_drum_owners() {
             (20, true, true, false),
             (22, false, false, true),
             (23, false, true, false),
-            (24, true, false, true),
-            (25, false, true, false),
-            (26, true, true, false),
-            (27, false, false, true),
+            (24, false, false, false),
+            (25, false, false, false),
+            (26, false, false, false),
+            (27, false, false, false),
             (28, false, false, false),
             (29, false, false, false),
             (30, true, true, false),
@@ -413,30 +415,25 @@ fn phrase_drive_fill_assigns_the_contour_to_distinct_drum_owners() {
                 .count()
         })
         .collect::<Vec<_>>();
-    assert_eq!(sounding_events_per_beat, [1, 2, 6, 5]);
+    assert_eq!(sounding_events_per_beat, [1, 2, 6, 1]);
     assert!(
-        !should_trigger_step(&render, 28) && !should_trigger_step(&render, 29),
-        "the final eight-slot grid must reserve the choke and rest before the payoff"
+        (24_i64..30).all(|step| !should_trigger_step(&render, step)),
+        "the final beat must reserve a perceptible choke/dropout before the payoff"
     );
 
-    let setup_kick_hat = test_fill_recipe_trigger(&render, 24);
-    let setup_snare = test_fill_recipe_trigger(&render, 25);
-    let setup_double = test_fill_recipe_trigger(&render, 26);
+    let setup_kick = test_fill_recipe_trigger(&render, 20);
+    let setup_snare = test_fill_recipe_trigger(&render, 23);
     let payoff = test_fill_recipe_trigger(&render, 30);
     assert!(
-        setup_kick_hat.kick > 0.0
-            && setup_kick_hat.hat > 0.0
-            && setup_snare.snare > 0.0
-            && setup_double.kick > 0.0
-            && setup_double.snare > 0.0,
-        "the beat-four rush must announce the destructive close"
+        setup_kick.kick > 0.0 && setup_kick.snare > 0.0 && setup_snare.snare > 0.0,
+        "the beat-three call must announce the destructive close"
     );
     assert!(
-        payoff.kick > setup_double.kick && payoff.snare > setup_double.snare,
+        payoff.kick > setup_kick.kick && payoff.snare > setup_snare.snare,
         "the late kick+snare dive-stomp must own the final-beat payoff"
     );
     assert_eq!(
-        tr909_fill_recipe::fill_step(&render, render_subdivision(&render), 28),
+        tr909_fill_recipe::fill_step(&render, render_subdivision(&render), 24),
         tr909_fill_recipe::Tr909FillStep::Choke
     );
     assert!(matches!(
@@ -478,17 +475,25 @@ fn fill_kick_snare_and_hat_tails_overlap_without_truncating_each_other() {
             as usize;
 
     voices.trigger(
-        test_fill_recipe_trigger(&render, 24),
+        test_fill_recipe_trigger(&render, 18),
         trigger_envelope(&render),
-        24,
+        18,
     );
     for _ in 0..frames_per_step {
         let _ = voices.render_sample(&render, sample_rate);
     }
     voices.trigger(
-        test_fill_recipe_trigger(&render, 25),
+        test_fill_recipe_trigger(&render, 19),
         trigger_envelope(&render),
-        25,
+        19,
+    );
+    for _ in 0..frames_per_step {
+        let _ = voices.render_sample(&render, sample_rate);
+    }
+    voices.trigger(
+        test_fill_recipe_trigger(&render, 20),
+        trigger_envelope(&render),
+        20,
     );
 
     let mut kick = Vec::with_capacity(1_024);
@@ -511,7 +516,7 @@ fn fill_kick_snare_and_hat_tails_overlap_without_truncating_each_other() {
     );
     assert!(
         hat_rms > 0.001,
-        "the setup hat tail did not survive into the adjacent snare: {hat_rms}"
+        "the setup hat tail did not survive into the following snare/kick call: {hat_rms}"
     );
 }
 
@@ -524,9 +529,9 @@ fn phrase_drive_signature_chokes_cleanly_and_exposes_a_pitch_dive_with_flam() {
     let mut choked_voices = tr909_fill_voice::Tr909FillVoiceState::default();
     choked_voices.start();
     choked_voices.trigger(
-        test_fill_recipe_trigger(&render, 26),
+        test_fill_recipe_trigger(&render, 23),
         envelope,
-        26,
+        23,
     );
     for _ in 0..128 {
         let _ = choked_voices.render_sample(&render, sample_rate);
@@ -1407,7 +1412,7 @@ fn cursor_20_phrase_drive_fill_render() -> RealtimeTr909RenderState {
         source_support_profile: None,
         source_support_context: None,
         pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
-        phrase_variation: Some(Tr909PhraseVariation::PhraseDrive),
+        phrase_variation: Some(Tr909PhraseVariation::PhraseDriveHardCut),
         takeover_profile: None,
         drum_bus_level: 0.799_204_35,
         slam_enabled: false,

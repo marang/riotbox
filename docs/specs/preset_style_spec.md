@@ -257,6 +257,22 @@ Actual bass ownership remains `mc202` only when the restored source-derived
 live-performance policy selects a trusted `sub_pressure_shove`; otherwise it
 is `unassigned`.
 
+### 12.2 Feral Break Alpha v2
+
+`feral_break_alpha_v2`, displayed as `Feral Break Alpha v2`, retains the v1
+lane roles and control defaults but tightens one performer-owned contract:
+while this preset is active, a committed TR-909 Fill uses the typed
+`PhraseDriveHardCut` variation after any explicit active Scene-movement
+override.
+That keeps the advertised destructive `f` gesture on
+`PhraseDriveBreakCutStompV2` even when the ambient transport phrase cycle would
+otherwise choose a polite Lift variation.
+
+This override applies only to the committed Fill window. It does not alter
+non-Fill playback, invent source material or a pattern, bypass queue/commit, or
+claim source-derived composition. V1 remains a historical replay/control
+identity and is not silently redefined.
+
 ---
 
 ## 13. TUI Requirements

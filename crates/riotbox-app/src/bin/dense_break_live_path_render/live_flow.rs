@@ -46,7 +46,7 @@ pub fn prepare(
     let source_timing = confirmed_source_timing(&state, cli_bpm_hint)?;
     if source_timing.beats_per_bar != DEFAULT_BEATS_PER_BAR {
         return Err(format!(
-            "Feral Break Alpha v1 requires 4/4 source timing, got {} beats per bar",
+            "Feral Break Alpha v2 requires 4/4 source timing, got {} beats per bar",
             source_timing.beats_per_bar
         )
         .into());
@@ -137,7 +137,7 @@ pub fn prepare(
     // Source monitor EOF clamps by product contract. Keep the raw reference proof
     // at source start instead of asking a short loop to play from performance bar 5.
     let source_plan = render_plan(&state, bpm, 0.0);
-    let preset_id = PerformancePresetId::FeralBreakAlphaV1;
+    let preset_id = PerformancePresetId::FeralBreakAlphaV2;
     if state.queue_performance_preset(preset_id, 305) != QueueControlResult::Enqueued {
         return Err("Feral Break Alpha preset was unavailable".into());
     }

@@ -101,9 +101,9 @@ jq -e \
   and .evidence_boundary.scripted_generation == true
   and .evidence_boundary.quality_proof == false
   and .evidence_boundary.human_verdict == "unverified"
-  and .performance_preset.preset_id == "feral_break_alpha_v1"
+  and .performance_preset.preset_id == "feral_break_alpha_v2"
   and .performance_preset.profile_id == "feral_rebuild"
-  and .performance_preset.label == "Feral Break Alpha"
+  and .performance_preset.label == "Feral Break Alpha v2"
   and .performance_preset.w30_role == "source_hook_lead"
   and .performance_preset.tr909_role == "break_pressure"
   and .performance_preset.mc202_role == "source_evidence_selected"
@@ -148,6 +148,22 @@ jq -e \
     "scene.launch",
     "scene.restore"
   ]
+  and .feral_break_alpha_arc.stages[2].tr909_mode == "fill"
+  and .feral_break_alpha_arc.stages[2].tr909_fill_recipe_id
+    == "phrase_drive_break_cut_stomp_v2"
+  and .feral_break_alpha_arc.destructive_negative_space.window == {
+    "start_step": 26,
+    "end_step_exclusive": 30,
+    "steps_per_beat": 8
+  }
+  and .feral_break_alpha_arc.destructive_negative_space.metrics.rms
+    <= .feral_break_alpha_arc.destructive_negative_space.thresholds.max_rms
+  and .feral_break_alpha_arc.destructive_negative_space.metrics.silence_ratio
+    >= .feral_break_alpha_arc.destructive_negative_space.thresholds.min_silence_ratio
+  and .feral_break_alpha_arc.destructive_negative_space.hard_return.start_step == 30
+  and .feral_break_alpha_arc.destructive_negative_space.hard_return.end_step_exclusive == 31
+  and .feral_break_alpha_arc.destructive_negative_space.hard_return.metrics.rms
+    >= .feral_break_alpha_arc.destructive_negative_space.hard_return.min_rms
   and all(.feral_break_alpha_arc.stages[];
     .metrics.rms > $manifest.thresholds.min_mix_rms
     and .metrics.clip_count == 0
@@ -182,11 +198,11 @@ jq -e \
   and .pattern_provenance.tr909_fill.source_evidence_selects_pattern == false
   and .pattern_provenance.tr909_fill.source_evidence_modulates_output == true
   and .pattern_provenance.tr909_fill.primitive_schema == "riotbox.tr909_fill_recipe.v1"
-  and .pattern_provenance.tr909_fill.recipe_id == "phrase_drive_break_cut_stomp_v1"
+  and .pattern_provenance.tr909_fill.recipe_id == "phrase_drive_break_cut_stomp_v2"
   and .pattern_provenance.tr909_fill.selection_inputs.mode == "fill"
   and .pattern_provenance.tr909_fill.selection_inputs.routing == "drum_bus_support"
   and .pattern_provenance.tr909_fill.selection_inputs.pattern_adoption == "mainline_drive"
-  and .pattern_provenance.tr909_fill.selection_inputs.phrase_variation == "phrase_drive"
+  and .pattern_provenance.tr909_fill.selection_inputs.phrase_variation == "phrase_drive_hard_cut"
   and .pattern_provenance.tr909_fill.source_modulation.schema == "riotbox.tr909_fill_source_modulation.v2"
   and .pattern_provenance.tr909_fill.source_modulation.source_feature_path == "session.runtime_state.lane_state.mc202.source_phrase_plan.source_expression.transient_backbeat"
   and .pattern_provenance.tr909_fill.source_modulation.source_timing_path == "source_graph.timing.primary_hypothesis.transport_bar_grid_anchor.beat_cursor"

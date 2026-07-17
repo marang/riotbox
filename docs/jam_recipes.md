@@ -990,10 +990,12 @@ Then:
 3. press `o`; wait for the raw audition and reject the path if it is unavailable
 4. press `p`; wait for promotion to the focused W-30 pad
 5. press `F`; verify the header shows profile `feral_rebuild`, preset
-   `Feral Break Alpha`, and monitor `Blend`
+   `Feral Break Alpha v2`, and monitor `Blend`
 6. press `w` and let the hook run for two bars
 7. press `s` and let the TR-909 pressure lift run for two bars
-8. press `f` for the destructive one-bar cut
+8. press `f` for the destructive one-bar cut; reject the path if the final beat
+   does not create at least an unmistakable half-beat silence followed by one hard
+   drum/transient return
 9. press `y` for the one-bar contrast scene
 10. after the jump lands, press `Y`, then `D`, for the changed two-bar return
 11. quit with `q`; restart from the saved session, then press `l` and `w` to

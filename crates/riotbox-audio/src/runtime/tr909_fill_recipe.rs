@@ -187,6 +187,23 @@ const fn phrase_drive_break_cut_stomp_steps() -> [Tr909FillStep; 32] {
     steps
 }
 
+const fn phrase_drive_break_cut_stomp_v2_steps() -> [Tr909FillStep; 32] {
+    let mut steps = phrase_drive_break_cut_stomp_steps();
+
+    // The drum-owned call ends on beat four. Choke every tail on its downbeat, leave six
+    // 32nd-note slots empty, then make the late DiveStomp restart the room. At 130 BPM this
+    // exposes roughly 346 ms of true negative space instead of another barely audible micro-rest.
+    steps[24] = Tr909FillStep::Choke;
+    steps[25] = Tr909FillStep::Rest;
+    steps[26] = Tr909FillStep::Rest;
+    steps[27] = Tr909FillStep::Rest;
+    steps[28] = Tr909FillStep::Rest;
+    steps[29] = Tr909FillStep::Rest;
+    steps[30] = Tr909FillStep::DiveStomp(LONG_CHOKE_STOMP_TRIGGER);
+    steps[31] = Tr909FillStep::Rest;
+    steps
+}
+
 const LONG_CHOKE_STOMP_TRIGGER: Tr909FillVoiceTrigger = Tr909FillVoiceTrigger::new(1.44, 1.20, 0.0);
 
 const PHRASE_DRIVE_ACCENT_GHOST_V1: Tr909FillRecipe = Tr909FillRecipe {
@@ -209,6 +226,11 @@ const PHRASE_DRIVE_BREAK_CUT_STOMP_V1: Tr909FillRecipe = Tr909FillRecipe {
     focus: BREAK_CUT_STOMP_FOCUS,
 };
 
+const PHRASE_DRIVE_BREAK_CUT_STOMP_V2: Tr909FillRecipe = Tr909FillRecipe {
+    steps: phrase_drive_break_cut_stomp_v2_steps(),
+    focus: BREAK_CUT_STOMP_FOCUS,
+};
+
 fn selected_phrase_drive_recipe(render: &RealtimeTr909RenderState) -> &'static Tr909FillRecipe {
     match fill_recipe_id(render) {
         Tr909FillRecipeId::PhraseDriveChokeDiveStompV1 => &PHRASE_DRIVE_CHOKE_DIVE_STOMP_V1,
@@ -216,6 +238,7 @@ fn selected_phrase_drive_recipe(render: &RealtimeTr909RenderState) -> &'static T
             &PHRASE_DRIVE_LONG_CHOKE_DIVE_STOMP_V2
         }
         Tr909FillRecipeId::PhraseDriveBreakCutStompV1 => &PHRASE_DRIVE_BREAK_CUT_STOMP_V1,
+        Tr909FillRecipeId::PhraseDriveBreakCutStompV2 => &PHRASE_DRIVE_BREAK_CUT_STOMP_V2,
         Tr909FillRecipeId::PhraseDriveAccentGhostV1 | Tr909FillRecipeId::GenericFillV1 => {
             &PHRASE_DRIVE_ACCENT_GHOST_V1
         }
@@ -229,7 +252,7 @@ pub(super) fn fill_recipe_id(render: &RealtimeTr909RenderState) -> Tr909FillReci
 pub(super) fn fill_focus_profile(render: &RealtimeTr909RenderState) -> Tr909FillFocusProfile {
     if matches!(
         render.phrase_variation,
-        Some(Tr909PhraseVariation::PhraseDrive)
+        Some(Tr909PhraseVariation::PhraseDrive | Tr909PhraseVariation::PhraseDriveHardCut)
     ) {
         selected_phrase_drive_recipe(render).focus
     } else {
@@ -261,7 +284,7 @@ pub(super) fn fill_step(
     let step_in_bar = step.rem_euclid(subdivision * 4);
     if matches!(
         render.phrase_variation,
-        Some(Tr909PhraseVariation::PhraseDrive)
+        Some(Tr909PhraseVariation::PhraseDrive | Tr909PhraseVariation::PhraseDriveHardCut)
     ) && subdivision == 8
     {
         return selected_phrase_drive_recipe(render).steps[step_in_bar as usize];
@@ -287,7 +310,7 @@ fn generic_fill_step(
         }
     };
     let pickup = match render.phrase_variation {
-        Some(Tr909PhraseVariation::PhraseDrive) => false,
+        Some(Tr909PhraseVariation::PhraseDrive | Tr909PhraseVariation::PhraseDriveHardCut) => false,
         Some(Tr909PhraseVariation::PhraseRelease) => beat_in_bar == 3 && step_in_beat >= half_beat,
         Some(Tr909PhraseVariation::PhraseAnchor | Tr909PhraseVariation::PhraseLift) | None => {
             beat_in_bar == 3
@@ -378,10 +401,17 @@ mod tests {
         }
     }
 
+    fn phrase_drive_hard_cut_render() -> RealtimeTr909RenderState {
+        RealtimeTr909RenderState {
+            phrase_variation: Some(Tr909PhraseVariation::PhraseDriveHardCut),
+            ..phrase_drive_render(Tr909PatternAdoption::MainlineDrive)
+        }
+    }
+
     #[test]
     fn phrase_drive_break_cut_preserves_context_then_owns_a_distinct_half_bar() {
         let accent_ghost = phrase_drive_render(Tr909PatternAdoption::SupportPulse);
-        let break_cut_stomp = phrase_drive_render(Tr909PatternAdoption::MainlineDrive);
+        let break_cut_stomp = phrase_drive_hard_cut_render();
 
         assert_eq!(
             fill_recipe_id(&accent_ghost),
@@ -389,7 +419,7 @@ mod tests {
         );
         assert_eq!(
             fill_recipe_id(&break_cut_stomp),
-            Tr909FillRecipeId::PhraseDriveBreakCutStompV1
+            Tr909FillRecipeId::PhraseDriveBreakCutStompV2
         );
         for step in 0..16 {
             assert_eq!(
@@ -410,16 +440,30 @@ mod tests {
             Tr909FillStep::Hit(_)
         ));
         assert!(matches!(
-            fill_step(&break_cut_stomp, 8, 28),
+            fill_step(&break_cut_stomp, 8, 24),
             Tr909FillStep::Choke
         ));
         assert!(matches!(
             fill_step(&break_cut_stomp, 8, 30),
             Tr909FillStep::DiveStomp(_)
         ));
-        for step in [29, 31] {
+        for step in [25, 26, 27, 28, 29, 31] {
             assert_eq!(fill_step(&break_cut_stomp, 8, step), Tr909FillStep::Rest);
         }
+    }
+
+    #[test]
+    fn historical_break_cut_v1_remains_a_frozen_review_control() {
+        let recipe = PHRASE_DRIVE_BREAK_CUT_STOMP_V1;
+
+        assert!(matches!(recipe.steps[24], Tr909FillStep::Hit(_)));
+        assert!(matches!(recipe.steps[25], Tr909FillStep::Hit(_)));
+        assert!(matches!(recipe.steps[26], Tr909FillStep::Hit(_)));
+        assert!(matches!(recipe.steps[27], Tr909FillStep::Hit(_)));
+        assert_eq!(recipe.steps[28], Tr909FillStep::Choke);
+        assert_eq!(recipe.steps[29], Tr909FillStep::Rest);
+        assert!(matches!(recipe.steps[30], Tr909FillStep::DiveStomp(_)));
+        assert_eq!(recipe.steps[31], Tr909FillStep::Rest);
     }
 
     #[test]
@@ -469,7 +513,7 @@ mod tests {
 
     #[test]
     fn break_cut_stomp_recipe_escalates_during_its_drum_owned_half_bar() {
-        let render = phrase_drive_render(Tr909PatternAdoption::MainlineDrive);
+        let render = phrase_drive_hard_cut_render();
         let sounding_per_beat: Vec<usize> = (0..4)
             .map(|beat| {
                 (beat * 8..(beat + 1) * 8)
@@ -478,8 +522,8 @@ mod tests {
             })
             .collect();
 
-        assert_eq!(sounding_per_beat, [1, 2, 6, 5]);
-        for step in [28, 29] {
+        assert_eq!(sounding_per_beat, [1, 2, 6, 1]);
+        for step in 24..30 {
             assert!(!fill_step(&render, 8, step).is_sounding());
         }
         assert!(fill_step(&render, 8, 30).is_sounding());
@@ -488,7 +532,7 @@ mod tests {
     #[test]
     fn fill_focus_landmarks_come_from_the_selected_recipe() {
         let accent_ghost = phrase_drive_render(Tr909PatternAdoption::SupportPulse);
-        let break_cut_stomp = phrase_drive_render(Tr909PatternAdoption::MainlineDrive);
+        let break_cut_stomp = phrase_drive_hard_cut_render();
 
         assert_eq!(fill_focus_profile(&accent_ghost), BASE_FILL_FOCUS);
         let profile = fill_focus_profile(&break_cut_stomp);

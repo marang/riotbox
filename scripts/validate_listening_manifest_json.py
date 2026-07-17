@@ -472,6 +472,13 @@ def validate_registered_product_primitive(
                 f"{path} recipe_id {recipe_id!r} requires "
                 "pattern_adoption='mainline_drive' and phrase_variation='phrase_drive'"
             )
+    elif recipe_id == "phrase_drive_break_cut_stomp_v2":
+        if adoption != "mainline_drive" or variation != "phrase_drive_hard_cut":
+            raise ValueError(
+                f"{path} recipe_id {recipe_id!r} requires "
+                "pattern_adoption='mainline_drive' and "
+                "phrase_variation='phrase_drive_hard_cut'"
+            )
     elif recipe_id == "phrase_drive_accent_ghost_v1":
         if adoption not in {"support_pulse", "takeover_grid"} or variation != "phrase_drive":
             raise ValueError(

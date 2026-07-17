@@ -20,6 +20,13 @@ const ALPHA_SOURCE_RAW_ARTIFACT_PATH: &str = "alpha/06_source_reference_raw.wav"
 const ALPHA_CANDIDATE_MATCHED_ARTIFACT_PATH: &str = "alpha/07_candidate_loudness_matched.wav";
 const ALPHA_SOURCE_MATCHED_ARTIFACT_PATH: &str = "alpha/08_source_reference_loudness_matched.wav";
 const ALPHA_RESTART_RECALL_ARTIFACT_PATH: &str = "alpha/09_restart_recall_trigger.wav";
+const DESTRUCTIVE_NEGATIVE_SPACE_START_STEP: usize = 26;
+const DESTRUCTIVE_NEGATIVE_SPACE_END_STEP: usize = 30;
+const DESTRUCTIVE_HARD_RETURN_END_STEP: usize = 31;
+const TR909_STEPS_PER_BEAT: usize = 8;
+const MAX_DESTRUCTIVE_NEGATIVE_SPACE_RMS: f32 = 0.001;
+const MIN_DESTRUCTIVE_NEGATIVE_SPACE_SILENCE_RATIO: f32 = 0.95;
+const MIN_DESTRUCTIVE_HARD_RETURN_RMS: f32 = 0.05;
 
 pub(super) struct AlphaManifestEvidence {
     pub arc: Value,
@@ -151,6 +158,37 @@ pub(super) fn write_and_validate(
             "Feral Break Alpha arc is {alpha_arc_total_beats} beats, expected 32"
         ));
     }
+    let destructive_fill_samples = &rendered.alpha_arc_outputs[2].samples;
+    let destructive_negative_space = step_window(
+        destructive_fill_samples,
+        bpm,
+        DESTRUCTIVE_NEGATIVE_SPACE_START_STEP,
+        DESTRUCTIVE_NEGATIVE_SPACE_END_STEP,
+    )?;
+    let destructive_hard_return = step_window(
+        destructive_fill_samples,
+        bpm,
+        DESTRUCTIVE_NEGATIVE_SPACE_END_STEP,
+        DESTRUCTIVE_HARD_RETURN_END_STEP,
+    )?;
+    let destructive_negative_space_metrics = signal_metrics(destructive_negative_space);
+    let destructive_hard_return_metrics = signal_metrics(destructive_hard_return);
+    if destructive_negative_space_metrics.rms > MAX_DESTRUCTIVE_NEGATIVE_SPACE_RMS
+        || destructive_negative_space_metrics.silence_ratio
+            < MIN_DESTRUCTIVE_NEGATIVE_SPACE_SILENCE_RATIO
+    {
+        failures.push(format!(
+            "Feral Break Alpha destructive pause did not create negative space: rms {:.6}, silence ratio {:.6}",
+            destructive_negative_space_metrics.rms,
+            destructive_negative_space_metrics.silence_ratio
+        ));
+    }
+    if destructive_hard_return_metrics.rms < MIN_DESTRUCTIVE_HARD_RETURN_RMS {
+        failures.push(format!(
+            "Feral Break Alpha destructive pause did not return hard enough: rms {:.6}",
+            destructive_hard_return_metrics.rms
+        ));
+    }
     let alpha_arc_stage_manifest = prepared
         .alpha_arc_stages
         .iter()
@@ -177,6 +215,12 @@ pub(super) fn write_and_validate(
                 "command": stage.command.map(ActionCommand::as_str),
                 "action_id": stage.action_id,
                 "scene_id": stage.scene_id,
+                "tr909_mode": stage.plan.tr909_render.mode.label(),
+                "tr909_fill_recipe_id": stage
+                    .plan
+                    .tr909_render
+                    .fill_recipe_id()
+                    .map(|recipe| recipe.label()),
                 "artifact": stage.artifact_path,
                 "metrics": metrics_json(metrics),
                 "limiter": limiter_json(output.limiter),
@@ -233,6 +277,24 @@ pub(super) fn write_and_validate(
             "hook_to_pressure_delta": metrics_json(alpha_hook_pressure_delta),
             "hook_to_changed_return_delta": metrics_json(alpha_hook_return_delta),
             "hook_to_changed_return_correlation": alpha_hook_return_correlation,
+            "destructive_negative_space": {
+                "window": {
+                    "start_step": DESTRUCTIVE_NEGATIVE_SPACE_START_STEP,
+                    "end_step_exclusive": DESTRUCTIVE_NEGATIVE_SPACE_END_STEP,
+                    "steps_per_beat": TR909_STEPS_PER_BEAT,
+                },
+                "metrics": metrics_json(destructive_negative_space_metrics),
+                "thresholds": {
+                    "max_rms": MAX_DESTRUCTIVE_NEGATIVE_SPACE_RMS,
+                    "min_silence_ratio": MIN_DESTRUCTIVE_NEGATIVE_SPACE_SILENCE_RATIO,
+                },
+                "hard_return": {
+                    "start_step": DESTRUCTIVE_NEGATIVE_SPACE_END_STEP,
+                    "end_step_exclusive": DESTRUCTIVE_HARD_RETURN_END_STEP,
+                    "metrics": metrics_json(destructive_hard_return_metrics),
+                    "min_rms": MIN_DESTRUCTIVE_HARD_RETURN_RMS,
+                },
+            },
             "typed_bass_owner": prepared.live_policy.bass_owner.label(),
             "raw_level_ab": {
                 "candidate_artifact": ALPHA_ARC_ARTIFACT_PATH,
@@ -277,6 +339,27 @@ pub(super) fn write_and_validate(
                 "trigger",
             ],
         }),
+    })
+}
+
+fn step_window(
+    samples: &[f32],
+    bpm: f32,
+    start_step: usize,
+    end_step: usize,
+) -> Result<&[f32], Box<dyn Error>> {
+    let frames_per_beat = (60.0 / bpm * SAMPLE_RATE as f32).round() as usize;
+    let start_frame = frames_per_beat.saturating_mul(start_step) / TR909_STEPS_PER_BEAT;
+    let end_frame = frames_per_beat.saturating_mul(end_step) / TR909_STEPS_PER_BEAT;
+    let channels = usize::from(CHANNEL_COUNT);
+    let start_sample = start_frame.saturating_mul(channels);
+    let end_sample = end_frame.saturating_mul(channels);
+    samples.get(start_sample..end_sample).ok_or_else(|| {
+        format!(
+            "Feral Break Alpha step window {start_step}..{end_step} exceeded {} samples",
+            samples.len()
+        )
+        .into()
     })
 }
 

@@ -245,18 +245,23 @@ Rules:
   next bar, and must remain deterministic across realtime callback partitions
   and the exact offline RuntimeMix seam; a silent or wrongly routed drum lane
   must never duck the arrangement
-- the supported dense-break `MainlineDrive + PhraseDrive` Fill uses fixed
+- the supported dense-break `MainlineDrive + PhraseDriveHardCut` Fill uses fixed
   callback-local, independently decaying kick, snare-body/noise, and
   metallic-hat voices. The current
-  `PhraseDriveBreakCutStompV1` four-beat arc has `1 / 2 / 6 / 5` sounding
+  `PhraseDriveBreakCutStompV2` four-beat arc has `1 / 2 / 6 / 1` sounding
   events. Beats one and two preserve context; beat three becomes a syncopated
-  kick/snare/hat call after the bed cut; beat four answers with
-  `kick+hat / snare / kick+snare / hat / choke / rest / pitch-dive
-  kick+snare flam / rest`. The choke removes existing voice tails through a
-  bounded click-safe callback-local release but is not a sounding trigger.
+  kick/snare/hat call after the bed cut; beat four chokes on its downbeat,
+  remains empty for six 32nd-note slots, then answers with a late pitch-dive
+  kick+snare flam. The choke removes existing voice tails through a bounded
+  click-safe callback-local release but is not a sounding trigger. At 130 BPM
+  the resulting negative-space window is about 346 ms and must read as an
+  arrangement event rather than a micro-rest.
   Historical `PhraseDriveChokeDiveStompV1` and
-  `PhraseDriveLongChokeDiveStompV2` remain registered listening controls but
-  are no longer selected by the current Mainline Golden Path
+  `PhraseDriveLongChokeDiveStompV2`, and `PhraseDriveBreakCutStompV1` remain
+  registered listening controls but are no longer selected by the current
+  Mainline Golden Path. The historical `MainlineDrive + PhraseDrive` selection
+  remains on `PhraseDriveBreakCutStompV1`; the new recipe is not a global
+  rewrite of that render-policy pair
 - the fixed Fill arc, its paired `FillFocus`, and its voice triggers come from
   one typed, versioned callback-safe recipe authority. This recipe is a
   versioned `primitive_renderer` Golden-Path vocabulary: the explicit committed

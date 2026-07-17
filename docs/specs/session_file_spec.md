@@ -178,7 +178,8 @@ RuntimeState {
 
 The IDs are behavior-relevant replay contract, not display-only metadata.
 Legacy Session V1 files without `style` load with both values unset. The first
-versioned preset identity is `feral_break_alpha_v1`, paired with profile
+historical preset identity is `feral_break_alpha_v1`; the current UI-selected
+product identity is `feral_break_alpha_v2`, both paired with profile
 `feral_rebuild`.
 
 The named identity does not cache a second live-performance policy. Bass

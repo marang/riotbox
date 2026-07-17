@@ -28,6 +28,7 @@ include!("tests/export_receipt_hydration_preflight.rs");
 include!("tests/export_receipt_stem_package_preflight.rs");
 include!("tests/export_receipt_daw_preflight.rs");
 include!("tests/feral_support_runtime_controls.rs");
+include!("tests/feral_break_alpha_runtime_projection.rs");
 include!("tests/transport_scene_select.rs");
 include!("tests/commit_pipeline_order.rs");
 include!("tests/scene_restore_mc202_queue_start.rs");

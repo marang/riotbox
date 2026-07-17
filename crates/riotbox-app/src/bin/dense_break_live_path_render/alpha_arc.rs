@@ -1,7 +1,9 @@
 use std::{error::Error, path::Path};
 
 use riotbox_app::jam_app::{JamAppState, QueueControlResult};
-use riotbox_audio::{runtime::RuntimeMixRenderPlan, w30::W30PreviewRenderRouting};
+use riotbox_audio::{
+    runtime::RuntimeMixRenderPlan, tr909::Tr909FillRecipeId, w30::W30PreviewRenderRouting,
+};
 use riotbox_core::{
     action::{ActionCommand, CommitBoundary},
     style::PerformancePresetId,
@@ -189,6 +191,18 @@ pub(super) fn prepare_alpha_arc(
         bpm,
         fill_cursor,
     );
+    let alpha_fill_recipe = stages
+        .last()
+        .and_then(|stage| stage.plan.tr909_render.fill_recipe_id())
+        .ok_or("Feral Break Alpha destructive stage did not retain its committed Fill recipe")?;
+    if alpha_fill_recipe != Tr909FillRecipeId::PhraseDriveBreakCutStompV2 {
+        return Err(format!(
+            "Feral Break Alpha destructive stage selected {}, expected {}",
+            alpha_fill_recipe.label(),
+            Tr909FillRecipeId::PhraseDriveBreakCutStompV2.label()
+        )
+        .into());
+    }
 
     if state.queue_scene_select(2_300) != QueueControlResult::Enqueued {
         return Err("Feral Break Alpha destructive role swap was unavailable".into());

@@ -75,7 +75,7 @@ impl JamShellState {
             }
             KeyCode::Char('F') => {
                 let preset_id =
-                    riotbox_core::style::PerformancePresetId::FeralBreakAlphaV1;
+                    riotbox_core::style::PerformancePresetId::FeralBreakAlphaV2;
                 self.status_message =
                     format!("queue {} for immediate commit", preset_id.label());
                 ShellKeyOutcome::QueuePerformancePreset(preset_id)
