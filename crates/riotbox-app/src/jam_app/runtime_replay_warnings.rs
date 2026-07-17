@@ -221,6 +221,7 @@ const fn replay_command_family(command: ActionCommand) -> &'static str {
         | ActionCommand::TransportPause
         | ActionCommand::TransportStop
         | ActionCommand::TransportSeek => "Transport",
+        ActionCommand::PresetActivate => "Preset",
         ActionCommand::SourceMonitorSetMode => "Source Monitor",
         ActionCommand::SourceTimingConfirmGrid | ActionCommand::SourceTimingRevertGrid => {
             "Source Timing"

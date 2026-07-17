@@ -24,6 +24,7 @@ use riotbox_core::{
     action::{ActionCommand, SourceMonitorMode},
     queue::CommittedActionRef,
     session::ExportArtifactRole,
+    style::PerformancePresetId,
     view::jam::SceneJumpAvailabilityView,
 };
 use serde_json::{Value, json};

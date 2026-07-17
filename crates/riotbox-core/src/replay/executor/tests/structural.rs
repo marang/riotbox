@@ -6,6 +6,7 @@ use crate::{
         Mc202RoleState, Mc202SourcePhraseCandidateFamilyState, Mc202SourcePhraseNoteBudgetState,
         Mc202SourcePhrasePlanState, Mc202SourcePhraseSlotState, SessionFile,
     },
+    style::{PerformancePresetId, StyleProfileId},
 };
 
 #[test]
@@ -319,6 +320,47 @@ fn plan_executor_applies_scene_mutation_to_session_macro_state() {
 }
 
 #[test]
+fn plan_executor_replays_named_performance_preset_deterministically() {
+    let action_log = action_log(vec![action(
+        1,
+        ActionCommand::PresetActivate,
+        ActionParams::Preset {
+            preset_id: PerformancePresetId::FeralBreakAlphaV1,
+        },
+        100,
+    )]);
+    let plan = build_committed_replay_plan(&action_log).expect("valid replay plan");
+    let mut session = SessionFile::new("session-1", "riotbox-test", "2026-07-17T14:35:00Z");
+
+    apply_replay_plan_to_session(&mut session, &plan).expect("supported replay plan");
+
+    assert_eq!(
+        session.runtime_state.style.active_profile,
+        Some(StyleProfileId::FeralRebuild)
+    );
+    assert_eq!(
+        session.runtime_state.style.active_preset,
+        Some(PerformancePresetId::FeralBreakAlphaV1)
+    );
+    assert_eq!(
+        session.runtime_state.source_monitor.mode,
+        SourceMonitorMode::Blend
+    );
+    assert_eq!(
+        session.runtime_state.macro_state,
+        PerformancePresetId::FeralBreakAlphaV1
+            .definition()
+            .macro_state
+    );
+    assert_eq!(
+        session.runtime_state.mixer_state,
+        PerformancePresetId::FeralBreakAlphaV1
+            .definition()
+            .mixer_state
+    );
+}
+
+#[test]
 fn plan_executor_rejects_scene_mutation_without_mutation_params() {
     let action_log = action_log(vec![action(
         1,
@@ -508,6 +550,7 @@ fn supported_action_list_documents_the_initial_executor_subset() {
             ActionCommand::TransportPause,
             ActionCommand::TransportStop,
             ActionCommand::TransportSeek,
+            ActionCommand::PresetActivate,
             ActionCommand::SourceMonitorSetMode,
             ActionCommand::SourceTimingConfirmGrid,
             ActionCommand::SourceTimingRevertGrid,

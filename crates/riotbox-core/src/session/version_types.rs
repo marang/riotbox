@@ -5,6 +5,7 @@ use crate::{
     action::{Action, CaptureLengthIntent, GhostMode, SourceMonitorMode},
     ids::{ActionId, BankId, CaptureId, PadId, SceneId, SnapshotId, SourceId},
     source_graph::{GraphProvenance, SourceGraph, SourceGraphVersion},
+    style::{PerformancePresetId, StyleProfileId},
     transport::CommitBoundaryState,
 };
 
@@ -95,6 +96,8 @@ pub struct SourceGraphRef {
 pub struct RuntimeState {
     pub transport: TransportRuntimeState,
     #[serde(default)]
+    pub style: StyleRuntimeState,
+    #[serde(default)]
     pub source_monitor: SourceMonitorRuntimeState,
     #[serde(default)]
     pub source_timing: SourceTimingRuntimeState,
@@ -108,6 +111,14 @@ pub struct RuntimeState {
     pub pending_policy: PendingPolicy,
     #[serde(default)]
     pub undo_state: UndoRuntimeState,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct StyleRuntimeState {
+    #[serde(default)]
+    pub active_profile: Option<StyleProfileId>,
+    #[serde(default)]
+    pub active_preset: Option<PerformancePresetId>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Default, Serialize, Deserialize)]

@@ -14,7 +14,13 @@ pub fn render_live_path(
     prepared: &PreparedLivePath,
 ) -> Result<RenderedLivePath, Box<dyn std::error::Error>> {
     let bpm = prepared.source_timing.bpm;
-    let monitor_review_frames = bar_frame_count(bpm).saturating_mul(MONITOR_REVIEW_BARS);
+    let maximum_monitor_review_frames = bar_frame_count(bpm).saturating_mul(MONITOR_REVIEW_BARS);
+    let source_monitor_plan = prepared
+        .monitor_proofs
+        .first()
+        .ok_or("dense-break render requires a source monitor proof")?;
+    let monitor_review_frames =
+        source_reference_frame_count(&source_monitor_plan.plan, maximum_monitor_review_frames);
     let monitor_outputs = prepared
         .monitor_proofs
         .iter()
@@ -36,6 +42,28 @@ pub fn render_live_path(
         CHANNEL_COUNT,
         CALLBACK_FRAME_COUNT,
     );
+    let alpha_arc_steps = prepared
+        .alpha_arc_stages
+        .iter()
+        .map(|stage| {
+            RuntimeMixRenderSequenceStep::new(
+                &stage.plan,
+                beat_frame_count(bpm).saturating_mul(stage.duration_beats as usize),
+            )
+        })
+        .collect::<Vec<_>>();
+    let alpha_arc_outputs =
+        render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
+            &alpha_arc_steps,
+            SAMPLE_RATE,
+            CHANNEL_COUNT,
+            CALLBACK_FRAME_COUNT,
+        );
+    let alpha_source_reference = render(&source_monitor_plan.plan, monitor_review_frames)?;
+    let restart_recall_output = render(
+        &prepared.restart_recall_plan,
+        bar_frame_count(bpm).saturating_mul(2),
+    )?;
     let transition_outputs = prepared
         .transitions
         .iter()
@@ -66,6 +94,9 @@ pub fn render_live_path(
     Ok(RenderedLivePath {
         monitor_outputs,
         stage_outputs,
+        alpha_arc_outputs,
+        alpha_source_reference,
+        restart_recall_output,
         transition_outputs,
         normal,
         damaged,
@@ -74,6 +105,22 @@ pub fn render_live_path(
         mc202_selected_role,
         direct_mc202,
     })
+}
+
+fn source_reference_frame_count(plan: &RuntimeMixRenderPlan, maximum_frames: usize) -> usize {
+    if maximum_frames == 0 {
+        return 0;
+    }
+    plan.source_monitor_render
+        .source
+        .as_ref()
+        .map(|source| {
+            let resampled_frames = (source.frame_count as f64 * f64::from(SAMPLE_RATE)
+                / f64::from(source.sample_rate.max(1)))
+            .floor() as usize;
+            resampled_frames.clamp(1, maximum_frames)
+        })
+        .unwrap_or(maximum_frames)
 }
 
 fn render_transition_branch(
@@ -160,5 +207,42 @@ fn only_mc202(plan: &RuntimeMixRenderPlan) -> RuntimeMixRenderPlan {
         w30_resample_tap: Default::default(),
         source_monitor_render: SourceMonitorRenderState::control_only(SourceMonitorMode::Riotbox),
         ..plan.clone()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use riotbox_audio::source_audio::SourceAudioCache;
+
+    use super::*;
+
+    #[test]
+    fn source_reference_duration_resamples_and_caps_without_padding_past_eof() {
+        let source = SourceAudioCache::from_interleaved_samples(
+            "short.wav",
+            44_100,
+            2,
+            vec![0.1; 44_100 * 2],
+        )
+        .expect("source cache");
+        let plan = RuntimeMixRenderPlan {
+            source_monitor_render: SourceMonitorRenderState::from_source_cache(
+                SourceMonitorMode::Source,
+                Some(&source),
+            ),
+            ..RuntimeMixRenderPlan::default()
+        };
+
+        assert_eq!(source_reference_frame_count(&plan, 200_000), 48_000);
+        assert_eq!(source_reference_frame_count(&plan, 10_000), 10_000);
+        assert_eq!(source_reference_frame_count(&plan, 0), 0);
+    }
+
+    #[test]
+    fn source_reference_without_audio_uses_requested_review_window() {
+        assert_eq!(
+            source_reference_frame_count(&RuntimeMixRenderPlan::default(), 96_000),
+            96_000
+        );
     }
 }

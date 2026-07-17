@@ -56,6 +56,10 @@ pub fn observer_snapshot(shell: &JamShellState) -> Value {
             "w30_resample_tap_mode": runtime.w30_resample_tap_mode,
             "warnings": runtime.runtime_warnings,
         },
+        "style": {
+            "active_profile": shell.app.session.runtime_state.style.active_profile.map(|profile| profile.label()),
+            "active_preset": shell.app.session.runtime_state.style.active_preset.map(|preset| preset.contract_id()),
+        },
         "source_timing": source_timing_observer_snapshot(shell),
         "source_map": source_map_observer_snapshot(shell),
         "scene": scene_observer_snapshot(shell),
@@ -94,6 +98,7 @@ pub fn shell_key_outcome_label(outcome: ShellKeyOutcome) -> &'static str {
         ShellKeyOutcome::Continue => "continue",
         ShellKeyOutcome::RequestRefresh => "request_refresh",
         ShellKeyOutcome::ToggleTransport => "toggle_transport",
+        ShellKeyOutcome::QueuePerformancePreset(_) => "queue_performance_preset",
         ShellKeyOutcome::QueueSourceMonitorMode(_) => "queue_source_monitor_mode",
         ShellKeyOutcome::QueueSceneMutation => "queue_scene_mutation",
         ShellKeyOutcome::QueueSceneSelect => "queue_scene_select",

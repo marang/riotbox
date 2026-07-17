@@ -6,7 +6,7 @@ use riotbox_core::{
     source_graph::{
         AssetType, CandidateType, EnergyClass, Mc202SourcePhraseFeatureVector, PhraseSpan, Section,
         SectionLabelHint, SourceGraph, SourceTimingAnchorType, mc202_source_phrase_feature_vector,
-        section_for_transport_bar,
+        section_for_projected_scene, section_for_transport_bar,
     },
     transport::{CommitBoundaryState, TransportClockState},
 };
@@ -44,7 +44,7 @@ pub(super) fn derive_mc202_source_phrase_plan(
         return Ok(None);
     };
 
-    let section = section_for_transport_bar(graph, &transport_clock_from_boundary(boundary));
+    let section = source_section_for_boundary(graph, boundary);
     let features = mc202_source_phrase_feature_vector(graph, &phrase_slot);
     if let Some(feature_section_id) = features.source_section_id.as_ref() {
         match section {
@@ -116,13 +116,15 @@ fn source_phrase_slot_for_boundary(
 ) -> Option<PhraseSpan> {
     let bar_index = boundary.bar_index as u32;
     let primary = graph.timing.primary_hypothesis();
-    primary
-        .and_then(|hypothesis| {
-            hypothesis
-                .phrase_grid
-                .iter()
-                .find(|phrase| bar_index >= phrase.start_bar && bar_index <= phrase.end_bar)
-                .copied()
+    source_phrase_slot_for_projected_scene(graph, boundary)
+        .or_else(|| {
+            primary.and_then(|hypothesis| {
+                hypothesis
+                    .phrase_grid
+                    .iter()
+                    .find(|phrase| bar_index >= phrase.start_bar && bar_index <= phrase.end_bar)
+                    .copied()
+            })
         })
         .or_else(|| {
             graph
@@ -144,6 +146,53 @@ fn source_phrase_slot_for_boundary(
                 confidence: hypothesis.confidence,
             })
         })
+}
+
+fn source_phrase_slot_for_projected_scene(
+    graph: &SourceGraph,
+    boundary: &CommitBoundaryState,
+) -> Option<PhraseSpan> {
+    let section = boundary
+        .scene_id
+        .as_ref()
+        .and_then(|scene_id| section_for_projected_scene(graph, scene_id))?;
+    let primary = graph.timing.primary_hypothesis()?;
+
+    if let Some(phrase) = primary
+        .phrase_grid
+        .iter()
+        .find(|phrase| phrase.start_bar <= section.bar_end && phrase.end_bar >= section.bar_start)
+        .copied()
+    {
+        return Some(PhraseSpan {
+            phrase_index: phrase.phrase_index,
+            start_bar: phrase.start_bar.max(section.bar_start),
+            end_bar: phrase.end_bar.min(section.bar_end),
+            confidence: phrase.confidence.min(section.confidence),
+        });
+    }
+
+    let grid_start = primary.bar_grid.first()?.bar_index;
+    let grid_end = primary.bar_grid.last()?.bar_index;
+    let start_bar = section.bar_start.max(grid_start);
+    let end_bar = section.bar_end.min(grid_end);
+    (start_bar <= end_bar).then_some(PhraseSpan {
+        phrase_index: boundary.phrase_index.try_into().ok()?,
+        start_bar,
+        end_bar,
+        confidence: primary.confidence.min(section.confidence),
+    })
+}
+
+fn source_section_for_boundary<'a>(
+    graph: &'a SourceGraph,
+    boundary: &CommitBoundaryState,
+) -> Option<&'a Section> {
+    boundary
+        .scene_id
+        .as_ref()
+        .and_then(|scene_id| section_for_projected_scene(graph, scene_id))
+        .or_else(|| section_for_transport_bar(graph, &transport_clock_from_boundary(boundary)))
 }
 
 fn transport_clock_from_boundary(boundary: &CommitBoundaryState) -> TransportClockState {
@@ -531,15 +580,16 @@ fn mc202_source_phrase_expression_state(
 #[cfg(test)]
 mod tests {
     use riotbox_core::{
-        ids::SourceId,
+        ids::{SceneId, SectionId, SourceId},
         source_graph::{
-            DecodeProfile, GraphProvenance, MeterHint, PhraseSpan, SourceDescriptor, SourceGraph,
-            TimingHypothesis, TimingHypothesisKind, TimingQuality,
+            BarSpan, DecodeProfile, EnergyClass, GraphProvenance, MeterHint, PhraseSpan, Section,
+            SectionLabelHint, SourceDescriptor, SourceGraph, TimingHypothesis,
+            TimingHypothesisKind, TimingQuality,
         },
         transport::CommitBoundaryState,
     };
 
-    use super::source_phrase_slot_for_boundary;
+    use super::{source_phrase_slot_for_boundary, source_section_for_boundary};
 
     #[test]
     fn phrase_slot_prefers_selected_primary_grid_over_divergent_top_level_grid() {
@@ -606,5 +656,169 @@ mod tests {
 
         assert_eq!(slot.phrase_index, 9);
         assert_eq!((slot.start_bar, slot.end_bar), (5, 8));
+    }
+
+    #[test]
+    fn short_source_projects_later_performance_boundary_into_scene_section() {
+        let mut graph = short_source_graph();
+        graph.timing.hypotheses[0].phrase_grid.clear();
+        let boundary = projected_boundary("scene-01-intro");
+
+        let section =
+            source_section_for_boundary(&graph, &boundary).expect("projected source section");
+        let slot =
+            source_phrase_slot_for_boundary(&graph, &boundary).expect("projected phrase slot");
+
+        assert_eq!(section.section_id, SectionId::from("section-intro"));
+        assert_eq!(slot.phrase_index, 2);
+        assert_eq!((slot.start_bar, slot.end_bar), (1, 1));
+        assert_eq!(slot.confidence, 0.88);
+    }
+
+    #[test]
+    fn short_source_uses_source_phrase_grid_owned_by_projected_scene() {
+        let graph = short_source_graph();
+        let boundary = projected_boundary("scene-01-intro");
+
+        let slot =
+            source_phrase_slot_for_boundary(&graph, &boundary).expect("source phrase grid slot");
+
+        assert_eq!(slot.phrase_index, 7);
+        assert_eq!((slot.start_bar, slot.end_bar), (1, 1));
+        assert_eq!(slot.confidence, 0.88);
+    }
+
+    #[test]
+    fn projected_phrase_is_clamped_to_its_scene_owned_source_section() {
+        let graph = short_source_graph();
+        let boundary = projected_boundary("scene-02-drop");
+
+        let section =
+            source_section_for_boundary(&graph, &boundary).expect("projected drop section");
+        let slot =
+            source_phrase_slot_for_boundary(&graph, &boundary).expect("projected drop phrase");
+
+        assert_eq!(section.section_id, SectionId::from("section-drop"));
+        assert_eq!(slot.phrase_index, 7);
+        assert_eq!((slot.start_bar, slot.end_bar), (2, 2));
+        assert_eq!(slot.confidence, 0.79);
+    }
+
+    #[test]
+    fn projected_scene_ownership_wins_over_transport_bar_phrase_overlap() {
+        let graph = short_source_graph();
+        let mut boundary = projected_boundary("scene-01-intro");
+        boundary.bar_index = 2;
+
+        let slot = source_phrase_slot_for_boundary(&graph, &boundary).expect("scene-owned phrase");
+
+        assert_eq!((slot.start_bar, slot.end_bar), (1, 1));
+    }
+
+    #[test]
+    fn short_source_without_known_projected_scene_stays_unavailable() {
+        let graph = short_source_graph();
+        let boundary = projected_boundary("scene-03-unknown");
+
+        assert!(source_section_for_boundary(&graph, &boundary).is_none());
+        assert!(source_phrase_slot_for_boundary(&graph, &boundary).is_none());
+    }
+
+    fn short_source_graph() -> SourceGraph {
+        let mut graph = SourceGraph::new(
+            SourceDescriptor {
+                source_id: SourceId::from("short-source"),
+                path: "short-source.wav".into(),
+                content_hash: "short-source-hash".into(),
+                duration_seconds: 3.7,
+                sample_rate: 48_000,
+                channel_count: 2,
+                decode_profile: DecodeProfile::NormalizedStereo,
+            },
+            GraphProvenance {
+                sidecar_version: "test".into(),
+                provider_set: vec!["test".into()],
+                generated_at: "2026-07-17T00:00:00Z".into(),
+                source_hash: "short-source-hash".into(),
+                analysis_seed: 24,
+                run_notes: None,
+            },
+        );
+        graph.sections = vec![
+            Section {
+                section_id: SectionId::from("section-intro"),
+                label_hint: SectionLabelHint::Intro,
+                start_seconds: 0.0,
+                end_seconds: 1.85,
+                bar_start: 1,
+                bar_end: 1,
+                energy_class: EnergyClass::Medium,
+                confidence: 0.88,
+                tags: vec!["short-loop".into()],
+            },
+            Section {
+                section_id: SectionId::from("section-drop"),
+                label_hint: SectionLabelHint::Drop,
+                start_seconds: 1.85,
+                end_seconds: 3.7,
+                bar_start: 2,
+                bar_end: 2,
+                energy_class: EnergyClass::High,
+                confidence: 0.79,
+                tags: Vec::new(),
+            },
+        ];
+        graph.timing.primary_hypothesis_id = Some("short-primary".into());
+        graph.timing.hypotheses = vec![TimingHypothesis {
+            hypothesis_id: "short-primary".into(),
+            kind: TimingHypothesisKind::Primary,
+            bpm: 130.0,
+            meter: MeterHint {
+                beats_per_bar: 4,
+                beat_unit: 4,
+            },
+            confidence: 0.92,
+            score: 0.92,
+            beat_grid: Vec::new(),
+            bar_grid: vec![
+                BarSpan {
+                    bar_index: 1,
+                    start_seconds: 0.0,
+                    end_seconds: 1.85,
+                    downbeat_confidence: 0.91,
+                    phrase_index: Some(7),
+                },
+                BarSpan {
+                    bar_index: 2,
+                    start_seconds: 1.85,
+                    end_seconds: 3.7,
+                    downbeat_confidence: 0.9,
+                    phrase_index: Some(7),
+                },
+            ],
+            phrase_grid: vec![PhraseSpan {
+                phrase_index: 7,
+                start_bar: 1,
+                end_bar: 2,
+                confidence: 0.91,
+            }],
+            anchors: Vec::new(),
+            drift: Vec::new(),
+            groove: Vec::new(),
+            quality: TimingQuality::High,
+            warnings: Vec::new(),
+            provenance: vec!["test:short-primary".into()],
+        }];
+        graph
+    }
+
+    fn projected_boundary(scene_id: &str) -> CommitBoundaryState {
+        CommitBoundaryState {
+            kind: riotbox_core::action::CommitBoundary::Phrase,
+            beat_index: 19,
+            bar_index: 5,
+            phrase_index: 2,
+            scene_id: Some(SceneId::from(scene_id)),
+        }
     }
 }

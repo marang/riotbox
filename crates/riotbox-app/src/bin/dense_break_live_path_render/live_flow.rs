@@ -15,15 +15,19 @@ use riotbox_core::{
     live_performance_policy::derive_live_performance_policy,
     queue::CommittedActionRef,
     source_graph::{primary_grid_anchor_seconds_for_projected_scene, section_for_projected_scene},
+    style::PerformancePresetId,
     transport::{
         CommitBoundaryState, DEFAULT_BARS_PER_PHRASE, DEFAULT_BEATS_PER_BAR, TransportClockState,
         TransportGridPosition,
     },
 };
 
-use crate::model::{
-    ConfirmedSourceTiming, GestureTransition, MonitorProof, PreparedLivePath, RenderStage,
-    SceneTransitionProof,
+use crate::{
+    alpha_arc::{prepare_alpha_arc, prepare_restart_recall},
+    model::{
+        CaptureJourneyProof, ConfirmedSourceTiming, GestureTransition, MonitorProof,
+        PreparedLivePath, RenderStage, SceneTransitionProof,
+    },
 };
 
 pub fn prepare(
@@ -40,13 +44,23 @@ pub fn prepare(
         Some(cli_bpm_hint),
     )?;
     let source_timing = confirmed_source_timing(&state, cli_bpm_hint)?;
+    if source_timing.beats_per_bar != DEFAULT_BEATS_PER_BAR {
+        return Err(format!(
+            "Feral Break Alpha v1 requires 4/4 source timing, got {} beats per bar",
+            source_timing.beats_per_bar
+        )
+        .into());
+    }
     let bpm = source_timing.bpm;
     let capture_cursor = source_timing
         .bar_start_beat_cursor(1)
         .ok_or("dense-break source timing cannot resolve bar 1")?;
-    let promote_cursor = source_timing
+    let audition_cursor = source_timing
         .bar_start_beat_cursor(2)
-        .ok_or("dense-break source timing cannot resolve bar 2")?;
+        .ok_or("dense-break source timing cannot resolve audition bar 2")?;
+    let promote_cursor = source_timing
+        .bar_start_beat_cursor(3)
+        .ok_or("dense-break source timing cannot resolve promotion bar 3")?;
     let phrase_cursor = source_timing
         .bar_start_beat_cursor(5)
         .ok_or("dense-break source timing cannot resolve phrase-2 bar 5")?;
@@ -79,25 +93,64 @@ pub fn prepare(
         1,
     )?;
     state.queue_capture_bar(100);
-    commit(
+    let capture_commit = one_commit(commit(
         &mut state,
         CommitBoundary::Bar,
         capture_cursor,
         initial_scene.clone(),
         200,
         1,
+    )?)?;
+    require_committed_command(&state, &capture_commit, ActionCommand::CaptureBarGroup)?;
+    if state.queue_w30_raw_capture_audition(210) != Some(QueueControlResult::Enqueued) {
+        return Err("raw W-30 capture audition was unavailable".into());
+    }
+    let audition_commit = one_commit(commit(
+        &mut state,
+        CommitBoundary::Bar,
+        audition_cursor,
+        initial_scene.clone(),
+        220,
+        1,
+    )?)?;
+    require_committed_command(
+        &state,
+        &audition_commit,
+        ActionCommand::W30AuditionRawCapture,
     )?;
-    if !state.queue_promote_last_capture(210) {
+    if !state.queue_promote_last_capture(230) {
         return Err("capture promotion was unavailable".into());
     }
-    commit(
+    let promotion_commit = one_commit(commit(
         &mut state,
         CommitBoundary::Bar,
         promote_cursor,
         initial_scene.clone(),
         300,
         1,
+    )?)?;
+    require_committed_command(
+        &state,
+        &promotion_commit,
+        ActionCommand::PromoteCaptureToPad,
     )?;
+    // Source monitor EOF clamps by product contract. Keep the raw reference proof
+    // at source start instead of asking a short loop to play from performance bar 5.
+    let source_plan = render_plan(&state, bpm, 0.0);
+    let preset_id = PerformancePresetId::FeralBreakAlphaV1;
+    if state.queue_performance_preset(preset_id, 305) != QueueControlResult::Enqueued {
+        return Err("Feral Break Alpha preset was unavailable".into());
+    }
+    let scene = current_scene(&state);
+    let preset_commit = one_commit(commit(
+        &mut state,
+        CommitBoundary::Immediate,
+        promote_cursor,
+        scene,
+        306,
+        1,
+    )?)?;
+    require_committed_command(&state, &preset_commit, ActionCommand::PresetActivate)?;
     state.queue_tr909_reinforce(310);
     if state.queue_mc202_generate_pressure(311) != QueueControlResult::Enqueued {
         return Err("MC-202 pressure generation was unavailable".into());
@@ -115,16 +168,32 @@ pub fn prepare(
         .source_graph
         .as_ref()
         .and_then(|graph| derive_live_performance_policy(&state.session, graph))
-        .ok_or("dense-break live performance policy was unavailable")?;
+        .ok_or_else(|| {
+            format!(
+                "dense-break live performance policy was unavailable: confirmed_grid={:?}, mc202_source_phrase_plan={:?}, latest_action_result={:?}",
+                state.session.runtime_state.source_timing.confirmed_grid,
+                state
+                    .session
+                    .runtime_state
+                    .lane_state
+                    .mc202
+                    .source_phrase_plan,
+                state
+                    .session
+                    .action_log
+                    .actions
+                    .last()
+                    .and_then(|action| action.result.as_ref())
+            )
+        })?;
     println!(
         "live performance policy: lead={} bass_owner={} mc202_intent={}",
         live_policy.lead.label(),
         live_policy.bass_owner.label(),
         live_policy.mc202_intent.label()
     );
+    let (alpha_arc_stages, alpha_arc_proof) = prepare_alpha_arc(&state, &source_timing, bpm)?;
 
-    let source_plan = render_plan(&state, bpm, phrase_cursor as f64);
-    let to_blend = set_monitor_mode(&mut state, SourceMonitorMode::Blend, phrase_cursor, 410)?;
     let blend_plan = render_plan(&state, bpm, phrase_cursor as f64);
     let to_riotbox = set_monitor_mode(&mut state, SourceMonitorMode::Riotbox, phrase_cursor, 420)?;
     let riotbox_plan = render_plan(&state, bpm, phrase_cursor as f64);
@@ -144,7 +213,7 @@ pub fn prepare(
             case_id: "monitor-blend",
             artifact_path: "monitor/01_blend.wav",
             expected_route: SourceMonitorAudioRoute::Blend,
-            action_id: Some(to_blend.action_id.0),
+            action_id: Some(preset_commit.action_id.0),
             plan: blend_plan,
         },
         MonitorProof {
@@ -492,17 +561,31 @@ pub fn prepare(
     ));
 
     let to_legacy_riotbox = set_monitor_mode(&mut state, SourceMonitorMode::Riotbox, 32, 920)?;
+    state.save()?;
+    let (restart_recall_plan, restart_recall_proof) =
+        prepare_restart_recall(output_dir, &source_timing, bpm, preset_id)?;
 
     Ok(PreparedLivePath {
         state,
         source_timing,
         live_policy,
+        preset_id,
+        preset_action_id: preset_commit.action_id.0,
+        alpha_arc_stages,
+        alpha_arc_proof,
+        restart_recall_plan,
+        restart_recall_proof,
+        capture_journey_proof: CaptureJourneyProof {
+            capture_action_id: capture_commit.action_id.0,
+            raw_audition_action_id: audition_commit.action_id.0,
+            promotion_action_id: promotion_commit.action_id.0,
+        },
         monitor_proofs,
         stages,
         transitions,
         scene_transition_proof,
         monitor_action_ids: [
-            to_blend.action_id.0,
+            preset_commit.action_id.0,
             to_riotbox.action_id.0,
             back_to_source.action_id.0,
             back_to_blend.action_id.0,
@@ -649,7 +732,7 @@ fn set_monitor_mode(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn stage(
+pub(super) fn stage(
     case_id: &'static str,
     artifact_path: &'static str,
     duration_beats: u32,
@@ -672,7 +755,7 @@ fn stage(
             .map(|scene| scene.to_string())
             .unwrap_or_else(|| "none".into()),
         source_anchor_seconds: plan.source_monitor_render.source_anchor_seconds,
-        plan,
+        plan: Box::new(plan),
     }
 }
 
@@ -700,7 +783,11 @@ fn gesture_transition(
     }
 }
 
-fn render_plan(state: &JamAppState, bpm: f32, position_beats: f64) -> RuntimeMixRenderPlan {
+pub(super) fn render_plan(
+    state: &JamAppState,
+    bpm: f32,
+    position_beats: f64,
+) -> RuntimeMixRenderPlan {
     RuntimeMixRenderPlan {
         transport: AudioRuntimeTimingSnapshot {
             is_transport_running: true,
@@ -715,7 +802,7 @@ fn render_plan(state: &JamAppState, bpm: f32, position_beats: f64) -> RuntimeMix
     }
 }
 
-fn current_scene(state: &JamAppState) -> Option<SceneId> {
+pub(super) fn current_scene(state: &JamAppState) -> Option<SceneId> {
     state
         .session
         .runtime_state
@@ -758,7 +845,7 @@ fn lane_audio_projection_matches(
         && expected.w30_resample_tap == actual.w30_resample_tap
 }
 
-fn one_commit(
+pub(super) fn one_commit(
     mut committed: Vec<CommittedActionRef>,
 ) -> Result<CommittedActionRef, Box<dyn Error>> {
     committed
@@ -766,7 +853,7 @@ fn one_commit(
         .ok_or_else(|| "expected one committed action".into())
 }
 
-fn require_committed_command(
+pub(super) fn require_committed_command(
     state: &JamAppState,
     committed: &CommittedActionRef,
     expected: ActionCommand,
@@ -791,6 +878,23 @@ fn require_committed_command(
         .into());
     }
     Ok(())
+}
+
+pub(super) fn committed_for_command(
+    state: &JamAppState,
+    committed: &[CommittedActionRef],
+    command: ActionCommand,
+) -> Result<CommittedActionRef, Box<dyn Error>> {
+    committed
+        .iter()
+        .find(|committed| {
+            state
+                .queue
+                .history_action(committed.action_id)
+                .is_some_and(|action| action.command == command)
+        })
+        .cloned()
+        .ok_or_else(|| format!("expected committed {}", command.as_str()).into())
 }
 
 fn require_committed_scene_target(
@@ -842,7 +946,7 @@ fn require_same_anchor(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn commit(
+pub(super) fn commit(
     state: &mut JamAppState,
     kind: CommitBoundary,
     position_beats: u64,

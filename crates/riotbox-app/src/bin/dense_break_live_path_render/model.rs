@@ -6,6 +6,7 @@ use riotbox_core::{
     action::{ActionCommand, CommitBoundary},
     ids::SourceId,
     live_performance_policy::LivePerformancePolicy,
+    style::PerformancePresetId,
 };
 
 pub const SAMPLE_RATE: u32 = 48_000;
@@ -38,7 +39,7 @@ pub struct RenderStage {
     pub action_id: Option<u64>,
     pub scene_id: String,
     pub source_anchor_seconds: Option<f64>,
-    pub plan: RuntimeMixRenderPlan,
+    pub plan: Box<RuntimeMixRenderPlan>,
 }
 
 #[derive(Clone)]
@@ -58,6 +59,13 @@ pub struct PreparedLivePath {
     pub state: JamAppState,
     pub source_timing: ConfirmedSourceTiming,
     pub live_policy: LivePerformancePolicy,
+    pub preset_id: PerformancePresetId,
+    pub preset_action_id: u64,
+    pub alpha_arc_stages: Vec<RenderStage>,
+    pub alpha_arc_proof: AlphaArcProof,
+    pub restart_recall_plan: Box<RuntimeMixRenderPlan>,
+    pub restart_recall_proof: RestartRecallProof,
+    pub capture_journey_proof: CaptureJourneyProof,
     pub monitor_proofs: Vec<MonitorProof>,
     pub stages: Vec<RenderStage>,
     pub transitions: Vec<GestureTransition>,
@@ -66,6 +74,31 @@ pub struct PreparedLivePath {
     pub legacy_riotbox_action_id: u64,
     pub normal_plan: RuntimeMixRenderPlan,
     pub damaged_plan: RuntimeMixRenderPlan,
+}
+
+pub struct CaptureJourneyProof {
+    pub capture_action_id: u64,
+    pub raw_audition_action_id: u64,
+    pub promotion_action_id: u64,
+}
+
+pub struct AlphaArcProof {
+    pub hook_action_id: u64,
+    pub pressure_action_id: u64,
+    pub destructive_fill_action_id: u64,
+    pub role_swap_action_id: u64,
+    pub return_action_id: u64,
+    pub return_damage_action_id: u64,
+    pub original_scene: String,
+    pub contrast_scene: String,
+    pub returned_scene: String,
+}
+
+pub struct RestartRecallProof {
+    pub preset_survived_restart: bool,
+    pub capture_id: String,
+    pub recall_action_id: u64,
+    pub trigger_action_id: u64,
 }
 
 #[derive(Clone, Debug)]
@@ -120,6 +153,9 @@ pub struct RenderedGestureTransition {
 pub struct RenderedLivePath {
     pub monitor_outputs: Vec<RuntimeMixRenderOutput>,
     pub stage_outputs: Vec<RuntimeMixRenderOutput>,
+    pub alpha_arc_outputs: Vec<RuntimeMixRenderOutput>,
+    pub alpha_source_reference: RuntimeMixRenderOutput,
+    pub restart_recall_output: RuntimeMixRenderOutput,
     pub transition_outputs: Vec<RenderedGestureTransition>,
     pub normal: RuntimeMixRenderOutput,
     pub damaged: RuntimeMixRenderOutput,

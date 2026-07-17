@@ -15,6 +15,7 @@ pub mod source_graph;
 pub mod stem_package_manifest;
 pub mod stem_package_proof;
 pub mod stem_package_writer;
+pub mod style;
 pub mod tr909_policy;
 pub mod transport;
 pub mod view;

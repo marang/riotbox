@@ -149,7 +149,10 @@ pub fn derive_live_performance_policy(
     let mc202_music_level = match mc202_intent {
         LivePerformanceMc202Intent::BassPressure => 0.76 + bass_pressure * 0.16,
         LivePerformanceMc202Intent::Punctuate => 0.62,
-        LivePerformanceMc202Intent::Instigate => 0.70,
+        // A fill-pickup is an accent, not a bass owner. Its higher touch floor
+        // supplies the attack; sharing the punctuate bus level preserves
+        // headroom for simultaneous W-30 damage.
+        LivePerformanceMc202Intent::Instigate => 0.62,
         LivePerformanceMc202Intent::StayOut => 0.0,
     };
     let mc202_touch_floor = match mc202_intent {
@@ -418,6 +421,28 @@ mod tests {
         assert_eq!(policy.mc202_music_level, 0.62);
         assert_eq!(policy.mc202_touch_floor, 0.72);
         assert_eq!(policy.w30_music_level, 0.64);
+    }
+
+    #[test]
+    fn fill_pickup_instigator_keeps_headroom_and_cannot_claim_bass() {
+        let (mut session, graph) = dense_break_context();
+        session.runtime_state.source_timing.confirmed_grid =
+            Some(SourceTimingGridConfirmationState {
+                source_id: graph.source.source_id.clone(),
+                hypothesis_id: Some("grid-1".into()),
+                confirmed_by_action: ActionId(1),
+                confirmed_at: 100,
+            });
+        let mut plan = pressure_source_plan(graph.source.source_id.clone());
+        plan.candidate_family = Some(Mc202SourcePhraseCandidateFamilyState::FillPickupInstigator);
+        session.runtime_state.lane_state.mc202.source_phrase_plan = Some(plan);
+
+        let policy = derive_live_performance_policy(&session, &graph).expect("dense policy");
+
+        assert_eq!(policy.mc202_intent, LivePerformanceMc202Intent::Instigate);
+        assert_eq!(policy.bass_owner, LivePerformanceBassOwner::Unassigned);
+        assert_eq!(policy.mc202_music_level, 0.62);
+        assert_eq!(policy.mc202_touch_floor, 0.82);
     }
 
     #[test]

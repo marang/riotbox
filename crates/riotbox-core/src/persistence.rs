@@ -145,6 +145,7 @@ mod tests {
             RelationshipType, Section, SectionLabelHint, SourceDescriptor, SourceGraph,
             SourceGraphVersion,
         },
+        style::PerformancePresetId,
         transport::CommitBoundaryState,
     };
 
@@ -245,6 +246,7 @@ mod tests {
         session.runtime_state.transport.is_playing = true;
         session.runtime_state.transport.position_beats = 32.0;
         session.runtime_state.transport.current_scene = Some(SceneId::from("scene-1"));
+        PerformancePresetId::FeralBreakAlphaV1.apply_to_session(&mut session);
         session.runtime_state.macro_state.scene_aggression = 0.75;
         session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Follower);
         let mc202_source_phrase_plan =
@@ -431,6 +433,22 @@ mod tests {
 
         let json = fs::read_to_string(path).expect("read session file");
         assert!(json.contains("\"session_version\""));
+        assert!(json.contains("\"feral_break_alpha_v1\""));
+    }
+
+    #[test]
+    fn legacy_session_without_style_state_loads_with_no_active_profile_or_preset() {
+        let session = SessionFile::new("legacy-session", "0.1.0", "2026-07-17T14:40:00Z");
+        let mut json = serde_json::to_value(session).expect("serialize session");
+        json["runtime_state"]
+            .as_object_mut()
+            .expect("runtime object")
+            .remove("style");
+
+        let loaded: SessionFile = serde_json::from_value(json).expect("load legacy session");
+
+        assert!(loaded.runtime_state.style.active_profile.is_none());
+        assert!(loaded.runtime_state.style.active_preset.is_none());
     }
 
     #[test]

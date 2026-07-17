@@ -24,6 +24,7 @@ const REPLAY_SUPPORTED_ACTION_COMMANDS: &[ActionCommand] = &[
     ActionCommand::TransportPause,
     ActionCommand::TransportStop,
     ActionCommand::TransportSeek,
+    ActionCommand::PresetActivate,
     ActionCommand::SourceMonitorSetMode,
     ActionCommand::SourceTimingConfirmGrid,
     ActionCommand::SourceTimingRevertGrid,
@@ -120,6 +121,16 @@ pub fn apply_replay_entry_to_session(
                 });
             };
             session.runtime_state.transport.position_beats = position_beats as f64;
+        }
+        ActionCommand::PresetActivate => {
+            let ActionParams::Preset { preset_id } = action.params else {
+                return Err(ReplayExecutionError::InvalidParams {
+                    action_id: action.id,
+                    command: action.command,
+                    expected: "ActionParams::Preset { preset_id }",
+                });
+            };
+            preset_id.apply_to_session(session);
         }
         ActionCommand::SourceMonitorSetMode => {
             let ActionParams::SourceMonitor { mode: Some(mode) } = action.params else {

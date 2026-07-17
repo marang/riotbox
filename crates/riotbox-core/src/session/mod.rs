@@ -59,7 +59,7 @@ pub use version_types::{
     SceneMovementState, SceneState, SessionFile, SessionVersion, Snapshot, SnapshotPayload,
     SnapshotPayloadVersion, SourceGraphRef, SourceMonitorRuntimeState,
     SourceMonitorUndoSnapshotState, SourceRef, SourceTimingGridConfirmationState,
-    SourceTimingRuntimeState, Tr909FillUndoSnapshotState, Tr909LaneState,
+    SourceTimingRuntimeState, StyleRuntimeState, Tr909FillUndoSnapshotState, Tr909LaneState,
     Tr909ReinforcementModeState, Tr909TakeoverProfileState, TransportRuntimeState,
     UndoRuntimeState, W30LaneState, W30PreviewModeState,
 };

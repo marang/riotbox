@@ -43,6 +43,7 @@ mod lifecycle;
 mod live_source_timing;
 mod mc202_queue;
 mod persistence;
+mod preset_queue;
 mod product_export;
 mod product_export_artifact_preflight;
 mod product_export_receipt;
@@ -132,8 +133,9 @@ pub use recovery::{
 pub use runtime_view::JamRuntimeView;
 use side_effects::{
     apply_capture_side_effects, apply_ghost_side_effects, apply_mc202_side_effects,
-    apply_scene_side_effects, apply_source_monitor_side_effects, apply_source_timing_side_effects,
-    apply_tr909_side_effects, apply_transport_side_effects, apply_w30_side_effects,
+    apply_preset_side_effects, apply_scene_side_effects, apply_source_monitor_side_effects,
+    apply_source_timing_side_effects, apply_tr909_side_effects, apply_transport_side_effects,
+    apply_w30_side_effects,
 };
 pub use source_map_navigation::{SourceMapNavigationIntent, SourceMapNavigationResult};
 pub use state::{

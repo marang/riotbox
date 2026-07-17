@@ -116,6 +116,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         ),
         Line::from(""),
         Line::from("Primary gestures"),
+        line_with_primary_key_prefixes("F: activate Feral Break Alpha"),
         line_with_primary_key_prefixes(format!(
             "M: monitor {} -> {} | {}",
             shell.app.session.runtime_state.source_monitor.mode,

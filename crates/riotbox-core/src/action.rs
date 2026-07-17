@@ -9,6 +9,7 @@ use crate::{
     },
     ids::{ActionId, AssetId, BankId, CaptureId, PadId, SceneId, SourceId},
     session::ExportArtifactRole,
+    style::PerformancePresetId,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -266,6 +267,9 @@ pub enum ActionParams {
     SourceMonitor {
         mode: Option<SourceMonitorMode>,
     },
+    Preset {
+        preset_id: PerformancePresetId,
+    },
     SourceTimingGrid {
         source_id: Option<SourceId>,
         hypothesis_id: Option<String>,
@@ -426,6 +430,7 @@ pub enum ActionCommand {
     UndoLast,
     RedoLast,
     RestoreSource,
+    PresetActivate,
     SourceMonitorSetMode,
     SourceTimingConfirmGrid,
     SourceTimingRevertGrid,
@@ -508,6 +513,7 @@ impl ActionCommand {
         Self::UndoLast,
         Self::RedoLast,
         Self::RestoreSource,
+        Self::PresetActivate,
         Self::SourceMonitorSetMode,
         Self::SourceTimingConfirmGrid,
         Self::SourceTimingRevertGrid,
@@ -610,6 +616,7 @@ impl ActionCommand {
             | Self::Tr909Release
             | Self::LockObject
             | Self::UnlockObject
+            | Self::PresetActivate
             | Self::SourceMonitorSetMode
             | Self::SourceTimingConfirmGrid
             | Self::SourceTimingRevertGrid
@@ -688,6 +695,7 @@ impl ActionCommand {
             Self::UndoLast => "undo.last",
             Self::RedoLast => "redo.last",
             Self::RestoreSource => "restore.source",
+            Self::PresetActivate => "preset.activate",
             Self::SourceMonitorSetMode => "source_monitor.set_mode",
             Self::SourceTimingConfirmGrid => "source_timing.confirm_grid",
             Self::SourceTimingRevertGrid => "source_timing.revert_grid",

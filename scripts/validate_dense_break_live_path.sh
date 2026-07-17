@@ -43,6 +43,16 @@ for artifact in \
   gestures/proofs/04_y_after.wav \
   gestures/proofs/05_Y_before.wav \
   gestures/proofs/05_Y_after.wav \
+  alpha/00_hook_establish.wav \
+  alpha/01_pressure_lift.wav \
+  alpha/02_destructive_fill.wav \
+  alpha/03_destructive_role_swap.wav \
+  alpha/04_changed_return.wav \
+  alpha/05_feral_break_alpha_eight_bar.wav \
+  alpha/06_source_reference_raw.wav \
+  alpha/07_candidate_loudness_matched.wav \
+  alpha/08_source_reference_loudness_matched.wav \
+  alpha/09_restart_recall_trigger.wav \
   stems/01_w30_hook.wav \
   stems/02_tr909_pressure.wav \
   stems/03_mc202_selected_role.wav \
@@ -91,6 +101,82 @@ jq -e \
   and .evidence_boundary.scripted_generation == true
   and .evidence_boundary.quality_proof == false
   and .evidence_boundary.human_verdict == "unverified"
+  and .performance_preset.preset_id == "feral_break_alpha_v1"
+  and .performance_preset.profile_id == "feral_rebuild"
+  and .performance_preset.label == "Feral Break Alpha"
+  and .performance_preset.w30_role == "source_hook_lead"
+  and .performance_preset.tr909_role == "break_pressure"
+  and .performance_preset.mc202_role == "source_evidence_selected"
+  and .performance_preset.bass_ownership_policy == "live_performance_policy"
+  and (["mc202", "unassigned"] | index($manifest.performance_preset.actual_bass_owner)) != null
+  and (.performance_preset.activation_action_id | type == "number")
+  and $session_file.runtime_state.style.active_profile == .performance_preset.profile_id
+  and $session_file.runtime_state.style.active_preset == .performance_preset.preset_id
+  and .feral_break_alpha_capture_journey.sequence == [
+    "capture",
+    "raw_audition",
+    "promote_to_pad",
+    "save",
+    "restart",
+    "live_recall",
+    "trigger"
+  ]
+  and .feral_break_alpha_capture_journey.saved_before_restart == true
+  and (.feral_break_alpha_capture_journey.capture_action_id | type == "number")
+  and (.feral_break_alpha_capture_journey.raw_audition_action_id | type == "number")
+  and (.feral_break_alpha_capture_journey.promotion_action_id | type == "number")
+  and (.feral_break_alpha_capture_journey.restart_recall_action_id | type == "number")
+  and (.feral_break_alpha_capture_journey.restart_trigger_action_id | type == "number")
+  and .feral_break_alpha_arc.duration_bars == 8
+  and .feral_break_alpha_arc.duration_beats == 32
+  and .feral_break_alpha_arc.human_verdict == "unverified"
+  and .feral_break_alpha_arc.typed_bass_owner == .performance_preset.actual_bass_owner
+  and .feral_break_alpha_arc.artifact == "alpha/05_feral_break_alpha_eight_bar.wav"
+  and (.feral_break_alpha_arc.stages | map(.case_id)) == [
+    "alpha-hook-establish",
+    "alpha-pressure-lift",
+    "alpha-destructive-fill",
+    "alpha-destructive-role-swap",
+    "alpha-changed-return"
+  ]
+  and (.feral_break_alpha_arc.stages | map(.duration_beats)) == [8, 8, 4, 4, 8]
+  and (.feral_break_alpha_arc.stages | map(.key)) == ["w", "s", "f", "y", "Y+D"]
+  and (.feral_break_alpha_arc.stages | map(.command)) == [
+    "w30.trigger_pad",
+    "tr909.set_slam",
+    "tr909.fill_next",
+    "scene.launch",
+    "scene.restore"
+  ]
+  and all(.feral_break_alpha_arc.stages[];
+    .metrics.rms > $manifest.thresholds.min_mix_rms
+    and .metrics.clip_count == 0
+    and (.limiter | exact_limiter_ok($manifest.thresholds.max_exact_mix_limited_sample_count)))
+  and .feral_break_alpha_arc.hook_to_pressure_delta.rms > .thresholds.min_monitor_delta_rms
+  and .feral_break_alpha_arc.hook_to_changed_return_delta.rms > .thresholds.min_monitor_delta_rms
+  and (.feral_break_alpha_arc.hook_to_changed_return_correlation | type == "number")
+  and ((.feral_break_alpha_arc.hook_to_changed_return_correlation | abs) < 0.985)
+  and .feral_break_alpha_arc.scenes.original != .feral_break_alpha_arc.scenes.contrast
+  and .feral_break_alpha_arc.scenes.returned == .feral_break_alpha_arc.scenes.original
+  and .feral_break_alpha_arc.raw_level_ab.candidate_artifact == "alpha/05_feral_break_alpha_eight_bar.wav"
+  and .feral_break_alpha_arc.raw_level_ab.source_artifact == "alpha/06_source_reference_raw.wav"
+  and .feral_break_alpha_arc.raw_level_ab.candidate_metrics.rms > .thresholds.min_mix_rms
+  and .feral_break_alpha_arc.raw_level_ab.source_metrics.rms > .thresholds.min_mix_rms
+  and .feral_break_alpha_arc.loudness_matched_ab.candidate_artifact == "alpha/07_candidate_loudness_matched.wav"
+  and .feral_break_alpha_arc.loudness_matched_ab.source_artifact == "alpha/08_source_reference_loudness_matched.wav"
+  and .feral_break_alpha_arc.loudness_matched_ab.target_rms > .thresholds.min_mix_rms
+  and ((.feral_break_alpha_arc.loudness_matched_ab.candidate_metrics.rms
+    - .feral_break_alpha_arc.loudness_matched_ab.source_metrics.rms) | abs) <= 0.00001
+  and .feral_break_alpha_arc.loudness_matched_ab.candidate_metrics.clip_count == 0
+  and .feral_break_alpha_arc.loudness_matched_ab.source_metrics.clip_count == 0
+  and .feral_break_alpha_restart_recall.preset_survived_restart == true
+  and .feral_break_alpha_restart_recall.artifact == "alpha/09_restart_recall_trigger.wav"
+  and .feral_break_alpha_restart_recall.monitor_mode == "riotbox"
+  and .feral_break_alpha_restart_recall.w30_routing == "music_bus_preview"
+  and .feral_break_alpha_restart_recall.metrics.rms > .thresholds.min_mix_rms
+  and .feral_break_alpha_restart_recall.metrics.clip_count == 0
+  and (.feral_break_alpha_restart_recall.limiter
+    | exact_limiter_ok($manifest.thresholds.max_exact_mix_limited_sample_count))
   and .pattern_provenance.tr909_fill.pattern_origin == "primitive_renderer"
   and .pattern_provenance.tr909_fill.source_evidence_role == "availability_timing_and_pressure_modulation"
   and .pattern_provenance.tr909_fill.source_evidence_selects_pattern == false
