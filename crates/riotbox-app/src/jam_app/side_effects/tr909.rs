@@ -42,10 +42,6 @@ pub(in crate::jam_app) fn apply_tr909_side_effects(
             session.runtime_state.lane_state.tr909.fill_armed_next_bar = false;
             session.runtime_state.lane_state.tr909.last_fill_bar =
                 boundary.map(|boundary| boundary.bar_index);
-            session.runtime_state.lane_state.tr909.pattern_ref =
-                boundary.map(|boundary| format!("fill-bar-{}", boundary.bar_index));
-            session.runtime_state.lane_state.tr909.reinforcement_mode =
-                Some(Tr909ReinforcementModeState::Fills);
             update_logged_action_result(
                 session,
                 action.id,

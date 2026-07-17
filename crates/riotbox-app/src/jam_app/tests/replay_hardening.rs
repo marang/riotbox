@@ -80,6 +80,76 @@ fn replay_from_zero_restore_rebuilds_commit_boundary_and_queue_cursor() {
 }
 
 #[test]
+fn separate_commit_calls_and_later_batch_continue_the_same_boundary_sequence() {
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    let boundary = CommitBoundaryState {
+        kind: CommitBoundary::Bar,
+        beat_index: 80,
+        bar_index: 21,
+        phrase_index: 6,
+        scene_id: Some(SceneId::from("scene-1")),
+    };
+    let capture_target = ActionTarget {
+        scope: Some(TargetScope::LaneW30),
+        ..Default::default()
+    };
+
+    state.queue.enqueue(
+        ActionDraft::new(
+            ActorType::User,
+            ActionCommand::CaptureNow,
+            Quantization::NextBar,
+            capture_target.clone(),
+        ),
+        300,
+    );
+    let first = state.commit_ready_actions(boundary.clone(), 400);
+    assert_eq!(first[0].commit_sequence, 1);
+
+    state.queue.enqueue(
+        ActionDraft::new(
+            ActorType::User,
+            ActionCommand::CaptureNow,
+            Quantization::NextBar,
+            capture_target.clone(),
+        ),
+        410,
+    );
+    state.queue.enqueue(
+        ActionDraft::new(
+            ActorType::User,
+            ActionCommand::CaptureLoop,
+            Quantization::NextBar,
+            capture_target,
+        ),
+        420,
+    );
+    let batch = state.commit_ready_actions(boundary, 500);
+
+    assert_eq!(
+        batch
+            .iter()
+            .map(|committed| committed.commit_sequence)
+            .collect::<Vec<_>>(),
+        vec![2, 3]
+    );
+    assert_eq!(
+        state
+            .session
+            .action_log
+            .commit_records
+            .iter()
+            .map(|record| record.commit_sequence)
+            .collect::<Vec<_>>(),
+        vec![1, 2, 3]
+    );
+    riotbox_core::replay::build_committed_replay_plan(&state.session.action_log)
+        .expect("continued boundary batch is replayable");
+}
+
+#[test]
 fn accepted_ghost_action_snapshot_replay_plan_uses_restored_commit_records() {
     let graph = sample_graph();
     let mut session = sample_session(&graph);

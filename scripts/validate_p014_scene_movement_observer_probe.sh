@@ -26,6 +26,9 @@ jq -s -e \
       and .snapshot.scene.arrangement_contract.has_pending_scene_transition == true)
     and any(.[]; .event == "transport_commit"
       and .committed[0].boundary == "Bar"
+      and .committed[0].beat_index == 36
+      and .committed[0].bar_index == 10
+      and .committed[0].phrase_index == 3
       and .snapshot.scene.active_scene == "scene-02-drop"
       and .snapshot.scene.last_movement.kind == "launch"
       and .snapshot.scene.last_movement.direction == "rise"
@@ -33,6 +36,8 @@ jq -s -e \
       and .snapshot.scene.last_movement.mc202_intent == "lift"
       and .snapshot.scene.last_movement.from_scene == "scene-01-break"
       and .snapshot.scene.last_movement.to_scene == "scene-02-drop"
+      and .snapshot.scene.last_movement.committed_bar_index == 10
+      and .snapshot.scene.last_movement.committed_phrase_index == 3
       and .snapshot.scene.arrangement_contract.can_use_source_locked_scene_movement == true
       and .snapshot.scene.arrangement_contract.bounded_extension == "manual_scene_chain_ready"
       and .snapshot.scene.arrangement_contract.allows_manual_scene_chain_extension == true
@@ -81,15 +86,18 @@ cat > "$manifest" <<'JSON'
     "primary_phrase_bar_count": 8,
     "alternate_evidence_count": 0,
     "anchor_evidence": {
-      "primary_anchor_count": 0,
-      "primary_kick_anchor_count": 0,
-      "primary_backbeat_anchor_count": 0,
-      "primary_transient_anchor_count": 0
+      "primary_anchor_count": 64,
+      "primary_kick_anchor_count": 16,
+      "primary_backbeat_anchor_count": 32,
+      "primary_transient_anchor_count": 16
     },
     "groove_evidence": {
-      "primary_groove_residual_count": 0,
-      "primary_max_abs_offset_ms": 0.0,
-      "primary_groove_preview": []
+      "primary_groove_residual_count": 2,
+      "primary_max_abs_offset_ms": 6.0,
+      "primary_groove_preview": [
+        { "subdivision": "eighth", "offset_ms": -6.0, "confidence": 0.78 },
+        { "subdivision": "sixteenth", "offset_ms": 3.5, "confidence": 0.66 }
+      ]
     },
     "warning_codes": []
   },

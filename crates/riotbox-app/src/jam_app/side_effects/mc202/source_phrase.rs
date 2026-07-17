@@ -21,8 +21,10 @@ pub(super) fn derive_mc202_source_phrase_plan(
     boundary: Option<&CommitBoundaryState>,
     role: Mc202RoleState,
     touch: f32,
-) -> Option<Mc202SourcePhrasePlanState> {
-    let graph = source_graph?;
+) -> Result<Option<Mc202SourcePhrasePlanState>, &'static str> {
+    let Some(graph) = source_graph else {
+        return Ok(None);
+    };
 
     let trusted_grid = session
         .runtime_state
@@ -30,16 +32,35 @@ pub(super) fn derive_mc202_source_phrase_plan(
         .confirmed_grid
         .as_ref()
         .is_some_and(|confirmed| confirmed.source_id == graph.source.source_id);
-    let boundary = boundary?;
+    let Some(boundary) = boundary else {
+        return Ok(None);
+    };
 
     if !trusted_grid {
-        return None;
+        return Ok(None);
     }
 
-    let phrase_slot = source_phrase_slot_for_boundary(graph, boundary)?;
+    let Some(phrase_slot) = source_phrase_slot_for_boundary(graph, boundary) else {
+        return Ok(None);
+    };
 
     let section = section_for_transport_bar(graph, &transport_clock_from_boundary(boundary));
     let features = mc202_source_phrase_feature_vector(graph, &phrase_slot);
+    if let Some(feature_section_id) = features.source_section_id.as_ref() {
+        match section {
+            Some(boundary_section) if boundary_section.section_id == *feature_section_id => {}
+            Some(_) => {
+                return Err(
+                    "phrase crosses source sections and feature ownership does not match the commit boundary",
+                );
+            }
+            None => {
+                return Err(
+                    "source section ownership cannot be proven at the MC-202 commit boundary",
+                );
+            }
+        }
+    }
     let source_expression = mc202_source_phrase_expression_state(&features);
     let source_fallback_reason = source_phrase_fallback_reason(&features, &source_expression);
     let candidate_selection = choose_source_phrase_candidate(
@@ -65,8 +86,9 @@ pub(super) fn derive_mc202_source_phrase_plan(
         };
     let confidence = source_phrase_confidence(graph, section, &phrase_slot, &features);
 
-    Some(Mc202SourcePhrasePlanState {
+    Ok(Some(Mc202SourcePhrasePlanState {
         source_id: graph.source.source_id.clone(),
+        source_section_id: features.source_section_id.clone(),
         phrase_slot: Mc202SourcePhraseSlotState {
             phrase_index: phrase_slot.phrase_index,
             start_bar: phrase_slot.start_bar,
@@ -85,7 +107,7 @@ pub(super) fn derive_mc202_source_phrase_plan(
         candidate_scorecards: candidate_selection.scorecards,
         phrase_memory_distance: candidate_selection.phrase_memory_distance,
         fallback_reason,
-    })
+    }))
 }
 
 fn source_phrase_slot_for_boundary(
@@ -93,14 +115,25 @@ fn source_phrase_slot_for_boundary(
     boundary: &CommitBoundaryState,
 ) -> Option<PhraseSpan> {
     let bar_index = boundary.bar_index as u32;
-    graph
-        .timing
-        .phrase_grid
-        .iter()
-        .find(|phrase| bar_index >= phrase.start_bar && bar_index <= phrase.end_bar)
-        .cloned()
+    let primary = graph.timing.primary_hypothesis();
+    primary
+        .and_then(|hypothesis| {
+            hypothesis
+                .phrase_grid
+                .iter()
+                .find(|phrase| bar_index >= phrase.start_bar && bar_index <= phrase.end_bar)
+                .copied()
+        })
         .or_else(|| {
-            let hypothesis = graph.timing.primary_hypothesis()?;
+            graph
+                .timing
+                .phrase_grid
+                .iter()
+                .find(|phrase| bar_index >= phrase.start_bar && bar_index <= phrase.end_bar)
+                .copied()
+        })
+        .or_else(|| {
+            let hypothesis = primary?;
             let phrase_index = boundary.phrase_index.try_into().ok()?;
             let start_bar = hypothesis.bar_grid.first()?.bar_index;
             let end_bar = hypothesis.bar_grid.last()?.bar_index;
@@ -116,6 +149,7 @@ fn source_phrase_slot_for_boundary(
 fn transport_clock_from_boundary(boundary: &CommitBoundaryState) -> TransportClockState {
     TransportClockState {
         is_playing: true,
+        // Session V1 commit boundaries persist this as the zero-based cursor.
         position_beats: boundary.beat_index as f64,
         beat_index: boundary.beat_index,
         bar_index: boundary.bar_index,
@@ -491,5 +525,86 @@ fn mc202_source_phrase_expression_state(
         stay_out_pressure,
         confidence: features.confidence.clamp(0.0, 1.0),
         provenance_refs,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use riotbox_core::{
+        ids::SourceId,
+        source_graph::{
+            DecodeProfile, GraphProvenance, MeterHint, PhraseSpan, SourceDescriptor, SourceGraph,
+            TimingHypothesis, TimingHypothesisKind, TimingQuality,
+        },
+        transport::CommitBoundaryState,
+    };
+
+    use super::source_phrase_slot_for_boundary;
+
+    #[test]
+    fn phrase_slot_prefers_selected_primary_grid_over_divergent_top_level_grid() {
+        let mut graph = SourceGraph::new(
+            SourceDescriptor {
+                source_id: SourceId::from("primary-phrase-test"),
+                path: "primary-phrase.wav".into(),
+                content_hash: "primary-phrase-hash".into(),
+                duration_seconds: 16.0,
+                sample_rate: 48_000,
+                channel_count: 2,
+                decode_profile: DecodeProfile::NormalizedStereo,
+            },
+            GraphProvenance {
+                sidecar_version: "test".into(),
+                provider_set: vec!["test".into()],
+                generated_at: "2026-07-16T00:00:00Z".into(),
+                source_hash: "primary-phrase-hash".into(),
+                analysis_seed: 23,
+                run_notes: None,
+            },
+        );
+        graph.timing.phrase_grid = vec![PhraseSpan {
+            phrase_index: 2,
+            start_bar: 5,
+            end_bar: 8,
+            confidence: 0.5,
+        }];
+        graph.timing.primary_hypothesis_id = Some("selected-primary".into());
+        graph.timing.hypotheses = vec![TimingHypothesis {
+            hypothesis_id: "selected-primary".into(),
+            kind: TimingHypothesisKind::Primary,
+            bpm: 132.0,
+            meter: MeterHint {
+                beats_per_bar: 4,
+                beat_unit: 4,
+            },
+            confidence: 0.94,
+            score: 0.94,
+            beat_grid: Vec::new(),
+            bar_grid: Vec::new(),
+            phrase_grid: vec![PhraseSpan {
+                phrase_index: 9,
+                start_bar: 5,
+                end_bar: 8,
+                confidence: 0.94,
+            }],
+            anchors: Vec::new(),
+            drift: Vec::new(),
+            groove: Vec::new(),
+            quality: TimingQuality::High,
+            warnings: Vec::new(),
+            provenance: vec!["test:selected-primary".into()],
+        }];
+        let boundary = CommitBoundaryState {
+            kind: riotbox_core::action::CommitBoundary::Phrase,
+            beat_index: 19,
+            bar_index: 5,
+            phrase_index: 2,
+            scene_id: None,
+        };
+
+        let slot = source_phrase_slot_for_boundary(&graph, &boundary).expect("primary phrase slot");
+
+        assert_eq!(slot.phrase_index, 9);
+        assert_eq!((slot.start_bar, slot.end_bar), (5, 8));
     }
 }

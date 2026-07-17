@@ -1,5 +1,5 @@
 use riotbox_core::{
-    action::Action,
+    action::{Action, ActionStatus},
     replay::{
         ReplayPlanError, ReplayTargetDryRunSummary, ReplayTargetExecutionError,
         ReplayTargetExecutionReport, SnapshotPayloadHydrationError,
@@ -178,7 +178,10 @@ fn mc202_phrase_replay_inputs(
             let action = committed_actions
                 .iter()
                 .find(|action| action.id == record.action_id)?;
-            is_mc202_phrase_action(action.command).then(|| Mc202PhraseReplayInput {
+            (action.status == ActionStatus::Committed
+                && action.result.as_ref().is_none_or(|result| result.accepted)
+                && is_mc202_phrase_action(action.command))
+            .then(|| Mc202PhraseReplayInput {
                 action: action.clone(),
                 boundary: record.boundary.clone(),
                 source_phrase_plan: record.mc202_source_phrase_plan.clone(),

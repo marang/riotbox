@@ -1,13 +1,17 @@
 use super::{
-    Asset, AssetType, Candidate, CandidateType, Confidence, EnergyClass, MeterHint,
-    PhraseAudioFeatures, PhraseSpan, Section, SectionLabelHint, SourceGraph, SourceTimingAnchor,
-    SourceTimingAnchorType,
+    Asset, AssetType, Candidate, CandidateType, Confidence, EnergyClass, PhraseAudioFeatures,
+    PhraseSpan, Section, SectionLabelHint, SourceGraph, SourceTimingAnchor, SourceTimingAnchorType,
+    TimingHypothesis,
 };
 use serde::{Deserialize, Serialize};
+
+use crate::ids::SectionId;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Mc202SourcePhraseFeatureVector {
     pub phrase_index: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_section_id: Option<SectionId>,
     pub low_band_pressure: f32,
     pub low_band_movement: f32,
     pub transient_density: f32,
@@ -63,10 +67,8 @@ pub fn mc202_source_phrase_feature_vector(
                 .any(|asset| asset.asset_id == candidate.asset_ref)
         })
         .collect::<Vec<_>>();
-    let anchors = graph
-        .timing
-        .primary_hypothesis()
-        .map_or(&[][..], |hypothesis| hypothesis.anchors.as_slice());
+    let primary_hypothesis = graph.timing.primary_hypothesis();
+    let anchors = primary_hypothesis.map_or(&[][..], |hypothesis| hypothesis.anchors.as_slice());
     let phrase_anchors = anchors
         .iter()
         .filter(|anchor| {
@@ -136,7 +138,7 @@ pub fn mc202_source_phrase_feature_vector(
             + candidate_type_presence(&phrase_candidates, CandidateType::GhostHit) * 0.08,
     );
     let mut offbeat_density = clamp01(
-        offbeat_anchor_presence(&phrase_anchors, graph.timing.meter_hint) * 0.75
+        offbeat_anchor_presence(&phrase_anchors, primary_hypothesis) * 0.75
             + candidate_type_presence(&phrase_candidates, CandidateType::AnswerCandidate) * 0.18
             + tag_presence_in_phrase(
                 section,
@@ -250,6 +252,7 @@ pub fn mc202_source_phrase_feature_vector(
 
     Mc202SourcePhraseFeatureVector {
         phrase_index: phrase.phrase_index,
+        source_section_id: section.map(|section| section.section_id.clone()),
         low_band_pressure,
         low_band_movement,
         transient_density,
@@ -324,16 +327,21 @@ fn weighted_anchor_presence(
     clamp01(average_anchor_strength(anchors, anchor_types) + (anchors.len() as f32 * 0.04))
 }
 
-fn offbeat_anchor_presence(anchors: &[&SourceTimingAnchor], meter_hint: Option<MeterHint>) -> f32 {
-    let beats_per_bar = u32::from(meter_hint.map_or(4, |meter| meter.beats_per_bar.max(1)));
+fn offbeat_anchor_presence(
+    anchors: &[&SourceTimingAnchor],
+    hypothesis: Option<&TimingHypothesis>,
+) -> f32 {
+    let Some(hypothesis) = hypothesis else {
+        return 0.0;
+    };
+    let beats_per_bar = u32::from(hypothesis.meter.beats_per_bar.max(1));
     let mut count = 0_u32;
     let mut total = 0.0_f32;
     for anchor in anchors {
-        let Some(beat_index) = anchor.beat_index else {
+        let Some(beat_in_bar) = selected_beat_in_bar(anchor, hypothesis) else {
             continue;
         };
-        let beat_in_bar = beat_index % beats_per_bar;
-        if beat_in_bar != 0 && beat_in_bar != beats_per_bar / 2 {
+        if is_offbeat_beat_in_bar(beat_in_bar, beats_per_bar) {
             count += 1;
             total += anchor.strength.clamp(0.0, 1.0) * anchor.confidence.clamp(0.0, 1.0);
         }
@@ -343,6 +351,34 @@ fn offbeat_anchor_presence(anchors: &[&SourceTimingAnchor], meter_hint: Option<M
     } else {
         clamp01(total / count as f32 + count as f32 * 0.05)
     }
+}
+
+fn selected_beat_in_bar(anchor: &SourceTimingAnchor, hypothesis: &TimingHypothesis) -> Option<u32> {
+    let beats_per_bar = u32::from(hypothesis.meter.beats_per_bar.max(1));
+    let beat_index = anchor.beat_index?;
+    if hypothesis.bar_grid.is_empty() {
+        return zero_based_beat_in_bar(beat_index, beats_per_bar);
+    }
+
+    let bar_index = anchor.bar_index?;
+    let downbeat = hypothesis.bar_start_beat_point(bar_index)?;
+    let beat = hypothesis
+        .beat_grid
+        .iter()
+        .find(|beat| beat.beat_index == beat_index)?;
+    beat.beat_index
+        .checked_sub(downbeat.beat_index)
+        .filter(|relative_beat| *relative_beat < beats_per_bar)
+}
+
+fn zero_based_beat_in_bar(beat_index: u32, beats_per_bar: u32) -> Option<u32> {
+    beat_index
+        .checked_sub(1)
+        .map(|zero_based_beat| zero_based_beat % beats_per_bar.max(1))
+}
+
+fn is_offbeat_beat_in_bar(beat_in_bar: u32, beats_per_bar: u32) -> bool {
+    beat_in_bar != 0 && beat_in_bar != beats_per_bar.max(1) / 2
 }
 
 fn asset_type_presence(assets: &[&Asset], asset_type: AssetType) -> f32 {
@@ -418,4 +454,34 @@ fn mc202_feature_provenance_refs(
             .map(|anchor| format!("anchor:{}", anchor.anchor_id)),
     );
     refs
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{is_offbeat_beat_in_bar, zero_based_beat_in_bar};
+
+    #[test]
+    fn one_based_beats_map_to_expected_bar_subdivisions_and_offbeats() {
+        let expected = [
+            (1, Some(0), false),
+            (2, Some(1), true),
+            (3, Some(2), false),
+            (4, Some(3), true),
+        ];
+
+        for (beat_index, subdivision, is_offbeat) in expected {
+            assert_eq!(zero_based_beat_in_bar(beat_index, 4), subdivision);
+            assert_eq!(
+                subdivision.is_some_and(|beat_in_bar| is_offbeat_beat_in_bar(beat_in_bar, 4)),
+                is_offbeat
+            );
+        }
+    }
+
+    #[test]
+    fn invalid_zero_beat_has_no_subdivision_and_is_not_an_offbeat() {
+        let subdivision = zero_based_beat_in_bar(0, 4);
+        assert_eq!(subdivision, None);
+        assert!(!subdivision.is_some_and(|beat_in_bar| is_offbeat_beat_in_bar(beat_in_bar, 4)));
+    }
 }

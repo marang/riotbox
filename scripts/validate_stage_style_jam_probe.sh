@@ -72,7 +72,7 @@ jq -e \
     and (.control_path.key_outcomes | index("w -> queue_w30_trigger_pad")) != null
     and (.control_path.key_outcomes | index("f -> queue_tr909_fill")) != null
     and (.control_path.key_outcomes | index("g -> queue_mc202_generate_follower")) != null
-    and .control_path.first_commit == "action 1 at Phrase beat 16 bar 4 phrase 1 sequence 1"
+    and .control_path.first_commit == "action 1 at Phrase beat 16 bar 5 phrase 2 sequence 1"
     and .control_path.commit_count >= 6
     and (.control_path.commit_boundaries | index("Phrase")) != null
     and (.control_path.commit_boundaries | index("Bar")) != null

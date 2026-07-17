@@ -38,8 +38,7 @@ impl ActionQueue {
     }
 
     pub fn enqueue(&mut self, draft: ActionDraft, requested_at: TimestampMs) -> ActionId {
-        let id = ActionId(self.next_id);
-        self.next_id += 1;
+        let id = self.allocate_action_id();
 
         let action = Action {
             id,
@@ -57,6 +56,16 @@ impl ActionQueue {
         };
 
         self.pending.push_back(action);
+        id
+    }
+
+    /// Reserve the next globally unique in-memory action id.
+    ///
+    /// Directly committed control actions such as `undo.last` use the same
+    /// allocator as queued actions so pending/history ids cannot collide.
+    pub fn allocate_action_id(&mut self) -> ActionId {
+        let id = ActionId(self.next_id);
+        self.next_id = self.next_id.saturating_add(1);
         id
     }
 

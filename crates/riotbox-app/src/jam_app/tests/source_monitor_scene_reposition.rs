@@ -3,6 +3,7 @@ fn scene_launch_repositions_source_monitor_to_target_section_and_replays() {
     let mut graph = scene_regression_graph(&["break".into(), "drop".into()]);
     graph.timing.bpm_estimate = Some(120.0);
     graph.timing.degraded_policy = TimingDegradedPolicy::Locked;
+    set_source_monitor_reposition_primary_grid(&mut graph, 120.0);
     let mut session = sample_session(&graph);
     session.runtime_state.transport.position_beats = 32.0;
     session.runtime_state.transport.current_scene = Some(SceneId::from("scene-01-break"));
@@ -49,7 +50,11 @@ fn scene_launch_repositions_source_monitor_to_target_section_and_replays() {
     committed_state.refresh_view();
 
     let anchored_render = committed_state.source_monitor_render_state();
-    assert_eq!(anchored_render.source_anchor_seconds, Some(16.0));
+    assert_eq!(
+        anchored_render.source_anchor_seconds,
+        Some(15.5),
+        "raw section start is 16s, but playable source anchor must use the Bar-9 downbeat"
+    );
     assert_eq!(anchored_render.source_anchor_position_beats, 36.0);
     assert_eq!(
         committed_state.session.runtime_state.scene_state.active_scene,
@@ -113,7 +118,7 @@ fn scene_launch_repositions_source_monitor_to_target_section_and_replays() {
         replayed_state.session.runtime_state.scene_state,
         committed_state.session.runtime_state.scene_state
     );
-    assert_eq!(replayed_render.source_anchor_seconds, Some(16.0));
+    assert_eq!(replayed_render.source_anchor_seconds, Some(15.5));
     assert_eq!(replayed_render.source_anchor_position_beats, 36.0);
     assert_recipe_buffers_match(
         "replayed scene source monitor reposition -> committed source monitor reposition",
@@ -130,6 +135,7 @@ fn source_monitor_scene_reposition_waits_for_trusted_source_timing() {
         policy: TimingDegradedPolicy,
         bpm: Option<f32>,
         confirmed_grid: bool,
+        has_target_bar: bool,
         expected_anchor_seconds: Option<f64>,
     }
 
@@ -139,13 +145,23 @@ fn source_monitor_scene_reposition_waits_for_trusted_source_timing() {
             policy: TimingDegradedPolicy::Locked,
             bpm: Some(120.0),
             confirmed_grid: false,
-            expected_anchor_seconds: Some(16.0),
+            has_target_bar: true,
+            expected_anchor_seconds: Some(15.5),
+        },
+        SceneRepositionTrustCase {
+            name: "locked analyzer timing without target bar",
+            policy: TimingDegradedPolicy::Locked,
+            bpm: Some(120.0),
+            confirmed_grid: false,
+            has_target_bar: false,
+            expected_anchor_seconds: None,
         },
         SceneRepositionTrustCase {
             name: "manual confirm without user trust",
             policy: TimingDegradedPolicy::ManualConfirm,
             bpm: Some(120.0),
             confirmed_grid: false,
+            has_target_bar: true,
             expected_anchor_seconds: None,
         },
         SceneRepositionTrustCase {
@@ -153,13 +169,15 @@ fn source_monitor_scene_reposition_waits_for_trusted_source_timing() {
             policy: TimingDegradedPolicy::ManualConfirm,
             bpm: Some(120.0),
             confirmed_grid: true,
-            expected_anchor_seconds: Some(16.0),
+            has_target_bar: true,
+            expected_anchor_seconds: Some(15.5),
         },
         SceneRepositionTrustCase {
             name: "fallback grid",
             policy: TimingDegradedPolicy::FallbackGrid,
             bpm: Some(120.0),
             confirmed_grid: false,
+            has_target_bar: true,
             expected_anchor_seconds: None,
         },
         SceneRepositionTrustCase {
@@ -167,6 +185,7 @@ fn source_monitor_scene_reposition_waits_for_trusted_source_timing() {
             policy: TimingDegradedPolicy::Disabled,
             bpm: Some(120.0),
             confirmed_grid: false,
+            has_target_bar: true,
             expected_anchor_seconds: None,
         },
         SceneRepositionTrustCase {
@@ -174,6 +193,7 @@ fn source_monitor_scene_reposition_waits_for_trusted_source_timing() {
             policy: TimingDegradedPolicy::Locked,
             bpm: None,
             confirmed_grid: false,
+            has_target_bar: true,
             expected_anchor_seconds: None,
         },
     ];
@@ -181,7 +201,12 @@ fn source_monitor_scene_reposition_waits_for_trusted_source_timing() {
     for case in cases {
         let mut graph = scene_regression_graph(&["break".into(), "drop".into()]);
         graph.timing.bpm_estimate = case.bpm;
-        graph.timing.primary_hypothesis_id = Some("scene-grid".into());
+        set_source_monitor_reposition_primary_grid(&mut graph, case.bpm.unwrap_or(120.0));
+        if !case.has_target_bar {
+            graph.timing.hypotheses[0]
+                .bar_grid
+                .retain(|bar| bar.bar_index != 9);
+        }
         graph.timing.degraded_policy = case.policy;
         let mut session = sample_session(&graph);
         session.runtime_state.transport.current_scene = Some(SceneId::from("scene-01-break"));
@@ -234,6 +259,45 @@ fn source_monitor_scene_reposition_waits_for_trusted_source_timing() {
             assert_eq!(render.source_anchor_position_beats, 36.0, "{} anchor beat", case.name);
         }
     }
+}
+
+fn set_source_monitor_reposition_primary_grid(graph: &mut SourceGraph, bpm: f32) {
+    graph.timing.primary_hypothesis_id = Some("scene-grid".into());
+    graph.timing.hypotheses = vec![TimingHypothesis {
+        hypothesis_id: "scene-grid".into(),
+        kind: TimingHypothesisKind::Primary,
+        bpm,
+        meter: MeterHint {
+            beats_per_bar: 4,
+            beat_unit: 4,
+        },
+        confidence: 0.9,
+        score: 0.9,
+        beat_grid: Vec::new(),
+        bar_grid: vec![
+            riotbox_core::source_graph::BarSpan {
+                bar_index: 1,
+                start_seconds: 0.0,
+                end_seconds: 2.0,
+                downbeat_confidence: 0.9,
+                phrase_index: Some(1),
+            },
+            riotbox_core::source_graph::BarSpan {
+                bar_index: 9,
+                start_seconds: 15.5,
+                end_seconds: 17.5,
+                downbeat_confidence: 0.9,
+                phrase_index: Some(2),
+            },
+        ],
+        phrase_grid: Vec::new(),
+        anchors: Vec::new(),
+        drift: Vec::new(),
+        groove: Vec::new(),
+        quality: TimingQuality::High,
+        warnings: Vec::new(),
+        provenance: vec!["fixture:grid-aligned-scene-anchor".into()],
+    }];
 }
 
 fn source_monitor_reposition_source_cache() -> SourceAudioCache {

@@ -3,7 +3,8 @@ use crate::{
     ids::ActionId,
     replay::{ReplayPlanEntry, W30ArtifactReplayHydrationError},
     session::{
-        Mc202PhraseIntentState, Mc202RoleState, SessionFile, Tr909ReinforcementModeState,
+        Mc202PhraseIntentState, Mc202RoleState, Mc202UndoSnapshotState, SessionFile,
+        SourceMonitorUndoSnapshotState, Tr909FillUndoSnapshotState, Tr909ReinforcementModeState,
         Tr909TakeoverProfileState,
     },
 };
@@ -128,6 +129,12 @@ pub fn apply_replay_entry_to_session(
                     expected: "ActionParams::SourceMonitor { mode: Some(_) }",
                 });
             };
+            let undo_snapshot = SourceMonitorUndoSnapshotState::from_session(action.id, session);
+            session
+                .runtime_state
+                .undo_state
+                .source_monitor_snapshots
+                .push(undo_snapshot);
             session.runtime_state.source_monitor.mode = mode;
         }
         ActionCommand::SourceTimingConfirmGrid | ActionCommand::SourceTimingRevertGrid => {
@@ -223,6 +230,12 @@ pub fn apply_replay_entry_to_session(
                 .as_ref()
                 .filter(|previous_scene| **previous_scene != scene_id)
                 .cloned();
+            super::scene_movement::apply_scene_audio_projection_transition(
+                &mut session.runtime_state.scene_state,
+                action.command,
+                None,
+                &scene_id,
+            );
             session.runtime_state.scene_state.last_movement = None;
         }
         ActionCommand::PromoteCaptureToPad => apply_promote_capture_to_w30_pad(session, entry)?,
@@ -323,6 +336,13 @@ pub fn apply_replay_entry_to_session(
             );
             let touch = mc202_touch_or(action, 0.88);
 
+            let undo_snapshot = Mc202UndoSnapshotState::from_session(action.id, session);
+            session
+                .runtime_state
+                .undo_state
+                .mc202_snapshots
+                .push(undo_snapshot);
+
             session.runtime_state.lane_state.mc202.role = Some(current_role);
             session.runtime_state.lane_state.mc202.phrase_ref = Some(phrase_ref);
             session.runtime_state.lane_state.mc202.phrase_variant = intent.phrase_variant();
@@ -343,15 +363,15 @@ pub fn apply_replay_entry_to_session(
             session.runtime_state.lane_state.tr909.slam_enabled = intensity > 0.0;
         }
         ActionCommand::Tr909FillNext => {
+            let undo_snapshot = Tr909FillUndoSnapshotState::from_session(action.id, session);
+            session
+                .runtime_state
+                .undo_state
+                .tr909_fill_snapshots
+                .push(undo_snapshot);
             session.runtime_state.lane_state.tr909.fill_armed_next_bar = false;
             session.runtime_state.lane_state.tr909.last_fill_bar =
                 Some(entry.commit_record.boundary.bar_index);
-            session.runtime_state.lane_state.tr909.pattern_ref = Some(format!(
-                "fill-bar-{}",
-                entry.commit_record.boundary.bar_index
-            ));
-            session.runtime_state.lane_state.tr909.reinforcement_mode =
-                Some(Tr909ReinforcementModeState::Fills);
         }
         ActionCommand::Tr909ReinforceBreak => {
             session.runtime_state.lane_state.tr909.reinforcement_mode =
@@ -419,6 +439,12 @@ fn apply_mc202_role(
     touch: f32,
 ) {
     let role_label = role.label();
+    let undo_snapshot = Mc202UndoSnapshotState::from_session(entry.action.id, session);
+    session
+        .runtime_state
+        .undo_state
+        .mc202_snapshots
+        .push(undo_snapshot);
     session.runtime_state.lane_state.mc202.role = Some(role);
     session.runtime_state.lane_state.mc202.phrase_ref =
         Some(mc202_boundary_phrase_ref(entry, role_label));

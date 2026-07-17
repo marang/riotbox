@@ -156,6 +156,40 @@ Current implementation:
 - Each commit record is keyed by action id and stores the commit boundary plus commit sequence within that boundary.
 - Replay and budget logic should consume these structured commit records instead of parsing result summaries or relying only on incidental action vector order.
 - A replay-plan builder may consume the existing action log and commit records to produce deterministic committed-order entries, but it must not become a second action, persistence, or repair system.
+- A commit record whose action is `undone` remains valid historical commit
+  evidence and is omitted from the executable replay plan only when that
+  command declares implemented typed undo semantics. An `undone` status on a
+  command without that typed contract is invalid instead of silently skipping
+  state whose inverse is unknown. Commit records that reference any other
+  non-committed status remain invalid.
+- A committed `undo.last` marker has its own Immediate commit record and typed
+  target action id. It is structural replay evidence rather than an executable
+  audio side effect. Replay accepts it only when it is successful, Immediate,
+  non-undoable, uniquely consumes the latest prior active successful action
+  with typed restoration, and that target is successful, `Undoable`, and owns
+  its historical commit record. The plan then omits the marker itself together
+  with the successfully undone target.
+- Commit sequence numbers are allocated against the existing persisted maximum
+  for the complete boundary. A second queue drain, structural Undo, or direct
+  side-effect commit at the same paused transport point must continue the same
+  sequence rather than restart at one.
+- Replaying a still-committed action with typed undo semantics rebuilds that
+  action's pre-state undo snapshot before applying its side effect, so restored
+  runtime state retains the same live undo capability as the original commit.
+- Live Undo selects only an accepted typed target with exactly one historical
+  commit record and a persisted pre-state snapshot. Newer committed mutations
+  form barriers only for overlapping typed restore domains; in particular, a
+  source-grid revert prevents an older MC-202 snapshot from restoring a
+  source-derived plan that replay correctly leaves cleared.
+- Snapshot and historical-target safety is cursor-relative. A snapshot from
+  before the matching typed undo marker remains unsafe because it contains the
+  now-undone state; a snapshot at or after that committed marker is a valid
+  anchor. Later tail actions replay normally from that post-undo anchor.
+- A request may reach its quantized commit boundary yet produce
+  `ActionResult.accepted == false` when the product-side precondition cannot be
+  proven. Its action and commit record remain historical evidence, but the
+  action is omitted from executable replay because the live side effect is an
+  atomic no-op. Replay must not reconstruct a rejected partial mutation.
 - Snapshot-vs-origin replay-plan comparisons may select a suffix from the origin plan by using the existing snapshot `action_cursor`.
 - Snapshot anchor selection should pick the latest valid snapshot at or before the target action cursor and reject out-of-range cursors instead of silently falling back.
 - Target replay planning may combine the origin plan, selected snapshot anchor, and target-limited suffix, but execution and runtime hydration remain separate responsibilities.
@@ -241,7 +275,7 @@ Rules:
   when trusted Source Graph / source-timing evidence is available; otherwise the
   lane must remain degraded/silent rather than synthesize fallback audio.
 - TR-909 replay currently covers the deterministic support-lane state needed by downstream projection: slam, fill, reinforce, takeover, scene-lock, release, pattern references, reinforcement mode, and takeover profile.
-- Scene replay currently covers the deterministic active-scene / restore-scene state carried by committed scene launch and restore actions. The minimal executor updates transport current scene, scene active scene, and restore pointer while deliberately staying Source Graph-free. A separate graph-aware replay boundary can hydrate `last_movement` from the pre-action scene state, committed boundary, committed scene action, and frozen Source Graph context.
+- Scene replay currently covers the deterministic active-scene / restore-scene state carried by committed scene launch and restore actions. The minimal executor updates transport current scene, scene active scene, restore pointer, and swaps the paired active/restore audio-projection snapshots while deliberately staying Source Graph-free. A separate graph-aware replay boundary hydrates `last_movement` from the pre-action scene state, committed boundary, committed scene action, and frozen Source Graph context; launches install that derived projection, while restores recover the previously paired projection instead of projecting the inverse transition as new musical state.
 - W-30 replay currently covers a deterministic cue subset whose committed actions already carry explicit target state: live recall, trigger, audition, bank swap, slice-pool browse, focus step, and damage profile. It updates preview mode, focused bank/pad, last capture, and W-30 grit only.
 - `capture.now` and `capture.loop` replay hydrate an already persisted source-window-backed loop capture produced by the committed action and point W-30 `last_capture` / live-recall preview state at it. They do not regenerate capture audio from the Source Graph.
 - `capture.bar_group` replay hydrates an already persisted source-window-backed pad capture produced by the committed action and points W-30 `last_capture` / live-recall preview state at it. It does not regenerate capture audio from the Source Graph or assign it to a pad.
@@ -307,10 +341,22 @@ Recommended restore algorithm:
 - snapshots must not contain hidden state that the action log cannot eventually explain
 - session restore must reject snapshots whose action cursor points beyond the persisted action log
 - session restore must reject commit records whose action id does not exist in the persisted action log
-- session restore must reject commit records whose action id exists but is not `Committed`
+- session restore must reject duplicate action ids in the persisted action log
+- session restore must reject commit records whose action id exists but is not
+  `Committed`, except for historical `Undone` targets whose command has typed
+  restoration semantics
 - session restore must reject commit records whose `committed_at` is missing or differs from the referenced action
 - session restore must reject duplicate commit records for the same action id
 - session restore must reject zero or duplicate commit-record sequence numbers within the same commit boundary
+- session restore/replay validation must reject a committed undo marker whose
+  typed target is missing, not the latest still-active typed target, not earlier
+  in the log, not `Undone`, unsuccessful, non-undoable, already consumed, or
+  lacks typed restoration semantics; marker quantization, boundary, result,
+  policy, and structured commit evidence must also satisfy the typed contract
+- legacy untyped markers never establish a safe post-undo snapshot boundary;
+  restore degrades committed typed actions without their pre-state snapshot to
+  `NotUndoable`, and rejects legacy undone Source Monitor or TR-909 Fill state
+  whose historical rollback cannot be proven
 
 ### 9.2 Runtime state relation
 

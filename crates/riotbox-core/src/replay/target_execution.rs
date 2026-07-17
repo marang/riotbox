@@ -139,7 +139,7 @@ mod tests {
         TimestampMs,
         action::{
             Action, ActionCommand, ActionParams, ActionResult, ActionStatus, ActionTarget,
-            ActorType, CommitBoundary, Quantization, UndoPolicy,
+            ActorType, CommitBoundary, Quantization, SourceMonitorMode, UndoPolicy,
         },
         ids::SnapshotId,
         session::{
@@ -200,12 +200,16 @@ mod tests {
             .iter()
             .enumerate()
             .map(|(index, action)| {
-                commit_record(
+                let mut record = commit_record(
                     action.id.0,
                     ((index + 1) * 4) as u64,
                     1,
                     action.committed_at.expect("test action committed"),
-                )
+                );
+                if action.command == ActionCommand::UndoLast {
+                    record.boundary.kind = CommitBoundary::Immediate;
+                }
+                record
             })
             .collect();
 
@@ -419,5 +423,86 @@ mod tests {
                 payload_action_cursor: 0,
             }
         );
+    }
+
+    #[test]
+    fn snapshot_payload_hydration_does_not_resurrect_state_from_before_undo() {
+        let mut monitor_action = action(
+            1,
+            ActionCommand::SourceMonitorSetMode,
+            ActionParams::SourceMonitor {
+                mode: Some(SourceMonitorMode::Blend),
+            },
+            100,
+        );
+        monitor_action.status = ActionStatus::Undone;
+        let undo_marker = action(2, ActionCommand::UndoLast, ActionParams::Empty, 200);
+        let action_log = ActionLog {
+            actions: vec![monitor_action, undo_marker],
+            commit_records: vec![commit_record(1, 4, 1, 100)],
+            replay_policy: crate::session::ReplayPolicy::DeterministicPreferred,
+        };
+        let mut stale_anchor_session = session_with_log(action_log.clone(), Vec::new());
+        stale_anchor_session.runtime_state.source_monitor.mode = SourceMonitorMode::Blend;
+        let stale_snapshot =
+            snapshot_with_session_payload("snap-before-monitor-undo", 1, &stale_anchor_session);
+        let session = session_with_log(action_log, vec![stale_snapshot]);
+
+        let error = hydrate_replay_target_from_snapshot_payload(&session, 2, None)
+            .expect_err("stale pre-undo payload must not be hydrated");
+
+        assert_eq!(
+            error,
+            SnapshotPayloadHydrationError::MissingSnapshotAnchor {
+                target_action_cursor: 2,
+            }
+        );
+    }
+
+    #[test]
+    fn snapshot_payload_hydration_accepts_post_undo_anchor_and_replays_tail() {
+        let mut monitor_action = action(
+            1,
+            ActionCommand::SourceMonitorSetMode,
+            ActionParams::SourceMonitor {
+                mode: Some(SourceMonitorMode::Blend),
+            },
+            100,
+        );
+        monitor_action.status = ActionStatus::Undone;
+        let mut undo_marker = action(
+            2,
+            ActionCommand::UndoLast,
+            ActionParams::Undo {
+                target_action_id: ActionId(1),
+            },
+            200,
+        );
+        undo_marker.quantization = Quantization::Immediate;
+        undo_marker.undo_policy = UndoPolicy::NotUndoable {
+            reason: "undo marker".into(),
+        };
+        let tail = action(3, ActionCommand::TransportPlay, ActionParams::Empty, 300);
+        let action_log = action_log(vec![monitor_action, undo_marker, tail]);
+        let mut anchor_session = session_with_log(action_log.clone(), Vec::new());
+        anchor_session.runtime_state.source_monitor.mode = SourceMonitorMode::Source;
+        anchor_session.runtime_state.transport.is_playing = false;
+        let post_undo_snapshot =
+            snapshot_with_session_payload("snap-after-monitor-undo", 2, &anchor_session);
+        let session = session_with_log(action_log, vec![post_undo_snapshot]);
+
+        let hydrated = hydrate_replay_target_from_snapshot_payload(&session, 3, None)
+            .expect("post-undo payload and tail should hydrate");
+
+        assert_eq!(
+            hydrated.replay_report.anchor_snapshot_id.as_deref(),
+            Some("snap-after-monitor-undo")
+        );
+        assert_eq!(hydrated.replay_report.applied_action_ids, vec![ActionId(3)]);
+        assert_eq!(
+            hydrated.session.runtime_state.source_monitor.mode,
+            SourceMonitorMode::Source
+        );
+        assert!(hydrated.session.runtime_state.transport.is_playing);
     }
 }

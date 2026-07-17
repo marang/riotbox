@@ -94,6 +94,7 @@ pub fn shell_key_outcome_label(outcome: ShellKeyOutcome) -> &'static str {
         ShellKeyOutcome::Continue => "continue",
         ShellKeyOutcome::RequestRefresh => "request_refresh",
         ShellKeyOutcome::ToggleTransport => "toggle_transport",
+        ShellKeyOutcome::QueueSourceMonitorMode(_) => "queue_source_monitor_mode",
         ShellKeyOutcome::QueueSceneMutation => "queue_scene_mutation",
         ShellKeyOutcome::QueueSceneSelect => "queue_scene_select",
         ShellKeyOutcome::QueueSceneRestore => "queue_scene_restore",

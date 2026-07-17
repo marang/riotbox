@@ -13,12 +13,19 @@ fn renders_help_overlay_with_first_run_guidance() {
     assert!(rendered.contains("kick+bb | b- bar8 p-"), "{rendered}");
     assert!(rendered.contains("b- bar8 p-"), "{rendered}");
     assert!(rendered.contains("confirm grid first"), "{rendered}");
-    assert!(rendered.contains("space: start transport"), "{rendered}");
-    assert!(rendered.contains("f: queue one first fill"), "{rendered}");
     assert!(
-        rendered.contains("2: switch to Log and watch it land"),
+        rendered.contains("1 Audio output is not running; playback is not ready"),
         "{rendered}"
     );
+    assert!(
+        rendered.contains("3 [c] capture a keeper at the shown boundary"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("Then [o] audition raw -> [p] promote"),
+        "{rendered}"
+    );
+    assert!(!rendered.contains("hear source"), "{rendered}");
     assert!(
         rendered.contains("After first loop: Recipe 16 taste/proof"),
         "{rendered}"

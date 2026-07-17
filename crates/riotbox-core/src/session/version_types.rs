@@ -144,6 +144,52 @@ pub struct CaptureRuntimeState {
 pub struct UndoRuntimeState {
     #[serde(default)]
     pub mc202_snapshots: Vec<Mc202UndoSnapshotState>,
+    #[serde(default)]
+    pub source_monitor_snapshots: Vec<SourceMonitorUndoSnapshotState>,
+    #[serde(default)]
+    pub tr909_fill_snapshots: Vec<Tr909FillUndoSnapshotState>,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Tr909FillUndoSnapshotState {
+    pub action_id: ActionId,
+    pub last_fill_bar: Option<u64>,
+}
+
+impl Tr909FillUndoSnapshotState {
+    #[must_use]
+    pub fn from_session(action_id: ActionId, session: &SessionFile) -> Self {
+        let tr909 = &session.runtime_state.lane_state.tr909;
+        Self {
+            action_id,
+            last_fill_bar: tr909.last_fill_bar,
+        }
+    }
+
+    pub fn apply_to_session(self, session: &mut SessionFile) {
+        let tr909 = &mut session.runtime_state.lane_state.tr909;
+        tr909.last_fill_bar = self.last_fill_bar;
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SourceMonitorUndoSnapshotState {
+    pub action_id: ActionId,
+    pub mode: SourceMonitorMode,
+}
+
+impl SourceMonitorUndoSnapshotState {
+    #[must_use]
+    pub fn from_session(action_id: ActionId, session: &SessionFile) -> Self {
+        Self {
+            action_id,
+            mode: session.runtime_state.source_monitor.mode,
+        }
+    }
+
+    pub fn apply_to_session(self, session: &mut SessionFile) {
+        session.runtime_state.source_monitor.mode = self.mode;
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -317,6 +363,16 @@ pub struct SceneState {
     pub restore_scene: Option<SceneId>,
     #[serde(default)]
     pub last_movement: Option<SceneMovementState>,
+    /// The source-backed movement profile currently projected into the audio lanes.
+    ///
+    /// This is deliberately separate from `last_movement`: a restore is the latest
+    /// transition for observer/source-anchor purposes, while its audible lane state
+    /// must return to the projection that belonged to the restored scene.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub active_projection_movement: Option<SceneMovementState>,
+    /// Audio projection paired with `restore_scene`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub restore_projection_movement: Option<SceneMovementState>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

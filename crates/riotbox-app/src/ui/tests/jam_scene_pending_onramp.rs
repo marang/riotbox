@@ -23,7 +23,7 @@ fn renders_jam_shell_with_scene_brain_summary() {
 
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-    assert!(rendered.contains("idle @ 32.0"));
+    assert!(rendered.contains("idle @ 31.0"));
     assert!(rendered.contains("scene-01-intro"));
     assert!(rendered.contains("energy medium"));
     assert!(
@@ -35,12 +35,12 @@ fn renders_jam_shell_with_scene_brain_summary() {
     assert!(rendered.contains("launch ->"), "{rendered}");
     assert!(rendered.contains("@ next bar"), "{rendered}");
     assert!(
-        rendered.contains("pulse [===>] | transport b32 bar8 p1"),
+        rendered.contains("pulse [==>-] | transport b31 bar8 p2"),
         "{rendered}"
     );
     assert!(
         rendered.contains(
-            "Scene: launch drop @ next bar | rise [===>] | 909 drive | 202 lift | 2 trail"
+            "Scene: launch drop @ next bar | rise [==>-] | 909 drive | 202 lift | 2 trail"
         ),
         "{rendered}"
     );
@@ -146,12 +146,12 @@ fn renders_jam_shell_with_pending_scene_restore_summary() {
     );
     assert!(rendered.contains("policy rise"), "{rendered}");
     assert!(
-        rendered.contains("pulse [===>] | transport b32 bar8 p1"),
+        rendered.contains("pulse [==>-] | transport b31 bar8 p2"),
         "{rendered}"
     );
     assert!(
         rendered
-            .contains("restore intro @ next bar | rise [===>] | 909 drive | 202 lift | 2 trail"),
+            .contains("restore intro @ next bar | rise [==>-] | 909 drive | 202 lift | 2 trail"),
         "{rendered}"
     );
 }
@@ -306,10 +306,10 @@ fn queued_timing_rail_styles_define_boundary_hierarchy() {
         .map(|span| span.content.as_ref())
         .collect::<String>();
 
-    assert_eq!(rendered, "wait [===>] next bar | transport b32 bar8 p1");
+    assert_eq!(rendered, "wait [==>-] next bar | transport b31 bar8 p2");
     assert_eq!(line.spans[0].content.as_ref(), "wait ");
     assert_eq!(line.spans[0].style.fg, Some(Color::DarkGray));
-    assert_eq!(line.spans[1].content.as_ref(), "[===>]");
+    assert_eq!(line.spans[1].content.as_ref(), "[==>-]");
     assert_eq!(line.spans[1].style.fg, Some(Color::Yellow));
     assert!(
         line.spans[1].style.add_modifier.contains(Modifier::BOLD),
@@ -354,10 +354,10 @@ fn queued_scene_timing_rail_styles_pulse_hierarchy() {
         .map(|span| span.content.as_ref())
         .collect::<String>();
 
-    assert_eq!(rendered, "pulse [===>] | transport b32 bar8 p1");
+    assert_eq!(rendered, "pulse [==>-] | transport b31 bar8 p2");
     assert_eq!(line.spans[0].content.as_ref(), "pulse ");
     assert_eq!(line.spans[0].style.fg, Some(Color::DarkGray));
-    assert_eq!(line.spans[1].content.as_ref(), "[===>]");
+    assert_eq!(line.spans[1].content.as_ref(), "[==>-]");
     assert_eq!(line.spans[1].style.fg, Some(Color::Yellow));
     assert!(
         line.spans[1].style.add_modifier.contains(Modifier::BOLD),
@@ -372,59 +372,58 @@ fn renders_jam_shell_with_first_run_onramp() {
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
     assert!(rendered.contains("Start Here"), "{rendered}");
-    assert!(rendered.contains("1 [Space] start transport"), "{rendered}");
     assert!(
-        rendered.contains("2 [f] queue one first fill"),
+        rendered.contains("1 Audio output is not running; playback is not ready"),
         "{rendered}"
     );
     assert!(
-        rendered.contains("3 [2] watch Log when it lands on the next bar"),
+        rendered.contains("2 [C] confirm grid if Timing asks"),
         "{rendered}"
     );
     assert!(
-        rendered.contains(
-            "Timing: needs confirm | grid manual_confirm_only | phase 0 amb | low | kick+bb | b- bar8 p- | confirm grid first"
-        ),
+        rendered.contains("3 [c] capture a keeper at the shown boundary"),
         "{rendered}"
     );
+    assert!(!rendered.contains("hear source"), "{rendered}");
 }
 
 #[test]
-fn renders_jam_shell_with_queued_first_move_guidance() {
+fn unrelated_pending_move_does_not_impersonate_capture_progress() {
     let mut shell = first_run_shell_state();
     shell.app.queue_tr909_fill(200);
 
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-    assert!(rendered.contains("Your first move is armed."), "{rendered}");
-    assert!(rendered.contains("next bar"), "{rendered}");
-    assert!(rendered.contains("confirm it in Log"), "{rendered}");
-    assert!(rendered.contains("[c] capture"), "{rendered}");
-    assert!(rendered.contains("confirm grid first"), "{rendered}");
+    assert!(rendered.contains("[c] capture a keeper"), "{rendered}");
+    assert!(!rendered.contains("Capture armed"), "{rendered}");
+    assert!(!rendered.contains("audition -> promote"), "{rendered}");
 }
 
 #[test]
-fn renders_jam_shell_with_first_result_guidance() {
-    let shell = first_result_shell_state();
+fn renders_source_backed_capture_readiness_guidance() {
+    let shell = first_run_captured_shell_state(true);
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
     assert!(
-        rendered.contains("What changed: landed user fill"),
+        rendered.contains("Capture landed with a source-backed audio handoff"),
         "{rendered}"
     );
     assert!(
-        rendered.contains("What next: [c] capture it or [u] undo it if it missed."),
+        rendered.contains("1 [o] audition the raw capture"),
         "{rendered}"
     );
     assert!(
-        rendered.contains("Then try [g] follow or [f] fill; use [y] after grid trust."),
+        rendered.contains("2 [p] promote the keeper to the focused W-30 pad"),
         "{rendered}"
     );
 }
 
 #[test]
-fn first_result_guidance_allows_scene_jump_when_grid_is_locked() {
-    let mut shell = first_result_shell_state();
+fn promoted_keeper_offers_blend_only_when_source_monitor_is_ready() {
+    let mut shell = first_run_promoted_shell_state(
+        riotbox_core::action::SourceMonitorMode::Source,
+        SourceMonitorAudioRoute::SourceOnly,
+    );
     let graph = shell
         .app
         .source_graph
@@ -434,14 +433,19 @@ fn first_result_guidance_allows_scene_jump_when_grid_is_locked() {
     graph.timing.degraded_policy = TimingDegradedPolicy::Locked;
     graph.timing.warnings.clear();
     shell.app.refresh_view();
+    set_first_run_audio_runtime(
+        &mut shell,
+        Some(AudioRuntimeLifecycle::Running),
+        SourceMonitorAudioRoute::SourceOnly,
+    );
 
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
     assert!(
-        rendered.contains("Then try one more move: [y] jump or [g] follow."),
+        rendered.contains("[M] choose Blend: source + Riotbox"),
         "{rendered}"
     );
-    assert!(!rendered.contains("use [y] after grid trust"), "{rendered}");
+    assert!(rendered.contains("Then [w] [f] [s] [y] perform"), "{rendered}");
 }
 
 #[test]
@@ -462,7 +466,7 @@ fn next_panel_promotes_timing_rail_above_landed_history() {
     assert_eq!(line_texts[0], "user tr909.fill_next @ next_bar");
     assert_eq!(line_texts[1], "scene transition idle");
     assert!(
-        line_texts[2].starts_with("wait [===>] next bar"),
+        line_texts[2].starts_with("wait [==>-] next bar"),
         "{line_texts:?}"
     );
     assert_eq!(line_texts[3], "landed user fill");

@@ -128,6 +128,14 @@ playback to the landed scene section only when Source Timing is analyzer-locked
 or user-confirmed. Fallback and manual-confirm-only timing must keep transport
 position playback until the user trust boundary is explicit.
 
+The reposition anchor is the matching `section.bar_start` downbeat from the
+selected primary timing hypothesis, not raw `section.start_seconds`. Analysis
+section boundaries may be off-grid and would make a dominant Source layer fight
+the live lanes. If the trusted primary bar grid has no matching bar, Scene state
+still commits but Source Monitor exposes no reposition anchor; it must not guess
+or fall back to the raw section timestamp. Live commit and graph-aware replay use
+the same canonical core helper.
+
 P016 may define receipt-only arrangement / DAW placement contracts for future
 export packages without changing the P014 runtime arrangement contract. The
 current bounded skeleton is `export_scope: daw_session`, `pack_id:

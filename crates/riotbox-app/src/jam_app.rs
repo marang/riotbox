@@ -113,7 +113,8 @@ pub use daw_session_writer_proof_types::{
 };
 pub use ghost_queue::{GhostSuggestionQueueResult, NO_CURRENT_GHOST_SUGGESTION_REASON};
 use helpers::{
-    is_mc202_phrase_action, max_action_id, next_action_id_from_session, update_logged_action_result,
+    is_mc202_phrase_action, max_action_id, normalize_missing_typed_undo_policies,
+    update_logged_action_result,
 };
 use live_source_timing::{
     confirm_explicit_source_bpm, enrich_graph_with_rust_source_timing, validate_explicit_source_bpm,

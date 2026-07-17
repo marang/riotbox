@@ -164,10 +164,12 @@ impl AudioFixtureRenderState {
                     other => panic!("unknown TR-909 fixture takeover profile: {other}"),
                 }),
             drum_bus_level: self.drum_bus_level,
+            slam_enabled: false,
             slam_intensity: self.slam_intensity,
             is_transport_running: self.is_transport_running,
             tempo_bpm: self.tempo_bpm,
             position_beats: self.position_beats,
+            source_bar_grid_anchor_position_beats: None,
         }
     }
 }

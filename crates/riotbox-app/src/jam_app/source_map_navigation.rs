@@ -119,7 +119,7 @@ fn source_map_navigation_target(
     if bars.is_empty() {
         return None;
     }
-    let current_bar = current_source_map_bar(position_beats, beats_per_bar, &bars);
+    let current_bar = current_source_map_bar(graph, position_beats, beats_per_bar, &bars)?;
 
     match intent {
         SourceMapNavigationIntent::PreviousBar => {
@@ -128,14 +128,14 @@ fn source_map_navigation_target(
                 .rev()
                 .find(|bar| bar.bar_index < current_bar)
                 .or_else(|| bars.first())?;
-            Some(source_map_bar_target(target_bar.bar_index, beats_per_bar))
+            source_map_bar_target(graph, target_bar.bar_index, beats_per_bar)
         }
         SourceMapNavigationIntent::NextBar => {
             let target_bar = bars
                 .iter()
                 .find(|bar| bar.bar_index > current_bar)
                 .or_else(|| bars.last())?;
-            Some(source_map_bar_target(target_bar.bar_index, beats_per_bar))
+            source_map_bar_target(graph, target_bar.bar_index, beats_per_bar)
         }
         SourceMapNavigationIntent::PreviousPhrase => {
             let phrases = source_map_navigation_phrases(graph, &bars);
@@ -145,7 +145,7 @@ fn source_map_navigation_target(
                 .rev()
                 .find(|phrase| phrase.start_bar < current_phrase.start_bar)
                 .or_else(|| phrases.first())?;
-            Some(source_map_phrase_target(target_phrase, beats_per_bar))
+            source_map_phrase_target(graph, target_phrase, beats_per_bar)
         }
         SourceMapNavigationIntent::NextPhrase => {
             let phrases = source_map_navigation_phrases(graph, &bars);
@@ -154,7 +154,7 @@ fn source_map_navigation_target(
                 .iter()
                 .find(|phrase| phrase.start_bar > current_phrase.start_bar)
                 .or_else(|| phrases.last())?;
-            Some(source_map_phrase_target(target_phrase, beats_per_bar))
+            source_map_phrase_target(graph, target_phrase, beats_per_bar)
         }
     }
 }
@@ -233,13 +233,26 @@ fn phrases_from_bar_markers(bars: &[BarSpan]) -> Vec<PhraseSpan> {
     phrases
 }
 
-fn current_source_map_bar(position_beats: f64, beats_per_bar: u64, bars: &[BarSpan]) -> u32 {
-    let raw_bar = ((position_beats.floor().max(0.0) as u64) / beats_per_bar).saturating_add(1);
+fn current_source_map_bar(
+    graph: &SourceGraph,
+    position_beats: f64,
+    beats_per_bar: u64,
+    bars: &[BarSpan],
+) -> Option<u32> {
+    let raw_bar = if let Some(primary) = graph.timing.primary_hypothesis()
+        && !primary.bar_grid.is_empty()
+    {
+        primary.transport_grid_position(position_beats)?.bar_index
+    } else {
+        ((position_beats.floor().max(0.0) as u64) / beats_per_bar).saturating_add(1)
+    };
     let first = bars.first().map_or(1, |bar| bar.bar_index);
     let last = bars.last().map_or(first, |bar| bar.bar_index);
-    u32::try_from(raw_bar)
-        .unwrap_or(u32::MAX)
-        .clamp(first, last)
+    Some(
+        u32::try_from(raw_bar)
+            .unwrap_or(u32::MAX)
+            .clamp(first, last),
+    )
 }
 
 fn current_source_map_phrase(current_bar: u32, phrases: &[PhraseSpan]) -> Option<&PhraseSpan> {
@@ -255,16 +268,39 @@ fn current_source_map_phrase(current_bar: u32, phrases: &[PhraseSpan]) -> Option
         .or_else(|| phrases.first())
 }
 
-fn source_map_bar_target(bar_index: u32, beats_per_bar: u64) -> SourceMapNavigationTarget {
-    SourceMapNavigationTarget {
-        position_beats: u64::from(bar_index.saturating_sub(1)) * beats_per_bar,
+fn source_map_bar_target(
+    graph: &SourceGraph,
+    bar_index: u32,
+    beats_per_bar: u64,
+) -> Option<SourceMapNavigationTarget> {
+    let position_beats = source_map_bar_start_cursor(graph, bar_index, beats_per_bar)?;
+    Some(SourceMapNavigationTarget {
+        position_beats,
         label: format!("bar {bar_index}"),
-    }
+    })
 }
 
-fn source_map_phrase_target(phrase: &PhraseSpan, beats_per_bar: u64) -> SourceMapNavigationTarget {
-    SourceMapNavigationTarget {
-        position_beats: u64::from(phrase.start_bar.saturating_sub(1)) * beats_per_bar,
+fn source_map_phrase_target(
+    graph: &SourceGraph,
+    phrase: &PhraseSpan,
+    beats_per_bar: u64,
+) -> Option<SourceMapNavigationTarget> {
+    let position_beats = source_map_bar_start_cursor(graph, phrase.start_bar, beats_per_bar)?;
+    Some(SourceMapNavigationTarget {
+        position_beats,
         label: format!("phrase {} bar {}", phrase.phrase_index, phrase.start_bar),
+    })
+}
+
+fn source_map_bar_start_cursor(
+    graph: &SourceGraph,
+    bar_index: u32,
+    beats_per_bar: u64,
+) -> Option<u64> {
+    if let Some(primary) = graph.timing.primary_hypothesis()
+        && !primary.bar_grid.is_empty()
+    {
+        return primary.bar_start_beat_cursor(u64::from(bar_index));
     }
+    Some(u64::from(bar_index.saturating_sub(1)) * beats_per_bar)
 }

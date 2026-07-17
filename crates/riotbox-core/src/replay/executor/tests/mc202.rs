@@ -354,6 +354,7 @@ fn source_phrase_plan(
     }
     Mc202SourcePhrasePlanState {
         source_id: SourceId::from(source_id),
+        source_section_id: None,
         phrase_slot: Mc202SourcePhraseSlotState {
             phrase_index: 1,
             start_bar: 0,

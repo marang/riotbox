@@ -4,6 +4,7 @@ use riotbox_core::action::SourceMonitorMode;
 const SOURCE_GAIN: f32 = 0.88;
 const BLEND_SOURCE_GAIN: f32 = 0.62;
 const BLEND_RIOTBOX_GAIN: f32 = 0.62;
+const SOURCE_MONITOR_TRANSITION_SECONDS: f64 = 0.005;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct SourceMonitorAudioSource {
@@ -20,7 +21,7 @@ impl SourceMonitorAudioSource {
             sample_rate: cache.sample_rate,
             channel_count: cache.channel_count,
             frame_count: cache.frame_count(),
-            samples: Arc::new(cache.interleaved_samples().to_vec()),
+            samples: cache.shared_interleaved_samples(),
         }
     }
 
@@ -255,6 +256,37 @@ pub(super) struct RealtimeSourceMonitorRenderState<'a> {
     pub(super) source_anchor_position_beats: f64,
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub(super) struct SourceMonitorCallbackState {
+    initialized: bool,
+    current_source_gain: f32,
+    current_riotbox_gain: f32,
+    target_source_gain: f32,
+    target_riotbox_gain: f32,
+    gain_transition_frames_remaining: usize,
+    expected_next_source_position: Option<f64>,
+    anchor_transition_old_position: f64,
+    anchor_transition_frames_remaining: usize,
+    anchor_transition_total_frames: usize,
+}
+
+impl Default for SourceMonitorCallbackState {
+    fn default() -> Self {
+        Self {
+            initialized: false,
+            current_source_gain: 0.0,
+            current_riotbox_gain: 0.0,
+            target_source_gain: 0.0,
+            target_riotbox_gain: 0.0,
+            gain_transition_frames_remaining: 0,
+            expected_next_source_position: None,
+            anchor_transition_old_position: 0.0,
+            anchor_transition_frames_remaining: 0,
+            anchor_transition_total_frames: 0,
+        }
+    }
+}
+
 pub(super) fn source_monitor_mode_to_u32(mode: SourceMonitorMode) -> u32 {
     match mode {
         SourceMonitorMode::Source => 0,
@@ -301,7 +333,8 @@ fn source_monitor_route(
     channel_count: usize,
 ) -> SourceMonitorAudioRoute {
     let source_available = source.is_some_and(|source| {
-        source.sample_rate == sample_rate
+        source.sample_rate > 0
+            && sample_rate > 0
             && source.frame_count > 0
             && source.channel_count > 0
             && channel_count > 0
@@ -325,7 +358,8 @@ fn source_monitor_route_for_metadata(
 ) -> SourceMonitorAudioRoute {
     let source_available =
         source.is_some_and(|(source_sample_rate, source_channel_count, frame_count)| {
-            source_sample_rate == sample_rate
+            source_sample_rate > 0
+                && sample_rate > 0
                 && frame_count > 0
                 && source_channel_count > 0
                 && channel_count > 0
@@ -346,46 +380,235 @@ pub fn apply_source_monitor_policy(
     channel_count: usize,
     render: &RealtimeSourceMonitorRenderState<'_>,
 ) -> SourceMonitorAudioRoute {
+    apply_source_monitor_policy_with_state(
+        data,
+        sample_rate,
+        channel_count,
+        render,
+        &mut SourceMonitorCallbackState::default(),
+    )
+}
+
+pub(super) fn apply_source_monitor_policy_with_state(
+    data: &mut [f32],
+    sample_rate: u32,
+    channel_count: usize,
+    render: &RealtimeSourceMonitorRenderState<'_>,
+    callback_state: &mut SourceMonitorCallbackState,
+) -> SourceMonitorAudioRoute {
+    apply_source_monitor_policy_with_state_and_fill_focus(
+        data,
+        sample_rate,
+        channel_count,
+        render,
+        FillFocusRenderState::inactive(),
+        callback_state,
+    )
+}
+
+pub(super) fn apply_source_monitor_policy_with_state_and_fill_focus(
+    data: &mut [f32],
+    sample_rate: u32,
+    channel_count: usize,
+    render: &RealtimeSourceMonitorRenderState<'_>,
+    fill_focus: FillFocusRenderState,
+    callback_state: &mut SourceMonitorCallbackState,
+) -> SourceMonitorAudioRoute {
     let route = source_monitor_route(render.mode, render.source, sample_rate, channel_count);
-    if matches!(route, SourceMonitorAudioRoute::SourceUnavailable) {
-        data.fill(0.0);
-        return route;
-    }
-    let Some(source) = render.source.as_ref() else {
-        return route;
-    };
-    if !matches!(
-        route,
-        SourceMonitorAudioRoute::SourceOnly | SourceMonitorAudioRoute::Blend
-    ) {
+    if channel_count == 0 || sample_rate == 0 {
+        if render.mode == SourceMonitorMode::Source {
+            data.fill(0.0);
+        }
         return route;
     }
 
-    let frame_count = data.len() / channel_count.max(1);
-    let source_channels = usize::from(source.channel_count);
-    let start_frame = source_start_frame(render, source);
+    let source = render.source.as_ref();
+    let source_is_audible = render.is_transport_running
+        && matches!(
+            route,
+            SourceMonitorAudioRoute::SourceOnly | SourceMonitorAudioRoute::Blend
+        );
+    let target_source_gain = if source_is_audible {
+        render.source_gain
+    } else {
+        0.0
+    };
+    let target_riotbox_gain = match render.mode {
+        SourceMonitorMode::Source => 0.0,
+        SourceMonitorMode::Blend => render.riotbox_gain,
+        SourceMonitorMode::Riotbox => render.riotbox_gain,
+    };
+    prepare_gain_transition(
+        callback_state,
+        target_source_gain,
+        target_riotbox_gain,
+        sample_rate,
+    );
+
+    let frame_count = data.len() / channel_count;
+    let (start_position, source_frames_per_output_frame, source_channels) =
+        source.map_or((0.0, 0.0, 0), |source| {
+            (
+                source_start_position(render, source),
+                f64::from(source.sample_rate) / f64::from(sample_rate),
+                usize::from(source.channel_count),
+            )
+        });
+    prepare_anchor_transition(
+        callback_state,
+        source_is_audible,
+        start_position,
+        source_frames_per_output_frame,
+        sample_rate,
+    );
+    let playback_start_position = if source_is_audible {
+        start_position
+    } else {
+        callback_state
+            .expected_next_source_position
+            .unwrap_or(start_position)
+    };
 
     for frame_index in 0..frame_count {
-        let source_frame = (start_frame + frame_index) % source.frame_count;
+        advance_gain_transition(callback_state);
+        let anchor_crossfade = anchor_crossfade(callback_state);
+        let source_position =
+            playback_start_position + (frame_index as f64 * source_frames_per_output_frame);
+        let source_focus_gain = if matches!(route, SourceMonitorAudioRoute::Blend) {
+            fill_focus.gain_at_frame(sample_rate, frame_index)
+        } else {
+            1.0
+        };
         for channel in 0..channel_count {
             let output_index = frame_index * channel_count + channel;
-            let source_sample = if render.is_transport_running {
-                source_sample(source, source_frame, channel, source_channels)
-            } else {
-                0.0
-            };
-            data[output_index] = match route {
-                SourceMonitorAudioRoute::SourceOnly => source_sample * render.source_gain,
-                SourceMonitorAudioRoute::Blend => ((data[output_index] * render.riotbox_gain)
-                    + (source_sample * render.source_gain))
-                    .clamp(-1.0, 1.0),
-                SourceMonitorAudioRoute::RiotboxOnly
-                | SourceMonitorAudioRoute::SourceUnavailable => data[output_index],
-            };
+            let source_sample = source.map_or(0.0, |source| {
+                let new_sample =
+                    source_sample_with_end_fade(source, source_position, channel, source_channels);
+                anchor_crossfade.map_or(new_sample, |crossfade| {
+                    let old_sample = source_sample_with_end_fade(
+                        source,
+                        callback_state.anchor_transition_old_position,
+                        channel,
+                        source_channels,
+                    );
+                    old_sample + ((new_sample - old_sample) * crossfade)
+                })
+            });
+            data[output_index] = (data[output_index] * callback_state.current_riotbox_gain)
+                + (source_sample * callback_state.current_source_gain * source_focus_gain);
+        }
+        if callback_state.anchor_transition_frames_remaining > 0 {
+            callback_state.anchor_transition_old_position += source_frames_per_output_frame;
+            callback_state.anchor_transition_frames_remaining -= 1;
         }
     }
 
+    callback_state.expected_next_source_position =
+        if source_is_audible || callback_state.current_source_gain.abs() > f32::EPSILON {
+            Some(playback_start_position + (frame_count as f64 * source_frames_per_output_frame))
+        } else {
+            None
+        };
+
     route
+}
+
+fn transition_frame_count(sample_rate: u32) -> usize {
+    ((f64::from(sample_rate) * SOURCE_MONITOR_TRANSITION_SECONDS).round() as usize).max(1)
+}
+
+fn prepare_gain_transition(
+    state: &mut SourceMonitorCallbackState,
+    source_gain: f32,
+    riotbox_gain: f32,
+    sample_rate: u32,
+) {
+    if !state.initialized {
+        state.initialized = true;
+        state.current_source_gain = source_gain;
+        state.current_riotbox_gain = riotbox_gain;
+        state.target_source_gain = source_gain;
+        state.target_riotbox_gain = riotbox_gain;
+        return;
+    }
+    if state.target_source_gain.to_bits() != source_gain.to_bits()
+        || state.target_riotbox_gain.to_bits() != riotbox_gain.to_bits()
+    {
+        state.target_source_gain = source_gain;
+        state.target_riotbox_gain = riotbox_gain;
+        state.gain_transition_frames_remaining = transition_frame_count(sample_rate);
+    }
+}
+
+fn advance_gain_transition(state: &mut SourceMonitorCallbackState) {
+    let remaining = state.gain_transition_frames_remaining;
+    if remaining == 0 {
+        state.current_source_gain = state.target_source_gain;
+        state.current_riotbox_gain = state.target_riotbox_gain;
+        return;
+    }
+    let remaining = remaining as f32;
+    state.current_source_gain += (state.target_source_gain - state.current_source_gain) / remaining;
+    state.current_riotbox_gain +=
+        (state.target_riotbox_gain - state.current_riotbox_gain) / remaining;
+    state.gain_transition_frames_remaining -= 1;
+}
+
+fn prepare_anchor_transition(
+    state: &mut SourceMonitorCallbackState,
+    source_is_audible: bool,
+    start_position: f64,
+    source_frames_per_output_frame: f64,
+    sample_rate: u32,
+) {
+    if !source_is_audible {
+        state.anchor_transition_frames_remaining = 0;
+        return;
+    }
+    let Some(expected_position) = state.expected_next_source_position else {
+        return;
+    };
+    if state.anchor_transition_frames_remaining > 0 {
+        return;
+    }
+    let discontinuity = (start_position - expected_position).abs();
+    if discontinuity <= source_frames_per_output_frame.abs().max(1.0) * 1.5 {
+        return;
+    }
+    let transition_frames = transition_frame_count(sample_rate);
+    state.anchor_transition_old_position = expected_position;
+    state.anchor_transition_frames_remaining = transition_frames;
+    state.anchor_transition_total_frames = transition_frames;
+}
+
+fn anchor_crossfade(state: &SourceMonitorCallbackState) -> Option<f32> {
+    (state.anchor_transition_frames_remaining > 0).then(|| {
+        let total_intervals = state
+            .anchor_transition_total_frames
+            .saturating_sub(1)
+            .max(1);
+        let remaining_intervals = state.anchor_transition_frames_remaining.saturating_sub(1);
+        1.0 - (remaining_intervals as f32 / total_intervals as f32)
+    })
+}
+
+fn source_sample_with_end_fade(
+    source: &SourceMonitorAudioSource,
+    frame_position: f64,
+    output_channel: usize,
+    source_channels: usize,
+) -> f32 {
+    let sample =
+        interpolated_source_sample(source, frame_position, output_channel, source_channels);
+    if sample == 0.0 || !frame_position.is_finite() {
+        return sample;
+    }
+    let remaining_frames = source.frame_count as f64 - frame_position;
+    let fade_frames = (f64::from(source.sample_rate) * SOURCE_MONITOR_TRANSITION_SECONDS)
+        .min(source.frame_count as f64 / 16.0)
+        .max(1.0);
+    let fade = (remaining_frames / fade_frames.max(1.0)).clamp(0.0, 1.0) as f32;
+    sample * fade
 }
 
 #[must_use]
@@ -424,17 +647,17 @@ pub fn render_source_monitor_mix_offline(
     output
 }
 
-fn source_start_frame(
+fn source_start_position(
     render: &RealtimeSourceMonitorRenderState<'_>,
     source: &SourceMonitorAudioSource,
-) -> usize {
+) -> f64 {
     if !render.is_transport_running
         || render.tempo_bpm <= 0.0
         || !render.tempo_bpm.is_finite()
         || !render.position_beats.is_finite()
         || source.frame_count == 0
     {
-        return 0;
+        return 0.0;
     }
 
     let transport_seconds = match render.source_anchor_seconds {
@@ -445,7 +668,27 @@ fn source_start_frame(
         }
         None => render.position_beats.max(0.0) * 60.0 / f64::from(render.tempo_bpm),
     };
-    ((transport_seconds * f64::from(source.sample_rate)).floor() as usize) % source.frame_count
+    transport_seconds * f64::from(source.sample_rate)
+}
+
+fn interpolated_source_sample(
+    source: &SourceMonitorAudioSource,
+    frame_position: f64,
+    output_channel: usize,
+    source_channels: usize,
+) -> f32 {
+    if !frame_position.is_finite()
+        || frame_position < 0.0
+        || frame_position >= source.frame_count as f64
+    {
+        return 0.0;
+    }
+    let first_frame = frame_position.floor() as usize;
+    let second_frame = (first_frame + 1).min(source.frame_count.saturating_sub(1));
+    let fraction = (frame_position - frame_position.floor()) as f32;
+    let first = source_sample(source, first_frame, output_channel, source_channels);
+    let second = source_sample(source, second_frame, output_channel, source_channels);
+    first + ((second - first) * fraction)
 }
 
 fn source_sample(

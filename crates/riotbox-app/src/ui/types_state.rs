@@ -10,7 +10,7 @@ use ratatui::{
 use riotbox_audio::w30::W30PreviewRenderMode;
 use riotbox_core::source_graph::{DecodeProfile, Section, SectionLabelHint};
 use riotbox_core::{
-    action::GhostMode,
+    action::{GhostMode, SourceMonitorMode},
     view::jam::{SceneTransitionKindView, SceneTransitionPolicyView},
 };
 
@@ -91,6 +91,7 @@ pub enum ShellKeyOutcome {
     Continue,
     RequestRefresh,
     ToggleTransport,
+    QueueSourceMonitorMode(SourceMonitorMode),
     QueueSceneMutation,
     QueueSceneSelect,
     QueueSceneRestore,
@@ -169,6 +170,7 @@ const GESTURE_UNDO: &str = "undo";
 
 const ADVANCED_GESTURES: &[(&str, &str)] = &[
     ("Y", GESTURE_RESTORE),
+    ("g", GESTURE_FOLLOW),
     ("a", GESTURE_ANSWER),
     ("b", GESTURE_VOICE),
     ("P", GESTURE_PRESSURE),
@@ -191,12 +193,11 @@ const LANE_GESTURES: &[(&str, &str)] = &[
 
 const HELP_PRIMARY_CONFIRM_GESTURES: &[(&str, &str)] = &[
     ("c", GESTURE_CAPTURE),
-    ("w", GESTURE_HIT),
     ("u", GESTURE_UNDO),
 ];
 
 const HELP_ADVANCED_GESTURES_A: &[(&str, &str)] = &[
-    ("Y", GESTURE_RESTORE),
+    ("g", GESTURE_FOLLOW),
     ("a", GESTURE_ANSWER),
     ("m", GESTURE_MUTATE),
     ("b", GESTURE_VOICE),
@@ -207,7 +208,6 @@ const HELP_ADVANCED_GESTURES_A: &[(&str, &str)] = &[
 ];
 
 const HELP_ADVANCED_GESTURES_B: &[(&str, &str)] = &[
-    ("s", GESTURE_SLAM),
     ("t", GESTURE_TAKEOVER),
     ("k", GESTURE_LOCK),
     ("x", GESTURE_RELEASE),

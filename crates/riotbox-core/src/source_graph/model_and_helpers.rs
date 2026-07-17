@@ -26,6 +26,26 @@ pub fn section_for_projected_scene<'a>(
     sections.get(scene_index).copied()
 }
 
+/// Returns the canonical source-time downbeat for a projected Scene.
+///
+/// Section boundaries are descriptive analysis output and may not be grid
+/// aligned. Playable Scene launches therefore use the matching bar from the
+/// selected primary timing hypothesis and stay unavailable when that evidence
+/// is absent.
+#[must_use]
+pub fn primary_grid_anchor_seconds_for_projected_scene(
+    graph: &SourceGraph,
+    scene_id: &SceneId,
+) -> Option<f64> {
+    let section = section_for_projected_scene(graph, scene_id)?;
+    let primary = graph.timing.primary_hypothesis()?;
+    primary
+        .bar_grid
+        .iter()
+        .find(|bar| bar.bar_index == section.bar_start)
+        .map(|bar| f64::from(bar.start_seconds))
+}
+
 fn parse_projected_scene_index(scene_id: &str) -> Option<usize> {
     let mut parts = scene_id.splitn(3, '-');
     match (parts.next(), parts.next(), parts.next()) {

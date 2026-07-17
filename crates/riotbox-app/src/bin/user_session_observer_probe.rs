@@ -12,8 +12,14 @@ use riotbox_app::{
 };
 use riotbox_audio::runtime::{AudioRuntimeHealth, AudioRuntimeLifecycle};
 use riotbox_core::{
-    action::CommitBoundary, ids::SceneId, queue::ActionQueue, session::SessionFile,
-    transport::CommitBoundaryState,
+    action::{ActionCommand, CommitBoundary},
+    ids::SceneId,
+    queue::{ActionQueue, CommittedActionRef},
+    session::SessionFile,
+    transport::{
+        CommitBoundaryState, DEFAULT_BARS_PER_PHRASE, DEFAULT_BEATS_PER_BAR, TransportClockState,
+        TransportGridPosition,
+    },
 };
 use serde_json::{Value, json};
 
@@ -150,6 +156,33 @@ fn apply_probe_key(
                 "transport paused"
             });
         }
+        ShellKeyOutcome::QueueSourceMonitorMode(mode) => {
+            match shell.app.queue_source_monitor_mode(mode, timestamp_ms) {
+                riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                    let transport = shell.app.runtime.transport.clone();
+                    let boundary = transport.boundary_state(CommitBoundary::Immediate);
+                    immediate_committed = shell
+                        .app
+                        .commit_ready_actions(boundary.clone(), timestamp_ms);
+                    require_source_monitor_immediate_commit(
+                        shell,
+                        &immediate_committed,
+                        &boundary,
+                    )?;
+                    shell.set_error_status(format!(
+                        "monitor {} landed | route {}",
+                        shell.app.runtime_view.source_monitor_mode,
+                        shell.app.runtime_view.source_monitor_audio_route
+                    ));
+                }
+                riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                    shell.set_error_status("source monitor change already queued");
+                }
+                riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                    shell.set_error_status(format!("monitor already {mode}"));
+                }
+            }
+        }
         ShellKeyOutcome::QueueMc202GenerateFollower => {
             match shell.app.queue_mc202_generate_follower(timestamp_ms) {
                 riotbox_app::jam_app::QueueControlResult::Enqueued => {
@@ -218,6 +251,13 @@ fn apply_probe_key(
         ShellKeyOutcome::QueueTr909Fill => {
             shell.app.queue_tr909_fill(timestamp_ms);
             shell.set_error_status("queued TR-909 fill for next bar");
+        }
+        ShellKeyOutcome::QueueTr909Slam => {
+            if shell.app.queue_tr909_slam_toggle(timestamp_ms) {
+                shell.set_error_status("queued TR-909 slam change for next beat");
+            } else {
+                shell.set_error_status("TR-909 slam change already queued");
+            }
         }
         ShellKeyOutcome::QueueSceneSelect => match shell.app.queue_scene_select(timestamp_ms) {
             riotbox_app::jam_app::QueueControlResult::Enqueued => {
@@ -419,6 +459,52 @@ fn apply_probe_key(
     Ok(())
 }
 
+fn require_source_monitor_immediate_commit(
+    shell: &JamShellState,
+    committed: &[CommittedActionRef],
+    expected_boundary: &CommitBoundaryState,
+) -> io::Result<()> {
+    let [committed] = committed else {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!(
+                "source monitor mode key must commit exactly one action immediately, got {}",
+                committed.len()
+            ),
+        ));
+    };
+    if committed.boundary != *expected_boundary
+        || committed.boundary.kind != CommitBoundary::Immediate
+    {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!(
+                "source monitor mode key committed at {:?}, expected current-clock {:?}",
+                committed.boundary, expected_boundary
+            ),
+        ));
+    }
+
+    let command = shell
+        .app
+        .queue
+        .history()
+        .iter()
+        .find(|action| action.id == committed.action_id)
+        .map(|action| action.command);
+    if command != Some(ActionCommand::SourceMonitorSetMode) {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!(
+                "source monitor mode key committed unexpected action {:?}",
+                command
+            ),
+        ));
+    }
+
+    Ok(())
+}
+
 fn commit_boundary(
     shell: &mut JamShellState,
     writer: &mut NdjsonWriter,
@@ -427,13 +513,24 @@ fn commit_boundary(
     index: u64,
     expected_count: usize,
 ) -> io::Result<()> {
+    let beats_per_phrase = DEFAULT_BEATS_PER_BAR.saturating_mul(DEFAULT_BARS_PER_PHRASE);
+    let grid_position = source_aware_grid_position(shell, index.saturating_mul(beats_per_phrase));
+    let scene_id = Some(SceneId::from("scene-1"));
+    shell.app.update_transport_clock(TransportClockState {
+        is_playing: shell.app.runtime.transport.is_playing,
+        position_beats: grid_position.beat_cursor as f64,
+        beat_index: grid_position.beat_cursor,
+        bar_index: grid_position.bar_index,
+        phrase_index: grid_position.phrase_index,
+        current_scene: scene_id.clone(),
+    });
     let committed = shell.app.commit_ready_actions(
         CommitBoundaryState {
             kind,
-            beat_index: index * 16,
-            bar_index: index * 4,
-            phrase_index: index,
-            scene_id: Some(SceneId::from("scene-1")),
+            beat_index: grid_position.beat_cursor,
+            bar_index: grid_position.bar_index,
+            phrase_index: grid_position.phrase_index,
+            scene_id,
         },
         timestamp_ms,
     );
@@ -446,6 +543,22 @@ fn commit_boundary(
         index,
         expected_count,
     )
+}
+
+fn source_aware_grid_position(shell: &JamShellState, position_beats: u64) -> TransportGridPosition {
+    shell
+        .app
+        .source_graph
+        .as_ref()
+        .and_then(|graph| graph.timing.primary_hypothesis())
+        .and_then(|hypothesis| hypothesis.transport_grid_position(position_beats as f64))
+        .unwrap_or_else(|| {
+            TransportGridPosition::from_zero_based_position_beats(
+                position_beats as f64,
+                DEFAULT_BEATS_PER_BAR,
+                DEFAULT_BARS_PER_PHRASE,
+            )
+        })
 }
 
 fn commit_boundary_for_scene(

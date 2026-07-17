@@ -715,6 +715,25 @@ fn undo_mc202_phrase_move_restores_lane_state_and_audio_path() {
     let restored = render_mc202_recipe_buffer(&state.runtime.mc202_render);
     assert_recipe_buffers_match("undo -> previous follower", &follower, &restored, 0.00001);
     assert_recipe_buffers_differ("answer -> undo", &answer, &restored, 0.005);
+
+    let reloaded = JamAppState::from_parts(
+        state.session.clone(),
+        state.source_graph.clone(),
+        ActionQueue::new(),
+    );
+    assert_eq!(reloaded.runtime.mc202_render, follower_render);
+    assert_eq!(reloaded.jam_view.lanes.mc202_role.as_deref(), Some("follower"));
+    assert_eq!(
+        reloaded.jam_view.lanes.mc202_phrase_ref.as_deref(),
+        Some("follower-scene-1")
+    );
+    let reloaded_follower = render_mc202_recipe_buffer(&reloaded.runtime.mc202_render);
+    assert_recipe_buffers_match(
+        "undo -> reload keeps previous follower instead of undone answer",
+        &follower,
+        &reloaded_follower,
+        0.00001,
+    );
 }
 
 #[test]
@@ -745,6 +764,140 @@ fn undo_mc202_phrase_move_without_snapshot_does_not_claim_success() {
         .expect("follower action remains in log");
     assert_eq!(follower_action.status, ActionStatus::Committed);
     assert_eq!(state.jam_view.lanes.mc202_role.as_deref(), Some("follower"));
+}
+
+#[test]
+fn source_timing_revert_blocks_older_mc202_undo_snapshot_resurrection() {
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    assert_eq!(
+        state.queue_mc202_generate_follower(300),
+        QueueControlResult::Enqueued
+    );
+    commit_mc202_recipe_step(&mut state, 1, 400);
+    assert!(
+        state
+            .session
+            .runtime_state
+            .lane_state
+            .mc202
+            .source_phrase_plan
+            .is_some()
+    );
+
+    assert_eq!(
+        state.queue_source_timing_grid_revert(410),
+        QueueControlResult::Enqueued
+    );
+    let reverted = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Immediate,
+            beat_index: state.runtime.transport.beat_index,
+            bar_index: state.runtime.transport.bar_index,
+            phrase_index: state.runtime.transport.phrase_index,
+            scene_id: state.runtime.transport.current_scene.clone(),
+        },
+        420,
+    );
+    assert_eq!(reverted.len(), 1);
+    assert!(
+        state
+            .session
+            .runtime_state
+            .lane_state
+            .mc202
+            .source_phrase_plan
+            .is_none()
+    );
+
+    assert_eq!(state.undo_last_action(500), None);
+    assert!(
+        state
+            .session
+            .runtime_state
+            .lane_state
+            .mc202
+            .source_phrase_plan
+            .is_none(),
+        "Undo must not restore source-derived MC-202 truth after timing trust was revoked"
+    );
+}
+
+#[test]
+fn typed_undo_target_without_unique_commit_record_is_normalized_and_rejected() {
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    assert_eq!(
+        state.queue_mc202_generate_follower(300),
+        QueueControlResult::Enqueued
+    );
+    let follower_id = state.queue.pending_actions()[0].id;
+    commit_mc202_recipe_step(&mut state, 1, 400);
+    state
+        .session
+        .action_log
+        .commit_records
+        .retain(|record| record.action_id != follower_id);
+
+    assert_eq!(state.undo_last_action(500), None);
+    let follower = state
+        .session
+        .action_log
+        .actions
+        .iter()
+        .find(|action| action.id == follower_id)
+        .expect("follower action");
+    assert!(matches!(follower.undo_policy, UndoPolicy::NotUndoable { .. }));
+    assert_eq!(follower.status, ActionStatus::Committed);
+}
+
+#[test]
+fn newer_typed_action_without_snapshot_does_not_block_earlier_restorable_mc202_action() {
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    assert_eq!(
+        state.queue_mc202_generate_follower(300),
+        QueueControlResult::Enqueued
+    );
+    let follower_id = state.queue.pending_actions()[0].id;
+    commit_mc202_recipe_step(&mut state, 1, 400);
+    assert_eq!(
+        state.queue_source_monitor_mode(SourceMonitorMode::Riotbox, 410),
+        QueueControlResult::Enqueued
+    );
+    state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Immediate,
+            beat_index: state.runtime.transport.beat_index,
+            bar_index: state.runtime.transport.bar_index,
+            phrase_index: state.runtime.transport.phrase_index,
+            scene_id: state.runtime.transport.current_scene.clone(),
+        },
+        420,
+    );
+    state
+        .session
+        .runtime_state
+        .undo_state
+        .source_monitor_snapshots
+        .clear();
+
+    let marker = state
+        .undo_last_action(500)
+        .expect("missing newer snapshot must not hide earlier restorable action");
+
+    assert_eq!(
+        marker.params,
+        ActionParams::Undo {
+            target_action_id: follower_id
+        }
+    );
 }
 
 fn commit_mc202_recipe_step(state: &mut JamAppState, phrase_index: u64, committed_at: u64) {

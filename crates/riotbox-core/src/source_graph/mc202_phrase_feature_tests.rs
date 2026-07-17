@@ -12,6 +12,10 @@ mod mc202_phrase_feature_tests {
         let second = mc202_source_phrase_feature_vector(&graph, &phrase);
 
         assert_eq!(first, second);
+        assert_eq!(
+            first.source_section_id,
+            Some(SectionId::from("section-drop"))
+        );
         assert!(first.has_musical_evidence());
         assert!(first.low_band_pressure > 0.7);
         assert!(first.low_band_movement > 0.4);
@@ -123,9 +127,97 @@ mod mc202_phrase_feature_tests {
         let features = mc202_source_phrase_feature_vector(&graph, &graph.timing.phrase_grid[0]);
 
         assert!(features.stay_out);
+        assert_eq!(features.source_section_id, None);
         assert!(!features.has_musical_evidence());
         assert!(features.source_strength < 0.25);
         assert!(features.provenance_refs.is_empty());
+    }
+
+    #[test]
+    fn mc202_offbeat_features_use_the_selected_primary_meter() {
+        let mut graph = mc202_feature_graph();
+        graph.timing.meter_hint = Some(MeterHint {
+            beats_per_bar: 4,
+            beat_unit: 4,
+        });
+        let primary = graph
+            .timing
+            .hypotheses
+            .first_mut()
+            .expect("primary timing hypothesis");
+        primary.meter = MeterHint {
+            beats_per_bar: 3,
+            beat_unit: 4,
+        };
+        primary.anchors = vec![SourceTimingAnchor {
+            anchor_id: "primary-three-four-downbeat".into(),
+            anchor_type: SourceTimingAnchorType::TransientCluster,
+            time_seconds: 0.0,
+            bar_index: Some(8),
+            beat_index: Some(22),
+            confidence: 1.0,
+            strength: 1.0,
+            tags: Vec::new(),
+        }];
+
+        let features = mc202_source_phrase_feature_vector(&graph, &graph.timing.phrase_grid[0]);
+
+        assert_eq!(features.offbeat_density, 0.0, "{features:?}");
+    }
+
+    #[test]
+    fn mc202_offbeat_features_follow_the_selected_primary_downbeat_phase() {
+        let mut graph = mc202_feature_graph();
+        let phrase = graph.timing.phrase_grid[0];
+        let primary = graph
+            .timing
+            .hypotheses
+            .first_mut()
+            .expect("primary timing hypothesis");
+        primary.bpm = 120.0;
+        primary.meter = MeterHint {
+            beats_per_bar: 4,
+            beat_unit: 4,
+        };
+        primary.beat_grid = (30..=33)
+            .map(|beat_index| BeatPoint {
+                beat_index,
+                time_seconds: 14.5 + (beat_index - 30) as f32 * 0.5,
+                confidence: 1.0,
+            })
+            .collect();
+        primary.bar_grid = vec![BarSpan {
+            bar_index: 8,
+            start_seconds: 14.5,
+            end_seconds: 16.5,
+            downbeat_confidence: 1.0,
+            phrase_index: Some(phrase.phrase_index),
+        }];
+        primary.anchors = vec![SourceTimingAnchor {
+            anchor_id: "phase-one-downbeat".into(),
+            anchor_type: SourceTimingAnchorType::TransientCluster,
+            time_seconds: 14.5,
+            bar_index: Some(8),
+            beat_index: Some(30),
+            confidence: 1.0,
+            strength: 1.0,
+            tags: Vec::new(),
+        }];
+
+        let downbeat = mc202_source_phrase_feature_vector(&graph, &phrase);
+        assert_eq!(downbeat.offbeat_density, 0.0, "{downbeat:?}");
+
+        let primary = graph
+            .timing
+            .hypotheses
+            .first_mut()
+            .expect("primary timing hypothesis");
+        primary.anchors[0].anchor_id = "phase-one-offbeat".into();
+        primary.anchors[0].time_seconds = 15.0;
+        primary.anchors[0].beat_index = Some(31);
+
+        let offbeat = mc202_source_phrase_feature_vector(&graph, &phrase);
+        assert!(offbeat.offbeat_density > 0.0, "{offbeat:?}");
     }
 
     fn mc202_feature_graph() -> SourceGraph {
@@ -194,7 +286,7 @@ mod mc202_phrase_feature_tests {
                     anchor_type: SourceTimingAnchorType::Kick,
                     time_seconds: 0.0,
                     bar_index: Some(8),
-                    beat_index: Some(32),
+                    beat_index: Some(29),
                     confidence: 0.95,
                     strength: 0.94,
                     tags: vec!["low".into()],
@@ -204,7 +296,7 @@ mod mc202_phrase_feature_tests {
                     anchor_type: SourceTimingAnchorType::TransientCluster,
                     time_seconds: 0.3,
                     bar_index: Some(8),
-                    beat_index: Some(33),
+                    beat_index: Some(30),
                     confidence: 0.72,
                     strength: 0.70,
                     tags: vec!["offbeat".into()],

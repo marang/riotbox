@@ -151,7 +151,8 @@ fn sample_session(graph: &SourceGraph) -> SessionFile {
         provenance: graph.provenance.clone(),
     });
     session.runtime_state.transport.is_playing = true;
-    session.runtime_state.transport.position_beats = 32.0;
+    // Cursor 31 is the final beat of one-based bar 8; cursor 32 starts bar 9.
+    session.runtime_state.transport.position_beats = 31.0;
     session.runtime_state.transport.current_scene = Some(SceneId::from("scene-1"));
     session.runtime_state.macro_state.scene_aggression = 0.75;
     session.runtime_state.macro_state.tr909_slam = 0.55;

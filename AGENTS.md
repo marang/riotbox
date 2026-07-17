@@ -133,6 +133,9 @@ If a surface is intentionally not applicable, say why in the PR or working notes
   - explicit PR or working-context notes when a stronger audio QA layer is still aspirational
 - For PRs that affect audible behavior, state whether a structured listening-review
   pack/verdict exists, or why the change remains `human_verdict: unverified`.
+- Before every human playback, technically analyze and correctly assign the
+  exact WAV/A-B artifact, interpret role-appropriate time/frequency deltas, and
+  only then give the factual brief and request fresh readiness.
 - After at most two consecutive generations of a review-ready candidate that
   remains `human_verdict: unverified`, stop generation for that candidate and
   perform or explicitly hand off structured human listening. Do not replace the
@@ -166,6 +169,20 @@ If a surface is intentionally not applicable, say why in the PR or working notes
   replacement music. Diagnostic controls may compare against silence or
   explicitly labeled non-product controls, but fallback sound must not exist on
   Riotbox product output paths.
+- Fixed, typed, versioned instrument vocabulary may be performer-triggered
+  product output when an explicit committed action owns it. It must be labeled
+  `primitive_renderer`, must not activate as a missing-source fallback, and must
+  not claim source-derived selection, composition, or musical intelligence.
+  Product-path QA must record the versioned primitive schema, actual recipe ID,
+  typed selection inputs, an activation reference resolving to the committed
+  command/action/boundary, affected RuntimeMix paths, and declared affected
+  artifacts. The shared listening-manifest validator must explicitly register
+  every product-output primitive schema and enforce its exact recipe/input,
+  source-modulation, activation, RuntimeMix, focus-path, and candidate-WAV
+  contract; identifiers that merely look versioned remain diagnostic-only. A
+  fixed recipe may remain `primitive_renderer` while source evidence modulates
+  its pressure or timbre, but that modulation must be declared separately with
+  actual values and must never be mislabeled `availability_and_timing_only`.
 - Treat repeated placeholder tones, fallback-only output, polite loops, and technically correct but hookless demos as product failures unless they are explicitly non-product diagnostic controls.
 - For every lane or product surface that claims to be source-derived, require
   evidence that Riotbox listened to source features, made a musical decision,
@@ -178,6 +195,10 @@ If a surface is intentionally not applicable, say why in the PR or working notes
 - State the typed bass owner before judging bass pressure. Relative low-band
   share alone is insufficient; an assigned bass lane needs absolute low-band
   energy or lift, while `unassigned` must not be failed for absent bass.
+- Never describe a listening target as generic `pressure`. Distinguish
+  bass/low-end, drum/transient, midrange/hook, and arrangement/performance
+  impact, and do not let pressure in one domain conceal failure in the intended
+  domain.
 - Keep commercial reference recordings local, ignored, and uncommitted. Use
   them only for listening and measurement comparison, never as Riotbox product
   sources, fixtures, generated assets, or redistributed material.

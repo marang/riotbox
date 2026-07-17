@@ -1,4 +1,7 @@
 use crate::test_support::{scene_energy_for_label, scene_label_hint};
+use riotbox_audio::runtime::{
+    AudioOutputInfo, AudioRuntimeHealth, AudioRuntimeLifecycle, SourceMonitorAudioRoute,
+};
 use riotbox_core::{
     TimestampMs,
     action::{

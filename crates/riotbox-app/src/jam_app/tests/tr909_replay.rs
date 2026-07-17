@@ -1,7 +1,10 @@
 #[test]
 fn tr909_replay_executor_matches_committed_app_state_and_audio_path() {
     let graph = sample_graph();
-    let base_session = sample_session(&graph);
+    let mut base_session = sample_session(&graph);
+    base_session.runtime_state.lane_state.tr909.reinforcement_mode =
+        Some(Tr909ReinforcementModeState::BreakReinforce);
+    base_session.runtime_state.lane_state.tr909.pattern_ref = Some("reinforce-scene-1".into());
     let mut committed_state =
         JamAppState::from_parts(base_session.clone(), Some(graph.clone()), ActionQueue::new());
 
@@ -73,7 +76,10 @@ fn tr909_replay_executor_matches_committed_app_state_and_audio_path() {
 #[test]
 fn tr909_target_suffix_replay_helper_matches_committed_app_projection() {
     let graph = sample_graph();
-    let base_session = sample_session(&graph);
+    let mut base_session = sample_session(&graph);
+    base_session.runtime_state.lane_state.tr909.reinforcement_mode =
+        Some(Tr909ReinforcementModeState::BreakReinforce);
+    base_session.runtime_state.lane_state.tr909.pattern_ref = Some("reinforce-scene-1".into());
     let mut committed_state =
         JamAppState::from_parts(base_session.clone(), Some(graph.clone()), ActionQueue::new());
 
@@ -155,7 +161,10 @@ fn tr909_target_suffix_replay_helper_matches_committed_app_projection() {
 #[test]
 fn tr909_snapshot_payload_restore_runner_matches_committed_app_projection() {
     let graph = sample_graph();
-    let base_session = sample_session(&graph);
+    let mut base_session = sample_session(&graph);
+    base_session.runtime_state.lane_state.tr909.reinforcement_mode =
+        Some(Tr909ReinforcementModeState::BreakReinforce);
+    base_session.runtime_state.lane_state.tr909.pattern_ref = Some("reinforce-scene-1".into());
     let mut committed_state =
         JamAppState::from_parts(base_session.clone(), Some(graph.clone()), ActionQueue::new());
 

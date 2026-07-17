@@ -130,6 +130,8 @@ fn scene_restore_snapshot_payload_restore_matches_committed_movement_projection(
     let mut committed_state =
         JamAppState::from_parts(session, Some(graph.clone()), ActionQueue::new());
     let before_launch = render_scene_recipe_mix_buffer(&committed_state);
+    let before_launch_tr909 = committed_state.runtime.tr909_render.clone();
+    let before_launch_mc202 = committed_state.runtime.mc202_render;
 
     assert_eq!(
         committed_state.queue_scene_select(300),
@@ -164,6 +166,8 @@ fn scene_restore_snapshot_payload_restore_matches_committed_movement_projection(
     );
     assert_eq!(restored.len(), 1);
     let committed_restore = render_scene_recipe_mix_buffer(&committed_state);
+    assert_eq!(committed_state.runtime.tr909_render, before_launch_tr909);
+    assert_eq!(committed_state.runtime.mc202_render, before_launch_mc202);
 
     let replayed_state = run_graph_aware_snapshot_payload_restore_probe(
         base_session,
@@ -226,12 +230,12 @@ fn scene_restore_snapshot_payload_restore_matches_committed_movement_projection(
         "snapshot payload restore Scene launch -> restore",
         &after_launch,
         &replayed_restore,
-        0.0035,
+        0.002,
     );
-    assert_recipe_buffers_differ(
-        "snapshot payload restore Scene restore keeps movement energy",
+    assert_recipe_buffers_match(
+        "snapshot payload restore Scene restore returns to the pre-launch projection",
         &before_launch,
         &replayed_restore,
-        0.002,
+        0.00001,
     );
 }

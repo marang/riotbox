@@ -25,7 +25,8 @@ use riotbox_core::{
     live_performance_policy::{LivePerformanceMc202Intent, derive_live_performance_policy},
     session::{
         Mc202PhraseIntentState, Mc202RoleState, SceneMovementDirectionState,
-        SceneMovementLaneIntentState, SceneMovementState, SessionFile, W30PreviewModeState,
+        SceneMovementKindState, SceneMovementLaneIntentState, SceneMovementState, SessionFile,
+        W30PreviewModeState,
     },
     source_graph::{
         EnergyClass, Section, SectionLabelHint, SourceGraph, section_for_projected_scene,
@@ -150,6 +151,7 @@ pub(super) fn build_tr909_render_state(
                 mixer.drum_level.max(policy.tr909_drum_level)
             })
             .clamp(0.0, 1.0),
+        slam_enabled: tr909.slam_enabled,
         slam_intensity: scene_movement_tr909_slam(session)
             .max(session.runtime_state.macro_state.tr909_slam)
             .max(
@@ -161,12 +163,31 @@ pub(super) fn build_tr909_render_state(
         is_transport_running: transport.is_playing,
         tempo_bpm,
         position_beats: transport.position_beats,
+        source_bar_grid_anchor_position_beats: live_policy
+            .as_ref()
+            .and_then(|policy| policy.source_bar_grid_anchor_beat_cursor)
+            .map(|cursor| cursor as f64),
         current_scene_id: transport.current_scene.as_ref().map(ToString::to_string),
     }
 }
 
 fn active_scene_movement(session: &SessionFile) -> Option<&SceneMovementState> {
-    let movement = session.runtime_state.scene_state.last_movement.as_ref()?;
+    let movement = session
+        .runtime_state
+        .scene_state
+        .active_projection_movement
+        .as_ref()
+        .or_else(|| {
+            // Backward compatibility for sessions written before projection state
+            // was persisted. A restore transition must never become the fallback
+            // audio profile because it is an event, not the restored scene state.
+            session
+                .runtime_state
+                .scene_state
+                .last_movement
+                .as_ref()
+                .filter(|movement| movement.kind == SceneMovementKindState::Launch)
+        })?;
     let active_scene = session
         .runtime_state
         .scene_state
@@ -226,6 +247,16 @@ pub(super) fn build_mc202_render_state(
     let phrase_intent = Mc202PhraseIntentState::from_phrase_variant(mc202.phrase_variant);
     let phrase_shape = mc202_phrase_shape_for_intent(phrase_intent).unwrap_or(base_phrase_shape);
     let current_section = mc202_current_section(source_graph, transport, scene_context(session));
+    if mc202_source_plan_has_explicit_section_mismatch(
+        mc202.source_phrase_plan.as_ref(),
+        source_graph,
+        current_section,
+    ) {
+        // The committed phrase was derived from a different source section. Keep
+        // the target scene source-backed by staying out instead of overlaying an
+        // untrusted tonal phrase or inventing a fallback.
+        return silent_render_state();
+    }
     let hook_response =
         mc202_hook_response_for_role_graph_and_section(role, source_graph, current_section);
     let movement = active_scene_movement(session);
@@ -346,6 +377,27 @@ fn mc202_current_section<'a>(
     scene_context
         .and_then(|scene_id| section_for_projected_scene(graph, scene_id))
         .or_else(|| section_for_transport_bar(graph, transport))
+}
+
+fn mc202_source_plan_has_explicit_section_mismatch(
+    plan: Option<&riotbox_core::session::Mc202SourcePhrasePlanState>,
+    source_graph: Option<&SourceGraph>,
+    current_section: Option<&Section>,
+) -> bool {
+    let (Some(plan), Some(graph)) = (plan, source_graph) else {
+        return false;
+    };
+    if plan.source_id != graph.source.source_id {
+        return true;
+    }
+
+    match (plan.source_section_id.as_ref(), current_section) {
+        (Some(source_section_id), Some(current_section)) => {
+            *source_section_id != current_section.section_id
+        }
+        (Some(_), None) => true,
+        (None, _) => false,
+    }
 }
 
 fn mc202_contour_hint(section: Option<&Section>) -> Mc202ContourHint {

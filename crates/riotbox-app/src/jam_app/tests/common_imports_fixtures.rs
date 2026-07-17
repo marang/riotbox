@@ -10,9 +10,9 @@ use riotbox_audio::{
         Mc202RenderState, render_mc202_buffer,
     },
     runtime::{
-        AudioOutputInfo, AudioRuntimeHealth, AudioRuntimeLifecycle, render_mc202_offline,
-        render_tr909_offline, render_w30_preview_offline, render_w30_resample_tap_offline,
-        signal_delta_metrics, signal_metrics,
+        AudioOutputInfo, AudioRuntimeHealth, AudioRuntimeLifecycle, SourceMonitorAudioRoute,
+        render_mc202_offline, render_tr909_offline, render_w30_preview_offline,
+        render_w30_resample_tap_offline, signal_delta_metrics, signal_metrics,
     },
     source_audio::SourceAudioCache,
     tr909::{

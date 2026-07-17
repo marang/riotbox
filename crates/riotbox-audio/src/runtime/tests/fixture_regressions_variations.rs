@@ -187,10 +187,12 @@ fn pattern_adoption_variants_produce_distinct_activity() {
             phrase_variation: Some(Tr909PhraseVariation::PhraseAnchor),
             takeover_profile: None,
             drum_bus_level: 0.8,
+            slam_enabled: false,
             slam_intensity: 0.35,
             is_transport_running: true,
             tempo_bpm: 126.0,
             position_beats: 0.0,
+            source_bar_grid_anchor_position_beats: None,
         },
         &mut pulse_state,
     );
@@ -208,10 +210,12 @@ fn pattern_adoption_variants_produce_distinct_activity() {
             phrase_variation: Some(Tr909PhraseVariation::PhraseDrive),
             takeover_profile: None,
             drum_bus_level: 0.8,
+            slam_enabled: false,
             slam_intensity: 0.35,
             is_transport_running: true,
             tempo_bpm: 126.0,
             position_beats: 0.0,
+            source_bar_grid_anchor_position_beats: None,
         },
         &mut drive_state,
     );
@@ -229,10 +233,12 @@ fn pattern_adoption_variants_produce_distinct_activity() {
             phrase_variation: Some(Tr909PhraseVariation::PhraseRelease),
             takeover_profile: Some(Tr909TakeoverRenderProfile::ControlledPhrase),
             drum_bus_level: 0.8,
+            slam_enabled: false,
             slam_intensity: 0.35,
             is_transport_running: true,
             tempo_bpm: 126.0,
             position_beats: 0.0,
+            source_bar_grid_anchor_position_beats: None,
         },
         &mut grid_state,
     );
@@ -270,10 +276,12 @@ fn phrase_variations_produce_distinct_activity() {
         phrase_variation: Some(Tr909PhraseVariation::PhraseAnchor),
         takeover_profile: Some(Tr909TakeoverRenderProfile::ControlledPhrase),
         drum_bus_level: 0.8,
+        slam_enabled: false,
         slam_intensity: 0.45,
         is_transport_running: true,
         tempo_bpm: 126.0,
         position_beats: 0.0,
+        source_bar_grid_anchor_position_beats: None,
     };
 
     render_tr909_buffer(&mut anchor, 44_100, 2, &base, &mut anchor_state);

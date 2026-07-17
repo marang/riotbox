@@ -78,7 +78,13 @@ fn source_map_navigation_control_graph() -> SourceGraph {
         },
         confidence: 0.9,
         score: 0.9,
-        beat_grid: Vec::new(),
+        beat_grid: (1..=32)
+            .map(|beat_index| riotbox_core::source_graph::BeatPoint {
+                beat_index,
+                time_seconds: (beat_index - 1) as f32 * 0.5,
+                confidence: 0.9,
+            })
+            .collect(),
         bar_grid: (0..8)
             .map(|index| riotbox_core::source_graph::BarSpan {
                 bar_index: index + 1,

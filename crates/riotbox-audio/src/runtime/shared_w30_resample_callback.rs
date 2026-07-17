@@ -367,6 +367,7 @@ pub(super) struct Tr909CallbackState {
     pub(super) envelope: f32,
     pub(super) last_step: i64,
     pub(super) was_running: bool,
+    pub(super) fill_voices: Tr909FillVoiceState,
 }
 
 #[derive(Debug, Default)]
@@ -448,7 +449,26 @@ pub(super) fn render_mix_buffer(
     w30: &mut W30MixRenderState<'_>,
 ) {
     data.fill(0.0);
+    let fill_focus = FillFocusRenderState::from_tr909(tr909_render);
+    if fill_focus.is_active() {
+        render_non_tr909_bed(data, sample_rate, channel_count, mc202_render, w30);
+        apply_fill_focus_to_non_tr909_bed(data, sample_rate, channel_count, fill_focus);
+        render_tr909_buffer(data, sample_rate, channel_count, tr909_render, tr909_state);
+        return;
+    }
+
+    // Preserve the established summation order (and therefore non-fill output hashes).
     render_tr909_buffer(data, sample_rate, channel_count, tr909_render, tr909_state);
+    render_non_tr909_bed(data, sample_rate, channel_count, mc202_render, w30);
+}
+
+fn render_non_tr909_bed(
+    data: &mut [f32],
+    sample_rate: u32,
+    channel_count: usize,
+    mc202_render: &RealtimeMc202RenderState,
+    w30: &mut W30MixRenderState<'_>,
+) {
     render_mc202_buffer(data, sample_rate, channel_count, &(*mc202_render).into());
     sync_w30_preview_state(w30.preview_render, w30.preview_state);
     render_w30_preview_buffer(

@@ -9,7 +9,7 @@
       "current_scene": "scene-01-intro",
       "active_scene_energy": "medium",
       "jam_contains": [
-        "idle @ 32.0",
+        "idle @ 31.0",
         "scene-01-intro",
         "source src-1 | next scene drop/high",
         "scene transition idle"
@@ -42,7 +42,7 @@
       "restore_scene_energy": "medium",
       "result_summary": "launched scene scene-02-drop at bar 9 / phrase 2",
       "jam_contains": [
-        "idle @ 32.0",
+        "idle @ 31.0",
         "scene-02-drop",
         "live drop/high <> restore intro/med",
         "source src-1 | next scene intro/med",

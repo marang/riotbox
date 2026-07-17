@@ -1,7 +1,13 @@
 use crate::{
     ids::SourceId,
     session::{Mc202SourcePhraseCandidateFamilyState, SessionFile},
-    source_graph::{EnergyClass, QualityClass, SourceGraph},
+    source_graph::{
+        EnergyClass, QualityClass, SourceGraph, section_for_projected_scene,
+        section_for_transport_bar,
+    },
+    transport::{
+        DEFAULT_BARS_PER_PHRASE, DEFAULT_BEATS_PER_BAR, TransportClockState, TransportGridPosition,
+    },
     view::jam::source_timing_confirmation_matches_graph,
 };
 
@@ -60,10 +66,18 @@ impl LivePerformanceBassOwner {
 #[derive(Clone, Debug, PartialEq)]
 pub struct LivePerformancePolicy {
     pub source_id: SourceId,
+    /// Confirmed source-bar downbeat expressed in the zero-based Session transport cursor.
+    ///
+    /// Runtime renderers subtract this phase anchor before evaluating bar-local vocabulary.
+    /// `None` preserves legacy zero-phase behavior when the confirmed graph cannot resolve an
+    /// evidenced bar anchor.
+    pub source_bar_grid_anchor_beat_cursor: Option<u64>,
     pub lead: LivePerformanceLead,
     pub bass_owner: LivePerformanceBassOwner,
     pub mc202_intent: LivePerformanceMc202Intent,
     pub w30_music_level: f32,
+    /// Trusted current-section transient evidence used to derive TR-909 pressure, when present.
+    pub source_transient_backbeat_evidence: Option<f32>,
     pub tr909_drum_level: f32,
     pub tr909_slam_floor: f32,
     pub mc202_music_level: f32,
@@ -95,7 +109,10 @@ pub fn derive_live_performance_policy(
         .source_phrase_plan
         .as_ref()
         .filter(|plan| plan.source_id == graph.source.source_id)?;
-    let mc202_intent = if !source_plan.is_source_derived() {
+    let section_ownership_is_current = source_plan.source_section_id.as_ref().is_none_or(|owner| {
+        current_source_section(session, graph).is_some_and(|section| section.section_id == *owner)
+    });
+    let mc202_intent = if !source_plan.is_source_derived() || !section_ownership_is_current {
         LivePerformanceMc202Intent::StayOut
     } else {
         match source_plan.candidate_family {
@@ -117,10 +134,13 @@ pub fn derive_live_performance_policy(
             None => LivePerformanceMc202Intent::StayOut,
         }
     };
-    let expression = source_plan.source_expression.as_ref();
+    let expression = section_ownership_is_current
+        .then_some(source_plan.source_expression.as_ref())
+        .flatten();
     let bass_pressure = expression.map_or(0.0, |value| value.bass_pressure.clamp(0.0, 1.0));
-    let transient_backbeat =
-        expression.map_or(0.55, |value| value.transient_backbeat.clamp(0.0, 1.0));
+    let source_transient_backbeat_evidence =
+        expression.map(|value| value.transient_backbeat.clamp(0.0, 1.0));
+    let transient_backbeat = source_transient_backbeat_evidence.unwrap_or(0.55);
     let lead = if transient_backbeat >= 0.72 {
         LivePerformanceLead::Tr909Pressure
     } else {
@@ -146,6 +166,11 @@ pub fn derive_live_performance_policy(
 
     Some(LivePerformancePolicy {
         source_id: graph.source.source_id.clone(),
+        source_bar_grid_anchor_beat_cursor: graph
+            .timing
+            .primary_hypothesis()
+            .and_then(|hypothesis| hypothesis.transport_bar_grid_anchor())
+            .map(|anchor| anchor.beat_cursor),
         lead,
         bass_owner,
         mc202_intent,
@@ -154,6 +179,7 @@ pub fn derive_live_performance_policy(
         } else {
             0.64
         },
+        source_transient_backbeat_evidence,
         tr909_drum_level: 0.68 + transient_backbeat * 0.16,
         tr909_slam_floor: 0.54 + transient_backbeat * 0.16,
         mc202_music_level,
@@ -161,11 +187,56 @@ pub fn derive_live_performance_policy(
     })
 }
 
+fn current_source_section<'a>(
+    session: &SessionFile,
+    graph: &'a SourceGraph,
+) -> Option<&'a crate::source_graph::Section> {
+    let scene = session
+        .runtime_state
+        .scene_state
+        .active_scene
+        .as_ref()
+        .or(session.runtime_state.transport.current_scene.as_ref());
+    if let Some(section) = scene.and_then(|scene| section_for_projected_scene(graph, scene)) {
+        return Some(section);
+    }
+
+    let beats_per_bar = graph
+        .timing
+        .primary_hypothesis()
+        .map(|hypothesis| u64::from(hypothesis.meter.beats_per_bar))
+        .or_else(|| {
+            graph
+                .timing
+                .meter_hint
+                .as_ref()
+                .map(|meter| u64::from(meter.beats_per_bar))
+        })
+        .filter(|beats| *beats > 0)
+        .unwrap_or(DEFAULT_BEATS_PER_BAR);
+    let grid = TransportGridPosition::from_zero_based_position_beats(
+        session.runtime_state.transport.position_beats,
+        beats_per_bar,
+        DEFAULT_BARS_PER_PHRASE,
+    );
+    section_for_transport_bar(
+        graph,
+        &TransportClockState {
+            is_playing: session.runtime_state.transport.is_playing,
+            position_beats: session.runtime_state.transport.position_beats,
+            beat_index: grid.beat_cursor,
+            bar_index: grid.bar_index,
+            phrase_index: grid.phrase_index,
+            current_scene: session.runtime_state.transport.current_scene.clone(),
+        },
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::{
-        ids::{ActionId, SectionId, SourceId},
+        ids::{ActionId, SceneId, SectionId, SourceId},
         session::{
             Mc202RoleState, Mc202SourcePhraseExpressionState, Mc202SourcePhraseNoteBudgetState,
             Mc202SourcePhrasePlanState, Mc202SourcePhraseSlotState,
@@ -232,11 +303,51 @@ mod tests {
             LivePerformanceMc202Intent::BassPressure
         );
         assert_eq!(policy.bass_owner, LivePerformanceBassOwner::Mc202);
+        assert_eq!(policy.source_transient_backbeat_evidence, Some(0.78));
         assert!(policy.tr909_drum_level >= 0.75);
         assert!(policy.tr909_slam_floor >= 0.60);
         assert!(policy.mc202_music_level >= 0.80);
         assert!(policy.mc202_touch_floor >= 0.82);
         assert_eq!(policy.w30_music_level, 0.60);
+    }
+
+    #[test]
+    fn typed_plan_from_previous_scene_cannot_claim_current_bass_ownership_or_floors() {
+        let (mut session, mut graph) = dense_break_context();
+        graph.sections.push(Section {
+            section_id: SectionId::from("break-2"),
+            label_hint: SectionLabelHint::Break,
+            start_seconds: 8.0,
+            end_seconds: 16.0,
+            bar_start: 5,
+            bar_end: 8,
+            energy_class: EnergyClass::Medium,
+            confidence: 0.9,
+            tags: vec!["break".into()],
+        });
+        session.runtime_state.source_timing.confirmed_grid =
+            Some(SourceTimingGridConfirmationState {
+                source_id: graph.source.source_id.clone(),
+                hypothesis_id: Some("grid-1".into()),
+                confirmed_by_action: ActionId(1),
+                confirmed_at: 100,
+            });
+        session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-02-break"));
+        session.runtime_state.transport.current_scene = Some(SceneId::from("scene-02-break"));
+        let mut plan = pressure_source_plan(graph.source.source_id.clone());
+        plan.source_section_id = Some(SectionId::from("drop-1"));
+        session.runtime_state.lane_state.mc202.source_phrase_plan = Some(plan);
+
+        let policy = derive_live_performance_policy(&session, &graph)
+            .expect("section-mismatched dense policy stays explicit");
+
+        assert_eq!(policy.mc202_intent, LivePerformanceMc202Intent::StayOut);
+        assert_eq!(policy.bass_owner, LivePerformanceBassOwner::Unassigned);
+        assert_eq!(policy.mc202_music_level, 0.0);
+        assert_eq!(policy.mc202_touch_floor, 0.0);
+        assert!((policy.tr909_drum_level - 0.768).abs() < 1.0e-6);
+        assert!((policy.tr909_slam_floor - 0.628).abs() < 1.0e-6);
+        assert_eq!(policy.w30_music_level, 0.64);
     }
 
     #[test]
@@ -387,6 +498,7 @@ mod tests {
     fn pressure_source_plan(source_id: SourceId) -> Mc202SourcePhrasePlanState {
         Mc202SourcePhrasePlanState {
             source_id,
+            source_section_id: None,
             phrase_slot: Mc202SourcePhraseSlotState {
                 phrase_index: 0,
                 start_bar: 1,

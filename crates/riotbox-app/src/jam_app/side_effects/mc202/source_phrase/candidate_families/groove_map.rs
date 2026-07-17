@@ -1,7 +1,7 @@
 use riotbox_core::{
     session::Mc202SourcePhraseExpressionState,
     source_graph::{
-        BeatPoint, PhraseSpan, SourceGraph, SourceTimingAnchor, SourceTimingAnchorType,
+        PhraseSpan, SourceGraph, SourceTimingAnchor, SourceTimingAnchorType, TimingHypothesis,
     },
 };
 
@@ -150,7 +150,6 @@ fn strongest_anchor_step(
     anchor_types: &[SourceTimingAnchorType],
 ) -> Option<usize> {
     let hypothesis = graph.timing.primary_hypothesis()?;
-    let beats_per_bar = u32::from(hypothesis.meter.beats_per_bar.max(1));
 
     hypothesis
         .anchors
@@ -164,36 +163,42 @@ fn strongest_anchor_step(
         .max_by(|left, right| {
             (left.strength * left.confidence).total_cmp(&(right.strength * right.confidence))
         })
-        .and_then(|anchor| {
-            source_anchor_step(
-                anchor,
-                phrase_slot,
-                beats_per_bar,
-                hypothesis.bpm,
-                &hypothesis.beat_grid,
-            )
-        })
+        .and_then(|anchor| source_anchor_step(anchor, phrase_slot, hypothesis))
 }
 
 fn source_anchor_step(
     anchor: &SourceTimingAnchor,
     phrase_slot: &PhraseSpan,
-    beats_per_bar: u32,
-    bpm: f32,
-    beat_grid: &[BeatPoint],
+    hypothesis: &TimingHypothesis,
 ) -> Option<usize> {
     if let Some(beat_index) = anchor.beat_index {
-        let phrase_start_beat = phrase_slot.start_bar.saturating_mul(beats_per_bar);
-        let relative_beat = beat_index.saturating_sub(phrase_start_beat);
+        let beats_per_bar = u32::from(hypothesis.meter.beats_per_bar.max(1));
+        let phrase_start_beat = if hypothesis.bar_grid.is_empty() {
+            phrase_slot
+                .start_bar
+                .saturating_sub(1)
+                .saturating_mul(beats_per_bar)
+                .saturating_add(1)
+        } else {
+            hypothesis
+                .bar_start_beat_point(phrase_slot.start_bar)?
+                .beat_index
+        };
+        let anchor_beat = hypothesis
+            .beat_grid
+            .iter()
+            .find(|beat| beat.beat_index == beat_index);
+        if !hypothesis.bar_grid.is_empty() && anchor_beat.is_none() {
+            return None;
+        }
+        let relative_beat = beat_index.checked_sub(phrase_start_beat)?;
         let coarse_step = i32::try_from(relative_beat.saturating_mul(4)).unwrap_or(i32::MAX);
-        if bpm.is_finite()
-            && bpm > 0.0
+        if hypothesis.bpm.is_finite()
+            && hypothesis.bpm > 0.0
             && anchor.time_seconds.is_finite()
-            && let Some(beat) = beat_grid
-                .iter()
-                .find(|beat| beat.beat_index == beat_index && beat.time_seconds.is_finite())
+            && let Some(beat) = anchor_beat.filter(|beat| beat.time_seconds.is_finite())
         {
-            let seconds_per_step = (60.0 / bpm) / 4.0;
+            let seconds_per_step = (60.0 / hypothesis.bpm) / 4.0;
             if seconds_per_step.is_finite() && seconds_per_step > 0.0 {
                 let subbeat_step =
                     ((anchor.time_seconds - beat.time_seconds) / seconds_per_step).round() as i32;
@@ -202,10 +207,18 @@ fn source_anchor_step(
         }
         return Some(coarse_step.rem_euclid(16) as usize);
     }
-    anchor.bar_index.map(|bar| {
-        let relative_bar = bar.saturating_sub(phrase_slot.start_bar);
-        ((relative_bar * 16) as usize) % 16
-    })
+    let bar_index = anchor.bar_index?;
+    if hypothesis.bar_grid.is_empty() {
+        let relative_bar = bar_index.saturating_sub(phrase_slot.start_bar);
+        return Some(((relative_bar * 16) as usize) % 16);
+    }
+
+    let phrase_start_beat = hypothesis
+        .bar_start_beat_point(phrase_slot.start_bar)?
+        .beat_index;
+    let anchor_bar_start_beat = hypothesis.bar_start_beat_point(bar_index)?.beat_index;
+    let relative_beat = anchor_bar_start_beat.checked_sub(phrase_start_beat)?;
+    Some((relative_beat.saturating_mul(4) as usize) % 16)
 }
 
 fn avoid_steps(mut step: usize, blocked: &[usize]) -> usize {
@@ -217,4 +230,150 @@ fn avoid_steps(mut step: usize, blocked: &[usize]) -> usize {
         }
     }
     step
+}
+
+#[cfg(test)]
+mod tests {
+    use super::source_anchor_step;
+    use riotbox_core::source_graph::{
+        BarSpan, BeatPoint, MeterHint, PhraseSpan, SourceTimingAnchor, SourceTimingAnchorType,
+        TimingHypothesis, TimingHypothesisKind, TimingQuality,
+    };
+
+    fn anchor_at_beat(beat_index: u32) -> SourceTimingAnchor {
+        anchor_at_beat_and_time(beat_index, 0.0)
+    }
+
+    fn anchor_at_beat_and_time(beat_index: u32, time_seconds: f32) -> SourceTimingAnchor {
+        SourceTimingAnchor {
+            anchor_id: format!("beat-{beat_index}"),
+            anchor_type: SourceTimingAnchorType::Kick,
+            time_seconds,
+            bar_index: Some(8),
+            beat_index: Some(beat_index),
+            confidence: 1.0,
+            strength: 1.0,
+            tags: Vec::new(),
+        }
+    }
+
+    fn timing_hypothesis(beat_grid: Vec<BeatPoint>, bar_grid: Vec<BarSpan>) -> TimingHypothesis {
+        TimingHypothesis {
+            hypothesis_id: "primary".into(),
+            kind: TimingHypothesisKind::Primary,
+            bpm: 120.0,
+            meter: MeterHint {
+                beats_per_bar: 4,
+                beat_unit: 4,
+            },
+            confidence: 1.0,
+            score: 1.0,
+            beat_grid,
+            bar_grid,
+            phrase_grid: Vec::new(),
+            anchors: Vec::new(),
+            drift: Vec::new(),
+            groove: Vec::new(),
+            quality: TimingQuality::High,
+            warnings: Vec::new(),
+            provenance: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn phrase_start_bar_eight_maps_one_based_beats_to_sixteenth_steps() {
+        let phrase = PhraseSpan {
+            phrase_index: 1,
+            start_bar: 8,
+            end_bar: 8,
+            confidence: 1.0,
+        };
+        let hypothesis = timing_hypothesis(Vec::new(), Vec::new());
+
+        for (beat_index, expected_step) in [(29, 0), (30, 4), (31, 8), (32, 12)] {
+            assert_eq!(
+                source_anchor_step(&anchor_at_beat(beat_index), &phrase, &hypothesis),
+                Some(expected_step)
+            );
+        }
+    }
+
+    #[test]
+    fn selected_primary_downbeat_phase_maps_bar_eight_beat_thirty_to_step_zero() {
+        let phrase = PhraseSpan {
+            phrase_index: 1,
+            start_bar: 8,
+            end_bar: 8,
+            confidence: 1.0,
+        };
+        let beat_grid = (30..=33)
+            .map(|beat_index| BeatPoint {
+                beat_index,
+                time_seconds: 14.5 + (beat_index - 30) as f32 * 0.5,
+                confidence: 1.0,
+            })
+            .collect();
+        let bar_grid = vec![BarSpan {
+            bar_index: 8,
+            start_seconds: 14.5,
+            end_seconds: 16.5,
+            downbeat_confidence: 1.0,
+            phrase_index: Some(1),
+        }];
+        let hypothesis = timing_hypothesis(beat_grid, bar_grid);
+
+        assert_eq!(
+            source_anchor_step(&anchor_at_beat_and_time(30, 14.5), &phrase, &hypothesis),
+            Some(0)
+        );
+        assert_eq!(
+            source_anchor_step(&anchor_at_beat_and_time(31, 15.0), &phrase, &hypothesis),
+            Some(4)
+        );
+    }
+
+    #[test]
+    fn present_bar_grid_does_not_fall_back_when_beat_grid_is_missing() {
+        let phrase = PhraseSpan {
+            phrase_index: 1,
+            start_bar: 8,
+            end_bar: 8,
+            confidence: 1.0,
+        };
+        let hypothesis = timing_hypothesis(
+            Vec::new(),
+            vec![BarSpan {
+                bar_index: 8,
+                start_seconds: 14.5,
+                end_seconds: 16.5,
+                downbeat_confidence: 1.0,
+                phrase_index: Some(1),
+            }],
+        );
+
+        assert_eq!(
+            source_anchor_step(&anchor_at_beat(30), &phrase, &hypothesis),
+            None
+        );
+    }
+
+    #[test]
+    fn zero_or_pre_phrase_beats_do_not_collapse_onto_phrase_start() {
+        let phrase = PhraseSpan {
+            phrase_index: 1,
+            start_bar: 8,
+            end_bar: 8,
+            confidence: 1.0,
+        };
+        let hypothesis = timing_hypothesis(Vec::new(), Vec::new());
+
+        assert_eq!(
+            source_anchor_step(&anchor_at_beat(0), &phrase, &hypothesis),
+            None
+        );
+        assert_eq!(
+            source_anchor_step(&anchor_at_beat(28), &phrase, &hypothesis),
+            None
+        );
+    }
 }

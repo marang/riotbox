@@ -126,6 +126,56 @@ impl Tr909PhraseVariation {
     }
 }
 
+/// Stable identifier for the fixed callback-safe recipe family selected by a Fill render plan.
+///
+/// This is derived render policy, not Session state and not a source-intelligence claim. The
+/// versioned ID plus its typed selection inputs identify the rendered vocabulary; the generic
+/// family alone does not describe every parameterized output.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Tr909FillRecipeId {
+    /// PhraseDrive accent/ghost control family.
+    PhraseDriveAccentGhostV1,
+    /// Historical mainline PhraseDrive micro-choke/dive-stomp family.
+    PhraseDriveChokeDiveStompV1,
+    /// Mainline PhraseDrive full-beat setup, extended choke, and late dive-stomp family.
+    PhraseDriveLongChokeDiveStompV2,
+    /// Mainline PhraseDrive half-bar drum takeover, break cut, and late dive-stomp family.
+    PhraseDriveBreakCutStompV1,
+    /// Parameterized legacy family whose exact output also depends on adoption and variation.
+    GenericFillV1,
+}
+
+impl Tr909FillRecipeId {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::PhraseDriveAccentGhostV1 => "phrase_drive_accent_ghost_v1",
+            Self::PhraseDriveChokeDiveStompV1 => "phrase_drive_choke_dive_stomp_v1",
+            Self::PhraseDriveLongChokeDiveStompV2 => "phrase_drive_long_choke_dive_stomp_v2",
+            Self::PhraseDriveBreakCutStompV1 => "phrase_drive_break_cut_stomp_v1",
+            Self::GenericFillV1 => "generic_fill_v1",
+        }
+    }
+}
+
+/// Select the fixed Fill recipe family implied by the typed render-policy inputs.
+///
+/// This crate-private selector is the callback/API shared authority; exact-path QA records the
+/// mode-aware public result without recreating the decision as a string mapping.
+#[must_use]
+pub(crate) const fn select_tr909_fill_recipe_id(
+    pattern_adoption: Option<Tr909PatternAdoption>,
+    phrase_variation: Option<Tr909PhraseVariation>,
+) -> Tr909FillRecipeId {
+    if !matches!(phrase_variation, Some(Tr909PhraseVariation::PhraseDrive)) {
+        Tr909FillRecipeId::GenericFillV1
+    } else if matches!(pattern_adoption, Some(Tr909PatternAdoption::MainlineDrive)) {
+        Tr909FillRecipeId::PhraseDriveBreakCutStompV1
+    } else {
+        Tr909FillRecipeId::PhraseDriveAccentGhostV1
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Tr909RenderState {
     pub mode: Tr909RenderMode,
@@ -137,11 +187,32 @@ pub struct Tr909RenderState {
     pub phrase_variation: Option<Tr909PhraseVariation>,
     pub takeover_profile: Option<Tr909TakeoverRenderProfile>,
     pub drum_bus_level: f32,
+    pub slam_enabled: bool,
     pub slam_intensity: f32,
     pub is_transport_running: bool,
     pub tempo_bpm: f32,
     pub position_beats: f64,
+    /// Confirmed source-bar downbeat in Session transport beats.
+    ///
+    /// Fill recipe and focus phase subtract this derived projection before evaluating their
+    /// bar-local positions. `None` preserves the legacy zero-phase grid.
+    pub source_bar_grid_anchor_position_beats: Option<f64>,
     pub current_scene_id: Option<String>,
+}
+
+impl Tr909RenderState {
+    /// Return the versioned fixed vocabulary selected for an active Fill plan.
+    #[must_use]
+    pub const fn fill_recipe_id(&self) -> Option<Tr909FillRecipeId> {
+        if matches!(self.mode, Tr909RenderMode::Fill) {
+            Some(select_tr909_fill_recipe_id(
+                self.pattern_adoption,
+                self.phrase_variation,
+            ))
+        } else {
+            None
+        }
+    }
 }
 
 impl Default for Tr909RenderState {
@@ -156,10 +227,12 @@ impl Default for Tr909RenderState {
             phrase_variation: None,
             takeover_profile: None,
             drum_bus_level: 0.0,
+            slam_enabled: false,
             slam_intensity: 0.0,
             is_transport_running: false,
             tempo_bpm: 0.0,
             position_beats: 0.0,
+            source_bar_grid_anchor_position_beats: None,
             current_scene_id: None,
         }
     }
@@ -168,9 +241,9 @@ impl Default for Tr909RenderState {
 #[cfg(test)]
 mod tests {
     use super::{
-        Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
-        Tr909RenderState, Tr909SourceSupportContext, Tr909SourceSupportProfile,
-        Tr909TakeoverRenderProfile,
+        Tr909FillRecipeId, Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode,
+        Tr909RenderRouting, Tr909RenderState, Tr909SourceSupportContext, Tr909SourceSupportProfile,
+        Tr909TakeoverRenderProfile, select_tr909_fill_recipe_id,
     };
 
     #[test]
@@ -223,6 +296,51 @@ mod tests {
         assert_eq!(
             Tr909PhraseVariation::PhraseRelease.label(),
             "phrase_release"
+        );
+        assert_eq!(
+            Tr909FillRecipeId::PhraseDriveBreakCutStompV1.label(),
+            "phrase_drive_break_cut_stomp_v1"
+        );
+    }
+
+    #[test]
+    fn fill_recipe_selection_is_typed_and_versioned() {
+        assert_eq!(
+            select_tr909_fill_recipe_id(
+                Some(Tr909PatternAdoption::MainlineDrive),
+                Some(Tr909PhraseVariation::PhraseDrive)
+            ),
+            Tr909FillRecipeId::PhraseDriveBreakCutStompV1
+        );
+        assert_eq!(
+            select_tr909_fill_recipe_id(
+                Some(Tr909PatternAdoption::SupportPulse),
+                Some(Tr909PhraseVariation::PhraseDrive)
+            ),
+            Tr909FillRecipeId::PhraseDriveAccentGhostV1
+        );
+        assert_eq!(
+            select_tr909_fill_recipe_id(
+                Some(Tr909PatternAdoption::MainlineDrive),
+                Some(Tr909PhraseVariation::PhraseLift)
+            ),
+            Tr909FillRecipeId::GenericFillV1
+        );
+
+        let fill = Tr909RenderState {
+            mode: Tr909RenderMode::Fill,
+            pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
+            phrase_variation: Some(Tr909PhraseVariation::PhraseDrive),
+            ..Tr909RenderState::default()
+        };
+        assert_eq!(
+            fill.fill_recipe_id(),
+            Some(Tr909FillRecipeId::PhraseDriveBreakCutStompV1)
+        );
+        assert_eq!(
+            Tr909RenderState::default().fill_recipe_id(),
+            None,
+            "non-Fill plans must not claim a fixed Fill recipe"
         );
     }
 }

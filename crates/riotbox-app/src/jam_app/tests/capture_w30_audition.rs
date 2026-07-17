@@ -123,6 +123,93 @@ fn capture_length_intent_controls_source_window_duration() {
 }
 
 #[test]
+fn capture_source_window_maps_zero_based_cursor_to_one_based_source_grid_beat() {
+    let mut graph = sample_graph();
+    graph.timing.beat_grid = vec![
+        BeatPoint {
+            beat_index: 16,
+            time_seconds: 7.5,
+            confidence: 0.9,
+        },
+        BeatPoint {
+            beat_index: 17,
+            time_seconds: 8.0,
+            confidence: 0.9,
+        },
+        BeatPoint {
+            beat_index: 18,
+            time_seconds: 8.5,
+            confidence: 0.9,
+        },
+    ];
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    state.session.captures.clear();
+    state.session.runtime_state.capture.length_intent = CaptureLengthIntent::OneBeat;
+
+    state.queue_capture_bar(300);
+    let committed = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Bar,
+            beat_index: 16,
+            bar_index: 5,
+            phrase_index: 2,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        400,
+    );
+
+    assert_eq!(committed.len(), 1);
+    let source_window = state.session.captures[0]
+        .source_window
+        .as_ref()
+        .expect("capture source window");
+    assert_eq!(source_window.start_seconds, 8.0);
+    assert_eq!(source_window.end_seconds, 8.5);
+}
+
+#[test]
+fn capture_source_window_missing_end_beat_uses_primary_hypothesis_bpm() {
+    let mut graph = source_map_navigation_graph();
+    graph.timing.bpm_estimate = Some(60.0);
+    let primary = graph
+        .timing
+        .hypotheses
+        .first_mut()
+        .expect("primary timing hypothesis");
+    primary.bpm = 120.0;
+    primary.beat_grid = vec![BeatPoint {
+        beat_index: 17,
+        time_seconds: 8.0,
+        confidence: 0.9,
+    }];
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    state.session.captures.clear();
+    state.session.runtime_state.capture.length_intent = CaptureLengthIntent::OneBeat;
+
+    state.queue_capture_bar(300);
+    let committed = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Bar,
+            beat_index: 16,
+            bar_index: 5,
+            phrase_index: 2,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        400,
+    );
+
+    assert_eq!(committed.len(), 1);
+    let source_window = state.session.captures[0]
+        .source_window
+        .as_ref()
+        .expect("capture source window");
+    assert_eq!(source_window.start_seconds, 8.0);
+    assert_eq!(source_window.end_seconds, 8.5);
+}
+
+#[test]
 fn phrase_capture_length_uses_phrase_grid_when_available() {
     let mut graph = sample_graph();
     graph.timing.meter_hint = Some(riotbox_core::source_graph::MeterHint {
@@ -175,8 +262,8 @@ fn phrase_capture_length_prefers_primary_hypothesis_phrase_grid() {
         CommitBoundaryState {
             kind: CommitBoundary::Bar,
             beat_index: 16,
-            bar_index: 4,
-            phrase_index: 1,
+            bar_index: 5,
+            phrase_index: 2,
             scene_id: Some(SceneId::from("scene-1")),
         },
         400,
@@ -192,6 +279,47 @@ fn phrase_capture_length_prefers_primary_hypothesis_phrase_grid() {
     assert!((source_window.end_seconds - 16.0).abs() < 0.01);
     assert_eq!(source_window.start_frame, 384_000);
     assert_eq!(source_window.end_frame, 768_000);
+}
+
+#[test]
+fn phrase_capture_length_preserves_selected_nonzero_downbeat_phase() {
+    let mut graph = source_map_navigation_graph();
+    let primary = graph
+        .timing
+        .hypotheses
+        .first_mut()
+        .expect("primary hypothesis");
+    primary.beat_grid = (4..=36)
+        .map(|beat_index| BeatPoint {
+            beat_index,
+            time_seconds: (beat_index - 4) as f32 * 0.5,
+            confidence: 0.9,
+        })
+        .collect();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    state.session.captures.clear();
+    state.session.runtime_state.capture.length_intent = CaptureLengthIntent::Phrase;
+
+    state.queue_capture_bar(300);
+    let committed = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Bar,
+            beat_index: 19,
+            bar_index: 5,
+            phrase_index: 2,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        400,
+    );
+
+    assert_eq!(committed.len(), 1);
+    let source_window = state.session.captures[0]
+        .source_window
+        .as_ref()
+        .expect("phase-aware phrase capture source window");
+    assert!((source_window.start_seconds - 8.0).abs() < 0.01);
+    assert!((source_window.end_seconds - 16.0).abs() < 0.01);
 }
 
 #[test]

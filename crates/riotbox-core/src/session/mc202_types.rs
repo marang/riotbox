@@ -1,4 +1,4 @@
-use crate::ids::SourceId;
+use crate::ids::{SectionId, SourceId};
 
 #[derive(Clone, Debug, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Mc202LaneState {
@@ -20,6 +20,10 @@ impl Mc202LaneState {
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Mc202SourcePhrasePlanState {
     pub source_id: SourceId,
+    /// Section whose measured/source-graph features shaped this musical plan.
+    /// `None` is retained for sessions written before section ownership existed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_section_id: Option<SectionId>,
     pub phrase_slot: Mc202SourcePhraseSlotState,
     #[serde(default)]
     pub source_expression: Option<Mc202SourcePhraseExpressionState>,

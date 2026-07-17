@@ -9,7 +9,7 @@ fn footer_keys_line_styles_top_legend_key_tokens() {
 
     assert_eq!(
         rendered,
-        "Keys: q quit | ? help | 1-4 screens | Tab switch | i inspect | space play/pause | [ ] drum | r re-ingest"
+        "Keys: q quit | ? help | 1-4 screens | Tab switch | i inspect | space play/pause | M monitor | [ ] drum | r re-ingest"
     );
     assert_eq!(line.spans[1].content.as_ref(), "q");
     assert_eq!(line.spans[1].style.fg, Some(Color::Cyan));
@@ -23,10 +23,12 @@ fn footer_keys_line_styles_top_legend_key_tokens() {
     assert_eq!(line.spans[13].style.fg, Some(Color::Cyan));
     assert_eq!(line.spans[16].content.as_ref(), "space");
     assert_eq!(line.spans[16].style.fg, Some(Color::Cyan));
-    assert_eq!(line.spans[19].content.as_ref(), "[ ]");
+    assert_eq!(line.spans[19].content.as_ref(), "M");
     assert_eq!(line.spans[19].style.fg, Some(Color::Cyan));
-    assert_eq!(line.spans[22].content.as_ref(), "r");
+    assert_eq!(line.spans[22].content.as_ref(), "[ ]");
     assert_eq!(line.spans[22].style.fg, Some(Color::Cyan));
+    assert_eq!(line.spans[25].content.as_ref(), "r");
+    assert_eq!(line.spans[25].style.fg, Some(Color::Cyan));
 }
 
 #[test]
@@ -40,7 +42,7 @@ fn footer_keys_line_compacts_load_mode_labels() {
 
     assert_eq!(
         rendered,
-        "Keys: q quit | ? help | 1-4 screens | Tab switch | i perform | space play/pause | [ ] drum | r reload"
+        "Keys: q quit | ? help | 1-4 screens | Tab switch | i perform | space play/pause | M monitor | [ ] drum | r reload"
     );
 }
 
@@ -172,16 +174,18 @@ fn help_primary_gesture_line_styles_key_prefixes_without_rewriting_text() {
 
     assert_eq!(
         rendered,
-        "space: play / pause | y: scene jump | g: follow | f: fill"
+        "space: play / pause | w: hit | f: fill | s: slam | y: scene jump"
     );
     assert_eq!(line.spans[0].content.as_ref(), "space");
     assert_eq!(line.spans[0].style.fg, Some(Color::Cyan));
-    assert_eq!(line.spans[3].content.as_ref(), "y");
+    assert_eq!(line.spans[3].content.as_ref(), "w");
     assert_eq!(line.spans[3].style.fg, Some(Color::Cyan));
-    assert_eq!(line.spans[6].content.as_ref(), "g");
+    assert_eq!(line.spans[6].content.as_ref(), "f");
     assert_eq!(line.spans[6].style.fg, Some(Color::Cyan));
-    assert_eq!(line.spans[9].content.as_ref(), "f");
+    assert_eq!(line.spans[9].content.as_ref(), "s");
     assert_eq!(line.spans[9].style.fg, Some(Color::Cyan));
+    assert_eq!(line.spans[12].content.as_ref(), "y");
+    assert_eq!(line.spans[12].style.fg, Some(Color::Cyan));
 }
 
 #[test]

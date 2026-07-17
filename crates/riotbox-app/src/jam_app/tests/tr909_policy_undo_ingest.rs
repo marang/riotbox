@@ -17,6 +17,8 @@ fn pattern_adoption_can_be_derived_without_pattern_ref() {
     );
 
     let mut takeover_session = sample_session(&graph);
+    // Keep this policy case on phrase 1; cursor 15 is bar 4 / phrase 1.
+    takeover_session.runtime_state.transport.position_beats = 15.0;
     takeover_session
         .runtime_state
         .lane_state
@@ -54,7 +56,8 @@ fn phrase_variation_tracks_phrase_context_and_release_patterns() {
     );
 
     session.runtime_state.lane_state.tr909.pattern_ref = Some("scene-1-main".into());
-    session.runtime_state.transport.position_beats = 64.0;
+    // Exercise the out-of-section steady profile on an even phrase cycle.
+    session.runtime_state.transport.position_beats = 48.0;
     let drive_state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
     assert_eq!(
         drive_state.runtime.tr909_render.phrase_variation,
@@ -168,25 +171,262 @@ fn committed_state_fixture_backed_render_projections_hold() {
 }
 
 #[test]
-fn undo_marks_last_undoable_action_and_appends_undo_marker() {
+fn undo_does_not_claim_success_without_typed_runtime_restoration() {
     let graph = sample_graph();
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    let undo_action = state.undo_last_action(500).expect("undo latest action");
-
-    assert_eq!(undo_action.command, ActionCommand::UndoLast);
-    assert_eq!(state.session.action_log.actions.len(), 2);
+    assert_eq!(state.undo_last_action(500), None);
+    assert_eq!(state.session.action_log.actions.len(), 1);
     assert_eq!(
         state.session.action_log.actions[0].status,
-        ActionStatus::Undone
-    );
-    assert_eq!(
-        state.session.action_log.actions[1].command,
-        ActionCommand::UndoLast
+        ActionStatus::Committed
     );
     assert_eq!(state.jam_view.recent_actions[0].status, "committed");
-    assert_eq!(state.jam_view.recent_actions[1].status, "undone");
+}
+
+#[test]
+fn undo_tr909_fill_restores_previous_fill_window_and_supports_post_undo_replay_anchor() {
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session.runtime_state.lane_state.tr909.last_fill_bar = Some(2);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    state.queue_tr909_fill(300);
+    let fill_action_id = state.queue.pending_actions()[0].id;
+    state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Bar,
+            beat_index: 8,
+            bar_index: 3,
+            phrase_index: 1,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        400,
+    );
+    assert_eq!(
+        state.session.runtime_state.lane_state.tr909.last_fill_bar,
+        Some(3)
+    );
+
+    let undo = state
+        .undo_last_action(500)
+        .expect("committed Fill has typed restoration");
+    assert_eq!(
+        undo.params,
+        ActionParams::Undo {
+            target_action_id: fill_action_id
+        }
+    );
+    assert_eq!(
+        state.session.runtime_state.lane_state.tr909.last_fill_bar,
+        Some(2)
+    );
+    assert!(
+        !state
+            .session
+            .runtime_state
+            .lane_state
+            .tr909
+            .fill_armed_next_bar,
+        "undo must not resurrect queue-only Fill pending state"
+    );
+    assert!(
+        state
+            .session
+            .runtime_state
+            .undo_state
+            .tr909_fill_snapshots
+            .is_empty()
+    );
+
+    let snapshot_cursor = state.session.action_log.actions.len();
+    let snapshot_id = SnapshotId::from("snap-after-fill-undo");
+    state.session.snapshots.push(Snapshot {
+        snapshot_id: snapshot_id.clone(),
+        created_at: "2026-07-16T12:00:00Z".into(),
+        label: "after Fill undo".into(),
+        action_cursor: snapshot_cursor,
+        payload: Some(riotbox_core::session::SnapshotPayload::from_runtime_state(
+            &snapshot_id,
+            snapshot_cursor,
+            &state.session.runtime_state,
+        )),
+    });
+
+    assert!(state.queue_tr909_slam_toggle(600));
+    state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Beat,
+            beat_index: 9,
+            bar_index: 3,
+            phrase_index: 1,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        700,
+    );
+
+    let plan = riotbox_core::replay::build_replay_target_plan(
+        &state.session.action_log,
+        &state.session.snapshots,
+        state.session.action_log.actions.len(),
+    )
+    .expect("post-undo snapshot anchors the later replay tail");
+    assert_eq!(
+        plan.anchor.map(|snapshot| snapshot.snapshot_id.clone()),
+        Some(snapshot_id)
+    );
+    assert_eq!(plan.suffix.len(), 1);
+    assert_eq!(plan.suffix[0].action.command, ActionCommand::Tr909SetSlam);
+}
+
+#[test]
+fn pending_fill_undo_and_later_commit_keep_unique_ids_through_reload_and_replay() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("jam-session.json");
+    let graph = sample_graph();
+    let base_session = sample_session(&graph);
+    let mut state =
+        JamAppState::from_parts(base_session.clone(), Some(graph.clone()), ActionQueue::new());
+    let immediate_boundary = CommitBoundaryState {
+        kind: CommitBoundary::Immediate,
+        beat_index: state.runtime.transport.beat_index,
+        bar_index: state.runtime.transport.bar_index,
+        phrase_index: state.runtime.transport.phrase_index,
+        scene_id: state.runtime.transport.current_scene.clone(),
+    };
+
+    assert_eq!(
+        state.queue_source_monitor_mode(SourceMonitorMode::Riotbox, 100),
+        QueueControlResult::Enqueued
+    );
+    let source_monitor_id = state.queue.pending_actions()[0].id;
+    state.commit_ready_actions(immediate_boundary, 110);
+
+    state.queue_tr909_fill(120);
+    let fill_id = state.queue.pending_actions()[0].id;
+    let undo = state
+        .undo_last_action(130)
+        .expect("source monitor action has typed restoration");
+    assert_ne!(undo.id, fill_id);
+    assert_eq!(
+        undo.params,
+        ActionParams::Undo {
+            target_action_id: source_monitor_id
+        }
+    );
+
+    state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Bar,
+            beat_index: 4,
+            bar_index: 2,
+            phrase_index: 1,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        140,
+    );
+    let action_ids = state
+        .session
+        .action_log
+        .actions
+        .iter()
+        .map(|action| action.id)
+        .collect::<Vec<_>>();
+    let unique_ids = action_ids
+        .iter()
+        .copied()
+        .collect::<std::collections::BTreeSet<_>>();
+    assert_eq!(action_ids.len(), unique_ids.len());
+    assert!(state.session.action_log.actions.iter().any(|action| {
+        action.id == fill_id && action.command == ActionCommand::Tr909FillNext
+    }));
+
+    save_session_json(&session_path, &state.session).expect("persist unique undo history");
+    let reloaded = JamAppState::from_json_files(&session_path, None::<&Path>)
+        .expect("reload unique undo history");
+    assert_eq!(reloaded.session.action_log.actions.len(), action_ids.len());
+
+    let plan = riotbox_core::replay::build_committed_replay_plan(&reloaded.session.action_log)
+        .expect("reloaded undo history builds replay plan");
+    assert_eq!(
+        plan.iter()
+            .map(|entry| entry.action.command)
+            .collect::<Vec<_>>(),
+        vec![ActionCommand::Tr909FillNext]
+    );
+    let mut replayed_session = base_session;
+    riotbox_core::replay::apply_replay_plan_to_session(&mut replayed_session, &plan)
+        .expect("Fill tail replays after undo marker");
+    assert_eq!(
+        replayed_session.runtime_state.lane_state.tr909.last_fill_bar,
+        state.session.runtime_state.lane_state.tr909.last_fill_bar
+    );
+    assert_eq!(
+        replayed_session.runtime_state.source_monitor.mode,
+        SourceMonitorMode::Source
+    );
+}
+
+#[test]
+fn newer_non_undoable_tr909_action_does_not_block_typed_monitor_undo() {
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    assert_eq!(
+        state.queue_source_monitor_mode(SourceMonitorMode::Riotbox, 100),
+        QueueControlResult::Enqueued
+    );
+    let monitor_id = state.queue.pending_actions()[0].id;
+    state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Immediate,
+            beat_index: state.runtime.transport.beat_index,
+            bar_index: state.runtime.transport.bar_index,
+            phrase_index: state.runtime.transport.phrase_index,
+            scene_id: state.runtime.transport.current_scene.clone(),
+        },
+        110,
+    );
+    assert!(state.queue_tr909_slam_toggle(120));
+    state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Beat,
+            beat_index: 1,
+            bar_index: 1,
+            phrase_index: 1,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        130,
+    );
+    let slam = state
+        .session
+        .action_log
+        .actions
+        .iter()
+        .find(|action| action.command == ActionCommand::Tr909SetSlam)
+        .expect("slam committed");
+    assert!(matches!(
+        &slam.undo_policy,
+        UndoPolicy::NotUndoable { .. }
+    ));
+
+    let undo = state
+        .undo_last_action(140)
+        .expect("typed monitor action remains undoable");
+
+    assert_eq!(
+        undo.params,
+        ActionParams::Undo {
+            target_action_id: monitor_id
+        }
+    );
+    assert_eq!(
+        state.session.runtime_state.source_monitor.mode,
+        SourceMonitorMode::Source
+    );
+    assert!(state.session.runtime_state.lane_state.tr909.slam_enabled);
 }
 
 #[test]

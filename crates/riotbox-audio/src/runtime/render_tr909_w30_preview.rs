@@ -13,12 +13,35 @@ pub(super) fn render_tr909_buffer(
     {
         state.was_running = false;
         state.envelope = 0.0;
+        state.fill_voices.deactivate();
         state.beat_position = render.position_beats;
         return;
     }
 
+    if matches!(render.mode, Tr909RenderMode::Fill) {
+        // The playable fill owns fixed, independently decaying kick/snare/hat voices. Keeping
+        // this branch fill-only preserves the established sample path for every other mode.
+        state.envelope = 0.0;
+        state.oscillator_phase = 0.0;
+        state.oscillator_hz = 0.0;
+        render_tr909_fill_buffer(data, sample_rate, channel_count, render, state);
+        return;
+    }
+
+    let exited_fill = state.fill_voices.is_active();
+    state.fill_voices.deactivate();
+
     let subdivision = render_subdivision(render);
     let current_step = (render.position_beats * f64::from(subdivision)).floor() as i64;
+    if exited_fill {
+        // A mode change can occur without crossing a transport step. Force a fresh legacy voice
+        // trigger so no Fill subdivision or oscillator state leaks into the non-Fill path.
+        state.beat_position = render.position_beats;
+        state.last_step = current_step.saturating_sub(1);
+        state.envelope = 0.0;
+        state.oscillator_phase = 0.0;
+        state.oscillator_hz = 0.0;
+    }
     if !state.was_running || (state.beat_position - render.position_beats).abs() > 0.125 {
         state.beat_position = render.position_beats;
         state.last_step = current_step.saturating_sub(1);
@@ -35,6 +58,9 @@ pub(super) fn render_tr909_buffer(
             if should_trigger_step(render, step) {
                 state.envelope = trigger_envelope(render);
                 state.oscillator_hz = trigger_frequency(render, step);
+                if break_performance_slam(render) > 0.0 {
+                    state.oscillator_phase = 0.25;
+                }
             }
         }
 

@@ -184,10 +184,16 @@ pub fn derive_tr909_render_policy_with_scene_context(
     source_graph: Option<&SourceGraph>,
     scene_context: Option<&SceneId>,
 ) -> Tr909RenderPolicyProjection {
+    let fill_is_active = tr909.last_fill_bar == Some(transport.bar_index);
     let mode = if tr909.takeover_enabled {
         Tr909RenderModePolicy::Takeover
+    } else if fill_is_active {
+        Tr909RenderModePolicy::Fill
     } else {
         match tr909.reinforcement_mode {
+            // Legacy sessions may contain the old persistent `Fills` state. New
+            // fill-next actions retain the underlying typed mode and use
+            // `last_fill_bar` as their one-bar performance window.
             Some(Tr909ReinforcementModeState::Fills) => Tr909RenderModePolicy::Fill,
             Some(Tr909ReinforcementModeState::BreakReinforce) => {
                 Tr909RenderModePolicy::BreakReinforce
@@ -447,4 +453,3 @@ fn derive_tr909_phrase_variation(
 
     Some(variation)
 }
-

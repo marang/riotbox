@@ -18,72 +18,91 @@ Right now Riotbox is already a serious prototype:
 
 ## Start Here
 
-If you only want the fastest possible first run:
+If you only want the fastest first playable run:
 
-1. load one WAV
-2. press `Space`
-3. press either `f` for a TR-909 fill or `c` for a capture
-4. switch to `Log` with `2`
-5. confirm what Riotbox queued, when it committed, and what changed
+1. load one WAV, leave the monitor on `Source`, and check the readiness / route
+   cue on `Jam`
+2. press `Space` and confirm that you can hear the source
+3. press `c`, wait for the capture to land, press `o` and hear the audition,
+   then press `p` to promote it
+4. when the source route is ready, press `M` once to move from `Source` to
+   `Blend`
+5. try `w`, `f`, `s`, and `y` one at a time; after the scene jump lands, press
+   `Y` to restore the previous scene
 
 What those steps mean:
 
 1. **Load one WAV** so Riotbox can build a Source Graph, timing hints, and a
-   Session around one piece of material. In the current prototype the source is
-   the thing every gesture is trying to steer, mark, or reuse.
-2. **Press `Space` once** to start transport. Leave it running after the next
-   gesture; most first gestures do not fire instantly, they wait for a musical
-   boundary. For the quickstart, wait until the next bar lands. At 120-130 BPM
-   that is roughly two seconds for one 4/4 bar; if you pressed the gesture just
-   after a bar line, wait one full bar.
-3. **Press one first gesture, not all of them.** `f` queues a TR-909 fill: a
-   short drum-lane variation for the next bar, useful for proving that Riotbox
-   can arm a change now and land it in time. `c` queues a capture into the W-30
-   path: Riotbox records a source-window reference using the current capture
-   length, keeps provenance, and prepares material that later W-30 actions can
-   audition, promote, or reuse. If you want the clearest first proof, start with
-   `f`; use `c` after you hear or see something worth keeping.
-4. **Switch to `Log` with `2`** because `Jam` is the performance view, while
-   `Log` is the trust view. It shows the exact action Riotbox accepted, its
-   target lane, and whether it is still pending or has committed.
-5. **Confirm three things in `Log`:** first, the action appeared as queued /
-   pending with `NextBar`; second, after transport crosses the next bar, it
-   changed to committed; third, the result text says what state changed, such as
-   a TR-909 fill landing on a bar or a new capture becoming the latest W-30
-   capture. After that, either capture the keeper with `c`, undo a miss with
-   `u`, or move to `Recipe 2` to compare a different first gesture.
+   Session around one piece of material. `Jam` should identify the current
+   monitor and route. If it says that source audio is unavailable, treat that as
+   a real degraded state: do not pretend that switching to `Blend` will repair
+   it, and do not judge the performance gestures yet.
+2. **Press `Space` once** to start transport and listen to the source-only
+   anchor without Riotbox lanes. It still follows Riotbox monitor gain and the
+   master limiter, so it is not a bit-identical untreated player. Leave
+   transport running. Quantized actions will first appear as pending and
+   then commit on their beat, bar, or phrase boundary; `Jam` keeps that handoff
+   visible without requiring a trip to `Log`.
+3. **Build one reusable hit.** `c` queues a source-window capture. Wait until it
+   commits, use `o` and wait to hear the raw captured moment, then use `p` to
+   promote it to the focused W-30 pad. An unavailable preview is silence plus
+   an honest cue, never synthetic replacement music.
+4. **Press `M` once only after source playback is ready.** Monitor mode cycles
+   `Source -> Blend -> Riotbox`; `Blend` keeps the source as an audible anchor
+   while Riotbox gestures enter around it. This is the safest place to judge a
+   first performance.
+5. **Make the room change.** `w` hits the promoted W-30 pad, `f` adds a TR-909
+   fill, `s` commits the harder TR-909 slam, and `y` jumps scene. Let each move
+   land before judging it. After `y` has committed, `Y` restores the previous
+   scene. Use `Log` only when you want the full forensic action history.
 
-That is the current core loop: **load material, queue one gesture, let it land in time, keep the good accident**.
+That is the current core loop: **hear the source, capture a keeper, blend Riotbox
+in, perform obvious contrasts, and restore the scene**.
 
-If that first loop works, do not keep repeating only it. Move straight to:
+If that first loop works, continue with:
 
-- [`docs/jam_recipes.md`](docs/jam_recipes.md) `Recipe 2` to compare different first gestures
+- [`docs/jam_recipes.md`](docs/jam_recipes.md) for the same Golden Path with
+  expected screen and listening cues
+- [`docs/jam_recipes.md`](docs/jam_recipes.md) `Recipe 14` for its CI-safe
+  control-plus-exact-mixer proof
 - [`docs/jam_recipes.md`](docs/jam_recipes.md) `Recipe 5` to compare different example sources
 - [`docs/benchmarks/lane_recipe_listening_pack_2026-04-26.md`](docs/benchmarks/lane_recipe_listening_pack_2026-04-26.md) if you want offline WAV proof for the current TR-909 and MC-202 recipe contrasts
 
 ## What To Expect Right Now
 
-If you start Riotbox on the same example loop and only press `Space`, `f`, `c`, and `2`, you will often get a **similar result each run**.
+The first-playable path now exposes more than the old `Space -> f/c -> Log`
+smoke, but it is still a bounded prototype workflow rather than an instant
+finished remix.
 
 That is expected in the current prototype because:
 
-- the first-run recipe is intentionally a **tiny learning path**, not a full performance recipe
-- `f` always queues the same first TR-909 fill gesture
-- the current build is still more about **quantized action flow** than about a wide expressive mixer/performance surface
+- the Golden Path deliberately uses one capture and a small set of
+  room-changing gestures before exposing the wider keymap
+- a repeated `f` on the same source still exercises the same fill intent
+- gesture contrast and exact live-mixer reachability are ahead of broad musical
+  variety and polished automatic arrangement
 - Riotbox is deterministic enough that the same source plus the same first gesture often produces the same first feel
 
 MC-202 gestures are no longer only log/state cues: after a committed `g` follower, `a` answer, `P` pressure, or `I` instigator, the current runtime can mix a bounded bass voice through the music bus. This is still a first audio seam, not a finished MC-202 synth engine or MIDI-controlled bassline editor.
 
 So the quickstart is useful for confirming:
 
-- transport is running
+- the original source is actually audible before Riotbox is blended in
 - actions queue and land on musical boundaries
-- `Log` shows what actually committed
-- capture is working
+- pending and committed state stays readable on `Jam`
+- capture, audition, promotion, and the W-30 hit form one audible handoff
+- `w`, `f`, `s`, `y`, and `Y` expose distinct performance intentions
 
 But it is **not** enough on its own to understand the whole shell.
 
-For W-30 capture reuse, the current source-backed path is intentionally bounded: Riotbox can preview short source-window excerpts and marks them with `.../src`, while `.../fallback` means it is using the safe synthetic preview. Use [`Recipe 11`](docs/jam_recipes.md#recipe-11-check-source-backed-w-30-reuse) for the current TUI smoke test and [`Recipe 13`](docs/jam_recipes.md#recipe-13-prove-w-30-source-backed-audio-is-not-fallback) for the offline source-vs-fallback proof. This is not yet a full W-30 sampler engine.
+For W-30 capture reuse, the current source-backed path is intentionally bounded:
+Riotbox can preview short source-window excerpts and marks them with `.../src`.
+`.../unavailable` is a degraded state and produces no replacement music. Use
+[`Recipe 11`](docs/jam_recipes.md#recipe-11-check-source-backed-w-30-reuse) for
+the current TUI smoke test and
+[`Recipe 13`](docs/jam_recipes.md#recipe-13-prove-w-30-source-backed-audio-beats-the-diagnostic-control)
+for an offline comparison against an explicitly non-product diagnostic control.
+This is not yet a full W-30 sampler engine.
 
 ## What Riotbox Is
 
@@ -100,6 +119,7 @@ The current shell is built for one job: make an analyzed loop or track feel like
 Today’s build already lets you:
 
 - load a source WAV and open a working `Jam` session
+- move deliberately between `Source`, `Blend`, and `Riotbox` monitor modes
 - inspect `Jam`, `Log`, `Source`, and `Capture` screens
 - queue actions that commit on **next beat**, **next bar**, or **next phrase**
 - drive early lane behavior for:
@@ -107,6 +127,7 @@ Today’s build already lets you:
   - **MC-202**: role, follower, answer, pressure, instigator, phrase mutation, touch
   - **W-30**: trigger, live recall, audition, bank swap, browse, damage, freeze, resample
 - capture, promote, pin, and reuse material in the W-30 flow
+- perform a scene jump and restore with `y` / `Y`
 - see pending, committed, rejected, and undone actions clearly
 
 The honest status: **this is already playable as a prototype shell, but it is not yet a finished musician product.**
@@ -119,45 +140,42 @@ The honest status: **this is already playable as a prototype shell, but it is no
    cargo run -p riotbox-app --bin riotbox-app -- --source "data/test_audio/examples/Beat08_128BPM(Full).wav"
    ```
 
-2. Press `Space` to start transport.
+2. On `Jam`, verify that the monitor is `Source`, press `Space`, and listen to
+   the source. Stop here if the route is unavailable or the audio runtime is
+   degraded.
 
-3. Switch between the four screens:
-   - `1` `Jam`
-   - `2` `Log`
-   - `3` `Source`
-   - `4` `Capture`
+3. Press `c`, wait for the capture commit, press `o`, and wait to hear the raw
+   audition. Then press `p` to promote it. `Jam` shows the pending / committed
+   handoff; `4` opens the fuller `Capture` view if you need it.
 
-4. Try a few high-value gestures:
-   - `y` scene select
-   - `g` MC-202 follower
-   - `P` MC-202 pressure
-   - `I` MC-202 instigator
-   - `G` MC-202 phrase mutation after a follower, answer, pressure, or instigator phrase lands
-   - `<` / `>` MC-202 touch down / up after a follower, answer, pressure, or instigator phrase lands
+4. Press `M` once to select `Blend`, then try one gesture at a time:
+   - `w` W-30 promoted-pad hit
    - `f` TR-909 fill
-   - `c` capture
-   - `w` W-30 trigger
-   - `u` undo
+   - `s` TR-909 slam
+   - `y` scene jump
+   - `Y` restore after the jump lands
 
-5. Watch the shell show what is **queued**, what gets **committed**, and what changed in each lane.
+5. Watch and hear each gesture land. Use `2` for the detailed `Log`, `3` for
+   `Source`, or `4` for `Capture` when a result is ambiguous.
 
 Before judging timing-sensitive gestures, read the compact timing cue on `Jam` or `Source`.
 For example, `timing needs confirm | low | kick+bb` means Riotbox found useful
 kick/backbeat evidence but is not ready to trust the grid automatically yet. The
 short cue meanings are documented in [`docs/jam_recipes.md`](docs/jam_recipes.md#read-the-timing-cues).
 
-If you want the simplest first success, do not try every action. Start with:
+If you want the simplest first success, stay on the supported Golden Path:
 
-- `Space` to make time move
-- `f` to queue a TR-909 fill
-- `c` to capture a phrase
-- `2` to confirm the action committed in `Log`
+- hear the source first
+- let `c` land, audition with `o`, and promote with `p`
+- select `Blend` with one press of `M`
+- let `w`, `f`, `s`, and `y` land one at a time, then use `Y` to restore
 
-If that works, stop repeating only that recipe. Move on to one of the more specific flows below.
+The on-screen pending / committed state is enough for normal playing. Open
+`Log` when a result is ambiguous or you need the complete action trace.
 
 ## Learn By Doing
 
-If you want more than the tiny quickstart loop, use the dedicated recipe guide:
+If you want more than the bounded Golden Path, use the dedicated recipe guide:
 
 - [`docs/jam_recipes.md`](docs/jam_recipes.md)
 
@@ -170,7 +188,8 @@ That guide contains concrete flows for:
 - source comparison
 - reading `Jam` and `Log` together
 
-It is the best place to continue once `Space -> f -> c -> 2` feels too repetitive.
+It is the best place to continue once the first
+`Source -> capture -> Blend -> perform -> restore` pass is clear.
 
 Best next moves from there:
 
@@ -180,11 +199,16 @@ Best next moves from there:
 - `Recipe 8` if you want the first Scene Brain `scene jump -> restore` flow and the new `not ready -> ready` restore contrast
 - `Recipe 9` if you want to compare which example source currently makes Scene Brain easiest to read
 - `Recipe 10` if you want to explicitly practice reading the current Scene Brain `boundary -> pulse -> live/restore energy -> trail` cues
-- `Recipe 11` if you want to check whether W-30 capture reuse is source-backed or on fallback
+- `Recipe 11` if you want to check whether W-30 capture reuse is source-backed,
+  artifact-backed, or honestly unavailable
 - `Recipe 12` if you want to follow the new `feral ready` suggested gesture path
-- `Recipe 13` if you want an offline W-30 source-vs-fallback proof before judging the TUI by ear
+- `Recipe 13` if you want an offline W-30 source-vs-diagnostic-control proof
+  before judging the TUI by ear
+- `Recipe 14` if you want the first-playable observer action contract checked
+  alongside the exact RuntimeMix dense-break pack
 - `Recipe 15` if you want an offline Feral grid listening pack and need to choose `auto` versus explicit BPM honestly
-- `Recipe 7` only if you want one longer workflow loop for queue -> commit -> capture -> audition -> promote -> hit -> undo
+- `Recipe 7` if you want a longer Golden Path practice run with monitor handoff,
+  four performance gestures, and restore
 
 If `just` is installed, the normal local check path is:
 
@@ -227,17 +251,18 @@ If you only want one tiny mental model:
 
 This is the current loop:
 
-1. load audio
-2. start transport
-3. queue one obvious action
-4. commit them on musical boundaries
-5. capture the good accident
+1. load audio and hear it in `Source` monitor mode
+2. capture, audition, and promote one source-backed moment
+3. switch once to `Blend`
+4. perform `w`, `f`, `s`, and `y` on their musical boundaries
+5. use `Y` to restore after the scene jump
 
 What should be clear after that first minute:
 
 - Riotbox is showing both **now** and **next**
 - actions do not always fire instantly; they commit on musical boundaries
-- `Log` is the quickest place to see whether your action actually landed
+- `Jam` keeps the pending-to-committed handoff visible while you play
+- `Log` remains the detailed history when you need to investigate a result
 - `Capture` is where good results start turning into reusable material
 
 ## How To Read The Screens
@@ -263,10 +288,11 @@ Practical rule:
 ```text
 load one loop
 -> Riotbox analyzes tempo, sections, and candidates
--> you start transport
--> queue fill / follower / scene select / capture
--> actions land on the next beat, bar, or phrase
--> captures become reusable W-30 material
+-> hear it with the Source monitor
+-> capture, audition, and promote one reusable W-30 moment
+-> switch to Blend
+-> trigger the W-30 hit, fill, slam, and scene jump in time
+-> restore the previous scene
 ```
 
 ## Why Terminal At All?
@@ -307,7 +333,9 @@ The shell already has a broad action vocabulary, but these are the best first ke
 
 - `Space` play / pause
 - `?` help
-- `y` scene select
+- `M` cycle `Source` / `Blend` / `Riotbox` monitor mode
+- `y` scene select / jump
+- `Y` restore the previous landed scene
 - `g` MC-202 follower
 - `a` MC-202 answer
 - `P` MC-202 pressure
@@ -315,6 +343,7 @@ The shell already has a broad action vocabulary, but these are the best first ke
 - `G` MC-202 phrase mutation
 - `<` / `>` lower / raise MC-202 touch
 - `f` TR-909 fill
+- `s` TR-909 slam
 - `t` TR-909 takeover
 - `c` capture
 - `w` W-30 trigger
@@ -332,13 +361,15 @@ To avoid the wrong expectation:
 - the current shell is strongest as:
   - a quantized action/commit instrument
   - a capture-and-reuse prototype
-  - a way to learn the lane behaviors
+  - a bounded live Source / Blend / Riotbox performance flow
 - it is still weaker as:
-  - a polished mixer/performance surface
+  - a polished, broadly expressive mixer/performance surface
   - a broad preset/browse workflow
-  - a fully obvious first-run musician product
+  - an equally obvious first run across every source and degraded device state
 
-So if the first recipe feels too similar every run, that does **not** mean nothing is working. It usually means you have learned the first minimal loop and should now try a different lane, a different source, or the capture/reuse path.
+So if the first recipe feels too similar every run, that does **not** mean
+nothing is working. It usually means you have learned the bounded Golden Path
+and should now try a different lane, source, or scene strategy.
 
 ## Repo Map
 

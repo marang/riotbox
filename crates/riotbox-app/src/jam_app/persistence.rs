@@ -8,6 +8,7 @@ impl JamAppState {
         let session_path = session_path.as_ref().to_path_buf();
         let mut session = load_session_json(&session_path)?;
         normalize_w30_preview_mode(&mut session);
+        normalize_missing_typed_undo_policies(&mut session);
         validate_mvp_session_restore_contracts(&session)?;
         let explicit_source_graph_path = source_graph_path.map(|path| path.as_ref().to_path_buf());
         let source_graph = resolve_source_graph(
@@ -227,6 +228,16 @@ fn validate_mvp_session_restore_contracts(session: &SessionFile) -> Result<(), J
         )));
     }
 
+    let mut seen_action_ids = std::collections::BTreeSet::new();
+    for action in &session.action_log.actions {
+        if !seen_action_ids.insert(action.id) {
+            return Err(JamAppError::InvalidSession(format!(
+                "action log contains duplicate action id {}",
+                action.id
+            )));
+        }
+    }
+
     let action_count = session.action_log.actions.len();
     for snapshot in &session.snapshots {
         if snapshot.action_cursor > action_count {
@@ -268,9 +279,11 @@ fn validate_mvp_session_restore_contracts(session: &SessionFile) -> Result<(), J
             )));
         };
 
-        if action.status != ActionStatus::Committed {
+        let has_valid_commit_history = action.status == ActionStatus::Committed
+            || (action.status == ActionStatus::Undone && action.command.has_typed_undo_semantics());
+        if !has_valid_commit_history {
             return Err(JamAppError::InvalidSession(format!(
-                "commit record references action {} with non-committed status {:?}",
+                "commit record references action {} with invalid committed-history status {:?}",
                 commit_record.action_id, action.status
             )));
         }
@@ -318,6 +331,43 @@ fn validate_mvp_session_restore_contracts(session: &SessionFile) -> Result<(), J
                     commit_record.boundary.phrase_index
                 )));
             }
+        }
+    }
+
+    riotbox_core::replay::build_committed_replay_plan(&session.action_log).map_err(|error| {
+        JamAppError::InvalidSession(format!("action replay contract is invalid: {error:?}"))
+    })?;
+
+    for action in &session.action_log.actions {
+        if action.status != ActionStatus::Undone
+            || !matches!(
+                action.command,
+                riotbox_core::action::ActionCommand::SourceMonitorSetMode
+                    | riotbox_core::action::ActionCommand::Tr909FillNext
+            )
+        {
+            continue;
+        }
+        let has_typed_marker = session.action_log.actions.iter().any(|marker| {
+            marker.command == riotbox_core::action::ActionCommand::UndoLast
+                && marker.status == ActionStatus::Committed
+                && marker.result.as_ref().is_some_and(|result| result.accepted)
+                && matches!(
+                    &marker.params,
+                    riotbox_core::action::ActionParams::Undo { target_action_id }
+                        if *target_action_id == action.id
+                )
+                && session
+                    .action_log
+                    .commit_records
+                    .iter()
+                    .any(|record| record.action_id == marker.id)
+        });
+        if !has_typed_marker {
+            return Err(JamAppError::InvalidSession(format!(
+                "legacy undone {} action {} has no trusted typed undo marker",
+                action.command, action.id
+            )));
         }
     }
 

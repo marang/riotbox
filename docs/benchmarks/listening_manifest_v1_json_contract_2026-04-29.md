@@ -78,6 +78,37 @@ it must include:
 This keeps the Feral QA explanation machine-readable without making every
 schema version `1` listening pack emit Feral-specific fields.
 
+### `primitive_renderer_boundary`
+
+When any manifest value is `primitive_renderer`, the validator requires a
+top-level `primitive_renderer_boundary`. Its `affected_paths` must exactly equal
+the JSON paths of all such values. A non-product diagnostic control records
+`evidence_role: non_product_diagnostic_control` and
+`product_output_allowed: false`.
+
+A typed, versioned primitive that is valid product instrument vocabulary may
+instead record `evidence_role: product_primitive_vocabulary` and
+`product_output_allowed: true`, but only with an explicit committed performer
+activation. Each primitive record must provide a versioned primitive schema,
+explicitly registered for product output in the shared validator, a versioned
+recipe ID, non-empty scalar selection inputs, a JSON-pointer reference to a
+manifest record containing the registered performer command, positive action
+ID, commit boundary, and candidate WAV, and affected artifacts declared at the
+top level. Schema-specific validation enforces allowed recipe/input combinations,
+the exact RuntimeMix path, and candidate-artifact linkage; a regex-compatible but
+unregistered schema or recipe remains diagnostic-only. A source-modulated
+product primitive uses `riotbox.primitive_renderer_boundary.v2`: it keeps
+`recipe_derivation_claimed: false` and `pattern_selection_claimed: false` while
+requiring `source_output_modulation_claimed: true` plus a registered modulation
+object containing the exact source feature, derived policy, resolved render
+inputs, and affected pressure/focus parameters. The boundary must exactly
+collect those activation references and artifacts, keep
+`source_failure_fallback: false`, name promotion target
+`source_derived_musical_intelligence`, and list non-empty affected RuntimeMix
+paths. Both roles remain `quality_proof: false`,
+`demo_readiness: unverified`, and `promotion_blocked: true`; the latter blocks a
+source-intelligence claim, not performer-triggered use of the fixed vocabulary.
+
 ### `source_timing`
 
 The Feral grid pack may emit a top-level `source_timing` object that records the

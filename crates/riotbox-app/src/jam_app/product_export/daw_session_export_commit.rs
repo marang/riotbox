@@ -3,7 +3,7 @@ use std::path::Path;
 use riotbox_core::{
     TimestampMs,
     action::{ActionCommand, ActionParams, DawSessionExportBoundary},
-    session::{ActionCommitRecord, ExportReceiptState},
+    session::ExportReceiptState,
     transport::CommitBoundaryState,
 };
 
@@ -95,7 +95,7 @@ impl JamAppState {
                 .as_deref()
                 .unwrap_or("missing-proof-sha")
         );
-        let committed_ref = self
+        let mut committed_ref = self
             .queue
             .commit_pending_after_side_effect(
                 action_id,
@@ -119,17 +119,7 @@ impl JamAppState {
                 ))
             })?;
 
-        self.session.action_log.actions.push(action);
-        self.session
-            .action_log
-            .commit_records
-            .push(ActionCommitRecord {
-                action_id,
-                boundary: committed_ref.boundary,
-                commit_sequence: committed_ref.commit_sequence,
-                committed_at: requested_at,
-                mc202_source_phrase_plan: None,
-            });
+        self.record_committed_action(action, &mut committed_ref, requested_at);
         update_logged_action_result(&mut self.session, action_id, result_summary);
         self.runtime.last_commit_boundary = Some(boundary);
         self.refresh_view();
@@ -221,7 +211,7 @@ impl JamAppState {
             receipt.receipt_id,
             report.sha256.as_deref().unwrap_or("missing-proof-sha")
         );
-        let committed_ref = self
+        let mut committed_ref = self
             .queue
             .commit_pending_after_side_effect(
                 action_id,
@@ -245,17 +235,7 @@ impl JamAppState {
                 ))
             })?;
 
-        self.session.action_log.actions.push(action);
-        self.session
-            .action_log
-            .commit_records
-            .push(ActionCommitRecord {
-                action_id,
-                boundary: committed_ref.boundary,
-                commit_sequence: committed_ref.commit_sequence,
-                committed_at: requested_at,
-                mc202_source_phrase_plan: None,
-            });
+        self.record_committed_action(action, &mut committed_ref, requested_at);
         update_logged_action_result(&mut self.session, action_id, result_summary);
         self.runtime.last_commit_boundary = Some(boundary);
         self.refresh_view();
@@ -347,7 +327,7 @@ impl JamAppState {
             receipt.receipt_id,
             report.sha256.as_deref().unwrap_or("missing-proof-sha")
         );
-        let committed_ref = self
+        let mut committed_ref = self
             .queue
             .commit_pending_after_side_effect(
                 action_id,
@@ -371,17 +351,7 @@ impl JamAppState {
                 ))
             })?;
 
-        self.session.action_log.actions.push(action);
-        self.session
-            .action_log
-            .commit_records
-            .push(ActionCommitRecord {
-                action_id,
-                boundary: committed_ref.boundary,
-                commit_sequence: committed_ref.commit_sequence,
-                committed_at: requested_at,
-                mc202_source_phrase_plan: None,
-            });
+        self.record_committed_action(action, &mut committed_ref, requested_at);
         update_logged_action_result(&mut self.session, action_id, result_summary);
         self.runtime.last_commit_boundary = Some(boundary);
         self.refresh_view();

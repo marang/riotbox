@@ -41,7 +41,7 @@ fn renders_jam_shell_with_single_scene_jump_waiting_cue() {
         "{rendered}"
     );
     assert!(
-        rendered.contains("Primary: y jump waits | g follow | f fill"),
+        rendered.contains("Primary: w hit | f fill | s slam | y jump waits"),
         "{rendered}"
     );
 
@@ -50,7 +50,7 @@ fn renders_jam_shell_with_single_scene_jump_waiting_cue() {
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
     assert!(
-        rendered.contains("space: play / pause | y: jump waits | g: follow | f: fill"),
+        rendered.contains("space: play / pause | w: hit | f: fill | s: slam | y: jump waits"),
         "{rendered}"
     );
 }

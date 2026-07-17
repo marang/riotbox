@@ -7,8 +7,11 @@ use riotbox_app::{
     ui::{JamShellState, ShellLaunchMode},
 };
 use riotbox_core::{
-    action::CommitBoundary, persistence::save_session_json, queue::ActionQueue,
+    action::CommitBoundary,
+    persistence::save_session_json,
+    queue::ActionQueue,
     session::SessionFile,
+    transport::{CommitBoundaryState, TransportClockState},
 };
 use serde_json::{Value, json};
 
@@ -25,13 +28,14 @@ mod source_transport_map_capture;
 
 use super::{
     NdjsonWriter, apply_probe_key, commit_boundary, commit_boundary_for_scene,
-    headless_audio_health, probe_shell, record_probe_start,
+    headless_audio_health, probe_shell, record_probe_start, source_aware_grid_position,
 };
 
 pub(super) use feral_grid::{
     write_feral_grid_fallback_jam_observer, write_feral_grid_jam_observer,
     write_feral_grid_locked_jam_observer,
 };
+use p014_scene_movement::attach_first_playable_scene_source;
 pub(super) use p014_scene_movement::write_p014_scene_movement_observer;
 pub(super) use source_timing_confirmation::write_source_timing_confirmation_observer;
 pub(super) use source_transport_map_capture::write_source_transport_map_capture_observer;
@@ -68,6 +72,7 @@ pub(super) fn write_recipe2_mc202_observer(path: &Path) -> io::Result<()> {
 pub(super) fn write_first_playable_jam_observer(path: &Path) -> io::Result<()> {
     let mut writer = NdjsonWriter::open(path)?;
     let mut shell = probe_shell("first-playable-jam-probe");
+    attach_first_playable_scene_source(&mut shell);
 
     record_probe_start(
         &mut writer,
@@ -80,14 +85,66 @@ pub(super) fn write_first_playable_jam_observer(path: &Path) -> io::Result<()> {
 
     apply_probe_key(&mut shell, &mut writer, 100, KeyCode::Char(' '))?;
     apply_probe_key(&mut shell, &mut writer, 200, KeyCode::Char('c'))?;
-    commit_boundary(&mut shell, &mut writer, 300, CommitBoundary::Phrase, 1, 1)?;
+    commit_first_playable_boundary(&mut shell, &mut writer, 300, CommitBoundary::Phrase, 16, 1)?;
     apply_probe_key(&mut shell, &mut writer, 400, KeyCode::Char('o'))?;
     apply_probe_key(&mut shell, &mut writer, 500, KeyCode::Char('p'))?;
-    commit_boundary(&mut shell, &mut writer, 600, CommitBoundary::Bar, 2, 2)?;
+    commit_first_playable_boundary(&mut shell, &mut writer, 600, CommitBoundary::Bar, 20, 2)?;
+    apply_probe_key(&mut shell, &mut writer, 650, KeyCode::Char('M'))?;
     apply_probe_key(&mut shell, &mut writer, 700, KeyCode::Char('w'))?;
-    commit_boundary(&mut shell, &mut writer, 800, CommitBoundary::Beat, 3, 1)?;
+    commit_first_playable_boundary(&mut shell, &mut writer, 800, CommitBoundary::Beat, 21, 1)?;
+    apply_probe_key(&mut shell, &mut writer, 900, KeyCode::Char('f'))?;
+    commit_first_playable_boundary(&mut shell, &mut writer, 1_000, CommitBoundary::Bar, 24, 1)?;
+    apply_probe_key(&mut shell, &mut writer, 1_100, KeyCode::Char('s'))?;
+    commit_first_playable_boundary(&mut shell, &mut writer, 1_200, CommitBoundary::Beat, 25, 1)?;
+    apply_probe_key(&mut shell, &mut writer, 1_300, KeyCode::Char('y'))?;
+    commit_first_playable_boundary(&mut shell, &mut writer, 1_400, CommitBoundary::Bar, 36, 1)?;
+    apply_probe_key(&mut shell, &mut writer, 1_500, KeyCode::Char('Y'))?;
+    commit_first_playable_boundary(&mut shell, &mut writer, 1_600, CommitBoundary::Bar, 40, 1)?;
 
     Ok(())
+}
+
+fn commit_first_playable_boundary(
+    shell: &mut JamShellState,
+    writer: &mut NdjsonWriter,
+    timestamp_ms: u64,
+    kind: CommitBoundary,
+    position_beats: u64,
+    expected_count: usize,
+) -> io::Result<()> {
+    let scene_id = shell
+        .app
+        .runtime
+        .transport
+        .current_scene
+        .clone()
+        .or_else(|| {
+            shell
+                .app
+                .session
+                .runtime_state
+                .scene_state
+                .active_scene
+                .clone()
+        });
+    let grid_position = source_aware_grid_position(shell, position_beats);
+    let boundary = CommitBoundaryState {
+        kind,
+        // Session V1 persists the integral zero-based cursor here.
+        beat_index: position_beats,
+        bar_index: grid_position.bar_index,
+        phrase_index: grid_position.phrase_index,
+        scene_id: scene_id.clone(),
+    };
+    shell.app.update_transport_clock(TransportClockState {
+        is_playing: shell.app.runtime.transport.is_playing,
+        position_beats: position_beats as f64,
+        beat_index: grid_position.beat_cursor,
+        bar_index: boundary.bar_index,
+        phrase_index: boundary.phrase_index,
+        current_scene: scene_id,
+    });
+    commit_boundary_for_scene(shell, writer, timestamp_ms, boundary, expected_count)
 }
 
 pub(super) fn write_stage_style_jam_observer(path: &Path) -> io::Result<()> {

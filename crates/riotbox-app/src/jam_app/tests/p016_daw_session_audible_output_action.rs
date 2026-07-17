@@ -85,6 +85,26 @@ fn daw_session_audible_output_proof_commits_through_export_action_without_enabli
     );
     assert_eq!(state.session.action_log.commit_records.len(), 3);
     assert_eq!(state.session.action_log.commit_records[2].action_id, action_id);
+    assert_eq!(
+        state
+            .session
+            .action_log
+            .commit_records
+            .iter()
+            .map(|record| record.commit_sequence)
+            .collect::<Vec<_>>(),
+        vec![1, 2, 3]
+    );
+    assert!(
+        state
+            .session
+            .action_log
+            .commit_records
+            .windows(2)
+            .all(|pair| pair[0].boundary == pair[1].boundary)
+    );
+    riotbox_core::replay::build_committed_replay_plan(&state.session.action_log)
+        .expect("direct side-effect commits keep one boundary sequence");
 
     let surface_gate = state.daw_session_export_surface_gate();
     assert_eq!(

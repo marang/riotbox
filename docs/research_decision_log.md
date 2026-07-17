@@ -2981,3 +2981,143 @@ Evidence: RIOTBOX-1400 exact live-path renders, structured human verdicts, same-
 Consequences: louder or cleaner processing alone is not musical-alpha progress. The next slice must change source-backed arrangement ownership and return behavior rather than continue polishing the same short loop. Commercial references cannot enter product sources, fixtures, generated artifacts, commits, or redistribution paths.
 Follow-up: RIOTBOX-1401 implements and reviews the bounded source-derived eight-bar Golden Path arc.
 Status: accepted
+
+---
+
+### RBX-138
+
+Date: 2026-07-15
+Topic: first-playable monitor and gesture proof follows the exact live mixer path
+Phase: P023 / Live Musical Alpha
+Question: how should Riotbox make Source, Blend, Riotbox, and the first performance gestures safely reachable without mistaking observer state or a separate W-30 renderer for audible product progress?
+Decision: commit `source_monitor.set_mode` synchronously at its Immediate boundary even when no audio device is running, while preserving the normal Session/replay and observer commit record. Treat valid prepared PCM as monitor-ready across source/output sample-rate differences using bounded allocation-free interpolation in the callback. If source material is genuinely absent, Source stays explicitly silent and Blend keeps only its real Riotbox component while reporting degraded source availability. Prove the first-playable path with one stateful callback-block RuntimeMix sequence plus same-position counterfactual branches for `w`, `f`, `s`, `y`, and `Y`; every branch continues through Source Monitor and the master limiter.
+Why: the previous UI could call `M` immediate while leaving it pending forever after audio startup failure; 44.1 kHz Golden Path sources became unavailable on a 48 kHz PipeWire output and could silence Blend; and the first-playable probe paired multi-gesture observer evidence with a separate W-30-only renderer that could not prove Blend, fill, slam, or scene movement in the product mix. Fresh static renders also reset W-30 callback state and could misrepresent retrigger behavior.
+Evidence: RIOTBOX-1335 adds modal and readiness-gated TUI guidance, typed monitor cycling, immediate commit coverage without an audio runtime, 44.1-to-48 kHz Source/Blend regression coverage, persistent RuntimeMix sequence tests, monotone observer commits for `M/w/f/s/y/Y`, and a generated exact-mixer manifest with non-silent Source/Blend/Riotbox routes plus measurable per-gesture deltas. The scripted pack uses the canonical `riotbox.audio_qa_evidence_boundary.v1` diagnostic contract and remains `quality_proof: false` and `human_verdict: unverified` until a structured human listen.
+Consequences: the supported first-run path can now expose audible product behavior without requiring Log navigation or hiding degraded audio. The observer and exact-mixer pack are correlated only at `action_contract_only` scope because they use different deterministic source fixtures, Sessions, and transport timelines; they do not establish sample-exact trace-to-audio causality. Metric success establishes reachability and non-collapse, not a musical-alpha pass; RIOTBOX-1401/1402 still own stronger musical development and human acceptance. Separate diagnostic renderers remain useful for narrow component tests but cannot substitute for exact mixer evidence when a ticket claims live instrument progress.
+Status: accepted
+
+---
+
+### RBX-139
+
+Date: 2026-07-16
+Topic: live TR-909 fills earn contrast through typed arrangement focus, not global gain
+Phase: P023 / Live Musical Alpha
+Question: how should the first-playable `f` gesture remain replay-safe and callback-safe while becoming clearly audible under a dense Source/W-30/MC-202 Blend bed?
+Decision: derive one callback-local `FillFocus` articulation only from an audible, running typed `Tr909RenderMode::Fill` on `DrumBusSupport` and the current transport position. During the final beat, apply one smooth sample-position envelope to Source in Blend and to the non-TR-909 Riotbox bed, leave TR-909 itself unchanged, and return fully at the next bar. Source-only remains sample-identical, inactive or silent/wrong-route states do not duck, and no Session, replay, action, or app-local state is added. Revert the rejected Candidate-5 unslammed global Fill gain floor; preserve its predecessor's source/policy pressure floor for BreakReinforce and preserve the accepted `1 -> 2 -> 4 -> 8` Fill rhythm.
+Why: Candidate 4's ratchet was creative in isolation but masked in the continuous Blend sequence. Candidate 5 raised the isolated TR-909 Fill by `4.83 dB`, yet the exact full-mix Fill moved only `0.23 dB`, retained `0.9932` waveform correlation, left the low band effectively unchanged, and still kept TR-909 about `11 dB` below the static bed. Human review correctly reported that the difference remained too small. The missing behavior was arrangement/performance impact, not another global level increase.
+Evidence: RIOTBOX-1335 FillFocus tests prove typed activation, a smooth last-beat/bar-reset envelope, sample-exact Source-only invariance, decisive non-TR-909/Blend-bed removal, exact 127-frame envelope partitioning, canonical 128-frame RuntimeMix parity, unchanged TR-909 gain, and clean headroom. The complete `riotbox-audio` library suite passes `145/145`; the fresh exact Blend candidate still requires mandatory technical pre-playback analysis and a structured human verdict before any musical pass claim.
+Consequences: future explicit live gestures must first create a time-local musical role change under the real mixer before seeking more lane gain. Global pressure floors cannot stand in for fill, slam, trigger, launch, or restore articulation. FillFocus is a bounded current 4/4 Golden Path policy, not a second arrangement model or permission to add hidden callback state.
+Status: accepted
+
+---
+
+### RBX-140
+
+Date: 2026-07-16
+Topic: exposed live fills use independent drum voices and real dramatic rests
+Phase: P023 / Live Musical Alpha
+Question: after FillFocus made the `f` gesture clearly audible, how should Riotbox replace the exposed but thin composite ratchet without hiding it under more gain or adding a second musical truth?
+Decision: keep the typed `FillFocus` arrangement articulation and the existing unslammed Fill gain, but render the supported dense-break `MainlineDrive + PhraseDrive` Fill through fixed callback-local kick, snare-body/noise, and metallic-hat voices with independent phases and envelopes. Replace RBX-139's preserved `1 -> 2 -> 4 -> 8` composite contour with `1 / 2 / 4 / 6` sounding events whose final eight-slot grid is `kick / rest / snare / hat / kick+snare / snare / hat / rest`. Model both rests as false trigger decisions. Pre-ramp the bed before the final-beat kick, release the Fill voice sum at the bar edge, clear hidden tails before a new bar, and realign callback state when returning to the legacy non-Fill renderer. This state remains derived/private realtime state, not Session, replay, action, or app truth.
+Why: Candidate 6 earned a clear arrangement cut but the human verdict remained `technically_ok_but_musically_weak`: too thin, too uninteresting, and not useful live. Analysis found one shared oscillator/envelope repeatedly replacing kick, snare, and hat, a final beat dominated by nearly identical midrange ticks, internal composite clamping, too little 120-500 Hz body, and no silence before the downbeat. More global Fill gain would repeat the rejected Candidate-5 failure.
+Evidence: the voice-separated control raises isolated final-beat 120-500 Hz RMS from `0.006982` to `0.024608` and 2-10 kHz attack from `0.010363` to `0.011636`, with `0.2551` peak, no clipping, and no master-limiter dependency. Tests prove the exact owner/rest map, overlapping voice tails, distinct body/attack regions, full-block/127/128-frame sample identity, a fresh continuous second bar, clean Fill-to-Break state, exact one-subdivision seek reset, and sample-exact SourceSupport/BreakReinforce/Takeover legacy output. The `riotbox-audio` library suite passes `153/153`. Exact RuntimeMix Candidate-7 preflight and structured human listening remain required before any musical pass.
+Consequences: arrangement contrast and drum-phrase quality are separate gates. A clear dropout cannot compensate for a weak exposed phrase, and a body-rich isolated Fill cannot compensate for a buried live mix. Fill low-end evidence describes drum thump while bass ownership remains unassigned. This decision does not claim distinct orchestration when `PhraseDrive` is combined with another adoption profile; TakeoverGrid-specific Fill ownership is a later audible slice. Broader voice/pattern expansion must follow a human-useful Golden Path result rather than multiplying procedural variations.
+Status: accepted
+
+---
+
+### RBX-141
+
+Date: 2026-07-16
+Topic: fixed live Fill vocabulary is versioned product instrumentation with explicit source pressure modulation
+Phase: P023 / Live Musical Alpha
+Question: after the voice-separated Fill remained programmed and its gain-tuned payoff remained difficult to distinguish, how should Riotbox make one structurally stronger close without continuing scattered float tuning or falsely calling fixed vocabulary source-derived behavior?
+Decision: replace RBX-140's `1 / 2 / 4 / 6` close with one typed, versioned Fill-recipe authority shared by trigger policy, callback dispatch, and `FillFocus`. Preserve `PhraseDriveAccentGhostV1` as the reproducible Candidate-8 control, and select `PhraseDriveChokeDiveStompV1` only for the supported `MainlineDrive + PhraseDrive` Golden Path. Its `1 / 2 / 4 / 5` sounding-event arc ends `kick / rest / snare / short hat / choke / pitch-dive kick+snare flam / ghost hat / rest`; choke is articulation, not a sounding event. Keep oscillator, decay, and retrigger values in named callback-local voice profiles rather than the musical recipe. Expose the stable recipe ID through the typed TR-909 render contract so exact-path manifests record the actual selection inputs instead of duplicating string logic. Keep source-derived `transient_backbeat` pressure separate from recipe selection: it modulates the resolved TR-909 drum level and slam intensity but does not select steps or recipe identity. Record the recipe-owned focus effect on the non-TR-909 bed and Blend source as affected RuntimeMix paths.
+Why: Candidate 7 improved body but the human verdict remained weak and too programmed, with no memorable peak. Candidate 8 established measurable accent hierarchy but repeated listening found no meaningful audible improvement. Another inline gain pass would repeat the same failure while leaving step plans, trigger predicates, focus timing, voice articulation, and QA as separate numeric authorities. Candidate 9 therefore changes the gesture grammar through air, choke, pitch movement, flam, and exit rather than only level.
+Evidence: the recipe extraction preserved the pre-phase-review Candidate-9 RuntimeMix Fill WAV byte-for-byte (`sha256 cd3bf7d435105ad1f6ffa766d9200f73f639fa01cbfb58d912644b685c992450`). The later shared downbeat-phase correction intentionally rescheduled the exact-path Fill from cursor 20 to the selected source downbeat at cursor 23; the fresh phase-corrected exact Blend Fill is `sha256 f13839facd85e0c29cbd0691d71b588d4b7bdd4d3f6109d9f130c6dd143a9f9f`. Tests prove the shared Candidate-8/9 prefix, distinct versioned closes, `1 / 2 / 4 / 5` sounding density, recipe-owned focus landmarks, generic Fill behavior, callback partitions, and Fill transitions. The dense-break manifest records `phrase_drive_choke_dive_stomp_v1`, its typed `mainline_drive + phrase_drive` selection inputs, source `transient_backbeat` plus derived and resolved pressure values, exact drum/slam/focus RuntimeMix paths and artifacts, the source bar-phase identity, and a role-aware exact Blend Fill-to-break/slam boundary proof. Candidate 9 still requires structured human listening before any musical pass.
+Consequences: a fixed, typed, versioned primitive reached by an explicit committed performer gesture is valid product instrument vocabulary, but it is not a missing-source fallback and cannot claim source-derived recipe selection, composition, demo readiness, musical quality, or Riotbox intelligence. Source evidence may truthfully modulate its pressure without changing that recipe provenance; source-modulated product primitives use `riotbox.primitive_renderer_boundary.v2` and must disclose the exact modulation path. Listening manifests distinguish `product_primitive_vocabulary` from `non_product_diagnostic_control`, keep `quality_proof: false`, and block only promotion to source-derived recipe/pattern intelligence. RIOTBOX-1401 remains responsible for moving recipe selection and longer-form development under real source evidence.
+Status: accepted
+
+---
+
+### RBX-142
+
+Date: 2026-07-16
+Topic: typed Undo markers close the Action/Session/Replay relation
+Phase: P023 / Live Musical Alpha
+Question: how can a live Fill or monitor action be undone without colliding with pending action ids, losing commit provenance, or making every later snapshot unusable?
+Decision: allocate queued and structural action ids through the single `ActionQueue` authority. Commands advertise undoability only when a typed commit-time pre-state snapshot and restoration path exist. Persist each successful `undo.last` as a non-undoable Immediate action with `ActionParams::Undo { target_action_id }` and its own `ActionCommitRecord`. Replay validates and omits that structural marker and its undone target. Treat pre-marker snapshots as stale, but accept snapshots at or after the matching marker as replay anchors. A TR-909 Fill undo restores only the prior committed `last_fill_bar`; it never re-arms queue-only pending state. Restore rejects duplicate persisted action ids. Live target selection requires an accepted result, exactly one target commit record, and the typed snapshot. Newer overlapping typed-domain mutations are conflict barriers; `source_timing.revert_grid` therefore prevents an older MC-202 snapshot from restoring revoked source-plan trust.
+Why: the prior direct marker could reuse an id already held by a pending Fill, had no durable target/boundary/sequence relation, and made post-undo snapshots indistinguishable from stale pre-undo payloads. The default `Undoable` label also overstated commands without an implemented inverse.
+Evidence: focused regressions cover pending Fill plus monitor undo plus later Fill commit with unique ids through JSON reload and replay; Fill commit/undo restoration; strict marker result/policy/Immediate/latest-target/one-target validation; shared `1,2,3` boundary sequencing across normal, Undo, batched, and direct side-effect commits; rejection of duplicate ids and malformed marker relations; rejection of pre-undo snapshots; acceptance of a post-undo snapshot followed by a replayed tail action; safe normalization/roundtrip of legacy committed actions without new snapshot fields; rejection of a typed live target without its unique commit record; and the MC-202 action → matching source-grid revert → Undo regression that proves the cleared source plan is not resurrected.
+Consequences: `undo.last` remains a structural action rather than an executable replay side effect, but it now participates honestly in the product spine. Non-undoable actions remain explicit debt instead of UI/session promises. Legacy untyped markers cannot make a payload into a trusted post-undo anchor. Successful committed typed actions without a persisted pre-state snapshot degrade to `NotUndoable`; legacy undone Source Monitor or TR-909 Fill histories without a trusted typed marker are rejected because their former rollback did not establish replay convergence.
+Status: accepted
+
+---
+
+### RBX-143
+
+Date: 2026-07-16
+Topic: selected source downbeat phase is shared product timing truth
+Phase: P023 / Live Musical Alpha
+Question: when the selected primary hypothesis places bar 1 on a non-zero transport beat cursor, which phase owns Jam transport, capture preview, phrase selection, and exact live-path QA?
+Decision: resolve the earliest evidenced primary `BarSpan` through its matching one-based `BeatPoint`, convert that identity once into a zero-based `TransportBarGridAnchor`, and use it for Jam bar/phrase projection, Source Map next-bar capture rounding, and exact RuntimeMix gesture boundaries. A populated but inconsistent bar/beat grid is unavailable rather than permission to invent cursor-zero phase. Phrase selection reads the selected primary hypothesis's non-empty phrase grid before the top-level compatibility grid. Exact-path manifests persist the source beat identity, transport cursor, source bar identity, meter, and committed gesture boundaries.
+Why: the dense-break source selected beat 4 as bar 1, which is transport cursor 3, but several live consumers restarted bar arithmetic at cursor 0. That placed the prior Fill at cursor 20, one beat after the actual source downbeat at cursor 19/23, while logs and zero-phase bar labels still looked internally plausible.
+Evidence: focused regressions cover anchor-aware transport mapping, next-bar rounding, Source Map capture range, divergent primary/top-level phrase grids, normal Jam transport at cursor 19, and the exact dense-break timing fixture. The fresh C9 manifest records anchor beat 4 / cursor 3 / bar 1 and commits W/F/S/y/Y at cursors 20/23/27/31/35 with bars 5/6/7/8/9; the smoke validator asserts this relation and passes without manifest failures.
+Consequences: any future source-aware quantizer or arrangement boundary must consume the shared anchor or explicitly report unavailable phase. Zero-phase arithmetic remains only the compatibility fallback when no source bar grid exists. The phase correction changes the full exact-path audio schedule and therefore invalidates pre-correction C9 listening hashes and comparisons even though the typed Fill recipe itself is unchanged.
+Status: accepted
+
+---
+
+### RBX-144
+
+Date: 2026-07-17
+Topic: reviewed weak Fill micro-cut becomes a versioned long-choke/stomp close
+Phase: P023 / Live Musical Alpha
+Question: after phase-corrected Candidate 9 remained technically valid but sounded effectively unchanged from Candidate 8 in the full Blend, how should Riotbox strengthen the pause without returning to scattered gain tuning?
+Decision: preserve `PhraseDriveChokeDiveStompV1` as the historical Candidate-9 control and select a new `PhraseDriveLongChokeDiveStompV2` for `MainlineDrive + PhraseDrive`. Keep the first three beats stable, then use a three-hit final-beat setup, choke at step 27, two explicit rests, and a late DiveStomp at step 30. Pair it with a recipe-owned `FillFocus` pocket that reaches zero before the choke and stays absent until beat `3.75`. Judge the change as arrangement/performance impact plus drum/transient payoff, not generic pressure or whole-render loudness.
+Why: structured listening marked C9 `technically_ok_but_musically_weak`: its approximately 44 ms audible hole was too short and masked to change the room. C8/C9 whole-render correlation had also been confounded by an earlier source-phase correction. A new versioned recipe keeps the reviewed control reproducible and makes the musical grammar, rather than isolated floats, own the intended contrast.
+Evidence: the phase-corrected C9 and V2 exact-path `F` counterfactuals are sample-identical before the gesture (`sha256 7081a3c1ded08fefb5cecdd9fca86065aa3bce24839c71585e32c09c6e88f0ce`). C9's exact Blend hole is 44.4 ms; V2's is 166.1 ms. In that matched window V2 RMS is 0.34% of C9, while the late payoff is 17% higher in RMS, approximately 87% higher in 120-500 Hz drum body, and approximately four times higher in 2-10 kHz attack energy. Everything after the changed closing beat is sample-identical. The exact RuntimeMix smoke and the complete `riotbox-audio` suite pass without clipping, click-boundary, callback-partition, or non-Fill regressions.
+Consequences: Candidate 10 was technically review-ready and later received the structured human verdict `technically_ok_but_musically_weak`: the pause worked, but the return stomp was not yet characteristic or physical enough. The stronger deterministic primitive remains performer-owned vocabulary, not source-selected composition or demo-readiness proof. Future recipe changes must preserve prior reviewed IDs and compare against a phase-identical exact-path control.
+Status: accepted
+
+---
+
+### RBX-145
+
+Date: 2026-07-17
+Topic: preserve the reviewed Fill pause and version only its weak return articulation
+Phase: P023 / Live Musical Alpha
+Question: after Candidate 10 made the arrangement pause clearly audible but its payoff remained musically weak, how should Riotbox strengthen the return without lengthening the pause or resuming float-by-float gain tuning?
+Decision: preserve Candidate 10 as `PhraseDriveLongChokeDiveStompV2` and test an experimental `PhraseDriveLongChokeImpactStompV3` for `MainlineDrive + PhraseDrive`. Freeze the four-beat grid, trigger owners and levels, `FillFocus`, 166 ms pocket, opening pitch dive, and delayed snare crack. Change only the typed step-30 articulation by scheduling one fixed 24 ms delayed low-drum aftershock inside the same callback-local payoff event. Treat it as drum/transient body, not an assigned bass lane or second grid event.
+Why: structured listening found C10's silence successful but its return insufficiently characteristic and physical. Another pause change, global level lift, or small trigger-weight edit would obscure which perceptual dimension improved. A delayed body event changes articulation and time structure while keeping the reviewed arrangement control reproducible.
+Evidence: C10 and C11 exact-path `F` counterfactuals remain sample-identical (`sha256 7081a3c1ded08fefb5cecdd9fca86065aa3bce24839c71585e32c09c6e88f0ce`). Their candidate Blends are sample-identical through `0.365270833 s`, including the opening return attack, and sample-identical again after `0.454770833 s`; only the declared aftershock tail differs. In the isolated voice regression, late 40-120 Hz drum body rises from `0.205354` to `0.246411` (about 20%) with `0.178498` delta RMS and `0.046255` maximum adjacent-frame delta. In the exact RuntimeMix changed window, RMS rises 4.34%, low-band spectral magnitude rises about 9.5%, correlation is `0.983024`, peak remains `0.429641`, and the whole render rises only 0.28% in RMS. The full `riotbox-audio` suite, manifest fixtures, clippy, and exact dense-break live-path smoke pass.
+Consequences: Structured listening rejected Candidate 11: the change remained musically irrelevant and the Fill was not something the musician would use. V3 is therefore removed from active product selection rather than promoted. Candidate 10/V2 remains the reproducible scaffold while Riotbox fixes the discovered source-bar phase mismatch and re-evaluates the complete build-up/payoff order. Do not add another aftershock or micro-parameter revision.
+Status: rejected
+
+---
+
+### RBX-146
+
+Date: 2026-07-17
+Topic: align the complete live Fill arc to the confirmed source-bar phase
+Phase: P023 / Live Musical Alpha
+Question: why did repeated payoff changes remain musically ineffective even after the Fill pause became technically clear?
+Decision: project the confirmed primary timing hypothesis's zero-based bar anchor from the existing `LivePerformancePolicy` into `Tr909RenderState`. The callback-safe Fill recipe grid, voice reset boundaries, tail release, and paired `FillFocus` envelope subtract that same anchor before evaluating bar-local position. Preserve zero-phase behavior only when no finite confirmed anchor is available. Remove the rejected V3 aftershock and re-evaluate the existing V2 recipe after phase correction.
+Why: the dense-break source bar begins at transport cursor 23 on an anchor phase of cursor 3, while the audio recipe previously used `position_beats mod 4`. The committed source-aware Fill window was therefore correct, but the audible four-beat recipe was rotated to `payoff/pause -> beat 1 -> beat 2 -> beat 3` instead of `beat 1 -> beat 2 -> beat 3 -> payoff/pause`. Parameter changes touched the opening event while the gesture then decayed through three ordinary beats, explaining why technically measurable versions did not become musically usable.
+Evidence: a unit regression proves that absolute position 23 with confirmed anchor 3 renders sample-exactly like the established zero-phase recipe at position 20, while the unaligned position-23 control differs. `FillFocus` has a matching phase-equivalence regression. In the exact RuntimeMix smoke, the same 164.625 ms digital silence moves from `0.176646-0.341271 s` to `1.541542-1.706167 s`, placing it in the final beat. The corrected V2 candidate differs from the old C10 artifact across 68.1% of 10 ms windows, with whole-render correlation `0.708122` and delta RMS `0.065290`; this is a structural reordering, not a loudness adjustment. The manifest records anchor cursor `3`, resolved render phase `3.0`, and `runtime_mix.tr909.source_bar_grid_phase`.
+Consequences: pre-fix C9-C11 listening verdicts remain valid for their exact hashes but cannot judge the corrected four-beat narrative. One fresh structured listening review is required for the phase-corrected V2 artifact. If that correctly ordered gesture remains unusable, route to a new musical vocabulary rather than further phase or micro-parameter work.
+Status: accepted
+
+---
+
+### RBX-147
+
+Date: 2026-07-17
+Topic: replace the rejected closing-accent Fill lineage with a half-bar live takeover
+Phase: P023 / Live Musical Alpha
+Question: after the correctly phased V2 Fill remained indistinguishable and unusable to the musician, what bounded gesture can complete RIOTBOX-1335 reachability without another closing-accent or float-tuning iteration?
+Decision: preserve the reviewed historical recipe IDs, but select `PhraseDriveBreakCutStompV1` for the supported `MainlineDrive + PhraseDrive` Golden Path. Preserve only beats one and two as context. Before beat three, use the recipe-owned click-safe `FillFocus` to remove the Blend source and non-TR-909 Riotbox bed for the complete final half bar. Give beat three a six-event syncopated drum call and beat four a five-event rush, callback-local choke/rest, and late DiveStomp. Treat this as fixed performer-triggered `primitive_renderer` vocabulary with bass ownership unassigned, not source-derived composition or a bass-pressure claim.
+Why: the phase correction proved a real timing defect but structured human review still rejected its output as having no musically relevant difference. Every prior candidate concentrated its change in the last fraction of one beat while the continuous source and melodic bed owned nearly the whole gesture. A half-bar arrangement takeover changes the performer function and event grammar rather than increasing another trigger, tail, or gain float.
+Evidence: the exact RuntimeMix candidate selects `phrase_drive_break_cut_stomp_v1`, commits at source-aligned cursor `23`, clips no samples, and does not engage the limiter. Against the rejected correctly phased V2 candidate, the second-half waveform correlation is `0.535613` with `0.062067` delta RMS; against the same-position BreakReinforce counterfactual the whole-render correlation is `0.659626` with `0.072324` manifest delta RMS and `0.939227` relevant 10 ms window activity. The new four-beat density is `1 / 2 / 6 / 5`; Audio, App, Core policy, manifest fixtures, and the exact dense-break live-path smoke pass. The exact three-repeat review artifact is `sha256 0c9d5f411862854c0f04255ac17736757262743a49a88f1ff0b636755e9ec4b4`.
+Consequences: this change satisfies the bounded RIOTBOX-1335 reachability requirement that `f` cause a plainly large exact-product-path delta. It does not certify hook memorability, Riotbox character, demo readiness, or musician preference. The listener explicitly declined to issue a verdict for this example, so `human_verdict` remains `unverified`; no pass is inferred from metrics or agent judgment. RIOTBOX-1401 owns the next source-backed curated preset and its human musical-quality gate. Do not reopen RIOTBOX-1335 for another Fill micro-variant unless the exact live gesture collapses technically.
+Status: accepted

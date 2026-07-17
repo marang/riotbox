@@ -10,7 +10,10 @@ mod tests {
             GraphProvenance, QualityClass, Relationship, RelationshipType, Section,
             SectionLabelHint, SourceDescriptor, SourceGraph,
         },
-        transport::TransportClockState,
+        transport::{
+            DEFAULT_BARS_PER_PHRASE, DEFAULT_BEATS_PER_BAR, TransportClockState,
+            TransportGridPosition,
+        },
     };
 
     use super::*;
@@ -130,15 +133,17 @@ mod tests {
     }
 
     fn transport_state(position_beats: f64) -> TransportClockState {
-        let beat_index = position_beats.floor() as u64;
-        let bar_index = beat_index / 4;
-        let phrase_index = bar_index / 8;
+        let grid_position = TransportGridPosition::from_zero_based_position_beats(
+            position_beats,
+            DEFAULT_BEATS_PER_BAR,
+            DEFAULT_BARS_PER_PHRASE,
+        );
         TransportClockState {
             is_playing: true,
             position_beats,
-            beat_index,
-            bar_index,
-            phrase_index,
+            beat_index: grid_position.beat_cursor,
+            bar_index: grid_position.bar_index,
+            phrase_index: grid_position.phrase_index,
             current_scene: Some(SceneId::from("scene-1")),
         }
     }
@@ -225,9 +230,28 @@ mod tests {
     }
 
     #[test]
+    fn fill_next_owns_one_bar_then_returns_to_typed_reinforcement_mode() {
+        let lane = Tr909LaneState {
+            pattern_ref: Some("reinforce-scene-1".into()),
+            takeover_enabled: false,
+            takeover_profile: None,
+            slam_enabled: true,
+            fill_armed_next_bar: false,
+            last_fill_bar: Some(4),
+            reinforcement_mode: Some(Tr909ReinforcementModeState::BreakReinforce),
+        };
+        let fill_bar = derive_tr909_render_policy(&lane, &transport_state(12.0), None);
+        let return_bar = derive_tr909_render_policy(&lane, &transport_state(16.0), None);
+
+        assert_eq!(fill_bar.mode, Tr909RenderModePolicy::Fill);
+        assert_eq!(return_bar.mode, Tr909RenderModePolicy::BreakReinforce);
+        assert_eq!(return_bar.routing, Tr909RenderRoutingPolicy::DrumBusSupport);
+    }
+
+    #[test]
     fn source_support_profile_can_follow_projected_scene_context() {
         let graph = sample_graph();
-        let transport = transport_state(4.0);
+        let transport = transport_state(0.0);
         let policy = derive_tr909_render_policy_with_scene_context(
             &Tr909LaneState {
                 pattern_ref: Some("support-scene-02-break".into()),
@@ -312,7 +336,8 @@ mod tests {
             notes: Some("feral hook supports rebuild".into()),
         });
         hook_only_graph.analysis_summary.break_rebuild_potential = QualityClass::High;
-        let transport = transport_state(4.0);
+        // Break-lift variation is intentionally checked on even phrase 2.
+        let transport = transport_state(16.0);
         let tr909 = Tr909LaneState {
             pattern_ref: Some("support-feral-break".into()),
             takeover_enabled: false,
