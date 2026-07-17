@@ -220,6 +220,7 @@ Current supported structural commands:
 - `transport.pause`
 - `transport.stop`
 - `transport.seek`
+- `preset.activate`
 - `lock.object`
 - `unlock.object`
 - `ghost.set_mode`

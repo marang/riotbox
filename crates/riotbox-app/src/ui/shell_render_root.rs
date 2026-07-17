@@ -73,6 +73,13 @@ impl JamShellState {
                 self.status_message = format!("queue monitor {mode} for immediate commit");
                 ShellKeyOutcome::QueueSourceMonitorMode(mode)
             }
+            KeyCode::Char('F') => {
+                let preset_id =
+                    riotbox_core::style::PerformancePresetId::FeralBreakAlphaV1;
+                self.status_message =
+                    format!("queue {} for immediate commit", preset_id.label());
+                ShellKeyOutcome::QueuePerformancePreset(preset_id)
+            }
             KeyCode::Char('?') | KeyCode::Char('h') => {
                 self.show_help = true;
                 self.status_message = "help overlay opened".into();
@@ -412,6 +419,23 @@ fn render_header(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
             bpm_text,
             trust.headline,
             source.feral_scorecard.readiness
+        )),
+        Line::from(format!(
+            "Profile {} | Preset {}",
+            shell
+                .app
+                .session
+                .runtime_state
+                .style
+                .active_profile
+                .map_or("none", |profile| profile.label()),
+            shell
+                .app
+                .session
+                .runtime_state
+                .style
+                .active_preset
+                .map_or("none", |preset| preset.label())
         )),
         Line::from(format!(
             "Now {} | Next {}",

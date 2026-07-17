@@ -70,6 +70,12 @@ fn shell_state_handles_help_refresh_and_action_keys() {
         ShellKeyOutcome::QueueSceneMutation
     );
     assert_eq!(
+        shell.handle_key_code(KeyCode::Char('F')),
+        ShellKeyOutcome::QueuePerformancePreset(
+            riotbox_core::style::PerformancePresetId::FeralBreakAlphaV1
+        )
+    );
+    assert_eq!(
         shell.handle_key_code(KeyCode::Char('y')),
         ShellKeyOutcome::QueueSceneSelect
     );

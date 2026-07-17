@@ -11,10 +11,13 @@ use riotbox_audio::{
 use riotbox_core::action::{ActionCommand, CommitBoundary};
 use serde_json::{Value, json};
 
-use crate::model::{
-    CHANNEL_COUNT, MAX_EXACT_MIX_LIMITED_SAMPLE_COUNT, MAX_SOURCE_MONITOR_SILENCE_RATIO,
-    MIN_ISOLATED_TR909_REGRESSION_RMS, MIN_MIX_RMS, MIN_MONITOR_DELTA_RMS, MONITOR_REVIEW_BARS,
-    PreparedLivePath, RenderedLivePath, SAMPLE_RATE,
+use crate::{
+    alpha_manifest,
+    model::{
+        CHANNEL_COUNT, MAX_EXACT_MIX_LIMITED_SAMPLE_COUNT, MAX_SOURCE_MONITOR_SILENCE_RATIO,
+        MIN_ISOLATED_TR909_REGRESSION_RMS, MIN_MIX_RMS, MIN_MONITOR_DELTA_RMS, MONITOR_REVIEW_BARS,
+        PreparedLivePath, RenderedLivePath, SAMPLE_RATE,
+    },
 };
 
 #[derive(Clone, Copy)]
@@ -95,8 +98,15 @@ pub fn write_pack(
         &continuous,
         &mut artifacts,
     )?;
-
     let mut failures = Vec::new();
+    let alpha_evidence = alpha_manifest::write_and_validate(
+        &prepared,
+        &rendered,
+        output_dir,
+        bpm,
+        &mut artifacts,
+        &mut failures,
+    )?;
     let render_plans_match_confirmed_bpm =
         all_render_plans_match_bpm(&prepared, prepared.source_timing.bpm);
     if !render_plans_match_confirmed_bpm {
@@ -728,7 +738,7 @@ pub fn write_pack(
         },
         "monitor_cycle": {
             "review_duration_bars": MONITOR_REVIEW_BARS,
-            "keys": ["M", "M", "M", "M"],
+            "keys": ["F", "M", "M", "M"],
             "action_ids": prepared.monitor_action_ids,
             "modes": monitor_metrics,
             "deltas": {
@@ -796,6 +806,21 @@ pub fn write_pack(
     manifest["pattern_provenance"] = pattern_provenance;
     manifest["primitive_renderer_boundary"] = primitive_renderer_boundary;
     manifest["fill_exit_boundary_proof"] = fill_exit_boundary_manifest;
+    let preset_definition = prepared.preset_id.definition();
+    manifest["performance_preset"] = json!({
+        "preset_id": prepared.preset_id.contract_id(),
+        "label": prepared.preset_id.label(),
+        "profile_id": preset_definition.profile_id.label(),
+        "activation_action_id": prepared.preset_action_id,
+        "w30_role": preset_definition.w30_role.label(),
+        "tr909_role": preset_definition.tr909_role.label(),
+        "mc202_role": preset_definition.mc202_role.label(),
+        "bass_ownership_policy": preset_definition.bass_ownership.label(),
+        "actual_bass_owner": prepared.live_policy.bass_owner.label(),
+    });
+    manifest["feral_break_alpha_arc"] = alpha_evidence.arc;
+    manifest["feral_break_alpha_restart_recall"] = alpha_evidence.restart_recall;
+    manifest["feral_break_alpha_capture_journey"] = alpha_evidence.capture_journey;
     write_manifest_json(&output_dir.join("gesture-manifest.json"), &manifest)?;
     prepared.state.save()?;
 
@@ -823,6 +848,10 @@ fn all_render_plans_match_bpm(prepared: &PreparedLivePath, expected_bpm: f32) ->
             .stages
             .iter()
             .all(|stage| matches(stage.plan.transport.tempo_bpm))
+        && prepared
+            .alpha_arc_stages
+            .iter()
+            .all(|stage| matches(stage.plan.transport.tempo_bpm))
         && prepared.transitions.iter().all(|transition| {
             matches(transition.before.transport.tempo_bpm)
                 && matches(transition.after.transport.tempo_bpm)
@@ -835,7 +864,7 @@ fn all_render_plans_match_bpm(prepared: &PreparedLivePath, expected_bpm: f32) ->
         && matches(prepared.damaged_plan.transport.tempo_bpm)
 }
 
-fn write_audio_artifact(
+pub(super) fn write_audio_artifact(
     output_dir: &Path,
     relative_path: &str,
     case_id: &str,
@@ -863,7 +892,7 @@ fn artifact_json(case_id: &str, role: &str, path: &str) -> Value {
     })
 }
 
-fn metrics_json(metrics: OfflineAudioMetrics) -> Value {
+pub(super) fn metrics_json(metrics: OfflineAudioMetrics) -> Value {
     json!({
         "active_samples": metrics.active_samples,
         "peak_abs": metrics.peak_abs,
@@ -883,7 +912,7 @@ fn metrics_json(metrics: OfflineAudioMetrics) -> Value {
     })
 }
 
-fn limiter_json(report: MasterBusLimiterReport) -> Value {
+pub(super) fn limiter_json(report: MasterBusLimiterReport) -> Value {
     json!({
         "applied": report.applied,
         "threshold": report.threshold,
@@ -894,7 +923,7 @@ fn limiter_json(report: MasterBusLimiterReport) -> Value {
     })
 }
 
-fn gate_exact_mix_limiter(
+pub(super) fn gate_exact_mix_limiter(
     case_id: &str,
     role: &str,
     report: &MasterBusLimiterReport,
@@ -1102,7 +1131,11 @@ fn relevant_window_activity_ratio(
     relevant as f32 / window_count as f32
 }
 
-fn mono_waveform_correlation(before: &[f32], after: &[f32], channel_count: usize) -> f32 {
+pub(super) fn mono_waveform_correlation(
+    before: &[f32],
+    after: &[f32],
+    channel_count: usize,
+) -> f32 {
     if channel_count == 0 {
         return 1.0;
     }
@@ -1148,7 +1181,7 @@ fn mono_waveform_correlation(before: &[f32], after: &[f32], channel_count: usize
     (covariance / denominator).clamp(-1.0, 1.0) as f32
 }
 
-fn waveform_is_too_similar(correlation: f32, maximum: f32) -> bool {
+pub(super) fn waveform_is_too_similar(correlation: f32, maximum: f32) -> bool {
     correlation.abs() > maximum
 }
 

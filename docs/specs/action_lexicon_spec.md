@@ -172,6 +172,25 @@ same session-scope action path without deleting the original Source Timing
 evidence. It carries the confirmed `source_id` plus optional `hypothesis_id` so
 replay can distinguish the trust-state removal from analysis changes.
 
+### 6.1.2 Performance preset activation
+
+- `preset.activate`
+
+`preset.activate` is an immediate, session-scoped action carrying a typed,
+versioned `PerformancePresetId`. It materializes only the policy/control
+surfaces owned by that named preset and persists the active profile and preset
+identity in `RuntimeState.style`.
+
+The first supported value is `feral_break_alpha_v1`. It may set monitor,
+macro, mixer, and named lane-role defaults, but it must not create W-30
+captures, MC-202 source phrase plans, TR-909 pattern references, scenes, or
+fallback audio. Those remain source/action-owned product state.
+
+Preset activation is deterministic and replay-supported. Re-activating the
+same versioned ID reapplies its defaults after manual control edits. V1 is not
+live-undoable; a musician recalls a named preset rather than relying on an
+incomplete raw-float pre-state snapshot.
+
 ### 6.2 Mutation
 
 - `mutate.scene`

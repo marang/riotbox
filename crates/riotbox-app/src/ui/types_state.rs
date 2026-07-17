@@ -8,9 +8,10 @@ use ratatui::{
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap},
 };
 use riotbox_audio::w30::W30PreviewRenderMode;
-use riotbox_core::source_graph::{DecodeProfile, Section, SectionLabelHint};
 use riotbox_core::{
     action::{GhostMode, SourceMonitorMode},
+    source_graph::{DecodeProfile, Section, SectionLabelHint},
+    style::PerformancePresetId,
     view::jam::{SceneTransitionKindView, SceneTransitionPolicyView},
 };
 
@@ -91,6 +92,7 @@ pub enum ShellKeyOutcome {
     Continue,
     RequestRefresh,
     ToggleTransport,
+    QueuePerformancePreset(PerformancePresetId),
     QueueSourceMonitorMode(SourceMonitorMode),
     QueueSceneMutation,
     QueueSceneSelect,

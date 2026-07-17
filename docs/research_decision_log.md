@@ -56,8 +56,6 @@ Why: this keeps strategy, archive history, and implementation contracts separate
 Consequences: future spec work should land in `docs/`, not in new planning sprawl under `plan/`.  
 Status: accepted
 
----
-
 ### RBX-105
 
 Date: 2026-06-30
@@ -3120,4 +3118,32 @@ Decision: preserve the reviewed historical recipe IDs, but select `PhraseDriveBr
 Why: the phase correction proved a real timing defect but structured human review still rejected its output as having no musically relevant difference. Every prior candidate concentrated its change in the last fraction of one beat while the continuous source and melodic bed owned nearly the whole gesture. A half-bar arrangement takeover changes the performer function and event grammar rather than increasing another trigger, tail, or gain float.
 Evidence: the exact RuntimeMix candidate selects `phrase_drive_break_cut_stomp_v1`, commits at source-aligned cursor `23`, clips no samples, and does not engage the limiter. Against the rejected correctly phased V2 candidate, the second-half waveform correlation is `0.535613` with `0.062067` delta RMS; against the same-position BreakReinforce counterfactual the whole-render correlation is `0.659626` with `0.072324` manifest delta RMS and `0.939227` relevant 10 ms window activity. The new four-beat density is `1 / 2 / 6 / 5`; Audio, App, Core policy, manifest fixtures, and the exact dense-break live-path smoke pass. The exact three-repeat review artifact is `sha256 0c9d5f411862854c0f04255ac17736757262743a49a88f1ff0b636755e9ec4b4`.
 Consequences: this change satisfies the bounded RIOTBOX-1335 reachability requirement that `f` cause a plainly large exact-product-path delta. It does not certify hook memorability, Riotbox character, demo readiness, or musician preference. The listener explicitly declined to issue a verdict for this example, so `human_verdict` remains `unverified`; no pass is inferred from metrics or agent judgment. RIOTBOX-1401 owns the next source-backed curated preset and its human musical-quality gate. Do not reopen RIOTBOX-1335 for another Fill micro-variant unless the exact live gesture collapses technically.
+Status: accepted
+
+---
+
+### RBX-148
+
+Date: 2026-07-17
+Topic: make Feral Break Alpha a versioned product preset and an eight-bar live arc
+Phase: P023 / Live Musical Alpha
+Question: how should Riotbox expose one curated Golden Path without returning to scattered float tuning, scripted arrangement truth, or false bass claims?
+Decision: add the typed `feral_break_alpha_v1` preset under `feral_rebuild` and activate it through the new immediate, session-scoped `preset.activate` action. Persist named profile/preset identity in `RuntimeState.style`, materialize one centralized set of monitor/macro/mixer defaults, and replay the same versioned definition. Keep W-30 `source_hook_lead`, TR-909 `break_pressure`, MC-202 `source_evidence_selected`, and bass ownership through the existing `LivePerformancePolicy`; the preset must not create source material, captures, phrase plans, patterns, scenes, or fallback audio. Build its exact-path eight-bar candidate from committed live gestures: W-30 hook for two bars, TR-909 pressure lift for two, one-bar destructive Fill, one-bar scene role swap, and a two-bar restored return with W-30 damage.
+Why: the prior exact path proved individual gesture reachability but produced only a five-bar diagnostic sequence and required manual control reconstruction. Earlier float-by-float Fill iterations also showed that technically different values can remain musically irrelevant. A named versioned recipe makes the defaults reviewable and replay-stable, while the longer source-backed arc gives hook, lift, removal, contrast, and changed return distinct performer-owned jobs.
+Evidence: Core and App tests prove typed ID persistence, legacy Session V1 defaults, Queue/Commit, observer/TUI exposure, and deterministic replay. The exact callback-block RuntimeMix run against the real `Beat03_130BPM(Full).wav` source records `preset_id=feral_break_alpha_v1`, `typed_bass_owner=unassigned`, 32 beats / eight bars, no clipping or limiter activity, hook-to-pressure delta RMS `0.049884`, and hook-to-return correlation `0.019427` with delta RMS `0.124567`. It also records capture -> raw audition -> promotion -> save -> restart -> live recall -> trigger on the same product spine; the restarted trigger routes to `music_bus_preview` with RMS `0.094251`. Raw and RMS-matched source/candidate A/B artifacts are generated locally. The exact eight-bar candidate is `sha256 c105b171d592f84a137b49e5142d47d5e47db2b3ee92ead0cd482aef25061820`.
+Consequences: RIOTBOX-1401 may claim one curated, replayable, exact-product-path candidate and documented five-minute workflow, but not a human musical pass or recognizable Riotbox character. The current real-source candidate assigns bass owner `unassigned`; it is judged for hook, drum/transient impact, destructive contrast, and return, not failed for absent bass. RIOTBOX-1402 owns the exact structured human verdict. Any later change to these preset defaults requires a new versioned ID or an explicit compatibility decision rather than silently rewriting `feral_break_alpha_v1`.
+Status: accepted
+
+---
+
+### RBX-149
+
+Date: 2026-07-17
+Topic: project later performance boundaries into trusted short-source Scene sections
+Phase: P023 / Live Musical Alpha
+Question: how can a two-bar analyzed source retain source-backed MC-202 phrase ownership when a live arrangement commits at bar 5 or later?
+Decision: when the commit boundary is outside the source's own bar/phrase range, first resolve its typed projected Scene to the corresponding Source Graph section. Prefer the section-bounded overlap of a primary source phrase; otherwise derive a phrase slot only from the intersection of that section and the confirmed primary bar grid. Use the same projected section for feature-ownership checks. Without a recognized projected Scene, trusted primary grid, or non-empty section/grid intersection, remain unavailable.
+Why: Session transport bars describe the developing performance, not extra bars inside a short source file. Looking up performance bar 5 directly in a two-bar source falsely discarded real source evidence and prevented the live policy from loading. Mapping through the existing Scene projection preserves source identity without wrapping source-monitor audio, inventing a phrase, or adding a second timing truth.
+Evidence: MC-202 source-phrase unit tests cover primary phrase preference, short-source projected phrase-grid reuse, bounded section/grid derivation, and fail-closed unknown Scenes. The real Beat03 exact-path run now resolves `scene-01-intro`, derives a source-backed Fill-pickup instigator with bass owner `unassigned`, and passes the strengthened eight-bar, A/B, limiter, capture, restart, recall, and trigger validator. Source-only reference playback still starts at source time zero and remains bounded by the existing clamp-at-EOF monitor contract.
+Consequences: short loops may drive longer live arrangements through projected source sections, but transport advancement alone never proves source phrase ownership. Future explicit source-loop/wrap behavior remains a separate monitor-mode contract; this decision does not silently loop decoded source audio.
 Status: accepted

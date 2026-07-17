@@ -1,3 +1,5 @@
+mod alpha_arc;
+mod alpha_manifest;
 mod live_flow;
 mod manifest;
 mod model;
@@ -13,7 +15,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let source_path = required_path(&args, "--source")?;
     let output_dir = required_path(&args, "--output")?;
     let cli_bpm_hint = required_bpm(&args)?;
-    for directory in ["stems", "monitor", "gestures", "gestures/proofs"] {
+    for directory in ["stems", "monitor", "gestures", "gestures/proofs", "alpha"] {
         fs::create_dir_all(output_dir.join(directory))?;
     }
 

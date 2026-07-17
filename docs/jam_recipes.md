@@ -970,6 +970,73 @@ What it does not prove yet:
 - automatic arrangement scheduling
 - that every source will produce a hard, stage-ready result without listening
 
+## Recipe 17: Play Feral Break Alpha
+
+Goal: reach one curated, source-backed eight-bar performance state without
+manually rebuilding lane gains or treating a script as the instrument.
+
+Launch the supported dense-break source with its known BPM:
+
+```bash
+cargo run -p riotbox-app --bin riotbox-app -- \
+  --source "data/test_audio/examples/Beat03_130BPM(Full).wav" \
+  --source-bpm 130
+```
+
+Then:
+
+1. press `Space` and confirm the source is audible
+2. press `c`; wait for the one-bar capture to land
+3. press `o`; wait for the raw audition and reject the path if it is unavailable
+4. press `p`; wait for promotion to the focused W-30 pad
+5. press `F`; verify the header shows profile `feral_rebuild`, preset
+   `Feral Break Alpha`, and monitor `Blend`
+6. press `w` and let the hook run for two bars
+7. press `s` and let the TR-909 pressure lift run for two bars
+8. press `f` for the destructive one-bar cut
+9. press `y` for the one-bar contrast scene
+10. after the jump lands, press `Y`, then `D`, for the changed two-bar return
+11. quit with `q`; restart from the saved session, then press `l` and `w` to
+    recall and trigger the promoted capture
+
+What to hear:
+
+- bars 1-2: a recognizable source-backed W-30 rhythmic hook; this is the first
+  satisfying moment
+- bars 3-4: higher drum/transient impact without losing the hook
+- bar 5: the Fill removes the Blend source and non-TR-909 bed for a real break cut
+- bar 6: the scene swap changes source position and removes an MC-202 plan that
+  no longer belongs to the active source section
+- bars 7-8: the original scene returns, but the W-30 playback is damaged rather
+  than repeating the opening unchanged
+
+Bass is not assumed. Read the exact proof's `typed_bass_owner` before judging
+low end. For the current Beat03 exact-path candidate it is `unassigned`, so
+absent bass pressure is not a failure; the hardest element is the TR-909
+drum/transient layer. A future source may assign `mc202` only when its trusted
+source-derived plan actually qualifies as `sub_pressure_shove`.
+
+Run the exact callback-block RuntimeMix proof:
+
+```bash
+just dense-break-live-path-smoke artifacts/audio_qa/local-feral-break-alpha 132
+```
+
+Review:
+
+- `alpha/05_feral_break_alpha_eight_bar.wav` for the raw eight-bar candidate
+- `alpha/06_source_reference_raw.wav` for the raw source reference
+- `alpha/07_candidate_loudness_matched.wav` and
+  `alpha/08_source_reference_loudness_matched.wav` for level-matched A/B
+- `alpha/09_restart_recall_trigger.wav` for post-save restart, recall, and trigger
+- `gesture-manifest.json` for preset identity, action IDs, lane-role policy,
+  typed bass owner, scene return, output metrics, and limiter evidence
+
+The generated smoke is diagnostic evidence with `human_verdict: unverified`.
+It proves exact-path reachability, eight-bar development, deterministic
+session/restart state, and audible non-collapse. It does not grant the
+structured human musical pass owned by RIOTBOX-1402.
+
 ## Current Limits
 
 The current prototype is still not a finished “load a loop and instantly get a polished remix” instrument.
@@ -990,6 +1057,8 @@ So if two runs feel similar:
 - use `Recipe 15` if you want a local Feral grid listening pack and need to choose `auto` versus explicit BPM honestly
 - use `Recipe 16` if you want the fastest Jam taste/proof read before trusting
   a scene or lane gesture
+- use `Recipe 17` if you want the curated Feral Break Alpha eight-bar path,
+  restart/recall proof, and raw plus loudness-matched A/B
 - use capture/reuse instead of only the first fill
 - stay on `Jam` while playing; use `Log` when you need the complete action trail
 

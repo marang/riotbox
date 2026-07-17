@@ -59,12 +59,37 @@ What those steps mean:
 That is the current core loop: **hear the source, capture a keeper, blend Riotbox
 in, perform obvious contrasts, and restore the scene**.
 
+### Feral Break Alpha
+
+For the one curated P023 starting state, use the same capture path but press
+`F` after promotion instead of reconstructing lane gains and macros by hand.
+`F` activates the versioned `Feral Break Alpha` preset, selects `Blend`, and
+shows the active `feral_rebuild` profile and preset in the Jam header.
+
+With the trusted dense-break source, the supported eight-bar practice arc is:
+
+1. `w` establishes the source-backed W-30 hook for two bars
+2. `s` raises TR-909 drum/transient pressure for two bars
+3. `f` makes the destructive one-bar break cut
+4. `y` swaps to the contrast scene for one bar
+5. `Y`, then `D`, returns to the first scene with a damaged W-30 payoff for two bars
+
+The first satisfying moment should be the recognizable W-30 rhythmic hook
+inside the first two bars, not merely a louder mix. The current reference
+source assigns bass ownership from source evidence; `unassigned` is valid and
+means the example is judged for hook, drums, contrast, and return rather than
+for missing bass pressure. See
+[`Recipe 17`](docs/jam_recipes.md#recipe-17-play-feral-break-alpha) for capture,
+audition, save/restart, recall, and the exact local proof command.
+
 If that first loop works, continue with:
 
 - [`docs/jam_recipes.md`](docs/jam_recipes.md) for the same Golden Path with
   expected screen and listening cues
 - [`docs/jam_recipes.md`](docs/jam_recipes.md) `Recipe 14` for its CI-safe
   control-plus-exact-mixer proof
+- [`docs/jam_recipes.md`](docs/jam_recipes.md) `Recipe 17` for the curated
+  Feral Break Alpha eight-bar path
 - [`docs/jam_recipes.md`](docs/jam_recipes.md) `Recipe 5` to compare different example sources
 - [`docs/benchmarks/lane_recipe_listening_pack_2026-04-26.md`](docs/benchmarks/lane_recipe_listening_pack_2026-04-26.md) if you want offline WAV proof for the current TR-909 and MC-202 recipe contrasts
 

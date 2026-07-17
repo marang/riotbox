@@ -65,6 +65,14 @@ fn run_event_loop(
                         "transport paused"
                     });
                 }
+                ShellKeyOutcome::QueuePerformancePreset(preset_id) => {
+                    let requested_at = timestamp_now();
+                    let committed =
+                        queue_and_commit_performance_preset(&mut shell, preset_id, requested_at);
+                    if !committed.is_empty() {
+                        immediate_observer_commit = Some((requested_at, committed));
+                    }
+                }
                 ShellKeyOutcome::QueueSourceMonitorMode(mode) => {
                     let requested_at = timestamp_now();
                     let committed =

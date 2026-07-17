@@ -155,6 +155,7 @@ MVP note:
 ```text
 RuntimeState {
   transport
+  style
   source_monitor
   source_timing
   capture
@@ -167,6 +168,22 @@ RuntimeState {
   undo_state
 }
 ```
+
+### 8.0.1 Style identity
+
+`runtime_state.style` persists:
+
+- `active_profile: Option<StyleProfileId>`
+- `active_preset: Option<PerformancePresetId>`
+
+The IDs are behavior-relevant replay contract, not display-only metadata.
+Legacy Session V1 files without `style` load with both values unset. The first
+versioned preset identity is `feral_break_alpha_v1`, paired with profile
+`feral_rebuild`.
+
+The named identity does not cache a second live-performance policy. Bass
+ownership and source-backed lane decisions remain derived from the restored
+Source Graph, timing confirmation, and committed source phrase plan.
 
 ### 8.1 Transport
 

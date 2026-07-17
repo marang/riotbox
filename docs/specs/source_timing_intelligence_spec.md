@@ -536,6 +536,13 @@ MC-202:
 
 - place question/answer phrases in bar and phrase slots from the selected
   hypothesis
+- when a live performance boundary has advanced beyond a short source's own bar
+  range, resolve the committed projected Scene back to its Source Graph section;
+  prefer the section-bounded overlap of a primary source phrase, otherwise use
+  only the bounded intersection of that section and the confirmed primary bar grid
+- remain unavailable when projected Scene ownership, confirmed primary timing,
+  or a non-empty section/grid intersection cannot be proven; transport bar
+  advancement alone must not invent a source phrase
 - use anchors as musical prompts, not as a requirement to quote source audio
 - prove phrase timing and source-grid drift in generated output
 - persist trusted source-derived MC-202 phrase plans in Session state and clear

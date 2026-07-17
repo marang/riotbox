@@ -78,6 +78,54 @@ fn queue_and_commit_source_monitor_mode(
     }
 }
 
+fn queue_and_commit_performance_preset(
+    shell: &mut JamShellState,
+    preset_id: PerformancePresetId,
+    requested_at: u64,
+) -> Vec<CommittedActionRef> {
+    match shell.app.queue_performance_preset(preset_id, requested_at) {
+        crate::jam_app::QueueControlResult::Enqueued => {
+            let transport = shell.app.runtime.transport.clone();
+            let committed = shell.app.commit_ready_actions(
+                riotbox_core::transport::CommitBoundaryState {
+                    kind: riotbox_core::action::CommitBoundary::Immediate,
+                    beat_index: transport.beat_index,
+                    bar_index: transport.bar_index,
+                    phrase_index: transport.phrase_index,
+                    scene_id: transport.current_scene,
+                },
+                requested_at,
+            );
+            let landed = committed.iter().any(|committed| {
+                shell
+                    .app
+                    .queue
+                    .history_action(committed.action_id)
+                    .is_some_and(|action| action.command == ActionCommand::PresetActivate)
+            });
+            shell.set_error_status(if landed {
+                format!(
+                    "{} active | monitor {} | source role policy {}",
+                    preset_id.label(),
+                    shell.app.runtime_view.source_monitor_mode,
+                    preset_id.definition().mc202_role.label()
+                )
+            } else {
+                format!("{} queued; immediate commit pending", preset_id.label())
+            });
+            committed
+        }
+        crate::jam_app::QueueControlResult::AlreadyPending => {
+            shell.set_error_status("performance preset activation already queued");
+            Vec::new()
+        }
+        crate::jam_app::QueueControlResult::AlreadyInState => {
+            shell.set_error_status(format!("{} already active", preset_id.label()));
+            Vec::new()
+        }
+    }
+}
+
 fn source_monitor_commit_status(
     shell: &JamShellState,
     committed: &[riotbox_core::queue::CommittedActionRef],

@@ -223,6 +223,40 @@ It must **not** be implemented as:
 - a second Ghost system
 - a separate persistence model
 
+### 12.1 Feral Break Alpha v1
+
+The first concrete versioned preset is `feral_break_alpha_v1`, displayed as
+`Feral Break Alpha`, under profile `feral_rebuild`.
+
+Its named lane-role contract is:
+
+| Lane / policy | Typed role |
+| --- | --- |
+| W-30 | `source_hook_lead` |
+| TR-909 | `break_pressure` |
+| MC-202 | `source_evidence_selected` |
+| bass ownership | `live_performance_policy` |
+
+The preset activates `Blend`, applies its versioned macro/mixer defaults, and
+places TR-909 in source-support readiness. All values live in one typed Core
+definition. Changing their behavior requires a new versioned preset ID rather
+than silently changing historical replay.
+
+Activation uses `preset.activate` through the normal Action Queue and immediate
+commit path. Session stores the active profile/preset IDs plus the materialized
+control state. Replay applies the same typed definition.
+
+The preset deliberately does not:
+
+- invent a W-30 capture or source window
+- invent an MC-202 source phrase plan or claim bass
+- invent a TR-909 pattern reference
+- create a scripted arrangement or replacement audio
+
+Actual bass ownership remains `mc202` only when the restored source-derived
+live-performance policy selects a trusted `sub_pressure_shove`; otherwise it
+is `unassigned`.
+
 ---
 
 ## 13. TUI Requirements
