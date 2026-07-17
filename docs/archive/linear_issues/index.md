@@ -1434,4 +1434,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Promote dense-break performance policy into the shared live runtime
 - [RIOTBOX-1335.md](./RIOTBOX-1335.md)
   P023: Make Blend and four performance gestures reachable in the first-playable live flow
+- [RIOTBOX-1401.md](./RIOTBOX-1401.md)
+  P023: Add a curated Feral Break Alpha preset with capture, recall, and replay
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
