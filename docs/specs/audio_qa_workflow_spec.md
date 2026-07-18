@@ -145,6 +145,15 @@ pressure, creates a destructive role swap or drop, and returns with a materially
 changed payoff. A render that is merely cleaner, louder, darker, or busier does
 not prove recognizable Riotbox character.
 
+A compact Golden Path arc and a reusable loop answer different QA questions.
+A scripted sequence that forces hook, pressure lift, fill, scene change, and
+return every one or two bars may prove gesture reachability and
+macro-development while still sounding like a crowded medley. It must not be
+used by itself to claim loopability, reusable source material, or performer
+freedom. Those claims additionally require a sustained isolated audition of the
+relevant hook, capture, lane, or mutation, with an explicit human keep/reject
+decision before roles are combined on demand.
+
 Bass-pressure review must name the typed bass owner first. When bass is
 assigned, report absolute low-band energy or lift as well as relative spectral
 share; a high relative low-band ratio can otherwise describe a quiet, dull mix.

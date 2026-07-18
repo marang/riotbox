@@ -159,6 +159,12 @@ If a surface is intentionally not applicable, say why in the PR or working notes
   explicitly promises a held loop and its hook already has a human pass.
   Micro-dropouts do not count as macro development; prefer a source-derived
   hook, pressure lift, destructive role swap or drop, and changed return.
+- Do not treat a compact scripted performance arc as loop or instrument proof.
+  A sequence that forces hook, lift, fill, scene change, and return every one or
+  two bars may prove gesture reachability while still sounding like a crowded
+  medley. Claims about reusable material or performer freedom additionally need
+  a sustained isolated component audition where the musician can keep or reject
+  the hook, capture, lane, or mutation before combining roles on demand.
 - Do not confuse a cleaner, louder, darker, or busier render with recognizable
   Riotbox character. The character claim requires a memorable source-backed
   hook, physical pressure, dramatic contrast, and stage-useful playability.

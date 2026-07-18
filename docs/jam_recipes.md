@@ -998,8 +998,11 @@ Then:
    drum/transient return
 9. press `y` for the one-bar contrast scene
 10. after the jump lands, press `Y`, then `D`, for the changed two-bar return
-11. quit with `q`; restart from the saved session, then press `l` and `w` to
-    recall and trigger the promoted capture
+11. quit with `q`; an intentional quit persists the canonical Session before
+    exit. Wait until all required gestures have landed because the transient
+    pending queue is not persisted. Restart from that saved session, then press
+    `l` and `w` to recall and trigger the promoted capture. Killing the process
+    is not this save path.
 
 What to hear:
 

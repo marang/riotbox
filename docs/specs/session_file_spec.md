@@ -1286,6 +1286,16 @@ MVP expectation:
 - one clear artifact layout
 - no hidden autosave complexity before the format is stable
 - current JSON saves serialize first, write beside the target, then rename into place; this is the MVP crash-safety seam, not a full multi-file transaction
+- an intentional interactive-shell exit through `q` or `Esc` runs that
+  canonical save path before the quit observer event and process exit; a save
+  error must fail the clean exit instead of claiming persisted state
+- that clean exit persists committed Session/replay truth, not the transient
+  pending action queue; musician recipes must wait for required actions to land
+  before quitting
+- abrupt process termination is not an intentional save and must not be
+  described as one; automatic autosave remains outside the current MVP boundary
+- interactive exit persistence runs on the app/control thread, never in the
+  realtime audio callback
 
 ---
 

@@ -83,6 +83,14 @@ When generating or reviewing patterns, slices, demos, or presets:
 - for Golden Path review, prefer a source-derived eight-bar arc that establishes
   the hook, lifts pressure, creates a destructive role swap or drop, and returns
   with a materially changed payoff
+- do not let that compact eight-bar arc become a medley-shaped substitute for
+  instrument proof: a scripted sequence that forces hook, lift, fill, scene
+  change, and return every one or two bars may prove gesture reachability, but
+  it does not prove that any component is desirable to hold or loop
+- when loopability, reusable source material, or performer freedom is claimed,
+  also audition the relevant hook, capture, lane, or mutation in isolation for
+  a sustained window; the musician must be able to keep or reject it before
+  combining it with other roles on demand
 
 ## Engineering Implications
 

@@ -169,6 +169,26 @@ fn record_key_outcome_then_immediate_commit(
     Ok(())
 }
 
+fn persist_and_record_quit(
+    shell: &JamShellState,
+    observer: Option<&mut UserSessionObserver>,
+    timestamp_ms: u64,
+    key_label: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    shell.app.save()?;
+
+    if let Some(observer) = observer {
+        observer.record_key_event(
+            timestamp_ms,
+            key_label,
+            shell_key_outcome_label(ShellKeyOutcome::Quit),
+            shell,
+        )?;
+    }
+
+    Ok(())
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum AudioRuntimeRefreshAction {
     RetryUnavailable,
