@@ -90,6 +90,13 @@ five surfaces:
   tested, and scripted/hardcoded artifacts stay labeled `quality_proof: false`
   until structured listening review accepts them
 
+For shared audible DSP, mix, pattern, or performance-policy tuning, do not wait
+for broad source-family expansion to catch overfitting. Keep one Golden Path as
+the human taste target, but run at least three contrasting real sources through
+the nearest exact product-path matrix before the next listening request. This
+matrix is a safety/diversity gate, not a substitute for the Golden Path human
+verdict.
+
 If a slice only adds the spine or a deterministic scaffold, say that plainly in
 the PR and docs. Do not describe it as complete musical intelligence.
 

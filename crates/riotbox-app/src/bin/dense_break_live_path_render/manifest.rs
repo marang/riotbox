@@ -36,6 +36,7 @@ const PERCEPTUAL_DELTA_ABSOLUTE_FLOOR: f32 = 1.0e-5;
 const FILL_EXIT_BOUNDARY_WINDOW_MS: usize = 10;
 const MAX_FILL_EXIT_BOUNDARY_STEP: f32 = 0.20;
 const MAX_FILL_EXIT_BOUNDARY_TO_LOCAL_P99_RATIO: f32 = 4.0;
+const MAX_FILL_EXIT_BOUNDARY_TO_ATTACK_RMS_RATIO: f32 = 4.0;
 const LIVE_SEQUENCE_ARTIFACT_PATH: &str = "gestures/06_live_sequence.wav";
 const TR909_FILL_PRIMITIVE_SCHEMA: &str = "riotbox.tr909_fill_recipe.v1";
 
@@ -44,6 +45,8 @@ struct SequenceBoundaryMetrics {
     boundary_step: f32,
     local_adjacent_step_p99: f32,
     boundary_to_local_p99_ratio: f32,
+    post_boundary_attack_rms: f32,
+    boundary_to_attack_rms_ratio: f32,
     window_frames: usize,
 }
 
@@ -277,20 +280,27 @@ pub fn write_pack(
         usize::from(CHANNEL_COUNT),
         (SAMPLE_RATE as usize * FILL_EXIT_BOUNDARY_WINDOW_MS / 1_000).max(1),
     )?;
+    let click_like_boundary = fill_exit_boundary.boundary_step > MAX_FILL_EXIT_BOUNDARY_STEP
+        && fill_exit_boundary.boundary_to_local_p99_ratio
+            > MAX_FILL_EXIT_BOUNDARY_TO_LOCAL_P99_RATIO
+        && fill_exit_boundary.boundary_to_attack_rms_ratio
+            > MAX_FILL_EXIT_BOUNDARY_TO_ATTACK_RMS_RATIO;
     if !fill_exit_boundary.boundary_step.is_finite()
         || !fill_exit_boundary.local_adjacent_step_p99.is_finite()
         || !fill_exit_boundary.boundary_to_local_p99_ratio.is_finite()
-        || fill_exit_boundary.boundary_step > MAX_FILL_EXIT_BOUNDARY_STEP
-        || fill_exit_boundary.boundary_to_local_p99_ratio
-            > MAX_FILL_EXIT_BOUNDARY_TO_LOCAL_P99_RATIO
+        || !fill_exit_boundary.post_boundary_attack_rms.is_finite()
+        || !fill_exit_boundary.boundary_to_attack_rms_ratio.is_finite()
+        || click_like_boundary
     {
         failures.push(format!(
-            "{} -> {} exact Blend boundary was click-like: step {:.6}, local p99 {:.6}, ratio {:.3}",
+            "{} -> {} exact Blend boundary was click-like: step {:.6}, local p99 {:.6}, local ratio {:.3}, attack rms {:.6}, attack ratio {:.3}",
             fill_stage.case_id,
             fill_followup_stage.case_id,
             fill_exit_boundary.boundary_step,
             fill_exit_boundary.local_adjacent_step_p99,
             fill_exit_boundary.boundary_to_local_p99_ratio,
+            fill_exit_boundary.post_boundary_attack_rms,
+            fill_exit_boundary.boundary_to_attack_rms_ratio,
         ));
     }
     let fill_exit_boundary_manifest = json!({
@@ -303,9 +313,12 @@ pub fn write_pack(
         "boundary_step": fill_exit_boundary.boundary_step,
         "local_adjacent_step_p99": fill_exit_boundary.local_adjacent_step_p99,
         "boundary_to_local_p99_ratio": fill_exit_boundary.boundary_to_local_p99_ratio,
+        "post_boundary_attack_rms": fill_exit_boundary.post_boundary_attack_rms,
+        "boundary_to_attack_rms_ratio": fill_exit_boundary.boundary_to_attack_rms_ratio,
         "thresholds": {
             "max_boundary_step": MAX_FILL_EXIT_BOUNDARY_STEP,
             "max_boundary_to_local_p99_ratio": MAX_FILL_EXIT_BOUNDARY_TO_LOCAL_P99_RATIO,
+            "max_boundary_to_attack_rms_ratio": MAX_FILL_EXIT_BOUNDARY_TO_ATTACK_RMS_RATIO,
         },
     });
 
@@ -1053,13 +1066,34 @@ fn sequence_boundary_metrics(
         .min(local_steps.len().saturating_sub(1));
     let local_adjacent_step_p99 = local_steps[p99_index];
     let boundary_to_local_p99_ratio = boundary_step / local_adjacent_step_p99.max(f32::EPSILON);
+    // A hard Fill release is allowed to land on a real downbeat transient. A discontinuity only
+    // becomes click-like when it is both locally anomalous and unsupported by the following
+    // two-millisecond attack body.
+    let attack_frames = (window_frames / 5).max(2);
+    let post_boundary_attack_rms =
+        frame_window_rms(&after_window[..attack_frames.min(window_frames) * channel_count]);
+    let boundary_to_attack_rms_ratio = boundary_step / post_boundary_attack_rms.max(f32::EPSILON);
 
     Ok(SequenceBoundaryMetrics {
         boundary_step,
         local_adjacent_step_p99,
         boundary_to_local_p99_ratio,
+        post_boundary_attack_rms,
+        boundary_to_attack_rms_ratio,
         window_frames,
     })
+}
+
+fn frame_window_rms(samples: &[f32]) -> f32 {
+    if samples.is_empty() {
+        return 0.0;
+    }
+    (samples
+        .iter()
+        .map(|sample| f64::from(*sample) * f64::from(*sample))
+        .sum::<f64>()
+        / samples.len() as f64)
+        .sqrt() as f32
 }
 
 fn collect_adjacent_frame_steps(samples: &[f32], channel_count: usize, output: &mut Vec<f32>) {
@@ -1268,6 +1302,25 @@ mod tests {
         assert!((metrics.boundary_step - 0.15).abs() < 1.0e-5);
         assert!((metrics.local_adjacent_step_p99 - 0.01).abs() < 1.0e-5);
         assert!((metrics.boundary_to_local_p99_ratio - 15.0).abs() < 0.01);
+        assert!(metrics.post_boundary_attack_rms > 1.0);
+        assert!(metrics.boundary_to_attack_rms_ratio < 1.0);
+    }
+
+    #[test]
+    fn sequence_boundary_metrics_distinguish_a_supported_downbeat_from_an_isolated_click() {
+        let before = vec![0.0; 500];
+        let supported = (0..500)
+            .map(|frame| 0.28 * (-frame as f32 / 80.0).exp())
+            .collect::<Vec<_>>();
+        let mut click = vec![0.0; 500];
+        click[0] = 0.28;
+
+        let supported_metrics =
+            sequence_boundary_metrics(&before, &supported, 1, 500).expect("supported");
+        let click_metrics = sequence_boundary_metrics(&before, &click, 1, 500).expect("click");
+
+        assert!(supported_metrics.boundary_to_attack_rms_ratio < 4.0);
+        assert!(click_metrics.boundary_to_attack_rms_ratio > 4.0);
     }
 
     #[test]

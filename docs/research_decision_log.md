@@ -56,6 +56,8 @@ Why: this keeps strategy, archive history, and implementation contracts separate
 Consequences: future spec work should land in `docs/`, not in new planning sprawl under `plan/`.  
 Status: accepted
 
+---
+
 ### RBX-105
 
 Date: 2026-06-30
@@ -3160,4 +3162,18 @@ Decision: preserve `feral_break_alpha_v1` as the reviewed historical identity an
 Why: the first revised manifest advertised V2 by borrowing recipe identity from a separate main gesture, while the Alpha Fill occurred on an odd ambient phrase cycle and actually selected `PhraseLift + generic_fill_v1`. Consequently the new full Alpha artifact was byte-identical to the human-rejected v1 candidate. Aggregate stage deltas had hidden both the false attribution and the absence of a macro arrangement event.
 Evidence: an invariant first made the renderer fail honestly with `generic_fill_v1` instead of publishing the mismatched manifest. App projection tests prove that the same odd-phrase Fill remains `PhraseLift + GenericFillV1` without the preset but resolves to `PhraseDriveHardCut + PhraseDriveBreakCutStompV2` under v2; a separate regression proves that v1's even-phrase Fill remains `PhraseDrive + PhraseDriveBreakCutStompV1`. Against the rejected v1 candidate (`sha256 c105b171d592f84a137b49e5142d47d5e47db2b3ee92ead0cd482aef25061820`), the corrected eight-bar artifact is byte-distinct (`sha256 f4c74703c157d66ede579b9a9200e9532f12dd04ba58b5326d81f7e5f46564d3`). The exact Fill stage records 18.50% silence instead of 0.12%; its declared half-beat negative-space window is digitally silent (`rms 0`, `silence_ratio 1.0`) and the immediate step-30 return reaches `rms 0.207901`, `peak 0.690721`, with no clipping or limiter dependency. The exact dense-break validator passes.
 Consequences: manifest recipe provenance must come from the artifact-owning plan; a different proof path cannot stand in for it. Whole-stage metrics remain diagnostic and cannot prove a dramatic pause, so Golden-Path arrangement gestures require role-specific time-local evidence. V2 is technically review-ready but retains `human_verdict: unverified`; measurements cannot promote it to a musical pass. V1 remains replayable and unchanged.
+Status: accepted
+
+---
+
+### RBX-151
+
+Date: 2026-07-18
+Topic: keep one Golden Path taste target while gating shared audible tuning across real sources
+Phase: P023 / Live Musical Alpha
+Question: should an audible DSP, mix, pattern, or performance-policy change be tuned and reviewed only against the current Golden Path source?
+Decision: keep one supported Golden Path as the structured human taste target, but require every shared audible tuning change to pass a nearest-exact product-path matrix of at least three contrasting real sources before another human review. The matrix rejects exact-path failure, silence, clipping or hidden limiter dependency, timing regressions, and near-identical source-backed hook envelopes. It remains diagnostic and cannot replace the Golden Path human verdict.
+Why: a single-source pass can overfit one break, hide source-dependent hot paths, or make a fixed transformation look like general instrument behavior. Requiring broad human listening on every tuning iteration would be slow and dilute the Golden Path; a bounded automated safety/diversity matrix catches structural collapse while preserving one focused taste decision.
+Evidence: the first Beat03-only W-30 bite candidate passed its exact diagnostic, while the new four-source matrix exposed hot Beat20 monitor/restart mixes and a false click classification on a legitimate sustained DH BeatC downbeat. The corrected policy respects an active preset's W-30 mixer ceiling, gives the non-bass MC-202 instigator less bus allocation, and distinguishes a supported transient from an isolated discontinuity. Beat03, Beat08, Beat20, and DH BeatC then pass the exact RuntimeMix renderer; after normalizing every eight-bar W-30 hook envelope to the same 512-point time axis, their maximum pair correlation is `0.492000`, below the diagnostic collapse threshold `0.95`.
+Consequences: `just dense-break-live-source-matrix` is required for shared audible dense-break tuning before a new Golden Path listening request. Its generated `source-matrix-report.json` stays `quality_proof: false` and `human_verdict: unverified`. Commercial references remain local comparison material and never enter this source matrix.
 Status: accepted

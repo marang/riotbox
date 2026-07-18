@@ -393,6 +393,8 @@ pub(super) struct W30PreviewCallbackState {
     pub(super) source_sample_cursor: f32,
     pub(super) pad_playback_cursor: f32,
     pub(super) pad_playback_age_frames: u64,
+    pub(super) last_character_input: f32,
+    pub(super) character_edge_memory: f32,
     pub(super) last_source_window_signature: u64,
     pub(super) last_pad_playback_signature: u64,
     pub(super) envelope: f32,

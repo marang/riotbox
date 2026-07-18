@@ -986,7 +986,9 @@ cargo run -p riotbox-app --bin riotbox-app -- \
 Then:
 
 1. press `Space` and confirm the source is audible
-2. press `c`; wait for the one-bar capture to land
+2. set the Capture length to `1 bar` with `-` (repeat only if the current
+   length is not yet `1 bar`), then press `c`; wait for the one-bar capture to
+   land
 3. press `o`; wait for the raw audition and reject the path if it is unavailable
 4. press `p`; wait for promotion to the focused W-30 pad
 5. press `F`; verify the header shows profile `feral_rebuild`, preset

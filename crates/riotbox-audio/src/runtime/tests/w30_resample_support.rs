@@ -546,6 +546,72 @@ fn w30_trigger_revision_retriggers_preview_accent() {
 }
 
 #[test]
+fn w30_grit_adds_source_backed_bite_without_changing_the_clean_path() {
+    let mut source = RealtimeW30PreviewRenderState {
+        mode: W30PreviewRenderMode::LiveRecall,
+        routing: W30PreviewRenderRouting::MusicBusPreview,
+        source_profile: Some(W30PreviewSourceProfile::PromotedRecall),
+        trigger_revision: 0,
+        trigger_velocity: 0.0,
+        source_window_preview: RealtimeW30PreviewSampleWindow::default(),
+        pad_playback: RealtimeW30PadPlaybackSampleWindow::default(),
+        music_bus_level: 0.8,
+        grit_level: 0.0,
+        is_transport_running: true,
+        tempo_bpm: 130.0,
+        position_beats: 0.0,
+    };
+    source.pad_playback.sample_count = 1_024;
+    source.pad_playback.source_sample_rate = 44_100;
+    source.pad_playback.playback_frame_count = 1_024;
+    source.pad_playback.loop_enabled = true;
+    for (index, sample) in source
+        .pad_playback
+        .samples
+        .iter_mut()
+        .take(source.pad_playback.sample_count)
+        .enumerate()
+    {
+        let phase = index as f32 / 32.0;
+        *sample = phase.sin() * 0.38 + (phase * 3.7).sin() * 0.08;
+    }
+
+    let mut clean = vec![0.0; 4_096];
+    let mut clean_state = W30PreviewCallbackState::default();
+    render_w30_preview_buffer(&mut clean, 44_100, 2, &source, &mut clean_state);
+
+    source.grit_level = 0.64;
+    let mut bitten = vec![0.0; 4_096];
+    let mut bitten_state = W30PreviewCallbackState::default();
+    render_w30_preview_buffer(&mut bitten, 44_100, 2, &source, &mut bitten_state);
+
+    let delta_rms = clean
+        .iter()
+        .zip(&bitten)
+        .map(|(clean, bitten)| (bitten - clean).powi(2))
+        .sum::<f32>()
+        / clean.len() as f32;
+    let delta_rms = delta_rms.sqrt();
+    let clean_edge_rms = adjacent_sample_delta_rms(&clean);
+    let bitten_edge_rms = adjacent_sample_delta_rms(&bitten);
+    assert!(delta_rms > 0.02, "bite delta was too small: {delta_rms}");
+    assert!(
+        bitten_edge_rms > clean_edge_rms * 1.25,
+        "bite did not add enough source-motion edge: clean={clean_edge_rms}, bitten={bitten_edge_rms}"
+    );
+    assert!(bitten.iter().all(|sample| sample.is_finite()));
+    assert!(bitten.iter().all(|sample| sample.abs() < 1.0));
+}
+
+fn adjacent_sample_delta_rms(samples: &[f32]) -> f32 {
+    let square_sum = samples
+        .windows(2)
+        .map(|window| (window[1] - window[0]).powi(2))
+        .sum::<f32>();
+    (square_sum / samples.len().saturating_sub(1).max(1) as f32).sqrt()
+}
+
+#[test]
 fn w30_resample_tap_stays_silent_when_idle() {
     let mut state = W30ResampleTapCallbackState::default();
     let mut buffer = [0.0_f32; 512];

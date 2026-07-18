@@ -369,6 +369,24 @@ For any pack presented as a source showcase:
   whether it is supposed to react to source timing, density, energy, anchors, or
   section role
 
+Shared audible DSP, mix, pattern, and performance-policy tuning also requires a
+bounded source matrix before another Golden Path listening request. The Golden
+Path remains the single human taste target; the matrix is a regression and
+overfitting gate. It must include at least three contrasting real sources and
+reject exact-path failure, clipping/limiter concealment, silence, timing
+regression, or near-identical source-backed hook envelopes. For the current
+dense-break live path, run:
+
+```bash
+just dense-break-live-source-matrix
+```
+
+This command renders Beat03, Beat08, Beat20, and DH BeatC through the exact
+`RuntimeMix` simulation, requires every diagnostic manifest to pass, and writes
+an ignored `source-matrix-report.json`. The report remains
+`quality_proof: false` and `human_verdict: unverified`; it cannot promote a
+candidate without structured Golden Path listening.
+
 The current lightweight command is:
 
 ```bash

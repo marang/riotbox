@@ -99,6 +99,8 @@ pub(super) fn render_w30_preview_buffer(
     if !active {
         state.was_active = false;
         state.envelope = 0.0;
+        state.last_character_input = 0.0;
+        state.character_edge_memory = 0.0;
         state.beat_position = render.position_beats;
         state.last_trigger_revision = render.trigger_revision;
         return;
@@ -113,6 +115,8 @@ pub(super) fn render_w30_preview_buffer(
         state.source_sample_cursor = 0.0;
         state.pad_playback_cursor = w30_chop_slice_cursor(render, state.last_step);
         state.pad_playback_age_frames = 0;
+        state.last_character_input = 0.0;
+        state.character_edge_memory = 0.0;
         state.last_source_window_signature = w30_source_window_signature(render);
         state.last_pad_playback_signature = w30_pad_playback_signature(render);
         state.last_trigger_revision = render.trigger_revision;
@@ -123,12 +127,16 @@ pub(super) fn render_w30_preview_buffer(
     if source_window_signature != state.last_source_window_signature {
         state.last_source_window_signature = source_window_signature;
         state.source_sample_cursor = 0.0;
+        state.last_character_input = 0.0;
+        state.character_edge_memory = 0.0;
     }
     let pad_playback_signature = w30_pad_playback_signature(render);
     if pad_playback_signature != state.last_pad_playback_signature {
         state.last_pad_playback_signature = pad_playback_signature;
         state.pad_playback_cursor = w30_chop_slice_cursor(render, state.last_step);
         state.pad_playback_age_frames = 0;
+        state.last_character_input = 0.0;
+        state.character_edge_memory = 0.0;
     }
 
     if render.trigger_revision > state.last_trigger_revision {
@@ -162,6 +170,8 @@ pub(super) fn render_w30_preview_buffer(
                     if w30_pad_playback_active(render) {
                         state.pad_playback_cursor = w30_chop_slice_cursor(render, step);
                         state.pad_playback_age_frames = 0;
+                        state.last_character_input = 0.0;
+                        state.character_edge_memory = 0.0;
                     }
                 }
             }
@@ -198,17 +208,71 @@ fn w30_preview_waveform_for_frame(
 ) -> f32 {
     if w30_pad_playback_active(render) {
         let sample = w30_pad_playback_sample(&render.pad_playback, state, sample_rate);
-        let grit = render.grit_level.clamp(0.0, 1.0);
-        return (sample * (1.0 + grit * 0.35)).clamp(-1.0, 1.0);
+        return w30_source_backed_character(sample, render.grit_level, state);
     }
 
     if w30_source_window_active(render) {
         let sample = w30_source_window_sample(&render.source_window_preview, state);
-        let grit = render.grit_level.clamp(0.0, 1.0);
-        return (sample * (1.0 + grit * 0.35)).clamp(-1.0, 1.0);
+        return w30_source_backed_character(sample, render.grit_level, state);
     }
 
     0.0
+}
+
+/// Add source-reactive sampler bite without introducing an oscillator or fallback voice.
+///
+/// The differentiated edge follows actual source motion, while asymmetric saturation exposes
+/// upper harmonics already implied by that motion. At zero grit the sample remains bit-for-bit
+/// on the clean branch.
+fn w30_source_backed_character(
+    sample: f32,
+    grit_level: f32,
+    state: &mut W30PreviewCallbackState,
+) -> f32 {
+    let grit = grit_level.clamp(0.0, 1.0);
+    if grit <= f32::EPSILON {
+        state.last_character_input = sample;
+        state.character_edge_memory = 0.0;
+        return sample;
+    }
+
+    const EDGE_MEMORY: f32 = 0.72;
+    const MIN_DRIVE: f32 = 1.0;
+    const DRIVE_RANGE: f32 = 5.2;
+    const EDGE_RANGE: f32 = 1.35;
+    const TRANSIENT_DRIVE_MIN: f32 = 6.0;
+    const TRANSIENT_DRIVE_RANGE: f32 = 18.0;
+    const FOLD_DRIVE_MIN: f32 = 1.4;
+    const FOLD_DRIVE_RANGE: f32 = 2.8;
+    const SATURATED_BODY_SHARE: f32 = 0.64;
+    const SOURCE_FOLD_SHARE: f32 = 0.24;
+    const TRANSIENT_BITE_SHARE: f32 = 0.12;
+    const WET_RANGE: f32 = 0.84;
+    const ASYMMETRY_RANGE: f32 = 0.12;
+
+    let raw_edge = sample - state.last_character_input;
+    state.last_character_input = sample;
+    state.character_edge_memory =
+        state.character_edge_memory * EDGE_MEMORY + raw_edge * (1.0 - EDGE_MEMORY);
+
+    let edge_emphasis = state.character_edge_memory * (grit * EDGE_RANGE);
+    let driven_input = sample + edge_emphasis;
+    let drive = MIN_DRIVE + grit * DRIVE_RANGE;
+    let asymmetry = grit * ASYMMETRY_RANGE;
+    let saturated =
+        ((driven_input * drive + asymmetry).tanh() - asymmetry.tanh()) / drive.tanh().max(0.001);
+    // Wavefolding remains entirely source-driven: source amplitude bends its own phase and
+    // exposes a sustained hostile upper-mid edge without adding a free-running tone.
+    let fold_drive = FOLD_DRIVE_MIN + grit * FOLD_DRIVE_RANGE;
+    let source_fold = (driven_input * fold_drive * std::f32::consts::PI).sin();
+    let transient_drive = TRANSIENT_DRIVE_MIN + grit * TRANSIENT_DRIVE_RANGE;
+    let transient_bite = (raw_edge * transient_drive).tanh();
+    let bitten = saturated * SATURATED_BODY_SHARE
+        + source_fold * SOURCE_FOLD_SHARE
+        + transient_bite * TRANSIENT_BITE_SHARE;
+    let wet = grit * WET_RANGE;
+
+    (sample * (1.0 - wet) + bitten * wet).clamp(-0.98, 0.98)
 }
 
 fn w30_source_window_active(render: &RealtimeW30PreviewRenderState) -> bool {

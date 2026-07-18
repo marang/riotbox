@@ -158,9 +158,14 @@ pub(in crate::jam_app) fn transport_clock_for_state(
 pub(in crate::jam_app) fn crossed_commit_boundary(
     previous: &TransportClockState,
     next: &TransportClockState,
+    source_graph: Option<&SourceGraph>,
 ) -> Option<CommitBoundaryState> {
     if next.phrase_index > previous.phrase_index {
         return Some(next.boundary_state(riotbox_core::action::CommitBoundary::Phrase));
+    }
+
+    if let Some(boundary) = crossed_source_bar_grid_boundary(previous, next, source_graph) {
+        return Some(boundary);
     }
 
     if next.bar_index > previous.bar_index {
@@ -172,4 +177,31 @@ pub(in crate::jam_app) fn crossed_commit_boundary(
     }
 
     None
+}
+
+fn crossed_source_bar_grid_boundary(
+    previous: &TransportClockState,
+    next: &TransportClockState,
+    source_graph: Option<&SourceGraph>,
+) -> Option<CommitBoundaryState> {
+    let graph = source_graph?;
+    let hypothesis = graph.timing.primary_hypothesis()?;
+    if hypothesis.bar_grid.is_empty() {
+        return None;
+    }
+
+    let boundary_cursor = hypothesis.next_bar_beat_cursor_after(previous.position_beats)?;
+    if boundary_cursor > next.beat_index {
+        return None;
+    }
+
+    Some(
+        transport_clock_for_state(
+            boundary_cursor as f64,
+            next.is_playing,
+            next.current_scene.clone(),
+            Some(graph),
+        )
+        .boundary_state(riotbox_core::action::CommitBoundary::Bar),
+    )
 }

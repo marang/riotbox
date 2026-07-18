@@ -47,7 +47,7 @@ impl PerformancePresetId {
     #[must_use]
     pub const fn definition(self) -> PerformancePresetDefinition {
         match self {
-            Self::FeralBreakAlphaV1 | Self::FeralBreakAlphaV2 => PerformancePresetDefinition {
+            Self::FeralBreakAlphaV1 => PerformancePresetDefinition {
                 profile_id: StyleProfileId::FeralRebuild,
                 w30_role: PresetW30Role::SourceHookLead,
                 tr909_role: PresetTr909Role::BreakPressure,
@@ -71,6 +71,36 @@ impl PerformancePresetId {
                     drum_level: 0.84,
                     music_level: 0.72,
                     fx_send_level: 0.32,
+                    master_level: 0.82,
+                },
+            },
+            Self::FeralBreakAlphaV2 => PerformancePresetDefinition {
+                profile_id: StyleProfileId::FeralRebuild,
+                w30_role: PresetW30Role::SourceHookLead,
+                tr909_role: PresetTr909Role::BreakPressure,
+                mc202_role: PresetMc202Role::SourceEvidenceSelected,
+                bass_ownership: PresetBassOwnership::LivePerformancePolicy,
+                source_monitor_mode: SourceMonitorMode::Blend,
+                macro_state: MacroState {
+                    // V2 gives the promoted source hook a more hostile sampler character while
+                    // the live performance policy still decides which lane hits hardest.
+                    source_retain: 0.56,
+                    chaos: 0.58,
+                    mc202_touch: 0.82,
+                    w30_grit: 0.64,
+                    tr909_slam: 0.76,
+                    scene_aggression: 0.86,
+                    capture_eagerness: 0.76,
+                    dirt_room_intensity: 0.74,
+                },
+                mixer_state: MixerState {
+                    source_level: 0.60,
+                    drum_level: 0.88,
+                    // The nonlinear hook character supplies perceived bite. Keep electrical
+                    // headroom for source-dependent peaks instead of manufacturing impact with
+                    // a hotter music bus.
+                    music_level: 0.58,
+                    fx_send_level: 0.38,
                     master_level: 0.82,
                 },
             },
@@ -212,5 +242,15 @@ mod tests {
         );
         assert!(session.runtime_state.lane_state.w30.last_capture.is_none());
         assert!(session.runtime_state.lane_state.tr909.pattern_ref.is_none());
+    }
+
+    #[test]
+    fn alpha_v2_strengthens_the_transformed_hook_with_explicit_headroom() {
+        let v1 = PerformancePresetId::FeralBreakAlphaV1.definition();
+        let v2 = PerformancePresetId::FeralBreakAlphaV2.definition();
+
+        assert!(v2.macro_state.w30_grit > v1.macro_state.w30_grit);
+        assert!(v2.mixer_state.music_level < v1.mixer_state.music_level);
+        assert_eq!(v2.source_monitor_mode, SourceMonitorMode::Blend);
     }
 }

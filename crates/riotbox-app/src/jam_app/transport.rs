@@ -46,7 +46,9 @@ impl JamAppState {
         );
         self.update_transport_clock(next_clock.clone());
 
-        if let Some(boundary) = crossed_commit_boundary(&previous, &next_clock) {
+        if let Some(boundary) =
+            crossed_commit_boundary(&previous, &next_clock, self.source_graph.as_ref())
+        {
             self.commit_ready_actions(boundary, committed_at)
         } else {
             Vec::new()
@@ -74,7 +76,8 @@ impl JamAppState {
             timing.is_transport_running.then_some(next_clock.beat_index);
 
         if timing.is_transport_running
-            && let Some(boundary) = crossed_commit_boundary(&previous, &next_clock)
+            && let Some(boundary) =
+                crossed_commit_boundary(&previous, &next_clock, self.source_graph.as_ref())
         {
             return self.commit_ready_actions(boundary, committed_at);
         }

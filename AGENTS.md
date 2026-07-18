@@ -194,6 +194,11 @@ If a surface is intentionally not applicable, say why in the PR or working notes
   evidence that Riotbox listened to source features, made a musical decision,
   stored that decision in the product spine, rendered audible output, and proved
   same-source stability plus cross-source diversity.
+- During Golden Path tuning, run each shared audible DSP, mix, pattern, or
+  performance-policy change against at least three contrasting real sources
+  before requesting another human review. The Golden Path remains the taste
+  target; the matrix rejects overfitting, hot/silent paths, timing regressions,
+  and near-identical hook envelopes, but never replaces the human verdict.
 - Hardcoded, scripted, or template-mutated output may be useful as a regression
   scaffold, but it is not quality proof and must be labeled accordingly in
   manifests, PRs, specs, and demos.
