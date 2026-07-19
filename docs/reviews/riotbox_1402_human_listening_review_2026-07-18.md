@@ -47,10 +47,34 @@ quality, nor a final structured pass for the interactive live instrument path.
 The accepted sound must not be changed during ticket closeout unless a
 correctness defect requires it; an audible change would require fresh listening.
 
+## Exact Live Stop Follow-Up
+
+On 2026-07-19 the frozen session was loaded through the real interactive
+PipeWire/device path with source monitoring disabled and only the W-30 raw
+capture audition plus internal resample tap active. The source capture was
+`cap-01`, duration `1.842116` seconds, SHA-256
+`19100072eca31f94c76c1ce941521881d200f8598cc58cae6d4ed7836db70e8e`.
+
+The bounded stop proof recorded:
+
+- observer start with `is_playing: true`
+- `Space` / `toggle_transport` after `2.953` seconds
+- the same observer event reported `is_playing: false` and
+  `status_message: transport paused`
+- intentional `q` after a further `1.001` seconds
+- the persisted Session retained `is_playing: false`
+- no Riotbox runtime remained active after exit
+
+Markus confirmed that the output became completely silent after the announced
+stop. This is a real human and exact-device-path pass for transport-stop
+semantics. It does not by itself upgrade the musical verdict or prove the
+remaining preset, gesture, restart, recall, and trigger journey.
+
 ## Remaining Gate
 
 RIOTBOX-1402 still needs exact interactive live-path verification of the frozen
-behavior. That check should verify capture, preset activation, gestures, mixer
-output, and intentional quit/restore behavior without using this offline render
-as a substitute. The next playback request must identify the exact live
+behavior. Capture material and exact transport stop are now proven. The
+remaining check should verify preset activation, gestures, mixer output, and
+intentional quit/restart/recall/trigger behavior without using this offline
+render as a substitute. The next playback request must identify the exact live
 candidate, state the intended role, and wait for fresh listener readiness.
