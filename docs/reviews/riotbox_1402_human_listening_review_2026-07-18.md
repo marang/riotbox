@@ -91,6 +91,15 @@ its human verdict is unverified. The earlier accepted-for-iteration verdict
 continues to describe only its exact historical hash and cannot be transferred
 to the corrected render.
 
+On 2026-07-19, the corrected binary replayed the exact persisted session for a
+bounded five-second real-device check. Observer evidence in
+`events-hook-no-hum-2.ndjson` recorded W-30 `live_recall` of `cap-01`, internal
+resample tap `idle`, MC-202 `silent`, transport stopped, 425 audio callbacks,
+and intentional quit. No Riotbox process remained afterward. Markus confirmed
+the reported background hum was gone: "ja ist verschwunden". This is a human
+pass for the isolation correction, not yet a new musical-taste verdict for the
+corrected hook hash.
+
 ## Remaining Gate
 
 RIOTBOX-1402 still needs exact interactive live-path verification of the frozen
