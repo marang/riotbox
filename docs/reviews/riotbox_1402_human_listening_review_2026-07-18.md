@@ -70,11 +70,33 @@ stop. This is a real human and exact-device-path pass for transport-stop
 semantics. It does not by itself upgrade the musical verdict or prove the
 remaining preset, gesture, restart, recall, and trigger journey.
 
+## Hook Isolation Correction
+
+A later five-second playback was introduced as an isolated W-30 hook, but the
+technical contributor inventory was incomplete: the source-backed promoted Pad
+played together with the synthetic internal resample-tap voice. Markus heard
+"ein brummen im hintergrund und den beat".
+
+The beat was the intended source-backed W-30 Pad. The hum was not part of the
+requested hook role: an ordinary `CaptureType::Pad` with empty lineage and
+generation depth zero had been projected as `CaptureLineageReady`, producing a
+promoted-profile oscillator near 177 Hz without a committed
+`promote.resample`. RBX-152 corrects that activation contract so normal Pad
+capture, promotion, recall, and trigger keep the tap idle/silent.
+
+The corrected exact eight-bar candidate is
+`e885a0641d3210a38b099c5133f0f7e801c00ab5cce0a3e27b79e0e8b41e83dc`.
+It passes the exact diagnostic path without clipping or limiter dependency, but
+its human verdict is unverified. The earlier accepted-for-iteration verdict
+continues to describe only its exact historical hash and cannot be transferred
+to the corrected render.
+
 ## Remaining Gate
 
 RIOTBOX-1402 still needs exact interactive live-path verification of the frozen
-behavior. Capture material and exact transport stop are now proven. The
-remaining check should verify preset activation, gestures, mixer output, and
-intentional quit/restart/recall/trigger behavior without using this offline
-render as a substitute. The next playback request must identify the exact live
-candidate, state the intended role, and wait for fresh listener readiness.
+behavior. Capture material, preset activation, Pad promotion/trigger, and exact
+transport stop are now technically proven. The
+remaining check should verify the gesture/mixer arc and intentional
+quit/restart/recall/trigger behavior without using this offline render as a
+substitute. The next playback request must identify the exact live candidate,
+state the intended role, and wait for fresh listener readiness.

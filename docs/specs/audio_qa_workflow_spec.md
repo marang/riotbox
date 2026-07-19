@@ -1218,6 +1218,11 @@ readiness before each artifact or repeat; readiness does not carry over between
 playbacks. Playback without that confirmation is treated as unheard and cannot
 support a recorded human verdict.
 
+An `isolated` playback label requires an exact audible-contributor inventory.
+Source monitor, internal resample taps, support lanes, diagnostic voices, and
+stopped manual previews must be silent unless the brief names them as part of a
+composite. Internal routing does not make a callback voice inaudible.
+
 Human playback is bounded by default. Use at most 10 seconds for a normal
 candidate and 2-5 seconds for an isolated capture or stem when that is
 sufficient for the requested judgment. A longer window is permitted only for a

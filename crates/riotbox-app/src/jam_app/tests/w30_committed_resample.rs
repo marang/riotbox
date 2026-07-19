@@ -1,4 +1,25 @@
 #[test]
+fn ordinary_promoted_pad_does_not_route_the_internal_resample_tap() {
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+        bank_id: BankId::from("bank-b"),
+        pad_id: PadId::from("pad-03"),
+    });
+    session.captures[0].lineage_capture_refs = vec![CaptureId::from("invalid-pad-lineage")];
+    session.captures[0].resample_generation_depth = 1;
+    session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
+
+    let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    assert_eq!(
+        state.runtime.w30_resample_tap,
+        riotbox_audio::w30::W30ResampleTapState::default(),
+        "a normal Pad capture must not activate the synthetic internal resample voice"
+    );
+}
+
+#[test]
 fn committed_w30_internal_resample_materializes_lineage_safe_capture() {
     let mut graph = sample_graph();
     add_feral_ready_evidence(&mut graph);

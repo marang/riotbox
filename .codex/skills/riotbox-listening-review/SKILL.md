@@ -54,6 +54,13 @@ Only after that technical gate, provide a compact factual brief that states:
   from an answer / punctuation stem
 - the dimensions the listener should judge for this artifact
 
+Before calling any playback isolated, enumerate all callback/mixer
+contributors that can remain audible in that state. Source monitor, internal
+resample taps, support lanes, diagnostic voices, and stopped manual previews
+count as contributors even when their route is called `internal`. Silence every
+unclaimed contributor or label the artifact as a composite; do not ask the
+listener to judge an isolated hook from a hook-plus-scaffold mix.
+
 Never use `pressure` as an unqualified listening target. Name the intended
 domain and its owner:
 

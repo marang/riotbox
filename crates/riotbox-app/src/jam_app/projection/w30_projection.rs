@@ -270,6 +270,12 @@ pub(super) fn build_w30_resample_tap_state(
     }) else {
         return W30ResampleTapState::default();
     };
+    if capture.capture_type != riotbox_core::session::CaptureType::Resample
+        || capture.lineage_capture_refs.is_empty()
+        || capture.resample_generation_depth == 0
+    {
+        return W30ResampleTapState::default();
+    }
 
     let source_profile = if capture.is_pinned {
         Some(W30ResampleTapSourceProfile::PinnedCapture)

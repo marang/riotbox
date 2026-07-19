@@ -352,6 +352,13 @@ Rules:
 - capture must not break playback
 - capture timing must be aligned with transport
 - capture events must be visible to session and action systems
+- the audible internal resample tap activates only for a focused
+  `CaptureType::Resample` with non-empty capture lineage and positive resample
+  generation depth; ordinary loop/pad capture, audition, promotion, recall, and
+  trigger paths keep the tap idle and silent
+- `promote.resample` owns the first audible tap activation. The presence of any
+  capture or W-30 lane focus is not sufficient activation evidence for the
+  synthetic tap voice.
 
 ### 11.1 Source audio cache seam
 

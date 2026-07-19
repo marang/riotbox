@@ -35,11 +35,8 @@ fn renders_capture_shell_snapshot_with_capture_context() {
         rendered.contains("hear cap-01 unavailable: recapture"),
         "{rendered}"
     );
-    assert!(
-        rendered.contains("forge idle | tap ready/raw"),
-        "{rendered}"
-    );
-    assert!(rendered.contains("g0"), "{rendered}");
+    assert!(rendered.contains("forge idle | tap"), "{rendered}");
+    assert!(rendered.contains("idle/silent"), "{rendered}");
     assert!(rendered.contains("latest promoted none"));
 }
 

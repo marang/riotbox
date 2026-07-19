@@ -170,6 +170,10 @@ If a surface is intentionally not applicable, say why in the PR or working notes
   medley. Claims about reusable material or performer freedom additionally need
   a sustained isolated component audition where the musician can keep or reject
   the hook, capture, lane, or mutation before combining roles on demand.
+- Before labeling playback as an isolated component, enumerate every audible
+  callback contribution. Monitor layers, internal resample taps, diagnostic
+  voices, support lanes, and stopped-preview voices either must be silent or
+  must be named as part of a composite; an internal route is still audible.
 - Do not confuse a cleaner, louder, darker, or busier render with recognizable
   Riotbox character. The character claim requires a memorable source-backed
   hook, physical pressure, dramatic contrast, and stage-useful playability.
