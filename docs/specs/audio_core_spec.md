@@ -150,6 +150,12 @@ Rules:
   callback-local transition state and use a short allocation-free gain ramp or
   source-cursor crossfade; source EOF fades over at most 5 ms (and no more than
   one sixteenth of a very short source) instead of producing a hard edge
+- an explicit play, pause, or stop request remains authoritative until the audio
+  runtime reports the requested running state; an older callback timing snapshot
+  must not reverse the musician's command
+- a running-to-stopped transition silences every active lane through a bounded
+  callback-local fade of at most 5 ms and remains silent until transport resumes
+  or the musician deliberately starts a stopped manual preview
 - the source monitor must not mask weak generated-lane QA; source-only and
   source-layer states must be explicit
 

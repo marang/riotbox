@@ -343,7 +343,12 @@ fn last_committed_w30_preview_action(session: &SessionFile) -> Option<&Action> {
 fn last_committed_w30_trigger_action(session: &SessionFile) -> Option<&Action> {
     session.action_log.actions.iter().rev().find(|action| {
         action.status == ActionStatus::Committed
-            && matches!(action.command, ActionCommand::W30TriggerPad)
+            && matches!(
+                action.command,
+                ActionCommand::W30TriggerPad
+                    | ActionCommand::W30AuditionRawCapture
+                    | ActionCommand::W30AuditionPromoted
+            )
     })
 }
 

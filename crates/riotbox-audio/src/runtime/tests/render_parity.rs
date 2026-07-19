@@ -133,6 +133,66 @@ fn runtime_mix_plan_sequence_preserves_callback_state_and_segment_lengths() {
 }
 
 #[test]
+fn exact_runtime_mix_transport_stop_fades_and_silences_all_w30_paths() {
+    let running = RuntimeMixRenderPlan {
+        transport: AudioRuntimeTimingSnapshot {
+            is_transport_running: true,
+            tempo_bpm: 130.0,
+            position_beats: 8.0,
+        },
+        w30_preview_render: W30PreviewRenderState {
+            mode: W30PreviewRenderMode::RawCaptureAudition,
+            routing: W30PreviewRenderRouting::MusicBusPreview,
+            source_profile: Some(W30PreviewSourceProfile::RawCaptureAudition),
+            source_window_preview: Some(runtime_mix_parity_source_window()),
+            music_bus_level: 0.58,
+            grit_level: 0.4,
+            is_transport_running: true,
+            tempo_bpm: 130.0,
+            position_beats: 8.0,
+            ..W30PreviewRenderState::default()
+        },
+        w30_resample_tap: W30ResampleTapState {
+            mode: W30ResampleTapMode::CaptureLineageReady,
+            routing: W30ResampleTapRouting::InternalCaptureTap,
+            source_profile: Some(W30ResampleTapSourceProfile::RawCapture),
+            source_capture_id: Some("stop-proof-capture".into()),
+            lineage_capture_count: 1,
+            generation_depth: 0,
+            music_bus_level: 0.34,
+            grit_level: 0.4,
+            is_transport_running: true,
+        },
+        ..RuntimeMixRenderPlan::default()
+    };
+    let mut stopped = running.clone();
+    stopped.transport.is_transport_running = false;
+    stopped.transport.position_beats = 8.25;
+    stopped.w30_preview_render.is_transport_running = false;
+    stopped.w30_preview_render.position_beats = 8.25;
+    stopped.w30_resample_tap.is_transport_running = false;
+
+    let segments = render_runtime_mix_plan_sequence_realtime_simulation_offline(
+        &[
+            RuntimeMixRenderSequenceStep::new(&running, 512),
+            RuntimeMixRenderSequenceStep::new(&stopped, 1_024),
+        ],
+        44_100,
+        2,
+        128,
+    );
+
+    assert!(segments[0].iter().any(|sample| sample.abs() > 0.0001));
+    let fade_sample_count = usize::try_from(44_100 / 200).unwrap() * 2;
+    assert!(segments[1][..fade_sample_count]
+        .iter()
+        .any(|sample| sample.abs() > 0.0001));
+    assert!(segments[1][fade_sample_count..]
+        .iter()
+        .all(|sample| sample.abs() <= f32::EPSILON));
+}
+
+#[test]
 fn runtime_mix_plan_sequence_observes_w30_trigger_revision_between_callbacks() {
     let ready = RuntimeMixRenderPlan {
         w30_preview_render: W30PreviewRenderState {

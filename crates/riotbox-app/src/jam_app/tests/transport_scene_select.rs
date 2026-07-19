@@ -59,12 +59,119 @@ fn setting_transport_playing_records_audio_transport_anchor() {
         state.runtime.transport_driver.last_audio_position_beats,
         Some(state.runtime.transport.beat_index)
     );
+    assert_eq!(
+        state.runtime.transport_driver.pending_audio_is_playing,
+        Some(true)
+    );
 
     state.set_transport_playing(false);
 
     assert!(!state.runtime.transport.is_playing);
     assert_eq!(
         state.runtime.transport_driver.last_audio_position_beats,
+        None
+    );
+    assert_eq!(
+        state.runtime.transport_driver.pending_audio_is_playing,
+        Some(false)
+    );
+}
+
+#[test]
+fn stale_running_audio_snapshot_cannot_cancel_requested_pause() {
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    state.set_transport_playing(true);
+    state.apply_audio_timing_snapshot(
+        AudioRuntimeTimingSnapshot {
+            is_transport_running: true,
+            tempo_bpm: 124.0,
+            position_beats: 32.5,
+        },
+        1_000,
+    );
+    state.set_transport_playing(false);
+    let paused_position = state.runtime.transport.position_beats;
+
+    let stale_commit = state.apply_audio_timing_snapshot(
+        AudioRuntimeTimingSnapshot {
+            is_transport_running: true,
+            tempo_bpm: 124.0,
+            position_beats: paused_position + 1.0,
+        },
+        1_100,
+    );
+
+    assert!(stale_commit.is_empty());
+    assert!(!state.runtime.transport.is_playing);
+    assert_eq!(state.runtime.transport.position_beats, paused_position);
+    assert_eq!(
+        state.runtime.transport_driver.pending_audio_is_playing,
+        Some(false)
+    );
+
+    state.apply_audio_timing_snapshot(
+        AudioRuntimeTimingSnapshot {
+            is_transport_running: false,
+            tempo_bpm: 124.0,
+            position_beats: paused_position,
+        },
+        1_200,
+    );
+
+    assert!(!state.runtime.transport.is_playing);
+    assert_eq!(
+        state.runtime.transport_driver.pending_audio_is_playing,
+        None
+    );
+}
+
+#[test]
+fn stale_stopped_audio_snapshot_cannot_cancel_requested_play() {
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    state.set_transport_playing(false);
+    state.apply_audio_timing_snapshot(
+        AudioRuntimeTimingSnapshot {
+            is_transport_running: false,
+            tempo_bpm: 124.0,
+            position_beats: 32.0,
+        },
+        1_000,
+    );
+
+    state.set_transport_playing(true);
+    let started_position = state.runtime.transport.position_beats;
+    state.apply_audio_timing_snapshot(
+        AudioRuntimeTimingSnapshot {
+            is_transport_running: false,
+            tempo_bpm: 124.0,
+            position_beats: started_position,
+        },
+        1_100,
+    );
+
+    assert!(state.runtime.transport.is_playing);
+    assert_eq!(
+        state.runtime.transport_driver.pending_audio_is_playing,
+        Some(true)
+    );
+
+    state.apply_audio_timing_snapshot(
+        AudioRuntimeTimingSnapshot {
+            is_transport_running: true,
+            tempo_bpm: 124.0,
+            position_beats: started_position,
+        },
+        1_200,
+    );
+
+    assert!(state.runtime.transport.is_playing);
+    assert_eq!(
+        state.runtime.transport_driver.pending_audio_is_playing,
         None
     );
 }

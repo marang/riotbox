@@ -1218,6 +1218,15 @@ readiness before each artifact or repeat; readiness does not carry over between
 playbacks. Playback without that confirmation is treated as unheard and cannot
 support a recorded human verdict.
 
+Human playback is bounded by default. Use at most 10 seconds for a normal
+candidate and 2-5 seconds for an isolated capture or stem when that is
+sufficient for the requested judgment. A longer window is permitted only for a
+named multi-bar development claim after the reviewer is told the exact duration
+and why it is necessary. A repeating live instrument state is not itself a
+bounded review artifact: the operator must schedule an explicit audible stop at
+the announced endpoint, verify that all active lanes are silent, and terminate
+the runtime immediately if transport stop does not silence them.
+
 Structured listening review records the human layer as explicit artifact data,
 not chat memory and not CI-only truth. For audio-producing slices, the local
 workflow is:

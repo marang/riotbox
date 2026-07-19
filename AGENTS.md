@@ -136,6 +136,11 @@ If a surface is intentionally not applicable, say why in the PR or working notes
 - Before every human playback, technically analyze and correctly assign the
   exact WAV/A-B artifact, interpret role-appropriate time/frequency deltas, and
   only then give the factual brief and request fresh readiness.
+- Bound human playback to 10 seconds by default and 2-5 seconds for an isolated
+  capture/stem when sufficient. Exceed 10 seconds only for a named multi-bar
+  development claim after stating its exact duration and purpose. Explicitly
+  stop and verify silence at the announced endpoint; terminate a live runtime
+  immediately if transport stop leaves any lane audible.
 - After at most two consecutive generations of a review-ready candidate that
   remains `human_verdict: unverified`, stop generation for that candidate and
   perform or explicitly hand off structured human listening. Do not replace the

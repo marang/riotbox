@@ -134,6 +134,14 @@ failure is genuinely unobservable.
 
 For audible changes that need structured human taste review, apply the companion `riotbox-listening-review` skill when available. If it is not automatically loaded, read `../riotbox-listening-review/SKILL.md` from the skills directory when accessible.
 
+Keep human QA playback bounded. Default to at most 10 seconds, and use only
+2-5 seconds for an isolated capture or stem when that is enough to judge the
+requested property. Exceed 10 seconds only when a named multi-bar development
+claim genuinely requires it; state the exact duration and purpose before
+requesting readiness. A live instrument loop is not a bounded audition: issue
+and verify an explicit audible stop at the announced endpoint, and terminate
+the runtime immediately if transport stop does not silence every active lane.
+
 ## Wrong-Sound Handling
 
 When the user says the output is wrong, identical, silent, or only "ding ding ding":

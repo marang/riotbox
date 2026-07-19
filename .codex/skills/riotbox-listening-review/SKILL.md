@@ -80,6 +80,18 @@ confirmation does not carry over to the next artifact or repeat. Treat any
 playback started without that confirmation as unheard and do not record a human
 verdict from it.
 
+Bound every playback before requesting readiness:
+
+- default maximum: 10 seconds
+- isolated capture or stem: 2-5 seconds when sufficient
+- longer playback: only for a named multi-bar development claim, with exact
+  duration and purpose stated in advance
+
+Do not let a live instrument loop stand in for a bounded review artifact.
+Schedule an explicit audible stop at the announced endpoint, verify that all
+active lanes are silent, and terminate the runtime immediately if transport
+stop does not silence them. Confirm silence before preparing the next sample.
+
 ## Primitive Vocabulary Provenance
 
 Do not collapse fixed instrument vocabulary and fallback output into one label.

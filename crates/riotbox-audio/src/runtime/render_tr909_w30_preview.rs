@@ -98,11 +98,32 @@ pub(super) fn render_w30_preview_buffer(
 
     if !active {
         state.was_active = false;
+        state.last_transport_running = render.is_transport_running;
+        state.transport_stop_latched = false;
+        state.transport_stop_fade_frames_remaining = 0;
         state.envelope = 0.0;
         state.last_character_input = 0.0;
         state.character_edge_memory = 0.0;
         state.beat_position = render.position_beats;
         state.last_trigger_revision = render.trigger_revision;
+        return;
+    }
+
+    let transport_stop_fade_frames = transport_stop_fade_frames(sample_rate);
+    let explicitly_retriggered = render.trigger_revision > state.last_trigger_revision;
+    if state.last_transport_running && !render.is_transport_running {
+        state.transport_stop_latched = true;
+        state.transport_stop_fade_frames_remaining = transport_stop_fade_frames;
+    } else if render.is_transport_running || explicitly_retriggered {
+        state.transport_stop_latched = false;
+        state.transport_stop_fade_frames_remaining = 0;
+    }
+    state.last_transport_running = render.is_transport_running;
+    if state.transport_stop_latched && state.transport_stop_fade_frames_remaining == 0 {
+        state.was_active = false;
+        state.envelope = 0.0;
+        state.last_character_input = 0.0;
+        state.character_edge_memory = 0.0;
         return;
     }
 
@@ -186,8 +207,16 @@ pub(super) fn render_w30_preview_buffer(
             0.45 + 0.55 * ((std::f32::consts::TAU * state.lfo_phase).sin() * 0.5 + 0.5)
         };
         let waveform = w30_preview_waveform_for_frame(render, state, sample_rate);
-        let sample =
-            waveform * state.envelope * tremolo * w30_render_gain(render, transport_running);
+        let stop_gain = transport_stop_gain(
+            state.transport_stop_latched,
+            &mut state.transport_stop_fade_frames_remaining,
+            transport_stop_fade_frames,
+        );
+        let sample = waveform
+            * state.envelope
+            * tremolo
+            * w30_render_gain(render, transport_running)
+            * stop_gain;
         if transport_running && !w30_pad_playback_active(render) {
             state.envelope *= w30_envelope_decay(render);
         }
@@ -457,10 +486,27 @@ pub(super) fn render_w30_resample_tap_buffer(
 
     if !active {
         state.was_active = false;
+        state.last_transport_running = render.is_transport_running;
+        state.transport_stop_latched = false;
+        state.transport_stop_fade_frames_remaining = 0;
         state.envelope = 0.0;
         state.beat_position = 0.0;
         return;
     }
+
+    let transport_stop_fade_frames = transport_stop_fade_frames(sample_rate);
+    if state.last_transport_running && !render.is_transport_running {
+        state.transport_stop_latched = true;
+        state.transport_stop_fade_frames_remaining = transport_stop_fade_frames;
+    } else if render.is_transport_running {
+        state.transport_stop_latched = false;
+        state.transport_stop_fade_frames_remaining = 0;
+    } else if state.transport_stop_latched && state.transport_stop_fade_frames_remaining == 0 {
+        state.was_active = false;
+        state.envelope = 0.0;
+        return;
+    }
+    state.last_transport_running = render.is_transport_running;
 
     if !state.was_active {
         state.beat_position = 0.0;
@@ -503,7 +549,12 @@ pub(super) fn render_w30_resample_tap_buffer(
         let sample = waveform
             * state.envelope
             * shimmer
-            * w30_resample_render_gain(render, transport_running);
+            * w30_resample_render_gain(render, transport_running)
+            * transport_stop_gain(
+                state.transport_stop_latched,
+                &mut state.transport_stop_fade_frames_remaining,
+                transport_stop_fade_frames,
+            );
         state.oscillator_phase =
             (state.oscillator_phase + frequency / sample_rate.max(1) as f32).fract();
         if transport_running {
@@ -517,6 +568,23 @@ pub(super) fn render_w30_resample_tap_buffer(
 
         state.beat_position += beats_per_sample;
     }
+}
+
+fn transport_stop_fade_frames(sample_rate: u32) -> u32 {
+    (sample_rate / 200).max(1)
+}
+
+fn transport_stop_gain(latched: bool, remaining_frames: &mut u32, total_frames: u32) -> f32 {
+    if !latched {
+        return 1.0;
+    }
+    if *remaining_frames == 0 {
+        return 0.0;
+    }
+
+    let gain = *remaining_frames as f32 / total_frames.max(1) as f32;
+    *remaining_frames = remaining_frames.saturating_sub(1);
+    gain
 }
 
 fn w30_resample_subdivision(render: &RealtimeW30ResampleTapState) -> u32 {

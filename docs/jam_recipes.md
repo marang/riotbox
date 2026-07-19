@@ -811,6 +811,12 @@ What to observe:
 - `source` is for checking the original material and grid
 - `blend` is for hearing source plus Riotbox lanes
 - `riotbox` is for checking the generated / performed result without source masking
+- keep human QA auditions bounded to 10 seconds by default and 2-5 seconds for
+  an isolated capture or stem; use a longer named multi-bar window only when its
+  development is the property under review
+- at the announced endpoint, press `Space` and verify that every active lane is
+  silent; if anything continues, press `q` immediately and treat the audition
+  as a failed stop-semantics check rather than continuing playback
 - Source Map bars are trusted only when timing is usable or user-confirmed
 - when timing is not usable, the map falls back to time-based orientation instead
   of pretending bar-accurate capture is safe
