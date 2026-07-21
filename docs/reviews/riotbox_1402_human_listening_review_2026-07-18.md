@@ -223,7 +223,7 @@ explicit stop before playback readiness is requested.
 
 ## Exact Live Timing Closeout
 
-The final real PipeWire/TUI run landed committed beats
+The first final real PipeWire/TUI timing run landed committed beats
 `22 -> 30 -> 38 -> 42 -> 46` and stopped at transport position
 `53.823536`. The dedicated validator accepts this as
 `8 -> 8 -> 4 -> 4 -> 7.823536`, inside the declared quarter-beat stop
@@ -231,15 +231,56 @@ tolerance. Its observer stream is
 `artifacts/audio_qa/local/user-session/RIOTBOX-1402-exact-live-timing-v4/events.ndjson`
 and validates independently as `riotbox.user_session_observer.v1`.
 
-No new musical verdict is recorded. The live sound recipe was intentionally
-unchanged across these timing runs, and Markus reported that the recent
-examples all sounded the same and that he no longer had a useful opinion about
-them. This is listener-fatigue evidence and a QA-process stop signal, not a
-negative verdict. The callback-render `keep` remains bound to its exact hash.
+The concurrent sink-monitor WAV from that run is excluded from listening
+evidence: its raw capture measured approximately `-3.90 dBFS RMS`, reached
+digital full scale, and reported an invalid positive true peak. The timing
+evidence remains valid, but the contaminated WAV was never presented as the
+closeout candidate.
 
-The concurrent sink-monitor WAV is excluded from listening evidence: its raw
-capture measured approximately `-3.90 dBFS RMS`, reached digital full scale,
-and reported an invalid positive true peak, so it is not a trustworthy isolated
-Riotbox artifact. The valid closeout evidence here is the exact interactive
-action/commit/stop path plus the earlier artifact-bound callback listening
-pass; no further same-recipe playback is warranted.
+## Exact Live Human Pass
+
+A fresh real TUI/audio-callback run routed only the Riotbox sink input into a
+temporary PipeWire null sink while the normal desktop/Chrome output remained
+on the physical device. This removed the earlier capture contamination without
+changing the Riotbox runtime path. The bounded candidate was trimmed from the
+silent capture pre-roll with a short capture-edge fade; no gain, compression,
+or musical processing was added.
+
+The accepted live take has these identities and technical properties:
+
+- observer:
+  `artifacts/audio_qa/local/user-session/RIOTBOX-1402-exact-live-isolated-v1/events.ndjson`
+- callback capture: `/tmp/RIOTBOX-1402-exact-live-isolated-candidate.wav`
+- SHA-256: `327f9d4d00bd18c294bcf26f86c8b8a3b23f8e4f85474572735139d627d5ce61`
+- format: 48 kHz, stereo, 24-bit PCM presentation file
+- duration: `14.787` seconds
+- integrated loudness: `-18.6 LUFS`
+- true peak: `-0.3 dBTP`; no clipping
+- typed bass owner: `unassigned`; bass pressure was not a review target
+
+The observer landed `w -> s -> f -> y -> Y+D` at transport positions
+`50.067233 -> 58.058831 -> 66.100849 -> 70.084042 -> 74.142866` and stopped
+at `81.907573`. The validator accepts the take as
+`8 -> 8 -> 4 -> 4 -> 7.90757`, again inside the declared stop tolerance.
+Time-local analysis also distinguishes the intended arrangement changes: the
+Fill is about `2.25 dB` louder in full-band RMS than the preceding slam and has
+substantially more high-band energy, the following scene section drops about
+`4.55 dB`, and the return recovers about `3.25 dB` while remaining below the
+Fill peak. The review therefore did not ask the listener to distinguish
+mechanically identical renders.
+
+After the exact artifact was announced and Markus explicitly confirmed fresh
+readiness, the complete candidate was played once. His verdict was:
+
+> "pass, ich wuerde es bestimmt anders loopen aber die elemente sind schon gut"
+
+This records `human_verdict: keep` for the exact live artifact. The candidate
+passes as usable musical material with a clear early hook, transformed-but-
+present source character, audible impact and contrast, and live replay value.
+The limitation is equally important: the reviewed eight-bar action arc is QA
+choreography, not a preferred fixed composition or default loop. The Alpha UX
+should preserve the passed elements while allowing the performer to confirm,
+trigger, and loop them in a different order. The local structured review is
+`artifacts/audio_qa/local/listening-reviews/RIOTBOX-1402-exact-live-327f9d4d/review.json`;
+it is intentionally ignored as local audio-QA state, while this review keeps
+the durable hash-bound verdict and product consequence in repository history.
