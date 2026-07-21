@@ -1390,6 +1390,16 @@ degraded, unavailable, or reject product-path outcome with no fallback music.
 This fixes evidence routing only and directly hands the product-path proof to
 RIOTBOX-1405.
 
+RIOTBOX-1405 now records exact live `degraded / needs_user_confirmation` and
+`unavailable / unavailable` assignments with source-only monitoring, stopped
+transport, idle generated lanes, no live source policy, and no fallback music.
+The compact state, reason, and safe next action earned a bounded human product
+`pass` with an explicit note that general TUI polish remains later work.
+`weak_source` and `bad_timing` therefore satisfy their reviewed-negative family
+contract without a rendered candidate or demo-ready claim. The next audible
+slice is RIOTBOX-1408: retire the synthetic W-30 resample-tap proxy in favor of
+source-backed resample audio on the exact product path.
+
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a
 quality guardrail, not a replacement for the current sound-product priority:
