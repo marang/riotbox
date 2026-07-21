@@ -210,6 +210,101 @@ fn capture_source_window_missing_end_beat_uses_primary_hypothesis_bpm() {
 }
 
 #[test]
+fn capture_after_source_eof_does_not_claim_an_empty_source_window() {
+    let mut graph = sample_graph();
+    graph.source.duration_seconds = 3.692;
+    graph.timing.beat_grid.clear();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    state.session.captures.clear();
+    state.session.runtime_state.capture.length_intent = CaptureLengthIntent::OneBar;
+
+    state.queue_capture_bar(300);
+    let committed = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Bar,
+            beat_index: 138,
+            bar_index: 35,
+            phrase_index: 9,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        400,
+    );
+
+    assert_eq!(committed.len(), 1);
+    assert!(
+        state.session.captures[0].source_window.is_none(),
+        "capture after source EOF must fail closed instead of advertising a zero-length window"
+    );
+}
+
+#[test]
+fn source_phase_bar_boundary_commits_capture_at_the_crossed_downbeat() {
+    let mut graph = source_map_navigation_graph();
+    graph.source.duration_seconds = 3.692;
+    graph.timing.bpm_estimate = Some(130.284_94);
+    let primary = graph
+        .timing
+        .hypotheses
+        .first_mut()
+        .expect("primary timing hypothesis");
+    primary.bpm = 130.284_94;
+    primary.beat_grid = (1..=9)
+        .map(|beat_index| BeatPoint {
+            beat_index,
+            time_seconds: (beat_index - 1) as f32 * 0.460_529_03,
+            confidence: 0.55,
+        })
+        .collect();
+    primary.bar_grid = vec![
+        riotbox_core::source_graph::BarSpan {
+            bar_index: 1,
+            start_seconds: 0.921_058_06,
+            end_seconds: 2.763_174,
+            downbeat_confidence: 0.55,
+            phrase_index: None,
+        },
+        riotbox_core::source_graph::BarSpan {
+            bar_index: 2,
+            start_seconds: 2.763_174,
+            end_seconds: 3.692,
+            downbeat_confidence: 0.55,
+            phrase_index: None,
+        },
+    ];
+    primary.phrase_grid.clear();
+
+    let mut session = sample_session(&graph);
+    session.captures.clear();
+    session.runtime_state.capture.length_intent = CaptureLengthIntent::OneBar;
+    session.runtime_state.transport.position_beats = 0.0;
+    session.runtime_state.transport.is_playing = false;
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    state.set_transport_playing(true);
+    state.queue_capture_bar(300);
+
+    let committed = state.apply_audio_timing_snapshot(
+        AudioRuntimeTimingSnapshot {
+            is_transport_running: true,
+            tempo_bpm: 130.0,
+            position_beats: 2.1,
+        },
+        400,
+    );
+
+    assert_eq!(committed.len(), 1);
+    assert_eq!(committed[0].boundary.kind, CommitBoundary::Bar);
+    assert_eq!(committed[0].boundary.beat_index, 2);
+    assert_eq!(committed[0].boundary.bar_index, 1);
+    let source_window = state.session.captures[0]
+        .source_window
+        .as_ref()
+        .expect("phase-aligned capture source window");
+    assert!((source_window.start_seconds - 0.921_058_06).abs() < 0.000_1);
+    assert!((source_window.end_seconds - 2.763_174).abs() < 0.000_1);
+}
+
+#[test]
 fn phrase_capture_length_uses_phrase_grid_when_available() {
     let mut graph = sample_graph();
     graph.timing.meter_hint = Some(riotbox_core::source_graph::MeterHint {

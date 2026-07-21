@@ -21,3 +21,7 @@ include!("bin/riotbox-app/args_support.rs");
 include!("bin/riotbox-app/args_daw_session.rs");
 include!("bin/riotbox-app/args.rs");
 include!("bin/riotbox-app/tests.rs");
+
+#[cfg(test)]
+#[path = "bin/riotbox-app/tests/intentional_quit_persistence.rs"]
+mod intentional_quit_persistence_tests;

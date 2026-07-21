@@ -149,10 +149,10 @@ pub fn derive_live_performance_policy(
     let mc202_music_level = match mc202_intent {
         LivePerformanceMc202Intent::BassPressure => 0.76 + bass_pressure * 0.16,
         LivePerformanceMc202Intent::Punctuate => 0.62,
-        // A fill-pickup is an accent, not a bass owner. Its higher touch floor
-        // supplies the attack; sharing the punctuate bus level preserves
-        // headroom for simultaneous W-30 damage.
-        LivePerformanceMc202Intent::Instigate => 0.62,
+        // A fill-pickup is an accent, not a bass owner. Its higher touch floor supplies the
+        // attack; a lower bus allocation leaves exact-mix headroom for the source-backed W-30
+        // hook and physical TR-909 downbeat.
+        LivePerformanceMc202Intent::Instigate => 0.50,
         LivePerformanceMc202Intent::StayOut => 0.0,
     };
     let mc202_touch_floor = match mc202_intent {
@@ -167,6 +167,12 @@ pub fn derive_live_performance_policy(
         LivePerformanceBassOwner::Unassigned
     };
 
+    let nominal_w30_music_level: f32 = if mc202_intent == LivePerformanceMc202Intent::BassPressure {
+        0.60
+    } else {
+        0.64
+    };
+
     Some(LivePerformancePolicy {
         source_id: graph.source.source_id.clone(),
         source_bar_grid_anchor_beat_cursor: graph
@@ -177,11 +183,21 @@ pub fn derive_live_performance_policy(
         lead,
         bass_owner,
         mc202_intent,
-        w30_music_level: if mc202_intent == LivePerformanceMc202Intent::BassPressure {
-            0.60
-        } else {
-            0.64
-        },
+        // The policy owns the musical balance, while the committed Session mixer remains an
+        // explicit headroom ceiling. Ignoring that ceiling made a named preset unable to protect
+        // the exact live mixer from source-dependent hot peaks.
+        w30_music_level: session.runtime_state.style.active_preset.map_or(
+            nominal_w30_music_level,
+            |_| {
+                nominal_w30_music_level.min(
+                    session
+                        .runtime_state
+                        .mixer_state
+                        .music_level
+                        .clamp(0.0, 1.0),
+                )
+            },
+        ),
         source_transient_backbeat_evidence,
         tr909_drum_level: 0.68 + transient_backbeat * 0.16,
         tr909_slam_floor: 0.54 + transient_backbeat * 0.16,
@@ -248,6 +264,7 @@ mod tests {
         source_graph::{
             DecodeProfile, GraphProvenance, Section, SectionLabelHint, SourceDescriptor,
         },
+        style::PerformancePresetId,
     };
 
     #[test]
@@ -424,6 +441,33 @@ mod tests {
     }
 
     #[test]
+    fn active_preset_mixer_caps_the_policy_w30_level_for_live_headroom() {
+        let (mut session, graph) = dense_break_context();
+        session.runtime_state.source_timing.confirmed_grid =
+            Some(SourceTimingGridConfirmationState {
+                source_id: graph.source.source_id.clone(),
+                hypothesis_id: Some("grid-1".into()),
+                confirmed_by_action: ActionId(1),
+                confirmed_at: 100,
+            });
+        let mut plan = pressure_source_plan(graph.source.source_id.clone());
+        plan.candidate_family = Some(Mc202SourcePhraseCandidateFamilyState::CallBackStab);
+        session.runtime_state.lane_state.mc202.source_phrase_plan = Some(plan);
+        PerformancePresetId::FeralBreakAlphaV2.apply_to_session(&mut session);
+
+        let policy = derive_live_performance_policy(&session, &graph).expect("dense policy");
+
+        assert_eq!(
+            policy.w30_music_level,
+            PerformancePresetId::FeralBreakAlphaV2
+                .definition()
+                .mixer_state
+                .music_level
+        );
+        assert!(policy.w30_music_level < 0.64);
+    }
+
+    #[test]
     fn fill_pickup_instigator_keeps_headroom_and_cannot_claim_bass() {
         let (mut session, graph) = dense_break_context();
         session.runtime_state.source_timing.confirmed_grid =
@@ -441,7 +485,7 @@ mod tests {
 
         assert_eq!(policy.mc202_intent, LivePerformanceMc202Intent::Instigate);
         assert_eq!(policy.bass_owner, LivePerformanceBassOwner::Unassigned);
-        assert_eq!(policy.mc202_music_level, 0.62);
+        assert_eq!(policy.mc202_music_level, 0.50);
         assert_eq!(policy.mc202_touch_floor, 0.82);
     }
 

@@ -3,7 +3,7 @@ use super::{
     shared_w30_resample_callback::Tr909CallbackState,
     tr909_fill_recipe::{
         Tr909FillStep, Tr909FillVoiceTrigger, fill_bar_aligned_position_beats, fill_focus_profile,
-        prepared_fill_step,
+        fill_output_gain, prepared_fill_step,
     },
     w30_tr909_signal_helpers::{
         fill_performance_slam, render_gain, render_subdivision, tr909_deterministic_noise,
@@ -475,7 +475,7 @@ pub(super) fn render_tr909_fill_buffer(
 
     let beats_per_sample = f64::from(render.tempo_bpm) / 60.0 / f64::from(sample_rate.max(1));
     let frame_count = data.len() / channel_count.max(1);
-    let gain = render_gain(render);
+    let gain = render_gain(render) * fill_output_gain(render);
 
     for frame_index in 0..frame_count {
         let step = fill_transport_step(render, state.beat_position, subdivision);

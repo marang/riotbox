@@ -58,6 +58,11 @@ When generating or reviewing patterns, slices, demos, or presets:
 - favor short, forceful loops with a clear riff or drum identity
 - establish the hook and clearly hardest element on one supported Golden Path
   before widening source-family coverage or multiplying variations
+- while tuning that Golden Path, run every shared audible DSP, mix, pattern, or
+  performance-policy change against at least three contrasting real sources
+  before requesting another human review; keep one source as the taste target,
+  but reject clipping, silence, timing regressions, or near-identical hook
+  envelopes across the matrix
 - after that core loop works, create at least one destructive variation: choke,
   reverse, retrigger, pitch dive, filter slam, bitcrush, or silence cut
 - do not make fallback sounds part of the product path; absence of trusted
@@ -83,6 +88,14 @@ When generating or reviewing patterns, slices, demos, or presets:
 - for Golden Path review, prefer a source-derived eight-bar arc that establishes
   the hook, lifts pressure, creates a destructive role swap or drop, and returns
   with a materially changed payoff
+- do not let that compact eight-bar arc become a medley-shaped substitute for
+  instrument proof: a scripted sequence that forces hook, lift, fill, scene
+  change, and return every one or two bars may prove gesture reachability, but
+  it does not prove that any component is desirable to hold or loop
+- when loopability, reusable source material, or performer freedom is claimed,
+  also audition the relevant hook, capture, lane, or mutation in isolation for
+  a sustained window; the musician must be able to keep or reject it before
+  combining it with other roles on demand
 
 ## Engineering Implications
 

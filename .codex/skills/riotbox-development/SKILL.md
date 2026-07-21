@@ -90,6 +90,13 @@ five surfaces:
   tested, and scripted/hardcoded artifacts stay labeled `quality_proof: false`
   until structured listening review accepts them
 
+For shared audible DSP, mix, pattern, or performance-policy tuning, do not wait
+for broad source-family expansion to catch overfitting. Keep one Golden Path as
+the human taste target, but run at least three contrasting real sources through
+the nearest exact product-path matrix before the next listening request. This
+matrix is a safety/diversity gate, not a substitute for the Golden Path human
+verdict.
+
 If a slice only adds the spine or a deterministic scaffold, say that plainly in
 the PR and docs. Do not describe it as complete musical intelligence.
 
@@ -115,6 +122,16 @@ cannot otherwise be evaluated honestly.
 
 If a user says two gestures sound the same, prefer adding or tightening an output comparison before adding more UI/log assertions.
 
+An exact Golden Path renderer must execute only the documented musician preparation and gestures. Do not silently queue a lane mode, phrase decision, pattern, monitor route, or other prerequisite that the recipe/UI does not expose. If a prerequisite is required, make it a visible product step and prove its committed action.
+
+When a QA gate reuses an existing source-backed render or manifest, validate it
+against the timing identity stored in that artifact. Do not substitute a
+generated-fixture BPM, sample rate, anchor, or source constant; that turns valid
+cross-source evidence into a false failure and hides whether the gate is truly
+source-general.
+
+When tuning typed versioned audio vocabulary, keep historical review/control versions sample-stable unless an explicit compatibility decision says otherwise. Split recipe-local focus, gain, or articulation data by version instead of reusing one mutable constant across the historical and current IDs.
+
 If output metrics pass but the musician-facing result is still weak, treat the feature as technically partial, not done.
 
 After at most two consecutive generations of a review-ready candidate that
@@ -126,6 +143,14 @@ failure is genuinely unobservable.
 ## Structured Listening Review
 
 For audible changes that need structured human taste review, apply the companion `riotbox-listening-review` skill when available. If it is not automatically loaded, read `../riotbox-listening-review/SKILL.md` from the skills directory when accessible.
+
+Keep human QA playback bounded. Default to at most 10 seconds, and use only
+2-5 seconds for an isolated capture or stem when that is enough to judge the
+requested property. Exceed 10 seconds only when a named multi-bar development
+claim genuinely requires it; state the exact duration and purpose before
+requesting readiness. A live instrument loop is not a bounded audition: issue
+and verify an explicit audible stop at the announced endpoint, and terminate
+the runtime immediately if transport stop does not silence every active lane.
 
 ## Wrong-Sound Handling
 

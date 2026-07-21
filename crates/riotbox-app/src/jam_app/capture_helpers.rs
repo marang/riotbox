@@ -142,13 +142,18 @@ fn capture_source_window(
         .unwrap_or_else(|| seconds_for_beat_cursor_estimate(graph, end_beat))
         .min(graph.source.duration_seconds)
         .max(start_seconds);
+    let start_frame = seconds_to_frame(start_seconds, graph.source.sample_rate);
+    let end_frame = seconds_to_frame(end_seconds, graph.source.sample_rate);
+    if end_frame <= start_frame {
+        return None;
+    }
 
     Some(CaptureSourceWindow {
         source_id: graph.source.source_id.clone(),
         start_seconds,
         end_seconds,
-        start_frame: seconds_to_frame(start_seconds, graph.source.sample_rate),
-        end_frame: seconds_to_frame(end_seconds, graph.source.sample_rate),
+        start_frame,
+        end_frame,
     })
 }
 

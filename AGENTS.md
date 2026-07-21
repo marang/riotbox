@@ -136,6 +136,19 @@ If a surface is intentionally not applicable, say why in the PR or working notes
 - Before every human playback, technically analyze and correctly assign the
   exact WAV/A-B artifact, interpret role-appropriate time/frequency deltas, and
   only then give the factual brief and request fresh readiness.
+- Bound human playback to 10 seconds by default and 2-5 seconds for an isolated
+  capture/stem when sufficient. Exceed 10 seconds only for a named multi-bar
+  development claim after stating its exact duration and purpose. Explicitly
+  stop and verify silence at the announced endpoint; terminate a live runtime
+  immediately if transport stop leaves any lane audible.
+- For multi-stage live reviews, queue ahead of intended quantized boundaries
+  and validate the landed observer commit intervals plus final stop position
+  before requesting readiness. Wall-clock sleeps alone are not timing proof;
+  reject a take that misses its declared beat/bar arc.
+- Do not ask for repeated human playback when only technical timing, capture,
+  or observer evidence changed and the sound recipe did not. Prove those
+  changes mechanically; treat repeated "same" or listener fatigue as a stop
+  signal, not as a negative musical verdict.
 - After at most two consecutive generations of a review-ready candidate that
   remains `human_verdict: unverified`, stop generation for that candidate and
   perform or explicitly hand off structured human listening. Do not replace the
@@ -159,6 +172,16 @@ If a surface is intentionally not applicable, say why in the PR or working notes
   explicitly promises a held loop and its hook already has a human pass.
   Micro-dropouts do not count as macro development; prefer a source-derived
   hook, pressure lift, destructive role swap or drop, and changed return.
+- Do not treat a compact scripted performance arc as loop or instrument proof.
+  A sequence that forces hook, lift, fill, scene change, and return every one or
+  two bars may prove gesture reachability while still sounding like a crowded
+  medley. Claims about reusable material or performer freedom additionally need
+  a sustained isolated component audition where the musician can keep or reject
+  the hook, capture, lane, or mutation before combining roles on demand.
+- Before labeling playback as an isolated component, enumerate every audible
+  callback contribution. Monitor layers, internal resample taps, diagnostic
+  voices, support lanes, and stopped-preview voices either must be silent or
+  must be named as part of a composite; an internal route is still audible.
 - Do not confuse a cleaner, louder, darker, or busier render with recognizable
   Riotbox character. The character claim requires a memorable source-backed
   hook, physical pressure, dramatic contrast, and stage-useful playability.
@@ -188,6 +211,11 @@ If a surface is intentionally not applicable, say why in the PR or working notes
   evidence that Riotbox listened to source features, made a musical decision,
   stored that decision in the product spine, rendered audible output, and proved
   same-source stability plus cross-source diversity.
+- During Golden Path tuning, run each shared audible DSP, mix, pattern, or
+  performance-policy change against at least three contrasting real sources
+  before requesting another human review. The Golden Path remains the taste
+  target; the matrix rejects overfitting, hot/silent paths, timing regressions,
+  and near-identical hook envelopes, but never replaces the human verdict.
 - Hardcoded, scripted, or template-mutated output may be useful as a regression
   scaffold, but it is not quality proof and must be labeled accordingly in
   manifests, PRs, specs, and demos.

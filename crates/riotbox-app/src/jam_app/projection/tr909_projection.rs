@@ -28,6 +28,7 @@ use riotbox_core::{
         SceneMovementKindState, SceneMovementLaneIntentState, SceneMovementState, SessionFile,
         W30PreviewModeState,
     },
+    style::PerformancePresetId,
     source_graph::{
         EnergyClass, Section, SectionLabelHint, SourceGraph, section_for_projected_scene,
         section_for_transport_bar,
@@ -143,6 +144,7 @@ pub(super) fn build_tr909_render_state(
         pattern_ref: tr909.pattern_ref.clone(),
         pattern_adoption: audio_tr909_pattern_adoption(policy.pattern_adoption),
         phrase_variation: scene_movement_tr909_variation(session)
+            .or_else(|| preset_tr909_fill_variation(session, policy.mode))
             .or_else(|| audio_tr909_phrase_variation(policy.phrase_variation)),
         takeover_profile: audio_tr909_takeover_profile(policy.takeover_profile),
         drum_bus_level: live_policy
@@ -169,6 +171,16 @@ pub(super) fn build_tr909_render_state(
             .map(|cursor| cursor as f64),
         current_scene_id: transport.current_scene.as_ref().map(ToString::to_string),
     }
+}
+
+fn preset_tr909_fill_variation(
+    session: &SessionFile,
+    mode: Tr909RenderModePolicy,
+) -> Option<Tr909PhraseVariation> {
+    (mode == Tr909RenderModePolicy::Fill
+        && session.runtime_state.style.active_preset
+            == Some(PerformancePresetId::FeralBreakAlphaV2))
+    .then_some(Tr909PhraseVariation::PhraseDriveHardCut)
 }
 
 fn active_scene_movement(session: &SessionFile) -> Option<&SceneMovementState> {

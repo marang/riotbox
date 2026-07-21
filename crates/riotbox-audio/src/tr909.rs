@@ -111,6 +111,7 @@ pub enum Tr909PhraseVariation {
     PhraseAnchor,
     PhraseLift,
     PhraseDrive,
+    PhraseDriveHardCut,
     PhraseRelease,
 }
 
@@ -121,6 +122,7 @@ impl Tr909PhraseVariation {
             Self::PhraseAnchor => "phrase_anchor",
             Self::PhraseLift => "phrase_lift",
             Self::PhraseDrive => "phrase_drive",
+            Self::PhraseDriveHardCut => "phrase_drive_hard_cut",
             Self::PhraseRelease => "phrase_release",
         }
     }
@@ -141,6 +143,8 @@ pub enum Tr909FillRecipeId {
     PhraseDriveLongChokeDiveStompV2,
     /// Mainline PhraseDrive half-bar drum takeover, break cut, and late dive-stomp family.
     PhraseDriveBreakCutStompV1,
+    /// Mainline PhraseDrive half-bar takeover with a three-quarter-beat hard choke before stomp.
+    PhraseDriveBreakCutStompV2,
     /// Parameterized legacy family whose exact output also depends on adoption and variation.
     GenericFillV1,
 }
@@ -153,6 +157,7 @@ impl Tr909FillRecipeId {
             Self::PhraseDriveChokeDiveStompV1 => "phrase_drive_choke_dive_stomp_v1",
             Self::PhraseDriveLongChokeDiveStompV2 => "phrase_drive_long_choke_dive_stomp_v2",
             Self::PhraseDriveBreakCutStompV1 => "phrase_drive_break_cut_stomp_v1",
+            Self::PhraseDriveBreakCutStompV2 => "phrase_drive_break_cut_stomp_v2",
             Self::GenericFillV1 => "generic_fill_v1",
         }
     }
@@ -167,7 +172,15 @@ pub(crate) const fn select_tr909_fill_recipe_id(
     pattern_adoption: Option<Tr909PatternAdoption>,
     phrase_variation: Option<Tr909PhraseVariation>,
 ) -> Tr909FillRecipeId {
-    if !matches!(phrase_variation, Some(Tr909PhraseVariation::PhraseDrive)) {
+    if matches!(
+        (pattern_adoption, phrase_variation,),
+        (
+            Some(Tr909PatternAdoption::MainlineDrive),
+            Some(Tr909PhraseVariation::PhraseDriveHardCut)
+        )
+    ) {
+        Tr909FillRecipeId::PhraseDriveBreakCutStompV2
+    } else if !matches!(phrase_variation, Some(Tr909PhraseVariation::PhraseDrive)) {
         Tr909FillRecipeId::GenericFillV1
     } else if matches!(pattern_adoption, Some(Tr909PatternAdoption::MainlineDrive)) {
         Tr909FillRecipeId::PhraseDriveBreakCutStompV1
@@ -294,12 +307,20 @@ mod tests {
         assert_eq!(Tr909PhraseVariation::PhraseLift.label(), "phrase_lift");
         assert_eq!(Tr909PhraseVariation::PhraseDrive.label(), "phrase_drive");
         assert_eq!(
+            Tr909PhraseVariation::PhraseDriveHardCut.label(),
+            "phrase_drive_hard_cut"
+        );
+        assert_eq!(
             Tr909PhraseVariation::PhraseRelease.label(),
             "phrase_release"
         );
         assert_eq!(
             Tr909FillRecipeId::PhraseDriveBreakCutStompV1.label(),
             "phrase_drive_break_cut_stomp_v1"
+        );
+        assert_eq!(
+            Tr909FillRecipeId::PhraseDriveBreakCutStompV2.label(),
+            "phrase_drive_break_cut_stomp_v2"
         );
     }
 
@@ -311,6 +332,13 @@ mod tests {
                 Some(Tr909PhraseVariation::PhraseDrive)
             ),
             Tr909FillRecipeId::PhraseDriveBreakCutStompV1
+        );
+        assert_eq!(
+            select_tr909_fill_recipe_id(
+                Some(Tr909PatternAdoption::MainlineDrive),
+                Some(Tr909PhraseVariation::PhraseDriveHardCut)
+            ),
+            Tr909FillRecipeId::PhraseDriveBreakCutStompV2
         );
         assert_eq!(
             select_tr909_fill_recipe_id(

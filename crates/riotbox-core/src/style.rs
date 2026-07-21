@@ -24,6 +24,7 @@ impl StyleProfileId {
 #[serde(rename_all = "snake_case")]
 pub enum PerformancePresetId {
     FeralBreakAlphaV1,
+    FeralBreakAlphaV2,
 }
 
 impl PerformancePresetId {
@@ -31,6 +32,7 @@ impl PerformancePresetId {
     pub const fn label(self) -> &'static str {
         match self {
             Self::FeralBreakAlphaV1 => "Feral Break Alpha",
+            Self::FeralBreakAlphaV2 => "Feral Break Alpha v2",
         }
     }
 
@@ -38,6 +40,7 @@ impl PerformancePresetId {
     pub const fn contract_id(self) -> &'static str {
         match self {
             Self::FeralBreakAlphaV1 => "feral_break_alpha_v1",
+            Self::FeralBreakAlphaV2 => "feral_break_alpha_v2",
         }
     }
 
@@ -48,6 +51,7 @@ impl PerformancePresetId {
                 profile_id: StyleProfileId::FeralRebuild,
                 w30_role: PresetW30Role::SourceHookLead,
                 tr909_role: PresetTr909Role::BreakPressure,
+                tr909_reinforcement_mode: Tr909ReinforcementModeState::SourceSupport,
                 mc202_role: PresetMc202Role::SourceEvidenceSelected,
                 bass_ownership: PresetBassOwnership::LivePerformancePolicy,
                 source_monitor_mode: SourceMonitorMode::Blend,
@@ -71,6 +75,43 @@ impl PerformancePresetId {
                     master_level: 0.82,
                 },
             },
+            Self::FeralBreakAlphaV2 => PerformancePresetDefinition {
+                profile_id: StyleProfileId::FeralRebuild,
+                w30_role: PresetW30Role::SourceHookLead,
+                tr909_role: PresetTr909Role::BreakPressure,
+                // The committed V2 preset action owns the typed break-pressure vocabulary
+                // needed by its documented `s`/`f` path. It does not invent a source-derived
+                // phrase or pattern reference.
+                tr909_reinforcement_mode: Tr909ReinforcementModeState::BreakReinforce,
+                mc202_role: PresetMc202Role::SourceEvidenceSelected,
+                bass_ownership: PresetBassOwnership::LivePerformancePolicy,
+                // V2 promotes the captured W-30 hook to the performance lead. Keeping the raw
+                // source in Blend can double the same break at its original source phase while
+                // the pad restarts its captured downbeat on the performance grid.
+                source_monitor_mode: SourceMonitorMode::Riotbox,
+                macro_state: MacroState {
+                    // V2 gives the promoted source hook a more hostile sampler character while
+                    // the live performance policy still decides which lane hits hardest.
+                    source_retain: 0.56,
+                    chaos: 0.58,
+                    mc202_touch: 0.82,
+                    w30_grit: 0.64,
+                    tr909_slam: 0.76,
+                    scene_aggression: 0.86,
+                    capture_eagerness: 0.76,
+                    dirt_room_intensity: 0.74,
+                },
+                mixer_state: MixerState {
+                    source_level: 0.60,
+                    drum_level: 0.88,
+                    // The nonlinear hook character supplies perceived bite. Keep electrical
+                    // headroom for source-dependent peaks instead of manufacturing impact with
+                    // a hotter music bus.
+                    music_level: 0.58,
+                    fx_send_level: 0.38,
+                    master_level: 0.82,
+                },
+            },
         }
     }
 
@@ -82,7 +123,7 @@ impl PerformancePresetId {
         session.runtime_state.macro_state = definition.macro_state;
         session.runtime_state.mixer_state = definition.mixer_state;
         session.runtime_state.lane_state.tr909.reinforcement_mode =
-            Some(Tr909ReinforcementModeState::SourceSupport);
+            Some(definition.tr909_reinforcement_mode);
     }
 }
 
@@ -147,6 +188,7 @@ pub struct PerformancePresetDefinition {
     pub profile_id: StyleProfileId,
     pub w30_role: PresetW30Role,
     pub tr909_role: PresetTr909Role,
+    pub tr909_reinforcement_mode: Tr909ReinforcementModeState,
     pub mc202_role: PresetMc202Role,
     pub bass_ownership: PresetBassOwnership,
     pub source_monitor_mode: SourceMonitorMode,
@@ -209,5 +251,19 @@ mod tests {
         );
         assert!(session.runtime_state.lane_state.w30.last_capture.is_none());
         assert!(session.runtime_state.lane_state.tr909.pattern_ref.is_none());
+    }
+
+    #[test]
+    fn alpha_v2_strengthens_the_transformed_hook_with_explicit_headroom() {
+        let v1 = PerformancePresetId::FeralBreakAlphaV1.definition();
+        let v2 = PerformancePresetId::FeralBreakAlphaV2.definition();
+
+        assert!(v2.macro_state.w30_grit > v1.macro_state.w30_grit);
+        assert!(v2.mixer_state.music_level < v1.mixer_state.music_level);
+        assert_eq!(v2.source_monitor_mode, SourceMonitorMode::Riotbox);
+        assert_eq!(
+            v2.tr909_reinforcement_mode,
+            Tr909ReinforcementModeState::BreakReinforce
+        );
     }
 }

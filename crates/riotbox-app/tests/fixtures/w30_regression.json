@@ -360,11 +360,12 @@
       "capture_contains": [
         "pending W-30 cue idle",
         "freeze bank-b/pad-03",
+        "forge idle | tap",
+        "idle/silent",
         "last lane capture cap-02"
       ],
       "log_contains": [
         "cue idle | freeze",
-        "tapmix 0.64/0.00",
         "result froze cap-01 into cap-02",
         "bank-b/pad-03"
       ]

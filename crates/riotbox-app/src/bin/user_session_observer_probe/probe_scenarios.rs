@@ -89,17 +89,20 @@ pub(super) fn write_first_playable_jam_observer(path: &Path) -> io::Result<()> {
     apply_probe_key(&mut shell, &mut writer, 400, KeyCode::Char('o'))?;
     apply_probe_key(&mut shell, &mut writer, 500, KeyCode::Char('p'))?;
     commit_first_playable_boundary(&mut shell, &mut writer, 600, CommitBoundary::Bar, 20, 2)?;
-    apply_probe_key(&mut shell, &mut writer, 650, KeyCode::Char('M'))?;
-    apply_probe_key(&mut shell, &mut writer, 700, KeyCode::Char('w'))?;
-    commit_first_playable_boundary(&mut shell, &mut writer, 800, CommitBoundary::Beat, 21, 1)?;
-    apply_probe_key(&mut shell, &mut writer, 900, KeyCode::Char('f'))?;
-    commit_first_playable_boundary(&mut shell, &mut writer, 1_000, CommitBoundary::Bar, 24, 1)?;
+    apply_probe_key(&mut shell, &mut writer, 650, KeyCode::Char('F'))?;
+    apply_probe_key(&mut shell, &mut writer, 700, KeyCode::Char('P'))?;
+    commit_first_playable_boundary(&mut shell, &mut writer, 800, CommitBoundary::Phrase, 32, 1)?;
+    apply_probe_key(&mut shell, &mut writer, 900, KeyCode::Char('w'))?;
+    commit_first_playable_boundary(&mut shell, &mut writer, 1_000, CommitBoundary::Beat, 33, 1)?;
     apply_probe_key(&mut shell, &mut writer, 1_100, KeyCode::Char('s'))?;
-    commit_first_playable_boundary(&mut shell, &mut writer, 1_200, CommitBoundary::Beat, 25, 1)?;
-    apply_probe_key(&mut shell, &mut writer, 1_300, KeyCode::Char('y'))?;
-    commit_first_playable_boundary(&mut shell, &mut writer, 1_400, CommitBoundary::Bar, 36, 1)?;
-    apply_probe_key(&mut shell, &mut writer, 1_500, KeyCode::Char('Y'))?;
-    commit_first_playable_boundary(&mut shell, &mut writer, 1_600, CommitBoundary::Bar, 40, 1)?;
+    commit_first_playable_boundary(&mut shell, &mut writer, 1_200, CommitBoundary::Beat, 36, 1)?;
+    apply_probe_key(&mut shell, &mut writer, 1_300, KeyCode::Char('f'))?;
+    commit_first_playable_boundary(&mut shell, &mut writer, 1_400, CommitBoundary::Bar, 40, 1)?;
+    apply_probe_key(&mut shell, &mut writer, 1_500, KeyCode::Char('y'))?;
+    commit_first_playable_boundary(&mut shell, &mut writer, 1_600, CommitBoundary::Bar, 44, 1)?;
+    apply_probe_key(&mut shell, &mut writer, 1_700, KeyCode::Char('Y'))?;
+    apply_probe_key(&mut shell, &mut writer, 1_750, KeyCode::Char('D'))?;
+    commit_first_playable_boundary(&mut shell, &mut writer, 1_800, CommitBoundary::Bar, 48, 2)?;
 
     Ok(())
 }

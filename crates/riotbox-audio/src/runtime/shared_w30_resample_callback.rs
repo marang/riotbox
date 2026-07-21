@@ -393,6 +393,8 @@ pub(super) struct W30PreviewCallbackState {
     pub(super) source_sample_cursor: f32,
     pub(super) pad_playback_cursor: f32,
     pub(super) pad_playback_age_frames: u64,
+    pub(super) last_character_input: f32,
+    pub(super) character_edge_memory: f32,
     pub(super) last_source_window_signature: u64,
     pub(super) last_pad_playback_signature: u64,
     pub(super) envelope: f32,
@@ -405,6 +407,8 @@ pub(super) struct W30PreviewCallbackState {
     pub(super) last_music_bus_level: f32,
     pub(super) last_grit_level: f32,
     pub(super) last_transport_running: bool,
+    pub(super) transport_stop_latched: bool,
+    pub(super) transport_stop_fade_frames_remaining: u32,
     pub(super) last_position_beats: f64,
 }
 
@@ -416,6 +420,9 @@ pub(super) struct W30ResampleTapCallbackState {
     pub(super) envelope: f32,
     pub(super) last_step: i64,
     pub(super) was_active: bool,
+    pub(super) last_transport_running: bool,
+    pub(super) transport_stop_latched: bool,
+    pub(super) transport_stop_fade_frames_remaining: u32,
 }
 
 pub(super) struct W30MixRenderState<'a> {
@@ -435,7 +442,6 @@ fn sync_w30_preview_state(
     state.last_source_profile = render.source_profile;
     state.last_music_bus_level = render.music_bus_level;
     state.last_grit_level = render.grit_level;
-    state.last_transport_running = render.is_transport_running;
     state.last_position_beats = render.position_beats;
 }
 

@@ -167,6 +167,7 @@ impl SourceAudioStatus {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct TransportDriverState {
     pub last_audio_position_beats: Option<u64>,
+    pub pending_audio_is_playing: Option<bool>,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]

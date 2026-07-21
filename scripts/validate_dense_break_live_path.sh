@@ -26,19 +26,19 @@ for artifact in \
   monitor/00_source.wav \
   monitor/01_blend.wav \
   monitor/02_riotbox.wav \
-  gestures/00_ready_blend.wav \
+  gestures/00_ready_riotbox.wav \
   gestures/01_after_w_hit.wav \
-  gestures/02_after_f_fill.wav \
-  gestures/03_after_s_slam.wav \
+  gestures/02_after_s_slam.wav \
+  gestures/03_after_f_fill.wav \
   gestures/04_after_y_scene_jump.wav \
-  gestures/05_after_Y_scene_restore.wav \
+  gestures/05_after_Y_D_changed_return.wav \
   gestures/06_live_sequence.wav \
   gestures/proofs/01_w_before.wav \
   gestures/proofs/01_w_after.wav \
-  gestures/proofs/02_f_before.wav \
-  gestures/proofs/02_f_after.wav \
-  gestures/proofs/03_s_before.wav \
-  gestures/proofs/03_s_after.wav \
+  gestures/proofs/02_s_before.wav \
+  gestures/proofs/02_s_after.wav \
+  gestures/proofs/03_f_before.wav \
+  gestures/proofs/03_f_after.wav \
   gestures/proofs/04_y_before.wav \
   gestures/proofs/04_y_after.wav \
   gestures/proofs/05_Y_before.wav \
@@ -101,12 +101,14 @@ jq -e \
   and .evidence_boundary.scripted_generation == true
   and .evidence_boundary.quality_proof == false
   and .evidence_boundary.human_verdict == "unverified"
-  and .performance_preset.preset_id == "feral_break_alpha_v1"
+  and .performance_preset.preset_id == "feral_break_alpha_v2"
   and .performance_preset.profile_id == "feral_rebuild"
-  and .performance_preset.label == "Feral Break Alpha"
+  and .performance_preset.label == "Feral Break Alpha v2"
   and .performance_preset.w30_role == "source_hook_lead"
   and .performance_preset.tr909_role == "break_pressure"
+  and .performance_preset.tr909_reinforcement_mode == "break_reinforce"
   and .performance_preset.mc202_role == "source_evidence_selected"
+  and .performance_preset.source_monitor_mode == "riotbox"
   and .performance_preset.bass_ownership_policy == "live_performance_policy"
   and (["mc202", "unassigned"] | index($manifest.performance_preset.actual_bass_owner)) != null
   and (.performance_preset.activation_action_id | type == "number")
@@ -148,6 +150,22 @@ jq -e \
     "scene.launch",
     "scene.restore"
   ]
+  and .feral_break_alpha_arc.stages[2].tr909_mode == "fill"
+  and .feral_break_alpha_arc.stages[2].tr909_fill_recipe_id
+    == "phrase_drive_break_cut_stomp_v2"
+  and .feral_break_alpha_arc.destructive_negative_space.window == {
+    "start_step": 26,
+    "end_step_exclusive": 30,
+    "steps_per_beat": 8
+  }
+  and .feral_break_alpha_arc.destructive_negative_space.metrics.rms
+    <= .feral_break_alpha_arc.destructive_negative_space.thresholds.max_rms
+  and .feral_break_alpha_arc.destructive_negative_space.metrics.silence_ratio
+    >= .feral_break_alpha_arc.destructive_negative_space.thresholds.min_silence_ratio
+  and .feral_break_alpha_arc.destructive_negative_space.hard_return.start_step == 30
+  and .feral_break_alpha_arc.destructive_negative_space.hard_return.end_step_exclusive == 31
+  and .feral_break_alpha_arc.destructive_negative_space.hard_return.metrics.rms
+    >= .feral_break_alpha_arc.destructive_negative_space.hard_return.min_rms
   and all(.feral_break_alpha_arc.stages[];
     .metrics.rms > $manifest.thresholds.min_mix_rms
     and .metrics.clip_count == 0
@@ -182,11 +200,11 @@ jq -e \
   and .pattern_provenance.tr909_fill.source_evidence_selects_pattern == false
   and .pattern_provenance.tr909_fill.source_evidence_modulates_output == true
   and .pattern_provenance.tr909_fill.primitive_schema == "riotbox.tr909_fill_recipe.v1"
-  and .pattern_provenance.tr909_fill.recipe_id == "phrase_drive_break_cut_stomp_v1"
+  and .pattern_provenance.tr909_fill.recipe_id == "phrase_drive_break_cut_stomp_v2"
   and .pattern_provenance.tr909_fill.selection_inputs.mode == "fill"
   and .pattern_provenance.tr909_fill.selection_inputs.routing == "drum_bus_support"
   and .pattern_provenance.tr909_fill.selection_inputs.pattern_adoption == "mainline_drive"
-  and .pattern_provenance.tr909_fill.selection_inputs.phrase_variation == "phrase_drive"
+  and .pattern_provenance.tr909_fill.selection_inputs.phrase_variation == "phrase_drive_hard_cut"
   and .pattern_provenance.tr909_fill.source_modulation.schema == "riotbox.tr909_fill_source_modulation.v2"
   and .pattern_provenance.tr909_fill.source_modulation.source_feature_path == "session.runtime_state.lane_state.mc202.source_phrase_plan.source_expression.transient_backbeat"
   and .pattern_provenance.tr909_fill.source_modulation.source_timing_path == "source_graph.timing.primary_hypothesis.transport_bar_grid_anchor.beat_cursor"
@@ -198,9 +216,9 @@ jq -e \
   and ((.pattern_provenance.tr909_fill.source_modulation.derived_policy.tr909_slam_floor - (0.54 + .pattern_provenance.tr909_fill.source_modulation.source_feature_value * 0.16)) > -0.00001)
   and ((.pattern_provenance.tr909_fill.source_modulation.derived_policy.tr909_slam_floor - (0.54 + .pattern_provenance.tr909_fill.source_modulation.source_feature_value * 0.16)) < 0.00001)
   and .pattern_provenance.tr909_fill.source_modulation.derived_policy.source_bar_grid_anchor_beat_cursor == .timing_identity.primary_bar_anchor_beat_cursor
-  and .pattern_provenance.tr909_fill.source_modulation.resolved_render_inputs.drum_bus_level == .gesture_transitions[1].control_values.tr909_drum_bus_level_after
-  and .pattern_provenance.tr909_fill.source_modulation.resolved_render_inputs.slam_intensity == .gesture_transitions[1].control_values.tr909_slam_after
-  and .pattern_provenance.tr909_fill.source_modulation.resolved_render_inputs.slam_enabled == .gesture_transitions[1].control_values.tr909_slam_enabled_after
+  and .pattern_provenance.tr909_fill.source_modulation.resolved_render_inputs.drum_bus_level == .gesture_transitions[2].control_values.tr909_drum_bus_level_after
+  and .pattern_provenance.tr909_fill.source_modulation.resolved_render_inputs.slam_intensity == .gesture_transitions[2].control_values.tr909_slam_after
+  and .pattern_provenance.tr909_fill.source_modulation.resolved_render_inputs.slam_enabled == .gesture_transitions[2].control_values.tr909_slam_enabled_after
   and .pattern_provenance.tr909_fill.source_modulation.resolved_render_inputs.source_bar_grid_anchor_position_beats == .timing_identity.primary_bar_anchor_beat_cursor
   and (.pattern_provenance.tr909_fill.source_modulation.affected_runtime_parameters == [
     "runtime_mix.tr909.drum_bus_level",
@@ -208,11 +226,11 @@ jq -e \
     "runtime_mix.tr909.source_bar_grid_phase"
   ])
   and .pattern_provenance.tr909_fill.source_modulation.pattern_selection_changed == false
-  and .pattern_provenance.tr909_fill.activation_ref == "/gesture_transitions/1"
+  and .pattern_provenance.tr909_fill.activation_ref == "/gesture_transitions/2"
   and (.pattern_provenance.tr909_fill.affected_artifacts == [
-    "gestures/02_after_f_fill.wav",
+    "gestures/03_after_f_fill.wav",
     "gestures/06_live_sequence.wav",
-    "gestures/proofs/02_f_after.wav"
+    "gestures/proofs/03_f_after.wav"
   ])
   and .primitive_renderer_boundary.schema == "riotbox.primitive_renderer_boundary.v2"
   and .primitive_renderer_boundary.evidence_role == "product_primitive_vocabulary"
@@ -227,7 +245,7 @@ jq -e \
   and .primitive_renderer_boundary.source_output_modulation_claimed == true
   and .primitive_renderer_boundary.activation.kind == "explicit_committed_performer_gesture"
   and (.primitive_renderer_boundary.activation.references == [
-    "/gesture_transitions/1"
+    "/gesture_transitions/2"
   ])
   and .primitive_renderer_boundary.source_failure_fallback == false
   and (.primitive_renderer_boundary.affected_paths == [
@@ -242,14 +260,14 @@ jq -e \
     "runtime_mix.source_monitor.blend_fill_focus"
   ])
   and (.primitive_renderer_boundary.affected_artifacts == [
-    "gestures/02_after_f_fill.wav",
+    "gestures/03_after_f_fill.wav",
     "gestures/06_live_sequence.wav",
-    "gestures/proofs/02_f_after.wav"
+    "gestures/proofs/03_f_after.wav"
   ])
   and (.primitive_renderer_boundary.musician_message | length > 0)
   and .fill_exit_boundary_proof.from_case_id == "after-f-fill"
-  and .fill_exit_boundary_proof.to_case_id == "after-s-slam"
-  and .fill_exit_boundary_proof.expected_role == "fill_release_to_break_slam_downbeat"
+  and .fill_exit_boundary_proof.to_case_id == "after-y-scene-jump"
+  and .fill_exit_boundary_proof.expected_role == "fill_release_to_scene_contrast_downbeat"
   and .fill_exit_boundary_proof.exact_runtime_mix_sequence == true
   and .fill_exit_boundary_proof.window_ms == 10
   and .fill_exit_boundary_proof.window_frames == 480
@@ -297,12 +315,17 @@ jq -e \
   and .monitor_cycle.deltas.source_vs_blend.rms > .thresholds.min_monitor_delta_rms
   and .monitor_cycle.deltas.blend_vs_riotbox.rms > .thresholds.min_monitor_delta_rms
   and .monitor_cycle.deltas.source_vs_riotbox.rms > .thresholds.min_monitor_delta_rms
-  and (.gesture_transitions | map(.key)) == ["w", "f", "s", "y", "Y"]
+  and (.gesture_transitions | map(.key)) == ["w", "s", "f", "y", "Y"]
+  and all(.gesture_transitions[] | select(.key != "Y"); .companion_actions == [])
+  and (.gesture_transitions[] | select(.key == "Y") | .companion_actions) == [{
+    "command": "w30.apply_damage_profile",
+    "action_id": $manifest.scene_transition_proof.return_damage_action_id
+  }]
   and (.gesture_transitions[] | select(.key == "w") | .commit_boundary.beat_cursor)
     == (.timing_identity.primary_bar_anchor_beat_cursor + (4 * .timing_identity.beats_per_bar) + 1)
-  and (.gesture_transitions[] | select(.key == "f") | .commit_boundary.beat_cursor)
-    == (.timing_identity.primary_bar_anchor_beat_cursor + (5 * .timing_identity.beats_per_bar))
   and (.gesture_transitions[] | select(.key == "s") | .commit_boundary.beat_cursor)
+    == (.timing_identity.primary_bar_anchor_beat_cursor + (5 * .timing_identity.beats_per_bar))
+  and (.gesture_transitions[] | select(.key == "f") | .commit_boundary.beat_cursor)
     == (.timing_identity.primary_bar_anchor_beat_cursor + (6 * .timing_identity.beats_per_bar))
   and (.gesture_transitions[] | select(.key == "y") | .commit_boundary.beat_cursor)
     == (.timing_identity.primary_bar_anchor_beat_cursor + (7 * .timing_identity.beats_per_bar))
@@ -310,9 +333,9 @@ jq -e \
     == (.timing_identity.primary_bar_anchor_beat_cursor + (8 * .timing_identity.beats_per_bar))
   and (.gesture_transitions | map(.commit_boundary.bar_index)) == [5, 6, 7, 8, 9]
   and (.gesture_transitions | map(.commit_boundary.phrase_index)) == [2, 2, 2, 2, 3]
-  and .gesture_transitions[1].command == "tr909.fill_next"
-  and .gesture_transitions[1].boundary == "Bar"
-  and (.gesture_transitions[1].action_id | type == "number")
+  and .gesture_transitions[2].command == "tr909.fill_next"
+  and .gesture_transitions[2].boundary == "Bar"
+  and (.gesture_transitions[2].action_id | type == "number")
   and (.gesture_transitions[] | select(.key == "f") | .control_values.tr909_mode_before) == "break_reinforce"
   and (.gesture_transitions[] | select(.key == "f") | .control_values.tr909_mode_after) == "fill"
   and (.gesture_transitions[] | select(.key == "s") | .control_values.tr909_mode_before) == "break_reinforce"
@@ -347,12 +370,15 @@ jq -e \
   and .scene_transition_proof.expected_restore_anchor_seconds != null
   and .scene_transition_proof.restored_anchor_seconds != null
   and .scene_transition_proof.restore_anchor_matches_expected == true
+  and (.scene_transition_proof.return_damage_action_id | type == "number")
   and .scene_transition_proof.mc202_plan_source_section != null
   and .scene_transition_proof.launched_source_section != null
   and .scene_transition_proof.mc202_plan_source_section != .scene_transition_proof.launched_source_section
   and .scene_transition_proof.launch_mc202_stayed_out_for_section_mismatch == true
   and .scene_transition_proof.restore_audio_projection_matches_pre_jump == true
-  and .scene_transition_proof.restore_lane_projection_matches_pre_jump == true
+  and .scene_transition_proof.restore_only_lane_projection_matches_pre_jump == true
+  and .scene_transition_proof.changed_return_w30_differs_from_restore_only == true
+  and .scene_transition_proof.changed_return_non_w30_projection_matches_restore_only == true
   and .scene_transition_proof.pre_jump_scene != .scene_transition_proof.launched_scene
   and .scene_transition_proof.launched_anchor_seconds == .scene_transition_proof.expected_launch_anchor_seconds
   and .scene_transition_proof.restored_scene == .scene_transition_proof.pre_jump_scene
@@ -360,7 +386,7 @@ jq -e \
   and .scene_transition_proof.launch_action_id == (.gesture_transitions[] | select(.key == "y") | .action_id)
   and .scene_transition_proof.restore_action_id == (.gesture_transitions[] | select(.key == "Y") | .action_id)
   and (.performance_stages | length) == 6
-  and all(.performance_stages[]; .monitor_mode == "blend" and .monitor_route == "blend")
+  and all(.performance_stages[]; .monitor_mode == "riotbox" and .monitor_route == "riotbox_only")
   and all(.performance_stages[]; .limiter | exact_limiter_ok($manifest.thresholds.max_exact_mix_limited_sample_count))
   and .legacy_lane_regression.frozen_before_live_fill_slam_scene_gestures == true
   and .legacy_lane_regression.plan.tr909_mode == "break_reinforce"

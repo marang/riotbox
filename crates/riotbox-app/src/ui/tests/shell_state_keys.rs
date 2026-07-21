@@ -72,7 +72,7 @@ fn shell_state_handles_help_refresh_and_action_keys() {
     assert_eq!(
         shell.handle_key_code(KeyCode::Char('F')),
         ShellKeyOutcome::QueuePerformancePreset(
-            riotbox_core::style::PerformancePresetId::FeralBreakAlphaV1
+            riotbox_core::style::PerformancePresetId::FeralBreakAlphaV2
         )
     );
     assert_eq!(

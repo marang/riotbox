@@ -79,7 +79,7 @@ pub(super) const fn render_subdivision(render: &RealtimeTr909RenderState) -> u32
                 base
             }
         }
-        Some(Tr909PhraseVariation::PhraseDrive) => {
+        Some(Tr909PhraseVariation::PhraseDrive | Tr909PhraseVariation::PhraseDriveHardCut) => {
             if base < 4 {
                 4
             } else {
@@ -98,7 +98,7 @@ pub(super) const fn render_subdivision(render: &RealtimeTr909RenderState) -> u32
     if matches!(render.mode, Tr909RenderMode::Fill)
         && matches!(
             render.phrase_variation,
-            Some(Tr909PhraseVariation::PhraseDrive)
+            Some(Tr909PhraseVariation::PhraseDrive | Tr909PhraseVariation::PhraseDriveHardCut)
         )
     {
         8
@@ -140,7 +140,9 @@ pub(super) fn should_trigger_step(render: &RealtimeTr909RenderState, step: i64) 
     match render.phrase_variation {
         Some(Tr909PhraseVariation::PhraseAnchor) | None => base,
         Some(Tr909PhraseVariation::PhraseLift) => base || step.rem_euclid(8) == 7,
-        Some(Tr909PhraseVariation::PhraseDrive) => base || matches!(step.rem_euclid(4), 1 | 3),
+        Some(Tr909PhraseVariation::PhraseDrive | Tr909PhraseVariation::PhraseDriveHardCut) => {
+            base || matches!(step.rem_euclid(4), 1 | 3)
+        }
         Some(Tr909PhraseVariation::PhraseRelease) => base && step.rem_euclid(4) == 0,
     }
 }
@@ -173,7 +175,7 @@ pub(super) fn trigger_envelope(render: &RealtimeTr909RenderState) -> f32 {
     let phrase_boost = match render.phrase_variation {
         Some(Tr909PhraseVariation::PhraseAnchor) | None => 0.0,
         Some(Tr909PhraseVariation::PhraseLift) => 0.03,
-        Some(Tr909PhraseVariation::PhraseDrive) => 0.06,
+        Some(Tr909PhraseVariation::PhraseDrive | Tr909PhraseVariation::PhraseDriveHardCut) => 0.06,
         Some(Tr909PhraseVariation::PhraseRelease) => -0.05,
     };
     let context_boost = match (render.mode, render.source_support_context) {
@@ -216,7 +218,7 @@ pub(super) fn trigger_frequency(render: &RealtimeTr909RenderState, step: i64) ->
     let phrase_pitch = match render.phrase_variation {
         Some(Tr909PhraseVariation::PhraseAnchor) | None => 0.0,
         Some(Tr909PhraseVariation::PhraseLift) => 6.0,
-        Some(Tr909PhraseVariation::PhraseDrive) => 12.0,
+        Some(Tr909PhraseVariation::PhraseDrive | Tr909PhraseVariation::PhraseDriveHardCut) => 12.0,
         Some(Tr909PhraseVariation::PhraseRelease) => -8.0,
     };
     let slam = render.slam_intensity.clamp(0.0, 1.0) * 18.0;
@@ -328,7 +330,7 @@ fn tr909_voice_balance(render: &RealtimeTr909RenderState, step: i64) -> Tr909Voi
             balance.snare *= 1.14;
             balance.hat *= 1.16;
         }
-        Some(Tr909PhraseVariation::PhraseDrive) => {
+        Some(Tr909PhraseVariation::PhraseDrive | Tr909PhraseVariation::PhraseDriveHardCut) => {
             if matches!(render.mode, Tr909RenderMode::SourceSupport) {
                 balance.kick *= 1.22;
                 balance.snare *= 0.92;
@@ -431,7 +433,7 @@ pub(super) fn render_gain(render: &RealtimeTr909RenderState) -> f32 {
     let phrase_gain = match render.phrase_variation {
         Some(Tr909PhraseVariation::PhraseAnchor) | None => 1.0,
         Some(Tr909PhraseVariation::PhraseLift) => 1.06,
-        Some(Tr909PhraseVariation::PhraseDrive) => 1.14,
+        Some(Tr909PhraseVariation::PhraseDrive | Tr909PhraseVariation::PhraseDriveHardCut) => 1.14,
         Some(Tr909PhraseVariation::PhraseRelease) => 0.72,
     };
     let context_gain = match (render.mode, render.source_support_context) {

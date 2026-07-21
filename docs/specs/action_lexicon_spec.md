@@ -181,7 +181,8 @@ versioned `PerformancePresetId`. It materializes only the policy/control
 surfaces owned by that named preset and persists the active profile and preset
 identity in `RuntimeState.style`.
 
-The first supported value is `feral_break_alpha_v1`. It may set monitor,
+The first supported value is `feral_break_alpha_v1`; the current UI-selected
+product value is `feral_break_alpha_v2`. It may set monitor,
 macro, mixer, and named lane-role defaults, but it must not create W-30
 captures, MC-202 source phrase plans, TR-909 pattern references, scenes, or
 fallback audio. Those remain source/action-owned product state.

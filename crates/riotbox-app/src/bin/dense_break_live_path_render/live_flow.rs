@@ -25,8 +25,8 @@ use riotbox_core::{
 use crate::{
     alpha_arc::{prepare_alpha_arc, prepare_restart_recall},
     model::{
-        CaptureJourneyProof, ConfirmedSourceTiming, GestureTransition, MonitorProof,
-        PreparedLivePath, RenderStage, SceneTransitionProof,
+        CaptureJourneyProof, ConfirmedSourceTiming, GestureCompanionAction, GestureTransition,
+        MonitorProof, PreparedLivePath, RenderStage, SceneTransitionProof,
     },
 };
 
@@ -46,7 +46,7 @@ pub fn prepare(
     let source_timing = confirmed_source_timing(&state, cli_bpm_hint)?;
     if source_timing.beats_per_bar != DEFAULT_BEATS_PER_BAR {
         return Err(format!(
-            "Feral Break Alpha v1 requires 4/4 source timing, got {} beats per bar",
+            "Feral Break Alpha v2 requires 4/4 source timing, got {} beats per bar",
             source_timing.beats_per_bar
         )
         .into());
@@ -65,12 +65,12 @@ pub fn prepare(
         .bar_start_beat_cursor(5)
         .ok_or("dense-break source timing cannot resolve phrase-2 bar 5")?;
     let w_cursor = phrase_cursor.saturating_add(1);
-    let fill_cursor = source_timing
-        .bar_start_beat_cursor(6)
-        .ok_or("dense-break source timing cannot resolve Fill bar 6")?;
     let slam_cursor = source_timing
+        .bar_start_beat_cursor(6)
+        .ok_or("dense-break source timing cannot resolve Slam bar 6")?;
+    let fill_cursor = source_timing
         .bar_start_beat_cursor(7)
-        .ok_or("dense-break source timing cannot resolve Slam bar 7")?;
+        .ok_or("dense-break source timing cannot resolve Fill bar 7")?;
     let scene_cursor = source_timing
         .bar_start_beat_cursor(8)
         .ok_or("dense-break source timing cannot resolve scene bar 8")?;
@@ -137,7 +137,7 @@ pub fn prepare(
     // Source monitor EOF clamps by product contract. Keep the raw reference proof
     // at source start instead of asking a short loop to play from performance bar 5.
     let source_plan = render_plan(&state, bpm, 0.0);
-    let preset_id = PerformancePresetId::FeralBreakAlphaV1;
+    let preset_id = PerformancePresetId::FeralBreakAlphaV2;
     if state.queue_performance_preset(preset_id, 305) != QueueControlResult::Enqueued {
         return Err("Feral Break Alpha preset was unavailable".into());
     }
@@ -151,7 +151,6 @@ pub fn prepare(
         1,
     )?)?;
     require_committed_command(&state, &preset_commit, ActionCommand::PresetActivate)?;
-    state.queue_tr909_reinforce(310);
     if state.queue_mc202_generate_pressure(311) != QueueControlResult::Enqueued {
         return Err("MC-202 pressure generation was unavailable".into());
     }
@@ -161,7 +160,7 @@ pub fn prepare(
         phrase_cursor,
         initial_scene,
         400,
-        2,
+        1,
     )?;
 
     let live_policy = state
@@ -194,12 +193,12 @@ pub fn prepare(
     );
     let (alpha_arc_stages, alpha_arc_proof) = prepare_alpha_arc(&state, &source_timing, bpm)?;
 
-    let blend_plan = render_plan(&state, bpm, phrase_cursor as f64);
-    let to_riotbox = set_monitor_mode(&mut state, SourceMonitorMode::Riotbox, phrase_cursor, 420)?;
     let riotbox_plan = render_plan(&state, bpm, phrase_cursor as f64);
-    let back_to_source =
-        set_monitor_mode(&mut state, SourceMonitorMode::Source, phrase_cursor, 430)?;
-    let back_to_blend = set_monitor_mode(&mut state, SourceMonitorMode::Blend, phrase_cursor, 440)?;
+    let to_source = set_monitor_mode(&mut state, SourceMonitorMode::Source, phrase_cursor, 420)?;
+    let to_blend = set_monitor_mode(&mut state, SourceMonitorMode::Blend, phrase_cursor, 430)?;
+    let blend_plan = render_plan(&state, bpm, phrase_cursor as f64);
+    let back_to_riotbox =
+        set_monitor_mode(&mut state, SourceMonitorMode::Riotbox, phrase_cursor, 440)?;
 
     let monitor_proofs = vec![
         MonitorProof {
@@ -213,22 +212,22 @@ pub fn prepare(
             case_id: "monitor-blend",
             artifact_path: "monitor/01_blend.wav",
             expected_route: SourceMonitorAudioRoute::Blend,
-            action_id: Some(preset_commit.action_id.0),
+            action_id: Some(to_blend.action_id.0),
             plan: blend_plan,
         },
         MonitorProof {
             case_id: "monitor-riotbox",
             artifact_path: "monitor/02_riotbox.wav",
             expected_route: SourceMonitorAudioRoute::RiotboxOnly,
-            action_id: Some(to_riotbox.action_id.0),
+            action_id: Some(back_to_riotbox.action_id.0),
             plan: riotbox_plan,
         },
     ];
 
     let ready_plan = render_plan(&state, bpm, phrase_cursor as f64);
     let mut stages = vec![stage(
-        "ready-blend",
-        "gestures/00_ready_blend.wav",
+        "ready-riotbox",
+        "gestures/00_ready_riotbox.wav",
         1,
         None,
         None,
@@ -279,55 +278,11 @@ pub fn prepare(
     ));
     prefix.push((after_w, 3));
 
-    update_transport_position(&mut state, fill_cursor);
-    let before_f = render_plan(&state, bpm, fill_cursor as f64);
-    state.queue_tr909_fill(600);
-    let scene = current_scene(&state);
-    let f_commit = one_commit(commit(
-        &mut state,
-        CommitBoundary::Bar,
-        fill_cursor,
-        scene,
-        610,
-        1,
-    )?)?;
-    require_committed_command(&state, &f_commit, ActionCommand::Tr909FillNext)?;
-    let after_f = render_plan(&state, bpm, fill_cursor as f64);
-    if !matches!(after_f.tr909_render.mode, Tr909RenderMode::Fill) {
-        return Err(format!(
-            "f did not own its committed bar: got {:?}",
-            after_f.tr909_render.mode
-        )
-        .into());
-    }
-    transitions.push(gesture_transition(
-        "f-fill",
-        "f",
-        ActionCommand::Tr909FillNext,
-        CommitBoundary::Bar,
-        &f_commit,
-        &prefix,
-        before_f,
-        after_f.clone(),
-    ));
-    stages.push(stage(
-        "after-f-fill",
-        "gestures/02_after_f_fill.wav",
-        4,
-        Some("f"),
-        Some(ActionCommand::Tr909FillNext),
-        Some(CommitBoundary::Bar),
-        Some(f_commit.action_id.0),
-        &state,
-        after_f.clone(),
-    ));
-    prefix.push((after_f, 4));
-
     update_transport_position(&mut state, slam_cursor);
     let before_s = render_plan(&state, bpm, slam_cursor as f64);
     if !matches!(before_s.tr909_render.mode, Tr909RenderMode::BreakReinforce) {
         return Err(format!(
-            "f did not return to break reinforcement before s: got {:?}",
+            "w did not retain break reinforcement before s: got {:?}",
             before_s.tr909_render.mode
         )
         .into());
@@ -367,7 +322,7 @@ pub fn prepare(
     ));
     stages.push(stage(
         "after-s-slam",
-        "gestures/03_after_s_slam.wav",
+        "gestures/02_after_s_slam.wav",
         4,
         Some("s"),
         Some(ActionCommand::Tr909SetSlam),
@@ -377,6 +332,50 @@ pub fn prepare(
         after_s.clone(),
     ));
     prefix.push((after_s, 4));
+
+    update_transport_position(&mut state, fill_cursor);
+    let before_f = render_plan(&state, bpm, fill_cursor as f64);
+    state.queue_tr909_fill(600);
+    let scene = current_scene(&state);
+    let f_commit = one_commit(commit(
+        &mut state,
+        CommitBoundary::Bar,
+        fill_cursor,
+        scene,
+        610,
+        1,
+    )?)?;
+    require_committed_command(&state, &f_commit, ActionCommand::Tr909FillNext)?;
+    let after_f = render_plan(&state, bpm, fill_cursor as f64);
+    if !matches!(after_f.tr909_render.mode, Tr909RenderMode::Fill) {
+        return Err(format!(
+            "f did not own its committed bar: got {:?}",
+            after_f.tr909_render.mode
+        )
+        .into());
+    }
+    transitions.push(gesture_transition(
+        "f-fill",
+        "f",
+        ActionCommand::Tr909FillNext,
+        CommitBoundary::Bar,
+        &f_commit,
+        &prefix,
+        before_f,
+        after_f.clone(),
+    ));
+    stages.push(stage(
+        "after-f-fill",
+        "gestures/03_after_f_fill.wav",
+        4,
+        Some("f"),
+        Some(ActionCommand::Tr909FillNext),
+        Some(CommitBoundary::Bar),
+        Some(f_commit.action_id.0),
+        &state,
+        after_f.clone(),
+    ));
+    prefix.push((after_f, 4));
 
     update_transport_position(&mut state, scene_cursor);
     let before_y = render_plan(&state, bpm, scene_cursor as f64);
@@ -475,19 +474,56 @@ pub fn prepare(
         before_restore.source_monitor_render.source_anchor_seconds,
         after_y_anchor,
     )?;
+    // Prove Scene restore independently before the documented changed-return companion (`D`)
+    // modifies W-30 playback at the same bar boundary. This keeps Scene truth and performer
+    // damage ownership distinguishable even though the audible return intentionally combines them.
+    let mut restore_only_control = state.clone();
+    if restore_only_control.queue_scene_restore(890) != QueueControlResult::Enqueued {
+        return Err("restore-only control was unavailable after the landed jump".into());
+    }
+    let restore_only_scene = current_scene(&restore_only_control);
+    let restore_only_commit = one_commit(commit(
+        &mut restore_only_control,
+        CommitBoundary::Bar,
+        restore_cursor,
+        restore_only_scene,
+        891,
+        1,
+    )?)?;
+    require_committed_command(
+        &restore_only_control,
+        &restore_only_commit,
+        ActionCommand::SceneRestore,
+    )?;
+    let restore_only_plan = render_plan(&restore_only_control, bpm, restore_cursor as f64);
     if state.queue_scene_restore(900) != QueueControlResult::Enqueued {
         return Err("scene restore was unavailable after the landed jump".into());
     }
+    if state.queue_w30_apply_damage_profile(901) != Some(QueueControlResult::Enqueued) {
+        return Err("changed-return W-30 damage was unavailable after the landed jump".into());
+    }
     let scene = current_scene(&state);
-    let restore_commit = one_commit(commit(
+    let restore_commits = commit(
         &mut state,
         CommitBoundary::Bar,
         restore_cursor,
         scene,
         910,
-        1,
-    )?)?;
+        2,
+    )?;
+    let restore_commit =
+        committed_for_command(&state, &restore_commits, ActionCommand::SceneRestore)?;
+    let return_damage_commit = committed_for_command(
+        &state,
+        &restore_commits,
+        ActionCommand::W30ApplyDamageProfile,
+    )?;
     require_committed_command(&state, &restore_commit, ActionCommand::SceneRestore)?;
+    require_committed_command(
+        &state,
+        &return_damage_commit,
+        ActionCommand::W30ApplyDamageProfile,
+    )?;
     let after_restore = render_plan(&state, bpm, restore_cursor as f64);
     let restored_scene = current_scene(&state).ok_or("scene restore cleared the active scene")?;
     require_committed_scene_target(&state, &restore_commit, &pre_y_scene)?;
@@ -512,18 +548,30 @@ pub fn prepare(
     // (notably TR-909 variation) are compared at the same musical instant.
     let expected_restored_scene_plan =
         counterfactual_plan_at_position(&pre_y_control_state, bpm, restore_cursor);
-    let restore_lane_projection_matches_pre_jump =
-        lane_audio_projection_matches(&expected_restored_scene_plan, &after_restore);
-    if !restore_audio_projection_matches_pre_jump || !restore_lane_projection_matches_pre_jump {
+    let restore_only_lane_projection_matches_pre_jump =
+        lane_audio_projection_matches(&expected_restored_scene_plan, &restore_only_plan);
+    let changed_return_w30_differs_from_restore_only =
+        restore_only_plan.w30_preview_render != after_restore.w30_preview_render;
+    let changed_return_non_w30_projection_matches_restore_only =
+        non_w30_lane_audio_projection_matches(&restore_only_plan, &after_restore);
+    if !restore_audio_projection_matches_pre_jump
+        || !restore_only_lane_projection_matches_pre_jump
+        || !changed_return_w30_differs_from_restore_only
+        || !changed_return_non_w30_projection_matches_restore_only
+    {
         return Err(format!(
-            "scene restore did not recover pre-jump projection at the current transport cursor: session_projection={} lane_projection={}",
-            restore_audio_projection_matches_pre_jump, restore_lane_projection_matches_pre_jump,
+            "changed return did not preserve restore ownership at the current transport cursor: session_projection={} restore_only_lane_projection={} w30_changed={} non_w30_preserved={}",
+            restore_audio_projection_matches_pre_jump,
+            restore_only_lane_projection_matches_pre_jump,
+            changed_return_w30_differs_from_restore_only,
+            changed_return_non_w30_projection_matches_restore_only,
         )
         .into());
     }
     let scene_transition_proof = SceneTransitionProof {
         launch_action_id: y_commit.action_id.0,
         restore_action_id: restore_commit.action_id.0,
+        return_damage_action_id: return_damage_commit.action_id.0,
         pre_jump_scene: pre_y_scene.to_string(),
         launched_scene: after_y_scene.to_string(),
         restored_scene: restored_scene.to_string(),
@@ -536,10 +584,12 @@ pub fn prepare(
         launched_source_section: launched_source_section.map(|section| section.to_string()),
         launch_mc202_stayed_out_for_section_mismatch: true,
         restore_audio_projection_matches_pre_jump,
-        restore_lane_projection_matches_pre_jump,
+        restore_only_lane_projection_matches_pre_jump,
+        changed_return_w30_differs_from_restore_only,
+        changed_return_non_w30_projection_matches_restore_only,
     };
-    transitions.push(gesture_transition(
-        "Y-scene-restore",
+    let mut changed_return_transition = gesture_transition(
+        "Y-D-changed-return",
         "Y",
         ActionCommand::SceneRestore,
         CommitBoundary::Bar,
@@ -547,12 +597,19 @@ pub fn prepare(
         &prefix,
         before_restore,
         after_restore.clone(),
-    ));
+    );
+    changed_return_transition
+        .companion_actions
+        .push(GestureCompanionAction {
+            command: ActionCommand::W30ApplyDamageProfile,
+            action_id: return_damage_commit.action_id.0,
+        });
+    transitions.push(changed_return_transition);
     stages.push(stage(
-        "after-Y-scene-restore",
-        "gestures/05_after_Y_scene_restore.wav",
+        "after-Y-D-changed-return",
+        "gestures/05_after_Y_D_changed_return.wav",
         4,
-        Some("Y"),
+        Some("Y+D"),
         Some(ActionCommand::SceneRestore),
         Some(CommitBoundary::Bar),
         Some(restore_commit.action_id.0),
@@ -560,7 +617,6 @@ pub fn prepare(
         after_restore,
     ));
 
-    let to_legacy_riotbox = set_monitor_mode(&mut state, SourceMonitorMode::Riotbox, 32, 920)?;
     state.save()?;
     let (restart_recall_plan, restart_recall_proof) =
         prepare_restart_recall(output_dir, &source_timing, bpm, preset_id)?;
@@ -586,11 +642,11 @@ pub fn prepare(
         scene_transition_proof,
         monitor_action_ids: [
             preset_commit.action_id.0,
-            to_riotbox.action_id.0,
-            back_to_source.action_id.0,
-            back_to_blend.action_id.0,
+            to_source.action_id.0,
+            to_blend.action_id.0,
+            back_to_riotbox.action_id.0,
         ],
-        legacy_riotbox_action_id: to_legacy_riotbox.action_id.0,
+        legacy_riotbox_action_id: back_to_riotbox.action_id.0,
         normal_plan,
         damaged_plan,
     })
@@ -776,10 +832,11 @@ fn gesture_transition(
         command,
         boundary,
         action_id: committed.action_id.0,
+        companion_actions: Vec::new(),
         commit_boundary: committed.boundary.clone(),
         prefix: prefix.to_vec(),
-        before,
-        after,
+        before: Box::new(before),
+        after: Box::new(after),
     }
 }
 
@@ -842,6 +899,15 @@ fn lane_audio_projection_matches(
     expected.tr909_render == actual.tr909_render
         && expected.mc202_render == actual.mc202_render
         && expected.w30_preview_render == actual.w30_preview_render
+        && expected.w30_resample_tap == actual.w30_resample_tap
+}
+
+fn non_w30_lane_audio_projection_matches(
+    expected: &RuntimeMixRenderPlan,
+    actual: &RuntimeMixRenderPlan,
+) -> bool {
+    expected.tr909_render == actual.tr909_render
+        && expected.mc202_render == actual.mc202_render
         && expected.w30_resample_tap == actual.w30_resample_tap
 }
 

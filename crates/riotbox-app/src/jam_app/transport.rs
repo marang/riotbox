@@ -25,6 +25,7 @@ impl JamAppState {
         self.update_transport_clock(next_clock);
         self.runtime.transport_driver.last_audio_position_beats =
             is_playing.then_some(self.runtime.transport.beat_index);
+        self.runtime.transport_driver.pending_audio_is_playing = Some(is_playing);
     }
 
     pub fn advance_transport_by(
@@ -46,7 +47,9 @@ impl JamAppState {
         );
         self.update_transport_clock(next_clock.clone());
 
-        if let Some(boundary) = crossed_commit_boundary(&previous, &next_clock) {
+        if let Some(boundary) =
+            crossed_commit_boundary(&previous, &next_clock, self.source_graph.as_ref())
+        {
             self.commit_ready_actions(boundary, committed_at)
         } else {
             Vec::new()
@@ -58,7 +61,12 @@ impl JamAppState {
         timing: AudioRuntimeTimingSnapshot,
         committed_at: TimestampMs,
     ) -> Vec<CommittedActionRef> {
-        if self.runtime.transport.is_playing && !timing.is_transport_running {
+        if let Some(pending_is_playing) = self.runtime.transport_driver.pending_audio_is_playing {
+            if timing.is_transport_running != pending_is_playing {
+                return Vec::new();
+            }
+            self.runtime.transport_driver.pending_audio_is_playing = None;
+        } else if self.runtime.transport.is_playing && !timing.is_transport_running {
             return Vec::new();
         }
 
@@ -74,7 +82,8 @@ impl JamAppState {
             timing.is_transport_running.then_some(next_clock.beat_index);
 
         if timing.is_transport_running
-            && let Some(boundary) = crossed_commit_boundary(&previous, &next_clock)
+            && let Some(boundary) =
+                crossed_commit_boundary(&previous, &next_clock, self.source_graph.as_ref())
         {
             return self.commit_ready_actions(boundary, committed_at);
         }

@@ -270,6 +270,12 @@ pub(super) fn build_w30_resample_tap_state(
     }) else {
         return W30ResampleTapState::default();
     };
+    if capture.capture_type != riotbox_core::session::CaptureType::Resample
+        || capture.lineage_capture_refs.is_empty()
+        || capture.resample_generation_depth == 0
+    {
+        return W30ResampleTapState::default();
+    }
 
     let source_profile = if capture.is_pinned {
         Some(W30ResampleTapSourceProfile::PinnedCapture)
@@ -343,7 +349,12 @@ fn last_committed_w30_preview_action(session: &SessionFile) -> Option<&Action> {
 fn last_committed_w30_trigger_action(session: &SessionFile) -> Option<&Action> {
     session.action_log.actions.iter().rev().find(|action| {
         action.status == ActionStatus::Committed
-            && matches!(action.command, ActionCommand::W30TriggerPad)
+            && matches!(
+                action.command,
+                ActionCommand::W30TriggerPad
+                    | ActionCommand::W30AuditionRawCapture
+                    | ActionCommand::W30AuditionPromoted
+            )
     })
 }
 

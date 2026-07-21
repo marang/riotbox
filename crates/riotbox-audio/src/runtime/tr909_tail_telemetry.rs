@@ -26,7 +26,9 @@ pub(super) fn envelope_decay(render: &RealtimeTr909RenderState) -> f32 {
     let phrase_decay = match render.phrase_variation {
         Some(Tr909PhraseVariation::PhraseAnchor) | None => 0.0,
         Some(Tr909PhraseVariation::PhraseLift) => -0.001,
-        Some(Tr909PhraseVariation::PhraseDrive) => -0.003,
+        Some(Tr909PhraseVariation::PhraseDrive | Tr909PhraseVariation::PhraseDriveHardCut) => {
+            -0.003
+        }
         Some(Tr909PhraseVariation::PhraseRelease) => 0.01,
     };
     let variation_scale = if matches!(render.mode, Tr909RenderMode::Fill) {
@@ -132,6 +134,7 @@ pub(super) const fn phrase_variation_to_u32(variation: Option<Tr909PhraseVariati
         Some(Tr909PhraseVariation::PhraseLift) => 2,
         Some(Tr909PhraseVariation::PhraseDrive) => 3,
         Some(Tr909PhraseVariation::PhraseRelease) => 4,
+        Some(Tr909PhraseVariation::PhraseDriveHardCut) => 5,
     }
 }
 
@@ -141,6 +144,7 @@ pub(super) const fn phrase_variation_from_u32(value: u32) -> Option<Tr909PhraseV
         2 => Some(Tr909PhraseVariation::PhraseLift),
         3 => Some(Tr909PhraseVariation::PhraseDrive),
         4 => Some(Tr909PhraseVariation::PhraseRelease),
+        5 => Some(Tr909PhraseVariation::PhraseDriveHardCut),
         _ => None,
     }
 }

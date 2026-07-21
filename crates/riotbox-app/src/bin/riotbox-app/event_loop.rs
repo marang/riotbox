@@ -45,14 +45,12 @@ fn run_event_loop(
             let mut immediate_observer_commit = None;
             match outcome {
                 ShellKeyOutcome::Quit => {
-                    if let Some(observer) = observer.as_deref_mut() {
-                        observer.record_key_event(
-                            timestamp_now(),
-                            &key_label,
-                            shell_key_outcome_label(outcome),
-                            &shell,
-                        )?;
-                    }
+                    persist_and_record_quit(
+                        &shell,
+                        observer.as_deref_mut(),
+                        timestamp_now(),
+                        &key_label,
+                    )?;
                     return Ok(());
                 }
                 ShellKeyOutcome::Continue => {}

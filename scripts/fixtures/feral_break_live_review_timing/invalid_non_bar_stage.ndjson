@@ -1,0 +1,6 @@
+{"event":"transport_commit","committed":[{"action_id":1,"boundary":"Beat","beat_index":23}],"snapshot":{"queue":{"recent_history":[{"id":1,"command":"w30.trigger_pad","status":"Committed"}]}}}
+{"event":"transport_commit","committed":[{"action_id":2,"boundary":"Beat","beat_index":31}],"snapshot":{"queue":{"recent_history":[{"id":2,"command":"tr909.set_slam","status":"Committed"}]}}}
+{"event":"transport_commit","committed":[{"action_id":3,"boundary":"Bar","beat_index":39}],"snapshot":{"queue":{"recent_history":[{"id":3,"command":"tr909.fill_next","status":"Committed"}]}}}
+{"event":"transport_commit","committed":[{"action_id":4,"boundary":"Bar","beat_index":43}],"snapshot":{"queue":{"recent_history":[{"id":4,"command":"scene.launch","status":"Committed"}]}}}
+{"event":"transport_commit","committed":[{"action_id":5,"boundary":"Bar","beat_index":47},{"action_id":6,"boundary":"Bar","beat_index":47}],"snapshot":{"queue":{"recent_history":[{"id":5,"command":"scene.restore","status":"Committed"},{"id":6,"command":"w30.apply_damage_profile","status":"Committed"}]}}}
+{"event":"key_outcome","key":"space","outcome":"toggle_transport","snapshot":{"transport":{"is_playing":false,"position_beats":55.0},"queue":{"pending_count":0}}}

@@ -54,6 +54,18 @@ Only after that technical gate, provide a compact factual brief that states:
   from an answer / punctuation stem
 - the dimensions the listener should judge for this artifact
 
+Before calling any playback isolated, enumerate all callback/mixer
+contributors that can remain audible in that state. Source monitor, internal
+resample taps, support lanes, diagnostic voices, and stopped manual previews
+count as contributors even when their route is called `internal`. Silence every
+unclaimed contributor or label the artifact as a composite; do not ask the
+listener to judge an isolated hook from a hook-plus-scaffold mix.
+
+When the performance preset promotes a captured source hook, reject an
+unintentional raw-source `Blend` underneath that same material if the two paths
+restart from different source phases. Use the preset's declared monitor route
+for the candidate, and reserve Source/Blend for explicitly labeled A/B checks.
+
 Never use `pressure` as an unqualified listening target. Name the intended
 domain and its owner:
 
@@ -79,6 +91,33 @@ wait for an explicit readiness confirmation before each playback. A previous
 confirmation does not carry over to the next artifact or repeat. Treat any
 playback started without that confirmation as unheard and do not record a human
 verdict from it.
+
+Bound every playback before requesting readiness:
+
+- default maximum: 10 seconds
+- isolated capture or stem: 2-5 seconds when sufficient
+- longer playback: only for a named multi-bar development claim, with exact
+  duration and purpose stated in advance
+
+Do not let a live instrument loop stand in for a bounded review artifact.
+Schedule an explicit audible stop at the announced endpoint, verify that all
+active lanes are silent, and terminate the runtime immediately if transport
+stop does not silence them. Confirm silence before preparing the next sample.
+
+For a live multi-stage review, drive queued actions ahead of their intended
+quantized boundaries and validate the landed observer commit beats before
+requesting readiness. Wall-clock sleeps alone are not timing evidence. Reject
+the take if any stage misses its declared beat/bar interval or if the explicit
+transport stop misses the announced endpoint; do not transfer a verdict from a
+different arrangement duration even when the sound recipe is identical.
+
+Do not turn non-discriminative technical reruns into human listening work. If
+the sound recipe is intentionally unchanged and only observer timing, capture,
+or transport proof differs, validate that difference mechanically. Request a
+new human verdict only when the preflight demonstrates a material audible or
+musical question. Repeated reports of "same" are a stop signal: end the
+comparison, preserve any existing artifact-bound verdict, and resolve the QA
+question without listener fatigue.
 
 ## Primitive Vocabulary Provenance
 

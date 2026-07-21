@@ -89,6 +89,10 @@ fn committed_w30_promoted_audition_updates_lane_focus_grit_and_log_result() {
         state.runtime.w30_preview.capture_id.as_deref(),
         Some("cap-01")
     );
+    assert_eq!(
+        state.runtime.w30_preview.trigger_revision, 2,
+        "an explicit stopped audition must retrigger callback playback"
+    );
     assert_eq!(state.runtime_view.w30_preview_mode, "promoted_audition");
     assert_eq!(state.runtime_view.w30_preview_profile, "promoted_audition");
     let preview = render_w30_preview_offline(&state.runtime.w30_preview, 48_000, 2, 2_048);

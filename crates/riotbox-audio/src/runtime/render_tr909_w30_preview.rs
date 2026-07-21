@@ -98,9 +98,32 @@ pub(super) fn render_w30_preview_buffer(
 
     if !active {
         state.was_active = false;
+        state.last_transport_running = render.is_transport_running;
+        state.transport_stop_latched = false;
+        state.transport_stop_fade_frames_remaining = 0;
         state.envelope = 0.0;
+        state.last_character_input = 0.0;
+        state.character_edge_memory = 0.0;
         state.beat_position = render.position_beats;
         state.last_trigger_revision = render.trigger_revision;
+        return;
+    }
+
+    let transport_stop_fade_frames = transport_stop_fade_frames(sample_rate);
+    let explicitly_retriggered = render.trigger_revision > state.last_trigger_revision;
+    if state.last_transport_running && !render.is_transport_running {
+        state.transport_stop_latched = true;
+        state.transport_stop_fade_frames_remaining = transport_stop_fade_frames;
+    } else if render.is_transport_running || explicitly_retriggered {
+        state.transport_stop_latched = false;
+        state.transport_stop_fade_frames_remaining = 0;
+    }
+    state.last_transport_running = render.is_transport_running;
+    if state.transport_stop_latched && state.transport_stop_fade_frames_remaining == 0 {
+        state.was_active = false;
+        state.envelope = 0.0;
+        state.last_character_input = 0.0;
+        state.character_edge_memory = 0.0;
         return;
     }
 
@@ -113,6 +136,8 @@ pub(super) fn render_w30_preview_buffer(
         state.source_sample_cursor = 0.0;
         state.pad_playback_cursor = w30_chop_slice_cursor(render, state.last_step);
         state.pad_playback_age_frames = 0;
+        state.last_character_input = 0.0;
+        state.character_edge_memory = 0.0;
         state.last_source_window_signature = w30_source_window_signature(render);
         state.last_pad_playback_signature = w30_pad_playback_signature(render);
         state.last_trigger_revision = render.trigger_revision;
@@ -123,12 +148,16 @@ pub(super) fn render_w30_preview_buffer(
     if source_window_signature != state.last_source_window_signature {
         state.last_source_window_signature = source_window_signature;
         state.source_sample_cursor = 0.0;
+        state.last_character_input = 0.0;
+        state.character_edge_memory = 0.0;
     }
     let pad_playback_signature = w30_pad_playback_signature(render);
     if pad_playback_signature != state.last_pad_playback_signature {
         state.last_pad_playback_signature = pad_playback_signature;
         state.pad_playback_cursor = w30_chop_slice_cursor(render, state.last_step);
         state.pad_playback_age_frames = 0;
+        state.last_character_input = 0.0;
+        state.character_edge_memory = 0.0;
     }
 
     if render.trigger_revision > state.last_trigger_revision {
@@ -162,6 +191,8 @@ pub(super) fn render_w30_preview_buffer(
                     if w30_pad_playback_active(render) {
                         state.pad_playback_cursor = w30_chop_slice_cursor(render, step);
                         state.pad_playback_age_frames = 0;
+                        state.last_character_input = 0.0;
+                        state.character_edge_memory = 0.0;
                     }
                 }
             }
@@ -176,8 +207,16 @@ pub(super) fn render_w30_preview_buffer(
             0.45 + 0.55 * ((std::f32::consts::TAU * state.lfo_phase).sin() * 0.5 + 0.5)
         };
         let waveform = w30_preview_waveform_for_frame(render, state, sample_rate);
-        let sample =
-            waveform * state.envelope * tremolo * w30_render_gain(render, transport_running);
+        let stop_gain = transport_stop_gain(
+            state.transport_stop_latched,
+            &mut state.transport_stop_fade_frames_remaining,
+            transport_stop_fade_frames,
+        );
+        let sample = waveform
+            * state.envelope
+            * tremolo
+            * w30_render_gain(render, transport_running)
+            * stop_gain;
         if transport_running && !w30_pad_playback_active(render) {
             state.envelope *= w30_envelope_decay(render);
         }
@@ -198,17 +237,71 @@ fn w30_preview_waveform_for_frame(
 ) -> f32 {
     if w30_pad_playback_active(render) {
         let sample = w30_pad_playback_sample(&render.pad_playback, state, sample_rate);
-        let grit = render.grit_level.clamp(0.0, 1.0);
-        return (sample * (1.0 + grit * 0.35)).clamp(-1.0, 1.0);
+        return w30_source_backed_character(sample, render.grit_level, state);
     }
 
     if w30_source_window_active(render) {
         let sample = w30_source_window_sample(&render.source_window_preview, state);
-        let grit = render.grit_level.clamp(0.0, 1.0);
-        return (sample * (1.0 + grit * 0.35)).clamp(-1.0, 1.0);
+        return w30_source_backed_character(sample, render.grit_level, state);
     }
 
     0.0
+}
+
+/// Add source-reactive sampler bite without introducing an oscillator or fallback voice.
+///
+/// The differentiated edge follows actual source motion, while asymmetric saturation exposes
+/// upper harmonics already implied by that motion. At zero grit the sample remains bit-for-bit
+/// on the clean branch.
+fn w30_source_backed_character(
+    sample: f32,
+    grit_level: f32,
+    state: &mut W30PreviewCallbackState,
+) -> f32 {
+    let grit = grit_level.clamp(0.0, 1.0);
+    if grit <= f32::EPSILON {
+        state.last_character_input = sample;
+        state.character_edge_memory = 0.0;
+        return sample;
+    }
+
+    const EDGE_MEMORY: f32 = 0.72;
+    const MIN_DRIVE: f32 = 1.0;
+    const DRIVE_RANGE: f32 = 5.2;
+    const EDGE_RANGE: f32 = 1.35;
+    const TRANSIENT_DRIVE_MIN: f32 = 6.0;
+    const TRANSIENT_DRIVE_RANGE: f32 = 18.0;
+    const FOLD_DRIVE_MIN: f32 = 1.4;
+    const FOLD_DRIVE_RANGE: f32 = 2.8;
+    const SATURATED_BODY_SHARE: f32 = 0.64;
+    const SOURCE_FOLD_SHARE: f32 = 0.24;
+    const TRANSIENT_BITE_SHARE: f32 = 0.12;
+    const WET_RANGE: f32 = 0.84;
+    const ASYMMETRY_RANGE: f32 = 0.12;
+
+    let raw_edge = sample - state.last_character_input;
+    state.last_character_input = sample;
+    state.character_edge_memory =
+        state.character_edge_memory * EDGE_MEMORY + raw_edge * (1.0 - EDGE_MEMORY);
+
+    let edge_emphasis = state.character_edge_memory * (grit * EDGE_RANGE);
+    let driven_input = sample + edge_emphasis;
+    let drive = MIN_DRIVE + grit * DRIVE_RANGE;
+    let asymmetry = grit * ASYMMETRY_RANGE;
+    let saturated =
+        ((driven_input * drive + asymmetry).tanh() - asymmetry.tanh()) / drive.tanh().max(0.001);
+    // Wavefolding remains entirely source-driven: source amplitude bends its own phase and
+    // exposes a sustained hostile upper-mid edge without adding a free-running tone.
+    let fold_drive = FOLD_DRIVE_MIN + grit * FOLD_DRIVE_RANGE;
+    let source_fold = (driven_input * fold_drive * std::f32::consts::PI).sin();
+    let transient_drive = TRANSIENT_DRIVE_MIN + grit * TRANSIENT_DRIVE_RANGE;
+    let transient_bite = (raw_edge * transient_drive).tanh();
+    let bitten = saturated * SATURATED_BODY_SHARE
+        + source_fold * SOURCE_FOLD_SHARE
+        + transient_bite * TRANSIENT_BITE_SHARE;
+    let wet = grit * WET_RANGE;
+
+    (sample * (1.0 - wet) + bitten * wet).clamp(-0.98, 0.98)
 }
 
 fn w30_source_window_active(render: &RealtimeW30PreviewRenderState) -> bool {
@@ -393,10 +486,27 @@ pub(super) fn render_w30_resample_tap_buffer(
 
     if !active {
         state.was_active = false;
+        state.last_transport_running = render.is_transport_running;
+        state.transport_stop_latched = false;
+        state.transport_stop_fade_frames_remaining = 0;
         state.envelope = 0.0;
         state.beat_position = 0.0;
         return;
     }
+
+    let transport_stop_fade_frames = transport_stop_fade_frames(sample_rate);
+    if state.last_transport_running && !render.is_transport_running {
+        state.transport_stop_latched = true;
+        state.transport_stop_fade_frames_remaining = transport_stop_fade_frames;
+    } else if render.is_transport_running {
+        state.transport_stop_latched = false;
+        state.transport_stop_fade_frames_remaining = 0;
+    } else if state.transport_stop_latched && state.transport_stop_fade_frames_remaining == 0 {
+        state.was_active = false;
+        state.envelope = 0.0;
+        return;
+    }
+    state.last_transport_running = render.is_transport_running;
 
     if !state.was_active {
         state.beat_position = 0.0;
@@ -439,7 +549,12 @@ pub(super) fn render_w30_resample_tap_buffer(
         let sample = waveform
             * state.envelope
             * shimmer
-            * w30_resample_render_gain(render, transport_running);
+            * w30_resample_render_gain(render, transport_running)
+            * transport_stop_gain(
+                state.transport_stop_latched,
+                &mut state.transport_stop_fade_frames_remaining,
+                transport_stop_fade_frames,
+            );
         state.oscillator_phase =
             (state.oscillator_phase + frequency / sample_rate.max(1) as f32).fract();
         if transport_running {
@@ -453,6 +568,23 @@ pub(super) fn render_w30_resample_tap_buffer(
 
         state.beat_position += beats_per_sample;
     }
+}
+
+fn transport_stop_fade_frames(sample_rate: u32) -> u32 {
+    (sample_rate / 200).max(1)
+}
+
+fn transport_stop_gain(latched: bool, remaining_frames: &mut u32, total_frames: u32) -> f32 {
+    if !latched {
+        return 1.0;
+    }
+    if *remaining_frames == 0 {
+        return 0.0;
+    }
+
+    let gain = *remaining_frames as f32 / total_frames.max(1) as f32;
+    *remaining_frames = remaining_frames.saturating_sub(1);
+    gain
 }
 
 fn w30_resample_subdivision(render: &RealtimeW30ResampleTapState) -> u32 {

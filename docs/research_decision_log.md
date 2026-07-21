@@ -56,6 +56,8 @@ Why: this keeps strategy, archive history, and implementation contracts separate
 Consequences: future spec work should land in `docs/`, not in new planning sprawl under `plan/`.  
 Status: accepted
 
+---
+
 ### RBX-105
 
 Date: 2026-06-30
@@ -3146,4 +3148,60 @@ Decision: when the commit boundary is outside the source's own bar/phrase range,
 Why: Session transport bars describe the developing performance, not extra bars inside a short source file. Looking up performance bar 5 directly in a two-bar source falsely discarded real source evidence and prevented the live policy from loading. Mapping through the existing Scene projection preserves source identity without wrapping source-monitor audio, inventing a phrase, or adding a second timing truth.
 Evidence: MC-202 source-phrase unit tests cover primary phrase preference, short-source projected phrase-grid reuse, bounded section/grid derivation, and fail-closed unknown Scenes. The real Beat03 exact-path run now resolves `scene-01-intro`, derives a source-backed Fill-pickup instigator with bass owner `unassigned`, and passes the strengthened eight-bar, A/B, limiter, capture, restart, recall, and trigger validator. Source-only reference playback still starts at source time zero and remains bounded by the existing clamp-at-EOF monitor contract.
 Consequences: short loops may drive longer live arrangements through projected source sections, but transport advancement alone never proves source phrase ownership. Future explicit source-loop/wrap behavior remains a separate monitor-mode contract; this decision does not silently loop decoded source audio.
+Status: accepted
+
+---
+
+### RBX-150
+
+Date: 2026-07-17
+Topic: make the Feral Break Alpha destructive Fill product-owned and prove its negative space locally
+Phase: P023 / Live Musical Alpha
+Question: after the exact `feral_break_alpha_v1` candidate remained repetitive and musically weak, why did selecting a stronger typed Fill recipe initially leave its eight-bar artifact byte-identical, and what is the smallest honest correction?
+Decision: preserve `feral_break_alpha_v1` as the reviewed historical identity and introduce `feral_break_alpha_v2`. V2 retains the same typed lane roles and mixer/macro defaults, but its committed TR-909 Fill projects the distinct typed `PhraseDriveHardCut` variation after any explicit Scene-movement variation; non-Fill projection and explicit Scene movement keep their existing ownership. Select the versioned `PhraseDriveBreakCutStompV2` primitive only for `MainlineDrive + PhraseDriveHardCut`, while the historical `MainlineDrive + PhraseDrive` pair remains on V1. Beat four chokes at step 24, rests through steps 25-29, returns with one late DiveStomp at step 30, and ends on a rest. The exact Alpha renderer must read the recipe from the actual destructive-stage `RuntimeMixRenderPlan`, not from the separate gesture proof. Gate the product artifact on complete silence during steps 26-29 and a non-silent hard return at step 30.
+Why: the first revised manifest advertised V2 by borrowing recipe identity from a separate main gesture, while the Alpha Fill occurred on an odd ambient phrase cycle and actually selected `PhraseLift + generic_fill_v1`. Consequently the new full Alpha artifact was byte-identical to the human-rejected v1 candidate. Aggregate stage deltas had hidden both the false attribution and the absence of a macro arrangement event.
+Evidence: an invariant first made the renderer fail honestly with `generic_fill_v1` instead of publishing the mismatched manifest. App projection tests prove that the same odd-phrase Fill remains `PhraseLift + GenericFillV1` without the preset but resolves to `PhraseDriveHardCut + PhraseDriveBreakCutStompV2` under v2; a separate regression proves that v1's even-phrase Fill remains `PhraseDrive + PhraseDriveBreakCutStompV1`. Against the rejected v1 candidate (`sha256 c105b171d592f84a137b49e5142d47d5e47db2b3ee92ead0cd482aef25061820`), the corrected eight-bar artifact is byte-distinct (`sha256 f4c74703c157d66ede579b9a9200e9532f12dd04ba58b5326d81f7e5f46564d3`). The exact Fill stage records 18.50% silence instead of 0.12%; its declared half-beat negative-space window is digitally silent (`rms 0`, `silence_ratio 1.0`) and the immediate step-30 return reaches `rms 0.207901`, `peak 0.690721`, with no clipping or limiter dependency. The exact dense-break validator passes.
+Consequences: manifest recipe provenance must come from the artifact-owning plan; a different proof path cannot stand in for it. Whole-stage metrics remain diagnostic and cannot prove a dramatic pause, so Golden-Path arrangement gestures require role-specific time-local evidence. V2 is technically review-ready but retains `human_verdict: unverified`; measurements cannot promote it to a musical pass. V1 remains replayable and unchanged.
+Status: accepted
+
+---
+
+### RBX-151
+
+Date: 2026-07-18
+Topic: keep one Golden Path taste target while gating shared audible tuning across real sources
+Phase: P023 / Live Musical Alpha
+Question: should an audible DSP, mix, pattern, or performance-policy change be tuned and reviewed only against the current Golden Path source?
+Decision: keep one supported Golden Path as the structured human taste target, but require every shared audible tuning change to pass a nearest-exact product-path matrix of at least three contrasting real sources before another human review. The matrix rejects exact-path failure, silence, clipping or hidden limiter dependency, timing regressions, and near-identical source-backed hook envelopes. It remains diagnostic and cannot replace the Golden Path human verdict.
+Why: a single-source pass can overfit one break, hide source-dependent hot paths, or make a fixed transformation look like general instrument behavior. Requiring broad human listening on every tuning iteration would be slow and dilute the Golden Path; a bounded automated safety/diversity matrix catches structural collapse while preserving one focused taste decision.
+Evidence: the first Beat03-only W-30 bite candidate passed its exact diagnostic, while the new four-source matrix exposed hot Beat20 monitor/restart mixes and a false click classification on a legitimate sustained DH BeatC downbeat. The corrected policy respects an active preset's W-30 mixer ceiling, gives the non-bass MC-202 instigator less bus allocation, and distinguishes a supported transient from an isolated discontinuity. Beat03, Beat08, Beat20, and DH BeatC then pass the exact RuntimeMix renderer; after normalizing every eight-bar W-30 hook envelope to the same 512-point time axis, their maximum pair correlation is `0.492000`, below the diagnostic collapse threshold `0.95`.
+Consequences: `just dense-break-live-source-matrix` is required for shared audible dense-break tuning before a new Golden Path listening request. Its generated `source-matrix-report.json` stays `quality_proof: false` and `human_verdict: unverified`. Commercial references remain local comparison material and never enter this source matrix.
+Status: accepted
+
+---
+
+### RBX-152
+
+Date: 2026-07-19
+Topic: require explicit resample lineage before routing the synthetic W-30 internal tap
+Phase: P023 / Live Musical Alpha
+Question: why did an isolated promoted W-30 hook contain a persistent background hum even though the musician had not requested or committed an internal resample?
+Decision: keep `W30ResampleTapState` on the existing callback seam, but project it as audible only when the focused capture is typed `CaptureType::Resample`, has non-empty capture lineage, and has positive resample generation depth. Ordinary loop/pad capture, raw audition, pad promotion, live recall, and pad trigger keep the tap idle and silent. `promote.resample` remains the explicit action that creates the first eligible resample capture; capture presence or W-30 focus alone is not activation evidence.
+Why: the older preparation seam automatically marked every focused capture `CaptureLineageReady` and routed a synthetic oscillator beside the source-backed pad. In the exact promoted Pad session, `cap-01` had no lineage and generation depth zero, yet the tap produced a fixed promoted-profile oscillator near 177 Hz. The musician correctly heard it as background hum during a claimed isolated hook review. That automatic scaffold polluted the Golden Path, lacked explicit performer ownership, and made the playback assignment false.
+Evidence: a new App regression proves that even a malformed ordinary Pad carrying fake lineage/depth remains on the default idle/silent tap state, while committed explicit resample tests retain their audible lineage-ready route. Capture-shell diagnostics now report `tap idle/silent` for ordinary capture. The exact callback-block Beat03 live-path run passes after removal; the eight-bar candidate remains non-silent and unclipped with peak `0.626358`, RMS `0.076353`, and no limiter dependency. Its hash changes to `e885a0641d3210a38b099c5133f0f7e801c00ab5cce0a3e27b79e0e8b41e83dc`, so the earlier accepted-for-iteration hash remains historical and the corrected hook requires fresh listening. The required Beat03, Beat08, Beat20, and DH BeatC exact source matrix also passes; its maximum time-normalized W-30 hook-envelope correlation is `0.494912`, below the `0.95` collapse threshold.
+Consequences: internal routing does not make a voice inaudible. Future isolated listening briefs must inventory every callback/mixer contributor and either silence unclaimed taps/support voices or label the artifact as a composite. Explicit resample workflows retain the synthetic primitive for their bounded existing contract; this decision does not claim that primitive is finished resample sound design.
+Status: accepted
+
+---
+
+### RBX-153
+
+Date: 2026-07-21
+Topic: make the Feral Break Alpha v2 QA path match the documented instrument path
+Phase: P023 / Live Musical Alpha
+Question: why did the corrected hook still sound like unrelated material was pasted together, and why did the exact gesture pack fail after moving the preset to Riotbox-only monitoring?
+Decision: materialize `BreakReinforce` and `Riotbox` as typed `feral_break_alpha_v2` preset defaults; keep Source and Blend only as explicit monitor A/B evidence. Execute the exact performance path in documented order `w -> s -> f -> y -> Y+D`. The V2 Fill owns a whole-bar non-TR-909 focus handoff and a recipe-local output trim, while historical V1 retains its original half-bar focus and unity gain. Prove the changed return as two same-boundary performer actions: a restore-only control must recover the pre-jump Scene projection, then committed W-30 damage must account for the additional audible change without altering non-W-30 lanes.
+Why: the prior QA renderer secretly queued TR-909 preparation that the musician recipe did not name, rendered `w -> f -> s`, and left the raw source doubled beneath a promoted W-30 capture from a different source phase. Moving to the honest Riotbox-only path exposed that Scene restore alone was too subtle because raw-source repositioning was no longer leaking into the candidate. Lowering the gesture threshold would have certified a status change rather than the documented changed return.
+Evidence: the generated 132 BPM exact RuntimeMix smoke and the real Beat03 path pass with no clipping or limiter activity. Across Beat03, Beat08, Beat20, and DH BeatC, Fill pre-limiter peak is `0.910073` with zero limited samples. Changed-return relative RMS deltas range from `1.0858` to `1.2567`, with waveform correlations from `0.0364` to `0.2156`. The four-source W-30 hook-envelope matrix remains diverse at maximum correlation `0.494912`, below the `0.95` collapse threshold. Targeted tests preserve V1 recipe focus/gain independently from V2.
+Consequences: scripted exact-path evidence may not hide prerequisite actions absent from the musician flow. Current-version audio tuning must not mutate historical recipe controls. The diagnostic pack remains `quality_proof: false` and `human_verdict: unverified`; a fresh structured human verdict is still required for RIOTBOX-1402.
 Status: accepted

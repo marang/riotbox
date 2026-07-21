@@ -439,6 +439,15 @@ impl JamAppState {
                     .transport
                     .is_playing
                     .then_some(self.runtime.transport.beat_index);
+                if matches!(
+                    action.command,
+                    ActionCommand::TransportPlay
+                        | ActionCommand::TransportPause
+                        | ActionCommand::TransportStop
+                ) {
+                    self.runtime.transport_driver.pending_audio_is_playing =
+                        Some(self.runtime.transport.is_playing);
+                }
             }
             ActionCommand::SceneLaunch | ActionCommand::SceneRestore => {
                 self.runtime.transport.current_scene =

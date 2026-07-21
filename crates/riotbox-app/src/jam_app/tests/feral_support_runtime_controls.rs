@@ -290,6 +290,7 @@ fn runtime_view_surfaces_w30_resample_tap_diagnostics() {
         bank_id: BankId::from("bank-b"),
         pad_id: PadId::from("pad-03"),
     });
+    session.captures[0].capture_type = CaptureType::Resample;
     session.captures[0].is_pinned = true;
     session.captures[0].lineage_capture_refs =
         vec![CaptureId::from("cap-seed"), CaptureId::from("cap-bar-02")];
