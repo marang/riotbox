@@ -348,15 +348,17 @@ Current review:
 
 Boundary:
 
-- `P023 | Sound Excellence / Production Quality` is the single active product
-  priority until `RIOTBOX-1396` closes.
+- `P023 | Sound Excellence / Production Quality` remains the single active
+  product priority. Its first bounded exit, `RIOTBOX-1396`, closed on
+  2026-07-21; the next work expands from that accepted baseline.
 - The first exit supports one trusted dense-break Golden Path through the exact
   live `riotbox-app` runtime and mixer. Offline binaries, scripted packs,
   fixtures, reports, and validators are diagnostic evidence only.
-- P016, P021, and P022 are deferred unless a ticket names the exact P023 blocker
-  it removes.
-- Broad positive source-family expansion and negative-source coverage do not
-  block this first exit.
+- P016, P021, and P022 remain subordinate unless a ticket names the exact
+  post-exit P023 outcome it enables or blocker it removes.
+- Broad positive source-family expansion and negative-source coverage did not
+  block this first exit; they now proceed from the accepted dense-break
+  baseline in the documented order.
 
 Done when:
 
@@ -405,6 +407,30 @@ Current landed evidence:
   and did not establish recognizable Riotbox character. It directly enables
   RIOTBOX-1401 to implement and human-review a source-derived eight-bar arc with
   hook establishment, pressure lift, destructive contrast, and changed return.
+- RIOTBOX-1401 lands the curated `Feral Break Alpha` product preset and the
+  documented five-minute Recipe 17 path through capture, raw audition,
+  promotion, save, intentional quit, restart, live recall, trigger, and
+  deterministic callback-path replay. The recipe also names the exact screen
+  cues and expected eight-bar development without requiring Log or source-code
+  knowledge.
+- RIOTBOX-1402 corrects the V2 product/QA path to `Riotbox` monitoring and the
+  documented `w -> s -> f -> y -> Y+D` order, then proves a real TUI and
+  audio-callback take as `8 -> 8 -> 4 -> 4 -> 7.90757` beats before its explicit
+  stop. The isolated 14.787-second artifact has SHA-256
+  `327f9d4d00bd18c294bcf26f86c8b8a3b23f8e4f85474572735139d627d5ce61`,
+  measures `-18.6 LUFS` and `-0.3 dBTP`, and does not clip. After exact-artifact
+  preflight and fresh readiness confirmation, Markus gave it a direct `pass`:
+  the elements are usable, though he would loop them differently.
+- The structured classification keeps the break/pause as the strongest
+  musical element (`silence`) from the earlier explicit same-recipe review,
+  the source-backed chop as a clear within-two-bars hook, and the TR-909 as the
+  hardest active drum/transient layer. Source character is transformed but
+  present. Beat03 truthfully assigns bass owner `unassigned`; the exit therefore
+  does not claim an MC-202 bass-pressure pass.
+
+Status: first bounded P023 Usable Musical Alpha exit closed on 2026-07-21.
+This is one human-passed dense-break Golden Path, not broad source-family,
+finished arrangement, export, or release readiness.
 
 Not sufficient for exit:
 

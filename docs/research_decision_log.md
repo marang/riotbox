@@ -3205,3 +3205,17 @@ Why: the prior QA renderer secretly queued TR-909 preparation that the musician 
 Evidence: the generated 132 BPM exact RuntimeMix smoke and the real Beat03 path pass with no clipping or limiter activity. Across Beat03, Beat08, Beat20, and DH BeatC, Fill pre-limiter peak is `0.910073` with zero limited samples. Changed-return relative RMS deltas range from `1.0858` to `1.2567`, with waveform correlations from `0.0364` to `0.2156`. The four-source W-30 hook-envelope matrix remains diverse at maximum correlation `0.494912`, below the `0.95` collapse threshold. Targeted tests preserve V1 recipe focus/gain independently from V2.
 Consequences: scripted exact-path evidence may not hide prerequisite actions absent from the musician flow. Current-version audio tuning must not mutate historical recipe controls. The diagnostic pack remains `quality_proof: false` and `human_verdict: unverified`; a fresh structured human verdict is still required for RIOTBOX-1402.
 Status: accepted
+
+---
+
+### RBX-154
+
+Date: 2026-07-21
+Topic: close the first P023 Usable Musical Alpha exit on exact-live evidence
+Phase: P023 / Live Musical Alpha
+Question: when may RIOTBOX-1396 close without mistaking diagnostics, a scripted render, or an attractive fixed demo for a usable live instrument?
+Decision: close the first bounded P023 exit only after the exact `riotbox-app` TUI/audio-callback path lands the documented `w -> s -> f -> y -> Y+D` performance arc, passes technical preflight, and receives a fresh human musical pass. Treat the accepted eight-bar action sequence as QA choreography around reusable elements, not as Riotbox's preferred fixed composition. Continue P023 through `RIOTBOX-1404` by expanding the passed live policy to tonal-hook and sparse-pressure material.
+Why: RIOTBOX-1401 already proved capture, raw audition, promotion, intentional save/quit, restart, recall, trigger, and deterministic replay, but the phase required exact-live musical judgment. RIOTBOX-1402 then corrected hidden QA preparation, doubled-source monitoring, gesture order, and quantized timing before asking the listener again. The resulting pass establishes one usable dense-break baseline while preserving the musician's direction that the elements should be loopable in another order.
+Evidence: PR #1369 merges the product-path corrections and strict observer validator. The final observer lands the five stages at transport positions `50.067233 -> 58.058831 -> 66.100849 -> 70.084042 -> 74.142866` and stops at `81.907573`, validating as `8 -> 8 -> 4 -> 4 -> 7.90757`. The isolated 14.787-second callback capture is SHA-256 `327f9d4d00bd18c294bcf26f86c8b8a3b23f8e4f85474572735139d627d5ce61`, measures `-18.6 LUFS` and `-0.3 dBTP` without clipping, and received Markus's direct verdict: `pass, ich wuerde es bestimmt anders loopen aber die elemente sind schon gut`. Recipe 17 and restart/recall callback proof preserve the same source-backed product spine.
+Consequences: RIOTBOX-1396 may close as one human-passed dense-break Usable Musical Alpha. This does not claim broad source-family quality, a finished arranger, export readiness, release readiness, or MC-202 bass pressure; Beat03's typed bass owner remains `unassigned`. The strongest musical review element is the break/pause, the TR-909 is the hardest active transient layer, and the source-backed hook remains clear within two bars. Future UX must expose the accepted elements for performer-selected confirmation and looping rather than freezing the review choreography.
+Status: accepted

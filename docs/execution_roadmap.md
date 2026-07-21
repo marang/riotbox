@@ -293,23 +293,26 @@ Linear project / phase map:
 4. `P014 | Arrangement / Scene System` - closed bounded Arrangement / Scene
    exit
 5. `P015 | Productization Alpha` - closed bounded Productization Alpha baseline
-6. `P016 | Pro Workflow / Export` - deferred unless it directly blocks the
-   P023 Golden Path
+6. `P016 | Pro Workflow / Export` - subordinate unless a ticket names the
+   exact P023 live-product outcome it enables or blocker it removes
 7. `P017 | Live Performance Readiness`
 8. `P018 | Ghost + Feral Autonomy Expansion`
 9. `P019 | Beta / Release Hardening`
 10. `P020 | Riotbox 1.0 Release Cut`
-11. `P021 | Audio Judge / Musical Fitness` - deferred calibration support;
-    proceed only when it directly blocks the P023 Golden Path
-12. `P022 | Professional Sound Output` - deferred diagnostic baseline for
+11. `P021 | Audio Judge / Musical Fitness` - subordinate calibration support
+    for named P023 live-product outcomes and regressions
+12. `P022 | Professional Sound Output` - subordinate diagnostic baseline for
     source-backed rendered examples and weak-output regressions
 13. `P023 | Sound Excellence / Production Quality` - active immediate track;
-    first exit is the `RIOTBOX-1396` live, human-passed Usable Musical Alpha
+    the `RIOTBOX-1396` live, human-passed Usable Musical Alpha first exit closed
+    on 2026-07-21, and `RIOTBOX-1404` owns the next audible source-family
+    expansion
 
 This is a project / phase overview, not a ticket list. Keep P012, P013, P014,
 and P015 as regression baselines and keep P017-P020 coarse while P023 turns the
 bounded product spine into one usable live instrument path. P016, P021, and
-P022 stay available as support tracks but do not outrank the active P023 exit.
+P022 stay available as support tracks but do not outrank the active P023
+product path.
 The quality ladder remains:
 
 - P021 makes the technical audio-QA and musical-fitness judge calibrated enough
@@ -327,7 +330,7 @@ P021 must not replace human listening or become a hidden taste oracle without
 labeled Riotbox examples. P022 and P023 must not bypass Source Graph, Session,
 Action Lexicon, queue / commit, replay, or existing audio-QA contracts. Work in
 P016, P021, or P022 is eligible during the active P023 phase only when the issue
-names the exact Golden Path blocker it removes.
+names the exact post-exit live-product outcome it enables or blocker it removes.
 
 ### Product Intelligence Contract
 
@@ -1327,13 +1330,13 @@ release gate unless a future issue promotes it into normal roadmap scope.
 
 ## 15. Next Concrete Step
 
-The immediate execution track is
-`P023 | Sound Excellence / Production Quality`. Its first bounded exit is
-`RIOTBOX-1396`: ship one live,
-human-passed Usable Musical Alpha before resuming export, broad corpus, or
-additional QA-infrastructure work.
+The immediate execution track remains
+`P023 | Sound Excellence / Production Quality`. Its first bounded exit,
+`RIOTBOX-1396`, closed on 2026-07-21 with one exact-live, human-passed
+dense-break Usable Musical Alpha. Do not reopen that exit merely to generate
+another report or rearrange the accepted QA sequence.
 
-Execute that exit in this order:
+The first exit landed in this order:
 
 1. `RIOTBOX-1397` synchronizes the active phase, work classes, listening stop
    rule, and honest demo-family outcomes; `RIOTBOX-1406` corrects the concrete
@@ -1348,17 +1351,18 @@ Execute that exit in this order:
    ownership.
 5. `RIOTBOX-1401` adds one curated Feral Break Alpha state with capture,
    recall, replay, and a short real-source recipe.
-6. `RIOTBOX-1402` runs the exact live journey and closes only with a structured
-   human `pass`. A weak or rejected result routes to one highest-value audio or
-   policy fix before another review; it does not open another report layer.
+6. `RIOTBOX-1402` corrected and ran the exact live journey, validated the
+   committed `8 -> 8 -> 4 -> 4 -> 8` arc, and closed with a structured human
+   `pass`. The accepted elements remain performer-loopable; the review sequence
+   is not a fixed composition.
 
-Only after that exit may `RIOTBOX-1404` expand the human-passed live path to
-tonal and sparse material. `RIOTBOX-1403` then separates fixture evidence from
-live readiness before `RIOTBOX-1405` proves correct degraded / reject behavior
-for weak and bad-timing sources. `RIOTBOX-1399` remains post-alpha workflow
-optimization unless measured validation cost is recorded as an explicit blocker
-of the live path. P016, P021, and P022 remain deferred unless an issue names the
-exact Golden Path blocker it removes.
+With that exit closed, `RIOTBOX-1404` is the next audible slice: expand the
+human-passed live path to tonal-hook and sparse-pressure material. `RIOTBOX-1403`
+then separates fixture evidence from live readiness before `RIOTBOX-1405`
+proves correct degraded / reject behavior for weak and bad-timing sources.
+`RIOTBOX-1399` remains workflow optimization unless measured validation cost is
+an explicit blocker. P016, P021, and P022 remain subordinate unless a ticket
+names the exact live-product blocker it removes.
 
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a

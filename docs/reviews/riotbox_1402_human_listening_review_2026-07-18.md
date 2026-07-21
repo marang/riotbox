@@ -277,6 +277,11 @@ readiness, the complete candidate was played once. His verdict was:
 This records `human_verdict: keep` for the exact live artifact. The candidate
 passes as usable musical material with a clear early hook, transformed-but-
 present source character, audible impact and contrast, and live replay value.
+The structured strongest-element field remains `silence`, based on Markus's
+earlier explicit praise for the breaks and pauses in the same frozen sound
+recipe; the hardest active sound layer is the TR-909 drum/transient handoff.
+These are separate claims: musical negative space can be the strongest feature
+while the drums provide the physical hit.
 The limitation is equally important: the reviewed eight-bar action arc is QA
 choreography, not a preferred fixed composition or default loop. The Alpha UX
 should preserve the passed elements while allowing the performer to confirm,

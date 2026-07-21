@@ -13,18 +13,21 @@ This directory holds implementation-facing specifications, plans, reviews, bench
 
 ## Current Active Direction
 
-`P023 | Sound Excellence / Production Quality` is the single active product
-priority. Its bounded exit is the `RIOTBOX-1396` Usable Musical Alpha: one
-trusted dense-break source must reach a strong hook through the exact live
-`riotbox-app` path, expose playable contrast, survive capture / recall / replay,
-and earn a structured human `pass`.
+`P023 | Sound Excellence / Production Quality` remains the single active
+product priority. Its first bounded exit, the `RIOTBOX-1396` Usable Musical
+Alpha, closed on 2026-07-21: one trusted dense-break source reached a strong
+hook through the exact live `riotbox-app` path, exposed playable contrast,
+survived capture / recall / replay, and earned a structured human `pass`.
+`RIOTBOX-1404` is the next audible expansion: carry the passed live policy into
+tonal-hook and sparse-pressure material without treating the reviewed
+eight-bar QA choreography as a fixed composition.
 
-`P016`, `P021`, and `P022` are deferred unless a slice directly blocks that
-Golden Path. Offline renderers, scripted packs, fixture verdicts, reports, and
-validators remain diagnostic evidence; they do not count as instrument
-progress until the behavior lands in the live product path. Broader positive
-source-family coverage and negative-source handling follow only after the first
-live human-passed alpha.
+`P016`, `P021`, and `P022` remain subordinate to the active P023 product path.
+Offline renderers, scripted packs, fixture verdicts, reports, and validators
+remain diagnostic evidence; they do not count as instrument progress until the
+behavior lands in the live product path. Broader positive source-family
+coverage and honest negative-source handling now follow from the accepted
+dense-break baseline.
 
 ## Documentation Rules
 
