@@ -1440,4 +1440,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Run the exact live Golden Path review and earn a real musical pass
 - [RIOTBOX-1396.md](./RIOTBOX-1396.md)
   P023: Ship one live, human-passed Usable Musical Alpha
+- [RIOTBOX-1421.md](./RIOTBOX-1421.md)
+  P023: Add an explicit manual source-grid hypothesis for tonal live sources
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
