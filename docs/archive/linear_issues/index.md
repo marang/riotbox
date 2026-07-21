@@ -1438,4 +1438,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Add a curated Feral Break Alpha preset with capture, recall, and replay
 - [RIOTBOX-1402.md](./RIOTBOX-1402.md)
   P023: Run the exact live Golden Path review and earn a real musical pass
+- [RIOTBOX-1396.md](./RIOTBOX-1396.md)
+  P023: Ship one live, human-passed Usable Musical Alpha
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
