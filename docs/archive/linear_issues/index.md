@@ -1444,4 +1444,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Add an explicit manual source-grid hypothesis for tonal live sources
 - [RIOTBOX-1404.md](./RIOTBOX-1404.md)
   P023: Expand the human-passed live alpha to tonal hook and sparse pressure
+- [RIOTBOX-1403.md](./RIOTBOX-1403.md)
+  P023: Stop fixture demo-bank evidence from driving live readiness priorities
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
