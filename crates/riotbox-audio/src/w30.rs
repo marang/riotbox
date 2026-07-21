@@ -147,6 +147,9 @@ pub struct W30PadPlaybackSampleWindow {
     pub loop_enabled: bool,
     pub playback_rate: f32,
     pub reverse: bool,
+    /// Fraction of one W-30 trigger step kept audible before a short choke.
+    /// Zero disables the gate and preserves the full slice playback path.
+    pub gate_step_fraction: f32,
     pub loop_crossfade_sample_count: usize,
     pub chop_slice_count: usize,
     pub chop_slice_starts: [u32; W30_PAD_CHOP_SLICE_COUNT],

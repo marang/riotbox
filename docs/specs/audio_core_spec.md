@@ -213,7 +213,7 @@ Rules:
 
 ### 9.1 Source-backed live performance projection
 
-For the trusted dense-break path, the control plane may derive one typed
+For the trusted live path, the control plane may derive one typed
 `LivePerformancePolicy` from the confirmed source timing, the current Source
 Graph, and the committed MC-202 `source_phrase_plan`. This is a shared render
 projection consumed by W-30, TR-909, and MC-202; it is not a second arrangement,
@@ -229,6 +229,26 @@ Rules:
   implying that a weak answer or pickup is the bass lane
 - the policy may set bounded W-30, TR-909, and MC-202 level/touch/slam floors so
   the selected all-lane hierarchy survives the live mixer
+- measured phrase-audio evidence may select one typed held-state character:
+  `dense_break`, `tonal_hook`, or `sparse_pressure`. Selection uses a named
+  normalized contrast margin across spectral brightness, low/mid body,
+  offbeat onset density, and hook-restraint evidence; source paths or filenames
+  must never control the branch. Missing/untrusted evidence preserves the
+  human-passed `dense_break` default
+- `tonal_hook` promotes the source-backed W-30 capture, uses restrained TR-909
+  anchor vocabulary, and may convert a generic fill-pickup MC-202 decision to
+  explicit `stay_out`. `sparse_pressure` assigns drum/transient impact to
+  TR-909, keeps the W-30 source rhythm audible, and converts that generic pickup
+  to bounded punctuation. A trusted explicit bass/answer/stay-out candidate
+  retains its own role; character policy must not steal or invent bass ownership
+- held-state character defaults may select TR-909 pattern adoption and phrase
+  variation only for SourceSupport/BreakReinforce. Explicit committed Fill and
+  Scene-movement vocabulary keeps precedence
+- character-aware destructive intent must remain source-backed and
+  grid-coherent. Dense/tonal may use a bounded pitch drag. Sparse destructive
+  playback must remain at `1.0x` and may gate each source-derived chop inside
+  its trigger step; it must not accelerate an already percussive source so its
+  kicks drift between the fixed-grid TR-909 hits
 - those shared floors must preserve headroom for explicit performer gestures;
   a fill, slam, trigger, launch, or restore must project a distinct bounded
   articulation instead of collapsing into the policy baseline

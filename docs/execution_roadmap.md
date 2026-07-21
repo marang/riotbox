@@ -1368,6 +1368,16 @@ proves correct degraded / reject behavior for weak and bad-timing sources.
 an explicit blocker. P016, P021, and P022 remain subordinate unless a ticket
 names the exact live-product blocker it removes.
 
+RIOTBOX-1404 now owns a typed `dense_break` / `tonal_hook` /
+`sparse_pressure` held-state projection and an exact four-bar controlled-source
+matrix. The deterministic dense control plus tonal and sparse candidates pass
+without clipping or limiter dependency and are materially distinct. Structured
+listening records `keep` for both held loops and both character-specific
+destructive variants. Sparse destructive review found and then removed
+free-running source-kick drift by replacing rate acceleration with a grid-locked
+source chop/choke. RIOTBOX-1404 is therefore complete; continue with the next
+bounded P023 slice instead of widening this source set again.
+
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a
 quality guardrail, not a replacement for the current sound-product priority:

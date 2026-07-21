@@ -2,14 +2,81 @@ use crate::{
     ids::SourceId,
     session::{Mc202SourcePhraseCandidateFamilyState, SessionFile},
     source_graph::{
-        EnergyClass, QualityClass, SourceGraph, section_for_projected_scene,
+        EnergyClass, PhraseAudioFeatures, QualityClass, SourceGraph, section_for_projected_scene,
         section_for_transport_bar,
     },
+    tr909_policy::{Tr909PatternAdoptionPolicy, Tr909PhraseVariationPolicy},
     transport::{
         DEFAULT_BARS_PER_PHRASE, DEFAULT_BEATS_PER_BAR, TransportClockState, TransportGridPosition,
     },
     view::jam::source_timing_confirmation_matches_graph,
 };
+
+/// Minimum normalized contrast required before phrase-audio evidence may move a source out of
+/// the proven dense-break default.
+///
+/// This is a classification margin, not a loudness or QA threshold. The controlled source
+/// matrix constrains it: the accepted Beat03 dense break stays inside the neutral band, while
+/// the trusted RushArp tonal source and BeatC sparse drum source clear opposite sides.
+pub const LIVE_PERFORMANCE_CHARACTER_CONTRAST_MARGIN: f32 = 0.10;
+const DENSE_TR909_LEAD_TRANSIENT_THRESHOLD: f32 = 0.72;
+const DEFAULT_TRANSIENT_BACKBEAT: f32 = 0.55;
+const TONAL_W30_MUSIC_LEVEL: f32 = 0.70;
+const TONAL_TR909_DRUM_BASE: f32 = 0.50;
+const TONAL_TR909_DRUM_TRANSIENT_SCALE: f32 = 0.12;
+const TONAL_TR909_SLAM_BASE: f32 = 0.28;
+const TONAL_TR909_SLAM_TRANSIENT_SCALE: f32 = 0.10;
+const SPARSE_W30_MUSIC_LEVEL: f32 = 0.38;
+const SPARSE_TR909_DRUM_BASE: f32 = 0.84;
+const SPARSE_TR909_DRUM_TRANSIENT_SCALE: f32 = 0.15;
+const SPARSE_TR909_SLAM_BASE: f32 = 0.65;
+const SPARSE_TR909_SLAM_TRANSIENT_SCALE: f32 = 0.15;
+const SPARSE_MC202_PUNCTUATE_MUSIC_LEVEL: f32 = 0.46;
+const SPARSE_MC202_PUNCTUATE_TOUCH_FLOOR: f32 = 0.68;
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum LivePerformanceCharacter {
+    DenseBreak,
+    TonalHook,
+    SparsePressure,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum LivePerformanceDestructiveIntent {
+    PitchDrag,
+    TransientBite,
+}
+
+impl LivePerformanceDestructiveIntent {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::PitchDrag => "pitch_drag",
+            Self::TransientBite => "transient_bite",
+        }
+    }
+}
+
+impl LivePerformanceCharacter {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::DenseBreak => "dense_break",
+            Self::TonalHook => "tonal_hook",
+            Self::SparsePressure => "sparse_pressure",
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct LivePerformanceCharacterEvidence {
+    pub phrase_index: u32,
+    pub spectral_brightness: f32,
+    pub low_mid_ratio: f32,
+    pub offbeat_onset_density: f32,
+    pub hook_restraint_hint: f32,
+    pub confidence: f32,
+}
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum LivePerformanceMc202Intent {
@@ -72,6 +139,9 @@ pub struct LivePerformancePolicy {
     /// `None` preserves legacy zero-phase behavior when the confirmed graph cannot resolve an
     /// evidenced bar anchor.
     pub source_bar_grid_anchor_beat_cursor: Option<u64>,
+    pub character: LivePerformanceCharacter,
+    pub character_evidence: Option<LivePerformanceCharacterEvidence>,
+    pub destructive_intent: LivePerformanceDestructiveIntent,
     pub lead: LivePerformanceLead,
     pub bass_owner: LivePerformanceBassOwner,
     pub mc202_intent: LivePerformanceMc202Intent,
@@ -80,6 +150,10 @@ pub struct LivePerformancePolicy {
     pub source_transient_backbeat_evidence: Option<f32>,
     pub tr909_drum_level: f32,
     pub tr909_slam_floor: f32,
+    /// Source-character defaults for the held live state. Explicit fills and scene movement keep
+    /// their committed vocabulary and take precedence in the app projection.
+    pub tr909_pattern_adoption: Option<Tr909PatternAdoptionPolicy>,
+    pub tr909_phrase_variation: Option<Tr909PhraseVariationPolicy>,
     pub mc202_music_level: f32,
     pub mc202_touch_floor: f32,
 }
@@ -112,7 +186,7 @@ pub fn derive_live_performance_policy(
     let section_ownership_is_current = source_plan.source_section_id.as_ref().is_none_or(|owner| {
         current_source_section(session, graph).is_some_and(|section| section.section_id == *owner)
     });
-    let mc202_intent = if !source_plan.is_source_derived() || !section_ownership_is_current {
+    let source_mc202_intent = if !source_plan.is_source_derived() || !section_ownership_is_current {
         LivePerformanceMc202Intent::StayOut
     } else {
         match source_plan.candidate_family {
@@ -137,17 +211,53 @@ pub fn derive_live_performance_policy(
     let expression = section_ownership_is_current
         .then_some(source_plan.source_expression.as_ref())
         .flatten();
+    let character_evidence = section_ownership_is_current
+        .then(|| character_evidence(graph, source_plan))
+        .flatten();
+    let character = character_evidence
+        .as_ref()
+        .map_or(LivePerformanceCharacter::DenseBreak, classify_character);
+    // Preserve explicit bass ownership and source-selected answer/stay-out families. Character
+    // policy only restrains the generic fill-pickup result that otherwise collapsed all three
+    // trusted source families into the same live behavior.
+    let mc202_intent = match (character, source_mc202_intent) {
+        (LivePerformanceCharacter::TonalHook, LivePerformanceMc202Intent::Instigate) => {
+            LivePerformanceMc202Intent::StayOut
+        }
+        (LivePerformanceCharacter::SparsePressure, LivePerformanceMc202Intent::Instigate) => {
+            LivePerformanceMc202Intent::Punctuate
+        }
+        (_, source_intent) => source_intent,
+    };
     let bass_pressure = expression.map_or(0.0, |value| value.bass_pressure.clamp(0.0, 1.0));
     let source_transient_backbeat_evidence =
         expression.map(|value| value.transient_backbeat.clamp(0.0, 1.0));
-    let transient_backbeat = source_transient_backbeat_evidence.unwrap_or(0.55);
-    let lead = if transient_backbeat >= 0.72 {
-        LivePerformanceLead::Tr909Pressure
-    } else {
-        LivePerformanceLead::W30Hook
+    let transient_backbeat =
+        source_transient_backbeat_evidence.unwrap_or(DEFAULT_TRANSIENT_BACKBEAT);
+    let lead = match character {
+        LivePerformanceCharacter::TonalHook => LivePerformanceLead::W30Hook,
+        LivePerformanceCharacter::SparsePressure => LivePerformanceLead::Tr909Pressure,
+        LivePerformanceCharacter::DenseBreak => {
+            if transient_backbeat >= DENSE_TR909_LEAD_TRANSIENT_THRESHOLD {
+                LivePerformanceLead::Tr909Pressure
+            } else {
+                LivePerformanceLead::W30Hook
+            }
+        }
+    };
+    let destructive_intent = match character {
+        LivePerformanceCharacter::SparsePressure => LivePerformanceDestructiveIntent::TransientBite,
+        LivePerformanceCharacter::DenseBreak | LivePerformanceCharacter::TonalHook => {
+            LivePerformanceDestructiveIntent::PitchDrag
+        }
     };
     let mc202_music_level = match mc202_intent {
         LivePerformanceMc202Intent::BassPressure => 0.76 + bass_pressure * 0.16,
+        LivePerformanceMc202Intent::Punctuate
+            if character == LivePerformanceCharacter::SparsePressure =>
+        {
+            SPARSE_MC202_PUNCTUATE_MUSIC_LEVEL
+        }
         LivePerformanceMc202Intent::Punctuate => 0.62,
         // A fill-pickup is an accent, not a bass owner. Its higher touch floor supplies the
         // attack; a lower bus allocation leaves exact-mix headroom for the source-backed W-30
@@ -157,6 +267,11 @@ pub fn derive_live_performance_policy(
     };
     let mc202_touch_floor = match mc202_intent {
         LivePerformanceMc202Intent::BassPressure => 0.82,
+        LivePerformanceMc202Intent::Punctuate
+            if character == LivePerformanceCharacter::SparsePressure =>
+        {
+            SPARSE_MC202_PUNCTUATE_TOUCH_FLOOR
+        }
         LivePerformanceMc202Intent::Punctuate => 0.72,
         LivePerformanceMc202Intent::Instigate => 0.82,
         LivePerformanceMc202Intent::StayOut => 0.0,
@@ -167,11 +282,38 @@ pub fn derive_live_performance_policy(
         LivePerformanceBassOwner::Unassigned
     };
 
-    let nominal_w30_music_level: f32 = if mc202_intent == LivePerformanceMc202Intent::BassPressure {
-        0.60
-    } else {
-        0.64
+    let nominal_w30_music_level: f32 = match (character, mc202_intent) {
+        (_, LivePerformanceMc202Intent::BassPressure) => 0.60,
+        (LivePerformanceCharacter::TonalHook, _) => TONAL_W30_MUSIC_LEVEL,
+        (LivePerformanceCharacter::SparsePressure, _) => SPARSE_W30_MUSIC_LEVEL,
+        (LivePerformanceCharacter::DenseBreak, _) => 0.64,
     };
+    let (tr909_drum_level, tr909_slam_floor, tr909_pattern_adoption, tr909_phrase_variation) =
+        match character {
+            LivePerformanceCharacter::DenseBreak => (
+                0.68 + transient_backbeat * 0.16,
+                0.54 + transient_backbeat * 0.16,
+                None,
+                None,
+            ),
+            // Let the captured tonal phrase lead. A steady anchor remains audible, while the
+            // reduced drum/slam allocation and MC-202 stay-out prevent pitch collision.
+            LivePerformanceCharacter::TonalHook => (
+                TONAL_TR909_DRUM_BASE + transient_backbeat * TONAL_TR909_DRUM_TRANSIENT_SCALE,
+                TONAL_TR909_SLAM_BASE + transient_backbeat * TONAL_TR909_SLAM_TRANSIENT_SCALE,
+                Some(Tr909PatternAdoptionPolicy::SupportPulse),
+                Some(Tr909PhraseVariationPolicy::PhraseAnchor),
+            ),
+            // Sparse drum material receives a harder mainline anchor, but PhraseAnchor avoids
+            // turning every held bar into a fill. The MC-202 becomes a quiet punctuation layer,
+            // never an undeclared bass owner.
+            LivePerformanceCharacter::SparsePressure => (
+                SPARSE_TR909_DRUM_BASE + transient_backbeat * SPARSE_TR909_DRUM_TRANSIENT_SCALE,
+                SPARSE_TR909_SLAM_BASE + transient_backbeat * SPARSE_TR909_SLAM_TRANSIENT_SCALE,
+                Some(Tr909PatternAdoptionPolicy::MainlineDrive),
+                Some(Tr909PhraseVariationPolicy::PhraseAnchor),
+            ),
+        };
 
     Some(LivePerformancePolicy {
         source_id: graph.source.source_id.clone(),
@@ -180,6 +322,9 @@ pub fn derive_live_performance_policy(
             .primary_hypothesis()
             .and_then(|hypothesis| hypothesis.transport_bar_grid_anchor())
             .map(|anchor| anchor.beat_cursor),
+        character,
+        character_evidence,
+        destructive_intent,
         lead,
         bass_owner,
         mc202_intent,
@@ -199,11 +344,70 @@ pub fn derive_live_performance_policy(
             },
         ),
         source_transient_backbeat_evidence,
-        tr909_drum_level: 0.68 + transient_backbeat * 0.16,
-        tr909_slam_floor: 0.54 + transient_backbeat * 0.16,
+        tr909_drum_level,
+        tr909_slam_floor,
+        tr909_pattern_adoption,
+        tr909_phrase_variation,
         mc202_music_level,
         mc202_touch_floor,
     })
+}
+
+fn character_evidence(
+    graph: &SourceGraph,
+    source_plan: &crate::session::Mc202SourcePhrasePlanState,
+) -> Option<LivePerformanceCharacterEvidence> {
+    let slot = &source_plan.phrase_slot;
+    let measured = || {
+        graph
+            .phrase_audio_features
+            .iter()
+            .filter(|feature| feature.has_measured_evidence())
+    };
+    measured()
+        .filter(|feature| feature.phrase_index == slot.phrase_index)
+        .max_by(|left, right| left.confidence.total_cmp(&right.confidence))
+        .or_else(|| {
+            measured()
+                .filter(|feature| {
+                    feature.start_bar <= slot.end_bar && feature.end_bar >= slot.start_bar
+                })
+                .max_by(|left, right| left.confidence.total_cmp(&right.confidence))
+        })
+        .map(character_evidence_from_features)
+}
+
+fn character_evidence_from_features(
+    features: &PhraseAudioFeatures,
+) -> LivePerformanceCharacterEvidence {
+    LivePerformanceCharacterEvidence {
+        phrase_index: features.phrase_index,
+        spectral_brightness: features.spectral_brightness.clamp(0.0, 1.0),
+        low_mid_ratio: features.low_mid_ratio.clamp(0.0, 1.0),
+        offbeat_onset_density: features.offbeat_onset_density.clamp(0.0, 1.0),
+        hook_restraint_hint: features.hook_restraint_hint.clamp(0.0, 1.0),
+        confidence: features.confidence.clamp(0.0, 1.0),
+    }
+}
+
+fn classify_character(evidence: &LivePerformanceCharacterEvidence) -> LivePerformanceCharacter {
+    let tonal_spectral_contrast = evidence.spectral_brightness - evidence.low_mid_ratio;
+    let tonal_hook_contrast = evidence.hook_restraint_hint - evidence.low_mid_ratio;
+    if tonal_spectral_contrast >= LIVE_PERFORMANCE_CHARACTER_CONTRAST_MARGIN
+        && tonal_hook_contrast >= LIVE_PERFORMANCE_CHARACTER_CONTRAST_MARGIN
+    {
+        return LivePerformanceCharacter::TonalHook;
+    }
+
+    let sparse_body_contrast = evidence.low_mid_ratio - evidence.spectral_brightness;
+    let sparse_space_contrast = evidence.hook_restraint_hint - evidence.offbeat_onset_density;
+    if sparse_body_contrast >= LIVE_PERFORMANCE_CHARACTER_CONTRAST_MARGIN
+        && sparse_space_contrast >= LIVE_PERFORMANCE_CHARACTER_CONTRAST_MARGIN
+    {
+        return LivePerformanceCharacter::SparsePressure;
+    }
+
+    LivePerformanceCharacter::DenseBreak
 }
 
 fn current_source_section<'a>(
@@ -490,6 +694,147 @@ mod tests {
     }
 
     #[test]
+    fn measured_tonal_character_promotes_w30_and_restrains_generic_instigator() {
+        let (mut session, mut graph) = dense_break_context();
+        session.runtime_state.source_timing.confirmed_grid =
+            Some(SourceTimingGridConfirmationState {
+                source_id: graph.source.source_id.clone(),
+                hypothesis_id: Some("grid-1".into()),
+                confirmed_by_action: ActionId(1),
+                confirmed_at: 100,
+            });
+        let mut plan = pressure_source_plan(graph.source.source_id.clone());
+        plan.candidate_family = Some(Mc202SourcePhraseCandidateFamilyState::FillPickupInstigator);
+        session.runtime_state.lane_state.mc202.source_phrase_plan = Some(plan);
+        graph
+            .phrase_audio_features
+            .push(phrase_features(0.34, 0.88, 0.43, 0.61));
+
+        let policy = derive_live_performance_policy(&session, &graph).expect("tonal policy");
+
+        assert_eq!(policy.character, LivePerformanceCharacter::TonalHook);
+        assert_eq!(
+            policy.destructive_intent,
+            LivePerformanceDestructiveIntent::PitchDrag
+        );
+        assert_eq!(policy.lead, LivePerformanceLead::W30Hook);
+        assert_eq!(policy.mc202_intent, LivePerformanceMc202Intent::StayOut);
+        assert_eq!(policy.bass_owner, LivePerformanceBassOwner::Unassigned);
+        assert_eq!(
+            policy.tr909_pattern_adoption,
+            Some(Tr909PatternAdoptionPolicy::SupportPulse)
+        );
+        assert_eq!(
+            policy.tr909_phrase_variation,
+            Some(Tr909PhraseVariationPolicy::PhraseAnchor)
+        );
+        assert!(policy.tr909_drum_level < 0.70);
+        assert_eq!(policy.mc202_music_level, 0.0);
+    }
+
+    #[test]
+    fn measured_sparse_character_anchors_drums_without_claiming_bass_or_dense_fill() {
+        let (mut session, mut graph) = dense_break_context();
+        session.runtime_state.source_timing.confirmed_grid =
+            Some(SourceTimingGridConfirmationState {
+                source_id: graph.source.source_id.clone(),
+                hypothesis_id: Some("grid-1".into()),
+                confirmed_by_action: ActionId(1),
+                confirmed_at: 100,
+            });
+        let mut plan = pressure_source_plan(graph.source.source_id.clone());
+        plan.candidate_family = Some(Mc202SourcePhraseCandidateFamilyState::FillPickupInstigator);
+        session.runtime_state.lane_state.mc202.source_phrase_plan = Some(plan);
+        graph
+            .phrase_audio_features
+            .push(phrase_features(0.70, 0.39, 0.20, 0.38));
+
+        let policy = derive_live_performance_policy(&session, &graph).expect("sparse policy");
+
+        assert_eq!(policy.character, LivePerformanceCharacter::SparsePressure);
+        assert_eq!(
+            policy.destructive_intent,
+            LivePerformanceDestructiveIntent::TransientBite
+        );
+        assert_eq!(policy.lead, LivePerformanceLead::Tr909Pressure);
+        assert_eq!(policy.mc202_intent, LivePerformanceMc202Intent::Punctuate);
+        assert_eq!(policy.bass_owner, LivePerformanceBassOwner::Unassigned);
+        assert_eq!(
+            policy.tr909_pattern_adoption,
+            Some(Tr909PatternAdoptionPolicy::MainlineDrive)
+        );
+        assert_eq!(
+            policy.tr909_phrase_variation,
+            Some(Tr909PhraseVariationPolicy::PhraseAnchor)
+        );
+        assert!(policy.tr909_drum_level > 0.80);
+        assert_eq!(policy.mc202_music_level, 0.46);
+    }
+
+    #[test]
+    fn neutral_measured_character_preserves_human_passed_dense_policy() {
+        let (mut session, mut graph) = dense_break_context();
+        session.runtime_state.source_timing.confirmed_grid =
+            Some(SourceTimingGridConfirmationState {
+                source_id: graph.source.source_id.clone(),
+                hypothesis_id: Some("grid-1".into()),
+                confirmed_by_action: ActionId(1),
+                confirmed_at: 100,
+            });
+        let mut plan = pressure_source_plan(graph.source.source_id.clone());
+        plan.candidate_family = Some(Mc202SourcePhraseCandidateFamilyState::FillPickupInstigator);
+        session.runtime_state.lane_state.mc202.source_phrase_plan = Some(plan);
+        graph
+            .phrase_audio_features
+            .push(phrase_features(0.58, 0.58, 0.13, 0.47));
+
+        let policy = derive_live_performance_policy(&session, &graph).expect("dense policy");
+
+        assert_eq!(policy.character, LivePerformanceCharacter::DenseBreak);
+        assert_eq!(
+            policy.destructive_intent,
+            LivePerformanceDestructiveIntent::PitchDrag
+        );
+        assert_eq!(policy.lead, LivePerformanceLead::Tr909Pressure);
+        assert_eq!(policy.mc202_intent, LivePerformanceMc202Intent::Instigate);
+        assert_eq!(policy.tr909_pattern_adoption, None);
+        assert_eq!(policy.tr909_phrase_variation, None);
+        assert!((policy.tr909_drum_level - 0.8048).abs() < 1.0e-6);
+        assert!((policy.tr909_slam_floor - 0.6648).abs() < 1.0e-6);
+    }
+
+    #[test]
+    fn exact_phrase_character_evidence_beats_higher_confidence_overlap() {
+        let (mut session, mut graph) = dense_break_context();
+        session.runtime_state.source_timing.confirmed_grid =
+            Some(SourceTimingGridConfirmationState {
+                source_id: graph.source.source_id.clone(),
+                hypothesis_id: Some("grid-1".into()),
+                confirmed_by_action: ActionId(1),
+                confirmed_at: 100,
+            });
+        let mut plan = pressure_source_plan(graph.source.source_id.clone());
+        plan.candidate_family = Some(Mc202SourcePhraseCandidateFamilyState::FillPickupInstigator);
+        session.runtime_state.lane_state.mc202.source_phrase_plan = Some(plan);
+
+        let mut exact_tonal = phrase_features(0.34, 0.88, 0.43, 0.61);
+        exact_tonal.phrase_index = 0;
+        exact_tonal.confidence = 0.40;
+        let overlapping_sparse = phrase_features(0.70, 0.39, 0.20, 0.38);
+        graph.phrase_audio_features = vec![overlapping_sparse, exact_tonal];
+
+        let policy = derive_live_performance_policy(&session, &graph).expect("tonal policy");
+
+        assert_eq!(policy.character, LivePerformanceCharacter::TonalHook);
+        assert_eq!(
+            policy
+                .character_evidence
+                .map(|evidence| evidence.phrase_index),
+            Some(0)
+        );
+    }
+
+    #[test]
     fn live_policy_rederives_identically_from_persisted_product_truth() {
         let (mut session, graph) = dense_break_context();
         session.runtime_state.source_timing.confirmed_grid =
@@ -614,6 +959,31 @@ mod tests {
             candidate_scorecards: Vec::new(),
             phrase_memory_distance: 0.6,
             fallback_reason: None,
+        }
+    }
+
+    fn phrase_features(
+        low_mid_ratio: f32,
+        spectral_brightness: f32,
+        offbeat_onset_density: f32,
+        hook_restraint_hint: f32,
+    ) -> PhraseAudioFeatures {
+        PhraseAudioFeatures {
+            phrase_index: 1,
+            start_seconds: 0.0,
+            end_seconds: 8.0,
+            start_bar: 1,
+            end_bar: 4,
+            low_band_rms: 0.1,
+            low_mid_ratio,
+            low_band_movement: 0.1,
+            transient_density: 1.0,
+            offbeat_onset_density,
+            spectral_roughness: 0.05,
+            spectral_brightness,
+            hook_restraint_hint,
+            confidence: 0.95,
+            provenance_refs: vec!["test.phrase-audio-features".into()],
         }
     }
 }

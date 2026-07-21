@@ -381,18 +381,42 @@ bounded source matrix before another Golden Path listening request. The Golden
 Path remains the single human taste target; the matrix is a regression and
 overfitting gate. It must include at least three contrasting real sources and
 reject exact-path failure, clipping/limiter concealment, silence, timing
-regression, or near-identical source-backed hook envelopes. For the current
-dense-break live path, run:
+regression, or near-identical source-backed hook envelopes. The historical
+dense command remains as a compatibility alias:
 
 ```bash
 just dense-break-live-source-matrix
 ```
 
-This command renders Beat03, Beat08, Beat20, and DH BeatC through the exact
-`RuntimeMix` simulation, requires every diagnostic manifest to pass, and writes
-an ignored `source-matrix-report.json`. The report remains
-`quality_proof: false` and `human_verdict: unverified`; it cannot promote a
-candidate without structured Golden Path listening.
+Beat08, Beat20, and DH BeatC now classify as sparse rather than dense, so the
+alias delegates to the controlled character-aware matrix below instead of
+forcing all four sources through dense-only gesture gates. Git history retains
+the older dense-only envelope validator as historical evidence.
+
+Controlled dense/tonal/sparse held-state expansion uses:
+
+```bash
+just controlled-source-live-matrix
+```
+
+The dense control renders once; the selected tonal and sparse sources each
+render twice through the exact callback-block RuntimeMix. The matrix requires
+byte-identical same-source WAVs, three distinct typed character decisions and
+WAVs, no clipping or limiter concealment, and non-collapsed pairwise 20 ms RMS
+envelopes. The held-state artifact is deliberately separate from the dense
+scripted Alpha arc: it proves a loopable committed instrument state, not a fixed
+composition. Tonal review assigns midrange/hook leadership to W-30 and
+intentional MC-202 stay-out; sparse review assigns drum/transient impact to
+TR-909, not bass. All three current cases declare bass owner `unassigned`. The
+report remains `quality_proof: false` and `human_verdict: unverified` until the
+tonal and sparse candidates receive structured human verdicts. Generated report
+state does not absorb those verdicts: store each human decision as a separate
+`riotbox.listening_review.v1` pack. RIOTBOX-1404 records `keep` for both held
+loops and both destructive variants. Its rejected sparse destructive control
+is retained as evidence that deterministic technical success does not excuse
+source kicks drifting between fixed-grid drums; the accepted replacement must
+prove `1.0x` playback, a nonzero bounded grid gate, deterministic WAV identity,
+and a fresh listening pass.
 
 The current lightweight command is:
 

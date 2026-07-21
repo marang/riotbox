@@ -318,6 +318,26 @@ fn duration_aware_w30_pad_matches_exact_realtime_mix_path() {
     assert_eq!(parity_delta.active_samples, 0);
     assert_eq!(parity_delta.rms, 0.0);
     assert!(source_delta.rms > 0.01);
+
+    let mut gated_plan = plan;
+    gated_plan
+        .w30_preview_render
+        .pad_playback
+        .as_mut()
+        .expect("duration pad")
+        .gate_step_fraction = 0.36;
+    let gated_full = render_runtime_mix_offline(&gated_plan, 48_000, 2, frame_count);
+    let gated_realtime =
+        render_runtime_mix_realtime_simulation_offline(&gated_plan, 48_000, 2, frame_count, 128);
+    let gated_metrics = signal_metrics(&gated_full);
+    let gated_parity_delta = signal_delta_metrics(&gated_full, &gated_realtime);
+
+    assert!(gated_metrics.active_samples > 20_000);
+    assert!(gated_metrics.active_samples < metrics.active_samples);
+    assert!(gated_metrics.rms > 0.01);
+    assert_eq!(gated_metrics.clip_count, 0);
+    assert_eq!(gated_parity_delta.active_samples, 0);
+    assert_eq!(gated_parity_delta.rms, 0.0);
 }
 
 #[test]
@@ -886,6 +906,7 @@ fn runtime_mix_duration_pad() -> W30PadPlaybackSampleWindow {
         loop_enabled: true,
         playback_rate: 1.0,
         reverse: false,
+        gate_step_fraction: 0.0,
         loop_crossfade_sample_count: 128,
         chop_slice_count: 0,
         chop_slice_starts: [0; W30_PAD_CHOP_SLICE_COUNT],

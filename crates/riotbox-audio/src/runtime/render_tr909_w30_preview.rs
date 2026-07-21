@@ -177,6 +177,7 @@ pub(super) fn render_w30_preview_buffer(
     } else {
         f64::from(w30_preview_idle_bpm(render)) / 60.0 / f64::from(sample_rate.max(1))
     };
+    let pad_grid_gate = w30_pad_grid_gate(render, sample_rate);
 
     for frame_index in 0..frame_count {
         if transport_running {
@@ -206,7 +207,7 @@ pub(super) fn render_w30_preview_buffer(
             state.lfo_phase = (state.lfo_phase + 1.8 / sample_rate.max(1) as f32).fract();
             0.45 + 0.55 * ((std::f32::consts::TAU * state.lfo_phase).sin() * 0.5 + 0.5)
         };
-        let waveform = w30_preview_waveform_for_frame(render, state, sample_rate);
+        let waveform = w30_preview_waveform_for_frame(render, state, sample_rate, pad_grid_gate);
         let stop_gain = transport_stop_gain(
             state.transport_stop_latched,
             &mut state.transport_stop_fade_frames_remaining,
@@ -234,10 +235,12 @@ fn w30_preview_waveform_for_frame(
     render: &RealtimeW30PreviewRenderState,
     state: &mut W30PreviewCallbackState,
     sample_rate: u32,
+    pad_grid_gate: Option<W30PadGridGate>,
 ) -> f32 {
     if w30_pad_playback_active(render) {
         let sample = w30_pad_playback_sample(&render.pad_playback, state, sample_rate);
-        return w30_source_backed_character(sample, render.grit_level, state);
+        let characterized = w30_source_backed_character(sample, render.grit_level, state);
+        return characterized * w30_pad_grid_gate_gain(pad_grid_gate, state);
     }
 
     if w30_source_window_active(render) {
@@ -246,6 +249,57 @@ fn w30_preview_waveform_for_frame(
     }
 
     0.0
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub(super) struct W30PadGridGate {
+    fade_start_frames: f32,
+    gate_end_frames: f32,
+    fade_frames: f32,
+}
+
+pub(super) fn w30_pad_grid_gate(
+    render: &RealtimeW30PreviewRenderState,
+    sample_rate: u32,
+) -> Option<W30PadGridGate> {
+    let gate_fraction = render.pad_playback.gate_step_fraction.clamp(0.0, 1.0);
+    if !gate_fraction.is_finite()
+        || gate_fraction <= f32::EPSILON
+        || !render.tempo_bpm.is_finite()
+        || render.tempo_bpm <= 0.0
+    {
+        return None;
+    }
+
+    const GATE_FADE_STEP_FRACTION: f32 = 0.10;
+    let subdivision = w30_preview_subdivision(render).max(1) as f32;
+    let step_frames = sample_rate.max(1) as f32 * 60.0 / render.tempo_bpm.max(1.0) / subdivision;
+    let gate_end = step_frames * gate_fraction;
+    let fade_frames = (step_frames * GATE_FADE_STEP_FRACTION).max(1.0);
+    let fade_start = (gate_end - fade_frames).max(0.0);
+    Some(W30PadGridGate {
+        fade_start_frames: fade_start,
+        gate_end_frames: gate_end,
+        fade_frames,
+    })
+}
+
+pub(super) fn w30_pad_grid_gate_gain(
+    gate: Option<W30PadGridGate>,
+    state: &W30PreviewCallbackState,
+) -> f32 {
+    let Some(gate) = gate else {
+        return 1.0;
+    };
+    let age = state.pad_playback_age_frames as f32;
+
+    if age <= gate.fade_start_frames {
+        1.0
+    } else if age >= gate.gate_end_frames {
+        0.0
+    } else {
+        1.0 - (age - gate.fade_start_frames) / gate.fade_frames
+    }
 }
 
 /// Add source-reactive sampler bite without introducing an oscillator or fallback voice.
@@ -440,6 +494,7 @@ pub(super) fn w30_pad_playback_signature(render: &RealtimeW30PreviewRenderState)
         .wrapping_add(u64::from(render.pad_playback.loop_enabled))
         .wrapping_add(u64::from(render.pad_playback.reverse).wrapping_mul(17))
         .wrapping_add(u64::from(render.pad_playback.playback_rate.to_bits()).wrapping_mul(19))
+        .wrapping_add(u64::from(render.pad_playback.gate_step_fraction.to_bits()).wrapping_mul(29))
         .wrapping_add((render.pad_playback.chop_slice_count as u64).wrapping_mul(23));
     render
         .pad_playback

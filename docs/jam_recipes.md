@@ -1061,6 +1061,33 @@ It proves exact-path reachability, eight-bar development, deterministic
 session/restart state, and audible non-collapse. It does not grant the
 structured human musical pass owned by RIOTBOX-1402.
 
+### Controlled tonal and sparse held loops
+
+Run the exact deterministic source-character matrix:
+
+```bash
+just controlled-source-live-matrix artifacts/audio_qa/local-controlled-source-live-matrix
+```
+
+The accepted dense source renders once as a regression control; tonal and
+sparse each render twice. Review `controlled/01_held_character_loop.wav` inside
+`tonal-a` and `sparse-a`; each is one four-bar held instrument state (about
+eight seconds), not the dense Alpha gesture medley.
+`controlled/02_destructive_variation.wav` asks a separate mutation question.
+The tonal expectation is a recognizable W-30 pitch/riff with restrained drums
+and silent MC-202. The sparse expectation is a retained source rhythm plus
+harder TR-909 drum/transient attack, bounded MC-202 punctuation, and a
+grid-locked W-30 chop/choke; source kicks between the fixed-grid drums are a
+failure. Neither source currently owns bass, so absent bass pressure must not
+be scored as failure.
+
+The generated `source-matrix-report.json` proves determinism and cross-source
+diversity only and intentionally remains `human_verdict: unverified`. Record
+human loop usefulness and character in separate structured listening reviews.
+RIOTBOX-1404's tonal/sparse held loops and both destructive variants received
+`keep`; later audible changes require fresh reviews rather than inheriting those
+verdicts.
+
 ## Current Limits
 
 The current prototype is still not a finished “load a loop and instantly get a polished remix” instrument.

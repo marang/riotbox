@@ -22,7 +22,10 @@ use riotbox_audio::{
 use riotbox_core::{
     action::{Action, ActionCommand, ActionParams, ActionStatus},
     ids::{CaptureId, SceneId},
-    live_performance_policy::{LivePerformanceMc202Intent, derive_live_performance_policy},
+    live_performance_policy::{
+        LivePerformanceDestructiveIntent, LivePerformanceMc202Intent,
+        derive_live_performance_policy,
+    },
     session::{
         Mc202PhraseIntentState, Mc202RoleState, SceneMovementDirectionState,
         SceneMovementKindState, SceneMovementLaneIntentState, SceneMovementState, SessionFile,
@@ -135,6 +138,26 @@ pub(super) fn build_tr909_render_state(
         scene_context,
     );
     let live_policy = source_graph.and_then(|graph| derive_live_performance_policy(session, graph));
+    let character_pattern_adoption = matches!(
+        policy.mode,
+        Tr909RenderModePolicy::SourceSupport | Tr909RenderModePolicy::BreakReinforce
+    )
+    .then(|| {
+        live_policy
+            .as_ref()
+            .and_then(|policy| policy.tr909_pattern_adoption)
+    })
+    .flatten();
+    let character_phrase_variation = matches!(
+        policy.mode,
+        Tr909RenderModePolicy::SourceSupport | Tr909RenderModePolicy::BreakReinforce
+    )
+    .then(|| {
+        live_policy
+            .as_ref()
+            .and_then(|policy| policy.tr909_phrase_variation)
+    })
+    .flatten();
 
     Tr909RenderState {
         mode: audio_tr909_render_mode(policy.mode),
@@ -142,9 +165,12 @@ pub(super) fn build_tr909_render_state(
         source_support_profile: audio_tr909_source_support_profile(policy.source_support_profile),
         source_support_context: audio_tr909_source_support_context(policy.source_support_context),
         pattern_ref: tr909.pattern_ref.clone(),
-        pattern_adoption: audio_tr909_pattern_adoption(policy.pattern_adoption),
+        pattern_adoption: audio_tr909_pattern_adoption(
+            character_pattern_adoption.or(policy.pattern_adoption),
+        ),
         phrase_variation: scene_movement_tr909_variation(session)
             .or_else(|| preset_tr909_fill_variation(session, policy.mode))
+            .or_else(|| audio_tr909_phrase_variation(character_phrase_variation))
             .or_else(|| audio_tr909_phrase_variation(policy.phrase_variation)),
         takeover_profile: audio_tr909_takeover_profile(policy.takeover_profile),
         drum_bus_level: live_policy
@@ -484,6 +510,7 @@ pub(super) fn build_w30_preview_render_state(
         W30PreviewModeState::PromotedAudition => W30PreviewRenderMode::PromotedAudition,
     };
     let last_trigger = last_committed_w30_trigger_action(session);
+    let live_policy = source_graph.and_then(|graph| derive_live_performance_policy(session, graph));
 
     let capture = w30.last_capture.as_ref().and_then(|capture_id| {
         session
@@ -516,7 +543,10 @@ pub(super) fn build_w30_preview_render_state(
         None
     };
     let pad_playback = if !matches!(mode, W30PreviewRenderMode::Idle) {
-        let transform = w30_pad_playback_transform(session);
+        let transform = w30_pad_playback_transform(
+            session,
+            live_policy.as_ref().map(|policy| policy.destructive_intent),
+        );
         capture.and_then(|capture| {
             build_w30_capture_artifact_playback(capture, capture_audio_cache, transform)
         })
@@ -529,8 +559,6 @@ pub(super) fn build_w30_preview_render_state(
     } else {
         W30PreviewRenderRouting::Silent
     };
-    let live_policy = source_graph.and_then(|graph| derive_live_performance_policy(session, graph));
-
     W30PreviewRenderState {
         mode,
         routing,

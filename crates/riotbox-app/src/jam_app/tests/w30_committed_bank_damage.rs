@@ -255,6 +255,7 @@ fn committed_w30_damage_profile_updates_grit_and_log_result() {
         .expect("damaged pad playback");
     assert!(!damaged_playback.reverse);
     assert!((damaged_playback.playback_rate - 0.7786).abs() < 0.0001);
+    assert_eq!(damaged_playback.gate_step_fraction, 0.0);
     assert_eq!(
         state
             .session

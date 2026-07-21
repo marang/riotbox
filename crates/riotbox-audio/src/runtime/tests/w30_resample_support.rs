@@ -101,6 +101,7 @@ fn w30_pad_playback_uses_duration_window_beyond_fixed_preview_len() {
             loop_enabled: true,
             playback_rate: 1.0,
             reverse: false,
+            gate_step_fraction: 0.0,
             loop_crossfade_sample_count: 128,
             chop_slice_count: 0,
             chop_slice_starts: [0; W30_PAD_CHOP_SLICE_COUNT],
@@ -157,6 +158,7 @@ fn w30_pad_playback_cursor_preserves_full_capture_duration() {
         loop_enabled: true,
         playback_rate: 1.0,
         reverse: false,
+        gate_step_fraction: 0.0,
         loop_crossfade_sample_count: 128,
         chop_slice_count: 0,
         chop_slice_starts: [0; W30_PAD_CHOP_SLICE_COUNT],
@@ -174,6 +176,49 @@ fn w30_pad_playback_cursor_preserves_full_capture_duration() {
         "duration-aware cursor advanced to {} instead of the capture midpoint",
         state.pad_playback_cursor
     );
+}
+
+#[test]
+fn w30_grid_gate_chokes_before_the_next_source_percussion_can_drift() {
+    let mut render = RealtimeW30PreviewRenderState {
+        mode: W30PreviewRenderMode::LiveRecall,
+        routing: W30PreviewRenderRouting::MusicBusPreview,
+        source_profile: Some(W30PreviewSourceProfile::PromotedRecall),
+        trigger_revision: 0,
+        trigger_velocity: 0.0,
+        source_window_preview: RealtimeW30PreviewSampleWindow::default(),
+        pad_playback: RealtimeW30PadPlaybackSampleWindow {
+            sample_count: 1,
+            gate_step_fraction: 0.4,
+            ..Default::default()
+        },
+        music_bus_level: 0.64,
+        grit_level: 0.0,
+        is_transport_running: true,
+        tempo_bpm: 120.0,
+        position_beats: 0.0,
+    };
+
+    let before_fade = W30PreviewCallbackState {
+        pad_playback_age_frames: 2_000,
+        ..Default::default()
+    };
+    let during_fade = W30PreviewCallbackState {
+        pad_playback_age_frames: 4_200,
+        ..Default::default()
+    };
+    let after_gate = W30PreviewCallbackState {
+        pad_playback_age_frames: 5_000,
+        ..Default::default()
+    };
+
+    let gate = w30_pad_grid_gate(&render, 48_000);
+    assert_eq!(w30_pad_grid_gate_gain(gate, &before_fade), 1.0);
+    assert!((w30_pad_grid_gate_gain(gate, &during_fade) - 0.5).abs() < 0.001);
+    assert_eq!(w30_pad_grid_gate_gain(gate, &after_gate), 0.0);
+
+    render.pad_playback.gate_step_fraction = f32::NAN;
+    assert_eq!(w30_pad_grid_gate(&render, 48_000), None);
 }
 
 #[test]
@@ -235,6 +280,7 @@ fn w30_damage_direction_and_rate_change_sample_motion() {
         loop_enabled: true,
         playback_rate: 1.0,
         reverse: false,
+        gate_step_fraction: 0.0,
         loop_crossfade_sample_count: 128,
         chop_slice_count: 0,
         chop_slice_starts: [0; W30_PAD_CHOP_SLICE_COUNT],
@@ -282,6 +328,7 @@ fn w30_loop_crossfade_keeps_wrap_boundary_click_safe() {
         loop_enabled: true,
         playback_rate: 1.0,
         reverse: false,
+        gate_step_fraction: 0.0,
         loop_crossfade_sample_count: 128,
         chop_slice_count: 0,
         chop_slice_starts: [0; W30_PAD_CHOP_SLICE_COUNT],
@@ -313,6 +360,7 @@ fn w30_pad_trigger_attack_fades_in_once_without_loop_wrap_dropout() {
         loop_enabled: true,
         playback_rate: 1.0,
         reverse: false,
+        gate_step_fraction: 0.0,
         loop_crossfade_sample_count: 64,
         chop_slice_count: 0,
         chop_slice_starts: [0; W30_PAD_CHOP_SLICE_COUNT],

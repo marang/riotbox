@@ -272,6 +272,9 @@ role, or the threshold lacks calibration.
 | exact gesture-specific QA policies and boundary checks | `crates/riotbox-app/src/bin/dense_break_live_path_render/manifest.rs` |
 | typed TR-909 Fill step and output parameters | `crates/riotbox-audio/src/runtime/tr909_fill_recipe.rs` |
 | cross-source W-30 envelope-correlation gate | `scripts/validate_dense_break_live_source_matrix.py` |
+| live source-character contrast margin and lane balance | `crates/riotbox-core/src/live_performance_policy.rs` |
+| controlled dense/tonal/sparse exact-path gates | `crates/riotbox-app/src/bin/dense_break_live_path_render/controlled_source_manifest.rs` |
+| controlled source stability/diversity gates | `scripts/validate_controlled_source_live_matrix.py` |
 | general audio QA meaning and human-verdict boundary | `docs/specs/audio_qa_workflow_spec.md` |
 | audio runtime behavior | `docs/specs/audio_core_spec.md` |
 | accepted durable calibration decisions | `docs/research_decision_log.md` |
@@ -299,3 +302,33 @@ awk 'BEGIN { value=0.916060388; print 20*log(value)/log(10) }'
 The goal is not to eliminate every numeric literal. The goal is that every
 number capable of changing sound, safety, evidence, or product behavior has a
 clear semantic home and an honest explanation.
+
+## Controlled Source Character Calibration
+
+`LIVE_PERFORMANCE_CHARACTER_CONTRAST_MARGIN = 0.10` is a normalized
+classification margin, not audio gain. It requires phrase evidence to clear the
+neutral dense band in two independent relative comparisons. The trusted
+RushArp source clears brightness-over-body and hook-restraint-over-body, while
+the sparse BeatC source clears body-over-brightness and hook-space-over-offbeat
+density. The accepted Beat03 dense source remains neutral. Equality passes.
+
+The character-specific W-30, TR-909, and MC-202 values in the same typed policy
+are normalized musician-control allocations. They are deliberately local to
+the `live_performance_character.v1` decision and are not limiter, dBFS, or QA
+thresholds. Tonal calibration reduces generated support and makes the W-30
+source hook lead; sparse calibration preserves a quieter W-30 rhythm while the
+TR-909 owns the highest isolated transient peak. The controlled exact-path
+manifest reports the resolved values and role metrics. Any change must rerun
+the dense regression plus `just controlled-source-live-matrix`, then receive
+fresh human listening when the candidate sound changes.
+
+`W30_DAMAGE_TRANSIENT_BITE_GATE_STEP_FRACTION = 0.44` is the maximum fraction
+of one W-30 trigger step retained by the sparse destructive articulation. The
+committed damage intensity scales it, so the current `0.82` action resolves to
+`0.3608` of a step. It is not a gain: playback remains exactly `1.0x`, the
+source-derived attack is retained, and the rest of the step is choked so source
+kicks cannot drift between fixed-grid drums. `GATE_FADE_STEP_FRACTION = 0.10`
+is the click-safe fade length within that trigger step. Zero disables the gate
+and leaves existing clean and pitch-drag playback unchanged. Changes require
+runtime gate tests, exact matrix determinism, and fresh sparse-destructive
+listening because silence placement and groove are musician-facing behavior.

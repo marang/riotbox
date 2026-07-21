@@ -1,5 +1,6 @@
 mod alpha_arc;
 mod alpha_manifest;
+mod controlled_source_manifest;
 mod live_flow;
 mod manifest;
 mod model;
@@ -16,7 +17,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let output_dir = required_path(&args, "--output")?;
     let cli_bpm_hint = required_bpm(&args)?;
     let cli_downbeat_seconds = optional_non_negative_f32(&args, "--downbeat-seconds")?;
-    for directory in ["stems", "monitor", "gestures", "gestures/proofs", "alpha"] {
+    let controlled_source_review = args.iter().any(|arg| arg == "--controlled-source-review");
+    for directory in [
+        "stems",
+        "monitor",
+        "gestures",
+        "gestures/proofs",
+        "alpha",
+        "controlled",
+    ] {
         fs::create_dir_all(output_dir.join(directory))?;
     }
 
@@ -27,7 +36,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         cli_downbeat_seconds,
     )?;
     let rendered = rendering::render_live_path(&prepared)?;
-    manifest::write_pack(prepared, rendered, &source_path, &output_dir)
+    if controlled_source_review {
+        controlled_source_manifest::write_pack(prepared, rendered, &source_path, &output_dir)
+    } else {
+        manifest::write_pack(prepared, rendered, &source_path, &output_dir)
+    }
 }
 
 fn required_bpm(args: &[String]) -> Result<f32, Box<dyn std::error::Error>> {

@@ -273,6 +273,9 @@ dense-break-live-path-smoke output="artifacts/audio_qa/local-dense-break-live-pa
 dense-break-live-source-matrix output="artifacts/audio_qa/local-dense-break-live-source-matrix":
     scripts/validate_dense_break_live_source_matrix.sh "{{output}}"
 
+controlled-source-live-matrix output="artifacts/audio_qa/local-controlled-source-live-matrix":
+    scripts/validate_controlled_source_live_matrix.sh "{{output}}"
+
 dense-break-weak-source-character-fixture-smoke output="artifacts/audio_qa/local-dense-break-weak-source-character-fixture":
     tmp="$(mktemp)" && if python3 scripts/generate_dense_break_performance_pack.py --output "{{output}}" --date "local-dense-break-weak-source-character-fixture" --weak-source-character-fixture >"$tmp" 2>&1; then cat "$tmp" >&2; rm "$tmp"; echo "expected weak source-character dense-break fixture to fail" >&2; exit 1; fi && grep -q "rebuild_only_source_character_not_surviving" "$tmp" && grep -q "rebuild_only_source_character_margin_too_low" "$tmp" && rm "$tmp"
     python3 scripts/generate_dense_break_performance_pack.py --validate-weak-source-character-report "{{output}}/performance-report.json"
