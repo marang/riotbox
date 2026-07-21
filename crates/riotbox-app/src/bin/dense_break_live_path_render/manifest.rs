@@ -8,7 +8,10 @@ use riotbox_audio::{
     },
     source_audio::{SourceAudioCache, write_interleaved_pcm16_wav},
 };
-use riotbox_core::action::{ActionCommand, CommitBoundary};
+use riotbox_core::{
+    action::{ActionCommand, CommitBoundary},
+    source_graph::TimingHypothesisKind,
+};
 use serde_json::{Value, json};
 
 use crate::{
@@ -63,6 +66,24 @@ pub fn write_pack(
     // exact instead of becoming a serializer-representation mismatch.
     let manifest_bpm = canonical_f32_json_number(bpm)?;
     let manifest_cli_bpm_hint = canonical_f32_json_number(prepared.source_timing.cli_bpm_hint)?;
+    let confirmed_hypothesis = prepared
+        .state
+        .source_graph
+        .as_ref()
+        .and_then(|graph| graph.timing.primary_hypothesis())
+        .ok_or("exact live path lost its confirmed primary timing hypothesis")?;
+    let confirmed_hypothesis_kind = timing_hypothesis_kind_label(confirmed_hypothesis.kind);
+    let manual_grid_input =
+        (confirmed_hypothesis.kind == TimingHypothesisKind::Manual).then(|| {
+            json!({
+                "declared_bpm": manifest_bpm.clone(),
+                "declared_downbeat_seconds": confirmed_hypothesis
+                    .bar_grid
+                    .iter()
+                    .min_by_key(|bar| bar.bar_index)
+                    .map(|bar| bar.start_seconds),
+            })
+        });
     let mut artifacts = Vec::new();
     for (proof, samples) in prepared
         .monitor_proofs
@@ -728,7 +749,9 @@ pub fn write_pack(
             "cli_bpm_hint": manifest_cli_bpm_hint,
             "confirmed_source_id": prepared.source_timing.source_id.to_string(),
             "confirmed_hypothesis_id": prepared.source_timing.hypothesis_id.as_str(),
+            "confirmed_hypothesis_kind": confirmed_hypothesis_kind,
             "confirmed_hypothesis_bpm": manifest_bpm.clone(),
+            "manual_grid_input": manual_grid_input,
             "beats_per_bar": prepared.source_timing.beats_per_bar,
             "primary_bar_anchor_beat_index": prepared.source_timing.primary_bar_anchor_beat_index,
             "primary_bar_anchor_beat_cursor": prepared.source_timing.primary_bar_anchor_beat_cursor,
@@ -870,6 +893,17 @@ pub fn write_pack(
         .into());
     }
     Ok(())
+}
+
+const fn timing_hypothesis_kind_label(kind: TimingHypothesisKind) -> &'static str {
+    match kind {
+        TimingHypothesisKind::Primary => "analyzer_primary",
+        TimingHypothesisKind::Manual => "musician_manual",
+        TimingHypothesisKind::HalfTime => "half_time",
+        TimingHypothesisKind::DoubleTime => "double_time",
+        TimingHypothesisKind::AlternateDownbeat => "alternate_downbeat",
+        TimingHypothesisKind::Ambiguous => "ambiguous",
+    }
 }
 
 fn all_render_plans_match_bpm(prepared: &PreparedLivePath, expected_bpm: f32) -> bool {

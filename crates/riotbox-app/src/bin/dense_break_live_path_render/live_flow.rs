@@ -34,14 +34,16 @@ pub fn prepare(
     source_path: &Path,
     output_dir: &Path,
     cli_bpm_hint: f32,
+    cli_downbeat_seconds: Option<f32>,
 ) -> Result<PreparedLivePath, Box<dyn Error>> {
-    let mut state = JamAppState::analyze_source_file_to_json_with_source_bpm_confirmation(
+    let mut state = JamAppState::analyze_source_file_to_json_with_source_timing_confirmation(
         source_path,
         output_dir.join("session.json"),
         Some(output_dir.join("source-graph.json")),
         "python/sidecar/json_stdio_sidecar.py",
         23,
         Some(cli_bpm_hint),
+        cli_downbeat_seconds,
     )?;
     let source_timing = confirmed_source_timing(&state, cli_bpm_hint)?;
     if source_timing.beats_per_bar != DEFAULT_BEATS_PER_BAR {

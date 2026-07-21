@@ -1357,7 +1357,11 @@ The first exit landed in this order:
    is not a fixed composition.
 
 With that exit closed, `RIOTBOX-1404` is the next audible slice: expand the
-human-passed live path to tonal-hook and sparse-pressure material. `RIOTBOX-1403`
+human-passed live path to tonal-hook and sparse-pressure material. Its trusted
+tonal source exposes a real prerequisite: unavailable analyzer timing must not
+be converted into a grid by BPM alone. `RIOTBOX-1421` therefore lands first as
+a bounded explicit BPM-plus-downbeat manual-grid enabler and must return
+directly to the audible 1404 follow-up. `RIOTBOX-1403`
 then separates fixture evidence from live readiness before `RIOTBOX-1405`
 proves correct degraded / reject behavior for weak and bad-timing sources.
 `RIOTBOX-1399` remains workflow optimization unless measured validation cost is

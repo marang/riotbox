@@ -197,6 +197,10 @@ impl TimingHypothesis {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TimingHypothesisKind {
     Primary,
+    /// A grid declared by the musician with explicit BPM and downbeat phase.
+    ///
+    /// This is user-owned timing truth, not analyzer evidence.
+    Manual,
     HalfTime,
     DoubleTime,
     AlternateDownbeat,

@@ -118,6 +118,7 @@ fn observer_snapshot_records_source_timing_readiness_when_graph_is_attached() {
     assert_eq!(source_timing["degraded_policy"], "manual_confirm");
     assert_eq!(source_timing["cue"], "needs confirm");
     assert_eq!(source_timing["actionability"], "confirm grid first");
+    assert_eq!(source_timing["primary_hypothesis_kind"], "analyzer_primary");
     assert_eq!(source_timing["grid_use"], "manual_confirm_only");
     assert_eq!(source_timing["beat_status"], "tempo_only");
     assert_eq!(source_timing["beat_count"], 0);
@@ -175,6 +176,38 @@ fn observer_snapshot_records_source_timing_readiness_when_graph_is_attached() {
     );
     assert_eq!(source_timing["primary_warning_code"], "ambiguous_downbeat");
     assert_eq!(source_timing["warning_codes"][1], "phrase_uncertain");
+}
+
+#[test]
+fn observer_snapshot_marks_musician_manual_grid_origin() {
+    let mut graph = observer_source_map_graph(TimingDegradedPolicy::Disabled, TimingQuality::Unknown);
+    riotbox_core::source_graph::install_manual_source_timing_grid(
+        &mut graph,
+        riotbox_core::source_graph::ManualSourceTimingGrid {
+            bpm: 120.0,
+            downbeat_seconds: 0.0,
+        },
+    )
+    .expect("manual grid");
+    let mut session = SessionFile::new("session-manual", "0.1.0", "2026-07-21T00:00:00Z");
+    session.runtime_state.source_timing.confirmed_grid =
+        Some(riotbox_core::session::SourceTimingGridConfirmationState {
+            source_id: graph.source.source_id.clone(),
+            hypothesis_id: graph.timing.primary_hypothesis_id.clone(),
+            confirmed_by_action: ActionId(11),
+            confirmed_at: 2_000_000,
+        });
+    let shell = JamShellState::new(
+        JamAppState::from_parts(session, Some(graph), ActionQueue::new()),
+        ShellLaunchMode::Ingest,
+    );
+
+    let snapshot = observer_snapshot(&shell);
+    assert_eq!(
+        snapshot["source_timing"]["primary_hypothesis_kind"],
+        "musician_manual"
+    );
+    assert_eq!(snapshot["source_timing"]["grid_confirmed"], true);
 }
 
 #[test]

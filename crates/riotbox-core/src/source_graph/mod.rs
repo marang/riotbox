@@ -3,6 +3,7 @@ pub mod model_and_helpers;
 pub mod timing;
 pub mod timing_analysis;
 pub mod timing_evaluation;
+pub mod timing_manual_grid;
 pub mod timing_probe_candidates;
 pub mod timing_probe_diagnostics;
 
@@ -11,6 +12,7 @@ pub use model_and_helpers::*;
 pub use timing::*;
 pub use timing_analysis::*;
 pub use timing_evaluation::*;
+pub use timing_manual_grid::*;
 pub use timing_probe_candidates::*;
 pub use timing_probe_diagnostics::*;
 

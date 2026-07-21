@@ -269,6 +269,80 @@ fn live_ingest_explicit_bpm_persists_graph_confirmation_and_restore_identity() {
     );
 }
 
+#[test]
+fn tonal_live_ingest_requires_and_persists_explicit_manual_grid_phase() {
+    let temp = tempdir().expect("tempdir");
+    let source_path = temp.path().join("tonal-120.wav");
+    let sample_rate = 48_000_u32;
+    let samples = (0..sample_rate as usize * 4)
+        .map(|frame| {
+            let phase = frame as f32 * 440.0 * std::f32::consts::TAU / sample_rate as f32;
+            phase.sin() * 0.2
+        })
+        .collect::<Vec<_>>();
+    riotbox_audio::source_audio::write_interleaved_pcm16_wav(
+        &source_path,
+        sample_rate,
+        1,
+        &samples,
+    )
+    .expect("write tonal source");
+
+    let bpm_only_error = JamAppState::analyze_source_file_to_json_with_source_bpm_confirmation(
+        &source_path,
+        temp.path().join("bpm-only-session.json"),
+        Some(temp.path().join("bpm-only-graph.json")),
+        sidecar_script_path(),
+        74,
+        Some(120.0),
+    )
+    .expect_err("tonal source must not gain an inferred grid from BPM alone");
+    assert!(bpm_only_error.to_string().contains("no primary grid"));
+
+    let session_path = temp.path().join("manual-session.json");
+    let graph_path = temp.path().join("manual-graph.json");
+    let state = JamAppState::analyze_source_file_to_json_with_source_timing_confirmation(
+        &source_path,
+        &session_path,
+        Some(graph_path.clone()),
+        sidecar_script_path(),
+        74,
+        Some(120.0),
+        Some(0.0),
+    )
+    .expect("manual tonal source grid");
+
+    let graph = state.source_graph.as_ref().expect("source graph");
+    let primary = graph.timing.primary_hypothesis().expect("manual primary");
+    assert_eq!(primary.kind, TimingHypothesisKind::Manual);
+    assert!(primary.hypothesis_id.starts_with("manual-source-grid-v1-"));
+    assert_eq!(primary.bar_grid[0].start_seconds, 0.0);
+    assert!(primary
+        .provenance
+        .contains(&"musician-manual-source-grid.v1".into()));
+    assert_eq!(
+        riotbox_core::view::jam::source_timing_consumer_readiness(Some(graph), &state.session),
+        riotbox_core::view::jam::SourceTimingConsumerReadiness::UserConfirmed
+    );
+    assert_eq!(
+        state.session.action_log.actions.last().map(|action| action.command),
+        Some(ActionCommand::SourceTimingConfirmGrid)
+    );
+
+    let restored = JamAppState::from_json_files(&session_path, Some(&graph_path))
+        .expect("restore manual tonal timing");
+    let restored_primary = restored
+        .source_graph
+        .as_ref()
+        .and_then(|graph| graph.timing.primary_hypothesis())
+        .expect("restored manual primary");
+    assert_eq!(restored_primary, primary);
+    assert_eq!(
+        restored.session.runtime_state.source_timing.confirmed_grid,
+        state.session.runtime_state.source_timing.confirmed_grid
+    );
+}
+
 fn accented_drum_grid_samples(beat_frames: usize, beats: usize) -> Vec<f32> {
     let mut samples = vec![0.0_f32; beat_frames * beats];
     for beat in 0..beats {

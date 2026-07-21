@@ -20,7 +20,10 @@ hook through the exact live `riotbox-app` path, exposed playable contrast,
 survived capture / recall / replay, and earned a structured human `pass`.
 `RIOTBOX-1404` is the next audible expansion: carry the passed live policy into
 tonal-hook and sparse-pressure material without treating the reviewed
-eight-bar QA choreography as a fixed composition.
+eight-bar QA choreography as a fixed composition. Its selected tonal source
+correctly has no analyzer grid, so the bounded `RIOTBOX-1421` manual
+BPM-plus-downbeat enabler lands immediately first; it may unblock the exact
+path but cannot claim musical progress or replace the 1404 listening verdict.
 
 `P016`, `P021`, and `P022` remain subordinate to the active P023 product path.
 Offline renderers, scripted packs, fixture verdicts, reports, and validators

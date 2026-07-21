@@ -303,6 +303,18 @@ Rules:
   candidates fail before ingest persistence; successful confirmation retains
   source id, hypothesis id, action id, and timestamp through Session restore and
   replay.
+- `riotbox-app --source-bpm <bpm> --source-downbeat-seconds <seconds>` is the
+  explicit exception for a musician who knows the tempo and first-downbeat
+  phase of timing-poor tonal material. Both values are required to construct a
+  typed `Manual` hypothesis; BPM alone still cannot turn an unavailable probe
+  into a grid. The manual hypothesis must cover at least one complete bar,
+  retain analyzer hypotheses and warnings as separate evidence, carry declared
+  BPM/phase provenance, bind hypothesis identity to both declared values so a
+  changed grid cannot reuse stale trust, and remain `manual_confirm` until the existing
+  `source_timing.confirm_grid` action commits. Compatibility beat/bar fields
+  may project the selected manual hypothesis, but neither UI nor QA may label
+  it analyzer-derived or automatic timing. Observer output identifies the
+  selected kind as `musician_manual`.
 - confirmation is explicitly revertible through `source_timing.revert_grid`;
   that action clears a matching `runtime_state.source_timing.confirmed_grid`
   value through queue / commit / replay rather than deleting or weakening the
