@@ -18,12 +18,13 @@ product priority. Its first bounded exit, the `RIOTBOX-1396` Usable Musical
 Alpha, closed on 2026-07-21: one trusted dense-break source reached a strong
 hook through the exact live `riotbox-app` path, exposed playable contrast,
 survived capture / recall / replay, and earned a structured human `pass`.
-`RIOTBOX-1404` is the next audible expansion: carry the passed live policy into
-tonal-hook and sparse-pressure material without treating the reviewed
-eight-bar QA choreography as a fixed composition. Its selected tonal source
-correctly has no analyzer grid, so the bounded `RIOTBOX-1421` manual
-BPM-plus-downbeat enabler lands immediately first; it may unblock the exact
-path but cannot claim musical progress or replace the 1404 listening verdict.
+`RIOTBOX-1404` has now carried that policy into human-kept tonal-hook and
+sparse-pressure held/destructive states without freezing the reviewed
+eight-bar QA choreography as a composition. `RIOTBOX-1403` has also separated
+fixture calibration from live readiness: live mode now starts with no eligible
+demo-bank evidence unless a real, hash-matched human review is supplied
+explicitly. The next bounded slice is `RIOTBOX-1405`, which must prove honest
+live degraded/unavailable/reject behavior for weak and bad-timing sources.
 
 `P016`, `P021`, and `P022` remain subordinate to the active P023 product path.
 Offline renderers, scripted packs, fixture verdicts, reports, and validators

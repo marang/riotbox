@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import demo_bank_evidence as evidence
 from release_demo_human_review_queue_fixtures import validate_mutation_fixtures
 import validate_source_family_release_demo_coverage as coverage
 
@@ -39,7 +40,12 @@ REQUIRED_QUEUE_CONTEXT_FIELDS = [
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source-corpus", type=Path, default=DEFAULT_SOURCE_CORPUS)
-    parser.add_argument("--demo-bank", type=Path, default=DEFAULT_DEMO_BANK)
+    parser.add_argument("--demo-bank", type=Path)
+    parser.add_argument(
+        "--evidence-mode",
+        choices=sorted(evidence.EVIDENCE_MODES),
+        default=evidence.LIVE_READINESS,
+    )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--date", default="local-release-demo-human-review-queue")
     parser.add_argument("--validate-report", type=Path)
@@ -51,17 +57,27 @@ def main() -> int:
             report = read_json_object(args.validate_report)
         else:
             source_corpus = read_json_object(args.source_corpus)
-            demo_bank = read_json_object(args.demo_bank)
+            demo_bank_path = evidence.resolve_demo_bank_path(
+                args.evidence_mode,
+                args.demo_bank,
+                DEFAULT_DEMO_BANK,
+            )
+            demo_bank = (
+                read_json_object(demo_bank_path)
+                if demo_bank_path is not None
+                else evidence.empty_demo_bank(coverage.DEMO_BANK_SCHEMA)
+            )
             coverage_report = coverage.build_report(
                 source_corpus,
                 demo_bank,
                 args.source_corpus,
-                args.demo_bank,
+                demo_bank_path,
+                args.evidence_mode,
             )
             coverage_failures = coverage.validate_report(coverage_report)
             if coverage_failures:
                 raise ValueError(", ".join(coverage_failures))
-            report = build_report(args, demo_bank, coverage_report)
+            report = build_report(args, demo_bank, coverage_report, demo_bank_path)
             args.output.mkdir(parents=True, exist_ok=True)
             write_report(args.output, report)
 
@@ -84,8 +100,20 @@ def build_report(
     args: argparse.Namespace,
     demo_bank: dict[str, Any],
     coverage_report: dict[str, Any],
+    demo_bank_path: Path | None,
 ) -> dict[str, Any]:
-    entries = list_field(demo_bank, "entries", args.demo_bank)
+    raw_entries = (
+        list_field(demo_bank, "entries", demo_bank_path)
+        if demo_bank_path is not None
+        else []
+    )
+    entries = evidence.usable_entries(demo_bank, raw_entries, args.evidence_mode)
+    evidence_context = evidence.evidence_context(
+        args.evidence_mode,
+        demo_bank_path,
+        raw_entries,
+        demo_bank.get("evidence_role"),
+    )
     family_lookup = demo_family_lookup(coverage_report)
     family_gaps = family_review_gaps(coverage_report)
     queue = [
@@ -105,6 +133,7 @@ def build_report(
         }
         for entry in entries
         if entry.get("human_verdict") in {"weak", "fail"}
+        and evidence.human_verdict_is_eligible(entry, args.evidence_mode)
     ]
     return {
         "schema": SCHEMA,
@@ -119,7 +148,8 @@ def build_report(
             "unverified, scripted, or diagnostic artifacts into product-quality "
             "proof."
         ),
-        "demo_bank": str(args.demo_bank),
+        "demo_bank": str(demo_bank_path) if demo_bank_path is not None else None,
+        "demo_bank_evidence": evidence_context,
         "source_family_coverage": {
             "source_corpus": coverage_report["source_corpus"],
             "required_family_count": coverage_report["required_family_count"],
@@ -132,13 +162,21 @@ def build_report(
             "missing_demo_ready_families": coverage_report[
                 "missing_demo_ready_families"
             ],
+            "missing_family_success_families": coverage_report[
+                "missing_family_success_families"
+            ],
             "family_gaps": family_gaps,
             "blockers": coverage_report["blockers"],
         },
         "review_queue_count": len(queue),
         "review_queue": queue,
         "weak_or_failed_entries": weak_or_failed,
-        "next_actions": next_actions(queue, family_gaps, weak_or_failed),
+        "next_actions": next_actions(
+            queue,
+            family_gaps,
+            weak_or_failed,
+            evidence_context,
+        ),
     }
 
 
@@ -160,6 +198,8 @@ def family_review_gaps(coverage_report: dict[str, Any]) -> list[dict[str, Any]]:
                 "status": family["status"],
                 "missing_human_verdict": not family["human_verdict_entry_ids"],
                 "missing_demo_ready_human_pass": not family["demo_ready_entry_ids"],
+                "missing_family_success": not family["family_success_entry_ids"],
+                "success_requirement": family["success_requirement"],
                 "candidate_entry_ids": family["candidate_entry_ids"],
                 "human_verdict_entry_ids": family["human_verdict_entry_ids"],
                 "demo_ready_entry_ids": family["demo_ready_entry_ids"],
@@ -181,7 +221,7 @@ def review_queue_entry(
         None,
     )
     missing_human = bool(gap and gap["missing_human_verdict"])
-    missing_demo_ready = bool(gap and gap["missing_demo_ready_human_pass"])
+    missing_demo_ready = bool(gap and gap["missing_family_success"])
     if missing_human:
         priority = "high"
         action = (
@@ -190,10 +230,16 @@ def review_queue_entry(
         )
     elif missing_demo_ready:
         priority = "medium"
-        action = (
-            "Review whether this updated candidate can become human-pass and "
-            "demo-ready, or route it to the next production fix."
-        )
+        if gap and gap["success_requirement"] == "reviewed_degraded_or_reject":
+            action = (
+                "Review whether the live product correctly degrades, becomes unavailable, "
+                "or rejects this source without fallback music."
+            )
+        else:
+            action = (
+                "Review whether this updated candidate can become human-pass and "
+                "demo-ready, or route it to the next production fix."
+            )
     else:
         priority = "low"
         action = (
@@ -242,9 +288,30 @@ def next_actions(
     queue: list[dict[str, Any]],
     family_gaps: list[dict[str, Any]],
     weak_or_failed: list[dict[str, Any]],
+    evidence_context: dict[str, Any],
 ) -> list[dict[str, Any]]:
     actions: list[dict[str, Any]] = []
-    for family in family_gaps:
+    if evidence_context.get("demo_bank_state") != "available":
+        actions.append(
+            {
+                "category": "human_review",
+                "target": "dense_break",
+                "action": (
+                    "Supply an explicit real demo-bank path and import the accepted "
+                    "dense-break structured review before trusting live readiness."
+                ),
+            }
+        )
+    priority = {"dense_break": 0}
+    for family in sorted(
+        family_gaps,
+        key=lambda item: (priority.get(str(item.get("source_family")), 1), str(item.get("source_family"))),
+    ):
+        if (
+            evidence_context.get("demo_bank_state") != "available"
+            and family["source_family"] == "dense_break"
+        ):
+            continue
         if family["missing_human_verdict"]:
             actions.append(
                 {
@@ -253,12 +320,20 @@ def next_actions(
                     "action": "Review the high-priority unverified candidate and record pass, weak, or fail.",
                 }
             )
-        elif family["missing_demo_ready_human_pass"]:
+        elif family["missing_family_success"]:
             actions.append(
                 {
-                    "category": "demo_promotion",
+                    "category": (
+                        "degraded_or_reject_review"
+                        if family["success_requirement"] == "reviewed_degraded_or_reject"
+                        else "demo_promotion"
+                    ),
                     "target": family["source_family"],
-                    "action": "Review the strongest candidate for possible demo-ready promotion or fix routing.",
+                    "action": (
+                        "Review the live degraded/unavailable/reject outcome and confirm no fallback music leaks."
+                        if family["success_requirement"] == "reviewed_degraded_or_reject"
+                        else "Review the strongest candidate for possible demo-ready promotion or fix routing."
+                    ),
                 }
             )
     if weak_or_failed:
@@ -289,8 +364,32 @@ def validate_report(report: dict[str, Any]) -> list[str]:
     check(report.get("source_files_required") is False, "source_files_required_must_be_false", failures)
     check(report.get("quality_claim_allowed") is False, "quality_claim_must_be_false", failures)
 
+    evidence_context = report.get("demo_bank_evidence")
+    check(isinstance(evidence_context, dict), "demo_bank_evidence_missing", failures)
+    mode = evidence_context.get("mode") if isinstance(evidence_context, dict) else None
+    state = evidence_context.get("demo_bank_state") if isinstance(evidence_context, dict) else None
+    check(mode in evidence.EVIDENCE_MODES, "demo_bank_evidence_mode_invalid", failures)
+    check(
+        state in {"available", "missing", "rejected_non_live_bank"},
+        "demo_bank_evidence_state_invalid",
+        failures,
+    )
+    if isinstance(evidence_context, dict) and evidence_context.get("demo_bank_path") is not None:
+        check(
+            isinstance(evidence_context.get("demo_bank_sha256"), str)
+            and len(evidence_context["demo_bank_sha256"]) == 64,
+            "demo_bank_evidence_sha256_invalid",
+            failures,
+        )
+    if isinstance(evidence_context, dict):
+        check(
+            evidence.context_bank_identity_is_current(evidence_context),
+            "demo_bank_evidence_identity_stale",
+            failures,
+        )
+
     queue = report.get("review_queue")
-    check(isinstance(queue, list) and bool(queue), "review_queue_missing", failures)
+    check(isinstance(queue, list), "review_queue_missing", failures)
     if isinstance(queue, list):
         check(
             report.get("review_queue_count") == len(queue),
@@ -298,7 +397,11 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             failures,
         )
         priorities = {entry.get("review_priority") for entry in queue if isinstance(entry, dict)}
-        check("high" in priorities, "high_priority_review_missing", failures)
+        if mode == evidence.FIXTURE_CALIBRATION:
+            check(bool(queue), "fixture_review_queue_missing", failures)
+            check("high" in priorities, "high_priority_review_missing", failures)
+        if mode == evidence.LIVE_READINESS and state != "available":
+            check(not queue, "unusable_live_demo_bank_created_review_queue", failures)
         for index, entry in enumerate(queue):
             validate_queue_entry(entry, index, failures)
 
@@ -314,10 +417,11 @@ def validate_report(report: dict[str, Any]) -> list[str]:
                 str(gap.get("source_family"))
                 for gap in gaps
                 if isinstance(gap, dict)
-                and (gap.get("missing_human_verdict") or gap.get("missing_demo_ready_human_pass"))
+                and (gap.get("missing_human_verdict") or gap.get("missing_family_success"))
             }
-            for required in ["bad_timing", "pad_noise", "sparse_drums", "weak_source"]:
-                check(required in gap_families, f"{required}_gap_missing", failures)
+            if mode == evidence.FIXTURE_CALIBRATION:
+                for required in ["bad_timing", "pad_noise", "sparse_drums", "weak_source"]:
+                    check(required in gap_families, f"{required}_gap_missing", failures)
 
     check(
         isinstance(report.get("human_verdict_boundary"), str)
@@ -325,7 +429,19 @@ def validate_report(report: dict[str, Any]) -> list[str]:
         "human_verdict_boundary_missing",
         failures,
     )
-    check(isinstance(report.get("next_actions"), list) and report["next_actions"], "next_actions_missing", failures)
+    actions = report.get("next_actions")
+    check(isinstance(actions, list), "next_actions_missing", failures)
+    if mode == evidence.FIXTURE_CALIBRATION:
+        check(bool(actions), "fixture_next_actions_missing", failures)
+    if mode == evidence.LIVE_READINESS and state != "available" and isinstance(actions, list):
+        check(bool(actions), "unusable_live_demo_bank_next_action_missing", failures)
+    if mode == evidence.LIVE_READINESS and state != "available" and isinstance(actions, list) and actions:
+        check(
+            actions[0].get("category") == "human_review"
+            and actions[0].get("target") == "dense_break",
+            "missing_live_demo_bank_dense_break_not_first_action",
+            failures,
+        )
     return failures
 
 
@@ -445,6 +561,9 @@ def markdown_report(report: dict[str, Any]) -> str:
         f"- Phase: `{report['phase']}`",
         f"- Queue entries: `{report['review_queue_count']}`",
         f"- Quality claim allowed: `{str(report['quality_claim_allowed']).lower()}`",
+        f"- Evidence mode: `{report['demo_bank_evidence']['mode']}`",
+        f"- Demo-bank state: `{report['demo_bank_evidence']['demo_bank_state']}`",
+        f"- Fixture only: `{str(report['demo_bank_evidence']['fixture_only']).lower()}`",
         "",
         "## Review Queue",
         "",
@@ -476,7 +595,8 @@ def markdown_report(report: dict[str, Any]) -> str:
         lines.append(
             f"- `{gap['source_family']}`: `{gap['status']}`, "
             f"missing human verdict `{str(gap['missing_human_verdict']).lower()}`, "
-            f"missing demo-ready `{str(gap['missing_demo_ready_human_pass']).lower()}`"
+            f"success requirement `{gap['success_requirement']}`, "
+            f"missing family success `{str(gap['missing_family_success']).lower()}`"
         )
     lines.extend(["", "## Boundary", "", report["human_verdict_boundary"], ""])
     return "\n".join(lines)

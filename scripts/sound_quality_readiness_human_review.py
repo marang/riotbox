@@ -34,12 +34,18 @@ def human_review_queue_summary(report: dict[str, Any] | None, path: Path) -> dic
             "source_families": [],
             "review_blockers": [],
             "candidates": [],
+            "evidence_mode": None,
+            "fixture_only": False,
+            "demo_bank_state": "missing",
+            "demo_bank_path": None,
+            "demo_bank_sha256": None,
         }
     require(
         report.get("schema") == HUMAN_REVIEW_QUEUE_SCHEMA,
         f"{path}: schema must be {HUMAN_REVIEW_QUEUE_SCHEMA}",
     )
     queue = list_field(report, "review_queue", path)
+    evidence_context = object_or_empty(report.get("demo_bank_evidence"))
     priority_counts = Counter(
         str(entry.get("review_priority")) for entry in queue if isinstance(entry, dict)
     )
@@ -101,6 +107,11 @@ def human_review_queue_summary(report: dict[str, Any] | None, path: Path) -> dic
         "source_families": sorted(source_families),
         "review_blockers": sorted(review_blockers),
         "candidates": candidates,
+        "evidence_mode": evidence_context.get("mode"),
+        "fixture_only": evidence_context.get("fixture_only"),
+        "demo_bank_state": evidence_context.get("demo_bank_state"),
+        "demo_bank_path": evidence_context.get("demo_bank_path"),
+        "demo_bank_sha256": evidence_context.get("demo_bank_sha256"),
     }
 
 
@@ -114,35 +125,33 @@ def validate_human_review_queue_section(
     review_count = review_queue.get("review_queue_count")
 
     if review_queue_available is True:
+        check(isinstance(review_candidates, list), "human_review_queue_candidates_missing", failures)
         check(
-            isinstance(review_candidates, list) and bool(review_candidates),
-            "human_review_queue_candidates_missing",
-            failures,
-        )
-        check(
-            review_count == len(review_candidates) and review_count > 0,
+            review_count == len(review_candidates),
             "human_review_queue_count_mismatch",
             failures,
         )
-        check(
-            number(review_queue.get("high_priority_count")) >= 1,
-            "human_review_queue_high_priority_missing",
-            failures,
-        )
-        check(
-            isinstance(review_queue.get("source_families"), list)
-            and REQUIRED_REVIEW_SOURCE_FAMILIES.issubset(
-                set(str(item) for item in review_queue.get("source_families", []))
-            ),
-            "human_review_queue_source_families_incomplete",
-            failures,
-        )
-        review_blockers = set(str(item) for item in review_queue.get("review_blockers", []))
-        check(
-            REQUIRED_REVIEW_BLOCKERS.issubset(review_blockers),
-            "human_review_queue_review_blockers_missing",
-            failures,
-        )
+        if review_queue.get("evidence_mode") == "fixture_calibration":
+            check(bool(review_candidates), "human_review_queue_fixture_candidates_missing", failures)
+            check(
+                number(review_queue.get("high_priority_count")) >= 1,
+                "human_review_queue_high_priority_missing",
+                failures,
+            )
+            check(
+                isinstance(review_queue.get("source_families"), list)
+                and REQUIRED_REVIEW_SOURCE_FAMILIES.issubset(
+                    set(str(item) for item in review_queue.get("source_families", []))
+                ),
+                "human_review_queue_source_families_incomplete",
+                failures,
+            )
+            review_blockers = set(str(item) for item in review_queue.get("review_blockers", []))
+            check(
+                REQUIRED_REVIEW_BLOCKERS.issubset(review_blockers),
+                "human_review_queue_review_blockers_missing",
+                failures,
+            )
         if isinstance(review_candidates, list):
             for index, candidate in enumerate(review_candidates):
                 validate_review_queue_candidate(candidate, index, failures)
@@ -221,7 +230,7 @@ def validate_review_queue_candidate(candidate: Any, index: int, failures: list[s
 
 def list_field(data: dict[str, Any], field: str, path: Path) -> list[Any]:
     value = data.get(field)
-    require(isinstance(value, list) and value, f"{path}: {field} must be non-empty array")
+    require(isinstance(value, list), f"{path}: {field} must be array")
     return value
 
 

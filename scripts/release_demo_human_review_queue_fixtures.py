@@ -213,8 +213,8 @@ def check_gap(
         return
     check(gap.get("missing_human_verdict") is missing_human, f"{family}_fixture_missing_human_mismatch", failures)
     check(
-        gap.get("missing_demo_ready_human_pass") is missing_demo_ready,
-        f"{family}_fixture_missing_demo_ready_mismatch",
+        gap.get("missing_family_success") is missing_demo_ready,
+        f"{family}_fixture_missing_family_success_mismatch",
         failures,
     )
 

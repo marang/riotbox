@@ -6,6 +6,8 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
 python3 scripts/generate_release_demo_human_review_queue.py \
+  --evidence-mode fixture_calibration \
+  --demo-bank scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json \
   --output "$tmp/queue" \
   --date "local-release-demo-listening-review-packs"
 

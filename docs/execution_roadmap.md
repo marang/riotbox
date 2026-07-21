@@ -1378,6 +1378,18 @@ free-running source-kick drift by replacing rate acceleration with a grid-locked
 source chop/choke. RIOTBOX-1404 is therefore complete; continue with the next
 bounded P023 slice instead of widening this source set again.
 
+RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
+source-family coverage, release-demo review queue, and sound-quality readiness
+generators. No implicit checked-in demo bank is loaded in that mode: missing
+real evidence yields zero eligible human verdicts and puts the accepted
+dense-break review/import first. Deterministic CI uses explicit
+`fixture_calibration` mode. Live pass/weak/fail coverage requires a non-fixture
+reviewer plus hashed structured-review provenance. Weak and bad-timing family
+success is modeled separately from demo-ready music and requires a reviewed
+degraded, unavailable, or reject product-path outcome with no fallback music.
+This fixes evidence routing only and directly hands the product-path proof to
+RIOTBOX-1405.
+
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a
 quality guardrail, not a replacement for the current sound-product priority:

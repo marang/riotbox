@@ -1,6 +1,7 @@
 {
   "schema": "riotbox.release_grade_demo_bank.v1",
   "schema_version": 1,
+  "evidence_role": "fixture_calibration",
   "readiness_rubric_schema": "riotbox.sound_product_readiness_rubric.v1",
   "hidden_taste_oracle_allowed": false,
   "entries": [
