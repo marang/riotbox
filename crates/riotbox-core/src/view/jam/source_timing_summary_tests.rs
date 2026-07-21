@@ -41,6 +41,10 @@ fn consumer_readiness_distinguishes_analyzer_user_and_manual_trust() {
     assert!(
         source_timing_consumer_readiness(Some(&locked), &session).can_use_source_window_grid()
     );
+    assert_eq!(
+        source_timing_consumer_readiness(Some(&locked), &session).performance_state_label(),
+        "trusted"
+    );
 
     let mut manual = source_timing_graph(TimingQuality::Low, TimingDegradedPolicy::ManualConfirm);
     manual.timing.primary_hypothesis_id = Some("primary".into());
@@ -50,6 +54,10 @@ fn consumer_readiness_distinguishes_analyzer_user_and_manual_trust() {
     );
     assert!(
         !source_timing_consumer_readiness(Some(&manual), &session).can_use_source_window_grid()
+    );
+    assert_eq!(
+        source_timing_consumer_readiness(Some(&manual), &session).performance_state_label(),
+        "degraded"
     );
 
     let mut confirmed_session =
@@ -89,6 +97,10 @@ fn consumer_readiness_distinguishes_analyzer_user_and_manual_trust() {
     assert_eq!(
         source_timing_consumer_readiness(None, &session),
         SourceTimingConsumerReadiness::Unavailable
+    );
+    assert_eq!(
+        source_timing_consumer_readiness(None, &session).performance_state_label(),
+        "unavailable"
     );
 }
 

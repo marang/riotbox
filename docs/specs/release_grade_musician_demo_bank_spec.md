@@ -1,6 +1,6 @@
 # Release-Grade Musician Demo Bank Spec
 
-Version: 0.2
+Version: 0.3
 Status: Active
 Audience: audio, QA, product, agents
 
@@ -32,7 +32,9 @@ just mc202-producer-grade-closeout-smoke
 Each demo-bank entry records:
 
 - source family and source WAV path
-- rendered WAV path and SHA-256 identity
+- rendered WAV path and SHA-256 identity for audible candidates; a completed
+  degraded / unavailable / reject review may omit it because inventing a
+  candidate WAV would contradict the no-fallback product outcome
 - metrics/report path and SHA-256 identity
 - review prompt path and SHA-256 identity
 - `human_verdict`: `pass`, `weak`, `fail`, or `unverified`
@@ -50,6 +52,8 @@ release coverage is outcome-aware rather than uniformly demo-oriented:
 - `weak_source` and `bad_timing` count as covered when the real product path has
   a structured review proving correct degraded / unavailable / reject behavior
   and no synthetic replacement fallback; they do not require demo-ready music
+- negative-family reviews use the explicit `weak_source` or `bad_timing`
+  demo-bank family rather than a generic `other` alias
 - `pad_noise` may satisfy either path depending on trusted timing / source
   evidence and the reviewed product decision
 

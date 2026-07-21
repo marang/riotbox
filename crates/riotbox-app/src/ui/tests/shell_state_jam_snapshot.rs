@@ -45,7 +45,7 @@ fn renders_more_musical_jam_shell_snapshot() {
     );
     assert!(rendered.contains("timing needs confirm | confirm grid"), "{rendered}");
     assert!(
-        rendered.contains("perform risk degraded | bar/live?"),
+        rendered.contains("risk bar/live?"),
         "{rendered}"
     );
     assert!(
@@ -55,7 +55,7 @@ fn renders_more_musical_jam_shell_snapshot() {
     assert!(rendered.contains("timing warning ambiguous_downbeat"));
     assert!(rendered.contains("scene scene-a | energy med"));
     assert!(rendered.contains("ghost"));
-    assert!(rendered.contains("warnings"));
+    assert!(rendered.contains("Warnings / trust"));
     assert!(rendered.contains("MC-202"));
     assert!(rendered.contains("W-30"));
     assert!(rendered.contains("TR-909"));
@@ -73,6 +73,66 @@ fn renders_more_musical_jam_shell_snapshot() {
         "{rendered}"
     );
     assert!(!rendered.contains("Sections"), "{rendered}");
+}
+
+#[test]
+fn narrow_jam_trust_headline_prioritizes_performance_risk_over_source_score() {
+    let shell = sample_shell_state();
+    let degraded = render_jam_shell_snapshot(&shell, 80, 24);
+
+    assert!(degraded.contains("degraded | bar/live?"), "{degraded}");
+    assert!(degraded.contains("why ambiguous downbeat"), "{degraded}");
+    assert!(degraded.contains("bar/live?"), "{degraded}");
+    assert!(!degraded.contains("│usable ("), "{degraded}");
+
+    let mut unavailable_shell = shell;
+    let graph = unavailable_shell
+        .app
+        .source_graph
+        .as_mut()
+        .expect("sample shell should include source graph");
+    graph.timing.bpm_estimate = None;
+    graph.timing.bpm_confidence = 0.0;
+    graph.timing.quality = TimingQuality::Unknown;
+    graph.timing.degraded_policy = TimingDegradedPolicy::Disabled;
+    graph.timing.primary_hypothesis_id = None;
+    graph.timing.hypotheses.clear();
+    graph.timing.beat_grid.clear();
+    graph.timing.bar_grid.clear();
+    graph.timing.phrase_grid.clear();
+    graph.timing.warnings = vec![TimingWarning {
+        code: TimingWarningCode::SparseOnsets,
+        message: "too few timing onsets".into(),
+    }];
+    unavailable_shell.app.refresh_view();
+
+    let unavailable = render_jam_shell_snapshot(&unavailable_shell, 80, 24);
+    assert!(unavailable.contains("unavailable | bar/live?"), "{unavailable}");
+    assert!(unavailable.contains("why sparse onsets"), "{unavailable}");
+    assert!(unavailable.contains("bar/live?"), "{unavailable}");
+    assert!(!unavailable.contains("│usable ("), "{unavailable}");
+}
+
+#[test]
+fn analyzer_locked_timing_stays_trusted_when_overall_source_score_is_low() {
+    let mut shell = sample_shell_state();
+    let graph = shell
+        .app
+        .source_graph
+        .as_mut()
+        .expect("sample shell should include source graph");
+    graph.analysis_summary.overall_confidence = 0.12;
+    graph.timing.quality = TimingQuality::High;
+    graph.timing.degraded_policy = TimingDegradedPolicy::Locked;
+    shell.app.refresh_view();
+
+    assert_eq!(
+        source_timing_perform_risk(&shell),
+        SourceTimingPerformRisk::Trusted
+    );
+    let rendered = render_jam_shell_snapshot(&shell, 80, 24);
+    assert!(rendered.contains("trusted | play grid"), "{rendered}");
+    assert!(!rendered.contains("degraded | bar/live?"), "{rendered}");
 }
 
 #[test]
@@ -124,7 +184,7 @@ fn renders_locked_source_timing_as_grid_locked_cue() {
         "{rendered}"
     );
     assert!(
-        rendered.contains("perform risk trusted | play grid"),
+        rendered.contains("risk play grid"),
         "{rendered}"
     );
     assert!(
@@ -333,7 +393,7 @@ fn renders_missing_source_timing_clock_as_unavailable() {
         "{rendered}"
     );
     assert!(
-        rendered.contains("perform risk unavailable | bar/live?"),
+        rendered.contains("risk bar/live?"),
         "{rendered}"
     );
     assert!(rendered.contains("load source"), "{rendered}");

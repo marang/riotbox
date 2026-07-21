@@ -251,7 +251,7 @@
     },
     {
       "entry_id": "weak-source-beat20-rejection-unverified-candidate",
-      "source_family": "other",
+      "source_family": "weak_source",
       "source_path": "data/test_audio/examples/Beat20_128BPM(Full).wav",
       "rendered_wav": {
         "path": "artifacts/audio_qa/local-weak-output-fix-routing/generated-weak-source-character/05_rebuild_only_performance.wav",

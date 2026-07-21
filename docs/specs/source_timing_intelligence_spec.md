@@ -1008,6 +1008,17 @@ bounded BPM policy:
   `grid_use` label and `actionability` phrase alongside cue, quality, and
   degraded policy, so the control-path observer event, Jam/Source TUI, and
   output-path manifest QA use the same compact timing contract.
+- app observer snapshots should expose typed `performance_readiness` derived
+  from `SourceTimingConsumerReadiness`: compact `trusted`, `degraded`, or
+  `unavailable` state; the precise consumer reason; whether confident
+  bar-locked output and a live source policy are allowed; typed TR-909,
+  MC-202, and W-30 generated-output configuration; and fallback-music state.
+  Compact Jam performance-risk wording must use that same typed state; a
+  global Source Graph confidence score may remain visible as source-analysis
+  context but must not silently override timing trust.
+  The shared observer validator must reject state/reason/grid-use
+  contradictions, generated-lane aggregation drift, and any live policy that
+  activates while confident bar-locked output is forbidden.
 - app observer snapshots should also preserve compact primary timing-anchor
   evidence as `anchor_evidence`: total primary anchors plus kick, backbeat, and
   transient-cluster counts from the shared Jam source timing summary, plus the

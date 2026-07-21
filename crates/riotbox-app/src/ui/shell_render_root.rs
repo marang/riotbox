@@ -408,16 +408,18 @@ fn render_header(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         .map(|bpm| format!("{bpm:.1} BPM"))
         .unwrap_or_else(|| "unknown BPM".into());
     let trust = trust_summary(shell);
+    let perform_risk = source_timing_perform_risk(shell);
 
     let paragraph = Paragraph::new(vec![
         Line::from("Riotbox Jam"),
         Line::from(format!(
-            "Mode {} | Screen {} | Source {} | {} | trust {} | feral {}",
+            "Mode {} | Screen {} | Source {} | {} | source {} | perform {} | feral {}",
             shell.launch_mode.label(),
             screen_context_label(shell),
             source.source_id,
             bpm_text,
             trust.headline,
+            perform_risk.label(),
             source.feral_scorecard.readiness
         )),
         Line::from(format!(
