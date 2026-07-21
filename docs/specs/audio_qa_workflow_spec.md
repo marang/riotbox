@@ -1101,6 +1101,30 @@ listen with intent:
 - required verdict path for `pass`, `weak`, and `fail`, with the current state
   fixed at `human_verdict:unverified/demo_readiness:unverified`
 
+Demo-bank consumers have two explicit evidence modes. `live_readiness` is the
+default and never resolves an omitted `--demo-bank` to the checked-in fixture.
+An omitted real bank is a valid blocked state with zero eligible human verdicts,
+zero demo-ready passes, and the dense-break real-review import as the first
+action. `fixture_calibration` must be requested explicitly and labels every
+derived report `fixture_only: true`; it exists for deterministic schema,
+mutation, and negative-control tests only.
+
+In `live_readiness`, pass/weak/fail entries count only when they carry
+`riotbox.demo_bank_human_review_evidence.v1` with a non-fixture reviewer,
+explicit `reviewer_kind: human`, an existing structured review JSON path, and a
+matching SHA-256 identity. Passing a calibration bank explicitly in live mode
+rejects the bank rather than making its verdicts or candidates eligible. Human
+review queues and derived listening packs must carry the same evidence mode,
+fixture flag, demo-bank state, normalized demo-bank path, and demo-bank SHA-256
+as the readiness report that consumes them. Positive families require a
+demo-ready human pass. `weak_source` and `bad_timing` instead use
+`riotbox.demo_bank_degraded_or_reject_review_evidence.v1`: family success
+requires a reviewed `degraded`, `unavailable`, or `reject` outcome through the
+product path, a musical `weak`/`fail` plus `not_demo_ready` classification, a
+useful reason, and `fallback_music_present: false`. This allows
+honest refusal to satisfy the negative-family contract without forcing weak or
+untrusted material into demo music.
+
 Queue validation must reject missing source-character or strongest-element
 context, incomplete listening questions, stale verdict state, or any quality
 claim. This keeps the queue useful for human review without promoting

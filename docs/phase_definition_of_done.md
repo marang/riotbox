@@ -446,6 +446,9 @@ After exit:
 - `weak_source` and `bad_timing` pass their family contract through reviewed
   correct degraded / unavailable / reject behavior when trusted generation is
   not possible; they do not need demo-ready music
+- live readiness must not infer human coverage from fixture/calibration demo
+  banks; a real bank is an explicit input and its human verdicts carry
+  non-fixture reviewer plus hashed structured-review provenance
 - P016 and the wider P021/P022/P023 quality ladder may resume from the accepted
   live baseline
 

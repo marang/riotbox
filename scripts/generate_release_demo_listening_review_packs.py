@@ -65,6 +65,7 @@ def main() -> int:
 def build_packs(queue: dict[str, Any], args: argparse.Namespace) -> dict[str, Any]:
     require(queue.get("schema") == QUEUE_SCHEMA, f"{args.queue}: schema must be {QUEUE_SCHEMA}")
     output = args.output
+    evidence_context = object_field(queue, "demo_bank_evidence", args.queue)
     output.mkdir(parents=True, exist_ok=True)
     pack_entries = []
     for candidate in list_field(queue, "review_queue", args.queue):
@@ -102,6 +103,11 @@ def build_packs(queue: dict[str, Any], args: argparse.Namespace) -> dict[str, An
         "phase": "P023",
         "queue": str(args.queue),
         "ticket": args.ticket,
+        "evidence_mode": evidence_context.get("mode"),
+        "fixture_only": evidence_context.get("fixture_only"),
+        "demo_bank_state": evidence_context.get("demo_bank_state"),
+        "demo_bank_path": evidence_context.get("demo_bank_path"),
+        "demo_bank_sha256": evidence_context.get("demo_bank_sha256"),
         "review_pack_count": len(pack_entries),
         "quality_claim_allowed": False,
         "human_verdict_boundary": (
@@ -270,6 +276,24 @@ def validate_summary(summary: dict[str, Any]) -> list[str]:
     check(summary.get("result") == "pass", "result_not_pass", failures)
     check(summary.get("phase") == "P023", "phase_mismatch", failures)
     check(summary.get("quality_claim_allowed") is False, "quality_claim_allowed_must_be_false", failures)
+    check(
+        summary.get("evidence_mode") in {"fixture_calibration", "live_readiness"},
+        "evidence_mode_invalid",
+        failures,
+    )
+    check(isinstance(summary.get("fixture_only"), bool), "fixture_only_invalid", failures)
+    check(
+        summary.get("demo_bank_state")
+        in {"available", "missing", "rejected_non_live_bank"},
+        "demo_bank_state_invalid",
+        failures,
+    )
+    check(
+        isinstance(summary.get("demo_bank_sha256"), str)
+        and len(summary["demo_bank_sha256"]) == 64,
+        "demo_bank_sha256_invalid",
+        failures,
+    )
     packs = summary.get("packs")
     check(isinstance(packs, list) and bool(packs), "packs_missing", failures)
     if isinstance(packs, list):
@@ -313,6 +337,9 @@ def render_summary(summary: dict[str, Any]) -> str:
         f"- Phase: `{summary['phase']}`",
         f"- Pack count: `{summary['review_pack_count']}`",
         f"- Quality claim allowed: `{str(summary['quality_claim_allowed']).lower()}`",
+        f"- Evidence mode: `{summary['evidence_mode']}`",
+        f"- Fixture only: `{str(summary['fixture_only']).lower()}`",
+        f"- Demo-bank state: `{summary['demo_bank_state']}`",
         "",
         "## Packs",
         "",

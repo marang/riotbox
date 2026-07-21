@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import demo_bank_evidence as evidence
 from mc202_source_composed_review_gate import (
     MC202_GATE_FIELD,
     MC202_ROLE_FIELD,
@@ -93,6 +94,12 @@ def validate_manifest(manifest: dict[str, Any], path: Path) -> dict[str, Any]:
         manifest.get("hidden_taste_oracle_allowed") is False,
         f"{path}: hidden_taste_oracle_allowed must be false",
     )
+    evidence_role = require_enum(
+        manifest,
+        "evidence_role",
+        {evidence.FIXTURE_CALIBRATION, "live_review"},
+        str(path),
+    )
 
     entries = list_field(manifest, "entries", path)
     seen_ids: set[str] = set()
@@ -105,25 +112,39 @@ def validate_manifest(manifest: dict[str, Any], path: Path) -> dict[str, Any]:
         entry_id = non_empty_string(entry.get("entry_id"), f"{path}: entries[{index}].entry_id")
         require(entry_id not in seen_ids, f"{path}: duplicate entry_id {entry_id}")
         seen_ids.add(entry_id)
-        verdict, readiness = validate_entry(entry, path, index)
+        verdict, readiness = validate_entry(entry, path, index, evidence_role)
         verdict_counts[verdict] += 1
         source_families.add(entry["source_family"])
         if readiness == "demo_ready":
             demo_ready_count += 1
 
-    missing_verdicts = sorted(REQUIRED_VERDICTS - {key for key, count in verdict_counts.items() if count > 0})
-    require(not missing_verdicts, f"{path}: missing verdict examples: {', '.join(missing_verdicts)}")
-    require("dense_break" in source_families, f"{path}: demo bank needs at least one dense_break entry")
-    require(
-        any(family != "dense_break" for family in source_families),
-        f"{path}: demo bank needs at least one non-dense-break entry",
-    )
-    require(demo_ready_count >= 1, f"{path}: demo bank needs at least one demo_ready human pass entry")
+    if evidence_role == evidence.FIXTURE_CALIBRATION:
+        missing_verdicts = sorted(
+            REQUIRED_VERDICTS
+            - {key for key, count in verdict_counts.items() if count > 0}
+        )
+        require(
+            not missing_verdicts,
+            f"{path}: missing verdict examples: {', '.join(missing_verdicts)}",
+        )
+        require(
+            "dense_break" in source_families,
+            f"{path}: demo bank needs at least one dense_break entry",
+        )
+        require(
+            any(family != "dense_break" for family in source_families),
+            f"{path}: demo bank needs at least one non-dense-break entry",
+        )
+        require(
+            demo_ready_count >= 1,
+            f"{path}: demo bank needs at least one demo_ready human pass entry",
+        )
 
     return {
         "schema": SCHEMA,
         "schema_version": 1,
         "result": "pass",
+        "evidence_role": evidence_role,
         "entry_count": len(entries),
         "demo_ready_count": demo_ready_count,
         "verdict_counts": verdict_counts,
@@ -131,7 +152,12 @@ def validate_manifest(manifest: dict[str, Any], path: Path) -> dict[str, Any]:
     }
 
 
-def validate_entry(entry: dict[str, Any], path: Path, index: int) -> tuple[str, str]:
+def validate_entry(
+    entry: dict[str, Any],
+    path: Path,
+    index: int,
+    evidence_role: str,
+) -> tuple[str, str]:
     prefix = f"{path}: entries[{index}]"
     require_enum(entry, "source_family", SOURCE_FAMILIES, prefix)
     source_path = non_empty_string(entry.get("source_path"), f"{prefix}.source_path")
@@ -167,6 +193,22 @@ def validate_entry(entry: dict[str, Any], path: Path, index: int) -> tuple[str, 
     else:
         require(readiness == "unverified", f"{prefix}: unverified entries must stay unverified")
         require(not entry.get("quality_claim", False), f"{prefix}: unverified entries must not claim quality")
+
+    if evidence_role == "live_review" and verdict in {"pass", "weak", "fail"}:
+        require(
+            evidence.human_verdict_is_eligible(entry, evidence.LIVE_READINESS),
+            f"{prefix}: live human verdict requires non-fixture reviewer and hashed review evidence",
+        )
+    if "degraded_or_reject_evidence" in entry:
+        mode = (
+            evidence.LIVE_READINESS
+            if evidence_role == "live_review"
+            else evidence.FIXTURE_CALIBRATION
+        )
+        require(
+            evidence.degraded_or_reject_is_eligible(entry, mode),
+            f"{prefix}: invalid degraded/unavailable/reject review evidence",
+        )
 
     return verdict, readiness
 

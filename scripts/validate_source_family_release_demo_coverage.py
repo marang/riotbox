@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import demo_bank_evidence as evidence
+
 
 SCHEMA = "riotbox.source_family_release_demo_coverage.v1"
 SOURCE_CORPUS_SCHEMA = "riotbox.sound_excellence_source_corpus.v1"
@@ -28,7 +30,12 @@ CORPUS_TO_DEMO_FAMILIES = {
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source-corpus", type=Path, default=DEFAULT_SOURCE_CORPUS)
-    parser.add_argument("--demo-bank", type=Path, default=DEFAULT_DEMO_BANK)
+    parser.add_argument("--demo-bank", type=Path)
+    parser.add_argument(
+        "--evidence-mode",
+        choices=sorted(evidence.EVIDENCE_MODES),
+        default=evidence.LIVE_READINESS,
+    )
     parser.add_argument("--json-output", type=Path)
     parser.add_argument("--markdown-output", type=Path)
     parser.add_argument("--validate-report", type=Path)
@@ -39,8 +46,23 @@ def main() -> int:
             report = read_json_object(args.validate_report)
         else:
             source_corpus = read_json_object(args.source_corpus)
-            demo_bank = read_json_object(args.demo_bank)
-            report = build_report(source_corpus, demo_bank, args.source_corpus, args.demo_bank)
+            demo_bank_path = evidence.resolve_demo_bank_path(
+                args.evidence_mode,
+                args.demo_bank,
+                DEFAULT_DEMO_BANK,
+            )
+            demo_bank = (
+                read_json_object(demo_bank_path)
+                if demo_bank_path is not None
+                else evidence.empty_demo_bank(DEMO_BANK_SCHEMA)
+            )
+            report = build_report(
+                source_corpus,
+                demo_bank,
+                args.source_corpus,
+                demo_bank_path,
+                args.evidence_mode,
+            )
             if args.json_output:
                 args.json_output.parent.mkdir(parents=True, exist_ok=True)
                 args.json_output.write_text(json.dumps(report, indent=2) + "\n")
@@ -63,7 +85,8 @@ def build_report(
     source_corpus: dict[str, Any],
     demo_bank: dict[str, Any],
     source_corpus_path: Path,
-    demo_bank_path: Path,
+    demo_bank_path: Path | None,
+    evidence_mode: str,
 ) -> dict[str, Any]:
     require(
         source_corpus.get("schema") == SOURCE_CORPUS_SCHEMA,
@@ -71,14 +94,23 @@ def build_report(
     )
     require(
         demo_bank.get("schema") == DEMO_BANK_SCHEMA,
-        f"{demo_bank_path}: schema must be {DEMO_BANK_SCHEMA}",
+        f"{demo_bank_path or '<missing>'}: schema must be {DEMO_BANK_SCHEMA}",
     )
     required_families = string_list(source_corpus, "required_source_families", source_corpus_path)
     corpus_entries = list_field(source_corpus, "entries", source_corpus_path)
-    demo_entries = list_field(demo_bank, "entries", demo_bank_path)
+    raw_demo_entries = (
+        list_field(demo_bank, "entries", demo_bank_path)
+        if demo_bank_path is not None
+        else []
+    )
+    demo_entries = evidence.usable_entries(
+        demo_bank,
+        raw_demo_entries,
+        evidence_mode,
+    )
 
     families = [
-        family_coverage(family, corpus_entries, demo_entries)
+        family_coverage(family, corpus_entries, demo_entries, evidence_mode)
         for family in required_families
     ]
     blockers = coverage_blockers(families)
@@ -91,15 +123,24 @@ def build_report(
         "release_readiness": release_readiness,
         "quality_claim_allowed": release_readiness == "release_ready",
         "human_verdict_boundary": (
-            "A source family is release-demo covered only when it has a "
-            "demo-ready human-pass entry. Candidates and weak/fail human "
-            "verdicts are useful evidence but block release-ready claims."
+            "Positive source families require a demo-ready human-pass entry. "
+            "Weak and bad-timing families instead require a reviewed degraded, "
+            "unavailable, or reject product-path outcome with no fallback music."
         ),
         "source_corpus": str(source_corpus_path),
-        "demo_bank": str(demo_bank_path),
+        "demo_bank": str(demo_bank_path) if demo_bank_path is not None else None,
+        "demo_bank_evidence": evidence.evidence_context(
+            evidence_mode,
+            demo_bank_path,
+            raw_demo_entries,
+            demo_bank.get("evidence_role"),
+        ),
         "required_family_count": len(families),
         "covered_demo_ready_family_count": sum(
             1 for family in families if family["status"] == "demo_ready_covered"
+        ),
+        "covered_family_success_count": sum(
+            1 for family in families if family["family_success_entry_ids"]
         ),
         "missing_demo_candidate_families": [
             family["source_family"] for family in families if not family["candidate_entry_ids"]
@@ -110,6 +151,11 @@ def build_report(
         "missing_demo_ready_families": [
             family["source_family"] for family in families if not family["demo_ready_entry_ids"]
         ],
+        "missing_family_success_families": [
+            family["source_family"]
+            for family in families
+            if not family["family_success_entry_ids"]
+        ],
         "families": families,
         "blockers": blockers,
     }
@@ -119,6 +165,7 @@ def family_coverage(
     source_family: str,
     corpus_entries: list[Any],
     demo_entries: list[Any],
+    evidence_mode: str,
 ) -> dict[str, Any]:
     aliases = CORPUS_TO_DEMO_FAMILIES.get(source_family, {source_family})
     matching_entries = [
@@ -128,15 +175,31 @@ def family_coverage(
     ]
     candidate_ids = entry_ids(matching_entries)
     human_entries = [
-        entry for entry in matching_entries if entry.get("human_verdict") in {"pass", "weak", "fail"}
+        entry
+        for entry in matching_entries
+        if evidence.human_verdict_is_eligible(entry, evidence_mode)
     ]
+    requires_degraded_or_reject = source_family in evidence.NEGATIVE_SUCCESS_FAMILIES
     demo_ready_entries = [
         entry
         for entry in matching_entries
-        if entry.get("human_verdict") == "pass" and entry.get("demo_readiness") == "demo_ready"
+        if not requires_degraded_or_reject
+        and entry.get("human_verdict") == "pass"
+        and entry.get("demo_readiness") == "demo_ready"
+        and evidence.human_verdict_is_eligible(entry, evidence_mode)
     ]
+    degraded_or_reject_entries = [
+        entry
+        for entry in matching_entries
+        if evidence.degraded_or_reject_is_eligible(entry, evidence_mode)
+    ]
+    family_success_entries = (
+        degraded_or_reject_entries if requires_degraded_or_reject else demo_ready_entries
+    )
     if demo_ready_entries:
         status = "demo_ready_covered"
+    elif degraded_or_reject_entries:
+        status = "reviewed_degraded_or_reject"
     elif human_entries:
         status = "human_verdict_non_demo"
     elif matching_entries:
@@ -154,6 +217,13 @@ def family_coverage(
         "candidate_entry_ids": candidate_ids,
         "human_verdict_entry_ids": entry_ids(human_entries),
         "demo_ready_entry_ids": entry_ids(demo_ready_entries),
+        "degraded_or_reject_entry_ids": entry_ids(degraded_or_reject_entries),
+        "family_success_entry_ids": entry_ids(family_success_entries),
+        "success_requirement": (
+            "reviewed_degraded_or_reject"
+            if requires_degraded_or_reject
+            else "demo_ready_human_pass"
+        ),
         "unverified_entry_ids": entry_ids(
             [entry for entry in matching_entries if entry.get("human_verdict") == "unverified"]
         ),
@@ -183,13 +253,31 @@ def coverage_blockers(families: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     "reason": "No pass, weak, or fail human verdict exists for this source family.",
                 }
             )
-        if not family["demo_ready_entry_ids"]:
+        if (
+            family["success_requirement"] == "demo_ready_human_pass"
+            and not family["demo_ready_entry_ids"]
+        ):
             blockers.append(
                 {
                     "code": "source_family_demo_ready_human_pass_missing",
                     "source_family": source_family,
                     "severity": "release_blocking",
                     "reason": "No demo-ready human-pass entry exists for this source family.",
+                }
+            )
+        if (
+            family["success_requirement"] == "reviewed_degraded_or_reject"
+            and not family["degraded_or_reject_entry_ids"]
+        ):
+            blockers.append(
+                {
+                    "code": "source_family_degraded_or_reject_review_missing",
+                    "source_family": source_family,
+                    "severity": "release_blocking",
+                    "reason": (
+                        "Weak and bad-timing families require a reviewed degraded, "
+                        "unavailable, or reject product-path outcome without fallback music."
+                    ),
                 }
             )
     return blockers
@@ -205,9 +293,59 @@ def validate_report(report: dict[str, Any]) -> list[str]:
     blockers = report.get("blockers")
     check(isinstance(families, list) and bool(families), "families_missing", failures)
     check(isinstance(blockers, list), "blockers_must_be_array", failures)
+    evidence_data = report.get("demo_bank_evidence")
+    check(isinstance(evidence_data, dict), "demo_bank_evidence_missing", failures)
+    if isinstance(evidence_data, dict):
+        mode = evidence_data.get("mode")
+        check(mode in evidence.EVIDENCE_MODES, "demo_bank_evidence_mode_invalid", failures)
+        check(
+            evidence_data.get("demo_bank_state")
+            in {"available", "missing", "rejected_non_live_bank"},
+            "demo_bank_evidence_state_invalid",
+            failures,
+        )
+        if evidence_data.get("demo_bank_path") is not None:
+            check(
+                isinstance(evidence_data.get("demo_bank_sha256"), str)
+                and len(evidence_data["demo_bank_sha256"]) == 64,
+                "demo_bank_evidence_sha256_invalid",
+                failures,
+            )
+        check(
+            evidence.context_bank_identity_is_current(evidence_data),
+            "demo_bank_evidence_identity_stale",
+            failures,
+        )
+        if mode == evidence.LIVE_READINESS and evidence_data.get("demo_bank_state") != "available":
+            check(
+                report.get("covered_demo_ready_family_count") == 0,
+                "missing_live_demo_bank_counted_demo_ready_coverage",
+                failures,
+            )
+            check(
+                evidence_data.get("eligible_human_verdict_count") == 0,
+                "missing_live_demo_bank_counted_human_verdicts",
+                failures,
+            )
     if isinstance(families, list):
         for index, family in enumerate(families):
             validate_family(family, index, failures)
+        expected_missing_success = [
+            family.get("source_family")
+            for family in families
+            if isinstance(family, dict) and not family.get("family_success_entry_ids")
+        ]
+        expected_covered_count = len(families) - len(expected_missing_success)
+        check(
+            report.get("missing_family_success_families") == expected_missing_success,
+            "missing_family_success_families_stale",
+            failures,
+        )
+        check(
+            report.get("covered_family_success_count") == expected_covered_count,
+            "covered_family_success_count_stale",
+            failures,
+        )
     release_readiness = report.get("release_readiness")
     check(release_readiness in {"blocked", "release_ready"}, "release_readiness_invalid", failures)
     if blockers:
@@ -230,6 +368,9 @@ def validate_family(family: Any, index: int, failures: list[str]) -> None:
         "candidate_entry_ids",
         "human_verdict_entry_ids",
         "demo_ready_entry_ids",
+        "degraded_or_reject_entry_ids",
+        "family_success_entry_ids",
+        "success_requirement",
         "unverified_entry_ids",
         "status",
     ]:
@@ -242,8 +383,26 @@ def validate_family(family: Any, index: int, failures: list[str]) -> None:
             "human_verdict_non_demo",
             "candidate_only",
             "missing_candidate",
+            "reviewed_degraded_or_reject",
         },
         f"families_{index}_status_invalid",
+        failures,
+    )
+    check(
+        family.get("success_requirement")
+        in {"demo_ready_human_pass", "reviewed_degraded_or_reject"},
+        f"families_{index}_success_requirement_invalid",
+        failures,
+    )
+    source_family = family.get("source_family")
+    expected_requirement = (
+        "reviewed_degraded_or_reject"
+        if source_family in evidence.NEGATIVE_SUCCESS_FAMILIES
+        else "demo_ready_human_pass"
+    )
+    check(
+        family.get("success_requirement") == expected_requirement,
+        f"families_{index}_success_requirement_mismatch",
         failures,
     )
     for field in [
@@ -252,6 +411,8 @@ def validate_family(family: Any, index: int, failures: list[str]) -> None:
         "candidate_entry_ids",
         "human_verdict_entry_ids",
         "demo_ready_entry_ids",
+        "degraded_or_reject_entry_ids",
+        "family_success_entry_ids",
         "unverified_entry_ids",
     ]:
         values = family.get(field)
@@ -270,6 +431,9 @@ def markdown_report(report: dict[str, Any]) -> str:
         f"- Quality claim allowed: `{str(report['quality_claim_allowed']).lower()}`",
         f"- Covered demo-ready families: `{report['covered_demo_ready_family_count']}/{report['required_family_count']}`",
         f"- Source files required: `{str(report['source_files_required']).lower()}`",
+        f"- Evidence mode: `{report['demo_bank_evidence']['mode']}`",
+        f"- Demo-bank state: `{report['demo_bank_evidence']['demo_bank_state']}`",
+        f"- Fixture only: `{str(report['demo_bank_evidence']['fixture_only']).lower()}`",
         "",
         "## Families",
         "",
@@ -285,6 +449,8 @@ def markdown_report(report: dict[str, Any]) -> str:
                 f"- Candidate entries: `{', '.join(family['candidate_entry_ids']) or 'none'}`",
                 f"- Human verdict entries: `{', '.join(family['human_verdict_entry_ids']) or 'none'}`",
                 f"- Demo-ready entries: `{', '.join(family['demo_ready_entry_ids']) or 'none'}`",
+                f"- Success requirement: `{family['success_requirement']}`",
+                f"- Family-success entries: `{', '.join(family['family_success_entry_ids']) or 'none'}`",
                 "",
             ]
         )

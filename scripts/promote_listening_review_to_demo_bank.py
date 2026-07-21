@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import demo_bank_evidence as evidence
 from listening_review_workflow import validate_review
 from mc202_source_composed_review_gate import (
     MC202_GATE_FIELD,
@@ -175,6 +176,7 @@ def build_demo_bank_entry(
 
     readiness = "demo_ready" if human_verdict == "pass" else "not_demo_ready"
     source_id = string_field(metadata, "source_id", review_path)
+    reviewer = string_field(review, "reviewer", review_path)
     entry = {
         "entry_id": entry_id or f"{slug(source_id)}-human-{human_verdict}",
         "source_family": string_field(metadata, "source_family", review_path),
@@ -196,6 +198,17 @@ def build_demo_bank_entry(
         "demo_readiness_consequence": demo_readiness_consequence(human_verdict),
         "demo_worthiness_note": demo_worthiness_note,
         "fix_categories": categories,
+        "human_review_evidence": {
+            "schema": evidence.HUMAN_REVIEW_EVIDENCE_SCHEMA,
+            "reviewer": reviewer,
+            "reviewer_kind": (
+                "fixture_calibration"
+                if evidence.reviewer_is_fixture(reviewer)
+                else "human"
+            ),
+            "review_path": str(review_path),
+            "review_sha256": sha256_file(review_path),
+        },
         MC202_GATE_FIELD: mc202_gate,
         MC202_ROLE_FIELD: mc202_role,
         "musical_summary": musical_summary(review, metadata, human_verdict),

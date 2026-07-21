@@ -50,6 +50,11 @@ jq -e '
     and (.rendered_wav.sha256 | length == 64)
     and (.metrics.sha256 | length == 64)
     and (.review_prompt.sha256 | length == 64)
+    and .human_review_evidence.schema == "riotbox.demo_bank_human_review_evidence.v1"
+    and .human_review_evidence.reviewer == "fixture-listener"
+    and .human_review_evidence.reviewer_kind == "fixture_calibration"
+    and (.human_review_evidence.review_path | endswith("review.json"))
+    and (.human_review_evidence.review_sha256 | length == 64)
     and (.fix_categories | length == 0)
     and .mc202_source_composed_review_gate.source_composed_evidence == true
     and .mc202_source_composed_review_gate.primitive_or_template_only == false
@@ -63,6 +68,33 @@ jq -e '
     and .mc202_producer_fix_routing.quality_proof == false
   )
 ' "$tmp/demo-bank-pass.json" >/dev/null
+
+jq '.reviewer = "Markus"' "$pass_review" > "$tmp/live-review.tmp"
+mv "$tmp/live-review.tmp" "$pass_review"
+live_review="$pass_review"
+jq -n '{
+  schema: "riotbox.release_grade_demo_bank.v1",
+  schema_version: 1,
+  evidence_role: "live_review",
+  readiness_rubric_schema: "riotbox.sound_product_readiness_rubric.v1",
+  hidden_taste_oracle_allowed: false,
+  entries: []
+}' > "$tmp/live-bank-empty.json"
+python3 scripts/promote_listening_review_to_demo_bank.py \
+  --review "$live_review" \
+  --demo-bank "$tmp/live-bank-empty.json" \
+  --json-output "$tmp/live-bank-promoted.json" \
+  --entry-id dense-beat03-real-human-pass \
+  --demo-worthiness-note "Real structured human pass remains eligible for live readiness." \
+  --mc202-producer-closeout "$closeout" \
+  --require-artifact-hashes >/dev/null
+jq -e '
+  .evidence_role == "live_review"
+  and (.entries | length) == 1
+  and .entries[0].human_review_evidence.reviewer == "Markus"
+  and .entries[0].human_review_evidence.reviewer_kind == "human"
+  and (.entries[0].human_review_evidence.review_sha256 | length) == 64
+' "$tmp/live-bank-promoted.json" >/dev/null
 
 invalid_demo_bank_role="$tmp/demo-bank-invalid-role.json"
 jq '(.entries[] | select(.entry_id == "dense-beat03-promoted-fixture") | .mc202_role_evidence.role) = "bass_pressure"' \
