@@ -123,6 +123,7 @@ fn pad_playback_from_interleaved(
         loop_enabled: true,
         playback_rate: transform.playback_rate,
         reverse: transform.reverse,
+        gate_step_fraction: transform.gate_step_fraction,
         loop_crossfade_sample_count: sample_count.min(128).min(sample_count / 4),
         chop_slice_count: W30_PAD_CHOP_SLICE_COUNT,
         chop_slice_starts,
@@ -229,18 +230,29 @@ mod transient_chop_plan_tests {
 struct W30PadPlaybackTransform {
     playback_rate: f32,
     reverse: bool,
+    gate_step_fraction: f32,
 }
+
+const W30_DAMAGE_PITCH_DRAG_DEPTH: f32 = 0.27;
+const W30_DAMAGE_PITCH_DRAG_MIN_RATE: f32 = 0.72;
+/// Retain only the source-derived attack portion of each grid retrigger. This keeps
+/// percussion already present in a sparse source from drifting between the TR-909 hits.
+const W30_DAMAGE_TRANSIENT_BITE_GATE_STEP_FRACTION: f32 = 0.44;
 
 impl Default for W30PadPlaybackTransform {
     fn default() -> Self {
         Self {
             playback_rate: 1.0,
             reverse: false,
+            gate_step_fraction: 0.0,
         }
     }
 }
 
-fn w30_pad_playback_transform(session: &SessionFile) -> W30PadPlaybackTransform {
+fn w30_pad_playback_transform(
+    session: &SessionFile,
+    destructive_intent: Option<LivePerformanceDestructiveIntent>,
+) -> W30PadPlaybackTransform {
     let Some(intensity) = last_committed_w30_damage_action(session).and_then(|action| {
         if let ActionParams::Mutation { intensity, .. } = action.params {
             Some(intensity.clamp(0.0, 1.0))
@@ -251,9 +263,22 @@ fn w30_pad_playback_transform(session: &SessionFile) -> W30PadPlaybackTransform 
         return W30PadPlaybackTransform::default();
     };
 
+    let (playback_rate, gate_step_fraction) = match destructive_intent {
+        Some(LivePerformanceDestructiveIntent::TransientBite) => {
+            (1.0, W30_DAMAGE_TRANSIENT_BITE_GATE_STEP_FRACTION * intensity)
+        }
+        Some(LivePerformanceDestructiveIntent::PitchDrag) | None => {
+            (
+                (1.0 - intensity * W30_DAMAGE_PITCH_DRAG_DEPTH)
+                    .clamp(W30_DAMAGE_PITCH_DRAG_MIN_RATE, 1.0),
+                0.0,
+            )
+        }
+    };
     W30PadPlaybackTransform {
-        playback_rate: (1.0 - intensity * 0.27).clamp(0.72, 1.0),
+        playback_rate,
         reverse: false,
+        gate_step_fraction,
     }
 }
 

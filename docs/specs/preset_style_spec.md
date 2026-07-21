@@ -279,6 +279,13 @@ queue/commit, or claim source-derived composition. V1 remains a historical
 replay/control identity and its Blend / SourceSupport / V1 FillFocus behavior is
 not silently redefined.
 
+The shared live-performance projection may adapt v2's held-state balance after
+activation when trusted phrase-audio evidence selects `tonal_hook` or
+`sparse_pressure`. This does not create another preset identity: the committed
+Source Graph and MC-202 source plan deterministically rederive the character,
+lane hierarchy, restraint, and base TR-909 vocabulary after restart/replay.
+Explicit Fill and Scene gestures continue to own their versioned behavior.
+
 ---
 
 ## 13. TUI Requirements

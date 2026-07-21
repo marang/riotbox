@@ -188,7 +188,8 @@ pub fn prepare(
             )
         })?;
     println!(
-        "live performance policy: lead={} bass_owner={} mc202_intent={}",
+        "live performance policy: character={} lead={} bass_owner={} mc202_intent={}",
+        live_policy.character.label(),
         live_policy.lead.label(),
         live_policy.bass_owner.label(),
         live_policy.mc202_intent.label()

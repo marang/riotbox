@@ -162,6 +162,7 @@ fn shared_w30_preview_state_tracks_updates() {
             loop_enabled: true,
             playback_rate: 0.82,
             reverse: true,
+            gate_step_fraction: 0.36,
             loop_crossfade_sample_count: 128,
             chop_slice_count: 2,
             chop_slice_starts: [512, 2_048, 0, 0, 0, 0, 0, 0],
@@ -190,6 +191,7 @@ fn shared_w30_preview_state_tracks_updates() {
     assert_eq!(snapshot.pad_playback.playback_frame_count, 96_000);
     assert_eq!(snapshot.pad_playback.playback_rate, 0.82);
     assert!(snapshot.pad_playback.reverse);
+    assert_eq!(snapshot.pad_playback.gate_step_fraction, 0.36);
     assert_eq!(snapshot.pad_playback.loop_crossfade_sample_count, 128);
     assert_eq!(snapshot.pad_playback.chop_slice_count, 2);
     assert_eq!(snapshot.pad_playback.chop_slice_starts[..2], [512, 2_048]);

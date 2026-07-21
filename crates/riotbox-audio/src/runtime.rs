@@ -48,8 +48,8 @@ use render_tr909_w30_preview::{
 };
 #[cfg(test)]
 use render_tr909_w30_preview::{
-    should_trigger_w30_step, w30_chop_slice_cursor, w30_pad_playback_sample,
-    w30_pad_playback_signature,
+    should_trigger_w30_step, w30_chop_slice_cursor, w30_pad_grid_gate, w30_pad_grid_gate_gain,
+    w30_pad_playback_sample, w30_pad_playback_signature,
 };
 pub use runtime_mix_parity::*;
 use shared_mc202_w30_preview::{

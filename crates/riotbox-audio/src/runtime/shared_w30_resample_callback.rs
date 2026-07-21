@@ -21,6 +21,7 @@ impl SharedW30PreviewRenderState {
             pad_loop_enabled: AtomicBool::new(false),
             pad_playback_rate_bits: AtomicU32::new(1.0_f32.to_bits()),
             pad_reverse: AtomicBool::new(false),
+            pad_gate_step_fraction_bits: AtomicU32::new(0.0_f32.to_bits()),
             pad_loop_crossfade_sample_count: AtomicU32::new(0),
             pad_chop_slice_count: AtomicU32::new(0),
             pad_chop_slice_starts: std::array::from_fn(|_| AtomicU32::new(0)),
@@ -150,6 +151,8 @@ impl SharedW30PreviewRenderState {
                 .store(pad_playback.playback_rate.to_bits(), Ordering::Relaxed);
             self.pad_reverse
                 .store(pad_playback.reverse, Ordering::Relaxed);
+            self.pad_gate_step_fraction_bits
+                .store(pad_playback.gate_step_fraction.to_bits(), Ordering::Relaxed);
             self.pad_loop_crossfade_sample_count.store(
                 pad_playback.loop_crossfade_sample_count.min(sample_count) as u32,
                 Ordering::Relaxed,
@@ -175,6 +178,8 @@ impl SharedW30PreviewRenderState {
             self.pad_playback_rate_bits
                 .store(1.0_f32.to_bits(), Ordering::Relaxed);
             self.pad_reverse.store(false, Ordering::Relaxed);
+            self.pad_gate_step_fraction_bits
+                .store(0.0_f32.to_bits(), Ordering::Relaxed);
             self.pad_loop_crossfade_sample_count
                 .store(0, Ordering::Relaxed);
             self.pad_chop_slice_count.store(0, Ordering::Relaxed);
@@ -205,6 +210,9 @@ impl SharedW30PreviewRenderState {
             loop_enabled: self.pad_loop_enabled.load(Ordering::Relaxed),
             playback_rate: f32::from_bits(self.pad_playback_rate_bits.load(Ordering::Relaxed)),
             reverse: self.pad_reverse.load(Ordering::Relaxed),
+            gate_step_fraction: f32::from_bits(
+                self.pad_gate_step_fraction_bits.load(Ordering::Relaxed),
+            ),
             loop_crossfade_sample_count: (self
                 .pad_loop_crossfade_sample_count
                 .load(Ordering::Relaxed) as usize)

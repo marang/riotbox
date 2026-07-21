@@ -10,6 +10,7 @@ use riotbox_audio::{
 };
 use riotbox_core::{
     action::{ActionCommand, CommitBoundary},
+    live_performance_policy::LIVE_PERFORMANCE_CHARACTER_CONTRAST_MARGIN,
     source_graph::TimingHypothesisKind,
 };
 use serde_json::{Value, json};
@@ -875,6 +876,35 @@ pub fn write_pack(
         "bass_ownership_policy": preset_definition.bass_ownership.label(),
         "source_monitor_mode": preset_definition.source_monitor_mode.as_str(),
         "actual_bass_owner": prepared.live_policy.bass_owner.label(),
+    });
+    manifest["source_character_policy"] = json!({
+        "schema": "riotbox.live_performance_character.v1",
+        "character": prepared.live_policy.character.label(),
+        "destructive_intent": prepared.live_policy.destructive_intent.label(),
+        "lead": prepared.live_policy.lead.label(),
+        "bass_owner": prepared.live_policy.bass_owner.label(),
+        "mc202_intent": prepared.live_policy.mc202_intent.label(),
+        "classification_margin": LIVE_PERFORMANCE_CHARACTER_CONTRAST_MARGIN,
+        "source_evidence": prepared.live_policy.character_evidence.as_ref().map(|evidence| json!({
+            "feature_path": "source_graph.phrase_audio_features",
+            "phrase_index": evidence.phrase_index,
+            "spectral_brightness": evidence.spectral_brightness,
+            "low_mid_ratio": evidence.low_mid_ratio,
+            "offbeat_onset_density": evidence.offbeat_onset_density,
+            "hook_restraint_hint": evidence.hook_restraint_hint,
+            "confidence": evidence.confidence,
+        })),
+        "resolved_live_defaults": {
+            "w30_music_level": prepared.live_policy.w30_music_level,
+            "tr909_drum_level": prepared.live_policy.tr909_drum_level,
+            "tr909_slam_floor": prepared.live_policy.tr909_slam_floor,
+            "tr909_pattern_adoption": prepared.live_policy.tr909_pattern_adoption.map(|value| value.label()),
+            "tr909_phrase_variation": prepared.live_policy.tr909_phrase_variation.map(|value| value.label()),
+            "mc202_music_level": prepared.live_policy.mc202_music_level,
+            "mc202_touch_floor": prepared.live_policy.mc202_touch_floor,
+            "damage_playback_rate": prepared.damaged_plan.w30_preview_render.pad_playback.as_ref().map(|window| window.playback_rate),
+            "damage_gate_step_fraction": prepared.damaged_plan.w30_preview_render.pad_playback.as_ref().map(|window| window.gate_step_fraction),
+        },
     });
     manifest["feral_break_alpha_arc"] = alpha_evidence.arc;
     manifest["feral_break_alpha_restart_recall"] = alpha_evidence.restart_recall;
