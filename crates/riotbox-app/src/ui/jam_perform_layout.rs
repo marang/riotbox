@@ -52,16 +52,24 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         .wrap(Wrap { trim: true });
 
     let trust = trust_summary(shell);
+    let perform_risk = source_timing_perform_risk(shell);
+    let perform_reason = trust
+        .source_timing_warning
+        .as_deref()
+        .unwrap_or(shell.app.jam_view.source.timing.cue.as_str());
+    let compact_risk_action = match perform_risk {
+        SourceTimingPerformRisk::Trusted => "play grid",
+        SourceTimingPerformRisk::Degraded | SourceTimingPerformRisk::Unavailable => {
+            PERFORM_RISK_BAR_LIVE_CUE
+        }
+    };
     let trust_panel = Paragraph::new(vec![
         Line::from(format!(
-            "{} ({:.2}) | warnings {}",
-            trust.headline, trust.overall_confidence, trust.warning_count
+            "{} | {compact_risk_action}",
+            perform_risk.label()
         )),
-        Line::from(format!(
-            "timing {} | sections {}",
-            trust.timing_quality, trust.section_quality
-        )),
-        source_timing_perform_risk_line(shell),
+        Line::from(format!("why {}", perform_reason.replace('_', " "))),
+        Line::from(format!("risk {compact_risk_action}")),
         source_timing_readiness_line(shell),
         arrangement_taste_line(shell),
     ])

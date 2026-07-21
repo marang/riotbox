@@ -6,9 +6,13 @@ use ratatui::{text::Line, widgets::ListItem};
 use riotbox_audio::runtime::{AudioRuntimeLifecycle, SourceMonitorAudioRoute};
 use riotbox_core::{
     action::{ActionCommand, CaptureLengthIntent, SourceMonitorMode},
-    view::jam::{CaptureHandoffReadinessView, CaptureTargetKindView, SceneJumpAvailabilityView},
+    view::jam::{
+        CaptureHandoffReadinessView, CaptureTargetKindView, SceneJumpAvailabilityView,
+        SourceTimingConsumerReadiness,
+    },
 };
 
+use super::source_trust_summary::source_timing_consumer_readiness_for_shell;
 use super::{JamShellState, transport_label, w30_preview_source_readiness};
 
 use onramp_history::{
@@ -125,10 +129,10 @@ pub(super) fn first_run_onramp_compact_lines(shell: &JamShellState) -> Vec<Strin
     match first_run_onramp_stage(shell) {
         Some(FirstRunOnrampStage::Capture) if !audio_runtime_is_running(shell) => vec![
             "Audio output not running; playback is not ready".into(),
-            "[C] grid if asked | [c] capture when ready".into(),
+            compact_capture_offline_step(shell).into(),
         ],
         Some(FirstRunOnrampStage::Capture) => vec![
-            "[Space] start | [C] grid if asked".into(),
+            compact_capture_timing_step(shell).into(),
             "[c] capture -> [o] audition -> [p] promote".into(),
         ],
         Some(FirstRunOnrampStage::CapturePending) => vec![
@@ -173,6 +177,32 @@ pub(super) fn first_run_onramp_compact_lines(shell: &JamShellState) -> Vec<Strin
             "[y] jump | [Y] restore".into(),
         ],
         None => Vec::new(),
+    }
+}
+
+fn compact_capture_offline_step(shell: &JamShellState) -> &'static str {
+    match source_timing_consumer_readiness_for_shell(shell) {
+        SourceTimingConsumerReadiness::AnalyzerLocked
+        | SourceTimingConsumerReadiness::UserConfirmed => "grid trusted | [c] capture when ready",
+        SourceTimingConsumerReadiness::NeedsUserConfirmation => {
+            "[C] confirm grid | [c] capture when ready"
+        }
+        SourceTimingConsumerReadiness::FallbackGrid => "fallback grid only | source preview",
+        SourceTimingConsumerReadiness::Unavailable => "timing unavailable | source preview only",
+    }
+}
+
+fn compact_capture_timing_step(shell: &JamShellState) -> &'static str {
+    match source_timing_consumer_readiness_for_shell(shell) {
+        SourceTimingConsumerReadiness::AnalyzerLocked
+        | SourceTimingConsumerReadiness::UserConfirmed => "[Space] start | grid trusted",
+        SourceTimingConsumerReadiness::NeedsUserConfirmation => {
+            "[Space] source preview | [C] confirm grid"
+        }
+        SourceTimingConsumerReadiness::FallbackGrid => {
+            "[Space] source preview | fallback grid only"
+        }
+        SourceTimingConsumerReadiness::Unavailable => "[Space] source preview | timing unavailable",
     }
 }
 

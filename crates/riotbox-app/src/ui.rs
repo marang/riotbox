@@ -48,6 +48,7 @@ use footer_renderer::{render_footer, render_help_primary_gesture_items};
 use jam_scene_commit_cues::{
     latest_landed_command, scene_history_trail_line, scene_post_commit_cue_line,
 };
+use perform_risk_cue_contract::PERFORM_RISK_BAR_LIVE_CUE;
 use recovery_prompt::{recovery_help_lines, recovery_warning_line};
 use riotbox_core::view::jam::ArrangementSceneContractReadinessView;
 #[cfg(test)]
@@ -62,11 +63,12 @@ use scene_timing_labels::{
 };
 use source_timing_panel::{source_map_lines, source_timing_lines};
 use source_trust_summary::{
-    arrangement_inspect_lines, arrangement_proof_line, arrangement_taste_line, energy_label,
-    source_candidate_lines, source_confidence_lines, source_provenance_lines,
-    source_timing_clock_compact, source_timing_clock_line, source_timing_grid_confirmed,
-    source_timing_help_line, source_timing_perform_risk_line, source_timing_performance_rail_line,
-    source_timing_readiness_line, source_timing_warning_line, source_warning_lines, trust_summary,
+    SourceTimingPerformRisk, arrangement_inspect_lines, arrangement_proof_line,
+    arrangement_taste_line, energy_label, source_candidate_lines, source_confidence_lines,
+    source_provenance_lines, source_timing_clock_compact, source_timing_clock_line,
+    source_timing_grid_confirmed, source_timing_help_line, source_timing_perform_risk,
+    source_timing_performance_rail_line, source_timing_readiness_line, source_timing_warning_line,
+    source_warning_lines, trust_summary,
 };
 use stem_package_export_inspect::stem_package_export_receipt_lines;
 use w30_cue_labels::{last_committed_w30_action, short_w30_action_label, w30_pending_cue_label};

@@ -8,6 +8,13 @@ import re
 from pathlib import Path
 from typing import Any
 
+from degraded_product_review import (
+    SCHEMA as DEGRADED_PRODUCT_REVIEW_SCHEMA,
+    read_json_object as read_degraded_product_review,
+    review_is_human_pass as degraded_product_review_is_human_pass,
+    validate_artifact_identity as validate_degraded_product_artifact_identity,
+)
+
 
 LIVE_READINESS = "live_readiness"
 FIXTURE_CALIBRATION = "fixture_calibration"
@@ -85,7 +92,7 @@ def degraded_or_reject_is_eligible(
     if not human_verdict_is_eligible(entry, evidence_mode):
         return False
     outcome = entry.get("degraded_or_reject_evidence")
-    return (
+    structurally_eligible = (
         isinstance(outcome, dict)
         and entry.get("human_verdict") in {"weak", "fail"}
         and entry.get("demo_readiness") == "not_demo_ready"
@@ -95,6 +102,35 @@ def degraded_or_reject_is_eligible(
         and outcome.get("fallback_music_present") is False
         and isinstance(outcome.get("reason"), str)
         and bool(outcome["reason"].strip())
+    )
+    if not structurally_eligible:
+        return False
+    if evidence_mode == FIXTURE_CALIBRATION:
+        return True
+
+    human_evidence = entry.get("human_review_evidence")
+    if not isinstance(human_evidence, dict):
+        return False
+    review_path = Path(str(human_evidence.get("review_path") or ""))
+    try:
+        review = read_degraded_product_review(review_path)
+        validate_degraded_product_artifact_identity(review)
+    except (OSError, TypeError, ValueError):
+        return False
+    human = review.get("human_review")
+    proof = review.get("product_path_proof")
+    return (
+        review.get("schema") == DEGRADED_PRODUCT_REVIEW_SCHEMA
+        and degraded_product_review_is_human_pass(review)
+        and review.get("source_family") == entry.get("source_family")
+        and review.get("outcome") == outcome.get("outcome")
+        and review.get("reason") == outcome.get("reason")
+        and isinstance(human, dict)
+        and human.get("reviewer") == human_evidence.get("reviewer")
+        and isinstance(proof, dict)
+        and proof.get("fallback_music_present") is False
+        and proof.get("generated_output_configured") is False
+        and proof.get("confident_bar_locked_output_allowed") is False
     )
 
 

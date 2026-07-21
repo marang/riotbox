@@ -134,6 +134,23 @@ fn observer_snapshot_records_source_timing_readiness_when_graph_is_attached() {
     assert_eq!(source_timing["phrase_count"], 0);
     assert_eq!(source_timing["primary_hypothesis_id"], "probe-primary");
     assert_eq!(source_timing["grid_confirmed"], true);
+    assert_eq!(source_timing["performance_readiness"]["state"], "trusted");
+    assert_eq!(
+        source_timing["performance_readiness"]["reason"],
+        "user_confirmed"
+    );
+    assert_eq!(
+        source_timing["performance_readiness"]["confident_bar_locked_output_allowed"],
+        true
+    );
+    assert_eq!(
+        source_timing["performance_readiness"]["generated_output_configured"],
+        false
+    );
+    assert_eq!(
+        source_timing["performance_readiness"]["fallback_music_present"],
+        false
+    );
     assert_eq!(source_timing["confirmed_grid_source_id"], "src-timing");
     assert_eq!(source_timing["confirmed_grid_hypothesis_id"], "probe-primary");
     assert_eq!(source_timing["confirmed_grid_action_id"], 9);
@@ -176,6 +193,28 @@ fn observer_snapshot_records_source_timing_readiness_when_graph_is_attached() {
     );
     assert_eq!(source_timing["primary_warning_code"], "ambiguous_downbeat");
     assert_eq!(source_timing["warning_codes"][1], "phrase_uncertain");
+}
+
+#[test]
+fn observer_snapshot_exposes_unconfirmed_timing_as_degraded_without_fallback_music() {
+    let graph = observer_source_map_graph(TimingDegradedPolicy::ManualConfirm, TimingQuality::Low);
+    let session = SessionFile::new("session-degraded", "0.1.0", "2026-07-21T00:00:00Z");
+    let shell = JamShellState::new(
+        JamAppState::from_parts(session, Some(graph), ActionQueue::new()),
+        ShellLaunchMode::Ingest,
+    );
+
+    let snapshot = observer_snapshot(&shell);
+    let readiness = &snapshot["source_timing"]["performance_readiness"];
+    assert_eq!(readiness["state"], "degraded");
+    assert_eq!(readiness["reason"], "needs_user_confirmation");
+    assert_eq!(readiness["confident_bar_locked_output_allowed"], false);
+    assert_eq!(readiness["live_source_policy_active"], false);
+    assert_eq!(readiness["generated_output_configured"], false);
+    assert_eq!(readiness["generated_lanes_configured"]["tr909"], false);
+    assert_eq!(readiness["generated_lanes_configured"]["mc202"], false);
+    assert_eq!(readiness["generated_lanes_configured"]["w30"], false);
+    assert_eq!(readiness["fallback_music_present"], false);
 }
 
 #[test]

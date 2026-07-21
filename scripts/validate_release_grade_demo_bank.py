@@ -30,6 +30,7 @@ SOURCE_FAMILIES = {
     "tonal_pad",
     "kick_snare_loop",
     "sparse_bass_pressure",
+    "weak_source",
     "other",
 }
 REQUIRED_VERDICTS = {"pass", "weak", "fail", "unverified"}
@@ -173,7 +174,19 @@ def validate_entry(
         )
     non_empty_string(entry.get("demo_worthiness_note"), f"{prefix}.demo_worthiness_note")
 
-    validate_artifact_ref(object_field(entry, "rendered_wav", prefix), "rendered_wav", prefix, ".wav")
+    degraded_evidence_present = "degraded_or_reject_evidence" in entry
+    if "rendered_wav" in entry:
+        validate_artifact_ref(
+            object_field(entry, "rendered_wav", prefix),
+            "rendered_wav",
+            prefix,
+            ".wav",
+        )
+    else:
+        require(
+            degraded_evidence_present and verdict in {"weak", "fail"},
+            f"{prefix}: rendered_wav may be omitted only for reviewed degraded/reject outcomes",
+        )
     validate_artifact_ref(object_field(entry, "metrics", prefix), "metrics", prefix, ".json")
     validate_artifact_ref(object_field(entry, "review_prompt", prefix), "review_prompt", prefix, ".md")
     validate_musical_summary(object_field(entry, "musical_summary", prefix), prefix)
@@ -199,7 +212,7 @@ def validate_entry(
             evidence.human_verdict_is_eligible(entry, evidence.LIVE_READINESS),
             f"{prefix}: live human verdict requires non-fixture reviewer and hashed review evidence",
         )
-    if "degraded_or_reject_evidence" in entry:
+    if degraded_evidence_present:
         mode = (
             evidence.LIVE_READINESS
             if evidence_role == "live_review"

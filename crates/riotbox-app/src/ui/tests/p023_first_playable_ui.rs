@@ -460,6 +460,7 @@ fn narrow_terminal_keeps_monitor_onramp_and_help_recovery_keys_visible() {
     assert!(rendered.contains("Now | M src>mix/no-src"), "{rendered}");
     assert!(rendered.contains("Start Here"), "{rendered}");
     assert!(rendered.contains("[c] capture"), "{rendered}");
+    assert!(rendered.contains("[C] confirm grid"), "{rendered}");
 
     let mut help_shell = shell;
     help_shell.show_help = true;
@@ -472,6 +473,31 @@ fn narrow_terminal_keeps_monitor_onramp_and_help_recovery_keys_visible() {
         help.contains("y: request next scene (when ready) | Y: restore prior scene"),
         "{help}"
     );
+}
+
+#[test]
+fn compact_capture_onramp_does_not_offer_grid_confirmation_when_timing_is_unavailable() {
+    let mut shell = first_run_shell_state();
+    let graph = shell
+        .app
+        .source_graph
+        .as_mut()
+        .expect("first-run shell should include source graph");
+    graph.timing.bpm_estimate = None;
+    graph.timing.bpm_confidence = 0.0;
+    graph.timing.quality = TimingQuality::Unknown;
+    graph.timing.degraded_policy = TimingDegradedPolicy::Disabled;
+    graph.timing.primary_hypothesis_id = None;
+    graph.timing.hypotheses.clear();
+    graph.timing.beat_grid.clear();
+    graph.timing.bar_grid.clear();
+    graph.timing.phrase_grid.clear();
+    shell.app.refresh_view();
+
+    let guidance = first_run_onramp_compact_lines(&shell).join("\n");
+    assert!(guidance.contains("timing unavailable"), "{guidance}");
+    assert!(guidance.contains("source preview only"), "{guidance}");
+    assert!(!guidance.contains("[C]"), "{guidance}");
 }
 
 #[test]

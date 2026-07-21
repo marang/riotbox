@@ -1,7 +1,15 @@
 use crossterm::event::KeyCode;
+use riotbox_audio::{
+    mc202::{Mc202RenderMode, Mc202RenderRouting},
+    tr909::{Tr909RenderMode, Tr909RenderRouting},
+    w30::W30PreviewRenderRouting,
+};
 use riotbox_core::{
-    action::Action, persistence::SessionRecoveryCandidateKind, queue::CommittedActionRef,
-    view::jam::source_timing_confirmation_matches_graph,
+    action::Action,
+    live_performance_policy::derive_live_performance_policy,
+    persistence::SessionRecoveryCandidateKind,
+    queue::CommittedActionRef,
+    view::jam::{source_timing_confirmation_matches_graph, source_timing_consumer_readiness},
 };
 use serde_json::{Value, json};
 
@@ -202,6 +210,12 @@ fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
         .as_ref();
     let confirmed_grid_matches_current_source =
         source_timing_confirmation_matches_graph(graph, &shell.app.session);
+    let consumer_readiness = source_timing_consumer_readiness(Some(graph), &shell.app.session);
+    let live_source_policy_active =
+        derive_live_performance_policy(&shell.app.session, graph).is_some();
+    let generated_lanes = generated_lane_output_configuration(shell);
+    let generated_output_configured =
+        generated_lanes.tr909 || generated_lanes.mc202 || generated_lanes.w30;
     let primary_hypothesis_kind =
         graph
             .timing
@@ -240,6 +254,19 @@ fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
         "primary_hypothesis_id": graph.timing.primary_hypothesis_id.as_deref(),
         "primary_hypothesis_kind": primary_hypothesis_kind,
         "grid_confirmed": confirmed_grid_matches_current_source,
+        "performance_readiness": {
+            "state": consumer_readiness.performance_state_label(),
+            "reason": consumer_readiness.label(),
+            "confident_bar_locked_output_allowed": consumer_readiness.can_use_source_window_grid(),
+            "live_source_policy_active": live_source_policy_active,
+            "generated_lanes_configured": {
+                "tr909": generated_lanes.tr909,
+                "mc202": generated_lanes.mc202,
+                "w30": generated_lanes.w30,
+            },
+            "generated_output_configured": generated_output_configured,
+            "fallback_music_present": (!generated_output_configured).then_some(false),
+        },
         "confirmed_grid_source_id": confirmed_grid.map(|confirmed| confirmed.source_id.to_string()),
         "confirmed_grid_hypothesis_id": confirmed_grid.and_then(|confirmed| confirmed.hypothesis_id.as_deref()),
         "confirmed_grid_action_id": confirmed_grid.map(|confirmed| confirmed.confirmed_by_action.0),
@@ -256,6 +283,35 @@ fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
             .map(|warning| observer_timing_warning_code_label(&warning.code))
             .collect::<Vec<_>>(),
     })
+}
+
+#[derive(Clone, Copy)]
+struct GeneratedLaneOutputConfiguration {
+    tr909: bool,
+    mc202: bool,
+    w30: bool,
+}
+
+fn generated_lane_output_configuration(shell: &JamShellState) -> GeneratedLaneOutputConfiguration {
+    let runtime = &shell.app.runtime;
+    GeneratedLaneOutputConfiguration {
+        tr909: !matches!(runtime.tr909_render.mode, Tr909RenderMode::Idle)
+            && !matches!(runtime.tr909_render.routing, Tr909RenderRouting::SourceOnly)
+            && runtime.tr909_render.drum_bus_level > 0.0,
+        mc202: !matches!(runtime.mc202_render.mode, Mc202RenderMode::Idle)
+            && !matches!(runtime.mc202_render.routing, Mc202RenderRouting::Silent)
+            && runtime
+                .mc202_render
+                .source_phrase_plan
+                .is_some_and(|plan| !plan.is_empty())
+            && runtime.mc202_render.music_bus_level > 0.0,
+        w30: matches!(
+            runtime.w30_preview.routing,
+            W30PreviewRenderRouting::MusicBusPreview
+        ) && (runtime.w30_preview.source_window_preview.is_some()
+            || runtime.w30_preview.pad_playback.is_some())
+            && runtime.w30_preview.music_bus_level > 0.0,
+    }
 }
 
 fn source_map_observer_snapshot(shell: &JamShellState) -> Value {

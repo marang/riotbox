@@ -22,7 +22,7 @@ CORPUS_TO_DEMO_FAMILIES = {
     "sparse_drums": {"sparse_bass_pressure"},
     "tonal_riff": {"tonal_hook"},
     "pad_noise": {"tonal_pad"},
-    "weak_source": {"other"},
+    "weak_source": {"weak_source"},
     "bad_timing": {"bad_timing"},
 }
 

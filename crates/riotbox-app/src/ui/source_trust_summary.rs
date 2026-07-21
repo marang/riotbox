@@ -4,7 +4,9 @@ use ratatui::{
 };
 use riotbox_core::{
     source_graph::{CandidateType, EnergyClass, QualityClass, Section},
-    view::jam::SourceTimingSummaryView,
+    view::jam::{
+        SourceTimingConsumerReadiness, SourceTimingSummaryView, source_timing_consumer_readiness,
+    },
 };
 
 use super::{
@@ -157,10 +159,6 @@ pub(super) fn source_confidence_lines(shell: &JamShellState) -> Vec<Line<'static
 
 pub(super) struct TrustSummary {
     pub(super) headline: &'static str,
-    pub(super) overall_confidence: f32,
-    pub(super) warning_count: usize,
-    pub(super) timing_quality: &'static str,
-    pub(super) section_quality: &'static str,
     pub(super) source_timing_warning: Option<String>,
 }
 
@@ -169,6 +167,22 @@ pub(super) enum SourceTimingPerformRisk {
     Trusted,
     Degraded,
     Unavailable,
+}
+
+impl SourceTimingPerformRisk {
+    pub(super) const fn label(self) -> &'static str {
+        match self {
+            Self::Trusted => "trusted",
+            Self::Degraded => PERFORM_RISK_DEGRADED_LABEL,
+            Self::Unavailable => PERFORM_RISK_UNAVAILABLE_LABEL,
+        }
+    }
+}
+
+pub(super) fn source_timing_consumer_readiness_for_shell(
+    shell: &JamShellState,
+) -> SourceTimingConsumerReadiness {
+    source_timing_consumer_readiness(shell.app.source_graph.as_ref(), &shell.app.session)
 }
 
 pub(super) fn trust_summary(shell: &JamShellState) -> TrustSummary {
@@ -185,65 +199,42 @@ pub(super) fn trust_summary(shell: &JamShellState) -> TrustSummary {
 
             TrustSummary {
                 headline,
-                overall_confidence: overall,
-                warning_count: graph.analysis_summary.warnings.len(),
-                timing_quality: quality_label(&graph.analysis_summary.timing_quality),
-                section_quality: quality_label(&graph.analysis_summary.section_quality),
                 source_timing_warning: shell.app.jam_view.source.timing.primary_warning.clone(),
             }
         }
         None => TrustSummary {
             headline: "unknown",
-            overall_confidence: 0.0,
-            warning_count: 0,
-            timing_quality: "unknown",
-            section_quality: "unknown",
             source_timing_warning: None,
         },
     }
 }
 
 pub(super) fn source_timing_perform_risk(shell: &JamShellState) -> SourceTimingPerformRisk {
-    let Some(graph) = shell.app.source_graph.as_ref() else {
-        return SourceTimingPerformRisk::Unavailable;
-    };
-    let timing = &shell.app.jam_view.source.timing;
-
-    if source_timing_grid_confirmed(shell) {
-        return SourceTimingPerformRisk::Trusted;
+    let readiness = source_timing_consumer_readiness_for_shell(shell);
+    match readiness {
+        SourceTimingConsumerReadiness::Unavailable => SourceTimingPerformRisk::Unavailable,
+        SourceTimingConsumerReadiness::AnalyzerLocked
+        | SourceTimingConsumerReadiness::UserConfirmed => SourceTimingPerformRisk::Trusted,
+        SourceTimingConsumerReadiness::NeedsUserConfirmation
+        | SourceTimingConsumerReadiness::FallbackGrid => SourceTimingPerformRisk::Degraded,
     }
-    if matches!(timing.degraded_policy.as_str(), "disabled" | "unknown")
-        || timing.grid_use == "unavailable"
-    {
-        return SourceTimingPerformRisk::Unavailable;
-    }
-    if timing.degraded_policy == "locked"
-        && graph.analysis_summary.overall_confidence >= 0.62
-        && !matches!(
-            quality_label(&graph.analysis_summary.timing_quality),
-            "low" | "unknown"
-        )
-    {
-        return SourceTimingPerformRisk::Trusted;
-    }
-    SourceTimingPerformRisk::Degraded
 }
 
 pub(super) fn source_timing_perform_risk_line(shell: &JamShellState) -> Line<'static> {
     let risk = source_timing_perform_risk(shell);
     let (label, action, style) = match risk {
         SourceTimingPerformRisk::Trusted => (
-            "trusted",
+            risk.label(),
             "play grid".to_string(),
             style_confirmation_strong(),
         ),
         SourceTimingPerformRisk::Degraded => (
-            PERFORM_RISK_DEGRADED_LABEL,
+            risk.label(),
             source_timing_perform_risk_action_compact(shell),
             style_pending_cue(),
         ),
         SourceTimingPerformRisk::Unavailable => (
-            PERFORM_RISK_UNAVAILABLE_LABEL,
+            risk.label(),
             PERFORM_RISK_BAR_LIVE_CUE.to_string(),
             style_low_emphasis(),
         ),

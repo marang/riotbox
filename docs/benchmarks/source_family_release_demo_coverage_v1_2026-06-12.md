@@ -48,7 +48,8 @@ a structured human pass marks a sparse-bass-pressure entry `demo_ready`.
 `weak_source`. A cautious timing candidate may satisfy bad-timing candidate
 coverage, but it must not accidentally cover weak-source rejection work.
 
-`weak_source` maps to the generic demo-bank family `other`. Rejection candidates
+`weak_source` uses an explicit demo-bank family instead of the generic `other`
+bucket. Rejection candidates
 can satisfy candidate coverage for weak material, but they still need human
 verdict evidence and must stay blocked from demo-ready claims unless a
 structured human pass says the transformation is worth keeping.

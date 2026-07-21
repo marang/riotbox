@@ -38,6 +38,14 @@ SOURCE_TIMING_GRID_USE = {
     "fallback_grid",
     "unavailable",
 }
+SOURCE_TIMING_PERFORMANCE_STATES = {"trusted", "degraded", "unavailable"}
+SOURCE_TIMING_CONSUMER_REASONS = {
+    "analyzer_locked",
+    "user_confirmed",
+    "needs_user_confirmation",
+    "fallback_grid",
+    "unavailable",
+}
 SOURCE_MAP_MODES = {
     "bar grid",
     "time fallback",
@@ -224,6 +232,10 @@ def validate_source_timing(value: Any) -> None:
     if degraded_policy == "locked" and (warning is not None or warning_codes):
         raise ValueError("locked source_timing must not carry warning evidence")
     require_source_timing_primary_warning_match(warning, warning_codes)
+    validate_source_timing_performance_readiness(
+        source_timing.get("performance_readiness"),
+        grid_use,
+    )
     require_source_timing_grid_use_match(
         grid_use,
         degraded_policy,
@@ -233,6 +245,82 @@ def validate_source_timing(value: Any) -> None:
         phrase_count,
         warning_codes,
     )
+
+
+def validate_source_timing_performance_readiness(value: Any, grid_use: str) -> None:
+    readiness = require_object(value, "source_timing.performance_readiness")
+    state = require_one_of(readiness, "state", SOURCE_TIMING_PERFORMANCE_STATES)
+    reason = require_one_of(readiness, "reason", SOURCE_TIMING_CONSUMER_REASONS)
+    bar_locked_allowed = require_bool_value(
+        readiness,
+        "confident_bar_locked_output_allowed",
+    )
+    live_policy_active = require_bool_value(readiness, "live_source_policy_active")
+    generated_lanes = require_object_field(readiness, "generated_lanes_configured")
+    lane_values = [
+        require_bool_value(generated_lanes, lane)
+        for lane in ("tr909", "mc202", "w30")
+    ]
+    generated_output = require_bool_value(readiness, "generated_output_configured")
+    if generated_output != any(lane_values):
+        raise ValueError(
+            "source_timing.performance_readiness.generated_output_configured "
+            "must match generated lane configuration"
+        )
+    fallback_music = readiness.get("fallback_music_present")
+    if fallback_music is not None and not isinstance(fallback_music, bool):
+        raise TypeError(
+            "source_timing.performance_readiness.fallback_music_present "
+            "must be a boolean or null"
+        )
+    if not generated_output and fallback_music is not False:
+        raise ValueError(
+            "source_timing.performance_readiness without generated output "
+            "must prove fallback_music_present false"
+        )
+
+    expected_state = {
+        "analyzer_locked": "trusted",
+        "user_confirmed": "trusted",
+        "needs_user_confirmation": "degraded",
+        "fallback_grid": "degraded",
+        "unavailable": "unavailable",
+    }[reason]
+    if state != expected_state:
+        raise ValueError(
+            "source_timing.performance_readiness.state must match reason: "
+            f"expected {expected_state!r}, got {state!r}"
+        )
+    expected_grid_uses = {
+        "analyzer_locked": {"locked_grid"},
+        "user_confirmed": {
+            "locked_grid",
+            "short_loop_manual_confirm",
+            "manual_confirm_only",
+        },
+        "needs_user_confirmation": {
+            "short_loop_manual_confirm",
+            "manual_confirm_only",
+        },
+        "fallback_grid": {"fallback_grid"},
+        "unavailable": {"unavailable"},
+    }[reason]
+    if grid_use not in expected_grid_uses:
+        raise ValueError(
+            "source_timing.performance_readiness.reason does not match grid_use: "
+            f"{reason!r} vs {grid_use!r}"
+        )
+    expected_bar_locked = reason in {"analyzer_locked", "user_confirmed"}
+    if bar_locked_allowed != expected_bar_locked:
+        raise ValueError(
+            "source_timing.performance_readiness confident bar-locked output "
+            "must match typed consumer readiness"
+        )
+    if live_policy_active and not bar_locked_allowed:
+        raise ValueError(
+            "source_timing.performance_readiness cannot activate live source policy "
+            "without confident bar-locked output"
+        )
 
 
 def validate_source_timing_anchor_evidence(value: Any) -> None:

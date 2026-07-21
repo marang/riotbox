@@ -58,6 +58,19 @@ impl SourceTimingConsumerReadiness {
     pub const fn can_use_source_window_grid(self) -> bool {
         matches!(self, Self::AnalyzerLocked | Self::UserConfirmed)
     }
+
+    /// Musician-facing readiness for source-timed performance decisions.
+    ///
+    /// Keep the more precise consumer label as the reason in observer/QA
+    /// evidence; this coarser state is the compact TUI headline.
+    #[must_use]
+    pub const fn performance_state_label(self) -> &'static str {
+        match self {
+            Self::AnalyzerLocked | Self::UserConfirmed => "trusted",
+            Self::NeedsUserConfirmation | Self::FallbackGrid => "degraded",
+            Self::Unavailable => "unavailable",
+        }
+    }
 }
 
 #[must_use]

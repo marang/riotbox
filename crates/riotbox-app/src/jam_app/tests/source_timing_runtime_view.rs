@@ -86,6 +86,64 @@ fn source_timing_grid_revert_queues_commits_and_clears_session_truth() {
     );
 }
 
+#[test]
+fn unconfirmed_source_timing_keeps_riotbox_only_exact_runtime_mix_silent() {
+    let mut graph = sample_graph();
+    graph.timing.quality = TimingQuality::Low;
+    graph.timing.degraded_policy = TimingDegradedPolicy::ManualConfirm;
+    graph.timing.primary_hypothesis_id = Some("ambiguous-primary".into());
+    let session = SessionFile::new("session-edge", "0.1.0", "2026-07-21T00:00:00Z");
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    state.update_transport_clock(TransportClockState {
+        is_playing: true,
+        position_beats: 0.0,
+        beat_index: 0,
+        bar_index: 1,
+        phrase_index: 1,
+        current_scene: None,
+    });
+
+    let readiness = riotbox_core::view::jam::source_timing_consumer_readiness(
+        state.source_graph.as_ref(),
+        &state.session,
+    );
+    assert_eq!(
+        readiness,
+        riotbox_core::view::jam::SourceTimingConsumerReadiness::NeedsUserConfirmation
+    );
+    assert!(!readiness.can_use_source_window_grid());
+    assert_eq!(state.runtime.tr909_render.mode, Tr909RenderMode::Idle);
+    assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Idle);
+    assert_eq!(
+        state.runtime.w30_preview.routing,
+        W30PreviewRenderRouting::Silent
+    );
+
+    let plan = riotbox_audio::runtime::RuntimeMixRenderPlan {
+        transport: riotbox_audio::runtime::AudioRuntimeTimingSnapshot {
+            is_transport_running: true,
+            tempo_bpm: 128.0,
+            position_beats: 0.0,
+        },
+        tr909_render: state.runtime.tr909_render.clone(),
+        mc202_render: state.runtime.mc202_render,
+        w30_preview_render: state.runtime.w30_preview.clone(),
+        w30_resample_tap: state.runtime.w30_resample_tap.clone(),
+        source_monitor_render: riotbox_audio::runtime::SourceMonitorRenderState::control_only(
+            SourceMonitorMode::Riotbox,
+        ),
+    };
+    let output = riotbox_audio::runtime::render_runtime_mix_realtime_simulation_offline(
+        &plan, 48_000, 2, 4_800, 128,
+    );
+    let metrics = signal_metrics(&output);
+
+    assert_eq!(metrics.active_samples, 0);
+    assert_eq!(metrics.peak_abs, 0.0);
+    assert_eq!(metrics.rms, 0.0);
+    assert_eq!(metrics.clip_count, 0);
+}
+
 fn immediate_boundary() -> CommitBoundaryState {
     CommitBoundaryState {
         kind: CommitBoundary::Immediate,

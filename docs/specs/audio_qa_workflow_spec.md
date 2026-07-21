@@ -1125,6 +1125,21 @@ useful reason, and `fallback_music_present: false`. This allows
 honest refusal to satisfy the negative-family contract without forcing weak or
 untrusted material into demo music.
 
+Live negative-family evidence must resolve to a hash-bound
+`riotbox.degraded_product_review.v1`, not a generic listening-review JSON. The
+review binds the exact source, Source Graph, Session, and observer stream;
+requires the real audio callback to have run; verifies the typed performance
+state/reason, empty queue/commit history, stopped transport, source-preview-only
+monitoring, idle generated lanes, forbidden confident bar-locked policy, and
+absent fallback music; and records whether the musician found the risk state
+visible, the reason useful, and the safe next action understandable. A fixture
+calibration review never satisfies live human coverage. A completed negative
+review may omit `rendered_wav`, because manufacturing a candidate WAV would
+contradict the reviewed no-generated-output outcome. Validation must rederive
+the stored product-path proof from the bound artifacts and reject unsafe state
+in any assigned observer snapshot, rather than accepting only the final or
+highest-callback snapshot.
+
 Queue validation must reject missing source-character or strongest-element
 context, incomplete listening questions, stale verdict state, or any quality
 claim. This keeps the queue useful for human review without promoting

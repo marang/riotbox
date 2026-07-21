@@ -23,15 +23,19 @@ sparse-pressure held/destructive states without freezing the reviewed
 eight-bar QA choreography as a composition. `RIOTBOX-1403` has also separated
 fixture calibration from live readiness: live mode now starts with no eligible
 demo-bank evidence unless a real, hash-matched human review is supplied
-explicitly. The next bounded slice is `RIOTBOX-1405`, which must prove honest
-live degraded/unavailable/reject behavior for weak and bad-timing sources.
+explicitly. `RIOTBOX-1405` has now proven honest live
+degraded/unavailable handling for weak and bad-timing sources without generated
+replacement music; both negative families have a bounded human product pass,
+not a sound-quality pass. The next bounded audible slice is `RIOTBOX-1408`,
+which replaces the synthetic W-30 resample-tap proxy with source-backed audio
+through the exact live path.
 
 `P016`, `P021`, and `P022` remain subordinate to the active P023 product path.
 Offline renderers, scripted packs, fixture verdicts, reports, and validators
 remain diagnostic evidence; they do not count as instrument progress until the
 behavior lands in the live product path. Broader positive source-family
-coverage and honest negative-source handling now follow from the accepted
-dense-break baseline.
+coverage and source-backed W-30 resampling now follow from the accepted
+dense-break baseline and honest negative-source handling.
 
 ## Documentation Rules
 
