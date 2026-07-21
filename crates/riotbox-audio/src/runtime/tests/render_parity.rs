@@ -410,26 +410,26 @@ fn runtime_mix_master_bus_limiter_controls_hot_product_mix() {
 }
 
 #[test]
-fn fill_focus_is_typed_to_fill_support_and_the_drum_owned_half_bar_phase() {
+fn fill_focus_is_typed_to_fill_support_and_the_drum_owned_full_bar_phase() {
     let render = RealtimeTr909RenderState {
         mode: Tr909RenderMode::Fill,
         routing: Tr909RenderRouting::DrumBusSupport,
         source_support_profile: None,
         source_support_context: None,
         pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
-        phrase_variation: Some(Tr909PhraseVariation::PhraseDrive),
+        phrase_variation: Some(Tr909PhraseVariation::PhraseDriveHardCut),
         takeover_profile: None,
         drum_bus_level: 0.80,
         slam_enabled: false,
         slam_intensity: 0.66,
         is_transport_running: true,
         tempo_bpm: 120.0,
-        position_beats: 1.93,
+        position_beats: 0.0,
         source_bar_grid_anchor_position_beats: None,
     };
     let focus = FillFocusRenderState::from_tr909(&render);
     let frames_per_beat = 24_000;
-    let frames_to_bar_wrap = frames_per_beat * 207 / 100;
+    let frames_to_bar_wrap = frames_per_beat * 4;
 
     assert_eq!(focus.gain_at_frame(48_000, 0), 1.0);
     assert_eq!(focus.gain_at_frame(48_000, 1_680), 0.0);
@@ -437,8 +437,8 @@ fn fill_focus_is_typed_to_fill_support_and_the_drum_owned_half_bar_phase() {
         focus.gain_at_frame(48_000, frames_per_beat / 2),
         0.0
     );
-    let late_stomp_frame = frames_per_beat * 179 / 100;
-    let release_frame = frames_per_beat * 204 / 100;
+    let late_stomp_frame = frames_per_beat * 15 / 4;
+    let release_frame = frames_per_beat * 395 / 100;
     assert_eq!(focus.gain_at_frame(48_000, late_stomp_frame), 0.0);
     assert!(focus.gain_at_frame(48_000, release_frame) > 0.0);
     assert_eq!(focus.gain_at_frame(48_000, frames_to_bar_wrap), 1.0);
@@ -543,7 +543,7 @@ fn fill_focus_uses_the_same_confirmed_source_bar_phase_as_the_fill_recipe() {
         source_support_profile: None,
         source_support_context: None,
         pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
-        phrase_variation: Some(Tr909PhraseVariation::PhraseDrive),
+        phrase_variation: Some(Tr909PhraseVariation::PhraseDriveHardCut),
         takeover_profile: None,
         drum_bus_level: 0.80,
         slam_enabled: false,
@@ -580,7 +580,7 @@ fn fill_focus_envelope_is_sample_exact_across_callback_partitions() {
         source_support_profile: None,
         source_support_context: None,
         pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
-        phrase_variation: Some(Tr909PhraseVariation::PhraseDrive),
+        phrase_variation: Some(Tr909PhraseVariation::PhraseDriveHardCut),
         takeover_profile: None,
         drum_bus_level: 0.80,
         slam_enabled: false,
@@ -658,7 +658,8 @@ fn fill_focus_ducks_the_non_tr909_riotbox_bed_without_boosting_the_drum_lane() {
         frame_count,
         128,
     );
-    let pre_focus_samples = (frames_per_beat * 193 / 100) * 2;
+    let focused_first_half_start = (frames_per_beat / 4) * 2;
+    let focused_first_half_end = (frames_per_beat * 7 / 4) * 2;
     let middle_last_beat_start = (frames_per_beat * 3 + frames_per_beat / 4) * 2;
     let middle_last_beat_end = (frames_per_beat * 3 + frames_per_beat * 3 / 4) * 2;
     let focused_bed = fill_output
@@ -666,15 +667,18 @@ fn fill_focus_ducks_the_non_tr909_riotbox_bed_without_boosting_the_drum_lane() {
         .zip(&tr909_only_output)
         .map(|(full, drums)| full - drums)
         .collect::<Vec<_>>();
-    let early_delta = signal_delta_metrics(
-        &focused_bed[..pre_focus_samples],
-        &bed_control_output[..pre_focus_samples],
-    );
+    let focused_first_half =
+        signal_metrics(&focused_bed[focused_first_half_start..focused_first_half_end]);
+    let unfocused_first_half =
+        signal_metrics(&bed_control_output[focused_first_half_start..focused_first_half_end]);
     let focused = signal_metrics(&focused_bed[middle_last_beat_start..middle_last_beat_end]);
     let unfocused =
         signal_metrics(&bed_control_output[middle_last_beat_start..middle_last_beat_end]);
 
-    assert_eq!(early_delta.active_samples, 0);
+    assert!(
+        focused_first_half.rms < unfocused_first_half.rms * 0.14,
+        "non-TR909 bed was not removed from the first half: focused={focused_first_half:?} control={unfocused_first_half:?}"
+    );
     assert!(unfocused.rms > 0.01, "control bed was not audible: {unfocused:?}");
     assert!(
         focused.rms < unfocused.rms * 0.14,
@@ -756,7 +760,8 @@ fn fill_focus_blend_is_callback_size_invariant_and_time_locally_decisive() {
         .zip(&tr909_only_output)
         .map(|(full, drums)| full - drums)
         .collect::<Vec<_>>();
-    let pre_focus_samples = (frames_per_beat * 193 / 100) * 2;
+    let focused_first_half_start = (frames_per_beat / 4) * 2;
+    let focused_first_half_end = (frames_per_beat * 7 / 4) * 2;
     let middle_last_beat_start = (frames_per_beat * 3 + frames_per_beat / 4) * 2;
     let middle_last_beat_end = (frames_per_beat * 3 + frames_per_beat * 3 / 4) * 2;
     let focused_bed_and_source = realtime
@@ -769,9 +774,11 @@ fn fill_focus_blend_is_callback_size_invariant_and_time_locally_decisive() {
         .zip(&bed_source_control_output)
         .map(|(drums, bed_and_source)| drums + bed_and_source)
         .collect::<Vec<_>>();
-    let early_delta = signal_delta_metrics(
-        &focused_bed_and_source[..pre_focus_samples],
-        &bed_source_control_output[..pre_focus_samples],
+    let focused_first_half = signal_metrics(
+        &focused_bed_and_source[focused_first_half_start..focused_first_half_end],
+    );
+    let unfocused_first_half = signal_metrics(
+        &bed_source_control_output[focused_first_half_start..focused_first_half_end],
     );
     let focused =
         signal_metrics(&focused_bed_and_source[middle_last_beat_start..middle_last_beat_end]);
@@ -783,7 +790,10 @@ fn fill_focus_blend_is_callback_size_invariant_and_time_locally_decisive() {
     );
 
     assert_eq!(parity_full_source, parity_realtime_source);
-    assert_eq!(early_delta.active_samples, 0);
+    assert!(
+        focused_first_half.rms < unfocused_first_half.rms * 0.14,
+        "blend bed was not removed from the first half: focused={focused_first_half:?} control={unfocused_first_half:?}"
+    );
     assert!(unfocused.rms > 0.02, "blend control was not audible: {unfocused:?}");
     assert!(
         focused.rms < unfocused.rms * 0.14,
@@ -811,7 +821,7 @@ fn fill_focus_test_plan(
             mode: tr909_mode,
             routing: Tr909RenderRouting::DrumBusSupport,
             pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
-            phrase_variation: Some(Tr909PhraseVariation::PhraseDrive),
+            phrase_variation: Some(Tr909PhraseVariation::PhraseDriveHardCut),
             drum_bus_level: 0.12,
             slam_enabled: false,
             slam_intensity: 0.0,

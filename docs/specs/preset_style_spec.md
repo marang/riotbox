@@ -260,18 +260,24 @@ is `unassigned`.
 ### 12.2 Feral Break Alpha v2
 
 `feral_break_alpha_v2`, displayed as `Feral Break Alpha v2`, retains the v1
-lane roles and control defaults but tightens one performer-owned contract:
-while this preset is active, a committed TR-909 Fill uses the typed
+lane roles but tightens three performer-owned contracts. Activation selects
+`Riotbox` monitoring so the promoted W-30 source hook owns the performance path
+without an out-of-phase raw-source double; `Source` and `Blend` remain explicit
+monitor A/B choices. It also selects typed `BreakReinforce` readiness so the
+documented `s` and `f` gestures do not depend on an undisclosed preparation
+action. While this preset is active, a committed TR-909 Fill uses the typed
 `PhraseDriveHardCut` variation after any explicit active Scene-movement
 override.
 That keeps the advertised destructive `f` gesture on
 `PhraseDriveBreakCutStompV2` even when the ambient transport phrase cycle would
 otherwise choose a polite Lift variation.
 
-This override applies only to the committed Fill window. It does not alter
-non-Fill playback, invent source material or a pattern, bypass queue/commit, or
-claim source-derived composition. V1 remains a historical replay/control
-identity and is not silently redefined.
+The Fill override applies only to the committed Fill window. The monitor and
+reinforcement defaults are materialized through the existing preset action and
+Session state; they do not invent source material or a pattern, bypass
+queue/commit, or claim source-derived composition. V1 remains a historical
+replay/control identity and its Blend / SourceSupport / V1 FillFocus behavior is
+not silently redefined.
 
 ---
 

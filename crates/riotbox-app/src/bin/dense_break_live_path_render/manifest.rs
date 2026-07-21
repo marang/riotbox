@@ -293,7 +293,7 @@ pub fn write_pack(
         || click_like_boundary
     {
         failures.push(format!(
-            "{} -> {} exact Blend boundary was click-like: step {:.6}, local p99 {:.6}, local ratio {:.3}, attack rms {:.6}, attack ratio {:.3}",
+            "{} -> {} exact RuntimeMix boundary was click-like: step {:.6}, local p99 {:.6}, local ratio {:.3}, attack rms {:.6}, attack ratio {:.3}",
             fill_stage.case_id,
             fill_followup_stage.case_id,
             fill_exit_boundary.boundary_step,
@@ -306,7 +306,7 @@ pub fn write_pack(
     let fill_exit_boundary_manifest = json!({
         "from_case_id": fill_stage.case_id,
         "to_case_id": fill_followup_stage.case_id,
-        "expected_role": "fill_release_to_break_slam_downbeat",
+        "expected_role": "fill_release_to_scene_contrast_downbeat",
         "exact_runtime_mix_sequence": true,
         "window_ms": FILL_EXIT_BOUNDARY_WINDOW_MS,
         "window_frames": fill_exit_boundary.window_frames,
@@ -453,6 +453,10 @@ pub fn write_pack(
             "status": "committed",
             "boundary": boundary_label(transition.boundary),
             "action_id": transition.action_id,
+            "companion_actions": transition.companion_actions.iter().map(|action| json!({
+                "command": action.command.as_str(),
+                "action_id": action.action_id,
+            })).collect::<Vec<_>>(),
             "commit_boundary": {
                 "beat_cursor": transition.commit_boundary.beat_index,
                 "bar_index": transition.commit_boundary.bar_index,
@@ -679,7 +683,7 @@ pub fn write_pack(
             "runtime_mix.source_monitor.blend_fill_focus",
         ],
         "affected_artifacts": fill_affected_artifacts,
-        "musician_message": "The committed live Fill uses fixed versioned TR-909 instrument vocabulary and applies its recipe-owned focus hole to the non-TR-909 bed and Blend source. Source evidence gates and times the gesture and modulates its drum level and slam pressure, but it does not select or compose the fixed recipe; this is source-responsive rendering, not source-derived recipe intelligence or musical-quality proof.",
+        "musician_message": "The committed live Fill uses fixed versioned TR-909 instrument vocabulary and applies its recipe-owned focus to the non-TR-909 bed, plus the monitored source only when Blend is explicitly selected. Source evidence gates and times the gesture and modulates its drum level and slam pressure, but it does not select or compose the fixed recipe; this is source-responsive rendering, not source-derived recipe intelligence or musical-quality proof.",
     });
     let mut manifest = json!({
         "schema_version": LISTENING_MANIFEST_SCHEMA_VERSION,
@@ -776,7 +780,6 @@ pub fn write_pack(
             "launched_source_section": prepared.scene_transition_proof.launched_source_section.as_deref(),
             "launch_mc202_stayed_out_for_section_mismatch": prepared.scene_transition_proof.launch_mc202_stayed_out_for_section_mismatch,
             "restore_audio_projection_matches_pre_jump": prepared.scene_transition_proof.restore_audio_projection_matches_pre_jump,
-            "restore_lane_projection_matches_pre_jump": prepared.scene_transition_proof.restore_lane_projection_matches_pre_jump,
             "launch_changed_scene": prepared.scene_transition_proof.pre_jump_scene != prepared.scene_transition_proof.launched_scene,
             "launch_anchor_matches_expected": anchors_match(
                 prepared.scene_transition_proof.launched_anchor_seconds,
@@ -816,6 +819,23 @@ pub fn write_pack(
         "artifacts": artifacts,
         "failures": failures,
     });
+    manifest["scene_transition_proof"]["return_damage_action_id"] =
+        json!(prepared.scene_transition_proof.return_damage_action_id);
+    manifest["scene_transition_proof"]["restore_only_lane_projection_matches_pre_jump"] = json!(
+        prepared
+            .scene_transition_proof
+            .restore_only_lane_projection_matches_pre_jump
+    );
+    manifest["scene_transition_proof"]["changed_return_w30_differs_from_restore_only"] = json!(
+        prepared
+            .scene_transition_proof
+            .changed_return_w30_differs_from_restore_only
+    );
+    manifest["scene_transition_proof"]["changed_return_non_w30_projection_matches_restore_only"] = json!(
+        prepared
+            .scene_transition_proof
+            .changed_return_non_w30_projection_matches_restore_only
+    );
     manifest["pattern_provenance"] = pattern_provenance;
     manifest["primitive_renderer_boundary"] = primitive_renderer_boundary;
     manifest["fill_exit_boundary_proof"] = fill_exit_boundary_manifest;
@@ -827,8 +847,10 @@ pub fn write_pack(
         "activation_action_id": prepared.preset_action_id,
         "w30_role": preset_definition.w30_role.label(),
         "tr909_role": preset_definition.tr909_role.label(),
+        "tr909_reinforcement_mode": preset_definition.tr909_reinforcement_mode.label(),
         "mc202_role": preset_definition.mc202_role.label(),
         "bass_ownership_policy": preset_definition.bass_ownership.label(),
+        "source_monitor_mode": preset_definition.source_monitor_mode.as_str(),
         "actual_bass_owner": prepared.live_policy.bass_owner.label(),
     });
     manifest["feral_break_alpha_arc"] = alpha_evidence.arc;

@@ -164,10 +164,12 @@ fn apply_probe_key(
                     immediate_committed = shell
                         .app
                         .commit_ready_actions(boundary.clone(), timestamp_ms);
-                    require_source_monitor_immediate_commit(
+                    require_immediate_commit(
                         shell,
                         &immediate_committed,
                         &boundary,
+                        ActionCommand::SourceMonitorSetMode,
+                        "source monitor mode",
                     )?;
                     shell.set_error_status(format!(
                         "monitor {} landed | route {}",
@@ -180,6 +182,31 @@ fn apply_probe_key(
                 }
                 riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
                     shell.set_error_status(format!("monitor already {mode}"));
+                }
+            }
+        }
+        ShellKeyOutcome::QueuePerformancePreset(preset_id) => {
+            match shell.app.queue_performance_preset(preset_id, timestamp_ms) {
+                riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                    let transport = shell.app.runtime.transport.clone();
+                    let boundary = transport.boundary_state(CommitBoundary::Immediate);
+                    immediate_committed = shell
+                        .app
+                        .commit_ready_actions(boundary.clone(), timestamp_ms);
+                    require_immediate_commit(
+                        shell,
+                        &immediate_committed,
+                        &boundary,
+                        ActionCommand::PresetActivate,
+                        "performance preset",
+                    )?;
+                    shell.set_error_status(format!("{} landed", preset_id.label()));
+                }
+                riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                    shell.set_error_status("performance preset already queued");
+                }
+                riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                    shell.set_error_status(format!("{} already active", preset_id.label()));
                 }
             }
         }
@@ -363,6 +390,20 @@ fn apply_probe_key(
                 None => shell.set_error_status("no committed W-30 pad available to trigger"),
             }
         }
+        ShellKeyOutcome::QueueW30ApplyDamageProfile => {
+            match shell.app.queue_w30_apply_damage_profile(timestamp_ms) {
+                Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
+                    shell.set_error_status("queued W-30 damage for next bar");
+                }
+                Some(riotbox_app::jam_app::QueueControlResult::AlreadyPending) => {
+                    shell.set_error_status("W-30 damage already queued");
+                }
+                Some(riotbox_app::jam_app::QueueControlResult::AlreadyInState) => {
+                    shell.set_error_status("W-30 damage already in state");
+                }
+                None => shell.set_error_status("no committed W-30 pad available to damage"),
+            }
+        }
         ShellKeyOutcome::RaiseMc202Touch => {
             let touch = shell.app.adjust_mc202_touch(0.08);
             shell.set_error_status(format!("MC-202 touch {touch:.2}"));
@@ -459,16 +500,18 @@ fn apply_probe_key(
     Ok(())
 }
 
-fn require_source_monitor_immediate_commit(
+fn require_immediate_commit(
     shell: &JamShellState,
     committed: &[CommittedActionRef],
     expected_boundary: &CommitBoundaryState,
+    expected_command: ActionCommand,
+    label: &str,
 ) -> io::Result<()> {
     let [committed] = committed else {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
             format!(
-                "source monitor mode key must commit exactly one action immediately, got {}",
+                "{label} key must commit exactly one action immediately, got {}",
                 committed.len()
             ),
         ));
@@ -479,7 +522,7 @@ fn require_source_monitor_immediate_commit(
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
             format!(
-                "source monitor mode key committed at {:?}, expected current-clock {:?}",
+                "{label} key committed at {:?}, expected current-clock {:?}",
                 committed.boundary, expected_boundary
             ),
         ));
@@ -492,12 +535,11 @@ fn require_source_monitor_immediate_commit(
         .iter()
         .find(|action| action.id == committed.action_id)
         .map(|action| action.command);
-    if command != Some(ActionCommand::SourceMonitorSetMode) {
+    if command != Some(expected_command) {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
             format!(
-                "source monitor mode key committed unexpected action {:?}",
-                command
+                "{label} key committed unexpected action {command:?}, expected {expected_command:?}",
             ),
         ));
     }

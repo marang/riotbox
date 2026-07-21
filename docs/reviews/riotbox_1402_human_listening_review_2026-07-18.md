@@ -109,3 +109,137 @@ remaining check should verify the gesture/mixer arc and intentional
 quit/restart/recall/trigger behavior without using this offline render as a
 substitute. The next playback request must identify the exact live candidate,
 state the intended role, and wait for fresh listener readiness.
+
+## Exact-Path Assignment Correction
+
+On 2026-07-21 the exact diagnostic path was corrected after Markus described
+the Fill sequence as an unharmonic, pasted-on composite. The old candidate had
+three assignment defects: raw Source and the promoted W-30 capture were doubled
+from different source phases, QA silently prepared TR-909 outside the documented
+musician recipe, and the executable gesture order was `w -> f -> s` while the
+Alpha recipe promised `w -> s -> f`.
+
+Feral Break Alpha v2 now starts its performance candidate in `Riotbox` monitor
+mode with typed `BreakReinforce` readiness. The exact path is
+`w -> s -> f -> y -> Y+D`. The changed return separately proves that Scene
+restore recovers the pre-jump projection and that the same-boundary W-30 damage
+action, not unrelated lane drift, creates the additional audible change.
+
+Technical evidence is green for the generated 132 BPM source and for real
+Beat03. A real-source matrix across Beat03, Beat08, Beat20, and DH BeatC passes
+without clipping or limiter activity; its maximum normalized W-30 hook-envelope
+correlation is `0.494912`. These are diagnostic anti-collapse and attribution
+proofs, not a human musical pass. The corrected candidate remained
+`human_verdict: unverified` until the fresh bounded playback recorded below.
+
+## Branch Review And Final Technical Gate
+
+The branch-level Rust review found and fixed four correctness issues before the
+final listening request: V2 had rewritten the historical V1 Fill focus, the
+observer exercised a different gesture order than the exact renderer, adding
+changed-return attribution exposed a main-thread stack overflow from large
+inline render plans, and the observer/audio reuse gate imposed a generated
+132-BPM fixture constant on real-source manifests. V1/V2 focus is now versioned,
+the observer and renderer both execute `w -> s -> f -> y -> Y+D`, transition
+plans are boxed, and reused manifests validate against their stored timing
+identity.
+
+The final technical gates pass: workspace tests, formatting, Clippy with denied
+warnings, the complete audio-QA suite, generated exact smoke, Beat03
+observer/audio correlation, and the four-source exact matrix. Every matrix Fill
+peaks at `0.916060` before the clean-path `0.92` threshold with zero limiter
+samples. `live_flow.rs` and `manifest.rs` remain above the module-policy size
+guidance, but they already own distinct exact-path orchestration and manifest
+validation concerns; a mechanical split during this audible behavior correction
+would increase review risk and is not required for this slice.
+
+## Exact Callback-Render Human Pass
+
+On 2026-07-21 Markus reviewed the bounded final Beat03 performance sequence
+through the configured PipeWire output:
+
+- Artifact: `gestures/06_live_sequence.wav`
+- Duration: `9.210417` seconds
+- SHA-256:
+  `e55b010cad7e080a6eaba53a85109b650be462c9540e95e1b2b858b1bbc2ccb8`
+- Source SHA-256:
+  `e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a`
+- Exact gesture arc: `w -> s -> f -> y -> Y+D`
+- Monitor path: `Riotbox`; no raw Source layer
+- Typed bass owner: `unassigned`; bass pressure was not a review target
+
+The structured review is stored locally at
+`artifacts/audio_qa/local/listening-reviews/RIOTBOX-1402-e55b010c/` and validates
+as `riotbox.listening_review.v1` with:
+
+- `human_verdict: keep`
+- strongest element: `silence`, representing the praised breaks and pauses
+- source recognition: `source_transformed_but_present`
+- hook after two bars: `clear`
+
+Reviewer wording: "gelungen, hat mir echt gefallen, gute breaks, gute pausen,
+hat auch alles zusammengepasst und es war nicht zu viel. eine gewisse
+aggressivitaet war auch zu hoeren, wir sind am richtigen weg". Markus then
+explicitly confirmed the formal `keep` verdict, that the source was "deutlich
+transformiert, aber noch vorhanden", and that the hook was already present
+within the first two bars.
+
+This is a musician-facing pass for this exact callback-render hash. It freezes
+the accepted sound and permits it to remain a demo-ready candidate. It does not
+substitute for the remaining exact interactive TUI/device-path gesture,
+restart, recall, and trigger verification; that product-path boundary must be
+closed without changing the accepted render unless a correctness defect is
+found.
+
+## Interactive A/B Timing Rejection
+
+Two subsequent real PipeWire/TUI takes used the correct source, preset, command
+order, and Riotbox-only monitor path. Markus judged each take "passabel", then
+heard no meaningful difference in a direct A-then-B comparison: "merklich kein
+unterschied". Technical analysis confirms that this was not useful sound
+variation: the captured source window and MC-202 selection were identical,
+both renders measured `-18.6 LUFS` and `-0.3 dBTP`, and their band deltas stayed
+below `0.03 dB`.
+
+More importantly, both takes missed the declared arrangement timing in the
+same way. Observer truth for each was:
+
+- hook: `8` beats
+- slam: `9` beats instead of `8`
+- Fill: `8` beats instead of `4`
+- Scene: `4` beats
+- return before stop: `5.764713` beats instead of `8`
+
+The cause was wall-clock input scheduling after a quantized boundary, not an
+accepted-sound defect. The local observer streams are
+`artifacts/audio_qa/local/user-session/RIOTBOX-1402-exact-live-a/events.ndjson`
+and `RIOTBOX-1402-exact-live-b/events.ndjson`; both are correctly rejected by
+`scripts/validate_feral_break_live_review_timing.py`.
+
+These takes therefore do not close the exact interactive musical gate and do
+not weaken or replace the callback-render `keep` verdict above. Future live
+review takes must validate the landed `8 -> 8 -> 4 -> 4 -> 8` observer arc and
+explicit stop before playback readiness is requested.
+
+## Exact Live Timing Closeout
+
+The final real PipeWire/TUI run landed committed beats
+`22 -> 30 -> 38 -> 42 -> 46` and stopped at transport position
+`53.823536`. The dedicated validator accepts this as
+`8 -> 8 -> 4 -> 4 -> 7.823536`, inside the declared quarter-beat stop
+tolerance. Its observer stream is
+`artifacts/audio_qa/local/user-session/RIOTBOX-1402-exact-live-timing-v4/events.ndjson`
+and validates independently as `riotbox.user_session_observer.v1`.
+
+No new musical verdict is recorded. The live sound recipe was intentionally
+unchanged across these timing runs, and Markus reported that the recent
+examples all sounded the same and that he no longer had a useful opinion about
+them. This is listener-fatigue evidence and a QA-process stop signal, not a
+negative verdict. The callback-render `keep` remains bound to its exact hash.
+
+The concurrent sink-monitor WAV is excluded from listening evidence: its raw
+capture measured approximately `-3.90 dBFS RMS`, reached digital full scale,
+and reported an invalid positive true peak, so it is not a trustworthy isolated
+Riotbox artifact. The valid closeout evidence here is the exact interactive
+action/commit/stop path plus the earlier artifact-bound callback listening
+pass; no further same-recipe playback is warranted.

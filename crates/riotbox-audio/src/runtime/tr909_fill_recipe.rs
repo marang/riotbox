@@ -71,6 +71,7 @@ pub(super) struct Tr909FillFocusProfile {
 struct Tr909FillRecipe {
     steps: [Tr909FillStep; 32],
     focus: Tr909FillFocusProfile,
+    output_gain: f32,
 }
 
 pub(super) const BASE_FILL_FOCUS: Tr909FillFocusProfile = Tr909FillFocusProfile {
@@ -106,15 +107,27 @@ const LONG_CHOKE_DIVE_STOMP_FOCUS: Tr909FillFocusProfile = Tr909FillFocusProfile
     ..BASE_FILL_FOCUS
 };
 
-const BREAK_CUT_STOMP_FOCUS: Tr909FillFocusProfile = Tr909FillFocusProfile {
-    // This is a half-bar arrangement takeover, not another short closing pocket. The non-TR-909
-    // bed reaches silence on beat three and stays absent until the late stomp has spoken.
+const BREAK_CUT_STOMP_V1_FOCUS: Tr909FillFocusProfile = Tr909FillFocusProfile {
+    // Frozen historical review control: the V1 recipe keeps its original half-bar takeover.
+    bar_beats: 4.0,
     start_beat: 1.93,
     attack_beats: 0.07,
     release_start_beat: 3.90,
     min_gain: 0.0,
     signature_hole: None,
-    ..BASE_FILL_FOCUS
+};
+
+const BREAK_CUT_STOMP_V2_FOCUS: Tr909FillFocusProfile = Tr909FillFocusProfile {
+    // The committed break-cut gesture owns its whole bar. Letting the promoted W-30 hook run
+    // beneath the first half made the fixed drum call sound pasted onto unrelated source pitch
+    // and could overload the exact Riotbox-only mix. A short beat-domain fade preserves a
+    // click-free boundary while making the role hand-off immediate and unmistakable.
+    bar_beats: 4.0,
+    start_beat: 0.0,
+    attack_beats: 0.07,
+    release_start_beat: 3.90,
+    min_gain: 0.0,
+    signature_hole: None,
 };
 
 const fn phrase_drive_common_steps() -> [Tr909FillStep; 32] {
@@ -209,26 +222,34 @@ const LONG_CHOKE_STOMP_TRIGGER: Tr909FillVoiceTrigger = Tr909FillVoiceTrigger::n
 const PHRASE_DRIVE_ACCENT_GHOST_V1: Tr909FillRecipe = Tr909FillRecipe {
     steps: phrase_drive_accent_ghost_steps(),
     focus: BASE_FILL_FOCUS,
+    output_gain: 1.0,
 };
 
 const PHRASE_DRIVE_CHOKE_DIVE_STOMP_V1: Tr909FillRecipe = Tr909FillRecipe {
     steps: phrase_drive_choke_dive_stomp_steps(),
     focus: CHOKE_DIVE_STOMP_FOCUS,
+    output_gain: 1.0,
 };
 
 const PHRASE_DRIVE_LONG_CHOKE_DIVE_STOMP_V2: Tr909FillRecipe = Tr909FillRecipe {
     steps: phrase_drive_long_choke_dive_stomp_steps(),
     focus: LONG_CHOKE_DIVE_STOMP_FOCUS,
+    output_gain: 1.0,
 };
 
 const PHRASE_DRIVE_BREAK_CUT_STOMP_V1: Tr909FillRecipe = Tr909FillRecipe {
     steps: phrase_drive_break_cut_stomp_steps(),
-    focus: BREAK_CUT_STOMP_FOCUS,
+    focus: BREAK_CUT_STOMP_V1_FOCUS,
+    output_gain: 1.0,
 };
 
 const PHRASE_DRIVE_BREAK_CUT_STOMP_V2: Tr909FillRecipe = Tr909FillRecipe {
     steps: phrase_drive_break_cut_stomp_v2_steps(),
-    focus: BREAK_CUT_STOMP_FOCUS,
+    focus: BREAK_CUT_STOMP_V2_FOCUS,
+    // The late combined kick/snare stomp owns enough recipe-local trim to stay below the 0.92
+    // clean-path limiter threshold across the exact source matrix without weakening every Fill
+    // or relying on the master limiter.
+    output_gain: 0.765,
 };
 
 fn selected_phrase_drive_recipe(render: &RealtimeTr909RenderState) -> &'static Tr909FillRecipe {
@@ -258,6 +279,10 @@ pub(super) fn fill_focus_profile(render: &RealtimeTr909RenderState) -> Tr909Fill
     } else {
         BASE_FILL_FOCUS
     }
+}
+
+pub(super) fn fill_output_gain(render: &RealtimeTr909RenderState) -> f32 {
+    selected_phrase_drive_recipe(render).output_gain
 }
 
 /// Project an absolute Session transport position onto the confirmed source-bar phase.
@@ -536,11 +561,32 @@ mod tests {
 
         assert_eq!(fill_focus_profile(&accent_ghost), BASE_FILL_FOCUS);
         let profile = fill_focus_profile(&break_cut_stomp);
-        assert_eq!(profile.start_beat, 1.93);
+        assert_eq!(profile.start_beat, 0.0);
         assert_eq!(profile.attack_beats, 0.07);
         assert_eq!(profile.release_start_beat, 3.90);
         assert_eq!(profile.min_gain, 0.0);
         assert_eq!(profile.signature_hole, None);
+    }
+
+    #[test]
+    fn hard_cut_recipe_owns_its_exact_mix_output_trim() {
+        let generic = phrase_drive_render(Tr909PatternAdoption::SupportPulse);
+        let hard_cut = phrase_drive_hard_cut_render();
+
+        assert_eq!(fill_output_gain(&generic), 1.0);
+        assert_eq!(fill_output_gain(&hard_cut), 0.765);
+    }
+
+    #[test]
+    fn historical_break_cut_focus_is_not_rewritten_by_v2() {
+        let mut historical = phrase_drive_render(Tr909PatternAdoption::MainlineDrive);
+        historical.phrase_variation = Some(Tr909PhraseVariation::PhraseDrive);
+        let current = phrase_drive_hard_cut_render();
+
+        assert_eq!(fill_focus_profile(&historical), BREAK_CUT_STOMP_V1_FOCUS);
+        assert_eq!(fill_output_gain(&historical), 1.0);
+        assert_eq!(fill_focus_profile(&current), BREAK_CUT_STOMP_V2_FOCUS);
+        assert_eq!(fill_output_gain(&current), 0.765);
     }
 
     #[test]

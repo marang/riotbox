@@ -15,6 +15,10 @@ This document defines how Riotbox should validate audio-producing behavior in a 
 - reproducible
 - usable both in CI and by a human operator
 
+For the difference between an observed metric, a QA threshold, a runtime safety
+boundary, and a musical/DSP parameter, see
+[`audio_numeric_values.md`](../engineering/audio_numeric_values.md).
+
 It exists so the project does not drift into either of these failure modes:
 
 - "tests pass, but the output is musically useless"
@@ -339,6 +343,9 @@ Minimum gates:
   when one exists, including source id, start/end seconds, duration, and frame
   bounds, so capture-length and boundary QA can correlate the visible `cap`
   preview with the committed source-window provenance.
+- gates that reuse an existing source-backed render or manifest must validate
+  it with that artifact's stored timing identity. Generated-fixture BPM, sample
+  rate, source, or anchor constants must not be imposed on real-source evidence.
 
 ### 3.2.2 Multi-source showcase diversity gates
 
@@ -1223,6 +1230,15 @@ Source monitor, internal resample taps, support lanes, diagnostic voices, and
 stopped manual previews must be silent unless the brief names them as part of a
 composite. Internal routing does not make a callback voice inaudible.
 
+Exact Golden Path renderers must execute the same documented preparation and
+gesture sequence available to the musician. A lane mode, source-evidence
+decision, pattern, monitor route, or other prerequisite may not be queued only
+inside QA. Required preparation must be visible in the recipe/UI and resolved
+through its real committed action. When a preset promotes a captured source
+hook, its candidate render uses the preset-declared monitor route; raw Source or
+Blend playback is reserved for explicitly labeled A/B evidence and must not
+silently double the promoted hook from another source phase.
+
 Human playback is bounded by default. Use at most 10 seconds for a normal
 candidate and 2-5 seconds for an isolated capture or stem when that is
 sufficient for the requested judgment. A longer window is permitted only for a
@@ -1231,6 +1247,25 @@ and why it is necessary. A repeating live instrument state is not itself a
 bounded review artifact: the operator must schedule an explicit audible stop at
 the announced endpoint, verify that all active lanes are silent, and terminate
 the runtime immediately if transport stop does not silence them.
+
+Multi-stage live review timing must be derived from committed observer beats,
+not assumed from wall-clock automation. Queue each action with enough lead time
+for its intended quantized boundary, then validate the landed stage intervals
+and final transport-stop position before asking a human to listen. A missed
+beat/bar boundary invalidates that take for the declared arrangement comparison
+even if its command order and sound recipe are correct. The Feral Break Alpha
+live review contract uses
+`scripts/validate_feral_break_live_review_timing.py` to prove the committed
+`8 -> 8 -> 4 -> 4 -> 8` beat arc. A verdict from another duration or stage arc
+must remain bound to its original artifact and cannot be transferred.
+
+Observer, transport, capture, and quantization corrections that intentionally
+leave the sound recipe unchanged are technical QA, not automatically a new
+human listening task. Use the mechanical evidence unless exact-artifact
+preflight identifies a material audible question. If repeated candidates are
+perceptually indistinguishable, stop requesting comparisons; do not convert
+listener fatigue or "no opinion" into a negative verdict, and do not overwrite
+an existing hash-bound review.
 
 Structured listening review records the human layer as explicit artifact data,
 not chat memory and not CI-only truth. For audio-producing slices, the local
@@ -1708,7 +1743,8 @@ Today the repo already has:
 - a CI-safe generated W-30 source-vs-control smoke that uses deterministic synthetic source material, checks minimum source-vs-control deltas, validates the generated listening manifest, and runs under `just audio-qa-ci`; existing command names may still say `source-vs-fallback` for compatibility, but the baseline is diagnostic control only
 - a CI-safe first-playable Jam probe, `just first-playable-jam-probe`, that
   checks a generated app-level observer journey for
-  `source -> capture -> audition -> promote -> blend -> w/f/s/y -> Y restore`
+  `source -> capture -> audition -> promote -> preset/role preparation ->
+  w/s/f/y -> Y+D changed return`
   alongside the exact callback-block RuntimeMix dense-break pack; correlation
   is explicitly limited to the typed action contract because source fixture,
   Session, and transport timeline differ. The pack proves

@@ -164,66 +164,74 @@ fn writes_first_playable_jam_observer_stream() {
         ("c", "queue_capture_bar"),
         ("o", "queue_w30_audition"),
         ("p", "promote_last_capture"),
-        ("M", "queue_source_monitor_mode"),
+        ("F", "queue_performance_preset"),
+        ("P", "queue_mc202_generate_pressure"),
         ("w", "queue_w30_trigger_pad"),
-        ("f", "queue_tr909_fill"),
         ("s", "queue_tr909_slam"),
+        ("f", "queue_tr909_fill"),
         ("y", "queue_scene_select"),
         ("Y", "queue_scene_restore"),
+        ("D", "queue_w30_apply_damage_profile"),
     ] {
         assert_eq!(key_outcome(&parsed, key)["outcome"], outcome);
     }
 
-    let monitor_key = key_outcome(&parsed, "M");
+    let preset_key = key_outcome(&parsed, "F");
     assert_eq!(
-        monitor_key["snapshot"]["runtime"]["source_monitor_mode"],
-        "blend"
+        preset_key["snapshot"]["runtime"]["source_monitor_mode"],
+        "riotbox"
     );
     assert_eq!(
-        monitor_key["snapshot"]["runtime"]["source_monitor_audio_route"],
-        "blend"
+        preset_key["snapshot"]["runtime"]["source_monitor_audio_route"],
+        "riotbox_only"
     );
-    assert_eq!(monitor_key["snapshot"]["queue"]["pending_count"], 0);
-    assert_eq!(monitor_key["snapshot"]["transport"]["beat_index"], 20);
-    assert_eq!(monitor_key["snapshot"]["transport"]["bar_index"], 6);
-    assert_eq!(monitor_key["snapshot"]["transport"]["phrase_index"], 2);
     assert_eq!(
-        monitor_key["snapshot"]["transport"]["current_scene"],
+        preset_key["snapshot"]["style"]["active_preset"],
+        "feral_break_alpha_v2"
+    );
+    assert_eq!(preset_key["snapshot"]["queue"]["pending_count"], 0);
+    assert_eq!(preset_key["snapshot"]["transport"]["beat_index"], 20);
+    assert_eq!(preset_key["snapshot"]["transport"]["bar_index"], 6);
+    assert_eq!(preset_key["snapshot"]["transport"]["phrase_index"], 2);
+    assert_eq!(
+        preset_key["snapshot"]["transport"]["current_scene"],
         "scene-01-break"
     );
 
-    let (monitor_commit, monitor_ref) =
-        committed_command(&parsed, "source_monitor.set_mode", "Immediate");
-    assert_eq!(monitor_commit["timestamp_ms"], 650);
+    let (preset_commit, preset_ref) = committed_command(&parsed, "preset.activate", "Immediate");
+    assert_eq!(preset_commit["timestamp_ms"], 650);
     assert_eq!(
-        monitor_commit["committed"]
+        preset_commit["committed"]
             .as_array()
-            .expect("monitor refs")
+            .expect("preset refs")
             .len(),
         1
     );
-    assert_commit_position(monitor_ref, 20, 6, 2);
+    assert_commit_position(preset_ref, 20, 6, 2);
+
+    let (_, pressure_ref) = committed_command(&parsed, "mc202.generate_pressure", "Phrase");
+    assert_commit_position(pressure_ref, 32, 9, 3);
 
     let (w30_commit, w30_ref) = committed_command(&parsed, "w30.trigger_pad", "Beat");
-    assert_commit_position(w30_ref, 21, 6, 2);
+    assert_commit_position(w30_ref, 33, 9, 3);
     assert_eq!(
         w30_commit["snapshot"]["runtime"]["w30_preview_target"],
         "bank-a / pad-01 | cap-01"
     );
 
+    let (_, slam_ref) = committed_command(&parsed, "tr909.set_slam", "Beat");
+    assert_commit_position(slam_ref, 36, 10, 3);
+
     let (fill_commit, fill_ref) = committed_command(&parsed, "tr909.fill_next", "Bar");
-    assert_commit_position(fill_ref, 24, 7, 2);
+    assert_commit_position(fill_ref, 40, 11, 3);
     assert_eq!(fill_commit["snapshot"]["runtime"]["tr909_mode"], "fill");
     assert_eq!(
         fill_commit["snapshot"]["runtime"]["tr909_routing"],
         "drum_bus_support"
     );
 
-    let (_, slam_ref) = committed_command(&parsed, "tr909.set_slam", "Beat");
-    assert_commit_position(slam_ref, 25, 7, 2);
-
     let (scene_commit, scene_ref) = committed_command(&parsed, "scene.launch", "Bar");
-    assert_commit_position(scene_ref, 36, 10, 3);
+    assert_commit_position(scene_ref, 44, 12, 3);
     assert_eq!(
         scene_commit["snapshot"]["scene"]["active_scene"],
         "scene-02-drop"
@@ -242,8 +250,8 @@ fn writes_first_playable_jam_observer_stream() {
     );
 
     let (restore_commit, restore_ref) = committed_command(&parsed, "scene.restore", "Bar");
-    assert_commit_position_for_scene(restore_ref, 40, 11, 3, "scene-02-drop");
-    assert_eq!(restore_commit["timestamp_ms"], 1_600);
+    assert_commit_position_for_scene(restore_ref, 48, 13, 4, "scene-02-drop");
+    assert_eq!(restore_commit["timestamp_ms"], 1_800);
     assert_eq!(
         restore_commit["snapshot"]["scene"]["active_scene"],
         "scene-01-break"
@@ -260,6 +268,8 @@ fn writes_first_playable_jam_observer_stream() {
         restore_commit["snapshot"]["scene"]["last_movement"]["to_scene"],
         "scene-01-break"
     );
+    let (_, damage_ref) = committed_command(&parsed, "w30.apply_damage_profile", "Bar");
+    assert_commit_position_for_scene(damage_ref, 48, 13, 4, "scene-02-drop");
 
     let committed_beats = parsed
         .iter()
@@ -272,7 +282,10 @@ fn writes_first_playable_jam_observer_stream() {
                 .map(|committed| committed["beat_index"].as_u64().expect("commit beat"))
         })
         .collect::<Vec<_>>();
-    assert_eq!(committed_beats, [16, 20, 20, 20, 21, 24, 25, 36, 40]);
+    assert_eq!(
+        committed_beats,
+        [16, 20, 20, 20, 32, 33, 36, 40, 44, 48, 48]
+    );
     assert!(committed_beats.windows(2).all(|pair| pair[0] <= pair[1]));
     let committed_scenes = parsed
         .iter()
@@ -291,27 +304,29 @@ fn writes_first_playable_jam_observer_stream() {
             "scene-01-break",
             "scene-01-break",
             "scene-01-break",
+            "scene-01-break",
+            "scene-02-drop",
             "scene-02-drop",
         ]
     );
 
     let final_snapshot = &parsed.last().expect("final event")["snapshot"];
     assert_eq!(final_snapshot["queue"]["pending_count"], 0);
-    assert_eq!(final_snapshot["queue"]["session_log_count"], 9);
+    assert_eq!(final_snapshot["queue"]["session_log_count"], 11);
     assert_eq!(
         final_snapshot["capture"]["source_window"]["source_id"],
         "src-first-playable-jam"
     );
-    assert_eq!(final_snapshot["transport"]["beat_index"], 40);
-    assert_eq!(final_snapshot["transport"]["bar_index"], 11);
-    assert_eq!(final_snapshot["transport"]["phrase_index"], 3);
+    assert_eq!(final_snapshot["transport"]["beat_index"], 48);
+    assert_eq!(final_snapshot["transport"]["bar_index"], 13);
+    assert_eq!(final_snapshot["transport"]["phrase_index"], 4);
     assert_eq!(
         final_snapshot["transport"]["current_scene"],
         "scene-01-break"
     );
 
-    assert_eq!(events.matches(r#""boundary":"Phrase""#).count(), 1);
-    assert_eq!(events.matches(r#""boundary":"Bar""#).count(), 5);
+    assert_eq!(events.matches(r#""boundary":"Phrase""#).count(), 2);
+    assert_eq!(events.matches(r#""boundary":"Bar""#).count(), 6);
     assert_eq!(events.matches(r#""boundary":"Beat""#).count(), 2);
     assert_eq!(events.matches(r#""boundary":"Immediate""#).count(), 1);
 }

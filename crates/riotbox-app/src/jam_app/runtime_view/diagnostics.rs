@@ -11,7 +11,7 @@ use riotbox_audio::{
         W30ResampleTapRouting, W30ResampleTapState,
     },
 };
-use riotbox_core::{action::SourceMonitorMode, session::SessionFile};
+use riotbox_core::{action::SourceMonitorMode, session::SessionFile, style::PerformancePresetId};
 
 pub(super) fn derive_runtime_warnings(
     runtime: &AppRuntimeState,
@@ -143,7 +143,27 @@ fn derive_tr909_render_warnings(render: &Tr909RenderState, session: &SessionFile
         warnings.push("909 lane takeover is committed but render mode is not takeover".into());
     }
 
+    let preset_owns_patternless_primitive =
+        session
+            .runtime_state
+            .style
+            .active_preset
+            .is_some_and(|preset| {
+                let definition = preset.definition();
+                lane.reinforcement_mode == Some(definition.tr909_reinforcement_mode)
+                    && matches!(
+                        (preset, render.mode),
+                        (
+                            PerformancePresetId::FeralBreakAlphaV1,
+                            Tr909RenderMode::SourceSupport | Tr909RenderMode::Fill
+                        ) | (
+                            PerformancePresetId::FeralBreakAlphaV2,
+                            Tr909RenderMode::BreakReinforce | Tr909RenderMode::Fill
+                        )
+                    )
+            });
     if render.pattern_ref.is_none()
+        && !preset_owns_patternless_primitive
         && (lane.takeover_enabled
             || lane.reinforcement_mode.is_some()
             || lane.slam_enabled
@@ -261,4 +281,49 @@ fn derive_w30_resample_tap_warnings(
     }
 
     warnings
+}
+
+#[cfg(test)]
+mod tests {
+    use riotbox_audio::tr909::{Tr909RenderMode, Tr909RenderRouting, Tr909RenderState};
+    use riotbox_core::{session::SessionFile, style::PerformancePresetId};
+
+    use super::derive_tr909_render_warnings;
+
+    #[test]
+    fn typed_feral_v2_primitive_does_not_claim_a_missing_pattern() {
+        let mut session = SessionFile::new("diagnostics", "0.1.0", "2026-07-21T00:00:00Z");
+        PerformancePresetId::FeralBreakAlphaV2.apply_to_session(&mut session);
+        let render = Tr909RenderState {
+            mode: Tr909RenderMode::BreakReinforce,
+            routing: Tr909RenderRouting::DrumBusSupport,
+            drum_bus_level: 0.8,
+            ..Tr909RenderState::default()
+        };
+
+        assert!(
+            !derive_tr909_render_warnings(&render, &session)
+                .iter()
+                .any(|warning| warning.contains("pattern_ref"))
+        );
+    }
+
+    #[test]
+    fn unowned_patternless_support_keeps_its_warning() {
+        let mut session = SessionFile::new("diagnostics", "0.1.0", "2026-07-21T00:00:00Z");
+        session.runtime_state.lane_state.tr909.reinforcement_mode =
+            Some(riotbox_core::session::Tr909ReinforcementModeState::BreakReinforce);
+        let render = Tr909RenderState {
+            mode: Tr909RenderMode::BreakReinforce,
+            routing: Tr909RenderRouting::DrumBusSupport,
+            drum_bus_level: 0.8,
+            ..Tr909RenderState::default()
+        };
+
+        assert!(
+            derive_tr909_render_warnings(&render, &session)
+                .iter()
+                .any(|warning| warning.contains("pattern_ref"))
+        );
+    }
 }

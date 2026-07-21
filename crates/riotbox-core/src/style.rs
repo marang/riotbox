@@ -51,6 +51,7 @@ impl PerformancePresetId {
                 profile_id: StyleProfileId::FeralRebuild,
                 w30_role: PresetW30Role::SourceHookLead,
                 tr909_role: PresetTr909Role::BreakPressure,
+                tr909_reinforcement_mode: Tr909ReinforcementModeState::SourceSupport,
                 mc202_role: PresetMc202Role::SourceEvidenceSelected,
                 bass_ownership: PresetBassOwnership::LivePerformancePolicy,
                 source_monitor_mode: SourceMonitorMode::Blend,
@@ -78,9 +79,16 @@ impl PerformancePresetId {
                 profile_id: StyleProfileId::FeralRebuild,
                 w30_role: PresetW30Role::SourceHookLead,
                 tr909_role: PresetTr909Role::BreakPressure,
+                // The committed V2 preset action owns the typed break-pressure vocabulary
+                // needed by its documented `s`/`f` path. It does not invent a source-derived
+                // phrase or pattern reference.
+                tr909_reinforcement_mode: Tr909ReinforcementModeState::BreakReinforce,
                 mc202_role: PresetMc202Role::SourceEvidenceSelected,
                 bass_ownership: PresetBassOwnership::LivePerformancePolicy,
-                source_monitor_mode: SourceMonitorMode::Blend,
+                // V2 promotes the captured W-30 hook to the performance lead. Keeping the raw
+                // source in Blend can double the same break at its original source phase while
+                // the pad restarts its captured downbeat on the performance grid.
+                source_monitor_mode: SourceMonitorMode::Riotbox,
                 macro_state: MacroState {
                     // V2 gives the promoted source hook a more hostile sampler character while
                     // the live performance policy still decides which lane hits hardest.
@@ -115,7 +123,7 @@ impl PerformancePresetId {
         session.runtime_state.macro_state = definition.macro_state;
         session.runtime_state.mixer_state = definition.mixer_state;
         session.runtime_state.lane_state.tr909.reinforcement_mode =
-            Some(Tr909ReinforcementModeState::SourceSupport);
+            Some(definition.tr909_reinforcement_mode);
     }
 }
 
@@ -180,6 +188,7 @@ pub struct PerformancePresetDefinition {
     pub profile_id: StyleProfileId,
     pub w30_role: PresetW30Role,
     pub tr909_role: PresetTr909Role,
+    pub tr909_reinforcement_mode: Tr909ReinforcementModeState,
     pub mc202_role: PresetMc202Role,
     pub bass_ownership: PresetBassOwnership,
     pub source_monitor_mode: SourceMonitorMode,
@@ -251,6 +260,10 @@ mod tests {
 
         assert!(v2.macro_state.w30_grit > v1.macro_state.w30_grit);
         assert!(v2.mixer_state.music_level < v1.mixer_state.music_level);
-        assert_eq!(v2.source_monitor_mode, SourceMonitorMode::Blend);
+        assert_eq!(v2.source_monitor_mode, SourceMonitorMode::Riotbox);
+        assert_eq!(
+            v2.tr909_reinforcement_mode,
+            Tr909ReinforcementModeState::BreakReinforce
+        );
     }
 }

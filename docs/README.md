@@ -54,19 +54,20 @@ live human-passed alpha.
 16. [Validation & Benchmark Spec](./specs/validation_benchmark_spec.md)
 17. [Fixture Corpus Spec](./specs/fixture_corpus_spec.md)
 18. [Audio QA Workflow Spec](./specs/audio_qa_workflow_spec.md)
-19. [Sound Product Readiness Rubric Spec](./specs/sound_product_readiness_rubric_spec.md)
-20. [Release-Grade Musician Demo Bank Spec](./specs/release_grade_musician_demo_bank_spec.md)
-21. [20/10 Sound-Product Future Ideas Spec](./specs/sound_product_2010_future_ideas_spec.md)
-22. [Source Timing Intelligence Spec](./specs/source_timing_intelligence_spec.md)
-23. [Arrangement / Scene System Spec](./specs/arrangement_scene_system_spec.md)
-24. [Recovery Notes](./recovery_notes.md)
-25. [Phase Definition of Done](./phase_definition_of_done.md)
-26. [Research / Decision Log](./research_decision_log.md)
-27. [Source Timing Intelligence Plan](./plans/source_timing_intelligence_plan.md)
-28. [Source Transport Map Capture Plan](./plans/source_transport_map_capture_plan.md)
-29. [MC-202 Source Phrase Planning Plan](./plans/mc202_source_phrase_planning_plan.md)
-30. [MC-202 Real-Source Listening Pack Benchmark](./benchmarks/mc202_real_source_listening_pack_v1_2026-06-18.md)
-31. [MC-202 Producer-Grade Closeout Benchmark](./benchmarks/mc202_producer_grade_closeout_v1_2026-06-18.md)
+19. [Audio Numeric Values Guide](./engineering/audio_numeric_values.md)
+20. [Sound Product Readiness Rubric Spec](./specs/sound_product_readiness_rubric_spec.md)
+21. [Release-Grade Musician Demo Bank Spec](./specs/release_grade_musician_demo_bank_spec.md)
+22. [20/10 Sound-Product Future Ideas Spec](./specs/sound_product_2010_future_ideas_spec.md)
+23. [Source Timing Intelligence Spec](./specs/source_timing_intelligence_spec.md)
+24. [Arrangement / Scene System Spec](./specs/arrangement_scene_system_spec.md)
+25. [Recovery Notes](./recovery_notes.md)
+26. [Phase Definition of Done](./phase_definition_of_done.md)
+27. [Research / Decision Log](./research_decision_log.md)
+28. [Source Timing Intelligence Plan](./plans/source_timing_intelligence_plan.md)
+29. [Source Transport Map Capture Plan](./plans/source_transport_map_capture_plan.md)
+30. [MC-202 Source Phrase Planning Plan](./plans/mc202_source_phrase_planning_plan.md)
+31. [MC-202 Real-Source Listening Pack Benchmark](./benchmarks/mc202_real_source_listening_pack_v1_2026-06-18.md)
+32. [MC-202 Producer-Grade Closeout Benchmark](./benchmarks/mc202_producer_grade_closeout_v1_2026-06-18.md)
 
 ## Why This Order
 
@@ -104,6 +105,7 @@ docs/
   phase_definition_of_done.md
   research_decision_log.md
   engineering/
+    audio_numeric_values.md
     module_policy.md
     textual_include_allowlist.txt
     textual_include_inventory_2026-06-29.md
@@ -177,6 +179,9 @@ docs/
 - `specs/technology_stack_spec.md`: Stack Freeze v1 captured with current timing-contract clarification
 - `specs/rust_engineering_guidelines.md`: Rust engineering guidelines captured
 - `engineering/module_policy.md`: semantic Rust module and textual include policy captured
+- `engineering/audio_numeric_values.md`: guide to measurements, runtime
+  boundaries, QA thresholds, controls, DSP coefficients, recipe parameters, and
+  fixture values, including the RIOTBOX-1402 `0.9161` / `0.92` example
 - `engineering/textual_include_inventory_2026-06-29.md`: RIOTBOX-1321 Rust textual include inventory captured
 - `engineering/textual_include_allowlist.txt`: current manual guardrail allowlist for textual include owners/counts captured
 - `specs/source_graph_spec.md`: Source Graph v1 contract captured

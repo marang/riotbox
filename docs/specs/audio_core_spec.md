@@ -10,6 +10,10 @@ Audience: realtime, DSP, QA, product
 
 This document defines the core realtime audio contract for Riotbox.
 
+For the meaning and change rules of numeric measurements, limiter boundaries,
+DSP coefficients, and recipe parameters, see
+[`audio_numeric_values.md`](../engineering/audio_numeric_values.md).
+
 It exists so that:
 
 - audio behavior stays stable under live use
@@ -247,16 +251,22 @@ Rules:
   `blend` applies the envelope to its source layer, `riotbox` applies it only
   to W-30 / MC-202 / resample material, and `source` remains sample-identical
   and unaffected
-- `FillFocus` leaves the TR-909 signal and gain unchanged, returns fully at the
-  next bar, and must remain deterministic across realtime callback partitions
-  and the exact offline RuntimeMix seam; a silent or wrongly routed drum lane
-  must never duck the arrangement
+- `FillFocus` leaves the TR-909 signal unchanged and returns fully at the next
+  bar. A versioned Fill recipe may own bounded output trim for its own fixed
+  voice sum so the exact clean path does not depend on the master limiter; that
+  trim must not alter historical recipe IDs. Focus and recipe gain remain
+  deterministic across realtime callback partitions and the exact offline
+  RuntimeMix seam; a silent or wrongly routed drum lane must never duck the
+  arrangement
 - the supported dense-break `MainlineDrive + PhraseDriveHardCut` Fill uses fixed
   callback-local, independently decaying kick, snare-body/noise, and
   metallic-hat voices. The current
   `PhraseDriveBreakCutStompV2` four-beat arc has `1 / 2 / 6 / 1` sounding
-  events. Beats one and two preserve context; beat three becomes a syncopated
-  kick/snare/hat call after the bed cut; beat four chokes on its downbeat,
+  events. V2 transfers the non-TR-909 bed to silence from the start of the Fill
+  bar through a short click-safe fade, so the fixed drum call reads as one
+  deliberate role takeover rather than being pasted onto a differently phased
+  promoted source hook. Beat three becomes a syncopated kick/snare/hat call;
+  beat four chokes on its downbeat,
   remains empty for six 32nd-note slots, then answers with a late pitch-dive
   kick+snare flam. The choke removes existing voice tails through a bounded
   click-safe callback-local release but is not a sounding trigger. At 130 BPM
@@ -266,8 +276,9 @@ Rules:
   `PhraseDriveLongChokeDiveStompV2`, and `PhraseDriveBreakCutStompV1` remain
   registered listening controls but are no longer selected by the current
   Mainline Golden Path. The historical `MainlineDrive + PhraseDrive` selection
-  remains on `PhraseDriveBreakCutStompV1`; the new recipe is not a global
-  rewrite of that render-policy pair
+  remains on `PhraseDriveBreakCutStompV1`, including its original half-bar
+  focus and unity recipe gain; the V2 whole-bar focus and local output trim are
+  not a global rewrite of that render-policy pair
 - the fixed Fill arc, its paired `FillFocus`, and its voice triggers come from
   one typed, versioned callback-safe recipe authority. This recipe is a
   versioned `primitive_renderer` Golden-Path vocabulary: the explicit committed
@@ -304,9 +315,13 @@ Rules:
   ownership as unassigned and must not reuse the previous section's expression
   floors for TR-909 or W-30. Provenance labels must not control this branch
 - Scene launch may install a source-backed lane projection, while Scene restore
-  must recover the projection paired with the restored scene. The latest
-  restore transition remains anchor/observer truth but is not itself a new
-  persistent lane profile.
+  must recover the projection paired with the restored scene. A documented
+  changed return may commit `scene.restore` and performer-owned W-30 damage at
+  the same bar boundary, but QA must separately prove the restore-only scene
+  projection, prove that non-W-30 lanes stay identical, and attribute the
+  additional audible delta to the committed W-30 action. The latest restore
+  transition remains anchor/observer truth but is not itself a new persistent
+  lane profile.
 - Scene Source Monitor repositioning uses the target section's matching primary
   bar-grid downbeat. Raw section timestamps are descriptive evidence, not a
   playable anchor; a missing matching primary-grid bar leaves repositioning

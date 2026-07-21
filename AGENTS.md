@@ -141,6 +141,14 @@ If a surface is intentionally not applicable, say why in the PR or working notes
   development claim after stating its exact duration and purpose. Explicitly
   stop and verify silence at the announced endpoint; terminate a live runtime
   immediately if transport stop leaves any lane audible.
+- For multi-stage live reviews, queue ahead of intended quantized boundaries
+  and validate the landed observer commit intervals plus final stop position
+  before requesting readiness. Wall-clock sleeps alone are not timing proof;
+  reject a take that misses its declared beat/bar arc.
+- Do not ask for repeated human playback when only technical timing, capture,
+  or observer evidence changed and the sound recipe did not. Prove those
+  changes mechanically; treat repeated "same" or listener fatigue as a stop
+  signal, not as a negative musical verdict.
 - After at most two consecutive generations of a review-ready candidate that
   remains `human_verdict: unverified`, stop generation for that candidate and
   perform or explicitly hand off structured human listening. Do not replace the

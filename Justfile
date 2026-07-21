@@ -52,6 +52,7 @@ _audio-qa-ci-unlocked:
     just observer-audio-correlate-locked-grid-json-fixture
     just observer-audio-summary-validator-fixtures
     just user-session-observer-validator-fixtures
+    just feral-break-live-review-timing-fixtures
     just source-timing-probe-json-validator-fixtures
     just source-timing-grid-use-contract-fixtures
     just recipe15-strict-missing-fixture-fixture
@@ -758,6 +759,12 @@ observer-audio-correlate-generated-feral-grid:
 
 first-playable-jam-probe:
     scripts/validate_first_playable_jam_probe.sh
+
+feral-break-live-review-timing-fixtures:
+    python3 scripts/validate_feral_break_live_review_timing.py --timing-only scripts/fixtures/feral_break_live_review_timing/valid.ndjson
+    if python3 scripts/validate_feral_break_live_review_timing.py --timing-only scripts/fixtures/feral_break_live_review_timing/invalid_missed_bars.ndjson; then echo "expected missed-bar live review timing fixture to fail" >&2; exit 1; fi
+    if python3 scripts/validate_feral_break_live_review_timing.py --timing-only scripts/fixtures/feral_break_live_review_timing/invalid_latest_take.ndjson; then echo "expected invalid latest live review take fixture to fail" >&2; exit 1; fi
+    if python3 scripts/validate_feral_break_live_review_timing.py --timing-only scripts/fixtures/feral_break_live_review_timing/invalid_non_bar_stage.ndjson; then echo "expected non-bar live review stage fixture to fail" >&2; exit 1; fi
 
 source-timing-confirmation-probe:
     scripts/validate_source_timing_confirmation_probe.sh

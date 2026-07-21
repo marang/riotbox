@@ -122,6 +122,16 @@ cannot otherwise be evaluated honestly.
 
 If a user says two gestures sound the same, prefer adding or tightening an output comparison before adding more UI/log assertions.
 
+An exact Golden Path renderer must execute only the documented musician preparation and gestures. Do not silently queue a lane mode, phrase decision, pattern, monitor route, or other prerequisite that the recipe/UI does not expose. If a prerequisite is required, make it a visible product step and prove its committed action.
+
+When a QA gate reuses an existing source-backed render or manifest, validate it
+against the timing identity stored in that artifact. Do not substitute a
+generated-fixture BPM, sample rate, anchor, or source constant; that turns valid
+cross-source evidence into a false failure and hides whether the gate is truly
+source-general.
+
+When tuning typed versioned audio vocabulary, keep historical review/control versions sample-stable unless an explicit compatibility decision says otherwise. Split recipe-local focus, gain, or articulation data by version instead of reusing one mutable constant across the historical and current IDs.
+
 If output metrics pass but the musician-facing result is still weak, treat the feature as technically partial, not done.
 
 After at most two consecutive generations of a review-ready candidate that

@@ -742,8 +742,9 @@ Expected result:
 - the pack contains non-silent monitor stages for `Source`, `Blend`, and
   `Riotbox`
 - the performance sequence preserves callback state and records measurable
-  output deltas for the promoted-pad hit (`w`), fill (`f`), slam (`s`), scene
-  jump (`y`), and restore (`Y`)
+  output deltas for the promoted-pad hit (`w`), slam (`s`), fill (`f`), scene
+  jump (`y`), and changed return (`Y+D`); the Scene restore projection is
+  proved independently from the companion W-30 damage action
 - the generated manifest records the route / scene context, validates the WAV
   artifacts and deltas, and keeps `human_verdict: unverified` and
   `quality_proof: false`
@@ -755,8 +756,9 @@ What this proves:
 - the first-playable actions reach the product spine and commit in the intended
   order
 - the observer proves the typed action family and commit order, while the
-  companion pack proves `Source -> Blend -> Riotbox` and `w/f/s/y/Y` can reach
-  the exact live-mixer render seam with bounded, measurable consequences
+  companion pack proves the explicit `Source -> Blend -> Riotbox` monitor A/B
+  and `w/s/f/y/Y+D` performance path can reach the exact live-mixer render seam
+  with bounded, measurable consequences
 - the machine-readable correlation scope is `action_contract_only`: the two
   deterministic scenarios intentionally do not claim the same source fixture,
   transport timeline, Session, or sample-exact observer-to-audio causality
@@ -998,15 +1000,20 @@ Then:
 3. press `o`; wait for the raw audition and reject the path if it is unavailable
 4. press `p`; wait for promotion to the focused W-30 pad
 5. press `F`; verify the header shows profile `feral_rebuild`, preset
-   `Feral Break Alpha v2`, and monitor `Blend`
-6. press `w` and let the hook run for two bars
-7. press `s` and let the TR-909 pressure lift run for two bars
-8. press `f` for the destructive one-bar cut; reject the path if the final beat
+   `Feral Break Alpha v2`, and monitor `Riotbox`. Use `M` for an explicit
+   Source/Blend A/B check; do not leave the raw source doubled under the
+   promoted W-30 performance hook.
+6. press `P` once and wait for the committed source-evidence MC-202 decision.
+   It may assign bass, punctuation, an instigator, or `stay_out`; this is
+   preparation, not one of the four live gestures.
+7. press `w` and let the hook run for two bars
+8. press `s` and let the TR-909 pressure lift run for two bars
+9. press `f` for the destructive one-bar cut; reject the path if the final beat
    does not create at least an unmistakable half-beat silence followed by one hard
    drum/transient return
-9. press `y` for the one-bar contrast scene
-10. after the jump lands, press `Y`, then `D`, for the changed two-bar return
-11. quit with `q`; an intentional quit persists the canonical Session before
+10. press `y` for the one-bar contrast scene
+11. after the jump lands, press `Y`, then `D`, for the changed two-bar return
+12. quit with `q`; an intentional quit persists the canonical Session before
     exit. Wait until all required gestures have landed because the transient
     pending queue is not persisted. Restart from that saved session, then press
     `l` and `w` to recall and trigger the promoted capture. Killing the process
@@ -1017,7 +1024,7 @@ What to hear:
 - bars 1-2: a recognizable source-backed W-30 rhythmic hook; this is the first
   satisfying moment
 - bars 3-4: higher drum/transient impact without losing the hook
-- bar 5: the Fill removes the Blend source and non-TR-909 bed for a real break cut
+- bar 5: the Fill removes the non-TR-909 bed for a real break cut
 - bar 6: the scene swap changes source position and removes an MC-202 plan that
   no longer belongs to the active source section
 - bars 7-8: the original scene returns, but the W-30 playback is damaged rather

@@ -49,10 +49,17 @@ pub struct GestureTransition {
     pub command: ActionCommand,
     pub boundary: CommitBoundary,
     pub action_id: u64,
+    pub companion_actions: Vec<GestureCompanionAction>,
     pub commit_boundary: riotbox_core::transport::CommitBoundaryState,
     pub prefix: Vec<(RuntimeMixRenderPlan, u32)>,
-    pub before: RuntimeMixRenderPlan,
-    pub after: RuntimeMixRenderPlan,
+    pub before: Box<RuntimeMixRenderPlan>,
+    pub after: Box<RuntimeMixRenderPlan>,
+}
+
+#[derive(Clone)]
+pub struct GestureCompanionAction {
+    pub command: ActionCommand,
+    pub action_id: u64,
 }
 
 pub struct PreparedLivePath {
@@ -130,6 +137,7 @@ impl ConfirmedSourceTiming {
 pub struct SceneTransitionProof {
     pub launch_action_id: u64,
     pub restore_action_id: u64,
+    pub return_damage_action_id: u64,
     pub pre_jump_scene: String,
     pub launched_scene: String,
     pub restored_scene: String,
@@ -142,7 +150,9 @@ pub struct SceneTransitionProof {
     pub launched_source_section: Option<String>,
     pub launch_mc202_stayed_out_for_section_mismatch: bool,
     pub restore_audio_projection_matches_pre_jump: bool,
-    pub restore_lane_projection_matches_pre_jump: bool,
+    pub restore_only_lane_projection_matches_pre_jump: bool,
+    pub changed_return_w30_differs_from_restore_only: bool,
+    pub changed_return_non_w30_projection_matches_restore_only: bool,
 }
 
 pub struct RenderedGestureTransition {
