@@ -1436,4 +1436,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Make Blend and four performance gestures reachable in the first-playable live flow
 - [RIOTBOX-1401.md](./RIOTBOX-1401.md)
   P023: Add a curated Feral Break Alpha preset with capture, recall, and replay
+- [RIOTBOX-1402.md](./RIOTBOX-1402.md)
+  P023: Run the exact live Golden Path review and earn a real musical pass
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
