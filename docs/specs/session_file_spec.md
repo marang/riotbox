@@ -217,6 +217,11 @@ User-confirmed timing trust must be represented explicitly:
 The session must preserve the original Source Graph evidence. Confirming a grid
 does not silently rewrite the analysis payload.
 
+For a typed Source Graph `Manual` hypothesis, the same confirmation state and
+action/replay contract applies. Its hypothesis provenance owns the declared BPM
+and downbeat phase; Session owns only the musician's committed trust decision.
+This avoids a second manual-timing persistence model.
+
 Source-window consumers must read this session trust state through the shared
 consumer readiness contract. A source graph that still requires manual
 confirmation must not become a bar-accurate capture / W-30 reuse source merely

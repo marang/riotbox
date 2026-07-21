@@ -15,11 +15,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let source_path = required_path(&args, "--source")?;
     let output_dir = required_path(&args, "--output")?;
     let cli_bpm_hint = required_bpm(&args)?;
+    let cli_downbeat_seconds = optional_non_negative_f32(&args, "--downbeat-seconds")?;
     for directory in ["stems", "monitor", "gestures", "gestures/proofs", "alpha"] {
         fs::create_dir_all(output_dir.join(directory))?;
     }
 
-    let prepared = live_flow::prepare(&source_path, &output_dir, cli_bpm_hint)?;
+    let prepared = live_flow::prepare(
+        &source_path,
+        &output_dir,
+        cli_bpm_hint,
+        cli_downbeat_seconds,
+    )?;
     let rendered = rendering::render_live_path(&prepared)?;
     manifest::write_pack(prepared, rendered, &source_path, &output_dir)
 }
@@ -40,6 +46,25 @@ fn required_bpm(args: &[String]) -> Result<f32, Box<dyn std::error::Error>> {
 
 fn required_path(args: &[String], flag: &str) -> Result<PathBuf, Box<dyn std::error::Error>> {
     Ok(PathBuf::from(required_value(args, flag)?))
+}
+
+fn optional_non_negative_f32(
+    args: &[String],
+    flag: &str,
+) -> Result<Option<f32>, Box<dyn std::error::Error>> {
+    let Some(index) = args.iter().position(|arg| arg == flag) else {
+        return Ok(None);
+    };
+    let value = args
+        .get(index + 1)
+        .ok_or_else(|| format!("missing value for {flag}"))?;
+    let parsed = value
+        .parse::<f32>()
+        .map_err(|_| format!("invalid value for {flag}: {value}"))?;
+    if !parsed.is_finite() || parsed < 0.0 {
+        return Err(format!("invalid value for {flag}: {value}").into());
+    }
+    Ok(Some(parsed))
 }
 
 fn required_value<'a>(
@@ -81,5 +106,18 @@ mod tests {
                 "unexpected error for {value}: {error}"
             );
         }
+    }
+
+    #[test]
+    fn parses_optional_manual_downbeat_seconds() {
+        let args = vec!["--downbeat-seconds".into(), "0.125".into()];
+        assert_eq!(
+            optional_non_negative_f32(&args, "--downbeat-seconds").unwrap(),
+            Some(0.125)
+        );
+        assert_eq!(
+            optional_non_negative_f32(&[], "--downbeat-seconds").unwrap(),
+            None
+        );
     }
 }

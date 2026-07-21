@@ -10,7 +10,8 @@ use riotbox_audio::{
 use riotbox_core::{
     action::CommitBoundary,
     source_graph::{
-        MeterHint, QualityClass, SourceGraph, SourceTimingProbeBpmCandidatePolicy, TimingQuality,
+        ManualSourceTimingGrid, MeterHint, QualityClass, SourceGraph,
+        SourceTimingProbeBpmCandidatePolicy, TimingQuality, install_manual_source_timing_grid,
         timing_model_from_probe_bpm_candidates,
     },
     transport::CommitBoundaryState,
@@ -20,6 +21,30 @@ use super::{JamAppError, JamAppState, QueueControlResult};
 
 const RUST_TIMING_PROVIDER: &str = "riotbox-rust-source-timing-probe";
 const EXPLICIT_BPM_MATCH_TOLERANCE: f32 = 1.0;
+
+pub(super) fn install_explicit_manual_source_grid(
+    graph: &mut SourceGraph,
+    explicit_source_bpm: f32,
+    explicit_downbeat_seconds: f32,
+) -> Result<(), JamAppError> {
+    install_manual_source_timing_grid(
+        graph,
+        ManualSourceTimingGrid {
+            bpm: explicit_source_bpm,
+            downbeat_seconds: explicit_downbeat_seconds,
+        },
+    )
+    .map_err(JamAppError::InvalidSession)?;
+
+    let note = format!(
+        "musician declared manual source grid at {explicit_source_bpm:.3} BPM with downbeat {explicit_downbeat_seconds:.6}s"
+    );
+    graph.provenance.run_notes = Some(match graph.provenance.run_notes.take() {
+        Some(existing) if !existing.is_empty() => format!("{existing}; {note}"),
+        _ => note,
+    });
+    Ok(())
+}
 
 pub(super) fn enrich_graph_with_rust_source_timing(
     graph: &mut SourceGraph,

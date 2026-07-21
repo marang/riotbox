@@ -241,6 +241,7 @@ fn hypothesis_id_for_alternative(alternative: &SourceTimingAlternativeSeed) -> S
         TimingHypothesisKind::AlternateDownbeat => "alternate-downbeat".into(),
         TimingHypothesisKind::Ambiguous => "ambiguous".into(),
         TimingHypothesisKind::Primary => "primary-alternative".into(),
+        TimingHypothesisKind::Manual => "manual-alternative".into(),
     }
 }
 

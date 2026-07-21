@@ -6,6 +6,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     let mut sidecar_script_path = Some(PathBuf::from(DEFAULT_SIDECAR_PATH));
     let mut analysis_seed = 19_u64;
     let mut explicit_source_bpm = None;
+    let mut explicit_source_downbeat_seconds = None;
     let mut saw_session_flag = false;
     let mut saw_sidecar_flag = false;
     let mut saw_seed_flag = false;
@@ -129,6 +130,18 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
                 }
                 explicit_source_bpm = Some(bpm);
             }
+            "--source-downbeat-seconds" => {
+                let value = args
+                    .next()
+                    .ok_or_else(|| "missing value for --source-downbeat-seconds".to_string())?;
+                let seconds = value
+                    .parse::<f32>()
+                    .map_err(|_| format!("invalid source downbeat value: {value}"))?;
+                if !seconds.is_finite() || seconds < 0.0 {
+                    return Err(format!("invalid source downbeat value: {value}"));
+                }
+                explicit_source_downbeat_seconds = Some(seconds);
+            }
             "--help" | "-h" => return Err(help_text()),
             other => return Err(format!("unknown argument: {other}\n\n{}", help_text())),
         }
@@ -136,6 +149,9 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
 
     if explicit_source_bpm.is_some() && source_path.is_none() {
         return Err("--source-bpm requires --source <audio.wav>".into());
+    }
+    if explicit_source_downbeat_seconds.is_some() && explicit_source_bpm.is_none() {
+        return Err("--source-downbeat-seconds requires --source-bpm <bpm>".into());
     }
 
     let stem_package_mode_count = [
@@ -380,6 +396,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
                 .unwrap_or_else(|| PathBuf::from(DEFAULT_SIDECAR_PATH)),
             analysis_seed,
             explicit_source_bpm,
+            explicit_source_downbeat_seconds,
         },
         None => {
             if !saw_session_flag {

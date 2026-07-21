@@ -16,6 +16,7 @@ fn launch_summary(launch: &AppLaunch) -> Value {
             sidecar_script_path,
             analysis_seed,
             explicit_source_bpm,
+            explicit_source_downbeat_seconds,
         } => json!({
             "mode": "ingest",
             "source_path": source_path,
@@ -24,6 +25,7 @@ fn launch_summary(launch: &AppLaunch) -> Value {
             "sidecar_script_path": sidecar_script_path,
             "analysis_seed": analysis_seed,
             "explicit_source_bpm": explicit_source_bpm,
+            "explicit_source_downbeat_seconds": explicit_source_downbeat_seconds,
             "observer_path": launch.observer_path,
         }),
         LaunchMode::StemPackageLocalCiDryRun {

@@ -215,6 +215,40 @@ mod tests {
     }
 
     #[test]
+    fn parse_args_requires_bpm_for_explicit_source_downbeat() {
+        let launch = parse_args([
+            "--source".into(),
+            "input.wav".into(),
+            "--source-bpm".into(),
+            "120".into(),
+            "--source-downbeat-seconds".into(),
+            "0.25".into(),
+        ])
+        .expect("parse explicit manual source grid");
+
+        match launch.mode {
+            LaunchMode::Ingest {
+                explicit_source_bpm,
+                explicit_source_downbeat_seconds,
+                ..
+            } => {
+                assert_eq!(explicit_source_bpm, Some(120.0));
+                assert_eq!(explicit_source_downbeat_seconds, Some(0.25));
+            }
+            _ => panic!("expected ingest mode"),
+        }
+
+        let error = parse_args([
+            "--source".into(),
+            "input.wav".into(),
+            "--source-downbeat-seconds".into(),
+            "0".into(),
+        ])
+        .expect_err("manual source phase requires BPM");
+        assert!(error.contains("requires --source-bpm"));
+    }
+
+    #[test]
     fn parse_args_defaults_ingest_to_embedded_graph_storage() {
         let mode = parse_args([
             "--source".into(),

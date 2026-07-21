@@ -202,6 +202,20 @@ fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
         .as_ref();
     let confirmed_grid_matches_current_source =
         source_timing_confirmation_matches_graph(graph, &shell.app.session);
+    let primary_hypothesis_kind =
+        graph
+            .timing
+            .primary_hypothesis()
+            .map(|hypothesis| match hypothesis.kind {
+                riotbox_core::source_graph::TimingHypothesisKind::Primary => "analyzer_primary",
+                riotbox_core::source_graph::TimingHypothesisKind::Manual => "musician_manual",
+                riotbox_core::source_graph::TimingHypothesisKind::HalfTime => "half_time",
+                riotbox_core::source_graph::TimingHypothesisKind::DoubleTime => "double_time",
+                riotbox_core::source_graph::TimingHypothesisKind::AlternateDownbeat => {
+                    "alternate_downbeat"
+                }
+                riotbox_core::source_graph::TimingHypothesisKind::Ambiguous => "ambiguous",
+            });
 
     json!({
         "present": true,
@@ -224,6 +238,7 @@ fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
         "phrase_status": timing.phrase_status.as_str(),
         "phrase_count": timing.phrase_count,
         "primary_hypothesis_id": graph.timing.primary_hypothesis_id.as_deref(),
+        "primary_hypothesis_kind": primary_hypothesis_kind,
         "grid_confirmed": confirmed_grid_matches_current_source,
         "confirmed_grid_source_id": confirmed_grid.map(|confirmed| confirmed.source_id.to_string()),
         "confirmed_grid_hypothesis_id": confirmed_grid.and_then(|confirmed| confirmed.hypothesis_id.as_deref()),

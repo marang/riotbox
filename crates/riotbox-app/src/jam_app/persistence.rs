@@ -77,6 +77,26 @@ impl JamAppState {
         analysis_seed: u64,
         explicit_source_bpm: Option<f32>,
     ) -> Result<Self, JamAppError> {
+        Self::analyze_source_file_to_json_with_source_timing_confirmation(
+            source_path,
+            session_path,
+            source_graph_path,
+            sidecar_script_path,
+            analysis_seed,
+            explicit_source_bpm,
+            None,
+        )
+    }
+
+    pub fn analyze_source_file_to_json_with_source_timing_confirmation(
+        source_path: impl AsRef<Path>,
+        session_path: impl AsRef<Path>,
+        source_graph_path: Option<PathBuf>,
+        sidecar_script_path: impl AsRef<Path>,
+        analysis_seed: u64,
+        explicit_source_bpm: Option<f32>,
+        explicit_source_downbeat_seconds: Option<f32>,
+    ) -> Result<Self, JamAppError> {
         let source_path = source_path.as_ref().canonicalize()?;
         let session_path = session_path.as_ref().to_path_buf();
 
@@ -85,6 +105,18 @@ impl JamAppState {
         let mut graph = client.analyze_source_file(&source_path, analysis_seed)?;
         drop(client);
         enrich_graph_with_rust_source_timing(&mut graph, &source_path)?;
+        if let Some(explicit_source_downbeat_seconds) = explicit_source_downbeat_seconds {
+            let explicit_source_bpm = explicit_source_bpm.ok_or_else(|| {
+                JamAppError::InvalidSession(
+                    "explicit source downbeat requires an explicit source BPM".into(),
+                )
+            })?;
+            install_explicit_manual_source_grid(
+                &mut graph,
+                explicit_source_bpm,
+                explicit_source_downbeat_seconds,
+            )?;
+        }
         if let Some(explicit_source_bpm) = explicit_source_bpm {
             validate_explicit_source_bpm(&graph, explicit_source_bpm)?;
         }

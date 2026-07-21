@@ -137,6 +137,12 @@ The first six fields are the compatibility surface used by existing consumers.
 The richer fields are the Source Timing Intelligence surface and should become
 the preferred contract for new timing-aware work.
 
+`TimingHypothesis.kind` distinguishes analyzer candidates from the typed
+`Manual` hypothesis created only when the musician declares both BPM and
+downbeat phase. Selecting that hypothesis may update compatibility timing
+fields, but analyzer hypotheses, warnings, and provider provenance remain in
+the graph so manual trust cannot be mistaken for detection quality.
+
 ### 7.1 Beat grid
 
 Each beat event should expose:

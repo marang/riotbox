@@ -294,6 +294,23 @@ jq -e \
   and .timing_identity.confirmed_source_id == $session_file.runtime_state.source_timing.confirmed_grid.source_id
   and .timing_identity.confirmed_hypothesis_id == $graph.timing.primary_hypothesis_id
   and .timing_identity.confirmed_hypothesis_id == $session_file.runtime_state.source_timing.confirmed_grid.hypothesis_id
+  and .timing_identity.confirmed_hypothesis_kind == (
+    if $primary_timing.kind == "Manual" then "musician_manual"
+    elif $primary_timing.kind == "Primary" then "analyzer_primary"
+    elif $primary_timing.kind == "HalfTime" then "half_time"
+    elif $primary_timing.kind == "DoubleTime" then "double_time"
+    elif $primary_timing.kind == "AlternateDownbeat" then "alternate_downbeat"
+    elif $primary_timing.kind == "Ambiguous" then "ambiguous"
+    else "unknown"
+    end
+  )
+  and (if $primary_timing.kind == "Manual" then
+    .timing_identity.manual_grid_input.declared_bpm == $primary_timing.bpm
+    and .timing_identity.manual_grid_input.declared_downbeat_seconds
+      == ($primary_timing.bar_grid | min_by(.bar_index) | .start_seconds)
+  else
+    .timing_identity.manual_grid_input == null
+  end)
   and .timing_identity.confirmed_hypothesis_bpm == $primary_timing.bpm
   and .timing_identity.beats_per_bar == $primary_timing.meter.beats_per_bar
   and .timing_identity.primary_bar_anchor_beat_index == (.timing_identity.primary_bar_anchor_beat_cursor + 1)
