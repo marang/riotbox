@@ -1446,4 +1446,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Expand the human-passed live alpha to tonal hook and sparse pressure
 - [RIOTBOX-1403.md](./RIOTBOX-1403.md)
   P023: Stop fixture demo-bank evidence from driving live readiness priorities
+- [RIOTBOX-1405.md](./RIOTBOX-1405.md)
+  P023: Validate weak and bad-timing sources through honest degraded or reject behavior
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
