@@ -73,6 +73,12 @@ fn w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_outpu
         2,
         committed_pad_playback.sample_count,
     );
+    let committed_tap_buffer = render_w30_resample_tap_offline(
+        &committed_state.runtime.w30_resample_tap,
+        48_000,
+        2,
+        W30_RESAMPLE_SOURCE_WINDOW_LEN,
+    );
 
     let replayed_state = run_snapshot_payload_restore_probe_from_anchor_runtime(
         &committed_state,
@@ -110,6 +116,12 @@ fn w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_outpu
         2,
         replayed_pad_playback.sample_count,
     );
+    let replayed_tap_buffer = render_w30_resample_tap_offline(
+        &replayed_state.runtime.w30_resample_tap,
+        48_000,
+        2,
+        W30_RESAMPLE_SOURCE_WINDOW_LEN,
+    );
 
     assert_eq!(
         replayed_state.session.runtime_state.lane_state.w30,
@@ -124,6 +136,14 @@ fn w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_outpu
         committed_state.runtime.w30_preview.source_profile
     );
     assert_eq!(
+        replayed_state.runtime.w30_resample_tap.source_capture_id,
+        committed_state.runtime.w30_resample_tap.source_capture_id
+    );
+    assert_eq!(
+        replayed_state.runtime.w30_resample_tap.availability,
+        W30ResampleTapAvailability::SourceAudioReady
+    );
+    assert_eq!(
         replayed_pad_playback.chop_slice_starts,
         committed_pad_playback.chop_slice_starts,
         "resample restore must preserve the source-derived chop decision"
@@ -133,6 +153,12 @@ fn w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_outpu
         &replayed_buffer,
         &committed_buffer,
         0.0015,
+    );
+    assert_recipe_buffers_match(
+        "snapshot payload restore source-backed resample tap -> committed tap",
+        &replayed_tap_buffer,
+        &committed_tap_buffer,
+        0.000_001,
     );
 
     let mut fallback_preview = replayed_state.runtime.w30_preview.clone();

@@ -245,11 +245,18 @@ impl W30ResampleAudioFixtureRenderState {
                 "pinned_capture" => W30ResampleTapSourceProfile::PinnedCapture,
                 _ => W30ResampleTapSourceProfile::RawCapture,
             }),
+            source_audio: if self.routing == "internal_capture_tap" {
+                positive_realtime_resample_source()
+            } else {
+                RealtimeW30ResampleSourceWindow::default()
+            },
             lineage_capture_count: self.lineage_capture_count,
             generation_depth: self.generation_depth,
             music_bus_level: self.music_bus_level,
             grit_level: self.grit_level,
             is_transport_running: self.is_transport_running,
+            tempo_bpm: 128.0,
+            position_beats: 0.0,
         }
     }
 }

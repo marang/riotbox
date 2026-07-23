@@ -21,6 +21,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let source_path = required_path(&args, "--source")?;
     let output_dir = required_path(&args, "--output")?;
     let bpm = required_value(&args, "--bpm")?.parse::<f32>()?;
+    let include_resample = args.iter().any(|arg| arg == "--include-resample");
     fs::create_dir_all(&output_dir)?;
 
     let session_path = output_dir.join("session.json");
@@ -96,7 +97,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if state.queue_w30_apply_damage_profile(410).is_none() {
         return Err("W-30 damage gesture was unavailable".into());
     }
-    commit(&mut state, CommitBoundary::Bar, 9, 3, 1, scene_id, 500)?;
+    commit(
+        &mut state,
+        CommitBoundary::Bar,
+        9,
+        3,
+        1,
+        scene_id.clone(),
+        500,
+    )?;
     print_w30_render_summary("damaged", &state.runtime.w30_preview);
     let damaged = render_state(&state, bpm);
 
@@ -112,6 +121,43 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         CHANNEL_COUNT,
         &damaged,
     )?;
+    let resample_outputs = if include_resample {
+        if state.queue_w30_internal_resample(510).is_none() {
+            return Err("W-30 internal resample was unavailable".into());
+        }
+        commit(&mut state, CommitBoundary::Phrase, 16, 4, 2, scene_id, 600)?;
+        println!(
+            "resample tap: mode={:?} routing={:?} availability={:?} source={:?} lineage={} generation={}",
+            state.runtime.w30_resample_tap.mode,
+            state.runtime.w30_resample_tap.routing,
+            state.runtime.w30_resample_tap.availability,
+            state.runtime.w30_resample_tap.source_capture_id,
+            state.runtime.w30_resample_tap.lineage_capture_count,
+            state.runtime.w30_resample_tap.generation_depth,
+        );
+        let tap = render_resample_state(&state, bpm);
+        let mut unavailable_state = state.runtime.w30_resample_tap.clone();
+        unavailable_state.source_audio = None;
+        unavailable_state.availability =
+            riotbox_audio::w30::W30ResampleTapAvailability::SourceAudioUnavailable;
+        unavailable_state.routing = riotbox_audio::w30::W30ResampleTapRouting::Silent;
+        let unavailable = render_resample_tap(&state, unavailable_state, bpm);
+        write_interleaved_pcm16_wav(
+            output_dir.join("03_w30_source_backed_resample_tap.wav"),
+            SAMPLE_RATE,
+            CHANNEL_COUNT,
+            &tap,
+        )?;
+        write_interleaved_pcm16_wav(
+            output_dir.join("04_w30_missing_source_silence.wav"),
+            SAMPLE_RATE,
+            CHANNEL_COUNT,
+            &unavailable,
+        )?;
+        Some((tap, unavailable))
+    } else {
+        None
+    };
     let source = SourceAudioCache::load_pcm_wav(&source_path)?;
     write_interleaved_pcm16_wav(
         output_dir.join("00_source.wav"),
@@ -130,6 +176,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if normal_metrics.rms <= 0.001 || damaged_metrics.rms <= 0.001 || delta.rms <= 0.001 {
         return Err("live W-30 render was silent or gesture-collapsed".into());
     }
+    if let Some((tap, unavailable)) = resample_outputs {
+        let tap_metrics = signal_metrics(&tap);
+        let unavailable_metrics = signal_metrics(&unavailable);
+        println!("source-backed resample tap: {tap_metrics:?}");
+        println!("missing-source control: {unavailable_metrics:?}");
+        if tap_metrics.rms <= 0.001 || tap_metrics.peak_abs >= 0.99 {
+            return Err("source-backed resample tap was silent or clipped".into());
+        }
+        if unavailable_metrics.active_samples != 0 {
+            return Err("missing-source resample control emitted fallback audio".into());
+        }
+    }
     Ok(())
 }
 
@@ -146,6 +204,38 @@ fn render_state(state: &JamAppState, bpm: f32) -> Vec<f32> {
         mc202_render: Default::default(),
         w30_preview_render: state.runtime.w30_preview.clone(),
         w30_resample_tap: Default::default(),
+        source_monitor_render: state.source_monitor_render_state(),
+    };
+    render_runtime_mix_realtime_simulation_offline(
+        &plan,
+        SAMPLE_RATE,
+        CHANNEL_COUNT,
+        frame_count,
+        128,
+    )
+}
+
+fn render_resample_state(state: &JamAppState, bpm: f32) -> Vec<f32> {
+    render_resample_tap(state, state.runtime.w30_resample_tap.clone(), bpm)
+}
+
+fn render_resample_tap(
+    state: &JamAppState,
+    tap: riotbox_audio::w30::W30ResampleTapState,
+    bpm: f32,
+) -> Vec<f32> {
+    let bars = 4.0_f32;
+    let frame_count = (bars * 4.0 * 60.0 / bpm * SAMPLE_RATE as f32).round() as usize;
+    let plan = RuntimeMixRenderPlan {
+        transport: AudioRuntimeTimingSnapshot {
+            is_transport_running: true,
+            tempo_bpm: bpm,
+            position_beats: 0.0,
+        },
+        tr909_render: Default::default(),
+        mc202_render: Default::default(),
+        w30_preview_render: Default::default(),
+        w30_resample_tap: tap,
         source_monitor_render: state.source_monitor_render_state(),
     };
     render_runtime_mix_realtime_simulation_offline(

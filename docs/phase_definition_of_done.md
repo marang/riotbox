@@ -449,6 +449,11 @@ After exit:
 - live readiness must not infer human coverage from fixture/calibration demo
   banks; a real bank is an explicit input and its human verdicts carry
   non-fixture reviewer plus hashed structured-review provenance
+- RIOTBOX-1408 proves that the W-30 resample callback now consumes real
+  committed capture PCM and remains silent without it. Its human verdict is
+  `technically_ok_but_musically_weak`, not a positive-family pass: the tap is
+  timid, the hook is weak, and source recognition is lost. RIOTBOX-1422 owns
+  the bounded level/source-character/hard-variation follow-up.
 - P016 and the wider P021/P022/P023 quality ladder may resume from the accepted
   live baseline
 

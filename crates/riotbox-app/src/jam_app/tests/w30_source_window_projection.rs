@@ -1,4 +1,44 @@
 #[test]
+fn resample_source_projection_keeps_a_transient_original_pcm_window() {
+    let frame_count = W30_RESAMPLE_SOURCE_WINDOW_LEN * 3;
+    let mut samples = vec![0.0_f32; frame_count * 2];
+    let transient_start = W30_RESAMPLE_SOURCE_WINDOW_LEN * 2;
+    for frame in transient_start..frame_count {
+        let phase = (frame - transient_start) as f32 / 11.0;
+        let sample = phase.sin() * 0.72;
+        samples[frame * 2] = sample;
+        samples[frame * 2 + 1] = sample;
+    }
+
+    let projected = super::projection::resample_source_from_interleaved(&samples, 2, 48_000)
+        .expect("transient source projection");
+
+    assert_eq!(projected.source_start_frame, transient_start as u64);
+    assert_eq!(
+        projected.source_frame_count,
+        W30_RESAMPLE_SOURCE_WINDOW_LEN as u64
+    );
+    assert_eq!(projected.sample_count, W30_RESAMPLE_SOURCE_WINDOW_LEN);
+    assert!(projected.samples.iter().any(|sample| sample.abs() > 0.5));
+}
+
+#[test]
+fn resample_source_projection_rejects_invalid_audio_metadata() {
+    let samples = [0.25_f32; 32];
+
+    assert!(super::projection::resample_source_from_interleaved(&samples, 0, 48_000).is_none());
+    assert!(super::projection::resample_source_from_interleaved(&samples, 2, 0).is_none());
+    assert!(super::projection::resample_source_from_interleaved(&[], 2, 48_000).is_none());
+    assert!(
+        super::projection::resample_source_from_interleaved(&samples[..31], 2, 48_000).is_none()
+    );
+    let non_finite = [0.0_f32, f32::NAN];
+    assert!(
+        super::projection::resample_source_from_interleaved(&non_finite, 2, 48_000).is_none()
+    );
+}
+
+#[test]
 fn raw_capture_audition_projects_source_window_preview_samples() {
     let tempdir = tempdir().expect("create source audio tempdir");
     let source_path = tempdir.path().join("source.wav");

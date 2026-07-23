@@ -96,13 +96,17 @@ fn runtime_mix_plan_sequence_preserves_callback_state_and_segment_lengths() {
         w30_resample_tap: W30ResampleTapState {
             mode: W30ResampleTapMode::CaptureLineageReady,
             routing: W30ResampleTapRouting::InternalCaptureTap,
+            availability: W30ResampleTapAvailability::SourceAudioReady,
             source_profile: Some(W30ResampleTapSourceProfile::PromotedCapture),
             source_capture_id: Some("sequence-capture".into()),
+            source_audio: Some(Box::new(runtime_mix_resample_source())),
             lineage_capture_count: 2,
             generation_depth: 1,
             music_bus_level: 0.34,
             grit_level: 0.48,
             is_transport_running: true,
+            tempo_bpm: 128.0,
+            position_beats: 0.0,
         },
         ..RuntimeMixRenderPlan::default()
     };
@@ -155,13 +159,17 @@ fn exact_runtime_mix_transport_stop_fades_and_silences_all_w30_paths() {
         w30_resample_tap: W30ResampleTapState {
             mode: W30ResampleTapMode::CaptureLineageReady,
             routing: W30ResampleTapRouting::InternalCaptureTap,
+            availability: W30ResampleTapAvailability::SourceAudioReady,
             source_profile: Some(W30ResampleTapSourceProfile::RawCapture),
             source_capture_id: Some("stop-proof-capture".into()),
+            source_audio: Some(Box::new(runtime_mix_resample_source())),
             lineage_capture_count: 1,
             generation_depth: 0,
             music_bus_level: 0.34,
             grit_level: 0.4,
             is_transport_running: true,
+            tempo_bpm: 130.0,
+            position_beats: 8.0,
         },
         ..RuntimeMixRenderPlan::default()
     };
@@ -888,6 +896,21 @@ fn runtime_mix_parity_source_window() -> W30PreviewSampleWindow {
             + ((phase * std::f32::consts::TAU * 11.0).sin() * 0.15);
     }
     window
+}
+
+fn runtime_mix_resample_source() -> W30ResampleSourceWindow {
+    let mut samples = [0.0; W30_RESAMPLE_SOURCE_WINDOW_LEN];
+    for (index, sample) in samples.iter_mut().enumerate() {
+        let phase = index as f32 / 41.0;
+        *sample = phase.sin() * 0.32 + (phase * 2.3).sin() * 0.08;
+    }
+    W30ResampleSourceWindow {
+        source_start_frame: 0,
+        source_sample_rate: 48_000,
+        source_frame_count: W30_RESAMPLE_SOURCE_WINDOW_LEN as u64,
+        sample_count: W30_RESAMPLE_SOURCE_WINDOW_LEN,
+        samples,
+    }
 }
 
 fn runtime_mix_duration_pad() -> W30PadPlaybackSampleWindow {

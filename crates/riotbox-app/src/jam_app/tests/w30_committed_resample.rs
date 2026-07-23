@@ -15,7 +15,7 @@ fn ordinary_promoted_pad_does_not_route_the_internal_resample_tap() {
     assert_eq!(
         state.runtime.w30_resample_tap,
         riotbox_audio::w30::W30ResampleTapState::default(),
-        "a normal Pad capture must not activate the synthetic internal resample voice"
+        "a normal Pad capture must not activate the internal resample tap"
     );
 }
 
@@ -197,6 +197,15 @@ fn committed_w30_internal_resample_prints_reusable_bus_artifact() {
             .capture_audio_cache
             .contains_key(&CaptureId::from("cap-02"))
     );
+    assert_eq!(
+        state.runtime.w30_resample_tap.availability,
+        W30ResampleTapAvailability::SourceAudioReady
+    );
+    assert_eq!(
+        state.runtime.w30_resample_tap.routing,
+        W30ResampleTapRouting::InternalCaptureTap
+    );
+    assert!(state.runtime.w30_resample_tap.source_audio.is_some());
 
     let printed_path = tempdir.path().join("captures/cap-02.wav");
     assert!(printed_path.exists());
@@ -228,16 +237,16 @@ fn committed_w30_internal_resample_prints_reusable_bus_artifact() {
         0.001,
     );
 
-    let fallback = render_w30_resample_tap_offline(
+    let source_backed_tap = render_w30_resample_tap_offline(
         &state.runtime.w30_resample_tap,
         printed.sample_rate,
         printed.channel_count,
         printed.frame_count(),
     );
     assert_recipe_buffers_differ(
-        "printed W-30 bus artifact vs synthetic resample tap",
+        "printed W-30 bus artifact vs isolated source-backed resample tap",
         printed.interleaved_samples(),
-        &fallback,
+        &source_backed_tap,
         0.001,
     );
 

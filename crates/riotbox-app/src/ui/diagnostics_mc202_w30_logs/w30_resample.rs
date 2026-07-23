@@ -13,7 +13,13 @@ pub(super) fn w30_resample_tap_compact(shell: &JamShellState) -> String {
         Some(riotbox_audio::w30::W30ResampleTapSourceProfile::PinnedCapture) => "pinned",
     };
 
-    format!("ready/{profile} g{}", tap.generation_depth)
+    let audio = match tap.availability {
+        riotbox_audio::w30::W30ResampleTapAvailability::Idle => "idle",
+        riotbox_audio::w30::W30ResampleTapAvailability::SourceAudioUnavailable => "unavailable",
+        riotbox_audio::w30::W30ResampleTapAvailability::SourceAudioReady => "source",
+    };
+
+    format!("ready/{profile}/{audio} g{}", tap.generation_depth)
 }
 
 pub(super) fn w30_capture_lineage_compact(shell: &JamShellState) -> String {

@@ -19,14 +19,18 @@ use crate::{
     },
     w30::{
         W30_PAD_CHOP_SLICE_COUNT, W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN,
-        W30_PREVIEW_SAMPLE_WINDOW_LEN, W30PadPlaybackSampleWindow, W30PreviewRenderMode,
-        W30PreviewRenderRouting, W30PreviewRenderState, W30PreviewSampleWindow,
-        W30PreviewSourceProfile, W30ResampleTapMode, W30ResampleTapRouting,
-        W30ResampleTapSourceProfile, W30ResampleTapState,
+        W30_PREVIEW_SAMPLE_WINDOW_LEN, W30_RESAMPLE_SOURCE_WINDOW_LEN, W30PadPlaybackSampleWindow,
+        W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewRenderState,
+        W30PreviewSampleWindow, W30PreviewSourceProfile, W30ResampleSourceWindow,
+        W30ResampleTapMode, W30ResampleTapRouting, W30ResampleTapSourceProfile,
+        W30ResampleTapState,
     },
 };
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+
+#[cfg(test)]
+use crate::w30::W30ResampleTapAvailability;
 
 mod fill_focus;
 mod public_api_shell;
@@ -62,6 +66,8 @@ use shared_transport_tr909::{
     RealtimeTr909RenderState, RealtimeTransportTimingState, SharedTr909RenderState,
     SharedTransportTimingState,
 };
+#[cfg(test)]
+use shared_w30_resample_callback::RealtimeW30ResampleSourceWindow;
 use shared_w30_resample_callback::{
     CallbackTimingSnapshot, RealtimeW30ResampleTapState, SharedW30ResampleTapState,
     Tr909CallbackState, TransportTimingCallbackState, W30MixRenderState, W30PreviewCallbackState,

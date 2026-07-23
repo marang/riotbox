@@ -206,6 +206,8 @@ pub fn render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
                 w30_preview_render.position_beats = timing.render_position_beats;
                 let mut w30_resample_render = shared_w30_resample.snapshot();
                 w30_resample_render.is_transport_running = timing.is_transport_running;
+                w30_resample_render.tempo_bpm = timing.tempo_bpm;
+                w30_resample_render.position_beats = timing.render_position_beats;
                 let mut source_monitor_render = shared_source_monitor
                     .render_snapshot_from_control(shared_source_monitor.control_snapshot());
                 source_monitor_render.is_transport_running = timing.is_transport_running;
