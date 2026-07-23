@@ -1448,4 +1448,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Stop fixture demo-bank evidence from driving live readiness priorities
 - [RIOTBOX-1405.md](./RIOTBOX-1405.md)
   P023: Validate weak and bad-timing sources through honest degraded or reject behavior
+- [RIOTBOX-1408.md](./RIOTBOX-1408.md)
+  P023: Replace the synthetic W-30 resample tap voice with source-backed resample audio
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
