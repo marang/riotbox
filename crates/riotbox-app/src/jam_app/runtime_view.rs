@@ -51,6 +51,7 @@ pub struct JamRuntimeView {
     pub w30_preview_trigger_summary: String,
     pub w30_resample_tap_mode: String,
     pub w30_resample_tap_routing: String,
+    pub w30_resample_tap_availability: String,
     pub w30_resample_tap_profile: String,
     pub w30_resample_tap_source_summary: String,
     pub w30_resample_tap_mix_summary: String,
@@ -162,6 +163,7 @@ impl JamRuntimeView {
             w30_preview_trigger_summary: w30_preview_trigger_summary(&runtime.w30_preview),
             w30_resample_tap_mode: runtime.w30_resample_tap.mode.label().into(),
             w30_resample_tap_routing: runtime.w30_resample_tap.routing.label().into(),
+            w30_resample_tap_availability: runtime.w30_resample_tap.availability.label().into(),
             w30_resample_tap_profile: w30_resample_tap_profile_label(&runtime.w30_resample_tap)
                 .into(),
             w30_resample_tap_source_summary: w30_resample_tap_source_summary(

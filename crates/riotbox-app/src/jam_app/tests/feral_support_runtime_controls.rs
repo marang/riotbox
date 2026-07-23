@@ -303,7 +303,11 @@ fn runtime_view_surfaces_w30_resample_tap_diagnostics() {
     );
     assert_eq!(
         state.runtime.w30_resample_tap.routing,
-        W30ResampleTapRouting::InternalCaptureTap
+        W30ResampleTapRouting::Silent
+    );
+    assert_eq!(
+        state.runtime.w30_resample_tap.availability,
+        W30ResampleTapAvailability::SourceAudioUnavailable
     );
     assert_eq!(
         state.runtime.w30_resample_tap.source_profile,
@@ -321,7 +325,11 @@ fn runtime_view_surfaces_w30_resample_tap_diagnostics() {
     );
     assert_eq!(
         state.runtime_view.w30_resample_tap_routing,
-        "internal_capture_tap"
+        "silent"
+    );
+    assert_eq!(
+        state.runtime_view.w30_resample_tap_availability,
+        "source_audio_unavailable"
     );
     assert_eq!(
         state.runtime_view.w30_resample_tap_profile,
@@ -335,6 +343,9 @@ fn runtime_view_surfaces_w30_resample_tap_diagnostics() {
         state.runtime_view.w30_resample_tap_mix_summary,
         "music bus 0.64 | grit 0.40"
     );
+    assert!(state.runtime_view.runtime_warnings.iter().any(|warning| {
+        warning == "W-30 resample tap source audio is unavailable; product output stays silent"
+    }));
 }
 
 #[test]

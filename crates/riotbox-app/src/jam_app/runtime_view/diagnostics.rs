@@ -7,8 +7,8 @@ use riotbox_audio::{
     runtime::{AudioRuntimeLifecycle, SourceMonitorAudioRoute},
     tr909::{Tr909RenderMode, Tr909RenderRouting, Tr909RenderState},
     w30::{
-        W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewRenderState, W30ResampleTapMode,
-        W30ResampleTapRouting, W30ResampleTapState,
+        W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewRenderState,
+        W30ResampleTapAvailability, W30ResampleTapMode, W30ResampleTapRouting, W30ResampleTapState,
     },
 };
 use riotbox_core::{action::SourceMonitorMode, session::SessionFile, style::PerformancePresetId};
@@ -263,6 +263,15 @@ fn derive_w30_resample_tap_warnings(
     }
 
     let mut warnings = Vec::new();
+
+    if matches!(
+        render.availability,
+        W30ResampleTapAvailability::SourceAudioUnavailable
+    ) {
+        warnings.push(
+            "W-30 resample tap source audio is unavailable; product output stays silent".into(),
+        );
+    }
 
     if matches!(render.routing, W30ResampleTapRouting::InternalCaptureTap)
         && render.music_bus_level <= 0.0

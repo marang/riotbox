@@ -83,8 +83,12 @@ impl JamAppState {
             self.source_audio_cache.as_ref(),
             Some(&self.capture_audio_cache),
         );
-        self.runtime.w30_resample_tap =
-            build_w30_resample_tap_state(&self.session, &self.runtime.transport);
+        self.runtime.w30_resample_tap = build_w30_resample_tap_state(
+            &self.session,
+            &self.runtime.transport,
+            self.source_graph.as_ref(),
+            Some(&self.capture_audio_cache),
+        );
         self.runtime.source_monitor_audio_route = match self
             .runtime
             .audio

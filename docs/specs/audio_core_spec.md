@@ -393,7 +393,9 @@ Rules:
   trigger paths keep the tap idle and silent
 - `promote.resample` owns the first audible tap activation. The presence of any
   capture or W-30 lane focus is not sufficient activation evidence for the
-  synthetic tap voice.
+  source-backed tap. A lineage-ready resample capture without a hydrated audio
+  artifact reports `source_audio_unavailable`, routes silent, and must not
+  synthesize replacement audio.
 
 ### 11.1 Source audio cache seam
 
@@ -409,6 +411,11 @@ The bounded early seam is a non-realtime source-audio cache:
 - prefer loaded committed capture artifacts for focused W-30 pad playback / trigger state, falling back to source-window projection only for bounded audition surfaces when no artifact is available
 - keep the `2048`-sample mono preview window for bounded audition diagnostics
 - project focused committed pad artifacts into a separate callback-safe `16384`-sample mono representation that spans the full capture duration and carries original sample-rate / frame-count identity, playback rate, direction, loop crossfade, and a bounded source-derived chop plan
+- project a focused lineage-ready resample artifact into a callback-safe
+  `4096`-sample mono original-PCM grain with source start-frame, sample-rate,
+  and frame-count identity; select the strongest energy/transient window
+  deterministically outside the callback instead of time-compressing the full
+  capture, point-sampling it, or decoding in realtime
 - derive chop slice starts outside the callback from quantized short-time energy rises in the real capture; realtime transport and pad triggers may only select and retrigger the prepared bounded plan
 - preserve the action-derived damage transform and capture-artifact identity across Session replay; artifact hydration must not invent macro / grit state that the committed action did not set
 - keep cache loading and source-window projection outside the realtime callback
@@ -429,7 +436,7 @@ Smallest acceptable seam:
 
 - input: one committed W-30 capture selected by the current lane focus
 - source audio: prefer the committed capture artifact, then fall back to source-window projection only when no artifact exists
-- render policy: use the existing W-30 preview / resample-tap state as the audible processing policy, including music-bus level, grit, source profile, and generation depth
+- render policy: use the existing W-30 preview / resample-tap state as the audible processing policy, including hydrated source audio, transport tempo/position, music-bus level, grit, source profile, and generation depth; no oscillator or synthetic fallback voice may substitute for missing capture audio
 - duration: bounded to the input capture duration or a documented maximum window for MVP safety
 - output: a new PCM16 WAV artifact at the derived resample capture `storage_path`
 - session result: a new `CaptureRef` with `CaptureType::Resample`, explicit `lineage_capture_refs`, incremented `resample_generation_depth`, and no direct `source_window` unless the printed artifact is still a literal source-window copy
@@ -440,7 +447,10 @@ Minimum QA gate:
 
 - control-path test for queue -> commit -> new resample capture -> lane focus
 - artifact test proving the printed WAV exists, reloads, has expected sample rate / channel count / bounded duration, and is not silent
-- comparison against raw source/capture artifact and synthetic fallback so the bus print cannot silently collapse to either control
+- comparison against raw source/capture artifact and missing-source silence,
+  plus same-source determinism and cross-source diversity so the bus print
+  cannot silently collapse to a dry copy or behave like the retired
+  source-independent proxy voice
 - docs or PR notes must state that full multitrack recording and export remain out of scope
 
 ### 11.3 Callback hot-path contract

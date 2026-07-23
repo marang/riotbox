@@ -26,9 +26,14 @@ demo-bank evidence unless a real, hash-matched human review is supplied
 explicitly. `RIOTBOX-1405` has now proven honest live
 degraded/unavailable handling for weak and bad-timing sources without generated
 replacement music; both negative families have a bounded human product pass,
-not a sound-quality pass. The next bounded audible slice is `RIOTBOX-1408`,
-which replaces the synthetic W-30 resample-tap proxy with source-backed audio
-through the exact live path.
+not a sound-quality pass. `RIOTBOX-1408` has now replaced the synthetic W-30
+resample-tap proxy with hydrated capture audio through the exact live path.
+Determinism, three-source diversity, replay identity, and missing-source silence
+pass, but direct source-to-tap listening rated the result
+`technically_ok_but_musically_weak`: the tap is very timid, its hook is weak,
+and Beat03 is no longer perceptually recognizable. `RIOTBOX-1422` is the next
+bounded audible slice: preserve the real source-backed seam while lifting its
+usable level, source character, and performer-triggered hard variation.
 
 `P016`, `P021`, and `P022` remain subordinate to the active P023 product path.
 Offline renderers, scripted packs, fixture verdicts, reports, and validators
@@ -311,6 +316,7 @@ docs/
 - `reviews/p013_w30_source_accent_dynamics_review_2026-05-29.md`: P013 W-30 source accent-dynamics review captured
 - `reviews/p013_tr909_source_accent_dynamics_review_2026-05-29.md`: P013 TR-909 source accent-dynamics review captured
 - `reviews/p013_all_lane_mix_movement_review_2026-05-29.md`: P013 all-lane mix movement review captured
+- `reviews/riotbox_1408_source_backed_w30_resample_review_2026-07-21.md`: source-backed W-30 resample implementation and human weak verdict captured
 - `reviews/p013_mc202_source_contour_review_2026-05-29.md`: P013 MC-202 source contour review captured
 - `reviews/p013_exit_review_2026-05-29.md`: P013 bounded all-lane musical-depth exit review captured
 - `reviews/p012_source_timing_qa_contract_review_2026-05-20.md`: P012 Source Timing QA contract review captured

@@ -7,14 +7,17 @@ use riotbox_audio::{
     runtime::render_w30_resample_tap_offline,
     source_audio::{SourceAudioCache, SourceAudioWindow, write_interleaved_pcm16_wav},
     w30::{
-        W30ResampleTapMode, W30ResampleTapRouting, W30ResampleTapSourceProfile, W30ResampleTapState,
+        W30ResampleTapAvailability, W30ResampleTapMode, W30ResampleTapRouting,
+        W30ResampleTapSourceProfile, W30ResampleTapState,
     },
 };
 use riotbox_core::{ids::CaptureId, session::CaptureRef};
 
 use super::JamAppState;
 use super::helpers::append_capture_note;
+use super::projection::resample_source_from_interleaved;
 use super::state::W30BusPrintInput;
+use super::transport_helpers::trusted_source_timing_bpm;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(in crate::jam_app) enum CaptureArtifactHydrationPreflightError {
@@ -121,7 +124,7 @@ impl JamAppState {
         let frame_count = input_frames.min(max_frames).max(1);
         let sample_count = frame_count.saturating_mul(channel_count);
         let dry = &input.samples[..sample_count.min(input.samples.len())];
-        let render_state = self.w30_bus_print_render_state(capture, source_capture);
+        let render_state = self.w30_bus_print_render_state(capture, source_capture, &input);
         let wet = render_w30_resample_tap_offline(
             &render_state,
             input.sample_rate,
@@ -183,6 +186,7 @@ impl JamAppState {
         &self,
         capture: &CaptureRef,
         source_capture: &CaptureRef,
+        input: &W30BusPrintInput,
     ) -> W30ResampleTapState {
         let source_profile = if source_capture.is_pinned {
             Some(W30ResampleTapSourceProfile::PinnedCapture)
@@ -192,11 +196,30 @@ impl JamAppState {
             Some(W30ResampleTapSourceProfile::RawCapture)
         };
 
+        let source_audio = resample_source_from_interleaved(
+            &input.samples,
+            usize::from(input.channel_count),
+            input.sample_rate,
+        );
+        let (availability, routing) = if source_audio.is_some() {
+            (
+                W30ResampleTapAvailability::SourceAudioReady,
+                W30ResampleTapRouting::InternalCaptureTap,
+            )
+        } else {
+            (
+                W30ResampleTapAvailability::SourceAudioUnavailable,
+                W30ResampleTapRouting::Silent,
+            )
+        };
+
         W30ResampleTapState {
             mode: W30ResampleTapMode::CaptureLineageReady,
-            routing: W30ResampleTapRouting::InternalCaptureTap,
+            routing,
+            availability,
             source_profile,
             source_capture_id: Some(source_capture.capture_id.to_string()),
+            source_audio,
             lineage_capture_count: capture
                 .lineage_capture_refs
                 .len()
@@ -216,6 +239,9 @@ impl JamAppState {
                 .w30_grit
                 .clamp(0.0, 1.0),
             is_transport_running: self.runtime.transport.is_playing,
+            tempo_bpm: trusted_source_timing_bpm(&self.session, self.source_graph.as_ref())
+                .unwrap_or(0.0),
+            position_beats: self.runtime.transport.position_beats,
         }
     }
 

@@ -220,13 +220,23 @@ fn shared_w30_resample_tap_state_tracks_updates() {
     let mut state = W30ResampleTapState {
         mode: W30ResampleTapMode::CaptureLineageReady,
         routing: W30ResampleTapRouting::InternalCaptureTap,
+        availability: W30ResampleTapAvailability::SourceAudioReady,
         source_profile: Some(W30ResampleTapSourceProfile::PromotedCapture),
         source_capture_id: Some("cap-03".into()),
+        source_audio: Some(Box::new(W30ResampleSourceWindow {
+            source_start_frame: 0,
+            source_sample_rate: 44_100,
+            source_frame_count: W30_RESAMPLE_SOURCE_WINDOW_LEN as u64,
+            sample_count: W30_RESAMPLE_SOURCE_WINDOW_LEN,
+            samples: positive_realtime_resample_source().samples,
+        })),
         lineage_capture_count: 2,
         generation_depth: 1,
         music_bus_level: 0.61,
         grit_level: 0.72,
         is_transport_running: true,
+        tempo_bpm: 128.0,
+        position_beats: 21.0,
     };
     shared.update(&state);
 
@@ -242,6 +252,17 @@ fn shared_w30_resample_tap_state_tracks_updates() {
     assert_eq!(snapshot.music_bus_level, 0.61);
     assert_eq!(snapshot.grit_level, 0.72);
     assert!(snapshot.is_transport_running);
+    assert_eq!(snapshot.tempo_bpm, 128.0);
+    assert_eq!(snapshot.position_beats, 21.0);
+    assert_eq!(snapshot.source_audio.source_sample_rate, 44_100);
+    assert_eq!(
+        snapshot.source_audio.sample_count,
+        W30_RESAMPLE_SOURCE_WINDOW_LEN
+    );
+    assert_eq!(
+        snapshot.source_audio.samples[127],
+        positive_realtime_resample_source().samples[127]
+    );
 
     state.source_profile = Some(W30ResampleTapSourceProfile::PinnedCapture);
     state.lineage_capture_count = 3;

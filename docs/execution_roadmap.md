@@ -1396,9 +1396,20 @@ transport, idle generated lanes, no live source policy, and no fallback music.
 The compact state, reason, and safe next action earned a bounded human product
 `pass` with an explicit note that general TUI polish remains later work.
 `weak_source` and `bad_timing` therefore satisfy their reviewed-negative family
-contract without a rendered candidate or demo-ready claim. The next audible
-slice is RIOTBOX-1408: retire the synthetic W-30 resample-tap proxy in favor of
-source-backed resample audio on the exact product path.
+contract without a rendered candidate or demo-ready claim.
+
+RIOTBOX-1408 now retires the synthetic W-30 resample-tap proxy. The committed
+capture artifact owns a bounded original-PCM grain carried through the exact
+callback path; missing/invalid capture material reports unavailable and stays
+digitally silent. Same-source replay is byte-stable, Beat03/Beat08/Beat20 remain
+materially distinct and unclipped, and the old fixed-frequency oscillator and
+fixed tempo are absent. Direct raw-level source-to-tap listening nevertheless
+records `technically_ok_but_musically_weak`: the chop is interesting but very
+timid, Beat03 source recognition is lost, and the two-bar hook is weak.
+RIOTBOX-1422 therefore owns the next bounded audible outcome: raise usable
+active tap level, preserve recognizable source character, and add a
+performer-triggered hard variation without scripted choreography or synthetic
+fallback.
 
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a

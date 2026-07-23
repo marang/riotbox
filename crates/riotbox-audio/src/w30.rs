@@ -1,5 +1,10 @@
 pub const W30_PREVIEW_SAMPLE_WINDOW_LEN: usize = 2_048;
 pub const W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN: usize = 16_384;
+/// Callback-safe original-PCM grain for the internal resample tap.
+///
+/// This is intentionally smaller than the pad playback window: the tap state is copied through
+/// several realtime plan snapshots, so keeping it bounded avoids growing app/test thread stacks.
+pub const W30_RESAMPLE_SOURCE_WINDOW_LEN: usize = 4_096;
 pub const W30_PAD_CHOP_SLICE_COUNT: usize = 8;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -99,6 +104,24 @@ pub enum W30ResampleTapSourceProfile {
     PinnedCapture,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum W30ResampleTapAvailability {
+    Idle,
+    SourceAudioUnavailable,
+    SourceAudioReady,
+}
+
+impl W30ResampleTapAvailability {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Idle => "idle",
+            Self::SourceAudioUnavailable => "source_audio_unavailable",
+            Self::SourceAudioReady => "source_audio_ready",
+        }
+    }
+}
+
 impl W30ResampleTapSourceProfile {
     #[must_use]
     pub const fn label(self) -> &'static str {
@@ -182,13 +205,26 @@ impl Default for W30PreviewRenderState {
 pub struct W30ResampleTapState {
     pub mode: W30ResampleTapMode,
     pub routing: W30ResampleTapRouting,
+    pub availability: W30ResampleTapAvailability,
     pub source_profile: Option<W30ResampleTapSourceProfile>,
     pub source_capture_id: Option<String>,
+    pub source_audio: Option<Box<W30ResampleSourceWindow>>,
     pub lineage_capture_count: u8,
     pub generation_depth: u8,
     pub music_bus_level: f32,
     pub grit_level: f32,
     pub is_transport_running: bool,
+    pub tempo_bpm: f32,
+    pub position_beats: f64,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct W30ResampleSourceWindow {
+    pub source_start_frame: u64,
+    pub source_sample_rate: u32,
+    pub source_frame_count: u64,
+    pub sample_count: usize,
+    pub samples: [f32; W30_RESAMPLE_SOURCE_WINDOW_LEN],
 }
 
 impl Default for W30ResampleTapState {
@@ -196,13 +232,17 @@ impl Default for W30ResampleTapState {
         Self {
             mode: W30ResampleTapMode::Idle,
             routing: W30ResampleTapRouting::Silent,
+            availability: W30ResampleTapAvailability::Idle,
             source_profile: None,
             source_capture_id: None,
+            source_audio: None,
             lineage_capture_count: 0,
             generation_depth: 0,
             music_bus_level: 0.0,
             grit_level: 0.0,
             is_transport_running: false,
+            tempo_bpm: 0.0,
+            position_beats: 0.0,
         }
     }
 }
@@ -211,8 +251,8 @@ impl Default for W30ResampleTapState {
 mod tests {
     use super::{
         W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewRenderState,
-        W30PreviewSourceProfile, W30ResampleTapMode, W30ResampleTapRouting,
-        W30ResampleTapSourceProfile, W30ResampleTapState,
+        W30PreviewSourceProfile, W30ResampleTapAvailability, W30ResampleTapMode,
+        W30ResampleTapRouting, W30ResampleTapSourceProfile, W30ResampleTapState,
     };
 
     #[test]
@@ -278,6 +318,15 @@ mod tests {
             W30ResampleTapRouting::InternalCaptureTap.label(),
             "internal_capture_tap"
         );
+        assert_eq!(W30ResampleTapAvailability::Idle.label(), "idle");
+        assert_eq!(
+            W30ResampleTapAvailability::SourceAudioUnavailable.label(),
+            "source_audio_unavailable"
+        );
+        assert_eq!(
+            W30ResampleTapAvailability::SourceAudioReady.label(),
+            "source_audio_ready"
+        );
         assert_eq!(
             W30ResampleTapSourceProfile::RawCapture.label(),
             "raw_capture"
@@ -298,8 +347,10 @@ mod tests {
 
         assert_eq!(state.mode, W30ResampleTapMode::Idle);
         assert_eq!(state.routing, W30ResampleTapRouting::Silent);
+        assert_eq!(state.availability, W30ResampleTapAvailability::Idle);
         assert_eq!(state.source_profile, None);
         assert_eq!(state.source_capture_id, None);
+        assert_eq!(state.source_audio, None);
         assert_eq!(state.lineage_capture_count, 0);
         assert_eq!(state.generation_depth, 0);
         assert!(!state.is_transport_running);

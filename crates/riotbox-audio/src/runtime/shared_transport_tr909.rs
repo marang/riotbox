@@ -351,6 +351,8 @@ where
                 .snapshot_or_previous(&last_w30_resample_snapshot);
             last_w30_resample_snapshot = w30_resample_render_state;
             w30_resample_render_state.is_transport_running = callback_timing.is_transport_running;
+            w30_resample_render_state.tempo_bpm = callback_timing.tempo_bpm;
+            w30_resample_render_state.position_beats = callback_timing.render_position_beats;
             let source_monitor_control_snapshot = shared
                 .source_monitor
                 .control_snapshot_or_previous(&last_source_monitor_control_snapshot);

@@ -32,14 +32,12 @@ fn renders_capture_shell_snapshot_with_committed_w30_resample_lineage_diagnostic
 
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-    assert!(
-        rendered.contains("forge idle | tap ready/raw"),
-        "{rendered}"
-    );
+    assert!(rendered.contains("forge idle | tap"), "{rendered}");
+    assert!(rendered.contains("ready/raw/unavailable"), "{rendered}");
     assert!(rendered.contains("g2"), "{rendered}");
     assert!(rendered.contains("lineage"));
     assert!(rendered.contains("tap src cap-02 g2/l2 |"), "{rendered}");
-    assert!(rendered.contains("route internal"), "{rendered}");
+    assert!(rendered.contains("route silent"), "{rendered}");
     assert!(rendered.contains("tap src cap-02"), "{rendered}");
     assert!(
         rendered.matches("latest promoted").count() <= 1,
@@ -197,6 +195,14 @@ fn renders_w30_resample_lab_diagnostics_across_shell_surfaces() {
     );
     assert_eq!(committed.len(), 1);
 
+    let observer = crate::observer::observer_snapshot(&shell);
+    assert_eq!(
+        observer
+            .pointer("/runtime/w30_resample_tap_availability")
+            .and_then(serde_json::Value::as_str),
+        Some("source_audio_unavailable")
+    );
+
     let jam_rendered = render_jam_shell_snapshot(&shell, 120, 34);
     assert!(
         jam_rendered.contains("current pad bank-b/pad-03"),
@@ -211,7 +217,7 @@ fn renders_w30_resample_lab_diagnostics_across_shell_surfaces() {
         "{capture_rendered}"
     );
     assert!(
-        capture_rendered.contains("route internal"),
+        capture_rendered.contains("route silent"),
         "{capture_rendered}"
     );
     assert!(
