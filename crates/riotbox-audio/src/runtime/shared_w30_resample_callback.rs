@@ -235,6 +235,9 @@ pub(super) struct RealtimeW30ResampleTapState {
     pub(super) variation: W30ResampleTapVariation,
     pub(super) variation_revision: u64,
     pub(super) variation_intensity: f32,
+    pub(super) hard_policy: W30ResampleTapHardPolicy,
+    pub(super) hard_trigger_mask: u8,
+    pub(super) hard_transient_contrast: f32,
     pub(super) music_bus_level: f32,
     pub(super) grit_level: f32,
     pub(super) is_transport_running: bool,
@@ -287,6 +290,9 @@ pub(super) struct SharedW30ResampleTapState {
     variation: AtomicU32,
     variation_revision: AtomicU64,
     variation_intensity_bits: AtomicU32,
+    hard_policy: AtomicU32,
+    hard_trigger_mask: AtomicU32,
+    hard_transient_contrast_bits: AtomicU32,
     music_bus_level_bits: AtomicU32,
     grit_level_bits: AtomicU32,
     is_transport_running: AtomicBool,
@@ -314,6 +320,9 @@ impl SharedW30ResampleTapState {
             variation: AtomicU32::new(0),
             variation_revision: AtomicU64::new(0),
             variation_intensity_bits: AtomicU32::new(0),
+            hard_policy: AtomicU32::new(0),
+            hard_trigger_mask: AtomicU32::new(0),
+            hard_transient_contrast_bits: AtomicU32::new(0),
             music_bus_level_bits: AtomicU32::new(0),
             grit_level_bits: AtomicU32::new(0),
             is_transport_running: AtomicBool::new(false),
@@ -355,6 +364,16 @@ impl SharedW30ResampleTapState {
             render_state.variation_intensity.to_bits(),
             Ordering::Relaxed,
         );
+        self.hard_policy.store(
+            w30_resample_hard_policy_to_u32(render_state.hard_policy),
+            Ordering::Relaxed,
+        );
+        self.hard_trigger_mask
+            .store(u32::from(render_state.hard_trigger_mask), Ordering::Relaxed);
+        self.hard_transient_contrast_bits.store(
+            render_state.hard_transient_contrast.to_bits(),
+            Ordering::Relaxed,
+        );
         self.music_bus_level_bits
             .store(render_state.music_bus_level.to_bits(), Ordering::Relaxed);
         self.grit_level_bits
@@ -393,6 +412,13 @@ impl SharedW30ResampleTapState {
             variation_revision: self.variation_revision.load(Ordering::Relaxed),
             variation_intensity: f32::from_bits(
                 self.variation_intensity_bits.load(Ordering::Relaxed),
+            ),
+            hard_policy: w30_resample_hard_policy_from_u32(
+                self.hard_policy.load(Ordering::Relaxed),
+            ),
+            hard_trigger_mask: self.hard_trigger_mask.load(Ordering::Relaxed) as u8,
+            hard_transient_contrast: f32::from_bits(
+                self.hard_transient_contrast_bits.load(Ordering::Relaxed),
             ),
             music_bus_level: f32::from_bits(self.music_bus_level_bits.load(Ordering::Relaxed)),
             grit_level: f32::from_bits(self.grit_level_bits.load(Ordering::Relaxed)),
@@ -524,6 +550,22 @@ fn w30_resample_variation_from_u32(value: u32) -> W30ResampleTapVariation {
     }
 }
 
+fn w30_resample_hard_policy_to_u32(policy: W30ResampleTapHardPolicy) -> u32 {
+    match policy {
+        W30ResampleTapHardPolicy::Unavailable => 0,
+        W30ResampleTapHardPolicy::SourceTransientChop => 1,
+        W30ResampleTapHardPolicy::SourceTextureBite => 2,
+    }
+}
+
+fn w30_resample_hard_policy_from_u32(value: u32) -> W30ResampleTapHardPolicy {
+    match value {
+        1 => W30ResampleTapHardPolicy::SourceTransientChop,
+        2 => W30ResampleTapHardPolicy::SourceTextureBite,
+        _ => W30ResampleTapHardPolicy::Unavailable,
+    }
+}
+
 #[derive(Debug, Default)]
 pub(super) struct Tr909CallbackState {
     pub(super) beat_position: f64,
@@ -582,6 +624,7 @@ pub(super) struct W30ResampleTapCallbackState {
     pub(super) beat_position: f64,
     pub(super) source_sample_cursor: f32,
     pub(super) attack_sample_cursor: f32,
+    pub(super) last_attack_input: f32,
     pub(super) last_character_input: f32,
     pub(super) character_edge_memory: f32,
     pub(super) envelope: f32,

@@ -48,6 +48,74 @@ fn resample_source_projection_rejects_invalid_audio_metadata() {
 }
 
 #[test]
+fn resample_hard_policy_separates_transient_chops_from_sustained_texture() {
+    let sample_rate = 48_000_u32;
+    let frame_count = sample_rate as usize * 2;
+    let mut transient = vec![0.0_f32; frame_count * 2];
+    for onset_frame in [0, frame_count / 4, frame_count * 5 / 8] {
+        for offset in 0..960 {
+            let envelope = 1.0 - offset as f32 / 960.0;
+            let sample = (offset as f32 / 5.0).sin() * envelope * 0.8;
+            transient[(onset_frame + offset) * 2] = sample;
+            transient[(onset_frame + offset) * 2 + 1] = sample;
+        }
+    }
+    let sustained = (0..frame_count)
+        .flat_map(|frame| {
+            let sample =
+                (frame as f32 * 220.0 * std::f32::consts::TAU / sample_rate as f32).sin() * 0.12;
+            [sample, sample]
+        })
+        .collect::<Vec<_>>();
+
+    let (transient_policy, transient_mask, transient_contrast) =
+        super::projection::analyze_w30_resample_hard_policy(&transient, 2, sample_rate);
+    let (texture_policy, texture_mask, texture_contrast) =
+        super::projection::analyze_w30_resample_hard_policy(&sustained, 2, sample_rate);
+
+    assert_eq!(
+        transient_policy,
+        riotbox_audio::w30::W30ResampleTapHardPolicy::SourceTransientChop
+    );
+    assert!(transient_mask.count_ones() >= 4);
+    assert!(transient_contrast >= 0.9);
+    assert_eq!(
+        texture_policy,
+        riotbox_audio::w30::W30ResampleTapHardPolicy::SourceTextureBite
+    );
+    assert_eq!(texture_mask, 0);
+    assert!(texture_contrast < 0.9);
+}
+
+#[test]
+fn resample_transient_trigger_mask_follows_source_onset_positions() {
+    let sample_rate = 48_000_u32;
+    let frame_count = sample_rate as usize * 2;
+    let source = |onset_slots: [usize; 3]| {
+        let mut samples = vec![0.0_f32; frame_count * 2];
+        for slot in onset_slots {
+            let onset_frame = slot * frame_count / 8;
+            for offset in 0..960 {
+                let envelope = 1.0 - offset as f32 / 960.0;
+                let sample = (offset as f32 / 4.0).sin() * envelope * 0.8;
+                samples[(onset_frame + offset) * 2] = sample;
+                samples[(onset_frame + offset) * 2 + 1] = sample;
+            }
+        }
+        samples
+    };
+
+    let (_, first_mask, _) =
+        super::projection::analyze_w30_resample_hard_policy(&source([1, 3, 5]), 2, sample_rate);
+    let (_, second_mask, _) =
+        super::projection::analyze_w30_resample_hard_policy(&source([2, 4, 7]), 2, sample_rate);
+
+    assert_ne!(first_mask, second_mask);
+    assert_ne!(first_mask & 0b0010_1010, 0);
+    assert_ne!(second_mask & 0b1001_0100, 0);
+}
+
+#[test]
 fn raw_capture_audition_projects_source_window_preview_samples() {
     let tempdir = tempdir().expect("create source audio tempdir");
     let source_path = tempdir.path().join("source.wav");

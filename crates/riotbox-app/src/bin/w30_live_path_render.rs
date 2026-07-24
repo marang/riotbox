@@ -22,18 +22,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let source_path = required_path(&args, "--source")?;
     let output_dir = required_path(&args, "--output")?;
     let bpm = required_value(&args, "--bpm")?.parse::<f32>()?;
+    let downbeat_seconds = optional_value(&args, "--downbeat-seconds")
+        .map(str::parse::<f32>)
+        .transpose()?;
     let include_resample = args.iter().any(|arg| arg == "--include-resample");
     fs::create_dir_all(&output_dir)?;
 
     let session_path = output_dir.join("session.json");
     let graph_path = output_dir.join("source-graph.json");
-    let mut state = JamAppState::analyze_source_file_to_json_with_source_bpm_confirmation(
+    let mut state = JamAppState::analyze_source_file_to_json_with_source_timing_confirmation(
         &source_path,
         &session_path,
         Some(graph_path),
         "python/sidecar/json_stdio_sidecar.py",
         19,
         Some(bpm),
+        downbeat_seconds,
     )?;
     state.set_transport_playing(true);
     let scene_id = state.runtime.transport.current_scene.clone();
@@ -146,10 +150,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let live_gesture =
             render_resample_live_gesture(&state, base_tap_state, hard_tap_state, bpm);
         println!(
-            "hard resample tap: variation={:?} revision={} intensity={}",
+            "hard resample tap: variation={:?} revision={} intensity={} policy={} trigger_mask={:08b} transient_contrast={:.3}",
             state.runtime.w30_resample_tap.variation,
             state.runtime.w30_resample_tap.variation_revision,
             state.runtime.w30_resample_tap.variation_intensity,
+            state.runtime.w30_resample_tap.hard_policy.label(),
+            state.runtime.w30_resample_tap.hard_trigger_mask,
+            state.runtime.w30_resample_tap.hard_transient_contrast,
         );
 
         let mut unavailable_state = state.runtime.w30_resample_tap.clone();
@@ -396,4 +403,11 @@ fn required_value<'a>(
     args.get(index + 1)
         .map(String::as_str)
         .ok_or_else(|| format!("missing value for {flag}").into())
+}
+
+fn optional_value<'a>(args: &'a [String], flag: &str) -> Option<&'a str> {
+    args.iter()
+        .position(|arg| arg == flag)
+        .and_then(|index| args.get(index + 1))
+        .map(String::as_str)
 }

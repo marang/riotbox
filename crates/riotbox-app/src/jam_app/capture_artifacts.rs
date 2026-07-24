@@ -7,8 +7,9 @@ use riotbox_audio::{
     runtime::render_w30_resample_tap_offline,
     source_audio::{SourceAudioCache, SourceAudioWindow, write_interleaved_pcm16_wav},
     w30::{
-        W30ResampleTapAvailability, W30ResampleTapMode, W30ResampleTapRouting,
-        W30ResampleTapSourceProfile, W30ResampleTapState, W30ResampleTapVariation,
+        W30ResampleTapAvailability, W30ResampleTapHardPolicy, W30ResampleTapMode,
+        W30ResampleTapRouting, W30ResampleTapSourceProfile, W30ResampleTapState,
+        W30ResampleTapVariation,
     },
 };
 use riotbox_core::{ids::CaptureId, session::CaptureRef};
@@ -229,6 +230,9 @@ impl JamAppState {
             variation: W30ResampleTapVariation::Base,
             variation_revision: 0,
             variation_intensity: 0.0,
+            hard_policy: W30ResampleTapHardPolicy::Unavailable,
+            hard_trigger_mask: 0,
+            hard_transient_contrast: 0.0,
             music_bus_level: self
                 .session
                 .runtime_state

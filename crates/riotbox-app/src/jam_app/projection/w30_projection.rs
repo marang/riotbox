@@ -30,13 +30,20 @@ fn build_w30_capture_artifact_preview(
 fn build_w30_capture_artifact_resample_source(
     capture: &riotbox_core::session::CaptureRef,
     capture_audio_cache: Option<&BTreeMap<CaptureId, SourceAudioCache>>,
-) -> Option<Box<W30ResampleSourceWindow>> {
+) -> Option<W30ResampleSourceProjection> {
     let cache = capture_audio_cache?.get(&capture.capture_id)?;
-    resample_source_from_interleaved(
+    project_resample_source_from_interleaved(
         cache.interleaved_samples(),
         usize::from(cache.channel_count),
         cache.sample_rate,
     )
+}
+
+struct W30ResampleSourceProjection {
+    audio: Box<W30ResampleSourceWindow>,
+    hard_policy: W30ResampleTapHardPolicy,
+    hard_trigger_mask: u8,
+    hard_transient_contrast: f32,
 }
 
 pub(super) fn resample_source_from_interleaved(
@@ -44,6 +51,15 @@ pub(super) fn resample_source_from_interleaved(
     channel_count: usize,
     source_sample_rate: u32,
 ) -> Option<Box<W30ResampleSourceWindow>> {
+    project_resample_source_from_interleaved(samples, channel_count, source_sample_rate)
+        .map(|projection| projection.audio)
+}
+
+fn project_resample_source_from_interleaved(
+    samples: &[f32],
+    channel_count: usize,
+    source_sample_rate: u32,
+) -> Option<W30ResampleSourceProjection> {
     if channel_count == 0
         || source_sample_rate == 0
         || samples.is_empty()
@@ -79,16 +95,108 @@ pub(super) fn resample_source_from_interleaved(
         *slot = samples[base..base + channel_count].iter().sum::<f32>() / channel_count as f32;
     }
 
-    Some(Box::new(W30ResampleSourceWindow {
-        source_start_frame: 0,
-        source_sample_rate,
-        source_frame_count: frame_count.try_into().unwrap_or(u64::MAX),
-        sample_count,
-        samples: resample,
-        attack_start_frame: attack_start_frame.try_into().unwrap_or(u64::MAX),
-        attack_sample_count,
-        attack_samples,
-    }))
+    let (hard_policy, hard_trigger_mask, hard_transient_contrast) =
+        analyze_w30_resample_hard_policy(samples, channel_count, source_sample_rate);
+    Some(W30ResampleSourceProjection {
+        audio: Box::new(W30ResampleSourceWindow {
+            source_start_frame: 0,
+            source_sample_rate,
+            source_frame_count: frame_count.try_into().unwrap_or(u64::MAX),
+            sample_count,
+            samples: resample,
+            attack_start_frame: attack_start_frame.try_into().unwrap_or(u64::MAX),
+            attack_sample_count,
+            attack_samples,
+        }),
+        hard_policy,
+        hard_trigger_mask,
+        hard_transient_contrast,
+    })
+}
+
+pub(super) fn analyze_w30_resample_hard_policy(
+    samples: &[f32],
+    channel_count: usize,
+    source_sample_rate: u32,
+) -> (W30ResampleTapHardPolicy, u8, f32) {
+    const ENVELOPE_WINDOW_MILLISECONDS: usize = 20;
+    const TRANSIENT_CHOP_MIN_RISE_TO_MEAN: f32 = 0.9;
+    const MEDIUM_TRANSIENT_RISE_TO_MEAN: f32 = 1.4;
+    const STRONG_TRANSIENT_RISE_TO_MEAN: f32 = 2.2;
+    const TRIGGER_SLOT_COUNT: usize = 8;
+    const LOW_TRANSIENT_TRIGGER_COUNT: usize = 4;
+    const MEDIUM_TRANSIENT_TRIGGER_COUNT: usize = 5;
+    const STRONG_TRANSIENT_TRIGGER_COUNT: usize = 6;
+
+    let frame_count = samples.len() / channel_count;
+    let window_frames =
+        ((source_sample_rate as usize * ENVELOPE_WINDOW_MILLISECONDS) / 1_000).max(1);
+    let mut envelope = Vec::with_capacity(frame_count.div_ceil(window_frames));
+    for start_frame in (0..frame_count).step_by(window_frames) {
+        let end_frame = (start_frame + window_frames).min(frame_count);
+        let mut square_sum = 0.0_f32;
+        for frame_index in start_frame..end_frame {
+            let base = frame_index * channel_count;
+            let mono =
+                samples[base..base + channel_count].iter().sum::<f32>() / channel_count as f32;
+            square_sum += mono * mono;
+        }
+        envelope.push((square_sum / (end_frame - start_frame).max(1) as f32).sqrt());
+    }
+    let mean_envelope = envelope.iter().sum::<f32>() / envelope.len().max(1) as f32;
+    if mean_envelope <= 1.0e-6 {
+        return (W30ResampleTapHardPolicy::Unavailable, 0, 0.0);
+    }
+    let strongest_rise = envelope
+        .windows(2)
+        .map(|window| (window[1] - window[0]).max(0.0))
+        .fold(0.0_f32, f32::max);
+    let transient_contrast = strongest_rise / mean_envelope;
+    if transient_contrast < TRANSIENT_CHOP_MIN_RISE_TO_MEAN {
+        return (
+            W30ResampleTapHardPolicy::SourceTextureBite,
+            0,
+            transient_contrast,
+        );
+    }
+
+    let trigger_count = if transient_contrast >= STRONG_TRANSIENT_RISE_TO_MEAN {
+        STRONG_TRANSIENT_TRIGGER_COUNT
+    } else if transient_contrast >= MEDIUM_TRANSIENT_RISE_TO_MEAN {
+        MEDIUM_TRANSIENT_TRIGGER_COUNT
+    } else {
+        LOW_TRANSIENT_TRIGGER_COUNT
+    };
+    let mut slot_scores = [0.0_f32; TRIGGER_SLOT_COUNT];
+    for (slot_index, slot_score) in slot_scores.iter_mut().enumerate() {
+        let start = slot_index * envelope.len() / TRIGGER_SLOT_COUNT;
+        let end = ((slot_index + 1) * envelope.len() / TRIGGER_SLOT_COUNT).max(start + 1);
+        let slot = &envelope[start.min(envelope.len())..end.min(envelope.len())];
+        let local_peak = slot.iter().copied().fold(0.0_f32, f32::max);
+        let local_rise = slot
+            .windows(2)
+            .map(|window| (window[1] - window[0]).max(0.0))
+            .fold(0.0_f32, f32::max);
+        *slot_score = local_rise + local_peak * 0.15;
+    }
+    let mut ranked_slots = std::array::from_fn::<_, TRIGGER_SLOT_COUNT, _>(|index| index);
+    ranked_slots.sort_by(|left, right| {
+        slot_scores[*right]
+            .total_cmp(&slot_scores[*left])
+            .then_with(|| left.cmp(right))
+    });
+    let mut trigger_mask = 1_u8;
+    for slot_index in ranked_slots {
+        if trigger_mask.count_ones() as usize >= trigger_count {
+            break;
+        }
+        trigger_mask |= 1_u8 << slot_index;
+    }
+    (
+        W30ResampleTapHardPolicy::SourceTransientChop,
+        trigger_mask,
+        transient_contrast,
+    )
 }
 
 fn select_resample_attack_start(
@@ -436,7 +544,23 @@ pub(super) fn build_w30_resample_tap_state(
     } else {
         Some(W30ResampleTapSourceProfile::RawCapture)
     };
-    let source_audio = build_w30_capture_artifact_resample_source(capture, capture_audio_cache);
+    let source_projection =
+        build_w30_capture_artifact_resample_source(capture, capture_audio_cache);
+    let (source_audio, hard_policy, hard_trigger_mask, hard_transient_contrast) =
+        match source_projection {
+            Some(projection) => (
+                Some(projection.audio),
+                projection.hard_policy,
+                projection.hard_trigger_mask,
+                projection.hard_transient_contrast,
+            ),
+            None => (
+                None,
+                W30ResampleTapHardPolicy::Unavailable,
+                0,
+                0.0,
+            ),
+        };
     let (variation, variation_revision, variation_intensity) =
         w30_resample_tap_variation(session, capture);
     let (availability, routing) = if source_audio.is_some() {
@@ -467,6 +591,9 @@ pub(super) fn build_w30_resample_tap_state(
         variation,
         variation_revision,
         variation_intensity,
+        hard_policy,
+        hard_trigger_mask,
+        hard_transient_contrast,
         music_bus_level: session
             .runtime_state
             .mixer_state

@@ -18,8 +18,8 @@ use riotbox_audio::{
         W30PadPlaybackSampleWindow, W30PreviewRenderMode, W30PreviewRenderRouting,
         W30PreviewRenderState, W30PreviewSampleWindow, W30PreviewSourceProfile,
         W30ResampleSourceWindow, W30ResampleTapAvailability, W30ResampleTapMode,
-        W30ResampleTapRouting, W30ResampleTapSourceProfile, W30ResampleTapState,
-        W30ResampleTapVariation,
+        W30ResampleTapHardPolicy, W30ResampleTapRouting, W30ResampleTapSourceProfile,
+        W30ResampleTapState, W30ResampleTapVariation,
     },
 };
 use riotbox_core::{

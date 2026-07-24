@@ -549,6 +549,7 @@ pub(super) fn render_w30_resample_tap_buffer(
         state.beat_position = 0.0;
         state.source_sample_cursor = 0.0;
         state.attack_sample_cursor = 0.0;
+        state.last_attack_input = 0.0;
         state.last_character_input = 0.0;
         state.character_edge_memory = 0.0;
         state.last_variation_revision = 0;
@@ -579,6 +580,7 @@ pub(super) fn render_w30_resample_tap_buffer(
         state.last_step = 0;
         state.source_sample_cursor = 0.0;
         state.attack_sample_cursor = 0.0;
+        state.last_attack_input = 0.0;
         state.last_character_input = 0.0;
         state.character_edge_memory = 0.0;
         state.last_variation_revision = render.variation_revision;
@@ -596,6 +598,7 @@ pub(super) fn render_w30_resample_tap_buffer(
         state.envelope = 1.0;
         state.source_sample_cursor = w30_resample_step_cursor(render, state.last_step);
         state.attack_sample_cursor = 0.0;
+        state.last_attack_input = 0.0;
         state.last_character_input = 0.0;
         state.character_edge_memory = 0.0;
     }
@@ -619,6 +622,7 @@ pub(super) fn render_w30_resample_tap_buffer(
                     state.envelope = w30_resample_trigger_envelope(render);
                     state.source_sample_cursor = w30_resample_step_cursor(render, step);
                     state.attack_sample_cursor = 0.0;
+                    state.last_attack_input = 0.0;
                 }
             }
         } else {
@@ -630,7 +634,7 @@ pub(super) fn render_w30_resample_tap_buffer(
         let voice = if render.variation == W30ResampleTapVariation::HardDamage {
             let (attack, attack_envelope) =
                 w30_resample_hard_attack_sample(render, state, sample_rate);
-            let attack_mix = attack_envelope * 0.72;
+            let attack_mix = attack_envelope * w30_resample_hard_attack_mix(render);
             (source_character * (1.0 - attack_mix) + attack * attack_mix).clamp(-0.98, 0.98)
         } else {
             source_character
@@ -746,7 +750,15 @@ fn w30_resample_source_character(
     const BODY_SHARE: f32 = 0.76;
     const EDGE_SHARE: f32 = 0.24;
 
-    let grit = render.grit_level.clamp(0.0, 1.0) * 0.22;
+    let grit = if render.variation == W30ResampleTapVariation::HardDamage
+        && render.hard_policy != W30ResampleTapHardPolicy::Unavailable
+    {
+        (render.grit_level.clamp(0.0, 1.0) * 0.22
+            + render.variation_intensity.clamp(0.0, 1.0) * 0.34)
+            .clamp(0.0, 0.62)
+    } else {
+        render.grit_level.clamp(0.0, 1.0) * 0.22
+    };
     let raw_edge = sample - state.last_character_input;
     state.last_character_input = sample;
     state.character_edge_memory =
@@ -768,6 +780,9 @@ fn w30_resample_hard_attack_sample(
     state: &mut W30ResampleTapCallbackState,
     output_sample_rate: u32,
 ) -> (f32, f32) {
+    if render.hard_policy != W30ResampleTapHardPolicy::SourceTransientChop {
+        return (0.0, 0.0);
+    }
     let window = &render.source_audio;
     let sample_count = window
         .attack_sample_count
@@ -782,6 +797,8 @@ fn w30_resample_hard_attack_sample(
     let next = (base + 1).min(sample_count - 1);
     let source = window.attack_samples[base]
         + (window.attack_samples[next] - window.attack_samples[base]) * cursor.fract();
+    let raw_edge = source - state.last_attack_input;
+    state.last_attack_input = source;
     state.attack_sample_cursor +=
         (f64::from(window.source_sample_rate.max(1)) / f64::from(output_sample_rate.max(1))) as f32;
 
@@ -793,10 +810,24 @@ fn w30_resample_hard_attack_sample(
         ((sample_count as f32 - cursor) / release_frames as f32).clamp(0.0, 1.0)
     };
     let intensity = render.variation_intensity.clamp(0.0, 1.0);
-    let drive = 4.0 + intensity * 4.0;
-    let clip_level = 0.68 - intensity * 0.12;
-    let hard_clipped = (source * drive).clamp(-clip_level, clip_level) / clip_level;
-    (hard_clipped * 0.9 + source * 0.1, release)
+    let driven = (source * (1.8 + intensity * 2.4)).tanh();
+    let transient = (raw_edge * (7.0 + intensity * 9.0)).tanh();
+    (driven * 0.78 + transient * 0.22, release)
+}
+
+fn w30_resample_hard_attack_mix(render: &RealtimeW30ResampleTapState) -> f32 {
+    const MIN_TRANSIENT_CONTRAST: f32 = 0.9;
+    const FULL_TRANSIENT_CONTRAST: f32 = 3.0;
+    const MIN_ATTACK_MIX: f32 = 0.38;
+    const MAX_ATTACK_MIX: f32 = 0.64;
+
+    if render.hard_policy != W30ResampleTapHardPolicy::SourceTransientChop {
+        return 0.0;
+    }
+    let normalized = ((render.hard_transient_contrast - MIN_TRANSIENT_CONTRAST)
+        / (FULL_TRANSIENT_CONTRAST - MIN_TRANSIENT_CONTRAST))
+        .clamp(0.0, 1.0);
+    MIN_ATTACK_MIX + normalized * (MAX_ATTACK_MIX - MIN_ATTACK_MIX)
 }
 
 fn transport_stop_fade_frames(sample_rate: u32) -> u32 {
@@ -817,6 +848,11 @@ fn transport_stop_gain(latched: bool, remaining_frames: &mut u32, total_frames: 
 }
 
 fn w30_resample_subdivision(render: &RealtimeW30ResampleTapState) -> u32 {
+    if render.variation == W30ResampleTapVariation::HardDamage
+        && render.hard_policy == W30ResampleTapHardPolicy::SourceTransientChop
+    {
+        return 2;
+    }
     let base = match render.source_profile {
         Some(W30ResampleTapSourceProfile::RawCapture) => 1,
         Some(W30ResampleTapSourceProfile::PromotedCapture) => 2,
@@ -836,11 +872,19 @@ pub(super) fn should_trigger_w30_resample_step(
         return false;
     }
 
-    // Hard damage is an explicitly performed chopped role. Every grid step retriggers the next
-    // sequential source-phase anchor; aggression comes from the attack and character path rather
-    // than from deleting beats or pseudo-randomly scrambling the phrase.
+    // Hard damage follows the source-derived policy. Transient material retains its own selected
+    // eighth-note attack pattern; sustained material keeps phrase flow and gets timbral bite
+    // without imposing a generic gate template.
     if render.variation == W30ResampleTapVariation::HardDamage {
-        return true;
+        return match render.hard_policy {
+            W30ResampleTapHardPolicy::SourceTransientChop => {
+                let slot = step.rem_euclid(8) as u8;
+                render.hard_trigger_mask & (1_u8 << slot) != 0
+            }
+            W30ResampleTapHardPolicy::SourceTextureBite | W30ResampleTapHardPolicy::Unavailable => {
+                false
+            }
+        };
     }
 
     match render.source_profile {

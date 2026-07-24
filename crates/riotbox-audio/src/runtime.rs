@@ -22,9 +22,9 @@ use crate::{
         W30_PREVIEW_SAMPLE_WINDOW_LEN, W30_RESAMPLE_ATTACK_WINDOW_LEN,
         W30_RESAMPLE_SOURCE_WINDOW_LEN, W30PadPlaybackSampleWindow, W30PreviewRenderMode,
         W30PreviewRenderRouting, W30PreviewRenderState, W30PreviewSampleWindow,
-        W30PreviewSourceProfile, W30ResampleSourceWindow, W30ResampleTapMode,
-        W30ResampleTapRouting, W30ResampleTapSourceProfile, W30ResampleTapState,
-        W30ResampleTapVariation,
+        W30PreviewSourceProfile, W30ResampleSourceWindow, W30ResampleTapHardPolicy,
+        W30ResampleTapMode, W30ResampleTapRouting, W30ResampleTapSourceProfile,
+        W30ResampleTapState, W30ResampleTapVariation,
     },
 };
 

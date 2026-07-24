@@ -121,6 +121,25 @@ pub enum W30ResampleTapVariation {
     HardDamage,
 }
 
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum W30ResampleTapHardPolicy {
+    #[default]
+    Unavailable,
+    SourceTransientChop,
+    SourceTextureBite,
+}
+
+impl W30ResampleTapHardPolicy {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Unavailable => "unavailable",
+            Self::SourceTransientChop => "source_transient_chop",
+            Self::SourceTextureBite => "source_texture_bite",
+        }
+    }
+}
+
 impl W30ResampleTapVariation {
     #[must_use]
     pub const fn label(self) -> &'static str {
@@ -237,6 +256,11 @@ pub struct W30ResampleTapState {
     /// Zero means that no post-resample variation gesture has committed.
     pub variation_revision: u64,
     pub variation_intensity: f32,
+    pub hard_policy: W30ResampleTapHardPolicy,
+    /// Eight source-derived eighth-note trigger decisions, least-significant bit first.
+    pub hard_trigger_mask: u8,
+    /// Strongest positive 20 ms envelope rise divided by the mean source envelope.
+    pub hard_transient_contrast: f32,
     pub music_bus_level: f32,
     pub grit_level: f32,
     pub is_transport_running: bool,
@@ -270,6 +294,9 @@ impl Default for W30ResampleTapState {
             variation: W30ResampleTapVariation::Base,
             variation_revision: 0,
             variation_intensity: 0.0,
+            hard_policy: W30ResampleTapHardPolicy::Unavailable,
+            hard_trigger_mask: 0,
+            hard_transient_contrast: 0.0,
             music_bus_level: 0.0,
             grit_level: 0.0,
             is_transport_running: false,
