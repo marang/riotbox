@@ -82,7 +82,7 @@ fn w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_outpu
 
     let replayed_state = run_snapshot_payload_restore_probe_from_anchor_runtime(
         &committed_state,
-        graph,
+        graph.clone(),
         SnapshotPayloadRestoreSpec {
             plan_label: "committed promote.resample action log builds replay plan",
             snapshot_id: "snap-before-promote-resample",
@@ -158,6 +158,89 @@ fn w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_outpu
         "snapshot payload restore source-backed resample tap -> committed tap",
         &replayed_tap_buffer,
         &committed_tap_buffer,
+        0.000_001,
+    );
+
+    let pre_damage_action_cursor = committed_state.session.action_log.actions.len();
+    let pre_damage_runtime = committed_state.session.runtime_state.clone();
+    assert_eq!(
+        committed_state.queue_w30_apply_damage_profile(750),
+        Some(QueueControlResult::Enqueued)
+    );
+    commit_w30_replay_step(
+        &mut committed_state,
+        CommitBoundary::Bar,
+        36,
+        9,
+        2,
+        840,
+    );
+    assert_eq!(
+        committed_state.runtime.w30_resample_tap.variation,
+        W30ResampleTapVariation::HardDamage
+    );
+    let committed_hard_tap = render_w30_resample_tap_offline(
+        &committed_state.runtime.w30_resample_tap,
+        48_000,
+        2,
+        W30_RESAMPLE_SOURCE_WINDOW_LEN,
+    );
+    let replayed_damage_state = run_snapshot_payload_restore_probe_from_anchor_runtime(
+        &committed_state,
+        graph,
+        SnapshotPayloadRestoreSpec {
+            plan_label: "post-resample W-30 damage action log builds replay plan",
+            snapshot_id: "snap-before-post-resample-damage",
+            snapshot_label: "before post-resample damage",
+            snapshot_created_at: "2026-07-23T15:50:00Z",
+            expected_plan_len: 4,
+            anchor_plan_len: 3,
+            target_plan_index: 3,
+            anchor_label: "source-backed W-30 resample exists before damage",
+            restore_expectation: "snapshot payload restore reactivates hard resample variation",
+        },
+        pre_damage_action_cursor,
+        &pre_damage_runtime,
+        |state| {
+            state.files = Some(JamFileSet {
+                session_path: session_path.clone(),
+                source_graph_path: Some(graph_path.clone()),
+            });
+            state.refresh_capture_audio_cache();
+        },
+    );
+    assert_eq!(
+        replayed_damage_state.runtime.w30_resample_tap.variation,
+        W30ResampleTapVariation::HardDamage
+    );
+    assert_eq!(
+        replayed_damage_state
+            .runtime
+            .w30_resample_tap
+            .variation_revision,
+        committed_state
+            .runtime
+            .w30_resample_tap
+            .variation_revision
+    );
+    assert_eq!(
+        replayed_damage_state
+            .runtime
+            .w30_resample_tap
+            .source_capture_id
+            .as_deref(),
+        Some("cap-02")
+    );
+    let replayed_hard_tap = render_w30_resample_tap_offline(
+        &replayed_damage_state.runtime.w30_resample_tap,
+        48_000,
+        2,
+        W30_RESAMPLE_SOURCE_WINDOW_LEN,
+    );
+    assert_recipe_buffers_match(
+        "snapshot payload restore post-resample hard variation -> committed hard tap",
+        &replayed_hard_tap,
+        &committed_hard_tap,
         0.000_001,
     );
 

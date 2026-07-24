@@ -1,10 +1,13 @@
 pub const W30_PREVIEW_SAMPLE_WINDOW_LEN: usize = 2_048;
 pub const W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN: usize = 16_384;
-/// Callback-safe original-PCM grain for the internal resample tap.
+/// Callback-safe full-duration mono proxy for the active internal resample artifact.
 ///
-/// This is intentionally smaller than the pad playback window: the tap state is copied through
-/// several realtime plan snapshots, so keeping it bounded avoids growing app/test thread stacks.
-pub const W30_RESAMPLE_SOURCE_WINDOW_LEN: usize = 4_096;
+/// The source artifact may be longer than this fixed payload. Control-plane projection then keeps
+/// evenly spaced PCM frames across the complete artifact, matching the existing committed-pad
+/// playback seam instead of reducing the resample to one short transient grain.
+pub const W30_RESAMPLE_SOURCE_WINDOW_LEN: usize = W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN;
+/// Full-bandwidth source transient retained separately for the performed hard-attack layer.
+pub const W30_RESAMPLE_ATTACK_WINDOW_LEN: usize = 4_096;
 pub const W30_PAD_CHOP_SLICE_COUNT: usize = 8;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -111,6 +114,23 @@ pub enum W30ResampleTapAvailability {
     SourceAudioReady,
 }
 
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum W30ResampleTapVariation {
+    #[default]
+    Base,
+    HardDamage,
+}
+
+impl W30ResampleTapVariation {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Base => "base",
+            Self::HardDamage => "hard_damage",
+        }
+    }
+}
+
 impl W30ResampleTapAvailability {
     #[must_use]
     pub const fn label(self) -> &'static str {
@@ -211,6 +231,12 @@ pub struct W30ResampleTapState {
     pub source_audio: Option<Box<W30ResampleSourceWindow>>,
     pub lineage_capture_count: u8,
     pub generation_depth: u8,
+    pub variation: W30ResampleTapVariation,
+    /// Stable action-log position of the committed gesture that activated the variation.
+    ///
+    /// Zero means that no post-resample variation gesture has committed.
+    pub variation_revision: u64,
+    pub variation_intensity: f32,
     pub music_bus_level: f32,
     pub grit_level: f32,
     pub is_transport_running: bool,
@@ -225,6 +251,9 @@ pub struct W30ResampleSourceWindow {
     pub source_frame_count: u64,
     pub sample_count: usize,
     pub samples: [f32; W30_RESAMPLE_SOURCE_WINDOW_LEN],
+    pub attack_start_frame: u64,
+    pub attack_sample_count: usize,
+    pub attack_samples: [f32; W30_RESAMPLE_ATTACK_WINDOW_LEN],
 }
 
 impl Default for W30ResampleTapState {
@@ -238,6 +267,9 @@ impl Default for W30ResampleTapState {
             source_audio: None,
             lineage_capture_count: 0,
             generation_depth: 0,
+            variation: W30ResampleTapVariation::Base,
+            variation_revision: 0,
+            variation_intensity: 0.0,
             music_bus_level: 0.0,
             grit_level: 0.0,
             is_transport_running: false,

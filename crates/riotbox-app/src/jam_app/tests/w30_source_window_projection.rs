@@ -1,5 +1,5 @@
 #[test]
-fn resample_source_projection_keeps_a_transient_original_pcm_window() {
+fn resample_source_projection_keeps_the_complete_phrase_in_the_bounded_window() {
     let frame_count = W30_RESAMPLE_SOURCE_WINDOW_LEN * 3;
     let mut samples = vec![0.0_f32; frame_count * 2];
     let transient_start = W30_RESAMPLE_SOURCE_WINDOW_LEN * 2;
@@ -13,13 +13,22 @@ fn resample_source_projection_keeps_a_transient_original_pcm_window() {
     let projected = super::projection::resample_source_from_interleaved(&samples, 2, 48_000)
         .expect("transient source projection");
 
-    assert_eq!(projected.source_start_frame, transient_start as u64);
-    assert_eq!(
-        projected.source_frame_count,
-        W30_RESAMPLE_SOURCE_WINDOW_LEN as u64
-    );
+    assert_eq!(projected.source_start_frame, 0);
+    assert_eq!(projected.source_frame_count, frame_count as u64);
     assert_eq!(projected.sample_count, W30_RESAMPLE_SOURCE_WINDOW_LEN);
+    assert_eq!(projected.samples[0], 0.0);
     assert!(projected.samples.iter().any(|sample| sample.abs() > 0.5));
+    assert!(projected.attack_start_frame >= transient_start as u64);
+    assert_eq!(
+        projected.attack_sample_count,
+        W30_RESAMPLE_ATTACK_WINDOW_LEN
+    );
+    assert!(
+        projected
+            .attack_samples
+            .iter()
+            .any(|sample| sample.abs() > 0.5)
+    );
 }
 
 #[test]

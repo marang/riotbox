@@ -548,8 +548,14 @@ pub(super) fn render_w30_resample_tap_buffer(
         state.envelope = 0.0;
         state.beat_position = 0.0;
         state.source_sample_cursor = 0.0;
+        state.attack_sample_cursor = 0.0;
         state.last_character_input = 0.0;
         state.character_edge_memory = 0.0;
+        state.last_variation_revision = 0;
+        state.variation_transition_frames_remaining = 0;
+        state.variation_transition_total_frames = 0;
+        state.variation_transition_start_sample = 0.0;
+        state.last_output_sample = 0.0;
         return;
     }
 
@@ -572,9 +578,26 @@ pub(super) fn render_w30_resample_tap_buffer(
         state.envelope = 1.0;
         state.last_step = 0;
         state.source_sample_cursor = 0.0;
+        state.attack_sample_cursor = 0.0;
         state.last_character_input = 0.0;
         state.character_edge_memory = 0.0;
+        state.last_variation_revision = render.variation_revision;
+        state.variation_transition_frames_remaining = 0;
+        state.variation_transition_total_frames = 0;
+        state.variation_transition_start_sample = 0.0;
+        state.last_output_sample = 0.0;
         state.was_active = true;
+    } else if render.variation_revision != state.last_variation_revision {
+        state.last_variation_revision = render.variation_revision;
+        let transition_frames = (sample_rate / 200).max(1);
+        state.variation_transition_frames_remaining = transition_frames;
+        state.variation_transition_total_frames = transition_frames;
+        state.variation_transition_start_sample = state.last_output_sample;
+        state.envelope = 1.0;
+        state.source_sample_cursor = w30_resample_step_cursor(render, state.last_step);
+        state.attack_sample_cursor = 0.0;
+        state.last_character_input = 0.0;
+        state.character_edge_memory = 0.0;
     }
 
     let transport_running = render.is_transport_running;
@@ -595,6 +618,7 @@ pub(super) fn render_w30_resample_tap_buffer(
                 if should_trigger_w30_resample_step(render, step) {
                     state.envelope = w30_resample_trigger_envelope(render);
                     state.source_sample_cursor = w30_resample_step_cursor(render, step);
+                    state.attack_sample_cursor = 0.0;
                 }
             }
         } else {
@@ -602,14 +626,37 @@ pub(super) fn render_w30_resample_tap_buffer(
         }
 
         let source_sample = w30_resample_source_sample(render, state, sample_rate);
-        let sample = w30_resample_source_character(source_sample, render.grit_level, state)
+        let source_character = w30_resample_source_character(source_sample, render, state);
+        let voice = if render.variation == W30ResampleTapVariation::HardDamage {
+            let (attack, attack_envelope) =
+                w30_resample_hard_attack_sample(render, state, sample_rate);
+            let attack_mix = attack_envelope * 0.72;
+            (source_character * (1.0 - attack_mix) + attack * attack_mix).clamp(-0.98, 0.98)
+        } else {
+            source_character
+        };
+        const RESAMPLE_TAP_VOICE_CEILING: f32 = 0.92;
+        let target_sample = (voice
             * state.envelope
             * w30_resample_render_gain(render, transport_running)
             * transport_stop_gain(
                 state.transport_stop_latched,
                 &mut state.transport_stop_fade_frames_remaining,
                 transport_stop_fade_frames,
-            );
+            ))
+        .clamp(-RESAMPLE_TAP_VOICE_CEILING, RESAMPLE_TAP_VOICE_CEILING);
+        let sample = if state.variation_transition_frames_remaining > 0 {
+            let progress = 1.0
+                - state.variation_transition_frames_remaining as f32
+                    / state.variation_transition_total_frames.max(1) as f32;
+            state.variation_transition_frames_remaining = state
+                .variation_transition_frames_remaining
+                .saturating_sub(1);
+            state.variation_transition_start_sample * (1.0 - progress) + target_sample * progress
+        } else {
+            target_sample
+        };
+        state.last_output_sample = sample;
         if transport_running {
             state.envelope *= w30_resample_decay(render);
         }
@@ -660,7 +707,7 @@ fn w30_resample_playback_rate(render: &RealtimeW30ResampleTapState) -> f32 {
         .clamp(MIN_RATE, 1.0)
 }
 
-fn w30_resample_step_cursor(render: &RealtimeW30ResampleTapState, step: i64) -> f32 {
+pub(super) fn w30_resample_step_cursor(render: &RealtimeW30ResampleTapState, step: i64) -> f32 {
     let sample_count = render
         .source_audio
         .sample_count
@@ -668,15 +715,28 @@ fn w30_resample_step_cursor(render: &RealtimeW30ResampleTapState, step: i64) -> 
     if sample_count == 0 {
         return 0.0;
     }
-    const STEP_SEQUENCE: [usize; 8] = [0, 3, 1, 5, 2, 7, 4, 6];
-    let sequence_index = step.rem_euclid(STEP_SEQUENCE.len() as i64) as usize;
-    sample_count as f32 * STEP_SEQUENCE[sequence_index] as f32 / STEP_SEQUENCE.len() as f32
+    if render.variation == W30ResampleTapVariation::Base {
+        return 0.0;
+    }
+    let source_cycle_steps = w30_resample_source_cycle_steps(render);
+    let cycle_step = step.rem_euclid(source_cycle_steps) as f32;
+    sample_count as f32 * cycle_step / source_cycle_steps as f32
+}
+
+fn w30_resample_source_cycle_steps(render: &RealtimeW30ResampleTapState) -> i64 {
+    let source_duration_seconds = render.source_audio.source_frame_count.max(1) as f64
+        / f64::from(render.source_audio.source_sample_rate.max(1));
+    let source_duration_beats =
+        source_duration_seconds * f64::from(render.tempo_bpm.max(1.0)) / 60.0;
+    (source_duration_beats * f64::from(w30_resample_subdivision(render)))
+        .round()
+        .clamp(1.0, 64.0) as i64
 }
 
 /// Add source-reactive resample bite without a free-running oscillator or fallback voice.
 fn w30_resample_source_character(
     sample: f32,
-    grit_level: f32,
+    render: &RealtimeW30ResampleTapState,
     state: &mut W30ResampleTapCallbackState,
 ) -> f32 {
     const EDGE_MEMORY: f32 = 0.68;
@@ -686,7 +746,7 @@ fn w30_resample_source_character(
     const BODY_SHARE: f32 = 0.76;
     const EDGE_SHARE: f32 = 0.24;
 
-    let grit = grit_level.clamp(0.0, 1.0);
+    let grit = render.grit_level.clamp(0.0, 1.0) * 0.22;
     let raw_edge = sample - state.last_character_input;
     state.last_character_input = sample;
     state.character_edge_memory =
@@ -701,6 +761,42 @@ fn w30_resample_source_character(
     let bitten = saturated * BODY_SHARE + edge * EDGE_SHARE;
     let wet = grit * WET_RANGE;
     (sample * (1.0 - wet) + bitten * wet).clamp(-0.98, 0.98)
+}
+
+fn w30_resample_hard_attack_sample(
+    render: &RealtimeW30ResampleTapState,
+    state: &mut W30ResampleTapCallbackState,
+    output_sample_rate: u32,
+) -> (f32, f32) {
+    let window = &render.source_audio;
+    let sample_count = window
+        .attack_sample_count
+        .min(W30_RESAMPLE_ATTACK_WINDOW_LEN)
+        .min((window.source_sample_rate as usize / 25).max(1));
+    if sample_count == 0 || state.attack_sample_cursor >= sample_count as f32 {
+        return (0.0, 0.0);
+    }
+
+    let cursor = state.attack_sample_cursor.max(0.0);
+    let base = cursor.floor() as usize;
+    let next = (base + 1).min(sample_count - 1);
+    let source = window.attack_samples[base]
+        + (window.attack_samples[next] - window.attack_samples[base]) * cursor.fract();
+    state.attack_sample_cursor +=
+        (f64::from(window.source_sample_rate.max(1)) / f64::from(output_sample_rate.max(1))) as f32;
+
+    let release_frames = (sample_count / 4).max(1);
+    let release_start = sample_count.saturating_sub(release_frames) as f32;
+    let release = if cursor < release_start {
+        1.0
+    } else {
+        ((sample_count as f32 - cursor) / release_frames as f32).clamp(0.0, 1.0)
+    };
+    let intensity = render.variation_intensity.clamp(0.0, 1.0);
+    let drive = 4.0 + intensity * 4.0;
+    let clip_level = 0.68 - intensity * 0.12;
+    let hard_clipped = (source * drive).clamp(-clip_level, clip_level) / clip_level;
+    (hard_clipped * 0.9 + source * 0.1, release)
 }
 
 fn transport_stop_fade_frames(sample_rate: u32) -> u32 {
@@ -730,7 +826,23 @@ fn w30_resample_subdivision(render: &RealtimeW30ResampleTapState) -> u32 {
     (base + u32::from(render.lineage_capture_count >= 2)).min(4)
 }
 
-fn should_trigger_w30_resample_step(render: &RealtimeW30ResampleTapState, step: i64) -> bool {
+pub(super) fn should_trigger_w30_resample_step(
+    render: &RealtimeW30ResampleTapState,
+    step: i64,
+) -> bool {
+    if render.variation == W30ResampleTapVariation::Base {
+        // Base is the recognizable full-phrase anchor. Repeated grid resets reduced the committed
+        // artifact to a polite tap and prevented the callback from reaching most source material.
+        return false;
+    }
+
+    // Hard damage is an explicitly performed chopped role. Every grid step retriggers the next
+    // sequential source-phase anchor; aggression comes from the attack and character path rather
+    // than from deleting beats or pseudo-randomly scrambling the phrase.
+    if render.variation == W30ResampleTapVariation::HardDamage {
+        return true;
+    }
+
     match render.source_profile {
         Some(W30ResampleTapSourceProfile::RawCapture) | None => step.rem_euclid(2) == 0,
         Some(W30ResampleTapSourceProfile::PromotedCapture) => !matches!(step.rem_euclid(4), 1),
@@ -739,6 +851,10 @@ fn should_trigger_w30_resample_step(render: &RealtimeW30ResampleTapState, step: 
 }
 
 fn w30_resample_trigger_envelope(render: &RealtimeW30ResampleTapState) -> f32 {
+    if render.variation == W30ResampleTapVariation::HardDamage {
+        return 1.0;
+    }
+
     let profile_boost = match render.source_profile {
         Some(W30ResampleTapSourceProfile::RawCapture) | None => 0.0,
         Some(W30ResampleTapSourceProfile::PromotedCapture) => 0.1,
@@ -746,29 +862,28 @@ fn w30_resample_trigger_envelope(render: &RealtimeW30ResampleTapState) -> f32 {
     };
     let lineage_boost = f32::from(render.lineage_capture_count.min(4)) * 0.04;
     let generation_boost = f32::from(render.generation_depth.min(4)) * 0.06;
-    (0.45 + profile_boost + lineage_boost + generation_boost + render.grit_level * 0.18)
-        .clamp(0.0, 0.95)
+    (0.58 + profile_boost + lineage_boost + generation_boost + render.grit_level * 0.08)
+        .clamp(0.0, 0.98)
 }
 
 fn w30_resample_render_gain(render: &RealtimeW30ResampleTapState, transport_running: bool) -> f32 {
+    // Full-phrase playback is naturally denser than the retired short grain. Hard attack must
+    // derive its contrast from the separate source transient, not from a hidden level multiplier.
     let profile_gain = match render.source_profile {
-        Some(W30ResampleTapSourceProfile::RawCapture) | None => 0.42,
-        Some(W30ResampleTapSourceProfile::PromotedCapture) => 0.5,
-        Some(W30ResampleTapSourceProfile::PinnedCapture) => 0.58,
+        Some(W30ResampleTapSourceProfile::RawCapture) | None => 0.88,
+        Some(W30ResampleTapSourceProfile::PromotedCapture) => 0.98,
+        Some(W30ResampleTapSourceProfile::PinnedCapture) => 1.08,
     };
     let transport_gain = if transport_running { 1.0 } else { 0.7 };
     (profile_gain
         * transport_gain
         * render.music_bus_level.clamp(0.0, 1.0)
         * (1.0 + render.grit_level.clamp(0.0, 1.0) * 0.18))
-        .clamp(0.0, 0.72)
+        .clamp(0.0, 1.2)
 }
 
-fn w30_resample_decay(render: &RealtimeW30ResampleTapState) -> f32 {
-    let generation_offset = f32::from(render.generation_depth.min(4)) * 0.00003;
-    let lineage_offset = f32::from(render.lineage_capture_count.min(4)) * 0.00002;
-    let grit_offset = render.grit_level.clamp(0.0, 1.0) * 0.00005;
-    (0.99978 - generation_offset - lineage_offset - grit_offset).clamp(0.0, 1.0)
+pub(super) fn w30_resample_decay(_render: &RealtimeW30ResampleTapState) -> f32 {
+    1.0
 }
 
 fn w30_current_step(position_beats: f64, render: &RealtimeW30PreviewRenderState) -> i64 {

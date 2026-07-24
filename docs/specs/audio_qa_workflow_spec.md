@@ -378,11 +378,18 @@ For any pack presented as a source showcase:
 
 Shared audible DSP, mix, pattern, and performance-policy tuning also requires a
 bounded source matrix before another Golden Path listening request. The Golden
-Path remains the single human taste target; the matrix is a regression and
-overfitting gate. It must include at least three contrasting real sources and
-reject exact-path failure, clipping/limiter concealment, silence, timing
-regression, or near-identical source-backed hook envelopes. The historical
-dense command remains as a compatibility alias:
+Path remains the single human taste target; the matrix is a regression,
+generalization, and overfitting gate. It must include at least five real sources
+across at least four typed source families. Several files from the same loop
+pack or narrow dense-break family count as one family. The working evidence
+must name the development cases that informed the algorithm/constants and at
+least two holdout cases from different families that did not. A holdout failure
+rejects the candidate. Once a holdout informs a later implementation it becomes
+a development case and fresh material must replace it; repeatedly tuning
+against a fixed "holdout" is not holdout validation. The matrix rejects
+exact-path failure, clipping/limiter concealment, silence, timing regression,
+near-identical source-backed hook envelopes, and source-family collapse. The
+historical dense command remains as a compatibility alias:
 
 ```bash
 just dense-break-live-source-matrix

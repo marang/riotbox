@@ -202,6 +202,12 @@ fn renders_w30_resample_lab_diagnostics_across_shell_surfaces() {
             .and_then(serde_json::Value::as_str),
         Some("source_audio_unavailable")
     );
+    assert_eq!(
+        observer
+            .pointer("/runtime/w30_resample_tap_variation")
+            .and_then(serde_json::Value::as_str),
+        Some("base")
+    );
 
     let jam_rendered = render_jam_shell_snapshot(&shell, 120, 34);
     assert!(
@@ -228,4 +234,39 @@ fn renders_w30_resample_lab_diagnostics_across_shell_surfaces() {
     shell.active_screen = ShellScreen::Log;
     let log_rendered = render_jam_shell_snapshot(&shell, 120, 34);
     assert!(log_rendered.contains("tapmix 0.64/0.50"), "{log_rendered}");
+
+    assert_eq!(
+        shell.app.queue_w30_apply_damage_profile(290),
+        Some(crate::jam_app::QueueControlResult::Enqueued)
+    );
+    let damage = shell.app.commit_ready_actions(
+        CommitBoundaryState {
+            kind: riotbox_core::action::CommitBoundary::Bar,
+            beat_index: 40,
+            bar_index: 11,
+            phrase_index: 3,
+            scene_id: Some(SceneId::from("scene-a")),
+        },
+        300,
+    );
+    assert_eq!(damage.len(), 1);
+    let hard_observer = crate::observer::observer_snapshot(&shell);
+    assert_eq!(
+        hard_observer
+            .pointer("/runtime/w30_resample_tap_variation")
+            .and_then(serde_json::Value::as_str),
+        Some("hard_damage")
+    );
+    assert!(
+        hard_observer
+            .pointer("/runtime/w30_resample_tap_variation_intensity")
+            .and_then(serde_json::Value::as_f64)
+            .is_some_and(|intensity| (intensity - 0.82).abs() < 0.000_001)
+    );
+    assert!(
+        hard_observer
+            .pointer("/runtime/w30_resample_tap_variation_revision")
+            .and_then(serde_json::Value::as_u64)
+            .is_some_and(|revision| revision > 0)
+    );
 }

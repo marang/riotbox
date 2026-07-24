@@ -274,6 +274,17 @@ target review questions. The manifest is not a quality proof and keeps
 `human_verdict: unverified`; it is the source-family coverage map that later
 rendered packs and listening reviews must satisfy.
 
+Per-slice tuning evidence must overlay this catalog with explicit
+`development` and `holdout` assignments. Shared audible policy changes require
+at least five real sources across at least four typed families, including two
+different-family holdouts that did not choose the current algorithm or
+constants. Multiple variants from one loop pack or narrow break family count as
+one family. When a failed holdout informs a subsequent change it must be
+reclassified as development material and replaced by a fresh holdout; the
+catalog itself does not make a repeatedly inspected source permanently unseen.
+Commercial reference recordings stay outside both partitions and may only
+provide local listening or measurement comparisons.
+
 The CI-safe validation gate is:
 
 ```bash

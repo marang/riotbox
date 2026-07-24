@@ -34,7 +34,7 @@
       "min_active_samples": 280,
       "max_active_samples": 512,
       "min_peak_abs": 0.01,
-      "max_peak_abs": 0.24
+      "max_peak_abs": 0.42
     }
   },
   {
@@ -53,7 +53,7 @@
       "min_active_samples": 320,
       "max_active_samples": 512,
       "min_peak_abs": 0.015,
-      "max_peak_abs": 0.32
+      "max_peak_abs": 0.56
     }
   },
   {
@@ -72,7 +72,7 @@
       "min_active_samples": 320,
       "max_active_samples": 512,
       "min_peak_abs": 0.008,
-      "max_peak_abs": 0.22
+      "max_peak_abs": 0.4
     }
   },
   {

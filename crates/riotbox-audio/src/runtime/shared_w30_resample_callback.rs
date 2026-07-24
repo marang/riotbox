@@ -232,6 +232,9 @@ pub(super) struct RealtimeW30ResampleTapState {
     pub(super) source_audio: RealtimeW30ResampleSourceWindow,
     pub(super) lineage_capture_count: u8,
     pub(super) generation_depth: u8,
+    pub(super) variation: W30ResampleTapVariation,
+    pub(super) variation_revision: u64,
+    pub(super) variation_intensity: f32,
     pub(super) music_bus_level: f32,
     pub(super) grit_level: f32,
     pub(super) is_transport_running: bool,
@@ -246,6 +249,9 @@ pub(super) struct RealtimeW30ResampleSourceWindow {
     pub(super) source_frame_count: u64,
     pub(super) sample_count: usize,
     pub(super) samples: [f32; W30_RESAMPLE_SOURCE_WINDOW_LEN],
+    pub(super) attack_start_frame: u64,
+    pub(super) attack_sample_count: usize,
+    pub(super) attack_samples: [f32; W30_RESAMPLE_ATTACK_WINDOW_LEN],
 }
 
 impl Default for RealtimeW30ResampleSourceWindow {
@@ -256,6 +262,9 @@ impl Default for RealtimeW30ResampleSourceWindow {
             source_frame_count: 0,
             sample_count: 0,
             samples: [0.0; W30_RESAMPLE_SOURCE_WINDOW_LEN],
+            attack_start_frame: 0,
+            attack_sample_count: 0,
+            attack_samples: [0.0; W30_RESAMPLE_ATTACK_WINDOW_LEN],
         }
     }
 }
@@ -270,8 +279,14 @@ pub(super) struct SharedW30ResampleTapState {
     source_frame_count: AtomicU64,
     source_sample_count: AtomicU32,
     source_samples: [AtomicU32; W30_RESAMPLE_SOURCE_WINDOW_LEN],
+    attack_start_frame: AtomicU64,
+    attack_sample_count: AtomicU32,
+    attack_samples: [AtomicU32; W30_RESAMPLE_ATTACK_WINDOW_LEN],
     lineage_capture_count: AtomicU32,
     generation_depth: AtomicU32,
+    variation: AtomicU32,
+    variation_revision: AtomicU64,
+    variation_intensity_bits: AtomicU32,
     music_bus_level_bits: AtomicU32,
     grit_level_bits: AtomicU32,
     is_transport_running: AtomicBool,
@@ -291,8 +306,14 @@ impl SharedW30ResampleTapState {
             source_frame_count: AtomicU64::new(0),
             source_sample_count: AtomicU32::new(0),
             source_samples: std::array::from_fn(|_| AtomicU32::new(0.0_f32.to_bits())),
+            attack_start_frame: AtomicU64::new(0),
+            attack_sample_count: AtomicU32::new(0),
+            attack_samples: std::array::from_fn(|_| AtomicU32::new(0.0_f32.to_bits())),
             lineage_capture_count: AtomicU32::new(0),
             generation_depth: AtomicU32::new(0),
+            variation: AtomicU32::new(0),
+            variation_revision: AtomicU64::new(0),
+            variation_intensity_bits: AtomicU32::new(0),
             music_bus_level_bits: AtomicU32::new(0),
             grit_level_bits: AtomicU32::new(0),
             is_transport_running: AtomicBool::new(false),
@@ -324,6 +345,16 @@ impl SharedW30ResampleTapState {
         );
         self.generation_depth
             .store(u32::from(render_state.generation_depth), Ordering::Relaxed);
+        self.variation.store(
+            w30_resample_variation_to_u32(render_state.variation),
+            Ordering::Relaxed,
+        );
+        self.variation_revision
+            .store(render_state.variation_revision, Ordering::Relaxed);
+        self.variation_intensity_bits.store(
+            render_state.variation_intensity.to_bits(),
+            Ordering::Relaxed,
+        );
         self.music_bus_level_bits
             .store(render_state.music_bus_level.to_bits(), Ordering::Relaxed);
         self.grit_level_bits
@@ -358,6 +389,11 @@ impl SharedW30ResampleTapState {
             source_audio: self.source_audio_snapshot(),
             lineage_capture_count: self.lineage_capture_count.load(Ordering::Relaxed) as u8,
             generation_depth: self.generation_depth.load(Ordering::Relaxed) as u8,
+            variation: w30_resample_variation_from_u32(self.variation.load(Ordering::Relaxed)),
+            variation_revision: self.variation_revision.load(Ordering::Relaxed),
+            variation_intensity: f32::from_bits(
+                self.variation_intensity_bits.load(Ordering::Relaxed),
+            ),
             music_bus_level: f32::from_bits(self.music_bus_level_bits.load(Ordering::Relaxed)),
             grit_level: f32::from_bits(self.grit_level_bits.load(Ordering::Relaxed)),
             is_transport_running: self.is_transport_running.load(Ordering::Relaxed),
@@ -382,11 +418,23 @@ impl SharedW30ResampleTapState {
             }
             self.source_sample_count
                 .store(sample_count as u32, Ordering::Relaxed);
+            let attack_sample_count = source_audio
+                .attack_sample_count
+                .min(W30_RESAMPLE_ATTACK_WINDOW_LEN);
+            self.attack_start_frame
+                .store(source_audio.attack_start_frame, Ordering::Relaxed);
+            for (index, sample) in source_audio.attack_samples.iter().copied().enumerate() {
+                self.attack_samples[index].store(sample.to_bits(), Ordering::Relaxed);
+            }
+            self.attack_sample_count
+                .store(attack_sample_count as u32, Ordering::Relaxed);
         } else {
             self.source_start_frame.store(0, Ordering::Relaxed);
             self.source_sample_rate.store(0, Ordering::Relaxed);
             self.source_frame_count.store(0, Ordering::Relaxed);
             self.source_sample_count.store(0, Ordering::Relaxed);
+            self.attack_start_frame.store(0, Ordering::Relaxed);
+            self.attack_sample_count.store(0, Ordering::Relaxed);
         }
     }
 
@@ -397,12 +445,21 @@ impl SharedW30ResampleTapState {
         for (index, sample) in samples.iter_mut().enumerate() {
             *sample = f32::from_bits(self.source_samples[index].load(Ordering::Relaxed));
         }
+        let attack_sample_count = (self.attack_sample_count.load(Ordering::Relaxed) as usize)
+            .min(W30_RESAMPLE_ATTACK_WINDOW_LEN);
+        let mut attack_samples = [0.0; W30_RESAMPLE_ATTACK_WINDOW_LEN];
+        for (index, sample) in attack_samples.iter_mut().enumerate() {
+            *sample = f32::from_bits(self.attack_samples[index].load(Ordering::Relaxed));
+        }
         RealtimeW30ResampleSourceWindow {
             source_start_frame: self.source_start_frame.load(Ordering::Relaxed),
             source_sample_rate: self.source_sample_rate.load(Ordering::Relaxed),
             source_frame_count: self.source_frame_count.load(Ordering::Relaxed),
             sample_count,
             samples,
+            attack_start_frame: self.attack_start_frame.load(Ordering::Relaxed),
+            attack_sample_count,
+            attack_samples,
         }
     }
 }
@@ -450,6 +507,20 @@ fn w30_resample_source_profile_from_u32(value: u32) -> Option<W30ResampleTapSour
         2 => Some(W30ResampleTapSourceProfile::PromotedCapture),
         3 => Some(W30ResampleTapSourceProfile::PinnedCapture),
         _ => None,
+    }
+}
+
+fn w30_resample_variation_to_u32(variation: W30ResampleTapVariation) -> u32 {
+    match variation {
+        W30ResampleTapVariation::Base => 0,
+        W30ResampleTapVariation::HardDamage => 1,
+    }
+}
+
+fn w30_resample_variation_from_u32(value: u32) -> W30ResampleTapVariation {
+    match value {
+        1 => W30ResampleTapVariation::HardDamage,
+        _ => W30ResampleTapVariation::Base,
     }
 }
 
@@ -510,10 +581,16 @@ pub(super) struct W30PreviewCallbackState {
 pub(super) struct W30ResampleTapCallbackState {
     pub(super) beat_position: f64,
     pub(super) source_sample_cursor: f32,
+    pub(super) attack_sample_cursor: f32,
     pub(super) last_character_input: f32,
     pub(super) character_edge_memory: f32,
     pub(super) envelope: f32,
     pub(super) last_step: i64,
+    pub(super) last_variation_revision: u64,
+    pub(super) variation_transition_frames_remaining: u32,
+    pub(super) variation_transition_total_frames: u32,
+    pub(super) variation_transition_start_sample: f32,
+    pub(super) last_output_sample: f32,
     pub(super) was_active: bool,
     pub(super) last_transport_running: bool,
     pub(super) transport_stop_latched: bool,

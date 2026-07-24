@@ -15,12 +15,17 @@ fn positive_realtime_resample_source() -> RealtimeW30ResampleSourceWindow {
         let phase = index as f32 / 37.0;
         *sample = phase.sin() * 0.34 + (phase * 2.7).sin() * 0.09;
     }
+    let mut attack_samples = [0.0; W30_RESAMPLE_ATTACK_WINDOW_LEN];
+    attack_samples.copy_from_slice(&samples[..W30_RESAMPLE_ATTACK_WINDOW_LEN]);
     RealtimeW30ResampleSourceWindow {
         source_start_frame: 0,
         source_sample_rate: 44_100,
         source_frame_count: W30_RESAMPLE_SOURCE_WINDOW_LEN as u64,
         sample_count: W30_RESAMPLE_SOURCE_WINDOW_LEN,
         samples,
+        attack_start_frame: 0,
+        attack_sample_count: W30_RESAMPLE_ATTACK_WINDOW_LEN,
+        attack_samples,
     }
 }
 
@@ -666,6 +671,9 @@ fn transport_stop_fades_the_internal_resample_tap_and_stays_silent() {
         source_audio: positive_realtime_resample_source(),
         lineage_capture_count: 1,
         generation_depth: 0,
+        variation: W30ResampleTapVariation::Base,
+        variation_revision: 0,
+        variation_intensity: 0.0,
         music_bus_level: 0.58,
         grit_level: 0.4,
         is_transport_running: true,
@@ -835,6 +843,9 @@ fn w30_resample_tap_stays_silent_when_idle() {
             source_audio: RealtimeW30ResampleSourceWindow::default(),
             lineage_capture_count: 0,
             generation_depth: 0,
+            variation: W30ResampleTapVariation::Base,
+            variation_revision: 0,
+            variation_intensity: 0.0,
             music_bus_level: 0.64,
             grit_level: 0.4,
             is_transport_running: true,
@@ -863,6 +874,9 @@ fn w30_resample_tap_produces_audible_samples_when_lineage_is_ready() {
             source_audio: positive_realtime_resample_source(),
             lineage_capture_count: 2,
             generation_depth: 1,
+            variation: W30ResampleTapVariation::Base,
+            variation_revision: 0,
+            variation_intensity: 0.0,
             music_bus_level: 0.58,
             grit_level: 0.62,
             is_transport_running: true,
@@ -884,6 +898,9 @@ fn w30_resample_tap_is_deterministic_and_follows_source_material() {
         source_audio: positive_realtime_resample_source(),
         lineage_capture_count: 2,
         generation_depth: 1,
+        variation: W30ResampleTapVariation::Base,
+        variation_revision: 0,
+        variation_intensity: 0.0,
         music_bus_level: 0.72,
         grit_level: 0.62,
         is_transport_running: true,
@@ -939,6 +956,116 @@ fn w30_resample_tap_is_deterministic_and_follows_source_material() {
 }
 
 #[test]
+fn post_resample_hard_damage_is_an_immediate_callback_safe_variation() {
+    let mut source_audio = positive_realtime_resample_source();
+    source_audio.source_frame_count = 88_200;
+    let base = RealtimeW30ResampleTapState {
+        mode: W30ResampleTapMode::CaptureLineageReady,
+        routing: W30ResampleTapRouting::InternalCaptureTap,
+        source_profile: Some(W30ResampleTapSourceProfile::PromotedCapture),
+        source_audio,
+        lineage_capture_count: 2,
+        generation_depth: 1,
+        variation: W30ResampleTapVariation::Base,
+        variation_revision: 0,
+        variation_intensity: 0.0,
+        music_bus_level: 0.64,
+        grit_level: 0.68,
+        is_transport_running: true,
+        tempo_bpm: 128.0,
+        position_beats: 0.0,
+    };
+    let hard = RealtimeW30ResampleTapState {
+        variation: W30ResampleTapVariation::HardDamage,
+        variation_revision: 7,
+        variation_intensity: 0.82,
+        ..base
+    };
+    let mut base_callback = W30ResampleTapCallbackState::default();
+    let mut hard_callback = W30ResampleTapCallbackState::default();
+    let mut warmup = [0.0_f32; 4_096];
+    let mut warmup_copy = [0.0_f32; 4_096];
+    render_w30_resample_tap_buffer(&mut warmup, 44_100, 2, &base, &mut base_callback);
+    render_w30_resample_tap_buffer(&mut warmup_copy, 44_100, 2, &base, &mut hard_callback);
+
+    let mut continued_base = [0.0_f32; 4_096];
+    let mut activated_hard = [0.0_f32; 4_096];
+    render_w30_resample_tap_buffer(
+        &mut continued_base,
+        44_100,
+        2,
+        &base,
+        &mut base_callback,
+    );
+    render_w30_resample_tap_buffer(
+        &mut activated_hard,
+        44_100,
+        2,
+        &hard,
+        &mut hard_callback,
+    );
+
+    let delta_rms = (continued_base
+        .iter()
+        .zip(activated_hard.iter())
+        .map(|(base, hard)| (hard - base).powi(2))
+        .sum::<f32>()
+        / continued_base.len() as f32)
+        .sqrt();
+    assert!(
+        delta_rms > 0.01,
+        "hard gesture collapsed to the running base tap: {delta_rms}"
+    );
+    assert_eq!(hard_callback.last_variation_revision, 7);
+    assert!(hard_callback.attack_sample_cursor > 0.0);
+}
+
+#[test]
+fn resample_base_preserves_phrase_flow_while_hard_damage_owns_the_chopped_role() {
+    let mut source_audio = positive_realtime_resample_source();
+    source_audio.source_frame_count = 88_200;
+    let base = RealtimeW30ResampleTapState {
+        mode: W30ResampleTapMode::CaptureLineageReady,
+        routing: W30ResampleTapRouting::InternalCaptureTap,
+        source_profile: Some(W30ResampleTapSourceProfile::RawCapture),
+        source_audio,
+        lineage_capture_count: 1,
+        generation_depth: 1,
+        variation: W30ResampleTapVariation::Base,
+        variation_revision: 0,
+        variation_intensity: 0.0,
+        music_bus_level: 0.8,
+        grit_level: 0.5,
+        is_transport_running: true,
+        tempo_bpm: 120.0,
+        position_beats: 0.0,
+    };
+    let hard = RealtimeW30ResampleTapState {
+        variation: W30ResampleTapVariation::HardDamage,
+        variation_revision: 11,
+        variation_intensity: 0.82,
+        ..base
+    };
+
+    assert!((0_i64..16).all(|step| !should_trigger_w30_resample_step(&base, step)));
+    let hard_steps = (0_i64..4)
+        .filter(|step| should_trigger_w30_resample_step(&hard, *step))
+        .collect::<Vec<_>>();
+    assert_eq!(hard_steps, (0_i64..4).collect::<Vec<_>>());
+    let hard_cursors = (0_i64..4)
+        .map(|step| w30_resample_step_cursor(&hard, step))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        hard_cursors,
+        (0..4)
+            .map(|step| step as f32 * W30_RESAMPLE_SOURCE_WINDOW_LEN as f32 / 4.0)
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(w30_resample_decay(&base), 1.0);
+    assert_eq!(w30_resample_decay(&hard), 1.0);
+}
+
+#[test]
 fn w30_resample_tap_stays_silent_without_source_audio() {
     let mut state = W30ResampleTapCallbackState::default();
     let mut buffer = [0.0_f32; 512];
@@ -954,6 +1081,9 @@ fn w30_resample_tap_stays_silent_without_source_audio() {
             source_audio: RealtimeW30ResampleSourceWindow::default(),
             lineage_capture_count: 2,
             generation_depth: 1,
+            variation: W30ResampleTapVariation::Base,
+            variation_revision: 0,
+            variation_intensity: 0.0,
             music_bus_level: 0.58,
             grit_level: 0.62,
             is_transport_running: true,
@@ -977,6 +1107,9 @@ fn w30_resample_tap_does_not_invent_grid_progress_without_a_valid_tempo() {
         source_audio: positive_realtime_resample_source(),
         lineage_capture_count: 2,
         generation_depth: 1,
+        variation: W30ResampleTapVariation::Base,
+        variation_revision: 0,
+        variation_intensity: 0.0,
         music_bus_level: 0.58,
         grit_level: 0.62,
         is_transport_running: true,
@@ -1006,6 +1139,9 @@ fn w30_resample_tap_respects_zero_music_bus_level() {
             source_audio: positive_realtime_resample_source(),
             lineage_capture_count: 3,
             generation_depth: 2,
+            variation: W30ResampleTapVariation::Base,
+            variation_revision: 0,
+            variation_intensity: 0.0,
             music_bus_level: 0.0,
             grit_level: 0.7,
             is_transport_running: false,

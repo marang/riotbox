@@ -19,7 +19,14 @@ pub(super) fn w30_resample_tap_compact(shell: &JamShellState) -> String {
         riotbox_audio::w30::W30ResampleTapAvailability::SourceAudioReady => "source",
     };
 
-    format!("ready/{profile}/{audio} g{}", tap.generation_depth)
+    let variation = match tap.variation {
+        riotbox_audio::w30::W30ResampleTapVariation::Base => "b",
+        riotbox_audio::w30::W30ResampleTapVariation::HardDamage => "H",
+    };
+    format!(
+        "ready/{profile}/{audio} {variation}g{}",
+        tap.generation_depth
+    )
 }
 
 pub(super) fn w30_capture_lineage_compact(shell: &JamShellState) -> String {
@@ -92,8 +99,12 @@ pub(super) fn w30_resample_log_focus_compact(shell: &JamShellState) -> String {
         riotbox_audio::w30::W30ResampleTapRouting::InternalCaptureTap => "int",
     };
 
+    let variation = match tap.variation {
+        riotbox_audio::w30::W30ResampleTapVariation::Base => "b",
+        riotbox_audio::w30::W30ResampleTapVariation::HardDamage => "H",
+    };
     format!(
-        "tap {capture_id} g{}/l{} {route}",
+        "tap {capture_id} g{}/l{} {route}/{variation}",
         tap.generation_depth, tap.lineage_capture_count
     )
 }

@@ -337,7 +337,7 @@ fn runtime_view_surfaces_w30_resample_tap_diagnostics() {
     );
     assert_eq!(
         state.runtime_view.w30_resample_tap_source_summary,
-        "cap-01 | gen 2 | lineage 2"
+        "cap-01 | gen 2 | lineage 2 | base"
     );
     assert_eq!(
         state.runtime_view.w30_resample_tap_mix_summary,

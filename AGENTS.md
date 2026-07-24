@@ -212,10 +212,15 @@ If a surface is intentionally not applicable, say why in the PR or working notes
   stored that decision in the product spine, rendered audible output, and proved
   same-source stability plus cross-source diversity.
 - During Golden Path tuning, run each shared audible DSP, mix, pattern, or
-  performance-policy change against at least three contrasting real sources
-  before requesting another human review. The Golden Path remains the taste
-  target; the matrix rejects overfitting, hot/silent paths, timing regressions,
-  and near-identical hook envelopes, but never replaces the human verdict.
+  performance-policy change against at least five real sources spanning at
+  least four typed source families before requesting another human review.
+  Several variants from one loop pack or dense-break family count as one
+  family. Reserve at least two different-family holdouts that did not choose
+  the current algorithm or constants; if a holdout informs the next change it
+  becomes a development case and must be replaced with fresh material. The
+  Golden Path remains the taste target; the matrix rejects overfitting,
+  hot/silent paths, timing regressions, near-identical hook envelopes, and
+  holdout failures, but never replaces the human verdict.
 - Hardcoded, scripted, or template-mutated output may be useful as a regression
   scaffold, but it is not quality proof and must be labeled accordingly in
   manifests, PRs, specs, and demos.

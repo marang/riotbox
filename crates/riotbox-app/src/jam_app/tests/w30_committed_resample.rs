@@ -99,6 +99,56 @@ fn committed_w30_internal_resample_materializes_lineage_safe_capture() {
     );
     assert_eq!(state.runtime.w30_resample_tap.lineage_capture_count, 2);
     assert_eq!(state.runtime.w30_resample_tap.generation_depth, 2);
+    assert_eq!(
+        state.runtime.w30_resample_tap.variation,
+        W30ResampleTapVariation::Base
+    );
+
+    assert_eq!(
+        state.queue_w30_apply_damage_profile(750),
+        Some(QueueControlResult::Enqueued)
+    );
+    let damage = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Bar,
+            beat_index: 36,
+            bar_index: 10,
+            phrase_index: 2,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        840,
+    );
+
+    assert_eq!(damage.len(), 1);
+    assert_eq!(
+        state.session.runtime_state.lane_state.w30.last_capture,
+        Some(CaptureId::from("cap-01")),
+        "damage continues to target the performer-focused source pad"
+    );
+    assert_eq!(
+        state.runtime.w30_resample_tap.source_capture_id.as_deref(),
+        Some("cap-02"),
+        "the active resample must survive a post-resample pad gesture"
+    );
+    assert_eq!(
+        state.runtime.w30_resample_tap.variation,
+        W30ResampleTapVariation::HardDamage
+    );
+    assert!(state.runtime.w30_resample_tap.variation_revision > 0);
+    assert_eq!(state.runtime.w30_resample_tap.variation_intensity, 0.82);
+
+    let mut unrelated = state.session.captures[0].clone();
+    unrelated.capture_id = CaptureId::from("cap-03");
+    unrelated.lineage_capture_refs.clear();
+    unrelated.resample_generation_depth = 0;
+    state.session.captures.push(unrelated);
+    state.session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-03"));
+    state.refresh_view();
+    assert_eq!(
+        state.runtime.w30_resample_tap,
+        riotbox_audio::w30::W30ResampleTapState::default(),
+        "unrelated later material must deactivate the old resample tap"
+    );
 }
 
 #[test]

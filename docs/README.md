@@ -31,9 +31,16 @@ resample-tap proxy with hydrated capture audio through the exact live path.
 Determinism, three-source diversity, replay identity, and missing-source silence
 pass, but direct source-to-tap listening rated the result
 `technically_ok_but_musically_weak`: the tap is very timid, its hook is weak,
-and Beat03 is no longer perceptually recognizable. `RIOTBOX-1422` is the next
-bounded audible slice: preserve the real source-backed seam while lifting its
-usable level, source character, and performer-triggered hard variation.
+and Beat03 is no longer perceptually recognizable. The first RIOTBOX-1422
+source/base/hard review was also rejected: its longer transient grain still
+erased the source, the base remained dull, and hard damage was not perceptibly
+harder or playable. The revised candidate now projects the complete committed
+resample artifact into a bounded full-duration proxy. Base owns a continuous
+source phrase while post-resample `w30.apply_damage_profile` owns a typed,
+replayable chopped hard role. Three-source exact RuntimeMix evidence preserves
+the immediate resample-input envelope (`0.883` to `0.949` correlation) while
+base/hard envelopes are distinct (`0.048` to `0.066` correlation); fresh human
+review is still required before closeout.
 
 `P016`, `P021`, and `P022` remain subordinate to the active P023 product path.
 Offline renderers, scripted packs, fixture verdicts, reports, and validators
@@ -317,6 +324,7 @@ docs/
 - `reviews/p013_tr909_source_accent_dynamics_review_2026-05-29.md`: P013 TR-909 source accent-dynamics review captured
 - `reviews/p013_all_lane_mix_movement_review_2026-05-29.md`: P013 all-lane mix movement review captured
 - `reviews/riotbox_1408_source_backed_w30_resample_review_2026-07-21.md`: source-backed W-30 resample implementation and human weak verdict captured
+- `reviews/riotbox_1422_w30_resample_level_hard_variation_review_2026-07-23.md`: lifted source-backed W-30 tap and performer-triggered hard-variation evidence
 - `reviews/p013_mc202_source_contour_review_2026-05-29.md`: P013 MC-202 source contour review captured
 - `reviews/p013_exit_review_2026-05-29.md`: P013 bounded all-lane musical-depth exit review captured
 - `reviews/p012_source_timing_qa_contract_review_2026-05-20.md`: P012 Source Timing QA contract review captured

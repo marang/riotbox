@@ -55,63 +55,87 @@ pub(super) fn resample_source_from_interleaved(
     let frame_count = samples.len() / channel_count;
 
     let sample_count = frame_count.min(W30_RESAMPLE_SOURCE_WINDOW_LEN);
-    let source_start_frame = select_resample_source_start(samples, channel_count, frame_count);
     let mut resample = [0.0; W30_RESAMPLE_SOURCE_WINDOW_LEN];
     for (index, slot) in resample.iter_mut().take(sample_count).enumerate() {
-        let frame_index = source_start_frame + index;
+        let frame_index = if sample_count <= 1 {
+            0
+        } else {
+            index * (frame_count - 1) / (sample_count - 1)
+        };
+        let base = frame_index * channel_count;
+        *slot = samples[base..base + channel_count].iter().sum::<f32>() / channel_count as f32;
+    }
+    let attack_sample_count = frame_count.min(W30_RESAMPLE_ATTACK_WINDOW_LEN);
+    let attack_start_frame =
+        select_resample_attack_start(samples, channel_count, frame_count, attack_sample_count);
+    let mut attack_samples = [0.0; W30_RESAMPLE_ATTACK_WINDOW_LEN];
+    for (index, slot) in attack_samples
+        .iter_mut()
+        .take(attack_sample_count)
+        .enumerate()
+    {
+        let frame_index = attack_start_frame + index;
         let base = frame_index * channel_count;
         *slot = samples[base..base + channel_count].iter().sum::<f32>() / channel_count as f32;
     }
 
     Some(Box::new(W30ResampleSourceWindow {
-        source_start_frame: source_start_frame.try_into().unwrap_or(u64::MAX),
+        source_start_frame: 0,
         source_sample_rate,
-        source_frame_count: sample_count.try_into().unwrap_or(u64::MAX),
+        source_frame_count: frame_count.try_into().unwrap_or(u64::MAX),
         sample_count,
         samples: resample,
+        attack_start_frame: attack_start_frame.try_into().unwrap_or(u64::MAX),
+        attack_sample_count,
+        attack_samples,
     }))
 }
 
-fn select_resample_source_start(
+fn select_resample_attack_start(
     samples: &[f32],
     channel_count: usize,
     frame_count: usize,
+    window_frames: usize,
 ) -> usize {
-    const ANALYSIS_HOP_FRAMES: usize = 1_024;
-    const TRANSIENT_WEIGHT: f32 = 2.5;
+    const ONSET_WINDOW_FRAMES: usize = 64;
+    const ANALYSIS_HOP_FRAMES: usize = 32;
+    const ATTACK_PREROLL_FRAMES: usize = 128;
 
-    let window_frames = frame_count.min(W30_RESAMPLE_SOURCE_WINDOW_LEN);
-    if frame_count <= window_frames {
+    if frame_count <= window_frames || frame_count <= ONSET_WINDOW_FRAMES * 2 {
         return 0;
     }
 
     let last_start = frame_count - window_frames;
-    let mut best_start = 0;
+    let mut best_onset = ONSET_WINDOW_FRAMES;
     let mut best_score = f32::NEG_INFINITY;
-    let mut start = 0;
-    loop {
-        let mut energy = 0.0_f32;
-        let mut motion = 0.0_f32;
-        let mut previous = 0.0_f32;
-        for frame_index in start..start + window_frames {
+    for onset in
+        (ONSET_WINDOW_FRAMES..frame_count - ONSET_WINDOW_FRAMES).step_by(ANALYSIS_HOP_FRAMES)
+    {
+        let mut before = 0.0_f32;
+        let mut after = 0.0_f32;
+        for frame_index in onset - ONSET_WINDOW_FRAMES..onset {
             let base = frame_index * channel_count;
             let mono =
                 samples[base..base + channel_count].iter().sum::<f32>() / channel_count as f32;
-            energy += mono.abs();
-            motion += (mono - previous).abs();
-            previous = mono;
+            before += mono.abs();
         }
-        let score = energy + motion * TRANSIENT_WEIGHT;
+        for frame_index in onset..onset + ONSET_WINDOW_FRAMES {
+            let base = frame_index * channel_count;
+            let mono =
+                samples[base..base + channel_count].iter().sum::<f32>() / channel_count as f32;
+            after += mono.abs();
+        }
+        before /= ONSET_WINDOW_FRAMES as f32;
+        after /= ONSET_WINDOW_FRAMES as f32;
+        let score = (after - before).max(0.0) + after * 0.05;
         if score > best_score {
             best_score = score;
-            best_start = start;
+            best_onset = onset;
         }
-        if start == last_start {
-            break;
-        }
-        start = (start + ANALYSIS_HOP_FRAMES).min(last_start);
     }
-    best_start
+    best_onset
+        .saturating_sub(ATTACK_PREROLL_FRAMES)
+        .min(last_start)
 }
 
 fn build_w30_source_window_preview(
@@ -376,12 +400,26 @@ pub(super) fn build_w30_resample_tap_state(
     capture_audio_cache: Option<&BTreeMap<CaptureId, SourceAudioCache>>,
 ) -> W30ResampleTapState {
     let w30 = &session.runtime_state.lane_state.w30;
-    let Some(capture) = w30.last_capture.as_ref().and_then(|capture_id| {
+    let focused_capture = w30.last_capture.as_ref().and_then(|capture_id| {
         session
             .captures
             .iter()
             .find(|capture| capture.capture_id == *capture_id)
-    }) else {
+    });
+    let Some(capture) = focused_capture
+        .filter(|capture| capture.capture_type == riotbox_core::session::CaptureType::Resample)
+        .or_else(|| {
+            let focused_capture_id = w30.last_capture.as_ref()?;
+            session.captures.iter().rev().find(|capture| {
+                capture.capture_type == riotbox_core::session::CaptureType::Resample
+                    && !capture.lineage_capture_refs.is_empty()
+                    && capture.resample_generation_depth > 0
+                    && capture
+                        .lineage_capture_refs
+                        .contains(focused_capture_id)
+            })
+        })
+    else {
         return W30ResampleTapState::default();
     };
     if capture.capture_type != riotbox_core::session::CaptureType::Resample
@@ -399,6 +437,8 @@ pub(super) fn build_w30_resample_tap_state(
         Some(W30ResampleTapSourceProfile::RawCapture)
     };
     let source_audio = build_w30_capture_artifact_resample_source(capture, capture_audio_cache);
+    let (variation, variation_revision, variation_intensity) =
+        w30_resample_tap_variation(session, capture);
     let (availability, routing) = if source_audio.is_some() {
         (
             W30ResampleTapAvailability::SourceAudioReady,
@@ -424,6 +464,9 @@ pub(super) fn build_w30_resample_tap_state(
             .try_into()
             .unwrap_or(u8::MAX),
         generation_depth: capture.resample_generation_depth,
+        variation,
+        variation_revision,
+        variation_intensity,
         music_bus_level: session
             .runtime_state
             .mixer_state
@@ -434,6 +477,60 @@ pub(super) fn build_w30_resample_tap_state(
         tempo_bpm: trusted_source_timing_bpm(session, source_graph).unwrap_or(0.0),
         position_beats: transport.position_beats,
     }
+}
+
+fn w30_resample_tap_variation(
+    session: &SessionFile,
+    capture: &riotbox_core::session::CaptureRef,
+) -> (W30ResampleTapVariation, u64, f32) {
+    let Some(created_from_action) = capture.created_from_action else {
+        return (W30ResampleTapVariation::Base, 0, 0.0);
+    };
+    let Some(created_index) = session
+        .action_log
+        .actions
+        .iter()
+        .position(|action| action.id == created_from_action)
+    else {
+        return (W30ResampleTapVariation::Base, 0, 0.0);
+    };
+
+    let targets_capture_lineage = |target_id: &str| {
+        capture.capture_id.as_str() == target_id
+            || capture
+                .lineage_capture_refs
+                .iter()
+                .any(|capture_id| capture_id.as_str() == target_id)
+    };
+    session
+        .action_log
+        .actions
+        .iter()
+        .enumerate()
+        .skip(created_index + 1)
+        .rev()
+        .find_map(|(index, action)| {
+            if action.status != ActionStatus::Committed
+                || action.command != ActionCommand::W30ApplyDamageProfile
+            {
+                return None;
+            }
+            let ActionParams::Mutation {
+                intensity,
+                target_id: Some(target_id),
+            } = &action.params
+            else {
+                return None;
+            };
+            targets_capture_lineage(target_id).then(|| {
+                (
+                    W30ResampleTapVariation::HardDamage,
+                    (index + 1).try_into().unwrap_or(u64::MAX),
+                    intensity.clamp(0.0, 1.0),
+                )
+            })
+        })
+        .unwrap_or((W30ResampleTapVariation::Base, 0, 0.0))
 }
 
 pub(super) fn normalize_w30_preview_mode(session: &mut SessionFile) {

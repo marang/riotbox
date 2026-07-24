@@ -1406,10 +1406,20 @@ materially distinct and unclipped, and the old fixed-frequency oscillator and
 fixed tempo are absent. Direct raw-level source-to-tap listening nevertheless
 records `technically_ok_but_musically_weak`: the chop is interesting but very
 timid, Beat03 source recognition is lost, and the two-bar hook is weak.
-RIOTBOX-1422 therefore owns the next bounded audible outcome: raise usable
-active tap level, preserve recognizable source character, and add a
-performer-triggered hard variation without scripted choreography or synthetic
-fallback.
+The first RIOTBOX-1422 technical candidate lifted level and added the typed
+post-resample action path, but structured source/base/hard listening rejected
+it: source recognition was still lost, the base was dull, and hard damage was
+neither harder nor playable. Root cause was structural: a `1.389`-second
+resample artifact had been reduced to one strongest `8192`-frame (`~186 ms`)
+grain, and both roles only rearranged that grain. The revised candidate carries
+the complete committed artifact in a bounded `16384`-sample full-duration
+proxy. Base now owns continuous source-phrase flow; committed
+`w30.apply_damage_profile` owns a chopped role with a rate dive, whole-phrase
+cursor changes, and deliberate rhythmic holes. Beat03/Beat08/Beat20 exact
+RuntimeMix renders are distinct, non-silent, unclipped, and preserve their
+immediate input envelope (`0.883` to `0.949` correlation); base/hard envelope
+correlations fall to `0.048`–`0.066`. This remains open until fresh structured
+listening keeps the revised pair.
 
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a

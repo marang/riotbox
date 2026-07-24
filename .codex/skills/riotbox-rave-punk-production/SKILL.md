@@ -59,10 +59,14 @@ When generating or reviewing patterns, slices, demos, or presets:
 - establish the hook and clearly hardest element on one supported Golden Path
   before widening source-family coverage or multiplying variations
 - while tuning that Golden Path, run every shared audible DSP, mix, pattern, or
-  performance-policy change against at least three contrasting real sources
-  before requesting another human review; keep one source as the taste target,
-  but reject clipping, silence, timing regressions, or near-identical hook
-  envelopes across the matrix
+  performance-policy change against at least five real sources spanning at
+  least four typed source families before requesting another human review;
+  several variants from one loop pack or dense-break family still count as one
+  family; keep one source as the taste target and reserve at least two
+  different-family holdouts that did not choose the current algorithm or
+  constants; reject clipping, silence, timing regressions, near-identical hook
+  envelopes, or a holdout failure, and rotate fresh holdouts after they inform
+  a subsequent implementation
 - after that core loop works, create at least one destructive variation: choke,
   reverse, retrigger, pitch dive, filter slam, bitcrush, or silence cut
 - do not make fallback sounds part of the product path; absence of trusted

@@ -74,12 +74,16 @@ pub(super) fn w30_resample_tap_profile_label(render: &W30ResampleTapState) -> &'
 pub(super) fn w30_resample_tap_source_summary(render: &W30ResampleTapState) -> String {
     match render.source_capture_id.as_deref() {
         Some(capture_id) => format!(
-            "{capture_id} | gen {} | lineage {}",
-            render.generation_depth, render.lineage_capture_count
+            "{capture_id} | gen {} | lineage {} | {}",
+            render.generation_depth,
+            render.lineage_capture_count,
+            render.variation.label()
         ),
         None => format!(
-            "source unset | gen {} | lineage {}",
-            render.generation_depth, render.lineage_capture_count
+            "source unset | gen {} | lineage {} | {}",
+            render.generation_depth,
+            render.lineage_capture_count,
+            render.variation.label()
         ),
     }
 }

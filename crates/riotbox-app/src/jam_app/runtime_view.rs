@@ -53,6 +53,9 @@ pub struct JamRuntimeView {
     pub w30_resample_tap_routing: String,
     pub w30_resample_tap_availability: String,
     pub w30_resample_tap_profile: String,
+    pub w30_resample_tap_variation: String,
+    pub w30_resample_tap_variation_revision: u64,
+    pub w30_resample_tap_variation_intensity: String,
     pub w30_resample_tap_source_summary: String,
     pub w30_resample_tap_mix_summary: String,
     pub replay_restore_status: String,
@@ -166,6 +169,12 @@ impl JamRuntimeView {
             w30_resample_tap_availability: runtime.w30_resample_tap.availability.label().into(),
             w30_resample_tap_profile: w30_resample_tap_profile_label(&runtime.w30_resample_tap)
                 .into(),
+            w30_resample_tap_variation: runtime.w30_resample_tap.variation.label().into(),
+            w30_resample_tap_variation_revision: runtime.w30_resample_tap.variation_revision,
+            w30_resample_tap_variation_intensity: format!(
+                "{:.2}",
+                runtime.w30_resample_tap.variation_intensity
+            ),
             w30_resample_tap_source_summary: w30_resample_tap_source_summary(
                 &runtime.w30_resample_tap,
             ),

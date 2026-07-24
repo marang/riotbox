@@ -92,10 +92,16 @@ five surfaces:
 
 For shared audible DSP, mix, pattern, or performance-policy tuning, do not wait
 for broad source-family expansion to catch overfitting. Keep one Golden Path as
-the human taste target, but run at least three contrasting real sources through
-the nearest exact product-path matrix before the next listening request. This
-matrix is a safety/diversity gate, not a substitute for the Golden Path human
-verdict.
+the human taste target, but run at least five real sources across at least four
+typed source families through the nearest exact product-path matrix before the
+next listening request. Multiple files from one loop pack or one narrow
+dense-break family count as one family, not independent generalization proof.
+Declare which cases informed the implementation and reserve at least two cases
+from different families as holdouts that did not choose the algorithm or its
+constants. A candidate that fails a holdout is rejected; once a holdout informs
+the next implementation it becomes a development case and fresh material must
+replace it. This matrix is a safety/diversity gate, not a substitute for the
+Golden Path human verdict.
 
 If a slice only adds the spine or a deterministic scaffold, say that plainly in
 the PR and docs. Do not describe it as complete musical intelligence.

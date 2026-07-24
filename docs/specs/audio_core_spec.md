@@ -387,10 +387,16 @@ Rules:
 - capture must not break playback
 - capture timing must be aligned with transport
 - capture events must be visible to session and action systems
-- the audible internal resample tap activates only for a focused
-  `CaptureType::Resample` with non-empty capture lineage and positive resample
-  generation depth; ordinary loop/pad capture, audition, promotion, recall, and
-  trigger paths keep the tap idle and silent
+- the audible internal resample tap activates only for the most recently
+  materialized `CaptureType::Resample` with non-empty capture lineage and
+  positive resample generation depth while current W-30 focus is that resample
+  or one of its lineage captures; a subsequent lineage-pad trigger or damage
+  gesture may change performer focus without silently deactivating that active
+  resample, while unrelated later material deactivates it
+- `w30.apply_damage_profile` activates the typed `hard_damage` resample
+  variation only when it commits after the active resample and targets that
+  capture or one of its lineage captures. Earlier damage remains part of the
+  source print but cannot masquerade as a newly triggered variation.
 - `promote.resample` owns the first audible tap activation. The presence of any
   capture or W-30 lane focus is not sufficient activation evidence for the
   source-backed tap. A lineage-ready resample capture without a hydrated audio
@@ -411,11 +417,18 @@ The bounded early seam is a non-realtime source-audio cache:
 - prefer loaded committed capture artifacts for focused W-30 pad playback / trigger state, falling back to source-window projection only for bounded audition surfaces when no artifact is available
 - keep the `2048`-sample mono preview window for bounded audition diagnostics
 - project focused committed pad artifacts into a separate callback-safe `16384`-sample mono representation that spans the full capture duration and carries original sample-rate / frame-count identity, playback rate, direction, loop crossfade, and a bounded source-derived chop plan
-- project a focused lineage-ready resample artifact into a callback-safe
-  `4096`-sample mono original-PCM grain with source start-frame, sample-rate,
-  and frame-count identity; select the strongest energy/transient window
-  deterministically outside the callback instead of time-compressing the full
-  capture, point-sampling it, or decoding in realtime
+- project the active lineage-ready resample artifact into a callback-safe
+  `16384`-sample mono full-duration proxy with source start-frame, sample-rate,
+  and complete frame-count identity; retain evenly spaced PCM frames across the
+  whole committed artifact outside the callback instead of selecting one
+  transient grain
+- keep the base tap source-preserving as a continuous phrase anchor; grid
+  retriggers must not repeatedly reset it before later source material becomes
+  audible. The typed post-resample `hard_damage` variation owns the chopped
+  role and may add an immediate rate dive, whole-phrase source-window
+  resequencing, deliberate rhythmic holes, denser retriggers, and stronger
+  source-derived saturation, but no fixed multi-bar choreography or synthetic
+  voice.
 - derive chop slice starts outside the callback from quantized short-time energy rises in the real capture; realtime transport and pad triggers may only select and retrigger the prepared bounded plan
 - preserve the action-derived damage transform and capture-artifact identity across Session replay; artifact hydration must not invent macro / grit state that the committed action did not set
 - keep cache loading and source-window projection outside the realtime callback

@@ -102,6 +102,9 @@ fn runtime_mix_plan_sequence_preserves_callback_state_and_segment_lengths() {
             source_audio: Some(Box::new(runtime_mix_resample_source())),
             lineage_capture_count: 2,
             generation_depth: 1,
+            variation: W30ResampleTapVariation::Base,
+            variation_revision: 0,
+            variation_intensity: 0.0,
             music_bus_level: 0.34,
             grit_level: 0.48,
             is_transport_running: true,
@@ -165,6 +168,9 @@ fn exact_runtime_mix_transport_stop_fades_and_silences_all_w30_paths() {
             source_audio: Some(Box::new(runtime_mix_resample_source())),
             lineage_capture_count: 1,
             generation_depth: 0,
+            variation: W30ResampleTapVariation::Base,
+            variation_revision: 0,
+            variation_intensity: 0.0,
             music_bus_level: 0.34,
             grit_level: 0.4,
             is_transport_running: true,
@@ -904,12 +910,17 @@ fn runtime_mix_resample_source() -> W30ResampleSourceWindow {
         let phase = index as f32 / 41.0;
         *sample = phase.sin() * 0.32 + (phase * 2.3).sin() * 0.08;
     }
+    let mut attack_samples = [0.0; W30_RESAMPLE_ATTACK_WINDOW_LEN];
+    attack_samples.copy_from_slice(&samples[..W30_RESAMPLE_ATTACK_WINDOW_LEN]);
     W30ResampleSourceWindow {
         source_start_frame: 0,
         source_sample_rate: 48_000,
         source_frame_count: W30_RESAMPLE_SOURCE_WINDOW_LEN as u64,
         sample_count: W30_RESAMPLE_SOURCE_WINDOW_LEN,
         samples,
+        attack_start_frame: 0,
+        attack_sample_count: W30_RESAMPLE_ATTACK_WINDOW_LEN,
+        attack_samples,
     }
 }
 

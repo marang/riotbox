@@ -19,11 +19,12 @@ use crate::{
     },
     w30::{
         W30_PAD_CHOP_SLICE_COUNT, W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN,
-        W30_PREVIEW_SAMPLE_WINDOW_LEN, W30_RESAMPLE_SOURCE_WINDOW_LEN, W30PadPlaybackSampleWindow,
-        W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewRenderState,
-        W30PreviewSampleWindow, W30PreviewSourceProfile, W30ResampleSourceWindow,
-        W30ResampleTapMode, W30ResampleTapRouting, W30ResampleTapSourceProfile,
-        W30ResampleTapState,
+        W30_PREVIEW_SAMPLE_WINDOW_LEN, W30_RESAMPLE_ATTACK_WINDOW_LEN,
+        W30_RESAMPLE_SOURCE_WINDOW_LEN, W30PadPlaybackSampleWindow, W30PreviewRenderMode,
+        W30PreviewRenderRouting, W30PreviewRenderState, W30PreviewSampleWindow,
+        W30PreviewSourceProfile, W30ResampleSourceWindow, W30ResampleTapMode,
+        W30ResampleTapRouting, W30ResampleTapSourceProfile, W30ResampleTapState,
+        W30ResampleTapVariation,
     },
 };
 
@@ -52,8 +53,9 @@ use render_tr909_w30_preview::{
 };
 #[cfg(test)]
 use render_tr909_w30_preview::{
-    should_trigger_w30_step, w30_chop_slice_cursor, w30_pad_grid_gate, w30_pad_grid_gate_gain,
-    w30_pad_playback_sample, w30_pad_playback_signature,
+    should_trigger_w30_resample_step, should_trigger_w30_step, w30_chop_slice_cursor,
+    w30_pad_grid_gate, w30_pad_grid_gate_gain, w30_pad_playback_sample, w30_pad_playback_signature,
+    w30_resample_decay, w30_resample_step_cursor,
 };
 pub use runtime_mix_parity::*;
 use shared_mc202_w30_preview::{

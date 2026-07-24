@@ -21,9 +21,10 @@ use riotbox_audio::{
     },
     w30::{
         W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN, W30_PREVIEW_SAMPLE_WINDOW_LEN,
-        W30_RESAMPLE_SOURCE_WINDOW_LEN, W30PreviewRenderMode, W30PreviewRenderRouting,
-        W30PreviewSourceProfile, W30ResampleTapAvailability, W30ResampleTapMode,
-        W30ResampleTapRouting, W30ResampleTapSourceProfile,
+        W30_RESAMPLE_ATTACK_WINDOW_LEN, W30_RESAMPLE_SOURCE_WINDOW_LEN, W30PreviewRenderMode,
+        W30PreviewRenderRouting, W30PreviewSourceProfile, W30ResampleTapAvailability,
+        W30ResampleTapMode, W30ResampleTapRouting, W30ResampleTapSourceProfile,
+        W30ResampleTapVariation,
     },
 };
 use riotbox_core::{

@@ -454,6 +454,14 @@ After exit:
   `technically_ok_but_musically_weak`, not a positive-family pass: the tap is
   timid, the hook is weak, and source recognition is lost. RIOTBOX-1422 owns
   the bounded level/source-character/hard-variation follow-up.
+- RIOTBOX-1422's first lifted transient-grain candidate received a structured
+  human `reject`: source recognition remained lost, the base was dull, and hard
+  damage was not harder or playable. The revised technical candidate projects
+  the complete committed resample into a bounded full-duration proxy, assigns
+  continuous phrase flow to base and a chopped role to committed hard damage,
+  and passes three-source exact RuntimeMix, missing-source-silence, observer,
+  and replay checks. It does not satisfy the audible exit until structured
+  human listening keeps the revised base/hard pair.
 - P016 and the wider P021/P022/P023 quality ladder may resume from the accepted
   live baseline
 
