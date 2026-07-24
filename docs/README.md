@@ -264,6 +264,8 @@ docs/
 - `benchmarks/audio_judge_spike_v1_2026-06-04.md`: CLAP/MERT-style audio judge spike boundary captured
 - `benchmarks/musical_pass_gate_policy_v1_2026-06-04.md`: agent/human musical-pass verdict policy captured
 - `benchmarks/sound_excellence_source_corpus_v1_2026-06-05.md`: P023 real-source coverage contract captured
+- `benchmarks/source_holdout_rotation_v1.json`: RIOTBOX-1423 legal CC0
+  multi-family development corpus and rotating fresh-holdout contract captured
 - `benchmarks/weak_output_fix_routing_v1_2026-06-05.md`: P023 weak-output failure-to-production-fix routing contract captured
 - `benchmarks/source_family_release_demo_coverage_v1_2026-06-12.md`: P023 source-family release-demo coverage gate captured
 - `benchmarks/sound_quality_readiness_report_v1_2026-06-12.md`: P023 sound-quality readiness status report captured

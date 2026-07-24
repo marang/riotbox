@@ -172,6 +172,20 @@ only. They must stay ignored and uncommitted and must never become Riotbox
 product sources, fixtures, generated assets, or redistributed review-pack
 content.
 
+Source-aware tuning and promotion must also separate development material from
+fresh acceptance evidence. The versioned
+`docs/benchmarks/source_holdout_rotation_v1.json` contract requires a
+multi-family development matrix plus disjoint unseen and reserve holdout sets.
+At least five eligible development sources across four typed families must
+inform a candidate before a family-specific success claim. At least two
+different-family holdouts must then test it without having selected the
+algorithm or constants. Once holdout output changes the next implementation,
+that source is consumed, must be recorded in rotation history, and cannot be
+presented as unseen again. `just source-holdout-rotation-fixtures` enforces
+family diversity, partition disjointness, rotation, provenance, license and
+reference boundaries; local file verification additionally binds the ignored
+WAVs by SHA-256 and format. This contract remains `quality_proof: false`.
+
 Pack-level `source_backed: true` states that source audio, availability, or
 timing participates in the tested path; it does not imply that every musical
 pattern in that pack was selected from source evidence. Pattern-level

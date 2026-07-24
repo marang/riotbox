@@ -462,6 +462,11 @@ After exit:
   and passes three-source exact RuntimeMix, missing-source-silence, observer,
   and replay checks. It does not satisfy the audible exit until structured
   human listening keeps the revised base/hard pair.
+- RIOTBOX-1423 supplies RIOTBOX-1422 with a legal CC0 development matrix and
+  two disjoint fresh holdout sets. Candidate tuning must cover at least five
+  eligible development sources across four typed families; a holdout that
+  informs another implementation is consumed and must be replaced before it
+  can be called fresh evidence again.
 - P016 and the wider P021/P022/P023 quality ladder may resume from the accepted
   live baseline
 

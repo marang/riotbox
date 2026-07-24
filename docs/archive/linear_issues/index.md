@@ -1450,4 +1450,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Validate weak and bad-timing sources through honest degraded or reject behavior
 - [RIOTBOX-1408.md](./RIOTBOX-1408.md)
   P023: Replace the synthetic W-30 resample tap voice with source-backed resample audio
+- [RIOTBOX-1423.md](./RIOTBOX-1423.md)
+  P023: Expand the legal real-source corpus and rotate cross-family holdouts
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
