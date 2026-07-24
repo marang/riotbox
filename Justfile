@@ -64,6 +64,7 @@ _audio-qa-ci-unlocked:
     just source-showcase-diversity-validator-fixtures
     just source-showcase-diversity-report-fixtures
     just sound-excellence-source-corpus-fixtures
+    just source-holdout-rotation-fixtures
     just representative-source-showcase-output-guard-fixtures
     just representative-source-showcase-musical-quality-fixtures
     just automated-musical-fitness-fixtures
@@ -343,6 +344,13 @@ sound-excellence-source-corpus-fixtures manifest="docs/benchmarks/sound_excellen
     python3 scripts/validate_sound_excellence_source_corpus.py "{{manifest}}"
     tmp="$(mktemp)" && jq 'del(.entries[0].target_review_questions)' "{{manifest}}" > "$tmp" && if python3 scripts/validate_sound_excellence_source_corpus.py "$tmp"; then echo "expected missing review questions fixture to fail" >&2; rm "$tmp"; exit 1; fi; rm "$tmp"
     tmp="$(mktemp)" && jq '.entries[0].source_family = "unknown_family"' "{{manifest}}" > "$tmp" && if python3 scripts/validate_sound_excellence_source_corpus.py "$tmp"; then echo "expected unsupported source family fixture to fail" >&2; rm "$tmp"; exit 1; fi; rm "$tmp"
+
+source-holdout-rotation-fixtures manifest="docs/benchmarks/source_holdout_rotation_v1.json":
+    python3 scripts/validate_source_holdout_rotation.py "{{manifest}}"
+    python3 scripts/validate_source_holdout_rotation_fixtures.py "{{manifest}}"
+
+source-holdout-rotation-local-files manifest="docs/benchmarks/source_holdout_rotation_v1.json":
+    python3 scripts/validate_source_holdout_rotation.py --require-existing-source-files "{{manifest}}"
 
 professional-output-listening-verdict-import-fixtures pack="artifacts/audio_qa/local-professional-output-listening-pack":
     python3 scripts/validate_professional_output_listening_verdict_import_fixtures.py --pack "{{pack}}"
