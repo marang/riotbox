@@ -825,6 +825,12 @@ following:
   `weak_source` and `bad_timing` need reviewed correct degraded / unavailable /
   reject behavior instead of a forced demo-ready pass; the gate must remain
   CI-safe without ignored local WAV files
+- source-aware implementation must use the RIOTBOX-1423 rotating-holdout
+  contract before tuning or promoting another candidate: at least five
+  eligible development sources across four typed families, two disjoint
+  multi-family holdout sets, and rotation of any holdout that informs later
+  code; commercial references and narrow same-pack repetition do not satisfy
+  this evidence
 - hardcoded or scripted audio generation may be used only as smoke, regression,
   or diagnostic evidence; it must not be presented as technical or musical
   quality proof until the relevant behavior is source-aware, policy-owned, and

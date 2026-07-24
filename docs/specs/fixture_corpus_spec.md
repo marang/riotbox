@@ -287,3 +287,49 @@ python3 scripts/validate_sound_excellence_source_corpus.py \
   --require-existing-source-files \
   docs/benchmarks/sound_excellence_source_corpus_v1.json
 ```
+
+## 13. P023 Legal Source Corpus And Rotating Holdouts
+
+The earlier sound-excellence corpus remains a compatibility map for existing
+packs. New source-aware implementation must additionally use the stricter
+versioned contract at:
+
+- `docs/benchmarks/source_holdout_rotation_v1.json`
+
+That contract references ignored, locally held CC0 WAV derivatives and records
+author, provider page, download URL, license, source excerpt offset, SHA-256,
+typed family, classification state, and development / holdout ownership. The
+audio itself is not committed. `source_suitability_verdict` records only
+whether the raw source is useful for the assigned test role; it is never a
+Riotbox-output human pass or release-quality verdict.
+
+The development matrix must contain at least five eligible real sources across
+at least four core families. A narrow source pack cannot supply multiple cases
+inside one matrix. `dense_full_mix` is a useful masking stress family, but it
+does not count as positive `dense_break` coverage. Commercial reference
+recordings remain listening / measurement references only and are rejected from
+this source contract.
+
+At least two disjoint holdout sets must remain available. Each set contains at
+least two sources from at least two different core families. Holdout audio stays
+unheard and may not choose the candidate algorithm or constants. Once a holdout
+informs later implementation, it leaves the unseen set, gains a dated rotation
+record with the consuming ticket, and receives a fresh replacement. Reusing a
+consumed source as unseen evidence is invalid.
+
+CI validates the contract and mutation fixtures without needing local audio:
+
+```bash
+just source-holdout-rotation-fixtures
+```
+
+Local source-file verification additionally checks presence, SHA-256, 48 kHz
+stereo PCM16 format, bounded duration, and integer clipping:
+
+```bash
+just source-holdout-rotation-local-files
+```
+
+This is a `contract_enabler` for RIOTBOX-1422. Corpus validity is not musical
+quality proof; the enabled W-30 candidate still requires exact-path technical
+evidence and structured human listening.

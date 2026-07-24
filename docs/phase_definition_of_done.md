@@ -454,6 +454,11 @@ After exit:
   `technically_ok_but_musically_weak`, not a positive-family pass: the tap is
   timid, the hook is weak, and source recognition is lost. RIOTBOX-1422 owns
   the bounded level/source-character/hard-variation follow-up.
+- RIOTBOX-1423 supplies RIOTBOX-1422 with a legal CC0 development matrix and
+  two disjoint fresh holdout sets. Candidate tuning must cover at least five
+  eligible development sources across four typed families; a holdout that
+  informs another implementation is consumed and must be replaced before it
+  can be called fresh evidence again.
 - P016 and the wider P021/P022/P023 quality ladder may resume from the accepted
   live baseline
 
