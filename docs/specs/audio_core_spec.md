@@ -422,10 +422,19 @@ The bounded early seam is a non-realtime source-audio cache:
   and complete frame-count identity; retain evenly spaced PCM frames across the
   whole committed artifact outside the callback instead of selecting one
   transient grain
+- reject a requested source-window capture when its complete quantized duration
+  does not fit before source EOF. Do not silently shorten a one-bar request to
+  three beats and label the truncated artifact as a complete bar.
 - keep the base tap source-preserving as a continuous phrase anchor; grid
   retriggers must not repeatedly reset it before later source material becomes
-  audible. The typed post-resample `hard_damage` variation owns the chopped
-  role and may add an immediate rate dive, whole-phrase source-window
+  audible. When transport tempo is valid, derive the base cycle from the
+  artifact's duration in beats, round that duration to a bounded whole-beat
+  count, and place its restart on the corresponding transport-grid boundary.
+  Generation depth and grit must not introduce a free-running playback-rate
+  offset that makes a source kick recur shortly after the grid kick. Use
+  double-precision phase accumulation so the restart stays within one output
+  frame over the cycle. The typed post-resample `hard_damage` variation owns
+  the chopped role and may add an immediate rate dive, whole-phrase source-window
   resequencing, deliberate rhythmic holes, denser retriggers, and stronger
   source-derived saturation, but no fixed multi-bar choreography or synthetic
   voice.

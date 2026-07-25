@@ -138,8 +138,13 @@ fn capture_source_window(
         .or(graph.timing.meter_hint)
         .map_or(4_u64, |meter| u64::from(meter.beats_per_bar));
     let end_beat = capture_end_beat(session, graph, action, boundary, beats_per_bar);
-    let end_seconds = seconds_for_beat_cursor(graph, end_beat)
-        .unwrap_or_else(|| seconds_for_beat_cursor_estimate(graph, end_beat))
+    let requested_end_seconds = seconds_for_beat_cursor(graph, end_beat)
+        .unwrap_or_else(|| seconds_for_beat_cursor_estimate(graph, end_beat));
+    let source_end_tolerance_seconds = 1.0 / graph.source.sample_rate.max(1) as f32;
+    if requested_end_seconds > graph.source.duration_seconds + source_end_tolerance_seconds {
+        return None;
+    }
+    let end_seconds = requested_end_seconds
         .min(graph.source.duration_seconds)
         .max(start_seconds);
     let start_frame = seconds_to_frame(start_seconds, graph.source.sample_rate);

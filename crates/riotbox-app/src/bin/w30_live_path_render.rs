@@ -66,7 +66,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     commit(
         &mut state,
         CommitBoundary::Bar,
-        5,
+        4,
         2,
         1,
         scene_id.clone(),

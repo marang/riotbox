@@ -602,7 +602,7 @@ pub(super) struct W30PreviewCallbackState {
 #[derive(Debug, Default)]
 pub(super) struct W30ResampleTapCallbackState {
     pub(super) beat_position: f64,
-    pub(super) source_sample_cursor: f32,
+    pub(super) source_sample_cursor: f64,
     pub(super) last_character_input: f32,
     pub(super) character_edge_memory: f32,
     pub(super) envelope: f32,

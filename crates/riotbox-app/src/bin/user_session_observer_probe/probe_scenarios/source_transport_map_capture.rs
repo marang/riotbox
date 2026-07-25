@@ -4,7 +4,7 @@ use crossterm::event::KeyCode;
 use riotbox_app::ui::JamShellState;
 use riotbox_audio::source_audio::SourceAudioCache;
 use riotbox_core::{
-    action::CommitBoundary,
+    action::{CaptureLengthIntent, CommitBoundary},
     ids::SourceId,
     source_graph::{
         DecodeProfile, GraphProvenance, SourceDescriptor, SourceGraph, TimingDegradedPolicy,
@@ -87,6 +87,7 @@ fn attach_manual_confirm_source_transport(shell: &mut JamShellState) -> io::Resu
 
     shell.app.source_graph = Some(graph);
     shell.app.source_audio_cache = Some(source_audio_cache()?);
+    shell.app.session.runtime_state.capture.length_intent = CaptureLengthIntent::OneBar;
     shell.app.refresh_view();
     Ok(())
 }

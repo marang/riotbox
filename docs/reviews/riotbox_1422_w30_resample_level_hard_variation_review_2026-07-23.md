@@ -94,7 +94,48 @@ This is technical readiness only. The timing-corrected Hard gesture remains
 confirms that the late/foreign layer is gone and the resulting variation is
 musically useful.
 
-## Exact RuntimeMix Evidence
+### Base loop timing reject and correction
+
+The first exact listening comparison after the local-onset correction received
+a fresh human `reject` before Hard usefulness could be judged. Base contained a
+doubled kick like an echo; the second hit disturbed the beat and made the loop
+feel out of time.
+
+Technical inspection found two independent causes in the reviewed artifact:
+
+- the review renderer committed a one-bar capture from zero-based source beat
+  `5`, leaving only three beats before EOF; the capture helper silently clamped
+  the requested end and produced a `1.389365 s` artifact instead of a complete
+  bar;
+- generation/grit playback-rate modulation made that truncated Base artifact
+  wrap after about `3.05` transport beats, so the source kick restarted shortly
+  after a regular grid attack. The strongest repeated kick rise in the rejected
+  render landed about `47.85 ms` after the bar boundary.
+
+The corrected renderer commits at zero-based source beat `4`, producing the
+complete four-beat `1.842109 s` capture. Source-window materialization now
+fails closed if the whole requested quantized window does not fit before EOF.
+The Base callback derives a bounded whole-beat cycle from capture duration and
+transport tempo, removes the free-running generation/grit rate offset, and
+uses an `f64` source cursor. A focused callback regression proves a full-bar
+artifact restarts within one output frame of the transport bar. In the new
+Beat03 render the kick body rises about `5–15 ms` after each bar boundary, with
+no separate late loop restart.
+
+Seven development/holdout sources rerender non-silent and unclipped, while
+their missing-source controls remain digital silence. The maximum absolute
+pairwise Hard-envelope correlation is `0.550674`: below the existing `0.95`
+collapse ceiling, although less diverse than the earlier onset-only matrix.
+The corrected exact artifact remains `human_verdict: unverified`; automated
+alignment does not replace another structured listen for the doubled-kick
+failure.
+
+## Earlier Onset-Only RuntimeMix Evidence
+
+The following table and hashes describe the onset-only candidate that preceded
+the Base loop-timing reject. They remain useful historical evidence for why
+local-onset alignment alone was insufficient, but they are not the current
+review candidate.
 
 Each candidate uses the exact RuntimeMix simulation with silent TR-909,
 MC-202, W-30 preview, and generated source-monitor contributors.
@@ -122,7 +163,7 @@ The DH BeatC and Kick/Snare hard artifacts have different hashes but their
 `0.95` and mean absolute delta at least `0.01`. Normalized hard clipping has
 collapsed different drum inputs toward the same articulation.
 
-Current revised Beat03 artifact hashes:
+Earlier onset-only Beat03 artifact hashes:
 
 - base SHA-256:
   `2c93fd593983182c7efc35d6a5a9b182c351b996d644bcb07d332459fe878b3e`
@@ -133,9 +174,11 @@ Current revised Beat03 artifact hashes:
 - continuous two-bar base to two-bar hard gesture SHA-256:
   `ae81a633c655fe0b25353d6e98faaebdc7405d0e9fc7cece61dd4ad8a019c4ff`
 
-The stable Base hash proves hard-mode iteration did not rewrite the
-human-accepted anchor. Distinct hard hashes alone are insufficient because the
-holdout envelope comparison still detects musical collapse.
+At that stage, the stable Base hash proved hard-mode iteration had not rewritten
+the earlier human-accepted anchor. The subsequent exact listen exposed the
+separate Base loop-phase defect, so that hash is now a historical control rather
+than an accepted current anchor. Distinct Hard hashes alone were also
+insufficient because the holdout envelope comparison detected musical collapse.
 
 ## Product-Spine Proof
 
@@ -156,21 +199,19 @@ holdout envelope comparison still detects musical collapse.
 
 ## Listening Gate
 
-The full-phrase Base has a human pass, but the latest Hard candidate is rejected
-before another listening request. The slice remains open. A future candidate
-must first pass a fresh matrix of at least five sources across four typed
-families, including two different-family holdouts that did not choose its
-algorithm or constants. DH BeatC, Kick/Snare, RushArp, and Fadapad now count as
-development evidence because their failures are known; fresh holdouts must
-replace them.
+The latest exact-artifact verdict rejects the onset-only candidate because Base
+contained the doubled/echo kick. The slice remains open. The grid-aligned
+replacement passes seven-source technical rendering, but remains
+`human_verdict: unverified`.
 
-Only after that gate should structured listening answer:
+Structured listening must now answer in this order:
 
-1. Is the hard gesture immediately obvious and musically preferable as a
-   performer-triggered variation?
-2. Does the accepted Base remain byte-stable and recognizable?
-3. Does the wider Beat03 origin remain meaningfully related after the capture
-   and resample lineage, without requiring the tap to reproduce uncaptured
+1. Is the doubled/echo kick gone, and does Base remain steadily in time across
+   the loop boundary?
+2. If Base timing passes, is the Hard gesture immediately obvious and musically
+   useful as a performer-triggered variation?
+3. Does the complete capture remain recognizable through Base and meaningfully
+   related through Hard without requiring either tap to reproduce uncaptured
    source sections?
 
 ## Review Note
@@ -180,8 +221,15 @@ would have kept an old resample active after unrelated later material. The
 final projection permits persistence only across focus within that resample's
 lineage and has a regression test for unrelated-focus deactivation.
 
-The revised full-duration behavior still requires a fresh branch review after
-validation. One known maintainability signal remains:
+The fresh branch review for the grid-aligned Base fix found one real regression:
+the source-transport observer probe called its action a bar capture while
+retaining the global four-bar default, then depended on source-EOF clamping.
+The probe now sets typed `OneBar` intent explicitly and passes without weakening
+the product's fail-closed rule. Focused W-30/capture tests and the complete
+`just ci` gate pass after that correction. No unresolved correctness, realtime,
+architecture, or test finding remains for this diff.
+
+One known maintainability signal remains:
 `render_tr909_w30_preview.rs` is above the soft review-size range. A future
 change should consider a real semantic `w30_resample_tap_renderer` module with
 explicit visibility and colocated tests. This slice does not add a mechanical

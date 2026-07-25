@@ -466,8 +466,14 @@ After exit:
   addition was outside the perceived groove and made the loop unusable.
   RIOTBOX-1422 now removes the repeated global attack layer and maps each
   quantized transient-chop trigger to a detected local source onset. Focused
-  timing and multi-source technical gates pass, but the corrected candidate
-  remains `human_verdict: unverified`.
+  timing and multi-source technical gates pass. The subsequent exact-artifact
+  review exposed a separate Base defect: a truncated three-beat capture and
+  free-running rate offset restarted a kick just after the transport grid,
+  perceived as a doubled echo that pulled the beat out of time. Capture now
+  fails closed when the complete requested window does not fit, and a valid
+  source-backed Base cycle restarts on its rounded whole-beat transport
+  boundary within one output frame. The corrected candidate remains
+  `human_verdict: unverified`.
 - RIOTBOX-1423 supplies RIOTBOX-1422 with a legal CC0 development matrix and
   two disjoint fresh holdout sets. Candidate tuning must cover at least five
   eligible development sources across four typed families; a holdout that

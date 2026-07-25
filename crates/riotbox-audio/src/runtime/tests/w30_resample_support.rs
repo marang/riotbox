@@ -1033,7 +1033,7 @@ fn post_resample_hard_damage_is_an_immediate_callback_safe_variation() {
     );
     assert_eq!(hard_callback.last_variation_revision, 7);
     assert!(
-        hard_callback.source_sample_cursor >= f32::from(hard.hard_slice_cursors[0]),
+        hard_callback.source_sample_cursor >= f64::from(hard.hard_slice_cursors[0]),
         "hard gesture did not jump to its source-derived local onset"
     );
 }
@@ -1148,7 +1148,7 @@ fn resample_base_preserves_phrase_flow_while_hard_damage_owns_the_chopped_role()
         hard_cursors,
         hard.hard_slice_cursors
             .into_iter()
-            .map(f32::from)
+            .map(f64::from)
             .collect::<Vec<_>>()
     );
     assert_eq!(w30_resample_decay(&base), 1.0);
@@ -1207,6 +1207,65 @@ fn transient_chop_starts_the_selected_source_onset_on_the_eighth_note_grid() {
     assert!(
         first_audible_frame.abs_diff(expected_grid_frame) <= 1,
         "source onset landed off-grid: expected frame {expected_grid_frame}, got {first_audible_frame}"
+    );
+}
+
+#[test]
+fn base_resample_wraps_a_full_bar_artifact_on_the_transport_bar_boundary() {
+    let output_sample_rate = 48_000_u32;
+    let tempo_bpm = 130.0_f32;
+    let expected_bar_frames =
+        (4.0 * 60.0 / f64::from(tempo_bpm) * f64::from(output_sample_rate)).round() as usize;
+    let mut source_audio = RealtimeW30ResampleSourceWindow {
+        source_start_frame: 0,
+        source_sample_rate: 44_100,
+        source_frame_count: 81_237,
+        sample_count: W30_RESAMPLE_SOURCE_WINDOW_LEN,
+        samples: [0.0; W30_RESAMPLE_SOURCE_WINDOW_LEN],
+    };
+    source_audio.samples[0] = 0.8;
+    let render = RealtimeW30ResampleTapState {
+        mode: W30ResampleTapMode::CaptureLineageReady,
+        routing: W30ResampleTapRouting::InternalCaptureTap,
+        source_profile: Some(W30ResampleTapSourceProfile::PromotedCapture),
+        source_audio,
+        lineage_capture_count: 1,
+        generation_depth: 1,
+        variation: W30ResampleTapVariation::Base,
+        variation_revision: 0,
+        variation_intensity: 0.0,
+        hard_policy: W30ResampleTapHardPolicy::SourceTransientChop,
+        hard_trigger_mask: 0b1101_0111,
+        hard_slice_cursors: [0; W30_RESAMPLE_HARD_SLICE_COUNT],
+        hard_transient_contrast: 5.0,
+        music_bus_level: 0.8,
+        grit_level: 0.82,
+        is_transport_running: true,
+        tempo_bpm,
+        position_beats: 0.0,
+    };
+    let mut callback = W30ResampleTapCallbackState::default();
+    let mut buffer = vec![0.0_f32; (expected_bar_frames + 32) * 2];
+
+    render_w30_resample_tap_buffer(
+        &mut buffer,
+        output_sample_rate,
+        2,
+        &render,
+        &mut callback,
+    );
+
+    let search_start = expected_bar_frames - 16;
+    let search_end = expected_bar_frames + 16;
+    let repeated_peak_frame = buffer[search_start * 2..search_end * 2]
+        .chunks_exact(2)
+        .enumerate()
+        .max_by(|(_, left), (_, right)| left[0].abs().total_cmp(&right[0].abs()))
+        .map(|(offset, _)| search_start + offset)
+        .expect("bar-boundary search window");
+    assert!(
+        repeated_peak_frame.abs_diff(expected_bar_frames) <= 1,
+        "Base loop restarted off the transport bar: expected frame {expected_bar_frames}, got {repeated_peak_frame}"
     );
 }
 

@@ -669,33 +669,42 @@ fn w30_resample_source_sample(
         return 0.0;
     }
 
-    let output_frame_count = (window.source_frame_count.max(1) as f64
-        * f64::from(output_sample_rate.max(1))
-        / f64::from(window.source_sample_rate.max(1)))
-    .max(1.0);
-    let playback_rate = w30_resample_playback_rate(render);
-    let cursor_increment =
-        (sample_count as f64 / output_frame_count * f64::from(playback_rate)) as f32;
-    let cursor = state.source_sample_cursor.rem_euclid(sample_count as f32);
+    let output_frame_count = w30_resample_cycle_output_frames(render, output_sample_rate);
+    let cursor_increment = sample_count as f64 / output_frame_count;
+    let cursor = state.source_sample_cursor.rem_euclid(sample_count as f64);
     let base = cursor.floor() as usize % sample_count;
     let next = (base + 1) % sample_count;
-    let sample =
-        window.samples[base] + (window.samples[next] - window.samples[base]) * cursor.fract();
-    state.source_sample_cursor = (cursor + cursor_increment).rem_euclid(sample_count as f32);
+    let sample = window.samples[base]
+        + (window.samples[next] - window.samples[base]) * cursor.fract() as f32;
+    state.source_sample_cursor = (cursor + cursor_increment).rem_euclid(sample_count as f64);
     sample
 }
 
-fn w30_resample_playback_rate(render: &RealtimeW30ResampleTapState) -> f32 {
-    const GENERATION_RATE_DROP: f32 = 0.025;
-    const GRIT_RATE_LIFT: f32 = 0.015;
-    const MIN_RATE: f32 = 0.86;
+fn w30_resample_cycle_output_frames(
+    render: &RealtimeW30ResampleTapState,
+    output_sample_rate: u32,
+) -> f64 {
+    const MIN_GRID_ALIGNED_CYCLE_BEATS: f64 = 1.0;
+    const MAX_GRID_ALIGNED_CYCLE_BEATS: f64 = 64.0;
 
-    (1.0 - f32::from(render.generation_depth.min(4)) * GENERATION_RATE_DROP
-        + render.grit_level.clamp(0.0, 1.0) * GRIT_RATE_LIFT)
-        .clamp(MIN_RATE, 1.0)
+    let window = &render.source_audio;
+    let source_duration_seconds =
+        window.source_frame_count.max(1) as f64 / f64::from(window.source_sample_rate.max(1));
+    let raw_output_frames =
+        (source_duration_seconds * f64::from(output_sample_rate.max(1))).max(1.0);
+    if !render.tempo_bpm.is_finite() || render.tempo_bpm <= 0.0 {
+        return raw_output_frames;
+    }
+
+    let source_duration_beats = source_duration_seconds * f64::from(render.tempo_bpm) / 60.0;
+    let aligned_beat_count = source_duration_beats
+        .round()
+        .clamp(MIN_GRID_ALIGNED_CYCLE_BEATS, MAX_GRID_ALIGNED_CYCLE_BEATS);
+    (aligned_beat_count * 60.0 / f64::from(render.tempo_bpm) * f64::from(output_sample_rate.max(1)))
+        .max(1.0)
 }
 
-pub(super) fn w30_resample_step_cursor(render: &RealtimeW30ResampleTapState, step: i64) -> f32 {
+pub(super) fn w30_resample_step_cursor(render: &RealtimeW30ResampleTapState, step: i64) -> f64 {
     let sample_count = render
         .source_audio
         .sample_count
@@ -709,7 +718,7 @@ pub(super) fn w30_resample_step_cursor(render: &RealtimeW30ResampleTapState, ste
     if render.hard_policy == W30ResampleTapHardPolicy::SourceTransientChop {
         let slot = step.rem_euclid(W30_RESAMPLE_HARD_SLICE_COUNT as i64) as usize;
         return usize::from(render.hard_slice_cursors[slot]).min(sample_count.saturating_sub(1))
-            as f32;
+            as f64;
     }
     0.0
 }

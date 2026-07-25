@@ -239,6 +239,51 @@ fn capture_after_source_eof_does_not_claim_an_empty_source_window() {
 }
 
 #[test]
+fn capture_before_source_eof_does_not_claim_a_truncated_one_bar_window() {
+    let mut graph = source_map_navigation_graph();
+    graph.source.duration_seconds = 3.692;
+    graph.timing.bpm_estimate = Some(130.0);
+    let primary = graph
+        .timing
+        .hypotheses
+        .first_mut()
+        .expect("primary timing hypothesis");
+    primary.bpm = 130.0;
+    primary.beat_grid = (1..=9)
+        .map(|beat_index| BeatPoint {
+            beat_index,
+            time_seconds: (beat_index - 1) as f32 * 60.0 / 130.0,
+            confidence: 0.9,
+        })
+        .collect();
+    primary.bar_grid.clear();
+    primary.phrase_grid.clear();
+
+    let mut session = sample_session(&graph);
+    session.captures.clear();
+    session.runtime_state.capture.length_intent = CaptureLengthIntent::OneBar;
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    state.queue_capture_bar(300);
+
+    let committed = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Bar,
+            beat_index: 5,
+            bar_index: 2,
+            phrase_index: 1,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        400,
+    );
+
+    assert_eq!(committed.len(), 1);
+    assert!(
+        state.session.captures[0].source_window.is_none(),
+        "a one-bar capture with only three source beats remaining must fail closed"
+    );
+}
+
+#[test]
 fn source_phase_bar_boundary_commits_capture_at_the_crossed_downbeat() {
     let mut graph = source_map_navigation_graph();
     graph.source.duration_seconds = 3.692;

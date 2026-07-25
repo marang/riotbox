@@ -332,3 +332,31 @@ is the click-safe fade length within that trigger step. Zero disables the gate
 and leaves existing clean and pitch-drag playback unchanged. Changes require
 runtime gate tests, exact matrix determinism, and fresh sparse-destructive
 listening because silence placement and groove are musician-facing behavior.
+
+## W-30 Resample Cycle Alignment
+
+`MIN_GRID_ALIGNED_CYCLE_BEATS = 1.0` and
+`MAX_GRID_ALIGNED_CYCLE_BEATS = 64.0` bound the whole-beat duration inferred
+from a hydrated W-30 resample artifact. They are counts in beats, not gains,
+playback rates, confidence scores, or QA thresholds. With valid transport
+tempo, the callback calculates:
+
+```text
+source duration in seconds * transport BPM / 60
+    -> nearest whole beat count, bounded to 1..64
+    -> exact output-frame duration on the transport grid
+```
+
+This correction is intentionally small: committed capture material is already
+quantized, while WAV/sample-rate rounding can leave its measured duration a
+fraction away from an integer beat count. Aligning that cycle prevents the
+source attack from wrapping a few milliseconds after the corresponding grid
+attack. `64` is an MVP realtime-safety ceiling for the bounded proxy, not a
+promise that the W-30 supports a 64-beat editing surface.
+
+The source cursor uses `f64` so accumulated phase error cannot move an otherwise
+correct cycle restart outside the one-frame timing regression. Generation depth
+and grit still shape the source-backed signal, but they no longer alter Base
+cycle rate and create a free-running loop. Any future pitched/dive behavior must
+be a typed performer-owned variation with an explicit grid/retrigger contract,
+not an incidental side effect of those controls.
