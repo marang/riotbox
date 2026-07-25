@@ -130,6 +130,37 @@ The corrected exact artifact remains `human_verdict: unverified`; automated
 alignment does not replace another structured listen for the doubled-kick
 failure.
 
+### Grid-safe Base pass and Hard articulation weak verdict
+
+Structured review of the grid-aligned exact artifact confirms that Base now has
+a stable beat and remains harmonic. The doubled/echo-kick failure is therefore
+closed. The same listen found that the second half was not genuinely Hard.
+The structured verdict is `technically_ok_but_musically_weak`, with the explicit
+constraint that later work must preserve Base and must not fake Hard through a
+level-only lift, hollow pitch shift, or off-grid retrigger.
+
+Self-analysis explains the perceptual miss: the prior Hard waveform differed
+from Base and was about `1.2 LU` louder, but its envelope never decayed. Hard
+therefore had only `0.7%` measured silence versus `1.0%` in Base; the trigger
+mask changed source cursors without creating the promised chopped articulation
+or inactive-slot space.
+
+The next technical candidate keeps Beat03 Base byte-identical at
+`13d5943f0d2c222f80c279991dfbf3593b6e155b99795c916661bb3565f64a4c`.
+For `source_transient_chop`, a tempo-derived envelope reaches `0.03` after
+`0.55` of an eighth-note step, while source-reactive edge/drive and a bounded
+`1.12` attack compensation keep the surviving hits forward. For continuous
+`source_texture_bite`, no trigger grid is imposed; the existing source waveform
+receives bounded wavefold/quantization instead.
+
+Across Beat03 plus seven development/holdout sources, every Hard render is
+non-silent and unclipped and every missing-source control is digital silence.
+The seven transient policies measure relative Base-to-Hard RMS deltas from
+`1.062192` to `1.248608`; the continuous texture policy measures `0.152667`.
+Maximum absolute pairwise 20 ms Hard-envelope correlation is `0.183690`.
+Beat03 Hard has `45.75%` silence, crest factor `7.789`, peak `0.709396`, and no
+clipping. This is a technically review-ready candidate, not a human pass.
+
 ## Earlier Onset-Only RuntimeMix Evidence
 
 The following table and hashes describe the onset-only candidate that preceded

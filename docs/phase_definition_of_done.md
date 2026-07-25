@@ -473,7 +473,13 @@ After exit:
   fails closed when the complete requested window does not fit, and a valid
   source-backed Base cycle restarts on its rounded whole-beat transport
   boundary within one output frame. The corrected candidate remains
-  `human_verdict: unverified`.
+  `human_verdict: technically_ok_but_musically_weak`: direct listening confirms
+  stable timing and harmonic output, but the committed Hard half is not
+  genuinely hard. Follow-up keeps Base byte-identical and gives transient Hard
+  a tempo-derived gate, stronger source-edge character, and bounded attack
+  compensation; continuous texture Hard receives source-only wavefold/crush
+  without an invented trigger grid. Eight-source technical gates pass, but the
+  stronger candidate remains `human_verdict: unverified`.
 - RIOTBOX-1423 supplies RIOTBOX-1422 with a legal CC0 development matrix and
   two disjoint fresh holdout sets. Candidate tuning must cover at least five
   eligible development sources across four typed families; a holdout that

@@ -444,6 +444,17 @@ The bounded early seam is a non-realtime source-audio cache:
   overlaying one global source attack is invalid: either can make the hard
   layer late, harmonically foreign, and unusable even when its trigger event is
   technically quantized.
+- transient-chop `hard_damage` must also own a tempo-derived source gate:
+  retrigger its envelope at each selected source onset, decay it to a small
+  explicit end level within a bounded fraction of the eighth-note step, and let
+  source-derived inactive mask slots become real arrangement space. A
+  continuously open envelope that merely changes source cursors is a
+  transformed variation but does not satisfy the Hard role.
+- both Hard policies may strengthen source-reactive saturation and edge
+  emphasis. `source_transient_chop` may add a bounded attack-gain correction to
+  compensate for its deliberate gaps. `source_texture_bite` must not invent a
+  trigger grid; use bounded wavefold/quantization of the real source waveform
+  when continuous material needs an immediately audible hard timbre.
 - derive chop slice starts outside the callback from quantized short-time energy rises in the real capture; realtime transport and pad triggers may only select and retrigger the prepared bounded plan
 - preserve the action-derived damage transform and capture-artifact identity across Session replay; artifact hydration must not invent macro / grit state that the committed action did not set
 - keep cache loading and source-window projection outside the realtime callback

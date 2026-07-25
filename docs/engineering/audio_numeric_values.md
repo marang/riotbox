@@ -360,3 +360,27 @@ and grit still shape the source-backed signal, but they no longer alter Base
 cycle rate and create a free-running loop. Any future pitched/dive behavior must
 be a typed performer-owned variation with an explicit grid/retrigger contract,
 not an incidental side effect of those controls.
+
+## W-30 Hard Articulation
+
+`HARD_TRANSIENT_CHOP_GATE_STEP_FRACTION = 0.55` means a selected transient-chop
+hit reaches its declared gate end level after 55% of one eighth-note step.
+`HARD_TRANSIENT_CHOP_GATE_END_LEVEL = 0.03` is linear envelope amplitude, about
+`-30.5 dB` relative to the retriggered envelope. The callback derives a
+sample-rate- and tempo-correct decay coefficient once per buffer. These values
+create real source-backed attack/space contrast; they are not silence-ratio QA
+thresholds, output gains, or a fixed BPM assumption.
+
+`HARD_TRANSIENT_ATTACK_GAIN = 1.12` is a local peak/attack compensation applied
+only to the gated `source_transient_chop` Hard policy. It offsets energy removed
+by the deliberate gaps and stays behind the existing voice ceiling. It must not
+be increased to disguise weak articulation; changes require zero-clipping proof
+across the real-source matrix and fresh structured listening.
+
+The `HARD_SOURCE_*` drive, wet, body, and edge values shape both typed Hard
+policies from their actual source samples. Continuous `source_texture_bite`
+adds `HARD_TEXTURE_FOLD_DRIVE = 2.2`, eight amplitude-quantization steps, and a
+`0.58` fold/crush mix. These are version-local DSP recipe values, not a fallback
+voice: no source means digital silence, and texture material receives no
+invented trigger grid. Changes require transient and texture policy tests,
+same-source determinism, cross-source diversity, and role-specific listening.

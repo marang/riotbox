@@ -605,6 +605,7 @@ pub(super) fn render_w30_resample_tap_buffer(
             0.0
         };
     let frame_count = data.len() / channel_count.max(1);
+    let envelope_decay = w30_resample_decay(render, sample_rate);
 
     for frame_index in 0..frame_count {
         if transport_running {
@@ -646,7 +647,7 @@ pub(super) fn render_w30_resample_tap_buffer(
         };
         state.last_output_sample = sample;
         if transport_running {
-            state.envelope *= w30_resample_decay(render);
+            state.envelope *= envelope_decay;
         }
 
         let base = frame_index * channel_count;
@@ -735,10 +736,19 @@ fn w30_resample_source_character(
     const WET_RANGE: f32 = 0.78;
     const BODY_SHARE: f32 = 0.76;
     const EDGE_SHARE: f32 = 0.24;
+    const HARD_SOURCE_DRIVE_RANGE: f32 = 5.2;
+    const HARD_SOURCE_WET_RANGE: f32 = 0.92;
+    const HARD_SOURCE_BODY_SHARE: f32 = 0.62;
+    const HARD_SOURCE_EDGE_SHARE: f32 = 0.38;
+    const HARD_SOURCE_EDGE_BASE: f32 = 7.0;
+    const HARD_SOURCE_EDGE_RANGE: f32 = 20.0;
+    const HARD_TEXTURE_FOLD_DRIVE: f32 = 2.2;
+    const HARD_TEXTURE_QUANTIZATION_STEPS: f32 = 8.0;
+    const HARD_TEXTURE_FOLD_CRUSH_MIX: f32 = 0.58;
 
-    let grit = if render.variation == W30ResampleTapVariation::HardDamage
-        && render.hard_policy != W30ResampleTapHardPolicy::Unavailable
-    {
+    let hard_source_character = render.variation == W30ResampleTapVariation::HardDamage
+        && render.hard_policy != W30ResampleTapHardPolicy::Unavailable;
+    let grit = if hard_source_character {
         (render.grit_level.clamp(0.0, 1.0) * 0.22
             + render.variation_intensity.clamp(0.0, 1.0) * 0.34)
             .clamp(0.0, 0.62)
@@ -754,10 +764,36 @@ fn w30_resample_source_character(
     }
 
     let driven = sample + state.character_edge_memory * grit * EDGE_RANGE;
-    let saturated = (driven * (1.0 + grit * DRIVE_RANGE)).tanh();
-    let edge = (raw_edge * (5.0 + grit * 13.0)).tanh();
-    let bitten = saturated * BODY_SHARE + edge * EDGE_SHARE;
-    let wet = grit * WET_RANGE;
+    let drive_range = if hard_source_character {
+        HARD_SOURCE_DRIVE_RANGE
+    } else {
+        DRIVE_RANGE
+    };
+    let (body_share, edge_share, edge_base, edge_range, wet_range) = if hard_source_character {
+        (
+            HARD_SOURCE_BODY_SHARE,
+            HARD_SOURCE_EDGE_SHARE,
+            HARD_SOURCE_EDGE_BASE,
+            HARD_SOURCE_EDGE_RANGE,
+            HARD_SOURCE_WET_RANGE,
+        )
+    } else {
+        (BODY_SHARE, EDGE_SHARE, 5.0, 13.0, WET_RANGE)
+    };
+    let saturated = (driven * (1.0 + grit * drive_range)).tanh();
+    let edge = (raw_edge * (edge_base + grit * edge_range)).tanh();
+    let bitten = saturated * body_share + edge * edge_share;
+    let bitten = if render.variation == W30ResampleTapVariation::HardDamage
+        && render.hard_policy == W30ResampleTapHardPolicy::SourceTextureBite
+    {
+        let folded = (bitten * HARD_TEXTURE_FOLD_DRIVE * std::f32::consts::FRAC_PI_2).sin();
+        let crushed =
+            (folded * HARD_TEXTURE_QUANTIZATION_STEPS).round() / HARD_TEXTURE_QUANTIZATION_STEPS;
+        bitten * (1.0 - HARD_TEXTURE_FOLD_CRUSH_MIX) + crushed * HARD_TEXTURE_FOLD_CRUSH_MIX
+    } else {
+        bitten
+    };
+    let wet = grit * wet_range;
     (sample * (1.0 - wet) + bitten * wet).clamp(-0.98, 0.98)
 }
 
@@ -842,6 +878,8 @@ fn w30_resample_trigger_envelope(render: &RealtimeW30ResampleTapState) -> f32 {
 }
 
 fn w30_resample_render_gain(render: &RealtimeW30ResampleTapState, transport_running: bool) -> f32 {
+    const HARD_TRANSIENT_ATTACK_GAIN: f32 = 1.12;
+
     // Full-phrase playback is naturally denser than the retired short grain. Hard contrast comes
     // from source-local onset jumps and source-reactive character, not a hidden level multiplier.
     let profile_gain = match render.source_profile {
@@ -850,15 +888,38 @@ fn w30_resample_render_gain(render: &RealtimeW30ResampleTapState, transport_runn
         Some(W30ResampleTapSourceProfile::PinnedCapture) => 1.08,
     };
     let transport_gain = if transport_running { 1.0 } else { 0.7 };
+    let hard_transient_gain = if render.variation == W30ResampleTapVariation::HardDamage
+        && render.hard_policy == W30ResampleTapHardPolicy::SourceTransientChop
+    {
+        HARD_TRANSIENT_ATTACK_GAIN
+    } else {
+        1.0
+    };
     (profile_gain
         * transport_gain
+        * hard_transient_gain
         * render.music_bus_level.clamp(0.0, 1.0)
         * (1.0 + render.grit_level.clamp(0.0, 1.0) * 0.18))
         .clamp(0.0, 1.2)
 }
 
-pub(super) fn w30_resample_decay(_render: &RealtimeW30ResampleTapState) -> f32 {
-    1.0
+pub(super) fn w30_resample_decay(render: &RealtimeW30ResampleTapState, sample_rate: u32) -> f32 {
+    const HARD_TRANSIENT_CHOP_GATE_STEP_FRACTION: f32 = 0.55;
+    const HARD_TRANSIENT_CHOP_GATE_END_LEVEL: f32 = 0.03;
+
+    if render.variation != W30ResampleTapVariation::HardDamage
+        || render.hard_policy != W30ResampleTapHardPolicy::SourceTransientChop
+        || !render.tempo_bpm.is_finite()
+        || render.tempo_bpm <= 0.0
+    {
+        return 1.0;
+    }
+
+    let step_frames = sample_rate.max(1) as f32 * 60.0
+        / render.tempo_bpm
+        / w30_resample_subdivision(render) as f32;
+    let gate_frames = (step_frames * HARD_TRANSIENT_CHOP_GATE_STEP_FRACTION).max(1.0);
+    HARD_TRANSIENT_CHOP_GATE_END_LEVEL.powf(1.0 / gate_frames)
 }
 
 fn w30_current_step(position_beats: f64, render: &RealtimeW30PreviewRenderState) -> i64 {

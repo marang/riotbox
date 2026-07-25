@@ -1097,7 +1097,10 @@ fn texture_bite_changes_timbre_without_imposing_the_transient_trigger_grid() {
         .sum::<f32>()
         / continued_base.len() as f32)
         .sqrt();
-    assert!(delta_rms > 0.005);
+    assert!(
+        delta_rms > 0.02,
+        "texture-bite Hard variation stayed too close to Base: {delta_rms}"
+    );
     assert!((0_i64..16).all(|step| !should_trigger_w30_resample_step(&hard, step)));
     assert!(
         hard_callback.source_sample_cursor > 0.0,
@@ -1151,8 +1154,15 @@ fn resample_base_preserves_phrase_flow_while_hard_damage_owns_the_chopped_role()
             .map(f64::from)
             .collect::<Vec<_>>()
     );
-    assert_eq!(w30_resample_decay(&base), 1.0);
-    assert_eq!(w30_resample_decay(&hard), 1.0);
+    assert_eq!(w30_resample_decay(&base, 48_000), 1.0);
+    let hard_decay = w30_resample_decay(&hard, 48_000);
+    assert!(hard_decay < 1.0);
+    let hard_step_frames = 48_000.0 * 60.0 / hard.tempo_bpm / 2.0;
+    let gate_end_level = hard_decay.powf(hard_step_frames * 0.55);
+    assert!(
+        (gate_end_level - 0.03).abs() < 0.001,
+        "hard transient gate should reach its explicit end level: {gate_end_level}"
+    );
 }
 
 #[test]
