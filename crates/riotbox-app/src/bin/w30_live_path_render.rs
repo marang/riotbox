@@ -150,12 +150,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let live_gesture =
             render_resample_live_gesture(&state, base_tap_state, hard_tap_state, bpm);
         println!(
-            "hard resample tap: variation={:?} revision={} intensity={} policy={} trigger_mask={:08b} transient_contrast={:.3}",
+            "hard resample tap: variation={:?} revision={} intensity={} policy={} trigger_mask={:08b} onset_cursors={:?} transient_contrast={:.3}",
             state.runtime.w30_resample_tap.variation,
             state.runtime.w30_resample_tap.variation_revision,
             state.runtime.w30_resample_tap.variation_intensity,
             state.runtime.w30_resample_tap.hard_policy.label(),
             state.runtime.w30_resample_tap.hard_trigger_mask,
+            state.runtime.w30_resample_tap.hard_slice_cursors,
             state.runtime.w30_resample_tap.hard_transient_contrast,
         );
 

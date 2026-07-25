@@ -429,6 +429,12 @@ The bounded early seam is a non-realtime source-audio cache:
   resequencing, deliberate rhythmic holes, denser retriggers, and stronger
   source-derived saturation, but no fixed multi-bar choreography or synthetic
   voice.
+- for transient-chop `hard_damage`, detect one local source onset per bounded
+  source slot outside the callback and start that onset on the committed
+  performance grid. Starting from the coarse slot boundary or repeatedly
+  overlaying one global source attack is invalid: either can make the hard
+  layer late, harmonically foreign, and unusable even when its trigger event is
+  technically quantized.
 - derive chop slice starts outside the callback from quantized short-time energy rises in the real capture; realtime transport and pad triggers may only select and retrigger the prepared bounded plan
 - preserve the action-derived damage transform and capture-artifact identity across Session replay; artifact hydration must not invent macro / grit state that the committed action did not set
 - keep cache loading and source-window projection outside the realtime callback

@@ -2,7 +2,7 @@ use super::{
     AppRuntimeState, SidecarState, runtime_replay_warnings::derive_replay_readiness_labels,
 };
 use diagnostics::derive_runtime_warnings;
-use riotbox_audio::runtime::AudioRuntimeLifecycle;
+use riotbox_audio::{runtime::AudioRuntimeLifecycle, w30::W30_RESAMPLE_HARD_SLICE_COUNT};
 use riotbox_core::{session::SessionFile, source_graph::SourceGraph};
 use summaries::{
     mc202_render_transport_summary, tr909_render_alignment_label, tr909_render_profile_label,
@@ -58,6 +58,7 @@ pub struct JamRuntimeView {
     pub w30_resample_tap_variation_intensity: String,
     pub w30_resample_tap_hard_policy: String,
     pub w30_resample_tap_hard_trigger_mask: u8,
+    pub w30_resample_tap_hard_slice_cursors: [u16; W30_RESAMPLE_HARD_SLICE_COUNT],
     pub w30_resample_tap_hard_transient_contrast: String,
     pub w30_resample_tap_source_summary: String,
     pub w30_resample_tap_mix_summary: String,
@@ -180,6 +181,7 @@ impl JamRuntimeView {
             ),
             w30_resample_tap_hard_policy: runtime.w30_resample_tap.hard_policy.label().into(),
             w30_resample_tap_hard_trigger_mask: runtime.w30_resample_tap.hard_trigger_mask,
+            w30_resample_tap_hard_slice_cursors: runtime.w30_resample_tap.hard_slice_cursors,
             w30_resample_tap_hard_transient_contrast: format!(
                 "{:.3}",
                 runtime.w30_resample_tap.hard_transient_contrast

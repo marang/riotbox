@@ -15,17 +15,12 @@ fn positive_realtime_resample_source() -> RealtimeW30ResampleSourceWindow {
         let phase = index as f32 / 37.0;
         *sample = phase.sin() * 0.34 + (phase * 2.7).sin() * 0.09;
     }
-    let mut attack_samples = [0.0; W30_RESAMPLE_ATTACK_WINDOW_LEN];
-    attack_samples.copy_from_slice(&samples[..W30_RESAMPLE_ATTACK_WINDOW_LEN]);
     RealtimeW30ResampleSourceWindow {
         source_start_frame: 0,
         source_sample_rate: 44_100,
         source_frame_count: W30_RESAMPLE_SOURCE_WINDOW_LEN as u64,
         sample_count: W30_RESAMPLE_SOURCE_WINDOW_LEN,
         samples,
-        attack_start_frame: 0,
-        attack_sample_count: W30_RESAMPLE_ATTACK_WINDOW_LEN,
-        attack_samples,
     }
 }
 
@@ -676,6 +671,7 @@ fn transport_stop_fades_the_internal_resample_tap_and_stays_silent() {
         variation_intensity: 0.0,
         hard_policy: W30ResampleTapHardPolicy::Unavailable,
         hard_trigger_mask: 0,
+        hard_slice_cursors: [0; W30_RESAMPLE_HARD_SLICE_COUNT],
         hard_transient_contrast: 0.0,
         music_bus_level: 0.58,
         grit_level: 0.4,
@@ -851,6 +847,7 @@ fn w30_resample_tap_stays_silent_when_idle() {
             variation_intensity: 0.0,
             hard_policy: W30ResampleTapHardPolicy::Unavailable,
             hard_trigger_mask: 0,
+            hard_slice_cursors: [0; W30_RESAMPLE_HARD_SLICE_COUNT],
             hard_transient_contrast: 0.0,
             music_bus_level: 0.64,
             grit_level: 0.4,
@@ -885,6 +882,7 @@ fn w30_resample_tap_produces_audible_samples_when_lineage_is_ready() {
             variation_intensity: 0.0,
             hard_policy: W30ResampleTapHardPolicy::Unavailable,
             hard_trigger_mask: 0,
+            hard_slice_cursors: [0; W30_RESAMPLE_HARD_SLICE_COUNT],
             hard_transient_contrast: 0.0,
             music_bus_level: 0.58,
             grit_level: 0.62,
@@ -912,6 +910,7 @@ fn w30_resample_tap_is_deterministic_and_follows_source_material() {
         variation_intensity: 0.0,
         hard_policy: W30ResampleTapHardPolicy::Unavailable,
         hard_trigger_mask: 0,
+        hard_slice_cursors: [0; W30_RESAMPLE_HARD_SLICE_COUNT],
         hard_transient_contrast: 0.0,
         music_bus_level: 0.72,
         grit_level: 0.62,
@@ -983,6 +982,7 @@ fn post_resample_hard_damage_is_an_immediate_callback_safe_variation() {
         variation_intensity: 0.0,
         hard_policy: W30ResampleTapHardPolicy::SourceTransientChop,
         hard_trigger_mask: 0b1011_0111,
+        hard_slice_cursors: [320, 2_112, 4_240, 6_016, 8_256, 10_048, 12_176, 14_352],
         hard_transient_contrast: 1.8,
         music_bus_level: 0.64,
         grit_level: 0.68,
@@ -1032,7 +1032,10 @@ fn post_resample_hard_damage_is_an_immediate_callback_safe_variation() {
         "hard gesture collapsed to the running base tap: {delta_rms}"
     );
     assert_eq!(hard_callback.last_variation_revision, 7);
-    assert!(hard_callback.attack_sample_cursor > 0.0);
+    assert!(
+        hard_callback.source_sample_cursor >= f32::from(hard.hard_slice_cursors[0]),
+        "hard gesture did not jump to its source-derived local onset"
+    );
 }
 
 #[test]
@@ -1049,6 +1052,7 @@ fn texture_bite_changes_timbre_without_imposing_the_transient_trigger_grid() {
         variation_intensity: 0.0,
         hard_policy: W30ResampleTapHardPolicy::SourceTextureBite,
         hard_trigger_mask: 0,
+        hard_slice_cursors: [0; W30_RESAMPLE_HARD_SLICE_COUNT],
         hard_transient_contrast: 0.5,
         music_bus_level: 0.72,
         grit_level: 0.5,
@@ -1095,7 +1099,10 @@ fn texture_bite_changes_timbre_without_imposing_the_transient_trigger_grid() {
         .sqrt();
     assert!(delta_rms > 0.005);
     assert!((0_i64..16).all(|step| !should_trigger_w30_resample_step(&hard, step)));
-    assert_eq!(hard_callback.attack_sample_cursor, 0.0);
+    assert!(
+        hard_callback.source_sample_cursor > 0.0,
+        "texture policy should preserve continuous source playback"
+    );
 }
 
 #[test]
@@ -1114,6 +1121,7 @@ fn resample_base_preserves_phrase_flow_while_hard_damage_owns_the_chopped_role()
         variation_intensity: 0.0,
         hard_policy: W30ResampleTapHardPolicy::SourceTransientChop,
         hard_trigger_mask: 0b1011_0111,
+        hard_slice_cursors: [320, 2_112, 4_240, 6_016, 8_256, 10_048, 12_176, 14_352],
         hard_transient_contrast: 1.8,
         music_bus_level: 0.8,
         grit_level: 0.5,
@@ -1138,12 +1146,68 @@ fn resample_base_preserves_phrase_flow_while_hard_damage_owns_the_chopped_role()
         .collect::<Vec<_>>();
     assert_eq!(
         hard_cursors,
-        (0..8)
-            .map(|step| step as f32 * W30_RESAMPLE_SOURCE_WINDOW_LEN as f32 / 8.0)
+        hard.hard_slice_cursors
+            .into_iter()
+            .map(f32::from)
             .collect::<Vec<_>>()
     );
     assert_eq!(w30_resample_decay(&base), 1.0);
     assert_eq!(w30_resample_decay(&hard), 1.0);
+}
+
+#[test]
+fn transient_chop_starts_the_selected_source_onset_on_the_eighth_note_grid() {
+    let sample_rate = 44_100_u32;
+    let tempo_bpm = 120.0_f32;
+    let start_beats = 0.49_f64;
+    let target_beats = 0.5_f64;
+    let selected_cursor = 2_048_u16;
+    let mut source_audio = RealtimeW30ResampleSourceWindow {
+        source_start_frame: 0,
+        source_sample_rate: sample_rate,
+        source_frame_count: W30_RESAMPLE_SOURCE_WINDOW_LEN as u64,
+        sample_count: W30_RESAMPLE_SOURCE_WINDOW_LEN,
+        samples: [0.0; W30_RESAMPLE_SOURCE_WINDOW_LEN],
+    };
+    source_audio.samples[usize::from(selected_cursor)] = 0.8;
+    source_audio.samples[usize::from(selected_cursor) + 1] = 0.4;
+    let render = RealtimeW30ResampleTapState {
+        mode: W30ResampleTapMode::CaptureLineageReady,
+        routing: W30ResampleTapRouting::InternalCaptureTap,
+        source_profile: Some(W30ResampleTapSourceProfile::PromotedCapture),
+        source_audio,
+        lineage_capture_count: 2,
+        generation_depth: 1,
+        variation: W30ResampleTapVariation::HardDamage,
+        variation_revision: 7,
+        variation_intensity: 0.82,
+        hard_policy: W30ResampleTapHardPolicy::SourceTransientChop,
+        hard_trigger_mask: 0b0000_0010,
+        hard_slice_cursors: [0, selected_cursor, 0, 0, 0, 0, 0, 0],
+        hard_transient_contrast: 1.8,
+        music_bus_level: 0.8,
+        grit_level: 0.5,
+        is_transport_running: true,
+        tempo_bpm,
+        position_beats: start_beats,
+    };
+    let mut callback = W30ResampleTapCallbackState::default();
+    let mut buffer = [0.0_f32; 2_048];
+
+    render_w30_resample_tap_buffer(&mut buffer, sample_rate, 2, &render, &mut callback);
+
+    let first_audible_frame = buffer
+        .chunks_exact(2)
+        .position(|frame| frame[0].abs() > 0.001)
+        .expect("source-derived onset should render");
+    let expected_grid_frame = ((target_beats - start_beats) * 60.0
+        * f64::from(sample_rate)
+        / f64::from(tempo_bpm))
+    .ceil() as usize;
+    assert!(
+        first_audible_frame.abs_diff(expected_grid_frame) <= 1,
+        "source onset landed off-grid: expected frame {expected_grid_frame}, got {first_audible_frame}"
+    );
 }
 
 #[test]
@@ -1167,6 +1231,7 @@ fn w30_resample_tap_stays_silent_without_source_audio() {
             variation_intensity: 0.0,
             hard_policy: W30ResampleTapHardPolicy::Unavailable,
             hard_trigger_mask: 0,
+            hard_slice_cursors: [0; W30_RESAMPLE_HARD_SLICE_COUNT],
             hard_transient_contrast: 0.0,
             music_bus_level: 0.58,
             grit_level: 0.62,
@@ -1196,6 +1261,7 @@ fn w30_resample_tap_does_not_invent_grid_progress_without_a_valid_tempo() {
         variation_intensity: 0.0,
         hard_policy: W30ResampleTapHardPolicy::Unavailable,
         hard_trigger_mask: 0,
+        hard_slice_cursors: [0; W30_RESAMPLE_HARD_SLICE_COUNT],
         hard_transient_contrast: 0.0,
         music_bus_level: 0.58,
         grit_level: 0.62,
@@ -1231,6 +1297,7 @@ fn w30_resample_tap_respects_zero_music_bus_level() {
             variation_intensity: 0.0,
             hard_policy: W30ResampleTapHardPolicy::Unavailable,
             hard_trigger_mask: 0,
+            hard_slice_cursors: [0; W30_RESAMPLE_HARD_SLICE_COUNT],
             hard_transient_contrast: 0.0,
             music_bus_level: 0.0,
             grit_level: 0.7,

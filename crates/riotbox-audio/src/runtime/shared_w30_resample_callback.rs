@@ -237,6 +237,7 @@ pub(super) struct RealtimeW30ResampleTapState {
     pub(super) variation_intensity: f32,
     pub(super) hard_policy: W30ResampleTapHardPolicy,
     pub(super) hard_trigger_mask: u8,
+    pub(super) hard_slice_cursors: [u16; W30_RESAMPLE_HARD_SLICE_COUNT],
     pub(super) hard_transient_contrast: f32,
     pub(super) music_bus_level: f32,
     pub(super) grit_level: f32,
@@ -252,9 +253,6 @@ pub(super) struct RealtimeW30ResampleSourceWindow {
     pub(super) source_frame_count: u64,
     pub(super) sample_count: usize,
     pub(super) samples: [f32; W30_RESAMPLE_SOURCE_WINDOW_LEN],
-    pub(super) attack_start_frame: u64,
-    pub(super) attack_sample_count: usize,
-    pub(super) attack_samples: [f32; W30_RESAMPLE_ATTACK_WINDOW_LEN],
 }
 
 impl Default for RealtimeW30ResampleSourceWindow {
@@ -265,9 +263,6 @@ impl Default for RealtimeW30ResampleSourceWindow {
             source_frame_count: 0,
             sample_count: 0,
             samples: [0.0; W30_RESAMPLE_SOURCE_WINDOW_LEN],
-            attack_start_frame: 0,
-            attack_sample_count: 0,
-            attack_samples: [0.0; W30_RESAMPLE_ATTACK_WINDOW_LEN],
         }
     }
 }
@@ -282,9 +277,6 @@ pub(super) struct SharedW30ResampleTapState {
     source_frame_count: AtomicU64,
     source_sample_count: AtomicU32,
     source_samples: [AtomicU32; W30_RESAMPLE_SOURCE_WINDOW_LEN],
-    attack_start_frame: AtomicU64,
-    attack_sample_count: AtomicU32,
-    attack_samples: [AtomicU32; W30_RESAMPLE_ATTACK_WINDOW_LEN],
     lineage_capture_count: AtomicU32,
     generation_depth: AtomicU32,
     variation: AtomicU32,
@@ -292,6 +284,7 @@ pub(super) struct SharedW30ResampleTapState {
     variation_intensity_bits: AtomicU32,
     hard_policy: AtomicU32,
     hard_trigger_mask: AtomicU32,
+    hard_slice_cursors: [AtomicU32; W30_RESAMPLE_HARD_SLICE_COUNT],
     hard_transient_contrast_bits: AtomicU32,
     music_bus_level_bits: AtomicU32,
     grit_level_bits: AtomicU32,
@@ -312,9 +305,6 @@ impl SharedW30ResampleTapState {
             source_frame_count: AtomicU64::new(0),
             source_sample_count: AtomicU32::new(0),
             source_samples: std::array::from_fn(|_| AtomicU32::new(0.0_f32.to_bits())),
-            attack_start_frame: AtomicU64::new(0),
-            attack_sample_count: AtomicU32::new(0),
-            attack_samples: std::array::from_fn(|_| AtomicU32::new(0.0_f32.to_bits())),
             lineage_capture_count: AtomicU32::new(0),
             generation_depth: AtomicU32::new(0),
             variation: AtomicU32::new(0),
@@ -322,6 +312,7 @@ impl SharedW30ResampleTapState {
             variation_intensity_bits: AtomicU32::new(0),
             hard_policy: AtomicU32::new(0),
             hard_trigger_mask: AtomicU32::new(0),
+            hard_slice_cursors: std::array::from_fn(|_| AtomicU32::new(0)),
             hard_transient_contrast_bits: AtomicU32::new(0),
             music_bus_level_bits: AtomicU32::new(0),
             grit_level_bits: AtomicU32::new(0),
@@ -370,6 +361,13 @@ impl SharedW30ResampleTapState {
         );
         self.hard_trigger_mask
             .store(u32::from(render_state.hard_trigger_mask), Ordering::Relaxed);
+        for (slot, cursor) in self
+            .hard_slice_cursors
+            .iter()
+            .zip(render_state.hard_slice_cursors)
+        {
+            slot.store(u32::from(cursor), Ordering::Relaxed);
+        }
         self.hard_transient_contrast_bits.store(
             render_state.hard_transient_contrast.to_bits(),
             Ordering::Relaxed,
@@ -417,6 +415,9 @@ impl SharedW30ResampleTapState {
                 self.hard_policy.load(Ordering::Relaxed),
             ),
             hard_trigger_mask: self.hard_trigger_mask.load(Ordering::Relaxed) as u8,
+            hard_slice_cursors: std::array::from_fn(|index| {
+                self.hard_slice_cursors[index].load(Ordering::Relaxed) as u16
+            }),
             hard_transient_contrast: f32::from_bits(
                 self.hard_transient_contrast_bits.load(Ordering::Relaxed),
             ),
@@ -444,23 +445,11 @@ impl SharedW30ResampleTapState {
             }
             self.source_sample_count
                 .store(sample_count as u32, Ordering::Relaxed);
-            let attack_sample_count = source_audio
-                .attack_sample_count
-                .min(W30_RESAMPLE_ATTACK_WINDOW_LEN);
-            self.attack_start_frame
-                .store(source_audio.attack_start_frame, Ordering::Relaxed);
-            for (index, sample) in source_audio.attack_samples.iter().copied().enumerate() {
-                self.attack_samples[index].store(sample.to_bits(), Ordering::Relaxed);
-            }
-            self.attack_sample_count
-                .store(attack_sample_count as u32, Ordering::Relaxed);
         } else {
             self.source_start_frame.store(0, Ordering::Relaxed);
             self.source_sample_rate.store(0, Ordering::Relaxed);
             self.source_frame_count.store(0, Ordering::Relaxed);
             self.source_sample_count.store(0, Ordering::Relaxed);
-            self.attack_start_frame.store(0, Ordering::Relaxed);
-            self.attack_sample_count.store(0, Ordering::Relaxed);
         }
     }
 
@@ -471,21 +460,12 @@ impl SharedW30ResampleTapState {
         for (index, sample) in samples.iter_mut().enumerate() {
             *sample = f32::from_bits(self.source_samples[index].load(Ordering::Relaxed));
         }
-        let attack_sample_count = (self.attack_sample_count.load(Ordering::Relaxed) as usize)
-            .min(W30_RESAMPLE_ATTACK_WINDOW_LEN);
-        let mut attack_samples = [0.0; W30_RESAMPLE_ATTACK_WINDOW_LEN];
-        for (index, sample) in attack_samples.iter_mut().enumerate() {
-            *sample = f32::from_bits(self.attack_samples[index].load(Ordering::Relaxed));
-        }
         RealtimeW30ResampleSourceWindow {
             source_start_frame: self.source_start_frame.load(Ordering::Relaxed),
             source_sample_rate: self.source_sample_rate.load(Ordering::Relaxed),
             source_frame_count: self.source_frame_count.load(Ordering::Relaxed),
             sample_count,
             samples,
-            attack_start_frame: self.attack_start_frame.load(Ordering::Relaxed),
-            attack_sample_count,
-            attack_samples,
         }
     }
 }
@@ -623,8 +603,6 @@ pub(super) struct W30PreviewCallbackState {
 pub(super) struct W30ResampleTapCallbackState {
     pub(super) beat_position: f64,
     pub(super) source_sample_cursor: f32,
-    pub(super) attack_sample_cursor: f32,
-    pub(super) last_attack_input: f32,
     pub(super) last_character_input: f32,
     pub(super) character_edge_memory: f32,
     pub(super) envelope: f32,

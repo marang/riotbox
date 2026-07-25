@@ -232,6 +232,7 @@ impl JamAppState {
             variation_intensity: 0.0,
             hard_policy: W30ResampleTapHardPolicy::Unavailable,
             hard_trigger_mask: 0,
+            hard_slice_cursors: [0; riotbox_audio::w30::W30_RESAMPLE_HARD_SLICE_COUNT],
             hard_transient_contrast: 0.0,
             music_bus_level: self
                 .session

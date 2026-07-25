@@ -68,6 +68,7 @@ pub fn observer_snapshot(shell: &JamShellState) -> Value {
             "w30_resample_tap_variation_intensity": shell.app.runtime.w30_resample_tap.variation_intensity,
             "w30_resample_tap_hard_policy": runtime.w30_resample_tap_hard_policy,
             "w30_resample_tap_hard_trigger_mask": runtime.w30_resample_tap_hard_trigger_mask,
+            "w30_resample_tap_hard_slice_cursors": runtime.w30_resample_tap_hard_slice_cursors,
             "w30_resample_tap_hard_transient_contrast": shell.app.runtime.w30_resample_tap.hard_transient_contrast,
             "warnings": runtime.runtime_warnings,
         },

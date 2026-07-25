@@ -18,17 +18,6 @@ fn resample_source_projection_keeps_the_complete_phrase_in_the_bounded_window() 
     assert_eq!(projected.sample_count, W30_RESAMPLE_SOURCE_WINDOW_LEN);
     assert_eq!(projected.samples[0], 0.0);
     assert!(projected.samples.iter().any(|sample| sample.abs() > 0.5));
-    assert!(projected.attack_start_frame >= transient_start as u64);
-    assert_eq!(
-        projected.attack_sample_count,
-        W30_RESAMPLE_ATTACK_WINDOW_LEN
-    );
-    assert!(
-        projected
-            .attack_samples
-            .iter()
-            .any(|sample| sample.abs() > 0.5)
-    );
 }
 
 #[test]
@@ -68,9 +57,9 @@ fn resample_hard_policy_separates_transient_chops_from_sustained_texture() {
         })
         .collect::<Vec<_>>();
 
-    let (transient_policy, transient_mask, transient_contrast) =
+    let (transient_policy, transient_mask, transient_cursors, transient_contrast) =
         super::projection::analyze_w30_resample_hard_policy(&transient, 2, sample_rate);
-    let (texture_policy, texture_mask, texture_contrast) =
+    let (texture_policy, texture_mask, texture_cursors, texture_contrast) =
         super::projection::analyze_w30_resample_hard_policy(&sustained, 2, sample_rate);
 
     assert_eq!(
@@ -78,12 +67,14 @@ fn resample_hard_policy_separates_transient_chops_from_sustained_texture() {
         riotbox_audio::w30::W30ResampleTapHardPolicy::SourceTransientChop
     );
     assert!(transient_mask.count_ones() >= 4);
+    assert!(transient_cursors.windows(2).all(|pair| pair[0] < pair[1]));
     assert!(transient_contrast >= 0.9);
     assert_eq!(
         texture_policy,
         riotbox_audio::w30::W30ResampleTapHardPolicy::SourceTextureBite
     );
     assert_eq!(texture_mask, 0);
+    assert!(texture_cursors.windows(2).all(|pair| pair[0] < pair[1]));
     assert!(texture_contrast < 0.9);
 }
 
@@ -105,14 +96,44 @@ fn resample_transient_trigger_mask_follows_source_onset_positions() {
         samples
     };
 
-    let (_, first_mask, _) =
+    let (_, first_mask, _, _) =
         super::projection::analyze_w30_resample_hard_policy(&source([1, 3, 5]), 2, sample_rate);
-    let (_, second_mask, _) =
+    let (_, second_mask, _, _) =
         super::projection::analyze_w30_resample_hard_policy(&source([2, 4, 7]), 2, sample_rate);
 
     assert_ne!(first_mask, second_mask);
     assert_ne!(first_mask & 0b0010_1010, 0);
     assert_ne!(second_mask & 0b1001_0100, 0);
+}
+
+#[test]
+fn resample_transient_cursors_target_local_onsets_instead_of_slot_boundaries() {
+    let sample_rate = 48_000_u32;
+    let frame_count = sample_rate as usize * 2;
+    let slot_frames = frame_count / W30_RESAMPLE_HARD_SLICE_COUNT;
+    let local_offset_frames = sample_rate as usize * 20 / 1_000;
+    let mut samples = vec![0.0_f32; frame_count * 2];
+    for slot in 0..W30_RESAMPLE_HARD_SLICE_COUNT {
+        let onset_frame = slot * slot_frames + local_offset_frames;
+        for offset in 0..960 {
+            let envelope = 1.0 - offset as f32 / 960.0;
+            let sample = (offset as f32 / 4.0).sin() * envelope * 0.8;
+            samples[(onset_frame + offset) * 2] = sample;
+            samples[(onset_frame + offset) * 2 + 1] = sample;
+        }
+    }
+
+    let (_, _, cursors, _) =
+        super::projection::analyze_w30_resample_hard_policy(&samples, 2, sample_rate);
+    let proxy_len = W30_RESAMPLE_SOURCE_WINDOW_LEN.min(frame_count);
+    let expected_offset = local_offset_frames * (proxy_len - 1) / (frame_count - 1);
+    for (slot, cursor) in cursors.into_iter().enumerate() {
+        let slot_boundary = slot * slot_frames * (proxy_len - 1) / (frame_count - 1);
+        assert!(
+            usize::from(cursor) >= slot_boundary + expected_offset.saturating_sub(64),
+            "slot {slot} cursor {cursor} did not advance to the local source onset"
+        );
+    }
 }
 
 #[test]

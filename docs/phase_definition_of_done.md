@@ -462,6 +462,12 @@ After exit:
   and passes three-source exact RuntimeMix, missing-source-silence, observer,
   and replay checks. It does not satisfy the audible exit until structured
   human listening keeps the revised base/hard pair.
+- A later source-policy candidate also received a human `reject`: its Hard
+  addition was outside the perceived groove and made the loop unusable.
+  RIOTBOX-1422 now removes the repeated global attack layer and maps each
+  quantized transient-chop trigger to a detected local source onset. Focused
+  timing and multi-source technical gates pass, but the corrected candidate
+  remains `human_verdict: unverified`.
 - RIOTBOX-1423 supplies RIOTBOX-1422 with a legal CC0 development matrix and
   two disjoint fresh holdout sets. Candidate tuning must cover at least five
   eligible development sources across four typed families; a holdout that

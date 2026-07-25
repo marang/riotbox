@@ -13,7 +13,7 @@ use riotbox_audio::{
     },
     w30::{
         W30_PAD_CHOP_SLICE_COUNT, W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN,
-        W30_PREVIEW_SAMPLE_WINDOW_LEN, W30_RESAMPLE_ATTACK_WINDOW_LEN,
+        W30_PREVIEW_SAMPLE_WINDOW_LEN, W30_RESAMPLE_HARD_SLICE_COUNT,
         W30_RESAMPLE_SOURCE_WINDOW_LEN,
         W30PadPlaybackSampleWindow, W30PreviewRenderMode, W30PreviewRenderRouting,
         W30PreviewRenderState, W30PreviewSampleWindow, W30PreviewSourceProfile,

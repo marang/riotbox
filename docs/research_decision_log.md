@@ -56,8 +56,6 @@ Why: this keeps strategy, archive history, and implementation contracts separate
 Consequences: future spec work should land in `docs/`, not in new planning sprawl under `plan/`.  
 Status: accepted
 
----
-
 ### RBX-105
 
 Date: 2026-06-30
@@ -3317,3 +3315,17 @@ Why: the earlier sound-excellence corpus was a useful coverage map but repeated 
 Evidence: the tracked contract records sixteen sources from OpenGameArt contributions: fifteen core-family-eligible sources across fourteen independent source packs and six development families, plus one confirmed `dense_full_mix` stress source. The local qualification inventory binds author, page/download provenance, CC0 license, excerpt offset, and SHA-256. `just source-holdout-rotation-fixtures` rejects candidate family collapse, insufficient or reused holdouts, consumed holdouts left marked unseen, unsafe paths, commercial-reference leakage, narrow source-pack collapse, and missing files. `just source-holdout-rotation-local-files` verifies every local derivative by SHA-256, 48 kHz stereo PCM16 format, duration, and clipping boundary.
 Consequences: RIOTBOX-1423 is a `contract_enabler`, not musical quality proof. RIOTBOX-1422 must use the development matrix for implementation choices and reserve fresh holdouts for cross-family acceptance. Any holdout-driven follow-up invalidates that source's unseen status until rotation is recorded and replacement evidence exists. The ignored CC0 audio remains local and unredistributed.
 Status: accepted
+
+---
+
+### RBX-162
+
+Date: 2026-07-25
+Topic: W-30 Hard retriggers must align source-local onsets rather than coarse slots or one repeated global attack
+Phase: P023 / Controlled Expansion
+Question: how should the source-backed W-30 transient-chop policy respond when its committed trigger events are quantized but the audible Hard layer still arrives late and ruins the loop?
+Decision: derive one local-onset cursor for each of eight bounded source slots outside the realtime callback. Carry those typed cursors with the existing hard policy and source-derived trigger mask through the coherent W-30 resample state. On an active eighth-note trigger, jump directly to that slot's detected onset so the source attack begins on the performance grid. Remove the separately retained strongest-attack window and never overlay one global source attack at every trigger. Keep Base playback unchanged and continuous; sustained `source_texture_bite` material retains continuous playback without an imposed trigger grid.
+Why: quantizing the trigger event alone did not quantize the audible attack. The rejected candidate began playback at coarse source-slot boundaries containing local preroll, while a repeated global attack added a harmonically foreign layer. Direct listening correctly judged the Hard addition out of time and the whole loop unusable.
+Evidence: a focused callback regression places a source onset that is internally 20 ms after its source-slot boundary and proves its transformed attack starts within one output frame of the committed eighth-note grid. Projection tests prove local-onset cursors advance beyond coarse boundaries when the source onset does. The accepted Beat03 Base remains byte-identical at `2c93fd593983182c7efc35d6a5a9b182c351b996d644bcb07d332459fe878b3e`; repeated Base, Hard, and live-gesture renders are deterministic. Four development sources, Beat03, and three reserve holdouts remain non-silent, unclipped, missing-source silent, and source-diverse; maximum absolute pairwise Hard-envelope correlation is `0.330187`. `just ci` passes.
+Consequences: the callback gains only eight fixed `u16` cursors and performs no analysis, allocation, blocking I/O, or model work. Runtime and observer surfaces expose the actual onset selections. A technically aligned candidate is not a musical pass; structured human listening must still verify that the late/foreign layer is gone and that Hard is useful.
+Status: accepted pending structured human listening

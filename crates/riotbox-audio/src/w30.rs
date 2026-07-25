@@ -6,9 +6,8 @@ pub const W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN: usize = 16_384;
 /// evenly spaced PCM frames across the complete artifact, matching the existing committed-pad
 /// playback seam instead of reducing the resample to one short transient grain.
 pub const W30_RESAMPLE_SOURCE_WINDOW_LEN: usize = W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN;
-/// Full-bandwidth source transient retained separately for the performed hard-attack layer.
-pub const W30_RESAMPLE_ATTACK_WINDOW_LEN: usize = 4_096;
 pub const W30_PAD_CHOP_SLICE_COUNT: usize = 8;
+pub const W30_RESAMPLE_HARD_SLICE_COUNT: usize = 8;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum W30PreviewRenderMode {
@@ -259,6 +258,8 @@ pub struct W30ResampleTapState {
     pub hard_policy: W30ResampleTapHardPolicy,
     /// Eight source-derived eighth-note trigger decisions, least-significant bit first.
     pub hard_trigger_mask: u8,
+    /// Source-proxy cursor for the detected local onset in each performed eighth-note slot.
+    pub hard_slice_cursors: [u16; W30_RESAMPLE_HARD_SLICE_COUNT],
     /// Strongest positive 20 ms envelope rise divided by the mean source envelope.
     pub hard_transient_contrast: f32,
     pub music_bus_level: f32,
@@ -275,9 +276,6 @@ pub struct W30ResampleSourceWindow {
     pub source_frame_count: u64,
     pub sample_count: usize,
     pub samples: [f32; W30_RESAMPLE_SOURCE_WINDOW_LEN],
-    pub attack_start_frame: u64,
-    pub attack_sample_count: usize,
-    pub attack_samples: [f32; W30_RESAMPLE_ATTACK_WINDOW_LEN],
 }
 
 impl Default for W30ResampleTapState {
@@ -296,6 +294,7 @@ impl Default for W30ResampleTapState {
             variation_intensity: 0.0,
             hard_policy: W30ResampleTapHardPolicy::Unavailable,
             hard_trigger_mask: 0,
+            hard_slice_cursors: [0; W30_RESAMPLE_HARD_SLICE_COUNT],
             hard_transient_contrast: 0.0,
             music_bus_level: 0.0,
             grit_level: 0.0,

@@ -8,9 +8,9 @@ First candidate human verdict: `reject`
 
 Full-phrase base human verdict: `pass` / loopable
 
-Latest hard candidate matrix verdict: `reject_before_listening`
+Latest heard hard candidate verdict: `reject`
 
-Latest hard candidate human verdict: `unverified`
+Timing-corrected hard follow-up human verdict: `unverified`
 
 ## Outcome And Rejected First Candidate
 
@@ -54,15 +54,45 @@ positive. The validated verdict is
 - Earlier `hard_damage` attempts based on rate sweeps, holes, random cursor
   order, edge emphasis, and quantization were rejected because they sounded
   slower, incomplete, hollow, higher, or merely louder instead of harder.
-- The latest candidate removes pitch/rate movement, holes, random ordering, and
+- The later clipped-attack candidate removed pitch/rate movement, holes, random ordering, and
   global hard-mode gain. It keeps the base body and crossfades about `40 ms` of
   each beat into a hard-clipped onset retained separately from the same
   committed source.
 - Missing or invalid source audio remains typed unavailable and digitally
   silent. No oscillator or replacement music exists.
-- The latest hard candidate is not review-ready: two different drum holdouts
+- That clipped-attack candidate was not review-ready: two different drum holdouts
   collapse to nearly the same envelope, and tonal/pad holdouts cannot traverse
   the exact renderer's current timing-confirmation setup.
+
+## Source-Policy Candidate And Timing Rejection
+
+The next candidate replaced the collapsed fixed articulation with typed
+`source_transient_chop` and `source_texture_bite` policies. Its development
+matrix and first holdout set were deterministic, source-diverse, non-silent,
+and unclipped while the accepted Beat03 Base remained byte-identical.
+
+Direct listening still rejected the exact Beat03 Base-to-Hard gesture. The
+Hard addition arrived outside the perceived groove and made the complete loop
+unusable; it was not merely weak. Technical follow-up found that the trigger
+mask selected source slots while playback began at their coarse boundaries,
+and one separately retained global source attack was repeated at every Hard
+trigger. Strongest rises in the rejected artifact landed as much as about
+`25 ms` after their intended eighth-note boundary.
+
+The timing-corrected follow-up removes that global attack layer. Analysis now
+stores one detected local-onset cursor per eight source slots, and the realtime
+callback starts the selected source onset on the committed eighth-note grid.
+A focused callback regression proves the audible onset lands within one output
+frame of that grid. Beat03 Base remains byte-identical at
+`2c93fd593983182c7efc35d6a5a9b182c351b996d644bcb07d332459fe878b3e`.
+Development and reserve-holdout renders remain deterministic, source-backed,
+unclipped, and source-diverse; the maximum absolute pairwise Hard-envelope
+correlation in the checked eight-source matrix is `0.330187`.
+
+This is technical readiness only. The timing-corrected Hard gesture remains
+`human_verdict: unverified` until a fresh exact-artifact listening comparison
+confirms that the late/foreign layer is gone and the resulting variation is
+musically useful.
 
 ## Exact RuntimeMix Evidence
 
@@ -114,9 +144,11 @@ holdout envelope comparison still detects musical collapse.
 - Session/replay: variation derives from the committed action-log position
   after the active resample and its typed lineage target.
 - Runtime: coherent callback state carries variation, activation revision,
-  intensity, and bounded source PCM without callback I/O or allocation.
+  intensity, the source-derived trigger mask and local-onset cursors, and
+  bounded source PCM without callback I/O or allocation.
 - User/observer: Jam/Capture/Log summaries label `base` or `hard_damage`; the
-  observer exposes variation, revision, and intensity.
+  observer exposes variation, revision, intensity, hard policy, trigger mask,
+  local-onset cursors, and transient contrast.
 - QA: full-duration projection, distinct base/hard trigger roles, focused
   callback delta, post-resample state retention, snapshot replay, exact
   RuntimeMix, and missing-source silence are covered. Cross-family
