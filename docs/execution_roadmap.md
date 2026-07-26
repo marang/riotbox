@@ -1417,15 +1417,26 @@ post-resample action path, but structured source/base/hard listening rejected
 it: source recognition was still lost, the base was dull, and hard damage was
 neither harder nor playable. Root cause was structural: a `1.389`-second
 resample artifact had been reduced to one strongest `8192`-frame (`~186 ms`)
-grain, and both roles only rearranged that grain. The revised candidate carries
-the complete committed artifact in a bounded `16384`-sample full-duration
-proxy. Base now owns continuous source-phrase flow; committed
-`w30.apply_damage_profile` owns a chopped role with a rate dive, whole-phrase
-cursor changes, and deliberate rhythmic holes. Beat03/Beat08/Beat20 exact
-RuntimeMix renders are distinct, non-silent, unclipped, and preserve their
-immediate input envelope (`0.883` to `0.949` correlation); base/hard envelope
-correlations fall to `0.048`–`0.066`. This remains open until fresh structured
-listening keeps the revised pair.
+grain, and both roles only rearranged that grain. The revised full-duration
+path, source-local onset alignment, and grid-safe cycle subsequently earned a
+human pass for stable, harmonic Beat03 Base. The next gated
+`source_transient_chop` Hard candidate remained source-backed, distinct,
+non-silent, and unclipped, but structured listening rejected it as choppier and
+emptier rather than harder. Its higher first-`10 ms` attack and peak concealed
+severe `40–200 ms` body loss; cursor discontinuities can also enter the current
+edge detector as artificial clicks. RIOTBOX-1422 therefore keeps the accepted
+Base and follows
+`docs/engineering/perceptual_hardness_and_musical_impact.md`: fix callback
+start/seek and source-local edge history, establish a source-adaptive
+attack/body path, then characterize band-limited nonlinear bite across the
+multi-family development matrix before another listen. The `16384`-sample
+per-callback atomic snapshot needs a bounded handoff or real-session worst-case
+evidence before branch merge. `oga_illin_robotic` was consumed while tuning
+successive Hard iterations. It is now retired with recorded rotation history
+and a fresh, unheard independent CC0 replacement; it cannot support another
+holdout/generalization claim. Two further reserve cases repeatedly rendered
+across changing candidates are conservatively retired and independently
+replaced as well, so the active replacements remain untouched.
 
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a

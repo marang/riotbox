@@ -34,13 +34,21 @@ pass, but direct source-to-tap listening rated the result
 and Beat03 is no longer perceptually recognizable. The first RIOTBOX-1422
 source/base/hard review was also rejected: its longer transient grain still
 erased the source, the base remained dull, and hard damage was not perceptibly
-harder or playable. The revised candidate now projects the complete committed
-resample artifact into a bounded full-duration proxy. Base owns a continuous
-source phrase while post-resample `w30.apply_damage_profile` owns a typed,
-replayable chopped hard role. Three-source exact RuntimeMix evidence preserves
-the immediate resample-input envelope (`0.883` to `0.949` correlation) while
-base/hard envelopes are distinct (`0.048` to `0.066` correlation); fresh human
-review is still required before closeout.
+harder or playable. The revised full-duration path, source-local onset
+alignment, and grid-safe cycle have now earned a listening pass for stable,
+harmonic Base timing. The next gated Hard candidate remained source-backed and
+technically safe but received a structured human `reject`: the standalone Hard
+sibling measured `45.75%` silence, while the exact transition's Hard half
+measured `46.38%`; its higher peak still represented a bright click followed by
+less body, not harder impact. RIOTBOX-1422 now follows the documented
+perceptual-hardness research: preserve Base, correct cursor-edge and
+start/seek state, separate attack from body, and test source-relative
+band-limited nonlinear bite before another listen. The enlarged per-callback
+source snapshot needs bounded-handoff or real-session worst-case evidence
+before merge. One reserve case changed the shared regression threshold, while
+two more were repeatedly rendered across changing candidates. All three are now
+conservatively retired with rotation history and independent CC0 replacements;
+the replacements remain unheard and provisional.
 
 `P016`, `P021`, and `P022` remain subordinate to the active P023 product path.
 Offline renderers, scripted packs, fixture verdicts, reports, and validators
@@ -78,19 +86,20 @@ dense-break baseline and honest negative-source handling.
 17. [Fixture Corpus Spec](./specs/fixture_corpus_spec.md)
 18. [Audio QA Workflow Spec](./specs/audio_qa_workflow_spec.md)
 19. [Audio Numeric Values Guide](./engineering/audio_numeric_values.md)
-20. [Sound Product Readiness Rubric Spec](./specs/sound_product_readiness_rubric_spec.md)
-21. [Release-Grade Musician Demo Bank Spec](./specs/release_grade_musician_demo_bank_spec.md)
-22. [20/10 Sound-Product Future Ideas Spec](./specs/sound_product_2010_future_ideas_spec.md)
-23. [Source Timing Intelligence Spec](./specs/source_timing_intelligence_spec.md)
-24. [Arrangement / Scene System Spec](./specs/arrangement_scene_system_spec.md)
-25. [Recovery Notes](./recovery_notes.md)
-26. [Phase Definition of Done](./phase_definition_of_done.md)
-27. [Research / Decision Log](./research_decision_log.md)
-28. [Source Timing Intelligence Plan](./plans/source_timing_intelligence_plan.md)
-29. [Source Transport Map Capture Plan](./plans/source_transport_map_capture_plan.md)
-30. [MC-202 Source Phrase Planning Plan](./plans/mc202_source_phrase_planning_plan.md)
-31. [MC-202 Real-Source Listening Pack Benchmark](./benchmarks/mc202_real_source_listening_pack_v1_2026-06-18.md)
-32. [MC-202 Producer-Grade Closeout Benchmark](./benchmarks/mc202_producer_grade_closeout_v1_2026-06-18.md)
+20. [Perceptual Hardness and Musical Impact](./engineering/perceptual_hardness_and_musical_impact.md)
+21. [Sound Product Readiness Rubric Spec](./specs/sound_product_readiness_rubric_spec.md)
+22. [Release-Grade Musician Demo Bank Spec](./specs/release_grade_musician_demo_bank_spec.md)
+23. [20/10 Sound-Product Future Ideas Spec](./specs/sound_product_2010_future_ideas_spec.md)
+24. [Source Timing Intelligence Spec](./specs/source_timing_intelligence_spec.md)
+25. [Arrangement / Scene System Spec](./specs/arrangement_scene_system_spec.md)
+26. [Recovery Notes](./recovery_notes.md)
+27. [Phase Definition of Done](./phase_definition_of_done.md)
+28. [Research / Decision Log](./research_decision_log.md)
+29. [Source Timing Intelligence Plan](./plans/source_timing_intelligence_plan.md)
+30. [Source Transport Map Capture Plan](./plans/source_transport_map_capture_plan.md)
+31. [MC-202 Source Phrase Planning Plan](./plans/mc202_source_phrase_planning_plan.md)
+32. [MC-202 Real-Source Listening Pack Benchmark](./benchmarks/mc202_real_source_listening_pack_v1_2026-06-18.md)
+33. [MC-202 Producer-Grade Closeout Benchmark](./benchmarks/mc202_producer_grade_closeout_v1_2026-06-18.md)
 
 ## Why This Order
 

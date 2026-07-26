@@ -232,6 +232,15 @@ If a surface is intentionally not applicable, say why in the PR or working notes
   bass/low-end, drum/transient, midrange/hook, and arrangement/performance
   impact, and do not let pressure in one domain conceal failure in the intended
   domain.
+- Do not equate `Hard` with louder peaks, shorter gates, more silence, clipping,
+  brightness, or waveform delta. Transient Hard needs a source-local perceptual
+  attack, onset-local spectral or strength change, enough retained body for its
+  role, stable timing, and useful performer contrast. Treat roughness and
+  arrangement space as separate ingredients. After a fixed gate/gain/drive
+  recipe fails listening, change and document the causal mechanism before
+  tuning another magic number. A slice-cursor discontinuity is not source
+  attack; prime edge history from the selected local source neighborhood and
+  declare the bandwidth of any proxy used to judge attack.
 - Keep commercial reference recordings local, ignored, and uncommitted. Use
   them only for listening and measurement comparison, never as Riotbox product
   sources, fixtures, generated assets, or redistributed material.

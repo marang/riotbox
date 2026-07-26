@@ -176,10 +176,11 @@ def validate_manifest(
         validated_entries[case_id] = entry
         seen_hashes.add(source_hash)
 
-    eligible = [entry for entry in entries if entry["corpus_eligible"]]
+    active_entries = [entry for entry in entries if entry["partition"] != "retired"]
+    eligible = [entry for entry in active_entries if entry["corpus_eligible"]]
     eligible_families = {str(entry["source_family"]) for entry in eligible}
     eligible_packs = {str(entry["source_pack_id"]) for entry in eligible}
-    authors = {str(entry["author"]).strip().casefold() for entry in entries}
+    authors = {str(entry["author"]).strip().casefold() for entry in active_entries}
     require(
         len(eligible) >= minimums["eligible_source_count"],
         f"{prefix}: eligible source count collapsed below {minimums['eligible_source_count']}",
@@ -343,10 +344,13 @@ def validate_entry(
             f"{prefix}: retired source must be a consumed_holdout",
         )
         require(
-            verdict in {"usable", "weak", "reject"},
+            verdict in {"unverified", "usable", "weak", "reject"},
             f"{prefix}: invalid retired source suitability",
         )
-        validate_review_provenance(entry, prefix, family_owner=None)
+        if verdict == "unverified":
+            validate_unverified_retirement_provenance(entry, prefix)
+        else:
+            validate_review_provenance(entry, prefix, family_owner=None)
 
     non_empty_string(entry.get("author"), f"{prefix}.author")
     non_empty_string(entry.get("title"), f"{prefix}.title")
@@ -739,6 +743,25 @@ def validate_review_provenance(
             owner in {"human_review", "technical_review"},
             f"{prefix}.family_verdict_owner is unsupported",
         )
+
+
+def validate_unverified_retirement_provenance(
+    entry: dict[str, Any],
+    prefix: str,
+) -> None:
+    parse_iso_date(entry.get("reviewed_on"), f"{prefix}.reviewed_on")
+    reviewer_role = non_empty_string(
+        entry.get("reviewer_role"),
+        f"{prefix}.reviewer_role",
+    )
+    require(
+        reviewer_role in {"project_musician", "technical_reviewer"},
+        f"{prefix}.reviewer_role is unsupported for unverified retirement",
+    )
+    require(
+        entry.get("family_verdict_owner") == "technical_review",
+        f"{prefix}.family_verdict_owner must be technical_review",
+    )
 
 
 def parse_iso_date(value: Any, message: str) -> date:

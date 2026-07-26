@@ -335,6 +335,26 @@ listening because silence placement and groove are musician-facing behavior.
 
 ## W-30 Resample Cycle Alignment
 
+`W30_RESAMPLE_SOURCE_WINDOW_LEN = 16_384` is the fixed full-duration mono proxy
+capacity, currently shared with `W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN`. It was
+increased from `4_096` so the resample path could span the complete capture
+instead of one short grain. It is not a source sample rate, spectral-quality
+target, or free realtime budget. The shared callback currently reloads all
+`16_384` atomic samples per buffer; at `48 kHz` and `128` frames that is about
+`6.14 million` atomic sample loads per second plus roughly `64 KiB` copied per
+callback. This branch needs a bounded immutable handoff or real-session
+worst-case callback/stack evidence before merge.
+
+The current projector chooses uniformly spaced source frames without an
+anti-alias filter. For the exact `81_237`-frame / `44.1 kHz` capture, `16_384`
+points represent about `1.842` seconds: an effective proxy rate near
+`8.89 kHz` and Nyquist near `4.45 kHz`. Any `6–20 kHz` output from that proxy is
+not faithfully preserved source attack; it can come from decimation aliasing,
+reconstruction/interpolation spectral images, cursor discontinuity, or later
+nonlinear processing. Future attack/body plans must declare proxy bandwidth,
+anti-alias and reconstruction behavior, and whether bounded full-rate onset
+material is retained.
+
 `MIN_GRID_ALIGNED_CYCLE_BEATS = 1.0` and
 `MAX_GRID_ALIGNED_CYCLE_BEATS = 64.0` bound the whole-beat duration inferred
 from a hydrated W-30 resample artifact. They are counts in beats, not gains,
@@ -368,14 +388,23 @@ hit reaches its declared gate end level after 55% of one eighth-note step.
 `HARD_TRANSIENT_CHOP_GATE_END_LEVEL = 0.03` is linear envelope amplitude, about
 `-30.5 dB` relative to the retriggered envelope. The callback derives a
 sample-rate- and tempo-correct decay coefficient once per buffer. These values
-create real source-backed attack/space contrast; they are not silence-ratio QA
-thresholds, output gains, or a fixed BPM assumption.
+are retained experimental recipe constants, not an accepted hardness target.
+The standalone Hard sibling measured `45.75%` silence (`46.38%` in the exact
+listened A/B Hard half under the documented near-silence floor), but the
+structured review rejected the result as choppier and emptier rather than
+harder. These values create source-backed attack/space contrast only; they are
+not silence-ratio QA thresholds, output gains, a fixed BPM assumption, or
+musical-quality evidence.
 
-`HARD_TRANSIENT_ATTACK_GAIN = 1.12` is a local peak/attack compensation applied
-only to the gated `source_transient_chop` Hard policy. It offsets energy removed
-by the deliberate gaps and stays behind the existing voice ceiling. It must not
-be increased to disguise weak articulation; changes require zero-clipping proof
-across the real-source matrix and fresh structured listening.
+`HARD_TRANSIENT_PATH_GAIN = 1.12` compensates the complete gated
+`source_transient_chop` Hard voice, not an isolated attack region. The earlier
+`HARD_TRANSIENT_ATTACK_GAIN` name was misleading: this multiplier cannot alter
+the attack/body relation or restore body removed by the envelope. It stays
+behind the existing voice ceiling and must not be increased to disguise weak
+articulation or missing body. Do not iterate this number again until a
+different, research-backed mechanism establishes a source-adaptive attack/body
+relation. Changes require zero-clipping proof across the real-source matrix,
+native and loudness-matched comparison, and fresh structured listening.
 
 The `HARD_SOURCE_*` drive, wet, body, and edge values shape both typed Hard
 policies from their actual source samples. Continuous `source_texture_bite`
@@ -384,3 +413,9 @@ adds `HARD_TEXTURE_FOLD_DRIVE = 2.2`, eight amplitude-quantization steps, and a
 voice: no source means digital silence, and texture material receives no
 invented trigger grid. Changes require transient and texture policy tests,
 same-source determinism, cross-source diversity, and role-specific listening.
+The transient candidate using these values received `human_verdict: reject`;
+the constants document current code, not a performer-approved recipe. Future
+work follows
+`docs/engineering/perceptual_hardness_and_musical_impact.md` and must not treat
+another combination of fixed drive/wet/body/edge floats tuned to Beat03 as
+generalized Hard behavior.

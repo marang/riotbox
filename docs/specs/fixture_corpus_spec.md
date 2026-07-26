@@ -313,6 +313,13 @@ typed family, classification state, and development / holdout ownership. The
 audio itself is not committed. `source_suitability_verdict` records only
 whether the raw source is useful for the assigned test role; it is never a
 Riotbox-output human pass or release-quality verdict.
+If a holdout is consumed before that raw-source judgment is settled, retirement
+must preserve `unverified` instead of inventing `usable`, `weak`, or `reject`.
+The dated review provenance and rotation history still record why it can no
+longer count as unseen evidence. A technical reviewer may own that governance
+retirement when no musician source-suitability verdict exists; this is not a
+substitute for human listening and must keep
+`family_verdict_owner: technical_review`.
 
 The development matrix must contain at least five eligible real sources across
 at least four core families. A narrow source pack cannot supply multiple cases
@@ -327,6 +334,18 @@ unheard and may not choose the candidate algorithm or constants. Once a holdout
 informs later implementation, it leaves the unseen set, gains a dated rotation
 record with the consuming ticket, and receives a fresh replacement. Reusing a
 consumed source as unseen evidence is invalid.
+
+A holdout may be evaluated against one candidate generation only after that
+candidate's algorithm, constants, and directional gates are frozen.
+Deterministic identity rerenders of that same frozen candidate are allowed, but
+must not inform tuning. Rendering across changing candidate generations
+destroys practical freshness when causal influence cannot be disproved;
+conservatively retire and replace that case instead of claiming it remained
+unseen.
+
+Corpus-size, source-pack, family, and author minimums count only active
+development and holdout entries. Retired cases remain lineage evidence but
+cannot prop up current source diversity.
 
 CI validates the contract and mutation fixtures without needing local audio:
 

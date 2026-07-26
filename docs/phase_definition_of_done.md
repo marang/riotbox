@@ -472,19 +472,30 @@ After exit:
   perceived as a doubled echo that pulled the beat out of time. Capture now
   fails closed when the complete requested window does not fit, and a valid
   source-backed Base cycle restarts on its rounded whole-beat transport
-  boundary within one output frame. The corrected candidate remains
+  boundary within one output frame. That grid-safe predecessor remains
   `human_verdict: technically_ok_but_musically_weak`: direct listening confirms
   stable timing and harmonic output, but the committed Hard half is not
   genuinely hard. Follow-up keeps Base byte-identical and gives transient Hard
-  a tempo-derived gate, stronger source-edge character, and bounded attack
-  compensation; continuous texture Hard receives source-only wavefold/crush
-  without an invented trigger grid. Eight-source technical gates pass, but the
-  stronger candidate remains `human_verdict: unverified`.
+  a tempo-derived gate, stronger source-edge character, and bounded whole-path
+  gain compensation; continuous texture Hard receives source-only
+  wavefold/crush without an invented trigger grid. Eight-source technical gates
+  pass, but structured listening rejected the current/latest stronger candidate
+  as choppier and emptier rather than harder. RIOTBOX-1422 now preserves Base
+  and follows the perceptual-hardness research contract: source-adaptive
+  attack/body separation, band-limited nonlinear bite, native and
+  loudness-matched comparison, and multi-family proof before another listening
+  request.
 - RIOTBOX-1423 supplies RIOTBOX-1422 with a legal CC0 development matrix and
   two disjoint fresh holdout sets. Candidate tuning must cover at least five
   eligible development sources across four typed families; a holdout that
-  informs another implementation is consumed and must be replaced before it
-  can be called fresh evidence again.
+  informs another implementation is permanently consumed and cannot be reused
+  as fresh evidence. The holdout set regains fresh coverage only after receiving
+  an untouched replacement. Three exposed holdouts are now retired with
+  recorded rotation history: `oga_illin_robotic` was replaced by
+  `oga_riintron_fat_groove_drums`, `oga_bretbernhoft_beatloops` by
+  `oga_hornpipe2_prehistoric_drums`, and `oga_akikazer_menu` by
+  `oga_centurion_chippy_melody`. The replacements remain unheard and
+  provisional; acquisition alone is not acceptance evidence.
 - P016 and the wider P021/P022/P023 quality ladder may resume from the accepted
   live baseline
 

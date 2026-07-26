@@ -88,15 +88,37 @@
       "state": "reserve",
       "purpose": "Replacement evidence after holdout_a has informed a later implementation.",
       "source_case_ids": [
-        "oga_illin_robotic",
-        "oga_bretbernhoft_beatloops",
-        "oga_akikazer_menu",
+        "oga_riintron_fat_groove_drums",
+        "oga_hornpipe2_prehistoric_drums",
+        "oga_centurion_chippy_melody",
         "oga_srg774_airy",
         "oga_laleksic_grind_metal"
       ]
     }
   ],
-  "rotation_history": [],
+  "rotation_history": [
+    {
+      "case_id": "oga_illin_robotic",
+      "former_holdout_id": "holdout_b",
+      "consumed_by_ticket": "RIOTBOX-1422",
+      "consumed_on": "2026-07-25",
+      "replacement_case_id": "oga_riintron_fat_groove_drums"
+    },
+    {
+      "case_id": "oga_bretbernhoft_beatloops",
+      "former_holdout_id": "holdout_b",
+      "consumed_by_ticket": "RIOTBOX-1422",
+      "consumed_on": "2026-07-25",
+      "replacement_case_id": "oga_hornpipe2_prehistoric_drums"
+    },
+    {
+      "case_id": "oga_akikazer_menu",
+      "former_holdout_id": "holdout_b",
+      "consumed_by_ticket": "RIOTBOX-1422",
+      "consumed_on": "2026-07-25",
+      "replacement_case_id": "oga_centurion_chippy_melody"
+    }
+  ],
   "entries": [
     {
       "case_id": "oga_bertsz_dnb",
@@ -166,9 +188,13 @@
       "case_id": "oga_illin_robotic",
       "source_family": "dense_break",
       "corpus_eligible": true,
-      "partition": "holdout_b",
-      "classification_status": "provisional_unheard_holdout",
+      "partition": "retired",
+      "classification_status": "consumed_holdout",
       "source_suitability_verdict": "unverified",
+      "reviewed_on": "2026-07-25",
+      "reviewer_role": "project_musician",
+      "family_verdict_owner": "technical_review",
+      "previous_partition": "holdout_b",
       "author": "illin",
       "title": "Friendly Talk On a Robotic Battlefield",
       "source_pack_id": "oga_friendly_talk_robotic_battlefield",
@@ -179,7 +205,29 @@
       "source_start_seconds": 22.514,
       "source_path": "data/test_audio/external/RIOTBOX-1423/wav/dense_oga_illin_robotic.wav",
       "sha256": "626d337e170f67a696f760a8ec82880d5326c364457296b5f7cc47de6a837a4a",
-      "commercial_reference": false
+      "commercial_reference": false,
+      "review_notes": "Retired because RIOTBOX-1422 v3-v6 tuning consumed the reserve. The project musician did not settle raw-source suitability or dense_break versus dense_full_mix; the retained family label records technical lineage only and is not active positive coverage."
+    },
+    {
+      "case_id": "oga_riintron_fat_groove_drums",
+      "source_family": "dense_break",
+      "corpus_eligible": true,
+      "partition": "holdout_b",
+      "classification_status": "provisional_unheard_holdout",
+      "source_suitability_verdict": "unverified",
+      "author": "Riintron",
+      "title": "Fat Groove Drums",
+      "source_pack_id": "oga_fat_groove_drums",
+      "provider": "OpenGameArt",
+      "page_url": "https://lpc.opengameart.org/content/fat-groove-drums",
+      "download_url": "https://lpc.opengameart.org/sites/default/files/drums.wav",
+      "license": "CC0-1.0",
+      "source_start_seconds": 0.0,
+      "source_path": "data/test_audio/external/RIOTBOX-1423/wav/dense_oga_riintron_fat_groove_drums.wav",
+      "sha256": "5d915fe1ff08b2dd584fbb1bfb67bfacb3a6eb5033143196a4662c4cc10c0518",
+      "commercial_reference": false,
+      "replacement_for_case_id": "oga_illin_robotic",
+      "acquired_on": "2026-07-26"
     },
     {
       "case_id": "oga_marwan_cinematic_percussion",
@@ -226,9 +274,13 @@
       "case_id": "oga_bretbernhoft_beatloops",
       "source_family": "sparse_drums",
       "corpus_eligible": true,
-      "partition": "holdout_b",
-      "classification_status": "provisional_unheard_holdout",
+      "partition": "retired",
+      "classification_status": "consumed_holdout",
       "source_suitability_verdict": "unverified",
+      "reviewed_on": "2026-07-26",
+      "reviewer_role": "technical_reviewer",
+      "family_verdict_owner": "technical_review",
+      "previous_partition": "holdout_b",
       "author": "bretbernhoft",
       "title": "Looping Beats 01",
       "source_pack_id": "oga_looping_beats_01",
@@ -239,7 +291,29 @@
       "source_start_seconds": 58.633,
       "source_path": "data/test_audio/external/RIOTBOX-1423/wav/sparse_oga_bretbernhoft_beatloops.wav",
       "sha256": "7e950adad640fee4c763a9aad508fac49a988c1f34c9cbafba56a73d818dcce4",
-      "commercial_reference": false
+      "commercial_reference": false,
+      "review_notes": "Conservatively retired after repeated RIOTBOX-1422 technical renders across onset, loop, gate-v2, and v6 algorithm generations. Causal influence was not established, but the case can no longer be called fresh evidence."
+    },
+    {
+      "case_id": "oga_hornpipe2_prehistoric_drums",
+      "source_family": "sparse_drums",
+      "corpus_eligible": true,
+      "partition": "holdout_b",
+      "classification_status": "provisional_unheard_holdout",
+      "source_suitability_verdict": "unverified",
+      "author": "hornpipe2",
+      "title": "Prehistoric Drum Loop",
+      "source_pack_id": "oga_prehistoric_drum_loop",
+      "provider": "OpenGameArt",
+      "page_url": "https://opengameart.org/content/prehistoric-drum-loop",
+      "download_url": "https://opengameart.org/sites/default/files/select.wav",
+      "license": "CC0-1.0",
+      "source_start_seconds": 0.0,
+      "source_path": "data/test_audio/external/RIOTBOX-1423/wav/sparse_oga_hornpipe2_prehistoric_drums.wav",
+      "sha256": "737ee81d9a426b210600ac379673e5124243ac407ad43d28d58e450601fc0d95",
+      "commercial_reference": false,
+      "replacement_for_case_id": "oga_bretbernhoft_beatloops",
+      "acquired_on": "2026-07-26"
     },
     {
       "case_id": "oga_fupi_plimplom",
@@ -286,9 +360,13 @@
       "case_id": "oga_akikazer_menu",
       "source_family": "tonal_riff",
       "corpus_eligible": true,
-      "partition": "holdout_b",
-      "classification_status": "provisional_unheard_holdout",
+      "partition": "retired",
+      "classification_status": "consumed_holdout",
       "source_suitability_verdict": "unverified",
+      "reviewed_on": "2026-07-26",
+      "reviewer_role": "technical_reviewer",
+      "family_verdict_owner": "technical_review",
+      "previous_partition": "holdout_b",
       "author": "Akikazer",
       "title": "Menu Loop",
       "source_pack_id": "oga_menu_loop",
@@ -299,7 +377,29 @@
       "source_start_seconds": 0.0,
       "source_path": "data/test_audio/external/RIOTBOX-1423/wav/tonal_oga_akikazer_menu.wav",
       "sha256": "41bad327af79ff60b4cd301c69b5c17e202e7fac586e0d4b80b65c255d151b57",
-      "commercial_reference": false
+      "commercial_reference": false,
+      "review_notes": "Conservatively retired after repeated RIOTBOX-1422 technical renders across onset, loop, gate-v2, and v6 algorithm generations. Causal influence was not established, but the case can no longer be called fresh evidence."
+    },
+    {
+      "case_id": "oga_centurion_chippy_melody",
+      "source_family": "tonal_riff",
+      "corpus_eligible": true,
+      "partition": "holdout_b",
+      "classification_status": "provisional_unheard_holdout",
+      "source_suitability_verdict": "unverified",
+      "author": "Centurion_of_war",
+      "title": "Chippy melody 1",
+      "source_pack_id": "oga_chippy_melody_1",
+      "provider": "OpenGameArt",
+      "page_url": "https://opengameart.org/content/chippy-melody-1",
+      "download_url": "https://opengameart.org/sites/default/files/chippy_melodyv2_0.ogg",
+      "license": "CC0-1.0",
+      "source_start_seconds": 1.32,
+      "source_path": "data/test_audio/external/RIOTBOX-1423/wav/tonal_oga_centurion_chippy_melody.wav",
+      "sha256": "5cf8d8ae81a1505bcc611864836d96760aa5163967ffa352f1848a6271862163",
+      "commercial_reference": false,
+      "replacement_for_case_id": "oga_akikazer_menu",
+      "acquired_on": "2026-07-26"
     },
     {
       "case_id": "oga_isaiah658_ambient",

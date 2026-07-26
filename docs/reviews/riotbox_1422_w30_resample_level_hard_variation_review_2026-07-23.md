@@ -10,7 +10,7 @@ Full-phrase base human verdict: `pass` / loopable
 
 Latest heard hard candidate verdict: `reject`
 
-Timing-corrected hard follow-up human verdict: `unverified`
+Post-research successor candidate: `not rendered`
 
 ## Outcome And Rejected First Candidate
 
@@ -149,9 +149,9 @@ The next technical candidate keeps Beat03 Base byte-identical at
 `13d5943f0d2c222f80c279991dfbf3593b6e155b99795c916661bb3565f64a4c`.
 For `source_transient_chop`, a tempo-derived envelope reaches `0.03` after
 `0.55` of an eighth-note step, while source-reactive edge/drive and a bounded
-`1.12` attack compensation keep the surviving hits forward. For continuous
-`source_texture_bite`, no trigger grid is imposed; the existing source waveform
-receives bounded wavefold/quantization instead.
+`1.12` whole-path gain compensation keep the surviving hits forward. For
+continuous `source_texture_bite`, no trigger grid is imposed; the existing
+source waveform receives bounded wavefold/quantization instead.
 
 Across Beat03 plus seven development/holdout sources, every Hard render is
 non-silent and unclipped and every missing-source control is digital silence.
@@ -160,6 +160,96 @@ The seven transient policies measure relative Base-to-Hard RMS deltas from
 Maximum absolute pairwise 20 ms Hard-envelope correlation is `0.183690`.
 Beat03 Hard has `45.75%` silence, crest factor `7.789`, peak `0.709396`, and no
 clipping. This is a technically review-ready candidate, not a human pass.
+
+### Gated Hard candidate human reject and mechanism audit
+
+Markus reviewed the exact committed artifact at `edd90406`:
+
+```text
+/tmp/riotbox-1422-hard-review-edd90406/
+  06_w30_resample_base_to_hard_live_gesture.wav
+SHA-256:
+  1ca4b7bdf5029ff60bfc8cc2cb2bb7b24639e04c2010c6e2ff56cd14b5c32ee4
+```
+
+The structured verdict is `human_verdict: reject`, strongest element `chop`,
+source recognition `source_transformed_but_present`, and hook `clear`. The
+binding failure statement is: the second half is audibly choppier and emptier,
+but it is not harder. The review is stored at:
+
+```text
+/tmp/riotbox-1422-hard-listening-review-edd90406/review.json
+SHA-256:
+  4a9cf47ce50d526b47e5bd5eb4aa468519bc02a526c9220d973f345ed7d5f633
+```
+
+The signal supports that verdict. Relative to Base, the Hard onset raises
+`0–10 ms` RMS by `77.6%`, then loses `48.3%` at `10–40 ms`, `69.0%` at
+`40–120 ms`, and `91.0%` at `120–200 ms`. Attack/body ratio rises from `6.8`
+to `39.0`; the kept event has become a brief bright head without enough body.
+Hard loses `38.4%` of Hann-windowed band magnitude in `20–80 Hz`, `21.1%` in
+`80–250 Hz`, `18.6%` in `250 Hz–2 kHz`, and `12.8%` in `2–6 kHz`. Only the
+low-magnitude `6–20 kHz` band rises, by `53.7%`. Its higher peak therefore does
+not represent stronger physical or midrange impact.
+
+Corresponding complete WAVs in the development-matrix Beat03 directory and the
+committed review directory are byte-identical; only runtime timestamps and
+absolute output paths differ in `session.json`. Within the pack, the exact A/B
+Base half is sample-identical to the corresponding first two bars of the
+standalone Base sibling. The exact A/B Hard half is not sample-identical to the
+standalone Hard sibling because the former keeps callback state across the
+Base-to-Hard transition and the latter starts fresh. The A/B Hard half measures
+`46.38%` near-silence with `|mono| < 1e-4`; the earlier `45.75%` figure belongs
+to the four-bar standalone Hard sibling. Neither value is hardness proof.
+
+The onset audit uses the exact A/B halves, arithmetic stereo-to-mono, and all
+twelve active eighth-note anchors implied by mask `11010111`. It concatenates
+the stated post-anchor windows before computing RMS; attack/body is
+`0–10 ms / 40–120 ms`. The band audit removes each half's mean, applies a Hann
+window, and compares root-summed real-FFT magnitudes inside each stated band.
+FFmpeg `loudnorm` reports `-16.85 / -19.08 LUFS` and
+`-4.09 / -2.26 dBTP` for the exact Base/Hard halves.
+
+The code audit found matching failure mechanisms and additional product-path
+risks:
+
+- the current immediate-decay gate removes body instead of providing separate
+  source-adaptive attack, hold, and release
+- source-cursor jumps are fed into the edge detector without priming its
+  history from the new slice, so discontinuities can become amplified clicks
+- current technical promotion checks accept any non-silent, unclipped Hard
+  signal with enough waveform delta, even when impact is worse
+- fresh stopped activation, mid-bar/inactive-slot start, and live seek/restore
+  lack safe resample-state regressions
+- active source replacement can inherit the previous source cursor/edge history
+  because the render plan has no separate source/artifact revision
+- all `16,384` atomic source samples are copied per callback; the path needs a
+  benchmark and bounded immutable handoff before more realtime DSP is added
+- arithmetic mono projection and uniform unfiltered decimation can remove
+  stereo body or manufacture high-frequency artifacts
+
+The source-corpus audit also found that `oga_illin_robotic` changed output
+across five successive v3–v6 tuning iterations while serving as the sole
+`holdout-dense` target. Its final `15.3%` texture delta was explicitly used to
+raise the shared texture regression threshold from `0.005` to `0.02` and
+freeze the rules. It is therefore consumed development material, not a reserve
+holdout. The `2026-07-26` manifest update retires it, records the consuming
+ticket/date, and replaces it with the independent, unheard CC0
+`oga_riintron_fat_groove_drums` case. That acquisition restores the rotation
+contract but is not quality proof. `oga_bretbernhoft_beatloops` and
+`oga_akikazer_menu` were also rendered under four changing algorithm
+generations. Their causal influence was not established, so the manifest
+conservatively retires and independently replaces them rather than presenting
+them as fresh.
+
+The current constants remain deterministic implementation state but are not a
+listening-approved Hard recipe. Another gate/gain/drive float adjustment is
+blocked until the causal mechanism changes. The research handoff is
+`docs/engineering/perceptual_hardness_and_musical_impact.md`: preserve Base,
+separate source-adaptive attack from body, test band-limited nonlinear bite,
+compare native and loudness-matched output, and prove the shared policy across
+the multi-family development matrix and untouched holdouts before another
+human playback.
 
 ## Earlier Onset-Only RuntimeMix Evidence
 
@@ -230,20 +320,23 @@ insufficient because the holdout envelope comparison detected musical collapse.
 
 ## Listening Gate
 
-The latest exact-artifact verdict rejects the onset-only candidate because Base
-contained the doubled/echo kick. The slice remains open. The grid-aligned
-replacement passes seven-source technical rendering, but remains
-`human_verdict: unverified`.
+The doubled/echo-kick defect is closed and grid-safe Base has a human timing /
+harmonic pass. The gated Hard replacement has now received a structured human
+`reject`, so no candidate is waiting for another listen.
 
-Structured listening must now answer in this order:
+Before the next listening request:
 
-1. Is the doubled/echo kick gone, and does Base remain steadily in time across
-   the loop boundary?
-2. If Base timing passes, is the Hard gesture immediately obvious and musically
-   useful as a performer-triggered variation?
-3. Does the complete capture remain recognizable through Base and meaningfully
-   related through Hard without requiring either tap to reproduce uncaptured
-   source sections?
+1. preserve the accepted Base hash
+   `13d5943f0d2c222f80c279991dfbf3593b6e155b99795c916661bb3565f64a4c`
+2. state one causal Hard hypothesis and the intended domain: source-local
+   attack, midrange bite, retained body, roughness, or arrangement impact
+3. pass the required development matrix and only the fresh, causally untouched
+   active holdout replacements
+4. analyze the exact artifact at native and loudness-matched level, including
+   onset spectrum, transient/body relation, body retention, timing, source
+   identity, and safety
+5. assign the exact WAV and tell the listener what should be heard; bass
+   pressure is not required unless a typed owner assigns it
 
 ## Review Note
 
@@ -257,8 +350,11 @@ the source-transport observer probe called its action a bar capture while
 retaining the global four-bar default, then depended on source-EOF clamping.
 The probe now sets typed `OneBar` intent explicitly and passes without weakening
 the product's fail-closed rule. Focused W-30/capture tests and the complete
-`just ci` gate pass after that correction. No unresolved correctness, realtime,
-architecture, or test finding remains for this diff.
+`just ci` gate pass after that correction. No unresolved finding remained for
+that grid-aligned Base correction. The later Hard-path audit findings recorded
+above remain open. They may be tracked in explicit blocker tickets, but ticket
+creation does not waive the gate: the findings must be resolved and verified
+before this branch can merge.
 
 One known maintainability signal remains:
 `render_tr909_w30_preview.rs` is above the soft review-size range. A future

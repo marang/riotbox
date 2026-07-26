@@ -444,17 +444,46 @@ The bounded early seam is a non-realtime source-audio cache:
   overlaying one global source attack is invalid: either can make the hard
   layer late, harmonically foreign, and unusable even when its trigger event is
   technically quantized.
-- transient-chop `hard_damage` must also own a tempo-derived source gate:
-  retrigger its envelope at each selected source onset, decay it to a small
-  explicit end level within a bounded fraction of the eighth-note step, and let
-  source-derived inactive mask slots become real arrangement space. A
-  continuously open envelope that merely changes source cursors is a
-  transformed variation but does not satisfy the Hard role.
+- transient-chop `hard_damage` may own a tempo-derived source gate so selected
+  local onsets and inactive mask slots create explicit articulation and
+  arrangement space. That gate is not itself the Hard contract. The reviewed
+  `0.55`-step / `0.03` envelope made the exact candidate choppier and emptier,
+  not harder; silence ratio, peak, crest factor, and waveform delta cannot
+  promote it.
+- transient-chop Hard acceptance requires a source-local perceptual attack,
+  onset-local spectral or transient-strength change, enough retained body for
+  the declared role, stable pulse, and a useful performer contrast. Prefer a
+  precomputed source-adaptive attack/body plan and a bounded band-selective
+  nonlinear attack path over another global gate or gain adjustment.
 - both Hard policies may strengthen source-reactive saturation and edge
-  emphasis. `source_transient_chop` may add a bounded attack-gain correction to
-  compensate for its deliberate gaps. `source_texture_bite` must not invent a
-  trigger grid; use bounded wavefold/quantization of the real source waveform
-  when continuous material needs an immediately audible hard timbre.
+  emphasis. `source_transient_chop` may add a bounded attack path or gain
+  correction, but it must not use level to disguise deleted body. The current
+  `1.12` multiplier compensates the complete gated Hard path; it is not an
+  attack-only processor and must not be described as one.
+  `source_texture_bite` must not invent a trigger grid; use bounded processing
+  of the real source waveform when continuous material needs an immediately
+  audible hard timbre. Wavefold/quantization is one available destructive
+  transform, not sufficient evidence that the result sounds Hard.
+- evaluate Hard mechanisms and measurements under
+  `docs/engineering/perceptual_hardness_and_musical_impact.md`; source
+  analysis, onset localization, decomposition, and band selection remain
+  outside the realtime callback.
+- a source-cursor jump is not itself transient evidence. When a render plan
+  retriggers from a prepared source-local onset, prime any edge/history state
+  from that same local source neighborhood so the discontinuity cannot become
+  an amplified synthetic click.
+- fresh activation, stopped restore, mid-bar start, and transport seek must
+  resynchronize beat, step, cursor, envelope, and active-slot state. A W-30
+  resample tap has no implicit stopped-transport audition permission and must
+  not leak slot-zero output into an inactive Hard slot.
+- active source replacement needs a bounded source/artifact revision in the
+  render plan. New PCM must not inherit the previous source cursor or edge
+  history merely because mode and variation are unchanged; reset or phase-map
+  it behind an explicit click-safe transition.
+- snapshot or handoff cost is part of the realtime contract. Benchmark the
+  current fixed-size source snapshot before adding parallel decomposition,
+  crossover, nonlinear branches, or oversampling; analysis improvements do not
+  authorize unbounded callback work.
 - derive chop slice starts outside the callback from quantized short-time energy rises in the real capture; realtime transport and pad triggers may only select and retrigger the prepared bounded plan
 - preserve the action-derived damage transform and capture-artifact identity across Session replay; artifact hydration must not invent macro / grit state that the committed action did not set
 - keep cache loading and source-window projection outside the realtime callback

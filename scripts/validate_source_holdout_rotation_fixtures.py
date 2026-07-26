@@ -167,6 +167,88 @@ def run_mutation_fixtures(manifest: dict[str, Any], manifest_path: Path) -> None
         "consumed source must record previous_partition",
     )
 
+    def invented_retired_suitability(mutated: dict[str, Any]) -> None:
+        for entry in mutated["entries"]:
+            if entry["partition"] == "retired":
+                entry["source_suitability_verdict"] = "accepted_output"
+                return
+        raise ValueError("fixture requires a retired source")
+
+    expect_failure(
+        "invented retired source suitability",
+        manifest,
+        manifest_path,
+        invented_retired_suitability,
+        "invalid retired source suitability",
+    )
+
+    def unowned_unverified_retirement(mutated: dict[str, Any]) -> None:
+        for entry in mutated["entries"]:
+            if (
+                entry["partition"] == "retired"
+                and entry["source_suitability_verdict"] == "unverified"
+            ):
+                entry["reviewer_role"] = "automation"
+                return
+        raise ValueError("fixture requires an unverified retired source")
+
+    expect_failure(
+        "unowned unverified retirement",
+        manifest,
+        manifest_path,
+        unowned_unverified_retirement,
+        "reviewer_role is unsupported for unverified retirement",
+    )
+
+    def retired_sources_do_not_fill_active_minimum(mutated: dict[str, Any]) -> None:
+        active_eligible_count = sum(
+            entry["partition"] != "retired" and entry["corpus_eligible"]
+            for entry in mutated["entries"]
+        )
+        mutated["minimums"]["eligible_source_count"] = active_eligible_count + 1
+
+    expect_failure(
+        "retired sources do not fill active minimum",
+        manifest,
+        manifest_path,
+        retired_sources_do_not_fill_active_minimum,
+        "eligible source count collapsed",
+    )
+
+    def retired_packs_do_not_fill_active_minimum(mutated: dict[str, Any]) -> None:
+        active_eligible_packs = {
+            entry["source_pack_id"]
+            for entry in mutated["entries"]
+            if entry["partition"] != "retired" and entry["corpus_eligible"]
+        }
+        mutated["minimums"]["eligible_source_pack_count"] = (
+            len(active_eligible_packs) + 1
+        )
+
+    expect_failure(
+        "retired packs do not fill active minimum",
+        manifest,
+        manifest_path,
+        retired_packs_do_not_fill_active_minimum,
+        "eligible source-pack count collapsed",
+    )
+
+    def retired_authors_do_not_fill_active_minimum(mutated: dict[str, Any]) -> None:
+        active_authors = {
+            entry["author"].strip().casefold()
+            for entry in mutated["entries"]
+            if entry["partition"] != "retired"
+        }
+        mutated["minimums"]["distinct_author_count"] = len(active_authors) + 1
+
+    expect_failure(
+        "retired authors do not fill active minimum",
+        manifest,
+        manifest_path,
+        retired_authors_do_not_fill_active_minimum,
+        "distinct author count collapsed",
+    )
+
     def source_pack_collapse(mutated: dict[str, Any]) -> None:
         for entry in mutated["entries"]:
             if entry["corpus_eligible"]:

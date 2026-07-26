@@ -132,6 +132,26 @@ rhythm/space, pitch trajectory, timbre, or articulation. Its exact A/B
 preflight must focus on the locally changed slots as well as whole-render
 metrics and state plainly what event the listener should be able to identify.
 
+For explicit `Hard`, punch, or aggression claims, do not count louder output,
+shorter gates, silence, peak, crest factor, or waveform delta as one of those
+dimensions. Name the intended pressure domain first. Transient Hard preflight
+must inspect the source-local perceptual attack, attack spectrum/onset
+strength, transient-to-body relation, body retention, grid alignment, and
+source identity. Compare native product level and a loudness-matched
+counterfactual when level can bias the judgment. Roughness, low-body pressure,
+and arrangement space are separate optional domains; only judge low-end when a
+typed owner assigns it. Use
+`docs/engineering/perceptual_hardness_and_musical_impact.md` for the research
+basis and ordered multi-source experiment protocol.
+
+For retriggered source-backed Hard paths, also report boundary jumps and prove
+that edge/transient analysis is primed from the selected local source
+neighborhood rather than the previous cursor location. Exercise the exact
+Base-to-Hard state transition, fresh stopped activation, mid-bar inactive-slot
+start, a running transport seek/restore, and active source replacement with
+unchanged mode/variation. Standalone Base and Hard siblings do not substitute
+for this stateful product-path evidence.
+
 For explicit drum gestures, a peak-only delta is insufficient. The exact
 audible Blend counterfactual must also report loudness-aware waveform
 correlation and the share of 10 ms windows whose delta RMS exceeds both 10% of

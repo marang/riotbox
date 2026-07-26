@@ -131,6 +131,36 @@ Use this taste model to shape implementation choices:
   listening and measurement references only, never Riotbox product sources,
   fixtures, generated assets, or redistribution material
 
+## Hardness And Punch Rule
+
+Do not equate harder with louder, brighter, more clipped, more silent, or more
+chopped. Before tuning, name the intended domain: drum/transient attack,
+midrange/hook bite, bass/low-body pressure, roughness, or
+arrangement/performance impact. One domain cannot conceal failure in another.
+
+For transient Hard behavior:
+
+- preserve and align the source-local perceptual attack
+- inspect attack strength, spectrum/bandwidth, and the body that follows it
+- never count a slice-cursor discontinuity as source attack; prime edge history
+  from the selected local source neighborhood and declare the proxy bandwidth
+- prefer a phase-aligned dry/body path plus bounded source-relative,
+  band-selective nonlinear attack processing over a global gate
+- treat gates, chokes, and dropouts as arrangement articulation; they do not
+  prove hardness without stronger sounding material or a stronger return
+- treat controlled roughness as a separate high-risk salience ingredient, not
+  a synonym for punch or quality
+- compare the candidate at native product level and loudness matched
+- reject a candidate that is only different, emptier, or louder
+
+When a fixed gate, gain, drive, wet mix, or edge constant fails structured
+listening, do not continue nudging that float against the same source. Change
+the causal mechanism, document the hypothesis, and run the shared policy
+against the required multi-family development matrix and untouched holdouts
+before another human playback. Use
+`docs/engineering/perceptual_hardness_and_musical_impact.md` as the project
+research guide.
+
 ## Review Language
 
 When judging an output, say plainly:

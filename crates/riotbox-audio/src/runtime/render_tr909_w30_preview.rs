@@ -878,10 +878,10 @@ fn w30_resample_trigger_envelope(render: &RealtimeW30ResampleTapState) -> f32 {
 }
 
 fn w30_resample_render_gain(render: &RealtimeW30ResampleTapState, transport_running: bool) -> f32 {
-    const HARD_TRANSIENT_ATTACK_GAIN: f32 = 1.12;
+    const HARD_TRANSIENT_PATH_GAIN: f32 = 1.12;
 
-    // Full-phrase playback is naturally denser than the retired short grain. Hard contrast comes
-    // from source-local onset jumps and source-reactive character, not a hidden level multiplier.
+    // This compensates the complete gated transient-Hard path, not the attack region in isolation.
+    // It cannot repair an attack/body imbalance created by the envelope.
     let profile_gain = match render.source_profile {
         Some(W30ResampleTapSourceProfile::RawCapture) | None => 0.88,
         Some(W30ResampleTapSourceProfile::PromotedCapture) => 0.98,
@@ -891,7 +891,7 @@ fn w30_resample_render_gain(render: &RealtimeW30ResampleTapState, transport_runn
     let hard_transient_gain = if render.variation == W30ResampleTapVariation::HardDamage
         && render.hard_policy == W30ResampleTapHardPolicy::SourceTransientChop
     {
-        HARD_TRANSIENT_ATTACK_GAIN
+        HARD_TRANSIENT_PATH_GAIN
     } else {
         1.0
     };
