@@ -613,3 +613,23 @@ The actual replacements were inspected only for licensing metadata, format,
 duration, peak, clipping, deterministic conversion, and hash. Their family
 labels remain provisional; none was listened to, timing-probed, preflighted,
 or rendered before H20 freeze.
+
+### H20 timing rejection and H21 tracker-tempo replenishment
+
+H20 again stopped before product projection. Stomper's Rust primary
+`158.45071 BPM` differed from provider 160 BPM by `1.54929`, above the
+unchanged 1 BPM tolerance; downbeat remained weak and drift high. The held
+guitar progression exposed one onset, while Dungeon Run selected
+`149.00665 BPM` against provider 120 with weak downbeat. No independent
+downbeat phase existed for either mismatch.
+
+All three are consumed timing evidence without candidate WAVs or human
+verdicts. The repeated result now justifies metadata stronger than a title or
+variant label, but it does not justify loosening timing.
+
+H21 keeps DSP, selectors, and timing contracts frozen. Its replacements are
+the provider-declared 150 BPM Mental Corruption plus two CC0 FamiTracker loops
+whose project FRAMES blocks independently encode tempo 150: 8-Bit Battle Loop
+and 8-Bit Cave Loop. Only tracker tempo, licensing metadata, format, duration,
+peak, clipping, conversion, and hash were inspected before freeze; their audio
+and product behavior remain unheard and unprobed.

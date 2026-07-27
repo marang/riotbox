@@ -31,7 +31,41 @@
       "classification_status": "provisional_unheard_holdout"
     }
   ],
-  "acceptance_status": "pending_fresh_exact_path_candidate",
+  "fresh_holdout_results": [
+    {
+      "case_id": "oga_tricksntraps_stomper",
+      "source_family": "dense_break",
+      "provider_bpm": 160.0,
+      "rust_primary_bpm": 158.45071,
+      "bpm_delta": 1.54929,
+      "bpm_match_tolerance": 1.0,
+      "downbeat_status": "weak",
+      "drift_status": "high",
+      "candidate_rendered": false,
+      "technical_verdict": "ineligible_explicit_bpm_mismatch_without_downbeat"
+    },
+    {
+      "case_id": "oga_some_weirdo_progression2_120",
+      "source_family": "tonal_riff",
+      "provider_bpm": 120.0,
+      "timing_onset_count": 1,
+      "timing_readiness": "unavailable",
+      "candidate_rendered": false,
+      "technical_verdict": "ineligible_timing_unavailable"
+    },
+    {
+      "case_id": "oga_whittakerb1987_dungeon_run_120",
+      "source_family": "tonal_riff",
+      "provider_bpm": 120.0,
+      "rust_primary_bpm": 149.00665,
+      "downbeat_status": "weak",
+      "drift_status": "high",
+      "candidate_rendered": false,
+      "technical_verdict": "ineligible_explicit_bpm_mismatch_without_downbeat"
+    }
+  ],
+  "acceptance_status": "rejected_before_product_projection",
   "human_listening_allowed": false,
-  "next_gate": "Freeze H20, run timing before product preflight, and render only a fresh multi-family source_hit_shaper_v3 candidate that passes unchanged technical gates."
+  "freeze_consequence": "All three H20 replacements are consumed timing evidence. No product projection or candidate WAV occurred and no human verdict was requested.",
+  "next_gate": "Replenish H21 with metadata-declared 150 BPM sources, including tracker files that independently encode tempo, then preserve all timing, recipe, and product-path gates."
 }

@@ -3497,3 +3497,17 @@ Why: Turnovus had a stable 105.05837 BPM beat but weak downbeat and high drift, 
 Evidence: H19 spans dense-break and tonal-riff families but produced no product projection or candidate WAV. The rotation validators retain one-for-one replacement history and prove the H20 derivatives are local, hashed, bounded, PCM16, and unclipped. Product DSP, selector gates, and timing contracts are byte-identical to H19.
 Consequences: metadata targeting improves the chance of reachability but is not prequalification or quality evidence. H20 must still run timing first, reject mismatches without phase, require causal `source_hit_shaper_v3` selection, and request human listening only after unchanged product-path technical gates pass.
 Status: accepted timing guardrail; H20 fresh holdout pending
+
+---
+
+### RBX-175
+
+Date: 2026-07-27
+Topic: use provider project tempo as stronger holdout timing evidence without assuming downbeat
+Phase: P023 / Controlled Expansion
+Question: after H20 again fails before product projection, what metadata may improve the next frozen holdout without weakening Source Graph timing truth?
+Decision: preserve the 1 BPM match tolerance and paired BPM-plus-downbeat override. Replenish H21 with provider-declared 150 BPM material and prefer sources whose published tracker project independently encodes tempo. Treat FamiTracker FRAMES tempo as BPM evidence only; do not infer downbeat zero from the project or loop label.
+Why: Stomper missed provider 160 by 1.54929 BPM, the held guitar exposed only one onset, and Dungeon Run selected a conflicting 149.00665 BPM alias against provider 120. Another title-only BPM set would repeat weak acquisition evidence, while tracker tempo is machine-readable and independent of Riotbox's analyzer.
+Evidence: the CC0 BattleTheme.ftm and Cave.ftm FRAMES blocks both encode tempo 150; their audio derivatives and Mental Corruption remain unheard and unprobed until H21 freeze. H20 produced no product projection, candidate WAV, or human verdict. Rotation fixtures reject duplicate historical cases and local validation checks hashes, PCM16 bounds, duration, and clipping.
+Consequences: matching tracker tempo may authorize the existing BPM-match route only when Rust independently lands within 1 BPM. A mismatch still rejects without an independently known downbeat. H21 still needs two-family coverage, causal `source_hit_shaper_v3` selection, unchanged product-path gates, and structured listening.
+Status: accepted acquisition refinement; H21 fresh holdout pending
