@@ -1454,4 +1454,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Expand the legal real-source corpus and rotate cross-family holdouts
 - [RIOTBOX-1424.md](./RIOTBOX-1424.md)
   P023: Prequalify trusted-grid and W-30 Hard-recipe reachability before frozen holdout
+- [RIOTBOX-1425.md](./RIOTBOX-1425.md)
+  P023: Make W-30 hit-shaper reachability source-adaptive
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
