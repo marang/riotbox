@@ -27,10 +27,11 @@ use crate::{
         W30PadPlaybackSampleWindow, W30PreviewRenderMode, W30PreviewRenderRouting,
         W30PreviewRenderState, W30PreviewSampleWindow, W30PreviewSourceProfile,
         W30ResampleAttackBiteBand, W30ResampleAttackBitePlan, W30ResampleHardGesturePlan,
-        W30ResampleHardGestureRecipe, W30ResampleLowImpactPlan, W30ResampleLowImpactRecipe,
-        W30ResampleSourceWindow, W30ResampleTapHardPolicy, W30ResampleTapMode,
-        W30ResampleTapRouting, W30ResampleTapSourceProfile, W30ResampleTapState,
-        W30ResampleTapVariation, w30_resample_source_character_sample,
+        W30ResampleHardGestureRecipe, W30ResampleLowImpactDecision, W30ResampleLowImpactPlan,
+        W30ResampleLowImpactRecipe, W30ResampleLowImpactRole, W30ResampleSourceWindow,
+        W30ResampleTapHardPolicy, W30ResampleTapMode, W30ResampleTapRouting,
+        W30ResampleTapSourceProfile, W30ResampleTapState, W30ResampleTapVariation,
+        w30_resample_source_character_sample,
     },
 };
 

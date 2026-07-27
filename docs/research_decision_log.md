@@ -3525,3 +3525,17 @@ Why: the blocker is now isolated. Mental Corruption matched provider/product tim
 Evidence: H18–H21 consumed multiple dense-break and tonal-riff cases across unavailable timing, insufficient level, inherited transient, sustained low body, and texture policy. The H19 preflight exposes exact selector inputs. H21 is the first retry where trusted product timing is clearly reachable across both families, yet no exact candidate exists. No candidate WAV or human verdict was produced.
 Consequences: H22 restores unheard Drama and 8-Bit Victory Loop replacements and retains untouched Cave, Sector, and bad-timing control. The next issue must name RIOTBOX-1422 exact-path holdout as its directly enabled audible outcome, use a multi-source development matrix, preserve fail-closed unavailable behavior, and return to frozen holdout only after branch review and full QA.
 Status: accepted blocker diagnosis; explicit P023 enabler required
+
+---
+
+### RBX-177
+
+Date: 2026-07-27
+Topic: select one source-local low-body transient instead of averaging all W-30 Hard slots
+Phase: P023 / Controlled Expansion
+Question: how should RIOTBOX-1425 improve exact hit-shaper reachability without weakening source ownership or consuming H22?
+Decision: preserve the `0.18` attack-share, `1.40` attack-over-body, and `0.30` attack-over-source floors. Evaluate each triggered source onset independently with its detected attack clamped to `20–80 ms` and a following body of twice that duration clamped to `40–120 ms`. Filter the continuous source proxy once at 45–180 Hz, rank candidates by their weakest normalized gate margin, and publish the winning typed `transient_low_body` role, decision, slot/onset, windows, and ratios through product state, the coherent realtime snapshot, observer, and preflight. This role is explicitly not bass ownership.
+Why: concatenating all selected attacks and bodies let a sustained or bass-heavy slot hide a separate valid transient, while restarting the band filter on extracted windows could add edge energy. Lowering `1.40` would instead admit sustained low material and would not solve the evidence problem.
+Evidence: the deterministic local development matrix covers Beat03 plus seven registered sources across seven families. Beat03 and Bertsz remain exact; Marwan sparse percussion and Fupi tonal-transient material newly reach `source_hit_shaper_v3`; Cinameng remains correctly unavailable at `1.353822 < 1.40`; pad, weak, and bad-timing controls fail closed. Repeated projections are identical and produce seven distinct selection signatures. Beat03 additionally passes the exact Source Graph -> Session -> queue -> commit -> capture -> resample -> Hard preflight with exact callback calibration. No candidate review WAV was generated, no human verdict was requested, and H22 remained untouched.
+Consequences: RIOTBOX-1425 is reachability evidence, not musical quality proof. Full branch review and `just ci` passed with H22 untouched. After this mechanism lands, RIOTBOX-1422 may freeze it and consume H22 exactly once through the existing preflight before any structured listening.
+Status: accepted and frozen contract enabler; H22 exact-path proof pending

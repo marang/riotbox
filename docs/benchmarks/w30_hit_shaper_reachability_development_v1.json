@@ -1,0 +1,166 @@
+{
+  "schema": "riotbox.w30_hit_shaper_reachability_development.v1",
+  "schema_version": 1,
+  "owner_ticket": "RIOTBOX-1425",
+  "classification": "contract_enabler",
+  "directly_enabled_followup": "RIOTBOX-1422 exact-path H22 holdout and structured listening",
+  "quality_proof": false,
+  "human_verdict": "unverified",
+  "candidate_wav_generated": false,
+  "holdout_reserve_accessed": false,
+  "selector": {
+    "recipe": "source_hit_shaper_v3",
+    "role": "transient_low_body",
+    "band_hz": [
+      45.0,
+      180.0
+    ],
+    "attack_window_seconds": {
+      "minimum": 0.02,
+      "maximum": 0.08
+    },
+    "body_window_seconds": {
+      "minimum": 0.04,
+      "maximum": 0.12,
+      "local_attack_length_multiplier": 2.0
+    },
+    "gates": {
+      "low_band_attack_share_min": 0.18,
+      "low_band_attack_over_body_min": 1.4,
+      "low_band_attack_over_source_min": 0.3
+    },
+    "ranking": "maximize_the_weakest_normalized_gate_margin_then_attack_over_body_then_earliest_slot",
+    "filter_state": "single_phase_coherent_full_source_proxy"
+  },
+  "development_matrix": {
+    "source_count": 8,
+    "registered_source_count": 7,
+    "registered_family_count": 7,
+    "same_source_repeat_stable": true,
+    "distinct_selection_signature_minimum": 5,
+    "distinct_selection_signature_count": 7,
+    "cases": [
+      {
+        "case_id": "beat03_golden_path",
+        "family": "dense_break",
+        "recipe": "source_hit_shaper_v3",
+        "decision": "source_hit_selected",
+        "candidate_count": 6,
+        "selected_slot": 4,
+        "selected_onset_cursor": 8209,
+        "attack_window_proxy_frames": 89,
+        "body_window_proxy_frames": 178,
+        "low_band_attack_share": 0.562997,
+        "low_band_attack_over_body": 2.603159,
+        "low_band_attack_over_source": 2.148337,
+        "expected_outcome": "existing_exact_stable"
+      },
+      {
+        "case_id": "oga_bertsz_dnb",
+        "family": "dense_full_mix",
+        "recipe": "source_hit_shaper_v3",
+        "decision": "source_hit_selected",
+        "candidate_count": 4,
+        "selected_slot": 0,
+        "selected_onset_cursor": 166,
+        "attack_window_proxy_frames": 23,
+        "body_window_proxy_frames": 46,
+        "low_band_attack_share": 0.483308,
+        "low_band_attack_over_body": 1.949662,
+        "low_band_attack_over_source": 0.859673,
+        "expected_outcome": "existing_exact_stable"
+      },
+      {
+        "case_id": "oga_cinameng_can_be_so_beautiful",
+        "family": "dense_break",
+        "recipe": "unavailable",
+        "decision": "insufficient_attack_over_body",
+        "candidate_count": 4,
+        "selected_slot": 4,
+        "selected_onset_cursor": 8601,
+        "attack_window_proxy_frames": 36,
+        "body_window_proxy_frames": 72,
+        "low_band_attack_share": 0.43321,
+        "low_band_attack_over_body": 1.353822,
+        "low_band_attack_over_source": 0.710958,
+        "expected_outcome": "fail_closed_without_lowering_1_40"
+      },
+      {
+        "case_id": "oga_marwan_cinematic_percussion",
+        "family": "sparse_drums",
+        "recipe": "source_hit_shaper_v3",
+        "decision": "source_hit_selected",
+        "candidate_count": 5,
+        "selected_slot": 6,
+        "selected_onset_cursor": 13064,
+        "attack_window_proxy_frames": 27,
+        "body_window_proxy_frames": 55,
+        "low_band_attack_share": 0.598943,
+        "low_band_attack_over_body": 1.411305,
+        "low_band_attack_over_source": 1.06147,
+        "expected_outcome": "new_exact_reachability"
+      },
+      {
+        "case_id": "oga_fupi_plimplom",
+        "family": "tonal_riff",
+        "recipe": "source_hit_shaper_v3",
+        "decision": "source_hit_selected",
+        "candidate_count": 6,
+        "selected_slot": 0,
+        "selected_onset_cursor": 1135,
+        "attack_window_proxy_frames": 39,
+        "body_window_proxy_frames": 78,
+        "low_band_attack_share": 0.54664,
+        "low_band_attack_over_body": 1.697597,
+        "low_band_attack_over_source": 1.550118,
+        "expected_outcome": "new_exact_reachability"
+      },
+      {
+        "case_id": "oga_isaiah658_ambient",
+        "family": "pad_noise",
+        "hard_policy": "source_texture_bite",
+        "recipe": "unavailable",
+        "decision": "not_evaluated",
+        "expected_outcome": "fail_closed_wrong_policy"
+      },
+      {
+        "case_id": "oga_killerfishred_short_synth",
+        "family": "weak_source",
+        "hard_policy": "unavailable",
+        "recipe": "unavailable",
+        "decision": "not_evaluated",
+        "expected_outcome": "fail_closed_source_suitability"
+      },
+      {
+        "case_id": "oga_laleksic_tap_water",
+        "family": "bad_timing",
+        "hard_policy": "unavailable",
+        "recipe": "unavailable",
+        "decision": "not_evaluated",
+        "expected_outcome": "fail_closed_source_suitability"
+      }
+    ]
+  },
+  "exact_product_preflight": {
+    "case_id": "beat03_golden_path",
+    "confirmation_route": "explicit_bpm_matches_rust_primary",
+    "product_graph_matches_confirmation_route": true,
+    "evaluated_through_product_queue_commit_projection": true,
+    "hard_policy": "source_transient_chop",
+    "recipe": "source_hit_shaper_v3",
+    "role": "transient_low_body",
+    "decision": "source_hit_selected",
+    "candidate_count": 6,
+    "selected_slot": 0,
+    "selected_onset_cursor": 68,
+    "attack_window_proxy_frames": 213,
+    "body_window_proxy_frames": 426,
+    "low_band_attack_share": 0.5631235,
+    "low_band_attack_over_body": 4.971718,
+    "low_band_attack_over_source": 2.266893,
+    "exact_callback_calibration_applicable": true,
+    "exact_callback_evaluated": true,
+    "exact_callback_calibrated": true,
+    "candidate_requirement_satisfied": true
+  }
+}

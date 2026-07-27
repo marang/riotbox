@@ -276,6 +276,19 @@ fn shared_w30_resample_tap_state_tracks_updates() {
     };
     state.hard_calibration.output_gain = 0.5;
     state.hard_calibration.hit_window_compensation_gain = 2.2;
+    state.hard_low_impact = W30ResampleLowImpactPlan {
+        recipe: W30ResampleLowImpactRecipe::SourceHitShaperV3,
+        role: W30ResampleLowImpactRole::TransientLowBody,
+        decision: W30ResampleLowImpactDecision::SourceHitSelected,
+        candidate_count: 5,
+        selected_slot: 3,
+        selected_onset_cursor: 1_234,
+        attack_window_proxy_frames: 48,
+        body_window_proxy_frames: 96,
+        low_band_attack_share: 0.24,
+        low_band_attack_over_body: 1.65,
+        low_band_attack_over_source: 0.42,
+    };
     shared.update(&state);
 
     let snapshot = shared.snapshot();
@@ -294,6 +307,7 @@ fn shared_w30_resample_tap_state_tracks_updates() {
     assert_eq!(snapshot.position_beats, 21.0);
     assert_eq!(snapshot.hard_output_gain, 0.5);
     assert_eq!(snapshot.hard_hit_window_compensation_gain, 2.2);
+    assert_eq!(snapshot.hard_low_impact, state.hard_low_impact);
     assert_eq!(snapshot.source_audio.source_sample_rate, 44_100);
     assert_eq!(
         snapshot.source_audio.sample_count,

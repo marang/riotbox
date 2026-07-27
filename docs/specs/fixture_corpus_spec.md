@@ -347,7 +347,10 @@ For W-30 Hard causal coverage, freeze is preceded by a non-listening
 reachability screen using `riotbox.w30_reachability_preflight.v1`. This screen
 may classify only timing confirmation and the exact product
 queue/commit/projection result. It must not emit candidate review WAVs, inspect
-candidate sound, or change DSP, selection, constants, or gates. A qualified set
+candidate sound, or change DSP, selection, constants, or gates. Its selector
+evidence includes typed role/decision, candidate count, selected slot/onset,
+adaptive attack/body windows, and the unchanged `0.18`, `1.40`, and `0.30`
+ratios and floors. A qualified set
 must still meet the normal two-source/two-family holdout minimum, and at least
 one case must select `source_transient_chop` with `source_hit_shaper_v3`, exact
 callback applicability, evaluation, and successful calibration. A timing
