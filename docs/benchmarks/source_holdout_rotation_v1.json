@@ -36,6 +36,28 @@
     "holdout_family_count": 2,
     "distinct_author_count": 10
   },
+  "w30_hard_reachability_contract": {
+    "owner_ticket": "RIOTBOX-1424",
+    "preflight_schema": "riotbox.w30_reachability_preflight.v1",
+    "stage": "after_candidate_freeze_before_holdout_candidate_wav_generation",
+    "human_listening_allowed": false,
+    "candidate_wav_generation_allowed_during_preflight": false,
+    "preflight_may_change_dsp_selector_or_gates": false,
+    "minimum_prequalified_source_count": 2,
+    "minimum_prequalified_family_count": 2,
+    "minimum_exact_hit_shaper_applicable_case_count": 1,
+    "applicable_case_requires": {
+      "candidate_wav_generation_eligible_after_preflight": true,
+      "hard_policy": "source_transient_chop",
+      "low_impact_recipe": "source_hit_shaper_v3",
+      "exact_callback_calibration_applicable": true,
+      "exact_callback_evaluated": true,
+      "exact_callback_calibrated": true
+    },
+    "non_selection_outcome": "ineligible_for_causal_holdout_coverage",
+    "timing_mismatch_outcome": "ineligible_without_matching_primary_or_independently_confirmed_bpm_and_downbeat",
+    "phase_zero_assumption_allowed": false
+  },
   "family_contracts": {
     "dense_break": {
       "positive_coverage": true,

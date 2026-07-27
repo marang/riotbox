@@ -20,7 +20,7 @@ use riotbox_core::{
 use super::{JamAppError, JamAppState, QueueControlResult};
 
 const RUST_TIMING_PROVIDER: &str = "riotbox-rust-source-timing-probe";
-const EXPLICIT_BPM_MATCH_TOLERANCE: f32 = 1.0;
+pub const EXPLICIT_SOURCE_BPM_MATCH_TOLERANCE: f32 = 1.0;
 
 pub(super) fn install_explicit_manual_source_grid(
     graph: &mut SourceGraph,
@@ -148,9 +148,9 @@ pub(super) fn validate_explicit_source_bpm(
                     .into(),
             )
         })?;
-    if (detected_bpm - explicit_source_bpm).abs() > EXPLICIT_BPM_MATCH_TOLERANCE {
+    if (detected_bpm - explicit_source_bpm).abs() > EXPLICIT_SOURCE_BPM_MATCH_TOLERANCE {
         return Err(JamAppError::InvalidSession(format!(
-            "explicit source BPM {explicit_source_bpm:.2} does not match Rust timing candidate {detected_bpm:.2} within {EXPLICIT_BPM_MATCH_TOLERANCE:.2} BPM"
+            "explicit source BPM {explicit_source_bpm:.2} does not match Rust timing candidate {detected_bpm:.2} within {EXPLICIT_SOURCE_BPM_MATCH_TOLERANCE:.2} BPM"
         )));
     }
 

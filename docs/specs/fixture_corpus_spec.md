@@ -343,6 +343,19 @@ destroys practical freshness when causal influence cannot be disproved;
 conservatively retire and replace that case instead of claiming it remained
 unseen.
 
+For W-30 Hard causal coverage, freeze is preceded by a non-listening
+reachability screen using `riotbox.w30_reachability_preflight.v1`. This screen
+may classify only timing confirmation and the exact product
+queue/commit/projection result. It must not emit candidate review WAVs, inspect
+candidate sound, or change DSP, selection, constants, or gates. A qualified set
+must still meet the normal two-source/two-family holdout minimum, and at least
+one case must select `source_transient_chop` with `source_hit_shaper_v3`, exact
+callback applicability, evaluation, and successful calibration. A timing
+mismatch without independently confirmed BPM and downbeat, unavailable grid,
+policy non-selection, or non-applicable calibration cannot count as causal
+coverage. An explicit downbeat is musician/provider evidence; the screen must
+never invent phase zero.
+
 Corpus-size, source-pack, family, and author minimums count only active
 development and holdout entries. Retired cases remain lineage evidence but
 cannot prop up current source diversity.
