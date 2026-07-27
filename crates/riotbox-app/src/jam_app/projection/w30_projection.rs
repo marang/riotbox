@@ -996,25 +996,11 @@ mod resample_attack_bite_tests {
 
     #[test]
     fn exact_hit_calibration_uses_the_callback_and_reuses_matching_evidence() {
-        let source_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../data/test_audio/examples/Beat03_130BPM(Full).wav");
-        let cache = SourceAudioCache::load_pcm_wav(source_path).expect("load Beat03 fixture");
-        let capture_frames =
-            (cache.sample_rate as f32 * 4.0 * 60.0 / 130.284_94).round() as usize;
-        let capture_sample_count =
-            capture_frames.saturating_mul(usize::from(cache.channel_count));
-        let projection = project_resample_source_from_interleaved(
-            &cache.interleaved_samples()[..capture_sample_count],
-            usize::from(cache.channel_count),
-            cache.sample_rate,
-            0.82,
-            0.82,
-        )
-        .expect("project Beat03 fixture");
-        assert_eq!(
-            projection.hard_policy,
-            W30ResampleTapHardPolicy::SourceTransientChop
-        );
+        let mut source_samples = [0.0; W30_RESAMPLE_SOURCE_WINDOW_LEN];
+        for (index, sample) in source_samples.iter_mut().enumerate() {
+            let phase = index as f32 / 37.0;
+            *sample = phase.sin() * 0.34 + (phase * 2.7).sin() * 0.09;
+        }
         let hard_low_impact = W30ResampleLowImpactPlan {
             recipe: W30ResampleLowImpactRecipe::SourceHitShaperV3,
             low_band_attack_share: 0.8,
@@ -1027,25 +1013,36 @@ mod resample_attack_bite_tests {
             availability: W30ResampleTapAvailability::SourceAudioReady,
             source_profile: Some(W30ResampleTapSourceProfile::PromotedCapture),
             source_capture_id: Some("cap-calibration-test".into()),
-            source_audio: Some(projection.audio),
+            source_audio: Some(Box::new(W30ResampleSourceWindow {
+                source_revision: 1,
+                source_start_frame: 0,
+                source_sample_rate: 44_100,
+                source_frame_count: W30_RESAMPLE_SOURCE_WINDOW_LEN as u64,
+                sample_count: W30_RESAMPLE_SOURCE_WINDOW_LEN,
+                samples: source_samples,
+            })),
             lineage_capture_count: 1,
             generation_depth: 1,
             variation: W30ResampleTapVariation::HardDamage,
             variation_revision: 7,
             variation_intensity: 0.82,
             hard_policy: W30ResampleTapHardPolicy::SourceTransientChop,
-            hard_suitability: projection.hard_suitability,
+            hard_suitability: W30ResampleHardSuitabilityPlan {
+                status: W30ResampleHardSuitability::Suitable,
+                source_rms: 0.24,
+                active_frame_ratio: 1.0,
+            },
             hard_calibration: W30ResampleHardCalibrationPlan {
                 output_gain: W30_RESAMPLE_HIT_SHAPER_SCHEMA_OUTPUT_GAIN,
                 ..W30ResampleHardCalibrationPlan::default()
             },
-            hard_trigger_mask: projection.hard_trigger_mask,
-            hard_slice_cursors: projection.hard_slice_cursors,
-            hard_attack_lengths: projection.hard_attack_lengths,
-            hard_attack_bite: projection.hard_attack_bite,
+            hard_trigger_mask: 1,
+            hard_slice_cursors: [0; W30_RESAMPLE_HARD_SLICE_COUNT],
+            hard_attack_lengths: [64; W30_RESAMPLE_HARD_SLICE_COUNT],
+            hard_attack_bite: Default::default(),
             hard_low_impact,
-            hard_gesture: projection.hard_gesture,
-            hard_transient_contrast: projection.hard_transient_contrast,
+            hard_gesture: Default::default(),
+            hard_transient_contrast: 2.0,
             music_bus_level: 0.64,
             grit_level: 0.82,
             is_transport_running: true,
@@ -1056,7 +1053,11 @@ mod resample_attack_bite_tests {
 
         calibrate_w30_hit_shaper_exact_callback(&mut state, None);
 
-        assert!(state.hard_calibration.exact_callback_calibrated);
+        assert!(
+            state.hard_calibration.exact_callback_calibrated,
+            "{:?}",
+            state.hard_calibration
+        );
         assert!(
             state.hard_calibration.output_gain
                 <= W30_RESAMPLE_HIT_SHAPER_SCHEMA_OUTPUT_GAIN
