@@ -3,8 +3,9 @@
 Date: 2026-07-27
 Phase: P023 / Controlled Expansion
 Classification: `contract_enabler`
-Directly enabled audible follow-up: RIOTBOX-1422 H22 exact-path holdout and
-structured listening
+Directly enabled audible follow-up: RIOTBOX-1422 H23 exact-path attempt
+against the reserve frozen by H22, followed by structured listening only if
+the technical gates pass
 
 ## Outcome
 
@@ -85,6 +86,7 @@ ownership continue through the existing W-30 resample/damage action path.
 ## Remaining Gate
 
 RIOTBOX-1425 is technical reachability evidence, not musical quality proof.
-After this branch lands, RIOTBOX-1422 must freeze the mechanism, access H22
-once through the existing non-listening preflight, and request structured human
-listening only for a candidate that passes the unchanged exact-path gates.
+After this branch lands, RIOTBOX-1422 must freeze the mechanism, access the
+reserve frozen by H22 once as H23 through the existing non-listening preflight,
+and request structured human listening only for a candidate that passes the
+unchanged exact-path gates.

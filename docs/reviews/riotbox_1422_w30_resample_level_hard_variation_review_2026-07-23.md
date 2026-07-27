@@ -653,3 +653,33 @@ with unheard Drama and 8-Bit Victory Loop replacements while preserving the
 untouched Cave, Sector, and bad-timing control. Further holdout access is
 frozen until a bounded source-adaptive hit-shaper reachability enabler lands
 on development material.
+
+## H23 Frozen Timing Rejection
+
+RIOTBOX-1425 landed the source-local hit-shaper reachability mechanism without
+changing the `0.18`, `1.40`, or `0.30` ownership gates. H23 then consumed
+exactly the two different-family replacements frozen by H22 through the
+non-listening preflight:
+
+- Drama's provider 130 BPM conflicted with the Rust `173.07709 BPM`
+  manual-confirm-only primary grid.
+- 8-Bit Victory Loop's independently derived FamiTracker 180 BPM conflicted
+  with the rendered WAV's Rust `133.92857 BPM` manual-confirm-only primary
+  grid.
+
+Both cases stopped before Source Graph product projection. No Hard policy,
+low-impact recipe, exact callback calibration, candidate WAV, or human verdict
+exists. The candidate is rejected; Cave, Sector, and the bad-timing control
+were not used as opportunistic retries. No downbeat phase was assumed.
+
+The holdout rotation is restored without listening or musical analysis using
+two new provider-declared CC0 sources from independent packs: Lucid Trigger
+(progressive break, 150 BPM) and the NES rendering of Chopin Op. 25 No. 2
+(tonal material, 140 BPM). Only license/provider metadata, archive listing,
+format, duration, peak, clipping, conversion, and hash were inspected.
+
+The next blocker is trusted-grid reachability, not W-30 DSP or hit-shaper
+selection. Any enabler must work on consumed development material, must not
+pass the Rust BPM back as external confirmation, and must not assume source
+phase zero. Machine-readable evidence is frozen in
+`docs/benchmarks/w30_resample_h23_characterization_v1.json`.

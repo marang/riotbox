@@ -1,0 +1,85 @@
+{
+  "schema": "riotbox.w30_resample_hard_characterization.v1",
+  "schema_version": 1,
+  "ticket": "RIOTBOX-1422",
+  "generation": "H23",
+  "recorded_on": "2026-07-27",
+  "classification": "frozen_holdout_timing_rejection",
+  "quality_proof": false,
+  "human_verdict": "unverified",
+  "inherits": "docs/benchmarks/w30_resample_h22_characterization_v1.json",
+  "source_adaptive_reachability_enabler": {
+    "ticket": "RIOTBOX-1425",
+    "merge_commit": "e99a3e56bb8680402e5eac2f9492e9c8347cd2cc",
+    "product_dsp_changed_since_freeze": false,
+    "selector_gates_changed_since_freeze": false,
+    "timing_contract_changed_since_freeze": false
+  },
+  "fresh_holdout_results": [
+    {
+      "case_id": "oga_tricksntraps_drama",
+      "source_family": "dense_break",
+      "provider_bpm": 130.0,
+      "rust_primary_bpm": 173.07709,
+      "bpm_delta": 43.077087,
+      "readiness": "needs_review",
+      "grid_use": "manual_confirm_only",
+      "confirmation_route": "explicit_bpm_mismatch",
+      "product_projection_allowed": false,
+      "product_projection_evaluated": false,
+      "candidate_rendered": false,
+      "preflight_report_sha256": "c76b6d5f8712fa3f12b8dd33a8d5b59dbf1eab48cd64ea6d7dac11c3ffc2ee3a",
+      "technical_verdict": "ineligible_timing_mismatch"
+    },
+    {
+      "case_id": "oga_wolfgang_8bit_victory_loop",
+      "source_family": "tonal_riff",
+      "provider_project_tempo": 180,
+      "provider_project_speed": 6,
+      "provider_project_bpm": 180.0,
+      "rust_primary_bpm": 133.92857,
+      "bpm_delta": 46.071426,
+      "readiness": "needs_review",
+      "grid_use": "manual_confirm_only",
+      "confirmation_route": "explicit_bpm_mismatch",
+      "product_projection_allowed": false,
+      "product_projection_evaluated": false,
+      "candidate_rendered": false,
+      "preflight_report_sha256": "fb92015b5a4520d1a7f982c8ea86b2e06341aba39419c0b0f4b966b151740c0c",
+      "technical_verdict": "ineligible_timing_mismatch"
+    }
+  ],
+  "holdout_contract": {
+    "different_family_source_count": 2,
+    "minimum_different_family_source_count": 2,
+    "prequalified_source_count": 0,
+    "minimum_prequalified_source_count": 2,
+    "exact_hit_shaper_applicable_case_count": 0,
+    "minimum_exact_hit_shaper_applicable_case_count": 1,
+    "phase_zero_assumption_used": false,
+    "additional_reserve_cases_accessed": false
+  },
+  "rotation_replenishment": [
+    {
+      "case_id": "oga_khtlrpzvgm_lucid_trigger",
+      "source_family": "dense_break",
+      "provider_bpm": 150.0,
+      "classification_status": "provisional_unheard_holdout"
+    },
+    {
+      "case_id": "oga_theouterlinux_chopin_op25_no2_140",
+      "source_family": "tonal_riff",
+      "provider_bpm": 140.0,
+      "classification_status": "provisional_unheard_holdout"
+    }
+  ],
+  "untouched_existing_reserve": [
+    "oga_wolfgang_8bit_cave_loop",
+    "oga_srg774_sector",
+    "oga_trezegames_pop_1"
+  ],
+  "acceptance_status": "rejected_before_product_projection",
+  "human_listening_allowed": false,
+  "freeze_consequence": "Drama and 8-Bit Victory Loop are consumed timing evidence. No Source Graph product projection, candidate WAV, or human verdict exists. The H23 candidate is rejected; no opportunistic reserve retry is allowed.",
+  "next_gate": "Land a bounded trusted-grid reachability enabler on consumed development material without passing the Rust BPM back as external confirmation, assuming downbeat phase zero, or changing W-30 DSP and selector gates."
+}

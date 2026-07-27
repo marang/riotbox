@@ -97,10 +97,10 @@
     {
       "holdout_id": "holdout_a",
       "state": "unseen",
-      "purpose": "Untouched CC0 reserve restored after the frozen H21 recipe-reachability rejection; inaccessible until an explicit source-adaptive hit-shaper reachability enabler lands.",
+      "purpose": "Untouched CC0 reserve restored after the frozen H23 timing rejection; inaccessible until an explicit trusted-grid reachability enabler lands.",
       "source_case_ids": [
-        "oga_tricksntraps_drama",
-        "oga_wolfgang_8bit_victory_loop",
+        "oga_khtlrpzvgm_lucid_trigger",
+        "oga_theouterlinux_chopin_op25_no2_140",
         "oga_wolfgang_8bit_cave_loop",
         "oga_srg774_sector",
         "oga_trezegames_pop_1"
@@ -700,6 +700,20 @@
       "consumed_by_ticket": "RIOTBOX-1422",
       "consumed_on": "2026-07-27",
       "replacement_case_id": "oga_wolfgang_8bit_victory_loop"
+    },
+    {
+      "case_id": "oga_tricksntraps_drama",
+      "former_holdout_id": "holdout_a",
+      "consumed_by_ticket": "RIOTBOX-1422",
+      "consumed_on": "2026-07-27",
+      "replacement_case_id": "oga_khtlrpzvgm_lucid_trigger"
+    },
+    {
+      "case_id": "oga_wolfgang_8bit_victory_loop",
+      "former_holdout_id": "holdout_a",
+      "consumed_by_ticket": "RIOTBOX-1422",
+      "consumed_on": "2026-07-27",
+      "replacement_case_id": "oga_theouterlinux_chopin_op25_no2_140"
     }
   ],
   "entries": [
@@ -2878,9 +2892,13 @@
       "case_id": "oga_tricksntraps_drama",
       "source_family": "dense_break",
       "corpus_eligible": true,
-      "partition": "holdout_a",
-      "classification_status": "provisional_unheard_holdout",
+      "partition": "retired",
+      "classification_status": "consumed_holdout",
       "source_suitability_verdict": "unverified",
+      "reviewed_on": "2026-07-27",
+      "reviewer_role": "technical_reviewer",
+      "family_verdict_owner": "technical_review",
+      "previous_partition": "holdout_a",
       "author": "Tricks & Traps",
       "title": "Drama",
       "source_pack_id": "oga_free_rhythm_game_music_pack_2",
@@ -2894,15 +2912,19 @@
       "commercial_reference": false,
       "replacement_for_case_id": "oga_tricksntraps_mental_corruption",
       "acquired_on": "2026-07-27",
-      "review_notes": "Untouched post-H21 reserve. Dense-break classification is provisional from provider rhythm-game, hardcore, speedcore, techno, experimental, and explicit 130 BPM metadata only. Acquisition retained the first 16 seconds as 48 kHz stereo PCM16, applied fixed 0.75 headroom because the near-full-scale source and sample-rate conversion otherwise approached the integer clipping boundary, and inspected only format, duration, peak, and clipping."
+      "review_notes": "Consumed by the frozen H23 reachability preflight. Provider 130 BPM conflicted with the Rust 173.07709 BPM manual-confirm-only primary grid, so product projection stopped before Source Graph persistence, Hard selection, candidate WAV generation, or human listening. No independent downbeat phase was available; suitability remains unverified."
     },
     {
       "case_id": "oga_wolfgang_8bit_victory_loop",
       "source_family": "tonal_riff",
       "corpus_eligible": true,
-      "partition": "holdout_a",
-      "classification_status": "provisional_unheard_holdout",
+      "partition": "retired",
+      "classification_status": "consumed_holdout",
       "source_suitability_verdict": "unverified",
+      "reviewed_on": "2026-07-27",
+      "reviewer_role": "technical_reviewer",
+      "family_verdict_owner": "technical_review",
+      "previous_partition": "holdout_a",
       "author": "Wolfgang_",
       "title": "8-Bit Victory Loop",
       "source_pack_id": "oga_8bit_victory_loop",
@@ -2916,7 +2938,7 @@
       "commercial_reference": false,
       "replacement_for_case_id": "oga_wolfgang_8bit_battle_loop",
       "acquired_on": "2026-07-27",
-      "review_notes": "Untouched post-H21 reserve. Tonal-riff classification is provisional from provider 8-bit victory-loop metadata. The provider's CC0 FamiTracker project encodes tempo 180 and speed 6, independently deriving 180 BPM via tempo * 6 / speed. Acquisition retained the first 16 seconds as 48 kHz stereo PCM16 and inspected only project tempo/speed, format, duration, peak, clipping, and hash."
+      "review_notes": "Consumed by the frozen H23 reachability preflight. The FamiTracker project independently derives 180 BPM, but the rendered WAV produced a Rust 133.92857 BPM manual-confirm-only primary grid. Product projection stopped before Source Graph persistence, Hard selection, candidate WAV generation, or human listening because no independently confirmed downbeat phase was available; suitability remains unverified."
     },
     {
       "case_id": "oga_wolfgang_8bit_cave_loop",
@@ -2983,6 +3005,51 @@
       "replacement_for_case_id": "oga_qubodup_impact_metal",
       "acquired_on": "2026-07-27",
       "review_notes": "Untouched post-H16 reserve and frozen pending the acceptance-reachability enabler. The 0.092-second pop is a provisional bad-timing challenge from provider one-shot pop metadata. Acquisition converted the complete source to 48 kHz stereo PCM16 and inspected only format, duration, peak, and clipping."
+    },
+    {
+      "case_id": "oga_khtlrpzvgm_lucid_trigger",
+      "source_family": "dense_break",
+      "corpus_eligible": true,
+      "partition": "holdout_a",
+      "classification_status": "provisional_unheard_holdout",
+      "source_suitability_verdict": "unverified",
+      "author": "khtlrpzvgm",
+      "title": "Lucid Trigger",
+      "source_pack_id": "oga_lucid_trigger",
+      "provider": "OpenGameArt",
+      "page_url": "https://opengameart.org/content/lucid-trigger",
+      "download_url": "https://opengameart.org/sites/default/files/cc0_lucid_trigger.wav",
+      "license": "CC0-1.0",
+      "source_start_seconds": 0.0,
+      "source_path": "data/test_audio/external/RIOTBOX-1423/wav/dense_oga_khtlrpzvgm_lucid_trigger.wav",
+      "sha256": "a99f8699fe443a79b5bd872ec08bb7287619cedbed02cf05159ac92763080164",
+      "commercial_reference": false,
+      "replacement_for_case_id": "oga_tricksntraps_drama",
+      "acquired_on": "2026-07-27",
+      "review_notes": "Untouched post-H23 reserve. Dense-break classification is provisional from provider progressive-break and explicit 150 BPM metadata only. Acquisition retained the first 16 seconds as 48 kHz stereo PCM16 and inspected only license, provider metadata, format, duration, peak (-0.0748 dBFS), clipping, and hash."
+    },
+    {
+      "case_id": "oga_theouterlinux_chopin_op25_no2_140",
+      "source_family": "tonal_riff",
+      "corpus_eligible": true,
+      "partition": "holdout_a",
+      "classification_status": "provisional_unheard_holdout",
+      "source_suitability_verdict": "unverified",
+      "author": "TheOuterLinux",
+      "title": "NES - Chopin - Op. 25 No. 2 - 140BPM",
+      "source_pack_id": "oga_nes_chopin_op25_no2_140",
+      "provider": "OpenGameArt",
+      "page_url": "https://opengameart.org/content/nes-chopin-op-25-no-2-140bpm",
+      "download_url": "https://opengameart.org/sites/default/files/chopin_-_op._25_no._2.tar_0.gz",
+      "archive_member": "Chopin - Op. 25, No. 2/NES - Chopin - Op. 25, No. 2 - 140BPM.wav",
+      "license": "CC0-1.0",
+      "source_start_seconds": 0.0,
+      "source_path": "data/test_audio/external/RIOTBOX-1423/wav/tonal_oga_theouterlinux_chopin_op25_no2_140.wav",
+      "sha256": "4209eed54583175b2b0ce6bdb7db828b8d88d771c0277f574c84f81cbda8d617",
+      "commercial_reference": false,
+      "replacement_for_case_id": "oga_wolfgang_8bit_victory_loop",
+      "acquired_on": "2026-07-27",
+      "review_notes": "Untouched post-H23 reserve. Tonal-riff classification is provisional from provider NES/chiptune, included-render, and explicit 140 BPM metadata only. Acquisition selected the provider-named 140 BPM WAV from the archive, retained its first 16 seconds as 48 kHz stereo PCM16, and inspected only license, provider metadata, archive listing, format, duration, peak (-5.2357 dBFS), clipping, and hash."
     },
     {
       "case_id": "oga_tricksntraps_psychic",

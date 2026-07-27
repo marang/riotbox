@@ -3,7 +3,7 @@
   "schema_version": 1,
   "owner_ticket": "RIOTBOX-1425",
   "classification": "contract_enabler",
-  "directly_enabled_followup": "RIOTBOX-1422 exact-path H22 holdout and structured listening",
+  "directly_enabled_followup": "RIOTBOX-1422 H23 exact-path attempt against the reserve frozen by H22",
   "quality_proof": false,
   "human_verdict": "unverified",
   "candidate_wav_generated": false,

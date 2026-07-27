@@ -3537,5 +3537,19 @@ Question: how should RIOTBOX-1425 improve exact hit-shaper reachability without 
 Decision: preserve the `0.18` attack-share, `1.40` attack-over-body, and `0.30` attack-over-source floors. Evaluate each triggered source onset independently with its detected attack clamped to `20–80 ms` and a following body of twice that duration clamped to `40–120 ms`. Filter the continuous source proxy once at 45–180 Hz, rank candidates by their weakest normalized gate margin, and publish the winning typed `transient_low_body` role, decision, slot/onset, windows, and ratios through product state, the coherent realtime snapshot, observer, and preflight. This role is explicitly not bass ownership.
 Why: concatenating all selected attacks and bodies let a sustained or bass-heavy slot hide a separate valid transient, while restarting the band filter on extracted windows could add edge energy. Lowering `1.40` would instead admit sustained low material and would not solve the evidence problem.
 Evidence: the deterministic local development matrix covers Beat03 plus seven registered sources across seven families. Beat03 and Bertsz remain exact; Marwan sparse percussion and Fupi tonal-transient material newly reach `source_hit_shaper_v3`; Cinameng remains correctly unavailable at `1.353822 < 1.40`; pad, weak, and bad-timing controls fail closed. Repeated projections are identical and produce seven distinct selection signatures. Beat03 additionally passes the exact Source Graph -> Session -> queue -> commit -> capture -> resample -> Hard preflight with exact callback calibration. No candidate review WAV was generated, no human verdict was requested, and H22 remained untouched.
-Consequences: RIOTBOX-1425 is reachability evidence, not musical quality proof. Full branch review and `just ci` passed with H22 untouched. After this mechanism lands, RIOTBOX-1422 may freeze it and consume H22 exactly once through the existing preflight before any structured listening.
-Status: accepted and frozen contract enabler; H22 exact-path proof pending
+Consequences: RIOTBOX-1425 is reachability evidence, not musical quality proof. Full branch review and `just ci` passed with the H22 reserve untouched. After this mechanism lands, RIOTBOX-1422 may freeze it and consume the H22 reserve exactly once as H23 through the existing preflight before any structured listening.
+Status: accepted and frozen contract enabler; H23 exact-path proof pending
+
+---
+
+### RBX-178
+
+Date: 2026-07-27
+Topic: reject H23 when independently declared tempo and Rust primary timing disagree
+Phase: P023 / Controlled Expansion
+Question: may the post-RIOTBOX-1425 holdout proceed to Hard projection by treating provider BPM as sufficient manual-grid confirmation?
+Decision: no. Reject H23 before product projection. Drama's provider 130 BPM conflicts with the Rust 173.07709 BPM manual-confirm-only primary grid, while 8-Bit Victory Loop's FamiTracker-derived 180 BPM conflicts with the rendered WAV's Rust 133.92857 BPM primary. Neither source has an independently confirmed downbeat phase, so do not install a manual grid, pass the Rust BPM back as external confirmation, assume phase zero, or test additional reserve cases with the unchanged candidate.
+Why: RIOTBOX-1425 fixed source-local hit-shaper reachability, but it did not change source-timing truth. Bypassing the mismatch would make the preflight ceremonial and could persist a confidently wrong performance grid before evaluating the intended W-30 mechanism.
+Evidence: both `riotbox.w30_reachability_preflight.v1` reports stop with `explicit_bpm_mismatch`, `product_projection_allowed=false`, no projection object, and no candidate WAV. Report hashes and exact values are frozen in `docs/benchmarks/w30_resample_h23_characterization_v1.json`. Cave, Sector, and the bad-timing control remained untouched.
+Consequences: Drama and Victory are consumed timing evidence. Restore the rotation with metadata-only CC0 replacements, then land one bounded trusted-grid reachability enabler on consumed development material. That enabler must preserve W-30 DSP and selector gates and directly enable a fresh frozen exact-path attempt.
+Status: accepted H23 rejection; trusted-grid reachability enabler required
