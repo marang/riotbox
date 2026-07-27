@@ -210,12 +210,14 @@ Where a frozen acceptance mechanism applies only to a typed subset of sources,
 reachability must be established before candidate review WAV generation. For
 the W-30 Hard hit-shaper, the preflight must report the shared timing decision,
 the actual product queue/commit/projection-selected policy and recipe, and exact
-callback applicability, evaluation, and calibration. Policy non-selection and
-timing mismatch without an independently confirmed BPM and downbeat are
-ineligible, not passing alternates. A typed musician/provider manual grid is
-the existing exception; phase zero must never be inferred. The reachability
-screen is non-listening evidence and cannot authorize tuning or substitute for
-the later holdout technical and human gates.
+callback applicability, evaluation, and calibration. It must also expose the
+typed low-impact role and decision, evaluated-candidate count, selected
+slot/onset, adaptive attack/body window lengths, and the three gate ratios.
+Policy non-selection and timing mismatch without an independently confirmed
+BPM and downbeat are ineligible, not passing alternates. A typed
+musician/provider manual grid is the existing exception; phase zero must never
+be inferred. The reachability screen is non-listening evidence and cannot
+authorize tuning or substitute for the later holdout technical and human gates.
 
 Pack-level `source_backed: true` states that source audio, availability, or
 timing participates in the tested path; it does not imply that every musical

@@ -119,6 +119,13 @@ fn w30_resample_hard_low_impact_observer_snapshot(shell: &JamShellState) -> Valu
     let plan = shell.app.runtime.w30_resample_tap.hard_low_impact;
     json!({
         "recipe": plan.recipe.label(),
+        "role": plan.role.label(),
+        "decision": plan.decision.label(),
+        "candidate_count": plan.candidate_count,
+        "selected_slot": plan.selected_slot,
+        "selected_onset_cursor": plan.selected_onset_cursor,
+        "attack_window_proxy_frames": plan.attack_window_proxy_frames,
+        "body_window_proxy_frames": plan.body_window_proxy_frames,
         "low_band_attack_share": plan.low_band_attack_share,
         "low_band_attack_over_body": plan.low_band_attack_over_body,
         "low_band_attack_over_source": plan.low_band_attack_over_source,

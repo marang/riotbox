@@ -53,6 +53,13 @@ struct W30HardProjectionReachability {
     hard_policy: &'static str,
     hard_suitability: &'static str,
     low_impact_recipe: &'static str,
+    low_impact_role: &'static str,
+    low_impact_decision: &'static str,
+    low_impact_candidate_count: u8,
+    low_impact_selected_slot: u8,
+    low_impact_selected_onset_cursor: u16,
+    low_impact_attack_window_proxy_frames: u16,
+    low_impact_body_window_proxy_frames: u16,
     low_band_attack_share: f32,
     low_band_attack_share_min: f32,
     low_band_attack_over_body: f32,
@@ -123,6 +130,13 @@ impl W30ReachabilityPreflightReport {
             hard_policy: state.hard_policy.label(),
             hard_suitability: state.hard_suitability.status.label(),
             low_impact_recipe: state.hard_low_impact.recipe.label(),
+            low_impact_role: state.hard_low_impact.role.label(),
+            low_impact_decision: state.hard_low_impact.decision.label(),
+            low_impact_candidate_count: state.hard_low_impact.candidate_count,
+            low_impact_selected_slot: state.hard_low_impact.selected_slot,
+            low_impact_selected_onset_cursor: state.hard_low_impact.selected_onset_cursor,
+            low_impact_attack_window_proxy_frames: state.hard_low_impact.attack_window_proxy_frames,
+            low_impact_body_window_proxy_frames: state.hard_low_impact.body_window_proxy_frames,
             low_band_attack_share: state.hard_low_impact.low_band_attack_share,
             low_band_attack_share_min: W30_RESAMPLE_LOW_IMPACT_MIN_ATTACK_SHARE,
             low_band_attack_over_body: state.hard_low_impact.low_band_attack_over_body,
@@ -256,8 +270,9 @@ pub(super) fn write_preflight_report(
 #[cfg(test)]
 mod tests {
     use riotbox_audio::w30::{
-        W30_RESAMPLE_SOURCE_WINDOW_LEN, W30ResampleLowImpactRecipe, W30ResampleSourceWindow,
-        W30ResampleTapHardPolicy, W30ResampleTapState, W30ResampleTapVariation,
+        W30_RESAMPLE_SOURCE_WINDOW_LEN, W30ResampleLowImpactDecision, W30ResampleLowImpactRecipe,
+        W30ResampleLowImpactRole, W30ResampleSourceWindow, W30ResampleTapHardPolicy,
+        W30ResampleTapState, W30ResampleTapVariation,
     };
     use riotbox_core::source_graph::{TimingDegradedPolicy, TimingHypothesis, TimingQuality};
 
@@ -290,6 +305,13 @@ mod tests {
             ..Default::default()
         };
         state.hard_low_impact.recipe = W30ResampleLowImpactRecipe::SourceHitShaperV3;
+        state.hard_low_impact.role = W30ResampleLowImpactRole::TransientLowBody;
+        state.hard_low_impact.decision = W30ResampleLowImpactDecision::SourceHitSelected;
+        state.hard_low_impact.candidate_count = 5;
+        state.hard_low_impact.selected_slot = 3;
+        state.hard_low_impact.selected_onset_cursor = 1_234;
+        state.hard_low_impact.attack_window_proxy_frames = 48;
+        state.hard_low_impact.body_window_proxy_frames = 96;
         state.hard_low_impact.low_band_attack_share = 0.24;
         state.hard_low_impact.low_band_attack_over_body = 1.65;
         state.hard_low_impact.low_band_attack_over_source = 0.42;
@@ -428,11 +450,27 @@ mod tests {
         assert!(report.blockers.is_empty());
         let projection = report.projection.expect("projection");
         assert!(projection.candidate_requirement_satisfied);
+        assert_eq!(projection.low_impact_role, "transient_low_body");
+        assert_eq!(projection.low_impact_decision, "source_hit_selected");
+        assert_eq!(projection.low_impact_candidate_count, 5);
+        assert_eq!(projection.low_impact_selected_slot, 3);
+        assert_eq!(projection.low_impact_selected_onset_cursor, 1_234);
+        assert_eq!(projection.low_impact_attack_window_proxy_frames, 48);
+        assert_eq!(projection.low_impact_body_window_proxy_frames, 96);
         assert_eq!(projection.low_band_attack_share, 0.24);
         assert_eq!(projection.low_band_attack_share_min, 0.18);
         assert_eq!(projection.low_band_attack_over_body, 1.65);
         assert_eq!(projection.low_band_attack_over_body_min, 1.40);
         assert_eq!(projection.low_band_attack_over_source, 0.42);
         assert_eq!(projection.low_band_attack_over_source_min, 0.30);
+    }
+
+    #[test]
+    fn recipe_without_matching_typed_role_and_decision_is_not_applicable() {
+        let mut state = applicable_hit_shaper_state();
+        state.hard_low_impact.role = W30ResampleLowImpactRole::Unassigned;
+        state.hard_low_impact.decision = W30ResampleLowImpactDecision::NotEvaluated;
+
+        assert!(!state.exact_hit_shaper_calibration_applicable());
     }
 }

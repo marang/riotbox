@@ -565,3 +565,33 @@ attack is almost level with the following body. This is a correct fail-closed
 selection, not evidence to lower `1.40`. H19 exposes both measured values and
 their floors in the reachability preflight so future failures can be diagnosed
 without changing the recipe or listening to rejected candidates.
+
+RIOTBOX-1425 changes how those unchanged gates receive evidence. It no longer
+concatenates every triggered slot into one synthetic average attack and body.
+Each source-derived onset is evaluated independently, and the candidate whose
+weakest normalized gate margin is strongest wins; ties prefer stronger
+attack-over-body evidence and then the earlier slot. This keeps one sustained
+or bass-heavy slot from hiding a real transient elsewhere in the source while
+still requiring one actual hit to pass all three floors.
+
+The selector uses four time bounds:
+
+- `0.02 s` is the minimum attack window. Shorter detected edges are extended so
+  a click-sized discontinuity cannot stand in for meaningful low-body evidence.
+- `0.08 s` is the maximum attack window and matches the existing perceptual
+  attack detector's upper bound.
+- the following body is twice the local attack length, bounded to
+  `0.04–0.12 s`. The lower bound prevents a tiny quiet gap from manufacturing
+  contrast; the upper bound avoids measuring the next musical event as the
+  current hit's body.
+
+The 45–180 Hz filter now runs once across the continuous source proxy before
+windows are compared. Resetting its state at every extracted window could
+manufacture edge energy and was not phase-coherent evidence. The `0.30` ratio
+continues to divide the selected low-band attack RMS by whole-source RMS; its
+meaning and floor did not change.
+
+Selection state names the role `transient_low_body`, never bass. It also carries
+the typed decision, candidate count, winning slot/onset, adaptive attack/body
+window lengths, and all three ratios through product state, the coherent
+realtime snapshot, observer JSON, and reachability preflight.

@@ -307,6 +307,13 @@ pub(super) struct SharedW30ResampleTapState {
     hard_attack_bite_input_gain_bits: AtomicU32,
     hard_attack_bite_output_gain_bits: AtomicU32,
     hard_low_impact_recipe: AtomicU32,
+    hard_low_impact_role: AtomicU32,
+    hard_low_impact_decision: AtomicU32,
+    hard_low_impact_candidate_count: AtomicU32,
+    hard_low_impact_selected_slot: AtomicU32,
+    hard_low_impact_selected_onset_cursor: AtomicU32,
+    hard_low_impact_attack_window_proxy_frames: AtomicU32,
+    hard_low_impact_body_window_proxy_frames: AtomicU32,
     hard_low_impact_attack_share_bits: AtomicU32,
     hard_low_impact_attack_over_body_bits: AtomicU32,
     hard_low_impact_attack_over_source_bits: AtomicU32,
@@ -354,6 +361,13 @@ impl SharedW30ResampleTapState {
             hard_attack_bite_input_gain_bits: AtomicU32::new(0),
             hard_attack_bite_output_gain_bits: AtomicU32::new(0),
             hard_low_impact_recipe: AtomicU32::new(0),
+            hard_low_impact_role: AtomicU32::new(0),
+            hard_low_impact_decision: AtomicU32::new(0),
+            hard_low_impact_candidate_count: AtomicU32::new(0),
+            hard_low_impact_selected_slot: AtomicU32::new(0),
+            hard_low_impact_selected_onset_cursor: AtomicU32::new(0),
+            hard_low_impact_attack_window_proxy_frames: AtomicU32::new(0),
+            hard_low_impact_body_window_proxy_frames: AtomicU32::new(0),
             hard_low_impact_attack_share_bits: AtomicU32::new(0),
             hard_low_impact_attack_over_body_bits: AtomicU32::new(0),
             hard_low_impact_attack_over_source_bits: AtomicU32::new(0),
@@ -452,6 +466,34 @@ impl SharedW30ResampleTapState {
         );
         self.hard_low_impact_recipe.store(
             w30_resample_low_impact_recipe_to_u32(render_state.hard_low_impact.recipe),
+            Ordering::Relaxed,
+        );
+        self.hard_low_impact_role.store(
+            w30_resample_low_impact_role_to_u32(render_state.hard_low_impact.role),
+            Ordering::Relaxed,
+        );
+        self.hard_low_impact_decision.store(
+            w30_resample_low_impact_decision_to_u32(render_state.hard_low_impact.decision),
+            Ordering::Relaxed,
+        );
+        self.hard_low_impact_candidate_count.store(
+            u32::from(render_state.hard_low_impact.candidate_count),
+            Ordering::Relaxed,
+        );
+        self.hard_low_impact_selected_slot.store(
+            u32::from(render_state.hard_low_impact.selected_slot),
+            Ordering::Relaxed,
+        );
+        self.hard_low_impact_selected_onset_cursor.store(
+            u32::from(render_state.hard_low_impact.selected_onset_cursor),
+            Ordering::Relaxed,
+        );
+        self.hard_low_impact_attack_window_proxy_frames.store(
+            u32::from(render_state.hard_low_impact.attack_window_proxy_frames),
+            Ordering::Relaxed,
+        );
+        self.hard_low_impact_body_window_proxy_frames.store(
+            u32::from(render_state.hard_low_impact.body_window_proxy_frames),
             Ordering::Relaxed,
         );
         self.hard_low_impact_attack_share_bits.store(
@@ -588,6 +630,23 @@ impl SharedW30ResampleTapState {
                 recipe: w30_resample_low_impact_recipe_from_u32(
                     self.hard_low_impact_recipe.load(Ordering::Relaxed),
                 ),
+                role: w30_resample_low_impact_role_from_u32(
+                    self.hard_low_impact_role.load(Ordering::Relaxed),
+                ),
+                decision: w30_resample_low_impact_decision_from_u32(
+                    self.hard_low_impact_decision.load(Ordering::Relaxed),
+                ),
+                candidate_count: self.hard_low_impact_candidate_count.load(Ordering::Relaxed) as u8,
+                selected_slot: self.hard_low_impact_selected_slot.load(Ordering::Relaxed) as u8,
+                selected_onset_cursor: self
+                    .hard_low_impact_selected_onset_cursor
+                    .load(Ordering::Relaxed) as u16,
+                attack_window_proxy_frames: self
+                    .hard_low_impact_attack_window_proxy_frames
+                    .load(Ordering::Relaxed) as u16,
+                body_window_proxy_frames: self
+                    .hard_low_impact_body_window_proxy_frames
+                    .load(Ordering::Relaxed) as u16,
                 low_band_attack_share: f32::from_bits(
                     self.hard_low_impact_attack_share_bits
                         .load(Ordering::Relaxed),
@@ -785,6 +844,42 @@ fn w30_resample_low_impact_recipe_from_u32(value: u32) -> W30ResampleLowImpactRe
         2 => W30ResampleLowImpactRecipe::SourceKickImpactV2,
         3 => W30ResampleLowImpactRecipe::SourceHitShaperV3,
         _ => W30ResampleLowImpactRecipe::Unavailable,
+    }
+}
+
+fn w30_resample_low_impact_role_to_u32(role: W30ResampleLowImpactRole) -> u32 {
+    match role {
+        W30ResampleLowImpactRole::Unassigned => 0,
+        W30ResampleLowImpactRole::TransientLowBody => 1,
+    }
+}
+
+fn w30_resample_low_impact_role_from_u32(value: u32) -> W30ResampleLowImpactRole {
+    match value {
+        1 => W30ResampleLowImpactRole::TransientLowBody,
+        _ => W30ResampleLowImpactRole::Unassigned,
+    }
+}
+
+fn w30_resample_low_impact_decision_to_u32(decision: W30ResampleLowImpactDecision) -> u32 {
+    match decision {
+        W30ResampleLowImpactDecision::NotEvaluated => 0,
+        W30ResampleLowImpactDecision::SourceHitSelected => 1,
+        W30ResampleLowImpactDecision::InsufficientAttackShare => 2,
+        W30ResampleLowImpactDecision::InsufficientAttackOverBody => 3,
+        W30ResampleLowImpactDecision::InsufficientAttackOverSource => 4,
+        W30ResampleLowImpactDecision::NoCompleteCandidateWindow => 5,
+    }
+}
+
+fn w30_resample_low_impact_decision_from_u32(value: u32) -> W30ResampleLowImpactDecision {
+    match value {
+        1 => W30ResampleLowImpactDecision::SourceHitSelected,
+        2 => W30ResampleLowImpactDecision::InsufficientAttackShare,
+        3 => W30ResampleLowImpactDecision::InsufficientAttackOverBody,
+        4 => W30ResampleLowImpactDecision::InsufficientAttackOverSource,
+        5 => W30ResampleLowImpactDecision::NoCompleteCandidateWindow,
+        _ => W30ResampleLowImpactDecision::NotEvaluated,
     }
 }
 

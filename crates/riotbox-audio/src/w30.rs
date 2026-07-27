@@ -334,6 +334,52 @@ pub enum W30ResampleLowImpactRecipe {
     SourceHitShaperV3,
 }
 
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum W30ResampleLowImpactRole {
+    #[default]
+    Unassigned,
+    /// A source-owned transient with meaningful 45–180 Hz body.
+    ///
+    /// This is not a bass-lane assignment and does not promise sustained bass
+    /// pressure.
+    TransientLowBody,
+}
+
+impl W30ResampleLowImpactRole {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Unassigned => "unassigned",
+            Self::TransientLowBody => "transient_low_body",
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum W30ResampleLowImpactDecision {
+    #[default]
+    NotEvaluated,
+    SourceHitSelected,
+    InsufficientAttackShare,
+    InsufficientAttackOverBody,
+    InsufficientAttackOverSource,
+    NoCompleteCandidateWindow,
+}
+
+impl W30ResampleLowImpactDecision {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::NotEvaluated => "not_evaluated",
+            Self::SourceHitSelected => "source_hit_selected",
+            Self::InsufficientAttackShare => "insufficient_attack_share",
+            Self::InsufficientAttackOverBody => "insufficient_attack_over_body",
+            Self::InsufficientAttackOverSource => "insufficient_attack_over_source",
+            Self::NoCompleteCandidateWindow => "no_complete_candidate_window",
+        }
+    }
+}
+
 impl W30ResampleLowImpactRecipe {
     #[must_use]
     pub const fn label(self) -> &'static str {
@@ -490,7 +536,21 @@ impl W30ResampleLowImpactRecipe {
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct W30ResampleLowImpactPlan {
     pub recipe: W30ResampleLowImpactRecipe,
-    /// RMS share of the 45–180 Hz band inside selected source attacks.
+    /// Typed musical role owned by the selected recipe.
+    pub role: W30ResampleLowImpactRole,
+    /// Exact selector outcome, including the strongest failed gate.
+    pub decision: W30ResampleLowImpactDecision,
+    /// Number of source-derived trigger candidates evaluated.
+    pub candidate_count: u8,
+    /// Winning trigger slot. Meaningful when `candidate_count` is non-zero.
+    pub selected_slot: u8,
+    /// Source-proxy onset cursor for the winning trigger slot.
+    pub selected_onset_cursor: u16,
+    /// Source-adaptive attack window length in proxy samples.
+    pub attack_window_proxy_frames: u16,
+    /// Source-adaptive following-body window length in proxy samples.
+    pub body_window_proxy_frames: u16,
+    /// RMS share of the 45–180 Hz band inside the selected source attack.
     pub low_band_attack_share: f32,
     /// Selected low-band attack RMS divided by its following body RMS.
     pub low_band_attack_over_body: f32,
@@ -502,6 +562,13 @@ impl Default for W30ResampleLowImpactPlan {
     fn default() -> Self {
         Self {
             recipe: W30ResampleLowImpactRecipe::Unavailable,
+            role: W30ResampleLowImpactRole::Unassigned,
+            decision: W30ResampleLowImpactDecision::NotEvaluated,
+            candidate_count: 0,
+            selected_slot: 0,
+            selected_onset_cursor: 0,
+            attack_window_proxy_frames: 0,
+            body_window_proxy_frames: 0,
             low_band_attack_share: 0.0,
             low_band_attack_over_body: 0.0,
             low_band_attack_over_source: 0.0,
@@ -859,6 +926,8 @@ impl W30ResampleTapState {
         self.variation == W30ResampleTapVariation::HardDamage
             && self.hard_policy == W30ResampleTapHardPolicy::SourceTransientChop
             && self.hard_low_impact.recipe == W30ResampleLowImpactRecipe::SourceHitShaperV3
+            && self.hard_low_impact.role == W30ResampleLowImpactRole::TransientLowBody
+            && self.hard_low_impact.decision == W30ResampleLowImpactDecision::SourceHitSelected
             && self.source_audio.is_some()
             && self.tempo_bpm.is_finite()
             && self.tempo_bpm > 0.0

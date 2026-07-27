@@ -789,73 +789,14 @@ fn rms(samples: &[f32]) -> f32 {
     (samples.iter().map(|sample| sample * sample).sum::<f32>() / samples.len().max(1) as f32).sqrt()
 }
 
-pub(super) fn derive_w30_resample_low_impact(
-    proxy: &[f32],
-    proxy_sample_rate: f32,
-    trigger_mask: u8,
-    onset_cursors: [u16; W30_RESAMPLE_HARD_SLICE_COUNT],
-    attack_lengths: [u16; W30_RESAMPLE_HARD_SLICE_COUNT],
-) -> W30ResampleLowImpactPlan {
-    const LOW_HZ: f32 = 45.0;
-    const HIGH_HZ: f32 = 180.0;
-    const MIN_RMS: f32 = 1.0e-6;
-
-    if proxy.len() < 2
-        || !proxy_sample_rate.is_finite()
-        || proxy_sample_rate <= HIGH_HZ * 2.0
-        || trigger_mask == 0
-    {
-        return W30ResampleLowImpactPlan::default();
-    }
-
-    let mut attack = Vec::new();
-    let mut body = Vec::new();
-    for slot in 0..W30_RESAMPLE_HARD_SLICE_COUNT {
-        if trigger_mask & (1_u8 << slot) == 0 {
-            continue;
-        }
-        let onset = usize::from(onset_cursors[slot]).min(proxy.len() - 1);
-        let attack_len = usize::from(attack_lengths[slot].max(1));
-        let attack_end = onset.saturating_add(attack_len).min(proxy.len());
-        if attack_end <= onset {
-            continue;
-        }
-        attack.extend_from_slice(&proxy[onset..attack_end]);
-        let body_end = attack_end.saturating_add(attack_len).min(proxy.len());
-        if body_end > attack_end {
-            body.extend_from_slice(&proxy[attack_end..body_end]);
-        }
-    }
-    if attack.is_empty() {
-        return W30ResampleLowImpactPlan::default();
-    }
-
-    let low_attack = bandpass_window(&attack, proxy_sample_rate, LOW_HZ, HIGH_HZ);
-    let low_body = bandpass_window(&body, proxy_sample_rate, LOW_HZ, HIGH_HZ);
-    let low_attack_rms = rms(&low_attack);
-    let full_attack_rms = rms(&attack).max(MIN_RMS);
-    let source_rms = rms(proxy).max(MIN_RMS);
-    let low_band_attack_share = (low_attack_rms / full_attack_rms).min(1.0);
-    let low_band_attack_over_body = low_attack_rms / rms(&low_body).max(MIN_RMS);
-    let low_band_attack_over_source = low_attack_rms / source_rms;
-    let recipe = if low_band_attack_share >= W30_RESAMPLE_LOW_IMPACT_MIN_ATTACK_SHARE
-        && low_band_attack_over_body >= W30_RESAMPLE_HIT_SHAPER_MIN_ATTACK_OVER_BODY
-        && low_band_attack_over_source >= W30_RESAMPLE_LOW_IMPACT_MIN_ATTACK_OVER_SOURCE
-    {
-        W30ResampleLowImpactRecipe::SourceHitShaperV3
-    } else {
-        W30ResampleLowImpactRecipe::Unavailable
-    };
-    W30ResampleLowImpactPlan {
-        recipe,
-        low_band_attack_share,
-        low_band_attack_over_body,
-        low_band_attack_over_source,
-    }
-}
-
 #[cfg(test)]
 mod resample_attack_bite_tests {
+    use riotbox_audio::w30::{
+        W30_RESAMPLE_HIT_SHAPER_MIN_ATTACK_OVER_BODY,
+        W30_RESAMPLE_LOW_IMPACT_MIN_ATTACK_SHARE, W30ResampleLowImpactDecision,
+        W30ResampleLowImpactRole,
+    };
+
     use super::*;
 
     fn attack_proxy(frequency_hz: f32) -> Vec<f32> {
@@ -967,6 +908,11 @@ mod resample_attack_bite_tests {
         );
 
         assert_eq!(plan.recipe, W30ResampleLowImpactRecipe::Unavailable);
+        assert_eq!(plan.role, W30ResampleLowImpactRole::Unassigned);
+        assert_eq!(
+            plan.decision,
+            W30ResampleLowImpactDecision::InsufficientAttackOverBody
+        );
     }
 
     #[test]
@@ -997,9 +943,12 @@ mod resample_attack_bite_tests {
         }
         let hard_low_impact = W30ResampleLowImpactPlan {
             recipe: W30ResampleLowImpactRecipe::SourceHitShaperV3,
+            role: W30ResampleLowImpactRole::TransientLowBody,
+            decision: W30ResampleLowImpactDecision::SourceHitSelected,
             low_band_attack_share: 0.8,
             low_band_attack_over_body: 2.0,
             low_band_attack_over_source: 1.0,
+            ..W30ResampleLowImpactPlan::default()
         };
         let mut state = W30ResampleTapState {
             mode: W30ResampleTapMode::CaptureLineageReady,
@@ -1091,6 +1040,8 @@ mod resample_attack_bite_tests {
             hard_policy: W30ResampleTapHardPolicy::SourceTransientChop,
             hard_low_impact: W30ResampleLowImpactPlan {
                 recipe: W30ResampleLowImpactRecipe::SourceHitShaperV3,
+                role: W30ResampleLowImpactRole::TransientLowBody,
+                decision: W30ResampleLowImpactDecision::SourceHitSelected,
                 ..W30ResampleLowImpactPlan::default()
             },
             source_audio: Some(Box::new(W30ResampleSourceWindow {

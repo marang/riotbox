@@ -1830,6 +1830,7 @@ fn source_low_transient_punch_is_parallel_hard_only_audio() {
             low_band_attack_share: 0.4,
             low_band_attack_over_body: 2.0,
             low_band_attack_over_source: 0.8,
+            ..W30ResampleLowImpactPlan::default()
         },
         hard_gesture: Default::default(),
         hard_transient_contrast: 2.0,
@@ -1887,6 +1888,7 @@ fn source_kick_impact_v2_lifts_body_and_head_without_damage_processing() {
             low_band_attack_share: 0.4,
             low_band_attack_over_body: 2.0,
             low_band_attack_over_source: 0.8,
+            ..W30ResampleLowImpactPlan::default()
         },
         hard_gesture: Default::default(),
         hard_transient_contrast: 2.0,
@@ -1951,6 +1953,7 @@ fn source_hit_shaper_v3_lifts_audible_head_and_following_body_windows() {
             low_band_attack_share: 0.4,
             low_band_attack_over_body: 2.0,
             low_band_attack_over_source: 0.8,
+            ..W30ResampleLowImpactPlan::default()
         },
         hard_gesture: Default::default(),
         hard_transient_contrast: 2.0,
@@ -2038,6 +2041,7 @@ fn exact_hit_calibration_preserves_the_owned_hit_but_lowers_between_hit_material
             low_band_attack_share: 0.4,
             low_band_attack_over_body: 2.0,
             low_band_attack_over_source: 0.8,
+            ..W30ResampleLowImpactPlan::default()
         },
         hard_gesture: Default::default(),
         hard_transient_contrast: 2.0,
