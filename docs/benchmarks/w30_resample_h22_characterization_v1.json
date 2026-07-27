@@ -1,0 +1,38 @@
+{
+  "schema": "riotbox.w30_resample_hard_characterization.v1",
+  "schema_version": 1,
+  "ticket": "RIOTBOX-1422",
+  "generation": "H22",
+  "recorded_on": "2026-07-27",
+  "classification": "holdout_replenishment_and_blocker_freeze",
+  "quality_proof": false,
+  "human_verdict": "unverified",
+  "inherits": "docs/benchmarks/w30_resample_h21_characterization_v1.json",
+  "product_dsp_changed": false,
+  "selector_gates_changed": false,
+  "timing_contract_changed": false,
+  "rotation_replenishment": [
+    {
+      "case_id": "oga_tricksntraps_drama",
+      "source_family": "dense_break",
+      "provider_bpm": 130.0,
+      "classification_status": "provisional_unheard_holdout"
+    },
+    {
+      "case_id": "oga_wolfgang_8bit_victory_loop",
+      "source_family": "tonal_riff",
+      "provider_project_tempo": 180,
+      "provider_project_speed": 6,
+      "provider_project_bpm": 180.0,
+      "classification_status": "provisional_unheard_holdout"
+    }
+  ],
+  "untouched_existing_reserve": [
+    "oga_wolfgang_8bit_cave_loop",
+    "oga_srg774_sector",
+    "oga_trezegames_pop_1"
+  ],
+  "acceptance_status": "blocked_by_source_adaptive_hit_shaper_reachability",
+  "human_listening_allowed": false,
+  "next_gate": "Create a bounded P023 contract enabler that improves real-source hit-shaper reachability on development material without lowering the 1.40 attack/body ownership floor or tuning against consumed holdouts."
+}

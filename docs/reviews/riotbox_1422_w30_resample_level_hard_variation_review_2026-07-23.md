@@ -629,7 +629,27 @@ variant label, but it does not justify loosening timing.
 
 H21 keeps DSP, selectors, and timing contracts frozen. Its replacements are
 the provider-declared 150 BPM Mental Corruption plus two CC0 FamiTracker loops
-whose project FRAMES blocks independently encode tempo 150: 8-Bit Battle Loop
-and 8-Bit Cave Loop. Only tracker tempo, licensing metadata, format, duration,
-peak, clipping, conversion, and hash were inspected before freeze; their audio
-and product behavior remain unheard and unprobed.
+whose project FRAMES blocks independently encode tempo and speed: 8-Bit Battle
+Loop and 8-Bit Cave Loop. Only tracker fields, licensing metadata, format,
+duration, peak, clipping, conversion, and hash were inspected before freeze;
+their audio and product behavior remained unheard and unprobed.
+
+The first H21 timing result exposed a documentation mistake: a FamiTracker
+tempo field is not automatically musical BPM. The documented formula is
+`tempo * 6 / speed`; Battle's tempo 150 and speed 5 therefore derive 180 BPM,
+while Cave's tempo 150 and speed 6 derive 150 BPM. Battle independently
+matched Rust and product timing at exactly 180 BPM, then selected
+`source_texture_bite`, so the exact hit shaper remained inapplicable.
+
+Mental Corruption independently matched provider 150 BPM at Rust/product
+`150.25043 BPM` and reached `source_transient_chop`. Its low-band attack share
+(`0.43791`) and attack-over-source (`1.36893`) passed, but
+attack-over-following-body was only `1.17281` against `1.40`; no exact recipe
+or candidate was produced.
+
+H21 therefore rejects before candidate rendering across dense-break and
+tonal-riff families. No human listening occurred. H22 restores the rotation
+with unheard Drama and 8-Bit Victory Loop replacements while preserving the
+untouched Cave, Sector, and bad-timing control. Further holdout access is
+frozen until a bounded source-adaptive hit-shaper reachability enabler lands
+on development material.

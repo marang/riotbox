@@ -3506,8 +3506,22 @@ Date: 2026-07-27
 Topic: use provider project tempo as stronger holdout timing evidence without assuming downbeat
 Phase: P023 / Controlled Expansion
 Question: after H20 again fails before product projection, what metadata may improve the next frozen holdout without weakening Source Graph timing truth?
-Decision: preserve the 1 BPM match tolerance and paired BPM-plus-downbeat override. Replenish H21 with provider-declared 150 BPM material and prefer sources whose published tracker project independently encodes tempo. Treat FamiTracker FRAMES tempo as BPM evidence only; do not infer downbeat zero from the project or loop label.
+Decision: preserve the 1 BPM match tolerance and paired BPM-plus-downbeat override. Replenish H21 with provider-declared 150 BPM material and prefer sources whose published tracker project independently encodes tempo and speed. Derive FamiTracker BPM as `tempo * 6 / speed`; never treat the tempo field alone as BPM, and do not infer downbeat zero from the project or loop label.
 Why: Stomper missed provider 160 by 1.54929 BPM, the held guitar exposed only one onset, and Dungeon Run selected a conflicting 149.00665 BPM alias against provider 120. Another title-only BPM set would repeat weak acquisition evidence, while tracker tempo is machine-readable and independent of Riotbox's analyzer.
-Evidence: the CC0 BattleTheme.ftm and Cave.ftm FRAMES blocks both encode tempo 150; their audio derivatives and Mental Corruption remain unheard and unprobed until H21 freeze. H20 produced no product projection, candidate WAV, or human verdict. Rotation fixtures reject duplicate historical cases and local validation checks hashes, PCM16 bounds, duration, and clipping.
+Evidence: BattleTheme.ftm encodes tempo 150/speed 5, deriving 180 BPM; Cave.ftm encodes tempo 150/speed 6, deriving 150 BPM. Their audio derivatives and Mental Corruption remained unheard and unprobed until H21 freeze. H20 produced no product projection, candidate WAV, or human verdict. Rotation fixtures reject duplicate historical cases and local validation checks hashes, PCM16 bounds, duration, and clipping.
 Consequences: matching tracker tempo may authorize the existing BPM-match route only when Rust independently lands within 1 BPM. A mismatch still rejects without an independently known downbeat. H21 still needs two-family coverage, causal `source_hit_shaper_v3` selection, unchanged product-path gates, and structured listening.
 Status: accepted acquisition refinement; H21 fresh holdout pending
+
+---
+
+### RBX-176
+
+Date: 2026-07-27
+Topic: stop holdout retries after timing becomes reachable but the exact hit-shaper recipe remains rare
+Phase: P023 / Controlled Expansion
+Question: should Riotbox keep acquiring fresh holdouts after H21 reaches trusted product timing across two families but still produces no exact candidate?
+Decision: no. Reject H21 before candidate rendering, restore the rotating reserve once, and freeze further holdout access. Create a bounded contract enabler that improves source-adaptive hit-shaper reachability on development material without lowering the 1.40 low-band attack-over-body ownership floor, changing H18 DSP, or tuning against consumed H18–H21 sources.
+Why: the blocker is now isolated. Mental Corruption matched provider/product timing and selected transient chop but measured 1.17281 attack over following body; Battle matched independently derived project/product 180 BPM exactly but correctly selected texture policy. More holdouts would spend acceptance evidence without changing the selector mechanism that makes causal coverage rare.
+Evidence: H18–H21 consumed multiple dense-break and tonal-riff cases across unavailable timing, insufficient level, inherited transient, sustained low body, and texture policy. The H19 preflight exposes exact selector inputs. H21 is the first retry where trusted product timing is clearly reachable across both families, yet no exact candidate exists. No candidate WAV or human verdict was produced.
+Consequences: H22 restores unheard Drama and 8-Bit Victory Loop replacements and retains untouched Cave, Sector, and bad-timing control. The next issue must name RIOTBOX-1422 exact-path holdout as its directly enabled audible outcome, use a multi-source development matrix, preserve fail-closed unavailable behavior, and return to frozen holdout only after branch review and full QA.
+Status: accepted blocker diagnosis; explicit P023 enabler required

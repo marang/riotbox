@@ -21,19 +21,57 @@
     {
       "case_id": "oga_wolfgang_8bit_battle_loop",
       "source_family": "tonal_riff",
-      "provider_project_bpm": 150.0,
+      "provider_project_tempo": 150,
+      "provider_project_speed": 5,
+      "provider_project_bpm": 180.0,
       "provider_project_format": "FamiTracker",
       "classification_status": "provisional_unheard_holdout"
     },
     {
       "case_id": "oga_wolfgang_8bit_cave_loop",
       "source_family": "tonal_riff",
+      "provider_project_tempo": 150,
+      "provider_project_speed": 6,
       "provider_project_bpm": 150.0,
       "provider_project_format": "FamiTracker",
       "classification_status": "provisional_unheard_holdout"
     }
   ],
-  "acceptance_status": "pending_fresh_exact_path_candidate",
+  "tracker_bpm_formula": "tempo * 6 / speed",
+  "fresh_holdout_results": [
+    {
+      "case_id": "oga_tricksntraps_mental_corruption",
+      "source_family": "dense_break",
+      "provider_bpm": 150.0,
+      "rust_primary_bpm": 150.25043,
+      "product_runtime_bpm": 150.25043,
+      "hard_policy": "source_transient_chop",
+      "low_impact_recipe": "unavailable",
+      "low_band_attack_share": 0.43790737,
+      "low_band_attack_share_min": 0.18,
+      "low_band_attack_over_body": 1.1728076,
+      "low_band_attack_over_body_min": 1.4,
+      "low_band_attack_over_source": 1.3689346,
+      "low_band_attack_over_source_min": 0.3,
+      "candidate_rendered": false,
+      "technical_verdict": "ineligible_recipe_non_selection"
+    },
+    {
+      "case_id": "oga_wolfgang_8bit_battle_loop",
+      "source_family": "tonal_riff",
+      "provider_project_tempo": 150,
+      "provider_project_speed": 5,
+      "provider_project_bpm": 180.0,
+      "rust_primary_bpm": 180.0,
+      "product_runtime_bpm": 180.0,
+      "hard_policy": "source_texture_bite",
+      "low_impact_recipe": "unavailable",
+      "candidate_rendered": false,
+      "technical_verdict": "ineligible_policy_non_selection"
+    }
+  ],
+  "acceptance_status": "rejected_before_candidate_rendering",
   "human_listening_allowed": false,
-  "next_gate": "Freeze H21, run timing before product preflight, and render only a fresh multi-family source_hit_shaper_v3 candidate that passes unchanged technical gates."
+  "freeze_consequence": "Mental Corruption and 8-Bit Battle Loop are consumed product-path reachability evidence. No candidate WAV exists and no human verdict was requested. 8-Bit Cave Loop remains untouched.",
+  "next_gate": "Stop fresh holdout retries and land an explicit source-adaptive hit-shaper reachability enabler on development material before accessing the restored reserve."
 }

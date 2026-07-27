@@ -97,10 +97,10 @@
     {
       "holdout_id": "holdout_a",
       "state": "unseen",
-      "purpose": "Untouched CC0 reserve replenished after the frozen H20 timing rejection; frozen for the H21 tracker-tempo exact-path acceptance retry.",
+      "purpose": "Untouched CC0 reserve restored after the frozen H21 recipe-reachability rejection; inaccessible until an explicit source-adaptive hit-shaper reachability enabler lands.",
       "source_case_ids": [
-        "oga_tricksntraps_mental_corruption",
-        "oga_wolfgang_8bit_battle_loop",
+        "oga_tricksntraps_drama",
+        "oga_wolfgang_8bit_victory_loop",
         "oga_wolfgang_8bit_cave_loop",
         "oga_srg774_sector",
         "oga_trezegames_pop_1"
@@ -686,6 +686,20 @@
       "consumed_by_ticket": "RIOTBOX-1422",
       "consumed_on": "2026-07-27",
       "replacement_case_id": "oga_wolfgang_8bit_cave_loop"
+    },
+    {
+      "case_id": "oga_tricksntraps_mental_corruption",
+      "former_holdout_id": "holdout_a",
+      "consumed_by_ticket": "RIOTBOX-1422",
+      "consumed_on": "2026-07-27",
+      "replacement_case_id": "oga_tricksntraps_drama"
+    },
+    {
+      "case_id": "oga_wolfgang_8bit_battle_loop",
+      "former_holdout_id": "holdout_a",
+      "consumed_by_ticket": "RIOTBOX-1422",
+      "consumed_on": "2026-07-27",
+      "replacement_case_id": "oga_wolfgang_8bit_victory_loop"
     }
   ],
   "entries": [
@@ -2812,9 +2826,13 @@
       "case_id": "oga_tricksntraps_mental_corruption",
       "source_family": "dense_break",
       "corpus_eligible": true,
-      "partition": "holdout_a",
-      "classification_status": "provisional_unheard_holdout",
+      "partition": "retired",
+      "classification_status": "consumed_holdout",
       "source_suitability_verdict": "unverified",
+      "reviewed_on": "2026-07-27",
+      "reviewer_role": "technical_reviewer",
+      "family_verdict_owner": "technical_review",
+      "previous_partition": "holdout_a",
       "author": "Tricks & Traps",
       "title": "Mental Corruption",
       "source_pack_id": "oga_free_rhythm_game_music_pack_2",
@@ -2828,15 +2846,19 @@
       "commercial_reference": false,
       "replacement_for_case_id": "oga_tricksntraps_stomper",
       "acquired_on": "2026-07-27",
-      "review_notes": "Untouched H21 reserve. Dense-break classification is provisional from provider rhythm-game, hardcore, speedcore, techno, experimental, and explicit 150 BPM metadata only. Acquisition retained the first 16 seconds as 48 kHz stereo PCM16, applied fixed 0.75 headroom because the near-full-scale source and sample-rate conversion otherwise approached the integer clipping boundary, and inspected only format, duration, peak, and clipping."
+      "review_notes": "Consumed by the frozen H21 reachability preflight. Provider 150 BPM matched Rust 150.25043 and product timing, Hard selected source_transient_chop, but source_hit_shaper_v3 remained unavailable because low-band attack over following body was 1.17281 against 1.40. No candidate WAV or human listening occurred; suitability remains unverified."
     },
     {
       "case_id": "oga_wolfgang_8bit_battle_loop",
       "source_family": "tonal_riff",
       "corpus_eligible": true,
-      "partition": "holdout_a",
-      "classification_status": "provisional_unheard_holdout",
+      "partition": "retired",
+      "classification_status": "consumed_holdout",
       "source_suitability_verdict": "unverified",
+      "reviewed_on": "2026-07-27",
+      "reviewer_role": "technical_reviewer",
+      "family_verdict_owner": "technical_review",
+      "previous_partition": "holdout_a",
       "author": "Wolfgang_",
       "title": "8-Bit Battle Loop",
       "source_pack_id": "oga_8bit_battle_loop",
@@ -2850,7 +2872,51 @@
       "commercial_reference": false,
       "replacement_for_case_id": "oga_some_weirdo_progression2_120",
       "acquired_on": "2026-07-27",
-      "review_notes": "Untouched H21 reserve. Tonal-riff classification is provisional from provider short 8-bit battle-loop metadata. The provider's CC0 FamiTracker project independently encodes tempo 150 in its FRAMES block. Acquisition retained the first 16 seconds as 48 kHz stereo PCM16 and inspected only project tempo, format, duration, peak, clipping, and hash."
+      "review_notes": "Consumed by the frozen H21 reachability preflight. The FamiTracker project encodes tempo 150 and speed 5, independently deriving 180 BPM via tempo * 6 / speed; Rust and product timing matched 180 exactly. Hard selected source_texture_bite, so source_hit_shaper_v3 was inapplicable. No candidate WAV or human listening occurred; suitability remains unverified."
+    },
+    {
+      "case_id": "oga_tricksntraps_drama",
+      "source_family": "dense_break",
+      "corpus_eligible": true,
+      "partition": "holdout_a",
+      "classification_status": "provisional_unheard_holdout",
+      "source_suitability_verdict": "unverified",
+      "author": "Tricks & Traps",
+      "title": "Drama",
+      "source_pack_id": "oga_free_rhythm_game_music_pack_2",
+      "provider": "OpenGameArt",
+      "page_url": "https://opengameart.org/content/free-rhythm-game-music-pack-2",
+      "download_url": "https://opengameart.org/sites/default/files/2_drama.wav",
+      "license": "CC0-1.0",
+      "source_start_seconds": 0.0,
+      "source_path": "data/test_audio/external/RIOTBOX-1423/wav/dense_oga_tricksntraps_drama.wav",
+      "sha256": "1e1344e617da389bd09c46788c2107a3248bd9d313cb97d8ae597e7f6abcfee7",
+      "commercial_reference": false,
+      "replacement_for_case_id": "oga_tricksntraps_mental_corruption",
+      "acquired_on": "2026-07-27",
+      "review_notes": "Untouched post-H21 reserve. Dense-break classification is provisional from provider rhythm-game, hardcore, speedcore, techno, experimental, and explicit 130 BPM metadata only. Acquisition retained the first 16 seconds as 48 kHz stereo PCM16, applied fixed 0.75 headroom because the near-full-scale source and sample-rate conversion otherwise approached the integer clipping boundary, and inspected only format, duration, peak, and clipping."
+    },
+    {
+      "case_id": "oga_wolfgang_8bit_victory_loop",
+      "source_family": "tonal_riff",
+      "corpus_eligible": true,
+      "partition": "holdout_a",
+      "classification_status": "provisional_unheard_holdout",
+      "source_suitability_verdict": "unverified",
+      "author": "Wolfgang_",
+      "title": "8-Bit Victory Loop",
+      "source_pack_id": "oga_8bit_victory_loop",
+      "provider": "OpenGameArt",
+      "page_url": "https://opengameart.org/content/8-bit-victory-loop",
+      "download_url": "https://opengameart.org/sites/default/files/8bitvictory.ogg",
+      "license": "CC0-1.0",
+      "source_start_seconds": 0.0,
+      "source_path": "data/test_audio/external/RIOTBOX-1423/wav/tonal_oga_wolfgang_8bit_victory_loop.wav",
+      "sha256": "b33be44d5f1f646c524a9af4ddeb33cccc69871dd1a77d45a161a49c70908bd1",
+      "commercial_reference": false,
+      "replacement_for_case_id": "oga_wolfgang_8bit_battle_loop",
+      "acquired_on": "2026-07-27",
+      "review_notes": "Untouched post-H21 reserve. Tonal-riff classification is provisional from provider 8-bit victory-loop metadata. The provider's CC0 FamiTracker project encodes tempo 180 and speed 6, independently deriving 180 BPM via tempo * 6 / speed. Acquisition retained the first 16 seconds as 48 kHz stereo PCM16 and inspected only project tempo/speed, format, duration, peak, clipping, and hash."
     },
     {
       "case_id": "oga_wolfgang_8bit_cave_loop",
@@ -2872,7 +2938,7 @@
       "commercial_reference": false,
       "replacement_for_case_id": "oga_whittakerb1987_dungeon_run_120",
       "acquired_on": "2026-07-27",
-      "review_notes": "Untouched H21 reserve. Tonal-riff classification is provisional from provider 8-bit cave-loop metadata. The provider's CC0 FamiTracker project independently encodes tempo 150 in its FRAMES block. Acquisition retained the first 16 seconds as 48 kHz stereo PCM16 and inspected only project tempo, format, duration, peak, clipping, and hash."
+      "review_notes": "Untouched post-H21 reserve. Tonal-riff classification is provisional from provider 8-bit cave-loop metadata. The provider's CC0 FamiTracker project encodes tempo 150 and speed 6, independently deriving 150 BPM via tempo * 6 / speed. Acquisition retained the first 16 seconds as 48 kHz stereo PCM16 and inspected only project tempo/speed, format, duration, peak, clipping, and hash."
     },
     {
       "case_id": "oga_srg774_sector",
