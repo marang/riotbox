@@ -587,3 +587,29 @@ classifications until the frozen H19 preflight consumes them. The Turnovus
 derivative uses fixed `0.75` import headroom because sample-rate conversion of
 the full-scale original exposed sample-peak overshoot; this is corpus hygiene,
 not candidate normalization or product DSP.
+
+### H19 timing rejection and H20 replenishment
+
+The frozen H19 retry covered dense-break and tonal-riff families but stopped
+before product projection:
+
+- Turnovus exposed a stable `105.05837 BPM` beat, but weak/ambiguous downbeat
+  and high drift. No independent provider BPM/downbeat pair existed, so using
+  the analyzer result as its own manual confirmation was prohibited.
+- Emotional Piano declared 138 BPM, but exposed only one onset in 16 seconds;
+  timing was unavailable.
+- Perces declared 112 BPM, while Rust selected `138.24884 BPM`; downbeat was
+  weak and no independent phase existed for the paired manual override.
+
+No product projection, candidate WAV, or human listening occurred. Sector and
+the Trez bad-timing control remain untouched.
+
+H20 changes only the rotating corpus. Metadata-targeted CC0 replacements are
+Tricks & Traps' 160 BPM Stomper, Some Weirdo's distorted 120 BPM guitar
+progression, and whittakerb1987's 120 BPM Dungeon Run variant. A first
+metadata search rediscovered Horde War Drums, but the rotation validator
+correctly rejected it as duplicate H7 holdout evidence; it was not reinstated.
+The actual replacements were inspected only for licensing metadata, format,
+duration, peak, clipping, deterministic conversion, and hash. Their family
+labels remain provisional; none was listened to, timing-probed, preflighted,
+or rendered before H20 freeze.

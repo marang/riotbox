@@ -1,0 +1,37 @@
+{
+  "schema": "riotbox.w30_resample_hard_characterization.v1",
+  "schema_version": 1,
+  "ticket": "RIOTBOX-1422",
+  "generation": "H20",
+  "recorded_on": "2026-07-27",
+  "classification": "holdout_replenishment",
+  "quality_proof": false,
+  "human_verdict": "unverified",
+  "inherits": "docs/benchmarks/w30_resample_h19_characterization_v1.json",
+  "product_dsp_changed": false,
+  "selector_gates_changed": false,
+  "timing_contract_changed": false,
+  "rotation_replenishment": [
+    {
+      "case_id": "oga_tricksntraps_stomper",
+      "source_family": "dense_break",
+      "provider_bpm": 160.0,
+      "classification_status": "provisional_unheard_holdout"
+    },
+    {
+      "case_id": "oga_some_weirdo_progression2_120",
+      "source_family": "tonal_riff",
+      "provider_bpm": 120.0,
+      "classification_status": "provisional_unheard_holdout"
+    },
+    {
+      "case_id": "oga_whittakerb1987_dungeon_run_120",
+      "source_family": "tonal_riff",
+      "provider_bpm": 120.0,
+      "classification_status": "provisional_unheard_holdout"
+    }
+  ],
+  "acceptance_status": "pending_fresh_exact_path_candidate",
+  "human_listening_allowed": false,
+  "next_gate": "Freeze H20, run timing before product preflight, and render only a fresh multi-family source_hit_shaper_v3 candidate that passes unchanged technical gates."
+}

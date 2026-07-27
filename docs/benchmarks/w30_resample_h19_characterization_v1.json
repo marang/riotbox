@@ -52,7 +52,40 @@
       "classification_status": "provisional_unheard_holdout"
     }
   ],
-  "acceptance_status": "pending_fresh_exact_path_candidate",
+  "fresh_holdout_results": [
+    {
+      "case_id": "oga_turnovus_simple_drumbeat_body",
+      "source_family": "dense_break",
+      "rust_primary_bpm": 105.05837,
+      "timing_readiness": "weak",
+      "grid_use": "manual_confirm_only",
+      "downbeat_status": "weak",
+      "drift_status": "high",
+      "candidate_rendered": false,
+      "technical_verdict": "ineligible_without_independent_grid_confirmation"
+    },
+    {
+      "case_id": "oga_extenz_emotional_piano",
+      "source_family": "tonal_riff",
+      "provider_bpm": 138.0,
+      "timing_onset_count": 1,
+      "timing_readiness": "unavailable",
+      "candidate_rendered": false,
+      "technical_verdict": "ineligible_timing_unavailable"
+    },
+    {
+      "case_id": "oga_poinl_perces",
+      "source_family": "tonal_riff",
+      "provider_bpm": 112.0,
+      "rust_primary_bpm": 138.24884,
+      "downbeat_status": "weak",
+      "drift_status": "high",
+      "candidate_rendered": false,
+      "technical_verdict": "ineligible_explicit_bpm_mismatch_without_downbeat"
+    }
+  ],
+  "acceptance_status": "rejected_before_product_projection",
   "human_listening_allowed": false,
-  "next_gate": "Freeze H19, preflight fresh holdout sources across at least two families, and render only an exact source_hit_shaper_v3 candidate that passes the unchanged product-path gates."
+  "freeze_consequence": "All three H19 replacements are consumed timing evidence. No product projection or candidate WAV occurred and no human verdict was requested.",
+  "next_gate": "Replenish the rotation with metadata-declared BPM loops that are more likely to align with the Rust primary grid, freeze H20, and preserve all timing, recipe, and product-path gates."
 }

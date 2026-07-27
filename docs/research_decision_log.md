@@ -3483,3 +3483,17 @@ Why: Sudocolon passed low-band share and source-relative energy but measured onl
 Evidence: frozen H18 also rejected Frenchyboy before projection because timing found only two onsets, and Head in the Sand after timing because Hard suitability was `insufficient_level`. No candidate WAV was generated and no human listening occurred. The H19 preflight regression serializes the selector inputs, while holdout fixture and local-file validators prove the replacement rotation is structurally valid and unclipped.
 Consequences: H19 changes observability and corpus rotation only; product DSP and selection remain frozen. Human review remains disallowed until a fresh exact-path candidate passes unchanged technical gates. Recipe unavailability is a valid fail-closed outcome, not a musical failure or permission to synthesize fallback sound.
 Status: accepted diagnostic direction; fresh exact-path candidate pending
+
+---
+
+### RBX-174
+
+Date: 2026-07-27
+Topic: analyzer output cannot confirm its own manual-only source grid
+Phase: P023 / Controlled Expansion
+Question: may a frozen holdout with a stable Rust BPM but weak downbeat proceed by passing that same analyzer BPM back as explicit confirmation?
+Decision: no. A manual-only grid needs independently known timing evidence. Preserve the existing explicit-provider-BPM match route and the paired BPM-plus-downbeat override; do not convert the analyzer's own weak result into a second confirmation. Consume Turnovus, Emotional Piano, and Perces as H19 timing evidence, leave untouched reserve cases alone, and replenish H20 with CC0 loops whose providers declare BPM.
+Why: Turnovus had a stable 105.05837 BPM beat but weak downbeat and high drift, with no provider BPM or phase. Feeding 105.05837 back into the preflight would be circular and would weaken Source Graph timing ownership. Emotional Piano was onset-sparse, while Perces had a provider/analyzer alias conflict without downbeat phase.
+Evidence: H19 spans dense-break and tonal-riff families but produced no product projection or candidate WAV. The rotation validators retain one-for-one replacement history and prove the H20 derivatives are local, hashed, bounded, PCM16, and unclipped. Product DSP, selector gates, and timing contracts are byte-identical to H19.
+Consequences: metadata targeting improves the chance of reachability but is not prequalification or quality evidence. H20 must still run timing first, reject mismatches without phase, require causal `source_hit_shaper_v3` selection, and request human listening only after unchanged product-path technical gates pass.
+Status: accepted timing guardrail; H20 fresh holdout pending
