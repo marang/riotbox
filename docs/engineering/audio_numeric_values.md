@@ -539,3 +539,29 @@ frozen generations.
 
 These values belong to drum/transient and midrange/hook impact. Bass ownership
 remains `unassigned`; none of them claims bass pressure.
+
+## W-30 Low-Impact Recipe Selection Values
+
+The three low-impact selector floors decide whether a source-selected
+transient owns a sufficiently distinct low-frequency attack for
+`source_hit_shaper_v3`. They are analysis ratios, not output gains, loudness
+targets, bass-pressure promises, or callback DSP:
+
+- `0.18` is the minimum share of the candidate attack's energy that must be in
+  the low band. It rejects attacks whose useful identity is predominantly
+  outside the intended low-impact region.
+- `1.40` is the minimum low-band attack RMS divided by the immediately
+  following low-band body RMS. It is the key attack/body ownership gate: the
+  low impact must be at least 40% stronger than its local body rather than a
+  sustained rumble or continuous bass bed.
+- `0.30` is the minimum low-band attack RMS divided by whole-source low-band
+  RMS. It prevents a locally detected event from being negligible relative to
+  the source's overall low-frequency content.
+
+All three conditions must pass. For example, the consumed H18 Sudocolon case
+passed `0.48562 >= 0.18` and `1.22218 >= 0.30`, but failed
+`1.01756 >= 1.40`. That source has low-frequency energy, yet its candidate
+attack is almost level with the following body. This is a correct fail-closed
+selection, not evidence to lower `1.40`. H19 exposes both measured values and
+their floors in the reachability preflight so future failures can be diagnosed
+without changing the recipe or listening to rejected candidates.

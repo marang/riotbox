@@ -4,7 +4,11 @@ use riotbox_app::jam_app::EXPLICIT_SOURCE_BPM_MATCH_TOLERANCE;
 use riotbox_audio::{
     source_audio::SourceAudioCache,
     source_timing_probe::{SourceTimingProbeConfig, analyze_source_timing_probe},
-    w30::W30ResampleTapState,
+    w30::{
+        W30_RESAMPLE_HIT_SHAPER_MIN_ATTACK_OVER_BODY,
+        W30_RESAMPLE_LOW_IMPACT_MIN_ATTACK_OVER_SOURCE, W30_RESAMPLE_LOW_IMPACT_MIN_ATTACK_SHARE,
+        W30ResampleTapState,
+    },
 };
 use riotbox_core::source_graph::{
     MeterHint, SourceTimingProbeBpmCandidatePolicy, SourceTimingProbeReadinessStatus,
@@ -49,6 +53,12 @@ struct W30HardProjectionReachability {
     hard_policy: &'static str,
     hard_suitability: &'static str,
     low_impact_recipe: &'static str,
+    low_band_attack_share: f32,
+    low_band_attack_share_min: f32,
+    low_band_attack_over_body: f32,
+    low_band_attack_over_body_min: f32,
+    low_band_attack_over_source: f32,
+    low_band_attack_over_source_min: f32,
     exact_callback_calibration_applicable: bool,
     exact_callback_evaluated: bool,
     exact_callback_calibrated: bool,
@@ -113,6 +123,12 @@ impl W30ReachabilityPreflightReport {
             hard_policy: state.hard_policy.label(),
             hard_suitability: state.hard_suitability.status.label(),
             low_impact_recipe: state.hard_low_impact.recipe.label(),
+            low_band_attack_share: state.hard_low_impact.low_band_attack_share,
+            low_band_attack_share_min: W30_RESAMPLE_LOW_IMPACT_MIN_ATTACK_SHARE,
+            low_band_attack_over_body: state.hard_low_impact.low_band_attack_over_body,
+            low_band_attack_over_body_min: W30_RESAMPLE_HIT_SHAPER_MIN_ATTACK_OVER_BODY,
+            low_band_attack_over_source: state.hard_low_impact.low_band_attack_over_source,
+            low_band_attack_over_source_min: W30_RESAMPLE_LOW_IMPACT_MIN_ATTACK_OVER_SOURCE,
             exact_callback_calibration_applicable: applicable,
             exact_callback_evaluated: state.hard_calibration.exact_callback_evaluated,
             exact_callback_calibrated: state.hard_calibration.exact_callback_calibrated,
@@ -274,6 +290,9 @@ mod tests {
             ..Default::default()
         };
         state.hard_low_impact.recipe = W30ResampleLowImpactRecipe::SourceHitShaperV3;
+        state.hard_low_impact.low_band_attack_share = 0.24;
+        state.hard_low_impact.low_band_attack_over_body = 1.65;
+        state.hard_low_impact.low_band_attack_over_source = 0.42;
         state.hard_calibration.exact_callback_evaluated = true;
         state.hard_calibration.exact_callback_calibrated = true;
         state
@@ -407,11 +426,13 @@ mod tests {
 
         assert!(report.candidate_wav_generation_eligible_after_preflight);
         assert!(report.blockers.is_empty());
-        assert!(
-            report
-                .projection
-                .expect("projection")
-                .candidate_requirement_satisfied
-        );
+        let projection = report.projection.expect("projection");
+        assert!(projection.candidate_requirement_satisfied);
+        assert_eq!(projection.low_band_attack_share, 0.24);
+        assert_eq!(projection.low_band_attack_share_min, 0.18);
+        assert_eq!(projection.low_band_attack_over_body, 1.65);
+        assert_eq!(projection.low_band_attack_over_body_min, 1.40);
+        assert_eq!(projection.low_band_attack_over_source, 0.42);
+        assert_eq!(projection.low_band_attack_over_source_min, 0.30);
     }
 }

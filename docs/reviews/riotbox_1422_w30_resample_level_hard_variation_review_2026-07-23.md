@@ -553,6 +553,37 @@ listening are still required before RIOTBOX-1422 can close.
 The two H17 technical cases were retired and replaced one-for-one before that
 fresh gate. `oga_congusbongus_head_in_the_sand` (tonal riff) and
 `oga_srg774_sector` (pad/noise) were acquired from provider-declared
-CC0 sources and classified from metadata only. Only format, duration, peak,
-clipping, and deterministic conversion were inspected; neither replacement
-was listened to, preflighted, or rendered.
+CC0 sources and classified from metadata only. At acquisition time, only
+format, duration, peak, clipping, and deterministic conversion were inspected;
+neither replacement had yet been listened to, preflighted, or rendered.
+
+### H18 fresh-holdout rejection and H19 reachability evidence
+
+The frozen H18 implementation produced no review candidate from three fresh
+Holdout A cases:
+
+- `oga_frenchyboy_tech_rave_faster` exposed only two onsets in 16 seconds, so
+  timing was unavailable before product projection;
+- `oga_congusbongus_head_in_the_sand` matched its provider 150 BPM at
+  `149.66743 BPM`, but the product correctly made Hard unavailable because the
+  source was too quiet and sparse (`0.016379` RMS, `0.201` active-frame ratio);
+- `oga_sudocolon_dance` reached `source_transient_chop`, but did not select
+  `source_hit_shaper_v3`.
+
+H19 adds the existing selector evidence to
+`riotbox.w30_reachability_preflight.v1`; it changes neither DSP nor selector
+gates. Sudocolon's low-band attack share (`0.48562`) and attack-over-source
+ratio (`1.22218`) passed their `0.18` and `0.30` floors, while
+attack-over-following-body was only `1.01756` against `1.40`. This is evidence
+of sustained low body, not a clear attack-owned low impact. Lowering the gate
+would make an inappropriate source satisfy the recipe rather than fix
+reachability.
+
+All three sources are consumed technical evidence without candidate WAVs or
+human verdicts. Holdout A was replenished one-for-one with unheard CC0 sources
+`oga_poinl_perces`, `oga_turnovus_simple_drumbeat_body`, and
+`oga_extenz_emotional_piano`. Their family labels remain provisional metadata
+classifications until the frozen H19 preflight consumes them. The Turnovus
+derivative uses fixed `0.75` import headroom because sample-rate conversion of
+the full-scale original exposed sample-peak overshoot; this is corpus hygiene,
+not candidate normalization or product DSP.

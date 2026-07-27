@@ -4,7 +4,7 @@
   "ticket": "RIOTBOX-1422",
   "generation": "H18",
   "recorded_on": "2026-07-27",
-  "classification": "development_characterization",
+  "classification": "development_characterization_and_frozen_holdout_rejection",
   "quality_proof": false,
   "human_verdict": "unverified",
   "inherits": "docs/benchmarks/w30_resample_h17_characterization_v1.json",
@@ -87,7 +87,45 @@
     "all_expected_outcomes_pass": true,
     "missing_source_output": "digital_silence"
   },
-  "acceptance_status": "pending_fresh_multi_family_holdout",
+  "fresh_holdout_results": [
+    {
+      "case_id": "oga_frenchyboy_tech_rave_faster",
+      "source_family": "dense_break",
+      "timing_onset_count": 2,
+      "timing_status": "unavailable",
+      "candidate_rendered": false,
+      "technical_verdict": "ineligible_timing_unavailable"
+    },
+    {
+      "case_id": "oga_congusbongus_head_in_the_sand",
+      "source_family": "tonal_riff",
+      "provider_bpm": 150.0,
+      "rust_primary_bpm": 149.66743,
+      "hard_policy": "unavailable",
+      "hard_suitability": "insufficient_level",
+      "source_rms": 0.016379,
+      "active_frame_ratio": 0.201,
+      "candidate_rendered": false,
+      "technical_verdict": "ineligible_hard_policy"
+    },
+    {
+      "case_id": "oga_sudocolon_dance",
+      "source_family": "dense_break",
+      "rust_primary_bpm": 139.9689,
+      "hard_policy": "source_transient_chop",
+      "low_impact_recipe": "unavailable",
+      "low_band_attack_share": 0.48561874,
+      "low_band_attack_share_min": 0.18,
+      "low_band_attack_over_body": 1.0175626,
+      "low_band_attack_over_body_min": 1.4,
+      "low_band_attack_over_source": 1.2221814,
+      "low_band_attack_over_source_min": 0.3,
+      "candidate_rendered": false,
+      "technical_verdict": "ineligible_recipe_non_selection"
+    }
+  ],
+  "acceptance_status": "rejected_before_candidate_rendering",
   "human_listening_allowed": false,
-  "next_gate": "Freeze H18, preflight an untouched holdout subset, render only eligible exact-path candidates, then run structured human listening."
+  "freeze_consequence": "All three sources are consumed technical evidence. No H18 candidate WAV exists and no human verdict was requested.",
+  "next_gate": "Expose the existing low-impact selector evidence in preflight, preserve its gates, replenish the rotation, and seek fresh causal exact-path coverage."
 }

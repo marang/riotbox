@@ -3469,3 +3469,17 @@ Why: H17 calibrated the H12/H13 combination but gated H12 separately, allowing H
 Evidence: the corrected development matrix passes eight sources across dense break, dense-full-mix stress, sparse drums, tonal riff, pad/noise, and weak/unavailable behavior. Exact Beat03, Bertsz, and consumed Lasso cases pass with H13 impact-body ratios 1.0633, 1.0720, and 1.1410 and Base-to-Hard levels 1.2690, 1.2340, and 1.1652. Their H12 late-body ratios are 1.03995, 1.02299, and 0.97333. Four inherited-policy cases remain within 1.15; the weak case remains explicitly unavailable; missing-source output remains digital silence.
 Consequences: H17 Lasso and Oriented are consumed technical evidence and receive no human verdict. H18 development behavior may now be frozen for a fresh multi-family reachability preflight, but it is not quality proof. Bass remains unassigned; the change claims drum/transient and midrange/hook body plus arrangement impact only.
 Status: accepted development mechanism; fresh holdout and structured listening pending
+
+---
+
+### RBX-173
+
+Date: 2026-07-27
+Topic: expose low-impact selector evidence instead of weakening the recipe against a sustained source
+Phase: P023 / Controlled Expansion
+Question: should Riotbox lower the `source_hit_shaper_v3` selector after the frozen H18 holdout produced no exact-path candidate?
+Decision: no. Keep the `0.18` low-band attack-share, `1.40` attack-over-following-body, and `0.30` attack-over-source floors unchanged. Add all three measured values and floors to `riotbox.w30_reachability_preflight.v1`, consume the H18 cases as technical evidence, replenish the rotating holdout, and seek a fresh source whose analysis genuinely selects the exact recipe.
+Why: Sudocolon passed low-band share and source-relative energy but measured only `1.01756x` attack over following body. That is sustained low body rather than a distinct low impact. Lowering the ownership floor would fit the selector to an inappropriate holdout and weaken the causal meaning of Hard.
+Evidence: frozen H18 also rejected Frenchyboy before projection because timing found only two onsets, and Head in the Sand after timing because Hard suitability was `insufficient_level`. No candidate WAV was generated and no human listening occurred. The H19 preflight regression serializes the selector inputs, while holdout fixture and local-file validators prove the replacement rotation is structurally valid and unclipped.
+Consequences: H19 changes observability and corpus rotation only; product DSP and selection remain frozen. Human review remains disallowed until a fresh exact-path candidate passes unchanged technical gates. Recipe unavailability is a valid fail-closed outcome, not a musical failure or permission to synthesize fallback sound.
+Status: accepted diagnostic direction; fresh exact-path candidate pending

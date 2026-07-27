@@ -1,0 +1,58 @@
+{
+  "schema": "riotbox.w30_resample_hard_characterization.v1",
+  "schema_version": 1,
+  "ticket": "RIOTBOX-1422",
+  "generation": "H19",
+  "recorded_on": "2026-07-27",
+  "classification": "diagnostic_and_holdout_replenishment",
+  "quality_proof": false,
+  "human_verdict": "unverified",
+  "inherits": "docs/benchmarks/w30_resample_h18_characterization_v1.json",
+  "product_dsp_changed": false,
+  "selector_gates_changed": false,
+  "preflight_evidence_added": {
+    "schema": "riotbox.w30_reachability_preflight.v1",
+    "fields": [
+      "low_band_attack_share",
+      "low_band_attack_share_min",
+      "low_band_attack_over_body",
+      "low_band_attack_over_body_min",
+      "low_band_attack_over_source",
+      "low_band_attack_over_source_min"
+    ]
+  },
+  "consumed_diagnostic": {
+    "case_id": "oga_sudocolon_dance",
+    "hard_policy": "source_transient_chop",
+    "low_impact_recipe": "unavailable",
+    "low_band_attack_share": 0.48561874,
+    "low_band_attack_share_min": 0.18,
+    "low_band_attack_over_body": 1.0175626,
+    "low_band_attack_over_body_min": 1.4,
+    "low_band_attack_over_source": 1.2221814,
+    "low_band_attack_over_source_min": 0.3,
+    "interpretation": "The source carries low-band energy, but its attack is only 1.01756 times its following body. It is sustained low body rather than a clearly attack-owned low impact, so preserving recipe non-selection is correct."
+  },
+  "rotation_replenishment": [
+    {
+      "case_id": "oga_poinl_perces",
+      "source_family": "tonal_riff",
+      "provider_bpm": 112.0,
+      "classification_status": "provisional_unheard_holdout"
+    },
+    {
+      "case_id": "oga_turnovus_simple_drumbeat_body",
+      "source_family": "dense_break",
+      "classification_status": "provisional_unheard_holdout"
+    },
+    {
+      "case_id": "oga_extenz_emotional_piano",
+      "source_family": "tonal_riff",
+      "provider_bpm": 138.0,
+      "classification_status": "provisional_unheard_holdout"
+    }
+  ],
+  "acceptance_status": "pending_fresh_exact_path_candidate",
+  "human_listening_allowed": false,
+  "next_gate": "Freeze H19, preflight fresh holdout sources across at least two families, and render only an exact source_hit_shaper_v3 candidate that passes the unchanged product-path gates."
+}
