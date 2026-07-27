@@ -1438,6 +1438,20 @@ holdout/generalization claim. Two further reserve cases repeatedly rendered
 across changing candidates are conservatively retired and independently
 replaced as well, so the active replacements remain untouched.
 
+RIOTBOX-1425 subsequently preserved the `0.18`, `1.40`, and `0.30` W-30
+ownership gates while selecting source-local low-body transient evidence. The
+frozen H23 attempt then stopped both replacement sources before product
+projection because their independent tempo disagreed with the Rust primary and
+no phase truth existed. RIOTBOX-1426 addresses only that timing blocker: a typed
+`TempoGuided` hypothesis keeps external BPM while selecting phase from actual
+source onsets under explicit support, margin, complete-bar, and drift gates. It
+persists through Source Graph restore, identifies itself separately from
+analyzer and musician-manual timing, and emits no fake user-confirm action.
+Development evidence admits 8-Bit Victory at its project-derived 180 BPM while
+Drama, a drifting sparse challenge, pad/noise, and one-shot controls fail
+closed. W-30 DSP and hit-shaper thresholds remain frozen. After review and full
+QA, this directly enables one fresh RIOTBOX-1422 H24 exact-path attempt.
+
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a
 quality guardrail, not a replacement for the current sound-product priority:

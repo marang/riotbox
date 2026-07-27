@@ -197,6 +197,12 @@ impl TimingHypothesis {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TimingHypothesisKind {
     Primary,
+    /// A source-derived grid whose tempo was supplied externally while Riotbox
+    /// selected and proved the downbeat phase from source onset evidence.
+    ///
+    /// This is neither an automatic tempo estimate nor musician-declared phase
+    /// truth.
+    TempoGuided,
     /// A grid declared by the musician with explicit BPM and downbeat phase.
     ///
     /// This is user-owned timing truth, not analyzer evidence.

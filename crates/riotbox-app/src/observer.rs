@@ -291,6 +291,9 @@ fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
             .primary_hypothesis()
             .map(|hypothesis| match hypothesis.kind {
                 riotbox_core::source_graph::TimingHypothesisKind::Primary => "analyzer_primary",
+                riotbox_core::source_graph::TimingHypothesisKind::TempoGuided => {
+                    "source_tempo_guided"
+                }
                 riotbox_core::source_graph::TimingHypothesisKind::Manual => "musician_manual",
                 riotbox_core::source_graph::TimingHypothesisKind::HalfTime => "half_time",
                 riotbox_core::source_graph::TimingHypothesisKind::DoubleTime => "double_time",

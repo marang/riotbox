@@ -123,7 +123,8 @@ use helpers::{
 pub use live_source_timing::EXPLICIT_SOURCE_BPM_MATCH_TOLERANCE;
 use live_source_timing::{
     confirm_explicit_source_bpm, enrich_graph_with_rust_source_timing,
-    install_explicit_manual_source_grid, validate_explicit_source_bpm,
+    install_explicit_manual_source_grid, install_tempo_guided_source_grid,
+    validate_explicit_source_bpm,
 };
 pub use product_export::{
     DawSessionExportSurfaceBlocker, DawSessionExportSurfaceGate, DawSessionExportSurfaceStatus,

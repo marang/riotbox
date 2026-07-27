@@ -50,6 +50,16 @@ two more were repeatedly rendered across changing candidates. All three are now
 conservatively retired with rotation history and independent CC0 replacements;
 the replacements remain unheard and provisional.
 
+After RIOTBOX-1425 made source-local hit-shaper evidence reachable, H23 stopped
+before product projection because provider/project tempo conflicted with the
+Rust primary and no independent phase existed. RIOTBOX-1426 now adds a typed
+`TempoGuided` Source Graph route: external BPM may drive product timing only
+when actual source onsets select a stable, complete-bar downbeat phase. The
+development matrix admits 8-Bit Victory Loop, still rejects Drama and
+drifting/sparse controls, preserves matching-primary and explicit-manual
+routes, and changes no W-30 DSP or hit-shaper gate. Fresh H24 reserve material
+remains inaccessible until review and full QA complete.
+
 `P016`, `P021`, and `P022` remain subordinate to the active P023 product path.
 Offline renderers, scripted packs, fixture verdicts, reports, and validators
 remain diagnostic evidence; they do not count as instrument progress until the

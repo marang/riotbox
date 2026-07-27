@@ -104,8 +104,10 @@ impl JamAppState {
         let pong = client.ping()?;
         let mut graph = client.analyze_source_file(&source_path, analysis_seed)?;
         drop(client);
-        enrich_graph_with_rust_source_timing(&mut graph, &source_path)?;
-        if let Some(explicit_source_downbeat_seconds) = explicit_source_downbeat_seconds {
+        let timing_input = enrich_graph_with_rust_source_timing(&mut graph, &source_path)?;
+        let requires_user_confirmation = if let Some(explicit_source_downbeat_seconds) =
+            explicit_source_downbeat_seconds
+        {
             let explicit_source_bpm = explicit_source_bpm.ok_or_else(|| {
                 JamAppError::InvalidSession(
                     "explicit source downbeat requires an explicit source BPM".into(),
@@ -116,10 +118,17 @@ impl JamAppState {
                 explicit_source_bpm,
                 explicit_source_downbeat_seconds,
             )?;
-        }
-        if let Some(explicit_source_bpm) = explicit_source_bpm {
-            validate_explicit_source_bpm(&graph, explicit_source_bpm)?;
-        }
+            true
+        } else if let Some(explicit_source_bpm) = explicit_source_bpm {
+            if validate_explicit_source_bpm(&graph, explicit_source_bpm).is_ok() {
+                true
+            } else {
+                install_tempo_guided_source_grid(&mut graph, &timing_input, explicit_source_bpm)?;
+                false
+            }
+        } else {
+            false
+        };
 
         let session =
             session_from_ingested_graph(&graph, &source_path, source_graph_path.as_deref())?;
@@ -129,7 +138,9 @@ impl JamAppState {
         save_session_json(&session_path, &session)?;
 
         let mut state = Self::from_json_files(&session_path, source_graph_path.as_deref())?;
-        if let Some(explicit_source_bpm) = explicit_source_bpm {
+        if requires_user_confirmation {
+            let explicit_source_bpm = explicit_source_bpm
+                .expect("explicit timing confirmation route always has source BPM");
             confirm_explicit_source_bpm(&mut state, explicit_source_bpm)?;
             state.save()?;
         }

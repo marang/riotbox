@@ -6,6 +6,7 @@ pub mod timing_evaluation;
 pub mod timing_manual_grid;
 pub mod timing_probe_candidates;
 pub mod timing_probe_diagnostics;
+pub mod timing_tempo_guided;
 
 pub use mc202_phrase_features::*;
 pub use model_and_helpers::*;
@@ -15,6 +16,7 @@ pub use timing_evaluation::*;
 pub use timing_manual_grid::*;
 pub use timing_probe_candidates::*;
 pub use timing_probe_diagnostics::*;
+pub use timing_tempo_guided::*;
 
 #[cfg(test)]
 #[path = "mc202_phrase_feature_tests.rs"]

@@ -496,6 +496,16 @@ After exit:
   `oga_hornpipe2_prehistoric_drums`, and `oga_akikazer_menu` by
   `oga_centurion_chippy_melody`. The replacements remain unheard and
   provisional; acquisition alone is not acceptance evidence.
+- RIOTBOX-1426 supplies the bounded trusted-grid enabler exposed by the frozen
+  H23 rejection without consuming H24 reserve material. A typed `TempoGuided`
+  Source Graph hypothesis combines external tempo with a downbeat phase chosen
+  only from real onset evidence, requires complete-bar support and bounded
+  drift, persists without a fabricated user-confirmation action, and is exposed
+  through observer and W-30 preflight evidence. The multi-family development
+  matrix selects 8-Bit Victory at its independently derived 180 BPM while
+  Drama, sparse-drift, pad/noise, and one-shot controls reject. This is timing
+  reachability, not a W-30 Hard or musical-quality pass; H24 still requires the
+  fresh exact live path and structured listening.
 - P016 and the wider P021/P022/P023 quality ladder may resume from the accepted
   live baseline
 

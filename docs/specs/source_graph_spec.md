@@ -137,11 +137,20 @@ The first six fields are the compatibility surface used by existing consumers.
 The richer fields are the Source Timing Intelligence surface and should become
 the preferred contract for new timing-aware work.
 
-`TimingHypothesis.kind` distinguishes analyzer candidates from the typed
-`Manual` hypothesis created only when the musician declares both BPM and
-downbeat phase. Selecting that hypothesis may update compatibility timing
-fields, but analyzer hypotheses, warnings, and provider provenance remain in
-the graph so manual trust cannot be mistaken for detection quality.
+`TimingHypothesis.kind` distinguishes analyzer candidates from both typed
+external-timing routes:
+
+- `TempoGuided` uses externally supplied BPM but derives its downbeat phase
+  from source onset evidence. It is machine-selected, not analyzer-estimated
+  tempo and not musician-declared phase truth.
+- `Manual` exists only when the musician declares both BPM and downbeat phase.
+
+Selecting either hypothesis may update compatibility timing fields, but
+analyzer hypotheses, warnings, and provider provenance remain in the graph.
+`TempoGuided` identity binds requested tempo, selected source phase, and the
+actual source onset anchor; `Manual` identity binds both declared values. This
+prevents restored or replayed consumers from confusing detection quality,
+source-derived phase, and user-owned trust.
 
 ### 7.1 Beat grid
 

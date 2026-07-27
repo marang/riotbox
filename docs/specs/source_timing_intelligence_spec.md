@@ -119,6 +119,8 @@ TimingHypothesis {
 `kind` should distinguish at least:
 
 - `primary`
+- `tempo_guided`
+- `manual`
 - `half_time`
 - `double_time`
 - `alternate_downbeat`
@@ -296,13 +298,20 @@ Rules:
   manual-confirm, fallback, unavailable, non-finite, and non-positive timing
   must expose no live lane BPM until trust changes through the existing Session
   action path.
-- `riotbox-app --source-bpm <bpm>` is a bounded explicit confirmation, not an
-  arbitrary BPM override or a second grid generator. It may commit
-  `source_timing.confirm_grid` only when the Rust probe produced a primary grid
-  within 1 BPM of the supplied positive finite value. Missing or mismatched
-  candidates fail before ingest persistence; successful confirmation retains
-  source id, hypothesis id, action id, and timestamp through Session restore and
-  replay.
+- `riotbox-app --source-bpm <bpm>` has two bounded routes and is not an
+  arbitrary phase override. When the Rust probe produced a primary grid within
+  1 BPM of the supplied positive finite value, the existing
+  `source_timing.confirm_grid` user action commits and retains source id,
+  hypothesis id, action id, and timestamp through Session restore and replay.
+  When the primary is missing or mismatched, Riotbox may instead construct a
+  typed `TempoGuided` hypothesis only when source onsets select one non-invented
+  downbeat phase with sufficient grid support, score margin, complete-bar
+  coverage, and bounded drift. Candidate phases must come from real source
+  onset times modulo the supplied bar period; phase zero is never a default.
+  This machine-derived route persists in Source Graph, retains analyzer
+  hypotheses and warnings, becomes `locked_grid`, and does not emit a fake
+  `source_timing.confirm_grid` user action. If its evidence rejects, the
+  pre-existing missing/mismatch failure remains.
 - `riotbox-app --source-bpm <bpm> --source-downbeat-seconds <seconds>` is the
   explicit exception for a musician who knows the tempo and first-downbeat
   phase of timing-poor tonal material. Both values are required to construct a
@@ -315,6 +324,13 @@ Rules:
   may project the selected manual hypothesis, but neither UI nor QA may label
   it analyzer-derived or automatic timing. Observer output identifies the
   selected kind as `musician_manual`.
+- observer and W-30 preflight output identify the machine-derived external-tempo
+  route as `source_tempo_guided` /
+  `source_derived_downbeat_at_external_tempo`, and serialize its requested BPM,
+  source phase anchor, selected phase, onset/grid ratios, complete-bar hit
+  coverage, score/margin, and drift. A selected product graph must reproduce
+  that BPM and first complete-bar phase exactly enough to prevent analysis /
+  projection disagreement.
 - confirmation is explicitly revertible through `source_timing.revert_grid`;
   that action clears a matching `runtime_state.source_timing.confirmed_grid`
   value through queue / commit / replay rather than deleting or weakening the

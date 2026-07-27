@@ -71,8 +71,9 @@ use riotbox_core::{
         AnalysisSummary, AnalysisWarning, Asset, AssetType, BeatPoint, Candidate, CandidateType,
         DecodeProfile, EnergyClass, GraphProvenance, MeterHint, QualityClass, Relationship,
         PhraseAudioFeatures, RelationshipType, Section, SectionLabelHint, SourceDescriptor, SourceGraph,
-        SourceGraphVersion, SourceTimingAnchorType, TimingDegradedPolicy, TimingHypothesis,
-        TimingHypothesisKind, TimingQuality,
+        SourceGraphVersion, SourceTimingAnchorType, SourceTimingProbeBpmCandidateInput,
+        TempoGuidedTimingDecision, TimingDegradedPolicy, TimingHypothesis, TimingHypothesisKind,
+        TimingQuality,
     },
     transport::{CommitBoundaryState, TransportClockState},
     view::jam::{
