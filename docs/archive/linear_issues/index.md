@@ -1456,4 +1456,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Prequalify trusted-grid and W-30 Hard-recipe reachability before frozen holdout
 - [RIOTBOX-1425.md](./RIOTBOX-1425.md)
   P023: Make W-30 hit-shaper reachability source-adaptive
+- [RIOTBOX-1426.md](./RIOTBOX-1426.md)
+  P023: Derive a source-backed downbeat phase for externally supplied tempo
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
