@@ -419,3 +419,93 @@ work follows
 `docs/engineering/perceptual_hardness_and_musical_impact.md` and must not treat
 another combination of fixed drive/wet/body/edge floats tuned to Beat03 as
 generalized Hard behavior.
+
+## W-30 H13 Reverse-Into-Impact Values
+
+H13 is the frozen `source_reverse_into_impact_v1` experiment documented in
+`docs/benchmarks/w30_resample_h13_characterization_v1.json`. Its values have
+separate units and responsibilities:
+
+- `0.02 s` and `0.10 s` delimit the source-analysis head and body windows. The
+  callback articulates the corresponding `20..100 ms` output window.
+- `0.90` is a dimensionless source-relative target: a weak selected body may
+  approach 90% of that same impact's measured head RMS. It is not an output
+  gain, wet mix, confidence, or QA threshold.
+- `1.12..=1.40` bounds the derived body gain. `1.12` guarantees a meaningful
+  local experiment; `1.40` prevents the source-relative target from becoming
+  an unbounded loudness fix. The final value still varies by source.
+- `0.75` is the lower bound for the independently derived impact-energy
+  compensation. It prevents the body lift from passing by raising the entire
+  impact.
+- `0.12 s` is the reverse-pickup duration. `0.20` is the minimum share of
+  whole-source RMS used when the preceding slot tail is nearly silent, and
+  `0.10` is the pickup gain floor. These are source-normalization controls, not
+  invented audio or a synthetic fallback.
+- `10 ms` ramps the reverse pickup into the compensated impact boundary.
+  `2.5 ms` smooths entry to and exit from the body articulation. Both are
+  click-control durations, not rhythmic offsets.
+- `1.05` is the frozen H12-to-H13 selected-body RMS gate; `0.20` is the frozen
+  pickup relative-delta gate; `1.50` is the maximum local boundary-outlier
+  ratio. These values validate distinct audible consequences and do not
+  substitute for structured listening.
+
+The body articulation is applied after the existing H12 callback voice has
+been produced. An earlier implementation extended every selected attack replay
+to 100 ms; that reduced body on short and textural sources before gain was
+applied. Keeping H12's source-owned attack length and articulating the actual
+output body fixes the causal error instead of compensating it with a larger
+global scalar.
+
+## W-30 H14 Exact Hit-Window Calibration Values
+
+H14 supersedes the fixed H12 hit-shaper output calibration without rewriting
+the frozen H13 evidence above:
+
+- `0.94` remains the versioned H12 schema output gain and the retained target
+  for the selected hit's `100..200 ms` following-body window. It is no longer
+  applied blindly to the complete source.
+- `1.0` is unity, not a taste boost: the selected hit's `0..100 ms` primary
+  window is kept at the unattenuated callback level while material between
+  selected hits receives the source/tempo-specific whole-path gain.
+- `20 ms` of source-backed material immediately before a selected hit is also
+  kept at unity. A `2.5 ms` smooth lead-in starts before that window, so the
+  gain change does not introduce a new click while the complete 20 ms context
+  still reaches unity. This primes the declared 900–3600 Hz head filter from
+  the actual pre-hit context instead of the attenuated between-hit level.
+- `200 ms` is the end of the retained following-body window; `10 ms` is its
+  smooth transition back to the calibrated between-hit gain. These windows
+  correspond to the existing role-specific QA regions, not invented notes or
+  a new rhythm.
+- `1.20` is the preferred exact-callback whole-path RMS ratio; `1.30` remains
+  the hard release ceiling. Three exact endpoint callback renders establish
+  source-specific energy curves, a ten-step in-memory search proposes the
+  between-hit gain, and at most four exact callback refinements resolve model
+  error or the role floors below. Every exact render covers four complete
+  eight-step cycles at 48 kHz stereo, and every measured window covers all
+  four cycles. The result is cached by source revision, trusted tempo,
+  variation, grit, policy, trigger/onset plan, low-impact recipe, and H13
+  gesture plan.
+- `0.25` is the minimum between-hit output gain. Its inverse establishes the
+  `4.0` maximum local compensation needed to retain a selected primary hit at
+  unity. The compensation never makes that hit hotter than the unattenuated
+  callback path.
+- `1.10` is the calibration search's anti-collapse floor for the filtered
+  0–20 ms head and `1.15` is its 20–100 ms body floor. If the preferred
+  `1.20` whole-path target and these role floors cannot all be met, the
+  calibration chooses the lowest exact gain that retains both roles, but only
+  while the exact result remains below `1.30`. The authoritative product-path
+  QA still independently requires its own `1.15` filtered-head gate. A source
+  that misses any authoritative gate is still rejected.
+- `0.95` is H14's updated source-relative selected-body target and
+  `1.12..=1.45` its gain range. The earlier H13 values (`0.90`,
+  `1.12..=1.40`) remain frozen historical evidence. H14 raises only the
+  source-selected 20–100 ms impact body; it does not assign bass or raise the
+  whole path.
+
+The derived output gain, selected-hit compensation, exact-calibration flag,
+evaluated flag, and predicted level/body ratios are visible in runtime and
+observer evidence. Matching evaluated rejections are cached as well as
+successful calibrations, so an unsuitable hit-shaper source cannot trigger the
+same offline render search on every view refresh. Missing source PCM, untrusted
+tempo, non-transient policy, and non-hit-shaper recipes do not run this
+calibration.

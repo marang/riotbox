@@ -1,0 +1,271 @@
+{
+  "schema": "riotbox.w30_resample_hard_characterization.v1",
+  "schema_version": 1,
+  "ticket": "RIOTBOX-1422",
+  "frozen_on": "2026-07-27",
+  "classification": "technical_characterization",
+  "quality_proof": false,
+  "human_verdict": "unverified",
+  "candidate_generation": "w30_resample_exact_hit_window_calibration_v1",
+  "inherits": "docs/benchmarks/w30_resample_h13_characterization_v1.json",
+  "rejected_predecessor": {
+    "generation": "w30_resample_source_reverse_into_impact_v1",
+    "technical_verdict": "rejected_by_frozen_holdout",
+    "primary_failure_case": "oga_iamoneabe_tryme",
+    "base_to_h12_level_ratio": 1.41339,
+    "h12_to_h13_level_ratio": 1.02599,
+    "base_to_h13_level_ratio": 1.45012,
+    "allowed_max": 1.3,
+    "diagnosis": "The fixed H12 whole-path gain caused the overshoot; H13 was not the primary level failure."
+  },
+  "single_causal_change": {
+    "typed_scope": "source_hit_shaper_v3 on source_transient_chop only",
+    "control_plane_calibration": {
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "eight_step_cycles": 4,
+      "preferred_whole_path_ratio": 1.2,
+      "maximum_whole_path_ratio": 1.3,
+      "minimum_between_hit_gain": 0.25,
+      "endpoint_callback_renders": 3,
+      "in_memory_curve_search_steps": 10,
+      "maximum_exact_refinement_steps_per_constraint": 4,
+      "head_ratio_floor": 1.1,
+      "body_ratio_floor": 1.15,
+      "all_rendered_cycles_measured": true,
+      "matching_input_result_cached": true,
+      "matching_evaluated_rejection_cached": true
+    },
+    "callback_window_policy": {
+      "pre_hit_context_ms": 20,
+      "pre_hit_fade_ms": 2.5,
+      "selected_primary_hit_ms": "0..100",
+      "selected_primary_hit_gain": 1.0,
+      "following_body_ms": "100..200",
+      "following_body_gain": 0.94,
+      "between_hit_gain": "source_and_tempo_specific",
+      "transition_back_to_between_hit_ms": 10
+    },
+    "h13_selected_body_target": 0.95,
+    "h13_body_gain_range": "1.12..=1.45",
+    "rhythm_or_trigger_policy_changed": false,
+    "source_selection_changed": false,
+    "missing_source_fallback": false,
+    "synthetic_kick_or_bass": false,
+    "bass_owner": "unassigned"
+  },
+  "frozen_gates": {
+    "inherits_h13_gates": true,
+    "base_to_hard_level_ratio": {
+      "min": 0.9,
+      "legacy_or_texture_max": 1.15,
+      "source_hit_shaper_v3_max": 1.3
+    },
+    "base_to_h12_filtered_head_ratio_min": 1.15,
+    "base_to_h12_filtered_body_ratio_min": 1.15,
+    "h12_to_h13_selected_impact_body_ratio_min": 1.05,
+    "h12_to_h13_reverse_pickup_relative_delta_min": 0.2,
+    "boundary_local_outlier_ratio_max": 1.5,
+    "hard_output_must_be_non_silent_unclipped": true,
+    "missing_source_output_must_be_digital_silence": true,
+    "candidate_and_gates_must_not_change_after_holdout_starts": true
+  },
+  "development_results": [
+    {
+      "case_id": "oga_iamoneabe_tryme",
+      "source_family": "dense_break",
+      "calibrated_output_gain": 0.639841,
+      "hit_window_compensation_gain": 1.562888,
+      "base_to_h12_level_ratio": 1.258777,
+      "base_to_h12_head_ratio": 1.167593,
+      "base_to_h12_body_ratio": 1.304631,
+      "h12_to_h13_level_ratio": 1.026485,
+      "h12_to_h13_body_ratio": 1.055392,
+      "pickup_relative_delta": 1.970436,
+      "base_to_h13_level_ratio": 1.29208,
+      "base_sha256": "672f8259dd1a7ab4c6f5f44ed10a3c6433b2078fbc9a8cf303eabe6b645b4047",
+      "h12_sha256": "65a7409dfa293126452638f3bc152b21ed396823b89e8940d7214c50dff4e406",
+      "h14_sha256": "0a8acbe13452692819e49fd4f47721d95f4d0511855a95ca87a8d7fd1b0e2a5f",
+      "outcome": "technical_gate_pass"
+    },
+    {
+      "case_id": "beat03_130",
+      "source_family": "dense_break",
+      "calibrated_output_gain": 0.869222,
+      "base_to_h12_level_ratio": 1.231588,
+      "base_to_h12_head_ratio": 1.439246,
+      "base_to_h12_body_ratio": 1.17125,
+      "h12_to_h13_body_ratio": 1.055533,
+      "pickup_relative_delta": 8.567614,
+      "base_sha256": "390d482e2ad1c9af94bdd4e754116c66b2bf288b4cc10e4c6291a088eb1d533d",
+      "h12_sha256": "293bd8669edd2eb35325f9fdc453fe06b064e6f478c6e74d9156066e18e86d63",
+      "h14_sha256": "4f096441149699a4af4f3544277fba8a7219d866547c25264dd8d30786cbb520",
+      "outcome": "technical_gate_pass"
+    },
+    {
+      "case_id": "oga_bertsz_dnb",
+      "source_family": "dense_full_mix",
+      "calibrated_output_gain": 0.790663,
+      "base_to_h12_level_ratio": 1.207666,
+      "base_to_h12_head_ratio": 1.766714,
+      "base_to_h12_body_ratio": 2.036692,
+      "h12_to_h13_body_ratio": 1.068385,
+      "pickup_relative_delta": 1.353323,
+      "base_sha256": "8bd31e3d4abd68668ef1acabfc35a730fd43774760383fe96a3c62190c4c110d",
+      "h12_sha256": "20d48bc6dc6dc198ea1d267378f7f1cb4c5f2402dccb2fcfde490d41f4a99b98",
+      "h14_sha256": "2602df8318b4d739a5c6dd1ad0e1518125c263586e4acbf9d3aa5563637004b6",
+      "outcome": "technical_gate_pass_stress_only"
+    },
+    {
+      "case_id": "oga_cinameng_can_be_so_beautiful",
+      "source_family": "dense_break",
+      "calibration": "not_applicable_low_impact_unavailable",
+      "h12_to_h13_body_ratio": 1.110936,
+      "pickup_relative_delta": 0.701073,
+      "outcome": "technical_gate_pass"
+    },
+    {
+      "case_id": "oga_marwan_cinematic_percussion",
+      "source_family": "sparse_drums",
+      "calibration": "not_applicable_low_impact_unavailable",
+      "h12_to_h13_body_ratio": 1.298322,
+      "pickup_relative_delta": 1.266124,
+      "outcome": "technical_gate_pass"
+    },
+    {
+      "case_id": "oga_obscure_level1_step2_evil",
+      "source_family": "tonal_riff",
+      "calibration": "not_applicable_low_impact_unavailable",
+      "h12_to_h13_body_ratio": 1.360697,
+      "pickup_relative_delta": 0.950787,
+      "outcome": "technical_gate_pass"
+    },
+    {
+      "case_id": "oga_beardalaxy_church_in_game",
+      "source_family": "pad_noise",
+      "calibration": "not_applicable_low_impact_unavailable",
+      "h12_to_h13_body_ratio": 1.240947,
+      "pickup_relative_delta": 0.926622,
+      "outcome": "technical_gate_pass"
+    },
+    {
+      "case_id": "oga_pauliuw_dumus",
+      "source_family": "weak_source",
+      "calibration": "not_applicable",
+      "hard_gesture_recipe": "unavailable",
+      "outcome": "technical_gate_pass_explicit_unavailable_base_preserved"
+    },
+    {
+      "case_id": "oga_ogrebane_dark_ambience_1",
+      "source_family": "pad_noise",
+      "calibration": "not_applicable",
+      "hard_policy": "source_texture_bite",
+      "outcome": "technical_gate_pass_texture_policy_unchanged"
+    },
+    {
+      "case_id": "oga_epb9000_creepyloop_v2",
+      "source_family": "pad_noise",
+      "calibration": "not_applicable",
+      "hard_policy": "source_texture_bite",
+      "outcome": "technical_gate_pass_texture_policy_unchanged"
+    }
+  ],
+  "pre_freeze_validation": {
+    "cargo_fmt_check": "pass",
+    "cargo_test_workspace": "pass",
+    "cargo_check_workspace_all_targets": "pass",
+    "cargo_clippy_all_targets_all_features_deny_warnings": "pass",
+    "broad_audio_qa_ci": "pass",
+    "riotbox_audio_w30_resample_tests": "pass",
+    "riotbox_app_resample_attack_bite_tests": "pass",
+    "exact_callback_calibration_and_cache_regression": "pass",
+    "evaluated_rejection_cache_regression": "pass",
+    "all_rendered_cycles_measurement_regression": "pass",
+    "selected_hit_window_preservation_regression": "pass",
+    "source_holdout_rotation_fixture_validator": "pass",
+    "source_holdout_rotation_local_files_validator": "pass",
+    "development_matrix": "10_of_10_pass"
+  },
+  "holdout_at_freeze": {
+    "evaluation_set": "holdout_a",
+    "state": "consumed",
+    "source_case_ids": [
+      "oga_frostyham_osdrums",
+      "oga_fupi_tense_bass_boost_drums",
+      "oga_2dplatformerguy_short_chiptune",
+      "oga_jaggedstone_dungeon_ambience",
+      "oga_springspring_interesting_snare"
+    ],
+    "reserve_set": "holdout_b",
+    "reserve_state": "untouched",
+    "reserve_source_case_ids": [
+      "oga_tricksntraps_psychic",
+      "oga_eldritchgrim_pirates_incoming",
+      "oga_eldritchgrim_chiptune_loop",
+      "oga_yoiyami_budding_consciousness",
+      "oga_springspring_mechanical_explosion"
+    ]
+  },
+  "holdout_result": {
+    "technical_verdict": "reject",
+    "human_listening_requested": false,
+    "primary_failure": {
+      "case_id": "oga_fupi_tense_bass_boost_drums",
+      "source_family": "dense_break",
+      "confirmed_bpm": 140.0,
+      "timing_basis": "provider_title_and_stable_beat_evidence",
+      "selected_hard_policy": "source_transient_chop",
+      "selected_low_impact_recipe": "unavailable",
+      "exact_callback_evaluated": false,
+      "exact_callback_calibrated": false,
+      "calibrated_output_gain": 1.0,
+      "diagnosis": "The only fresh holdout source with a trusted BPM selected the inherited transient-chop and H13 gesture path, but did not select source_hit_shaper_v3. Its render passes inherited gates, yet it provides no fresh causal coverage of the H14 exact hit-window calibration."
+    },
+    "passing_inherited_path": {
+      "case_id": "oga_fupi_tense_bass_boost_drums",
+      "base_to_hard_level_ratio": 1.0498,
+      "h12_to_h13_body_ratio": 1.066922,
+      "pickup_relative_delta": 1.073662,
+      "base_sha256": "545139998e994be246acb635cdffb64b40e273333354502a0c19e1227a0f0f23",
+      "h12_sha256": "50a96f71b7f7f9722f80f3dc614ce47ca8b18e26962affaed7df2c8f12678171",
+      "h14_sha256": "679c4c04abc6a1ccda7a611c95f4fd74d4b0b7eb4f5037d6d764760811ebeda1",
+      "missing_source_sha256": "665a6afdf240caefb19d6dcd7435f94eab1c07b945c56f0070dfe0e6df561364",
+      "outcome": "technical_gate_pass_inherited_path_only"
+    },
+    "pre_candidate_timing_outcomes": [
+      {
+        "case_id": "oga_frostyham_osdrums",
+        "readiness": "weak",
+        "grid_use": "manual_confirm_only",
+        "primary_bpm": 127.84092,
+        "outcome": "degraded_unconfirmed_timing_before_candidate_render"
+      },
+      {
+        "case_id": "oga_2dplatformerguy_short_chiptune",
+        "readiness": "weak",
+        "grid_use": "manual_confirm_only",
+        "primary_bpm": 150.50168,
+        "drift_status": "high",
+        "outcome": "degraded_unconfirmed_timing_before_candidate_render"
+      },
+      {
+        "case_id": "oga_jaggedstone_dungeon_ambience",
+        "readiness": "needs_review",
+        "grid_use": "short_loop_manual_confirm",
+        "primary_bpm": 95.44008,
+        "drift_status": "high",
+        "outcome": "degraded_unconfirmed_timing_before_candidate_render"
+      },
+      {
+        "case_id": "oga_springspring_interesting_snare",
+        "readiness": "unavailable",
+        "grid_use": "unavailable",
+        "primary_bpm": null,
+        "outcome": "source_timing_unavailable_before_candidate_render"
+      }
+    ],
+    "consequence": "H14 is not eligible for human listening. Preserve the frozen evidence, consume holdout-a, and start a new candidate generation only after restoring the rotating holdout contract. Do not retune H14 against holdout-a."
+  },
+  "freeze_rule": "Any implementation, typed value, selection formula, gate, or validator change after holdout-a rendering starts invalidates holdout-a as H14 evidence.",
+  "next_gate": "Restore the rotating holdout contract, then define a new candidate generation whose frozen evaluation set contains causal coverage of the selected source_hit_shaper_v3 path. H14 must not be retuned against consumed holdout-a."
+}

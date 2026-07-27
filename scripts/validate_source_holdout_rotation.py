@@ -537,6 +537,9 @@ def validate_rotation_history(
     history = manifest.get("rotation_history")
     require(isinstance(history, list), f"{prefix}: rotation_history must be an array")
     active_holdout_ids = set().union(*holdout_membership.values())
+    events_by_case = {
+        str(event.get("case_id")): event for event in history if isinstance(event, dict)
+    }
     seen_consumed: set[str] = set()
     seen_replacements: set[str] = set()
     for index, raw_event in enumerate(history):
@@ -566,8 +569,8 @@ def validate_rotation_history(
             f"{prefix}: replacement_case_id",
         )
         require(
-            replacement in holdout_membership[former],
-            f"{prefix}: consumed holdout needs a replacement in {former}",
+            replacement in entries,
+            f"{prefix}: consumed holdout replacement is unknown: {replacement}",
         )
         require(replacement != case_id, f"{prefix}: holdout cannot replace itself")
         require(
@@ -575,6 +578,15 @@ def validate_rotation_history(
             f"{prefix}: replacement source reused across rotation events: {replacement}",
         )
         replacement_entry = entries[replacement]
+        replacement_is_active = replacement in holdout_membership[former]
+        replacement_is_rotated = (
+            replacement in events_by_case
+            and replacement_entry.get("previous_partition") == former
+        )
+        require(
+            replacement_is_active or replacement_is_rotated,
+            f"{prefix}: consumed holdout needs an active or subsequently rotated replacement in {former}",
+        )
         require(
             replacement_entry.get("replacement_for_case_id") == case_id,
             f"{prefix}: replacement must identify consumed case {case_id}",
@@ -589,6 +601,26 @@ def validate_rotation_history(
         )
         seen_consumed.add(case_id)
         seen_replacements.add(replacement)
+
+    for case_id, event in events_by_case.items():
+        former = str(event.get("former_holdout_id"))
+        cursor = case_id
+        visited: set[str] = set()
+        while cursor not in holdout_membership[former]:
+            require(
+                cursor not in visited,
+                f"{prefix}: cyclic holdout replacement chain from {case_id}",
+            )
+            visited.add(cursor)
+            next_event = events_by_case.get(cursor)
+            require(
+                next_event is not None,
+                f"{prefix}: holdout replacement chain from {case_id} has no active endpoint",
+            )
+            cursor = non_empty_string(
+                next_event.get("replacement_case_id"),
+                f"{prefix}: replacement chain case_id",
+            )
 
     entries_with_history = {
         case_id

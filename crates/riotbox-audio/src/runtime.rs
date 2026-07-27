@@ -19,12 +19,18 @@ use crate::{
     },
     w30::{
         W30_PAD_CHOP_SLICE_COUNT, W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN,
-        W30_PREVIEW_SAMPLE_WINDOW_LEN, W30_RESAMPLE_HARD_SLICE_COUNT,
+        W30_PREVIEW_SAMPLE_WINDOW_LEN, W30_RESAMPLE_H13_MAX_BODY_GAIN,
+        W30_RESAMPLE_H13_MIN_IMPACT_LEVEL_COMPENSATION, W30_RESAMPLE_H13_MIN_PICKUP_GAIN,
+        W30_RESAMPLE_HARD_BITE_NONLINEAR_DRIVE, W30_RESAMPLE_HARD_SLICE_COUNT,
+        W30_RESAMPLE_HIT_SHAPER_MAX_WINDOW_COMPENSATION_GAIN,
+        W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN, W30_RESAMPLE_HIT_SHAPER_SCHEMA_OUTPUT_GAIN,
         W30_RESAMPLE_SOURCE_WINDOW_LEN, W30PadPlaybackSampleWindow, W30PreviewRenderMode,
         W30PreviewRenderRouting, W30PreviewRenderState, W30PreviewSampleWindow,
-        W30PreviewSourceProfile, W30ResampleSourceWindow, W30ResampleTapHardPolicy,
+        W30PreviewSourceProfile, W30ResampleAttackBiteBand, W30ResampleAttackBitePlan,
+        W30ResampleHardGesturePlan, W30ResampleHardGestureRecipe, W30ResampleLowImpactPlan,
+        W30ResampleLowImpactRecipe, W30ResampleSourceWindow, W30ResampleTapHardPolicy,
         W30ResampleTapMode, W30ResampleTapRouting, W30ResampleTapSourceProfile,
-        W30ResampleTapState, W30ResampleTapVariation,
+        W30ResampleTapState, W30ResampleTapVariation, w30_resample_source_character_sample,
     },
 };
 
@@ -48,14 +54,20 @@ mod w30_tr909_signal_helpers;
 
 use fill_focus::{FillFocusRenderState, apply_fill_focus_to_non_tr909_bed};
 pub use public_api_shell::*;
+#[cfg(test)]
+use render_tr909_w30_preview::{
+    configure_w30_resample_low_impact, should_trigger_w30_resample_step, should_trigger_w30_step,
+    w30_chop_slice_cursor, w30_pad_grid_gate, w30_pad_grid_gate_gain, w30_pad_playback_sample,
+    w30_pad_playback_signature, w30_resample_decay, w30_resample_step_cursor,
+};
 use render_tr909_w30_preview::{
     render_tr909_buffer, render_w30_preview_buffer, render_w30_resample_tap_buffer,
 };
 #[cfg(test)]
 use render_tr909_w30_preview::{
-    should_trigger_w30_resample_step, should_trigger_w30_step, w30_chop_slice_cursor,
-    w30_pad_grid_gate, w30_pad_grid_gate_gain, w30_pad_playback_sample, w30_pad_playback_signature,
-    w30_resample_decay, w30_resample_step_cursor,
+    w30_resample_calibrated_hit_preservation_sample, w30_resample_hard_grit_sample,
+    w30_resample_hit_shaper_v3_sample, w30_resample_kick_impact_v2_sample,
+    w30_resample_low_impact_sample,
 };
 pub use runtime_mix_parity::*;
 use shared_mc202_w30_preview::{
@@ -143,6 +155,42 @@ fn coherent_snapshot_or<T: Clone>(revision: &AtomicU64, previous: &T, read: impl
         }
     }
     previous.clone()
+}
+
+fn coherent_snapshot_with_revision<T>(revision: &AtomicU64, read: impl Fn() -> T) -> (u64, T) {
+    loop {
+        let before = revision.load(Ordering::Acquire);
+        if !before.is_multiple_of(2) {
+            continue;
+        }
+        let snapshot = read();
+        let after = revision.load(Ordering::Acquire);
+        if before == after && after.is_multiple_of(2) {
+            return (after, snapshot);
+        }
+    }
+}
+
+fn coherent_snapshot_if_changed<T>(
+    revision: &AtomicU64,
+    previous_revision: u64,
+    read: impl Fn() -> T,
+) -> Option<(u64, T)> {
+    for _ in 0..COHERENT_SNAPSHOT_READ_ATTEMPTS {
+        let before = revision.load(Ordering::Acquire);
+        if !before.is_multiple_of(2) {
+            continue;
+        }
+        if before == previous_revision {
+            return None;
+        }
+        let snapshot = read();
+        let after = revision.load(Ordering::Acquire);
+        if before == after && after.is_multiple_of(2) {
+            return Some((after, snapshot));
+        }
+    }
+    None
 }
 
 #[cfg(test)]

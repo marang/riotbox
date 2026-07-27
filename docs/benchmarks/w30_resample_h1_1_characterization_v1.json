@@ -1,0 +1,116 @@
+{
+  "schema": "riotbox.w30_resample_h1_1_characterization.v1",
+  "schema_version": 1,
+  "owner_ticket": "RIOTBOX-1422",
+  "frozen_on": "2026-07-26",
+  "classification": "technical_characterization",
+  "musical_pass_claimed": false,
+  "mechanism": {
+    "id": "w30_resample_source_adaptive_attack_body_v1_1",
+    "inherits": "docs/benchmarks/w30_resample_h1_characterization_v1.json",
+    "only_change_from_parent": "Clamp the minimum attack duration to the source frames still available after a late onset before applying the 4-80 ms bound.",
+    "algorithm_or_taste_constants_changed": false,
+    "source_proxy_samples": 16384,
+    "global_transient_gate": false,
+    "whole_path_hard_gain": 1.0,
+    "mix_topology": "crossfade_attack_against_phase_aligned_body",
+    "callback_handoff": "revision_check_when_unchanged_and_one_bounded_payload_copy_per_changed_w30_plan"
+  },
+  "accepted_base_control": {
+    "case_id": "beat03",
+    "path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+    "bpm": 130.0,
+    "expected_base_sha256": "13d5943f0d2c222f80c279991dfbf3593b6e155b99795c916661bb3565f64a4c"
+  },
+  "development_confirmation": {
+    "case_id": "oga_ruok_160bpm",
+    "former_role": "consumed_holdout_a",
+    "current_role": "development_regression",
+    "policy": "source_transient_chop",
+    "attack_0_10ms_hard_over_base": 1.1161549643,
+    "body_40_120ms_hard_over_base": 1.0260240003,
+    "body_120_200ms_hard_over_base": 1.1133466829,
+    "base_boundary_jump_max": 0.1210327148,
+    "hard_boundary_jump_max": 0.1215820313,
+    "hard_clip_count": 0,
+    "missing_source_is_digital_silence": true
+  },
+  "frozen_directional_gates": {
+    "apply_only_when_policy": "source_transient_chop",
+    "hard_output_non_silent": true,
+    "hard_output_clip_count": 0,
+    "missing_source_is_digital_silence": true,
+    "attack_0_10ms_hard_over_base_min": 1.1,
+    "body_40_120ms_hard_over_base_min": 0.95,
+    "body_120_200ms_hard_over_base_min": 0.95,
+    "boundary_jump_hard_over_base_max": 1.1,
+    "boundary_jump_absolute_tolerance": 0.000030517578125,
+    "family_results_reported_separately": true,
+    "comparison_level": "native_product_level",
+    "failure_rule": "Any eligible holdout safety or directional failure rejects H1.1. Do not tune this candidate against holdout output."
+  },
+  "holdout_evaluation": {
+    "holdout_id": "holdout_a",
+    "state_at_freeze": "unseen",
+    "evaluated_on": "2026-07-26",
+    "candidate_generation": "w30_resample_source_adaptive_attack_body_v1_1",
+    "result": "technical_directional_pass",
+    "algorithm_or_constants_changed_after_evaluation": false,
+    "informed_later_implementation": false,
+    "reuse_rule": "These results are acceptance evidence only for this frozen H1.1 generation. Any later candidate generation requires fresh holdout evidence.",
+    "source_case_ids": [
+      "oga_apppro_action_loop",
+      "oga_iamoneabe_dark_things_loop",
+      "oga_isaiah658_underwater_ambient_pad",
+      "oga_umplix_game_overcredits"
+    ],
+    "results": [
+      {
+        "case_id": "oga_apppro_action_loop",
+        "source_family": "dense_break",
+        "outcome": "rendered_directional_pass",
+        "policy": "source_transient_chop",
+        "attack_0_10ms_hard_over_base": 2.8238335345,
+        "body_40_120ms_hard_over_base": 1.0414345108,
+        "body_120_200ms_hard_over_base": 1.0415861266,
+        "base_boundary_jump_max": 0.0081787109,
+        "hard_boundary_jump_max": 0.0085144043,
+        "hard_clip_count": 0,
+        "missing_source_is_digital_silence": true,
+        "base_sha256": "2d649b37b539b0439b05f7a4972ce92a8fe1d91887a4dfe2d6e882638778fb44",
+        "hard_sha256": "d324c55379996b69e8472469dcc34d3295bec4276ce8b7fe5a439b7fdee863ae",
+        "ab_sha256": "00469dc0b2e8409cf75283371e8f2227638bc22ec955beee3d6cc8592f98dfb4"
+      },
+      {
+        "case_id": "oga_iamoneabe_dark_things_loop",
+        "source_family": "tonal_riff",
+        "outcome": "source_timing_unavailable",
+        "fallback_audio_emitted": false
+      },
+      {
+        "case_id": "oga_isaiah658_underwater_ambient_pad",
+        "source_family": "pad_noise",
+        "outcome": "source_timing_unavailable",
+        "fallback_audio_emitted": false
+      },
+      {
+        "case_id": "oga_umplix_game_overcredits",
+        "source_family": "tonal_riff",
+        "outcome": "rendered_directional_pass",
+        "policy": "source_transient_chop",
+        "attack_0_10ms_hard_over_base": 3.7821031595,
+        "body_40_120ms_hard_over_base": 1.0393877804,
+        "body_120_200ms_hard_over_base": 1.0381525161,
+        "base_boundary_jump_max": 0.0052490234,
+        "hard_boundary_jump_max": 0.0054626465,
+        "hard_clip_count": 0,
+        "missing_source_is_digital_silence": true,
+        "base_sha256": "bd2f0608c258eea26b7ca1c05150ed2d8a1ff21be1de6d2ee46f254374d01330",
+        "hard_sha256": "e3eecc6dbd404637dd80594ea5541d39df46bad142e5cc99a9c616acc5f70765",
+        "ab_sha256": "febc5b6284893b78adc2dc75114a3e7f6a6bfda7a9b0025a5f08956c20cdd35a"
+      }
+    ],
+    "reserve_holdout_id": "holdout_b",
+    "reserve_access_allowed": false
+  }
+}

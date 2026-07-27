@@ -1,7 +1,7 @@
 # RIOTBOX-1402 Human Listening Review
 
 Date: 2026-07-18
-Reviewer: Markus
+Reviewer: Owner
 Verdict source: real user-session playback through the configured PipeWire
 output
 
@@ -65,7 +65,7 @@ The bounded stop proof recorded:
 - the persisted Session retained `is_playing: false`
 - no Riotbox runtime remained active after exit
 
-Markus confirmed that the output became completely silent after the announced
+Owner confirmed that the output became completely silent after the announced
 stop. This is a real human and exact-device-path pass for transport-stop
 semantics. It does not by itself upgrade the musical verdict or prove the
 remaining preset, gesture, restart, recall, and trigger journey.
@@ -74,7 +74,7 @@ remaining preset, gesture, restart, recall, and trigger journey.
 
 A later five-second playback was introduced as an isolated W-30 hook, but the
 technical contributor inventory was incomplete: the source-backed promoted Pad
-played together with the synthetic internal resample-tap voice. Markus heard
+played together with the synthetic internal resample-tap voice. Owner heard
 "ein brummen im hintergrund und den beat".
 
 The beat was the intended source-backed W-30 Pad. The hum was not part of the
@@ -95,7 +95,7 @@ On 2026-07-19, the corrected binary replayed the exact persisted session for a
 bounded five-second real-device check. Observer evidence in
 `events-hook-no-hum-2.ndjson` recorded W-30 `live_recall` of `cap-01`, internal
 resample tap `idle`, MC-202 `silent`, transport stopped, 425 audio callbacks,
-and intentional quit. No Riotbox process remained afterward. Markus confirmed
+and intentional quit. No Riotbox process remained afterward. Owner confirmed
 the reported background hum was gone: "ja ist verschwunden". This is a human
 pass for the isolation correction, not yet a new musical-taste verdict for the
 corrected hook hash.
@@ -112,7 +112,7 @@ state the intended role, and wait for fresh listener readiness.
 
 ## Exact-Path Assignment Correction
 
-On 2026-07-21 the exact diagnostic path was corrected after Markus described
+On 2026-07-21 the exact diagnostic path was corrected after Owner described
 the Fill sequence as an unharmonic, pasted-on composite. The old candidate had
 three assignment defects: raw Source and the promoted W-30 capture were doubled
 from different source phases, QA silently prepared TR-909 outside the documented
@@ -155,7 +155,7 @@ would increase review risk and is not required for this slice.
 
 ## Exact Callback-Render Human Pass
 
-On 2026-07-21 Markus reviewed the bounded final Beat03 performance sequence
+On 2026-07-21 Owner reviewed the bounded final Beat03 performance sequence
 through the configured PipeWire output:
 
 - Artifact: `gestures/06_live_sequence.wav`
@@ -179,7 +179,7 @@ as `riotbox.listening_review.v1` with:
 
 Reviewer wording: "gelungen, hat mir echt gefallen, gute breaks, gute pausen,
 hat auch alles zusammengepasst und es war nicht zu viel. eine gewisse
-aggressivitaet war auch zu hoeren, wir sind am richtigen weg". Markus then
+aggressivitaet war auch zu hoeren, wir sind am richtigen weg". Owner then
 explicitly confirmed the formal `keep` verdict, that the source was "deutlich
 transformiert, aber noch vorhanden", and that the hook was already present
 within the first two bars.
@@ -194,7 +194,7 @@ found.
 ## Interactive A/B Timing Rejection
 
 Two subsequent real PipeWire/TUI takes used the correct source, preset, command
-order, and Riotbox-only monitor path. Markus judged each take "passabel", then
+order, and Riotbox-only monitor path. Owner judged each take "passabel", then
 heard no meaningful difference in a direct A-then-B comparison: "merklich kein
 unterschied". Technical analysis confirms that this was not useful sound
 variation: the captured source window and MC-202 selection were identical,
@@ -269,7 +269,7 @@ substantially more high-band energy, the following scene section drops about
 Fill peak. The review therefore did not ask the listener to distinguish
 mechanically identical renders.
 
-After the exact artifact was announced and Markus explicitly confirmed fresh
+After the exact artifact was announced and Owner explicitly confirmed fresh
 readiness, the complete candidate was played once. His verdict was:
 
 > "pass, ich wuerde es bestimmt anders loopen aber die elemente sind schon gut"
@@ -277,7 +277,7 @@ readiness, the complete candidate was played once. His verdict was:
 This records `human_verdict: keep` for the exact live artifact. The candidate
 passes as usable musical material with a clear early hook, transformed-but-
 present source character, audible impact and contrast, and live replay value.
-The structured strongest-element field remains `silence`, based on Markus's
+The structured strongest-element field remains `silence`, based on Owner's
 earlier explicit praise for the breaks and pauses in the same frozen sound
 recipe; the hardest active sound layer is the TR-909 drum/transient handoff.
 These are separate claims: musical negative space can be the strongest feature

@@ -69,7 +69,7 @@ jq -e '
   )
 ' "$tmp/demo-bank-pass.json" >/dev/null
 
-jq '.reviewer = "Markus"' "$pass_review" > "$tmp/live-review.tmp"
+jq '.reviewer = "Owner"' "$pass_review" > "$tmp/live-review.tmp"
 mv "$tmp/live-review.tmp" "$pass_review"
 live_review="$pass_review"
 jq -n '{
@@ -91,7 +91,7 @@ python3 scripts/promote_listening_review_to_demo_bank.py \
 jq -e '
   .evidence_role == "live_review"
   and (.entries | length) == 1
-  and .entries[0].human_review_evidence.reviewer == "Markus"
+  and .entries[0].human_review_evidence.reviewer == "Owner"
   and .entries[0].human_review_evidence.reviewer_kind == "human"
   and (.entries[0].human_review_evidence.review_sha256 | length) == 64
 ' "$tmp/live-bank-promoted.json" >/dev/null

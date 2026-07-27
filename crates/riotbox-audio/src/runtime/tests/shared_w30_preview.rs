@@ -215,6 +215,28 @@ fn shared_w30_preview_state_tracks_updates() {
 }
 
 #[test]
+fn shared_w30_preview_snapshot_skips_large_payload_when_plan_is_unchanged() {
+    let shared = SharedW30PreviewRenderState::new(&W30PreviewRenderState::default());
+    let (revision, snapshot) = shared.snapshot_with_revision();
+
+    assert!(shared.snapshot_if_changed(revision).is_none());
+
+    let updated = W30PreviewRenderState {
+        music_bus_level: 0.64,
+        ..W30PreviewRenderState::default()
+    };
+    shared.update(&updated);
+
+    let (updated_revision, updated_snapshot) = shared
+        .snapshot_if_changed(revision)
+        .expect("a changed preview plan should publish one bounded payload");
+    assert_ne!(updated_revision, revision);
+    assert_eq!(updated_snapshot.music_bus_level, 0.64);
+    assert_eq!(snapshot.music_bus_level, 0.0);
+    assert!(shared.snapshot_if_changed(updated_revision).is_none());
+}
+
+#[test]
 fn shared_w30_resample_tap_state_tracks_updates() {
     let shared = SharedW30ResampleTapState::new(&W30ResampleTapState::default());
     let mut state = W30ResampleTapState {
@@ -224,6 +246,7 @@ fn shared_w30_resample_tap_state_tracks_updates() {
         source_profile: Some(W30ResampleTapSourceProfile::PromotedCapture),
         source_capture_id: Some("cap-03".into()),
         source_audio: Some(Box::new(W30ResampleSourceWindow {
+            source_revision: 1,
             source_start_frame: 0,
             source_sample_rate: 44_100,
             source_frame_count: W30_RESAMPLE_SOURCE_WINDOW_LEN as u64,
@@ -236,8 +259,14 @@ fn shared_w30_resample_tap_state_tracks_updates() {
         variation_revision: 0,
         variation_intensity: 0.0,
         hard_policy: W30ResampleTapHardPolicy::Unavailable,
+        hard_suitability: Default::default(),
+        hard_calibration: Default::default(),
         hard_trigger_mask: 0,
         hard_slice_cursors: [0; W30_RESAMPLE_HARD_SLICE_COUNT],
+        hard_attack_lengths: [0; W30_RESAMPLE_HARD_SLICE_COUNT],
+        hard_attack_bite: Default::default(),
+        hard_low_impact: Default::default(),
+        hard_gesture: Default::default(),
         hard_transient_contrast: 0.0,
         music_bus_level: 0.61,
         grit_level: 0.72,
@@ -283,6 +312,36 @@ fn shared_w30_resample_tap_state_tracks_updates() {
     );
     assert_eq!(updated.lineage_capture_count, 3);
     assert_eq!(updated.generation_depth, 2);
+}
+
+#[test]
+fn shared_w30_resample_snapshot_skips_large_payload_when_plan_is_unchanged() {
+    let shared = SharedW30ResampleTapState::new(&W30ResampleTapState::default());
+    let (revision, snapshot) = shared.snapshot_with_revision();
+
+    assert!(shared.snapshot_if_changed(revision).is_none());
+
+    let updated = W30ResampleTapState {
+        source_audio: Some(Box::new(W30ResampleSourceWindow {
+            source_revision: 9,
+            source_start_frame: 0,
+            source_sample_rate: 48_000,
+            source_frame_count: W30_RESAMPLE_SOURCE_WINDOW_LEN as u64,
+            sample_count: W30_RESAMPLE_SOURCE_WINDOW_LEN,
+            samples: [0.25; W30_RESAMPLE_SOURCE_WINDOW_LEN],
+        })),
+        ..W30ResampleTapState::default()
+    };
+    shared.update(&updated);
+
+    let (updated_revision, updated_snapshot) = shared
+        .snapshot_if_changed(revision)
+        .expect("a changed resample plan should publish one bounded payload");
+    assert_ne!(updated_revision, revision);
+    assert_eq!(updated_snapshot.source_audio.source_revision, 9);
+    assert_eq!(updated_snapshot.source_audio.samples[8_192], 0.25);
+    assert_eq!(snapshot.source_audio.sample_count, 0);
+    assert!(shared.snapshot_if_changed(updated_revision).is_none());
 }
 
 #[test]

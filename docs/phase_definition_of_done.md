@@ -419,7 +419,7 @@ Current landed evidence:
   stop. The isolated 14.787-second artifact has SHA-256
   `327f9d4d00bd18c294bcf26f86c8b8a3b23f8e4f85474572735139d627d5ce61`,
   measures `-18.6 LUFS` and `-0.3 dBTP`, and does not clip. After exact-artifact
-  preflight and fresh readiness confirmation, Markus gave it a direct `pass`:
+  preflight and fresh readiness confirmation, Owner gave it a direct `pass`:
   the elements are usable, though he would loop them differently.
 - The structured classification keeps the break/pause as the strongest
   musical element (`silence`) from the earlier explicit same-recipe review,

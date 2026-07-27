@@ -21,6 +21,28 @@ fn resample_source_projection_keeps_the_complete_phrase_in_the_bounded_window() 
 }
 
 #[test]
+fn resample_source_revision_is_stable_for_identical_pcm_and_changes_with_pcm() {
+    let mut samples = (0..8_192)
+        .flat_map(|frame| {
+            let sample = (frame as f32 / 17.0).sin() * 0.4;
+            [sample, sample]
+        })
+        .collect::<Vec<_>>();
+    let first = super::projection::resample_source_from_interleaved(&samples, 2, 48_000)
+        .expect("first source projection");
+    let repeated = super::projection::resample_source_from_interleaved(&samples, 2, 48_000)
+        .expect("repeated source projection");
+    samples[4_096] += 0.125;
+    samples[4_097] += 0.125;
+    let changed = super::projection::resample_source_from_interleaved(&samples, 2, 48_000)
+        .expect("changed source projection");
+
+    assert_ne!(first.source_revision, 0);
+    assert_eq!(first.source_revision, repeated.source_revision);
+    assert_ne!(first.source_revision, changed.source_revision);
+}
+
+#[test]
 fn resample_source_projection_rejects_invalid_audio_metadata() {
     let samples = [0.25_f32; 32];
 
@@ -68,14 +90,98 @@ fn resample_hard_policy_separates_transient_chops_from_sustained_texture() {
     );
     assert!(transient_mask.count_ones() >= 4);
     assert!(transient_cursors.windows(2).all(|pair| pair[0] < pair[1]));
-    assert!(transient_contrast >= 0.9);
+    assert!(
+        transient_contrast
+            >= riotbox_audio::w30::W30_RESAMPLE_TRANSIENT_CHOP_MIN_RISE_TO_MEAN
+    );
     assert_eq!(
         texture_policy,
         riotbox_audio::w30::W30ResampleTapHardPolicy::SourceTextureBite
     );
     assert_eq!(texture_mask, 0);
     assert!(texture_cursors.windows(2).all(|pair| pair[0] < pair[1]));
-    assert!(texture_contrast < 0.9);
+    assert!(
+        texture_contrast < riotbox_audio::w30::W30_RESAMPLE_TRANSIENT_CHOP_MIN_RISE_TO_MEAN
+    );
+}
+
+#[test]
+fn near_mean_envelope_rise_does_not_claim_transient_chop() {
+    let sample_rate = 48_000_u32;
+    let window_frames = sample_rate as usize * 20 / 1_000;
+    let samples = (0..window_frames * 10)
+        .flat_map(|frame| {
+            let amplitude = if frame < window_frames { 0.1 } else { 1.0 };
+            [amplitude, amplitude]
+        })
+        .collect::<Vec<_>>();
+
+    let (policy, trigger_mask, _, transient_contrast) =
+        super::projection::analyze_w30_resample_hard_policy(&samples, 2, sample_rate);
+
+    assert!((0.9..1.0).contains(&transient_contrast));
+    assert_eq!(
+        policy,
+        riotbox_audio::w30::W30ResampleTapHardPolicy::SourceTextureBite
+    );
+    assert_eq!(trigger_mask, 0);
+}
+
+#[test]
+fn resample_attack_lengths_follow_source_decay_instead_of_one_fixed_gate() {
+    let sample_rate = 48_000_u32;
+    let frame_count = sample_rate as usize;
+    let source = |decay_frames: usize| {
+        let mut samples = vec![0.0_f32; frame_count * 2];
+        for frame in 0..decay_frames {
+            let envelope = 1.0 - frame as f32 / decay_frames as f32;
+            let sample = (frame as f32 / 3.0).sin() * envelope * 0.8;
+            samples[frame * 2] = sample;
+            samples[frame * 2 + 1] = sample;
+        }
+        samples
+    };
+    let short = source(sample_rate as usize * 6 / 1_000);
+    let long = source(sample_rate as usize * 60 / 1_000);
+    let onset_cursors = [0; W30_RESAMPLE_HARD_SLICE_COUNT];
+    let short_lengths = super::projection::derive_w30_resample_attack_lengths(
+        &short,
+        2,
+        sample_rate,
+        W30_RESAMPLE_SOURCE_WINDOW_LEN,
+        onset_cursors,
+    );
+    let long_lengths = super::projection::derive_w30_resample_attack_lengths(
+        &long,
+        2,
+        sample_rate,
+        W30_RESAMPLE_SOURCE_WINDOW_LEN,
+        onset_cursors,
+    );
+
+    assert!(short_lengths.iter().all(|length| *length > 0));
+    assert!(long_lengths[0] > short_lengths[0] * 2);
+}
+
+#[test]
+fn resample_attack_lengths_bound_a_late_source_onset_to_available_audio() {
+    let sample_rate = 48_000_u32;
+    let frame_count = sample_rate as usize;
+    let mut samples = vec![0.0_f32; frame_count * 2];
+    let last_frame = frame_count - 1;
+    samples[last_frame * 2] = 0.8;
+    samples[last_frame * 2 + 1] = 0.8;
+    let last_proxy_cursor = (W30_RESAMPLE_SOURCE_WINDOW_LEN - 1) as u16;
+
+    let lengths = super::projection::derive_w30_resample_attack_lengths(
+        &samples,
+        2,
+        sample_rate,
+        W30_RESAMPLE_SOURCE_WINDOW_LEN,
+        [last_proxy_cursor; W30_RESAMPLE_HARD_SLICE_COUNT],
+    );
+
+    assert_eq!(lengths, [1; W30_RESAMPLE_HARD_SLICE_COUNT]);
 }
 
 #[test]

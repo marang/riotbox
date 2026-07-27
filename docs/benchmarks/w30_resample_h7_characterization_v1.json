@@ -1,0 +1,272 @@
+{
+  "schema": "riotbox.w30_resample_hard_characterization.v1",
+  "schema_version": 1,
+  "ticket": "RIOTBOX-1422",
+  "frozen_on": "2026-07-26",
+  "classification": "technical_characterization",
+  "quality_proof": false,
+  "human_verdict": "unverified",
+  "candidate_generation": "w30_resample_source_grit_eligibility_v2",
+  "inherits": "docs/benchmarks/w30_resample_h6_1_characterization_v1.json",
+  "rejected_predecessor": {
+    "generation": "w30_resample_source_grit_slam_v1",
+    "technical_verdict": "reject",
+    "reason": "Two different weak-pad holdouts failed: one lacked the claimed attack lift and one produced an isolated trigger-boundary outlier."
+  },
+  "single_causal_change": {
+    "contract": "source_transient_chop ownership",
+    "previous_positive_20ms_envelope_rise_over_mean_min": 0.9,
+    "candidate_positive_20ms_envelope_rise_over_mean_min": 1.0,
+    "semantic_reason": "Transient-chop and its grit recipe may claim ownership only when the strongest positive 20 ms envelope rise exceeds the source's mean envelope. Near-mean movement remains texture-owned.",
+    "grit_recipe_changed": false,
+    "attack_body_algorithm_changed": false,
+    "band_selection_or_nonlinear_recipe_changed": false,
+    "gates_changed": false,
+    "base_path_changed": false
+  },
+  "active_recipe": {
+    "policy": "source_transient_chop",
+    "recipe_schema": "source_grit_slam_v1",
+    "activation": "committed HardDamage variation only",
+    "grit_effective_sample_rate_hz": 8000,
+    "grit_quantization_levels": 63,
+    "grit_hold_frames_at_48000_hz": 6,
+    "missing_source_fallback": false,
+    "bass_pressure_claim": false
+  },
+  "frozen_gates": {
+    "accepted_beat03_base_bpm": 130.0,
+    "accepted_beat03_base_sha256": "13d5943f0d2c222f80c279991dfbf3593b6e155b99795c916661bb3565f64a4c",
+    "attack_0_10ms_hard_over_base_min": 1.1,
+    "body_40_120ms_hard_over_base_min": 0.95,
+    "body_120_200ms_hard_over_base_min": 0.95,
+    "gesture_level_hard_over_base": {
+      "min": 0.9,
+      "max": 1.15
+    },
+    "gesture_rms_matched_relative_delta_min": 0.2,
+    "gesture_correlation_max": 0.98,
+    "trigger_boundary_local_outlier_ratio_max": 1.5,
+    "hard_output_must_be_non_silent_unclipped": true,
+    "missing_source_output_must_be_digital_silence": true,
+    "gate_semantics": "Anti-collapse, level, body, policy-ownership, and boundary-safety evidence only. Human listening remains mandatory for a hardness or stage-value claim."
+  },
+  "development_results": [
+    {
+      "case_id": "beat03_130",
+      "source_family": "dense_break",
+      "bpm": 130.0,
+      "policy": "source_transient_chop",
+      "transient_contrast": 6.730,
+      "attack_ratio": 1.848117,
+      "body_40_120_ratio": 1.255580,
+      "body_120_200_ratio": 1.225093,
+      "gesture_level_ratio": 1.097081,
+      "rms_matched_relative_delta": 0.813853,
+      "correlation": 0.668840,
+      "boundary_local_outlier_ratio": 0.0,
+      "base_sha256": "13d5943f0d2c222f80c279991dfbf3593b6e155b99795c916661bb3565f64a4c",
+      "hard_sha256": "2c7ae1144ebc1bf6edca704843d96f970cabcbf1fc5c86ff5638ce6130c9d4bc",
+      "outcome": "technical_gate_pass"
+    },
+    {
+      "case_id": "oga_cinameng_can_be_so_beautiful",
+      "source_family": "dense_break",
+      "bpm": 159.01059,
+      "policy": "source_transient_chop",
+      "transient_contrast": 1.291,
+      "attack_ratio": 1.206842,
+      "body_40_120_ratio": 1.004041,
+      "body_120_200_ratio": 1.043543,
+      "gesture_level_ratio": 1.032718,
+      "rms_matched_relative_delta": 0.255969,
+      "correlation": 0.967242,
+      "boundary_local_outlier_ratio": 0.999269,
+      "outcome": "technical_gate_pass"
+    },
+    {
+      "case_id": "oga_marwan_cinematic_percussion",
+      "source_family": "sparse_drums",
+      "bpm": 100.446434,
+      "policy": "source_transient_chop",
+      "transient_contrast": 1.818,
+      "attack_ratio": 1.747255,
+      "body_40_120_ratio": 1.045020,
+      "body_120_200_ratio": 1.015663,
+      "gesture_level_ratio": 1.043585,
+      "rms_matched_relative_delta": 0.253071,
+      "correlation": 0.968037,
+      "boundary_local_outlier_ratio": 0.499927,
+      "outcome": "technical_gate_pass"
+    },
+    {
+      "case_id": "oga_fupi_plimplom",
+      "source_family": "tonal_riff",
+      "bpm": 116.37931,
+      "policy": "source_transient_chop",
+      "transient_contrast": 3.223,
+      "attack_ratio": 3.021702,
+      "body_40_120_ratio": 0.963871,
+      "body_120_200_ratio": 1.063801,
+      "gesture_level_ratio": 1.074774,
+      "rms_matched_relative_delta": 0.436435,
+      "correlation": 0.904757,
+      "boundary_local_outlier_ratio": 0.666612,
+      "outcome": "technical_gate_pass"
+    },
+    {
+      "case_id": "oga_bertsz_dnb",
+      "source_family": "dense_full_mix",
+      "coverage_role": "stress_only",
+      "bpm": 159.01059,
+      "policy": "source_transient_chop",
+      "transient_contrast": 1.109,
+      "attack_ratio": 1.644917,
+      "body_40_120_ratio": 1.058492,
+      "body_120_200_ratio": 0.984542,
+      "gesture_level_ratio": 1.054375,
+      "rms_matched_relative_delta": 0.476945,
+      "correlation": 0.886308,
+      "boundary_local_outlier_ratio": 0.999909,
+      "outcome": "technical_gate_pass"
+    },
+    {
+      "case_id": "oga_isaiah658_ambient",
+      "source_family": "pad_noise",
+      "source_timing_readiness": "unavailable",
+      "fallback_audio_emitted": false,
+      "outcome": "explicit_unavailable"
+    },
+    {
+      "case_id": "oga_killerfishred_short_synth",
+      "source_family": "weak_source",
+      "source_timing_readiness": "unavailable",
+      "fallback_audio_emitted": false,
+      "outcome": "explicit_unavailable"
+    },
+    {
+      "case_id": "oga_laleksic_tap_water",
+      "source_family": "bad_timing",
+      "source_timing_readiness": "unavailable",
+      "fallback_audio_emitted": false,
+      "outcome": "explicit_unavailable"
+    }
+  ],
+  "holdout_at_freeze": {
+    "manifest": "docs/benchmarks/source_holdout_rotation_v1.json",
+    "holdout_id": "holdout_b",
+    "state": "unseen",
+    "source_case_ids": [
+      "oga_william_hector_horde_war_drums",
+      "oga_scribe_summer_park",
+      "oga_haeldb_evil_temple",
+      "oga_kickstand_music_loop",
+      "oga_independent_dripping_water"
+    ],
+    "source_families": [
+      "dense_break",
+      "tonal_riff",
+      "pad_noise",
+      "weak_source",
+      "bad_timing"
+    ],
+    "single_generation_rule": "Render once after this freeze. Any output-driven implementation, gate, policy threshold, or recipe change consumes the set and requires rotation.",
+    "failure_rule": "Any eligible policy-ownership, safety, anti-collapse, or explicit supported/degraded/unavailable/reject contract failure rejects H7. Do not tune H7 against holdout output.",
+    "reserve_holdout_id": "holdout_a",
+    "reserve_access_allowed": false
+  },
+  "human_gate": {
+    "state": "reject",
+    "review_path": "artifacts/audio_qa/local/listening-reviews/RIOTBOX-1422-H7/review.json",
+    "review_sha256": "53f0ecfe2768a720de4032974f9db31f69fe2828fe26ca6f8c88fb3210013db4",
+    "reviewer": "Owner",
+    "verdict": "reject",
+    "heard": "audibly different, dirtier, and more destroyed",
+    "failed": "the source kick and its low-end impact did not become harder or more aggressive",
+    "consequence": "H7 remains technical evidence only. Its grit recipe may inform a separately named Damage vocabulary item, but it does not satisfy the promised Hard variation."
+  },
+  "holdout_evaluation": {
+    "holdout_id": "holdout_b",
+    "evaluated_on": "2026-07-26",
+    "candidate_generation": "w30_resample_source_grit_eligibility_v2",
+    "result": "technical_pass",
+    "algorithm_gates_policy_or_recipe_changed_after_evaluation": false,
+    "results": [
+      {
+        "case_id": "oga_william_hector_horde_war_drums",
+        "source_family": "dense_break",
+        "source_timing_readiness": "weak",
+        "confirmed_bpm": 146.1039,
+        "policy": "source_texture_bite",
+        "transient_contrast": 0.833,
+        "recipe": "unavailable",
+        "base_sha256": "77b9e6f528f80fbd5748a8a12540ed703b44b1a2c91a2dec5180dab1d4d6d1e2",
+        "hard_sha256": "8f2195a0bc930e1e2fe9f41b9adf726da94526de8876685bdea49ab9ed898b46",
+        "missing_source_is_digital_silence": true,
+        "outcome": "explicit_alternate_policy_safe"
+      },
+      {
+        "case_id": "oga_scribe_summer_park",
+        "source_family": "tonal_riff",
+        "source_timing_readiness": "weak",
+        "confirmed_bpm": 150.62762,
+        "policy": "source_transient_chop",
+        "transient_contrast": 1.636,
+        "recipe": "source_grit_slam_v1",
+        "attack_ratio": 1.409901,
+        "body_40_120_ratio": 1.027248,
+        "body_120_200_ratio": 1.015764,
+        "gesture_level_ratio": 1.029799,
+        "rms_matched_relative_delta": 0.388493,
+        "correlation": 0.924526,
+        "boundary_local_outlier_ratio": 0.624886,
+        "base_sha256": "76ed9acc6fc599eb4e83eff45818ca080194b1b3df7f12ec23e5adf181474618",
+        "hard_sha256": "f8707c00329df2ec46b827f8d4d16045544a0595acddfdfe32de07f719d5787f",
+        "missing_source_is_digital_silence": true,
+        "outcome": "technical_gate_pass"
+      },
+      {
+        "case_id": "oga_haeldb_evil_temple",
+        "source_family": "pad_noise",
+        "source_timing_readiness": "unavailable",
+        "fallback_audio_emitted": false,
+        "outcome": "explicit_unavailable"
+      },
+      {
+        "case_id": "oga_kickstand_music_loop",
+        "source_family": "weak_source",
+        "source_timing_readiness": "weak",
+        "confirmed_bpm": 144.23076,
+        "policy": "source_texture_bite",
+        "transient_contrast": 0.597,
+        "recipe": "unavailable",
+        "base_sha256": "3f2ef7086810bc13ea63631550f1cd4ff09cc9e364b29a61ca0ac1b78aa183ce",
+        "hard_sha256": "deab5611bbd6856ee8b5dae615a487784d3689082963195aa559bfdab96d0516",
+        "missing_source_is_digital_silence": true,
+        "outcome": "explicit_alternate_policy_safe"
+      },
+      {
+        "case_id": "oga_independent_dripping_water",
+        "source_family": "bad_timing",
+        "source_timing_readiness": "weak",
+        "confirmed_bpm": 165.44118,
+        "policy": "source_transient_chop",
+        "transient_contrast": 7.189,
+        "recipe": "source_grit_slam_v1",
+        "attack_ratio": 3.558283,
+        "body_40_120_ratio": 1.059806,
+        "body_120_200_ratio": 1.003519,
+        "gesture_level_ratio": 1.087059,
+        "rms_matched_relative_delta": 0.642686,
+        "correlation": 0.793483,
+        "boundary_local_outlier_ratio": 0.499634,
+        "base_sha256": "9e291eeae56acd8bf50d42f169ccf94c12975c61594a0356d693a3fabf842fe6",
+        "hard_sha256": "af6d3952aa95c34381677cf803d623d03ddc2ae5dd0ed8b2837c25f75b1d27d4",
+        "missing_source_is_digital_silence": true,
+        "outcome": "technical_gate_pass"
+      }
+    ],
+    "cross_family_requirement": "passed by active source_grit_slam_v1 renders from tonal_riff and bad_timing plus explicit safe outcomes for dense_break, pad_noise, and weak_source",
+    "human_review_consequence": "structured Beat03 Base/Hard listening may proceed; technical pass is not a musical pass"
+  }
+}

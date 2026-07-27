@@ -546,10 +546,30 @@ pub(super) fn render_w30_resample_tap_buffer(
         state.transport_stop_latched = false;
         state.transport_stop_fade_frames_remaining = 0;
         state.envelope = 0.0;
-        state.beat_position = 0.0;
+        state.beat_position = render.position_beats.max(0.0);
         state.source_sample_cursor = 0.0;
+        state.hard_attack_sample_cursor = 0.0;
+        state.hard_attack_frames_remaining = 0;
+        state.hard_attack_total_frames = 0;
+        state.hard_attack_fade_in_frames = 0;
+        state.hard_attack_mix = 0.0;
+        state.hard_attack_head_mix = 0.0;
+        state.hard_hit_preservation_frames_remaining = 0;
+        state.hard_hit_preservation_total_frames = 0;
+        state.hard_reverse_pickup_cursor = 0.0;
+        state.hard_reverse_pickup_delay_frames_remaining = 0;
+        state.hard_reverse_pickup_frames_remaining = 0;
+        state.hard_reverse_pickup_total_frames = 0;
+        state.hard_impact_active = false;
+        state.hard_impact_frames_remaining = 0;
+        state.hard_impact_total_frames = 0;
+        state.hard_bite_filter_initialized = false;
+        state.hard_low_impact_filter_initialized = false;
+        state.hard_grit_held_sample = 0.0;
+        state.hard_grit_hold_frames_remaining = 0;
         state.last_character_input = 0.0;
         state.character_edge_memory = 0.0;
+        state.last_source_revision = render.source_audio.source_revision;
         state.last_variation_revision = 0;
         state.variation_transition_frames_remaining = 0;
         state.variation_transition_total_frames = 0;
@@ -572,38 +592,79 @@ pub(super) fn render_w30_resample_tap_buffer(
     }
     state.last_transport_running = render.is_transport_running;
 
-    if !state.was_active {
+    if !render.is_transport_running && !state.transport_stop_latched {
+        state.was_active = false;
+        state.envelope = 0.0;
         state.beat_position = render.position_beats.max(0.0);
-        state.envelope = 1.0;
-        state.last_step = 0;
         state.source_sample_cursor = 0.0;
+        state.hard_attack_sample_cursor = 0.0;
+        state.hard_attack_frames_remaining = 0;
+        state.hard_attack_total_frames = 0;
+        state.hard_attack_fade_in_frames = 0;
+        state.hard_attack_mix = 0.0;
+        state.hard_attack_head_mix = 0.0;
+        state.hard_hit_preservation_frames_remaining = 0;
+        state.hard_hit_preservation_total_frames = 0;
+        state.hard_reverse_pickup_cursor = 0.0;
+        state.hard_reverse_pickup_delay_frames_remaining = 0;
+        state.hard_reverse_pickup_frames_remaining = 0;
+        state.hard_reverse_pickup_total_frames = 0;
+        state.hard_impact_active = false;
+        state.hard_impact_frames_remaining = 0;
+        state.hard_impact_total_frames = 0;
+        state.hard_bite_filter_initialized = false;
+        state.hard_low_impact_filter_initialized = false;
+        state.hard_grit_held_sample = 0.0;
+        state.hard_grit_hold_frames_remaining = 0;
         state.last_character_input = 0.0;
         state.character_edge_memory = 0.0;
+        state.last_source_revision = render.source_audio.source_revision;
+        state.last_variation_revision = render.variation_revision;
+        state.variation_transition_frames_remaining = 0;
+        state.variation_transition_total_frames = 0;
+        state.variation_transition_start_sample = 0.0;
+        state.last_output_sample = 0.0;
+        return;
+    }
+
+    let source_changed =
+        state.was_active && render.source_audio.source_revision != state.last_source_revision;
+    let variation_changed =
+        state.was_active && render.variation_revision != state.last_variation_revision;
+    let beats_per_sample =
+        if render.is_transport_running && render.tempo_bpm.is_finite() && render.tempo_bpm > 0.0 {
+            f64::from(render.tempo_bpm) / 60.0 / f64::from(sample_rate.max(1))
+        } else {
+            0.0
+        };
+    let position_tolerance = (beats_per_sample * 2.0).max(f64::EPSILON);
+    let transport_seek = state.was_active
+        && render.is_transport_running
+        && (state.beat_position - render.position_beats.max(0.0)).abs() > position_tolerance;
+
+    if !state.was_active {
+        let preserve_frozen_base_start = (render.variation == W30ResampleTapVariation::Base
+            || render.hard_policy == W30ResampleTapHardPolicy::Unavailable)
+            && render.position_beats.abs() <= f64::EPSILON;
+        sync_w30_resample_playhead(render, state, sample_rate, !preserve_frozen_base_start);
+        state.last_source_revision = render.source_audio.source_revision;
         state.last_variation_revision = render.variation_revision;
         state.variation_transition_frames_remaining = 0;
         state.variation_transition_total_frames = 0;
         state.variation_transition_start_sample = 0.0;
         state.last_output_sample = 0.0;
         state.was_active = true;
-    } else if render.variation_revision != state.last_variation_revision {
+    } else if source_changed || variation_changed || transport_seek {
+        state.last_source_revision = render.source_audio.source_revision;
         state.last_variation_revision = render.variation_revision;
         let transition_frames = (sample_rate / 200).max(1);
         state.variation_transition_frames_remaining = transition_frames;
         state.variation_transition_total_frames = transition_frames;
         state.variation_transition_start_sample = state.last_output_sample;
-        state.envelope = 1.0;
-        state.source_sample_cursor = w30_resample_step_cursor(render, state.last_step);
-        state.last_character_input = 0.0;
-        state.character_edge_memory = 0.0;
+        sync_w30_resample_playhead(render, state, sample_rate, true);
     }
 
     let transport_running = render.is_transport_running;
-    let beats_per_sample =
-        if transport_running && render.tempo_bpm.is_finite() && render.tempo_bpm > 0.0 {
-            f64::from(render.tempo_bpm) / 60.0 / f64::from(sample_rate.max(1))
-        } else {
-            0.0
-        };
     let frame_count = data.len() / channel_count.max(1);
     let envelope_decay = w30_resample_decay(render, sample_rate);
 
@@ -615,7 +676,7 @@ pub(super) fn render_w30_resample_tap_buffer(
                 state.last_step = step;
                 if should_trigger_w30_resample_step(render, step) {
                     state.envelope = w30_resample_trigger_envelope(render);
-                    state.source_sample_cursor = w30_resample_step_cursor(render, step);
+                    trigger_w30_resample_attack(render, state, sample_rate, step);
                 }
             }
         } else {
@@ -623,11 +684,37 @@ pub(super) fn render_w30_resample_tap_buffer(
         }
 
         let source_sample = w30_resample_source_sample(render, state, sample_rate);
-        let voice = w30_resample_source_character(source_sample, render, state);
+        let body = w30_resample_source_character(source_sample, render, state);
+        let pickup_and_body = w30_resample_reverse_pickup_sample(render, state, sample_rate, body);
+        let attack_and_body =
+            w30_resample_attack_body_sample(render, state, sample_rate, pickup_and_body);
+        let voice = match render.hard_low_impact.recipe {
+            W30ResampleLowImpactRecipe::SourceKickImpactV2 => {
+                w30_resample_kick_impact_v2_sample(render, state, attack_and_body)
+            }
+            W30ResampleLowImpactRecipe::SourceHitShaperV3 => {
+                w30_resample_hit_shaper_v3_sample(render, state, attack_and_body)
+            }
+            W30ResampleLowImpactRecipe::Unavailable
+            | W30ResampleLowImpactRecipe::SourceLowTransientPunchV1 => {
+                let bitten = w30_resample_hard_gesture_bite_sample(render, state, attack_and_body);
+                let gritted = w30_resample_hard_grit_sample(render, state, sample_rate, bitten);
+                w30_resample_low_impact_sample(render, state, attack_and_body, gritted)
+            }
+        };
+        let voice = w30_resample_hard_impact_articulation_sample(render, state, sample_rate, voice);
+        let voice =
+            w30_resample_calibrated_hit_preservation_sample(render, state, sample_rate, voice);
         const RESAMPLE_TAP_VOICE_CEILING: f32 = 0.92;
+        let hard_output_gain = if render.variation == W30ResampleTapVariation::HardDamage {
+            render.hard_output_gain.clamp(0.25, 1.25)
+        } else {
+            1.0
+        };
         let target_sample = (voice
             * state.envelope
             * w30_resample_render_gain(render, transport_running)
+            * hard_output_gain
             * transport_stop_gain(
                 state.transport_stop_latched,
                 &mut state.transport_stop_fade_frames_remaining,
@@ -659,6 +746,727 @@ pub(super) fn render_w30_resample_tap_buffer(
     }
 }
 
+fn sync_w30_resample_playhead(
+    render: &RealtimeW30ResampleTapState,
+    state: &mut W30ResampleTapCallbackState,
+    output_sample_rate: u32,
+    prime_edge_history: bool,
+) {
+    state.hard_grit_held_sample = 0.0;
+    state.hard_grit_hold_frames_remaining = 0;
+    state.hard_attack_mix = 0.0;
+    state.hard_attack_head_mix = 0.0;
+    state.hard_hit_preservation_frames_remaining = 0;
+    state.hard_hit_preservation_total_frames = 0;
+    state.hard_reverse_pickup_cursor = 0.0;
+    state.hard_reverse_pickup_delay_frames_remaining = 0;
+    state.hard_reverse_pickup_frames_remaining = 0;
+    state.hard_reverse_pickup_total_frames = 0;
+    state.hard_impact_active = false;
+    state.hard_impact_frames_remaining = 0;
+    state.hard_impact_total_frames = 0;
+    state.hard_low_impact_filter_initialized = false;
+    let position_beats = render.position_beats.max(0.0);
+    let step = (position_beats * f64::from(w30_resample_subdivision(render))).floor() as i64;
+    state.beat_position = position_beats;
+    state.last_step = step;
+    if render.variation == W30ResampleTapVariation::HardDamage
+        && render.hard_policy == W30ResampleTapHardPolicy::SourceTransientChop
+    {
+        state.envelope = 1.0;
+        state.source_sample_cursor =
+            w30_resample_phase_cursor(render, output_sample_rate, position_beats);
+        if should_trigger_w30_resample_step(render, step) {
+            trigger_w30_resample_attack(render, state, output_sample_rate, step);
+        } else {
+            state.hard_attack_frames_remaining = 0;
+            state.hard_attack_total_frames = 0;
+            state.hard_attack_fade_in_frames = 0;
+            state.hard_bite_filter_initialized = false;
+        }
+    } else {
+        state.envelope = 1.0;
+        state.source_sample_cursor =
+            w30_resample_phase_cursor(render, output_sample_rate, position_beats);
+        state.hard_attack_frames_remaining = 0;
+        state.hard_attack_total_frames = 0;
+        state.hard_attack_fade_in_frames = 0;
+        state.hard_bite_filter_initialized = false;
+    }
+    if prime_edge_history {
+        prime_w30_resample_edge_history(render, state, output_sample_rate);
+    } else {
+        state.last_character_input = 0.0;
+        state.character_edge_memory = 0.0;
+    }
+    configure_w30_resample_hard_bite(render, state, output_sample_rate);
+    configure_w30_resample_low_impact(render, state, output_sample_rate);
+}
+
+fn trigger_w30_resample_attack(
+    render: &RealtimeW30ResampleTapState,
+    state: &mut W30ResampleTapCallbackState,
+    output_sample_rate: u32,
+    step: i64,
+) {
+    let slot = step.rem_euclid(W30_RESAMPLE_HARD_SLICE_COUNT as i64) as usize;
+    let sample_count = render
+        .source_audio
+        .sample_count
+        .min(W30_RESAMPLE_SOURCE_WINDOW_LEN);
+    if sample_count == 0 {
+        state.hard_attack_frames_remaining = 0;
+        state.hard_attack_total_frames = 0;
+        state.hard_attack_fade_in_frames = 0;
+        state.hard_attack_mix = 0.0;
+        state.hard_attack_head_mix = 0.0;
+        state.hard_reverse_pickup_delay_frames_remaining = 0;
+        state.hard_reverse_pickup_frames_remaining = 0;
+        state.hard_reverse_pickup_total_frames = 0;
+        state.hard_impact_active = false;
+        state.hard_impact_frames_remaining = 0;
+        state.hard_impact_total_frames = 0;
+        state.hard_bite_filter_initialized = false;
+        return;
+    }
+    let cursor_increment =
+        sample_count as f64 / w30_resample_cycle_output_frames(render, output_sample_rate);
+    if render.hard_gesture.recipe == W30ResampleHardGestureRecipe::SourceReverseIntoImpactV1
+        && slot == usize::from(render.hard_gesture.pickup_slot)
+    {
+        let pickup_frames = render
+            .hard_gesture
+            .recipe
+            .pickup_duration_frames(output_sample_rate)
+            .max(1);
+        let step_frames = if render.tempo_bpm.is_finite() && render.tempo_bpm > 0.0 {
+            (f64::from(output_sample_rate.max(1)) * 30.0 / f64::from(render.tempo_bpm))
+                .round()
+                .max(1.0) as u32
+        } else {
+            pickup_frames
+        };
+        let impact_slot =
+            usize::from(render.hard_gesture.impact_slot).min(W30_RESAMPLE_HARD_SLICE_COUNT - 1);
+        let impact_cursor = f64::from(render.hard_slice_cursors[impact_slot])
+            .min(sample_count.saturating_sub(1) as f64);
+        state.hard_reverse_pickup_cursor = (impact_cursor
+            + cursor_increment * f64::from(pickup_frames.saturating_sub(1)))
+        .rem_euclid(sample_count as f64);
+        state.hard_reverse_pickup_delay_frames_remaining =
+            step_frames.saturating_sub(pickup_frames);
+        state.hard_reverse_pickup_frames_remaining = pickup_frames.min(step_frames);
+        state.hard_reverse_pickup_total_frames = pickup_frames.min(step_frames);
+        state.hard_attack_frames_remaining = 0;
+        state.hard_attack_total_frames = 0;
+        state.hard_attack_fade_in_frames = 0;
+        state.hard_attack_mix = 0.0;
+        state.hard_attack_head_mix = 0.0;
+        state.hard_impact_active = false;
+        state.hard_impact_frames_remaining = 0;
+        state.hard_impact_total_frames = 0;
+        state.hard_bite_filter_initialized = false;
+        return;
+    }
+    state.hard_reverse_pickup_delay_frames_remaining = 0;
+    state.hard_reverse_pickup_frames_remaining = 0;
+    state.hard_reverse_pickup_total_frames = 0;
+    state.hard_impact_active = render.hard_gesture.recipe
+        == W30ResampleHardGestureRecipe::SourceReverseIntoImpactV1
+        && slot == usize::from(render.hard_gesture.impact_slot);
+    state.hard_impact_total_frames = if state.hard_impact_active {
+        render
+            .hard_gesture
+            .recipe
+            .body_end_frames(output_sample_rate)
+            .max(1)
+    } else {
+        0
+    };
+    state.hard_impact_frames_remaining = state.hard_impact_total_frames;
+    let onset_cursor = w30_resample_step_cursor(render, step);
+    let proxy_attack_length = u32::from(render.hard_attack_lengths[slot].max(1));
+    let mut attack_frames = (f64::from(proxy_attack_length) / cursor_increment)
+        .round()
+        .clamp(1.0, f64::from(output_sample_rate.max(1)) * 0.08) as u32;
+    attack_frames = attack_frames.max(
+        render
+            .hard_low_impact
+            .recipe
+            .minimum_hit_window_frames(output_sample_rate),
+    );
+    let fade_in_frames = if state.hard_impact_active {
+        0
+    } else {
+        (output_sample_rate / 2_000)
+            .max(1)
+            .min((attack_frames / 4).max(1))
+    };
+    state.hard_attack_sample_cursor = if state.hard_impact_active {
+        onset_cursor
+    } else {
+        (onset_cursor - cursor_increment * f64::from(fade_in_frames))
+            .rem_euclid(sample_count as f64)
+    };
+    state.hard_attack_total_frames = attack_frames.saturating_add(fade_in_frames);
+    state.hard_attack_frames_remaining = state.hard_attack_total_frames;
+    state.hard_attack_fade_in_frames = fade_in_frames;
+    let preservation_frames = render
+        .hard_low_impact
+        .recipe
+        .calibrated_hit_preservation_frames(output_sample_rate);
+    let preservation_fade_frames = render
+        .hard_low_impact
+        .recipe
+        .calibrated_hit_preservation_fade_frames(output_sample_rate);
+    state.hard_hit_preservation_total_frames =
+        preservation_frames.saturating_add(preservation_fade_frames);
+    state.hard_hit_preservation_frames_remaining = state.hard_hit_preservation_total_frames;
+    if render.hard_low_impact.recipe == W30ResampleLowImpactRecipe::SourceHitShaperV3 {
+        state.hard_body_eq_z1 = 0.0;
+        state.hard_body_eq_z2 = 0.0;
+        state.hard_low_impact_filter_initialized = false;
+    }
+}
+
+fn w30_resample_reverse_pickup_sample(
+    render: &RealtimeW30ResampleTapState,
+    state: &mut W30ResampleTapCallbackState,
+    output_sample_rate: u32,
+    body: f32,
+) -> f32 {
+    if render.variation != W30ResampleTapVariation::HardDamage
+        || render.hard_policy != W30ResampleTapHardPolicy::SourceTransientChop
+        || render.hard_gesture.recipe != W30ResampleHardGestureRecipe::SourceReverseIntoImpactV1
+    {
+        state.hard_reverse_pickup_delay_frames_remaining = 0;
+        state.hard_reverse_pickup_frames_remaining = 0;
+        state.hard_reverse_pickup_total_frames = 0;
+        return body;
+    }
+    if state.hard_reverse_pickup_delay_frames_remaining > 0 {
+        state.hard_reverse_pickup_delay_frames_remaining = state
+            .hard_reverse_pickup_delay_frames_remaining
+            .saturating_sub(1);
+        return body;
+    }
+    if state.hard_reverse_pickup_frames_remaining == 0 {
+        return body;
+    }
+    let sample_count = render
+        .source_audio
+        .sample_count
+        .min(W30_RESAMPLE_SOURCE_WINDOW_LEN);
+    if sample_count == 0 {
+        state.hard_reverse_pickup_frames_remaining = 0;
+        return body;
+    }
+    let reverse = w30_resample_source_sample_at(render, state.hard_reverse_pickup_cursor);
+    let cursor_increment =
+        sample_count as f64 / w30_resample_cycle_output_frames(render, output_sample_rate);
+    state.hard_reverse_pickup_cursor =
+        (state.hard_reverse_pickup_cursor - cursor_increment).rem_euclid(sample_count as f64);
+    let elapsed = state
+        .hard_reverse_pickup_total_frames
+        .saturating_sub(state.hard_reverse_pickup_frames_remaining);
+    let pickup_mix =
+        smoothstep(elapsed as f32 / state.hard_reverse_pickup_total_frames.max(1) as f32);
+    let boundary_ramp_frames = (output_sample_rate / 100).max(1);
+    let boundary_progress = if state.hard_reverse_pickup_frames_remaining <= boundary_ramp_frames {
+        1.0 - smoothstep(
+            state.hard_reverse_pickup_frames_remaining as f32 / boundary_ramp_frames as f32,
+        )
+    } else {
+        0.0
+    };
+    let pickup_gain = render
+        .hard_gesture
+        .pickup_gain
+        .clamp(W30_RESAMPLE_H13_MIN_PICKUP_GAIN, 1.0);
+    let impact_gain = render
+        .hard_gesture
+        .impact_level_compensation
+        .clamp(W30_RESAMPLE_H13_MIN_IMPACT_LEVEL_COMPENSATION, 1.0);
+    let reverse_gain = pickup_gain * (1.0 - boundary_progress) + impact_gain * boundary_progress;
+    state.hard_reverse_pickup_frames_remaining =
+        state.hard_reverse_pickup_frames_remaining.saturating_sub(1);
+    body * (1.0 - pickup_mix) + reverse * reverse_gain * pickup_mix
+}
+
+fn w30_resample_attack_body_sample(
+    render: &RealtimeW30ResampleTapState,
+    state: &mut W30ResampleTapCallbackState,
+    output_sample_rate: u32,
+    body: f32,
+) -> f32 {
+    if render.variation != W30ResampleTapVariation::HardDamage
+        || render.hard_policy != W30ResampleTapHardPolicy::SourceTransientChop
+        || state.hard_attack_frames_remaining == 0
+    {
+        state.hard_attack_mix = 0.0;
+        state.hard_attack_head_mix = 0.0;
+        return body;
+    }
+
+    let sample_count = render
+        .source_audio
+        .sample_count
+        .min(W30_RESAMPLE_SOURCE_WINDOW_LEN);
+    if sample_count == 0 {
+        state.hard_attack_frames_remaining = 0;
+        return body;
+    }
+    let attack = w30_resample_source_sample_at(render, state.hard_attack_sample_cursor);
+    let cursor_increment =
+        sample_count as f64 / w30_resample_cycle_output_frames(render, output_sample_rate);
+    state.hard_attack_sample_cursor =
+        (state.hard_attack_sample_cursor + cursor_increment).rem_euclid(sample_count as f64);
+
+    let elapsed = state
+        .hard_attack_total_frames
+        .saturating_sub(state.hard_attack_frames_remaining);
+    let fade_in_frames = state.hard_attack_fade_in_frames;
+    let attack_frames = state
+        .hard_attack_total_frames
+        .saturating_sub(state.hard_attack_fade_in_frames)
+        .max(1);
+    let attack_elapsed = elapsed.saturating_sub(state.hard_attack_fade_in_frames);
+    let release_start = attack_frames * 3 / 5;
+    let attack_mix = if fade_in_frames > 0 && elapsed < fade_in_frames {
+        smoothstep(elapsed as f32 / fade_in_frames as f32)
+    } else if attack_elapsed <= release_start {
+        1.0
+    } else {
+        let release_frames = attack_frames.saturating_sub(release_start).max(1);
+        1.0 - smoothstep(
+            attack_elapsed.saturating_sub(release_start) as f32 / release_frames as f32,
+        )
+    };
+    state.hard_attack_mix = attack_mix;
+    let head_frames = (output_sample_rate / 55).max(1);
+    state.hard_attack_head_mix = if fade_in_frames > 0 && elapsed < fade_in_frames {
+        smoothstep(elapsed as f32 / fade_in_frames as f32)
+    } else {
+        1.0 - smoothstep(attack_elapsed as f32 / head_frames as f32)
+    };
+    state.hard_attack_frames_remaining = state.hard_attack_frames_remaining.saturating_sub(1);
+    body * (1.0 - attack_mix) + attack * attack_mix
+}
+
+fn w30_resample_hard_impact_articulation_sample(
+    render: &RealtimeW30ResampleTapState,
+    state: &mut W30ResampleTapCallbackState,
+    output_sample_rate: u32,
+    voice: f32,
+) -> f32 {
+    if render.variation != W30ResampleTapVariation::HardDamage
+        || render.hard_policy != W30ResampleTapHardPolicy::SourceTransientChop
+        || render.hard_gesture.recipe != W30ResampleHardGestureRecipe::SourceReverseIntoImpactV1
+        || !state.hard_impact_active
+        || state.hard_impact_frames_remaining == 0
+    {
+        return voice;
+    }
+    let elapsed = state
+        .hard_impact_total_frames
+        .saturating_sub(state.hard_impact_frames_remaining);
+    state.hard_impact_frames_remaining = state.hard_impact_frames_remaining.saturating_sub(1);
+    if state.hard_impact_frames_remaining == 0 {
+        state.hard_impact_active = false;
+    }
+    let impact_compensation = render
+        .hard_gesture
+        .impact_level_compensation
+        .clamp(W30_RESAMPLE_H13_MIN_IMPACT_LEVEL_COMPENSATION, 1.0);
+    let body_start = render
+        .hard_gesture
+        .recipe
+        .body_start_frames(output_sample_rate);
+    let body_end = render
+        .hard_gesture
+        .recipe
+        .body_end_frames(output_sample_rate)
+        .max(body_start + 1);
+    if elapsed < body_start || elapsed >= body_end {
+        return voice * impact_compensation;
+    }
+    let body_gain = render
+        .hard_gesture
+        .body_gain
+        .clamp(1.0, W30_RESAMPLE_H13_MAX_BODY_GAIN);
+    let transition_frames = (output_sample_rate / 400).max(1);
+    let fade_in = smoothstep(elapsed.saturating_sub(body_start) as f32 / transition_frames as f32);
+    let fade_out = smoothstep(body_end.saturating_sub(elapsed) as f32 / transition_frames as f32);
+    let articulation = fade_in.min(fade_out);
+    let gain = impact_compensation + (body_gain - impact_compensation) * articulation;
+    (voice * gain).clamp(-0.98, 0.98)
+}
+
+fn configure_w30_resample_hard_bite(
+    render: &RealtimeW30ResampleTapState,
+    state: &mut W30ResampleTapCallbackState,
+    output_sample_rate: u32,
+) {
+    state.hard_bite_filter_initialized = false;
+    if let Some((low_hz, high_hz)) = render.hard_attack_bite.band.cutoff_hz() {
+        let sample_rate = output_sample_rate.max(1) as f32;
+        state.hard_bite_low_alpha = 1.0 - (-std::f32::consts::TAU * low_hz / sample_rate).exp();
+        state.hard_bite_high_alpha = 1.0 - (-std::f32::consts::TAU * high_hz / sample_rate).exp();
+    } else {
+        state.hard_bite_low_alpha = 0.0;
+        state.hard_bite_high_alpha = 0.0;
+    }
+}
+
+fn w30_resample_hard_gesture_bite_sample(
+    render: &RealtimeW30ResampleTapState,
+    state: &mut W30ResampleTapCallbackState,
+    sample: f32,
+) -> f32 {
+    // H4 replaces only the source-selected band with its RMS-matched nonlinear residual.
+    // The complementary dry spectrum stays at unity while dry-band masking no longer hides
+    // the distortion component.
+    if render.variation != W30ResampleTapVariation::HardDamage
+        || render.hard_policy != W30ResampleTapHardPolicy::SourceTransientChop
+        || render.hard_attack_bite.band == W30ResampleAttackBiteBand::Unavailable
+        || state.hard_bite_low_alpha <= 0.0
+        || state.hard_bite_high_alpha <= 0.0
+    {
+        return sample;
+    }
+    let input_gain = render.hard_attack_bite.input_gain.clamp(1.0, 12.0);
+    let output_gain = render.hard_attack_bite.output_gain.clamp(0.25, 12.0);
+    if !state.hard_bite_filter_initialized {
+        state.hard_bite_lowpass_low = sample;
+        state.hard_bite_lowpass_high = sample;
+        state.hard_bite_filter_initialized = true;
+        return sample;
+    }
+
+    state.hard_bite_lowpass_low +=
+        state.hard_bite_low_alpha * (sample - state.hard_bite_lowpass_low);
+    state.hard_bite_lowpass_high +=
+        state.hard_bite_high_alpha * (sample - state.hard_bite_lowpass_high);
+    let selected_band = state.hard_bite_lowpass_high - state.hard_bite_lowpass_low;
+    let drive_normalization = W30_RESAMPLE_HARD_BITE_NONLINEAR_DRIVE
+        .tanh()
+        .max(f32::EPSILON);
+    let shaped_band = (selected_band * input_gain * W30_RESAMPLE_HARD_BITE_NONLINEAR_DRIVE).tanh()
+        / drive_normalization
+        / input_gain;
+    let residual_band = (shaped_band - selected_band) * output_gain;
+    (sample - selected_band + residual_band).clamp(-0.98, 0.98)
+}
+
+pub(super) fn configure_w30_resample_low_impact(
+    render: &RealtimeW30ResampleTapState,
+    state: &mut W30ResampleTapCallbackState,
+    output_sample_rate: u32,
+) {
+    state.hard_low_impact_filter_initialized = false;
+    if let Some((low_hz, high_hz)) = render.hard_low_impact.recipe.cutoff_hz() {
+        let sample_rate = output_sample_rate.max(1) as f32;
+        state.hard_low_impact_low_alpha =
+            1.0 - (-std::f32::consts::TAU * low_hz / sample_rate).exp();
+        state.hard_low_impact_high_alpha =
+            1.0 - (-std::f32::consts::TAU * high_hz / sample_rate).exp();
+    } else {
+        state.hard_low_impact_low_alpha = 0.0;
+        state.hard_low_impact_high_alpha = 0.0;
+    }
+    if let Some((low_hz, high_hz)) = render.hard_low_impact.recipe.presence_cutoff_hz() {
+        let sample_rate = output_sample_rate.max(1) as f32;
+        state.hard_impact_presence_low_alpha =
+            1.0 - (-std::f32::consts::TAU * low_hz / sample_rate).exp();
+        state.hard_impact_presence_high_alpha =
+            1.0 - (-std::f32::consts::TAU * high_hz / sample_rate).exp();
+    } else {
+        state.hard_impact_presence_low_alpha = 0.0;
+        state.hard_impact_presence_high_alpha = 0.0;
+    }
+    let recipe = render.hard_low_impact.recipe;
+    if recipe == W30ResampleLowImpactRecipe::SourceHitShaperV3 {
+        let sample_rate = output_sample_rate.max(1) as f32;
+        let omega = std::f32::consts::TAU * recipe.body_eq_center_hz().max(1.0) / sample_rate;
+        let alpha = omega.sin() / (2.0 * recipe.body_eq_q().max(0.01));
+        let amplitude = 10.0_f32.powf(recipe.body_eq_gain_db() / 40.0);
+        let a0 = 1.0 + alpha / amplitude;
+        state.hard_body_eq_b0 = (1.0 + alpha * amplitude) / a0;
+        state.hard_body_eq_b1 = -2.0 * omega.cos() / a0;
+        state.hard_body_eq_b2 = (1.0 - alpha * amplitude) / a0;
+        state.hard_body_eq_a1 = -2.0 * omega.cos() / a0;
+        state.hard_body_eq_a2 = (1.0 - alpha / amplitude) / a0;
+    } else {
+        state.hard_body_eq_b0 = 1.0;
+        state.hard_body_eq_b1 = 0.0;
+        state.hard_body_eq_b2 = 0.0;
+        state.hard_body_eq_a1 = 0.0;
+        state.hard_body_eq_a2 = 0.0;
+    }
+    state.hard_body_eq_z1 = 0.0;
+    state.hard_body_eq_z2 = 0.0;
+}
+
+pub(super) fn w30_resample_kick_impact_v2_sample(
+    render: &RealtimeW30ResampleTapState,
+    state: &mut W30ResampleTapCallbackState,
+    source_attack: f32,
+) -> f32 {
+    if render.variation != W30ResampleTapVariation::HardDamage
+        || render.hard_policy != W30ResampleTapHardPolicy::SourceTransientChop
+        || render.hard_low_impact.recipe != W30ResampleLowImpactRecipe::SourceKickImpactV2
+        || state.hard_attack_mix <= 0.0
+    {
+        return source_attack;
+    }
+    if !state.hard_low_impact_filter_initialized {
+        state.hard_low_impact_lowpass_low = source_attack;
+        state.hard_low_impact_lowpass_high = source_attack;
+        state.hard_impact_presence_lowpass_low = source_attack;
+        state.hard_impact_presence_lowpass_high = source_attack;
+        state.hard_low_impact_filter_initialized = true;
+        return source_attack;
+    }
+
+    state.hard_low_impact_lowpass_low +=
+        state.hard_low_impact_low_alpha * (source_attack - state.hard_low_impact_lowpass_low);
+    state.hard_low_impact_lowpass_high +=
+        state.hard_low_impact_high_alpha * (source_attack - state.hard_low_impact_lowpass_high);
+    state.hard_impact_presence_lowpass_low += state.hard_impact_presence_low_alpha
+        * (source_attack - state.hard_impact_presence_lowpass_low);
+    state.hard_impact_presence_lowpass_high += state.hard_impact_presence_high_alpha
+        * (source_attack - state.hard_impact_presence_lowpass_high);
+
+    let low_body = state.hard_low_impact_lowpass_high - state.hard_low_impact_lowpass_low;
+    let head = state.hard_impact_presence_lowpass_high - state.hard_impact_presence_lowpass_low;
+    (source_attack
+        + low_body * render.hard_low_impact.recipe.parallel_attack_gain() * state.hard_attack_mix
+        + head * render.hard_low_impact.recipe.parallel_head_gain() * state.hard_attack_head_mix)
+        .clamp(-0.98, 0.98)
+}
+
+pub(super) fn w30_resample_hit_shaper_v3_sample(
+    render: &RealtimeW30ResampleTapState,
+    state: &mut W30ResampleTapCallbackState,
+    source_hit: f32,
+) -> f32 {
+    if render.variation != W30ResampleTapVariation::HardDamage
+        || render.hard_policy != W30ResampleTapHardPolicy::SourceTransientChop
+        || render.hard_low_impact.recipe != W30ResampleLowImpactRecipe::SourceHitShaperV3
+        || state.hard_attack_mix <= 0.0
+    {
+        return source_hit;
+    }
+    if !state.hard_low_impact_filter_initialized {
+        state.hard_low_impact_filter_initialized = true;
+        return source_hit;
+    }
+
+    let recipe = render.hard_low_impact.recipe;
+    let equalized_body = state.hard_body_eq_b0 * source_hit + state.hard_body_eq_z1;
+    state.hard_body_eq_z1 = state.hard_body_eq_b1 * source_hit
+        - state.hard_body_eq_a1 * equalized_body
+        + state.hard_body_eq_z2;
+    state.hard_body_eq_z2 =
+        state.hard_body_eq_b2 * source_hit - state.hard_body_eq_a2 * equalized_body;
+    let body_mix = state.hard_attack_mix * (1.0 - state.hard_attack_head_mix);
+    let body_hit = source_hit + (equalized_body - source_hit) * body_mix;
+    let shaped_head = normalized_soft_clip(body_hit, recipe.head_drive());
+    let head_mix = recipe.head_wet() * state.hard_attack_head_mix;
+    let shaped = body_hit + (shaped_head - body_hit) * head_mix;
+    shaped.clamp(-0.98, 0.98)
+}
+
+fn normalized_soft_clip(sample: f32, drive: f32) -> f32 {
+    let drive = drive.max(1.0);
+    (sample * drive).tanh() / drive.tanh().max(f32::EPSILON)
+}
+
+pub(super) fn w30_resample_calibrated_hit_preservation_sample(
+    render: &RealtimeW30ResampleTapState,
+    state: &mut W30ResampleTapCallbackState,
+    output_sample_rate: u32,
+    voice: f32,
+) -> f32 {
+    if render.variation != W30ResampleTapVariation::HardDamage
+        || render.hard_policy != W30ResampleTapHardPolicy::SourceTransientChop
+        || render.hard_low_impact.recipe != W30ResampleLowImpactRecipe::SourceHitShaperV3
+    {
+        return voice;
+    }
+    let recipe = render.hard_low_impact.recipe;
+    let primary_hit_frames = recipe.minimum_hit_window_frames(output_sample_rate);
+    let hold_frames = recipe.calibrated_hit_preservation_frames(output_sample_rate);
+    let fade_frames = recipe
+        .calibrated_hit_preservation_fade_frames(output_sample_rate)
+        .max(1);
+    let elapsed = state
+        .hard_hit_preservation_total_frames
+        .saturating_sub(state.hard_hit_preservation_frames_remaining);
+    let active_target = if state.hard_hit_preservation_frames_remaining > 0 {
+        state.hard_hit_preservation_frames_remaining = state
+            .hard_hit_preservation_frames_remaining
+            .saturating_sub(1);
+        if elapsed < primary_hit_frames {
+            W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN
+        } else if elapsed < hold_frames {
+            W30_RESAMPLE_HIT_SHAPER_SCHEMA_OUTPUT_GAIN
+        } else {
+            let fade = smoothstep(elapsed.saturating_sub(hold_frames) as f32 / fade_frames as f32);
+            W30_RESAMPLE_HIT_SHAPER_SCHEMA_OUTPUT_GAIN
+                + (render.hard_output_gain - W30_RESAMPLE_HIT_SHAPER_SCHEMA_OUTPUT_GAIN) * fade
+        }
+    } else {
+        render.hard_output_gain
+    };
+    let step_position = state.beat_position * f64::from(w30_resample_subdivision(render));
+    let next_step = step_position.floor() as i64 + 1;
+    let next_slot = next_step.rem_euclid(W30_RESAMPLE_HARD_SLICE_COUNT as i64) as u8;
+    let frames_per_step =
+        f64::from(output_sample_rate.max(1)) * 30.0 / f64::from(render.tempo_bpm.max(f32::EPSILON));
+    let frames_until_next_step = ((next_step as f64 - step_position) * frames_per_step)
+        .round()
+        .max(0.0) as u32;
+    let preroll_frames = recipe.calibrated_hit_preroll_frames(output_sample_rate);
+    let preroll_fade_frames = recipe
+        .calibrated_hit_preroll_fade_frames(output_sample_rate)
+        .max(1);
+    let preroll_with_fade_frames = preroll_frames.saturating_add(preroll_fade_frames);
+    let preroll_target = if render.hard_trigger_mask & (1_u8 << next_slot) != 0
+        && frames_until_next_step <= preroll_with_fade_frames
+    {
+        let progress = smoothstep(
+            preroll_with_fade_frames.saturating_sub(frames_until_next_step) as f32
+                / preroll_fade_frames as f32,
+        );
+        render.hard_output_gain
+            + (W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN - render.hard_output_gain) * progress
+    } else {
+        render.hard_output_gain
+    };
+    let target_output_gain = active_target.max(preroll_target);
+    if target_output_gain <= render.hard_output_gain {
+        return voice;
+    }
+    let compensation = (target_output_gain / render.hard_output_gain.max(f32::EPSILON))
+        .clamp(1.0, W30_RESAMPLE_HIT_SHAPER_MAX_WINDOW_COMPENSATION_GAIN);
+    (voice * compensation).clamp(-0.98, 0.98)
+}
+
+pub(super) fn w30_resample_low_impact_sample(
+    render: &RealtimeW30ResampleTapState,
+    state: &mut W30ResampleTapCallbackState,
+    source_attack: f32,
+    processed: f32,
+) -> f32 {
+    if render.variation != W30ResampleTapVariation::HardDamage
+        || render.hard_policy != W30ResampleTapHardPolicy::SourceTransientChop
+        || render.hard_low_impact.recipe == W30ResampleLowImpactRecipe::Unavailable
+        || state.hard_attack_mix <= 0.0
+        || state.hard_low_impact_low_alpha <= 0.0
+        || state.hard_low_impact_high_alpha <= 0.0
+    {
+        return processed;
+    }
+    if !state.hard_low_impact_filter_initialized {
+        state.hard_low_impact_lowpass_low = source_attack;
+        state.hard_low_impact_lowpass_high = source_attack;
+        state.hard_low_impact_filter_initialized = true;
+        return processed;
+    }
+    state.hard_low_impact_lowpass_low +=
+        state.hard_low_impact_low_alpha * (source_attack - state.hard_low_impact_lowpass_low);
+    state.hard_low_impact_lowpass_high +=
+        state.hard_low_impact_high_alpha * (source_attack - state.hard_low_impact_lowpass_high);
+    let source_low_band = state.hard_low_impact_lowpass_high - state.hard_low_impact_lowpass_low;
+    let parallel_gain = render.hard_low_impact.recipe.parallel_attack_gain();
+    (processed + source_low_band * parallel_gain * state.hard_attack_mix).clamp(-0.98, 0.98)
+}
+
+pub(super) fn w30_resample_hard_grit_sample(
+    render: &RealtimeW30ResampleTapState,
+    state: &mut W30ResampleTapCallbackState,
+    output_sample_rate: u32,
+    sample: f32,
+) -> f32 {
+    if render.variation != W30ResampleTapVariation::HardDamage
+        || render.hard_policy != W30ResampleTapHardPolicy::SourceTransientChop
+    {
+        state.hard_grit_held_sample = sample;
+        state.hard_grit_hold_frames_remaining = 0;
+        return sample;
+    }
+
+    let recipe = render.hard_policy.grit_recipe();
+    let (Some(effective_sample_rate_hz), Some(quantization_levels)) = (
+        recipe.effective_sample_rate_hz(),
+        recipe.quantization_levels(),
+    ) else {
+        return sample;
+    };
+    let quantization_peak = f32::from((quantization_levels - 1) / 2);
+    if state.hard_grit_hold_frames_remaining == 0 {
+        state.hard_grit_held_sample = (sample * quantization_peak).round() / quantization_peak;
+        state.hard_grit_hold_frames_remaining = (output_sample_rate.max(effective_sample_rate_hz)
+            / effective_sample_rate_hz)
+            .saturating_sub(1);
+    } else {
+        state.hard_grit_hold_frames_remaining =
+            state.hard_grit_hold_frames_remaining.saturating_sub(1);
+    }
+    state.hard_grit_held_sample
+}
+
+fn smoothstep(value: f32) -> f32 {
+    let value = value.clamp(0.0, 1.0);
+    value * value * (3.0 - 2.0 * value)
+}
+
+fn w30_resample_phase_cursor(
+    render: &RealtimeW30ResampleTapState,
+    output_sample_rate: u32,
+    position_beats: f64,
+) -> f64 {
+    let sample_count = render
+        .source_audio
+        .sample_count
+        .min(W30_RESAMPLE_SOURCE_WINDOW_LEN);
+    if sample_count == 0
+        || !render.tempo_bpm.is_finite()
+        || render.tempo_bpm <= 0.0
+        || !position_beats.is_finite()
+    {
+        return 0.0;
+    }
+    let output_frame_count = w30_resample_cycle_output_frames(render, output_sample_rate);
+    let elapsed_output_frames = position_beats.max(0.0) * 60.0 / f64::from(render.tempo_bpm)
+        * f64::from(output_sample_rate);
+    (elapsed_output_frames * sample_count as f64 / output_frame_count)
+        .rem_euclid(sample_count as f64)
+}
+
+fn prime_w30_resample_edge_history(
+    render: &RealtimeW30ResampleTapState,
+    state: &mut W30ResampleTapCallbackState,
+    output_sample_rate: u32,
+) {
+    let sample_count = render
+        .source_audio
+        .sample_count
+        .min(W30_RESAMPLE_SOURCE_WINDOW_LEN);
+    if sample_count == 0 {
+        state.last_character_input = 0.0;
+        state.character_edge_memory = 0.0;
+        return;
+    }
+    let cursor_increment =
+        sample_count as f64 / w30_resample_cycle_output_frames(render, output_sample_rate);
+    let previous_cursor =
+        (state.source_sample_cursor - cursor_increment).rem_euclid(sample_count as f64);
+    state.last_character_input = w30_resample_source_sample_at(render, previous_cursor);
+    state.character_edge_memory = 0.0;
+}
+
 fn w30_resample_source_sample(
     render: &RealtimeW30ResampleTapState,
     state: &mut W30ResampleTapCallbackState,
@@ -673,12 +1481,21 @@ fn w30_resample_source_sample(
     let output_frame_count = w30_resample_cycle_output_frames(render, output_sample_rate);
     let cursor_increment = sample_count as f64 / output_frame_count;
     let cursor = state.source_sample_cursor.rem_euclid(sample_count as f64);
-    let base = cursor.floor() as usize % sample_count;
-    let next = (base + 1) % sample_count;
-    let sample = window.samples[base]
-        + (window.samples[next] - window.samples[base]) * cursor.fract() as f32;
+    let sample = w30_resample_source_sample_at(render, cursor);
     state.source_sample_cursor = (cursor + cursor_increment).rem_euclid(sample_count as f64);
     sample
+}
+
+fn w30_resample_source_sample_at(render: &RealtimeW30ResampleTapState, cursor: f64) -> f32 {
+    let window = &render.source_audio;
+    let sample_count = window.sample_count.min(W30_RESAMPLE_SOURCE_WINDOW_LEN);
+    if sample_count == 0 {
+        return 0.0;
+    }
+    let cursor = cursor.rem_euclid(sample_count as f64);
+    let base = cursor.floor() as usize % sample_count;
+    let next = (base + 1) % sample_count;
+    window.samples[base] + (window.samples[next] - window.samples[base]) * cursor.fract() as f32
 }
 
 fn w30_resample_cycle_output_frames(
@@ -730,71 +1547,17 @@ fn w30_resample_source_character(
     render: &RealtimeW30ResampleTapState,
     state: &mut W30ResampleTapCallbackState,
 ) -> f32 {
-    const EDGE_MEMORY: f32 = 0.68;
-    const EDGE_RANGE: f32 = 1.1;
-    const DRIVE_RANGE: f32 = 4.2;
-    const WET_RANGE: f32 = 0.78;
-    const BODY_SHARE: f32 = 0.76;
-    const EDGE_SHARE: f32 = 0.24;
-    const HARD_SOURCE_DRIVE_RANGE: f32 = 5.2;
-    const HARD_SOURCE_WET_RANGE: f32 = 0.92;
-    const HARD_SOURCE_BODY_SHARE: f32 = 0.62;
-    const HARD_SOURCE_EDGE_SHARE: f32 = 0.38;
-    const HARD_SOURCE_EDGE_BASE: f32 = 7.0;
-    const HARD_SOURCE_EDGE_RANGE: f32 = 20.0;
-    const HARD_TEXTURE_FOLD_DRIVE: f32 = 2.2;
-    const HARD_TEXTURE_QUANTIZATION_STEPS: f32 = 8.0;
-    const HARD_TEXTURE_FOLD_CRUSH_MIX: f32 = 0.58;
-
     let hard_source_character = render.variation == W30ResampleTapVariation::HardDamage
-        && render.hard_policy != W30ResampleTapHardPolicy::Unavailable;
-    let grit = if hard_source_character {
-        (render.grit_level.clamp(0.0, 1.0) * 0.22
-            + render.variation_intensity.clamp(0.0, 1.0) * 0.34)
-            .clamp(0.0, 0.62)
-    } else {
-        render.grit_level.clamp(0.0, 1.0) * 0.22
-    };
-    let raw_edge = sample - state.last_character_input;
-    state.last_character_input = sample;
-    state.character_edge_memory =
-        state.character_edge_memory * EDGE_MEMORY + raw_edge * (1.0 - EDGE_MEMORY);
-    if grit <= f32::EPSILON {
-        return sample;
-    }
-
-    let driven = sample + state.character_edge_memory * grit * EDGE_RANGE;
-    let drive_range = if hard_source_character {
-        HARD_SOURCE_DRIVE_RANGE
-    } else {
-        DRIVE_RANGE
-    };
-    let (body_share, edge_share, edge_base, edge_range, wet_range) = if hard_source_character {
-        (
-            HARD_SOURCE_BODY_SHARE,
-            HARD_SOURCE_EDGE_SHARE,
-            HARD_SOURCE_EDGE_BASE,
-            HARD_SOURCE_EDGE_RANGE,
-            HARD_SOURCE_WET_RANGE,
-        )
-    } else {
-        (BODY_SHARE, EDGE_SHARE, 5.0, 13.0, WET_RANGE)
-    };
-    let saturated = (driven * (1.0 + grit * drive_range)).tanh();
-    let edge = (raw_edge * (edge_base + grit * edge_range)).tanh();
-    let bitten = saturated * body_share + edge * edge_share;
-    let bitten = if render.variation == W30ResampleTapVariation::HardDamage
-        && render.hard_policy == W30ResampleTapHardPolicy::SourceTextureBite
-    {
-        let folded = (bitten * HARD_TEXTURE_FOLD_DRIVE * std::f32::consts::FRAC_PI_2).sin();
-        let crushed =
-            (folded * HARD_TEXTURE_QUANTIZATION_STEPS).round() / HARD_TEXTURE_QUANTIZATION_STEPS;
-        bitten * (1.0 - HARD_TEXTURE_FOLD_CRUSH_MIX) + crushed * HARD_TEXTURE_FOLD_CRUSH_MIX
-    } else {
-        bitten
-    };
-    let wet = grit * wet_range;
-    (sample * (1.0 - wet) + bitten * wet).clamp(-0.98, 0.98)
+        && render.hard_policy == W30ResampleTapHardPolicy::SourceTextureBite;
+    w30_resample_source_character_sample(
+        sample,
+        render.grit_level,
+        render.variation_intensity,
+        render.hard_policy != W30ResampleTapHardPolicy::Unavailable,
+        hard_source_character,
+        &mut state.last_character_input,
+        &mut state.character_edge_memory,
+    )
 }
 
 fn transport_stop_fade_frames(sample_rate: u32) -> u32 {
@@ -847,6 +1610,9 @@ pub(super) fn should_trigger_w30_resample_step(
             W30ResampleTapHardPolicy::SourceTransientChop => {
                 let slot = step.rem_euclid(W30_RESAMPLE_HARD_SLICE_COUNT as i64) as u8;
                 render.hard_trigger_mask & (1_u8 << slot) != 0
+                    || (render.hard_gesture.recipe
+                        == W30ResampleHardGestureRecipe::SourceReverseIntoImpactV1
+                        && slot == render.hard_gesture.pickup_slot)
             }
             W30ResampleTapHardPolicy::SourceTextureBite | W30ResampleTapHardPolicy::Unavailable => {
                 false
@@ -878,48 +1644,25 @@ fn w30_resample_trigger_envelope(render: &RealtimeW30ResampleTapState) -> f32 {
 }
 
 fn w30_resample_render_gain(render: &RealtimeW30ResampleTapState, transport_running: bool) -> f32 {
-    const HARD_TRANSIENT_PATH_GAIN: f32 = 1.12;
-
-    // This compensates the complete gated transient-Hard path, not the attack region in isolation.
-    // It cannot repair an attack/body imbalance created by the envelope.
     let profile_gain = match render.source_profile {
         Some(W30ResampleTapSourceProfile::RawCapture) | None => 0.88,
         Some(W30ResampleTapSourceProfile::PromotedCapture) => 0.98,
         Some(W30ResampleTapSourceProfile::PinnedCapture) => 1.08,
     };
     let transport_gain = if transport_running { 1.0 } else { 0.7 };
-    let hard_transient_gain = if render.variation == W30ResampleTapVariation::HardDamage
-        && render.hard_policy == W30ResampleTapHardPolicy::SourceTransientChop
-    {
-        HARD_TRANSIENT_PATH_GAIN
-    } else {
+    let grit_gain = if render.hard_policy == W30ResampleTapHardPolicy::Unavailable {
         1.0
+    } else {
+        1.0 + render.grit_level.clamp(0.0, 1.0) * 0.18
     };
-    (profile_gain
-        * transport_gain
-        * hard_transient_gain
-        * render.music_bus_level.clamp(0.0, 1.0)
-        * (1.0 + render.grit_level.clamp(0.0, 1.0) * 0.18))
+    (profile_gain * transport_gain * render.music_bus_level.clamp(0.0, 1.0) * grit_gain)
         .clamp(0.0, 1.2)
 }
 
-pub(super) fn w30_resample_decay(render: &RealtimeW30ResampleTapState, sample_rate: u32) -> f32 {
-    const HARD_TRANSIENT_CHOP_GATE_STEP_FRACTION: f32 = 0.55;
-    const HARD_TRANSIENT_CHOP_GATE_END_LEVEL: f32 = 0.03;
-
-    if render.variation != W30ResampleTapVariation::HardDamage
-        || render.hard_policy != W30ResampleTapHardPolicy::SourceTransientChop
-        || !render.tempo_bpm.is_finite()
-        || render.tempo_bpm <= 0.0
-    {
-        return 1.0;
-    }
-
-    let step_frames = sample_rate.max(1) as f32 * 60.0
-        / render.tempo_bpm
-        / w30_resample_subdivision(render) as f32;
-    let gate_frames = (step_frames * HARD_TRANSIENT_CHOP_GATE_STEP_FRACTION).max(1.0);
-    HARD_TRANSIENT_CHOP_GATE_END_LEVEL.powf(1.0 / gate_frames)
+pub(super) fn w30_resample_decay(_render: &RealtimeW30ResampleTapState, _sample_rate: u32) -> f32 {
+    // H1 keeps the source body intact. The source-adaptive attack path crossfades
+    // back to the continuous body instead of deleting it with a global gate.
+    1.0
 }
 
 fn w30_current_step(position_beats: f64, render: &RealtimeW30PreviewRenderState) -> i64 {

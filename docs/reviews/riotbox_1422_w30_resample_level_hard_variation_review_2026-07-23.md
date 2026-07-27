@@ -163,7 +163,7 @@ clipping. This is a technically review-ready candidate, not a human pass.
 
 ### Gated Hard candidate human reject and mechanism audit
 
-Markus reviewed the exact committed artifact at `edd90406`:
+Owner reviewed the exact committed artifact at `edd90406`:
 
 ```text
 /tmp/riotbox-1422-hard-review-edd90406/
@@ -361,3 +361,140 @@ One known maintainability signal remains:
 change should consider a real semantic `w30_resample_tap_renderer` module with
 explicit visibility and colocated tests. This slice does not add a mechanical
 `include!` shard or mix that module move into the audible behavior change.
+
+### H14 pre-freeze branch review
+
+The H14 `code-review` plus Rust/realtime pass found and fixed three additional
+issues before fresh holdout rendering:
+
+- `refresh_view` cloned the complete bounded W-30 PCM state before every
+  projection. The next projection now borrows the previous state for cache
+  comparison and assigns only after the borrow ends.
+- exact callback failures had no evaluated state, so a matching source that
+  could not satisfy all calibration constraints would repeat the expensive
+  offline render search on every refresh. The typed calibration plan now
+  distinguishes `exact_callback_evaluated` from
+  `exact_callback_calibrated`, exposes both through runtime/observer evidence,
+  and caches matching positive or negative outcomes.
+- the full-unity pre-hit context began with an instantaneous gain step. On the
+  Bertsz stress case that transition measured `0.03934` absolute and `11.31x`
+  its local jump RMS. A 2.5 ms lead-in now precedes the complete 20 ms unity
+  context; the same diagnostic falls to `0.01547` and `2.02x`. The exact
+  callback calibration includes this ramp, and product-path timing, boundary,
+  head, body, level, and H13 gesture gates remain green.
+
+The realtime callback still performs no allocation, I/O, file access, or
+analysis. Two callback-local `expect` calls on the typed grit-recipe invariant
+were replaced with a non-panicking unavailable return. Focused tests cover
+successful and rejected calibration-cache reuse, all four calibration cycles,
+the hit/following-body/between-hit responsibilities, and the click-safe
+pre-roll. The large accumulated H1–H14 diff and the existing large W-30
+projection/renderer/diagnostic files remain a review-cost signal; semantic
+module extraction belongs in a separate mechanical ticket rather than this
+audible freeze.
+
+Full CI then exposed two stale test assumptions outside the focused H14
+filters. The texture callback fixture had added a level-compensation assertion
+while still supplying an uncalibrated `1.0` gain; it now derives the fixture's
+typed target gain from an uncalibrated preflight and reruns the exact
+Base-to-Hard transition. The onset-grid tolerance omitted one frame of
+transport/fade rounding at 44.1 kHz; its bounded 0.5 ms allowance now includes
+that frame. Both focused regressions pass without changing product output or
+release gates.
+
+### H14 frozen holdout result
+
+H14 is rejected before human listening because the fresh holdout did not
+exercise its causal mechanism.
+
+The source-timing preflight did not invent manual confirmations. Three sources
+reported manual-confirm-only timing, one bad-timing one-shot reported
+unavailable timing, and none of those four entered candidate rendering. The
+remaining dense-break source had a trusted provider value of 140 BPM plus
+stable beat evidence and received exactly one product-path render.
+
+That render selected inherited `source_transient_chop` behavior with
+`low_impact_recipe=unavailable`; therefore
+`exact_callback_evaluated=false` and
+`exact_callback_calibrated=false`. It passed the inherited technical gates:
+
+- Base-to-Hard level ratio: `1.0498`
+- H12-to-H13 impact-body ratio: `1.066922`
+- reverse-pickup relative delta: `1.073662`
+- clipping: none in the Hard output
+- missing-source control: digital silence
+
+The valid waveform hashes are recorded in
+`docs/benchmarks/w30_resample_h14_characterization_v1.json`. These facts prove
+the inherited path did not regress, but they cannot establish cross-source
+generalization of H14 exact hit-window calibration. Treating non-selection as a
+pass would let a candidate evade its own acceptance mechanism.
+
+Holdout A is consumed. H14 must not be retuned against it, and no listening
+request is allowed. The rotating holdout contract was restored with five new
+unheard, unrendered CC0 reserve sources and passes both fixture and local-file
+validation. H15 therefore freezes the byte-identical H14 implementation and
+gates as a coverage retry against untouched Holdout B. It introduces no new
+DSP or selection constants. H15 can pass only if a fresh source actually
+selects and successfully evaluates the causal `source_hit_shaper_v3` path;
+non-selection remains a failure, not a pass.
+
+### H15 frozen holdout result
+
+H15 is also rejected before human listening, without producing a candidate
+WAV. Holdout B timing preflight left four sources manual-confirm-only or
+unavailable. The remaining dense-break source, `Psychic`, has an explicit
+provider tempo of 190 BPM, but the Rust probe selected `141.50945 BPM` with
+high drift. That is close to a 3:4 tempo alias (`142.5 BPM`), not a matching
+primary hypothesis.
+
+The exact product path rejected the attempted 190 BPM confirmation before
+Session persistence:
+
+`explicit source BPM 190.00 does not match Rust timing candidate 141.51 within
+1.00 BPM`
+
+This is correct under the current source-timing contract. BPM-only input may
+confirm a matching analyzer grid; a conflicting or unavailable grid requires
+the typed musician-manual form with both BPM and downbeat phase. The holdout
+contains no independently trusted downbeat declaration, so phase zero was not
+invented and the conflicting 141.51 BPM hypothesis was not substituted.
+
+Holdout B is consumed. H15 neither proves nor disproves H14 DSP behavior; it
+proves that the current acceptance corpus cannot reach the candidate through a
+trusted grid. No second render, gate change, or human listening request is
+allowed. The rotation must be restored again before another frozen generation.
+
+The rotation was restored with five further unheard/unrendered CC0 derivatives
+and passed fixture plus local-file validation. H16 is the final byte-identical
+coverage retry. Its fresh Holdout A includes a provider-declared 140 BPM,
+hard-hitting/start-stop loop selected from metadata before freeze. That improves
+the chance of reaching the causal path but does not guarantee selection or
+acceptance. If H16 still lacks causal coverage, Riotbox must stop consuming
+holdouts and address acceptance reachability as an explicit enabler.
+
+### H16 frozen holdout result
+
+H16 is rejected before candidate rendering and ends the byte-identical coverage
+retry sequence. Its metadata-selected 140 BPM hard-hitting/start-stop source
+produced a Rust primary candidate of `154.63918 BPM`, manual-confirm-only
+readiness, weak downbeat, and high drift. BPM-only confirmation therefore could
+not satisfy the existing 1 BPM matching contract, and the source had no
+independently trusted downbeat phase for a typed musician-manual grid.
+
+The other three musical sources also remained manual-confirm-only with high
+drift; the impact one-shot was timing unavailable. No H16 candidate WAV was
+created, `source_hit_shaper_v3` was not evaluated, and no human listening was
+requested.
+
+Three frozen generations now establish the reachability problem:
+
+- H14 reached the product path but selected an inherited recipe.
+- H15 had explicit provider tempo but failed matching confirmation.
+- H16 deliberately improved metadata reachability but still failed trusted
+  timing before recipe selection.
+
+Another identical holdout retry would consume evidence without testing a new
+hypothesis. The next slice must explicitly prequalify acceptance reachability:
+trusted grid ownership and causal recipe-selection coverage, while preserving
+Source Graph, Session confirmation, and holdout separation.

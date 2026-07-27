@@ -1,0 +1,227 @@
+{
+  "schema": "riotbox.w30_resample_hard_characterization.v1",
+  "schema_version": 1,
+  "ticket": "RIOTBOX-1422",
+  "frozen_on": "2026-07-27",
+  "classification": "technical_characterization",
+  "quality_proof": false,
+  "human_verdict": "not_requested_technical_reject",
+  "candidate_generation": "w30_resample_source_reverse_into_impact_v1",
+  "inherits": "docs/benchmarks/w30_resample_h12_characterization_v1.json",
+  "rejected_predecessor": {
+    "generation": "w30_resample_source_calibrated_transform_plan_v1",
+    "technical_verdict": "pass",
+    "human_verdict": "technically_ok_but_musically_weak",
+    "reason": "H12 sounded clearer and more damaged but did not create a convincing or keep-worthy Hard performance gesture."
+  },
+  "single_causal_change": {
+    "typed_recipe": "source_reverse_into_impact_v1",
+    "impact_selection": "Rank selected trigger slots from source-local 0..20 ms head RMS plus 20..100 ms body RMS.",
+    "pickup": {
+      "duration_ms": 120,
+      "source_direction": "reverse",
+      "destination": "tail of the eighth-note slot immediately preceding the selected impact",
+      "minimum_source_rms_share": 0.2,
+      "gain_min": 0.1,
+      "boundary_ramp_ms": 10
+    },
+    "impact": {
+      "head_window_ms": "0..20",
+      "body_window_ms": "20..100",
+      "target_body_over_head": 0.9,
+      "body_gain_min": 1.12,
+      "body_gain_max": 1.4,
+      "impact_level_compensation_min": 0.75,
+      "body_transition_ms": 2.5,
+      "application": "Post-H12 callback voice articulation at the selected impact only; H13 does not lengthen or replace the H12 attack slice."
+    },
+    "typed_runtime_state": "W30ResampleHardGesturePlan is projected outside the callback and copied atomically into the exact live render path.",
+    "rhythm_or_trigger_policy_changed": false,
+    "source_hit_shaper_dsp_topology_changed": false,
+    "missing_source_fallback": false,
+    "synthetic_kick_or_bass": false,
+    "bass_owner": "unassigned"
+  },
+  "frozen_gates": {
+    "inherits_h12_base_to_counterfactual_gates": true,
+    "base_to_hard_level_ratio": {
+      "min": 0.9,
+      "legacy_or_texture_max": 1.15,
+      "source_hit_shaper_v3_max": 1.3
+    },
+    "h12_to_h13_selected_impact_body_ratio_min": 1.05,
+    "h12_to_h13_reverse_pickup_relative_delta_min": 0.2,
+    "pickup_slot_must_precede_impact_slot": true,
+    "boundary_local_outlier_ratio_max": 1.5,
+    "hard_output_must_be_non_silent_unclipped": true,
+    "missing_source_output_must_be_digital_silence": true,
+    "candidate_and_gates_must_not_change_after_holdout_starts": true
+  },
+  "development_results": [
+    {
+      "case_id": "beat03_130",
+      "source_family": "dense_break",
+      "impact_slot": 4,
+      "pickup_slot": 3,
+      "body_gain": 1.4,
+      "base_to_hard_level_ratio": 1.2931,
+      "h12_to_h13_body_ratio": 1.0532,
+      "pickup_relative_delta": 7.6538,
+      "base_sha256": "584e9e5f1761d80002dbd6b0b8b76b2e2b485f3d92c881e0a76e984199433825",
+      "h12_sha256": "c8e0e37f2ba65e67e2dbd84f292896fe504f1952454b17fdff03929296765a2e",
+      "h13_sha256": "9dad2c2874da3ebf9a1c572594b7c174dca453c26280baf835d65360242563a6",
+      "outcome": "technical_gate_pass"
+    },
+    {
+      "case_id": "oga_cinameng_can_be_so_beautiful",
+      "source_family": "dense_break",
+      "impact_slot": 5,
+      "pickup_slot": 4,
+      "body_gain": 1.12,
+      "base_to_hard_level_ratio": 1.0314,
+      "h12_to_h13_body_ratio": 1.1108,
+      "pickup_relative_delta": 0.6994,
+      "outcome": "technical_gate_pass"
+    },
+    {
+      "case_id": "oga_marwan_cinematic_percussion",
+      "source_family": "sparse_drums",
+      "impact_slot": 1,
+      "pickup_slot": 0,
+      "body_gain": 1.235,
+      "base_to_hard_level_ratio": 1.0484,
+      "h12_to_h13_body_ratio": 1.2307,
+      "pickup_relative_delta": 1.2711,
+      "outcome": "technical_gate_pass"
+    },
+    {
+      "case_id": "oga_bertsz_dnb",
+      "source_family": "dense_full_mix",
+      "impact_slot": 6,
+      "pickup_slot": 5,
+      "body_gain": 1.392,
+      "base_to_hard_level_ratio": 1.294,
+      "h12_to_h13_body_ratio": 1.0866,
+      "pickup_relative_delta": 1.2016,
+      "outcome": "technical_gate_pass_stress_only"
+    },
+    {
+      "case_id": "oga_obscure_level1_step2_evil",
+      "source_family": "tonal_riff",
+      "impact_slot": 6,
+      "pickup_slot": 5,
+      "body_gain": 1.296,
+      "base_to_hard_level_ratio": 1.0751,
+      "h12_to_h13_body_ratio": 1.29,
+      "pickup_relative_delta": 0.9562,
+      "outcome": "technical_gate_pass"
+    },
+    {
+      "case_id": "oga_beardalaxy_church_in_game",
+      "source_family": "pad_noise",
+      "impact_slot": 3,
+      "pickup_slot": 2,
+      "body_gain": 1.178,
+      "base_to_hard_level_ratio": 1.0631,
+      "h12_to_h13_body_ratio": 1.1759,
+      "pickup_relative_delta": 0.9288,
+      "outcome": "technical_gate_pass"
+    },
+    {
+      "case_id": "oga_pauliuw_dumus",
+      "source_family": "weak_source",
+      "hard_gesture_recipe": "unavailable",
+      "outcome": "technical_gate_pass_explicit_unavailable_base_preserved"
+    },
+    {
+      "case_id": "oga_ogrebane_dark_ambience_1",
+      "source_family": "pad_noise",
+      "hard_policy": "source_texture_bite",
+      "hard_gesture_recipe": "unavailable",
+      "base_to_hard_level_ratio": 1.1235,
+      "outcome": "technical_gate_pass_texture_policy_unchanged"
+    },
+    {
+      "case_id": "oga_epb9000_creepyloop_v2",
+      "source_family": "pad_noise",
+      "hard_policy": "source_texture_bite",
+      "hard_gesture_recipe": "unavailable",
+      "base_to_hard_level_ratio": 1.0755,
+      "outcome": "technical_gate_pass_texture_policy_unchanged"
+    }
+  ],
+  "pre_freeze_validation": {
+    "cargo_fmt_check": "pass",
+    "cargo_check_workspace_all_targets": "pass",
+    "riotbox_audio_w30_resample_tests": "pass",
+    "riotbox_app_resample_attack_bite_tests": "pass",
+    "source_holdout_rotation_fixture_validator": "pass",
+    "source_holdout_rotation_local_files_validator": "pass",
+    "development_matrix": "9_of_9_pass"
+  },
+  "holdout_at_freeze": {
+    "evaluation_set": "holdout_b",
+    "state": "unseen",
+    "source_case_ids": [
+      "oga_iamoneabe_tryme",
+      "oga_matiasvme_crazy",
+      "oga_alxl_rain_window",
+      "oga_bart_steam_boiler",
+      "oga_bmaczero_thud2"
+    ],
+    "reserve_set": "holdout_a",
+    "reserve_state": "untouched",
+    "reserve_source_case_ids": [
+      "oga_frostyham_osdrums",
+      "oga_fupi_tense_bass_boost_drums",
+      "oga_2dplatformerguy_short_chiptune",
+      "oga_jaggedstone_dungeon_ambience",
+      "oga_springspring_interesting_snare"
+    ]
+  },
+  "holdout_result": {
+    "technical_verdict": "reject",
+    "human_listening_requested": false,
+    "primary_failure": {
+      "case_id": "oga_iamoneabe_tryme",
+      "source_family": "dense_break",
+      "base_to_h12_level_ratio": 1.41339,
+      "h12_to_h13_level_ratio": 1.02599,
+      "base_to_h13_level_ratio": 1.45012,
+      "allowed_max": 1.3,
+      "base_rms_dbfs": -19.620798,
+      "h12_rms_dbfs": -16.615534,
+      "h13_rms_dbfs": -16.392691,
+      "base_sha256": "2d462791f19b1dda46ac4599b5eba48ea03602ee16984ff3f749d9bf3bfb309e",
+      "h12_sha256": "6699f0bd228c955bde4a961cd3e76850224a9726ef3ed31b0f70729d9fd7e5c1",
+      "h13_sha256": "35a549bd98edafebb8487e76c42aa300a5d39cc2fa3db1c4e09b275bad5345d8",
+      "diagnosis": "The inherited H12 source_hit_shaper_v3 path already exceeds the frozen level gate; H13 adds only 0.223 dB and is not the primary level failure."
+    },
+    "passing_transient_case": {
+      "case_id": "oga_matiasvme_crazy",
+      "base_to_h13_level_ratio": 1.0144,
+      "impact_slot": 6,
+      "pickup_slot": 5,
+      "h12_to_h13_body_ratio": 1.1144,
+      "pickup_relative_delta": 2.9243,
+      "outcome": "technical_gate_pass"
+    },
+    "degraded_cases": [
+      {
+        "case_id": "oga_alxl_rain_window",
+        "outcome": "source_timing_unavailable_before_candidate_render"
+      },
+      {
+        "case_id": "oga_bart_steam_boiler",
+        "outcome": "source_timing_unavailable_before_candidate_render"
+      },
+      {
+        "case_id": "oga_bmaczero_thud2",
+        "outcome": "source_timing_unavailable_before_candidate_render"
+      }
+    ],
+    "consequence": "H13 is not eligible for human listening. Preserve the frozen evidence and start a new candidate generation; do not retune H13 against holdout-b."
+  },
+  "freeze_rule": "Any implementation, typed value, selection formula, gate, or validator change after this file is committed to the working tree invalidates holdout-b as H13 evidence.",
+  "next_gate": "A new generation must correct inherited H12 level calibration on newly designated development material while preserving the H13 reverse/body mechanism and frozen holdout evidence."
+}

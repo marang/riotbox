@@ -1,7 +1,7 @@
 # RIOTBOX-1405 Degraded Product Review
 
 Date: 2026-07-21
-Reviewer: Markus
+Reviewer: Owner
 Verdict source: real 80x24 TUI / PipeWire user-session assignments
 
 ## Evidence Boundary

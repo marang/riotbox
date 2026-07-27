@@ -168,6 +168,8 @@ impl AudioRuntimeShell {
             mc202_render,
             w30_preview,
             w30_resample_tap,
+            published_w30_preview: Mutex::new(Some(w30_preview_render_state)),
+            published_w30_resample_tap: Mutex::new(Some(w30_resample_tap_state)),
             source_monitor,
             stream: Some(stream),
         })
@@ -225,11 +227,33 @@ impl AudioRuntimeShell {
     }
 
     pub fn update_w30_preview_render_state(&self, render_state: &W30PreviewRenderState) {
+        let mut published = self
+            .published_w30_preview
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if published
+            .as_ref()
+            .is_some_and(|previous| w30_preview_callback_plan_eq(previous, render_state))
+        {
+            return;
+        }
         self.w30_preview.update(render_state);
+        *published = Some(render_state.clone());
     }
 
     pub fn update_w30_resample_tap_state(&self, render_state: &W30ResampleTapState) {
+        let mut published = self
+            .published_w30_resample_tap
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if published
+            .as_ref()
+            .is_some_and(|previous| w30_resample_callback_plan_eq(previous, render_state))
+        {
+            return;
+        }
         self.w30_resample_tap.update(render_state);
+        *published = Some(render_state.clone());
     }
 
     pub fn update_source_monitor_render_state(&self, render_state: &SourceMonitorRenderState) {
@@ -252,9 +276,128 @@ impl AudioRuntimeShell {
             mc202_render: parts.mc202_render,
             w30_preview: parts.w30_preview,
             w30_resample_tap: parts.w30_resample_tap,
+            published_w30_preview: Mutex::new(None),
+            published_w30_resample_tap: Mutex::new(None),
             source_monitor: parts.source_monitor,
             stream: None,
         }
+    }
+}
+
+fn w30_preview_callback_plan_eq(
+    previous: &W30PreviewRenderState,
+    candidate: &W30PreviewRenderState,
+) -> bool {
+    previous.mode == candidate.mode
+        && previous.routing == candidate.routing
+        && previous.source_profile == candidate.source_profile
+        && previous.trigger_revision == candidate.trigger_revision
+        && previous.trigger_velocity == candidate.trigger_velocity
+        && previous.source_window_preview == candidate.source_window_preview
+        && previous.pad_playback == candidate.pad_playback
+        && previous.music_bus_level == candidate.music_bus_level
+        && previous.grit_level == candidate.grit_level
+}
+
+fn w30_resample_callback_plan_eq(
+    previous: &W30ResampleTapState,
+    candidate: &W30ResampleTapState,
+) -> bool {
+    previous.mode == candidate.mode
+        && previous.routing == candidate.routing
+        && previous.source_profile == candidate.source_profile
+        && w30_resample_source_plan_eq(
+            previous.source_audio.as_deref(),
+            candidate.source_audio.as_deref(),
+        )
+        && previous.lineage_capture_count == candidate.lineage_capture_count
+        && previous.generation_depth == candidate.generation_depth
+        && previous.variation == candidate.variation
+        && previous.variation_revision == candidate.variation_revision
+        && previous.variation_intensity == candidate.variation_intensity
+        && previous.hard_policy == candidate.hard_policy
+        && previous.hard_calibration == candidate.hard_calibration
+        && previous.hard_trigger_mask == candidate.hard_trigger_mask
+        && previous.hard_slice_cursors == candidate.hard_slice_cursors
+        && previous.hard_attack_lengths == candidate.hard_attack_lengths
+        && previous.hard_attack_bite == candidate.hard_attack_bite
+        && previous.hard_low_impact == candidate.hard_low_impact
+        && previous.hard_gesture == candidate.hard_gesture
+        && previous.hard_transient_contrast == candidate.hard_transient_contrast
+        && previous.music_bus_level == candidate.music_bus_level
+        && previous.grit_level == candidate.grit_level
+}
+
+fn w30_resample_source_plan_eq(
+    previous: Option<&W30ResampleSourceWindow>,
+    candidate: Option<&W30ResampleSourceWindow>,
+) -> bool {
+    match (previous, candidate) {
+        (None, None) => true,
+        (Some(previous), Some(candidate)) => {
+            previous.source_revision == candidate.source_revision
+                && previous.source_start_frame == candidate.source_start_frame
+                && previous.source_sample_rate == candidate.source_sample_rate
+                && previous.source_frame_count == candidate.source_frame_count
+                && previous.sample_count == candidate.sample_count
+        }
+        _ => false,
+    }
+}
+
+#[cfg(test)]
+mod callback_plan_tests {
+    use super::*;
+
+    #[test]
+    fn w30_preview_transport_progress_does_not_republish_large_payload() {
+        let previous = W30PreviewRenderState::default();
+        let mut candidate = previous.clone();
+        candidate.is_transport_running = true;
+        candidate.tempo_bpm = 137.0;
+        candidate.position_beats = 19.25;
+
+        assert!(w30_preview_callback_plan_eq(&previous, &candidate));
+
+        candidate.trigger_revision = 1;
+        assert!(!w30_preview_callback_plan_eq(&previous, &candidate));
+    }
+
+    #[test]
+    fn w30_resample_transport_progress_does_not_republish_large_payload() {
+        let previous = W30ResampleTapState::default();
+        let mut candidate = previous.clone();
+        candidate.is_transport_running = true;
+        candidate.tempo_bpm = 137.0;
+        candidate.position_beats = 19.25;
+
+        assert!(w30_resample_callback_plan_eq(&previous, &candidate));
+
+        candidate.variation_revision = 1;
+        assert!(!w30_resample_callback_plan_eq(&previous, &candidate));
+    }
+
+    #[test]
+    fn w30_resample_source_revision_republishes_large_payload() {
+        let previous = W30ResampleTapState {
+            source_audio: Some(Box::new(W30ResampleSourceWindow {
+                source_revision: 11,
+                source_start_frame: 0,
+                source_sample_rate: 48_000,
+                source_frame_count: W30_RESAMPLE_SOURCE_WINDOW_LEN as u64,
+                sample_count: W30_RESAMPLE_SOURCE_WINDOW_LEN,
+                samples: [0.25; W30_RESAMPLE_SOURCE_WINDOW_LEN],
+            })),
+            ..W30ResampleTapState::default()
+        };
+        let mut candidate = previous.clone();
+        candidate
+            .source_audio
+            .as_deref_mut()
+            .expect("source")
+            .source_revision = 12;
+
+        assert!(!w30_resample_callback_plan_eq(&previous, &candidate));
     }
 }
 
@@ -300,8 +443,10 @@ where
     let mut last_transport_snapshot = callback_transport.snapshot();
     let mut last_tr909_render_snapshot = shared.tr909_render.snapshot();
     let mut last_mc202_render_snapshot = shared.mc202_render.snapshot();
-    let mut last_w30_preview_snapshot = shared.w30_preview.snapshot();
-    let mut last_w30_resample_snapshot = shared.w30_resample_tap.snapshot();
+    let (mut last_w30_preview_revision, mut last_w30_preview_snapshot) =
+        shared.w30_preview.snapshot_with_revision();
+    let (mut last_w30_resample_revision, mut last_w30_resample_snapshot) =
+        shared.w30_resample_tap.snapshot_with_revision();
     let mut last_source_monitor_control_snapshot = shared.source_monitor.control_snapshot();
 
     device.build_output_stream(
@@ -339,20 +484,26 @@ where
             mc202_render_state.is_transport_running = callback_timing.is_transport_running;
             mc202_render_state.tempo_bpm = callback_timing.tempo_bpm;
             mc202_render_state.position_beats = callback_timing.render_position_beats;
-            let mut w30_preview_render_state = shared
+            if let Some((revision, snapshot)) = shared
                 .w30_preview
-                .snapshot_or_previous(&last_w30_preview_snapshot);
-            last_w30_preview_snapshot = w30_preview_render_state;
-            w30_preview_render_state.is_transport_running = callback_timing.is_transport_running;
-            w30_preview_render_state.tempo_bpm = callback_timing.tempo_bpm;
-            w30_preview_render_state.position_beats = callback_timing.render_position_beats;
-            let mut w30_resample_render_state = shared
+                .snapshot_if_changed(last_w30_preview_revision)
+            {
+                last_w30_preview_revision = revision;
+                last_w30_preview_snapshot = snapshot;
+            }
+            last_w30_preview_snapshot.is_transport_running = callback_timing.is_transport_running;
+            last_w30_preview_snapshot.tempo_bpm = callback_timing.tempo_bpm;
+            last_w30_preview_snapshot.position_beats = callback_timing.render_position_beats;
+            if let Some((revision, snapshot)) = shared
                 .w30_resample_tap
-                .snapshot_or_previous(&last_w30_resample_snapshot);
-            last_w30_resample_snapshot = w30_resample_render_state;
-            w30_resample_render_state.is_transport_running = callback_timing.is_transport_running;
-            w30_resample_render_state.tempo_bpm = callback_timing.tempo_bpm;
-            w30_resample_render_state.position_beats = callback_timing.render_position_beats;
+                .snapshot_if_changed(last_w30_resample_revision)
+            {
+                last_w30_resample_revision = revision;
+                last_w30_resample_snapshot = snapshot;
+            }
+            last_w30_resample_snapshot.is_transport_running = callback_timing.is_transport_running;
+            last_w30_resample_snapshot.tempo_bpm = callback_timing.tempo_bpm;
+            last_w30_resample_snapshot.position_beats = callback_timing.render_position_beats;
             let source_monitor_control_snapshot = shared
                 .source_monitor
                 .control_snapshot_or_previous(&last_source_monitor_control_snapshot);
@@ -372,9 +523,9 @@ where
                 &mc202_render_state,
                 &mut render_state,
                 &mut W30MixRenderState {
-                    preview_render: &w30_preview_render_state,
+                    preview_render: &last_w30_preview_snapshot,
                     preview_state: &mut w30_preview_state,
-                    resample_render: &w30_resample_render_state,
+                    resample_render: &last_w30_resample_snapshot,
                     resample_state: &mut w30_resample_state,
                 },
             );

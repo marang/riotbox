@@ -67,8 +67,13 @@ pub fn observer_snapshot(shell: &JamShellState) -> Value {
             "w30_resample_tap_variation_revision": runtime.w30_resample_tap_variation_revision,
             "w30_resample_tap_variation_intensity": shell.app.runtime.w30_resample_tap.variation_intensity,
             "w30_resample_tap_hard_policy": runtime.w30_resample_tap_hard_policy,
+            "w30_resample_tap_hard_grit": w30_resample_hard_grit_observer_snapshot(shell),
             "w30_resample_tap_hard_trigger_mask": runtime.w30_resample_tap_hard_trigger_mask,
             "w30_resample_tap_hard_slice_cursors": runtime.w30_resample_tap_hard_slice_cursors,
+            "w30_resample_tap_hard_attack_lengths": runtime.w30_resample_tap_hard_attack_lengths,
+            "w30_resample_tap_hard_attack_bite_band": runtime.w30_resample_tap_hard_attack_bite_band,
+            "w30_resample_tap_hard_attack_bite_input_gain": shell.app.runtime.w30_resample_tap.hard_attack_bite.input_gain,
+            "w30_resample_tap_hard_attack_bite_output_gain": shell.app.runtime.w30_resample_tap.hard_attack_bite.output_gain,
             "w30_resample_tap_hard_transient_contrast": shell.app.runtime.w30_resample_tap.hard_transient_contrast,
             "warnings": runtime.runtime_warnings,
         },
@@ -82,6 +87,55 @@ pub fn observer_snapshot(shell: &JamShellState) -> Value {
         "capture": capture_observer_snapshot(shell),
         "export": export::export_observer_snapshot(shell),
         "recovery": recovery_observer_snapshot(shell),
+    })
+}
+
+fn w30_resample_hard_grit_observer_snapshot(shell: &JamShellState) -> Value {
+    let runtime = &shell.app.runtime_view;
+    json!({
+        "recipe": runtime.w30_resample_tap_hard_grit_recipe,
+        "effective_sample_rate_hz": runtime.w30_resample_tap_hard_grit_effective_sample_rate_hz,
+        "quantization_levels": runtime.w30_resample_tap_hard_grit_quantization_levels,
+        "calibration": w30_resample_hard_calibration_observer_snapshot(shell),
+        "low_impact": w30_resample_hard_low_impact_observer_snapshot(shell),
+        "performance_gesture": w30_resample_hard_gesture_observer_snapshot(shell),
+    })
+}
+
+fn w30_resample_hard_calibration_observer_snapshot(shell: &JamShellState) -> Value {
+    let plan = shell.app.runtime.w30_resample_tap.hard_calibration;
+    json!({
+        "output_gain": plan.output_gain,
+        "hit_window_compensation_gain": plan.hit_window_compensation_gain,
+        "exact_callback_calibrated": plan.exact_callback_calibrated,
+        "exact_callback_evaluated": plan.exact_callback_evaluated,
+        "predicted_raw_level_ratio": plan.predicted_raw_level_ratio,
+        "predicted_compensated_level_ratio": plan.predicted_compensated_level_ratio,
+        "predicted_level_matched_body_ratio": plan.predicted_level_matched_body_ratio,
+    })
+}
+
+fn w30_resample_hard_low_impact_observer_snapshot(shell: &JamShellState) -> Value {
+    let plan = shell.app.runtime.w30_resample_tap.hard_low_impact;
+    json!({
+        "recipe": plan.recipe.label(),
+        "low_band_attack_share": plan.low_band_attack_share,
+        "low_band_attack_over_body": plan.low_band_attack_over_body,
+        "low_band_attack_over_source": plan.low_band_attack_over_source,
+    })
+}
+
+fn w30_resample_hard_gesture_observer_snapshot(shell: &JamShellState) -> Value {
+    let plan = shell.app.runtime.w30_resample_tap.hard_gesture;
+    json!({
+        "recipe": plan.recipe.label(),
+        "impact_slot": plan.impact_slot,
+        "pickup_slot": plan.pickup_slot,
+        "body_gain": plan.body_gain,
+        "impact_level_compensation": plan.impact_level_compensation,
+        "pickup_gain": plan.pickup_gain,
+        "selected_head_rms": plan.selected_head_rms,
+        "selected_body_rms": plan.selected_body_rms,
     })
 }
 

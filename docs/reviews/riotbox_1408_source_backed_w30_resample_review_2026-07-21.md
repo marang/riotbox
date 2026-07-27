@@ -53,7 +53,7 @@ The focused callback regression also rejects collapse to raw source PCM and prov
 
 ## Human Listening Verdict
 
-Markus first described the isolated element as interesting. A direct raw-level
+Owner first described the isolated element as interesting. A direct raw-level
 A/B then made the musical limitation clear:
 
 - source: the complete `3.692313`-second Beat03 source at `-14.8 LUFS`

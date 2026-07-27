@@ -902,7 +902,7 @@ Recommended metadata block:
 - Finished: `2026-04-17`
 - Branch: `feature/riotbox-999-example-ticket`
 - Linear branch: `feature/riotbox-999-example-ticket`
-- Assignee: `Markus`
+- Assignee: `Owner`
 - Labels: `TUI`, `TR-909`
 - PR: `#99`
 - Merge commit: `abc1234`

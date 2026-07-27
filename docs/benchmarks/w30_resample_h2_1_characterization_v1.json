@@ -1,0 +1,193 @@
+{
+  "schema": "riotbox.w30_resample_hard_characterization.v1",
+  "schema_version": 1,
+  "ticket": "RIOTBOX-1422",
+  "frozen_on": "2026-07-26",
+  "classification": "technical_characterization",
+  "quality_proof": false,
+  "human_verdict": "unverified",
+  "candidate_generation": "w30_resample_source_relative_gesture_bite_v2_1",
+  "inherits": "docs/benchmarks/w30_resample_h1_1_characterization_v1.json",
+  "rejected_predecessor": {
+    "generation": "w30_resample_source_relative_band_limited_nonlinear_attack_v2",
+    "human_verdict": "reject",
+    "reason": "The exact separated Base and Hard WAVs had measurable attack-window deltas but no audible difference."
+  },
+  "mechanism": {
+    "policy": "source_transient_chop",
+    "source_selected_bands_hz": {
+      "low_mid": [250.0, 900.0],
+      "presence": [700.0, 2150.0]
+    },
+    "selection_evidence": "source-local attack-to-body score and selected-band share",
+    "normalized_peak_target": 0.78,
+    "maximum_input_gain": 12.0,
+    "nonlinear_drive": 4.0,
+    "selected_band_output_gain_bounds": [0.25, 4.0],
+    "parallel_bite_mix": 2.0,
+    "gesture_output_gain_bounds": [0.25, 1.0],
+    "gesture_output_gain_rule": "restore complete processed source-proxy RMS to dry source-proxy RMS",
+    "audible_duration_change_from_rejected_h2": "apply the unchanged selected nonlinear branch across the committed Hard gesture instead of only the short attack window",
+    "base_path_changed": false,
+    "bass_pressure_claim": false,
+    "missing_source_fallback": false,
+    "realtime_boundary": "selection and gains are derived outside the callback; callback uses fixed atomics, one-pole state, and no allocation, lock, I/O, or model call"
+  },
+  "frozen_gates": {
+    "accepted_beat03_base_sha256": "13d5943f0d2c222f80c279991dfbf3593b6e155b99795c916661bb3565f64a4c",
+    "attack_0_10ms_hard_over_base_min": 1.1,
+    "body_40_120ms_hard_over_base_min": 0.95,
+    "body_120_200ms_hard_over_base_min": 0.95,
+    "gesture_level_hard_over_base": {
+      "min": 0.9,
+      "max": 1.15
+    },
+    "gesture_rms_matched_relative_delta_min": 0.4,
+    "gesture_correlation_max": 0.92,
+    "trigger_boundary_local_outlier_ratio_max": 1.5,
+    "trigger_boundary_neighborhood_ms": 5.0,
+    "selected_band_attack_ratio": "diagnostic_only_after_rejected_h2_false_positive",
+    "hard_output_must_be_non_silent_unclipped": true,
+    "missing_source_output_must_be_digital_silence": true
+  },
+  "development_results": [
+    {
+      "case_id": "beat03_130",
+      "source_family": "dense_break",
+      "band": "low_mid",
+      "input_gain": 1.210,
+      "band_output_gain": 0.409,
+      "gesture_output_gain": 0.681,
+      "attack_ratio": 1.966017,
+      "body_40_120_ratio": 1.531928,
+      "body_120_200_ratio": 1.522783,
+      "gesture_level_ratio": 1.090982,
+      "rms_matched_relative_delta": 0.843525,
+      "correlation": 0.644246,
+      "boundary_local_outlier_ratio": 0.010578,
+      "base_sha256": "13d5943f0d2c222f80c279991dfbf3593b6e155b99795c916661bb3565f64a4c",
+      "hard_sha256": "5a2e8ee2769df7dd5067eb5f4115f849f17f1004562f56d6f9f9f942325cc534"
+    },
+    {
+      "case_id": "oga_cinameng_can_be_so_beautiful",
+      "source_family": "dense_break",
+      "band": "low_mid",
+      "gesture_output_gain": 0.795,
+      "gesture_level_ratio": 1.042096,
+      "rms_matched_relative_delta": 0.451228,
+      "correlation": 0.898198,
+      "boundary_local_outlier_ratio": 1.061116
+    },
+    {
+      "case_id": "oga_marwan_cinematic_percussion",
+      "source_family": "sparse_drums",
+      "band": "low_mid",
+      "gesture_output_gain": 0.765,
+      "gesture_level_ratio": 1.053924,
+      "rms_matched_relative_delta": 0.463663,
+      "correlation": 0.892538,
+      "boundary_local_outlier_ratio": 0.459570
+    },
+    {
+      "case_id": "oga_fupi_plimplom",
+      "source_family": "tonal_riff",
+      "band": "low_mid",
+      "gesture_output_gain": 0.573,
+      "gesture_level_ratio": 1.076366,
+      "rms_matched_relative_delta": 0.542610,
+      "correlation": 0.852780,
+      "boundary_local_outlier_ratio": 0.560101
+    },
+    {
+      "case_id": "oga_bertsz_dnb",
+      "source_family": "dense_full_mix",
+      "band": "low_mid",
+      "gesture_output_gain": 0.637,
+      "gesture_level_ratio": 1.071519,
+      "rms_matched_relative_delta": 0.582937,
+      "correlation": 0.830103,
+      "boundary_local_outlier_ratio": 1.031793
+    }
+  ],
+  "callback_simulation": {
+    "build_profile": "debug",
+    "buffer_frames": 128,
+    "minimum_observed_realtime_factor": 3.0,
+    "scope": "local offline realtime-callback simulation; not a real-session xrun claim"
+  },
+  "holdout_at_freeze": {
+    "manifest": "docs/benchmarks/source_holdout_rotation_v1.json",
+    "holdout_id": "holdout_b",
+    "state": "unseen",
+    "source_case_ids": [
+      "oga_riintron_fat_groove_drums",
+      "oga_hornpipe2_prehistoric_drums",
+      "oga_centurion_chippy_melody",
+      "oga_srg774_airy",
+      "oga_laleksic_grind_metal"
+    ],
+    "single_generation_rule": "render once after this freeze; any output-driven implementation change consumes the set"
+  },
+  "holdout_result": {
+    "evaluated_on": "2026-07-26",
+    "result": "technical_reject",
+    "algorithm_or_constants_changed_after_evaluation": false,
+    "human_listening_requested": false,
+    "reason": "The tonal-riff holdout failed the preregistered early-body preservation floor; a family-level directional failure blocks listening promotion.",
+    "results": [
+      {
+        "case_id": "oga_riintron_fat_groove_drums",
+        "source_family": "dense_break",
+        "outcome": "rendered_directional_pass",
+        "policy": "source_transient_chop",
+        "gesture_level_ratio": 1.131591,
+        "rms_matched_relative_delta": 0.569802,
+        "correlation": 0.837677,
+        "body_40_120_ratio": 0.958192,
+        "body_120_200_ratio": 1.193606,
+        "boundary_local_outlier_ratio": 0.737591
+      },
+      {
+        "case_id": "oga_hornpipe2_prehistoric_drums",
+        "source_family": "sparse_drums",
+        "outcome": "rendered_directional_pass",
+        "policy": "source_transient_chop",
+        "gesture_level_ratio": 1.077661,
+        "rms_matched_relative_delta": 0.480705,
+        "correlation": 0.884462,
+        "body_40_120_ratio": 1.023341,
+        "body_120_200_ratio": 1.079564,
+        "boundary_local_outlier_ratio": 0.144928
+      },
+      {
+        "case_id": "oga_centurion_chippy_melody",
+        "source_family": "tonal_riff",
+        "outcome": "rejected_body_preservation",
+        "policy": "source_transient_chop",
+        "gesture_level_ratio": 1.073191,
+        "rms_matched_relative_delta": 0.532223,
+        "correlation": 0.858402,
+        "body_40_120_ratio": 0.870409,
+        "body_120_200_ratio": 1.298281,
+        "required_body_ratio_min": 0.95
+      },
+      {
+        "case_id": "oga_srg774_airy",
+        "source_family": "pad_noise",
+        "outcome": "rendered_safety_pass",
+        "policy": "source_texture_bite",
+        "transient_h2_1_gate_applicable": false,
+        "hard_clip_count": 0,
+        "missing_source_is_digital_silence": true
+      },
+      {
+        "case_id": "oga_laleksic_grind_metal",
+        "source_family": "bad_timing",
+        "outcome": "source_timing_unavailable",
+        "fallback_audio_emitted": false
+      }
+    ],
+    "consequence": "H2.1 remains a failed technical candidate. Any successor informed by this result must rotate holdout_b before evaluation."
+  },
+  "promotion_boundary": "Passing development or holdout gates cannot claim Hard, musical quality, source recognition, or playability. Exact structured human listening remains mandatory."
+}

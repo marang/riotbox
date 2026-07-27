@@ -57,8 +57,33 @@ pub struct JamRuntimeView {
     pub w30_resample_tap_variation_revision: u64,
     pub w30_resample_tap_variation_intensity: String,
     pub w30_resample_tap_hard_policy: String,
+    pub w30_resample_tap_hard_grit_recipe: String,
+    pub w30_resample_tap_hard_grit_effective_sample_rate_hz: Option<u32>,
+    pub w30_resample_tap_hard_grit_quantization_levels: Option<u16>,
     pub w30_resample_tap_hard_trigger_mask: u8,
     pub w30_resample_tap_hard_slice_cursors: [u16; W30_RESAMPLE_HARD_SLICE_COUNT],
+    pub w30_resample_tap_hard_attack_lengths: [u16; W30_RESAMPLE_HARD_SLICE_COUNT],
+    pub w30_resample_tap_hard_attack_bite_band: String,
+    pub w30_resample_tap_hard_attack_bite_input_gain: String,
+    pub w30_resample_tap_hard_attack_bite_output_gain: String,
+    pub w30_resample_tap_hard_calibration_output_gain: String,
+    pub w30_resample_tap_hard_calibration_hit_window_gain: String,
+    pub w30_resample_tap_hard_calibration_exact_callback: bool,
+    pub w30_resample_tap_hard_calibration_exact_callback_evaluated: bool,
+    pub w30_resample_tap_hard_calibration_predicted_level_ratio: String,
+    pub w30_resample_tap_hard_calibration_predicted_body_ratio: String,
+    pub w30_resample_tap_hard_low_impact_recipe: String,
+    pub w30_resample_tap_hard_low_impact_attack_share: String,
+    pub w30_resample_tap_hard_low_impact_attack_over_body: String,
+    pub w30_resample_tap_hard_low_impact_attack_over_source: String,
+    pub w30_resample_tap_hard_gesture_recipe: String,
+    pub w30_resample_tap_hard_gesture_impact_slot: u8,
+    pub w30_resample_tap_hard_gesture_pickup_slot: u8,
+    pub w30_resample_tap_hard_gesture_body_gain: String,
+    pub w30_resample_tap_hard_gesture_level_compensation: String,
+    pub w30_resample_tap_hard_gesture_pickup_gain: String,
+    pub w30_resample_tap_hard_gesture_head_rms: String,
+    pub w30_resample_tap_hard_gesture_body_rms: String,
     pub w30_resample_tap_hard_transient_contrast: String,
     pub w30_resample_tap_source_summary: String,
     pub w30_resample_tap_mix_summary: String,
@@ -180,8 +205,136 @@ impl JamRuntimeView {
                 runtime.w30_resample_tap.variation_intensity
             ),
             w30_resample_tap_hard_policy: runtime.w30_resample_tap.hard_policy.label().into(),
+            w30_resample_tap_hard_grit_recipe: runtime
+                .w30_resample_tap
+                .hard_policy
+                .grit_recipe()
+                .label()
+                .into(),
+            w30_resample_tap_hard_grit_effective_sample_rate_hz: runtime
+                .w30_resample_tap
+                .hard_policy
+                .grit_recipe()
+                .effective_sample_rate_hz(),
+            w30_resample_tap_hard_grit_quantization_levels: runtime
+                .w30_resample_tap
+                .hard_policy
+                .grit_recipe()
+                .quantization_levels(),
             w30_resample_tap_hard_trigger_mask: runtime.w30_resample_tap.hard_trigger_mask,
             w30_resample_tap_hard_slice_cursors: runtime.w30_resample_tap.hard_slice_cursors,
+            w30_resample_tap_hard_attack_lengths: runtime.w30_resample_tap.hard_attack_lengths,
+            w30_resample_tap_hard_attack_bite_band: runtime
+                .w30_resample_tap
+                .hard_attack_bite
+                .band
+                .label()
+                .into(),
+            w30_resample_tap_hard_attack_bite_input_gain: format!(
+                "{:.3}",
+                runtime.w30_resample_tap.hard_attack_bite.input_gain
+            ),
+            w30_resample_tap_hard_attack_bite_output_gain: format!(
+                "{:.3}",
+                runtime.w30_resample_tap.hard_attack_bite.output_gain
+            ),
+            w30_resample_tap_hard_calibration_output_gain: format!(
+                "{:.6}",
+                runtime.w30_resample_tap.hard_calibration.output_gain
+            ),
+            w30_resample_tap_hard_calibration_hit_window_gain: format!(
+                "{:.6}",
+                runtime
+                    .w30_resample_tap
+                    .hard_calibration
+                    .hit_window_compensation_gain
+            ),
+            w30_resample_tap_hard_calibration_exact_callback: runtime
+                .w30_resample_tap
+                .hard_calibration
+                .exact_callback_calibrated,
+            w30_resample_tap_hard_calibration_exact_callback_evaluated: runtime
+                .w30_resample_tap
+                .hard_calibration
+                .exact_callback_evaluated,
+            w30_resample_tap_hard_calibration_predicted_level_ratio: format!(
+                "{:.6}",
+                runtime
+                    .w30_resample_tap
+                    .hard_calibration
+                    .predicted_compensated_level_ratio
+            ),
+            w30_resample_tap_hard_calibration_predicted_body_ratio: format!(
+                "{:.6}",
+                runtime
+                    .w30_resample_tap
+                    .hard_calibration
+                    .predicted_level_matched_body_ratio
+            ),
+            w30_resample_tap_hard_low_impact_recipe: runtime
+                .w30_resample_tap
+                .hard_low_impact
+                .recipe
+                .label()
+                .into(),
+            w30_resample_tap_hard_low_impact_attack_share: format!(
+                "{:.3}",
+                runtime
+                    .w30_resample_tap
+                    .hard_low_impact
+                    .low_band_attack_share
+            ),
+            w30_resample_tap_hard_low_impact_attack_over_body: format!(
+                "{:.3}",
+                runtime
+                    .w30_resample_tap
+                    .hard_low_impact
+                    .low_band_attack_over_body
+            ),
+            w30_resample_tap_hard_low_impact_attack_over_source: format!(
+                "{:.3}",
+                runtime
+                    .w30_resample_tap
+                    .hard_low_impact
+                    .low_band_attack_over_source
+            ),
+            w30_resample_tap_hard_gesture_recipe: runtime
+                .w30_resample_tap
+                .hard_gesture
+                .recipe
+                .label()
+                .into(),
+            w30_resample_tap_hard_gesture_impact_slot: runtime
+                .w30_resample_tap
+                .hard_gesture
+                .impact_slot,
+            w30_resample_tap_hard_gesture_pickup_slot: runtime
+                .w30_resample_tap
+                .hard_gesture
+                .pickup_slot,
+            w30_resample_tap_hard_gesture_body_gain: format!(
+                "{:.3}",
+                runtime.w30_resample_tap.hard_gesture.body_gain
+            ),
+            w30_resample_tap_hard_gesture_level_compensation: format!(
+                "{:.3}",
+                runtime
+                    .w30_resample_tap
+                    .hard_gesture
+                    .impact_level_compensation
+            ),
+            w30_resample_tap_hard_gesture_pickup_gain: format!(
+                "{:.3}",
+                runtime.w30_resample_tap.hard_gesture.pickup_gain
+            ),
+            w30_resample_tap_hard_gesture_head_rms: format!(
+                "{:.6}",
+                runtime.w30_resample_tap.hard_gesture.selected_head_rms
+            ),
+            w30_resample_tap_hard_gesture_body_rms: format!(
+                "{:.6}",
+                runtime.w30_resample_tap.hard_gesture.selected_body_rms
+            ),
             w30_resample_tap_hard_transient_contrast: format!(
                 "{:.3}",
                 runtime.w30_resample_tap.hard_transient_contrast

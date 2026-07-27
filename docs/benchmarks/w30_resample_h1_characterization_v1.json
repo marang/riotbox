@@ -1,0 +1,142 @@
+{
+  "schema": "riotbox.w30_resample_h1_characterization.v1",
+  "schema_version": 1,
+  "owner_ticket": "RIOTBOX-1422",
+  "frozen_on": "2026-07-26",
+  "classification": "technical_characterization",
+  "musical_pass_claimed": false,
+  "mechanism": {
+    "id": "w30_resample_source_adaptive_attack_body_v1",
+    "variation": "hard_damage",
+    "eligible_policy": "source_transient_chop",
+    "intended_domain": "source_local_attack_with_retained_body",
+    "not_claimed": [
+      "bass_pressure",
+      "hardness",
+      "loudness_matched_superiority",
+      "musical_pass"
+    ],
+    "source_proxy_samples": 16384,
+    "attack_analysis": {
+      "energy_window_ms": 1,
+      "peak_search_ms": 20,
+      "minimum_attack_ms": 4,
+      "maximum_attack_ms": 80,
+      "peak_release_ratio": 0.55,
+      "body_floor_ratio": 1.25,
+      "release_confirmation_windows": 2
+    },
+    "render": {
+      "attack_preroll_fade_in_ms": 0.5,
+      "hold_fraction": 0.6,
+      "release_curve": "smoothstep",
+      "mix_topology": "crossfade_attack_against_phase_aligned_body",
+      "global_transient_gate": false,
+      "whole_path_hard_gain": 1.0,
+      "transient_policy_uses_texture_drive": false,
+      "voice_ceiling": 0.92
+    },
+    "source_revision": {
+      "algorithm": "fnv1a_64",
+      "inputs": [
+        "source_sample_rate",
+        "source_frame_count",
+        "projected_sample_count",
+        "projected_pcm_f32_bits"
+      ],
+      "zero_reserved": true
+    },
+    "callback_handoff": {
+      "control_plane_filters_transport_only_updates": true,
+      "unchanged_callback_work": "revision_check_only",
+      "large_payload_copy": "once_per_changed_w30_plan",
+      "audio_thread_locks": false,
+      "audio_thread_allocations": false
+    }
+  },
+  "accepted_base_control": {
+    "case_id": "beat03",
+    "path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+    "bpm": 130.0,
+    "expected_base_sha256": "13d5943f0d2c222f80c279991dfbf3593b6e155b99795c916661bb3565f64a4c"
+  },
+  "development_calibration": {
+    "source_count": 5,
+    "typed_families": [
+      "dense_break",
+      "dense_full_mix",
+      "sparse_drums",
+      "tonal_riff"
+    ],
+    "case_ids": [
+      "beat03",
+      "oga_cinameng_can_be_so_beautiful",
+      "oga_marwan_cinematic_percussion",
+      "oga_fupi_plimplom",
+      "oga_bertsz_dnb"
+    ],
+    "rejected_before_render": [
+      {
+        "case_id": "oga_isaiah658_ambient",
+        "reason": "Rust timing probe produced no primary grid; manual BPM was not accepted as product-path timing confirmation."
+      }
+    ],
+    "observed_hard_over_base_ranges": {
+      "attack_0_10ms_ratio": [
+        1.263,
+        3.467
+      ],
+      "body_40_120ms_ratio": [
+        1.027,
+        1.041
+      ],
+      "body_120_200ms_ratio": [
+        1.025,
+        1.07
+      ],
+      "boundary_jump_ratio": [
+        1.0,
+        1.041
+      ]
+    }
+  },
+  "frozen_directional_gates": {
+    "apply_only_when_policy": "source_transient_chop",
+    "hard_output_non_silent": true,
+    "hard_output_clip_count": 0,
+    "missing_source_is_digital_silence": true,
+    "attack_0_10ms_hard_over_base_min": 1.1,
+    "body_40_120ms_hard_over_base_min": 0.95,
+    "body_120_200ms_hard_over_base_min": 0.95,
+    "boundary_jump_hard_over_base_max": 1.1,
+    "boundary_jump_absolute_tolerance": 0.000030517578125,
+    "family_results_reported_separately": true,
+    "comparison_level": "native_product_level",
+    "failure_rule": "Any eligible holdout safety or directional failure rejects H1. Do not tune this candidate against holdout output."
+  },
+  "holdout_evaluation": {
+    "holdout_id": "holdout_a",
+    "state_at_freeze": "unseen",
+    "source_case_ids": [
+      "oga_ruok_160bpm",
+      "oga_bart_getequipped",
+      "oga_rami99_electronic",
+      "oga_tinyworlds_cyberworld"
+    ],
+    "reserve_holdout_id": "holdout_b",
+    "reserve_access_allowed": false
+  },
+  "result": {
+    "status": "rejected",
+    "evaluated_on": "2026-07-26",
+    "reason": "The dense-break holdout exposed a late-onset min-greater-than-max panic in source-adaptive attack derivation.",
+    "other_family_outcomes": {
+      "sparse_drums": "source_audio_unavailable_before_h1",
+      "tonal_riff": "technical_directional_pass",
+      "pad_noise": "timing_unavailable_before_h1"
+    },
+    "holdout_set_consumed": true,
+    "tuning_against_holdout_output": false,
+    "next_generation": "w30_resample_source_adaptive_attack_body_v1_1"
+  }
+}

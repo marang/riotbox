@@ -41,6 +41,19 @@ def main() -> int:
 
 def run_mutation_fixtures(manifest: dict[str, Any], manifest_path: Path) -> None:
     holdout_a = list(manifest["holdout_sets"][0]["source_case_ids"])
+    forged_holdout = next(
+        (
+            holdout
+            for holdout in manifest["holdout_sets"]
+            if len(holdout["source_case_ids"]) >= 2
+        ),
+        None,
+    )
+    require(
+        forged_holdout is not None,
+        "mutation fixtures require two active holdout cases",
+    )
+    forged_cases = list(forged_holdout["source_case_ids"])
 
     def collapse_families(mutated: dict[str, Any]) -> None:
         mutated["candidate_matrix"]["source_case_ids"] = [
@@ -135,8 +148,14 @@ def run_mutation_fixtures(manifest: dict[str, Any], manifest_path: Path) -> None
     )
 
     def forged_rotation_history(mutated: dict[str, Any]) -> None:
-        consumed_id = holdout_a[0]
-        mutated["holdout_sets"][0]["source_case_ids"].remove(consumed_id)
+        consumed_id = forged_cases[0]
+        replacement_id = forged_cases[1]
+        holdout = next(
+            holdout
+            for holdout in mutated["holdout_sets"]
+            if holdout["holdout_id"] == forged_holdout["holdout_id"]
+        )
+        holdout["source_case_ids"].remove(consumed_id)
         for entry in mutated["entries"]:
             if entry["case_id"] == consumed_id:
                 entry.update(
@@ -152,10 +171,10 @@ def run_mutation_fixtures(manifest: dict[str, Any], manifest_path: Path) -> None
         mutated["rotation_history"].append(
             {
                 "case_id": consumed_id,
-                "former_holdout_id": "holdout_a",
+                "former_holdout_id": forged_holdout["holdout_id"],
                 "consumed_by_ticket": "RIOTBOX-1422",
                 "consumed_on": "2026-07-24",
-                "replacement_case_id": holdout_a[1],
+                "replacement_case_id": replacement_id,
             }
         )
 
@@ -164,7 +183,7 @@ def run_mutation_fixtures(manifest: dict[str, Any], manifest_path: Path) -> None
         manifest,
         manifest_path,
         forged_rotation_history,
-        "consumed source must record previous_partition",
+        "consumed holdout needs an active or subsequently rotated replacement",
     )
 
     def invented_retired_suitability(mutated: dict[str, Any]) -> None:

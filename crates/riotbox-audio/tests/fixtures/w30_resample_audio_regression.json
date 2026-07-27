@@ -57,7 +57,7 @@
     }
   },
   {
-    "name": "stopped_promoted_capture_lineage_ready",
+    "name": "fresh_stopped_promoted_capture_stays_silent",
     "render_state": {
       "mode": "capture_lineage_ready",
       "routing": "internal_capture_tap",
@@ -69,10 +69,10 @@
       "is_transport_running": false
     },
     "expected": {
-      "min_active_samples": 320,
-      "max_active_samples": 512,
-      "min_peak_abs": 0.008,
-      "max_peak_abs": 0.4
+      "min_active_samples": 0,
+      "max_active_samples": 0,
+      "min_peak_abs": 0.0,
+      "max_peak_abs": 0.0
     }
   },
   {

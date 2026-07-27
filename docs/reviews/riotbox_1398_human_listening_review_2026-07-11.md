@@ -1,7 +1,7 @@
 # RIOTBOX-1398 Human Listening Review
 
 Date: 2026-07-11
-Reviewer: Markus
+Reviewer: Owner
 Verdict source: real user-session playback through the configured PipeWire
 output, not fixture or agent approval
 

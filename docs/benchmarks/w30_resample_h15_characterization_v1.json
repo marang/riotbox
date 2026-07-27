@@ -1,0 +1,148 @@
+{
+  "schema": "riotbox.w30_resample_hard_characterization.v1",
+  "schema_version": 1,
+  "ticket": "RIOTBOX-1422",
+  "frozen_on": "2026-07-27",
+  "classification": "technical_characterization",
+  "quality_proof": false,
+  "human_verdict": "unverified",
+  "candidate_generation": "w30_resample_exact_hit_window_calibration_v1_h15_coverage_retry",
+  "inherits": "docs/benchmarks/w30_resample_h14_characterization_v1.json",
+  "implementation_change_from_h14": "none",
+  "evaluation_design_change": {
+    "reason": "H14's only renderable fresh source selected inherited transient-chop behavior and did not exercise source_hit_shaper_v3.",
+    "required_causal_coverage": "At least one fresh holdout source must select source_hit_shaper_v3 with exact_callback_evaluated=true and exact_callback_calibrated=true.",
+    "non_selection_is_pass": false,
+    "candidate_or_gate_retuning": false
+  },
+  "frozen_candidate": {
+    "typed_scope": "source_hit_shaper_v3 on source_transient_chop only",
+    "sample_rate_hz": 48000,
+    "channels": 2,
+    "eight_step_cycles": 4,
+    "preferred_whole_path_ratio": 1.2,
+    "maximum_whole_path_ratio": 1.3,
+    "minimum_between_hit_gain": 0.25,
+    "endpoint_callback_renders": 3,
+    "in_memory_curve_search_steps": 10,
+    "maximum_exact_refinement_steps_per_constraint": 4,
+    "head_ratio_floor": 1.1,
+    "body_ratio_floor": 1.15,
+    "pre_hit_context_ms": 20,
+    "pre_hit_fade_ms": 2.5,
+    "selected_primary_hit_ms": "0..100",
+    "selected_primary_hit_gain": 1.0,
+    "following_body_ms": "100..200",
+    "following_body_gain": 0.94,
+    "transition_back_to_between_hit_ms": 10,
+    "h13_selected_body_target": 0.95,
+    "h13_body_gain_range": "1.12..=1.45",
+    "rhythm_or_trigger_policy_changed": false,
+    "source_selection_changed": false,
+    "missing_source_fallback": false,
+    "synthetic_kick_or_bass": false,
+    "bass_owner": "unassigned"
+  },
+  "frozen_gates": {
+    "inherits_h14_gates": true,
+    "base_to_hard_level_ratio": {
+      "min": 0.9,
+      "legacy_or_texture_max": 1.15,
+      "source_hit_shaper_v3_max": 1.3
+    },
+    "base_to_h12_filtered_head_ratio_min": 1.15,
+    "base_to_h12_filtered_body_ratio_min": 1.15,
+    "h12_to_h13_selected_impact_body_ratio_min": 1.05,
+    "h12_to_h13_reverse_pickup_relative_delta_min": 0.2,
+    "boundary_local_outlier_ratio_max": 1.5,
+    "hard_output_must_be_non_silent_unclipped": true,
+    "missing_source_output_must_be_digital_silence": true,
+    "candidate_and_gates_must_not_change_after_holdout_starts": true
+  },
+  "pre_freeze_validation": {
+    "inherits_h14_full_ci_and_branch_review": true,
+    "cargo_fmt_check": "pass",
+    "cargo_test_workspace": "pass",
+    "cargo_check_workspace_all_targets": "pass",
+    "cargo_clippy_all_targets_all_features_deny_warnings": "pass",
+    "broad_audio_qa_ci": "pass",
+    "development_matrix": "10_of_10_pass",
+    "source_holdout_rotation_fixture_validator_after_h14_rotation": "pass",
+    "source_holdout_rotation_local_files_validator_after_h14_rotation": "pass",
+    "git_diff_check": "pass"
+  },
+  "holdout_at_freeze": {
+    "evaluation_set": "holdout_b",
+    "state": "consumed",
+    "source_case_ids": [
+      "oga_tricksntraps_psychic",
+      "oga_eldritchgrim_pirates_incoming",
+      "oga_eldritchgrim_chiptune_loop",
+      "oga_yoiyami_budding_consciousness",
+      "oga_springspring_mechanical_explosion"
+    ],
+    "reserve_set": "holdout_a",
+    "reserve_state": "untouched",
+    "reserve_source_case_ids": [
+      "oga_tsorthan_grove_bamboo_blitz",
+      "oga_fupi_melodic_skippy_edm",
+      "oga_ansimuz_exploration",
+      "oga_wipics_calm_loop",
+      "oga_qubodup_impact_metal"
+    ]
+  },
+  "holdout_result": {
+    "technical_verdict": "reject",
+    "causal_coverage_satisfied": false,
+    "human_listening_requested": false,
+    "primary_failure": {
+      "case_id": "oga_tricksntraps_psychic",
+      "source_family": "dense_break",
+      "provider_bpm": 190.0,
+      "rust_primary_bpm": 141.50945,
+      "rust_timing_readiness": "weak",
+      "rust_drift_status": "high",
+      "tempo_alias_observation": "The Rust candidate is close to the 3:4 alias of provider tempo: 190 * 0.75 = 142.5 BPM.",
+      "outcome": "explicit_bpm_mismatch_rejected_before_candidate_render",
+      "error": "explicit source BPM 190.00 does not match Rust timing candidate 141.51 within 1.00 BPM",
+      "candidate_wav_created": false,
+      "diagnosis": "The exact product path correctly refused to treat provider BPM as a matching confirmation. No trusted downbeat phase was available for the typed manual-grid exception, so inventing phase zero or using the conflicting Rust BPM would have violated the source-timing contract."
+    },
+    "pre_candidate_timing_outcomes": [
+      {
+        "case_id": "oga_eldritchgrim_pirates_incoming",
+        "readiness": "needs_review",
+        "grid_use": "short_loop_manual_confirm",
+        "primary_bpm": 123.6264,
+        "drift_status": "high",
+        "outcome": "degraded_unconfirmed_timing_before_candidate_render"
+      },
+      {
+        "case_id": "oga_eldritchgrim_chiptune_loop",
+        "readiness": "needs_review",
+        "grid_use": "manual_confirm_only",
+        "primary_bpm": 133.1361,
+        "drift_status": "high",
+        "outcome": "degraded_unconfirmed_timing_before_candidate_render"
+      },
+      {
+        "case_id": "oga_yoiyami_budding_consciousness",
+        "readiness": "weak",
+        "grid_use": "manual_confirm_only",
+        "primary_bpm": 141.95584,
+        "drift_status": "high",
+        "outcome": "degraded_unconfirmed_timing_before_candidate_render"
+      },
+      {
+        "case_id": "oga_springspring_mechanical_explosion",
+        "readiness": "unavailable",
+        "grid_use": "unavailable",
+        "primary_bpm": null,
+        "outcome": "source_timing_unavailable_before_candidate_render"
+      }
+    ],
+    "consequence": "H15 is not eligible for human listening. Preserve the frozen evidence, consume holdout-b, and do not bypass matching-confirmation or manual BPM-plus-downbeat contracts. Restore the rotating holdout contract before any further coverage generation."
+  },
+  "freeze_rule": "Any implementation, typed value, selection formula, gate, or validator change after holdout-b timing inspection starts invalidates holdout-b as H15 evidence.",
+  "next_gate": "Restore the rotating holdout contract. A later frozen coverage generation may use a fresh source only with a matching analyzer hypothesis or an independently trusted BPM and downbeat phase; it must still exercise source_hit_shaper_v3 before listening."
+}

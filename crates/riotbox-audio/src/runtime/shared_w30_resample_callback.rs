@@ -69,11 +69,17 @@ impl SharedW30PreviewRenderState {
         coherent_snapshot(&self.revision, || self.read_snapshot_fields())
     }
 
-    pub(super) fn snapshot_or_previous(
+    pub(super) fn snapshot_with_revision(&self) -> (u64, RealtimeW30PreviewRenderState) {
+        coherent_snapshot_with_revision(&self.revision, || self.read_snapshot_fields())
+    }
+
+    pub(super) fn snapshot_if_changed(
         &self,
-        previous: &RealtimeW30PreviewRenderState,
-    ) -> RealtimeW30PreviewRenderState {
-        coherent_snapshot_or(&self.revision, previous, || self.read_snapshot_fields())
+        previous_revision: u64,
+    ) -> Option<(u64, RealtimeW30PreviewRenderState)> {
+        coherent_snapshot_if_changed(&self.revision, previous_revision, || {
+            self.read_snapshot_fields()
+        })
     }
 
     fn read_snapshot_fields(&self) -> RealtimeW30PreviewRenderState {
@@ -236,8 +242,13 @@ pub(super) struct RealtimeW30ResampleTapState {
     pub(super) variation_revision: u64,
     pub(super) variation_intensity: f32,
     pub(super) hard_policy: W30ResampleTapHardPolicy,
+    pub(super) hard_output_gain: f32,
     pub(super) hard_trigger_mask: u8,
     pub(super) hard_slice_cursors: [u16; W30_RESAMPLE_HARD_SLICE_COUNT],
+    pub(super) hard_attack_lengths: [u16; W30_RESAMPLE_HARD_SLICE_COUNT],
+    pub(super) hard_attack_bite: W30ResampleAttackBitePlan,
+    pub(super) hard_low_impact: W30ResampleLowImpactPlan,
+    pub(super) hard_gesture: W30ResampleHardGesturePlan,
     pub(super) hard_transient_contrast: f32,
     pub(super) music_bus_level: f32,
     pub(super) grit_level: f32,
@@ -248,6 +259,7 @@ pub(super) struct RealtimeW30ResampleTapState {
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub(super) struct RealtimeW30ResampleSourceWindow {
+    pub(super) source_revision: u64,
     pub(super) source_start_frame: u64,
     pub(super) source_sample_rate: u32,
     pub(super) source_frame_count: u64,
@@ -258,6 +270,7 @@ pub(super) struct RealtimeW30ResampleSourceWindow {
 impl Default for RealtimeW30ResampleSourceWindow {
     fn default() -> Self {
         Self {
+            source_revision: 0,
             source_start_frame: 0,
             source_sample_rate: 0,
             source_frame_count: 0,
@@ -272,6 +285,7 @@ pub(super) struct SharedW30ResampleTapState {
     mode: AtomicU32,
     routing: AtomicU32,
     source_profile: AtomicU32,
+    source_revision: AtomicU64,
     source_start_frame: AtomicU64,
     source_sample_rate: AtomicU32,
     source_frame_count: AtomicU64,
@@ -283,8 +297,25 @@ pub(super) struct SharedW30ResampleTapState {
     variation_revision: AtomicU64,
     variation_intensity_bits: AtomicU32,
     hard_policy: AtomicU32,
+    hard_output_gain_bits: AtomicU32,
     hard_trigger_mask: AtomicU32,
     hard_slice_cursors: [AtomicU32; W30_RESAMPLE_HARD_SLICE_COUNT],
+    hard_attack_lengths: [AtomicU32; W30_RESAMPLE_HARD_SLICE_COUNT],
+    hard_attack_bite_band: AtomicU32,
+    hard_attack_bite_input_gain_bits: AtomicU32,
+    hard_attack_bite_output_gain_bits: AtomicU32,
+    hard_low_impact_recipe: AtomicU32,
+    hard_low_impact_attack_share_bits: AtomicU32,
+    hard_low_impact_attack_over_body_bits: AtomicU32,
+    hard_low_impact_attack_over_source_bits: AtomicU32,
+    hard_gesture_recipe: AtomicU32,
+    hard_gesture_impact_slot: AtomicU32,
+    hard_gesture_pickup_slot: AtomicU32,
+    hard_gesture_body_gain_bits: AtomicU32,
+    hard_gesture_impact_level_compensation_bits: AtomicU32,
+    hard_gesture_pickup_gain_bits: AtomicU32,
+    hard_gesture_head_rms_bits: AtomicU32,
+    hard_gesture_body_rms_bits: AtomicU32,
     hard_transient_contrast_bits: AtomicU32,
     music_bus_level_bits: AtomicU32,
     grit_level_bits: AtomicU32,
@@ -300,6 +331,7 @@ impl SharedW30ResampleTapState {
             mode: AtomicU32::new(0),
             routing: AtomicU32::new(0),
             source_profile: AtomicU32::new(0),
+            source_revision: AtomicU64::new(0),
             source_start_frame: AtomicU64::new(0),
             source_sample_rate: AtomicU32::new(0),
             source_frame_count: AtomicU64::new(0),
@@ -311,8 +343,25 @@ impl SharedW30ResampleTapState {
             variation_revision: AtomicU64::new(0),
             variation_intensity_bits: AtomicU32::new(0),
             hard_policy: AtomicU32::new(0),
+            hard_output_gain_bits: AtomicU32::new(1.0_f32.to_bits()),
             hard_trigger_mask: AtomicU32::new(0),
             hard_slice_cursors: std::array::from_fn(|_| AtomicU32::new(0)),
+            hard_attack_lengths: std::array::from_fn(|_| AtomicU32::new(0)),
+            hard_attack_bite_band: AtomicU32::new(0),
+            hard_attack_bite_input_gain_bits: AtomicU32::new(0),
+            hard_attack_bite_output_gain_bits: AtomicU32::new(0),
+            hard_low_impact_recipe: AtomicU32::new(0),
+            hard_low_impact_attack_share_bits: AtomicU32::new(0),
+            hard_low_impact_attack_over_body_bits: AtomicU32::new(0),
+            hard_low_impact_attack_over_source_bits: AtomicU32::new(0),
+            hard_gesture_recipe: AtomicU32::new(0),
+            hard_gesture_impact_slot: AtomicU32::new(0),
+            hard_gesture_pickup_slot: AtomicU32::new(0),
+            hard_gesture_body_gain_bits: AtomicU32::new(1.0_f32.to_bits()),
+            hard_gesture_impact_level_compensation_bits: AtomicU32::new(1.0_f32.to_bits()),
+            hard_gesture_pickup_gain_bits: AtomicU32::new(1.0_f32.to_bits()),
+            hard_gesture_head_rms_bits: AtomicU32::new(0),
+            hard_gesture_body_rms_bits: AtomicU32::new(0),
             hard_transient_contrast_bits: AtomicU32::new(0),
             music_bus_level_bits: AtomicU32::new(0),
             grit_level_bits: AtomicU32::new(0),
@@ -359,6 +408,10 @@ impl SharedW30ResampleTapState {
             w30_resample_hard_policy_to_u32(render_state.hard_policy),
             Ordering::Relaxed,
         );
+        self.hard_output_gain_bits.store(
+            render_state.hard_calibration.output_gain.to_bits(),
+            Ordering::Relaxed,
+        );
         self.hard_trigger_mask
             .store(u32::from(render_state.hard_trigger_mask), Ordering::Relaxed);
         for (slot, cursor) in self
@@ -368,6 +421,82 @@ impl SharedW30ResampleTapState {
         {
             slot.store(u32::from(cursor), Ordering::Relaxed);
         }
+        for (slot, length) in self
+            .hard_attack_lengths
+            .iter()
+            .zip(render_state.hard_attack_lengths)
+        {
+            slot.store(u32::from(length), Ordering::Relaxed);
+        }
+        self.hard_attack_bite_band.store(
+            w30_resample_attack_bite_band_to_u32(render_state.hard_attack_bite.band),
+            Ordering::Relaxed,
+        );
+        self.hard_attack_bite_input_gain_bits.store(
+            render_state.hard_attack_bite.input_gain.to_bits(),
+            Ordering::Relaxed,
+        );
+        self.hard_attack_bite_output_gain_bits.store(
+            render_state.hard_attack_bite.output_gain.to_bits(),
+            Ordering::Relaxed,
+        );
+        self.hard_low_impact_recipe.store(
+            w30_resample_low_impact_recipe_to_u32(render_state.hard_low_impact.recipe),
+            Ordering::Relaxed,
+        );
+        self.hard_low_impact_attack_share_bits.store(
+            render_state.hard_low_impact.low_band_attack_share.to_bits(),
+            Ordering::Relaxed,
+        );
+        self.hard_low_impact_attack_over_body_bits.store(
+            render_state
+                .hard_low_impact
+                .low_band_attack_over_body
+                .to_bits(),
+            Ordering::Relaxed,
+        );
+        self.hard_low_impact_attack_over_source_bits.store(
+            render_state
+                .hard_low_impact
+                .low_band_attack_over_source
+                .to_bits(),
+            Ordering::Relaxed,
+        );
+        self.hard_gesture_recipe.store(
+            w30_resample_hard_gesture_recipe_to_u32(render_state.hard_gesture.recipe),
+            Ordering::Relaxed,
+        );
+        self.hard_gesture_impact_slot.store(
+            u32::from(render_state.hard_gesture.impact_slot),
+            Ordering::Relaxed,
+        );
+        self.hard_gesture_pickup_slot.store(
+            u32::from(render_state.hard_gesture.pickup_slot),
+            Ordering::Relaxed,
+        );
+        self.hard_gesture_body_gain_bits.store(
+            render_state.hard_gesture.body_gain.to_bits(),
+            Ordering::Relaxed,
+        );
+        self.hard_gesture_impact_level_compensation_bits.store(
+            render_state
+                .hard_gesture
+                .impact_level_compensation
+                .to_bits(),
+            Ordering::Relaxed,
+        );
+        self.hard_gesture_pickup_gain_bits.store(
+            render_state.hard_gesture.pickup_gain.to_bits(),
+            Ordering::Relaxed,
+        );
+        self.hard_gesture_head_rms_bits.store(
+            render_state.hard_gesture.selected_head_rms.to_bits(),
+            Ordering::Relaxed,
+        );
+        self.hard_gesture_body_rms_bits.store(
+            render_state.hard_gesture.selected_body_rms.to_bits(),
+            Ordering::Relaxed,
+        );
         self.hard_transient_contrast_bits.store(
             render_state.hard_transient_contrast.to_bits(),
             Ordering::Relaxed,
@@ -389,11 +518,17 @@ impl SharedW30ResampleTapState {
         coherent_snapshot(&self.revision, || self.read_snapshot_fields())
     }
 
-    pub(super) fn snapshot_or_previous(
+    pub(super) fn snapshot_with_revision(&self) -> (u64, RealtimeW30ResampleTapState) {
+        coherent_snapshot_with_revision(&self.revision, || self.read_snapshot_fields())
+    }
+
+    pub(super) fn snapshot_if_changed(
         &self,
-        previous: &RealtimeW30ResampleTapState,
-    ) -> RealtimeW30ResampleTapState {
-        coherent_snapshot_or(&self.revision, previous, || self.read_snapshot_fields())
+        previous_revision: u64,
+    ) -> Option<(u64, RealtimeW30ResampleTapState)> {
+        coherent_snapshot_if_changed(&self.revision, previous_revision, || {
+            self.read_snapshot_fields()
+        })
     }
 
     fn read_snapshot_fields(&self) -> RealtimeW30ResampleTapState {
@@ -414,10 +549,65 @@ impl SharedW30ResampleTapState {
             hard_policy: w30_resample_hard_policy_from_u32(
                 self.hard_policy.load(Ordering::Relaxed),
             ),
+            hard_output_gain: f32::from_bits(self.hard_output_gain_bits.load(Ordering::Relaxed)),
             hard_trigger_mask: self.hard_trigger_mask.load(Ordering::Relaxed) as u8,
             hard_slice_cursors: std::array::from_fn(|index| {
                 self.hard_slice_cursors[index].load(Ordering::Relaxed) as u16
             }),
+            hard_attack_lengths: std::array::from_fn(|index| {
+                self.hard_attack_lengths[index].load(Ordering::Relaxed) as u16
+            }),
+            hard_attack_bite: W30ResampleAttackBitePlan {
+                band: w30_resample_attack_bite_band_from_u32(
+                    self.hard_attack_bite_band.load(Ordering::Relaxed),
+                ),
+                input_gain: f32::from_bits(
+                    self.hard_attack_bite_input_gain_bits
+                        .load(Ordering::Relaxed),
+                ),
+                output_gain: f32::from_bits(
+                    self.hard_attack_bite_output_gain_bits
+                        .load(Ordering::Relaxed),
+                ),
+            },
+            hard_low_impact: W30ResampleLowImpactPlan {
+                recipe: w30_resample_low_impact_recipe_from_u32(
+                    self.hard_low_impact_recipe.load(Ordering::Relaxed),
+                ),
+                low_band_attack_share: f32::from_bits(
+                    self.hard_low_impact_attack_share_bits
+                        .load(Ordering::Relaxed),
+                ),
+                low_band_attack_over_body: f32::from_bits(
+                    self.hard_low_impact_attack_over_body_bits
+                        .load(Ordering::Relaxed),
+                ),
+                low_band_attack_over_source: f32::from_bits(
+                    self.hard_low_impact_attack_over_source_bits
+                        .load(Ordering::Relaxed),
+                ),
+            },
+            hard_gesture: W30ResampleHardGesturePlan {
+                recipe: w30_resample_hard_gesture_recipe_from_u32(
+                    self.hard_gesture_recipe.load(Ordering::Relaxed),
+                ),
+                impact_slot: self.hard_gesture_impact_slot.load(Ordering::Relaxed) as u8,
+                pickup_slot: self.hard_gesture_pickup_slot.load(Ordering::Relaxed) as u8,
+                body_gain: f32::from_bits(self.hard_gesture_body_gain_bits.load(Ordering::Relaxed)),
+                impact_level_compensation: f32::from_bits(
+                    self.hard_gesture_impact_level_compensation_bits
+                        .load(Ordering::Relaxed),
+                ),
+                pickup_gain: f32::from_bits(
+                    self.hard_gesture_pickup_gain_bits.load(Ordering::Relaxed),
+                ),
+                selected_head_rms: f32::from_bits(
+                    self.hard_gesture_head_rms_bits.load(Ordering::Relaxed),
+                ),
+                selected_body_rms: f32::from_bits(
+                    self.hard_gesture_body_rms_bits.load(Ordering::Relaxed),
+                ),
+            },
             hard_transient_contrast: f32::from_bits(
                 self.hard_transient_contrast_bits.load(Ordering::Relaxed),
             ),
@@ -434,6 +624,8 @@ impl SharedW30ResampleTapState {
             let sample_count = source_audio
                 .sample_count
                 .min(W30_RESAMPLE_SOURCE_WINDOW_LEN);
+            self.source_revision
+                .store(source_audio.source_revision, Ordering::Relaxed);
             self.source_start_frame
                 .store(source_audio.source_start_frame, Ordering::Relaxed);
             self.source_sample_rate
@@ -446,6 +638,7 @@ impl SharedW30ResampleTapState {
             self.source_sample_count
                 .store(sample_count as u32, Ordering::Relaxed);
         } else {
+            self.source_revision.store(0, Ordering::Relaxed);
             self.source_start_frame.store(0, Ordering::Relaxed);
             self.source_sample_rate.store(0, Ordering::Relaxed);
             self.source_frame_count.store(0, Ordering::Relaxed);
@@ -461,6 +654,7 @@ impl SharedW30ResampleTapState {
             *sample = f32::from_bits(self.source_samples[index].load(Ordering::Relaxed));
         }
         RealtimeW30ResampleSourceWindow {
+            source_revision: self.source_revision.load(Ordering::Relaxed),
             source_start_frame: self.source_start_frame.load(Ordering::Relaxed),
             source_sample_rate: self.source_sample_rate.load(Ordering::Relaxed),
             source_frame_count: self.source_frame_count.load(Ordering::Relaxed),
@@ -546,6 +740,54 @@ fn w30_resample_hard_policy_from_u32(value: u32) -> W30ResampleTapHardPolicy {
     }
 }
 
+fn w30_resample_attack_bite_band_to_u32(band: W30ResampleAttackBiteBand) -> u32 {
+    match band {
+        W30ResampleAttackBiteBand::Unavailable => 0,
+        W30ResampleAttackBiteBand::LowMid => 1,
+        W30ResampleAttackBiteBand::Presence => 2,
+    }
+}
+
+fn w30_resample_attack_bite_band_from_u32(value: u32) -> W30ResampleAttackBiteBand {
+    match value {
+        1 => W30ResampleAttackBiteBand::LowMid,
+        2 => W30ResampleAttackBiteBand::Presence,
+        _ => W30ResampleAttackBiteBand::Unavailable,
+    }
+}
+
+fn w30_resample_low_impact_recipe_to_u32(recipe: W30ResampleLowImpactRecipe) -> u32 {
+    match recipe {
+        W30ResampleLowImpactRecipe::Unavailable => 0,
+        W30ResampleLowImpactRecipe::SourceLowTransientPunchV1 => 1,
+        W30ResampleLowImpactRecipe::SourceKickImpactV2 => 2,
+        W30ResampleLowImpactRecipe::SourceHitShaperV3 => 3,
+    }
+}
+
+fn w30_resample_low_impact_recipe_from_u32(value: u32) -> W30ResampleLowImpactRecipe {
+    match value {
+        1 => W30ResampleLowImpactRecipe::SourceLowTransientPunchV1,
+        2 => W30ResampleLowImpactRecipe::SourceKickImpactV2,
+        3 => W30ResampleLowImpactRecipe::SourceHitShaperV3,
+        _ => W30ResampleLowImpactRecipe::Unavailable,
+    }
+}
+
+fn w30_resample_hard_gesture_recipe_to_u32(recipe: W30ResampleHardGestureRecipe) -> u32 {
+    match recipe {
+        W30ResampleHardGestureRecipe::Unavailable => 0,
+        W30ResampleHardGestureRecipe::SourceReverseIntoImpactV1 => 1,
+    }
+}
+
+fn w30_resample_hard_gesture_recipe_from_u32(value: u32) -> W30ResampleHardGestureRecipe {
+    match value {
+        1 => W30ResampleHardGestureRecipe::SourceReverseIntoImpactV1,
+        _ => W30ResampleHardGestureRecipe::Unavailable,
+    }
+}
+
 #[derive(Debug, Default)]
 pub(super) struct Tr909CallbackState {
     pub(super) beat_position: f64,
@@ -603,10 +845,49 @@ pub(super) struct W30PreviewCallbackState {
 pub(super) struct W30ResampleTapCallbackState {
     pub(super) beat_position: f64,
     pub(super) source_sample_cursor: f64,
+    pub(super) hard_attack_sample_cursor: f64,
+    pub(super) hard_attack_frames_remaining: u32,
+    pub(super) hard_attack_total_frames: u32,
+    pub(super) hard_attack_fade_in_frames: u32,
+    pub(super) hard_attack_mix: f32,
+    pub(super) hard_attack_head_mix: f32,
+    pub(super) hard_hit_preservation_frames_remaining: u32,
+    pub(super) hard_hit_preservation_total_frames: u32,
+    pub(super) hard_reverse_pickup_cursor: f64,
+    pub(super) hard_reverse_pickup_delay_frames_remaining: u32,
+    pub(super) hard_reverse_pickup_frames_remaining: u32,
+    pub(super) hard_reverse_pickup_total_frames: u32,
+    pub(super) hard_impact_active: bool,
+    pub(super) hard_impact_frames_remaining: u32,
+    pub(super) hard_impact_total_frames: u32,
+    pub(super) hard_bite_lowpass_low: f32,
+    pub(super) hard_bite_lowpass_high: f32,
+    pub(super) hard_bite_low_alpha: f32,
+    pub(super) hard_bite_high_alpha: f32,
+    pub(super) hard_bite_filter_initialized: bool,
+    pub(super) hard_grit_held_sample: f32,
+    pub(super) hard_grit_hold_frames_remaining: u32,
+    pub(super) hard_low_impact_lowpass_low: f32,
+    pub(super) hard_low_impact_lowpass_high: f32,
+    pub(super) hard_low_impact_low_alpha: f32,
+    pub(super) hard_low_impact_high_alpha: f32,
+    pub(super) hard_impact_presence_lowpass_low: f32,
+    pub(super) hard_impact_presence_lowpass_high: f32,
+    pub(super) hard_impact_presence_low_alpha: f32,
+    pub(super) hard_impact_presence_high_alpha: f32,
+    pub(super) hard_body_eq_b0: f32,
+    pub(super) hard_body_eq_b1: f32,
+    pub(super) hard_body_eq_b2: f32,
+    pub(super) hard_body_eq_a1: f32,
+    pub(super) hard_body_eq_a2: f32,
+    pub(super) hard_body_eq_z1: f32,
+    pub(super) hard_body_eq_z2: f32,
+    pub(super) hard_low_impact_filter_initialized: bool,
     pub(super) last_character_input: f32,
     pub(super) character_edge_memory: f32,
     pub(super) envelope: f32,
     pub(super) last_step: i64,
+    pub(super) last_source_revision: u64,
     pub(super) last_variation_revision: u64,
     pub(super) variation_transition_frames_remaining: u32,
     pub(super) variation_transition_total_frames: u32,

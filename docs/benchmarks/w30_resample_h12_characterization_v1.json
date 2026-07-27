@@ -1,0 +1,319 @@
+{
+  "schema": "riotbox.w30_resample_hard_characterization.v1",
+  "schema_version": 1,
+  "ticket": "RIOTBOX-1422",
+  "frozen_on": "2026-07-26",
+  "classification": "technical_characterization",
+  "quality_proof": false,
+  "human_verdict": "technically_ok_but_musically_weak",
+  "candidate_generation": "w30_resample_source_calibrated_transform_plan_v1",
+  "inherits": "docs/benchmarks/w30_resample_h11_characterization_v1.json",
+  "rejected_predecessor": {
+    "generation": "w30_resample_source_suitability_and_all_policy_safety_v1",
+    "technical_verdict": "holdout_reject",
+    "human_verdict": "not_requested_technical_reject",
+    "reason": "H11 exposed a source-dependent texture level explosion and false source_hit_shaper_v3 body ownership before human listening."
+  },
+  "single_causal_change": {
+    "contract": "typed source-calibrated transform state plus renderer-aligned low-impact recipe eligibility",
+    "shared_texture_topology": "Projection and callback use the same nonlinear source-character sample transform.",
+    "texture_calibration": {
+      "fixed_h11_output_gain_removed": 0.79,
+      "predicted_compensated_level_ratio_target": 1.05,
+      "output_gain_min": 0.25,
+      "output_gain_max": 1.25,
+      "scope": "whole callback proxy",
+      "automatic_mastering": false
+    },
+    "source_hit_shaper_v3_eligibility": {
+      "recipe_output_gain_unchanged": 0.94,
+      "selected_hit_window_ms": 100,
+      "body_window_ms": "20..100",
+      "level_match_target_for_eligibility_only": 1.2,
+      "minimum_predicted_level_matched_body_ratio": 1.15,
+      "failure_consequence": "Demote low-impact ownership to unavailable while retaining the normal source-backed transient Hard policy."
+    },
+    "policy_contrast": {
+      "removed_absolute_delta_rms_min": 0.01,
+      "relative_delta_rms_over_base_min": 0.12,
+      "reason": "The absolute threshold rejected lower-level sources independently of perceptual contrast."
+    },
+    "typed_runtime_state": "W30ResampleHardCalibrationPlan is projected into W30ResampleTapState and copied atomically into the realtime callback plan.",
+    "rhythm_or_trigger_policy_changed": false,
+    "source_hit_shaper_dsp_topology_changed": false,
+    "source_suitability_changed": false,
+    "missing_source_fallback": false,
+    "synthetic_kick_or_bass": false
+  },
+  "frozen_gates": {
+    "source_rms_min": 0.04,
+    "active_frame_ratio_min": 0.6,
+    "active_frame_floor": 0.001,
+    "unsuitable_policy": "unavailable",
+    "unsuitable_trigger_mask": 0,
+    "unsuitable_attack_lengths": "all_zero",
+    "unsuitable_base_hard_delta_peak": 0.0,
+    "audible_policy_level_ratio": {
+      "min": 0.9,
+      "legacy_or_texture_max": 1.15,
+      "source_hit_shaper_v3_max": 1.3
+    },
+    "policy_relative_delta_min": 0.12,
+    "transient_policy_directional_gates": {
+      "attack_0_10ms_ratio_min": 1.1,
+      "body_120_200ms_ratio_min": 0.95,
+      "source_hit_shaper_v3_head_ratio_min": 1.15,
+      "source_hit_shaper_v3_body_20_100ms_ratio_min": 1.15,
+      "source_hit_shaper_v3_significant_delta_ms_per_selected_hit_min": 25.0,
+      "rms_matched_relative_delta_min": 0.2,
+      "correlation_max": 0.98
+    },
+    "hard_output_must_be_non_silent_unclipped": true,
+    "missing_source_output_must_be_digital_silence": true,
+    "candidate_and_gates_must_not_change_after_holdout_starts": true
+  },
+  "development_results": [
+    {
+      "case_id": "beat03_130",
+      "source_family": "dense_break",
+      "policy": "source_transient_chop",
+      "low_impact_recipe": "source_hit_shaper_v3",
+      "calibrated_output_gain": 0.94,
+      "predicted_level_matched_body_ratio": 1.688343,
+      "rendered_head_0_20ms_ratio": 1.400109,
+      "rendered_body_20_100ms_ratio": 1.230023,
+      "gesture_level_ratio": 1.287308,
+      "relative_delta": 1.688331,
+      "base_sha256": "584e9e5f1761d80002dbd6b0b8b76b2e2b485f3d92c881e0a76e984199433825",
+      "hard_sha256": "c8e0e37f2ba65e67e2dbd84f292896fe504f1952454b17fdff03929296765a2e",
+      "outcome": "technical_gate_pass"
+    },
+    {
+      "case_id": "oga_cinameng_can_be_so_beautiful",
+      "source_family": "dense_break",
+      "policy": "source_transient_chop",
+      "low_impact_recipe": "unavailable",
+      "attack_ratio": 1.205729,
+      "body_120_200ms_ratio": 1.045651,
+      "gesture_level_ratio": 1.034001,
+      "relative_delta": 0.262081,
+      "outcome": "technical_gate_pass_unassigned_safe_alternate"
+    },
+    {
+      "case_id": "oga_marwan_cinematic_percussion",
+      "source_family": "sparse_drums",
+      "policy": "source_transient_chop",
+      "low_impact_recipe": "unavailable",
+      "attack_ratio": 1.756605,
+      "body_120_200ms_ratio": 1.015647,
+      "gesture_level_ratio": 1.044599,
+      "relative_delta": 0.263187,
+      "outcome": "technical_gate_pass_unassigned_safe_alternate"
+    },
+    {
+      "case_id": "oga_fupi_plimplom",
+      "source_family": "tonal_riff",
+      "policy": "source_transient_chop",
+      "low_impact_recipe": "unavailable",
+      "attack_ratio": 2.897862,
+      "body_120_200ms_ratio": 1.065655,
+      "gesture_level_ratio": 1.070341,
+      "relative_delta": 0.450853,
+      "outcome": "technical_gate_pass_role_guard_prevented_false_body_ownership"
+    },
+    {
+      "case_id": "oga_bertsz_dnb",
+      "source_family": "dense_full_mix",
+      "policy": "source_transient_chop",
+      "low_impact_recipe": "source_hit_shaper_v3",
+      "calibrated_output_gain": 0.94,
+      "predicted_level_matched_body_ratio": 1.199853,
+      "rendered_head_0_20ms_ratio": 1.764623,
+      "rendered_body_20_100ms_ratio": 2.2115,
+      "gesture_level_ratio": 1.290099,
+      "relative_delta": 1.049471,
+      "outcome": "technical_gate_pass_stress_only"
+    },
+    {
+      "case_id": "oga_pauliuw_dumus",
+      "source_family": "weak_source",
+      "suitability": "insufficient_level",
+      "policy": "unavailable",
+      "base_sha256": "3a44e290d8b1fdc8d75a971222d08b77e12a2f3a98285fd3f9c4fa7f33022d7f",
+      "hard_sha256": "3a44e290d8b1fdc8d75a971222d08b77e12a2f3a98285fd3f9c4fa7f33022d7f",
+      "outcome": "technical_gate_pass_explicit_unavailable_base_preserved"
+    },
+    {
+      "case_id": "oga_ogrebane_dark_ambience_1",
+      "source_family": "pad_noise",
+      "policy": "source_texture_bite",
+      "calibrated_output_gain": 0.779027,
+      "predicted_raw_level_ratio": 1.347835,
+      "predicted_compensated_level_ratio": 1.05,
+      "rendered_gesture_level_ratio": 1.1235,
+      "relative_delta": 0.344349,
+      "outcome": "technical_gate_pass_source_calibrated_texture"
+    },
+    {
+      "case_id": "oga_epb9000_creepyloop_v2",
+      "source_family": "pad_noise",
+      "status": "consumed_h11_holdout_development_evidence",
+      "policy": "source_texture_bite",
+      "calibrated_output_gain": 0.452372,
+      "predicted_raw_level_ratio": 2.321101,
+      "predicted_compensated_level_ratio": 1.05,
+      "rendered_gesture_level_ratio": 1.0756,
+      "relative_delta": 0.137457,
+      "h11_rendered_gesture_level_ratio": 1.8783,
+      "outcome": "technical_gate_pass_previous_texture_failure_corrected"
+    },
+    {
+      "case_id": "oga_obscure_level1_step2_evil",
+      "source_family": "tonal_riff",
+      "status": "consumed_h11_holdout_development_evidence",
+      "policy": "source_transient_chop",
+      "low_impact_recipe": "unavailable",
+      "predicted_level_matched_body_ratio": 0.997427,
+      "attack_ratio": 1.488594,
+      "body_120_200ms_ratio": 1.051242,
+      "gesture_level_ratio": 1.051512,
+      "relative_delta": 0.493978,
+      "h11_false_v3_rendered_body_ratio": 1.094877,
+      "outcome": "technical_gate_pass_false_body_ownership_demoted"
+    },
+    {
+      "case_id": "oga_beardalaxy_church_in_game",
+      "source_family": "pad_noise",
+      "status": "consumed_h11_holdout_development_evidence",
+      "policy": "source_transient_chop",
+      "low_impact_recipe": "unavailable",
+      "attack_ratio": 1.458042,
+      "body_120_200ms_ratio": 1.04692,
+      "gesture_level_ratio": 1.048303,
+      "relative_delta": 0.377034,
+      "outcome": "technical_gate_pass_unassigned_safe_alternate"
+    }
+  ],
+  "pre_freeze_validation": {
+    "cargo_fmt": "pass",
+    "riotbox_app_resample_attack_bite_tests": "pass",
+    "riotbox_audio_w30_resample_support_tests": "pass",
+    "riotbox_app_all_targets_check": "pass",
+    "riotbox_audio_all_targets_check": "pass",
+    "source_holdout_rotation_validator_with_existing_files": "pass",
+    "source_holdout_rotation_fixture_validator": "pass",
+    "development_matrix": "10_of_10_pass"
+  },
+  "holdout_at_freeze": {
+    "evaluation_set": "holdout_a",
+    "state": "unseen",
+    "source_case_ids": [
+      "oga_cosmac_concentration",
+      "oga_symphony_loop",
+      "oga_hc_mech_stomp",
+      "oga_congusbongus_cathedral_forest",
+      "oga_dagameknower_hit01"
+    ],
+    "reserve_set": "holdout_b",
+    "reserve_source_case_ids": [
+      "oga_iamoneabe_tryme",
+      "oga_matiasvme_crazy",
+      "oga_alxl_rain_window",
+      "oga_bart_steam_boiler",
+      "oga_bmaczero_thud2"
+    ],
+    "reserve_was_auditioned_or_rendered": false
+  },
+  "holdout_evaluation": {
+    "result": "technical_pass_limited_positive_coverage",
+    "candidate_or_gate_changed_after_freeze": false,
+    "human_listening_requested": true,
+    "operator_input_correction": {
+      "changed_candidate_or_gate": false,
+      "note": "The first invocation supplied 120 BPM to every source and produced no candidate artifacts. The two sources with detected primary grids were rerun once using their reported BPM. Three sources without a primary grid remained explicitly unavailable without rendering."
+    },
+    "positive_render_count": 1,
+    "negative_or_unavailable_count": 4,
+    "cases": [
+      {
+        "case_id": "oga_cosmac_concentration",
+        "source_family": "tonal_riff",
+        "outcome": "explicit_source_timing_unavailable_no_primary_grid_no_render"
+      },
+      {
+        "case_id": "oga_symphony_loop",
+        "source_family": "pad_noise",
+        "confirmed_bpm": 131.77,
+        "suitability": "suitable",
+        "source_rms": 0.255067,
+        "active_frame_ratio": 0.994,
+        "policy": "source_transient_chop",
+        "low_impact_recipe": "unavailable",
+        "attack_ratio": 2.760923,
+        "selected_band_attack_ratio": 3.448242,
+        "body_120_200ms_ratio": 1.060228,
+        "gesture_level_ratio": 1.055036,
+        "relative_delta": 0.311231,
+        "rms_matched_relative_delta": 0.298231,
+        "correlation": 0.955541,
+        "base_sha256": "fd8287f60ce081c0f8bc2eef17f2764ddc7115f52486461b9de76a54e81502cc",
+        "hard_sha256": "853d5e26c25c935afa845634275274cf56a58a3d494195e7afa086a75ae5c81a",
+        "outcome": "technical_gate_pass"
+      },
+      {
+        "case_id": "oga_hc_mech_stomp",
+        "source_family": "bad_timing",
+        "confirmed_bpm": 93.75,
+        "source_duration_seconds": 0.589979,
+        "availability": "source_audio_unavailable",
+        "routing": "silent",
+        "promoted_pad": null,
+        "fallback_music_present": false,
+        "outcome": "expected_bad_timing_degraded_unavailable",
+        "qa_surface_note": "The exact renderer preserves the safe product state but reports the expected all-silent negative-family outcome with the generic live-render-silent error."
+      },
+      {
+        "case_id": "oga_congusbongus_cathedral_forest",
+        "source_family": "pad_noise",
+        "outcome": "explicit_source_timing_unavailable_no_primary_grid_no_render"
+      },
+      {
+        "case_id": "oga_dagameknower_hit01",
+        "source_family": "bad_timing",
+        "outcome": "explicit_source_timing_unavailable_no_primary_grid_no_render"
+      }
+    ],
+    "interpretation": [
+      "The one renderable positive source passes the unchanged policy contrast, level, attack, body-retention, anti-collapse, clipping, and missing-source gates.",
+      "The negative-family one-shot truthfully exposes unavailable state and silence instead of manufacturing fallback music.",
+      "Positive generalization evidence is limited to one holdout source because three frozen cases had no primary grid and one was a sub-one-second negative-family challenge; the development matrix and structured human review remain required context."
+    ],
+    "listening_review": {
+      "state": "recorded",
+      "pack": "artifacts/audio_qa/local/listening-reviews/RIOTBOX-1422-H12",
+      "candidate": "03_base_then_hard_ab.wav",
+      "candidate_sha256": "8f189daf5f9c3e5f32d07220f8376737c42f74a06076d861c9e0a7c1ee9ebcab",
+      "segment_order": "4.00s Base, 0.35s digital silence, 4.00s H12 Hard",
+      "human_verdict": "technically_ok_but_musically_weak",
+      "strongest_element": "chop",
+      "source_recognition": "source_transformed_but_present",
+      "hook_after_two_bars": "weak",
+      "listener_summary": "The transient was less dull and clearer with audible damage, but the result remained musically too weak.",
+      "analysis": {
+        "base_integrated_lufs": -15.0,
+        "hard_integrated_lufs": -14.4,
+        "first_four_seconds_level_ratio": 1.057353,
+        "first_four_seconds_relative_delta": 0.322666,
+        "first_four_seconds_correlation": 0.952326,
+        "band_ratio_hard_over_base": {
+          "40_120_hz": 1.027059,
+          "120_500_hz": 1.08523,
+          "500_2000_hz": 1.168657,
+          "2000_10000_hz": 1.991417
+        },
+        "interpretation": "The perceptual change is dominated by upper-mid/high-frequency bite and damage while low/body energy, rhythm, and gesture topology remain nearly unchanged. This explains clearer and damaged rather than physically harder or musically consequential."
+      },
+      "concrete_follow_up": "Retain H12 source-relative calibration, but require the next Hard candidate to change at least two non-level perceptual dimensions: source-local transient/body articulation plus a stage-useful rhythmic, pitch, or destructive gesture."
+    }
+  }
+}

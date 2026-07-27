@@ -446,6 +446,26 @@ evidence call for low-body hardness.
 Hypothesis: attack-local harmonic density and midband presence will add bite
 without the hollow, foreign, or low-end-erasing result of full-band drive.
 
+#### H2 development result: rejected
+
+The first H2 development candidate selected a source-relative attack band,
+added a level-compensated nonlinear parallel branch only during the
+source-adaptive attack, and preserved the accepted Base hash. On Beat03 it
+measured a `2.228x` `0–10 ms` attack lift, a `1.358x` selected-band lift, and
+retained `1.040x` body energy in both the `40–120 ms` and `120–200 ms`
+windows. The exact Base and Hard WAVs were technically different
+(`0.966` correlation), but the project musician heard no audible difference
+when they were played separately.
+
+That verdict rejects the mechanism as a musician-facing Hard state. Concentrated
+difference energy inside repeated short attack windows can pass directional
+signal gates while remaining perceptually negligible across the performance
+window. Do not rescue this candidate by raising its parallel-mix or output-gain
+constant. A successor must change one causal dimension: extend a source-derived
+nonlinear or destructive timbre through a bounded, perceptible gesture while
+retaining the accepted body, timing, and source identity. Its gate must measure
+gesture-duration body/timbre contrast in addition to attack-local change.
+
 ### H3: bounded source-derived roughness
 
 Only after H1/H2 have an accepted source-relative foundation, test a small
@@ -674,6 +694,286 @@ callback.
 - preserve a stable Base that the performer can return to
 - prefer a few strong orthogonal gestures over many subtle float changes
 - expose role and expected sound so the musician can judge the right property
+
+## Riotbox H7 Result and H8 Consequence
+
+H7 proved that an audible, deterministic, source-dependent transform can still
+fail the promised musical role. Its 8 kHz/63-level grit recipe made the result
+dirtier and more destroyed, but structured human review found no harder
+source-kick or low-end impact. Therefore:
+
+- `source_grit_slam_v1` remains Damage/lo-fi vocabulary evidence, not proof of
+  a Hard variation;
+- roughness, destruction, level, and spectral difference must not stand in for
+  low-end or drum-transient impact;
+- a Hard candidate may claim source-kick impact only when analysis assigns a
+  source-owned low transient;
+- unassigned material must not receive a synthetic kick or bass fallback.
+
+H8 introduces `source_low_transient_punch_v1`. Control-plane analysis requires
+all three source-relative conditions before assigning it: meaningful 45–180 Hz
+attack share, a low-band attack that exceeds its following body, and material
+low-band attack energy relative to the whole source. During the exact live
+callback path, the versioned recipe returns only that filtered source band in
+parallel during the detected attack, after the destructive chain. Base bypasses
+the recipe exactly.
+
+Its fixed parallel gain is part of the versioned recipe, not an anonymous taste
+float. Technical QA separately requires:
+
+- absolute low-band attack energy for assigned material;
+- relative low-band attack lift over Base;
+- preserved later body, bounded total level, continuity, and no clipping;
+- explicit `unavailable` ownership for material without qualifying source
+  evidence;
+- structured human confirmation that the relevant kick/body actually feels
+  harder, since the measurements alone cannot establish that verdict.
+
+## Riotbox H9 Result and H10 Consequence
+
+H9 removed Damage from the assigned source-kick-impact path and added a short
+source-owned 45–180 Hz body return plus a 900–3,600 Hz attack head. The frozen
+candidate passed development and fresh holdout gates, but structured listening
+found Base and H9 perceptually identical. The comparison was not a playback or
+artifact-assignment error: the concatenated review payload contained the exact
+three registered PCM files in order, and Base/H9 had distinct hashes and
+waveforms.
+
+The failure exposed a metric and mechanism mismatch:
+
+- only about `5.71%` of the 7.385-second review render differed from Base by
+  more than `0.01` full scale, about `0.422` aggregate seconds or roughly
+  `18 ms` per selected hit;
+- H9 raised the selected 0–10 ms attack but the 40–120 ms and 120–200 ms body
+  windows only reached `1.040x` Base, approximately `0.34 dB`;
+- the validator treated `>= 0.95x` as sufficient body evidence, so preservation
+  could be mislabeled as punch;
+- the `selected_band_attack` diagnostic still followed the historical
+  Damage-bite band even though H9 bypassed that processing;
+- the focused unit test proved only that one synthetic output sample increased.
+
+Therefore H10 must not retune H9's parallel gains. It needs a different
+source-local hit mechanism with separate, typed roles:
+
+- an attack-head articulation with its own intended-band, absolute, relative,
+  and duration evidence;
+- a following low/body articulation spanning a musically meaningful portion of
+  roughly 20–100 ms, with a required audible lift rather than preservation
+  alone;
+- a phase-coherent dry/body topology or band-replacement topology so parallel
+  filter phase cannot silently erase the intended lift;
+- native-level and loudness-matched comparison, plus a regression that fails
+  when the large-difference region collapses into a sub-20-ms click;
+- unchanged groove, source timing, Base hash, and missing-source silence.
+
+## Riotbox H10 Result and H11 Consequence
+
+H10's direct-path source hit shaper passed the development matrix, but the
+frozen holdout rejected the candidate before human listening:
+
+- a weak, intermittently active source was assigned transient-chop ownership,
+  then failed because its later 120–200 ms body was absent;
+- a pad selected `source_texture_bite` and reached about `1.400x` Base RMS, but
+  that policy bypassed the transient-only directional validator and therefore
+  bypassed the intended `1.15x` level ceiling;
+- the failure was not evidence that another head/body gain tweak was needed.
+  It exposed missing source suitability and incomplete policy-wide QA.
+
+H11 therefore makes two contract changes before another listening request:
+
+- typed source suitability is evaluated from original mono PCM before Hard
+  ownership. A source below `0.04` RMS or below `0.60` active-frame share at a
+  `0.001` activity floor receives explicit `Hard = unavailable`;
+- every audible Hard policy passes the same bounded whole-gesture level check.
+  Transient-chop retains its stricter attack/body/continuity gates, while
+  texture-bite can no longer bypass level safety.
+
+An unavailable Hard policy is not a weak candidate. It is a truthful product
+outcome: trigger mask, attack windows, grit, and Hard gain remain inactive,
+while the source-backed Base output is preserved sample-identically. The H11
+QA pass also corrected the focus renderer so Source Monitor PCM cannot
+contaminate the isolated W-30 Base/Hard delta.
+
+## Riotbox H11 Result and H12 Consequence
+
+H11 correctly rejected the frozen candidate before human listening, but its
+new safety surfaces exposed two different proxy failures on the fresh holdout:
+
+- a lower-level pad selected `source_texture_bite`, and the fixed `0.79`
+  compensation still produced about `1.878x` Base RMS instead of remaining
+  below the frozen `1.15x` ceiling;
+- a transient source satisfied the source-analysis low-attack-over-body
+  ownership proxy and received `source_hit_shaper_v3`, but the actual rendered
+  20–100 ms body reached only `1.095x` Base instead of the required `1.15x`.
+
+The first failure means nonlinear level compensation cannot be one global
+number across sources. The second means source-band ownership evidence and
+renderer-window outcome are related but not interchangeable. H12 therefore
+must not adjust the H11 `0.79` or `0.94` values and retry. It needs a typed,
+source-calibrated transform plan:
+
+- predict the selected transform at projection time using the same DSP
+  topology and source proxy as the live renderer;
+- derive a bounded, explicit output compensation from that prediction and
+  carry it through product state to the callback;
+- retain `source_hit_shaper_v3` only when renderer-aligned prediction supports
+  the required head/body outcome, otherwise keep the source-backed transient
+  policy without falsely claiming low-impact ownership;
+- preserve missing-source silence, unsuitable-source Base identity, source
+  timing, groove, and the frozen policy-wide QA gates.
+
+This calibration is not automatic mastering and must not make all sources
+equally loud. It only prevents a fixed nonlinear recipe from creating
+source-dependent level explosions and prevents an indirect feature ratio from
+claiming an audible body result it cannot deliver.
+
+The implemented H12 plan removes the fixed `0.79` texture compensation and
+derives a bounded per-source gain targeting a predicted `1.05x` Base RMS. Its
+projection proxy and callback share the same nonlinear source-character
+topology. The versioned `source_hit_shaper_v3` recipe keeps its existing
+`0.94` output gain; H12 does not retune that number. Instead, H12 measures the
+selected source hit windows through the same peaking-filter topology, matches
+the transformed proxy to a `1.20x` level target for comparison, and requires a
+predicted level-matched 20–100 ms body ratio of at least `1.15x` before the V3
+recipe may own Hard. Failing that evidence demotes the candidate to the normal
+source-backed transient policy rather than manufacturing a body claim.
+
+For texture policies, predicted raw and compensated level ratios describe the
+whole callback proxy. For V3, they describe only the selected transform
+windows and are not claims about whole-gesture output loudness; the
+level-matched body ratio is the ownership signal. The exact-path renderer
+continues to enforce the unchanged whole-gesture level ceilings and
+directional transient gates. Its non-collapse check is now source-relative:
+Hard-minus-Base delta RMS must be at least `0.12x` Base RMS, replacing the
+fixed absolute `0.01` threshold that unfairly rejected otherwise meaningful
+lower-level sources.
+
+### H12 Listening Result
+
+The frozen H12 holdout technically passed, but structured listening returned
+`technically_ok_but_musically_weak`. The listener heard a less dull, clearer
+transient and audible damage, but not a convincing or keep-worthy Hard gesture.
+Exact four-second A/B analysis explains the result:
+
+- Hard was only `0.6 LUFS` louder and reached a `1.057x` RMS level ratio;
+- Hard/Base energy was nearly unchanged at 40–120 Hz (`1.027x`) and changed
+  modestly at 120–500 Hz (`1.085x`);
+- 500 Hz–2 kHz rose to `1.169x`, while 2–10 kHz nearly doubled to `1.991x`;
+- the aligned waveform correlation remained `0.952`.
+
+H12 therefore solved its calibration and truthful-ownership problem, but not
+the broader musical Hard problem. The audible difference is dominated by
+brightness and damage while low/body energy, rhythm, and gesture topology stay
+too similar. The next candidate must preserve H12 source-relative calibration
+and change at least two non-level perceptual dimensions: source-local
+transient/body articulation plus a stage-useful rhythmic, pitch, or destructive
+gesture. Another brightness, loudness, or generic-damage scalar adjustment is
+not an acceptable next experiment.
+
+## Frozen H13 Hypothesis: Source Reverse Into Impact V1
+
+H13 tests one typed mechanism rather than another collection of independent
+taste constants. It is available only for a suitable
+`source_transient_chop` policy with source PCM and a committed `HardDamage`
+action:
+
+1. rank the already source-selected trigger slots by their local 0–20 ms head
+   and 20–100 ms body evidence;
+2. name exactly one strongest source impact and the immediately preceding
+   eighth-note slot;
+3. during the end of that preceding slot, read a bounded window of the same
+   source impact backwards so its transient converges on the grid boundary;
+4. return to the same impact forwards on the boundary and apply a bounded,
+   source-relative body gain only inside its 20–100 ms body window.
+
+The body gain is derived from the measured head/body relationship of the
+selected impact. It may lift a weak body toward 90% of its own head RMS, is
+bounded to `1.12..=1.40`, and cannot create a kick, bass, or unrelated layer.
+The same measured head/body RMS and window durations derive a separate
+impact-level compensation, so the local articulation cannot pass by raising
+whole-gesture level. The callback does not lengthen or replace the selected H12
+attack slice: after the existing H12 voice is rendered, H13 applies its bounded
+2.5 ms-ramped body articulation only to the selected 20–100 ms output window.
+The reverse pickup is normalized against the source energy already present at
+the destination slot tail, then ramps to the compensated impact level over its
+final 10 ms for continuity. It uses the same source cursor and is inactive
+outside its declared pickup slot. Other selected hits retain the H12 path.
+
+This changes two causal dimensions:
+
+- **transient/body articulation:** the selected source hit develops from head
+  into a more present source-owned body instead of receiving another broadband
+  brightness adjustment;
+- **arrangement/performance impact:** a source-derived reverse approach creates
+  anticipation and a clear return boundary rather than repeating the same chop
+  topology at a different level.
+
+H13 does not claim bass pressure. Its intended domains are drum/transient or
+midrange/hook body, plus arrangement/performance impact. A valid technical
+candidate must prove the registered pickup and impact occur in their typed
+slots, the reverse window actually runs backwards into the forward cursor,
+the selected 20–100 ms body changes at matched whole-gesture level, Base and
+unavailable output remain unchanged, cross-source slot/body choices differ
+where source evidence differs, and the exact callback output remains bounded
+and continuous. Brightness, waveform delta, loudness, or generic damage alone
+cannot pass H13.
+
+### H13 Holdout Result
+
+The frozen H13 candidate failed holdout before human listening. On
+`oga_iamoneabe_tryme`, Base-to-Hard RMS reached `1.45012x` against the frozen
+`1.30x` maximum. Artifact forensics separated inherited and new behavior:
+
+- Base-to-H12 was already `1.41339x`;
+- H12-to-H13 added only `1.02599x` (`0.223 dB`);
+- the level failure therefore belongs primarily to H12
+  `source_hit_shaper_v3` calibration, not the reverse/body gesture.
+
+The independent tonal holdout `oga_matiasvme_crazy` passed H13 with a
+`1.1144x` selected-body ratio and `2.9243` pickup delta at `1.0144x`
+Base-to-Hard level. Three degraded timing cases correctly could not confirm a
+grid and stopped before candidate rendering. The mixed evidence is useful but
+cannot promote H13: the whole frozen generation is technically rejected, no
+human playback is requested, and holdout-b must not be used for retuning.
+
+## H14: Exact Callback Calibration With Hit-Window Preservation
+
+H14 treats the H13 rejection as a calibration/contrast problem, not permission
+to weaken the release gates. For each new source revision and trusted tempo,
+the control plane renders the exact W-30 callback over four complete
+eight-step cycles. It compares Base with the typed Hard recipe, searches a
+bounded between-hit output gain, and caches the result for subsequent runtime
+refreshes. No measurement, allocation, file I/O, or search enters the realtime
+callback.
+
+The callback then applies three distinct responsibilities:
+
+1. keep the source-selected 0–100 ms primary hit at unity, including 20 ms of
+   real source context before its grid boundary and a 2.5 ms click-safe lead-in
+   before that full-unity context;
+2. retain the existing H12 `0.94` calibration through the 100–200 ms following
+   body and fade out over 10 ms;
+3. apply the source/tempo-specific calibrated gain only between those owned
+   hit windows.
+
+This is an arrangement and microdynamics decision: the physical hit stays
+present while surrounding material yields, increasing usable attack contrast
+without claiming bass pressure or hiding failure behind global loudness.
+Sources without `source_hit_shaper_v3`, trusted tempo, or source PCM keep their
+existing typed behavior and never receive a synthetic fallback.
+
+The former H13 holdout failure `oga_iamoneabe_tryme` is now consumed
+development material. H14 changes its fixed H12 output gain from `0.94` to
+`0.639841`, retains the selected hit locally, and measures Base-to-H12
+`1.25878x`, filtered head `1.16759x`, filtered body `1.30463x`, and
+H12-to-H13 impact body `1.05539x`. The complete Base-to-H13 level is about
+`1.29208x`, below the unchanged `1.30x` ceiling. Beat03, dense-full-mix stress,
+sparse percussion, tonal, and pad development cases also pass; weak and
+texture cases retain unavailable or continuous-policy behavior.
+
+This technical pass is not a human musical verdict. H14 must still be frozen
+before one untouched multi-family holdout set is rendered, and only a complete
+technical holdout pass may produce a structured listening pack.
 
 ## Sources
 

@@ -1,0 +1,115 @@
+{
+  "schema": "riotbox.w30_resample_hard_characterization.v1",
+  "schema_version": 1,
+  "ticket": "RIOTBOX-1422",
+  "frozen_on": "2026-07-27",
+  "classification": "technical_characterization",
+  "quality_proof": false,
+  "human_verdict": "unverified",
+  "candidate_generation": "w30_resample_exact_hit_window_calibration_v1_h16_final_coverage_retry",
+  "inherits": "docs/benchmarks/w30_resample_h15_characterization_v1.json",
+  "implementation_change_from_h15": "none",
+  "evaluation_design_change": {
+    "reason": "H15 could not enter candidate rendering because its provider BPM conflicted with the analyzer grid and no trusted downbeat phase existed.",
+    "required_causal_coverage": "At least one fresh holdout source must select source_hit_shaper_v3 with exact_callback_evaluated=true and exact_callback_calibrated=true.",
+    "preferred_reachability_case": "oga_fupi_melodic_skippy_edm has provider-declared 140 BPM plus hard-hitting and start-stop loop metadata; that metadata does not guarantee selection or a pass.",
+    "non_selection_is_pass": false,
+    "candidate_or_gate_retuning": false,
+    "further_identical_coverage_retries_after_failure": false
+  },
+  "frozen_candidate": {
+    "inherits_h14_candidate_exactly": true,
+    "candidate_generation": "w30_resample_exact_hit_window_calibration_v1",
+    "source_selection_changed": false,
+    "rhythm_or_trigger_policy_changed": false,
+    "missing_source_fallback": false,
+    "synthetic_kick_or_bass": false,
+    "bass_owner": "unassigned"
+  },
+  "frozen_gates": {
+    "inherits_h14_gates_exactly": true,
+    "causal_source_hit_shaper_v3_coverage_required": true,
+    "candidate_and_gates_must_not_change_after_holdout_starts": true
+  },
+  "pre_freeze_validation": {
+    "inherits_h14_full_ci_and_branch_review": true,
+    "inherits_h14_development_matrix": "10_of_10_pass",
+    "source_holdout_rotation_fixture_validator_after_h15_rotation": "pass",
+    "source_holdout_rotation_local_files_validator_after_h15_rotation": "pass",
+    "git_diff_check": "pass"
+  },
+  "holdout_at_freeze": {
+    "evaluation_set": "holdout_a",
+    "state": "consumed",
+    "source_case_ids": [
+      "oga_tsorthan_grove_bamboo_blitz",
+      "oga_fupi_melodic_skippy_edm",
+      "oga_ansimuz_exploration",
+      "oga_wipics_calm_loop",
+      "oga_qubodup_impact_metal"
+    ],
+    "reserve_set": "holdout_b",
+    "reserve_state": "untouched",
+    "reserve_source_case_ids": [
+      "oga_isaiah658_final_hour",
+      "oga_cleytonkauffman_continue_theme",
+      "oga_poinl_title_x",
+      "oga_nikke_dark_intro",
+      "oga_farfadet46_bubble_pop"
+    ]
+  },
+  "holdout_result": {
+    "technical_verdict": "reject",
+    "causal_coverage_satisfied": false,
+    "human_listening_requested": false,
+    "primary_failure": {
+      "case_id": "oga_fupi_melodic_skippy_edm",
+      "source_family": "dense_break",
+      "provider_bpm": 140.0,
+      "rust_primary_bpm": 154.63918,
+      "rust_timing_readiness": "weak",
+      "rust_grid_use": "manual_confirm_only",
+      "rust_drift_status": "high",
+      "rust_downbeat_status": "weak",
+      "outcome": "provider_bpm_does_not_match_untrusted_primary_grid_before_candidate_render",
+      "candidate_wav_created": false,
+      "diagnosis": "The metadata-selected reachability source still lacked a matching trusted grid. BPM-only confirmation would fail the existing 1 BPM contract, while no independently trusted downbeat phase existed for a musician-manual grid."
+    },
+    "pre_candidate_timing_outcomes": [
+      {
+        "case_id": "oga_tsorthan_grove_bamboo_blitz",
+        "readiness": "needs_review",
+        "grid_use": "short_loop_manual_confirm",
+        "primary_bpm": 99.778275,
+        "drift_status": "high",
+        "outcome": "degraded_unconfirmed_timing_before_candidate_render"
+      },
+      {
+        "case_id": "oga_ansimuz_exploration",
+        "readiness": "needs_review",
+        "grid_use": "manual_confirm_only",
+        "primary_bpm": 130.24602,
+        "drift_status": "high",
+        "outcome": "degraded_unconfirmed_timing_before_candidate_render"
+      },
+      {
+        "case_id": "oga_wipics_calm_loop",
+        "readiness": "needs_review",
+        "grid_use": "manual_confirm_only",
+        "primary_bpm": 150.33408,
+        "drift_status": "high",
+        "outcome": "degraded_unconfirmed_timing_before_candidate_render"
+      },
+      {
+        "case_id": "oga_qubodup_impact_metal",
+        "readiness": "unavailable",
+        "grid_use": "unavailable",
+        "primary_bpm": null,
+        "outcome": "source_timing_unavailable_before_candidate_render"
+      }
+    ],
+    "consequence": "H16 is not eligible for human listening. Stop byte-identical coverage retries and create an explicit acceptance-reachability enabler that can prequalify trusted timing plus causal recipe selection without weakening the Source Graph contract or consuming acceptance evidence."
+  },
+  "freeze_rule": "Any implementation, typed value, selection formula, gate, or validator change after holdout-a timing inspection starts invalidates holdout-a as H16 evidence.",
+  "next_gate": "Restore the rotating holdout contract, then land an explicit acceptance-reachability enabler before any new frozen audio candidate. Do not run another byte-identical holdout retry."
+}
