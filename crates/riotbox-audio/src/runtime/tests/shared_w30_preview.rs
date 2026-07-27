@@ -274,6 +274,8 @@ fn shared_w30_resample_tap_state_tracks_updates() {
         tempo_bpm: 128.0,
         position_beats: 21.0,
     };
+    state.hard_calibration.output_gain = 0.5;
+    state.hard_calibration.hit_window_compensation_gain = 2.2;
     shared.update(&state);
 
     let snapshot = shared.snapshot();
@@ -290,6 +292,8 @@ fn shared_w30_resample_tap_state_tracks_updates() {
     assert!(snapshot.is_transport_running);
     assert_eq!(snapshot.tempo_bpm, 128.0);
     assert_eq!(snapshot.position_beats, 21.0);
+    assert_eq!(snapshot.hard_output_gain, 0.5);
+    assert_eq!(snapshot.hard_hit_window_compensation_gain, 2.2);
     assert_eq!(snapshot.source_audio.source_sample_rate, 44_100);
     assert_eq!(
         snapshot.source_audio.sample_count,

@@ -34,7 +34,7 @@ use riotbox_audio::{
         W30_RESAMPLE_H13_MIN_PICKUP_GAIN,
         W30_RESAMPLE_HIT_SHAPER_MAX_WINDOW_COMPENSATION_GAIN,
         W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN, W30_RESAMPLE_HIT_SHAPER_SCHEMA_OUTPUT_GAIN,
-        w30_resample_source_character_sample,
+        W30_RESAMPLE_MIN_BODY_PRESERVATION_RATIO, w30_resample_source_character_sample,
     },
 };
 use riotbox_core::{

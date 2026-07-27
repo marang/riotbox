@@ -975,6 +975,44 @@ This technical pass is not a human musical verdict. H14 must still be frozen
 before one untouched multi-family holdout set is rendered, and only a complete
 technical holdout pass may produce a structured listening pack.
 
+## H17–H18: Runtime-Synchronous Body Ownership
+
+The H17 reachability-qualified `oga_congusbongus_lasso_lady` holdout exercised
+the intended `source_hit_shaper_v3` path but failed before listening. Its
+frozen callback render reached a Base-to-Hard level ratio of `1.31278`, above
+the unchanged `1.30` ceiling, while its apparent late-body result was being
+measured against the requested 140 BPM rather than the product-owned
+`140.62514 BPM` grid. `oga_yd_oriented` was preflight-ineligible because the
+low-impact recipe remained unavailable. Neither case received a human verdict.
+
+H18 corrects the causal path rather than loosening either gate:
+
+1. H12 exact calibration owns the between-hit gain and its head/body floors.
+2. The same gain is verified separately through the complete H13 callback, so
+   an H13 level reduction cannot conceal an H12 overshoot.
+3. The existing typed hit-window compensation now reaches the realtime
+   snapshot. When the exact callback proves a 120–200 ms body shortfall, the
+   control plane derives the smallest local late-body target that restores the
+   unchanged `0.95` floor.
+4. H13 no longer attenuates the selected impact after source-local body
+   articulation. The derived body gain remains bounded at `1.75`, and the
+   unchanged full-path `1.30` ceiling prevents this from becoming a global
+   loudness fix.
+5. Product-path QA measures against `hard_state.tempo_bpm`, the same tempo used
+   by the callback.
+
+The post-change development matrix spans eight sources across dense break,
+dense-full-mix stress, sparse drums, tonal riff, pad/noise, and weak/unavailable
+behavior. Beat03, Bertsz, and Lasso exercise exact callback calibration and
+pass the full H12/H13 gates. Their selected H13 impact-body ratios are
+`1.0633`, `1.0720`, and `1.1410`; their full Base-to-Hard levels are `1.2690`,
+`1.2340`, and `1.1652`. Cinameng, Marwan, Fupi, and Beard remain within the
+legacy `1.15` ceiling; Pauliuw remains explicitly unavailable without fallback
+audio.
+
+This is technical development evidence, not a musician-facing quality pass.
+Fresh multi-family acceptance and structured listening remain mandatory.
+
 ## Sources
 
 Primary perceptual and audio research:

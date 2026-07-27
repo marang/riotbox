@@ -68,6 +68,7 @@ fn render_mix_buffer_includes_live_mc202_bass_seam() {
                 variation_intensity: 0.0,
                 hard_policy: W30ResampleTapHardPolicy::Unavailable,
                 hard_output_gain: 1.0,
+                hard_hit_window_compensation_gain: 1.0,
                 hard_trigger_mask: 0,
                 hard_slice_cursors: [0; W30_RESAMPLE_HARD_SLICE_COUNT],
                 hard_attack_lengths: [0; W30_RESAMPLE_HARD_SLICE_COUNT],

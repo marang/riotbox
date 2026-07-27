@@ -1,0 +1,93 @@
+{
+  "schema": "riotbox.w30_resample_hard_characterization.v1",
+  "schema_version": 1,
+  "ticket": "RIOTBOX-1422",
+  "generation": "H18",
+  "recorded_on": "2026-07-27",
+  "classification": "development_characterization",
+  "quality_proof": false,
+  "human_verdict": "unverified",
+  "inherits": "docs/benchmarks/w30_resample_h17_characterization_v1.json",
+  "causal_changes": {
+    "h12_calibrated_before_h13": true,
+    "same_gain_verified_through_h13": true,
+    "hit_window_compensation_reaches_realtime_snapshot": true,
+    "late_body_window_ms": "120..200",
+    "late_body_ratio_min_unchanged": 0.95,
+    "late_body_compensation_max": 4.0,
+    "h13_impact_level_compensation_min": 1.0,
+    "h13_body_gain_max": 1.75,
+    "qa_tempo_owner": "projected_runtime_state",
+    "source_hit_shaper_level_max_unchanged": 1.3,
+    "bass_owner": "unassigned"
+  },
+  "development_results": [
+    {
+      "case_id": "beat03_130",
+      "source_family": "dense_break",
+      "exact_callback_calibrated": true,
+      "h12_late_body_ratio": 1.039952,
+      "h13_impact_body_ratio": 1.063306,
+      "base_to_hard_level_ratio": 1.2690,
+      "outcome": "technical_gate_pass"
+    },
+    {
+      "case_id": "oga_bertsz_dnb",
+      "source_family": "dense_full_mix",
+      "exact_callback_calibrated": true,
+      "h12_late_body_ratio": 1.022988,
+      "h13_impact_body_ratio": 1.0720,
+      "base_to_hard_level_ratio": 1.234,
+      "outcome": "technical_gate_pass_stress_only"
+    },
+    {
+      "case_id": "oga_congusbongus_lasso_lady",
+      "source_family": "tonal_riff",
+      "evidence_role": "consumed_h17_development",
+      "exact_callback_calibrated": true,
+      "h12_late_body_ratio": 0.973327,
+      "h13_impact_body_ratio": 1.1410,
+      "base_to_hard_level_ratio": 1.1652,
+      "outcome": "technical_gate_pass"
+    },
+    {
+      "case_id": "oga_cinameng_can_be_so_beautiful",
+      "source_family": "dense_break",
+      "base_to_hard_level_ratio": 1.0334,
+      "outcome": "technical_gate_pass"
+    },
+    {
+      "case_id": "oga_marwan_cinematic_percussion",
+      "source_family": "sparse_drums",
+      "base_to_hard_level_ratio": 1.057,
+      "outcome": "technical_gate_pass"
+    },
+    {
+      "case_id": "oga_fupi_plimplom",
+      "source_family": "tonal_riff",
+      "base_to_hard_level_ratio": 1.0997,
+      "outcome": "technical_gate_pass"
+    },
+    {
+      "case_id": "oga_beardalaxy_church_in_game",
+      "source_family": "pad_noise",
+      "base_to_hard_level_ratio": 1.073,
+      "outcome": "technical_gate_pass"
+    },
+    {
+      "case_id": "oga_pauliuw_dumus",
+      "source_family": "weak_source",
+      "hard_policy": "unavailable",
+      "outcome": "explicit_unavailable_without_fallback"
+    }
+  ],
+  "development_matrix": {
+    "source_count": 8,
+    "family_count": 6,
+    "all_expected_outcomes_pass": true,
+    "missing_source_output": "digital_silence"
+  },
+  "acceptance_status": "pending_fresh_multi_family_holdout",
+  "human_listening_allowed": false,
+  "next_gate": "Freeze H18, preflight an untouched holdout subset, render only eligible exact-path candidates, then run structured human listening."
+}

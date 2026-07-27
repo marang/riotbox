@@ -509,3 +509,33 @@ successful calibrations, so an unsuitable hit-shaper source cannot trigger the
 same offline render search on every view refresh. Missing source PCM, untrusted
 tempo, non-transient policy, and non-hit-shaper recipes do not run this
 calibration.
+
+## W-30 H18 Runtime-Synchronous Body Preservation Values
+
+H18 supersedes the active H14/H13 callback values after a fresh holdout exposed
+two hidden mismatches. The historical values above remain the record of those
+frozen generations.
+
+- The exact calibration measures H12 without H13, chooses the H12 between-hit
+  gain, then verifies the same gain through the complete H13 callback. H13
+  remains part of the cache key. This prevents an H13 level reduction from
+  hiding an over-limit H12 counterfactual.
+- `120..200 ms` is the independently gated late-body window. The callback
+  carries the already typed `hit_window_compensation_gain` into realtime and
+  may lift only that window above unity when exact source evidence requires
+  it. `4.0` remains the absolute compensation cap. The `0..120 ms` head/body
+  stays at unity, and the existing `10 ms` fade returns to the between-hit
+  gain.
+- `0.95` is the unchanged minimum source-relative late-body ratio. H18 derives
+  the smallest late-body target that passes it with at most four exact callback
+  refinements; it does not add a fixed taste boost.
+- `1.0` is now the minimum H13 impact-level compensation: the chosen impact is
+  not attenuated after source-local articulation. `1.75` is the bounded maximum
+  derived body gain. Exact H12 and full-H13 level checks still enforce the
+  unchanged `1.30` ceiling for `source_hit_shaper_v3`.
+- QA windows use the projected runtime tempo, not merely the requested BPM.
+  For example, Beat03 is measured at the product-owned `130.28494 BPM` grid
+  even when the confirmation request was `130 BPM`.
+
+These values belong to drum/transient and midrange/hook impact. Bass ownership
+remains `unassigned`; none of them claims bass pressure.

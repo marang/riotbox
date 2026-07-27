@@ -3455,3 +3455,17 @@ Why: H14 reached only an inherited recipe, while H15 and H16 failed timing befor
 Evidence: regression fixtures reproduce H14 non-applicability, H15's `190` versus `141.50945` BPM mismatch, H16's `140` versus `154.63918` BPM mismatch, unavailable one-shot timing, and a successful exact hit-shaper product state. A consumed Beat03 development run at 130 BPM reports `source_transient_chop`, `source_hit_shaper_v3`, and exact evaluation/calibration success. Supplying an unsupported explicit downbeat of zero to the same source makes capture projection unavailable, demonstrating that phase cannot be invented merely to satisfy reachability.
 Consequences: future acceptance preparation may use the preflight only after the candidate mechanism and gates are fixed and before candidate review WAV generation. The screen is technical selection evidence, not musical quality proof or a human verdict. Current fresh holdout A/B audio remains untouched by RIOTBOX-1424. A later frozen RIOTBOX-1422 generation must still pass exact-path technical gates and structured human listening.
 Status: accepted contract enabler; fresh holdout proof pending
+
+---
+
+### RBX-172
+
+Date: 2026-07-27
+Topic: exact W-30 Hard calibration must satisfy H12 and H13 at runtime-owned tempo
+Phase: P023 / Controlled Expansion
+Question: how should Riotbox correct the H17 Lasso level rejection without weakening the H12/H13 role gates or tuning another whole-path scalar to one source?
+Decision: calibrate the H12 hit-shaper counterfactual first, verify the same between-hit gain through the complete H13 callback, and keep H13 in the calibration cache key. Carry the existing typed hit-window compensation into the realtime snapshot and derive the smallest bounded local lift needed for the selected 120–200 ms body to retain the unchanged 0.95 source-relative floor. Do not attenuate the selected H13 impact after body articulation; bound its derived body gain at 1.75 and retain the unchanged 1.30 exact-path whole-level ceiling. Product-path QA windows must use the projected runtime tempo.
+Why: H17 calibrated the H12/H13 combination but gated H12 separately, allowing H13's level reduction to hide an H12 overshoot. The observer exposed hit-window compensation that the realtime snapshot did not carry, and the renderer measured requested BPM while the callback ran at the analyzer-owned grid. These mismatches made level and body evidence internally inconsistent.
+Evidence: the corrected development matrix passes eight sources across dense break, dense-full-mix stress, sparse drums, tonal riff, pad/noise, and weak/unavailable behavior. Exact Beat03, Bertsz, and consumed Lasso cases pass with H13 impact-body ratios 1.0633, 1.0720, and 1.1410 and Base-to-Hard levels 1.2690, 1.2340, and 1.1652. Their H12 late-body ratios are 1.03995, 1.02299, and 0.97333. Four inherited-policy cases remain within 1.15; the weak case remains explicitly unavailable; missing-source output remains digital silence.
+Consequences: H17 Lasso and Oriented are consumed technical evidence and receive no human verdict. H18 development behavior may now be frozen for a fresh multi-family reachability preflight, but it is not quality proof. Bass remains unassigned; the change claims drum/transient and midrange/hook body plus arrangement impact only.
+Status: accepted development mechanism; fresh holdout and structured listening pending

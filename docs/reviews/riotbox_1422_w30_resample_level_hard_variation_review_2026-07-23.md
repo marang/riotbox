@@ -498,3 +498,61 @@ Another identical holdout retry would consume evidence without testing a new
 hypothesis. The next slice must explicitly prequalify acceptance reachability:
 trusted grid ownership and causal recipe-selection coverage, while preserving
 Source Graph, Session confirmation, and holdout separation.
+
+### H17 reachability-qualified holdout result
+
+RIOTBOX-1424 made the intended path reachable without changing its DSP or
+gates. Two fresh Holdout A families passed technical preflight:
+
+- `oga_congusbongus_lasso_lady`, provider-declared 140 BPM, selected
+  `source_transient_chop` plus `source_hit_shaper_v3` and completed exact
+  callback calibration;
+- `oga_yd_oriented`, whose CC0 LMMS project metadata independently declares
+  140 BPM, reached source timing but selected no low-impact recipe and was
+  therefore ineligible for causal candidate coverage.
+
+The frozen Lasso candidate failed before human listening at a Base-to-Hard
+level ratio of `1.31278`, above the unchanged `1.30` ceiling. Oriented produced
+no candidate WAV. Both sources are consumed technical evidence; neither has a
+human musical verdict.
+
+### H18 runtime-synchronous calibration correction
+
+Diagnosis found three coupled implementation defects:
+
+- exact calibration included H13 while the release validator first gated an
+  H12 counterfactual; an H13 level reduction could therefore authorize an
+  over-limit H12 gain;
+- `hit_window_compensation_gain` was visible in product/observer state but not
+  carried into the realtime snapshot, so it could not preserve a
+  source-dependent late body;
+- the renderer validator placed windows using the requested BPM rather than
+  the product-owned callback tempo.
+
+H18 now calibrates H12, verifies the same gain through H13, transports the
+typed compensation into the callback, derives a bounded local 120–200 ms body
+target, and measures QA at runtime tempo. The selected H13 impact is no longer
+attenuated after articulation; its derived body gain is bounded at `1.75`.
+The `0.95` late-body floor and `1.30` exact-path level ceiling are unchanged.
+
+The final development matrix passes across eight sources and six behavioral
+families. Exact cases:
+
+| Case | H12 late body | H13 impact body | Base-to-Hard level |
+| --- | ---: | ---: | ---: |
+| Beat03 | `1.03995` | `1.0633` | `1.2690` |
+| Bertsz dense-full-mix stress | `1.02299` | `1.0720` | `1.2340` |
+| Lasso consumed development | `0.97333` | `1.1410` | `1.1652` |
+
+Cinameng, Marwan, Fupi, and Beard pass their inherited `1.15` level ceiling;
+Pauliuw remains explicitly unavailable and emits no fallback Hard output.
+Missing-source output remains digital silence. This matrix freezes the
+development mechanism only; a fresh multi-family holdout and structured human
+listening are still required before RIOTBOX-1422 can close.
+
+The two H17 technical cases were retired and replaced one-for-one before that
+fresh gate. `oga_congusbongus_head_in_the_sand` (tonal riff) and
+`oga_srg774_sector` (pad/noise) were acquired from provider-declared
+CC0 sources and classified from metadata only. Only format, duration, peak,
+clipping, and deterministic conversion were inspected; neither replacement
+was listened to, preflighted, or rendered.

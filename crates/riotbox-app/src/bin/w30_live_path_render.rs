@@ -11,8 +11,9 @@ use riotbox_audio::{
     w30::{
         W30_RESAMPLE_H13_MAX_BODY_GAIN, W30_RESAMPLE_H13_MIN_BODY_GAIN,
         W30_RESAMPLE_H13_MIN_IMPACT_LEVEL_COMPENSATION, W30_RESAMPLE_H13_MIN_PICKUP_GAIN,
-        W30_RESAMPLE_HARD_SLICE_COUNT, W30ResampleHardGestureRecipe, W30ResampleLowImpactRecipe,
-        W30ResampleTapHardPolicy, W30ResampleTapState,
+        W30_RESAMPLE_HARD_SLICE_COUNT, W30_RESAMPLE_MIN_BODY_PRESERVATION_RATIO,
+        W30ResampleHardGestureRecipe, W30ResampleLowImpactRecipe, W30ResampleTapHardPolicy,
+        W30ResampleTapState,
     },
 };
 use riotbox_core::{
@@ -37,7 +38,6 @@ const SOURCE_HIT_SHAPER_HEAD_RMS_MIN: f64 = 0.0001;
 const SOURCE_HIT_SHAPER_BODY_RATIO_MIN: f64 = 1.15;
 const SOURCE_HIT_SHAPER_BODY_RMS_MIN: f64 = 0.0001;
 const SOURCE_HIT_SHAPER_SIGNIFICANT_DELTA_MS_MIN: f64 = 25.0;
-const BODY_RATIO_MIN: f64 = 0.95;
 const GESTURE_LEVEL_RATIO_MIN: f64 = 0.9;
 const GESTURE_LEVEL_RATIO_MAX: f64 = 1.15;
 const SOURCE_HIT_SHAPER_GESTURE_LEVEL_RATIO_MAX: f64 = 1.3;
@@ -530,7 +530,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     base_tap,
                     h12_counterfactual_tap,
                     &h12_counterfactual_state,
-                    bpm,
+                    hard_state.tempo_bpm,
                     SAMPLE_RATE,
                     usize::from(CHANNEL_COUNT),
                 )?;
@@ -543,7 +543,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     h12_counterfactual_tap,
                     hard_tap,
                     hard_state,
-                    bpm,
+                    hard_state.tempo_bpm,
                     SAMPLE_RATE,
                     usize::from(CHANNEL_COUNT),
                 )?;
@@ -1358,11 +1358,12 @@ fn validate_resample_directional_metrics(
         )
         .into());
     }
-    if metrics.body_40_120ms_hard_over_base < BODY_RATIO_MIN
-        || metrics.body_120_200ms_hard_over_base < BODY_RATIO_MIN
+    if metrics.body_40_120ms_hard_over_base < f64::from(W30_RESAMPLE_MIN_BODY_PRESERVATION_RATIO)
+        || metrics.body_120_200ms_hard_over_base
+            < f64::from(W30_RESAMPLE_MIN_BODY_PRESERVATION_RATIO)
     {
         return Err(format!(
-            "hard body preservation failed: early={:.4} late={:.4} min={BODY_RATIO_MIN}",
+            "hard body preservation failed: early={:.4} late={:.4} min={W30_RESAMPLE_MIN_BODY_PRESERVATION_RATIO}",
             metrics.body_40_120ms_hard_over_base, metrics.body_120_200ms_hard_over_base
         )
         .into());
@@ -1673,8 +1674,8 @@ mod tests {
             source_hit_shaper_significant_delta_ms_per_hit: None,
             h13_impact_body_hard_over_base: None,
             h13_pickup_relative_rms_delta: None,
-            body_40_120ms_hard_over_base: BODY_RATIO_MIN,
-            body_120_200ms_hard_over_base: BODY_RATIO_MIN,
+            body_40_120ms_hard_over_base: f64::from(W30_RESAMPLE_MIN_BODY_PRESERVATION_RATIO),
+            body_120_200ms_hard_over_base: f64::from(W30_RESAMPLE_MIN_BODY_PRESERVATION_RATIO),
             gesture_level_hard_over_base: 1.0,
             gesture_relative_rms_delta: 0.5,
             gesture_rms_matched_relative_delta: GESTURE_RMS_MATCHED_RELATIVE_DELTA_MIN,
@@ -1746,8 +1747,8 @@ mod tests {
             source_hit_shaper_significant_delta_ms_per_hit: None,
             h13_impact_body_hard_over_base: None,
             h13_pickup_relative_rms_delta: None,
-            body_40_120ms_hard_over_base: BODY_RATIO_MIN,
-            body_120_200ms_hard_over_base: BODY_RATIO_MIN,
+            body_40_120ms_hard_over_base: f64::from(W30_RESAMPLE_MIN_BODY_PRESERVATION_RATIO),
+            body_120_200ms_hard_over_base: f64::from(W30_RESAMPLE_MIN_BODY_PRESERVATION_RATIO),
             gesture_level_hard_over_base: 1.0,
             gesture_relative_rms_delta: 0.5,
             gesture_rms_matched_relative_delta: GESTURE_RMS_MATCHED_RELATIVE_DELTA_MIN,
@@ -1787,8 +1788,8 @@ mod tests {
             ),
             h13_impact_body_hard_over_base: None,
             h13_pickup_relative_rms_delta: None,
-            body_40_120ms_hard_over_base: BODY_RATIO_MIN,
-            body_120_200ms_hard_over_base: BODY_RATIO_MIN,
+            body_40_120ms_hard_over_base: f64::from(W30_RESAMPLE_MIN_BODY_PRESERVATION_RATIO),
+            body_120_200ms_hard_over_base: f64::from(W30_RESAMPLE_MIN_BODY_PRESERVATION_RATIO),
             gesture_level_hard_over_base: 1.0,
             gesture_relative_rms_delta: 0.5,
             gesture_rms_matched_relative_delta: GESTURE_RMS_MATCHED_RELATIVE_DELTA_MIN,

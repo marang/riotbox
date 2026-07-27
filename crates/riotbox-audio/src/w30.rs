@@ -14,15 +14,19 @@ pub const W30_RESAMPLE_HIT_SHAPER_SCHEMA_OUTPUT_GAIN: f32 = 0.94;
 /// H14 keeps a selected `source_hit_shaper_v3` hit at unity while exact
 /// callback calibration may lower only the material between selected hits.
 pub const W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN: f32 = 1.0;
-/// Maximum inverse gain needed when H14 chooses its minimum whole-path output
-/// gain (`0.25`) but keeps the selected hit at unity.
+/// Maximum callback-safe local compensation for the retained hit. This covers
+/// unity preservation at the minimum whole-path gain (`0.25`) and bounds H18's
+/// source-calibrated late-body lift.
 pub const W30_RESAMPLE_HIT_SHAPER_MAX_WINDOW_COMPENSATION_GAIN: f32 = 4.0;
+/// Minimum retained source body in the 40–120 ms and 120–200 ms Hard windows.
+pub const W30_RESAMPLE_MIN_BODY_PRESERVATION_RATIO: f32 = 0.95;
 /// Minimum source-local body articulation for the versioned H13 gesture.
 pub const W30_RESAMPLE_H13_MIN_BODY_GAIN: f32 = 1.12;
-/// Maximum source-local body articulation for the versioned H13 gesture.
-pub const W30_RESAMPLE_H13_MAX_BODY_GAIN: f32 = 1.45;
-/// Lower bound for source-relative energy matching of the H13 impact window.
-pub const W30_RESAMPLE_H13_MIN_IMPACT_LEVEL_COMPENSATION: f32 = 0.75;
+/// Maximum source-local body articulation for the H18-hardened H13 gesture.
+pub const W30_RESAMPLE_H13_MAX_BODY_GAIN: f32 = 1.75;
+/// H18 keeps the selected H13 impact unattenuated; whole-path calibration owns
+/// the final level bound.
+pub const W30_RESAMPLE_H13_MIN_IMPACT_LEVEL_COMPENSATION: f32 = 1.0;
 /// Lower bound for source-relative reverse-pickup normalization.
 pub const W30_RESAMPLE_H13_MIN_PICKUP_GAIN: f32 = 0.10;
 
@@ -441,6 +445,15 @@ impl W30ResampleLowImpactRecipe {
     pub const fn calibrated_hit_preservation_frames(self, sample_rate: u32) -> u32 {
         match self {
             Self::SourceHitShaperV3 => sample_rate / 5,
+            Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 0,
+        }
+    }
+
+    /// Start of the source-calibrated late-body lift inside the retained hit.
+    #[must_use]
+    pub const fn calibrated_late_body_start_frames(self, sample_rate: u32) -> u32 {
+        match self {
+            Self::SourceHitShaperV3 => sample_rate * 3 / 25,
             Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 0,
         }
     }

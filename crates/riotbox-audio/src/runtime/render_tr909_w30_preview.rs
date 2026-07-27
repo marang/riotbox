@@ -1295,7 +1295,7 @@ pub(super) fn w30_resample_calibrated_hit_preservation_sample(
         return voice;
     }
     let recipe = render.hard_low_impact.recipe;
-    let primary_hit_frames = recipe.minimum_hit_window_frames(output_sample_rate);
+    let late_body_start_frames = recipe.calibrated_late_body_start_frames(output_sample_rate);
     let hold_frames = recipe.calibrated_hit_preservation_frames(output_sample_rate);
     let fade_frames = recipe
         .calibrated_hit_preservation_fade_frames(output_sample_rate)
@@ -1303,18 +1303,22 @@ pub(super) fn w30_resample_calibrated_hit_preservation_sample(
     let elapsed = state
         .hard_hit_preservation_total_frames
         .saturating_sub(state.hard_hit_preservation_frames_remaining);
+    let late_body_target = (render.hard_output_gain
+        * render
+            .hard_hit_window_compensation_gain
+            .clamp(1.0, W30_RESAMPLE_HIT_SHAPER_MAX_WINDOW_COMPENSATION_GAIN))
+    .max(W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN);
     let active_target = if state.hard_hit_preservation_frames_remaining > 0 {
         state.hard_hit_preservation_frames_remaining = state
             .hard_hit_preservation_frames_remaining
             .saturating_sub(1);
-        if elapsed < primary_hit_frames {
+        if elapsed < late_body_start_frames {
             W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN
         } else if elapsed < hold_frames {
-            W30_RESAMPLE_HIT_SHAPER_SCHEMA_OUTPUT_GAIN
+            late_body_target
         } else {
             let fade = smoothstep(elapsed.saturating_sub(hold_frames) as f32 / fade_frames as f32);
-            W30_RESAMPLE_HIT_SHAPER_SCHEMA_OUTPUT_GAIN
-                + (render.hard_output_gain - W30_RESAMPLE_HIT_SHAPER_SCHEMA_OUTPUT_GAIN) * fade
+            late_body_target + (render.hard_output_gain - late_body_target) * fade
         }
     } else {
         render.hard_output_gain

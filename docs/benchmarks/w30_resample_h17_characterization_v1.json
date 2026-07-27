@@ -1,0 +1,43 @@
+{
+  "schema": "riotbox.w30_resample_hard_characterization.v1",
+  "schema_version": 1,
+  "ticket": "RIOTBOX-1422",
+  "generation": "H17",
+  "recorded_on": "2026-07-27",
+  "classification": "frozen_holdout_technical_rejection",
+  "quality_proof": false,
+  "human_verdict": "unverified",
+  "inherits": "docs/benchmarks/w30_resample_h14_characterization_v1.json",
+  "reachability_enabler": "RIOTBOX-1424",
+  "holdout_cases": [
+    {
+      "case_id": "oga_congusbongus_lasso_lady",
+      "source_family": "tonal_riff",
+      "provider_bpm": 140.0,
+      "rust_primary_bpm": 140.62514,
+      "hard_policy": "source_transient_chop",
+      "low_impact_recipe": "source_hit_shaper_v3",
+      "exact_callback_evaluated": true,
+      "exact_callback_calibrated": true,
+      "candidate_rendered": true,
+      "base_to_hard_level_ratio": 1.312781,
+      "allowed_max": 1.3,
+      "technical_verdict": "reject_before_listening"
+    },
+    {
+      "case_id": "oga_yd_oriented",
+      "source_family": "pad_noise",
+      "provider_project_bpm": 140.0,
+      "rust_primary_bpm": 139.9689,
+      "hard_policy": "source_transient_chop",
+      "low_impact_recipe": "unavailable",
+      "exact_callback_evaluated": false,
+      "exact_callback_calibrated": false,
+      "candidate_rendered": false,
+      "technical_verdict": "ineligible_recipe_non_selection"
+    }
+  ],
+  "human_listening_requested": false,
+  "freeze_consequence": "Both cases are consumed technical evidence. H17 must not be retuned against them or promoted as musical quality proof.",
+  "next_gate": "Correct the H12/H13 exact-callback ownership mismatch and runtime-synchronous body measurement on development sources before freezing a new holdout generation."
+}

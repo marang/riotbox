@@ -249,13 +249,7 @@ fn derive_w30_resample_hard_gesture(
             W30_RESAMPLE_H13_MIN_BODY_GAIN,
             W30_RESAMPLE_H13_MAX_BODY_GAIN,
         );
-    let head_energy = selected_head_rms.powi(2) * W30_RESAMPLE_H13_HEAD_SECONDS;
-    let body_energy = selected_body_rms.powi(2)
-        * (W30_RESAMPLE_H13_BODY_END_SECONDS - W30_RESAMPLE_H13_HEAD_SECONDS);
-    let impact_level_compensation = ((head_energy + body_energy)
-        / (head_energy + body_energy * body_gain.powi(2)).max(f32::EPSILON))
-    .sqrt()
-    .clamp(W30_RESAMPLE_H13_MIN_IMPACT_LEVEL_COMPENSATION, 1.0);
+    let impact_level_compensation = W30_RESAMPLE_H13_MIN_IMPACT_LEVEL_COMPENSATION;
     let pickup_slot =
         (impact_slot + W30_RESAMPLE_HARD_SLICE_COUNT - 1) % W30_RESAMPLE_HARD_SLICE_COUNT;
     let pickup_frames = (proxy_sample_rate * W30_RESAMPLE_H13_PICKUP_SECONDS)
@@ -995,7 +989,7 @@ mod resample_attack_bite_tests {
     }
 
     #[test]
-    fn exact_hit_calibration_uses_the_callback_and_reuses_matching_evidence() {
+    fn exact_hit_calibration_uses_the_callback_and_invalidates_changed_h13_evidence() {
         let mut source_samples = [0.0; W30_RESAMPLE_SOURCE_WINDOW_LEN];
         for (index, sample) in source_samples.iter_mut().enumerate() {
             let phase = index as f32 / 37.0;
@@ -1050,34 +1044,44 @@ mod resample_attack_bite_tests {
             position_beats: 0.0,
         };
         let uncalibrated = state.clone();
+        let mut with_h13_gesture = state.clone();
+        with_h13_gesture.hard_gesture = W30ResampleHardGesturePlan {
+            recipe: W30ResampleHardGestureRecipe::SourceReverseIntoImpactV1,
+            impact_slot: 1,
+            pickup_slot: 0,
+            body_gain: 1.45,
+            impact_level_compensation: 0.8,
+            pickup_gain: 0.2,
+            selected_head_rms: 0.2,
+            selected_body_rms: 0.1,
+        };
 
         calibrate_w30_hit_shaper_exact_callback(&mut state, None);
+        calibrate_w30_hit_shaper_exact_callback(&mut with_h13_gesture, None);
 
         assert!(
             state.hard_calibration.exact_callback_calibrated,
-            "{:?}",
+            "the deterministic H12 fixture must retain positive exact-calibration coverage: {:?}",
             state.hard_calibration
         );
         assert!(
-            state.hard_calibration.output_gain
-                <= W30_RESAMPLE_HIT_SHAPER_SCHEMA_OUTPUT_GAIN
+            with_h13_gesture
+                .hard_calibration
+                .exact_callback_evaluated,
+            "{:?}",
+            with_h13_gesture.hard_calibration
         );
         assert!(
-            state
-                .hard_calibration
-                .predicted_compensated_level_ratio
-                <= W30_EXACT_HIT_MAX_LEVEL_RATIO
+            !w30_hit_calibration_inputs_match(&with_h13_gesture, &state),
+            "the exact callback cache must include the H13 runtime gesture"
         );
-        assert!(
-            state
-                .hard_calibration
-                .predicted_level_matched_body_ratio
-                >= W30_EXACT_HIT_MIN_BODY_RATIO
-        );
-
         let mut repeated = uncalibrated;
+        repeated.hard_gesture = with_h13_gesture.hard_gesture;
         calibrate_w30_hit_shaper_exact_callback(&mut repeated, Some(&state));
-        assert_eq!(repeated.hard_calibration, state.hard_calibration);
+        assert_eq!(
+            repeated.hard_calibration, with_h13_gesture.hard_calibration,
+            "an H13 input change must recompute rather than reuse stale calibration"
+        );
     }
 
     #[test]
@@ -1741,6 +1745,7 @@ struct W30ExactHitMetrics {
     level_ratio: f32,
     head_ratio: f32,
     body_ratio: f32,
+    late_body_ratio: f32,
 }
 
 fn w30_hit_calibration_inputs_match(
@@ -1944,9 +1949,11 @@ struct W30ExactHitMetricModel {
     base_level_energy: f64,
     base_head_energy: f64,
     base_body_energy: f64,
+    base_late_body_energy: f64,
     hard_level_curve: W30ExactEnergyCurve,
     hard_head_curve: W30ExactEnergyCurve,
     hard_body_curve: W30ExactEnergyCurve,
+    hard_late_body_curve: W30ExactEnergyCurve,
 }
 
 impl W30ExactHitMetricModel {
@@ -1972,6 +1979,10 @@ impl W30ExactHitMetricModel {
             body_ratio: ratio(
                 self.hard_body_curve.at(interpolation),
                 self.base_body_energy,
+            ),
+            late_body_ratio: ratio(
+                self.hard_late_body_curve.at(interpolation),
+                self.base_late_body_energy,
             ),
         }
     }
@@ -2060,12 +2071,22 @@ fn w30_exact_hit_metric_model(
         0.02,
         0.10,
     );
+    let base_late_body_energy = w30_exact_hit_window_energy(
+        base,
+        channel_count,
+        W30_EXACT_HIT_CALIBRATION_SAMPLE_RATE,
+        state.tempo_bpm,
+        state.hard_trigger_mask,
+        0.12,
+        0.20,
+    );
     W30ExactHitMetricModel {
         minimum_gain: W30_EXACT_HIT_MIN_OUTPUT_GAIN,
         maximum_gain: W30_RESAMPLE_HIT_SHAPER_SCHEMA_OUTPUT_GAIN,
         base_level_energy: total_energy(base),
         base_head_energy,
         base_body_energy,
+        base_late_body_energy,
         hard_level_curve: W30ExactEnergyCurve::from_samples(hard_low, hard_high),
         hard_head_curve: w30_exact_hit_window_energy_curve(
             &filtered_hard_low_head,
@@ -2091,6 +2112,18 @@ fn w30_exact_hit_metric_model(
                 end_seconds: 0.10,
             },
         ),
+        hard_late_body_curve: w30_exact_hit_window_energy_curve(
+            hard_low,
+            hard_high,
+            channel_count,
+            W30_EXACT_HIT_CALIBRATION_SAMPLE_RATE,
+            state.tempo_bpm,
+            state.hard_trigger_mask,
+            W30ExactHitWindow {
+                start_seconds: 0.12,
+                end_seconds: 0.20,
+            },
+        ),
     }
 }
 
@@ -2108,10 +2141,24 @@ fn w30_exact_hit_render(
     output_gain: f32,
     frame_count: usize,
 ) -> Vec<f32> {
+    w30_exact_hit_render_with_late_body_target(
+        state,
+        output_gain,
+        W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN,
+        frame_count,
+    )
+}
+
+fn w30_exact_hit_render_with_late_body_target(
+    state: &W30ResampleTapState,
+    output_gain: f32,
+    late_body_target_gain: f32,
+    frame_count: usize,
+) -> Vec<f32> {
     let mut hard = state.clone();
     hard.hard_calibration.output_gain = output_gain;
     hard.hard_calibration.hit_window_compensation_gain =
-        (W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN / output_gain.max(f32::EPSILON))
+        (late_body_target_gain / output_gain.max(f32::EPSILON))
             .clamp(1.0, W30_RESAMPLE_HIT_SHAPER_MAX_WINDOW_COMPENSATION_GAIN);
     render_w30_resample_tap_offline(
         &hard,
@@ -2150,9 +2197,13 @@ fn calibrate_w30_hit_shaper_exact_callback(
     base.hard_gesture = W30ResampleHardGesturePlan::default();
     base.position_beats = 0.0;
     base.is_transport_running = true;
-    let mut calibration_state = state.clone();
-    calibration_state.position_beats = 0.0;
-    calibration_state.is_transport_running = true;
+    let mut h12_calibration_state = state.clone();
+    h12_calibration_state.hard_gesture = W30ResampleHardGesturePlan::default();
+    h12_calibration_state.position_beats = 0.0;
+    h12_calibration_state.is_transport_running = true;
+    let mut final_calibration_state = state.clone();
+    final_calibration_state.position_beats = 0.0;
+    final_calibration_state.is_transport_running = true;
     let base_audio = render_w30_resample_tap_offline(
         &base,
         W30_EXACT_HIT_CALIBRATION_SAMPLE_RATE,
@@ -2164,17 +2215,21 @@ fn calibrate_w30_hit_shaper_exact_callback(
     }
 
     let schema_audio = w30_exact_hit_render(
-        &calibration_state,
+        &h12_calibration_state,
         W30_RESAMPLE_HIT_SHAPER_SCHEMA_OUTPUT_GAIN,
         frame_count,
     );
     let low_audio = w30_exact_hit_render(
-        &calibration_state,
+        &h12_calibration_state,
         W30_EXACT_HIT_MIN_OUTPUT_GAIN,
         frame_count,
     );
-    let metric_model =
-        w30_exact_hit_metric_model(&base_audio, &low_audio, &schema_audio, &calibration_state);
+    let metric_model = w30_exact_hit_metric_model(
+        &base_audio,
+        &low_audio,
+        &schema_audio,
+        &h12_calibration_state,
+    );
     let schema_metrics = metric_model.metrics(W30_RESAMPLE_HIT_SHAPER_SCHEMA_OUTPUT_GAIN);
     let mut selected_gain = W30_RESAMPLE_HIT_SHAPER_SCHEMA_OUTPUT_GAIN;
 
@@ -2198,12 +2253,12 @@ fn calibrate_w30_hit_shaper_exact_callback(
         }
     }
 
-    let selected_audio = w30_exact_hit_render(&calibration_state, selected_gain, frame_count);
+    let selected_audio = w30_exact_hit_render(&h12_calibration_state, selected_gain, frame_count);
     let mut selected_metrics =
-        w30_exact_hit_direct_metrics(&base_audio, &selected_audio, &calibration_state);
+        w30_exact_hit_direct_metrics(&base_audio, &selected_audio, &h12_calibration_state);
     if selected_metrics.level_ratio > W30_EXACT_HIT_TARGET_LEVEL_RATIO {
         let low_metrics =
-            w30_exact_hit_direct_metrics(&base_audio, &low_audio, &calibration_state);
+            w30_exact_hit_direct_metrics(&base_audio, &low_audio, &h12_calibration_state);
         if low_metrics.level_ratio > W30_EXACT_HIT_MAX_LEVEL_RATIO {
             return;
         }
@@ -2214,9 +2269,12 @@ fn calibrate_w30_hit_shaper_exact_callback(
             for _ in 0..W30_EXACT_HIT_REFINEMENT_STEPS {
                 let candidate_gain = (lower_gain + upper_gain) * 0.5;
                 let candidate_audio =
-                    w30_exact_hit_render(&calibration_state, candidate_gain, frame_count);
-                let candidate_metrics =
-                    w30_exact_hit_direct_metrics(&base_audio, &candidate_audio, &calibration_state);
+                    w30_exact_hit_render(&h12_calibration_state, candidate_gain, frame_count);
+                let candidate_metrics = w30_exact_hit_direct_metrics(
+                    &base_audio,
+                    &candidate_audio,
+                    &h12_calibration_state,
+                );
                 if candidate_metrics.level_ratio <= W30_EXACT_HIT_TARGET_LEVEL_RATIO {
                     lower_gain = candidate_gain;
                     lower_metrics = candidate_metrics;
@@ -2231,14 +2289,14 @@ fn calibrate_w30_hit_shaper_exact_callback(
             selected_metrics = low_metrics;
         }
     }
-    if selected_metrics.head_ratio < W30_EXACT_HIT_MIN_HEAD_RATIO
-        || selected_metrics.body_ratio < W30_EXACT_HIT_MIN_BODY_RATIO
-    {
+    let primary_roles_pass = |metrics: W30ExactHitMetrics| {
+        metrics.head_ratio >= W30_EXACT_HIT_MIN_HEAD_RATIO
+            && metrics.body_ratio >= W30_EXACT_HIT_MIN_BODY_RATIO
+    };
+    if !primary_roles_pass(selected_metrics) {
         let schema_direct_metrics =
-            w30_exact_hit_direct_metrics(&base_audio, &schema_audio, &calibration_state);
-        if schema_direct_metrics.head_ratio < W30_EXACT_HIT_MIN_HEAD_RATIO
-            || schema_direct_metrics.body_ratio < W30_EXACT_HIT_MIN_BODY_RATIO
-        {
+            w30_exact_hit_direct_metrics(&base_audio, &schema_audio, &h12_calibration_state);
+        if !primary_roles_pass(schema_direct_metrics) {
             return;
         }
         let mut lower_gain = selected_gain;
@@ -2247,12 +2305,13 @@ fn calibrate_w30_hit_shaper_exact_callback(
         for _ in 0..W30_EXACT_HIT_REFINEMENT_STEPS {
             let candidate_gain = (lower_gain + upper_gain) * 0.5;
             let candidate_audio =
-                w30_exact_hit_render(&calibration_state, candidate_gain, frame_count);
-            let candidate_metrics =
-                w30_exact_hit_direct_metrics(&base_audio, &candidate_audio, &calibration_state);
-            if candidate_metrics.head_ratio >= W30_EXACT_HIT_MIN_HEAD_RATIO
-                && candidate_metrics.body_ratio >= W30_EXACT_HIT_MIN_BODY_RATIO
-            {
+                w30_exact_hit_render(&h12_calibration_state, candidate_gain, frame_count);
+            let candidate_metrics = w30_exact_hit_direct_metrics(
+                &base_audio,
+                &candidate_audio,
+                &h12_calibration_state,
+            );
+            if primary_roles_pass(candidate_metrics) {
                 upper_gain = candidate_gain;
                 upper_metrics = candidate_metrics;
             } else {
@@ -2265,18 +2324,81 @@ fn calibrate_w30_hit_shaper_exact_callback(
     if selected_metrics.level_ratio > W30_EXACT_HIT_MAX_LEVEL_RATIO {
         return;
     }
+    let mut late_body_target_gain = W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN;
+    if selected_metrics.late_body_ratio < W30_RESAMPLE_MIN_BODY_PRESERVATION_RATIO {
+        let maximum_late_body_target_gain = (selected_gain
+            * W30_RESAMPLE_HIT_SHAPER_MAX_WINDOW_COMPENSATION_GAIN)
+            .max(W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN);
+        let maximum_audio = w30_exact_hit_render_with_late_body_target(
+            &h12_calibration_state,
+            selected_gain,
+            maximum_late_body_target_gain,
+            frame_count,
+        );
+        let maximum_metrics =
+            w30_exact_hit_direct_metrics(&base_audio, &maximum_audio, &h12_calibration_state);
+        if maximum_metrics.late_body_ratio < W30_RESAMPLE_MIN_BODY_PRESERVATION_RATIO {
+            return;
+        }
+        let mut lower_target = W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN;
+        let mut upper_target = maximum_late_body_target_gain;
+        let mut upper_metrics = maximum_metrics;
+        for _ in 0..W30_EXACT_HIT_REFINEMENT_STEPS {
+            let candidate_target = (lower_target + upper_target) * 0.5;
+            let candidate_audio = w30_exact_hit_render_with_late_body_target(
+                &h12_calibration_state,
+                selected_gain,
+                candidate_target,
+                frame_count,
+            );
+            let candidate_metrics = w30_exact_hit_direct_metrics(
+                &base_audio,
+                &candidate_audio,
+                &h12_calibration_state,
+            );
+            if candidate_metrics.late_body_ratio >= W30_RESAMPLE_MIN_BODY_PRESERVATION_RATIO {
+                upper_target = candidate_target;
+                upper_metrics = candidate_metrics;
+            } else {
+                lower_target = candidate_target;
+            }
+        }
+        late_body_target_gain = upper_target;
+        selected_metrics = upper_metrics;
+        if selected_metrics.level_ratio > W30_EXACT_HIT_MAX_LEVEL_RATIO {
+            return;
+        }
+    }
+    let final_audio = w30_exact_hit_render_with_late_body_target(
+        &final_calibration_state,
+        selected_gain,
+        late_body_target_gain,
+        frame_count,
+    );
+    let final_metrics =
+        w30_exact_hit_direct_metrics(&base_audio, &final_audio, &final_calibration_state);
+    if final_metrics.level_ratio > W30_EXACT_HIT_MAX_LEVEL_RATIO {
+        return;
+    }
+    let final_schema_audio = w30_exact_hit_render(
+        &final_calibration_state,
+        W30_RESAMPLE_HIT_SHAPER_SCHEMA_OUTPUT_GAIN,
+        frame_count,
+    );
+    let final_schema_metrics =
+        w30_exact_hit_direct_metrics(&base_audio, &final_schema_audio, &final_calibration_state);
 
-    state.hard_calibration.predicted_raw_level_ratio = schema_metrics.level_ratio
+    state.hard_calibration.predicted_raw_level_ratio = final_schema_metrics.level_ratio
         / W30_RESAMPLE_HIT_SHAPER_SCHEMA_OUTPUT_GAIN.max(f32::EPSILON);
     state
         .hard_calibration
-        .predicted_compensated_level_ratio = selected_metrics.level_ratio;
+        .predicted_compensated_level_ratio = final_metrics.level_ratio;
     state
         .hard_calibration
         .predicted_level_matched_body_ratio = selected_metrics.body_ratio;
     state.hard_calibration.output_gain = selected_gain;
     state.hard_calibration.hit_window_compensation_gain =
-        (W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN / selected_gain.max(f32::EPSILON))
+        (late_body_target_gain / selected_gain.max(f32::EPSILON))
             .clamp(1.0, W30_RESAMPLE_HIT_SHAPER_MAX_WINDOW_COMPENSATION_GAIN);
     state.hard_calibration.exact_callback_calibrated = true;
 }
