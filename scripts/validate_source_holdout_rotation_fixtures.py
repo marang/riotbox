@@ -73,6 +73,30 @@ def run_mutation_fixtures(manifest: dict[str, Any], manifest_path: Path) -> None
         "candidate matrix family collapse",
     )
 
+    def remove_exact_w30_applicable_case(mutated: dict[str, Any]) -> None:
+        mutated["w30_hard_reachability_contract"][
+            "minimum_exact_hit_shaper_applicable_case_count"
+        ] = 0
+
+    expect_failure(
+        "missing exact W-30 applicable case",
+        manifest,
+        manifest_path,
+        remove_exact_w30_applicable_case,
+        "W-30 reachability requires at least one exact applicable case",
+    )
+
+    def allow_phase_zero_assumption(mutated: dict[str, Any]) -> None:
+        mutated["w30_hard_reachability_contract"]["phase_zero_assumption_allowed"] = True
+
+    expect_failure(
+        "phase-zero assumption",
+        manifest,
+        manifest_path,
+        allow_phase_zero_assumption,
+        "phase_zero_assumption_allowed must be false",
+    )
+
     def insufficient_holdout(mutated: dict[str, Any]) -> None:
         mutated["holdout_sets"][0]["source_case_ids"] = holdout_a[:1]
 

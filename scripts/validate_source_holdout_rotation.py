@@ -152,6 +152,7 @@ def validate_manifest(
             isinstance(value, int) and not isinstance(value, bool) and value >= floor,
             f"{prefix}: minimums.{field} must be an integer >= {floor}",
         )
+    validate_w30_hard_reachability_contract(manifest, minimums, prefix)
 
     entries = list_field(manifest, "entries", prefix)
     require(entries, f"{prefix}: entries must not be empty")
@@ -231,6 +232,83 @@ def validate_manifest(
         "candidate_family_count": len(candidate_families),
         "holdout_count": len(holdout_membership),
     }
+
+
+def validate_w30_hard_reachability_contract(
+    manifest: dict[str, Any],
+    minimums: dict[str, Any],
+    prefix: str,
+) -> None:
+    contract = object_field(manifest, "w30_hard_reachability_contract", prefix)
+    require(
+        contract.get("owner_ticket") == "RIOTBOX-1424",
+        f"{prefix}: W-30 reachability owner must be RIOTBOX-1424",
+    )
+    require(
+        contract.get("preflight_schema") == "riotbox.w30_reachability_preflight.v1",
+        f"{prefix}: invalid W-30 reachability preflight schema",
+    )
+    require(
+        contract.get("stage")
+        == "after_candidate_freeze_before_holdout_candidate_wav_generation",
+        f"{prefix}: W-30 reachability stage must precede holdout candidate WAV generation",
+    )
+    for field in (
+        "human_listening_allowed",
+        "candidate_wav_generation_allowed_during_preflight",
+        "preflight_may_change_dsp_selector_or_gates",
+        "phase_zero_assumption_allowed",
+    ):
+        require(
+            contract.get(field) is False,
+            f"{prefix}: w30_hard_reachability_contract.{field} must be false",
+        )
+
+    source_minimum = contract.get("minimum_prequalified_source_count")
+    family_minimum = contract.get("minimum_prequalified_family_count")
+    applicable_minimum = contract.get("minimum_exact_hit_shaper_applicable_case_count")
+    require(
+        isinstance(source_minimum, int)
+        and not isinstance(source_minimum, bool)
+        and source_minimum >= minimums["holdout_source_count"],
+        f"{prefix}: W-30 prequalified source minimum must cover the holdout minimum",
+    )
+    require(
+        isinstance(family_minimum, int)
+        and not isinstance(family_minimum, bool)
+        and family_minimum >= minimums["holdout_family_count"],
+        f"{prefix}: W-30 prequalified family minimum must cover the holdout minimum",
+    )
+    require(
+        isinstance(applicable_minimum, int)
+        and not isinstance(applicable_minimum, bool)
+        and applicable_minimum >= 1,
+        f"{prefix}: W-30 reachability requires at least one exact applicable case",
+    )
+
+    applicable = object_field(contract, "applicable_case_requires", prefix)
+    expected = {
+        "candidate_wav_generation_eligible_after_preflight": True,
+        "hard_policy": "source_transient_chop",
+        "low_impact_recipe": "source_hit_shaper_v3",
+        "exact_callback_calibration_applicable": True,
+        "exact_callback_evaluated": True,
+        "exact_callback_calibrated": True,
+    }
+    require(
+        applicable == expected,
+        f"{prefix}: W-30 exact applicable-case requirements changed",
+    )
+    require(
+        contract.get("non_selection_outcome")
+        == "ineligible_for_causal_holdout_coverage",
+        f"{prefix}: W-30 non-selection must remain ineligible",
+    )
+    require(
+        contract.get("timing_mismatch_outcome")
+        == "ineligible_without_matching_primary_or_independently_confirmed_bpm_and_downbeat",
+        f"{prefix}: W-30 timing mismatch outcome changed",
+    )
 
 
 def validate_family_contracts(manifest: dict[str, Any], prefix: str) -> None:

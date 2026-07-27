@@ -2125,13 +2125,7 @@ fn calibrate_w30_hit_shaper_exact_callback(
     state: &mut W30ResampleTapState,
     previous: Option<&W30ResampleTapState>,
 ) {
-    if state.variation != W30ResampleTapVariation::HardDamage
-        || state.hard_policy != W30ResampleTapHardPolicy::SourceTransientChop
-        || state.hard_low_impact.recipe != W30ResampleLowImpactRecipe::SourceHitShaperV3
-        || state.source_audio.is_none()
-        || !state.tempo_bpm.is_finite()
-        || state.tempo_bpm <= 0.0
-    {
+    if !state.exact_hit_shaper_calibration_applicable() {
         return;
     }
     if let Some(previous) = previous.filter(|previous| {

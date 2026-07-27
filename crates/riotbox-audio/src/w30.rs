@@ -835,6 +835,23 @@ pub struct W30ResampleTapState {
     pub position_beats: f64,
 }
 
+impl W30ResampleTapState {
+    /// Whether the typed product state owns the exact callback calibration
+    /// used by the source-backed hit-shaper Hard recipe.
+    ///
+    /// Preflight and projection share this predicate so diagnostics cannot
+    /// invent a second recipe selector or disagree about applicability.
+    #[must_use]
+    pub fn exact_hit_shaper_calibration_applicable(&self) -> bool {
+        self.variation == W30ResampleTapVariation::HardDamage
+            && self.hard_policy == W30ResampleTapHardPolicy::SourceTransientChop
+            && self.hard_low_impact.recipe == W30ResampleLowImpactRecipe::SourceHitShaperV3
+            && self.source_audio.is_some()
+            && self.tempo_bpm.is_finite()
+            && self.tempo_bpm > 0.0
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct W30ResampleSourceWindow {
     /// Stable fingerprint of the projected PCM and its source timing metadata.

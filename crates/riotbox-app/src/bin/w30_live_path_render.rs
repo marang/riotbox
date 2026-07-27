@@ -20,6 +20,13 @@ use riotbox_core::{
     transport::CommitBoundaryState,
 };
 
+#[path = "w30_live_path_render/preflight.rs"]
+mod preflight;
+
+use preflight::{
+    W30ReachabilityPreflightReport, analyze_timing_reachability, write_preflight_report,
+};
+
 const SAMPLE_RATE: u32 = 48_000;
 const CHANNEL_COUNT: u16 = 2;
 const ATTACK_RATIO_MIN: f64 = 1.1;
@@ -82,7 +89,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(str::parse::<f32>)
         .transpose()?;
     let include_resample = args.iter().any(|arg| arg == "--include-resample");
+    let preflight_only = args.iter().any(|arg| arg == "--preflight-only");
+    let require_exact_hit_shaper =
+        preflight_only || args.iter().any(|arg| arg == "--require-exact-hit-shaper");
+    if require_exact_hit_shaper && !include_resample {
+        return Err(
+            "--preflight-only/--require-exact-hit-shaper requires --include-resample".into(),
+        );
+    }
     fs::create_dir_all(&output_dir)?;
+    let mut reachability_report = if require_exact_hit_shaper {
+        let timing = analyze_timing_reachability(&source_path, bpm, downbeat_seconds)?;
+        let report = W30ReachabilityPreflightReport::from_timing(&source_path, timing);
+        if !report.timing_allows_product_projection() {
+            write_preflight_report(&output_dir, &report)?;
+            return Err("W-30 candidate WAV generation rejected by source-timing preflight".into());
+        }
+        Some(report)
+    } else {
+        None
+    };
 
     let session_path = output_dir.join("session.json");
     let graph_path = output_dir.join("source-graph.json");
@@ -95,6 +121,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(bpm),
         downbeat_seconds,
     )?;
+    if let Some(report) = reachability_report.as_mut() {
+        let graph = state
+            .source_graph
+            .as_ref()
+            .ok_or("W-30 reachability requires a Source Graph")?;
+        report.record_product_timing(&graph.timing);
+        if !report.timing_allows_product_projection() {
+            write_preflight_report(&output_dir, report)?;
+            return Err("W-30 candidate WAV generation rejected by product timing drift".into());
+        }
+    }
     state.set_transport_playing(true);
     let scene_id = state.runtime.transport.current_scene.clone();
     state.queue_source_monitor_mode(SourceMonitorMode::Riotbox, 90);
@@ -154,13 +191,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     print_w30_render_summary("normal", &state.runtime.w30_preview);
-    let normal = render_state(&state, bpm);
-    write_interleaved_pcm16_wav(
-        output_dir.join("01_w30_live_hook.wav"),
-        SAMPLE_RATE,
-        CHANNEL_COUNT,
-        &normal,
-    )?;
+    let normal_state = state.clone();
     let resample_outputs = if include_resample {
         if state.queue_w30_internal_resample(410).is_none() {
             return Err("W-30 internal resample was unavailable".into());
@@ -198,7 +229,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .active_frame_ratio,
         );
         let base_tap_state = state.runtime.w30_resample_tap.clone();
-        let base_tap = render_resample_tap(&state, base_tap_state.clone(), bpm);
 
         if state.queue_w30_apply_damage_profile(510).is_none() {
             return Err("W-30 post-resample damage gesture was unavailable".into());
@@ -212,7 +242,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             scene_id.clone(),
             600,
         )?;
+        if let Some(report) = reachability_report.as_mut() {
+            report.record_projection(&state.runtime.w30_resample_tap);
+            write_preflight_report(&output_dir, report)?;
+            if !report.candidate_wav_generation_eligible_after_preflight() {
+                return Err(
+                    "W-30 candidate WAV generation rejected by Hard-recipe preflight".into(),
+                );
+            }
+            if preflight_only {
+                return Ok(());
+            }
+        }
+
         print_w30_render_summary("damaged", &state.runtime.w30_preview);
+        let base_tap = render_resample_tap(&state, base_tap_state.clone(), bpm);
         let damaged = render_state(&state, bpm);
         let hard_tap_state = state.runtime.w30_resample_tap.clone();
         let hard_tap = render_resample_tap(&state, hard_tap_state.clone(), bpm);
@@ -402,6 +446,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         )?;
         Some((damaged, Vec::new(), Vec::new(), Vec::new(), Vec::new()))
     };
+    let normal = render_state(&normal_state, bpm);
+    write_interleaved_pcm16_wav(
+        output_dir.join("01_w30_live_hook.wav"),
+        SAMPLE_RATE,
+        CHANNEL_COUNT,
+        &normal,
+    )?;
     let source = SourceAudioCache::load_pcm_wav(&source_path)?;
     write_interleaved_pcm16_wav(
         output_dir.join("00_source.wav"),
