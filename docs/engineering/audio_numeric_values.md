@@ -303,6 +303,52 @@ The goal is not to eliminate every numeric literal. The goal is that every
 number capable of changing sound, safety, evidence, or product behavior has a
 clear semantic home and an honest explanation.
 
+## Tempo-Guided Source Phase Selection
+
+The values in
+`crates/riotbox-core/src/source_graph/timing_tempo_guided.rs` are source-timing
+evidence gates. They do not change audio, W-30 DSP, tempo, gain, or the existing
+1 BPM explicit-confirmation tolerance.
+
+| Value | Meaning |
+|---|---|
+| `20..=400 BPM` | accepted finite external-tempo domain |
+| `8` onsets | minimum source evidence before phase scoring |
+| `0.18 beat`, clamped to `35..90 ms` | beat/bar alignment tolerance |
+| `0.08 beat`, clamped to `15..40 ms` | near-identical source-phase merge tolerance |
+| `0.40` | minimum share of source onsets aligned to the supplied grid |
+| `0.50` | minimum share of total onset strength aligned to the grid |
+| `0.30` | minimum share of complete bars carrying a source downbeat hit |
+| `0.48` | minimum composite phase score |
+| `0.020` | minimum winning score margin over the next source-backed phase |
+| `45 ms` / `90 ms` | maximum mean / single aligned-onset drift |
+
+The phase score weights are `0.45` aligned-strength share, `0.20`
+aligned-onset ratio, `0.25` complete-bar coverage, and `0.10` downbeat-strength
+share. They sum to `1.0`. The score is a selection confidence proxy, not a
+musical-quality score.
+
+Every candidate phase is the modulo-bar phase of an actual detected source
+onset. Nearby candidates retain the strongest real onset as their identity
+anchor. A candidate must leave at least one complete bar in the source; emitted
+bar spans are never truncated partial bars. Thus `0.0` is accepted only when a
+real onset supports zero, never because a loop file happens to start there.
+
+The `0.30` complete-bar floor deliberately supports sparse tonal phrases that
+mark roughly one bar in three. On the RIOTBOX-1426 development matrix, 8-Bit
+Victory Loop selects 180 BPM at `0.010667 s` with `4/11` complete bars,
+`3.11 ms` mean drift, and a `0.10493` phase margin. Drama still rejects at
+provider 130 BPM because it covers only `2/7` complete bars and has no winning
+margin. A sparse drum challenge at an unverified 120 BPM rejects for excessive
+mean drift; pad/noise and one-shot controls reject for insufficient onsets or
+material. These are development calibration results, not a fresh-holdout or
+human listening verdict.
+
+Changing any of these values requires synthetic non-zero-phase, flat-accent,
+sparse-tonal, insufficient-material/onset, same-source stability, and
+multi-family development regressions. Do not tune them against an untouched
+holdout, and do not change W-30 selection or DSP gates in the same calibration.
+
 ## Controlled Source Character Calibration
 
 `LIVE_PERFORMANCE_CHARACTER_CONTRAST_MARGIN = 0.10` is a normalized

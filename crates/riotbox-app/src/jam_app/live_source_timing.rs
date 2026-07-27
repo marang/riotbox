@@ -11,7 +11,9 @@ use riotbox_core::{
     action::CommitBoundary,
     source_graph::{
         ManualSourceTimingGrid, MeterHint, QualityClass, SourceGraph,
-        SourceTimingProbeBpmCandidatePolicy, TimingQuality, install_manual_source_timing_grid,
+        SourceTimingProbeBpmCandidateInput, SourceTimingProbeBpmCandidatePolicy,
+        TempoGuidedTimingDecision, TempoGuidedTimingEvidence, TimingQuality,
+        install_manual_source_timing_grid, install_tempo_guided_timing,
         timing_model_from_probe_bpm_candidates,
     },
     transport::CommitBoundaryState,
@@ -49,7 +51,7 @@ pub(super) fn install_explicit_manual_source_grid(
 pub(super) fn enrich_graph_with_rust_source_timing(
     graph: &mut SourceGraph,
     source_path: &Path,
-) -> Result<(), JamAppError> {
+) -> Result<SourceTimingProbeBpmCandidateInput, JamAppError> {
     let source = SourceAudioCache::load_pcm_wav(source_path).map_err(|error| {
         JamAppError::InvalidSession(format!(
             "live source timing could not decode {}: {error}",
@@ -88,7 +90,36 @@ pub(super) fn enrich_graph_with_rust_source_timing(
         Some(existing) if !existing.is_empty() => format!("{existing}; {note}"),
         _ => note.into(),
     });
-    Ok(())
+    Ok(input)
+}
+
+pub(super) fn install_tempo_guided_source_grid(
+    graph: &mut SourceGraph,
+    input: &SourceTimingProbeBpmCandidateInput,
+    explicit_source_bpm: f32,
+) -> Result<TempoGuidedTimingEvidence, JamAppError> {
+    let evidence = install_tempo_guided_timing(&mut graph.timing, input, explicit_source_bpm);
+    if evidence.decision != TempoGuidedTimingDecision::Selected {
+        return Err(JamAppError::InvalidSession(format!(
+            "explicit source BPM {explicit_source_bpm:.2} could not derive a trusted source-backed downbeat phase: {}",
+            evidence.decision.label()
+        )));
+    }
+    let selected_downbeat = evidence.selected_downbeat_seconds.ok_or_else(|| {
+        JamAppError::InvalidSession(
+            "selected tempo-guided timing did not carry a source downbeat".into(),
+        )
+    })?;
+    graph.analysis_summary.timing_quality = QualityClass::High;
+    let note = format!(
+        "Rust timing used externally supplied {explicit_source_bpm:.3} BPM with source-derived downbeat {:.6}s",
+        selected_downbeat
+    );
+    graph.provenance.run_notes = Some(match graph.provenance.run_notes.take() {
+        Some(existing) if !existing.is_empty() => format!("{existing}; {note}"),
+        _ => note,
+    });
+    Ok(evidence)
 }
 
 pub(super) fn confirm_explicit_source_bpm(

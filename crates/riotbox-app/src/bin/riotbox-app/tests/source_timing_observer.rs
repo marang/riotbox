@@ -250,6 +250,27 @@ fn observer_snapshot_marks_musician_manual_grid_origin() {
 }
 
 #[test]
+fn observer_snapshot_marks_source_tempo_guided_grid_origin() {
+    let mut graph = observer_source_map_graph(TimingDegradedPolicy::Locked, TimingQuality::High);
+    graph.timing.hypotheses[0].kind = TimingHypothesisKind::TempoGuided;
+    graph.timing.hypotheses[0].provenance =
+        vec!["source-timing-probe.tempo-guided-phase.v1".into()];
+    let session = SessionFile::new("session-guided", "0.1.0", "2026-07-27T00:00:00Z");
+    let shell = JamShellState::new(
+        JamAppState::from_parts(session, Some(graph), ActionQueue::new()),
+        ShellLaunchMode::Ingest,
+    );
+
+    let snapshot = observer_snapshot(&shell);
+    assert_eq!(
+        snapshot["source_timing"]["primary_hypothesis_kind"],
+        "source_tempo_guided"
+    );
+    assert_eq!(snapshot["source_timing"]["grid_use"], "locked_grid");
+    assert_eq!(snapshot["source_timing"]["grid_confirmed"], false);
+}
+
+#[test]
 fn observer_snapshot_records_source_map_capture_range_projection() {
     let graph = observer_source_map_graph(TimingDegradedPolicy::Locked, TimingQuality::High);
     let mut session = SessionFile::new("session-1", "0.1.0", "2026-05-23T00:00:00Z");

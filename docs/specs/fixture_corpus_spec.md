@@ -350,14 +350,18 @@ queue/commit/projection result. It must not emit candidate review WAVs, inspect
 candidate sound, or change DSP, selection, constants, or gates. Its selector
 evidence includes typed role/decision, candidate count, selected slot/onset,
 adaptive attack/body windows, and the unchanged `0.18`, `1.40`, and `0.30`
-ratios and floors. A qualified set
+ratios and floors. When external tempo conflicts with the analyzer, the report
+also carries typed `TempoGuided` evidence: actual source phase anchor, selected
+downbeat, onset/grid support, complete-bar hit coverage, phase score/margin,
+and drift. Product projection must reproduce its BPM and phase. A qualified set
 must still meet the normal two-source/two-family holdout minimum, and at least
 one case must select `source_transient_chop` with `source_hit_shaper_v3`, exact
 callback applicability, evaluation, and successful calibration. A timing
-mismatch without independently confirmed BPM and downbeat, unavailable grid,
-policy non-selection, or non-applicable calibration cannot count as causal
-coverage. An explicit downbeat is musician/provider evidence; the screen must
-never invent phase zero.
+mismatch without either independently confirmed BPM plus downbeat or an
+accepted source-backed `TempoGuided` phase, unavailable grid, policy
+non-selection, or non-applicable calibration cannot count as causal coverage.
+An explicit downbeat is musician/provider evidence; a guided phase is machine
+source evidence. Neither route may invent phase zero.
 
 Corpus-size, source-pack, family, and author minimums count only active
 development and holdout entries. Retired cases remain lineage evidence but

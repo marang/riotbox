@@ -12,8 +12,9 @@ use riotbox_audio::{
 };
 use riotbox_core::source_graph::{
     MeterHint, SourceTimingProbeBpmCandidatePolicy, SourceTimingProbeReadinessStatus,
-    TimingHypothesisKind, TimingModel, source_timing_grid_use,
-    source_timing_grid_use_from_timing_model, source_timing_probe_readiness_report,
+    TempoGuidedTimingDecision, TempoGuidedTimingEvidence, TimingHypothesisKind, TimingModel,
+    source_timing_grid_use, source_timing_grid_use_from_timing_model,
+    source_timing_probe_readiness_report, tempo_guided_timing_hypothesis,
 };
 use serde::Serialize;
 
@@ -41,6 +42,7 @@ pub(super) struct W30TimingReachability {
     requires_manual_confirm: bool,
     grid_use: &'static str,
     confirmation_route: &'static str,
+    tempo_guided_evidence: Option<TempoGuidedTimingEvidence>,
     product_projection_allowed: bool,
     product_graph_primary_bpm: Option<f32>,
     product_graph_grid_use: Option<&'static str>,
@@ -97,17 +99,33 @@ impl W30ReachabilityPreflightReport {
     pub(super) fn record_product_timing(&mut self, timing: &TimingModel) {
         let product_primary = timing.primary_hypothesis();
         let product_primary_bpm = product_primary.map(|hypothesis| hypothesis.bpm);
-        let matches = if self.timing.confirmation_route == "musician_manual_bpm_and_downbeat" {
-            product_primary.is_some_and(|hypothesis| {
+        let matches = match self.timing.confirmation_route {
+            "musician_manual_bpm_and_downbeat" => product_primary.is_some_and(|hypothesis| {
                 hypothesis.kind == TimingHypothesisKind::Manual
                     && (hypothesis.bpm - self.timing.requested_bpm).abs() <= 0.001
-            })
-        } else {
-            match (self.timing.primary_bpm, product_primary_bpm) {
+            }),
+            "source_derived_downbeat_at_external_tempo" => {
+                let selected_downbeat = self
+                    .timing
+                    .tempo_guided_evidence
+                    .as_ref()
+                    .and_then(|evidence| evidence.selected_downbeat_seconds);
+                product_primary.is_some_and(|hypothesis| {
+                    hypothesis.kind == TimingHypothesisKind::TempoGuided
+                        && (hypothesis.bpm - self.timing.requested_bpm).abs() <= 0.001
+                        && selected_downbeat.is_some_and(|selected| {
+                            hypothesis
+                                .bar_grid
+                                .first()
+                                .is_some_and(|bar| (bar.start_seconds - selected).abs() <= 0.001)
+                        })
+                })
+            }
+            _ => match (self.timing.primary_bpm, product_primary_bpm) {
                 (Some(preflight), Some(product)) => (preflight - product).abs() <= 0.001,
                 (None, None) => true,
                 _ => false,
-            }
+            },
         };
         self.timing.product_graph_primary_bpm = product_primary_bpm;
         self.timing.product_graph_grid_use =
@@ -196,16 +214,26 @@ pub(super) fn analyze_timing_reachability(
         &input,
         SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness(),
     );
-    Ok(classify_timing_reachability(
+    let tempo_guided_needed = requested_downbeat_seconds.is_none()
+        && requested_bpm.is_finite()
+        && requested_bpm > 0.0
+        && readiness.primary_bpm.is_none_or(|primary| {
+            (requested_bpm - primary).abs() > EXPLICIT_SOURCE_BPM_MATCH_TOLERANCE
+        });
+    let tempo_guided =
+        tempo_guided_needed.then(|| tempo_guided_timing_hypothesis(&input, requested_bpm).evidence);
+    Ok(classify_timing_reachability_with_tempo_guided(
         requested_bpm,
         requested_downbeat_seconds,
         readiness.primary_bpm,
         readiness.readiness,
         readiness.requires_manual_confirm,
         source_timing_grid_use(&readiness).label(),
+        tempo_guided,
     ))
 }
 
+#[cfg(test)]
 fn classify_timing_reachability(
     requested_bpm: f32,
     requested_downbeat_seconds: Option<f32>,
@@ -213,6 +241,26 @@ fn classify_timing_reachability(
     readiness: SourceTimingProbeReadinessStatus,
     requires_manual_confirm: bool,
     grid_use: &'static str,
+) -> W30TimingReachability {
+    classify_timing_reachability_with_tempo_guided(
+        requested_bpm,
+        requested_downbeat_seconds,
+        primary_bpm,
+        readiness,
+        requires_manual_confirm,
+        grid_use,
+        None,
+    )
+}
+
+fn classify_timing_reachability_with_tempo_guided(
+    requested_bpm: f32,
+    requested_downbeat_seconds: Option<f32>,
+    primary_bpm: Option<f32>,
+    readiness: SourceTimingProbeReadinessStatus,
+    requires_manual_confirm: bool,
+    grid_use: &'static str,
+    tempo_guided_evidence: Option<TempoGuidedTimingEvidence>,
 ) -> W30TimingReachability {
     let bpm_delta = primary_bpm.map(|primary| (requested_bpm - primary).abs());
     let (confirmation_route, product_projection_allowed) =
@@ -224,6 +272,15 @@ fn classify_timing_reachability(
             ("invalid_explicit_downbeat", false)
         } else if requested_downbeat_seconds.is_some() {
             ("musician_manual_bpm_and_downbeat", true)
+        } else if primary_bpm.is_some()
+            && bpm_delta.is_some_and(|delta| delta <= EXPLICIT_SOURCE_BPM_MATCH_TOLERANCE)
+        {
+            ("explicit_bpm_matches_rust_primary", true)
+        } else if tempo_guided_evidence
+            .as_ref()
+            .is_some_and(|evidence| evidence.decision == TempoGuidedTimingDecision::Selected)
+        {
+            ("source_derived_downbeat_at_external_tempo", true)
         } else if primary_bpm.is_none() {
             ("primary_grid_unavailable", false)
         } else if bpm_delta.is_some_and(|delta| delta > EXPLICIT_SOURCE_BPM_MATCH_TOLERANCE) {
@@ -241,6 +298,7 @@ fn classify_timing_reachability(
         requires_manual_confirm,
         grid_use,
         confirmation_route,
+        tempo_guided_evidence,
         product_projection_allowed,
         product_graph_primary_bpm: None,
         product_graph_grid_use: None,
@@ -414,6 +472,77 @@ mod tests {
             Some(true)
         );
         assert!(report.blockers.is_empty());
+    }
+
+    #[test]
+    fn source_derived_phase_can_replace_analyzer_alias_without_becoming_manual_truth() {
+        let evidence = TempoGuidedTimingEvidence {
+            decision: TempoGuidedTimingDecision::Selected,
+            requested_bpm: 190.0,
+            selected_downbeat_seconds: Some(0.125),
+            selected_phase_anchor_seconds: Some(0.125),
+            ..Default::default()
+        };
+        let guided = classify_timing_reachability_with_tempo_guided(
+            190.0,
+            None,
+            Some(141.509_45),
+            SourceTimingProbeReadinessStatus::Weak,
+            true,
+            "manual_confirm_only",
+            Some(evidence),
+        );
+        assert_eq!(
+            guided.confirmation_route,
+            "source_derived_downbeat_at_external_tempo"
+        );
+        assert!(guided.product_projection_allowed);
+
+        let mut product = primary_timing(TimingHypothesisKind::TempoGuided, 190.0);
+        product.hypotheses[0].bar_grid = vec![riotbox_core::source_graph::BarSpan {
+            bar_index: 1,
+            start_seconds: 0.125,
+            end_seconds: 1.388,
+            downbeat_confidence: 0.9,
+            phrase_index: None,
+        }];
+        let mut report =
+            W30ReachabilityPreflightReport::from_timing(Path::new("guided.wav"), guided);
+        report.record_product_timing(&product);
+
+        assert_eq!(
+            report.timing.product_graph_matches_confirmation_route,
+            Some(true)
+        );
+        assert!(report.timing.product_projection_allowed);
+        assert!(report.blockers.is_empty());
+    }
+
+    #[test]
+    fn source_phase_rejection_preserves_existing_mismatch_failure() {
+        let rejected = classify_timing_reachability_with_tempo_guided(
+            190.0,
+            None,
+            Some(141.509_45),
+            SourceTimingProbeReadinessStatus::Weak,
+            true,
+            "manual_confirm_only",
+            Some(TempoGuidedTimingEvidence {
+                decision: TempoGuidedTimingDecision::AmbiguousPhase,
+                requested_bpm: 190.0,
+                ..Default::default()
+            }),
+        );
+
+        assert_eq!(rejected.confirmation_route, "explicit_bpm_mismatch");
+        assert!(!rejected.product_projection_allowed);
+        assert_eq!(
+            rejected
+                .tempo_guided_evidence
+                .as_ref()
+                .map(|evidence| evidence.decision),
+            Some(TempoGuidedTimingDecision::AmbiguousPhase)
+        );
     }
 
     #[test]

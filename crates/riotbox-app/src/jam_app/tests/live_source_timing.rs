@@ -201,6 +201,74 @@ fn explicit_bpm_rejects_a_mismatched_probe_grid() {
 }
 
 #[test]
+fn tempo_guided_grid_preserves_analyzer_evidence_and_restores_without_fake_user_confirmation() {
+    let mut graph = manual_confirm_source_window_graph();
+    let analyzer_hypothesis_id = graph
+        .timing
+        .primary_hypothesis_id
+        .clone()
+        .expect("analyzer hypothesis");
+    let input = tempo_guided_test_input(0.137, 130.0);
+
+    let evidence = install_tempo_guided_source_grid(&mut graph, &input, 130.0)
+        .expect("derive source-backed phase");
+
+    assert_eq!(evidence.decision, TempoGuidedTimingDecision::Selected);
+    assert!((evidence.selected_downbeat_seconds.expect("downbeat") - 0.137).abs() < 0.001);
+    let primary = graph.timing.primary_hypothesis().expect("guided primary");
+    assert_eq!(primary.kind, TimingHypothesisKind::TempoGuided);
+    assert!((primary.bpm - 130.0).abs() < f32::EPSILON);
+    assert!(graph
+        .timing
+        .hypotheses
+        .iter()
+        .any(|hypothesis| hypothesis.hypothesis_id == analyzer_hypothesis_id));
+
+    let temp = tempdir().expect("tempdir");
+    let session_path = temp.path().join("session.json");
+    let graph_path = temp.path().join("graph.json");
+    let session = sample_session(&graph);
+    save_session_json(&session_path, &session).expect("save session");
+    save_source_graph_json(&graph_path, &graph).expect("save graph");
+
+    let restored =
+        JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("restore guided grid");
+    let restored_graph = restored.source_graph.as_ref().expect("restored graph");
+    assert_eq!(
+        restored_graph.timing.primary_hypothesis(),
+        graph.timing.primary_hypothesis()
+    );
+    assert_eq!(
+        riotbox_core::view::jam::source_timing_consumer_readiness(
+            Some(restored_graph),
+            &restored.session,
+        ),
+        riotbox_core::view::jam::SourceTimingConsumerReadiness::AnalyzerLocked
+    );
+    assert!(restored.session.runtime_state.source_timing.confirmed_grid.is_none());
+    assert!(!restored
+        .session
+        .action_log
+        .actions
+        .iter()
+        .any(|action| action.command == ActionCommand::SourceTimingConfirmGrid));
+}
+
+#[test]
+fn tempo_guided_grid_fails_closed_when_source_accents_do_not_select_a_phase() {
+    let mut graph = manual_confirm_source_window_graph();
+    let original_timing = graph.timing.clone();
+    let mut input = tempo_guided_test_input(0.137, 130.0);
+    input.onset_strengths.fill(1.0);
+
+    let error = install_tempo_guided_source_grid(&mut graph, &input, 130.0)
+        .expect_err("reject ambiguous source phase");
+
+    assert!(error.to_string().contains("ambiguous_phase"));
+    assert_eq!(graph.timing, original_timing);
+}
+
+#[test]
 fn live_ingest_explicit_bpm_persists_graph_confirmation_and_restore_identity() {
     let temp = tempdir().expect("tempdir");
     let source_path = temp.path().join("ingest-128.wav");
@@ -297,7 +365,10 @@ fn tonal_live_ingest_requires_and_persists_explicit_manual_grid_phase() {
         Some(120.0),
     )
     .expect_err("tonal source must not gain an inferred grid from BPM alone");
-    assert!(bpm_only_error.to_string().contains("no primary grid"));
+    assert!(bpm_only_error
+        .to_string()
+        .contains("could not derive a trusted source-backed downbeat phase"));
+    assert!(bpm_only_error.to_string().contains("insufficient_onsets"));
 
     let session_path = temp.path().join("manual-session.json");
     let graph_path = temp.path().join("manual-graph.json");
@@ -352,6 +423,29 @@ fn accented_drum_grid_samples(beat_frames: usize, beats: usize) -> Vec<f32> {
         add_timing_impulse(&mut samples, start + beat_frames / 2, 32, 0.08);
     }
     samples
+}
+
+fn tempo_guided_test_input(
+    downbeat_seconds: f32,
+    bpm: f32,
+) -> SourceTimingProbeBpmCandidateInput {
+    let seconds_per_beat = 60.0 / bpm;
+    let mut onset_times_seconds = Vec::new();
+    let mut onset_strengths = Vec::new();
+    for beat in 0..32 {
+        onset_times_seconds.push(downbeat_seconds + beat as f32 * seconds_per_beat);
+        onset_strengths.push(if beat % 4 == 0 { 1.0 } else { 0.45 });
+    }
+    SourceTimingProbeBpmCandidateInput {
+        source_id: "src-1".into(),
+        duration_seconds: downbeat_seconds + 32.0 * seconds_per_beat,
+        onset_times_seconds,
+        onset_strengths,
+        meter: MeterHint {
+            beats_per_bar: 4,
+            beat_unit: 4,
+        },
+    }
 }
 
 fn add_timing_impulse(samples: &mut [f32], start: usize, frames: usize, amplitude: f32) {

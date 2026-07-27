@@ -928,6 +928,7 @@ pub fn write_pack(
 const fn timing_hypothesis_kind_label(kind: TimingHypothesisKind) -> &'static str {
     match kind {
         TimingHypothesisKind::Primary => "analyzer_primary",
+        TimingHypothesisKind::TempoGuided => "source_tempo_guided",
         TimingHypothesisKind::Manual => "musician_manual",
         TimingHypothesisKind::HalfTime => "half_time",
         TimingHypothesisKind::DoubleTime => "double_time",
