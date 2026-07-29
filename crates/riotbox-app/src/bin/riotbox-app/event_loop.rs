@@ -329,7 +329,7 @@ fn run_event_loop(
                 ShellKeyOutcome::QueueW30ApplyDamageProfile => {
                     match shell.app.queue_w30_apply_damage_profile(timestamp_now()) {
                         Some(crate::jam_app::QueueControlResult::Enqueued) => {
-                            shell.set_error_status("queued W-30 damage profile for next bar");
+                            shell.set_error_status("queued W-30 impact profile for next bar");
                         }
                         Some(crate::jam_app::QueueControlResult::AlreadyPending) => {
                             shell.set_error_status("W-30 pad cue already queued");

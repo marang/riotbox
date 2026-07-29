@@ -1128,6 +1128,16 @@ Rules:
 - committed musical state changes do
 - budget and replay logic must consume structured commit records, not parse
   result-summary strings
+- new `w30.apply_damage_profile` actions persist their performer-owned Hard
+  domain as typed `W30DamageProfile` params: capture ID, intensity, and
+  `impact` or `texture` intent. Older generic `Mutation` params remain valid
+  Session v1 history and map to `legacy_auto`; restore must not invent a new
+  intent for them.
+- W-30 Hard realization is derived product state, not a second persisted
+  action. Projection combines the committed intent with the hydrated capture
+  evidence and exposes `realized_impact`, `realized_texture`,
+  `source_mismatch`, or `source_unavailable`. Replay obtains the request from
+  the Action Log and recomputes that outcome through the same projection path.
 
 ---
 

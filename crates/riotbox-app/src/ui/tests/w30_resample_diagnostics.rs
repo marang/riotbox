@@ -269,4 +269,16 @@ fn renders_w30_resample_lab_diagnostics_across_shell_surfaces() {
             .and_then(serde_json::Value::as_u64)
             .is_some_and(|revision| revision > 0)
     );
+    assert_eq!(
+        hard_observer
+            .pointer("/runtime/w30_resample_tap_hard_grit/requested_intent")
+            .and_then(serde_json::Value::as_str),
+        Some("impact")
+    );
+    assert_eq!(
+        hard_observer
+            .pointer("/runtime/w30_resample_tap_hard_grit/intent_outcome")
+            .and_then(serde_json::Value::as_str),
+        Some("source_unavailable")
+    );
 }

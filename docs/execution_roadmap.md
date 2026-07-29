@@ -1463,6 +1463,18 @@ performer-owned Hard role and its role-specific acceptance path explicit on
 development material before another fresh holdout attempt. It must not call
 texture damage a harder beat or lower the existing hit-shaper ownership gates.
 
+RIOTBOX-1427 now closes that contract gap before H25. `w30.apply_damage_profile`
+retains one ActionCommand but persists performer-owned `impact` or `texture`
+intent; old generic actions remain explicit `legacy_auto`. Runtime projection
+publishes realized role, mismatch, or source unavailability. The current `D`
+TUI gesture requests impact; typed product callers can also request texture,
+and the TUI reports either committed request and outcome. The existing
+eight-source development matrix proves fail-closed impact behavior and
+trigger-free texture behavior.
+No W-30 DSP value, `0.18` / `1.40` / `0.30` ownership gate, holdout source, or
+human listening state changes. The direct next audible slice is RIOTBOX-1422
+H25 through the exact live path.
+
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a
 quality guardrail, not a replacement for the current sound-product priority:

@@ -264,7 +264,7 @@ fn committed_w30_damage_profile_updates_grit_and_log_result() {
             .last()
             .and_then(|action| action.result.as_ref())
             .map(|result| result.summary.as_str()),
-        Some("applied shred damage profile to cap-01 on W-30 pad bank-a/pad-01")
+        Some("applied impact shred profile to cap-01 on W-30 pad bank-a/pad-01")
     );
 }
 

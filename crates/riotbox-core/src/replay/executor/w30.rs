@@ -280,11 +280,22 @@ pub(super) fn apply_w30_cue(
             target_id: Some(target_id),
             ..
         } => Some(crate::ids::CaptureId::from(target_id.clone())),
+        ActionParams::W30DamageProfile {
+            target_id, intent, ..
+        } if action.command == ActionCommand::W30ApplyDamageProfile
+            && intent.is_performer_request() =>
+        {
+            Some(target_id.clone())
+        }
         _ => {
             return Err(ReplayExecutionError::InvalidParams {
                 action_id: action.id,
                 command: action.command,
-                expected: "ActionParams::Mutation { target_id: Some(_), .. }",
+                expected: if action.command == ActionCommand::W30ApplyDamageProfile {
+                    "typed impact/texture damage params or legacy mutation params with a capture target"
+                } else {
+                    "W-30 cue params with an explicit capture target"
+                },
             });
         }
     };
@@ -399,6 +410,7 @@ fn updated_capture_promotion_note(existing_notes: Option<&str>, target: &Capture
 
 fn w30_grit_or(action: &crate::action::Action, fallback: f32) -> f32 {
     match &action.params {
+        ActionParams::W30DamageProfile { intensity, .. } => intensity.clamp(0.0, 1.0),
         ActionParams::Mutation { intensity, .. } => match action.command {
             ActionCommand::W30TriggerPad => (intensity * 0.82).clamp(0.0, 1.0),
             _ => intensity.clamp(0.0, 1.0),

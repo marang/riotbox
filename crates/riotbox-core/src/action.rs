@@ -238,6 +238,11 @@ pub enum ActionParams {
         intensity: f32,
         target_id: Option<String>,
     },
+    W30DamageProfile {
+        intensity: f32,
+        target_id: CaptureId,
+        intent: crate::w30::W30HardIntent,
+    },
     Capture {
         bars: Option<u32>,
     },

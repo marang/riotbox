@@ -81,6 +81,29 @@ fn action_draft_only_advertises_undo_when_typed_restoration_exists() {
 }
 
 #[test]
+fn w30_damage_profile_intent_roundtrips_in_the_action_contract() {
+    let params = ActionParams::W30DamageProfile {
+        intensity: 0.82,
+        target_id: CaptureId::from("cap-hard-01"),
+        intent: crate::w30::W30HardIntent::Texture,
+    };
+
+    let json = serde_json::to_value(&params).expect("serialize W-30 hard intent");
+    assert_eq!(
+        json["W30DamageProfile"]["target_id"],
+        serde_json::json!("cap-hard-01")
+    );
+    assert_eq!(
+        json["W30DamageProfile"]["intent"],
+        serde_json::json!("texture")
+    );
+    assert_eq!(
+        serde_json::from_value::<ActionParams>(json).expect("deserialize W-30 hard intent"),
+        params
+    );
+}
+
+#[test]
 fn product_export_action_params_default_scope_for_older_logs() {
     let params: ActionParams = serde_json::from_value(serde_json::json!({
         "ProductExport": {

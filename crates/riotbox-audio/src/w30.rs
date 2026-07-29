@@ -1,3 +1,5 @@
+use riotbox_core::w30::{W30HardIntent, W30HardIntentOutcome};
+
 pub const W30_PREVIEW_SAMPLE_WINDOW_LEN: usize = 2_048;
 pub const W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN: usize = 16_384;
 /// Callback-safe full-duration mono proxy for the active internal resample artifact.
@@ -888,6 +890,10 @@ pub struct W30ResampleTapState {
     /// Zero means that no post-resample variation gesture has committed.
     pub variation_revision: u64,
     pub variation_intensity: f32,
+    /// Performer-owned requested Hard domain from the committed action.
+    pub hard_intent: Option<W30HardIntent>,
+    /// Typed projection result after applying source evidence to the intent.
+    pub hard_intent_outcome: W30HardIntentOutcome,
     pub hard_policy: W30ResampleTapHardPolicy,
     /// Typed source-level and activity evidence that permits or rejects Hard
     /// policy ownership before any audible transform reaches the callback.
@@ -962,6 +968,8 @@ impl Default for W30ResampleTapState {
             variation: W30ResampleTapVariation::Base,
             variation_revision: 0,
             variation_intensity: 0.0,
+            hard_intent: None,
+            hard_intent_outcome: W30HardIntentOutcome::Inactive,
             hard_policy: W30ResampleTapHardPolicy::Unavailable,
             hard_suitability: W30ResampleHardSuitabilityPlan::default(),
             hard_calibration: W30ResampleHardCalibrationPlan::default(),

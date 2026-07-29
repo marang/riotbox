@@ -298,7 +298,7 @@
       "preview_music_bus_level": 0.0,
       "preview_grit_level": 0.82,
       "preview_transport_running": true,
-      "result_summary": "applied shred damage profile to cap-01 on W-30 pad bank-a/pad-01",
+      "result_summary": "applied impact shred profile to cap-01 on W-30 pad bank-a/pad-01",
       "jam_contains": [
         "current pad bank-a/pad-01",
         "current preview",
@@ -314,7 +314,7 @@
       "log_contains": [
         "cue idle | damage",
         "mix 0.00/0.82 shred",
-        "result applied shred damage profile",
+        "result applied impact shred profile",
         "to cap-01 on W-30 pad bank-a/pad-01"
       ]
     }

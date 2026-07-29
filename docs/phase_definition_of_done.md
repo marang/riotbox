@@ -513,6 +513,15 @@ After exit:
   development material. `source_texture_bite` may remain a valid continuous
   damage role, but it cannot satisfy harder-beat or exact-hit-shaper proof.
   The existing hit-shaper ownership gates remain frozen.
+- RIOTBOX-1427 supplies that bounded contract enabler. The same committed
+  `w30.apply_damage_profile` action now carries `impact` or `texture` through
+  queue, Session, replay, projection, observer, and TUI diagnostics; historical actions map
+  to `legacy_auto`. Impact fails closed as `source_mismatch` rather than
+  silently becoming texture, while texture clears trigger-grid ownership and
+  cannot claim harder-beat evidence. The eight-source development matrix
+  passes without consuming H25 material, changing DSP, generating a candidate
+  WAV, or requesting listening. RIOTBOX-1422 H25 is the named audible
+  follow-up.
 - P016 and the wider P021/P022/P023 quality ladder may resume from the accepted
   live baseline
 

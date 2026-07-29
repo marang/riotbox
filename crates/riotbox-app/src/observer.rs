@@ -93,6 +93,8 @@ pub fn observer_snapshot(shell: &JamShellState) -> Value {
 fn w30_resample_hard_grit_observer_snapshot(shell: &JamShellState) -> Value {
     let runtime = &shell.app.runtime_view;
     json!({
+        "requested_intent": runtime.w30_resample_tap_hard_intent,
+        "intent_outcome": runtime.w30_resample_tap_hard_intent_outcome,
         "recipe": runtime.w30_resample_tap_hard_grit_recipe,
         "effective_sample_rate_hz": runtime.w30_resample_tap_hard_grit_effective_sample_rate_hz,
         "quantization_levels": runtime.w30_resample_tap_hard_grit_quantization_levels,

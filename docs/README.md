@@ -67,6 +67,17 @@ Cave, Sector, and the bad-timing control remain untouched. Another blind
 holdout retry is frozen until the intended performer-owned Hard role and its
 role-specific acceptance path are explicit.
 
+RIOTBOX-1427 now makes that request explicit without changing W-30 DSP or the
+frozen hit-shaper gates. The current `D` gesture commits source-owned `impact`,
+the typed action API also represents continuous source-owned `texture`, and old
+sessions remain `legacy_auto`.
+Projection exposes realized impact/texture, source mismatch, or source
+unavailability through RuntimeView, observer, and compact TUI diagnostics.
+The eight-source development matrix proves that impact cannot silently become
+texture and texture never gains an invented trigger grid. This is a
+`contract_enabler`, not a new audible candidate or human sound-quality pass;
+its direct follow-up is RIOTBOX-1422 H25.
+
 `P016`, `P021`, and `P022` remain subordinate to the active P023 product path.
 Offline renderers, scripted packs, fixture verdicts, reports, and validators
 remain diagnostic evidence; they do not count as instrument progress until the
@@ -353,6 +364,7 @@ docs/
 - `reviews/p013_all_lane_mix_movement_review_2026-05-29.md`: P013 all-lane mix movement review captured
 - `reviews/riotbox_1408_source_backed_w30_resample_review_2026-07-21.md`: source-backed W-30 resample implementation and human weak verdict captured
 - `reviews/riotbox_1422_w30_resample_level_hard_variation_review_2026-07-23.md`: lifted source-backed W-30 tap and performer-triggered hard-variation evidence
+- `reviews/riotbox_1427_w30_hard_intent_review_2026-07-29.md`: performer-owned W-30 impact/texture contract, replay, observer, TUI, and development-matrix evidence
 - `reviews/p013_mc202_source_contour_review_2026-05-29.md`: P013 MC-202 source contour review captured
 - `reviews/p013_exit_review_2026-05-29.md`: P013 bounded all-lane musical-depth exit review captured
 - `reviews/p012_source_timing_qa_contract_review_2026-05-20.md`: P012 Source Timing QA contract review captured
