@@ -146,6 +146,8 @@
     "confirmation_route": "explicit_bpm_matches_rust_primary",
     "product_graph_matches_confirmation_route": true,
     "evaluated_through_product_queue_commit_projection": true,
+    "requested_intent": "impact",
+    "intent_outcome": "realized_impact",
     "hard_policy": "source_transient_chop",
     "recipe": "source_hit_shaper_v3",
     "role": "transient_low_body",

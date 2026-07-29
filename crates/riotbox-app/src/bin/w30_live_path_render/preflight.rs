@@ -10,11 +10,14 @@ use riotbox_audio::{
         W30ResampleTapState,
     },
 };
-use riotbox_core::source_graph::{
-    MeterHint, SourceTimingProbeBpmCandidatePolicy, SourceTimingProbeReadinessStatus,
-    TempoGuidedTimingDecision, TempoGuidedTimingEvidence, TimingHypothesisKind, TimingModel,
-    source_timing_grid_use, source_timing_grid_use_from_timing_model,
-    source_timing_probe_readiness_report, tempo_guided_timing_hypothesis,
+use riotbox_core::{
+    source_graph::{
+        MeterHint, SourceTimingProbeBpmCandidatePolicy, SourceTimingProbeReadinessStatus,
+        TempoGuidedTimingDecision, TempoGuidedTimingEvidence, TimingHypothesisKind, TimingModel,
+        source_timing_grid_use, source_timing_grid_use_from_timing_model,
+        source_timing_probe_readiness_report, tempo_guided_timing_hypothesis,
+    },
+    w30::{W30HardIntent, W30HardIntentOutcome},
 };
 use serde::Serialize;
 
@@ -52,6 +55,8 @@ pub(super) struct W30TimingReachability {
 #[derive(Clone, Debug, Serialize)]
 struct W30HardProjectionReachability {
     evaluated_through_product_queue_commit_projection: bool,
+    requested_intent: &'static str,
+    intent_outcome: &'static str,
     hard_policy: &'static str,
     hard_suitability: &'static str,
     low_impact_recipe: &'static str,
@@ -139,12 +144,19 @@ impl W30ReachabilityPreflightReport {
     }
 
     pub(super) fn record_projection(&mut self, state: &W30ResampleTapState) {
+        let performer_impact_committed = state.hard_intent == Some(W30HardIntent::Impact);
+        let performer_impact_realized =
+            state.hard_intent_outcome == W30HardIntentOutcome::RealizedImpact;
         let applicable = state.exact_hit_shaper_calibration_applicable();
-        let requirement_satisfied = applicable
+        let requirement_satisfied = performer_impact_committed
+            && performer_impact_realized
+            && applicable
             && state.hard_calibration.exact_callback_evaluated
             && state.hard_calibration.exact_callback_calibrated;
         self.projection = Some(W30HardProjectionReachability {
             evaluated_through_product_queue_commit_projection: true,
+            requested_intent: state.hard_intent.map_or("none", W30HardIntent::label),
+            intent_outcome: state.hard_intent_outcome.label(),
             hard_policy: state.hard_policy.label(),
             hard_suitability: state.hard_suitability.status.label(),
             low_impact_recipe: state.hard_low_impact.recipe.label(),
@@ -171,7 +183,11 @@ impl W30ReachabilityPreflightReport {
                 && self.timing.product_graph_matches_confirmation_route == Some(true)
                 && requirement_satisfied;
         if !requirement_satisfied {
-            self.blockers.push(if !applicable {
+            self.blockers.push(if !performer_impact_committed {
+                "performer_impact_intent_not_committed"
+            } else if !performer_impact_realized {
+                "performer_impact_intent_not_realized"
+            } else if !applicable {
                 "exact_hit_shaper_calibration_not_applicable"
             } else if !state.hard_calibration.exact_callback_evaluated {
                 "exact_hit_shaper_calibration_not_evaluated"
@@ -350,6 +366,8 @@ mod tests {
     fn applicable_hit_shaper_state() -> W30ResampleTapState {
         let mut state = W30ResampleTapState {
             variation: W30ResampleTapVariation::HardDamage,
+            hard_intent: Some(W30HardIntent::Impact),
+            hard_intent_outcome: W30HardIntentOutcome::RealizedImpact,
             hard_policy: W30ResampleTapHardPolicy::SourceTransientChop,
             tempo_bpm: 130.0,
             source_audio: Some(Box::new(W30ResampleSourceWindow {
@@ -552,6 +570,8 @@ mod tests {
         let mut report = W30ReachabilityPreflightReport::from_timing(Path::new("h14.wav"), timing);
         let state = W30ResampleTapState {
             variation: W30ResampleTapVariation::HardDamage,
+            hard_intent: Some(W30HardIntent::Impact),
+            hard_intent_outcome: W30HardIntentOutcome::RealizedImpact,
             hard_policy: W30ResampleTapHardPolicy::SourceTransientChop,
             tempo_bpm: 140.0,
             ..Default::default()
@@ -579,6 +599,8 @@ mod tests {
         assert!(report.blockers.is_empty());
         let projection = report.projection.expect("projection");
         assert!(projection.candidate_requirement_satisfied);
+        assert_eq!(projection.requested_intent, "impact");
+        assert_eq!(projection.intent_outcome, "realized_impact");
         assert_eq!(projection.low_impact_role, "transient_low_body");
         assert_eq!(projection.low_impact_decision, "source_hit_selected");
         assert_eq!(projection.low_impact_candidate_count, 5);
@@ -592,6 +614,26 @@ mod tests {
         assert_eq!(projection.low_band_attack_over_body_min, 1.40);
         assert_eq!(projection.low_band_attack_over_source, 0.42);
         assert_eq!(projection.low_band_attack_over_source_min, 0.30);
+    }
+
+    #[test]
+    fn exact_hit_shaper_without_performer_impact_intent_cannot_generate_candidate() {
+        let timing = timing_report(Some(130.4), 130.0);
+        let mut report =
+            W30ReachabilityPreflightReport::from_timing(Path::new("legacy-loop.wav"), timing);
+        report.timing.product_graph_matches_confirmation_route = Some(true);
+        let mut state = applicable_hit_shaper_state();
+        state.hard_intent = Some(W30HardIntent::LegacyAuto);
+        state.hard_intent_outcome = W30HardIntentOutcome::LegacyAuto;
+
+        report.record_projection(&state);
+
+        assert!(!report.candidate_wav_generation_eligible_after_preflight);
+        assert_eq!(report.blockers, ["performer_impact_intent_not_committed"]);
+        let projection = report.projection.expect("projection");
+        assert_eq!(projection.requested_intent, "legacy_auto");
+        assert_eq!(projection.intent_outcome, "legacy_auto");
+        assert!(!projection.candidate_requirement_satisfied);
     }
 
     #[test]

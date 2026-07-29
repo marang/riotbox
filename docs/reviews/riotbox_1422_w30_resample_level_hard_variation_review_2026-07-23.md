@@ -720,3 +720,20 @@ before another fresh attempt. It must not relabel texture damage as a harder
 beat, weaken the `0.18`, `1.40`, or `0.30` hit-shaper ownership gates, or tune
 timing against consumed H24 material. Machine-readable evidence is frozen in
 `docs/benchmarks/w30_resample_h24_characterization_v1.json`.
+
+## H25 Frozen Impact-Intent Gate
+
+RIOTBOX-1427 now carries performer-owned `impact` through the existing
+`w30.apply_damage_profile` queue, commit, Session/replay, and product projection
+path. Before opening the H25 holdouts, the existing exact-path preflight was
+tightened to report both `requested_intent` and `intent_outcome` and to require
+`impact` plus `realized_impact` in addition to `source_hit_shaper_v3` and exact
+callback calibration. Legacy, texture, mismatch, and unavailable outcomes fail
+closed and cannot authorize an impact candidate.
+
+The unchanged Beat03 development source passes the tightened preflight with
+`impact`, `realized_impact`, `source_transient_chop`,
+`source_hit_shaper_v3`, and successful exact callback calibration. The run
+stops before candidate WAV generation. No H25 holdout was accessed while
+freezing this acceptance gate; W-30 DSP, the `0.18` / `1.40` / `0.30`
+ownership gates, and the accepted Base remain unchanged.
