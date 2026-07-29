@@ -1458,4 +1458,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Make W-30 hit-shaper reachability source-adaptive
 - [RIOTBOX-1426.md](./RIOTBOX-1426.md)
   P023: Derive a source-backed downbeat phase for externally supplied tempo
+- [RIOTBOX-1427.md](./RIOTBOX-1427.md)
+  P023: Carry performer-owned W-30 Hard intent through the product spine
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
