@@ -15,7 +15,7 @@
 - Labels: `Audio`, `Feature`, `review-followup`
 - PR: `#1381 (https://github.com/marang/riotbox/pull/1381)`
 - Merge commit: `cd1866fcc4918d07b8ba443f717a3c69ff036cdc`
-- Deleted from Linear: `Pending archive commit`
+- Deleted from Linear: `2026-07-29`
 - Verification: `cargo test --workspace; just ci; eight-source RIOTBOX-1423 intent matrix; git diff --check; branch code-review and Rust review; GitHub Rust CI 30437291698`
 - Docs touched: `docs/reviews/riotbox_1427_w30_hard_intent_review_2026-07-29.md`, `docs/research_decision_log.md`, and W-30 action/session/replay/audio contracts
 - Follow-ups: `RIOTBOX-1422`
