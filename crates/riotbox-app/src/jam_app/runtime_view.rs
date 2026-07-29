@@ -56,6 +56,8 @@ pub struct JamRuntimeView {
     pub w30_resample_tap_variation: String,
     pub w30_resample_tap_variation_revision: u64,
     pub w30_resample_tap_variation_intensity: String,
+    pub w30_resample_tap_hard_intent: String,
+    pub w30_resample_tap_hard_intent_outcome: String,
     pub w30_resample_tap_hard_policy: String,
     pub w30_resample_tap_hard_grit_recipe: String,
     pub w30_resample_tap_hard_grit_effective_sample_rate_hz: Option<u32>,
@@ -204,6 +206,16 @@ impl JamRuntimeView {
                 "{:.2}",
                 runtime.w30_resample_tap.variation_intensity
             ),
+            w30_resample_tap_hard_intent: runtime
+                .w30_resample_tap
+                .hard_intent
+                .map_or("none", riotbox_core::w30::W30HardIntent::label)
+                .into(),
+            w30_resample_tap_hard_intent_outcome: runtime
+                .w30_resample_tap
+                .hard_intent_outcome
+                .label()
+                .into(),
             w30_resample_tap_hard_policy: runtime.w30_resample_tap.hard_policy.label().into(),
             w30_resample_tap_hard_grit_recipe: runtime
                 .w30_resample_tap

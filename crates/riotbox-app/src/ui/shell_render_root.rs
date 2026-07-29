@@ -194,7 +194,7 @@ impl JamShellState {
                 ShellKeyOutcome::QueueW30BrowseSlicePool
             }
             KeyCode::Char('D') => {
-                self.status_message = queued_status_message(GESTURE_DAMAGE, "next bar");
+                self.status_message = queued_status_message("impact damage", "next bar");
                 ShellKeyOutcome::QueueW30ApplyDamageProfile
             }
             KeyCode::Char('z') => {

@@ -144,7 +144,7 @@ fn w30_non_focus_cue_rejects_missing_capture_without_mutating_session() {
         ReplayExecutionError::InvalidParams {
             action_id: ActionId(1),
             command: ActionCommand::W30TriggerPad,
-            expected: "ActionParams::Mutation { target_id: Some(_), .. }",
+            expected: "W-30 cue params with an explicit capture target",
         }
     );
     assert_eq!(session, original_session);
@@ -253,4 +253,60 @@ fn w30_damage_profile_preserves_existing_preview_mode() {
         Some("cap-01".into())
     );
     assert!((session.runtime_state.macro_state.w30_grit - 0.92).abs() < f32::EPSILON);
+}
+
+#[test]
+fn typed_w30_damage_profile_replays_capture_and_grit_without_losing_intent() {
+    let params = ActionParams::W30DamageProfile {
+        intensity: 0.81,
+        target_id: CaptureId::from("cap-texture"),
+        intent: crate::w30::W30HardIntent::Texture,
+    };
+    let action_log = action_log(vec![w30_action(
+        1,
+        ActionCommand::W30ApplyDamageProfile,
+        params.clone(),
+        200,
+    )]);
+    let plan = build_replay_target_plan(&action_log, &[], 1).expect("origin plan");
+    assert_eq!(plan.suffix[0].action.params, params);
+    let mut session = SessionFile::new("session-1", "riotbox-test", "2026-07-29T08:00:00Z");
+
+    apply_replay_plan_to_session(&mut session, &plan.suffix).expect("typed W-30 replay succeeds");
+
+    assert_eq!(
+        session.runtime_state.lane_state.w30.last_capture,
+        Some(CaptureId::from("cap-texture"))
+    );
+    assert!((session.runtime_state.macro_state.w30_grit - 0.81).abs() < f32::EPSILON);
+}
+
+#[test]
+fn typed_w30_damage_profile_rejects_compatibility_only_legacy_intent() {
+    let action_log = action_log(vec![w30_action(
+        1,
+        ActionCommand::W30ApplyDamageProfile,
+        ActionParams::W30DamageProfile {
+            intensity: 0.81,
+            target_id: CaptureId::from("cap-legacy"),
+            intent: crate::w30::W30HardIntent::LegacyAuto,
+        },
+        200,
+    )]);
+    let plan = build_replay_target_plan(&action_log, &[], 1).expect("origin plan");
+    let mut session = SessionFile::new("session-1", "riotbox-test", "2026-07-29T08:00:00Z");
+    let original = session.clone();
+
+    let error = apply_replay_plan_to_session(&mut session, &plan.suffix)
+        .expect_err("new typed params must not claim compatibility-only auto intent");
+
+    assert_eq!(
+        error,
+        ReplayExecutionError::InvalidParams {
+            action_id: ActionId(1),
+            command: ActionCommand::W30ApplyDamageProfile,
+            expected: "typed impact/texture damage params or legacy mutation params with a capture target",
+        }
+    );
+    assert_eq!(session, original);
 }

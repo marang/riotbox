@@ -23,9 +23,12 @@ pub(super) fn w30_resample_tap_compact(shell: &JamShellState) -> String {
         riotbox_audio::w30::W30ResampleTapVariation::Base => "b",
         riotbox_audio::w30::W30ResampleTapVariation::HardDamage => "H",
     };
+    let hard = tap.hard_intent.map_or_else(String::new, |intent| {
+        format!("/{}:{}", intent.label(), tap.hard_intent_outcome.label())
+    });
     format!(
-        "ready/{profile}/{audio} {variation}g{}",
-        tap.generation_depth
+        "ready/{profile}/{audio} {variation}g{}{hard}",
+        tap.generation_depth,
     )
 }
 
@@ -103,9 +106,12 @@ pub(super) fn w30_resample_log_focus_compact(shell: &JamShellState) -> String {
         riotbox_audio::w30::W30ResampleTapVariation::Base => "b",
         riotbox_audio::w30::W30ResampleTapVariation::HardDamage => "H",
     };
+    let hard = tap.hard_intent.map_or_else(String::new, |intent| {
+        format!("/{}:{}", intent.label(), tap.hard_intent_outcome.label())
+    });
     format!(
-        "tap {capture_id} g{}/l{} {route}/{variation}",
-        tap.generation_depth, tap.lineage_capture_count
+        "tap {capture_id} g{}/l{} {route}/{variation}{hard}",
+        tap.generation_depth, tap.lineage_capture_count,
     )
 }
 

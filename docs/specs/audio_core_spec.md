@@ -395,8 +395,15 @@ Rules:
   resample, while unrelated later material deactivates it
 - `w30.apply_damage_profile` activates the typed `hard_damage` resample
   variation only when it commits after the active resample and targets that
-  capture or one of its lineage captures. Earlier damage remains part of the
-  source print but cannot masquerade as a newly triggered variation.
+  capture or one of its lineage captures. The committed intent constrains the
+  source-derived policy: `impact` may realize only
+  `source_transient_chop`, while a texture-classified source reports
+  `source_mismatch` and preserves Base; `texture` realizes
+  `source_texture_bite`, clears trigger/cursor ownership, and cannot claim
+  harder-beat or exact-hit-shaper evidence. Unsuitable or missing audio reports
+  `source_unavailable`. Earlier damage remains part of the source print but
+  cannot masquerade as a newly triggered variation. Historical generic params
+  retain the pre-intent automatic policy as `legacy_auto`.
 - `promote.resample` owns the first audible tap activation. The presence of any
   capture or W-30 lane focus is not sufficient activation evidence for the
   source-backed tap. A lineage-ready resample capture without a hydrated audio

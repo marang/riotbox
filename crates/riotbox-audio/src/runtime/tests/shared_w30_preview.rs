@@ -258,6 +258,8 @@ fn shared_w30_resample_tap_state_tracks_updates() {
         variation: W30ResampleTapVariation::Base,
         variation_revision: 0,
         variation_intensity: 0.0,
+        hard_intent: None,
+        hard_intent_outcome: Default::default(),
         hard_policy: W30ResampleTapHardPolicy::Unavailable,
         hard_suitability: Default::default(),
         hard_calibration: Default::default(),

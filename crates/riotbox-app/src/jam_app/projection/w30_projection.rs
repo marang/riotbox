@@ -32,6 +32,7 @@ fn build_w30_capture_artifact_resample_source(
     capture_audio_cache: Option<&BTreeMap<CaptureId, SourceAudioCache>>,
     grit_level: f32,
     variation_intensity: f32,
+    hard_intent: Option<riotbox_core::w30::W30HardIntent>,
 ) -> Option<W30ResampleSourceProjection> {
     let cache = capture_audio_cache?.get(&capture.capture_id)?;
     project_resample_source_from_interleaved(
@@ -40,6 +41,7 @@ fn build_w30_capture_artifact_resample_source(
         cache.sample_rate,
         grit_level,
         variation_intensity,
+        hard_intent,
     )
 }
 
@@ -55,6 +57,7 @@ struct W30ResampleSourceProjection {
     hard_low_impact: W30ResampleLowImpactPlan,
     hard_gesture: W30ResampleHardGesturePlan,
     hard_transient_contrast: f32,
+    hard_intent_outcome: riotbox_core::w30::W30HardIntentOutcome,
 }
 
 pub(super) fn resample_source_from_interleaved(
@@ -62,8 +65,15 @@ pub(super) fn resample_source_from_interleaved(
     channel_count: usize,
     source_sample_rate: u32,
 ) -> Option<Box<W30ResampleSourceWindow>> {
-    project_resample_source_from_interleaved(samples, channel_count, source_sample_rate, 0.0, 0.0)
-        .map(|projection| projection.audio)
+    project_resample_source_from_interleaved(
+        samples,
+        channel_count,
+        source_sample_rate,
+        0.0,
+        0.0,
+        None,
+    )
+    .map(|projection| projection.audio)
 }
 
 fn project_resample_source_from_interleaved(
@@ -72,6 +82,7 @@ fn project_resample_source_from_interleaved(
     source_sample_rate: u32,
     grit_level: f32,
     variation_intensity: f32,
+    hard_intent: Option<riotbox_core::w30::W30HardIntent>,
 ) -> Option<W30ResampleSourceProjection> {
     if channel_count == 0
         || source_sample_rate == 0
@@ -95,7 +106,12 @@ fn project_resample_source_from_interleaved(
         *slot = samples[base..base + channel_count].iter().sum::<f32>() / channel_count as f32;
     }
     let hard_suitability = derive_w30_resample_hard_suitability(samples, channel_count);
-    let (hard_policy, hard_trigger_mask, hard_slice_cursors, hard_transient_contrast) =
+    let (
+        analyzed_hard_policy,
+        analyzed_hard_trigger_mask,
+        analyzed_hard_slice_cursors,
+        hard_transient_contrast,
+    ) =
         if hard_suitability.status == W30ResampleHardSuitability::Suitable {
             analyze_w30_resample_hard_policy(samples, channel_count, source_sample_rate)
         } else {
@@ -106,18 +122,31 @@ fn project_resample_source_from_interleaved(
                 0.0,
             )
         };
-    let hard_attack_lengths =
-        if hard_suitability.status == W30ResampleHardSuitability::Suitable {
-            derive_w30_resample_attack_lengths(
-                samples,
-                channel_count,
-                source_sample_rate,
-                sample_count,
-                hard_slice_cursors,
-            )
-        } else {
-            [0; W30_RESAMPLE_HARD_SLICE_COUNT]
-        };
+    let (hard_policy, hard_trigger_mask, hard_slice_cursors, hard_intent_outcome) =
+        resolve_w30_hard_intent(
+            hard_intent,
+            hard_suitability.status,
+            analyzed_hard_policy,
+            analyzed_hard_trigger_mask,
+            analyzed_hard_slice_cursors,
+        );
+    let preserves_automatic_analysis = hard_intent.is_none()
+        || hard_intent == Some(riotbox_core::w30::W30HardIntent::LegacyAuto);
+    let hard_attack_lengths = if hard_suitability.status
+        == W30ResampleHardSuitability::Suitable
+        && (preserves_automatic_analysis
+            || hard_policy == W30ResampleTapHardPolicy::SourceTransientChop)
+    {
+        derive_w30_resample_attack_lengths(
+            samples,
+            channel_count,
+            source_sample_rate,
+            sample_count,
+            hard_slice_cursors,
+        )
+    } else {
+        [0; W30_RESAMPLE_HARD_SLICE_COUNT]
+    };
     let proxy_sample_rate =
         source_sample_rate as f32 * sample_count as f32 / frame_count.max(1) as f32;
     let hard_attack_bite = if hard_policy == W30ResampleTapHardPolicy::SourceTransientChop {
@@ -187,6 +216,7 @@ fn project_resample_source_from_interleaved(
         hard_low_impact,
         hard_gesture,
         hard_transient_contrast,
+        hard_intent_outcome,
     })
 }
 
@@ -919,7 +949,7 @@ mod resample_attack_bite_tests {
     fn hard_suitability_rejects_quiet_source_before_policy_selection() {
         let samples = vec![0.02_f32; 8_000];
         let projection =
-            project_resample_source_from_interleaved(&samples, 1, 8_000, 1.0, 1.0)
+            project_resample_source_from_interleaved(&samples, 1, 8_000, 1.0, 1.0, None)
                 .expect("projection");
 
         assert_eq!(
@@ -969,6 +999,8 @@ mod resample_attack_bite_tests {
             variation: W30ResampleTapVariation::HardDamage,
             variation_revision: 7,
             variation_intensity: 0.82,
+            hard_intent: Some(riotbox_core::w30::W30HardIntent::Impact),
+            hard_intent_outcome: riotbox_core::w30::W30HardIntentOutcome::RealizedImpact,
             hard_policy: W30ResampleTapHardPolicy::SourceTransientChop,
             hard_suitability: W30ResampleHardSuitabilityPlan {
                 status: W30ResampleHardSuitability::Suitable,
@@ -1100,7 +1132,7 @@ mod resample_attack_bite_tests {
         let mut samples = vec![0.0_f32; 8_000];
         samples[..4_000].fill(0.1);
         let projection =
-            project_resample_source_from_interleaved(&samples, 1, 8_000, 1.0, 1.0)
+            project_resample_source_from_interleaved(&samples, 1, 8_000, 1.0, 1.0, None)
                 .expect("projection");
 
         assert_eq!(
@@ -1119,7 +1151,7 @@ mod resample_attack_bite_tests {
             })
             .collect::<Vec<_>>();
         let projection =
-            project_resample_source_from_interleaved(&samples, 1, 8_000, 1.0, 1.0)
+            project_resample_source_from_interleaved(&samples, 1, 8_000, 1.0, 1.0, None)
                 .expect("projection");
 
         assert_eq!(
@@ -1127,6 +1159,36 @@ mod resample_attack_bite_tests {
             W30ResampleHardSuitability::Suitable
         );
         assert_ne!(projection.hard_policy, W30ResampleTapHardPolicy::Unavailable);
+    }
+
+    #[test]
+    fn legacy_auto_preserves_the_pre_intent_analysis_projection() {
+        let samples = (0..8_000)
+            .map(|index| {
+                0.1 * (std::f32::consts::TAU * 220.0 * index as f32 / 8_000.0).sin()
+            })
+            .collect::<Vec<_>>();
+        let automatic =
+            project_resample_source_from_interleaved(&samples, 1, 8_000, 1.0, 1.0, None)
+                .expect("automatic projection");
+        let legacy = project_resample_source_from_interleaved(
+            &samples,
+            1,
+            8_000,
+            1.0,
+            1.0,
+            Some(riotbox_core::w30::W30HardIntent::LegacyAuto),
+        )
+        .expect("legacy projection");
+
+        assert_eq!(legacy.hard_policy, automatic.hard_policy);
+        assert_eq!(legacy.hard_trigger_mask, automatic.hard_trigger_mask);
+        assert_eq!(legacy.hard_slice_cursors, automatic.hard_slice_cursors);
+        assert_eq!(legacy.hard_attack_lengths, automatic.hard_attack_lengths);
+        assert_eq!(
+            legacy.hard_intent_outcome,
+            riotbox_core::w30::W30HardIntentOutcome::LegacyAuto
+        );
     }
 
     #[test]
@@ -1648,10 +1710,10 @@ fn w30_pad_playback_transform(
     destructive_intent: Option<LivePerformanceDestructiveIntent>,
 ) -> W30PadPlaybackTransform {
     let Some(intensity) = last_committed_w30_damage_action(session).and_then(|action| {
-        if let ActionParams::Mutation { intensity, .. } = action.params {
-            Some(intensity.clamp(0.0, 1.0))
-        } else {
-            None
+        match action.params {
+            ActionParams::W30DamageProfile { intensity, .. }
+            | ActionParams::Mutation { intensity, .. } => Some(intensity.clamp(0.0, 1.0)),
+            _ => None,
         }
     }) else {
         return W30PadPlaybackTransform::default();
@@ -2398,7 +2460,7 @@ pub(super) fn build_w30_resample_tap_state(
     } else {
         Some(W30ResampleTapSourceProfile::RawCapture)
     };
-    let (variation, variation_revision, variation_intensity) =
+    let (variation, variation_revision, variation_intensity, hard_intent) =
         w30_resample_tap_variation(session, capture);
     let grit_level = session.runtime_state.macro_state.w30_grit.clamp(0.0, 1.0);
     let source_projection = build_w30_capture_artifact_resample_source(
@@ -2406,6 +2468,7 @@ pub(super) fn build_w30_resample_tap_state(
         capture_audio_cache,
         grit_level,
         variation_intensity,
+        hard_intent,
     );
     let (
         source_audio,
@@ -2419,6 +2482,7 @@ pub(super) fn build_w30_resample_tap_state(
         hard_low_impact,
         hard_gesture,
         hard_transient_contrast,
+        hard_intent_outcome,
     ) =
         match source_projection {
             Some(projection) => (
@@ -2433,6 +2497,7 @@ pub(super) fn build_w30_resample_tap_state(
                 projection.hard_low_impact,
                 projection.hard_gesture,
                 projection.hard_transient_contrast,
+                projection.hard_intent_outcome,
             ),
             None => (
                 None,
@@ -2446,6 +2511,11 @@ pub(super) fn build_w30_resample_tap_state(
                 W30ResampleLowImpactPlan::default(),
                 W30ResampleHardGesturePlan::default(),
                 0.0,
+                if hard_intent.is_some() {
+                    riotbox_core::w30::W30HardIntentOutcome::SourceUnavailable
+                } else {
+                    riotbox_core::w30::W30HardIntentOutcome::Inactive
+                },
             ),
         };
     let (availability, routing) = if source_audio.is_some() {
@@ -2476,6 +2546,8 @@ pub(super) fn build_w30_resample_tap_state(
         variation,
         variation_revision,
         variation_intensity,
+        hard_intent,
+        hard_intent_outcome,
         hard_policy,
         hard_suitability,
         hard_calibration,
@@ -2503,9 +2575,14 @@ pub(super) fn build_w30_resample_tap_state(
 fn w30_resample_tap_variation(
     session: &SessionFile,
     capture: &riotbox_core::session::CaptureRef,
-) -> (W30ResampleTapVariation, u64, f32) {
+) -> (
+    W30ResampleTapVariation,
+    u64,
+    f32,
+    Option<riotbox_core::w30::W30HardIntent>,
+) {
     let Some(created_from_action) = capture.created_from_action else {
-        return (W30ResampleTapVariation::Base, 0, 0.0);
+        return (W30ResampleTapVariation::Base, 0, 0.0, None);
     };
     let Some(created_index) = session
         .action_log
@@ -2513,7 +2590,7 @@ fn w30_resample_tap_variation(
         .iter()
         .position(|action| action.id == created_from_action)
     else {
-        return (W30ResampleTapVariation::Base, 0, 0.0);
+        return (W30ResampleTapVariation::Base, 0, 0.0, None);
     };
 
     let targets_capture_lineage = |target_id: &str| {
@@ -2536,22 +2613,34 @@ fn w30_resample_tap_variation(
             {
                 return None;
             }
-            let ActionParams::Mutation {
-                intensity,
-                target_id: Some(target_id),
-            } = &action.params
-            else {
-                return None;
+            let (intensity, target_id, hard_intent) = match &action.params {
+                ActionParams::W30DamageProfile {
+                    intensity,
+                    target_id,
+                    intent,
+                } if intent.is_performer_request() => {
+                    (*intensity, target_id.as_str(), *intent)
+                }
+                ActionParams::Mutation {
+                    intensity,
+                    target_id: Some(target_id),
+                } => (
+                    *intensity,
+                    target_id.as_str(),
+                    riotbox_core::w30::W30HardIntent::LegacyAuto,
+                ),
+                _ => return None,
             };
             targets_capture_lineage(target_id).then(|| {
                 (
                     W30ResampleTapVariation::HardDamage,
                     (index + 1).try_into().unwrap_or(u64::MAX),
                     intensity.clamp(0.0, 1.0),
+                    Some(hard_intent),
                 )
             })
         })
-        .unwrap_or((W30ResampleTapVariation::Base, 0, 0.0))
+        .unwrap_or((W30ResampleTapVariation::Base, 0, 0.0, None))
 }
 
 pub(super) fn normalize_w30_preview_mode(session: &mut SessionFile) {

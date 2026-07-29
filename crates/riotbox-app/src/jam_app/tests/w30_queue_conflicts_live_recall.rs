@@ -32,15 +32,16 @@ fn queue_w30_apply_damage_profile_targets_focused_lane_capture_on_next_bar() {
     );
     assert!(matches!(
         &pending[0].params,
-        ActionParams::Mutation {
+        ActionParams::W30DamageProfile {
             intensity,
-            target_id: Some(target_id),
+            target_id,
+            intent: riotbox_core::w30::W30HardIntent::Impact,
         } if (*intensity - JamAppState::W30_DAMAGE_PROFILE_GRIT).abs() < f32::EPSILON
-            && target_id == "cap-01"
+            && target_id.as_str() == "cap-01"
     ));
     assert_eq!(
         pending[0].explanation.as_deref(),
-        Some("apply shred damage profile to cap-01 on W-30 pad bank-a/pad-01")
+        Some("apply impact shred profile to cap-01 on W-30 pad bank-a/pad-01")
     );
     assert_eq!(
         state
@@ -50,6 +51,59 @@ fn queue_w30_apply_damage_profile_targets_focused_lane_capture_on_next_bar() {
             .as_deref(),
         Some("bank-a/pad-01")
     );
+}
+
+#[test]
+fn queue_w30_texture_damage_profile_preserves_performer_intent() {
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    state.session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+        bank_id: BankId::from("bank-a"),
+        pad_id: PadId::from("pad-01"),
+    });
+    state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
+    state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-01"));
+    state.session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
+    state.refresh_view();
+
+    assert_eq!(
+        state.queue_w30_apply_damage_profile_with_intent(
+            645,
+            riotbox_core::w30::W30HardIntent::Texture,
+        ),
+        Some(QueueControlResult::Enqueued)
+    );
+
+    let pending = state.queue.pending_actions();
+    assert!(matches!(
+        &pending[0].params,
+        ActionParams::W30DamageProfile {
+            target_id,
+            intent: riotbox_core::w30::W30HardIntent::Texture,
+            ..
+        } if target_id.as_str() == "cap-01"
+    ));
+    assert_eq!(
+        pending[0].explanation.as_deref(),
+        Some("apply texture shred profile to cap-01 on W-30 pad bank-a/pad-01")
+    );
+}
+
+#[test]
+fn queue_w30_damage_profile_rejects_compatibility_only_legacy_intent() {
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    assert_eq!(
+        state.queue_w30_apply_damage_profile_with_intent(
+            646,
+            riotbox_core::w30::W30HardIntent::LegacyAuto,
+        ),
+        None
+    );
+    assert!(state.queue.pending_actions().is_empty());
 }
 
 #[test]

@@ -134,6 +134,14 @@ fn committed_w30_internal_resample_materializes_lineage_safe_capture() {
         state.runtime.w30_resample_tap.variation,
         W30ResampleTapVariation::HardDamage
     );
+    assert_eq!(
+        state.runtime.w30_resample_tap.hard_intent,
+        Some(riotbox_core::w30::W30HardIntent::Impact)
+    );
+    assert_eq!(
+        state.runtime.w30_resample_tap.hard_intent_outcome,
+        riotbox_core::w30::W30HardIntentOutcome::SourceUnavailable
+    );
     assert!(state.runtime.w30_resample_tap.variation_revision > 0);
     assert_eq!(state.runtime.w30_resample_tap.variation_intensity, 0.82);
 

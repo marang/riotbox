@@ -277,7 +277,16 @@ Rules:
   lane must remain degraded/silent rather than synthesize fallback audio.
 - TR-909 replay currently covers the deterministic support-lane state needed by downstream projection: slam, fill, reinforce, takeover, scene-lock, release, pattern references, reinforcement mode, and takeover profile.
 - Scene replay currently covers the deterministic active-scene / restore-scene state carried by committed scene launch and restore actions. The minimal executor updates transport current scene, scene active scene, restore pointer, and swaps the paired active/restore audio-projection snapshots while deliberately staying Source Graph-free. A separate graph-aware replay boundary hydrates `last_movement` from the pre-action scene state, committed boundary, committed scene action, and frozen Source Graph context; launches install that derived projection, while restores recover the previously paired projection instead of projecting the inverse transition as new musical state.
-- W-30 replay currently covers a deterministic cue subset whose committed actions already carry explicit target state: live recall, trigger, audition, bank swap, slice-pool browse, focus step, and damage profile. It updates preview mode, focused bank/pad, last capture, and W-30 grit only.
+- W-30 replay currently covers a deterministic cue subset whose committed
+  actions already carry explicit target state: live recall, trigger, audition,
+  bank swap, slice-pool browse, focus step, and damage profile. It updates
+  preview mode, focused bank/pad, last capture, and W-30 grit only. New damage
+  actions retain typed `impact` / `texture` intent in
+  `ActionParams::W30DamageProfile`; old generic `Mutation` actions replay as
+  explicit `legacy_auto`. Replay does not select a musical Hard role itself:
+  app projection combines the replayed action with the hydrated source
+  artifact, fails closed on mismatch/unavailability, and exposes the realized
+  outcome.
 - `capture.now` and `capture.loop` replay hydrate an already persisted source-window-backed loop capture produced by the committed action and point W-30 `last_capture` / live-recall preview state at it. They do not regenerate capture audio from the Source Graph.
 - `capture.bar_group` replay hydrates an already persisted source-window-backed pad capture produced by the committed action and points W-30 `last_capture` / live-recall preview state at it. It does not regenerate capture audio from the Source Graph or assign it to a pad.
 - `w30.capture_to_pad` replay hydrates an already persisted source-window-backed pad capture produced by the committed action and points W-30 focus/last-capture/live-recall state at it. It does not regenerate capture audio from the Source Graph.

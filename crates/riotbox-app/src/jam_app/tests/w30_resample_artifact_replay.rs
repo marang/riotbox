@@ -214,6 +214,20 @@ fn w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_outpu
         W30ResampleTapVariation::HardDamage
     );
     assert_eq!(
+        replayed_damage_state.runtime.w30_resample_tap.hard_intent,
+        committed_state.runtime.w30_resample_tap.hard_intent
+    );
+    assert_eq!(
+        replayed_damage_state
+            .runtime
+            .w30_resample_tap
+            .hard_intent_outcome,
+        committed_state
+            .runtime
+            .w30_resample_tap
+            .hard_intent_outcome
+    );
+    assert_eq!(
         replayed_damage_state
             .runtime
             .w30_resample_tap

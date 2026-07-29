@@ -41,6 +41,7 @@ pub(in crate::jam_app) fn apply_w30_side_effects(
         _ => None,
     };
     let capture_id = match &action.params {
+        ActionParams::W30DamageProfile { target_id, .. } => Some(target_id.clone()),
         ActionParams::Mutation {
             target_id: Some(target_id),
             ..
@@ -81,6 +82,7 @@ pub(in crate::jam_app) fn apply_w30_side_effects(
             | ActionCommand::W30ApplyDamageProfile
     ) {
         let grit = match &action.params {
+            ActionParams::W30DamageProfile { intensity, .. } => intensity.clamp(0.0, 1.0),
             ActionParams::Mutation { intensity, .. } => match action.command {
                 ActionCommand::W30AuditionRawCapture => intensity.clamp(0.0, 1.0),
                 ActionCommand::W30AuditionPromoted => intensity.clamp(0.0, 1.0),
@@ -141,20 +143,29 @@ pub(in crate::jam_app) fn apply_w30_side_effects(
                     },
                 )
             }
-            ActionCommand::W30ApplyDamageProfile => capture_id.as_ref().map_or_else(
-                || {
-                    format!(
-                        "applied {} damage profile on W-30 pad {bank_id}/{pad_id}",
-                        JamAppState::W30_DAMAGE_PROFILE_LABEL
-                    )
-                },
-                |capture_id| {
-                    format!(
-                        "applied {} damage profile to {capture_id} on W-30 pad {bank_id}/{pad_id}",
-                        JamAppState::W30_DAMAGE_PROFILE_LABEL
-                    )
-                },
-            ),
+            ActionCommand::W30ApplyDamageProfile => {
+                let intent = match &action.params {
+                    ActionParams::W30DamageProfile { intent, .. } => *intent,
+                    ActionParams::Mutation { .. } => riotbox_core::w30::W30HardIntent::LegacyAuto,
+                    _ => unreachable!("damage profile params validated by queue/replay"),
+                };
+                capture_id.as_ref().map_or_else(
+                    || {
+                        format!(
+                            "applied {} {} profile on W-30 pad {bank_id}/{pad_id}",
+                            intent.label(),
+                            JamAppState::W30_DAMAGE_PROFILE_LABEL
+                        )
+                    },
+                    |capture_id| {
+                        format!(
+                            "applied {} {} profile to {capture_id} on W-30 pad {bank_id}/{pad_id}",
+                            intent.label(),
+                            JamAppState::W30_DAMAGE_PROFILE_LABEL
+                        )
+                    },
+                )
+            }
             ActionCommand::W30AuditionRawCapture => capture_id.as_ref().map_or_else(
                 || format!("auditioned raw capture on W-30 preview {bank_id}/{pad_id}"),
                 |capture_id| {

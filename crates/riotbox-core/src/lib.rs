@@ -19,5 +19,6 @@ pub mod style;
 pub mod tr909_policy;
 pub mod transport;
 pub mod view;
+pub mod w30;
 
 pub type TimestampMs = u64;

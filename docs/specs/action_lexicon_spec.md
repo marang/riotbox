@@ -255,6 +255,19 @@ falls back visibly to `four_bars`.
 - `tr909.scene_lock`
 - `tr909.release`
 
+`w30.apply_damage_profile` carries
+`ActionParams::W30DamageProfile { intensity, target_id, intent }`. The typed
+performer intent is `impact` for source-owned transient/body attack or
+`texture` for continuous source-owned roughness without an invented trigger
+grid. The current Jam TUI `D` gesture queues `impact`; explicit action
+producers may request either typed value, and TUI diagnostics display the
+committed request and realized outcome. Both values use the same command,
+queue, commit, Session, and replay path. Session v1 actions that still carry
+the former generic `Mutation` params map explicitly to `legacy_auto`.
+Compatibility must not silently reinterpret those historical actions as a new
+performer choice. New typed actions may not request `legacy_auto`; queue and
+replay reject that compatibility-only value.
+
 `w30.browse_slice_pool` normally cycles through captures assigned to the
 current W-30 pad. A Feral-ready Source Graph may bias that choice toward a
 non-current capture whose `source_origin_refs` match a `CaptureCandidate` asset

@@ -254,6 +254,20 @@ impl JamAppState {
         &mut self,
         requested_at: TimestampMs,
     ) -> Option<QueueControlResult> {
+        self.queue_w30_apply_damage_profile_with_intent(
+            requested_at,
+            riotbox_core::w30::W30HardIntent::Impact,
+        )
+    }
+
+    pub fn queue_w30_apply_damage_profile_with_intent(
+        &mut self,
+        requested_at: TimestampMs,
+        intent: riotbox_core::w30::W30HardIntent,
+    ) -> Option<QueueControlResult> {
+        if !intent.is_performer_request() {
+            return None;
+        }
         if self.w30_pad_cue_pending() {
             return Some(QueueControlResult::AlreadyPending);
         }
@@ -274,12 +288,14 @@ impl JamAppState {
                 ..Default::default()
             },
         );
-        draft.params = ActionParams::Mutation {
+        draft.params = ActionParams::W30DamageProfile {
             intensity: Self::W30_DAMAGE_PROFILE_GRIT,
-            target_id: Some(capture.capture_id.to_string()),
+            target_id: capture.capture_id.clone(),
+            intent,
         };
         draft.explanation = Some(format!(
-            "apply {} damage profile to {} on W-30 pad {bank_id}/{pad_id}",
+            "apply {} {} profile to {} on W-30 pad {bank_id}/{pad_id}",
+            intent.label(),
             Self::W30_DAMAGE_PROFILE_LABEL,
             capture.capture_id
         ));

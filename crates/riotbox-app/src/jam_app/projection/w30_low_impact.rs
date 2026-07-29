@@ -169,8 +169,9 @@ mod tests {
     use riotbox_audio::{
         source_audio::SourceAudioCache,
         w30::{
-            W30_RESAMPLE_HARD_SLICE_COUNT, W30ResampleLowImpactDecision,
-            W30ResampleLowImpactRecipe, W30ResampleLowImpactRole,
+            W30_RESAMPLE_HARD_SLICE_COUNT, W30ResampleHardSuitability,
+            W30ResampleLowImpactDecision, W30ResampleLowImpactRecipe, W30ResampleLowImpactRole,
+            W30ResampleTapHardPolicy,
         },
     };
 
@@ -315,6 +316,7 @@ mod tests {
                 source.sample_rate,
                 1.0,
                 1.0,
+                None,
             )
             .expect("project development source");
             let repeated = project_resample_source_from_interleaved(
@@ -323,10 +325,69 @@ mod tests {
                 source.sample_rate,
                 1.0,
                 1.0,
+                None,
             )
             .expect("repeat development source projection");
             assert_eq!(projection.hard_policy, repeated.hard_policy);
             assert_eq!(projection.hard_low_impact, repeated.hard_low_impact);
+            let impact = project_resample_source_from_interleaved(
+                source.interleaved_samples(),
+                usize::from(source.channel_count),
+                source.sample_rate,
+                1.0,
+                1.0,
+                Some(riotbox_core::w30::W30HardIntent::Impact),
+            )
+            .expect("project impact intent");
+            let texture = project_resample_source_from_interleaved(
+                source.interleaved_samples(),
+                usize::from(source.channel_count),
+                source.sample_rate,
+                1.0,
+                1.0,
+                Some(riotbox_core::w30::W30HardIntent::Texture),
+            )
+            .expect("project texture intent");
+            match projection.hard_suitability.status {
+                W30ResampleHardSuitability::Suitable => {
+                    assert_eq!(
+                        texture.hard_intent_outcome,
+                        riotbox_core::w30::W30HardIntentOutcome::RealizedTexture
+                    );
+                    assert_eq!(
+                        texture.hard_policy,
+                        W30ResampleTapHardPolicy::SourceTextureBite
+                    );
+                    assert_eq!(texture.hard_trigger_mask, 0);
+                    assert_eq!(
+                        texture.hard_slice_cursors,
+                        [0; W30_RESAMPLE_HARD_SLICE_COUNT]
+                    );
+                    if projection.hard_policy == W30ResampleTapHardPolicy::SourceTransientChop {
+                        assert_eq!(
+                            impact.hard_intent_outcome,
+                            riotbox_core::w30::W30HardIntentOutcome::RealizedImpact
+                        );
+                        assert_eq!(impact.hard_policy, projection.hard_policy);
+                    } else {
+                        assert_eq!(
+                            impact.hard_intent_outcome,
+                            riotbox_core::w30::W30HardIntentOutcome::SourceMismatch
+                        );
+                        assert_eq!(impact.hard_policy, W30ResampleTapHardPolicy::Unavailable);
+                        assert_eq!(impact.hard_trigger_mask, 0);
+                    }
+                }
+                _ => {
+                    for intended in [impact, texture] {
+                        assert_eq!(
+                            intended.hard_intent_outcome,
+                            riotbox_core::w30::W30HardIntentOutcome::SourceUnavailable
+                        );
+                        assert_eq!(intended.hard_policy, W30ResampleTapHardPolicy::Unavailable);
+                    }
+                }
+            }
             let plan = projection.hard_low_impact;
             eprintln!(
                 "{family}: policy={} recipe={} role={} decision={} candidates={} slot={} onset={} attack={} body={} share={:.6} over_body={:.6} over_source={:.6}",
