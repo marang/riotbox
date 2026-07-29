@@ -35,9 +35,13 @@ const LOW_IMPACT_ATTACK_RATIO_MIN: f64 = 1.15;
 const LOW_IMPACT_ATTACK_RMS_MIN: f64 = 0.0001;
 const SOURCE_HIT_SHAPER_HEAD_RATIO_MIN: f64 = 1.15;
 const SOURCE_HIT_SHAPER_HEAD_RMS_MIN: f64 = 0.0001;
+const SOURCE_ALIGNED_IMPACT_HEAD_RATIO_MIN: f64 = 1.10;
 const SOURCE_HIT_SHAPER_BODY_RATIO_MIN: f64 = 1.15;
 const SOURCE_HIT_SHAPER_BODY_RMS_MIN: f64 = 0.0001;
+const SOURCE_ALIGNED_IMPACT_BODY_RMS_MIN: f64 = 0.001;
 const SOURCE_HIT_SHAPER_SIGNIFICANT_DELTA_MS_MIN: f64 = 25.0;
+const SOURCE_ALIGNED_IMPACT_SIGNIFICANT_DELTA_MS_MIN: f64 = 6.0;
+const SOURCE_ALIGNED_IMPACT_CREST_RATIO_MIN: f64 = 0.9;
 const GESTURE_LEVEL_RATIO_MIN: f64 = 0.9;
 const GESTURE_LEVEL_RATIO_MAX: f64 = 1.15;
 const SOURCE_HIT_SHAPER_GESTURE_LEVEL_RATIO_MAX: f64 = 1.3;
@@ -266,7 +270,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let live_gesture =
             render_resample_live_gesture(&state, base_tap_state, hard_tap_state, bpm);
         println!(
-            "hard resample tap: variation={:?} revision={} intensity={} policy={} suitability={} source_rms={:.6} active_frame_ratio={:.3} calibrated_output_gain={:.6} hit_window_compensation_gain={:.6} exact_callback_calibrated={} exact_callback_evaluated={} predicted_raw_level_ratio={:.6} predicted_compensated_level_ratio={:.6} predicted_level_matched_body_ratio={:.6} grit_recipe={} grit_effective_sample_rate_hz={:?} grit_quantization_levels={:?} trigger_mask={:08b} onset_cursors={:?} attack_lengths={:?} bite_band={} bite_input_gain={:.3} bite_output_gain={:.3} low_impact_recipe={} low_attack_share={:.3} low_attack_over_body={:.3} low_attack_over_source={:.3} hard_gesture_recipe={} impact_slot={} pickup_slot={} body_gain={:.3} impact_level_compensation={:.3} pickup_gain={:.3} selected_head_rms={:.6} selected_body_rms={:.6} transient_contrast={:.3}",
+            "hard resample tap: variation={:?} revision={} intensity={} policy={} suitability={} source_rms={:.6} active_frame_ratio={:.3} calibrated_output_gain={:.6} hit_window_compensation_gain={:.6} impact_body_eq_gain_db={:.3} impact_presence_gain={:.3} exact_callback_calibrated={} exact_callback_evaluated={} predicted_raw_level_ratio={:.6} predicted_compensated_level_ratio={:.6} predicted_level_matched_body_ratio={:.6} grit_recipe={} grit_effective_sample_rate_hz={:?} grit_quantization_levels={:?} trigger_mask={:08b} onset_cursors={:?} attack_lengths={:?} bite_band={} bite_input_gain={:.3} bite_output_gain={:.3} low_impact_recipe={} presence_head_wet={:.3} low_attack_share={:.3} low_attack_over_body={:.3} low_attack_over_source={:.3} hard_gesture_recipe={} impact_slot={} pickup_slot={} body_gain={:.3} impact_level_compensation={:.3} pickup_gain={:.3} selected_head_rms={:.6} selected_body_rms={:.6} transient_contrast={:.3}",
             state.runtime.w30_resample_tap.variation,
             state.runtime.w30_resample_tap.variation_revision,
             state.runtime.w30_resample_tap.variation_intensity,
@@ -289,6 +293,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .w30_resample_tap
                 .hard_calibration
                 .hit_window_compensation_gain,
+            state
+                .runtime
+                .w30_resample_tap
+                .hard_calibration
+                .impact_body_eq_gain_db,
+            state
+                .runtime
+                .w30_resample_tap
+                .hard_low_impact
+                .recipe
+                .calibrated_presence_gain(
+                    state
+                        .runtime
+                        .w30_resample_tap
+                        .hard_calibration
+                        .impact_body_eq_gain_db,
+                ),
             state
                 .runtime
                 .w30_resample_tap
@@ -344,6 +365,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .hard_low_impact
                 .recipe
                 .label(),
+            state
+                .runtime
+                .w30_resample_tap
+                .hard_low_impact
+                .presence_head_wet,
             state
                 .runtime
                 .w30_resample_tap
@@ -539,26 +565,36 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     h12_directional,
                     hard_state.hard_low_impact.recipe,
                 )?;
-                let h13_directional = resample_directional_metrics(
-                    h12_counterfactual_tap,
-                    hard_tap,
-                    hard_state,
-                    hard_state.tempo_bpm,
-                    SAMPLE_RATE,
-                    usize::from(CHANNEL_COUNT),
-                )?;
-                println!("H12-to-H13 directional metrics: {h13_directional:?}");
-                println!(
-                    "H12-to-H13 auxiliary metrics: raw_relative_delta={:.6} h12_boundary_jump={:.6} h13_boundary_jump={:.6}",
-                    h13_directional.gesture_relative_rms_delta,
-                    h13_directional.base_boundary_jump_max,
-                    h13_directional.hard_boundary_jump_max,
-                );
-                validate_resample_h13_metrics(h13_directional, hard_state)?;
+                if hard_state.hard_gesture.recipe
+                    == W30ResampleHardGestureRecipe::SourceReverseIntoImpactV1
+                {
+                    let h13_directional = resample_directional_metrics(
+                        h12_counterfactual_tap,
+                        hard_tap,
+                        hard_state,
+                        hard_state.tempo_bpm,
+                        SAMPLE_RATE,
+                        usize::from(CHANNEL_COUNT),
+                    )?;
+                    println!("H12-to-H13 directional metrics: {h13_directional:?}");
+                    println!(
+                        "H12-to-H13 auxiliary metrics: raw_relative_delta={:.6} h12_boundary_jump={:.6} h13_boundary_jump={:.6}",
+                        h13_directional.gesture_relative_rms_delta,
+                        h13_directional.base_boundary_jump_max,
+                        h13_directional.hard_boundary_jump_max,
+                    );
+                    validate_resample_h13_metrics(h13_directional, hard_state)?;
+                } else {
+                    println!(
+                        "H13 unavailable: the aligned V5 impact owns the final Hard output without a delayed body gesture"
+                    );
+                }
             }
             validate_resample_hard_level(
                 tap_metrics.rms,
+                tap_metrics.peak_abs,
                 hard_metrics.rms,
+                hard_metrics.peak_abs,
                 hard_state.hard_low_impact.recipe,
             )?;
         }
@@ -571,14 +607,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn validate_resample_hard_level(
     base_rms: f32,
+    base_peak: f32,
     hard_rms: f32,
+    hard_peak: f32,
     low_impact_recipe: W30ResampleLowImpactRecipe,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    if !base_rms.is_finite() || !hard_rms.is_finite() || base_rms <= f32::EPSILON {
+    if !base_rms.is_finite()
+        || !base_peak.is_finite()
+        || !hard_rms.is_finite()
+        || !hard_peak.is_finite()
+        || base_rms <= f32::EPSILON
+        || hard_rms <= f32::EPSILON
+    {
         return Err("invalid W-30 Hard level comparison".into());
     }
     let ratio = f64::from(hard_rms / base_rms);
-    let maximum = if low_impact_recipe == W30ResampleLowImpactRecipe::SourceHitShaperV3 {
+    let maximum = if matches!(
+        low_impact_recipe,
+        W30ResampleLowImpactRecipe::SourceHitShaperV3
+            | W30ResampleLowImpactRecipe::SourceImpactShaperV4
+    ) {
         SOURCE_HIT_SHAPER_GESTURE_LEVEL_RATIO_MAX
     } else {
         GESTURE_LEVEL_RATIO_MAX
@@ -592,6 +640,20 @@ fn validate_resample_hard_level(
     println!(
         "base-to-hard level validation: ratio={ratio:.4} accepted={GESTURE_LEVEL_RATIO_MIN}..={maximum}"
     );
+    if low_impact_recipe == W30ResampleLowImpactRecipe::SourceAlignedImpactV5 {
+        let base_crest = f64::from(base_peak / base_rms);
+        let hard_crest = f64::from(hard_peak / hard_rms);
+        let crest_ratio = hard_crest / base_crest.max(f64::EPSILON);
+        if crest_ratio < SOURCE_ALIGNED_IMPACT_CREST_RATIO_MIN {
+            return Err(format!(
+                "aligned V5 impact collapsed source crest: {crest_ratio:.4} < {SOURCE_ALIGNED_IMPACT_CREST_RATIO_MIN}"
+            )
+            .into());
+        }
+        println!(
+            "aligned V5 crest validation: base={base_crest:.4} hard={hard_crest:.4} ratio={crest_ratio:.4}"
+        );
+    }
     Ok(())
 }
 
@@ -643,12 +705,16 @@ fn resample_directional_metrics(
         0.120,
         0.200,
     );
-    let selected_band =
-        if hard_state.hard_low_impact.recipe == W30ResampleLowImpactRecipe::SourceHitShaperV3 {
-            hard_state.hard_low_impact.recipe.presence_cutoff_hz()
-        } else {
-            hard_state.hard_attack_bite.band.cutoff_hz()
-        };
+    let selected_band = if matches!(
+        hard_state.hard_low_impact.recipe,
+        W30ResampleLowImpactRecipe::SourceHitShaperV3
+            | W30ResampleLowImpactRecipe::SourceImpactShaperV4
+            | W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+    ) {
+        hard_state.hard_low_impact.recipe.presence_cutoff_hz()
+    } else {
+        hard_state.hard_attack_bite.band.cutoff_hz()
+    };
     let selected_band_attack_hard_over_base = selected_band.map_or(1.0, |(low_hz, high_hz)| {
         let filtered_base = bandpass_interleaved(base, sample_rate, channel_count, low_hz, high_hz);
         let filtered_hard = bandpass_interleaved(hard, sample_rate, channel_count, low_hz, high_hz);
@@ -695,7 +761,12 @@ fn resample_directional_metrics(
         source_hit_shaper_body_hard_rms,
         source_hit_shaper_body_hard_over_base,
         source_hit_shaper_significant_delta_ms_per_hit,
-    ) = if hard_state.hard_low_impact.recipe == W30ResampleLowImpactRecipe::SourceHitShaperV3 {
+    ) = if matches!(
+        hard_state.hard_low_impact.recipe,
+        W30ResampleLowImpactRecipe::SourceHitShaperV3
+            | W30ResampleLowImpactRecipe::SourceImpactShaperV4
+            | W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+    ) {
         let (head_low_hz, head_high_hz) = hard_state
             .hard_low_impact
             .recipe
@@ -1269,14 +1340,21 @@ fn validate_resample_directional_metrics(
             )
             .into());
         }
-        if ratio < LOW_IMPACT_ATTACK_RATIO_MIN {
+        if low_impact_recipe != W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+            && ratio < LOW_IMPACT_ATTACK_RATIO_MIN
+        {
             return Err(format!(
-                "assigned low-impact attack lift failed: {ratio:.4} < {LOW_IMPACT_ATTACK_RATIO_MIN}"
+                "assigned low-impact attack ratio failed: {ratio:.4} < {LOW_IMPACT_ATTACK_RATIO_MIN}"
             )
             .into());
         }
     }
-    if low_impact_recipe == W30ResampleLowImpactRecipe::SourceHitShaperV3 {
+    if matches!(
+        low_impact_recipe,
+        W30ResampleLowImpactRecipe::SourceHitShaperV3
+            | W30ResampleLowImpactRecipe::SourceImpactShaperV4
+            | W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+    ) {
         let (Some(head_base_rms), Some(head_hard_rms), Some(head_ratio)) = (
             metrics.source_hit_shaper_head_base_rms,
             metrics.source_hit_shaper_head_hard_rms,
@@ -1306,35 +1384,54 @@ fn validate_resample_directional_metrics(
         {
             return Err("non-finite source-hit shaper metric".into());
         }
-        if head_hard_rms < SOURCE_HIT_SHAPER_HEAD_RMS_MIN
-            || head_ratio < SOURCE_HIT_SHAPER_HEAD_RATIO_MIN
-        {
+        let minimum_head_ratio =
+            if low_impact_recipe == W30ResampleLowImpactRecipe::SourceAlignedImpactV5 {
+                SOURCE_ALIGNED_IMPACT_HEAD_RATIO_MIN
+            } else {
+                SOURCE_HIT_SHAPER_HEAD_RATIO_MIN
+            };
+        if head_hard_rms < SOURCE_HIT_SHAPER_HEAD_RMS_MIN || head_ratio < minimum_head_ratio {
             return Err(format!(
-                "source-hit shaper head lift failed: rms={head_hard_rms:.6} min={SOURCE_HIT_SHAPER_HEAD_RMS_MIN} ratio={head_ratio:.4} min_ratio={SOURCE_HIT_SHAPER_HEAD_RATIO_MIN}"
+                "source-hit shaper head lift failed: rms={head_hard_rms:.6} min={SOURCE_HIT_SHAPER_HEAD_RMS_MIN} ratio={head_ratio:.4} min_ratio={minimum_head_ratio}"
             )
             .into());
         }
-        if body_hard_rms < SOURCE_HIT_SHAPER_BODY_RMS_MIN
-            || body_ratio < SOURCE_HIT_SHAPER_BODY_RATIO_MIN
-        {
+        let body_contract_pass =
+            if low_impact_recipe == W30ResampleLowImpactRecipe::SourceAlignedImpactV5 {
+                body_hard_rms >= SOURCE_ALIGNED_IMPACT_BODY_RMS_MIN
+            } else {
+                body_hard_rms >= SOURCE_HIT_SHAPER_BODY_RMS_MIN
+                    && body_ratio >= SOURCE_HIT_SHAPER_BODY_RATIO_MIN
+            };
+        if !body_contract_pass {
             return Err(format!(
-                "source-hit shaper body lift failed: rms={body_hard_rms:.6} min={SOURCE_HIT_SHAPER_BODY_RMS_MIN} ratio={body_ratio:.4} min_ratio={SOURCE_HIT_SHAPER_BODY_RATIO_MIN}"
+                "source-hit shaper body contract failed: rms={body_hard_rms:.6} ratio={body_ratio:.4} recipe={}",
+                low_impact_recipe.label()
             )
             .into());
         }
-        if significant_delta_ms_per_hit < SOURCE_HIT_SHAPER_SIGNIFICANT_DELTA_MS_MIN {
+        let minimum_delta_ms =
+            if low_impact_recipe == W30ResampleLowImpactRecipe::SourceAlignedImpactV5 {
+                SOURCE_ALIGNED_IMPACT_SIGNIFICANT_DELTA_MS_MIN
+            } else {
+                SOURCE_HIT_SHAPER_SIGNIFICANT_DELTA_MS_MIN
+            };
+        if significant_delta_ms_per_hit < minimum_delta_ms {
             return Err(format!(
-                "source-hit shaper changed too little of each selected hit: {significant_delta_ms_per_hit:.2}ms < {SOURCE_HIT_SHAPER_SIGNIFICANT_DELTA_MS_MIN:.2}ms"
+                "source-hit shaper changed too little of each selected hit: {significant_delta_ms_per_hit:.2}ms < {minimum_delta_ms:.2}ms"
             )
             .into());
         }
     }
-    let gesture_level_ratio_max =
-        if low_impact_recipe == W30ResampleLowImpactRecipe::SourceHitShaperV3 {
-            SOURCE_HIT_SHAPER_GESTURE_LEVEL_RATIO_MAX
-        } else {
-            GESTURE_LEVEL_RATIO_MAX
-        };
+    let gesture_level_ratio_max = if matches!(
+        low_impact_recipe,
+        W30ResampleLowImpactRecipe::SourceHitShaperV3
+            | W30ResampleLowImpactRecipe::SourceImpactShaperV4
+    ) {
+        SOURCE_HIT_SHAPER_GESTURE_LEVEL_RATIO_MAX
+    } else {
+        GESTURE_LEVEL_RATIO_MAX
+    };
     if metrics.gesture_level_hard_over_base < GESTURE_LEVEL_RATIO_MIN
         || metrics.gesture_level_hard_over_base > gesture_level_ratio_max
     {
@@ -1358,9 +1455,11 @@ fn validate_resample_directional_metrics(
         )
         .into());
     }
-    if metrics.body_40_120ms_hard_over_base < f64::from(W30_RESAMPLE_MIN_BODY_PRESERVATION_RATIO)
-        || metrics.body_120_200ms_hard_over_base
+    if low_impact_recipe != W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+        && (metrics.body_40_120ms_hard_over_base
             < f64::from(W30_RESAMPLE_MIN_BODY_PRESERVATION_RATIO)
+            || metrics.body_120_200ms_hard_over_base
+                < f64::from(W30_RESAMPLE_MIN_BODY_PRESERVATION_RATIO))
     {
         return Err(format!(
             "hard body preservation failed: early={:.4} late={:.4} min={W30_RESAMPLE_MIN_BODY_PRESERVATION_RATIO}",

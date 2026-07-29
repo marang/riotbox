@@ -289,8 +289,10 @@ def validate_w30_hard_reachability_contract(
     applicable = object_field(contract, "applicable_case_requires", prefix)
     expected = {
         "candidate_wav_generation_eligible_after_preflight": True,
+        "requested_intent": "impact",
+        "intent_outcome": "realized_impact",
         "hard_policy": "source_transient_chop",
-        "low_impact_recipe": "source_hit_shaper_v3",
+        "low_impact_recipe": "source_aligned_impact_v5",
         "exact_callback_calibration_applicable": True,
         "exact_callback_evaluated": True,
         "exact_callback_calibrated": True,

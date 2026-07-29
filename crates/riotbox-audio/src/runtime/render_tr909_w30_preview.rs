@@ -695,6 +695,12 @@ pub(super) fn render_w30_resample_tap_buffer(
             W30ResampleLowImpactRecipe::SourceHitShaperV3 => {
                 w30_resample_hit_shaper_v3_sample(render, state, attack_and_body)
             }
+            W30ResampleLowImpactRecipe::SourceImpactShaperV4 => {
+                w30_resample_impact_shaper_v4_sample(render, state, attack_and_body)
+            }
+            W30ResampleLowImpactRecipe::SourceAlignedImpactV5 => {
+                w30_resample_aligned_impact_v5_sample(render, state, attack_and_body)
+            }
             W30ResampleLowImpactRecipe::Unavailable
             | W30ResampleLowImpactRecipe::SourceLowTransientPunchV1 => {
                 let bitten = w30_resample_hard_gesture_bite_sample(render, state, attack_and_body);
@@ -885,7 +891,12 @@ fn trigger_w30_resample_attack(
     };
     state.hard_impact_frames_remaining = state.hard_impact_total_frames;
     let onset_cursor = w30_resample_step_cursor(render, step);
-    let proxy_attack_length = u32::from(render.hard_attack_lengths[slot].max(1));
+    let proxy_attack_length =
+        if render.hard_low_impact.recipe == W30ResampleLowImpactRecipe::SourceAlignedImpactV5 {
+            u32::from(render.hard_low_impact.attack_window_proxy_frames.max(1))
+        } else {
+            u32::from(render.hard_attack_lengths[slot].max(1))
+        };
     let mut attack_frames = (f64::from(proxy_attack_length) / cursor_increment)
         .round()
         .clamp(1.0, f64::from(output_sample_rate.max(1)) * 0.08) as u32;
@@ -922,7 +933,12 @@ fn trigger_w30_resample_attack(
     state.hard_hit_preservation_total_frames =
         preservation_frames.saturating_add(preservation_fade_frames);
     state.hard_hit_preservation_frames_remaining = state.hard_hit_preservation_total_frames;
-    if render.hard_low_impact.recipe == W30ResampleLowImpactRecipe::SourceHitShaperV3 {
+    if matches!(
+        render.hard_low_impact.recipe,
+        W30ResampleLowImpactRecipe::SourceHitShaperV3
+            | W30ResampleLowImpactRecipe::SourceImpactShaperV4
+            | W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+    ) {
         state.hard_body_eq_z1 = 0.0;
         state.hard_body_eq_z2 = 0.0;
         state.hard_low_impact_filter_initialized = false;
@@ -1185,11 +1201,20 @@ pub(super) fn configure_w30_resample_low_impact(
         state.hard_impact_presence_high_alpha = 0.0;
     }
     let recipe = render.hard_low_impact.recipe;
-    if recipe == W30ResampleLowImpactRecipe::SourceHitShaperV3 {
+    if matches!(
+        recipe,
+        W30ResampleLowImpactRecipe::SourceHitShaperV3
+            | W30ResampleLowImpactRecipe::SourceImpactShaperV4
+    ) {
         let sample_rate = output_sample_rate.max(1) as f32;
         let omega = std::f32::consts::TAU * recipe.body_eq_center_hz().max(1.0) / sample_rate;
         let alpha = omega.sin() / (2.0 * recipe.body_eq_q().max(0.01));
-        let amplitude = 10.0_f32.powf(recipe.body_eq_gain_db() / 40.0);
+        let gain_db = if recipe == W30ResampleLowImpactRecipe::SourceImpactShaperV4 {
+            render.hard_impact_body_eq_gain_db
+        } else {
+            recipe.body_eq_gain_db()
+        };
+        let amplitude = 10.0_f32.powf(gain_db / 40.0);
         let a0 = 1.0 + alpha / amplitude;
         state.hard_body_eq_b0 = (1.0 + alpha * amplitude) / a0;
         state.hard_body_eq_b1 = -2.0 * omega.cos() / a0;
@@ -1277,6 +1302,84 @@ pub(super) fn w30_resample_hit_shaper_v3_sample(
     shaped.clamp(-0.98, 0.98)
 }
 
+pub(super) fn w30_resample_impact_shaper_v4_sample(
+    render: &RealtimeW30ResampleTapState,
+    state: &mut W30ResampleTapCallbackState,
+    source_hit: f32,
+) -> f32 {
+    if render.variation != W30ResampleTapVariation::HardDamage
+        || render.hard_policy != W30ResampleTapHardPolicy::SourceTransientChop
+        || render.hard_low_impact.recipe != W30ResampleLowImpactRecipe::SourceImpactShaperV4
+        || state.hard_attack_mix <= 0.0
+    {
+        return source_hit;
+    }
+    if !state.hard_low_impact_filter_initialized {
+        state.hard_impact_presence_lowpass_low = source_hit;
+        state.hard_impact_presence_lowpass_high = source_hit;
+        state.hard_low_impact_filter_initialized = true;
+        return source_hit;
+    }
+
+    state.hard_impact_presence_lowpass_low += state.hard_impact_presence_low_alpha
+        * (source_hit - state.hard_impact_presence_lowpass_low);
+    state.hard_impact_presence_lowpass_high += state.hard_impact_presence_high_alpha
+        * (source_hit - state.hard_impact_presence_lowpass_high);
+    let presence = state.hard_impact_presence_lowpass_high - state.hard_impact_presence_lowpass_low;
+    let recipe = render.hard_low_impact.recipe;
+    let equalized_body = state.hard_body_eq_b0 * source_hit + state.hard_body_eq_z1;
+    state.hard_body_eq_z1 = state.hard_body_eq_b1 * source_hit
+        - state.hard_body_eq_a1 * equalized_body
+        + state.hard_body_eq_z2;
+    state.hard_body_eq_z2 =
+        state.hard_body_eq_b2 * source_hit - state.hard_body_eq_a2 * equalized_body;
+    let shaped_presence = normalized_soft_clip(presence, recipe.head_drive());
+    let presence_residual = shaped_presence - presence;
+    let head_envelope = state.hard_attack_head_mix;
+    let nonlinear_head_mix = recipe.head_wet() * head_envelope;
+    let clean_presence = presence
+        * recipe.calibrated_presence_gain(render.hard_impact_body_eq_gain_db)
+        * state.hard_attack_mix;
+    let body_mix = state.hard_attack_mix * (1.0 - state.hard_attack_head_mix);
+    let body_hit = source_hit + (equalized_body - source_hit) * body_mix;
+    (body_hit + clean_presence + presence_residual * nonlinear_head_mix).clamp(-0.98, 0.98)
+}
+
+pub(super) fn w30_resample_aligned_impact_v5_sample(
+    render: &RealtimeW30ResampleTapState,
+    state: &mut W30ResampleTapCallbackState,
+    source_hit: f32,
+) -> f32 {
+    if render.variation != W30ResampleTapVariation::HardDamage
+        || render.hard_policy != W30ResampleTapHardPolicy::SourceTransientChop
+        || render.hard_low_impact.recipe != W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+        || state.hard_attack_mix <= 0.0
+    {
+        return source_hit;
+    }
+    if !state.hard_low_impact_filter_initialized {
+        state.hard_impact_presence_lowpass_low = source_hit;
+        state.hard_impact_presence_lowpass_high = source_hit;
+        state.hard_low_impact_filter_initialized = true;
+        return source_hit;
+    }
+
+    state.hard_impact_presence_lowpass_low += state.hard_impact_presence_low_alpha
+        * (source_hit - state.hard_impact_presence_lowpass_low);
+    state.hard_impact_presence_lowpass_high += state.hard_impact_presence_high_alpha
+        * (source_hit - state.hard_impact_presence_lowpass_high);
+    let presence = state.hard_impact_presence_lowpass_high - state.hard_impact_presence_lowpass_low;
+    let recipe = render.hard_low_impact.recipe;
+    let shaped_presence = normalized_soft_clip(presence, recipe.head_drive());
+    let presence_residual = shaped_presence - presence;
+    let nonlinear_head_mix = render
+        .hard_low_impact
+        .presence_head_wet
+        .clamp(0.0, recipe.head_wet())
+        * state.hard_attack_head_mix;
+    (source_hit + presence_residual * nonlinear_head_mix).clamp(-0.98, 0.98)
+}
+
 fn normalized_soft_clip(sample: f32, drive: f32) -> f32 {
     let drive = drive.max(1.0);
     (sample * drive).tanh() / drive.tanh().max(f32::EPSILON)
@@ -1290,7 +1393,12 @@ pub(super) fn w30_resample_calibrated_hit_preservation_sample(
 ) -> f32 {
     if render.variation != W30ResampleTapVariation::HardDamage
         || render.hard_policy != W30ResampleTapHardPolicy::SourceTransientChop
-        || render.hard_low_impact.recipe != W30ResampleLowImpactRecipe::SourceHitShaperV3
+        || !matches!(
+            render.hard_low_impact.recipe,
+            W30ResampleLowImpactRecipe::SourceHitShaperV3
+                | W30ResampleLowImpactRecipe::SourceImpactShaperV4
+                | W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+        )
     {
         return voice;
     }
@@ -1538,6 +1646,10 @@ pub(super) fn w30_resample_step_cursor(render: &RealtimeW30ResampleTapState, ste
         return 0.0;
     }
     if render.hard_policy == W30ResampleTapHardPolicy::SourceTransientChop {
+        if render.hard_low_impact.recipe == W30ResampleLowImpactRecipe::SourceAlignedImpactV5 {
+            return usize::from(render.hard_low_impact.selected_onset_cursor)
+                .min(sample_count.saturating_sub(1)) as f64;
+        }
         let slot = step.rem_euclid(W30_RESAMPLE_HARD_SLICE_COUNT as i64) as usize;
         return usize::from(render.hard_slice_cursors[slot]).min(sample_count.saturating_sub(1))
             as f64;

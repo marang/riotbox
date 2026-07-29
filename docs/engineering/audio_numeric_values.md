@@ -641,3 +641,52 @@ Selection state names the role `transient_low_body`, never bass. It also carries
 the typed decision, candidate count, winning slot/onset, adaptive attack/body
 window lengths, and all three ratios through product state, the coherent
 realtime snapshot, observer JSON, and reachability preflight.
+
+## W-30 H25 Source-Aligned Impact V5 Values
+
+V5 retains the `0.18`, `1.40`, and `0.30` low-impact ownership gates above.
+It changes how a qualifying hit is aligned, rendered, and accepted:
+
+- `2 ms` is the presence-analysis hop. It is resolution for locating the
+  audible attack inside a source window, not a delay applied to output.
+- `50 ms` is the inspected post-onset presence region. It is long enough to
+  detect a late rise but remains local to the attack.
+- `15 ms` is the maximum allowed delay from the grid point to the strongest
+  presence rise. Later candidates caused the previously heard foreign or
+  off-grid layer and are rejected.
+- `2` aligned hits is the minimum source evidence. A single accidental edge
+  cannot become the repeated Hard identity.
+- `900–3600 Hz` is the existing presence band used for the V5 nonlinear
+  residual. V5 does not boost the dry body or synthesize a replacement hit.
+- `0.90..=1.10` is the exact whole-window Hard/Base RMS range. This blocks both
+  body collapse and a result that passes merely by becoming globally louder.
+- `1.10` is the minimum causal presence-head ratio. It compares V5 against the
+  same callback topology, source, mask, gain, and body with the V5 residual
+  disabled; it therefore measures the intended local mechanism rather than an
+  unrelated arrangement change.
+- `0.90` is the minimum Hard/Base crest ratio. A louder but flattened,
+  overdriven, or body-heavy render cannot claim harder transient impact.
+- `16` wet intervals and `16` gain intervals are deterministic solver
+  resolution. They are not sixteen musical presets and are not source-specific
+  taste values. The chosen wet, gain, and mask remain source-derived outputs.
+
+The density candidates are ordered, typed policies: full source mask,
+anchor-preserving alternating mask, and anchor-plus-farthest two-hit floor.
+The solver selects the densest candidate satisfying all unchanged contracts.
+If none passes, V5 reports `exact_callback_rejected` and clears product output.
+The fail-closed state retains the rejected source-derived recipe, role, and
+mask only as a typed negative-cache key. Its Hard policy is `unavailable`, so
+those retained diagnostics cannot trigger callback audio; an unchanged view
+refresh reuses the evaluated rejection instead of rerunning the exact search.
+
+The exact search is control-plane work and never runs inside the realtime audio
+callback. Once a descending gain candidate falls below the `0.90` whole-window
+floor, all later lower-gain steps are impossible and are skipped. The
+unity-gain render is also reused for the first gain step. On the measured
+rejection this reduced debug search time from roughly 180 seconds to roughly
+30 seconds. Eight accepted-case WAVs remained byte-identical, and the rejected
+preflight JSON retained the same hash, so this is an algorithmic efficiency
+change rather than new audio tuning.
+
+These values own transient and midrange/hook impact only. Bass remains
+`unassigned`; V5 neither promises nor evaluates bass pressure.

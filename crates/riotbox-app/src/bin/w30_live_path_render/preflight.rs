@@ -7,7 +7,7 @@ use riotbox_audio::{
     w30::{
         W30_RESAMPLE_HIT_SHAPER_MIN_ATTACK_OVER_BODY,
         W30_RESAMPLE_LOW_IMPACT_MIN_ATTACK_OVER_SOURCE, W30_RESAMPLE_LOW_IMPACT_MIN_ATTACK_SHARE,
-        W30ResampleTapState,
+        W30ResampleLowImpactDecision, W30ResampleTapState,
     },
 };
 use riotbox_core::{
@@ -76,6 +76,13 @@ struct W30HardProjectionReachability {
     exact_callback_calibration_applicable: bool,
     exact_callback_evaluated: bool,
     exact_callback_calibrated: bool,
+    predicted_level_ratio: f32,
+    predicted_presence_head_ratio: f32,
+    predicted_body_ratio: f32,
+    predicted_crest_ratio: f32,
+    presence_head_wet: f32,
+    impact_body_eq_gain_db: f32,
+    impact_presence_gain: f32,
     candidate_requirement_satisfied: bool,
 }
 
@@ -148,6 +155,10 @@ impl W30ReachabilityPreflightReport {
         let performer_impact_realized =
             state.hard_intent_outcome == W30HardIntentOutcome::RealizedImpact;
         let applicable = state.exact_hit_shaper_calibration_applicable();
+        let calibration_was_applicable = applicable
+            || (state.hard_calibration.exact_callback_evaluated
+                && state.hard_low_impact.decision
+                    == W30ResampleLowImpactDecision::ExactCallbackRejected);
         let requirement_satisfied = performer_impact_committed
             && performer_impact_realized
             && applicable
@@ -173,9 +184,19 @@ impl W30ReachabilityPreflightReport {
             low_band_attack_over_body_min: W30_RESAMPLE_HIT_SHAPER_MIN_ATTACK_OVER_BODY,
             low_band_attack_over_source: state.hard_low_impact.low_band_attack_over_source,
             low_band_attack_over_source_min: W30_RESAMPLE_LOW_IMPACT_MIN_ATTACK_OVER_SOURCE,
-            exact_callback_calibration_applicable: applicable,
+            exact_callback_calibration_applicable: calibration_was_applicable,
             exact_callback_evaluated: state.hard_calibration.exact_callback_evaluated,
             exact_callback_calibrated: state.hard_calibration.exact_callback_calibrated,
+            predicted_level_ratio: state.hard_calibration.predicted_compensated_level_ratio,
+            predicted_presence_head_ratio: state.hard_calibration.predicted_presence_head_ratio,
+            predicted_body_ratio: state.hard_calibration.predicted_level_matched_body_ratio,
+            predicted_crest_ratio: state.hard_calibration.predicted_crest_ratio,
+            presence_head_wet: state.hard_low_impact.presence_head_wet,
+            impact_body_eq_gain_db: state.hard_calibration.impact_body_eq_gain_db,
+            impact_presence_gain: state
+                .hard_low_impact
+                .recipe
+                .calibrated_presence_gain(state.hard_calibration.impact_body_eq_gain_db),
             candidate_requirement_satisfied: requirement_satisfied,
         });
         self.candidate_wav_generation_eligible_after_preflight =
@@ -183,17 +204,23 @@ impl W30ReachabilityPreflightReport {
                 && self.timing.product_graph_matches_confirmation_route == Some(true)
                 && requirement_satisfied;
         if !requirement_satisfied {
-            self.blockers.push(if !performer_impact_committed {
-                "performer_impact_intent_not_committed"
-            } else if !performer_impact_realized {
-                "performer_impact_intent_not_realized"
-            } else if !applicable {
-                "exact_hit_shaper_calibration_not_applicable"
-            } else if !state.hard_calibration.exact_callback_evaluated {
-                "exact_hit_shaper_calibration_not_evaluated"
-            } else {
-                "exact_hit_shaper_calibration_rejected"
-            });
+            self.blockers.push(
+                if state.hard_low_impact.decision
+                    == W30ResampleLowImpactDecision::ExactCallbackRejected
+                {
+                    "exact_hit_shaper_calibration_rejected"
+                } else if !performer_impact_committed {
+                    "performer_impact_intent_not_committed"
+                } else if !performer_impact_realized {
+                    "performer_impact_intent_not_realized"
+                } else if !applicable {
+                    "exact_hit_shaper_calibration_not_applicable"
+                } else if !state.hard_calibration.exact_callback_evaluated {
+                    "exact_hit_shaper_calibration_not_evaluated"
+                } else {
+                    "exact_hit_shaper_calibration_rejected"
+                },
+            );
         }
     }
 
@@ -380,8 +407,8 @@ mod tests {
             })),
             ..Default::default()
         };
-        state.hard_low_impact.recipe = W30ResampleLowImpactRecipe::SourceHitShaperV3;
-        state.hard_low_impact.role = W30ResampleLowImpactRole::TransientLowBody;
+        state.hard_low_impact.recipe = W30ResampleLowImpactRecipe::SourceImpactShaperV4;
+        state.hard_low_impact.role = W30ResampleLowImpactRole::TransientImpact;
         state.hard_low_impact.decision = W30ResampleLowImpactDecision::SourceHitSelected;
         state.hard_low_impact.candidate_count = 5;
         state.hard_low_impact.selected_slot = 3;
@@ -601,7 +628,8 @@ mod tests {
         assert!(projection.candidate_requirement_satisfied);
         assert_eq!(projection.requested_intent, "impact");
         assert_eq!(projection.intent_outcome, "realized_impact");
-        assert_eq!(projection.low_impact_role, "transient_low_body");
+        assert_eq!(projection.low_impact_recipe, "source_impact_shaper_v4");
+        assert_eq!(projection.low_impact_role, "transient_impact");
         assert_eq!(projection.low_impact_decision, "source_hit_selected");
         assert_eq!(projection.low_impact_candidate_count, 5);
         assert_eq!(projection.low_impact_selected_slot, 3);
@@ -643,5 +671,30 @@ mod tests {
         state.hard_low_impact.decision = W30ResampleLowImpactDecision::NotEvaluated;
 
         assert!(!state.exact_hit_shaper_calibration_applicable());
+    }
+
+    #[test]
+    fn evaluated_fail_closed_rejection_reports_prior_applicability() {
+        let timing = timing_report(Some(130.4), 130.0);
+        let mut report =
+            W30ReachabilityPreflightReport::from_timing(Path::new("rejected-loop.wav"), timing);
+        report.timing.product_graph_matches_confirmation_route = Some(true);
+        let mut state = applicable_hit_shaper_state();
+        state.hard_policy = W30ResampleTapHardPolicy::Unavailable;
+        state.hard_intent_outcome = W30HardIntentOutcome::SourceMismatch;
+        state.hard_low_impact.recipe = W30ResampleLowImpactRecipe::SourceAlignedImpactV5;
+        state.hard_low_impact.decision = W30ResampleLowImpactDecision::ExactCallbackRejected;
+        state.hard_calibration.exact_callback_evaluated = true;
+        state.hard_calibration.exact_callback_calibrated = false;
+
+        report.record_projection(&state);
+
+        assert!(!report.candidate_wav_generation_eligible_after_preflight);
+        assert_eq!(report.blockers, ["exact_hit_shaper_calibration_rejected"]);
+        let projection = report.projection.expect("projection");
+        assert!(projection.exact_callback_calibration_applicable);
+        assert!(projection.exact_callback_evaluated);
+        assert!(!projection.exact_callback_calibrated);
+        assert!(!projection.candidate_requirement_satisfied);
     }
 }

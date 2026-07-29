@@ -10,7 +10,7 @@ Full-phrase base human verdict: `pass` / loopable
 
 Latest heard hard candidate verdict: `reject`
 
-Post-research successor candidate: `not rendered`
+Post-research H25 successor: `technical partial` / `human_verdict: unverified`
 
 ## Outcome And Rejected First Candidate
 
@@ -737,3 +737,83 @@ The unchanged Beat03 development source passes the tightened preflight with
 stops before candidate WAV generation. No H25 holdout was accessed while
 freezing this acceptance gate; W-30 DSP, the `0.18` / `1.40` / `0.30`
 ownership gates, and the accepted Base remain unchanged.
+
+## H25 Source-Aligned Impact V5 Technical Result
+
+The earlier frozen V4 body-shaping candidate remains rejected historical
+evidence. H25 does not tune its gain, body EQ, or delayed gesture. The new
+`source_aligned_impact_v5` mechanism selects a real grid-near source hit,
+preserves the dry source body, and adds only a causal source-local nonlinear
+presence head. Source-derived density may fall from the full mask to an
+anchored alternating or two-hit mask when the complete source rhythm cannot
+retain level and crest.
+
+The exact callback contract is:
+
+- whole-window level `0.90..=1.10`;
+- causal presence-head ratio at least `1.10`;
+- Hard/Base crest ratio at least `0.90`;
+- no fallback audio when selection or calibration fails.
+
+Five contrasting development cases covered four typed families:
+
+- Beat03 (`dense_break`) passed at level `1.01452`, causal head `1.21401`,
+  crest `0.98566`, and source-derived mask `01000101`;
+- Bertsz (`dense_full_mix` stress) passed at level `1.05359`, causal head
+  `1.11037`, crest `0.96589`, and mask `01011001`;
+- Cinameng (`dense_break`) and Marwan (`sparse_drums`) correctly rejected
+  insufficient local attack over body;
+- Fupi (`tonal_riff`) reached exact calibration but rejected level `1.30467`
+  and crest `0.76649`, then failed closed to unavailable output.
+
+After freeze, Continue was the first exact H25 holdout pass. Its provider
+`138.462 BPM` matched Rust `138.46156 BPM`; the product path realized impact
+with `source_aligned_impact_v5`, mask `10010101`, level `1.01426`, causal head
+`1.14549`, and crest `1.00119`. The resulting Hard WAV hash is
+`8b48fad8dc967e904fbf887e388bbdb42a8a49ddf86dc6964f73507518497b0a`.
+
+Three tonal holdouts then failed honestly:
+
+- Trance Boss Battle and Fever Stadium matched provider tempo but resolved the
+  committed impact request as source mismatch before V5;
+- Better Days used the independently reconstructed 120 BPM/downbeat route and
+  reached V5, but exact calibration retained only `0.65606` whole-window
+  level despite causal head `1.16835`, so no candidate WAV was generated.
+
+The exact search initially exposed approximately three minutes of debug
+control-plane work on the rejected Better Days case. A sample-stable search
+optimization reuses the already-rendered unity candidate and stops descending
+gain once level is below the acceptance floor. The difficult reject now takes
+roughly 30 seconds in debug. All eight WAVs of the accepted Continue case are
+byte-identical before and after the optimization, and Better Days retains the
+same optimization-comparison preflight hash
+`71d8018922bb8aab692d44e726bc9e726282820b17119b1d549d6020ad00ca5c`.
+Evaluated V5 rejections also retain their typed selector evidence behind an
+`unavailable` Hard policy, allowing unchanged Jam view refreshes to reuse the
+negative result without rerunning that search. The callback cannot trigger the
+retained rejected recipe. That explicit retained evidence changes the final
+report hash to
+`29f2d9d77563df97f7f39a7e61504c790c04ecd29b99caf50684540f61fd3b83`.
+It now truthfully records `applicable=true`, `evaluated=true`, and
+`calibrated=false`; the rejected level, causal-head, body, and crest metrics
+remain unchanged.
+
+H25 remains `human_verdict: unverified`. It has one exact fresh holdout pass
+but not the required two prequalified sources across two families. No
+structured playback is authorized, and the result is not a musical-alpha
+claim. The active rotation is replenished with untouched CC0 sources; no
+replacement was pre-rendered or used to tune V5.
+
+Machine-readable evidence is frozen in
+`docs/benchmarks/w30_resample_h25_characterization_v1.json`.
+
+## Branch Review Note
+
+`w30_projection.rs` now exceeds the project file-size guidance and carries the
+source selector, exact-callback calibration, projection assembly, and their
+tests. This is a review-cost warning, not justification for an `include!` or
+line-number split. A later behavior-neutral maintenance slice should extract
+the stable exact-calibration domain as a real Rust module with explicit
+visibility and local tests; doing that mechanically inside this audible slice
+would mix module migration with DSP behavior and make sample-stability review
+less reliable.

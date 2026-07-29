@@ -66,8 +66,9 @@ use render_tr909_w30_preview::{
 };
 #[cfg(test)]
 use render_tr909_w30_preview::{
-    w30_resample_calibrated_hit_preservation_sample, w30_resample_hard_grit_sample,
-    w30_resample_hit_shaper_v3_sample, w30_resample_kick_impact_v2_sample,
+    w30_resample_aligned_impact_v5_sample, w30_resample_calibrated_hit_preservation_sample,
+    w30_resample_hard_grit_sample, w30_resample_hit_shaper_v3_sample,
+    w30_resample_impact_shaper_v4_sample, w30_resample_kick_impact_v2_sample,
     w30_resample_low_impact_sample,
 };
 pub use runtime_mix_parity::*;

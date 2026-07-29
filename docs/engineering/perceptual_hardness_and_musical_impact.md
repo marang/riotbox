@@ -1013,6 +1013,65 @@ audio.
 This is technical development evidence, not a musician-facing quality pass.
 Fresh multi-family acceptance and structured listening remain mandatory.
 
+## H25 V5: Source-Aligned Impact Instead Of Scalar Tuning
+
+Repeated listening rejected several superficially different Hard renders for
+the same perceptual reason: louder, darker, dirtier, more hollow, or more
+damaged was not the requested harder drum impact. Delayed attacks, repeated
+foreign clicks, lost body, and unchanged rhythmic identity could not be
+repaired responsibly by another gain, drive, or EQ scalar.
+
+`source_aligned_impact_v5` therefore changes the decision algorithm:
+
+1. inspect each real source onset on a 2 ms analysis hop over a 50 ms region;
+2. reject a candidate whose strongest presence rise starts more than 15 ms
+   after its intended grid point;
+3. require at least two aligned source hits so one accidental click cannot own
+   an eight-step performance;
+4. choose a real hit by balancing source-relative presence attack and attack
+   crest rather than maximizing either value alone;
+5. repeat that selected source hit only on the source-derived trigger mask;
+6. preserve the dry source body and add only a causal 900–3600 Hz nonlinear
+   presence residual inside the selected attack head;
+7. if the full source rhythm violates the unchanged level, causal-head, or
+   crest contracts, try an anchored alternating mask and then an anchored
+   two-hit floor; and
+8. surface source mismatch or unavailable state when no candidate passes.
+
+An evaluated rejection keeps its source-derived V5 selector evidence only for
+negative-cache matching. The projected Hard policy is `unavailable`, so the
+callback cannot trigger the rejected recipe; repeated view refreshes reuse the
+same rejection instead of performing the exact control-plane search again.
+
+This turns earlier musician feedback into falsifiable behavior:
+
+- “only louder” is rejected by level-matched causal head and crest checks;
+- “dumpfer/übersteuert” cannot pass without retained crest;
+- “außerhalb vom Takt” is rejected by source-local peak-to-grid alignment;
+- “zu monoton” is addressed by preserving the source trigger topology and
+  choosing density from three typed candidates rather than repeating every
+  step;
+- “kein Bassdruck” is not silently reinterpreted as failure because this
+  recipe owns transient/midrange impact and leaves bass ownership unassigned.
+
+The development matrix spans the Beat03 dense-break Golden Path, a
+dense-full-mix stress case, a second dense break, sparse percussion, and a
+tonal riff. Beat03 and Bertsz pass the exact callback. Cinameng and Marwan
+correctly fail local attack-over-body ownership. Fupi reaches the exact V5
+solver but fails level/crest preservation and therefore becomes unavailable
+instead of emitting fallback audio.
+
+The fresh Continue holdout is the first exact V5 pass: whole-window level
+`1.01426`, causal presence head `1.14549`, and crest `1.00119`. Three tonal
+holdouts correctly reject either performer impact ownership or exact level
+preservation. That is only one prequalified source family, however. H25
+therefore remains a technical partial pass with `human_verdict: unverified`;
+it does not meet the required two-source/two-family holdout gate and is not a
+musical-alpha claim.
+
+Machine-readable evidence is frozen in
+`docs/benchmarks/w30_resample_h25_characterization_v1.json`.
+
 ## Sources
 
 Primary perceptual and audio research:

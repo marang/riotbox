@@ -125,8 +125,8 @@ impl LowImpactCandidate {
         let (recipe, role, decision) =
             if share_margin >= 1.0 && body_margin >= 1.0 && source_margin >= 1.0 {
                 (
-                    W30ResampleLowImpactRecipe::SourceHitShaperV3,
-                    W30ResampleLowImpactRole::TransientLowBody,
+                    W30ResampleLowImpactRecipe::SourceAlignedImpactV5,
+                    W30ResampleLowImpactRole::TransientImpact,
                     W30ResampleLowImpactDecision::SourceHitSelected,
                 )
             } else if share_margin <= body_margin && share_margin <= source_margin {
@@ -150,6 +150,7 @@ impl LowImpactCandidate {
             };
         W30ResampleLowImpactPlan {
             recipe,
+            presence_head_wet: recipe.head_wet(),
             role,
             decision,
             candidate_count,
@@ -198,8 +199,11 @@ mod tests {
             [160; W30_RESAMPLE_HARD_SLICE_COUNT],
         );
 
-        assert_eq!(plan.recipe, W30ResampleLowImpactRecipe::SourceHitShaperV3);
-        assert_eq!(plan.role, W30ResampleLowImpactRole::TransientLowBody);
+        assert_eq!(
+            plan.recipe,
+            W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+        );
+        assert_eq!(plan.role, W30ResampleLowImpactRole::TransientImpact);
         assert_eq!(
             plan.decision,
             W30ResampleLowImpactDecision::SourceHitSelected
@@ -412,7 +416,7 @@ mod tests {
                 plan.attack_window_proxy_frames,
                 plan.body_window_proxy_frames,
             ));
-            if plan.recipe == W30ResampleLowImpactRecipe::SourceHitShaperV3 {
+            if plan.recipe == W30ResampleLowImpactRecipe::SourceAlignedImpactV5 {
                 selected_families.push(family);
             }
         }

@@ -190,14 +190,24 @@ pub struct W30ResampleHardCalibrationPlan {
     ///
     /// Zero means that the selected policy does not claim hit-body ownership.
     pub predicted_level_matched_body_ratio: f32,
+    /// Exact 0–20 ms presence-band ratio for the selected source hit.
+    ///
+    /// This distinguishes actual attack articulation from whole-loop level.
+    pub predicted_presence_head_ratio: f32,
+    /// Exact whole-render Hard crest factor divided by the Base crest factor.
+    ///
+    /// Values below one expose transient flattening even when RMS increased.
+    pub predicted_crest_ratio: f32,
     /// Source-calibrated gain carried unchanged into the realtime callback.
     pub output_gain: f32,
-    /// Local selected-hit compensation paired with `output_gain` for
-    /// `source_hit_shaper_v3`.
+    /// Local selected-hit compensation paired with `output_gain` for the
+    /// versioned V3/V4 source-impact shapers.
     ///
     /// Exact callback calibration may reduce the whole Hard path while this
     /// keeps the already source-owned 0–200 ms hit from collapsing.
     pub hit_window_compensation_gain: f32,
+    /// Exact-callback-selected clean 120 Hz transient-body articulation for V4.
+    pub impact_body_eq_gain_db: f32,
     /// True when the hit-shaper level was measured through the exact callback
     /// at the trusted source tempo rather than only predicted from source
     /// windows.
@@ -216,8 +226,11 @@ impl Default for W30ResampleHardCalibrationPlan {
             predicted_raw_level_ratio: 1.0,
             predicted_compensated_level_ratio: 1.0,
             predicted_level_matched_body_ratio: 0.0,
+            predicted_presence_head_ratio: 0.0,
+            predicted_crest_ratio: 0.0,
             output_gain: 1.0,
             hit_window_compensation_gain: 1.0,
+            impact_body_eq_gain_db: 0.0,
             exact_callback_calibrated: false,
             exact_callback_evaluated: false,
         }
@@ -334,6 +347,14 @@ pub enum W30ResampleLowImpactRecipe {
     /// existing source hit over a longer body window and gives its short head
     /// a clipped articulation without adding a synthetic kick or bass layer.
     SourceHitShaperV3,
+    /// Source-local impact shaper that preserves the dry attack, articulates a
+    /// clean 120 Hz transient body plus a presence-band nonlinear residual,
+    /// and never distorts the low band or invents sustained bass.
+    SourceImpactShaperV4,
+    /// Grid-aligned source-transient shaper. It preserves the dry body, adds
+    /// only a phase-coherent presence residual inside the transient head, and
+    /// rejects source slots whose perceptual attack arrives too late.
+    SourceAlignedImpactV5,
 }
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
@@ -345,6 +366,9 @@ pub enum W30ResampleLowImpactRole {
     /// This is not a bass-lane assignment and does not promise sustained bass
     /// pressure.
     TransientLowBody,
+    /// A source-owned transient whose dry attack and broadband body remain the
+    /// impact owner. It does not assign bass or authorize low-end enhancement.
+    TransientImpact,
 }
 
 impl W30ResampleLowImpactRole {
@@ -353,6 +377,7 @@ impl W30ResampleLowImpactRole {
         match self {
             Self::Unassigned => "unassigned",
             Self::TransientLowBody => "transient_low_body",
+            Self::TransientImpact => "transient_impact",
         }
     }
 }
@@ -366,6 +391,7 @@ pub enum W30ResampleLowImpactDecision {
     InsufficientAttackOverBody,
     InsufficientAttackOverSource,
     NoCompleteCandidateWindow,
+    ExactCallbackRejected,
 }
 
 impl W30ResampleLowImpactDecision {
@@ -378,6 +404,7 @@ impl W30ResampleLowImpactDecision {
             Self::InsufficientAttackOverBody => "insufficient_attack_over_body",
             Self::InsufficientAttackOverSource => "insufficient_attack_over_source",
             Self::NoCompleteCandidateWindow => "no_complete_candidate_window",
+            Self::ExactCallbackRejected => "exact_callback_rejected",
         }
     }
 }
@@ -390,6 +417,8 @@ impl W30ResampleLowImpactRecipe {
             Self::SourceLowTransientPunchV1 => "source_low_transient_punch_v1",
             Self::SourceKickImpactV2 => "source_kick_impact_v2",
             Self::SourceHitShaperV3 => "source_hit_shaper_v3",
+            Self::SourceImpactShaperV4 => "source_impact_shaper_v4",
+            Self::SourceAlignedImpactV5 => "source_aligned_impact_v5",
         }
     }
 
@@ -400,6 +429,7 @@ impl W30ResampleLowImpactRecipe {
             Self::SourceLowTransientPunchV1
             | Self::SourceKickImpactV2
             | Self::SourceHitShaperV3 => Some((45.0, 180.0)),
+            Self::SourceImpactShaperV4 | Self::SourceAlignedImpactV5 => Some((80.0, 250.0)),
         }
     }
 
@@ -409,24 +439,54 @@ impl W30ResampleLowImpactRecipe {
             Self::Unavailable => 0.0,
             Self::SourceLowTransientPunchV1 => 0.5,
             Self::SourceKickImpactV2 => 0.43,
-            Self::SourceHitShaperV3 => 0.0,
+            Self::SourceHitShaperV3 | Self::SourceImpactShaperV4 | Self::SourceAlignedImpactV5 => {
+                0.0
+            }
         }
     }
 
     #[must_use]
     pub const fn presence_cutoff_hz(self) -> Option<(f32, f32)> {
         match self {
-            Self::SourceKickImpactV2 | Self::SourceHitShaperV3 => Some((900.0, 3_600.0)),
+            Self::SourceKickImpactV2
+            | Self::SourceHitShaperV3
+            | Self::SourceImpactShaperV4
+            | Self::SourceAlignedImpactV5 => Some((900.0, 3_600.0)),
             Self::Unavailable | Self::SourceLowTransientPunchV1 => None,
         }
     }
 
+    /// Maximum clean presence-band gain for the source-owned attack path.
     #[must_use]
     pub const fn parallel_head_gain(self) -> f32 {
         match self {
             Self::SourceKickImpactV2 => 0.38,
-            Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceHitShaperV3 => 0.0,
+            Self::SourceImpactShaperV4 => 2.0,
+            Self::Unavailable
+            | Self::SourceLowTransientPunchV1
+            | Self::SourceHitShaperV3
+            | Self::SourceAlignedImpactV5 => 0.0,
         }
+    }
+
+    /// Source-calibrated clean presence gain for V4.
+    ///
+    /// A source that already needs more than 12 dB of clean body articulation
+    /// spends progressively less of the finite whole-hit level budget on
+    /// presence. At the bounded 18 dB body-EQ ceiling the clean presence path
+    /// is disabled instead of forcing the callback to attenuate the body below
+    /// its declared role gate.
+    #[must_use]
+    pub fn calibrated_presence_gain(self, body_eq_gain_db: f32) -> f32 {
+        if self != Self::SourceImpactShaperV4 {
+            return self.parallel_head_gain();
+        }
+        const FULL_PRESENCE_BODY_EQ_CEILING_DB: f32 = 12.0;
+        const BODY_EQ_SEARCH_CEILING_DB: f32 = 18.0;
+        let body_budget = ((BODY_EQ_SEARCH_CEILING_DB - body_eq_gain_db)
+            / (BODY_EQ_SEARCH_CEILING_DB - FULL_PRESENCE_BODY_EQ_CEILING_DB))
+            .clamp(0.0, 1.0);
+        self.parallel_head_gain() * body_budget
     }
 
     /// Center of the source-owned body equalizer.
@@ -434,7 +494,11 @@ impl W30ResampleLowImpactRecipe {
     pub const fn body_eq_center_hz(self) -> f32 {
         match self {
             Self::SourceHitShaperV3 => 90.0,
-            Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 0.0,
+            Self::SourceImpactShaperV4 => 120.0,
+            Self::Unavailable
+            | Self::SourceLowTransientPunchV1
+            | Self::SourceKickImpactV2
+            | Self::SourceAlignedImpactV5 => 0.0,
         }
     }
 
@@ -442,8 +506,11 @@ impl W30ResampleLowImpactRecipe {
     #[must_use]
     pub const fn body_eq_q(self) -> f32 {
         match self {
-            Self::SourceHitShaperV3 => 0.8,
-            Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 1.0,
+            Self::SourceHitShaperV3 | Self::SourceImpactShaperV4 => 0.8,
+            Self::Unavailable
+            | Self::SourceLowTransientPunchV1
+            | Self::SourceKickImpactV2
+            | Self::SourceAlignedImpactV5 => 1.0,
         }
     }
 
@@ -452,7 +519,11 @@ impl W30ResampleLowImpactRecipe {
     pub const fn body_eq_gain_db(self) -> f32 {
         match self {
             Self::SourceHitShaperV3 => 12.0,
-            Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 0.0,
+            Self::SourceImpactShaperV4 => 6.0,
+            Self::Unavailable
+            | Self::SourceLowTransientPunchV1
+            | Self::SourceKickImpactV2
+            | Self::SourceAlignedImpactV5 => 0.0,
         }
     }
 
@@ -460,7 +531,9 @@ impl W30ResampleLowImpactRecipe {
     #[must_use]
     pub const fn head_drive(self) -> f32 {
         match self {
-            Self::SourceHitShaperV3 => 3.5,
+            Self::SourceHitShaperV3 | Self::SourceImpactShaperV4 | Self::SourceAlignedImpactV5 => {
+                3.5
+            }
             Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 1.0,
         }
     }
@@ -469,7 +542,9 @@ impl W30ResampleLowImpactRecipe {
     #[must_use]
     pub const fn head_wet(self) -> f32 {
         match self {
-            Self::SourceHitShaperV3 => 0.6,
+            Self::SourceHitShaperV3 | Self::SourceImpactShaperV4 | Self::SourceAlignedImpactV5 => {
+                0.6
+            }
             Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 0.0,
         }
     }
@@ -479,7 +554,7 @@ impl W30ResampleLowImpactRecipe {
     #[must_use]
     pub const fn minimum_hit_window_frames(self, sample_rate: u32) -> u32 {
         match self {
-            Self::SourceHitShaperV3 => {
+            Self::SourceHitShaperV3 | Self::SourceImpactShaperV4 | Self::SourceAlignedImpactV5 => {
                 let frames = sample_rate / 10;
                 if frames == 0 { 1 } else { frames }
             }
@@ -492,7 +567,9 @@ impl W30ResampleLowImpactRecipe {
     #[must_use]
     pub const fn calibrated_hit_preservation_frames(self, sample_rate: u32) -> u32 {
         match self {
-            Self::SourceHitShaperV3 => sample_rate / 5,
+            Self::SourceHitShaperV3 | Self::SourceImpactShaperV4 | Self::SourceAlignedImpactV5 => {
+                sample_rate / 5
+            }
             Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 0,
         }
     }
@@ -501,7 +578,9 @@ impl W30ResampleLowImpactRecipe {
     #[must_use]
     pub const fn calibrated_late_body_start_frames(self, sample_rate: u32) -> u32 {
         match self {
-            Self::SourceHitShaperV3 => sample_rate * 3 / 25,
+            Self::SourceHitShaperV3 | Self::SourceImpactShaperV4 | Self::SourceAlignedImpactV5 => {
+                sample_rate * 3 / 25
+            }
             Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 0,
         }
     }
@@ -510,7 +589,9 @@ impl W30ResampleLowImpactRecipe {
     #[must_use]
     pub const fn calibrated_hit_preservation_fade_frames(self, sample_rate: u32) -> u32 {
         match self {
-            Self::SourceHitShaperV3 => sample_rate / 100,
+            Self::SourceHitShaperV3 | Self::SourceImpactShaperV4 | Self::SourceAlignedImpactV5 => {
+                sample_rate / 100
+            }
             Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 0,
         }
     }
@@ -520,7 +601,9 @@ impl W30ResampleLowImpactRecipe {
     #[must_use]
     pub const fn calibrated_hit_preroll_frames(self, sample_rate: u32) -> u32 {
         match self {
-            Self::SourceHitShaperV3 => sample_rate / 50,
+            Self::SourceHitShaperV3 | Self::SourceImpactShaperV4 | Self::SourceAlignedImpactV5 => {
+                sample_rate / 50
+            }
             Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 0,
         }
     }
@@ -529,7 +612,9 @@ impl W30ResampleLowImpactRecipe {
     #[must_use]
     pub const fn calibrated_hit_preroll_fade_frames(self, sample_rate: u32) -> u32 {
         match self {
-            Self::SourceHitShaperV3 => sample_rate / 400,
+            Self::SourceHitShaperV3 | Self::SourceImpactShaperV4 | Self::SourceAlignedImpactV5 => {
+                sample_rate / 400
+            }
             Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 0,
         }
     }
@@ -538,6 +623,11 @@ impl W30ResampleLowImpactRecipe {
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct W30ResampleLowImpactPlan {
     pub recipe: W30ResampleLowImpactRecipe,
+    /// Source-calibrated share of the versioned nonlinear presence residual.
+    ///
+    /// The exact callback may lower V5 from the recipe ceiling to preserve
+    /// whole-render crest and level. Zero is the causal dry counterfactual.
+    pub presence_head_wet: f32,
     /// Typed musical role owned by the selected recipe.
     pub role: W30ResampleLowImpactRole,
     /// Exact selector outcome, including the strongest failed gate.
@@ -564,6 +654,7 @@ impl Default for W30ResampleLowImpactPlan {
     fn default() -> Self {
         Self {
             recipe: W30ResampleLowImpactRecipe::Unavailable,
+            presence_head_wet: 0.0,
             role: W30ResampleLowImpactRole::Unassigned,
             decision: W30ResampleLowImpactDecision::NotEvaluated,
             candidate_count: 0,
@@ -931,8 +1022,12 @@ impl W30ResampleTapState {
     pub fn exact_hit_shaper_calibration_applicable(&self) -> bool {
         self.variation == W30ResampleTapVariation::HardDamage
             && self.hard_policy == W30ResampleTapHardPolicy::SourceTransientChop
-            && self.hard_low_impact.recipe == W30ResampleLowImpactRecipe::SourceHitShaperV3
-            && self.hard_low_impact.role == W30ResampleLowImpactRole::TransientLowBody
+            && matches!(
+                self.hard_low_impact.recipe,
+                W30ResampleLowImpactRecipe::SourceImpactShaperV4
+                    | W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+            )
+            && self.hard_low_impact.role == W30ResampleLowImpactRole::TransientImpact
             && self.hard_low_impact.decision == W30ResampleLowImpactDecision::SourceHitSelected
             && self.source_audio.is_some()
             && self.tempo_bpm.is_finite()
@@ -993,8 +1088,9 @@ impl Default for W30ResampleTapState {
 mod tests {
     use super::{
         W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewRenderState,
-        W30PreviewSourceProfile, W30ResampleTapAvailability, W30ResampleTapMode,
-        W30ResampleTapRouting, W30ResampleTapSourceProfile, W30ResampleTapState,
+        W30PreviewSourceProfile, W30ResampleLowImpactRecipe, W30ResampleTapAvailability,
+        W30ResampleTapMode, W30ResampleTapRouting, W30ResampleTapSourceProfile,
+        W30ResampleTapState,
     };
 
     #[test]
@@ -1096,5 +1192,15 @@ mod tests {
         assert_eq!(state.lineage_capture_count, 0);
         assert_eq!(state.generation_depth, 0);
         assert!(!state.is_transport_running);
+    }
+
+    #[test]
+    fn v4_presence_budget_follows_the_calibrated_body_requirement() {
+        let recipe = W30ResampleLowImpactRecipe::SourceImpactShaperV4;
+
+        assert_eq!(recipe.calibrated_presence_gain(0.0), 2.0);
+        assert_eq!(recipe.calibrated_presence_gain(12.0), 2.0);
+        assert!((recipe.calibrated_presence_gain(15.0) - 1.0).abs() < f32::EPSILON);
+        assert_eq!(recipe.calibrated_presence_gain(18.0), 0.0);
     }
 }

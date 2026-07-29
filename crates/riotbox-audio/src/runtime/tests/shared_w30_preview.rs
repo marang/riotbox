@@ -278,9 +278,11 @@ fn shared_w30_resample_tap_state_tracks_updates() {
     };
     state.hard_calibration.output_gain = 0.5;
     state.hard_calibration.hit_window_compensation_gain = 2.2;
+    state.hard_calibration.impact_body_eq_gain_db = 7.5;
     state.hard_low_impact = W30ResampleLowImpactPlan {
-        recipe: W30ResampleLowImpactRecipe::SourceHitShaperV3,
-        role: W30ResampleLowImpactRole::TransientLowBody,
+        recipe: W30ResampleLowImpactRecipe::SourceImpactShaperV4,
+        presence_head_wet: 0.47,
+        role: W30ResampleLowImpactRole::TransientImpact,
         decision: W30ResampleLowImpactDecision::SourceHitSelected,
         candidate_count: 5,
         selected_slot: 3,
@@ -309,6 +311,8 @@ fn shared_w30_resample_tap_state_tracks_updates() {
     assert_eq!(snapshot.position_beats, 21.0);
     assert_eq!(snapshot.hard_output_gain, 0.5);
     assert_eq!(snapshot.hard_hit_window_compensation_gain, 2.2);
+    assert_eq!(snapshot.hard_impact_body_eq_gain_db, 7.5);
+    assert_eq!(snapshot.hard_low_impact.presence_head_wet, 0.47);
     assert_eq!(snapshot.hard_low_impact, state.hard_low_impact);
     assert_eq!(snapshot.source_audio.source_sample_rate, 44_100);
     assert_eq!(

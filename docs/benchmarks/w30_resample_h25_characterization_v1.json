@@ -1,0 +1,182 @@
+{
+  "schema": "riotbox.w30_resample_hard_characterization.v1",
+  "schema_version": 1,
+  "ticket": "RIOTBOX-1422",
+  "generation": "H25",
+  "recorded_on": "2026-07-29",
+  "classification": "frozen_source_aligned_impact_v5_partial_holdout_pass",
+  "quality_proof": false,
+  "human_verdict": "unverified",
+  "inherits": "docs/benchmarks/w30_resample_h24_characterization_v1.json",
+  "algorithm": {
+    "recipe": "source_aligned_impact_v5",
+    "requested_intent": "impact",
+    "required_intent_outcome": "realized_impact",
+    "source_hit_selection": "pareto_balance_of_presence_attack_over_source_and_attack_crest",
+    "grid_alignment": {
+      "analysis_hop_ms": 2.0,
+      "analysis_window_ms": 50.0,
+      "maximum_post_grid_peak_ms": 15.0,
+      "minimum_aligned_hit_count": 2
+    },
+    "rendering": {
+      "body_policy": "preserve_source_body",
+      "presence_band_hz": [
+        900.0,
+        3600.0
+      ],
+      "presence_transform": "source_local_nonlinear_residual_in_selected_attack_head",
+      "fallback_audio_allowed": false
+    },
+    "source_adaptive_density": [
+      "full_source_mask",
+      "anchored_alternating_mask",
+      "anchored_two_hit_floor"
+    ],
+    "exact_callback_gates": {
+      "whole_window_level_ratio": [
+        0.9,
+        1.1
+      ],
+      "causal_presence_head_ratio_min": 1.1,
+      "crest_ratio_min": 0.9
+    },
+    "search_resolution": {
+      "wet_intervals": 16,
+      "gain_intervals": 16,
+      "meaning": "deterministic solver resolution, not source-specific taste constants"
+    }
+  },
+  "development_matrix": [
+    {
+      "case_id": "golden_path_beat03",
+      "source_family": "dense_break",
+      "candidate_wav_generation_eligible_after_preflight": true,
+      "trigger_mask": "01000101",
+      "predicted_level_ratio": 1.014516,
+      "predicted_presence_head_ratio": 1.2140062,
+      "predicted_crest_ratio": 0.98566157,
+      "preflight_report_sha256": "4a1b0d5ef61f9f2b35f68b11e5405d2a5efc58a9db533baabf7947ec30965454",
+      "technical_verdict": "exact_v5_pass"
+    },
+    {
+      "case_id": "oga_bertsz_dnb",
+      "source_family": "dense_full_mix",
+      "candidate_wav_generation_eligible_after_preflight": true,
+      "trigger_mask": "01011001",
+      "predicted_level_ratio": 1.0535917,
+      "predicted_presence_head_ratio": 1.1103685,
+      "predicted_crest_ratio": 0.9658866,
+      "preflight_report_sha256": "427ece3ca418d476e8023eb0a071c1c14cc4be2980a66fd227bdbc06d446c484",
+      "technical_verdict": "exact_v5_stress_pass"
+    },
+    {
+      "case_id": "oga_cinameng_can_be_so_beautiful",
+      "source_family": "dense_break",
+      "candidate_wav_generation_eligible_after_preflight": false,
+      "low_impact_decision": "insufficient_attack_over_body",
+      "preflight_report_sha256": "1b894503ca744ab4020dec6b801f93d90694d57b33860b870d387f4142c9f60d",
+      "technical_verdict": "correct_role_rejection"
+    },
+    {
+      "case_id": "oga_marwan_cinematic_percussion",
+      "source_family": "sparse_drums",
+      "candidate_wav_generation_eligible_after_preflight": false,
+      "low_impact_decision": "insufficient_attack_over_body",
+      "preflight_report_sha256": "6aa708413ef300529a91d1114cecb22065552571216749befffa22d9935270d9",
+      "technical_verdict": "correct_role_rejection"
+    },
+    {
+      "case_id": "oga_fupi_plimplom",
+      "source_family": "tonal_riff",
+      "candidate_wav_generation_eligible_after_preflight": false,
+      "low_impact_decision": "exact_callback_rejected",
+      "predicted_level_ratio": 1.3046744,
+      "predicted_presence_head_ratio": 1.1292164,
+      "predicted_crest_ratio": 0.766491,
+      "preflight_report_sha256": "b8e30a1d9579734221954bfe8be777cc70c0314237aedb604c97874f5b1ff2c8",
+      "technical_verdict": "correct_crest_and_level_rejection"
+    }
+  ],
+  "fresh_holdout_results": [
+    {
+      "case_id": "oga_cleytonkauffman_continue_theme",
+      "source_family": "dense_break",
+      "provider_bpm": 138.462,
+      "rust_primary_bpm": 138.46156,
+      "requested_intent": "impact",
+      "intent_outcome": "realized_impact",
+      "hard_policy": "source_transient_chop",
+      "low_impact_recipe": "source_aligned_impact_v5",
+      "trigger_mask": "10010101",
+      "predicted_level_ratio": 1.0142577,
+      "predicted_presence_head_ratio": 1.145486,
+      "predicted_crest_ratio": 1.0011905,
+      "candidate_wav_generation_eligible_after_preflight": true,
+      "preflight_report_sha256": "9ffeb4837cd3de9f1fea8c7d25dc08b6212c01d8ffae2477943e10eb07e6686d",
+      "hard_candidate_wav_sha256": "8b48fad8dc967e904fbf887e388bbdb42a8a49ddf86dc6964f73507518497b0a",
+      "technical_verdict": "exact_v5_pass"
+    },
+    {
+      "case_id": "oga_mintodog_trance_boss_battle_150",
+      "source_family": "tonal_riff",
+      "provider_bpm": 150.0,
+      "rust_primary_bpm": 150.1251,
+      "intent_outcome": "source_mismatch",
+      "candidate_wav_generation_eligible_after_preflight": false,
+      "preflight_report_sha256": "c0b633df67a9129df0422c93872abc97e9fd4bbd5372d462988dd9a2ce3751ef",
+      "technical_verdict": "correct_impact_role_rejection"
+    },
+    {
+      "case_id": "oga_mintodog_fever_stadium_165",
+      "source_family": "tonal_riff",
+      "provider_bpm": 165.0,
+      "rust_primary_bpm": 165.44185,
+      "intent_outcome": "source_mismatch",
+      "candidate_wav_generation_eligible_after_preflight": false,
+      "preflight_report_sha256": "e0f24819e731e1ceae90a6cadf857b65b8efc7b48713fe5ebc93c78f5725e4ad",
+      "technical_verdict": "correct_impact_role_rejection"
+    },
+    {
+      "case_id": "oga_uederson_better_days_120",
+      "source_family": "tonal_riff",
+      "provider_bpm": 120.0,
+      "rust_primary_bpm": 150.62761,
+      "confirmation_route": "source_derived_downbeat_at_external_tempo",
+      "tempo_guided_max_abs_drift_ms": 9.333611,
+      "low_impact_decision": "exact_callback_rejected",
+      "predicted_level_ratio": 0.65606064,
+      "predicted_presence_head_ratio": 1.1683534,
+      "predicted_crest_ratio": 1.09506,
+      "candidate_wav_generation_eligible_after_preflight": false,
+      "preflight_report_sha256": "29f2d9d77563df97f7f39a7e61504c790c04ecd29b99caf50684540f61fd3b83",
+      "technical_verdict": "correct_exact_level_rejection"
+    }
+  ],
+  "calibration_search_optimization": {
+    "basis": "development-source performance evidence observed before the frozen holdout evaluation",
+    "change": "reuse the unity-gain render and stop descending gain search once whole-window level is below the acceptance floor",
+    "accepted_case_wav_count_compared": 8,
+    "accepted_case_all_wavs_byte_identical": true,
+    "rejected_case_preflight_byte_identical": true,
+    "rejected_case_optimization_comparison_preflight_sha256": "71d8018922bb8aab692d44e726bc9e726282820b17119b1d549d6020ad00ca5c",
+    "rejected_case_final_negative_cache_preflight_sha256": "29f2d9d77563df97f7f39a7e61504c790c04ecd29b99caf50684540f61fd3b83",
+    "rejected_case_final_negative_cache_metrics_unchanged": true,
+    "approximate_debug_reject_runtime_before_seconds": 180,
+    "approximate_debug_reject_runtime_after_seconds": 30
+  },
+  "holdout_contract": {
+    "prequalified_source_count": 1,
+    "minimum_prequalified_source_count": 2,
+    "prequalified_family_count": 1,
+    "minimum_prequalified_family_count": 2,
+    "exact_v5_applicable_case_count": 1,
+    "minimum_exact_v5_applicable_case_count": 1,
+    "phase_zero_assumption_used": false,
+    "additional_candidate_wavs_rendered": false
+  },
+  "acceptance_status": "technical_partial_holdout_pass",
+  "human_listening_allowed": false,
+  "freeze_consequence": "V5 demonstrates one exact source-backed holdout pass and several role-, timing-, level-, or crest-correct rejections. It does not meet the two-source/two-family prequalified holdout minimum, so it is not a musical-alpha or structured-listening pass.",
+  "next_gate": "Preserve the frozen V5 audio result. Obtain a second causally applicable holdout from a different typed family without changing V5 from holdout evidence; otherwise close RIOTBOX-1422 as technically partial and hand the remaining source-family reachability gap to a bounded follow-up."
+}

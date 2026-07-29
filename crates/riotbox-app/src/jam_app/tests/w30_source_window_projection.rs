@@ -88,7 +88,7 @@ fn resample_hard_policy_separates_transient_chops_from_sustained_texture() {
         transient_policy,
         riotbox_audio::w30::W30ResampleTapHardPolicy::SourceTransientChop
     );
-    assert!(transient_mask.count_ones() >= 4);
+    assert!(transient_mask.count_ones() >= 2);
     assert!(transient_cursors.windows(2).all(|pair| pair[0] < pair[1]));
     assert!(
         transient_contrast
