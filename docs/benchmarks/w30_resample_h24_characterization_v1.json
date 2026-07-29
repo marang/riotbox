@@ -1,0 +1,91 @@
+{
+  "schema": "riotbox.w30_resample_hard_characterization.v1",
+  "schema_version": 1,
+  "ticket": "RIOTBOX-1422",
+  "generation": "H24",
+  "recorded_on": "2026-07-27",
+  "classification": "frozen_holdout_role_and_timing_rejection",
+  "quality_proof": false,
+  "human_verdict": "unverified",
+  "inherits": "docs/benchmarks/w30_resample_h23_characterization_v1.json",
+  "tempo_guided_reachability_enabler": {
+    "ticket": "RIOTBOX-1426",
+    "merge_commit": "760fec3b896d913860af190f13988779b001e90d",
+    "product_dsp_changed_since_freeze": false,
+    "selector_gates_changed_since_freeze": false,
+    "timing_contract_changed_since_freeze": true
+  },
+  "fresh_holdout_results": [
+    {
+      "case_id": "oga_khtlrpzvgm_lucid_trigger",
+      "source_family": "dense_break",
+      "provider_bpm": 150.0,
+      "rust_primary_bpm": 150.25041,
+      "bpm_delta": 0.250412,
+      "readiness": "weak",
+      "grid_use": "manual_confirm_only",
+      "confirmation_route": "explicit_bpm_matches_rust_primary",
+      "product_projection_allowed": true,
+      "product_projection_evaluated": true,
+      "product_graph_primary_bpm": 150.25041,
+      "product_graph_grid_use": "short_loop_manual_confirm",
+      "hard_policy": "source_texture_bite",
+      "hard_suitability": "suitable",
+      "exact_hit_shaper_applicable": false,
+      "candidate_rendered": false,
+      "preflight_report_sha256": "24fcc0280a20b4cac3b34c6f83dee552aec80e4c917edb930d876a60fa27b606",
+      "technical_verdict": "ineligible_hard_role"
+    },
+    {
+      "case_id": "oga_theouterlinux_chopin_op25_no2_140",
+      "source_family": "tonal_riff",
+      "provider_bpm": 140.0,
+      "rust_primary_bpm": 144.23077,
+      "bpm_delta": 4.230774,
+      "readiness": "needs_review",
+      "grid_use": "manual_confirm_only",
+      "confirmation_route": "explicit_bpm_mismatch",
+      "tempo_guided_decision": "InsufficientOnsets",
+      "tempo_guided_onset_count": 6,
+      "product_projection_allowed": false,
+      "product_projection_evaluated": false,
+      "candidate_rendered": false,
+      "preflight_report_sha256": "8c83b875b11d1ecab2736a2f2db0859479875f0809bf48c9a8eb41805418a388",
+      "technical_verdict": "ineligible_timing_evidence"
+    }
+  ],
+  "holdout_contract": {
+    "different_family_source_count": 2,
+    "minimum_different_family_source_count": 2,
+    "prequalified_source_count": 0,
+    "minimum_prequalified_source_count": 2,
+    "exact_hit_shaper_applicable_case_count": 0,
+    "minimum_exact_hit_shaper_applicable_case_count": 1,
+    "phase_zero_assumption_used": false,
+    "additional_reserve_cases_accessed": false
+  },
+  "rotation_replenishment": [
+    {
+      "case_id": "oga_joth_black_diamond_143",
+      "source_family": "dense_break",
+      "provider_bpm": 143.0,
+      "classification_status": "provisional_unheard_holdout"
+    },
+    {
+      "case_id": "oga_nene_love_song_95",
+      "source_family": "tonal_riff",
+      "provider_bpm": 95.0,
+      "provider_bpm_confidence": "approximate",
+      "classification_status": "provisional_unheard_holdout"
+    }
+  ],
+  "untouched_existing_reserve": [
+    "oga_wolfgang_8bit_cave_loop",
+    "oga_srg774_sector",
+    "oga_trezegames_pop_1"
+  ],
+  "acceptance_status": "rejected_before_candidate_render",
+  "human_listening_allowed": false,
+  "freeze_consequence": "Lucid Trigger is consumed role evidence and Chopin is consumed timing evidence. No exact hit-shaper case, candidate WAV, or human verdict exists. H24 is rejected; no opportunistic reserve retry is allowed.",
+  "next_gate": "Do not treat source_texture_bite as harder beat evidence and do not tune timing from consumed holdouts. Re-establish the product outcome around a typed source-transient Hard owner before another fresh holdout generation."
+}

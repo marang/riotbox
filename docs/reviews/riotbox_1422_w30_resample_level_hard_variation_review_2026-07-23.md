@@ -683,3 +683,40 @@ selection. Any enabler must work on consumed development material, must not
 pass the Rust BPM back as external confirmation, and must not assume source
 phase zero. Machine-readable evidence is frozen in
 `docs/benchmarks/w30_resample_h23_characterization_v1.json`.
+
+## H24 Frozen Role And Timing Rejection
+
+RIOTBOX-1426 landed the typed source-backed tempo-guided phase route while
+leaving W-30 DSP and the hit-shaper ownership gates unchanged. H24 then
+consumed exactly the two replacements restored after H23 through the
+non-listening preflight:
+
+- Lucid Trigger's provider 150 BPM matched Rust `150.25041 BPM` and projected
+  through Source Graph at the same product tempo. Hard selected
+  `source_texture_bite`, however, so `source_hit_shaper_v3` and exact callback
+  calibration were inapplicable.
+- Chopin's provider 140 BPM conflicted with Rust `144.23077 BPM`. The guided
+  route detected only six onsets and rejected with `InsufficientOnsets`, before
+  product projection.
+
+The first result is role evidence, not a timing failure. A continuous texture
+may legitimately receive source-derived nonlinear bite without an invented
+trigger grid, but it cannot satisfy harder-beat or exact-hit-shaper coverage.
+The second result proves the timing enabler fails closed rather than guessing
+phase from sparse evidence. Neither case produced a candidate WAV, listening
+artifact, or human verdict. Cave, Sector, and the bad-timing control remained
+untouched.
+
+The rotation is restored using two independent CC0 OpenGameArt packs without
+listening or musical analysis: Joth's provider-declared 143 BPM drum-and-bass
+loop Black Diamond and nene's instrumental Love Song, whose provider later
+described its tempo as approximately 95 BPM. Only license/provider metadata,
+format, duration, peak, clipping-safe conversion, and hash were inspected.
+Both family assignments remain provisional and unheard.
+
+Another blind holdout retry is frozen. The next bounded slice must establish
+the performer-owned Hard intent and its role-specific development evidence
+before another fresh attempt. It must not relabel texture damage as a harder
+beat, weaken the `0.18`, `1.40`, or `0.30` hit-shaper ownership gates, or tune
+timing against consumed H24 material. Machine-readable evidence is frozen in
+`docs/benchmarks/w30_resample_h24_characterization_v1.json`.

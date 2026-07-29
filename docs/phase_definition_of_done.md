@@ -504,8 +504,15 @@ After exit:
   through observer and W-30 preflight evidence. The multi-family development
   matrix selects 8-Bit Victory at its independently derived 180 BPM while
   Drama, sparse-drift, pad/noise, and one-shot controls reject. This is timing
-  reachability, not a W-30 Hard or musical-quality pass; H24 still requires the
-  fresh exact live path and structured listening.
+  reachability, not a W-30 Hard or musical-quality pass. H24 subsequently
+  rejected before candidate rendering: Lucid reached product timing but
+  selected continuous texture bite, while Chopin's six onsets could not support
+  a guided grid at provider tempo. No structured listening exists for H24.
+- RIOTBOX-1422 must not consume another fresh holdout until the intended
+  performer-owned Hard role and role-specific acceptance path are explicit on
+  development material. `source_texture_bite` may remain a valid continuous
+  damage role, but it cannot satisfy harder-beat or exact-hit-shaper proof.
+  The existing hit-shaper ownership gates remain frozen.
 - P016 and the wider P021/P022/P023 quality ladder may resume from the accepted
   live baseline
 

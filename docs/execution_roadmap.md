@@ -1450,7 +1450,18 @@ analyzer and musician-manual timing, and emits no fake user-confirm action.
 Development evidence admits 8-Bit Victory at its project-derived 180 BPM while
 Drama, a drifting sparse challenge, pad/noise, and one-shot controls fail
 closed. W-30 DSP and hit-shaper thresholds remain frozen. After review and full
-QA, this directly enables one fresh RIOTBOX-1422 H24 exact-path attempt.
+QA, this directly enabled one fresh RIOTBOX-1422 H24 exact-path attempt.
+
+H24 then rejected before candidate rendering. Lucid Trigger matched provider,
+Rust, and product timing but selected the valid continuous
+`source_texture_bite` role, not `source_transient_chop`; exact hit-shaper
+calibration was therefore inapplicable. Chopin's provider 140 BPM differed
+from Rust 144.23077 BPM, and the new guided route correctly rejected its six
+detected onsets as insufficient evidence. No reserve retry, candidate WAV, or
+human listening followed. The next bounded slice must make the intended
+performer-owned Hard role and its role-specific acceptance path explicit on
+development material before another fresh holdout attempt. It must not call
+texture damage a harder beat or lower the existing hit-shaper ownership gates.
 
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a

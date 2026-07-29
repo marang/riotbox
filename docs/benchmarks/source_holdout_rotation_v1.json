@@ -97,10 +97,10 @@
     {
       "holdout_id": "holdout_a",
       "state": "unseen",
-      "purpose": "Untouched CC0 reserve restored after the frozen H23 timing rejection; inaccessible until an explicit trusted-grid reachability enabler lands.",
+      "purpose": "Untouched CC0 reserve restored after the frozen H24 reachability rejection; inaccessible until the next candidate and its role-specific acceptance path are frozen.",
       "source_case_ids": [
-        "oga_khtlrpzvgm_lucid_trigger",
-        "oga_theouterlinux_chopin_op25_no2_140",
+        "oga_joth_black_diamond_143",
+        "oga_nene_love_song_95",
         "oga_wolfgang_8bit_cave_loop",
         "oga_srg774_sector",
         "oga_trezegames_pop_1"
@@ -714,6 +714,20 @@
       "consumed_by_ticket": "RIOTBOX-1422",
       "consumed_on": "2026-07-27",
       "replacement_case_id": "oga_theouterlinux_chopin_op25_no2_140"
+    },
+    {
+      "case_id": "oga_khtlrpzvgm_lucid_trigger",
+      "former_holdout_id": "holdout_a",
+      "consumed_by_ticket": "RIOTBOX-1422",
+      "consumed_on": "2026-07-27",
+      "replacement_case_id": "oga_joth_black_diamond_143"
+    },
+    {
+      "case_id": "oga_theouterlinux_chopin_op25_no2_140",
+      "former_holdout_id": "holdout_a",
+      "consumed_by_ticket": "RIOTBOX-1422",
+      "consumed_on": "2026-07-27",
+      "replacement_case_id": "oga_nene_love_song_95"
     }
   ],
   "entries": [
@@ -3010,9 +3024,13 @@
       "case_id": "oga_khtlrpzvgm_lucid_trigger",
       "source_family": "dense_break",
       "corpus_eligible": true,
-      "partition": "holdout_a",
-      "classification_status": "provisional_unheard_holdout",
+      "partition": "retired",
+      "classification_status": "consumed_holdout",
       "source_suitability_verdict": "unverified",
+      "reviewed_on": "2026-07-27",
+      "reviewer_role": "technical_reviewer",
+      "family_verdict_owner": "technical_review",
+      "previous_partition": "holdout_a",
       "author": "khtlrpzvgm",
       "title": "Lucid Trigger",
       "source_pack_id": "oga_lucid_trigger",
@@ -3026,15 +3044,19 @@
       "commercial_reference": false,
       "replacement_for_case_id": "oga_tricksntraps_drama",
       "acquired_on": "2026-07-27",
-      "review_notes": "Untouched post-H23 reserve. Dense-break classification is provisional from provider progressive-break and explicit 150 BPM metadata only. Acquisition retained the first 16 seconds as 48 kHz stereo PCM16 and inspected only license, provider metadata, format, duration, peak (-0.0748 dBFS), clipping, and hash."
+      "review_notes": "Consumed by the frozen H24 non-listening reachability preflight. Provider 150 BPM matched Rust 150.25041 and projected through the product timing path. Hard selected source_texture_bite, so source_hit_shaper_v3 and its exact callback calibration were inapplicable. No candidate WAV or human listening occurred; source suitability remains unverified."
     },
     {
       "case_id": "oga_theouterlinux_chopin_op25_no2_140",
       "source_family": "tonal_riff",
       "corpus_eligible": true,
-      "partition": "holdout_a",
-      "classification_status": "provisional_unheard_holdout",
+      "partition": "retired",
+      "classification_status": "consumed_holdout",
       "source_suitability_verdict": "unverified",
+      "reviewed_on": "2026-07-27",
+      "reviewer_role": "technical_reviewer",
+      "family_verdict_owner": "technical_review",
+      "previous_partition": "holdout_a",
       "author": "TheOuterLinux",
       "title": "NES - Chopin - Op. 25 No. 2 - 140BPM",
       "source_pack_id": "oga_nes_chopin_op25_no2_140",
@@ -3049,7 +3071,51 @@
       "commercial_reference": false,
       "replacement_for_case_id": "oga_wolfgang_8bit_victory_loop",
       "acquired_on": "2026-07-27",
-      "review_notes": "Untouched post-H23 reserve. Tonal-riff classification is provisional from provider NES/chiptune, included-render, and explicit 140 BPM metadata only. Acquisition selected the provider-named 140 BPM WAV from the archive, retained its first 16 seconds as 48 kHz stereo PCM16, and inspected only license, provider metadata, archive listing, format, duration, peak (-5.2357 dBFS), clipping, and hash."
+      "review_notes": "Consumed by the frozen H24 non-listening reachability preflight. Provider 140 BPM differed from Rust 144.23077 BPM. The tempo-guided route correctly rejected with only six detected onsets, so product projection stopped before Hard selection, candidate WAV generation, or human listening. Source suitability remains unverified."
+    },
+    {
+      "case_id": "oga_joth_black_diamond_143",
+      "source_family": "dense_break",
+      "corpus_eligible": true,
+      "partition": "holdout_a",
+      "classification_status": "provisional_unheard_holdout",
+      "source_suitability_verdict": "unverified",
+      "author": "Joth",
+      "title": "Black Diamond",
+      "source_pack_id": "oga_black_diamond",
+      "provider": "OpenGameArt",
+      "page_url": "https://opengameart.org/content/black-diamond",
+      "download_url": "https://opengameart.org/sites/default/files/Black%20Diamond.mp3",
+      "license": "CC0-1.0",
+      "source_start_seconds": 0.0,
+      "source_path": "data/test_audio/external/RIOTBOX-1423/wav/dense_oga_joth_black_diamond_143.wav",
+      "sha256": "3363d813d0805e879bfb55e4b25ca1666955d6fdc8695e9334e3ce2ba08b1524",
+      "commercial_reference": false,
+      "replacement_for_case_id": "oga_khtlrpzvgm_lucid_trigger",
+      "acquired_on": "2026-07-27",
+      "review_notes": "Untouched post-H24 reserve. Dense-break classification is provisional from provider drum-and-bass, loop, and explicit 143 BPM metadata only. Acquisition retained the first 16 seconds as 48 kHz stereo PCM16 with 0.5 dB conversion headroom to avoid integer saturation and inspected only license, provider metadata, format, duration, peak (-0.3990 dBFS), clipping, conversion, and hash."
+    },
+    {
+      "case_id": "oga_nene_love_song_95",
+      "source_family": "tonal_riff",
+      "corpus_eligible": true,
+      "partition": "holdout_a",
+      "classification_status": "provisional_unheard_holdout",
+      "source_suitability_verdict": "unverified",
+      "author": "nene",
+      "title": "Love Song [instrumental]",
+      "source_pack_id": "oga_love_song_instrumental",
+      "provider": "OpenGameArt",
+      "page_url": "https://opengameart.org/content/love-song-instrumental",
+      "download_url": "https://opengameart.org/sites/default/files/love_song.wav",
+      "license": "CC0-1.0",
+      "source_start_seconds": 0.0,
+      "source_path": "data/test_audio/external/RIOTBOX-1423/wav/tonal_oga_nene_love_song_95.wav",
+      "sha256": "84c174e8fd8e91267b4b5a67a7a972a8df6c16a7fd77df40309404e3c5e917b9",
+      "commercial_reference": false,
+      "replacement_for_case_id": "oga_theouterlinux_chopin_op25_no2_140",
+      "acquired_on": "2026-07-27",
+      "review_notes": "Untouched post-H24 reserve. Tonal-riff classification is provisional from provider guitar, bass, strings, piano, and instrumental metadata only. The provider later described the tempo as approximately 95 BPM, which remains approximate external metadata rather than trusted timing truth. Acquisition retained the first 16 seconds as 48 kHz stereo PCM16 and inspected only license, provider metadata, format, duration, peak (-13.4903 dBFS), clipping, conversion, and hash."
     },
     {
       "case_id": "oga_tricksntraps_psychic",

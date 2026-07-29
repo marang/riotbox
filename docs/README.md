@@ -58,7 +58,14 @@ when actual source onsets select a stable, complete-bar downbeat phase. The
 development matrix admits 8-Bit Victory Loop, still rejects Drama and
 drifting/sparse controls, preserves matching-primary and explicit-manual
 routes, and changes no W-30 DSP or hit-shaper gate. Fresh H24 reserve material
-remains inaccessible until review and full QA complete.
+was then consumed exactly once. Lucid Trigger matched product timing but
+correctly selected continuous `source_texture_bite`, so it could not prove the
+transient hit shaper; Chopin differed from provider tempo and the guided route
+failed closed with only six onsets. H24 produced no candidate WAV and no human
+verdict. The rotation is restored with two unheard CC0 replacements, while
+Cave, Sector, and the bad-timing control remain untouched. Another blind
+holdout retry is frozen until the intended performer-owned Hard role and its
+role-specific acceptance path are explicit.
 
 `P016`, `P021`, and `P022` remain subordinate to the active P023 product path.
 Offline renderers, scripted packs, fixture verdicts, reports, and validators
