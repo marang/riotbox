@@ -10,7 +10,7 @@ Full-phrase base human verdict: `pass` / loopable
 
 Latest heard hard candidate verdict: `reject`
 
-Post-research H25 successor: `technical partial` / `human_verdict: unverified`
+Post-research H25 successor: `technical two-family pass` / `human_verdict: unverified`
 
 ## Outcome And Rejected First Candidate
 
@@ -798,11 +798,41 @@ It now truthfully records `applicable=true`, `evaluated=true`, and
 `calibrated=false`; the rejected level, causal-head, body, and crest metrics
 remain unchanged.
 
-H25 remains `human_verdict: unverified`. It has one exact fresh holdout pass
-but not the required two prequalified sources across two families. No
-structured playback is authorized, and the result is not a musical-alpha
-claim. The active rotation is replenished with untouched CC0 sources; no
-replacement was pre-rendered or used to tune V5.
+The next untouched tonal holdout, Anime-esque Intro-Outro Theme, rejected
+before product projection: provider `190 BPM` disagreed with Rust
+`143.08427 BPM`, phase remained ambiguous, aligned-onset ratio was `0.56383`,
+and maximum drift was `28.63121 ms`. No candidate WAV was generated.
+
+Party Sector then supplied the independent different-family pass. Published
+OpenGameArt derivative metadata identifies the original as F-sharp minor at
+`120 BPM`; Rust measured `120.00001 BPM`. The frozen V5 product path realized
+impact with mask `01010101` and preflight level `0.98332`, causal head
+`1.23382`, body `0.78880`, and crest `0.91443`. The exact RuntimeMix render
+retained level `1.02057`, crest `0.9070`, selected presence attack `2.1192`,
+head `2.3190`, `84.23 ms` significant delta per hit, correlation `0.73708`,
+and no clipping. Its exact hashes are:
+
+- source:
+  `f79f28f79cfcd06b8ff55d7c1f8049fe57685b7bd82d6e812c24a4dac7166bd3`;
+- Base:
+  `dcab59d8d5333557f7cf8cc9d155e0976853ce47895454661a2fd3a6fceec5e8`;
+- Hard:
+  `7ac23c0752de70a8f8c5912bfd9f54db86ea29d429e3f80771c8912c5a07428f`;
+- live gesture:
+  `c8542c48d59b60caf33df47ccbcfb71a0b76a545b9fc7610b7e53b05c8976782`.
+
+Only the W-30 resample tap is audible in the review artifact. TR-909, MC-202,
+source monitor, preview, and support paths are silent; bass ownership is
+`unassigned`, so the review does not expect bass pressure. The exact
+eight-second A/B is Base from `0..4 s` and Hard from `4..8 s`. Base measures
+`-22.7 LUFS` / `-9.5 dBTP`; Hard measures `-22.5 LUFS` / `-10.2 dBTP`.
+
+H25 remains `human_verdict: unverified`, but now meets the required two
+prequalified sources across `dense_break` and `tonal_riff`. One structured
+playback of the exact RuntimeMix A/B is authorized. The technical pass is
+still not a musical-alpha claim. The active rotation is replenished with
+untouched CC0 sources; replacements were not rendered or heard and did not
+tune V5.
 
 Machine-readable evidence is frozen in
 `docs/benchmarks/w30_resample_h25_characterization_v1.json`.

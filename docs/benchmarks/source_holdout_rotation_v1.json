@@ -99,7 +99,7 @@
     {
       "holdout_id": "holdout_a",
       "state": "unseen",
-      "purpose": "Untouched CC0 reserve restored after the frozen H25 V5 evaluation; inaccessible until a later candidate and its role-specific acceptance path are frozen.",
+      "purpose": "Untouched CC0 reserve replenished after the frozen H25 two-family technical evaluation; inaccessible until a later candidate and its role-specific acceptance path are frozen.",
       "source_case_ids": [
         "oga_farfadet46_loopable_beat",
         "oga_skrjablin_final_battle",
@@ -111,11 +111,11 @@
     {
       "holdout_id": "holdout_b",
       "state": "reserve",
-      "purpose": "Untouched CC0 reserve restored after the frozen H25 V5 evaluation; inaccessible until a later candidate and its gates are frozen.",
+      "purpose": "Untouched CC0 reserve replenished after the frozen H25 two-family technical evaluation; inaccessible until a later candidate and its gates are frozen.",
       "source_case_ids": [
-        "oga_cleytonkauffman_anime_intro_190",
+        "oga_fupi_tense_bass_boost_140",
         "oga_section31_sewer_nightclub",
-        "oga_joth_party_sector",
+        "oga_sen_jester_90",
         "oga_nikke_dark_intro",
         "oga_farfadet46_bubble_pop"
       ]
@@ -793,6 +793,20 @@
       "consumed_by_ticket": "RIOTBOX-1422",
       "consumed_on": "2026-07-29",
       "replacement_case_id": "oga_tricksntraps_ascend_130"
+    },
+    {
+      "case_id": "oga_cleytonkauffman_anime_intro_190",
+      "former_holdout_id": "holdout_b",
+      "consumed_by_ticket": "RIOTBOX-1422",
+      "consumed_on": "2026-07-29",
+      "replacement_case_id": "oga_fupi_tense_bass_boost_140"
+    },
+    {
+      "case_id": "oga_joth_party_sector",
+      "former_holdout_id": "holdout_b",
+      "consumed_by_ticket": "RIOTBOX-1422",
+      "consumed_on": "2026-07-29",
+      "replacement_case_id": "oga_sen_jester_90"
     }
   ],
   "entries": [
@@ -3573,9 +3587,13 @@
       "case_id": "oga_joth_party_sector",
       "source_family": "tonal_riff",
       "corpus_eligible": true,
-      "partition": "holdout_b",
-      "classification_status": "provisional_unheard_holdout",
+      "partition": "retired",
+      "classification_status": "consumed_holdout",
       "source_suitability_verdict": "unverified",
+      "reviewed_on": "2026-07-29",
+      "reviewer_role": "technical_reviewer",
+      "family_verdict_owner": "technical_review",
+      "previous_partition": "holdout_b",
       "author": "Joth",
       "title": "Party Sector",
       "source_pack_id": "oga_party_sector",
@@ -3589,7 +3607,7 @@
       "commercial_reference": false,
       "replacement_for_case_id": "oga_poinl_title_x",
       "acquired_on": "2026-07-29",
-      "review_notes": "Untouched post-H25 replacement. Tonal-riff classification is provisional from provider dance, space, and loop metadata only. Acquisition retained the first 16 seconds as 48 kHz stereo PCM16 and inspected only license, provider metadata, format, duration, peak (-5.2585 dBFS), clipping, conversion, and hash."
+      "review_notes": "Consumed by the frozen H25 V5 evaluation. Independent published OpenGameArt metadata identified the original Party Sector as F-sharp minor at 120 BPM; Rust measured 120.00001 BPM. The committed impact path realized source_aligned_impact_v5 with mask 01010101 and passed exact callback calibration at predicted level 0.98332, causal presence head 1.23382, body 0.78880, and crest 0.91443. The exact RuntimeMix render retained level 1.02057, crest 0.9070, causal presence attack 2.1192, head 2.3190, 84.23 ms significant delta per hit, correlation 0.7371, and no clipping. Structured human listening remains unverified; suitability is not promoted by this technical pass."
     },
     {
       "case_id": "oga_farfadet46_loopable_beat",
@@ -3606,20 +3624,24 @@
       "download_url": "https://opengameart.org/sites/default/files/test.wav",
       "license": "CC0-1.0",
       "source_start_seconds": 0.0,
-      "source_path": "data/test_audio/external/RIOTBOX-1423/wav/dense_oga_farfadet46_loopable_beat.wav",
-      "sha256": "59bc8cad89495ec3fa9e39b5301ea53a9f0b9ee0ed1560cd66f3f07a341eb375",
+      "source_path": "data/test_audio/external/RIOTBOX-1423/wav/dense_oga_farfadet46_loopable_beat_headroom.wav",
+      "sha256": "b1a0424929b777eb1d3b62a6be4f53d1f8ee60c7e33ecb0d981c2aca1627c3bd",
       "commercial_reference": false,
       "replacement_for_case_id": "oga_mintodog_trance_boss_battle_150",
       "acquired_on": "2026-07-29",
-      "review_notes": "Untouched post-H25 replacement. Dense-break classification is provisional from provider beat and loopable metadata only. Acquisition converted the complete 9.613-second source to 48 kHz stereo PCM16 and inspected only license, provider metadata, format, duration, peak (0.0 dBFS), clipping, conversion, and hash."
+      "review_notes": "Untouched post-H25 replacement. Dense-break classification is provisional from provider beat and loopable metadata only. Acquisition converted the complete 9.613-second source to 48 kHz stereo PCM16 with 0.5 dB diagnostic headroom after local validation identified full-scale integer samples; the music was not rendered or heard. Only license, provider metadata, format, duration, peak (-0.4997 dBFS), clipping, conversion, and hash were inspected."
     },
     {
       "case_id": "oga_cleytonkauffman_anime_intro_190",
       "source_family": "tonal_riff",
       "corpus_eligible": true,
-      "partition": "holdout_b",
-      "classification_status": "provisional_unheard_holdout",
+      "partition": "retired",
+      "classification_status": "consumed_holdout",
       "source_suitability_verdict": "unverified",
+      "reviewed_on": "2026-07-29",
+      "reviewer_role": "technical_reviewer",
+      "family_verdict_owner": "technical_review",
+      "previous_partition": "holdout_b",
       "author": "CleytonKauffman",
       "title": "Anime-esque Intro-Outro Theme",
       "source_pack_id": "oga_anime_intro_outro_theme",
@@ -3628,12 +3650,12 @@
       "download_url": "https://opengameart.org/sites/default/files/Play%20Now_0.mp3",
       "license": "CC0-1.0",
       "source_start_seconds": 0.0,
-      "source_path": "data/test_audio/external/RIOTBOX-1423/wav/dense_oga_cleytonkauffman_anime_intro_190.wav",
-      "sha256": "ec2055551161889656962f4fc5c02781b96a0405cb3f1794f37454dc6b61bf32",
+      "source_path": "data/test_audio/external/RIOTBOX-1423/wav/dense_oga_cleytonkauffman_anime_intro_190_headroom.wav",
+      "sha256": "39cc3f6ef3aaea750f2328d9574663bef73a7e317e74ccbadc41501e0cd08bcc",
       "commercial_reference": false,
       "replacement_for_case_id": "oga_mintodog_fever_stadium_165",
       "acquired_on": "2026-07-29",
-      "review_notes": "Untouched post-H25 replacement. Tonal-riff classification is provisional from provider melodic intro/bridge/outro, violin, guitar, bass, drums, and explicit 190 BPM metadata; it is not counted as drum-only evidence. Acquisition retained the first 16 seconds as 48 kHz stereo PCM16 and inspected only license, provider metadata, format, duration, peak (0.0 dBFS), clipping, conversion, and hash."
+      "review_notes": "Consumed by the frozen H25 V5 reachability preflight. Local validation first added 0.5 dB diagnostic headroom to remove full-scale integer samples, then the timing preflight was repeated on that catalogued copy with unchanged decisive evidence. Provider 190 BPM disagreed with the Rust primary 143.08427 BPM by 46.91573 BPM. Source timing remained AmbiguousPhase with 0.56383 aligned-onset ratio and 28.63121 ms maximum drift, so the explicit BPM mismatch failed before W-30 product projection or candidate WAV generation. No human listening occurred; suitability remains unverified."
     },
     {
       "case_id": "oga_tricksntraps_ascend_130",
@@ -3656,6 +3678,50 @@
       "replacement_for_case_id": "oga_uederson_better_days_120",
       "acquired_on": "2026-07-29",
       "review_notes": "Untouched post-H25 replacement. Dense-break classification is provisional from provider breakbeat, drum-and-bass, electronic, rhythm-game, and explicit 130 BPM metadata only. Acquisition retained the first 16 seconds as 48 kHz stereo PCM16 and inspected only license, provider metadata, format, duration, peak (-1.6 dBFS), clipping, conversion, and hash."
+    },
+    {
+      "case_id": "oga_fupi_tense_bass_boost_140",
+      "source_family": "sparse_drums",
+      "corpus_eligible": true,
+      "partition": "holdout_b",
+      "classification_status": "provisional_unheard_holdout",
+      "source_suitability_verdict": "unverified",
+      "author": "Fupi",
+      "title": "Tense Bass Boost Drum Loop 140 BPM",
+      "source_pack_id": "oga_tense_bass_boost_drum_loop",
+      "provider": "OpenGameArt",
+      "page_url": "https://opengameart.org/content/tense-bass-boost-drum-loop-140-bpm",
+      "download_url": "https://opengameart.org/sites/default/files/tensebassboostdrums.wav",
+      "license": "CC0-1.0",
+      "source_start_seconds": 0.0,
+      "source_path": "data/test_audio/external/RIOTBOX-1423/wav/sparse_oga_fupi_tense_bass_boost_140.wav",
+      "sha256": "98c5c0063f074181ef3141c2cf08550e5976846b5853d416a8e8dc4356d32017",
+      "commercial_reference": false,
+      "replacement_for_case_id": "oga_cleytonkauffman_anime_intro_190",
+      "acquired_on": "2026-07-29",
+      "review_notes": "Untouched post-H25 replacement. Sparse-drums classification is provisional from the provider's explicit drum-loop, beat, bass-boost, and 140 BPM metadata only; it does not claim a typed bass owner or positive suitability. Acquisition converted the complete 6.875-second source to 48 kHz stereo PCM16 with -3 dB diagnostic headroom because the provider source decoded above full scale. Only license, provider metadata, format, duration, peak (-1.947 dBFS), clipping, conversion, and hash were inspected; no render or listening occurred."
+    },
+    {
+      "case_id": "oga_sen_jester_90",
+      "source_family": "tonal_riff",
+      "corpus_eligible": true,
+      "partition": "holdout_b",
+      "classification_status": "provisional_unheard_holdout",
+      "source_suitability_verdict": "unverified",
+      "author": "Sen",
+      "title": "Jester",
+      "source_pack_id": "oga_jester",
+      "provider": "OpenGameArt",
+      "page_url": "https://opengameart.org/content/jester-0",
+      "download_url": "https://opengameart.org/sites/default/files/eerie_3.wav",
+      "license": "CC0-1.0",
+      "source_start_seconds": 0.0,
+      "source_path": "data/test_audio/external/RIOTBOX-1423/wav/tonal_oga_sen_jester_90.wav",
+      "sha256": "f5ddb9927cb2170394093a92c828c161454cf59f6eacefb73b0026b52efdd957",
+      "commercial_reference": false,
+      "replacement_for_case_id": "oga_joth_party_sector",
+      "acquired_on": "2026-07-29",
+      "review_notes": "Untouched post-H25 replacement. Tonal-riff classification is provisional from provider eerie, loop, and explicit 90 BPM metadata only. Acquisition converted the complete 11.606-second source from 48 kHz stereo float PCM to 48 kHz stereo PCM16 and inspected only license, provider metadata, format, duration, peak (-3.7672 dBFS), clipping, conversion, and hash. No product render or listening occurred."
     }
   ]
 }
