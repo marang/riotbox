@@ -10,7 +10,8 @@ Full-phrase base human verdict: `pass` / loopable
 
 Latest heard hard candidate verdict: `reject`
 
-Post-research H25 successor: `technical two-family pass` / `human_verdict: unverified`
+Post-research H25 successor: `technical two-family pass` /
+`human_verdict: technically_ok_but_musically_weak`
 
 ## Outcome And Rejected First Candidate
 
@@ -827,12 +828,30 @@ source monitor, preview, and support paths are silent; bass ownership is
 eight-second A/B is Base from `0..4 s` and Hard from `4..8 s`. Base measures
 `-22.7 LUFS` / `-9.5 dBTP`; Hard measures `-22.5 LUFS` / `-10.2 dBTP`.
 
-H25 remains `human_verdict: unverified`, but now meets the required two
-prequalified sources across `dense_break` and `tonal_riff`. One structured
-playback of the exact RuntimeMix A/B is authorized. The technical pass is
-still not a musical-alpha claim. The active rotation is replenished with
-untouched CC0 sources; replacements were not rendered or heard and did not
-tune V5.
+H25 meets the required two prequalified sources across `dense_break` and
+`tonal_riff`, but the exact structured RuntimeMix A/B received
+`human_verdict: technically_ok_but_musically_weak` on 2026-07-31. The listener
+heard Hard as the same Base hit periodically retriggered or doubled and
+explicitly did not hear a harder result.
+
+Post-listening mechanical analysis confirms that verdict. V5 resets one
+selected onset about every `0.5 s`; `99.98891%` of Base/Hard difference energy
+falls inside the associated short retrigger windows. Hard is only `0.2 LU`
+louder while its true peak is `0.7 dB` lower and its crest ratio is `0.907`.
+Across the actual review window, Hard/Base energy is `-0.4715 dB` in the
+`900..3600 Hz` presence band and `-0.2866 dB` above `3600 Hz`. The accepted
+`1.23382` causal-head metric compares V5 wet against V5 dry inside the same
+retrigger topology; it does not prove harder perceptual impact against Base.
+The lower `0.90` crest floor also admitted a candidate at the least-punchy edge
+of the contract.
+
+The technical reachability result remains valid, but its musical Hard claim is
+rejected. Preserve H25 as negative evidence. The next mechanism must avoid
+periodic same-onset retriggering, provide an exact wet-versus-dry V5 artifact,
+and require role-appropriate Base-to-Hard attack, presence, and crest contrast
+across the development matrix before another holdout or human playback.
+The active rotation remains replenished with untouched CC0 sources;
+replacements were not rendered or heard and did not tune V5.
 
 Machine-readable evidence is frozen in
 `docs/benchmarks/w30_resample_h25_characterization_v1.json`.

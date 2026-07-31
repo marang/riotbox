@@ -6,7 +6,7 @@
   "recorded_on": "2026-07-29",
   "classification": "frozen_source_aligned_impact_v5_two_family_technical_pass",
   "quality_proof": false,
-  "human_verdict": "unverified",
+  "human_verdict": "technically_ok_but_musically_weak",
   "inherits": "docs/benchmarks/w30_resample_h24_characterization_v1.json",
   "algorithm": {
     "recipe": "source_aligned_impact_v5",
@@ -216,8 +216,30 @@
     "phase_zero_assumption_used": false,
     "additional_candidate_wavs_rendered": true
   },
-  "acceptance_status": "technical_two_family_holdout_pass_human_unverified",
+  "human_listening_result": {
+    "reviewed_on": "2026-07-31",
+    "reviewer_role": "Owner",
+    "artifact_duration_seconds": 8.0,
+    "artifact_sequence": "base_0_to_4_seconds_then_hard_4_to_8_seconds",
+    "strongest_element": "chop",
+    "source_recognition": "source_clear",
+    "hook_after_two_bars": "weak",
+    "verdict": "technically_ok_but_musically_weak",
+    "failure_reason": "Hard reads as the same Base hit periodically retriggered or doubled and does not sound harder.",
+    "mechanical_followup_evidence": {
+      "retrigger_interval_seconds": 0.5,
+      "difference_energy_inside_retrigger_windows_ratio": 0.9998891,
+      "base_lufs": -22.7,
+      "hard_lufs": -22.5,
+      "base_true_peak_dbfs": -9.5,
+      "hard_true_peak_dbfs": -10.2,
+      "hard_over_base_crest_ratio": 0.907,
+      "hard_over_base_presence_900_3600_db": -0.4715,
+      "hard_over_base_high_3600_12000_db": -0.2866
+    }
+  },
+  "acceptance_status": "technical_two_family_holdout_pass_human_weak",
   "human_listening_allowed": true,
-  "freeze_consequence": "V5 demonstrates two exact source-backed holdout passes across dense_break and tonal_riff plus honest role-, timing-, level-, and crest-correct rejections. The technical holdout minimum is met without changing V5 from holdout evidence. This authorizes one structured exact RuntimeMix A/B review but is not a musical-alpha or human quality pass.",
-  "next_gate": "Preserve the frozen V5 audio, gates, and Party Sector exact A/B. Record a structured human verdict on the exact 8-second Base-then-Hard RuntimeMix artifact; do not claim musical-alpha acceptance until that verdict passes source recognition, harder transient/midrange impact, groove stability, and performer usefulness."
+  "freeze_consequence": "V5 demonstrates two exact source-backed holdout passes across dense_break and tonal_riff, but structured listening rejects the musical Hard claim. The selected onset is periodically retriggered and the local wet-versus-dry causal-head metric does not prove harder Base-to-Hard impact. Technical reachability remains useful evidence; H25 is not musical-alpha or demo-ready quality proof.",
+  "next_gate": "Keep H25 frozen as negative evidence. Replace periodic same-onset retriggering with a role-aware impact mechanism, add an exact V5 wet-versus-dry artifact, and require role-appropriate Base-to-Hard attack, presence, and crest contrast across the development matrix before consuming another holdout or requesting human playback."
 }
