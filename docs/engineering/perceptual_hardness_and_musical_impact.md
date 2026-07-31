@@ -1117,10 +1117,24 @@ and the new
 `08_w30_aligned_impact_dry_counterfactual.wav` have distinct hashes.
 
 This development matrix consumes no holdout and does not establish musical
-quality. `human_verdict` remains `unverified`; one new exact isolated
-Base-to-Hard review is permitted only after branch review and full CI because
-the causal mechanism, runtime topology, and development-matrix result all
-changed materially. Machine-readable evidence is in
+quality. The exact isolated Base-to-Hard review received
+`human_verdict: technically_ok_but_musically_weak`. The listener found V6 very
+similar to Base and the source and could not confidently hear Hard as harder.
+Source recognition remained clear, but the hook remained weak.
+
+Post-listening analysis explains the uncertainty. Hard is only `0.896 dB`
+higher in RMS and `0.181 dB` higher in peak, while crest falls from `5.200` to
+`4.789`. V6 raises the exact presence attack to `1.66731` times Base, but its
+20–100 ms source-hit body is only `0.94195` times Base. The mechanism therefore
+adds a short bright bite without enough body or retained dynamics to read as a
+confidently harder physical hit. V6 fixes the repeated-onset bug and stays
+grid-stable, but it is not a musical pass.
+
+Preserve H26 as weak evidence. The next mechanism must use source-adaptive,
+phase-coherent body or transient reinforcement and must prove that the stronger
+attack head is supported by 20–100 ms body and perceptual crest. Do not spend a
+holdout or request another playback for loudness-, brightness-, or
+presence-only tuning. Machine-readable evidence is in
 `docs/benchmarks/w30_resample_h26_development_v1.json`.
 
 ## Sources

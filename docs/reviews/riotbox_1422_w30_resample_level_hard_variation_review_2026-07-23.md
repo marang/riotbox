@@ -893,10 +893,26 @@ The exact V6 dry counterfactual measures wet/dry presence head `1.27266` over
 `8.91 ms` per hit. Base, Hard, and dry-counterfactual hashes are all distinct;
 missing-source output remains digital silence.
 
-No holdout was opened and no musical pass is claimed. The H26
-`human_verdict` remains `unverified` until branch review, full CI, and one
-fresh exact isolated Base-to-Hard listening review. Machine evidence is frozen
-in `docs/benchmarks/w30_resample_h26_development_v1.json`.
+No holdout was opened. After branch review and full CI, the exact `7.384625 s`
+RuntimeMix Base-to-Hard artifact received
+`human_verdict: technically_ok_but_musically_weak`. The listener described V6
+as very similar to the original/Base and could not confidently identify Hard
+as harder. Source recognition is `source_clear`; the hook after two bars is
+`weak`.
+
+The uncertainty is not a timing or routing failure. Only the W-30 resample tap
+is audible, the Base/Hard boundary is grid-aligned, and V6 no longer repeats
+one winning cursor. Instead, the remaining perceptual failure is an incomplete
+impact envelope: Hard gains only `0.896 dB` RMS and `0.181 dB` peak, crest falls
+from `5.200` to `4.789`, and the exact 20–100 ms body ratio is `0.94195` even
+though the short presence-head ratio reaches `1.66731`. This reads as brief
+brightness/bite rather than a stronger physical hit.
+
+Preserve H26 as weak evidence and keep PR #1377 draft. The next candidate must
+change the causal mechanism toward phase-coherent, source-adaptive body and
+transient reinforcement; another gain/presence adjustment is not eligible for
+human playback. Machine and structured-review evidence are frozen in
+`docs/benchmarks/w30_resample_h26_development_v1.json`.
 
 ## Branch Review Note
 

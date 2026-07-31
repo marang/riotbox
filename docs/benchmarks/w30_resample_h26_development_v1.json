@@ -131,8 +131,27 @@
       "dry_counterfactual_sha256": "ebd54b40a81cb040ab0271cc2dd9a25ab15e371871e70ff1becc00b90e167d64"
     }
   ],
-  "human_verdict": "unverified",
+  "structured_listening_review": {
+    "reviewer": "Owner",
+    "review_sha256": "67d172cdf63b0539b31f5f69edc1a194c577f520343484e9965507c6715ecdbe",
+    "candidate_sha256": "a41c20506dfb9f46f5f2eb831b8c376a02d193286df2532eb346a2f718e30c06",
+    "human_verdict": "technically_ok_but_musically_weak",
+    "strongest_element": "chop",
+    "source_recognition": "source_clear",
+    "hook_after_two_bars": "weak",
+    "listener_summary": "V6 remains very similar to Base and the source; Hard is not immediately or confidently harder.",
+    "post_listening_analysis": {
+      "hard_over_base_rms_db": 0.89578,
+      "hard_over_base_peak_db": 0.180562,
+      "base_crest_factor": 5.200454,
+      "hard_crest_factor": 4.789391,
+      "hard_over_base_body_ratio": 0.9419497,
+      "hard_over_base_presence_head_ratio": 1.6673066,
+      "interpretation": "The short presence attack increases, but body and crest do not support a confidently harder physical hit."
+    }
+  },
+  "human_verdict": "technically_ok_but_musically_weak",
   "quality_proof": false,
   "holdout_allowed": false,
-  "next_gate": "Complete branch review and full CI, then prepare one exact isolated Base-to-Hard listening artifact. Human playback is allowed only because V6 changed the causal recipe and passed the five-source/four-family development matrix; no fresh holdout is consumed before that verdict."
+  "next_gate": "Preserve H26 as weak evidence. Develop a phase-coherent, source-adaptive successor that preserves or increases the 20–100 ms source attack body and perceptual crest across the development matrix before another human playback. Do not consume a holdout or tune loudness/presence alone."
 }
