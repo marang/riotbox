@@ -125,7 +125,7 @@ impl LowImpactCandidate {
         let (recipe, role, decision) =
             if share_margin >= 1.0 && body_margin >= 1.0 && source_margin >= 1.0 {
                 (
-                    W30ResampleLowImpactRecipe::SourceAlignedImpactV5,
+                    W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6,
                     W30ResampleLowImpactRole::TransientImpact,
                     W30ResampleLowImpactDecision::SourceHitSelected,
                 )
@@ -201,7 +201,7 @@ mod tests {
 
         assert_eq!(
             plan.recipe,
-            W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+            W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
         );
         assert_eq!(plan.role, W30ResampleLowImpactRole::TransientImpact);
         assert_eq!(
@@ -416,7 +416,7 @@ mod tests {
                 plan.attack_window_proxy_frames,
                 plan.body_window_proxy_frames,
             ));
-            if plan.recipe == W30ResampleLowImpactRecipe::SourceAlignedImpactV5 {
+            if plan.recipe == W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6 {
                 selected_families.push(family);
             }
         }

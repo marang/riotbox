@@ -190,10 +190,18 @@ pub struct W30ResampleHardCalibrationPlan {
     ///
     /// Zero means that the selected policy does not claim hit-body ownership.
     pub predicted_level_matched_body_ratio: f32,
-    /// Exact 0–20 ms presence-band ratio for the selected source hit.
+    /// Exact 0–20 ms presence-band ratio for the wet aligned-impact transform
+    /// against the same trigger topology with its nonlinear residual disabled.
     ///
-    /// This distinguishes actual attack articulation from whole-loop level.
+    /// This proves that the transform itself is causal, but it does not prove
+    /// that Hard is more forceful than Base.
     pub predicted_presence_head_ratio: f32,
+    /// Exact 0–20 ms presence-band ratio for Hard against Base.
+    ///
+    /// V6 requires this to exceed both unity and the corresponding body ratio,
+    /// so a louder wet effect or repeated cursor cannot masquerade as a harder
+    /// source attack.
+    pub predicted_base_presence_head_ratio: f32,
     /// Exact whole-render Hard crest factor divided by the Base crest factor.
     ///
     /// Values below one expose transient flattening even when RMS increased.
@@ -227,6 +235,7 @@ impl Default for W30ResampleHardCalibrationPlan {
             predicted_compensated_level_ratio: 1.0,
             predicted_level_matched_body_ratio: 0.0,
             predicted_presence_head_ratio: 0.0,
+            predicted_base_presence_head_ratio: 0.0,
             predicted_crest_ratio: 0.0,
             output_gain: 1.0,
             hit_window_compensation_gain: 1.0,
@@ -355,6 +364,11 @@ pub enum W30ResampleLowImpactRecipe {
     /// only a phase-coherent presence residual inside the transient head, and
     /// rejects source slots whose perceptual attack arrives too late.
     SourceAlignedImpactV5,
+    /// Phase-aligned multi-hit source-transient shaper. Unlike V5, each active
+    /// grid slot keeps its own analyzed source onset instead of repeating one
+    /// winning hit across the pattern. Exact calibration additionally requires
+    /// the processed attack to dominate Base, not only its dry counterfactual.
+    SourcePhaseAlignedImpactV6,
 }
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
@@ -419,6 +433,7 @@ impl W30ResampleLowImpactRecipe {
             Self::SourceHitShaperV3 => "source_hit_shaper_v3",
             Self::SourceImpactShaperV4 => "source_impact_shaper_v4",
             Self::SourceAlignedImpactV5 => "source_aligned_impact_v5",
+            Self::SourcePhaseAlignedImpactV6 => "source_phase_aligned_impact_v6",
         }
     }
 
@@ -429,7 +444,9 @@ impl W30ResampleLowImpactRecipe {
             Self::SourceLowTransientPunchV1
             | Self::SourceKickImpactV2
             | Self::SourceHitShaperV3 => Some((45.0, 180.0)),
-            Self::SourceImpactShaperV4 | Self::SourceAlignedImpactV5 => Some((80.0, 250.0)),
+            Self::SourceImpactShaperV4
+            | Self::SourceAlignedImpactV5
+            | Self::SourcePhaseAlignedImpactV6 => Some((80.0, 250.0)),
         }
     }
 
@@ -439,9 +456,10 @@ impl W30ResampleLowImpactRecipe {
             Self::Unavailable => 0.0,
             Self::SourceLowTransientPunchV1 => 0.5,
             Self::SourceKickImpactV2 => 0.43,
-            Self::SourceHitShaperV3 | Self::SourceImpactShaperV4 | Self::SourceAlignedImpactV5 => {
-                0.0
-            }
+            Self::SourceHitShaperV3
+            | Self::SourceImpactShaperV4
+            | Self::SourceAlignedImpactV5
+            | Self::SourcePhaseAlignedImpactV6 => 0.0,
         }
     }
 
@@ -451,7 +469,8 @@ impl W30ResampleLowImpactRecipe {
             Self::SourceKickImpactV2
             | Self::SourceHitShaperV3
             | Self::SourceImpactShaperV4
-            | Self::SourceAlignedImpactV5 => Some((900.0, 3_600.0)),
+            | Self::SourceAlignedImpactV5
+            | Self::SourcePhaseAlignedImpactV6 => Some((900.0, 3_600.0)),
             Self::Unavailable | Self::SourceLowTransientPunchV1 => None,
         }
     }
@@ -465,7 +484,8 @@ impl W30ResampleLowImpactRecipe {
             Self::Unavailable
             | Self::SourceLowTransientPunchV1
             | Self::SourceHitShaperV3
-            | Self::SourceAlignedImpactV5 => 0.0,
+            | Self::SourceAlignedImpactV5
+            | Self::SourcePhaseAlignedImpactV6 => 0.0,
         }
     }
 
@@ -498,7 +518,8 @@ impl W30ResampleLowImpactRecipe {
             Self::Unavailable
             | Self::SourceLowTransientPunchV1
             | Self::SourceKickImpactV2
-            | Self::SourceAlignedImpactV5 => 0.0,
+            | Self::SourceAlignedImpactV5
+            | Self::SourcePhaseAlignedImpactV6 => 0.0,
         }
     }
 
@@ -510,7 +531,8 @@ impl W30ResampleLowImpactRecipe {
             Self::Unavailable
             | Self::SourceLowTransientPunchV1
             | Self::SourceKickImpactV2
-            | Self::SourceAlignedImpactV5 => 1.0,
+            | Self::SourceAlignedImpactV5
+            | Self::SourcePhaseAlignedImpactV6 => 1.0,
         }
     }
 
@@ -523,7 +545,8 @@ impl W30ResampleLowImpactRecipe {
             Self::Unavailable
             | Self::SourceLowTransientPunchV1
             | Self::SourceKickImpactV2
-            | Self::SourceAlignedImpactV5 => 0.0,
+            | Self::SourceAlignedImpactV5
+            | Self::SourcePhaseAlignedImpactV6 => 0.0,
         }
     }
 
@@ -531,9 +554,10 @@ impl W30ResampleLowImpactRecipe {
     #[must_use]
     pub const fn head_drive(self) -> f32 {
         match self {
-            Self::SourceHitShaperV3 | Self::SourceImpactShaperV4 | Self::SourceAlignedImpactV5 => {
-                3.5
-            }
+            Self::SourceHitShaperV3
+            | Self::SourceImpactShaperV4
+            | Self::SourceAlignedImpactV5
+            | Self::SourcePhaseAlignedImpactV6 => 3.5,
             Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 1.0,
         }
     }
@@ -542,9 +566,10 @@ impl W30ResampleLowImpactRecipe {
     #[must_use]
     pub const fn head_wet(self) -> f32 {
         match self {
-            Self::SourceHitShaperV3 | Self::SourceImpactShaperV4 | Self::SourceAlignedImpactV5 => {
-                0.6
-            }
+            Self::SourceHitShaperV3
+            | Self::SourceImpactShaperV4
+            | Self::SourceAlignedImpactV5
+            | Self::SourcePhaseAlignedImpactV6 => 0.6,
             Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 0.0,
         }
     }
@@ -558,6 +583,13 @@ impl W30ResampleLowImpactRecipe {
                 let frames = sample_rate / 10;
                 if frames == 0 { 1 } else { frames }
             }
+            Self::SourcePhaseAlignedImpactV6 => {
+                // V6's control plane already bounds each source-derived attack
+                // to 20–80 ms. Do not flatten that evidence back into V5's
+                // fixed 100 ms owned-hit floor.
+                let frames = sample_rate / 50;
+                if frames == 0 { 1 } else { frames }
+            }
             Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 1,
         }
     }
@@ -567,9 +599,10 @@ impl W30ResampleLowImpactRecipe {
     #[must_use]
     pub const fn calibrated_hit_preservation_frames(self, sample_rate: u32) -> u32 {
         match self {
-            Self::SourceHitShaperV3 | Self::SourceImpactShaperV4 | Self::SourceAlignedImpactV5 => {
-                sample_rate / 5
-            }
+            Self::SourceHitShaperV3
+            | Self::SourceImpactShaperV4
+            | Self::SourceAlignedImpactV5
+            | Self::SourcePhaseAlignedImpactV6 => sample_rate / 5,
             Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 0,
         }
     }
@@ -578,9 +611,10 @@ impl W30ResampleLowImpactRecipe {
     #[must_use]
     pub const fn calibrated_late_body_start_frames(self, sample_rate: u32) -> u32 {
         match self {
-            Self::SourceHitShaperV3 | Self::SourceImpactShaperV4 | Self::SourceAlignedImpactV5 => {
-                sample_rate * 3 / 25
-            }
+            Self::SourceHitShaperV3
+            | Self::SourceImpactShaperV4
+            | Self::SourceAlignedImpactV5
+            | Self::SourcePhaseAlignedImpactV6 => sample_rate * 3 / 25,
             Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 0,
         }
     }
@@ -589,9 +623,10 @@ impl W30ResampleLowImpactRecipe {
     #[must_use]
     pub const fn calibrated_hit_preservation_fade_frames(self, sample_rate: u32) -> u32 {
         match self {
-            Self::SourceHitShaperV3 | Self::SourceImpactShaperV4 | Self::SourceAlignedImpactV5 => {
-                sample_rate / 100
-            }
+            Self::SourceHitShaperV3
+            | Self::SourceImpactShaperV4
+            | Self::SourceAlignedImpactV5
+            | Self::SourcePhaseAlignedImpactV6 => sample_rate / 100,
             Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 0,
         }
     }
@@ -601,9 +636,10 @@ impl W30ResampleLowImpactRecipe {
     #[must_use]
     pub const fn calibrated_hit_preroll_frames(self, sample_rate: u32) -> u32 {
         match self {
-            Self::SourceHitShaperV3 | Self::SourceImpactShaperV4 | Self::SourceAlignedImpactV5 => {
-                sample_rate / 50
-            }
+            Self::SourceHitShaperV3
+            | Self::SourceImpactShaperV4
+            | Self::SourceAlignedImpactV5
+            | Self::SourcePhaseAlignedImpactV6 => sample_rate / 50,
             Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 0,
         }
     }
@@ -612,9 +648,10 @@ impl W30ResampleLowImpactRecipe {
     #[must_use]
     pub const fn calibrated_hit_preroll_fade_frames(self, sample_rate: u32) -> u32 {
         match self {
-            Self::SourceHitShaperV3 | Self::SourceImpactShaperV4 | Self::SourceAlignedImpactV5 => {
-                sample_rate / 400
-            }
+            Self::SourceHitShaperV3
+            | Self::SourceImpactShaperV4
+            | Self::SourceAlignedImpactV5
+            | Self::SourcePhaseAlignedImpactV6 => sample_rate / 400,
             Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 0,
         }
     }
@@ -625,8 +662,9 @@ pub struct W30ResampleLowImpactPlan {
     pub recipe: W30ResampleLowImpactRecipe,
     /// Source-calibrated share of the versioned nonlinear presence residual.
     ///
-    /// The exact callback may lower V5 from the recipe ceiling to preserve
-    /// whole-render crest and level. Zero is the causal dry counterfactual.
+    /// The exact callback may lower an aligned-impact recipe from its ceiling
+    /// to preserve whole-render crest and level. Zero is the causal dry
+    /// counterfactual.
     pub presence_head_wet: f32,
     /// Typed musical role owned by the selected recipe.
     pub role: W30ResampleLowImpactRole,
@@ -1026,6 +1064,7 @@ impl W30ResampleTapState {
                 self.hard_low_impact.recipe,
                 W30ResampleLowImpactRecipe::SourceImpactShaperV4
                     | W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+                    | W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
             )
             && self.hard_low_impact.role == W30ResampleLowImpactRole::TransientImpact
             && self.hard_low_impact.decision == W30ResampleLowImpactDecision::SourceHitSelected
@@ -1202,5 +1241,21 @@ mod tests {
         assert_eq!(recipe.calibrated_presence_gain(12.0), 2.0);
         assert!((recipe.calibrated_presence_gain(15.0) - 1.0).abs() < f32::EPSILON);
         assert_eq!(recipe.calibrated_presence_gain(18.0), 0.0);
+    }
+
+    #[test]
+    fn v6_does_not_flatten_analyzed_attack_lengths_to_the_v5_hit_floor() {
+        let sample_rate = 48_000;
+
+        assert_eq!(
+            W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+                .minimum_hit_window_frames(sample_rate),
+            4_800
+        );
+        assert_eq!(
+            W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
+                .minimum_hit_window_frames(sample_rate),
+            960
+        );
     }
 }

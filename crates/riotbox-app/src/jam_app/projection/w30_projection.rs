@@ -171,8 +171,8 @@ fn project_resample_source_from_interleaved(
     } else {
         W30ResampleLowImpactPlan::default()
     };
-    if hard_low_impact.recipe == W30ResampleLowImpactRecipe::SourceAlignedImpactV5
-        && let Some(selected) = select_v5_balanced_impact(
+    if hard_low_impact.recipe == W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
+        && let Some(selected) = select_v6_balanced_impact(
             samples,
             channel_count,
             source_sample_rate,
@@ -183,7 +183,13 @@ fn project_resample_source_from_interleaved(
             hard_attack_lengths,
         )
     {
-        hard_low_impact = selected;
+        // V6 uses the balanced winner only as its mask-search anchor. Keep the
+        // full selector's candidate count because the callback performs each
+        // retained slot from its own source onset rather than cloning this hit.
+        hard_low_impact = W30ResampleLowImpactPlan {
+            candidate_count: hard_low_impact.candidate_count,
+            ..selected
+        };
     }
     let hard_calibration = derive_w30_resample_hard_calibration(
         &resample[..sample_count],
@@ -196,7 +202,11 @@ fn project_resample_source_from_interleaved(
         &mut hard_low_impact,
     );
     let hard_gesture = if hard_policy == W30ResampleTapHardPolicy::SourceTransientChop
-        && hard_low_impact.recipe != W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+        && !matches!(
+            hard_low_impact.recipe,
+            W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+                | W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
+        )
     {
         derive_w30_resample_hard_gesture(
             &resample[..sample_count],
@@ -350,6 +360,7 @@ fn derive_w30_resample_hard_calibration(
                 low_impact.recipe,
                 W30ResampleLowImpactRecipe::SourceImpactShaperV4
                     | W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+                    | W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
             ) =>
         {
             let plan = derive_w30_resample_hit_shaper_calibration(
@@ -429,6 +440,7 @@ fn derive_w30_resample_texture_calibration(
         predicted_compensated_level_ratio: raw_ratio * output_gain,
         predicted_level_matched_body_ratio: 0.0,
         predicted_presence_head_ratio: 0.0,
+        predicted_base_presence_head_ratio: 0.0,
         predicted_crest_ratio: 0.0,
         output_gain,
         hit_window_compensation_gain: 1.0,
@@ -515,7 +527,8 @@ fn derive_w30_resample_hit_shaper_calibration(
                     body_hit
                         + (shaped_presence - presence) * recipe.head_wet() * head_mix
                 }
-                W30ResampleLowImpactRecipe::SourceAlignedImpactV5 => {
+                W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+                | W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6 => {
                     let shaped_presence = normalized_soft_clip(presence, recipe.head_drive());
                     *dry
                         + (shaped_presence - presence)
@@ -545,7 +558,11 @@ fn derive_w30_resample_hit_shaper_calibration(
         W30_RESAMPLE_H12_MIN_OUTPUT_GAIN,
         W30_RESAMPLE_H12_MAX_OUTPUT_GAIN,
     );
-    let output_gain = if low_impact.recipe == W30ResampleLowImpactRecipe::SourceAlignedImpactV5 {
+    let output_gain = if matches!(
+        low_impact.recipe,
+        W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+            | W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
+    ) {
         W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN
     } else {
         W30_RESAMPLE_HIT_SHAPER_SCHEMA_OUTPUT_GAIN
@@ -555,6 +572,7 @@ fn derive_w30_resample_hit_shaper_calibration(
         predicted_compensated_level_ratio: raw_level_ratio * output_gain,
         predicted_level_matched_body_ratio: raw_body_ratio * level_match_gain,
         predicted_presence_head_ratio: 0.0,
+        predicted_base_presence_head_ratio: 0.0,
         predicted_crest_ratio: 0.0,
         output_gain,
         hit_window_compensation_gain: 1.0,
@@ -967,7 +985,7 @@ mod resample_attack_bite_tests {
 
         assert_eq!(
             low_plan.recipe,
-            W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+            W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
         );
         assert_eq!(low_plan.role, W30ResampleLowImpactRole::TransientImpact);
         assert_eq!(
@@ -1321,7 +1339,7 @@ mod resample_attack_bite_tests {
             samples: [0.0; riotbox_audio::w30::W30_RESAMPLE_SOURCE_WINDOW_LEN],
         }));
         let low_impact = W30ResampleLowImpactPlan {
-            recipe: W30ResampleLowImpactRecipe::SourceAlignedImpactV5,
+            recipe: W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6,
             presence_head_wet: 0.6,
             role: W30ResampleLowImpactRole::TransientImpact,
             decision: W30ResampleLowImpactDecision::SourceHitSelected,
@@ -1576,6 +1594,28 @@ mod resample_attack_bite_tests {
             W30ResampleHardGesturePlan::default()
         );
     }
+
+    #[test]
+    fn v6_rejects_a_causal_effect_that_does_not_make_hard_attack_dominate_base() {
+        let v5_false_pass = W30ExactHitMetrics {
+            level_ratio: 1.02,
+            head_ratio: 0.95,
+            body_ratio: 0.79,
+            late_body_ratio: 1.0,
+        };
+        assert!(!w30_v6_base_attack_contract_pass(v5_false_pass, 0.91));
+
+        let source_phase_aligned_impact = W30ExactHitMetrics {
+            level_ratio: 1.02,
+            head_ratio: 1.31,
+            body_ratio: 0.78,
+            late_body_ratio: 1.0,
+        };
+        assert!(w30_v6_base_attack_contract_pass(
+            source_phase_aligned_impact,
+            0.98
+        ));
+    }
 }
 
 pub(super) fn analyze_w30_resample_hard_policy(
@@ -1779,14 +1819,14 @@ fn retain_grid_aligned_presence_attacks(
 }
 
 #[derive(Clone, Copy)]
-struct W30V5ImpactCandidate {
+struct W30V6ImpactCandidate {
     plan: W30ResampleLowImpactPlan,
     presence_attack_over_source: f32,
     attack_crest: f32,
 }
 
 #[allow(clippy::too_many_arguments)]
-fn select_v5_balanced_impact(
+fn select_v6_balanced_impact(
     samples: &[f32],
     channel_count: usize,
     source_sample_rate: u32,
@@ -1838,7 +1878,7 @@ fn select_v5_balanced_impact(
             onset_cursors,
             attack_lengths,
         );
-        if plan.recipe != W30ResampleLowImpactRecipe::SourceAlignedImpactV5 {
+        if plan.recipe != W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6 {
             continue;
         }
         let onset = usize::from(plan.selected_onset_cursor) * (frame_count - 1)
@@ -1853,7 +1893,7 @@ fn select_v5_balanced_impact(
             .iter()
             .map(|sample| sample.abs())
             .fold(0.0_f32, f32::max);
-        candidates.push(W30V5ImpactCandidate {
+        candidates.push(W30V6ImpactCandidate {
             plan,
             presence_attack_over_source: rms(&presence[onset..end]) / source_presence_rms,
             attack_crest: attack_peak / attack_rms,
@@ -1872,7 +1912,7 @@ fn select_v5_balanced_impact(
     candidates
         .into_iter()
         .max_by(|left, right| {
-            let score = |candidate: &W30V5ImpactCandidate| {
+            let score = |candidate: &W30V6ImpactCandidate| {
                 (candidate.presence_attack_over_source / maximum_presence)
                     .min(candidate.attack_crest / maximum_crest)
             };
@@ -1947,8 +1987,8 @@ mod aligned_presence_attack_tests {
     }
 
     #[test]
-    fn v5_trigger_density_candidates_keep_the_source_anchor_and_two_hit_floor() {
-        let candidates = w30_v5_trigger_mask_candidates(0b0111_1111, 4);
+    fn aligned_impact_density_candidates_keep_the_source_anchor_and_two_hit_floor() {
+        let candidates = w30_aligned_impact_trigger_mask_candidates(0b0111_1111, 4);
 
         assert_eq!(candidates[0], 0b0111_1111);
         assert!(candidates.iter().all(|mask| mask.count_ones() >= 2));
@@ -2295,6 +2335,7 @@ const W30_EXACT_HIT_MIN_OUTPUT_GAIN: f32 = 0.25;
 const W30_EXACT_HIT_SEARCH_STEPS: usize = 10;
 const W30_EXACT_HIT_REFINEMENT_STEPS: usize = 4;
 const W30_EXACT_HIT_CALIBRATION_CYCLES: usize = 4;
+const W30_ALIGNED_IMPACT_MIN_CREST_RATIO: f32 = 0.90;
 
 #[derive(Clone, Copy)]
 struct W30ExactHitMetrics {
@@ -2304,19 +2345,33 @@ struct W30ExactHitMetrics {
     late_body_ratio: f32,
 }
 
+fn w30_v6_base_attack_contract_pass(metrics: W30ExactHitMetrics, crest_ratio: f32) -> bool {
+    metrics.head_ratio > 1.0
+        && metrics.head_ratio > metrics.body_ratio
+        && crest_ratio >= W30_ALIGNED_IMPACT_MIN_CREST_RATIO
+        && metrics.head_ratio * crest_ratio > 1.0
+}
+
 fn w30_hit_calibration_inputs_match(
     state: &W30ResampleTapState,
     previous: &W30ResampleTapState,
 ) -> bool {
+    let is_aligned_impact = |recipe| {
+        matches!(
+            recipe,
+            W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+                | W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
+        )
+    };
     let low_impact_inputs_match = {
         let mut current = state.hard_low_impact;
         let mut prior = previous.hard_low_impact;
         current.presence_head_wet = 0.0;
         prior.presence_head_wet = 0.0;
-        if prior.recipe == W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+        if is_aligned_impact(prior.recipe)
             && prior.decision == W30ResampleLowImpactDecision::ExactCallbackRejected
         {
-            // Fail-closed V5 retains the rejected source evidence as a
+            // Fail-closed aligned impact retains the rejected source evidence as a
             // negative-cache key. Normalize only the terminal decision back
             // to the input decision used by the deterministic exact search.
             prior.decision = W30ResampleLowImpactDecision::SourceHitSelected;
@@ -2324,23 +2379,20 @@ fn w30_hit_calibration_inputs_match(
         current == prior
     };
     let hard_policies_match = state.hard_policy == previous.hard_policy
-        || (state.hard_low_impact.recipe == W30ResampleLowImpactRecipe::SourceAlignedImpactV5
-            && previous.hard_low_impact.recipe
-                == W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+        || (is_aligned_impact(state.hard_low_impact.recipe)
+            && state.hard_low_impact.recipe == previous.hard_low_impact.recipe
             && previous.hard_low_impact.decision
                 == W30ResampleLowImpactDecision::ExactCallbackRejected
             && previous.hard_policy == W30ResampleTapHardPolicy::Unavailable);
-    let trigger_masks_match =
-        if state.hard_low_impact.recipe == W30ResampleLowImpactRecipe::SourceAlignedImpactV5
-            && previous.hard_low_impact.recipe
-                == W30ResampleLowImpactRecipe::SourceAlignedImpactV5
-        {
-            previous.hard_trigger_mask != 0
-                && previous.hard_trigger_mask & state.hard_trigger_mask
-                    == previous.hard_trigger_mask
-        } else {
-            state.hard_trigger_mask == previous.hard_trigger_mask
-        };
+    let trigger_masks_match = if is_aligned_impact(state.hard_low_impact.recipe)
+        && state.hard_low_impact.recipe == previous.hard_low_impact.recipe
+    {
+        previous.hard_trigger_mask != 0
+            && previous.hard_trigger_mask & state.hard_trigger_mask
+                == previous.hard_trigger_mask
+    } else {
+        state.hard_trigger_mask == previous.hard_trigger_mask
+    };
     state
         .source_audio
         .as_ref()
@@ -2761,10 +2813,14 @@ fn calibrate_w30_hit_shaper_exact_callback(
     state: &mut W30ResampleTapState,
     previous: Option<&W30ResampleTapState>,
 ) {
-    if state.hard_low_impact.recipe == W30ResampleLowImpactRecipe::SourceAlignedImpactV5 {
-        calibrate_w30_aligned_impact_v5_exact_callback(state, previous);
-    } else {
-        calibrate_w30_impact_shaper_v4_exact_callback(state, previous);
+    match state.hard_low_impact.recipe {
+        W30ResampleLowImpactRecipe::SourceAlignedImpactV5 => {
+            calibrate_w30_aligned_impact_exact_callback(state, previous, false);
+        }
+        W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6 => {
+            calibrate_w30_aligned_impact_exact_callback(state, previous, true);
+        }
+        _ => calibrate_w30_impact_shaper_v4_exact_callback(state, previous),
     }
 }
 
@@ -2776,7 +2832,7 @@ fn w30_exact_signal_crest(samples: &[f32]) -> f32 {
     peak / rms(samples).max(1.0e-6)
 }
 
-fn w30_v5_trigger_mask_candidates(trigger_mask: u8, anchor_slot: u8) -> Vec<u8> {
+fn w30_aligned_impact_trigger_mask_candidates(trigger_mask: u8, anchor_slot: u8) -> Vec<u8> {
     let anchor = usize::from(anchor_slot.min((W30_RESAMPLE_HARD_SLICE_COUNT - 1) as u8));
     let ordered_slots = (0..W30_RESAMPLE_HARD_SLICE_COUNT)
         .map(|offset| (anchor + offset) % W30_RESAMPLE_HARD_SLICE_COUNT)
@@ -2808,17 +2864,19 @@ fn w30_v5_trigger_mask_candidates(trigger_mask: u8, anchor_slot: u8) -> Vec<u8> 
     candidates
 }
 
-fn calibrate_w30_aligned_impact_v5_exact_callback(
+fn calibrate_w30_aligned_impact_exact_callback(
     state: &mut W30ResampleTapState,
     previous: Option<&W30ResampleTapState>,
+    require_base_attack_dominance: bool,
 ) {
     // These are cross-source acceptance contracts, not a source-specific
-    // sound recipe. V5 must preserve the source body and crest while creating
-    // an audible on-grid presence attack at near-matched whole-loop level.
+    // sound recipe. The aligned-impact family must preserve source dynamics
+    // while creating an audible on-grid presence attack at near-matched
+    // whole-loop level. V6 additionally requires Base-relative attack
+    // dominance through `w30_v6_base_attack_contract_pass`.
     const MAX_LEVEL_RATIO: f32 = 1.10;
     const MIN_LEVEL_RATIO: f32 = 0.90;
     const MIN_PRESENCE_HEAD_RATIO: f32 = 1.10;
-    const MIN_CREST_RATIO: f32 = 0.90;
     const GAIN_SEARCH_INTERVALS: usize = 16;
     const WET_SEARCH_INTERVALS: usize = 16;
 
@@ -2889,10 +2947,13 @@ fn calibrate_w30_aligned_impact_v5_exact_callback(
         .predicted_level_matched_body_ratio = schema_metrics.body_ratio;
     state.hard_calibration.predicted_presence_head_ratio =
         schema_causal_metrics.head_ratio;
+    state
+        .hard_calibration
+        .predicted_base_presence_head_ratio = schema_metrics.head_ratio;
     state.hard_calibration.predicted_crest_ratio = schema_crest_ratio;
 
     let mut selected = None;
-    'mask_search: for trigger_mask in w30_v5_trigger_mask_candidates(
+    'mask_search: for trigger_mask in w30_aligned_impact_trigger_mask_candidates(
         state.hard_trigger_mask,
         state.hard_low_impact.selected_slot,
     ) {
@@ -2952,7 +3013,9 @@ fn calibrate_w30_aligned_impact_v5_exact_callback(
                     w30_exact_signal_crest(hard_audio) / base_crest.max(1.0e-6);
                 let dynamics_pass = metrics.level_ratio >= MIN_LEVEL_RATIO
                     && metrics.level_ratio <= MAX_LEVEL_RATIO
-                    && crest_ratio >= MIN_CREST_RATIO;
+                    && crest_ratio >= W30_ALIGNED_IMPACT_MIN_CREST_RATIO
+                    && (!require_base_attack_dominance
+                        || w30_v6_base_attack_contract_pass(metrics, crest_ratio));
                 if !dynamics_pass {
                     continue;
                 }
@@ -2996,6 +3059,9 @@ fn calibrate_w30_aligned_impact_v5_exact_callback(
         .predicted_level_matched_body_ratio = selected_metrics.body_ratio;
     state.hard_calibration.predicted_presence_head_ratio =
         selected_causal_head_ratio;
+    state
+        .hard_calibration
+        .predicted_base_presence_head_ratio = selected_metrics.head_ratio;
     state.hard_calibration.predicted_crest_ratio = selected_crest_ratio;
     state.hard_trigger_mask = selected_trigger_mask;
     state.hard_low_impact.presence_head_wet = selected_head_wet;
@@ -3474,11 +3540,15 @@ pub(super) fn build_w30_resample_tap_state(
 
 fn fail_closed_rejected_w30_aligned_impact(state: &mut W30ResampleTapState) {
     if state.variation == W30ResampleTapVariation::HardDamage
-        && state.hard_low_impact.recipe == W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+        && matches!(
+            state.hard_low_impact.recipe,
+            W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+                | W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
+        )
         && !state.hard_calibration.exact_callback_calibrated
     {
-        // The unavailable policy prevents callback triggers and audible V5
-        // output. Keep the source-derived recipe, role, and trigger evidence
+        // The unavailable policy prevents callback triggers and audible
+        // aligned-impact output. Keep the source-derived recipe, role, and trigger evidence
         // so an unchanged evaluated rejection can be reused as a typed
         // negative cache instead of repeating the expensive exact search on
         // every JamAppState view refresh.

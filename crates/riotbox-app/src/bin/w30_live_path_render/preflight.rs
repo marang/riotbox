@@ -78,6 +78,7 @@ struct W30HardProjectionReachability {
     exact_callback_calibrated: bool,
     predicted_level_ratio: f32,
     predicted_presence_head_ratio: f32,
+    predicted_base_presence_head_ratio: f32,
     predicted_body_ratio: f32,
     predicted_crest_ratio: f32,
     presence_head_wet: f32,
@@ -189,6 +190,9 @@ impl W30ReachabilityPreflightReport {
             exact_callback_calibrated: state.hard_calibration.exact_callback_calibrated,
             predicted_level_ratio: state.hard_calibration.predicted_compensated_level_ratio,
             predicted_presence_head_ratio: state.hard_calibration.predicted_presence_head_ratio,
+            predicted_base_presence_head_ratio: state
+                .hard_calibration
+                .predicted_base_presence_head_ratio,
             predicted_body_ratio: state.hard_calibration.predicted_level_matched_body_ratio,
             predicted_crest_ratio: state.hard_calibration.predicted_crest_ratio,
             presence_head_wet: state.hard_low_impact.presence_head_wet,

@@ -280,7 +280,7 @@ fn shared_w30_resample_tap_state_tracks_updates() {
     state.hard_calibration.hit_window_compensation_gain = 2.2;
     state.hard_calibration.impact_body_eq_gain_db = 7.5;
     state.hard_low_impact = W30ResampleLowImpactPlan {
-        recipe: W30ResampleLowImpactRecipe::SourceImpactShaperV4,
+        recipe: W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6,
         presence_head_wet: 0.47,
         role: W30ResampleLowImpactRole::TransientImpact,
         decision: W30ResampleLowImpactDecision::SourceHitSelected,

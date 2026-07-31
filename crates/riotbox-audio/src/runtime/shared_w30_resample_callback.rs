@@ -861,6 +861,7 @@ fn w30_resample_low_impact_recipe_to_u32(recipe: W30ResampleLowImpactRecipe) -> 
         W30ResampleLowImpactRecipe::SourceHitShaperV3 => 3,
         W30ResampleLowImpactRecipe::SourceImpactShaperV4 => 4,
         W30ResampleLowImpactRecipe::SourceAlignedImpactV5 => 5,
+        W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6 => 6,
     }
 }
 
@@ -871,6 +872,7 @@ fn w30_resample_low_impact_recipe_from_u32(value: u32) -> W30ResampleLowImpactRe
         3 => W30ResampleLowImpactRecipe::SourceHitShaperV3,
         4 => W30ResampleLowImpactRecipe::SourceImpactShaperV4,
         5 => W30ResampleLowImpactRecipe::SourceAlignedImpactV5,
+        6 => W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6,
         _ => W30ResampleLowImpactRecipe::Unavailable,
     }
 }

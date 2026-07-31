@@ -856,6 +856,48 @@ replacements were not rendered or heard and did not tune V5.
 Machine-readable evidence is frozen in
 `docs/benchmarks/w30_resample_h25_characterization_v1.json`.
 
+## H26 Phase-Aligned Multi-Hit Development Result
+
+H26 preserves V5 and its reviewed artifacts as negative evidence. Product
+selection now emits `source_phase_aligned_impact_v6`. The callback uses each
+retained grid slot's analyzed cursor and attack length; it no longer repeats
+the selected winning onset. Exact calibration now exposes two different facts:
+
+- wet V6 versus the exact same V6 topology with the nonlinear residual
+  disabled; and
+- complete Hard versus Base in the intended 0–20 ms presence attack.
+
+V6 requires the second ratio to exceed both unity and its Hard/Base body ratio.
+It also retains the `0.90` crest floor and requires attack lift multiplied by
+retained crest to exceed unity. This prevents the V5 failure where a causal
+effect passed even though its actual Base-to-Hard presence energy fell.
+
+The unchanged five-source/four-family development matrix passes its expected
+outcomes:
+
+| Case | Family | Outcome | Base head | Body | Crest |
+| --- | --- | --- | ---: | ---: | ---: |
+| Beat03 | dense break | exact V6 pass | `1.29713` | `0.93261` | `0.92076` |
+| Bertsz | dense full mix | exact V6 stress pass | `1.54438` | `0.98971` | `0.95793` |
+| Cinameng | dense break | role reject: attack/body | n/a | n/a | n/a |
+| Marwan | sparse drums | role reject: attack/body | n/a | n/a | n/a |
+| Fupi | tonal riff | exact V6 stress pass | `3.83417` | `1.00294` | `0.91873` |
+
+Branch review found that the inherited V5 100 ms owned-hit floor flattened
+V6's analyzed attack lengths. V6 now retains its existing bounded 20–80 ms
+source durations while V5 remains sample-stable. After that fix, Beat03,
+Bertsz, and Fupi all pass the complete exact RuntimeMix validator. Beat03
+passes with six source candidates and mask `11010111`; its Hard/Base render
+measures 0–10 ms attack `2.62925`, presence head `1.66731`, and body `0.94195`.
+The exact V6 dry counterfactual measures wet/dry presence head `1.27266` over
+`8.91 ms` per hit. Base, Hard, and dry-counterfactual hashes are all distinct;
+missing-source output remains digital silence.
+
+No holdout was opened and no musical pass is claimed. The H26
+`human_verdict` remains `unverified` until branch review, full CI, and one
+fresh exact isolated Base-to-Hard listening review. Machine evidence is frozen
+in `docs/benchmarks/w30_resample_h26_development_v1.json`.
+
 ## Branch Review Note
 
 `w30_projection.rs` now exceeds the project file-size guidance and carries the

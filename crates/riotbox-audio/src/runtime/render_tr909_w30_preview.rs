@@ -698,7 +698,8 @@ pub(super) fn render_w30_resample_tap_buffer(
             W30ResampleLowImpactRecipe::SourceImpactShaperV4 => {
                 w30_resample_impact_shaper_v4_sample(render, state, attack_and_body)
             }
-            W30ResampleLowImpactRecipe::SourceAlignedImpactV5 => {
+            W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+            | W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6 => {
                 w30_resample_aligned_impact_v5_sample(render, state, attack_and_body)
             }
             W30ResampleLowImpactRecipe::Unavailable
@@ -893,8 +894,12 @@ fn trigger_w30_resample_attack(
     let onset_cursor = w30_resample_step_cursor(render, step);
     let proxy_attack_length =
         if render.hard_low_impact.recipe == W30ResampleLowImpactRecipe::SourceAlignedImpactV5 {
+            // Historical V5 deliberately repeats the one winning hit and its
+            // selected attack window. Keep it sample-stable as negative evidence.
             u32::from(render.hard_low_impact.attack_window_proxy_frames.max(1))
         } else {
+            // V6 and earlier per-slot recipes retain each grid slot's own
+            // source-derived attack duration.
             u32::from(render.hard_attack_lengths[slot].max(1))
         };
     let mut attack_frames = (f64::from(proxy_attack_length) / cursor_increment)
@@ -938,6 +943,7 @@ fn trigger_w30_resample_attack(
         W30ResampleLowImpactRecipe::SourceHitShaperV3
             | W30ResampleLowImpactRecipe::SourceImpactShaperV4
             | W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+            | W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
     ) {
         state.hard_body_eq_z1 = 0.0;
         state.hard_body_eq_z2 = 0.0;
@@ -1352,7 +1358,11 @@ pub(super) fn w30_resample_aligned_impact_v5_sample(
 ) -> f32 {
     if render.variation != W30ResampleTapVariation::HardDamage
         || render.hard_policy != W30ResampleTapHardPolicy::SourceTransientChop
-        || render.hard_low_impact.recipe != W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+        || !matches!(
+            render.hard_low_impact.recipe,
+            W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+                | W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
+        )
         || state.hard_attack_mix <= 0.0
     {
         return source_hit;
@@ -1398,6 +1408,7 @@ pub(super) fn w30_resample_calibrated_hit_preservation_sample(
             W30ResampleLowImpactRecipe::SourceHitShaperV3
                 | W30ResampleLowImpactRecipe::SourceImpactShaperV4
                 | W30ResampleLowImpactRecipe::SourceAlignedImpactV5
+                | W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
         )
     {
         return voice;

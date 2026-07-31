@@ -1072,6 +1072,57 @@ musical-alpha claim.
 Machine-readable evidence is frozen in
 `docs/benchmarks/w30_resample_h25_characterization_v1.json`.
 
+Structured listening subsequently rejected V5 as
+`technically_ok_but_musically_weak`. It periodically replayed one winning
+source onset, and its accepted causal-head ratio compared wet against dry
+inside that same retrigger topology. The exact Party Sector review render had
+less whole-window energy than Base in both the declared 900–3600 Hz presence
+band and the higher band. A causal effect therefore existed, but the asserted
+Base-to-Hard impact did not.
+
+## H26 V6: Phase-Aligned Multi-Hit Impact
+
+`source_phase_aligned_impact_v6` preserves V5 as sample-stable negative
+evidence and changes both the performed topology and acceptance relation:
+
+1. every active grid slot starts from its own analyzed source cursor;
+2. every slot keeps its own source-adaptive attack length;
+3. the balanced winning hit remains only the deterministic anchor for bounded
+   source-mask search rather than becoming the repeated output;
+4. exact calibration separately records causal wet-over-dry presence attack
+   and Hard-over-Base presence attack;
+5. Hard-over-Base attack must exceed unity and the measured Hard body ratio;
+6. retained crest must remain at least `0.90`, and attack lift multiplied by
+   retained crest must exceed unity; and
+7. missing, role-ineligible, or exact-contract-rejected sources remain
+   unavailable without fallback audio.
+
+This is a Pareto contract rather than a source-specific scalar tune. A wet
+effect can no longer pass merely because it differs from its dry
+counterfactual, and a louder body cannot hide the absence of a stronger
+attack. Whole-render crest is retained as an anti-flattening guard, but it is
+not incorrectly required to increase when the source-derived pattern changes.
+
+Five unchanged development sources span four families. Beat03, Bertsz, and
+Fupi pass exact V6; Cinameng and Marwan retain their attack-over-body role
+rejections. The review found and removed an inherited V5 100 ms minimum that
+had flattened V6's analyzed 20–80 ms attack durations. With that correction,
+all three passing families also pass the complete exact RuntimeMix validator,
+not only preflight. Beat03 uses six source candidates. Its exact preflight
+measures level `1.08602`, causal wet/dry head `1.23047`, Hard/Base head
+`1.29713`, body `0.93261`, and crest `0.92076`. The exact RuntimeMix render
+independently measures Hard/Base 0–10 ms attack `2.62925`, presence head
+`1.66731`, body `0.94195`, and dry/wet presence head `1.27266`. Base, Hard,
+and the new
+`08_w30_aligned_impact_dry_counterfactual.wav` have distinct hashes.
+
+This development matrix consumes no holdout and does not establish musical
+quality. `human_verdict` remains `unverified`; one new exact isolated
+Base-to-Hard review is permitted only after branch review and full CI because
+the causal mechanism, runtime topology, and development-matrix result all
+changed materially. Machine-readable evidence is in
+`docs/benchmarks/w30_resample_h26_development_v1.json`.
+
 ## Sources
 
 Primary perceptual and audio research:

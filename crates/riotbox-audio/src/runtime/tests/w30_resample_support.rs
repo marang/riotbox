@@ -1663,6 +1663,59 @@ fn resample_base_preserves_phrase_flow_while_hard_uses_source_attack_body_region
 }
 
 #[test]
+fn aligned_impact_v6_uses_each_source_onset_while_v5_remains_sample_stable() {
+    let source_audio = positive_realtime_resample_source();
+    let mut hard = RealtimeW30ResampleTapState {
+        mode: W30ResampleTapMode::CaptureLineageReady,
+        routing: W30ResampleTapRouting::InternalCaptureTap,
+        source_profile: Some(W30ResampleTapSourceProfile::RawCapture),
+        source_audio,
+        lineage_capture_count: 1,
+        generation_depth: 1,
+        variation: W30ResampleTapVariation::HardDamage,
+        variation_revision: 1,
+        variation_intensity: 0.82,
+        hard_policy: W30ResampleTapHardPolicy::SourceTransientChop,
+        hard_output_gain: 1.0,
+        hard_hit_window_compensation_gain: 1.0,
+        hard_impact_body_eq_gain_db: 0.0,
+        hard_trigger_mask: 0xff,
+        hard_slice_cursors: [320, 2_112, 4_240, 6_016, 8_256, 10_048, 12_176, 14_352],
+        hard_attack_lengths: [128; W30_RESAMPLE_HARD_SLICE_COUNT],
+        hard_attack_bite: Default::default(),
+        hard_low_impact: W30ResampleLowImpactPlan {
+            recipe: W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6,
+            selected_onset_cursor: 4_240,
+            ..W30ResampleLowImpactPlan::default()
+        },
+        hard_gesture: Default::default(),
+        hard_transient_contrast: 1.8,
+        music_bus_level: 0.8,
+        grit_level: 0.5,
+        is_transport_running: true,
+        tempo_bpm: 120.0,
+        position_beats: 0.0,
+    };
+
+    let v6_cursors = (0_i64..8)
+        .map(|step| w30_resample_step_cursor(&hard, step))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        v6_cursors,
+        hard.hard_slice_cursors
+            .into_iter()
+            .map(f64::from)
+            .collect::<Vec<_>>()
+    );
+
+    hard.hard_low_impact.recipe = W30ResampleLowImpactRecipe::SourceAlignedImpactV5;
+    let v5_cursors = (0_i64..8)
+        .map(|step| w30_resample_step_cursor(&hard, step))
+        .collect::<Vec<_>>();
+    assert_eq!(v5_cursors, vec![4_240.0; 8]);
+}
+
+#[test]
 fn source_selected_bite_changes_the_sustained_hard_gesture_without_affecting_base() {
     let mut source_audio = positive_realtime_resample_source();
     source_audio.source_frame_count = 88_200;

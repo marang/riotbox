@@ -1,0 +1,138 @@
+{
+  "schema": "riotbox.w30_resample_h26_development.v1",
+  "schema_version": 1,
+  "ticket": "RIOTBOX-1422",
+  "generation": "H26",
+  "classification": "audible_vertical_slice_development_evidence",
+  "mechanism": {
+    "recipe": "source_phase_aligned_impact_v6",
+    "replaces_product_selection": "source_aligned_impact_v5",
+    "historical_v5_sample_stable": true,
+    "source_derived_multi_hit": true,
+    "per_active_slot_source_cursor": true,
+    "per_active_slot_attack_length": true,
+    "bass_owner": "unassigned",
+    "fallback_audio": false
+  },
+  "exact_acceptance_contract": {
+    "whole_window_level_ratio_min": 0.9,
+    "whole_window_level_ratio_max": 1.1,
+    "causal_wet_over_dry_presence_head_ratio_min": 1.1,
+    "hard_over_base_presence_head_ratio_must_exceed": 1.0,
+    "hard_over_base_presence_head_must_exceed_body": true,
+    "crest_ratio_min": 0.9,
+    "attack_lift_times_crest_ratio_must_exceed": 1.0
+  },
+  "development_matrix": [
+    {
+      "case_id": "golden_path_beat03",
+      "source_family": "dense_break",
+      "expected_outcome": "exact_v6_pass",
+      "actual_outcome": "exact_v6_pass",
+      "candidate_count": 6,
+      "trigger_mask": "11010111",
+      "predicted_level_ratio": 1.0860227,
+      "predicted_causal_presence_head_ratio": 1.2304652,
+      "predicted_base_presence_head_ratio": 1.2971287,
+      "predicted_body_ratio": 0.93260777,
+      "predicted_crest_ratio": 0.92076284,
+      "exact_runtime_validator": "pass",
+      "preflight_report_sha256": "8f72e1cd183e493da70bdf22dcba6db8e47e3441a70ae371746a6dcb54ba6534"
+    },
+    {
+      "case_id": "oga_bertsz_dnb",
+      "source_family": "dense_full_mix",
+      "expected_outcome": "exact_v6_stress_pass",
+      "actual_outcome": "exact_v6_stress_pass",
+      "candidate_count": 4,
+      "predicted_level_ratio": 1.0623353,
+      "predicted_causal_presence_head_ratio": 1.1306034,
+      "predicted_base_presence_head_ratio": 1.5443761,
+      "predicted_body_ratio": 0.9897114,
+      "predicted_crest_ratio": 0.95793474,
+      "exact_runtime_validator": "pass",
+      "preflight_report_sha256": "e792101cf8f7d43c300583e11e4e22978247f5db9bc55a3c81fe08e8373c3051"
+    },
+    {
+      "case_id": "oga_cinameng_can_be_so_beautiful",
+      "source_family": "dense_break",
+      "expected_outcome": "correct_role_rejection",
+      "actual_outcome": "correct_role_rejection",
+      "decision": "insufficient_attack_over_body",
+      "candidate_count": 3,
+      "preflight_report_sha256": "7b2cf04947838bcec20a366bbe2803dbfab2411e61e9da696790cac80ba85c75"
+    },
+    {
+      "case_id": "oga_marwan_cinematic_percussion",
+      "source_family": "sparse_drums",
+      "expected_outcome": "correct_role_rejection",
+      "actual_outcome": "correct_role_rejection",
+      "decision": "insufficient_attack_over_body",
+      "candidate_count": 3,
+      "preflight_report_sha256": "ee3ecf07bee2ca6ea79dacf7d2e44ca0be7ce9f67d8e8bbf1488e705b375842c"
+    },
+    {
+      "case_id": "oga_fupi_plimplom",
+      "source_family": "tonal_riff",
+      "expected_outcome": "exact_v6_tonal_stress",
+      "actual_outcome": "exact_v6_tonal_stress_pass",
+      "decision": "source_hit_selected",
+      "candidate_count": 4,
+      "predicted_level_ratio": 1.0884678,
+      "predicted_causal_presence_head_ratio": 1.1687031,
+      "predicted_base_presence_head_ratio": 3.8341691,
+      "predicted_body_ratio": 1.0029376,
+      "predicted_crest_ratio": 0.9187257,
+      "exact_runtime_validator": "pass",
+      "preflight_report_sha256": "291c3509c8345c726a672c9aa0f5ba8f845b712af02cb3580bf6d793341d7884"
+    }
+  ],
+  "matrix_summary": {
+    "source_count": 5,
+    "source_family_count": 4,
+    "exact_v6_pass_count": 3,
+    "exact_runtime_validated_pass_count": 3,
+    "correct_rejection_count": 2,
+    "all_expected_outcomes_pass": true,
+    "holdouts_consumed": 0
+  },
+  "golden_path_exact_runtime": {
+    "candidate_wav_duration_seconds": 7.384625,
+    "hard_over_base_attack_0_10ms_ratio": 2.6292531,
+    "hard_over_base_selected_presence_attack_ratio": 1.4888718,
+    "hard_over_base_presence_head_ratio": 1.6673066,
+    "hard_over_base_body_ratio": 0.9419497,
+    "dry_to_wet_presence_head_ratio": 1.2726595,
+    "dry_to_wet_significant_delta_ms_per_hit": 8.913333,
+    "base_sha256": "584e9e5f1761d80002dbd6b0b8b76b2e2b485f3d92c881e0a76e984199433825",
+    "hard_sha256": "5ab27ad4f0bbd74cf40678a6544c9e17c8bac3428410d484f8459920fe94812a",
+    "dry_counterfactual_sha256": "dffd588104c0a40e75dfa67df0974f1cb0b7c31b350362d03f1e8e5166ebae00",
+    "base_hard_distinct": true,
+    "wet_dry_distinct": true,
+    "missing_source_output": "digital_silence"
+  },
+  "additional_exact_runtime_passes": [
+    {
+      "case_id": "oga_bertsz_dnb",
+      "hard_over_base_presence_head_ratio": 1.5975633,
+      "hard_over_base_body_ratio": 1.0215608,
+      "hard_over_base_crest_ratio": 0.9456,
+      "base_sha256": "3a7f8347cc5d7c12babaef6b1617eae61f12eb4cb819e8cce99fc07b47aa3b89",
+      "hard_sha256": "74961ad587f7fbbb9dbe26ff1f86112e9fce677a3f6ce33936f649d8fe564bfa",
+      "dry_counterfactual_sha256": "575209a4bff437dc2e88412fe47448db769d0709b87fb0b83691b19e298b6296"
+    },
+    {
+      "case_id": "oga_fupi_plimplom",
+      "hard_over_base_presence_head_ratio": 3.9888353,
+      "hard_over_base_body_ratio": 1.0286772,
+      "hard_over_base_crest_ratio": 0.9103,
+      "base_sha256": "393bae061247fdb4fb33961f6a941a65accc78c1cc00ebd7e37a3b72586d7553",
+      "hard_sha256": "9134fdd14ca0d2509df855806b770b79793ab5a6f8814eed80daf33da2b7908e",
+      "dry_counterfactual_sha256": "ebd54b40a81cb040ab0271cc2dd9a25ab15e371871e70ff1becc00b90e167d64"
+    }
+  ],
+  "human_verdict": "unverified",
+  "quality_proof": false,
+  "holdout_allowed": false,
+  "next_gate": "Complete branch review and full CI, then prepare one exact isolated Base-to-Hard listening artifact. Human playback is allowed only because V6 changed the causal recipe and passed the five-source/four-family development matrix; no fresh holdout is consumed before that verdict."
+}
