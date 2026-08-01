@@ -86,6 +86,7 @@ fn w30_damage_profile_intent_roundtrips_in_the_action_contract() {
         intensity: 0.82,
         target_id: CaptureId::from("cap-hard-01"),
         intent: crate::w30::W30HardIntent::Texture,
+        base_grit_level: 0.68,
     };
 
     let json = serde_json::to_value(&params).expect("serialize W-30 hard intent");
@@ -97,10 +98,38 @@ fn w30_damage_profile_intent_roundtrips_in_the_action_contract() {
         json["W30DamageProfile"]["intent"],
         serde_json::json!("texture")
     );
+    assert!(
+        (json["W30DamageProfile"]["base_grit_level"]
+            .as_f64()
+            .expect("serialized base grit")
+            - 0.68)
+            .abs()
+            < 1.0e-6
+    );
     assert_eq!(
         serde_json::from_value::<ActionParams>(json).expect("deserialize W-30 hard intent"),
         params
     );
+}
+
+#[test]
+fn older_w30_damage_profile_defaults_missing_base_grit_to_clean() {
+    let params: ActionParams = serde_json::from_value(serde_json::json!({
+        "W30DamageProfile": {
+            "intensity": 0.82,
+            "target_id": "cap-hard-legacy",
+            "intent": "impact"
+        }
+    }))
+    .expect("deserialize pre-V7 W-30 damage params");
+
+    assert!(matches!(
+        params,
+        ActionParams::W30DamageProfile {
+            base_grit_level,
+            ..
+        } if base_grit_level == 0.0
+    ));
 }
 
 #[test]

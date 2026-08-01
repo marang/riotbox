@@ -2269,7 +2269,7 @@ fn source_aligned_impact_v5_changes_only_the_owned_presence_head() {
 #[test]
 fn exact_hit_calibration_preserves_the_owned_hit_but_lowers_between_hit_material() {
     let sample_rate = 48_000_u32;
-    let recipe = W30ResampleLowImpactRecipe::SourceHitShaperV3;
+    let recipe = W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7;
     let render = RealtimeW30ResampleTapState {
         mode: W30ResampleTapMode::CaptureLineageReady,
         routing: W30ResampleTapRouting::InternalCaptureTap,
@@ -2312,6 +2312,42 @@ fn exact_hit_calibration_preserves_the_owned_hit_but_lowers_between_hit_material
         hard_hit_preservation_total_frames: total_frames,
         ..Default::default()
     };
+    let mut peak_state = W30ResampleTapCallbackState {
+        beat_position: 0.25,
+        hard_hit_preservation_frames_remaining: total_frames,
+        hard_hit_preservation_total_frames: total_frames,
+        ..Default::default()
+    };
+    let compensated_peak = w30_resample_calibrated_hit_preservation_sample(
+        &render,
+        &mut peak_state,
+        sample_rate,
+        0.8,
+    );
+    assert!(
+        compensated_peak > 0.98,
+        "pre-output-gain compensation must not be clipped before the final callback ceiling"
+    );
+    assert!((compensated_peak * render.hard_output_gain - 0.8).abs() < 1.0e-6);
+
+    let mut historical_render = render;
+    historical_render.hard_low_impact.recipe = W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6;
+    let mut historical_state = W30ResampleTapCallbackState {
+        beat_position: 0.25,
+        hard_hit_preservation_frames_remaining: total_frames,
+        hard_hit_preservation_total_frames: total_frames,
+        ..Default::default()
+    };
+    assert_eq!(
+        w30_resample_calibrated_hit_preservation_sample(
+            &historical_render,
+            &mut historical_state,
+            sample_rate,
+            0.8,
+        ),
+        0.98,
+        "the V3-V6 review boundary must retain its historical intermediate clamp"
+    );
 
     let primary = w30_resample_calibrated_hit_preservation_sample(
         &render,

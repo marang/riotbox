@@ -20,6 +20,21 @@ pub const W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN: f32 = 1.0;
 /// unity preservation at the minimum whole-path gain (`0.25`) and bounds H18's
 /// source-calibrated late-body lift.
 pub const W30_RESAMPLE_HIT_SHAPER_MAX_WINDOW_COMPENSATION_GAIN: f32 = 4.0;
+/// Callback safety ceiling for V7's source-adaptive body equalizer. The
+/// control plane derives the requested lift from the selected hit's measured
+/// attack/body contrast; this bound prevents narrow source resonances from
+/// consuming unbounded headroom.
+pub const W30_RESAMPLE_PHASE_COHERENT_BODY_MAX_EQ_GAIN_DB: f32 = 12.0;
+/// Minimum Hard/Base 20–100 ms body ratio for V7. This closes H26's
+/// presence-only false pass, whose reviewed body ratio was below unity.
+pub const W30_RESAMPLE_PHASE_COHERENT_BODY_MIN_RATIO: f32 = 1.05;
+/// Minimum whole-render crest retention for V7.
+pub const W30_RESAMPLE_PHASE_COHERENT_BODY_MIN_CREST_RATIO: f32 = 0.95;
+/// Minimum retained peak proxy (`whole-level ratio * crest ratio`) for V7.
+/// The final callback ceiling is shared by Base and Hard, so a source that
+/// already reaches it cannot create a peak ratio above unity. V7 therefore
+/// proves peak retention alongside its separate head/body and crest gates.
+pub const W30_RESAMPLE_PHASE_COHERENT_BODY_MIN_PEAK_RETENTION_RATIO: f32 = 0.98;
 /// Minimum retained source body in the 40–120 ms and 120–200 ms Hard windows.
 pub const W30_RESAMPLE_MIN_BODY_PRESERVATION_RATIO: f32 = 0.95;
 /// Minimum source-local body articulation for the versioned H13 gesture.
@@ -214,7 +229,9 @@ pub struct W30ResampleHardCalibrationPlan {
     /// Exact callback calibration may reduce the whole Hard path while this
     /// keeps the already source-owned 0–200 ms hit from collapsing.
     pub hit_window_compensation_gain: f32,
-    /// Exact-callback-selected clean 120 Hz transient-body articulation for V4.
+    /// Exact-callback-selected transient-body articulation. V4 uses its fixed
+    /// 120 Hz control; V7 pairs this gain with `impact_body_center_hz` from
+    /// source evidence.
     pub impact_body_eq_gain_db: f32,
     /// True when the hit-shaper level was measured through the exact callback
     /// at the trusted source tempo rather than only predicted from source
@@ -369,6 +386,11 @@ pub enum W30ResampleLowImpactRecipe {
     /// winning hit across the pattern. Exact calibration additionally requires
     /// the processed attack to dominate Base, not only its dry counterfactual.
     SourcePhaseAlignedImpactV6,
+    /// Source-adaptive attack-plus-body shaper. It keeps V6's per-slot source
+    /// onsets and equalizes the selected hit around its analyzed low-body
+    /// resonance. No synthetic oscillator, delayed copy, or missing-source
+    /// fallback is introduced.
+    SourcePhaseCoherentBodyImpactV7,
 }
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
@@ -434,6 +456,7 @@ impl W30ResampleLowImpactRecipe {
             Self::SourceImpactShaperV4 => "source_impact_shaper_v4",
             Self::SourceAlignedImpactV5 => "source_aligned_impact_v5",
             Self::SourcePhaseAlignedImpactV6 => "source_phase_aligned_impact_v6",
+            Self::SourcePhaseCoherentBodyImpactV7 => "source_phase_coherent_body_impact_v7",
         }
     }
 
@@ -446,7 +469,8 @@ impl W30ResampleLowImpactRecipe {
             | Self::SourceHitShaperV3 => Some((45.0, 180.0)),
             Self::SourceImpactShaperV4
             | Self::SourceAlignedImpactV5
-            | Self::SourcePhaseAlignedImpactV6 => Some((80.0, 250.0)),
+            | Self::SourcePhaseAlignedImpactV6
+            | Self::SourcePhaseCoherentBodyImpactV7 => Some((80.0, 250.0)),
         }
     }
 
@@ -459,7 +483,8 @@ impl W30ResampleLowImpactRecipe {
             Self::SourceHitShaperV3
             | Self::SourceImpactShaperV4
             | Self::SourceAlignedImpactV5
-            | Self::SourcePhaseAlignedImpactV6 => 0.0,
+            | Self::SourcePhaseAlignedImpactV6
+            | Self::SourcePhaseCoherentBodyImpactV7 => 0.0,
         }
     }
 
@@ -470,7 +495,8 @@ impl W30ResampleLowImpactRecipe {
             | Self::SourceHitShaperV3
             | Self::SourceImpactShaperV4
             | Self::SourceAlignedImpactV5
-            | Self::SourcePhaseAlignedImpactV6 => Some((900.0, 3_600.0)),
+            | Self::SourcePhaseAlignedImpactV6
+            | Self::SourcePhaseCoherentBodyImpactV7 => Some((900.0, 3_600.0)),
             Self::Unavailable | Self::SourceLowTransientPunchV1 => None,
         }
     }
@@ -485,7 +511,8 @@ impl W30ResampleLowImpactRecipe {
             | Self::SourceLowTransientPunchV1
             | Self::SourceHitShaperV3
             | Self::SourceAlignedImpactV5
-            | Self::SourcePhaseAlignedImpactV6 => 0.0,
+            | Self::SourcePhaseAlignedImpactV6
+            | Self::SourcePhaseCoherentBodyImpactV7 => 0.0,
         }
     }
 
@@ -519,7 +546,8 @@ impl W30ResampleLowImpactRecipe {
             | Self::SourceLowTransientPunchV1
             | Self::SourceKickImpactV2
             | Self::SourceAlignedImpactV5
-            | Self::SourcePhaseAlignedImpactV6 => 0.0,
+            | Self::SourcePhaseAlignedImpactV6
+            | Self::SourcePhaseCoherentBodyImpactV7 => 0.0,
         }
     }
 
@@ -532,7 +560,8 @@ impl W30ResampleLowImpactRecipe {
             | Self::SourceLowTransientPunchV1
             | Self::SourceKickImpactV2
             | Self::SourceAlignedImpactV5
-            | Self::SourcePhaseAlignedImpactV6 => 1.0,
+            | Self::SourcePhaseAlignedImpactV6
+            | Self::SourcePhaseCoherentBodyImpactV7 => 1.0,
         }
     }
 
@@ -546,7 +575,8 @@ impl W30ResampleLowImpactRecipe {
             | Self::SourceLowTransientPunchV1
             | Self::SourceKickImpactV2
             | Self::SourceAlignedImpactV5
-            | Self::SourcePhaseAlignedImpactV6 => 0.0,
+            | Self::SourcePhaseAlignedImpactV6
+            | Self::SourcePhaseCoherentBodyImpactV7 => 0.0,
         }
     }
 
@@ -557,7 +587,8 @@ impl W30ResampleLowImpactRecipe {
             Self::SourceHitShaperV3
             | Self::SourceImpactShaperV4
             | Self::SourceAlignedImpactV5
-            | Self::SourcePhaseAlignedImpactV6 => 3.5,
+            | Self::SourcePhaseAlignedImpactV6
+            | Self::SourcePhaseCoherentBodyImpactV7 => 3.5,
             Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 1.0,
         }
     }
@@ -569,7 +600,8 @@ impl W30ResampleLowImpactRecipe {
             Self::SourceHitShaperV3
             | Self::SourceImpactShaperV4
             | Self::SourceAlignedImpactV5
-            | Self::SourcePhaseAlignedImpactV6 => 0.6,
+            | Self::SourcePhaseAlignedImpactV6
+            | Self::SourcePhaseCoherentBodyImpactV7 => 0.6,
             Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 0.0,
         }
     }
@@ -583,10 +615,10 @@ impl W30ResampleLowImpactRecipe {
                 let frames = sample_rate / 10;
                 if frames == 0 { 1 } else { frames }
             }
-            Self::SourcePhaseAlignedImpactV6 => {
-                // V6's control plane already bounds each source-derived attack
-                // to 20–80 ms. Do not flatten that evidence back into V5's
-                // fixed 100 ms owned-hit floor.
+            Self::SourcePhaseAlignedImpactV6 | Self::SourcePhaseCoherentBodyImpactV7 => {
+                // V6/V7 control-plane evidence already bounds each
+                // source-derived attack to 20–80 ms. Do not flatten that
+                // evidence back into V5's fixed 100 ms owned-hit floor.
                 let frames = sample_rate / 50;
                 if frames == 0 { 1 } else { frames }
             }
@@ -603,6 +635,11 @@ impl W30ResampleLowImpactRecipe {
             | Self::SourceImpactShaperV4
             | Self::SourceAlignedImpactV5
             | Self::SourcePhaseAlignedImpactV6 => sample_rate / 5,
+            // V7's owned body contract ends at 100 ms. Preserving a full
+            // 200 ms at eighth-note trigger spacing would overlap most of the
+            // loop and prevent the between-hit level calibration from
+            // restoring crest.
+            Self::SourcePhaseCoherentBodyImpactV7 => sample_rate / 10,
             Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 0,
         }
     }
@@ -615,6 +652,7 @@ impl W30ResampleLowImpactRecipe {
             | Self::SourceImpactShaperV4
             | Self::SourceAlignedImpactV5
             | Self::SourcePhaseAlignedImpactV6 => sample_rate * 3 / 25,
+            Self::SourcePhaseCoherentBodyImpactV7 => sample_rate / 20,
             Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 0,
         }
     }
@@ -626,7 +664,8 @@ impl W30ResampleLowImpactRecipe {
             Self::SourceHitShaperV3
             | Self::SourceImpactShaperV4
             | Self::SourceAlignedImpactV5
-            | Self::SourcePhaseAlignedImpactV6 => sample_rate / 100,
+            | Self::SourcePhaseAlignedImpactV6
+            | Self::SourcePhaseCoherentBodyImpactV7 => sample_rate / 100,
             Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 0,
         }
     }
@@ -639,7 +678,8 @@ impl W30ResampleLowImpactRecipe {
             Self::SourceHitShaperV3
             | Self::SourceImpactShaperV4
             | Self::SourceAlignedImpactV5
-            | Self::SourcePhaseAlignedImpactV6 => sample_rate / 50,
+            | Self::SourcePhaseAlignedImpactV6
+            | Self::SourcePhaseCoherentBodyImpactV7 => sample_rate / 50,
             Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 0,
         }
     }
@@ -651,7 +691,8 @@ impl W30ResampleLowImpactRecipe {
             Self::SourceHitShaperV3
             | Self::SourceImpactShaperV4
             | Self::SourceAlignedImpactV5
-            | Self::SourcePhaseAlignedImpactV6 => sample_rate / 400,
+            | Self::SourcePhaseAlignedImpactV6
+            | Self::SourcePhaseCoherentBodyImpactV7 => sample_rate / 400,
             Self::Unavailable | Self::SourceLowTransientPunchV1 | Self::SourceKickImpactV2 => 0,
         }
     }
@@ -666,6 +707,9 @@ pub struct W30ResampleLowImpactPlan {
     /// to preserve whole-render crest and level. Zero is the causal dry
     /// counterfactual.
     pub presence_head_wet: f32,
+    /// Dominant source-owned body frequency selected from the analyzed hit.
+    /// Zero disables the body equalizer and is the causal counterfactual.
+    pub impact_body_center_hz: f32,
     /// Typed musical role owned by the selected recipe.
     pub role: W30ResampleLowImpactRole,
     /// Exact selector outcome, including the strongest failed gate.
@@ -693,6 +737,7 @@ impl Default for W30ResampleLowImpactPlan {
         Self {
             recipe: W30ResampleLowImpactRecipe::Unavailable,
             presence_head_wet: 0.0,
+            impact_body_center_hz: 0.0,
             role: W30ResampleLowImpactRole::Unassigned,
             decision: W30ResampleLowImpactDecision::NotEvaluated,
             candidate_count: 0,
@@ -1019,6 +1064,10 @@ pub struct W30ResampleTapState {
     /// Zero means that no post-resample variation gesture has committed.
     pub variation_revision: u64,
     pub variation_intensity: f32,
+    /// Grit level heard before the quantized Hard gesture committed.
+    /// The control plane uses this persisted action evidence to calibrate V7
+    /// reproducibly across live execution, restore, and replay.
+    pub base_grit_level: f32,
     /// Performer-owned requested Hard domain from the committed action.
     pub hard_intent: Option<W30HardIntent>,
     /// Typed projection result after applying source evidence to the intent.
@@ -1065,6 +1114,7 @@ impl W30ResampleTapState {
                 W30ResampleLowImpactRecipe::SourceImpactShaperV4
                     | W30ResampleLowImpactRecipe::SourceAlignedImpactV5
                     | W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
+                    | W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7
             )
             && self.hard_low_impact.role == W30ResampleLowImpactRole::TransientImpact
             && self.hard_low_impact.decision == W30ResampleLowImpactDecision::SourceHitSelected
@@ -1102,6 +1152,7 @@ impl Default for W30ResampleTapState {
             variation: W30ResampleTapVariation::Base,
             variation_revision: 0,
             variation_intensity: 0.0,
+            base_grit_level: 0.0,
             hard_intent: None,
             hard_intent_outcome: W30HardIntentOutcome::Inactive,
             hard_policy: W30ResampleTapHardPolicy::Unavailable,
@@ -1244,7 +1295,7 @@ mod tests {
     }
 
     #[test]
-    fn v6_does_not_flatten_analyzed_attack_lengths_to_the_v5_hit_floor() {
+    fn aligned_successors_preserve_adaptive_attack_and_v7_body_windows() {
         let sample_rate = 48_000;
 
         assert_eq!(
@@ -1256,6 +1307,16 @@ mod tests {
             W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
                 .minimum_hit_window_frames(sample_rate),
             960
+        );
+        assert_eq!(
+            W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7
+                .minimum_hit_window_frames(sample_rate),
+            960
+        );
+        assert_eq!(
+            W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7
+                .calibrated_hit_preservation_frames(sample_rate),
+            4_800
         );
     }
 }

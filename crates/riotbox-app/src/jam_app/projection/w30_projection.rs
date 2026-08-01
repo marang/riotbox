@@ -171,8 +171,8 @@ fn project_resample_source_from_interleaved(
     } else {
         W30ResampleLowImpactPlan::default()
     };
-    if hard_low_impact.recipe == W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
-        && let Some(selected) = select_v6_balanced_impact(
+    if hard_low_impact.recipe == W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7
+        && let Some(selected) = select_v7_balanced_impact(
             samples,
             channel_count,
             source_sample_rate,
@@ -183,7 +183,7 @@ fn project_resample_source_from_interleaved(
             hard_attack_lengths,
         )
     {
-        // V6 uses the balanced winner only as its mask-search anchor. Keep the
+        // V7 uses the balanced winner only as its mask-search anchor. Keep the
         // full selector's candidate count because the callback performs each
         // retained slot from its own source onset rather than cloning this hit.
         hard_low_impact = W30ResampleLowImpactPlan {
@@ -206,6 +206,7 @@ fn project_resample_source_from_interleaved(
             hard_low_impact.recipe,
             W30ResampleLowImpactRecipe::SourceAlignedImpactV5
                 | W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
+                | W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7
         )
     {
         derive_w30_resample_hard_gesture(
@@ -361,6 +362,7 @@ fn derive_w30_resample_hard_calibration(
                 W30ResampleLowImpactRecipe::SourceImpactShaperV4
                     | W30ResampleLowImpactRecipe::SourceAlignedImpactV5
                     | W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
+                    | W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7
             ) =>
         {
             let plan = derive_w30_resample_hit_shaper_calibration(
@@ -528,7 +530,8 @@ fn derive_w30_resample_hit_shaper_calibration(
                         + (shaped_presence - presence) * recipe.head_wet() * head_mix
                 }
                 W30ResampleLowImpactRecipe::SourceAlignedImpactV5
-                | W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6 => {
+                | W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
+                | W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7 => {
                     let shaped_presence = normalized_soft_clip(presence, recipe.head_drive());
                     *dry
                         + (shaped_presence - presence)
@@ -562,6 +565,7 @@ fn derive_w30_resample_hit_shaper_calibration(
         low_impact.recipe,
         W30ResampleLowImpactRecipe::SourceAlignedImpactV5
             | W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
+            | W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7
     ) {
         W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN
     } else {
@@ -985,7 +989,7 @@ mod resample_attack_bite_tests {
 
         assert_eq!(
             low_plan.recipe,
-            W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
+            W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7
         );
         assert_eq!(low_plan.role, W30ResampleLowImpactRole::TransientImpact);
         assert_eq!(
@@ -1079,6 +1083,7 @@ mod resample_attack_bite_tests {
             variation: W30ResampleTapVariation::HardDamage,
             variation_revision: 7,
             variation_intensity: 0.82,
+            base_grit_level: 0.68,
             hard_intent: Some(riotbox_core::w30::W30HardIntent::Impact),
             hard_intent_outcome: riotbox_core::w30::W30HardIntentOutcome::RealizedImpact,
             hard_policy: W30ResampleTapHardPolicy::SourceTransientChop,
@@ -1143,6 +1148,56 @@ mod resample_attack_bite_tests {
             repeated.hard_calibration, with_h13_gesture.hard_calibration,
             "an H13 input change must recompute rather than reuse stale calibration"
         );
+    }
+
+    #[test]
+    fn v7_exact_calibration_uses_the_persisted_pre_gesture_grit() {
+        let source = Box::new(W30ResampleSourceWindow {
+            source_revision: 43,
+            source_start_frame: 0,
+            source_sample_rate: 48_000,
+            source_frame_count: 1,
+            sample_count: 1,
+            samples: [0.0; W30_RESAMPLE_SOURCE_WINDOW_LEN],
+        });
+        let hard = W30ResampleTapState {
+            source_audio: Some(source.clone()),
+            variation: W30ResampleTapVariation::HardDamage,
+            grit_level: 0.82,
+            base_grit_level: 0.68,
+            music_bus_level: 0.64,
+            ..W30ResampleTapState::default()
+        };
+
+        let selected = w30_v7_base_reference(&hard);
+
+        assert_eq!(selected.variation, W30ResampleTapVariation::Base);
+        assert_eq!(selected.grit_level, hard.base_grit_level);
+        assert_eq!(selected.music_bus_level, hard.music_bus_level);
+        assert_eq!(selected.position_beats, 0.0);
+        assert!(selected.is_transport_running);
+    }
+
+    #[test]
+    fn exact_calibration_cache_invalidates_changed_pre_gesture_grit() {
+        let current = W30ResampleTapState {
+            source_audio: Some(Box::new(W30ResampleSourceWindow {
+                source_revision: 43,
+                source_start_frame: 0,
+                source_sample_rate: 48_000,
+                source_frame_count: 1,
+                sample_count: 1,
+                samples: [0.0; W30_RESAMPLE_SOURCE_WINDOW_LEN],
+            })),
+            variation: W30ResampleTapVariation::HardDamage,
+            grit_level: 0.82,
+            base_grit_level: 0.68,
+            ..W30ResampleTapState::default()
+        };
+        let mut previous = current.clone();
+        previous.base_grit_level = 0.24;
+
+        assert!(!w30_hit_calibration_inputs_match(&current, &previous));
     }
 
     #[test]
@@ -1819,14 +1874,14 @@ fn retain_grid_aligned_presence_attacks(
 }
 
 #[derive(Clone, Copy)]
-struct W30V6ImpactCandidate {
+struct W30V7ImpactCandidate {
     plan: W30ResampleLowImpactPlan,
     presence_attack_over_source: f32,
     attack_crest: f32,
 }
 
 #[allow(clippy::too_many_arguments)]
-fn select_v6_balanced_impact(
+fn select_v7_balanced_impact(
     samples: &[f32],
     channel_count: usize,
     source_sample_rate: u32,
@@ -1878,7 +1933,7 @@ fn select_v6_balanced_impact(
             onset_cursors,
             attack_lengths,
         );
-        if plan.recipe != W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6 {
+        if plan.recipe != W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7 {
             continue;
         }
         let onset = usize::from(plan.selected_onset_cursor) * (frame_count - 1)
@@ -1893,7 +1948,7 @@ fn select_v6_balanced_impact(
             .iter()
             .map(|sample| sample.abs())
             .fold(0.0_f32, f32::max);
-        candidates.push(W30V6ImpactCandidate {
+        candidates.push(W30V7ImpactCandidate {
             plan,
             presence_attack_over_source: rms(&presence[onset..end]) / source_presence_rms,
             attack_crest: attack_peak / attack_rms,
@@ -1912,7 +1967,7 @@ fn select_v6_balanced_impact(
     candidates
         .into_iter()
         .max_by(|left, right| {
-            let score = |candidate: &W30V6ImpactCandidate| {
+            let score = |candidate: &W30V7ImpactCandidate| {
                 (candidate.presence_attack_over_source / maximum_presence)
                     .min(candidate.attack_crest / maximum_crest)
             };
@@ -2321,6 +2376,7 @@ fn w30_pad_playback_transform(
 
 const W30_EXACT_HIT_CALIBRATION_SAMPLE_RATE: u32 = 48_000;
 const W30_EXACT_HIT_CALIBRATION_CHANNELS: u16 = 2;
+const W30_EXACT_HIT_PRODUCT_CALLBACK_FRAMES: usize = 128;
 const W30_EXACT_HIT_TARGET_LEVEL_RATIO: f32 = 1.20;
 const W30_EXACT_HIT_MAX_LEVEL_RATIO: f32 = 1.30;
 const W30_EXACT_HIT_FINAL_TARGET_LEVEL_RATIO: f32 = 1.27;
@@ -2352,6 +2408,33 @@ fn w30_v6_base_attack_contract_pass(metrics: W30ExactHitMetrics, crest_ratio: f3
         && metrics.head_ratio * crest_ratio > 1.0
 }
 
+fn w30_v7_attack_body_contract_pass(metrics: W30ExactHitMetrics, crest_ratio: f32) -> bool {
+    metrics.head_ratio > metrics.body_ratio
+        && metrics.body_ratio >= W30_RESAMPLE_PHASE_COHERENT_BODY_MIN_RATIO
+        && crest_ratio >= W30_RESAMPLE_PHASE_COHERENT_BODY_MIN_CREST_RATIO
+        && metrics.level_ratio * crest_ratio
+            >= W30_RESAMPLE_PHASE_COHERENT_BODY_MIN_PEAK_RETENTION_RATIO
+}
+
+fn w30_v7_source_body_eq_gain_db(low_impact: W30ResampleLowImpactPlan) -> f32 {
+    // Convert the selector's measured amplitude contrast into the exact lift
+    // needed to bring the following source body toward its own attack. The
+    // callback applies it only around the source-derived dominant frequency.
+    (20.0 * low_impact.low_band_attack_over_body.max(1.0).log10())
+        .clamp(0.0, W30_RESAMPLE_PHASE_COHERENT_BODY_MAX_EQ_GAIN_DB)
+}
+
+fn w30_v7_base_reference(
+    state: &W30ResampleTapState,
+) -> W30ResampleTapState {
+    let mut base = state.clone();
+    base.variation = W30ResampleTapVariation::Base;
+    base.grit_level = state.base_grit_level.clamp(0.0, 1.0);
+    base.position_beats = 0.0;
+    base.is_transport_running = true;
+    base
+}
+
 fn w30_hit_calibration_inputs_match(
     state: &W30ResampleTapState,
     previous: &W30ResampleTapState,
@@ -2361,6 +2444,7 @@ fn w30_hit_calibration_inputs_match(
             recipe,
             W30ResampleLowImpactRecipe::SourceAlignedImpactV5
                 | W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
+                | W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7
         )
     };
     let low_impact_inputs_match = {
@@ -2401,6 +2485,7 @@ fn w30_hit_calibration_inputs_match(
         && state.tempo_bpm.to_bits() == previous.tempo_bpm.to_bits()
         && state.variation == previous.variation
         && state.variation_intensity.to_bits() == previous.variation_intensity.to_bits()
+        && state.base_grit_level.to_bits() == previous.base_grit_level.to_bits()
         && state.grit_level.to_bits() == previous.grit_level.to_bits()
         && hard_policies_match
         && trigger_masks_match
@@ -2809,19 +2894,57 @@ fn w30_exact_hit_render_with_late_body_target(
     )
 }
 
+fn w30_exact_hit_product_render(
+    state: &W30ResampleTapState,
+    output_gain: f32,
+    frame_count: usize,
+) -> Vec<f32> {
+    let mut render = state.clone();
+    render.hard_calibration.output_gain = output_gain;
+    render.hard_calibration.hit_window_compensation_gain =
+        (W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN / output_gain.max(f32::EPSILON))
+            .clamp(1.0, W30_RESAMPLE_HIT_SHAPER_MAX_WINDOW_COMPENSATION_GAIN);
+    let plan = RuntimeMixRenderPlan {
+        transport: AudioRuntimeTimingSnapshot {
+            is_transport_running: true,
+            tempo_bpm: render.tempo_bpm,
+            position_beats: 0.0,
+        },
+        w30_resample_tap: render,
+        ..RuntimeMixRenderPlan::default()
+    };
+    render_runtime_mix_realtime_simulation_offline(
+        &plan,
+        W30_EXACT_HIT_CALIBRATION_SAMPLE_RATE,
+        W30_EXACT_HIT_CALIBRATION_CHANNELS,
+        frame_count,
+        W30_EXACT_HIT_PRODUCT_CALLBACK_FRAMES,
+    )
+}
+
 fn calibrate_w30_hit_shaper_exact_callback(
     state: &mut W30ResampleTapState,
     previous: Option<&W30ResampleTapState>,
 ) {
     match state.hard_low_impact.recipe {
         W30ResampleLowImpactRecipe::SourceAlignedImpactV5 => {
-            calibrate_w30_aligned_impact_exact_callback(state, previous, false);
+            calibrate_w30_aligned_impact_exact_callback(state, previous, false, false);
         }
         W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6 => {
-            calibrate_w30_aligned_impact_exact_callback(state, previous, true);
+            calibrate_w30_aligned_impact_exact_callback(state, previous, true, false);
+        }
+        W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7 => {
+            calibrate_w30_phase_coherent_body_impact_exact_callback(state, previous);
         }
         _ => calibrate_w30_impact_shaper_v4_exact_callback(state, previous),
     }
+}
+
+fn calibrate_w30_phase_coherent_body_impact_exact_callback(
+    state: &mut W30ResampleTapState,
+    previous: Option<&W30ResampleTapState>,
+) {
+    calibrate_w30_aligned_impact_exact_callback(state, previous, true, true);
 }
 
 fn w30_exact_signal_crest(samples: &[f32]) -> f32 {
@@ -2868,6 +2991,7 @@ fn calibrate_w30_aligned_impact_exact_callback(
     state: &mut W30ResampleTapState,
     previous: Option<&W30ResampleTapState>,
     require_base_attack_dominance: bool,
+    require_phase_coherent_body: bool,
 ) {
     // These are cross-source acceptance contracts, not a source-specific
     // sound recipe. The aligned-impact family must preserve source dynamics
@@ -2879,6 +3003,7 @@ fn calibrate_w30_aligned_impact_exact_callback(
     const MIN_PRESENCE_HEAD_RATIO: f32 = 1.10;
     const GAIN_SEARCH_INTERVALS: usize = 16;
     const WET_SEARCH_INTERVALS: usize = 16;
+    const BODY_EQ_SEARCH_INTERVALS: usize = 4;
 
     if !state.exact_hit_shaper_calibration_applicable() {
         return;
@@ -2902,12 +3027,22 @@ fn calibrate_w30_aligned_impact_exact_callback(
     let frame_count = step_frames
         .saturating_mul(W30_RESAMPLE_HARD_SLICE_COUNT)
         .saturating_mul(W30_EXACT_HIT_CALIBRATION_CYCLES);
-    let mut base = state.clone();
-    base.variation = W30ResampleTapVariation::Base;
-    base.hard_calibration = W30ResampleHardCalibrationPlan::default();
-    base.hard_gesture = W30ResampleHardGesturePlan::default();
-    base.position_beats = 0.0;
-    base.is_transport_running = true;
+    let mut base = if require_phase_coherent_body {
+        // V7 measures the actual pre-gesture Base state when it is available.
+        // The committed damage action also raises the W-30 grit macro, so a
+        // synthetic Base cloned from Hard is not the sound heard immediately
+        // before the gesture and can create a false exact-calibration pass.
+        w30_v7_base_reference(state)
+    } else {
+        state.clone()
+    };
+    if !require_phase_coherent_body {
+        base.variation = W30ResampleTapVariation::Base;
+        base.hard_calibration = W30ResampleHardCalibrationPlan::default();
+        base.hard_gesture = W30ResampleHardGesturePlan::default();
+        base.position_beats = 0.0;
+        base.is_transport_running = true;
+    }
     let base_audio = render_w30_resample_tap_offline(
         &base,
         W30_EXACT_HIT_CALIBRATION_SAMPLE_RATE,
@@ -2918,23 +3053,31 @@ fn calibrate_w30_aligned_impact_exact_callback(
         return;
     }
     let base_crest = w30_exact_signal_crest(&base_audio);
+    let body_eq_gain_db = if require_phase_coherent_body {
+        w30_v7_source_body_eq_gain_db(state.hard_low_impact)
+    } else {
+        0.0
+    };
     let mut schema_dry_control = state.clone();
     schema_dry_control.hard_low_impact.presence_head_wet = 0.0;
+    schema_dry_control.hard_calibration.impact_body_eq_gain_db = 0.0;
     let schema_dry_control_audio = w30_exact_hit_render(
         &schema_dry_control,
         W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN,
         frame_count,
     );
+    let mut schema_state = state.clone();
+    schema_state.hard_calibration.impact_body_eq_gain_db = body_eq_gain_db;
     let schema_audio = w30_exact_hit_render(
-        state,
+        &schema_state,
         W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN,
         frame_count,
     );
-    let schema_metrics = w30_exact_hit_direct_metrics(&base_audio, &schema_audio, state);
+    let schema_metrics = w30_exact_hit_direct_metrics(&base_audio, &schema_audio, &schema_state);
     let schema_causal_metrics = w30_exact_hit_direct_metrics(
         &schema_dry_control_audio,
         &schema_audio,
-        state,
+        &schema_state,
     );
     let schema_crest_ratio =
         w30_exact_signal_crest(&schema_audio) / base_crest.max(1.0e-6);
@@ -2951,89 +3094,139 @@ fn calibrate_w30_aligned_impact_exact_callback(
         .hard_calibration
         .predicted_base_presence_head_ratio = schema_metrics.head_ratio;
     state.hard_calibration.predicted_crest_ratio = schema_crest_ratio;
+    state.hard_calibration.impact_body_eq_gain_db = body_eq_gain_db;
 
     let mut selected = None;
-    'mask_search: for trigger_mask in w30_aligned_impact_trigger_mask_candidates(
+    let wet_search_intervals = if require_phase_coherent_body {
+        0
+    } else {
+        WET_SEARCH_INTERVALS
+    };
+    let gain_search_intervals = if require_phase_coherent_body {
+        GAIN_SEARCH_INTERVALS / 2
+    } else {
+        GAIN_SEARCH_INTERVALS
+    };
+    let mask_candidates = w30_aligned_impact_trigger_mask_candidates(
         state.hard_trigger_mask,
         state.hard_low_impact.selected_slot,
-    ) {
+    )
+    .into_iter()
+    .map(|trigger_mask| {
         let mut mask_state = state.clone();
         mask_state.hard_trigger_mask = trigger_mask;
         let mut dry_control = mask_state.clone();
         dry_control.hard_low_impact.presence_head_wet = 0.0;
+        dry_control.hard_calibration.impact_body_eq_gain_db = 0.0;
         let dry_control_audio = w30_exact_hit_render(
             &dry_control,
             W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN,
             frame_count,
         );
-        for wet_step in 0..=WET_SEARCH_INTERVALS {
-            let wet_progress = wet_step as f32 / WET_SEARCH_INTERVALS as f32;
-            let mut wet_state = mask_state.clone();
-            wet_state.hard_low_impact.presence_head_wet =
-                state.hard_low_impact.recipe.head_wet() * (1.0 - wet_progress);
-            let unity_wet_audio = w30_exact_hit_render(
-                &wet_state,
-                W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN,
-                frame_count,
-            );
-            let unity_causal_head =
-                w30_exact_hit_direct_metrics(&dry_control_audio, &unity_wet_audio, &wet_state)
-                    .head_ratio;
-            if unity_causal_head < MIN_PRESENCE_HEAD_RATIO {
-                continue;
-            }
-            for gain_step in 0..=GAIN_SEARCH_INTERVALS {
-                let gain_progress = gain_step as f32 / GAIN_SEARCH_INTERVALS as f32;
-                let output_gain = W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN
-                    + (W30_EXACT_HIT_MIN_OUTPUT_GAIN
-                        - W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN)
-                        * gain_progress;
-                let rendered_hard_audio;
-                let hard_audio = if gain_step == 0 {
-                    // The causal-head check immediately above already rendered
-                    // this exact state at the preserved 1.0 output gain.
-                    &unity_wet_audio
-                } else {
-                    rendered_hard_audio =
-                        w30_exact_hit_render(&wet_state, output_gain, frame_count);
-                    &rendered_hard_audio
-                };
-                let metrics = w30_exact_hit_direct_metrics(&base_audio, hard_audio, &wet_state);
-                // The callback keeps the selected hit windows at the fixed
-                // preservation target and scales only the surrounding body
-                // downward as this search advances from 1.0 toward the
-                // minimum output gain. Once whole-window RMS is already below
-                // the acceptance floor, every later gain step is ineligible.
-                // Stopping here preserves the first-match result while
-                // avoiding sixteen full callback renders for rejected sources.
-                if metrics.level_ratio < MIN_LEVEL_RATIO {
-                    break;
-                }
-                let crest_ratio =
-                    w30_exact_signal_crest(hard_audio) / base_crest.max(1.0e-6);
-                let dynamics_pass = metrics.level_ratio >= MIN_LEVEL_RATIO
-                    && metrics.level_ratio <= MAX_LEVEL_RATIO
-                    && crest_ratio >= W30_ALIGNED_IMPACT_MIN_CREST_RATIO
-                    && (!require_base_attack_dominance
-                        || w30_v6_base_attack_contract_pass(metrics, crest_ratio));
-                if !dynamics_pass {
+        (trigger_mask, mask_state, dry_control, dry_control_audio)
+    })
+    .collect::<Vec<_>>();
+    let body_eq_search_intervals = if require_phase_coherent_body {
+        BODY_EQ_SEARCH_INTERVALS
+    } else {
+        0
+    };
+    'body_search: for body_eq_step in 0..=body_eq_search_intervals {
+        let body_eq_progress = body_eq_step as f32 / body_eq_search_intervals.max(1) as f32;
+        let candidate_body_eq_gain_db = body_eq_gain_db
+            + (W30_RESAMPLE_PHASE_COHERENT_BODY_MAX_EQ_GAIN_DB - body_eq_gain_db)
+                * body_eq_progress;
+        for (trigger_mask, mask_state, dry_control, dry_control_audio) in &mask_candidates {
+            for wet_step in 0..=wet_search_intervals {
+                let wet_progress = wet_step as f32 / wet_search_intervals.max(1) as f32;
+                let mut wet_state = mask_state.clone();
+                wet_state.hard_low_impact.presence_head_wet =
+                    state.hard_low_impact.recipe.head_wet() * (1.0 - wet_progress);
+                wet_state.hard_calibration.impact_body_eq_gain_db = candidate_body_eq_gain_db;
+                let unity_wet_audio = w30_exact_hit_render(
+                    &wet_state,
+                    W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN,
+                    frame_count,
+                );
+                let unity_causal_head =
+                    w30_exact_hit_direct_metrics(dry_control_audio, &unity_wet_audio, &wet_state)
+                        .head_ratio;
+                if unity_causal_head < MIN_PRESENCE_HEAD_RATIO {
                     continue;
                 }
-                let matched_dry_audio =
-                    w30_exact_hit_render(&dry_control, output_gain, frame_count);
-                let causal_head_ratio =
-                    w30_exact_hit_direct_metrics(&matched_dry_audio, hard_audio, &wet_state)
-                        .head_ratio;
-                if causal_head_ratio >= MIN_PRESENCE_HEAD_RATIO {
-                    selected = Some((
-                        trigger_mask,
-                        output_gain,
-                        wet_state.hard_low_impact.presence_head_wet,
-                        metrics,
-                        causal_head_ratio,
-                        crest_ratio,
-                    ));
-                    break 'mask_search;
+                let unity_metrics =
+                    w30_exact_hit_direct_metrics(&base_audio, &unity_wet_audio, &wet_state);
+                if require_phase_coherent_body
+                    && (unity_metrics.head_ratio <= unity_metrics.body_ratio
+                        || unity_metrics.body_ratio
+                            < W30_RESAMPLE_PHASE_COHERENT_BODY_MIN_RATIO)
+                {
+                    // Output-gain calibration preserves the owned 0-100 ms
+                    // hit while lowering only surrounding material. It cannot
+                    // repair an EQ/mask pair whose source body or attack/body
+                    // ordering already fails at unity.
+                    continue;
+                }
+                for gain_step in 0..=gain_search_intervals {
+                    let gain_progress = gain_step as f32 / gain_search_intervals as f32;
+                    let output_gain = W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN
+                        + (W30_EXACT_HIT_MIN_OUTPUT_GAIN
+                            - W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN)
+                            * gain_progress;
+                    let rendered_hard_audio;
+                    let hard_audio = if gain_step == 0 {
+                        // The causal-head check immediately above already rendered
+                        // this exact state at the preserved 1.0 output gain.
+                        &unity_wet_audio
+                    } else {
+                        rendered_hard_audio =
+                            w30_exact_hit_render(&wet_state, output_gain, frame_count);
+                        &rendered_hard_audio
+                    };
+                    let metrics =
+                        w30_exact_hit_direct_metrics(&base_audio, hard_audio, &wet_state);
+                    // The callback keeps the selected hit windows at the fixed
+                    // preservation target and scales only the surrounding body
+                    // downward as this search advances from 1.0 toward the
+                    // minimum output gain. Once whole-window RMS is already below
+                    // the acceptance floor, every later gain step is ineligible.
+                    if metrics.level_ratio < MIN_LEVEL_RATIO {
+                        break;
+                    }
+                    let crest_ratio =
+                        w30_exact_signal_crest(hard_audio) / base_crest.max(1.0e-6);
+                    let role_contract_pass = if require_phase_coherent_body {
+                        w30_v7_attack_body_contract_pass(metrics, crest_ratio)
+                    } else if require_base_attack_dominance {
+                        w30_v6_base_attack_contract_pass(metrics, crest_ratio)
+                    } else {
+                        true
+                    };
+                    let dynamics_pass = metrics.level_ratio >= MIN_LEVEL_RATIO
+                        && metrics.level_ratio <= MAX_LEVEL_RATIO
+                        && crest_ratio >= W30_ALIGNED_IMPACT_MIN_CREST_RATIO
+                        && role_contract_pass;
+                    if !dynamics_pass {
+                        continue;
+                    }
+                    let matched_dry_audio =
+                        w30_exact_hit_render(dry_control, output_gain, frame_count);
+                    let causal_head_ratio =
+                        w30_exact_hit_direct_metrics(&matched_dry_audio, hard_audio, &wet_state)
+                            .head_ratio;
+                    if causal_head_ratio >= MIN_PRESENCE_HEAD_RATIO {
+                        selected = Some((
+                            *trigger_mask,
+                            output_gain,
+                            wet_state.hard_low_impact.presence_head_wet,
+                            candidate_body_eq_gain_db,
+                            unity_metrics,
+                            metrics,
+                            causal_head_ratio,
+                            crest_ratio,
+                        ));
+                        break 'body_search;
+                    }
                 }
             }
         }
@@ -3042,6 +3235,8 @@ fn calibrate_w30_aligned_impact_exact_callback(
         selected_trigger_mask,
         selected_gain,
         selected_head_wet,
+        selected_body_eq_gain_db,
+        selected_raw_metrics,
         selected_metrics,
         selected_causal_head_ratio,
         selected_crest_ratio,
@@ -3050,7 +3245,72 @@ fn calibrate_w30_aligned_impact_exact_callback(
         return;
     };
 
-    state.hard_calibration.predicted_raw_level_ratio = schema_metrics.level_ratio;
+    let (
+        selected_raw_metrics,
+        selected_metrics,
+        selected_causal_head_ratio,
+        selected_crest_ratio,
+    ) = if require_phase_coherent_body {
+        let mut selected_state = state.clone();
+        selected_state.hard_trigger_mask = selected_trigger_mask;
+        selected_state.hard_low_impact.presence_head_wet = selected_head_wet;
+        selected_state.hard_calibration.impact_body_eq_gain_db = selected_body_eq_gain_db;
+        let mut product_dry = selected_state.clone();
+        product_dry.hard_low_impact.presence_head_wet = 0.0;
+        product_dry.hard_calibration.impact_body_eq_gain_db = 0.0;
+        let product_base_audio = w30_exact_hit_product_render(
+            &base,
+            W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN,
+            frame_count,
+        );
+        let product_unity_audio = w30_exact_hit_product_render(
+            &selected_state,
+            W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN,
+            frame_count,
+        );
+        let product_hard_audio = w30_exact_hit_product_render(
+            &selected_state,
+            selected_gain,
+            frame_count,
+        );
+        let product_dry_audio =
+            w30_exact_hit_product_render(&product_dry, selected_gain, frame_count);
+        let raw_metrics = w30_exact_hit_direct_metrics(
+            &product_base_audio,
+            &product_unity_audio,
+            &selected_state,
+        );
+        let metrics = w30_exact_hit_direct_metrics(
+            &product_base_audio,
+            &product_hard_audio,
+            &selected_state,
+        );
+        let causal_head_ratio = w30_exact_hit_direct_metrics(
+            &product_dry_audio,
+            &product_hard_audio,
+            &selected_state,
+        )
+        .head_ratio;
+        let crest_ratio = w30_exact_signal_crest(&product_hard_audio)
+            / w30_exact_signal_crest(&product_base_audio).max(1.0e-6);
+        if metrics.level_ratio < MIN_LEVEL_RATIO
+            || metrics.level_ratio > MAX_LEVEL_RATIO
+            || causal_head_ratio < MIN_PRESENCE_HEAD_RATIO
+            || !w30_v7_attack_body_contract_pass(metrics, crest_ratio)
+        {
+            return;
+        }
+        (raw_metrics, metrics, causal_head_ratio, crest_ratio)
+    } else {
+        (
+            selected_raw_metrics,
+            selected_metrics,
+            selected_causal_head_ratio,
+            selected_crest_ratio,
+        )
+    };
+
+    state.hard_calibration.predicted_raw_level_ratio = selected_raw_metrics.level_ratio;
     state
         .hard_calibration
         .predicted_compensated_level_ratio = selected_metrics.level_ratio;
@@ -3065,11 +3325,11 @@ fn calibrate_w30_aligned_impact_exact_callback(
     state.hard_calibration.predicted_crest_ratio = selected_crest_ratio;
     state.hard_trigger_mask = selected_trigger_mask;
     state.hard_low_impact.presence_head_wet = selected_head_wet;
+    state.hard_calibration.impact_body_eq_gain_db = selected_body_eq_gain_db;
     state.hard_calibration.output_gain = selected_gain;
     state.hard_calibration.hit_window_compensation_gain =
         (W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN / selected_gain.max(f32::EPSILON))
             .clamp(1.0, W30_RESAMPLE_HIT_SHAPER_MAX_WINDOW_COMPENSATION_GAIN);
-    state.hard_calibration.impact_body_eq_gain_db = 0.0;
     state.hard_calibration.exact_callback_calibrated = true;
 }
 
@@ -3425,7 +3685,7 @@ pub(super) fn build_w30_resample_tap_state(
     } else {
         Some(W30ResampleTapSourceProfile::RawCapture)
     };
-    let (variation, variation_revision, variation_intensity, hard_intent) =
+    let (variation, variation_revision, variation_intensity, hard_intent, base_grit_level) =
         w30_resample_tap_variation(session, capture);
     let grit_level = session.runtime_state.macro_state.w30_grit.clamp(0.0, 1.0);
     let source_projection = build_w30_capture_artifact_resample_source(
@@ -3511,6 +3771,7 @@ pub(super) fn build_w30_resample_tap_state(
         variation,
         variation_revision,
         variation_intensity,
+        base_grit_level,
         hard_intent,
         hard_intent_outcome,
         hard_policy,
@@ -3544,6 +3805,7 @@ fn fail_closed_rejected_w30_aligned_impact(state: &mut W30ResampleTapState) {
             state.hard_low_impact.recipe,
             W30ResampleLowImpactRecipe::SourceAlignedImpactV5
                 | W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
+                | W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7
         )
         && !state.hard_calibration.exact_callback_calibrated
     {
@@ -3566,9 +3828,16 @@ fn w30_resample_tap_variation(
     u64,
     f32,
     Option<riotbox_core::w30::W30HardIntent>,
+    f32,
 ) {
     let Some(created_from_action) = capture.created_from_action else {
-        return (W30ResampleTapVariation::Base, 0, 0.0, None);
+        return (
+            W30ResampleTapVariation::Base,
+            0,
+            0.0,
+            None,
+            session.runtime_state.macro_state.w30_grit.clamp(0.0, 1.0),
+        );
     };
     let Some(created_index) = session
         .action_log
@@ -3576,7 +3845,13 @@ fn w30_resample_tap_variation(
         .iter()
         .position(|action| action.id == created_from_action)
     else {
-        return (W30ResampleTapVariation::Base, 0, 0.0, None);
+        return (
+            W30ResampleTapVariation::Base,
+            0,
+            0.0,
+            None,
+            session.runtime_state.macro_state.w30_grit.clamp(0.0, 1.0),
+        );
     };
 
     let targets_capture_lineage = |target_id: &str| {
@@ -3599,13 +3874,14 @@ fn w30_resample_tap_variation(
             {
                 return None;
             }
-            let (intensity, target_id, hard_intent) = match &action.params {
+            let (intensity, target_id, hard_intent, base_grit_level) = match &action.params {
                 ActionParams::W30DamageProfile {
                     intensity,
                     target_id,
                     intent,
+                    base_grit_level,
                 } if intent.is_performer_request() => {
-                    (*intensity, target_id.as_str(), *intent)
+                    (*intensity, target_id.as_str(), *intent, *base_grit_level)
                 }
                 ActionParams::Mutation {
                     intensity,
@@ -3614,6 +3890,7 @@ fn w30_resample_tap_variation(
                     *intensity,
                     target_id.as_str(),
                     riotbox_core::w30::W30HardIntent::LegacyAuto,
+                    0.0,
                 ),
                 _ => return None,
             };
@@ -3623,10 +3900,17 @@ fn w30_resample_tap_variation(
                     (index + 1).try_into().unwrap_or(u64::MAX),
                     intensity.clamp(0.0, 1.0),
                     Some(hard_intent),
+                    base_grit_level.clamp(0.0, 1.0),
                 )
             })
         })
-        .unwrap_or((W30ResampleTapVariation::Base, 0, 0.0, None))
+        .unwrap_or((
+            W30ResampleTapVariation::Base,
+            0,
+            0.0,
+            None,
+            session.runtime_state.macro_state.w30_grit.clamp(0.0, 1.0),
+        ))
 }
 
 pub(super) fn normalize_w30_preview_mode(session: &mut SessionFile) {

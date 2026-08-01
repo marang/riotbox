@@ -699,7 +699,8 @@ pub(super) fn render_w30_resample_tap_buffer(
                 w30_resample_impact_shaper_v4_sample(render, state, attack_and_body)
             }
             W30ResampleLowImpactRecipe::SourceAlignedImpactV5
-            | W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6 => {
+            | W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
+            | W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7 => {
                 w30_resample_aligned_impact_v5_sample(render, state, attack_and_body)
             }
             W30ResampleLowImpactRecipe::Unavailable
@@ -897,14 +898,32 @@ fn trigger_w30_resample_attack(
             // Historical V5 deliberately repeats the one winning hit and its
             // selected attack window. Keep it sample-stable as negative evidence.
             u32::from(render.hard_low_impact.attack_window_proxy_frames.max(1))
+        } else if render.hard_low_impact.recipe
+            == W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7
+        {
+            // V7 performs the source analyzer's attack-plus-following-body
+            // window for each slot. The selector defines that body as twice
+            // the adaptive attack duration, hence three attack lengths in
+            // total; no fixed hit is invented.
+            u32::from(render.hard_attack_lengths[slot].max(1)).saturating_mul(3)
         } else {
             // V6 and earlier per-slot recipes retain each grid slot's own
             // source-derived attack duration.
             u32::from(render.hard_attack_lengths[slot].max(1))
         };
+    let maximum_attack_seconds = if render.hard_low_impact.recipe
+        == W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7
+    {
+        0.10
+    } else {
+        0.08
+    };
     let mut attack_frames = (f64::from(proxy_attack_length) / cursor_increment)
         .round()
-        .clamp(1.0, f64::from(output_sample_rate.max(1)) * 0.08) as u32;
+        .clamp(
+            1.0,
+            f64::from(output_sample_rate.max(1)) * maximum_attack_seconds,
+        ) as u32;
     attack_frames = attack_frames.max(
         render
             .hard_low_impact
@@ -944,6 +963,7 @@ fn trigger_w30_resample_attack(
             | W30ResampleLowImpactRecipe::SourceImpactShaperV4
             | W30ResampleLowImpactRecipe::SourceAlignedImpactV5
             | W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
+            | W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7
     ) {
         state.hard_body_eq_z1 = 0.0;
         state.hard_body_eq_z2 = 0.0;
@@ -1211,11 +1231,21 @@ pub(super) fn configure_w30_resample_low_impact(
         recipe,
         W30ResampleLowImpactRecipe::SourceHitShaperV3
             | W30ResampleLowImpactRecipe::SourceImpactShaperV4
+            | W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7
     ) {
         let sample_rate = output_sample_rate.max(1) as f32;
-        let omega = std::f32::consts::TAU * recipe.body_eq_center_hz().max(1.0) / sample_rate;
+        let center_hz = if recipe == W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7 {
+            render.hard_low_impact.impact_body_center_hz
+        } else {
+            recipe.body_eq_center_hz()
+        };
+        let omega = std::f32::consts::TAU * center_hz.max(1.0) / sample_rate;
         let alpha = omega.sin() / (2.0 * recipe.body_eq_q().max(0.01));
-        let gain_db = if recipe == W30ResampleLowImpactRecipe::SourceImpactShaperV4 {
+        let gain_db = if matches!(
+            recipe,
+            W30ResampleLowImpactRecipe::SourceImpactShaperV4
+                | W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7
+        ) {
             render.hard_impact_body_eq_gain_db
         } else {
             recipe.body_eq_gain_db()
@@ -1362,16 +1392,20 @@ pub(super) fn w30_resample_aligned_impact_v5_sample(
             render.hard_low_impact.recipe,
             W30ResampleLowImpactRecipe::SourceAlignedImpactV5
                 | W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
+                | W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7
         )
         || state.hard_attack_mix <= 0.0
     {
         return source_hit;
     }
+    let recipe = render.hard_low_impact.recipe;
     if !state.hard_low_impact_filter_initialized {
         state.hard_impact_presence_lowpass_low = source_hit;
         state.hard_impact_presence_lowpass_high = source_hit;
         state.hard_low_impact_filter_initialized = true;
-        return source_hit;
+        if recipe != W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7 {
+            return source_hit;
+        }
     }
 
     state.hard_impact_presence_lowpass_low += state.hard_impact_presence_low_alpha
@@ -1379,7 +1413,6 @@ pub(super) fn w30_resample_aligned_impact_v5_sample(
     state.hard_impact_presence_lowpass_high += state.hard_impact_presence_high_alpha
         * (source_hit - state.hard_impact_presence_lowpass_high);
     let presence = state.hard_impact_presence_lowpass_high - state.hard_impact_presence_lowpass_low;
-    let recipe = render.hard_low_impact.recipe;
     let shaped_presence = normalized_soft_clip(presence, recipe.head_drive());
     let presence_residual = shaped_presence - presence;
     let nonlinear_head_mix = render
@@ -1387,7 +1420,18 @@ pub(super) fn w30_resample_aligned_impact_v5_sample(
         .presence_head_wet
         .clamp(0.0, recipe.head_wet())
         * state.hard_attack_head_mix;
-    (source_hit + presence_residual * nonlinear_head_mix).clamp(-0.98, 0.98)
+    let body_hit = if recipe == W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7 {
+        let equalized_body = state.hard_body_eq_b0 * source_hit + state.hard_body_eq_z1;
+        state.hard_body_eq_z1 = state.hard_body_eq_b1 * source_hit
+            - state.hard_body_eq_a1 * equalized_body
+            + state.hard_body_eq_z2;
+        state.hard_body_eq_z2 =
+            state.hard_body_eq_b2 * source_hit - state.hard_body_eq_a2 * equalized_body;
+        source_hit + (equalized_body - source_hit) * state.hard_attack_mix
+    } else {
+        source_hit
+    };
+    (body_hit + presence_residual * nonlinear_head_mix).clamp(-0.98, 0.98)
 }
 
 fn normalized_soft_clip(sample: f32, drive: f32) -> f32 {
@@ -1409,6 +1453,7 @@ pub(super) fn w30_resample_calibrated_hit_preservation_sample(
                 | W30ResampleLowImpactRecipe::SourceImpactShaperV4
                 | W30ResampleLowImpactRecipe::SourceAlignedImpactV5
                 | W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
+                | W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7
         )
     {
         return voice;
@@ -1473,7 +1518,17 @@ pub(super) fn w30_resample_calibrated_hit_preservation_sample(
     }
     let compensation = (target_output_gain / render.hard_output_gain.max(f32::EPSILON))
         .clamp(1.0, W30_RESAMPLE_HIT_SHAPER_MAX_WINDOW_COMPENSATION_GAIN);
-    (voice * compensation).clamp(-0.98, 0.98)
+    if recipe == W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7 {
+        // This is a pre-output-gain compensation. Clamping it here would erase
+        // the compensation before `hard_output_gain` is applied and make V7's
+        // peak-preservation contract mathematically impossible. The bounded
+        // compensation and final callback voice ceiling own safety.
+        voice * compensation
+    } else {
+        // Preserve the reviewed V3-V6 callback samples exactly. V7 is the
+        // versioned compatibility boundary for the corrected compensation.
+        (voice * compensation).clamp(-0.98, 0.98)
+    }
 }
 
 pub(super) fn w30_resample_low_impact_sample(

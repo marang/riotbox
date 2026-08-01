@@ -81,7 +81,9 @@ struct W30HardProjectionReachability {
     predicted_base_presence_head_ratio: f32,
     predicted_body_ratio: f32,
     predicted_crest_ratio: f32,
+    base_grit_level: f32,
     presence_head_wet: f32,
+    impact_body_center_hz: f32,
     impact_body_eq_gain_db: f32,
     impact_presence_gain: f32,
     candidate_requirement_satisfied: bool,
@@ -195,7 +197,9 @@ impl W30ReachabilityPreflightReport {
                 .predicted_base_presence_head_ratio,
             predicted_body_ratio: state.hard_calibration.predicted_level_matched_body_ratio,
             predicted_crest_ratio: state.hard_calibration.predicted_crest_ratio,
+            base_grit_level: state.base_grit_level,
             presence_head_wet: state.hard_low_impact.presence_head_wet,
+            impact_body_center_hz: state.hard_low_impact.impact_body_center_hz,
             impact_body_eq_gain_db: state.hard_calibration.impact_body_eq_gain_db,
             impact_presence_gain: state
                 .hard_low_impact

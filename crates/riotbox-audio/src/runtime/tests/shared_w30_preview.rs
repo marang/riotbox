@@ -258,6 +258,7 @@ fn shared_w30_resample_tap_state_tracks_updates() {
         variation: W30ResampleTapVariation::Base,
         variation_revision: 0,
         variation_intensity: 0.0,
+        base_grit_level: 0.0,
         hard_intent: None,
         hard_intent_outcome: Default::default(),
         hard_policy: W30ResampleTapHardPolicy::Unavailable,
@@ -282,6 +283,7 @@ fn shared_w30_resample_tap_state_tracks_updates() {
     state.hard_low_impact = W30ResampleLowImpactPlan {
         recipe: W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6,
         presence_head_wet: 0.47,
+        impact_body_center_hz: 112.5,
         role: W30ResampleLowImpactRole::TransientImpact,
         decision: W30ResampleLowImpactDecision::SourceHitSelected,
         candidate_count: 5,

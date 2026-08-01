@@ -261,6 +261,7 @@ fn typed_w30_damage_profile_replays_capture_and_grit_without_losing_intent() {
         intensity: 0.81,
         target_id: CaptureId::from("cap-texture"),
         intent: crate::w30::W30HardIntent::Texture,
+        base_grit_level: 0.37,
     };
     let action_log = action_log(vec![w30_action(
         1,
@@ -290,6 +291,7 @@ fn typed_w30_damage_profile_rejects_compatibility_only_legacy_intent() {
             intensity: 0.81,
             target_id: CaptureId::from("cap-legacy"),
             intent: crate::w30::W30HardIntent::LegacyAuto,
+            base_grit_level: 0.37,
         },
         200,
     )]);

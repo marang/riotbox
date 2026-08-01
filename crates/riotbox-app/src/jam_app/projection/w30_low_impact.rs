@@ -9,6 +9,8 @@ use super::{bandpass_window, rms};
 
 const LOW_HZ: f32 = 45.0;
 const HIGH_HZ: f32 = 180.0;
+const BODY_CENTER_LOW_HZ: f32 = 80.0;
+const BODY_CENTER_HIGH_HZ: f32 = 250.0;
 const MIN_RMS: f32 = 1.0e-6;
 const MIN_ATTACK_SECONDS: f32 = 0.02;
 const MAX_ATTACK_SECONDS: f32 = 0.08;
@@ -24,6 +26,7 @@ struct LowImpactCandidate {
     attack_share: f32,
     attack_over_body: f32,
     attack_over_source: f32,
+    body_center_hz: f32,
     score: f32,
 }
 
@@ -79,6 +82,12 @@ pub(super) fn derive_w30_resample_low_impact(
         let attack_share = (low_attack_rms / full_attack_rms).min(1.0);
         let attack_over_body = low_attack_rms / low_body_rms;
         let attack_over_source = low_attack_rms / source_rms;
+        let body_center_hz = dominant_body_frequency_hz(
+            &proxy[attack_end..body_end],
+            proxy_sample_rate,
+            BODY_CENTER_LOW_HZ,
+            BODY_CENTER_HIGH_HZ,
+        );
         let score = (attack_share / W30_RESAMPLE_LOW_IMPACT_MIN_ATTACK_SHARE)
             .min(attack_over_body / W30_RESAMPLE_HIT_SHAPER_MIN_ATTACK_OVER_BODY)
             .min(attack_over_source / W30_RESAMPLE_LOW_IMPACT_MIN_ATTACK_OVER_SOURCE);
@@ -92,6 +101,7 @@ pub(super) fn derive_w30_resample_low_impact(
             attack_share,
             attack_over_body,
             attack_over_source,
+            body_center_hz,
             score,
         };
         if selected.is_none_or(|current| candidate.outranks(current)) {
@@ -125,7 +135,7 @@ impl LowImpactCandidate {
         let (recipe, role, decision) =
             if share_margin >= 1.0 && body_margin >= 1.0 && source_margin >= 1.0 {
                 (
-                    W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6,
+                    W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7,
                     W30ResampleLowImpactRole::TransientImpact,
                     W30ResampleLowImpactDecision::SourceHitSelected,
                 )
@@ -151,6 +161,7 @@ impl LowImpactCandidate {
         W30ResampleLowImpactPlan {
             recipe,
             presence_head_wet: recipe.head_wet(),
+            impact_body_center_hz: self.body_center_hz,
             role,
             decision,
             candidate_count,
@@ -163,6 +174,38 @@ impl LowImpactCandidate {
             low_band_attack_over_source: self.attack_over_source,
         }
     }
+}
+
+fn dominant_body_frequency_hz(samples: &[f32], sample_rate: f32, low_hz: f32, high_hz: f32) -> f32 {
+    if samples.len() < 3 || !sample_rate.is_finite() || sample_rate <= high_hz * 2.0 {
+        return 0.0;
+    }
+    let length = samples.len() as f32;
+    let first_bin = (low_hz * length / sample_rate).ceil().max(1.0) as usize;
+    let last_bin = (high_hz * length / sample_rate).floor() as usize;
+    if first_bin > last_bin {
+        return 0.0;
+    }
+    let denominator = (samples.len() - 1) as f32;
+    let mut best_bin = first_bin;
+    let mut best_power = f64::NEG_INFINITY;
+    for bin in first_bin..=last_bin {
+        let omega = std::f32::consts::TAU * bin as f32 / length;
+        let mut real = 0.0_f64;
+        let mut imaginary = 0.0_f64;
+        for (index, sample) in samples.iter().copied().enumerate() {
+            let hann = 0.5 - 0.5 * (std::f32::consts::TAU * index as f32 / denominator).cos();
+            let phase = omega * index as f32;
+            real += f64::from(sample * hann * phase.cos());
+            imaginary -= f64::from(sample * hann * phase.sin());
+        }
+        let power = real * real + imaginary * imaginary;
+        if power > best_power {
+            best_power = power;
+            best_bin = bin;
+        }
+    }
+    best_bin as f32 * sample_rate / length
 }
 
 #[cfg(test)]
@@ -201,7 +244,7 @@ mod tests {
 
         assert_eq!(
             plan.recipe,
-            W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6
+            W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7
         );
         assert_eq!(plan.role, W30ResampleLowImpactRole::TransientImpact);
         assert_eq!(
@@ -213,6 +256,10 @@ mod tests {
         assert_eq!(plan.selected_onset_cursor, 800);
         assert_eq!(plan.attack_window_proxy_frames, 160);
         assert_eq!(plan.body_window_proxy_frames, 320);
+        assert!(
+            (80.0..=100.0).contains(&plan.impact_body_center_hz),
+            "the bounded DFT must recover the source's 90 Hz body: {plan:?}"
+        );
     }
 
     #[test]
@@ -394,7 +441,7 @@ mod tests {
             }
             let plan = projection.hard_low_impact;
             eprintln!(
-                "{family}: policy={} recipe={} role={} decision={} candidates={} slot={} onset={} attack={} body={} share={:.6} over_body={:.6} over_source={:.6}",
+                "{family}: policy={} recipe={} role={} decision={} candidates={} slot={} onset={} attack={} body={} center_hz={:.2} share={:.6} over_body={:.6} over_source={:.6}",
                 projection.hard_policy.label(),
                 plan.recipe.label(),
                 plan.role.label(),
@@ -404,6 +451,7 @@ mod tests {
                 plan.selected_onset_cursor,
                 plan.attack_window_proxy_frames,
                 plan.body_window_proxy_frames,
+                plan.impact_body_center_hz,
                 plan.low_band_attack_share,
                 plan.low_band_attack_over_body,
                 plan.low_band_attack_over_source,
@@ -416,7 +464,7 @@ mod tests {
                 plan.attack_window_proxy_frames,
                 plan.body_window_proxy_frames,
             ));
-            if plan.recipe == W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6 {
+            if plan.recipe == W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7 {
                 selected_families.push(family);
             }
         }
@@ -428,7 +476,7 @@ mod tests {
         assert!(
             selected_families.contains(&"sparse_drums")
                 && selected_families.contains(&"tonal_riff"),
-            "two independent development families must newly reach the exact recipe: {selected_families:?}"
+            "two independent development families must reach the exact callback evaluator: {selected_families:?}"
         );
         assert!(
             selection_signatures.len() >= 5,

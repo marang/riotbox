@@ -242,6 +242,10 @@ pub enum ActionParams {
         intensity: f32,
         target_id: CaptureId,
         intent: crate::w30::W30HardIntent,
+        /// W-30 grit heard when the performer queued the quantized gesture.
+        /// Older sessions default to a conservative clean Base reference.
+        #[serde(default)]
+        base_grit_level: f32,
     },
     Capture {
         bars: Option<u32>,

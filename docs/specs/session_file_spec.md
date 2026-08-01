@@ -1129,8 +1129,10 @@ Rules:
 - budget and replay logic must consume structured commit records, not parse
   result-summary strings
 - new `w30.apply_damage_profile` actions persist their performer-owned Hard
-  domain as typed `W30DamageProfile` params: capture ID, intensity, and
-  `impact` or `texture` intent. Older generic `Mutation` params remain valid
+  domain as typed `W30DamageProfile` params: capture ID, intensity,
+  pre-gesture W-30 grit, and `impact` or `texture` intent. The pre-gesture grit
+  is replay evidence for exact Base-to-Hard calibration rather than hidden app
+  state. Older generic `Mutation` params remain valid
   Session v1 history and map to `legacy_auto`; restore must not invent a new
   intent for them.
 - W-30 Hard realization is derived product state, not a second persisted

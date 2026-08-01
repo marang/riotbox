@@ -914,6 +914,60 @@ transient reinforcement; another gain/presence adjustment is not eligible for
 human playback. Machine and structured-review evidence are frozen in
 `docs/benchmarks/w30_resample_h26_development_v1.json`.
 
+## H27 Source-Adaptive Phase-Coherent Body Development Result
+
+H27 preserves the reviewed V5 and V6 outputs as negative and weak evidence.
+Product selection now emits `source_phase_coherent_body_impact_v7`. V7 keeps
+V6's distinct per-slot source onsets, but extends each owned hit from its
+adaptive attack through the following source body, capped at `100 ms`. A
+bounded Hann-windowed DFT analyzes only that following body in `80..250 Hz`;
+the callback applies a source-centered peaking EQ whose initial lift is derived
+from the measured attack/body contrast and whose exact search remains capped
+at `12 dB`. This adds no oscillator, delayed copy, or fallback material.
+
+The exact acceptance contract now requires all of the following through the
+product `RuntimeMix` path with 128-frame callback chunks:
+
+- whole-render Hard/Base level in `0.90..=1.10`;
+- causal wet/dry presence-head ratio at least `1.10`;
+- Hard/Base presence head greater than Hard/Base body;
+- Hard/Base `20..100 ms` body ratio at least `1.05`;
+- crest retention at least `0.95`; and
+- level multiplied by crest at least `0.98` as a retained-peak proxy.
+
+Branch review found that the committed damage action also changes global W-30
+grit. A Base cloned from the post-commit Hard state was therefore not the
+sound immediately preceding the gesture. The typed `W30DamageProfile` action
+now persists `base_grit_level`; queue, Session serialization, restore, replay,
+projection, and QA all retain it. Older typed actions default conservatively to
+a clean Base, and legacy generic mutation remains explicitly compatibility-only.
+
+The final unchanged five-source/four-family development matrix has the
+intended mixed outcome:
+
+| Case | Family | Outcome | Body center | Level | Causal head | Base head | Body | Crest |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Beat03 | dense break | exact V7 pass | `124.92 Hz` | `1.0447` | `1.18862` | `1.59431` | `1.11442` | `0.9774` |
+| Bertsz | dense full mix | exact V7 stress pass | `207.95 Hz` | `1.05655` | `1.60784` | `2.29896` | `1.76522` | `0.97906` |
+| Cinameng | dense break | reject: attack/body | n/a | n/a | n/a | n/a | n/a | n/a |
+| Marwan | sparse drums | reject: attack/body | n/a | n/a | n/a | n/a | n/a | n/a |
+| Fupi | tonal riff | exact V7 stress pass | `99.93 Hz` | `1.07110` | `1.27781` | `2.22006` | `1.12951` | `0.9533` |
+
+All three accepted candidates have zero clipped samples, rejected cases emit
+no candidate, and missing-source output remains digital silence. Deterministic
+direct-callback search reduced the golden debug preflight from roughly `205 s`
+to `25.84 s`; final acceptance is nevertheless re-rendered and re-measured
+through the authoritative product path. No analysis, allocation, or I/O was
+added to the realtime callback.
+
+No holdout was opened. The exact `7.384625 s` isolated W-30 Base-to-Hard
+gesture is technically ready for structured review, but remains
+`human_verdict: unverified`; bass ownership is `unassigned`, so the claim is
+drum/transient and source-body impact rather than bass pressure. H27 is not
+musical-quality proof until that exact artifact receives a fresh listener
+verdict. Machine evidence and hashes are frozen in
+`docs/benchmarks/w30_resample_h27_development_v1.json`.
+
 ## Branch Review Note
 
 `w30_projection.rs` now exceeds the project file-size guidance and carries the

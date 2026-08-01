@@ -230,6 +230,12 @@ impl JamAppState {
             variation: W30ResampleTapVariation::Base,
             variation_revision: 0,
             variation_intensity: 0.0,
+            base_grit_level: self
+                .session
+                .runtime_state
+                .macro_state
+                .w30_grit
+                .clamp(0.0, 1.0),
             hard_intent: None,
             hard_intent_outcome: Default::default(),
             hard_policy: W30ResampleTapHardPolicy::Unavailable,

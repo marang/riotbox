@@ -281,9 +281,10 @@ Rules:
   actions already carry explicit target state: live recall, trigger, audition,
   bank swap, slice-pool browse, focus step, and damage profile. It updates
   preview mode, focused bank/pad, last capture, and W-30 grit only. New damage
-  actions retain typed `impact` / `texture` intent in
-  `ActionParams::W30DamageProfile`; old generic `Mutation` actions replay as
-  explicit `legacy_auto`. Replay does not select a musical Hard role itself:
+  actions retain typed `impact` / `texture` intent and the pre-gesture W-30
+  grit in `ActionParams::W30DamageProfile`; old typed actions default missing
+  pre-gesture grit to a conservative clean Base, while old generic `Mutation`
+  actions replay as explicit `legacy_auto`. Replay does not select a musical Hard role itself:
   app projection combines the replayed action with the hydrated source
   artifact, fails closed on mismatch/unavailability, and exposes the realized
   outcome.

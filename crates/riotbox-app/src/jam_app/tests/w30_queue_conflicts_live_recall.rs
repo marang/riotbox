@@ -11,6 +11,7 @@ fn queue_w30_apply_damage_profile_targets_focused_lane_capture_on_next_bar() {
     state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
     state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-01"));
     state.session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
+    state.session.runtime_state.macro_state.w30_grit = 0.37;
     state.refresh_view();
 
     assert_eq!(
@@ -36,7 +37,12 @@ fn queue_w30_apply_damage_profile_targets_focused_lane_capture_on_next_bar() {
             intensity,
             target_id,
             intent: riotbox_core::w30::W30HardIntent::Impact,
+            base_grit_level,
         } if (*intensity - JamAppState::W30_DAMAGE_PROFILE_GRIT).abs() < f32::EPSILON
+            && (*base_grit_level
+                - state.session.runtime_state.macro_state.w30_grit)
+                .abs()
+                < f32::EPSILON
             && target_id.as_str() == "cap-01"
     ));
     assert_eq!(

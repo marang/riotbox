@@ -241,6 +241,17 @@ fn w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_outpu
         replayed_damage_state
             .runtime
             .w30_resample_tap
+            .base_grit_level,
+        committed_state
+            .runtime
+            .w30_resample_tap
+            .base_grit_level,
+        "V7 calibration must retain the pre-gesture Base grit across replay"
+    );
+    assert_eq!(
+        replayed_damage_state
+            .runtime
+            .w30_resample_tap
             .source_capture_id
             .as_deref(),
         Some("cap-02")

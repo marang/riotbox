@@ -1137,6 +1137,46 @@ holdout or request another playback for loudness-, brightness-, or
 presence-only tuning. Machine-readable evidence is in
 `docs/benchmarks/w30_resample_h26_development_v1.json`.
 
+## H27: Source-Adaptive Body Must Complete the Impact Envelope
+
+H27 promotes `source_phase_coherent_body_impact_v7` on development material.
+It retains V6's source-local multi-hit topology and analyzes the following
+source body rather than inventing another hit. A Hann-windowed bounded DFT over
+the body-only window selects an `80..250 Hz` center. The initial peaking-EQ
+gain is derived from the measured attack/body amplitude contrast as
+`20 * log10(attack_over_body)`, then a deterministic exact search may increase
+it only up to `12 dB`. These numbers are typed cross-source bounds and measured
+inputs, not a per-file sound recipe.
+
+The V7 contract closes H26's partial-envelope pass. At near-matched whole-loop
+level, the causal nonlinear head must remain audible, Hard's presence head must
+exceed its body lift, the `20..100 ms` source body must reach at least `1.05`
+of Base, crest must retain `0.95`, and the level-times-crest peak proxy must
+retain `0.98`. Candidate search may use the direct callback seam for speed,
+but the same selected coefficients must pass a final 128-frame `RuntimeMix`
+simulation before product output is available.
+
+Calibration compares Hard against the actual pre-gesture Base grit persisted
+in the committed typed action. This is product state, not hidden application
+memory: old actions deserialize with a conservative clean default and new
+queue/replay paths retain the exact value. The DFT and exact search run only in
+the control plane; the realtime path receives bounded biquad coefficients and
+performs no analysis, allocation, or I/O.
+
+Across five unchanged sources and four families, Beat03, Bertsz, and Fupi pass
+the final product path; Cinameng and Marwan correctly reject insufficient
+attack-over-body evidence. The accepted RuntimeMix candidates measure body
+ratios `1.11442`, `1.76522`, and `1.12951`, crest ratios `0.9774`, `0.97906`,
+and `0.9533`, with no clipped candidate samples. Missing-source output remains
+digital silence. No holdout was consumed.
+
+These results prove a source-adaptive mechanism and exact-path reachability,
+not that musicians perceive the result as harder or want to loop it. The
+golden-path H27 artifact remains `human_verdict: unverified`; do not promote
+V7's musical claim until the exact isolated Base-to-Hard gesture passes fresh
+structured listening. Full evidence is in
+`docs/benchmarks/w30_resample_h27_development_v1.json`.
+
 ## Sources
 
 Primary perceptual and audio research:

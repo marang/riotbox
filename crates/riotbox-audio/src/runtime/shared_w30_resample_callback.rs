@@ -310,6 +310,7 @@ pub(super) struct SharedW30ResampleTapState {
     hard_attack_bite_output_gain_bits: AtomicU32,
     hard_low_impact_recipe: AtomicU32,
     hard_low_impact_presence_head_wet_bits: AtomicU32,
+    hard_low_impact_body_center_hz_bits: AtomicU32,
     hard_low_impact_role: AtomicU32,
     hard_low_impact_decision: AtomicU32,
     hard_low_impact_candidate_count: AtomicU32,
@@ -366,6 +367,7 @@ impl SharedW30ResampleTapState {
             hard_attack_bite_output_gain_bits: AtomicU32::new(0),
             hard_low_impact_recipe: AtomicU32::new(0),
             hard_low_impact_presence_head_wet_bits: AtomicU32::new(0),
+            hard_low_impact_body_center_hz_bits: AtomicU32::new(0.0_f32.to_bits()),
             hard_low_impact_role: AtomicU32::new(0),
             hard_low_impact_decision: AtomicU32::new(0),
             hard_low_impact_candidate_count: AtomicU32::new(0),
@@ -482,6 +484,10 @@ impl SharedW30ResampleTapState {
         );
         self.hard_low_impact_presence_head_wet_bits.store(
             render_state.hard_low_impact.presence_head_wet.to_bits(),
+            Ordering::Relaxed,
+        );
+        self.hard_low_impact_body_center_hz_bits.store(
+            render_state.hard_low_impact.impact_body_center_hz.to_bits(),
             Ordering::Relaxed,
         );
         self.hard_low_impact_role.store(
@@ -652,6 +658,10 @@ impl SharedW30ResampleTapState {
                 ),
                 presence_head_wet: f32::from_bits(
                     self.hard_low_impact_presence_head_wet_bits
+                        .load(Ordering::Relaxed),
+                ),
+                impact_body_center_hz: f32::from_bits(
+                    self.hard_low_impact_body_center_hz_bits
                         .load(Ordering::Relaxed),
                 ),
                 role: w30_resample_low_impact_role_from_u32(
@@ -862,6 +872,7 @@ fn w30_resample_low_impact_recipe_to_u32(recipe: W30ResampleLowImpactRecipe) -> 
         W30ResampleLowImpactRecipe::SourceImpactShaperV4 => 4,
         W30ResampleLowImpactRecipe::SourceAlignedImpactV5 => 5,
         W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6 => 6,
+        W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7 => 7,
     }
 }
 
@@ -873,6 +884,7 @@ fn w30_resample_low_impact_recipe_from_u32(value: u32) -> W30ResampleLowImpactRe
         4 => W30ResampleLowImpactRecipe::SourceImpactShaperV4,
         5 => W30ResampleLowImpactRecipe::SourceAlignedImpactV5,
         6 => W30ResampleLowImpactRecipe::SourcePhaseAlignedImpactV6,
+        7 => W30ResampleLowImpactRecipe::SourcePhaseCoherentBodyImpactV7,
         _ => W30ResampleLowImpactRecipe::Unavailable,
     }
 }

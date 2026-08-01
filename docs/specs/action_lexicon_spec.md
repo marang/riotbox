@@ -256,11 +256,14 @@ falls back visibly to `four_bars`.
 - `tr909.release`
 
 `w30.apply_damage_profile` carries
-`ActionParams::W30DamageProfile { intensity, target_id, intent }`. The typed
-performer intent is `impact` for source-owned transient/body attack or
+`ActionParams::W30DamageProfile { intensity, target_id, intent,
+base_grit_level }`. The typed performer intent is `impact` for source-owned transient/body attack or
 `texture` for continuous source-owned roughness without an invented trigger
-grid. The current Jam TUI `D` gesture queues `impact`; explicit action
-producers may request either typed value, and TUI diagnostics display the
+grid. `base_grit_level` freezes the W-30 grit heard when the quantized gesture
+was queued so source-backed exact calibration remains identical after Session
+restore/replay. Older typed actions without this field default to a conservative
+clean Base reference. The current Jam TUI `D` gesture queues `impact`;
+explicit action producers may request either typed value, and TUI diagnostics display the
 committed request and realized outcome. Both values use the same command,
 queue, commit, Session, and replay path. Session v1 actions that still carry
 the former generic `Mutation` params map explicitly to `legacy_auto`.

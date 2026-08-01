@@ -292,6 +292,12 @@ impl JamAppState {
             intensity: Self::W30_DAMAGE_PROFILE_GRIT,
             target_id: capture.capture_id.clone(),
             intent,
+            base_grit_level: self
+                .session
+                .runtime_state
+                .macro_state
+                .w30_grit
+                .clamp(0.0, 1.0),
         };
         draft.explanation = Some(format!(
             "apply {} {} profile to {} on W-30 pad {bank_id}/{pad_id}",

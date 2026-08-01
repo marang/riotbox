@@ -5,7 +5,10 @@ use riotbox_audio::{
         Mc202ContourHint, Mc202HookResponse, Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode,
         Mc202RenderRouting, Mc202RenderState,
     },
-    runtime::render_w30_resample_tap_offline,
+    runtime::{
+        AudioRuntimeTimingSnapshot, RuntimeMixRenderPlan,
+        render_runtime_mix_realtime_simulation_offline, render_w30_resample_tap_offline,
+    },
     source_audio::{SourceAudioCache, SourceAudioWindow},
     tr909::{
         Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
@@ -34,7 +37,12 @@ use riotbox_audio::{
         W30_RESAMPLE_H13_MIN_PICKUP_GAIN,
         W30_RESAMPLE_HIT_SHAPER_MAX_WINDOW_COMPENSATION_GAIN,
         W30_RESAMPLE_HIT_SHAPER_PRESERVED_OUTPUT_GAIN, W30_RESAMPLE_HIT_SHAPER_SCHEMA_OUTPUT_GAIN,
-        W30_RESAMPLE_MIN_BODY_PRESERVATION_RATIO, w30_resample_source_character_sample,
+        W30_RESAMPLE_MIN_BODY_PRESERVATION_RATIO,
+        W30_RESAMPLE_PHASE_COHERENT_BODY_MAX_EQ_GAIN_DB,
+        W30_RESAMPLE_PHASE_COHERENT_BODY_MIN_CREST_RATIO,
+        W30_RESAMPLE_PHASE_COHERENT_BODY_MIN_PEAK_RETENTION_RATIO,
+        W30_RESAMPLE_PHASE_COHERENT_BODY_MIN_RATIO,
+        w30_resample_source_character_sample,
     },
 };
 use riotbox_core::{
