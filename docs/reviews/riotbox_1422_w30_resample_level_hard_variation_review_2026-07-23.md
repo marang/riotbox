@@ -961,11 +961,29 @@ through the authoritative product path. No analysis, allocation, or I/O was
 added to the realtime callback.
 
 No holdout was opened. The exact `7.384625 s` isolated W-30 Base-to-Hard
-gesture is technically ready for structured review, but remains
-`human_verdict: unverified`; bass ownership is `unassigned`, so the claim is
-drum/transient and source-body impact rather than bass pressure. H27 is not
-musical-quality proof until that exact artifact receives a fresh listener
-verdict. Machine evidence and hashes are frozen in
+gesture and a source-direct comparison received
+`human_verdict: technically_ok_but_musically_weak`. Bass ownership was
+`unassigned`, so the review judged drum/transient and source-body impact rather
+than bass pressure. The listener heard V7 as slightly harder, but duller and
+recessed as if it played in the background, and explicitly did not want to
+loop it. Source recognition is conservatively recorded as
+`source_transformed_but_present`; the hook is `weak`.
+
+Post-listening analysis explains why the exact gates did not establish
+foreground impact. In the live A/B, Hard gains `0.379 dB` RMS and `0.181 dB`
+peak over Base, with crest ratio `0.97746`. Its local presence head reaches
+`1.28419` and body reaches `1.08281`, so V7 solves H26's incomplete local
+envelope. Across the whole segment, however, presence falls `0.292 dB` and
+high-band energy falls `0.988 dB` versus Base. In the direct source comparison,
+V7 is `1.285 dB` lower in RMS and `3.967 dB` lower in peak. The source-centered
+low-body mechanism therefore reads as darker and farther away despite a
+measurably stronger local hit.
+
+Preserve H27 as weak evidence. The next mechanism must retain the source-owned
+body while adding onset-aligned broadband foreground salience and forward hook
+contrast. Low-body lift alone, darker output, loudness-only tuning, or another
+V7 scalar adjustment is not eligible for playback. Machine and structured
+review evidence are frozen in
 `docs/benchmarks/w30_resample_h27_development_v1.json`.
 
 ## Branch Review Note

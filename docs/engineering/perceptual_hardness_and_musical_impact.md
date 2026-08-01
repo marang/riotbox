@@ -1171,10 +1171,21 @@ and `0.9533`, with no clipped candidate samples. Missing-source output remains
 digital silence. No holdout was consumed.
 
 These results prove a source-adaptive mechanism and exact-path reachability,
-not that musicians perceive the result as harder or want to loop it. The
-golden-path H27 artifact remains `human_verdict: unverified`; do not promote
-V7's musical claim until the exact isolated Base-to-Hard gesture passes fresh
-structured listening. Full evidence is in
+not musical quality. The golden-path H27 artifact received
+`human_verdict: technically_ok_but_musically_weak`: slightly harder, but duller
+and recessed as if it played in the background, with no loop desire. The local
+presence head (`1.28419`) and body (`1.08281`) both exceed Base, yet whole-hit
+presence and high-band energy fall by `0.292 dB` and `0.988 dB`; V7 is also
+`1.285 dB` RMS and `3.967 dB` peak below the direct source. This is an important
+distinction: completing a low-frequency impact envelope does not guarantee
+perceptual foreground salience.
+
+Preserve H27 as weak evidence. The next mechanism must retain phase-coherent
+source body while adding onset-aligned broadband foreground attack and forward
+hook contrast. It must measure source-relative peak/spectral retention as well
+as Base-relative attack/body lift across the unchanged source matrix. Do not
+retry low-body lift alone, darker output, loudness-only tuning, or another V7
+scalar adjustment. Full evidence is in
 `docs/benchmarks/w30_resample_h27_development_v1.json`.
 
 ## Sources
