@@ -138,3 +138,11 @@ Current benchmark artifacts:
   Bounded readability baseline for pending-aware Capture `Do Next` states before committed capture fallback guidance.
 - [w30_preview_smoke_listening_pack_2026-04-26.md](./w30_preview_smoke_listening_pack_2026-04-26.md)
   Initial local-only W-30 preview listening-pack convention with one deterministic source-window smoke case.
+- [w30_resample_h27_development_v1.json](./w30_resample_h27_development_v1.json)
+  Frozen H27/V7 exact-path development evidence; technical gates passed, but structured listening found the result musically weak and not worth looping.
+- [w30_resample_h28_development_v1.json](./w30_resample_h28_development_v1.json)
+  Frozen H28/V8 evidence bound to the corrected product-timing A/B; the artifact-bound human observation heard duller output rather than harder impact, but no standard review pack exists.
+- [w30_resample_h29_development_v1.json](./w30_resample_h29_development_v1.json)
+  Frozen H29/V9 evidence; exact technical gates passed, but the artifact-bound human observation found Base and Hard the same, and no standard review pack exists.
+- [w30_resample_h30_development_v1.json](./w30_resample_h30_development_v1.json)
+  Frozen H30/V10 evidence; the local-only WAV is hash-bound but not committed, and structured listening found no useful distinction.
