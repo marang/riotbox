@@ -227,6 +227,12 @@ If a surface is intentionally not applicable, say why in the PR or working notes
   bass/low-end, drum/transient, midrange/hook, and arrangement/performance
   impact, and do not let pressure in one domain conceal failure in the intended
   domain.
+- Never describe a source-backed event as `harder` without a typed hardness
+  role. For `percussive_hard`, preserve one onset, source pitch / `1.0x`
+  playback, recognizable hit identity, immediate attack, physical body, and
+  bite. Lower, louder, darker, dirtier, more damaged, or merely different is
+  not harder. Use `docs/engineering/percussive_hardness_contract.md`; a human
+  `different but not harder` verdict rejects and freezes the recipe.
 - Keep commercial reference recordings local, ignored, and uncommitted. Use
   them only for listening and measurement comparison, never as Riotbox product
   sources, fixtures, generated assets, or redistributed material.

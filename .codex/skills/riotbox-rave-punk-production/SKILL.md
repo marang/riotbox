@@ -115,6 +115,13 @@ Use this taste model to shape implementation choices:
 - do not use `pressure` as a generic success label: distinguish bass/low-end,
   drum/transient, midrange/hook, and arrangement/performance pressure; failure
   in the intended domain cannot be rescued by an unrelated kind of pressure
+- require a typed meaning whenever a gesture claims to be `harder`. For
+  `percussive_hard`, the same recognizable hit must keep one onset, source pitch
+  and `1.0x` playback while gaining unmistakable attack force, retaining
+  physical body, and preserving bite. A lower, louder, darker, dirtier,
+  damaged, doubled, or merely different hit is not harder. Treat a human
+  `different but not harder` verdict as a recipe reject and freeze that
+  mechanism instead of retuning it
 - compare audible candidates both raw and loudness-matched when practical;
   matching gain may expose character and arrangement differences, but it must
   not conceal a product path that is still materially too quiet
