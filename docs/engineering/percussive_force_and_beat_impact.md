@@ -1162,8 +1162,11 @@ Confidence does not replace the separate property fields.
    Never tune an algorithm or force the label order to make this check pass.
 2. **False-control sanity:** independently present hidden A/A and the frozen
    gain, rate/pitch, dark, bright, distortion, delayed-duplicate, detached-click,
-   and stable historical controls needed to verify that the review question
-   rejects known confounds. Natural-reference and false-control judgments are
+   and body-collapse controls needed to verify that the review question rejects
+   known confounds. A historical candidate may join this block only if a future
+   complete, landed, executable artifact bundle satisfies the same frozen
+   protocol; H27--H31 are non-executable design observations and must not be
+   replayed as controls. Natural-reference and false-control judgments are
    separate blocks; neither selects an algorithm family.
 3. **Golden Path family screen:** present raw and the exact Stage-A-frozen
    event-RMS attenuation-match views for every mechanically review-ready F1–F3
