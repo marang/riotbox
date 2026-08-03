@@ -27,6 +27,23 @@ Review evidence remains local at:
 
 `artifacts/audio_qa/local/listening-reviews/RIOTBOX-1428-H31-STAGE-A/review.json`
 
+The reviewed local artifacts are identity-bound as follows:
+
+- source train SHA-256:
+  `ee0d6f02bfec431ca532c4d0611787bb0398ddc2d4eaae96aa5152ba4f85e801`
+- prepared train SHA-256:
+  `af70724d5074969dceebf44b6be2aaf949e39d19e7372cea9f22b34e17677ace`
+- source-then-prepared review WAV SHA-256:
+  `788f801b47f14d8b2d600c8d594c991738e09da01656f04f420ebca5ba36b7b3`
+- structured review SHA-256:
+  `1ec58f7b8388bdb8d67f8e727c4b53db6a9a607facfd58fce7fa0d0258adf68b`
+- metrics SHA-256:
+  `542bb14b93580dcec90d1ab3d90ae5e6af2b5d1304c79eb9997ee4a88e33bfaf`
+
+These ignored local files are not committed or artifact-complete release
+evidence. The hashes bind the historical observation but do not make it a
+guaranteed executable backtest.
+
 ## Stage A v2 Mechanical Rejection
 
 The second experiment removed resampling, kept the source cursor at `1.0x`,
@@ -49,7 +66,9 @@ its pre-registered technical gate.
 - Do not merge or promote either recipe into a product output path.
 - Preserve the semantic hardness contract and the negative evidence.
 - Move RIOTBOX-1428 out of active implementation until a dedicated research
-  prerequisite defines a defensible perceptual model, controlled experiments,
-  algorithm candidates, and validation protocol for hard versus soft beats.
-- Resume RIOTBOX-1428 only after that research produces a mechanism materially
-  different from playback-rate, loudness, darkness, dirt, or fixed-float tuning.
+  prerequisite defines a defensible perceptual model, experiment design,
+  falsifiable algorithm hypotheses, and validation protocol for hard versus
+  soft beats.
+- Resume RIOTBOX-1428 Stage A to implement and falsify those hypotheses; only
+  its implementation may produce a mechanism materially different from
+  playback-rate, loudness, darkness, dirt, or fixed-float tuning.

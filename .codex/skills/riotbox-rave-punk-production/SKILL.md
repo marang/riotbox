@@ -116,9 +116,11 @@ Use this taste model to shape implementation choices:
   drum/transient, midrange/hook, and arrangement/performance pressure; failure
   in the intended domain cannot be rescued by an unrelated kind of pressure
 - require a typed meaning whenever a gesture claims to be `harder`. For
-  `percussive_hard`, the same recognizable hit must keep one onset, source pitch
-  and `1.0x` playback while gaining unmistakable attack force, retaining
-  physical body, and preserving bite. A lower, louder, darker, dirtier,
+  `percussive_hard`, the same recognizable hit must keep one onset and `1.0x`
+  playback while gaining unmistakable attack force, retaining physical body,
+  and preserving bite. Global resampling or transposition is prohibited. A
+  local, source-consistent spectral or resonant change is not an automatic
+  reject, but cannot itself prove force. A lower, louder, darker, dirtier,
   damaged, doubled, or merely different hit is not harder. Treat a human
   `different but not harder` verdict as a recipe reject and freeze that
   mechanism instead of retuning it

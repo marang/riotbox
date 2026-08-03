@@ -31,9 +31,14 @@ resample-tap proxy with hydrated capture audio through the exact live path.
 Determinism, three-source diversity, replay identity, and missing-source silence
 pass, but direct source-to-tap listening rated the result
 `technically_ok_but_musically_weak`: the tap is very timid, its hook is weak,
-and Beat03 is no longer perceptually recognizable. `RIOTBOX-1422` is the next
-bounded audible slice: preserve the real source-backed seam while lifting its
-usable level, source character, and performer-triggered hard variation.
+and Beat03 is no longer perceptually recognizable. Repeated scalar tuning then
+failed to establish a defensible `percussive_hard` mechanism. `RIOTBOX-1429`
+therefore records the research prerequisite: it distinguishes force, punch,
+hardness, aggression, bass pressure, groove, and arrangement impact; defines a
+multi-scale beat-analysis rubric; and hands falsifiable source-adaptive
+hypotheses directly to `RIOTBOX-1428` Stage A. `RIOTBOX-1429` changes no
+renderer and does not itself prove or unblock Stage B product promotion.
+`RIOTBOX-1428` Stage A is the next bounded audible slice.
 
 `P016`, `P021`, and `P022` remain subordinate to the active P023 product path.
 Offline renderers, scripted packs, fixture verdicts, reports, and validators
@@ -70,20 +75,21 @@ dense-break baseline and honest negative-source handling.
 16. [Validation & Benchmark Spec](./specs/validation_benchmark_spec.md)
 17. [Fixture Corpus Spec](./specs/fixture_corpus_spec.md)
 18. [Audio QA Workflow Spec](./specs/audio_qa_workflow_spec.md)
-19. [Audio Numeric Values Guide](./engineering/audio_numeric_values.md)
-20. [Sound Product Readiness Rubric Spec](./specs/sound_product_readiness_rubric_spec.md)
-21. [Release-Grade Musician Demo Bank Spec](./specs/release_grade_musician_demo_bank_spec.md)
-22. [20/10 Sound-Product Future Ideas Spec](./specs/sound_product_2010_future_ideas_spec.md)
-23. [Source Timing Intelligence Spec](./specs/source_timing_intelligence_spec.md)
-24. [Arrangement / Scene System Spec](./specs/arrangement_scene_system_spec.md)
-25. [Recovery Notes](./recovery_notes.md)
-26. [Phase Definition of Done](./phase_definition_of_done.md)
-27. [Research / Decision Log](./research_decision_log.md)
-28. [Source Timing Intelligence Plan](./plans/source_timing_intelligence_plan.md)
-29. [Source Transport Map Capture Plan](./plans/source_transport_map_capture_plan.md)
-30. [MC-202 Source Phrase Planning Plan](./plans/mc202_source_phrase_planning_plan.md)
-31. [MC-202 Real-Source Listening Pack Benchmark](./benchmarks/mc202_real_source_listening_pack_v1_2026-06-18.md)
-32. [MC-202 Producer-Grade Closeout Benchmark](./benchmarks/mc202_producer_grade_closeout_v1_2026-06-18.md)
+19. [Percussive Force And Beat Impact](./engineering/percussive_force_and_beat_impact.md)
+20. [Audio Numeric Values Guide](./engineering/audio_numeric_values.md)
+21. [Sound Product Readiness Rubric Spec](./specs/sound_product_readiness_rubric_spec.md)
+22. [Release-Grade Musician Demo Bank Spec](./specs/release_grade_musician_demo_bank_spec.md)
+23. [20/10 Sound-Product Future Ideas Spec](./specs/sound_product_2010_future_ideas_spec.md)
+24. [Source Timing Intelligence Spec](./specs/source_timing_intelligence_spec.md)
+25. [Arrangement / Scene System Spec](./specs/arrangement_scene_system_spec.md)
+26. [Recovery Notes](./recovery_notes.md)
+27. [Phase Definition of Done](./phase_definition_of_done.md)
+28. [Research / Decision Log](./research_decision_log.md)
+29. [Source Timing Intelligence Plan](./plans/source_timing_intelligence_plan.md)
+30. [Source Transport Map Capture Plan](./plans/source_transport_map_capture_plan.md)
+31. [MC-202 Source Phrase Planning Plan](./plans/mc202_source_phrase_planning_plan.md)
+32. [MC-202 Real-Source Listening Pack Benchmark](./benchmarks/mc202_real_source_listening_pack_v1_2026-06-18.md)
+33. [MC-202 Producer-Grade Closeout Benchmark](./benchmarks/mc202_producer_grade_closeout_v1_2026-06-18.md)
 
 ## Why This Order
 
@@ -123,6 +129,7 @@ docs/
   engineering/
     audio_numeric_values.md
     module_policy.md
+    percussive_force_and_beat_impact.md
     textual_include_allowlist.txt
     textual_include_inventory_2026-06-29.md
   archive/
@@ -136,6 +143,7 @@ docs/
   benchmarks/
     README.md
     jam_workflow_baseline_2026-04-17.md
+    percussive_force_development_matrix_v1.json
   plans/
     riotbox_improvement_tracks_plan.md
     source_timing_intelligence_plan.md
@@ -198,6 +206,12 @@ docs/
 - `engineering/audio_numeric_values.md`: guide to measurements, runtime
   boundaries, QA thresholds, controls, DSP coefficients, recipe parameters, and
   fixture values, including the RIOTBOX-1402 `0.9161` / `0.92` example
+- `engineering/percussive_force_and_beat_impact.md`: RIOTBOX-1429 research on
+  multi-scale beat perception, force, softness, punch, groove, heaviness,
+  cross-genre evidence, analysis vocabulary, and future validation hypotheses
+- `benchmarks/percussive_force_development_matrix_v1.json`: unexecuted
+  RIOTBOX-1428 Stage-A preregistration draft with source-admission, holdout,
+  control, cross-product, and promotion boundaries
 - `engineering/textual_include_inventory_2026-06-29.md`: RIOTBOX-1321 Rust textual include inventory captured
 - `engineering/textual_include_allowlist.txt`: current manual guardrail allowlist for textual include owners/counts captured
 - `specs/source_graph_spec.md`: Source Graph v1 contract captured
