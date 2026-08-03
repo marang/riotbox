@@ -8,6 +8,8 @@ This index tracks archived Linear ticket history that has been removed from the 
   Index for April 2026 one-file-per-ticket archives.
 - [2026-05.md](./2026-05.md)
   Index for May 2026 one-file-per-ticket archives.
+- [2026-08.md](./2026-08.md)
+  Index for August 2026 one-file-per-ticket archives.
 - [RIOTBOX-16.md](./RIOTBOX-16.md)
   MemPalace evaluation and dev-memory adoption decision.
 - [RIOTBOX-23.md](./RIOTBOX-23.md)
@@ -1450,6 +1452,16 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Validate weak and bad-timing sources through honest degraded or reject behavior
 - [RIOTBOX-1408.md](./RIOTBOX-1408.md)
   P023: Replace the synthetic W-30 resample tap voice with source-backed resample audio
+- [RIOTBOX-1422.md](./RIOTBOX-1422.md)
+  P023: Canceled W-30 Hard experiment after H27-H30 failed musical review
 - [RIOTBOX-1423.md](./RIOTBOX-1423.md)
   P023: Expand the legal real-source corpus and rotate cross-family holdouts
+- [RIOTBOX-1424.md](./RIOTBOX-1424.md)
+  P023: Superseded trusted-grid and Hard-recipe reachability preflight from the abandoned RIOTBOX-1422 stack
+- [RIOTBOX-1425.md](./RIOTBOX-1425.md)
+  P023: Superseded source-adaptive hit-shaper reachability from the abandoned RIOTBOX-1422 stack
+- [RIOTBOX-1426.md](./RIOTBOX-1426.md)
+  P023: Superseded source-backed external-tempo phase from the abandoned RIOTBOX-1422 stack
+- [RIOTBOX-1427.md](./RIOTBOX-1427.md)
+  P023: Superseded performer-owned W-30 Hard intent from the abandoned RIOTBOX-1422 stack
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.

@@ -37,3 +37,9 @@ Current P012 source-timing refreshes:
 
 - `p012_real_source_timing_confidence_review_2026-05-22.md`: current local
   example confidence rows and the next downbeat-ambiguity surface slice.
+
+Current P023 rejected-experiment closeouts:
+
+- [riotbox_1422_h27_h30_rejected_experiment_closeout_2026-08-02.md](./riotbox_1422_h27_h30_rejected_experiment_closeout_2026-08-02.md):
+  artifact-bound H27-H30 verdicts, retired V7-V10 mechanism family, and the
+  narrow re-extraction boundary for stack-only work that never reached `main`.

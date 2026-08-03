@@ -1,0 +1,153 @@
+{
+  "schema": "riotbox.w30_resample_h30_development.v1",
+  "schema_version": 1,
+  "ticket": "RIOTBOX-1422",
+  "generation": "H30",
+  "classification": "audible_vertical_slice_development_evidence",
+  "quality_proof": false,
+  "human_verdict": "reject",
+  "mechanism": {
+    "recipe": "source_sustained_impact_v10",
+    "replaces_product_selection": "source_perceptual_impact_v9",
+    "base_backbone": "phase_continuous_source_body",
+    "source_peak_aligned_event_cursor": true,
+    "source_adaptive_attack_hold_release": true,
+    "minimum_hold_seconds": 0.03,
+    "selected_band_nonlinear_event": true,
+    "base_coherent_edge_reinforcement": true,
+    "soft_headroom_parallel_mixer": true,
+    "global_output_ducking": false,
+    "body_eq_search": false,
+    "bass_owner": "unassigned",
+    "fallback_audio": false
+  },
+  "new_exact_rejection_gates": {
+    "significant_delta_ms_per_selected_hit_min": 25.0,
+    "new_peak_plateau_max_run_frames": 4,
+    "event_high_band_hz": [3600.0, 12000.0],
+    "event_high_ratio_min": 0.98,
+    "event_high_measurement": "hann_windowed_radix2_fft_per_selected_0_100ms_event"
+  },
+  "rejected_intermediate_results": [
+    {
+      "case": "reviewed_h29",
+      "reason": "perceptually_indistinguishable_duration",
+      "significant_delta_ms_per_hit": 13.11,
+      "required_minimum_ms": 25.0
+    },
+    {
+      "case": "v10_hard_clamped_parallel_event",
+      "reason": "new_internal_ceiling_flat_top",
+      "hard_peak_plateau_max_run_frames": 141,
+      "base_peak_plateau_max_run_frames": 1
+    },
+    {
+      "case": "v10_soft_headroom_without_base_edge",
+      "reason": "event_local_high_loss",
+      "event_high_energy_ratio_3600_12000_hz": 0.9381,
+      "interpretation": "unchanged background concealed a darker selected event"
+    }
+  ],
+  "development_matrix": [
+    {
+      "case_id": "golden_path_beat03",
+      "source_family": "dense_break",
+      "actual_outcome": "exact_v10_pass",
+      "trigger_mask": "01000001",
+      "event_wet": 1.5,
+      "predicted_level_ratio": 1.0444815,
+      "predicted_body_ratio": 1.0067914,
+      "predicted_crest_ratio": 0.9574276,
+      "predicted_causal_selected_band_ratio": 1.1835986,
+      "predicted_background_ratio": 1.0000172,
+      "predicted_significant_delta_ms_per_hit": 49.109375,
+      "predicted_peak_plateau_max_run_frames": 1,
+      "predicted_event_high_ratio": 1.2572782,
+      "predicted_peak_ratio": 1.0000155,
+      "preflight_report_sha256": "0a7ceac33a57321ba3141689dc845ff3815e56762e12677a59868b86591fccf0"
+    },
+    {
+      "case_id": "oga_bertsz_dnb",
+      "source_family": "dense_full_mix",
+      "actual_outcome": "exact_v10_stress_pass",
+      "trigger_mask": "00001001",
+      "event_wet": 0.5,
+      "predicted_level_ratio": 1.0162822,
+      "predicted_body_ratio": 1.0896167,
+      "predicted_crest_ratio": 0.9839871,
+      "predicted_causal_selected_band_ratio": 1.9561741,
+      "predicted_background_ratio": 1.0,
+      "predicted_significant_delta_ms_per_hit": 50.958332,
+      "predicted_peak_plateau_max_run_frames": 1,
+      "predicted_event_high_ratio": 1.0588773,
+      "predicted_peak_ratio": 1.0000086,
+      "preflight_report_sha256": "fd27b10995883092a39a021f40583f19eec3c16f3681112cdf3492c7346dd357"
+    },
+    {
+      "case_id": "oga_fupi_plimplom",
+      "source_family": "tonal_riff",
+      "actual_outcome": "exact_v10_tonal_stress_pass",
+      "trigger_mask": "01000001",
+      "event_wet": 0.5,
+      "predicted_level_ratio": 1.019842,
+      "predicted_body_ratio": 1.0569916,
+      "predicted_crest_ratio": 0.9805526,
+      "predicted_causal_selected_band_ratio": 2.202162,
+      "predicted_background_ratio": 1.0,
+      "predicted_significant_delta_ms_per_hit": 42.208332,
+      "predicted_peak_plateau_max_run_frames": 1,
+      "predicted_event_high_ratio": 1.1654866,
+      "predicted_peak_ratio": 1.0000088,
+      "preflight_report_sha256": "83a55edf8c269a347f08fb409216eb86a3f408e57a204814f1cd1428008bba99"
+    }
+  ],
+  "matrix_summary": {
+    "source_count": 3,
+    "source_family_count": 3,
+    "exact_v10_runtime_pass_count": 3,
+    "unique_trigger_mask_count": 2,
+    "unique_event_wet_count": 2,
+    "all_expected_outcomes_pass": true,
+    "interpretation": "One typed event algorithm adapts topology and bounded wet amount across three contrasting sources while the exact product path rejects short, clipped, dark, silent, or fallback-collapsed output."
+  },
+  "golden_path_artifacts": {
+    "duration_seconds": 7.368458,
+    "base_sha256": "48ddd8de9eb521f8805bab013441a55f56e7211e3290cf2b69d4d88ec6dd730c",
+    "hard_sha256": "40dc2981c2294e53def08a52cdc795e357e439863d7ff5f9a7ff0f70f0e18162",
+    "dry_counterfactual_sha256": "dea3ac286dde0d02d3586305b486a13a4bd84a4884cb3305d378a3f7a7ed8e49",
+    "base_to_hard_live_gesture_sha256": "bb683cddf9f07cf2b16db9616e0cdb3efa4e881fe963afdd6e5218e43631b7ad",
+    "base_hard_correlation": 0.9102043,
+    "base_hard_rms_ratio": 1.0444799,
+    "candidate_clip_count": 0,
+    "candidate_peak_plateau_max_run_frames": 1,
+    "boundary_discontinuity": false
+  },
+  "branch_review": {
+    "status": "pass",
+    "unresolved_correctness_findings": 0,
+    "repairs": [
+      "guarantee the minimum event window required by the 30 ms hold",
+      "compute the hold length once per trigger and clear it with callback state",
+      "bind spectral QA to the typed eight-slot W-30 contract",
+      "add a direct soft-headroom mixer regression"
+    ],
+    "known_holdout": "Inherited W-30 projection, renderer, runtime, and model files remain above module-size guidance; the new FFT QA is isolated in a real semantic module and no new textual include was added."
+  },
+  "validation": {
+    "cargo_test_riotbox_audio_and_app": "pass",
+    "cargo_clippy_all_targets_all_features_deny_warnings": "pass",
+    "just_ci_including_audio_qa_ci": "pass"
+  },
+  "listening_review": {
+    "artifact": "06_w30_resample_base_to_hard_live_gesture.wav",
+    "artifact_path": "/tmp/riotbox-1422-h30-review-runtime/06_w30_resample_base_to_hard_live_gesture.wav",
+    "duration_seconds": 7.368458,
+    "base_interval_seconds": [0.0, 3.684229],
+    "hard_interval_seconds": [3.684229, 7.368458],
+    "human_verdict": "reject",
+    "playback_authorized": true,
+    "playback_completed": true,
+    "replay_authorized": false,
+    "reason": "The listener heard no useful distinction from the previous three to five attempts. V10 and the V8-V10 parallel-overlay family are frozen as rejected evidence; do not request another playback after parameter or gate changes."
+  }
+}
