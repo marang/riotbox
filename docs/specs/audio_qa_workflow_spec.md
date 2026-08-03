@@ -1302,6 +1302,16 @@ readiness before each artifact or repeat; readiness does not carry over between
 playbacks. Playback without that confirmation is treated as unheard and cannot
 support a recorded human verdict.
 
+For a `percussive_hard` claim, apply
+`docs/engineering/percussive_force_and_beat_impact.md`. The candidate must
+preserve one onset, `1.0x` playback, recognizable hit identity, immediate
+attack, physical body, and bite. Global resampling/transposition is prohibited.
+A local source-consistent spectral or resonant change is not an automatic
+reject, but it cannot itself count as force evidence. Lower pitch, louder
+output, darker EQ, distortion, damage, or a passing crest/transient metric does
+not establish hardness. `different_but_not_harder` is a human reject and
+freezes that recipe; do not route it into another scalar-tuning pass.
+
 An `isolated` playback label requires an exact audible-contributor inventory.
 Source monitor, internal resample taps, support lanes, diagnostic voices, and
 stopped manual previews must be silent unless the brief names them as part of a

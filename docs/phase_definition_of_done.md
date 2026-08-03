@@ -452,13 +452,26 @@ After exit:
 - RIOTBOX-1408 proves that the W-30 resample callback now consumes real
   committed capture PCM and remains silent without it. Its human verdict is
   `technically_ok_but_musically_weak`, not a positive-family pass: the tap is
-  timid, the hook is weak, and source recognition is lost. RIOTBOX-1422 owns
-  the bounded level/source-character/hard-variation follow-up.
-- RIOTBOX-1423 supplies RIOTBOX-1422 with a legal CC0 development matrix and
-  two disjoint fresh holdout sets. Candidate tuning must cover at least five
-  eligible development sources across four typed families; a holdout that
-  informs another implementation is consumed and must be replaced before it
-  can be called fresh evidence again.
+  timid, the hook is weak, and source recognition is lost. RIOTBOX-1422 and
+  RIOTBOX-1428 H31 subsequently failed to establish a defensible
+  `percussive_hard` mechanism.
+- RIOTBOX-1429 owns the research-only prerequisite: typed force/beat vocabulary,
+  multi-scale analysis, failure explanation, and an unexecuted preregistration.
+  It changes no renderer and produces no listening candidate.
+- RIOTBOX-1428 is the directly enabled audible vertical slice. Stage A must
+  implement and falsify at least three structurally distinct source-general
+  mechanism families across the registered development matrix. Its separate
+  positive-event gate requires at least four source packs from four authors
+  across dense break, sparse drums, and electronic drums, with two qualified
+  events per pack plus refusal/stress controls. Every surviving family must
+  independently earn mechanical and directional human passes; at most one
+  uniquely preferred frozen mechanism may proceed to Stage B.
+- RIOTBOX-1423 established the broader legal CC0 corpus contract: its general
+  candidate matrix covers at least five eligible development sources across
+  four typed families and protects two disjoint fresh holdout sets. That broad
+  corpus quota is historical infrastructure, not RIOTBOX-1428's positive-event
+  quota. A holdout that informs another implementation is consumed and must be
+  replaced before it can be called fresh evidence again.
 - P016 and the wider P021/P022/P023 quality ladder may resume from the accepted
   live baseline
 

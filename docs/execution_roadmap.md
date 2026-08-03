@@ -1412,10 +1412,15 @@ materially distinct and unclipped, and the old fixed-frequency oscillator and
 fixed tempo are absent. Direct raw-level source-to-tap listening nevertheless
 records `technically_ok_but_musically_weak`: the chop is interesting but very
 timid, Beat03 source recognition is lost, and the two-bar hook is weak.
-RIOTBOX-1422 therefore owns the next bounded audible outcome: raise usable
-active tap level, preserve recognizable source character, and add a
-performer-triggered hard variation without scripted choreography or synthetic
-fallback.
+RIOTBOX-1422 and the rejected RIOTBOX-1428 H31 experiments then proved that
+measurable gain, attack/body, spectrum, and cross-source differences still do
+not establish a more forceful strike. RIOTBOX-1429 therefore records the
+research prerequisite: the typed multi-scale beat/force model, explanation of
+the failed mechanisms, and preregistered falsifiable source-adaptive hypotheses,
+without a code change or another candidate render. RIOTBOX-1428 is the next
+bounded audible slice and resumes at Stage A to implement and falsify those
+hypotheses; its Stage B product promotion remains blocked until Stage A earns
+mechanical and directional human passes.
 
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a
