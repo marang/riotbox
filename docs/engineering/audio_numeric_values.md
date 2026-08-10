@@ -275,6 +275,7 @@ role, or the threshold lacks calibration.
 | live source-character contrast margin and lane balance | `crates/riotbox-core/src/live_performance_policy.rs` |
 | controlled dense/tonal/sparse exact-path gates | `crates/riotbox-app/src/bin/dense_break_live_path_render/controlled_source_manifest.rs` |
 | controlled source stability/diversity gates | `scripts/validate_controlled_source_live_matrix.py` |
+| RIOTBOX-1428 Stage-A detector, event anatomy, F1--F3, controls, matching, and reject-only values | `docs/benchmarks/percussive_force_stage_a_protocol_v1.json` |
 | general audio QA meaning and human-verdict boundary | `docs/specs/audio_qa_workflow_spec.md` |
 | audio runtime behavior | `docs/specs/audio_core_spec.md` |
 | accepted durable calibration decisions | `docs/research_decision_log.md` |

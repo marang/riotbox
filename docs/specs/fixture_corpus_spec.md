@@ -294,7 +294,11 @@ The earlier sound-excellence corpus remains a compatibility map for existing
 packs. New source-aware implementation must additionally use the stricter
 versioned contract at:
 
-- `docs/benchmarks/source_holdout_rotation_v1.json`
+- `docs/benchmarks/source_holdout_rotation_v2.json`
+
+Version 1 remains the immutable predecessor used to prove that inherited
+entries and active holdout ID/path/SHA tuples did not change during the
+RIOTBOX-1428 development-only admission.
 
 That contract references ignored, locally held CC0 WAV derivatives and records
 author, provider page, download URL, license, source excerpt offset, SHA-256,
@@ -323,13 +327,19 @@ CI validates the contract and mutation fixtures without needing local audio:
 just source-holdout-rotation-fixtures
 ```
 
-Local source-file verification additionally checks presence, SHA-256, 48 kHz
-stereo PCM16 format, bounded duration, and integer clipping:
+The historical full-corpus local check remains available for v1 maintenance,
+but it is forbidden during RIOTBOX-1428 Stage A because it would open holdout
+audio. Stage A instead verifies an exact allowlist of development cases only,
+rejects every requested ID/path/SHA against the active holdout metadata union
+before any file open, and writes a bounded access log. It validates each
+entry's registered native sample rate, channels, PCM16/PCM24 width, duration,
+SHA-256, and integer clipping without directory discovery. This is deliberately
+not a standalone validator or Just route: only the in-process Stage-A
+qualification runner may request all four frozen development cases, and it must
+synchronously own every verified byte payload. Access completion never records
+qualification success by itself.
 
-```bash
-just source-holdout-rotation-local-files
-```
-
-This is a `contract_enabler` for RIOTBOX-1422. Corpus validity is not musical
-quality proof; the enabled W-30 candidate still requires exact-path technical
-evidence and structured human listening.
+This registry freeze is an internal prerequisite of the active RIOTBOX-1428
+`audible_vertical_slice`; it directly enables the source-backed F1--F3 render
+and bounded directional listening outcome. Corpus validity is not musical
+quality proof.

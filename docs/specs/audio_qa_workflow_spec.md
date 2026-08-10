@@ -174,7 +174,8 @@ content.
 
 Source-aware tuning and promotion must also separate development material from
 fresh acceptance evidence. The versioned
-`docs/benchmarks/source_holdout_rotation_v1.json` contract requires a
+`docs/benchmarks/source_holdout_rotation_v2.json` contract, whose v1
+predecessor remains immutable, requires a
 multi-family development matrix plus disjoint unseen and reserve holdout sets.
 At least five eligible development sources across four typed families must
 inform a candidate before a family-specific success claim. At least two
@@ -183,8 +184,24 @@ algorithm or constants. Once holdout output changes the next implementation,
 that source is consumed, must be recorded in rotation history, and cannot be
 presented as unseen again. `just source-holdout-rotation-fixtures` enforces
 family diversity, partition disjointness, rotation, provenance, license and
-reference boundaries; local file verification additionally binds the ignored
-WAVs by SHA-256 and format. This contract remains `quality_proof: false`.
+reference boundaries. RIOTBOX-1428 Stage A additionally uses exact-case,
+development-only access with a bounded access log; it must reject holdout
+identity, path, or hash collisions before opening any selected file and must
+not discover source directories. The v2 registry may preserve explicitly
+registered native-rate PCM16 or PCM24 development files while inherited v1
+entries retain their 48 kHz PCM16 contract. This remains
+`quality_proof: false`.
+
+The isolated RIOTBOX-1428 percussive-force screen is a narrower preregistered
+role test: exactly four positive packs from four authors across dense break,
+sparse drums, and electronic drums, with two qualified events per pack. It
+does not claim the broader five-source/four-family source-aware readiness floor
+above. Its exact detector, event anatomy, source-contrast partition, F1--F3
+equations, controls, level matcher, reject-only screens, and blind ordering are
+frozen in `docs/benchmarks/percussive_force_stage_a_protocol_v1.json` and bound
+by `docs/benchmarks/percussive_force_development_matrix_v2.json` before any
+source feature or candidate is computed. Mechanical success grants only a
+human listening request; it cannot award `percussive_hard`.
 
 Pack-level `source_backed: true` states that source audio, availability, or
 timing participates in the tested path; it does not imply that every musical

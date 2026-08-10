@@ -345,12 +345,25 @@ sound-excellence-source-corpus-fixtures manifest="docs/benchmarks/sound_excellen
     tmp="$(mktemp)" && jq 'del(.entries[0].target_review_questions)' "{{manifest}}" > "$tmp" && if python3 scripts/validate_sound_excellence_source_corpus.py "$tmp"; then echo "expected missing review questions fixture to fail" >&2; rm "$tmp"; exit 1; fi; rm "$tmp"
     tmp="$(mktemp)" && jq '.entries[0].source_family = "unknown_family"' "{{manifest}}" > "$tmp" && if python3 scripts/validate_sound_excellence_source_corpus.py "$tmp"; then echo "expected unsupported source family fixture to fail" >&2; rm "$tmp"; exit 1; fi; rm "$tmp"
 
-source-holdout-rotation-fixtures manifest="docs/benchmarks/source_holdout_rotation_v1.json":
+source-holdout-rotation-fixtures manifest="docs/benchmarks/source_holdout_rotation_v2.json":
+    python3 scripts/validate_source_holdout_rotation.py "docs/benchmarks/source_holdout_rotation_v1.json"
+    python3 scripts/validate_source_holdout_rotation_fixtures.py "docs/benchmarks/source_holdout_rotation_v1.json"
     python3 scripts/validate_source_holdout_rotation.py "{{manifest}}"
     python3 scripts/validate_source_holdout_rotation_fixtures.py "{{manifest}}"
 
 source-holdout-rotation-local-files manifest="docs/benchmarks/source_holdout_rotation_v1.json":
     python3 scripts/validate_source_holdout_rotation.py --require-existing-source-files "{{manifest}}"
+
+percussive-force-stage-a-protocol-validator protocol="docs/benchmarks/percussive_force_stage_a_protocol_v1.json" matrix="docs/benchmarks/percussive_force_development_matrix_v2.json" registry="docs/benchmarks/source_holdout_rotation_v2.json":
+    test "{{protocol}}" = "docs/benchmarks/percussive_force_stage_a_protocol_v1.json" && test "{{matrix}}" = "docs/benchmarks/percussive_force_development_matrix_v2.json" && test "{{registry}}" = "docs/benchmarks/source_holdout_rotation_v2.json"
+    python3 scripts/validate_percussive_force_stage_a_protocol.py
+
+percussive-force-stage-a-protocol-validator-fixtures protocol="docs/benchmarks/percussive_force_stage_a_protocol_v1.json" matrix="docs/benchmarks/percussive_force_development_matrix_v2.json" registry="docs/benchmarks/source_holdout_rotation_v2.json":
+    test "{{protocol}}" = "docs/benchmarks/percussive_force_stage_a_protocol_v1.json" && test "{{matrix}}" = "docs/benchmarks/percussive_force_development_matrix_v2.json" && test "{{registry}}" = "docs/benchmarks/source_holdout_rotation_v2.json"
+    python3 scripts/validate_percussive_force_stage_a_protocol_fixtures.py
+
+percussive-force-stage-a-qualification-fixtures:
+    python3 scripts/percussive_force_stage_a_qualification_fixtures.py
 
 professional-output-listening-verdict-import-fixtures pack="artifacts/audio_qa/local-professional-output-listening-pack":
     python3 scripts/validate_professional_output_listening_verdict_import_fixtures.py --pack "{{pack}}"
