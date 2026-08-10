@@ -1,0 +1,378 @@
+{
+  "schema": "riotbox.percussive_force_development_matrix.v2",
+  "schema_version": 2,
+  "owner_ticket": "RIOTBOX-1428",
+  "work_class": "audible_vertical_slice_stage_a_isolated_gate",
+  "execution_state": "preregistered_no_source_qualification_or_candidate_render",
+  "evidence_role": "full_metadata_only_stage_a_execution_snapshot",
+  "quality_proof": false,
+  "product_path_proof": false,
+  "predecessor": {
+    "path": "docs/benchmarks/percussive_force_development_matrix_v1.json",
+    "schema": "riotbox.percussive_force_development_matrix.v1",
+    "sha256": "3290011471bb1ae0fc66e54c8bb4e1382f82ceee6266245a44755d8f62f1f970"
+  },
+  "protocol": {
+    "path": "docs/benchmarks/percussive_force_stage_a_protocol_v1.json",
+    "schema": "riotbox.percussive_force_stage_a_protocol.v1",
+    "sha256": "35091e697cacb3c187f9a33f4f41ac85aba26832a4214bf3251dfc703edad840",
+    "state": "frozen_before_source_qualification_or_candidate_render"
+  },
+  "source_registry": {
+    "path": "docs/benchmarks/source_holdout_rotation_v2.json",
+    "schema": "riotbox.source_holdout_rotation.v2",
+    "sha256": "af98af67d5b0ef9f8478bf800438b268af2a4640bed29d8ec7c87fa585eb6812",
+    "predecessor_path": "docs/benchmarks/source_holdout_rotation_v1.json",
+    "predecessor_schema": "riotbox.source_holdout_rotation.v1",
+    "predecessor_sha256": "dd017080f311dcb2a8eda2fac63d8da372a356f0fc2cc33d5c97d3fd2ea34cfc"
+  },
+  "canonical_research_contract": "docs/engineering/percussive_force_and_beat_impact.md",
+  "directly_enabled_followup": {
+    "ticket": "RIOTBOX-1428",
+    "stage": "Stage A qualification and falsification",
+    "outcome": "Produce source-backed isolated raw and attenuation-matched renders from the unchanged frozen development cross-product, then run the bounded blinded human force-direction and desirable-to-trigger comparison."
+  },
+  "eventual_product_integration": {
+    "ticket": "RIOTBOX-1428",
+    "stage": "Stage B",
+    "condition": "Only one uniquely preferred unchanged Stage-A mechanism with complete mechanical and human directional passes may enter the exact RuntimeMix and TUI path.",
+    "allowed_now": false
+  },
+  "source_registry_transition": {
+    "state": "completed_metadata_transition_before_event_qualification",
+    "predecessor_holdout_union_unchanged": true,
+    "exact_development_additions": [
+      "oga_william_hector_horde_war_drums",
+      "oga_frosty_ham_osdrums"
+    ],
+    "new_family": "electronic_drums",
+    "original_rate_policy": "registered_PCM_is_analyzed_at_native_rate_without_analysis_resampling",
+    "pre_admission_review": "docs/reviews/riotbox_1428_stage_a_source_pre_admission_2026-08-10.md",
+    "source_qualification_started": false,
+    "candidate_render_started": false
+  },
+  "qualification_evidence_boundary": {
+    "only_path": "protocol.precandidate.qualification_wrapper",
+    "direct_family_renderer_can_qualify": false,
+    "caller_supplied_event_lsb_lookbehind_or_policy_allowed": false,
+    "strict_candidate_peak_gate": "abs_peak_strictly_less_than_1.0_before_serialization",
+    "failure": "typed_refusal_no_candidate_audio_no_fallback"
+  },
+  "positive_source_set": {
+    "exact_source_count": 4,
+    "exact_author_count": 4,
+    "exact_family_count": 3,
+    "required_families": [
+      "dense_break",
+      "sparse_drums",
+      "electronic_drums"
+    ],
+    "source_selection_basis": "registered_legal_development_metadata_plus_source_suitability_review_only",
+    "metadata_family_labels_establish_acoustic_contrast": false,
+    "mechanism_blind_source_contrast_required": true,
+    "event_qualification_state": "not_started",
+    "failure": "stop_without_candidate_render_and_version_a_revised_legal_development_snapshot"
+  },
+  "positive_sources": [
+    {
+      "case_id": "oga_cinameng_can_be_so_beautiful",
+      "source_family": "dense_break",
+      "partition": "development",
+      "matrix_role": "positive_qualification_source",
+      "event_qualification": "not_started",
+      "candidate_render": "not_started",
+      "author": "cinameng",
+      "title": "can be so beautiful",
+      "source_pack_id": "oga_can_be_so_beautiful",
+      "provider": "OpenGameArt",
+      "page_url": "https://opengameart.org/content/can-be-so-beautiful",
+      "license": "CC0-1.0",
+      "source_path": "data/test_audio/external/RIOTBOX-1423/wav/dense_oga_cinameng_can_be_so_beautiful.wav",
+      "sha256": "bf5fa8c5bc15e39d79cb51a08a54ccc4d663ab4996149b29153bd0e1febebd6f",
+      "admission_evidence": "source_family_suitability_human_confirmed_not_force"
+    },
+    {
+      "case_id": "oga_marwan_cinematic_percussion",
+      "source_family": "sparse_drums",
+      "partition": "development",
+      "matrix_role": "positive_qualification_source",
+      "event_qualification": "not_started",
+      "candidate_render": "not_started",
+      "author": "Marwan Antonios",
+      "title": "Cinematic percussion loop",
+      "source_pack_id": "oga_cinematic_percussion_loop",
+      "provider": "OpenGameArt",
+      "page_url": "https://opengameart.org/content/cinematic-percussion-loop",
+      "license": "CC0-1.0",
+      "source_path": "data/test_audio/external/RIOTBOX-1423/wav/sparse_oga_marwan_cinematic_percussion.wav",
+      "sha256": "9373f577cf09135e2b7e3ce0e946ce5af6ea333f5a7462ab9126f6802f9986f3",
+      "admission_evidence": "source_family_suitability_human_confirmed_not_force"
+    },
+    {
+      "case_id": "oga_william_hector_horde_war_drums",
+      "source_family": "dense_break",
+      "partition": "development",
+      "matrix_role": "positive_qualification_source",
+      "event_qualification": "not_started",
+      "candidate_render": "not_started",
+      "author": "William Hector",
+      "title": "Horde War Drums loop",
+      "source_pack_id": "oga_horde_war_drums_loop",
+      "provider": "OpenGameArt",
+      "page_url": "https://opengameart.org/content/horde-war-drums-loop",
+      "license": "CC0-1.0",
+      "source_path": "data/test_audio/external/RIOTBOX-1423/wav/sparse_oga_william_hector_horde_war_drums.wav",
+      "sha256": "a4d95514029dd928e5637c3b9edd659b8eaf14fa78d8afb2ab7ec4da064e4417",
+      "source_format": {"sample_rate_hz": 44100, "channels": 2, "sample_width_bits": 24},
+      "admission_evidence": "human_source_suitability_pass_and_technical_dense_break_taxonomy_not_force"
+    },
+    {
+      "case_id": "oga_frosty_ham_osdrums",
+      "source_family": "electronic_drums",
+      "partition": "development",
+      "matrix_role": "positive_qualification_source",
+      "event_qualification": "not_started",
+      "candidate_render": "not_started",
+      "author": "frosty ham",
+      "title": "Drumming - osdrums",
+      "source_pack_id": "oga_drumming",
+      "provider": "OpenGameArt",
+      "page_url": "https://opengameart.org/content/drumming",
+      "license": "CC0-1.0",
+      "source_path": "data/test_audio/external/RIOTBOX-1423/wav/sparse_oga_frosty_ham_osdrums.wav",
+      "sha256": "7e412dd16e701d1f2b3a8c0d66fbb24ec0164691e6761a93eca8b4bb60d32bb2",
+      "source_format": {"sample_rate_hz": 44100, "channels": 2, "sample_width_bits": 16},
+      "source_derivation": {
+        "original_url": "https://opengameart.org/sites/default/files/osdrums.ogg",
+        "original_sha256": "297121379bd972c775bb18d66c4077c28db7ad3da935f9dc43768da55ebc0e40",
+        "decoded_format": "pcm_s16le_wav",
+        "decoder": "ffmpeg",
+        "sample_rate_policy": "preserve_original"
+      },
+      "admission_evidence": "human_source_suitability_pass_and_technical_electronic_drums_taxonomy_not_force"
+    }
+  ],
+  "stage_a_golden_path": {
+    "case_id": "oga_cinameng_can_be_so_beautiful",
+    "event_ordinal": 1,
+    "selected_before_event_qualification": true,
+    "eligibility": "must_pass_the_identical_mechanism_blind_source_and_event_gate",
+    "automatic_fallback": false,
+    "failure": "stop_and_version_a_revised_preregistration_after_expanding_the_legal_development_corpus",
+    "beat03_role": "historical_taste_coordinate_and_negative_evidence_only"
+  },
+  "event_catalog": {
+    "state": "pending_mechanism_blind_qualification",
+    "detector_and_anatomy": "riotbox.percussive_force_prequalification.v2",
+    "minimum_events_per_source": 2,
+    "maximum_frozen_events_per_source": 3,
+    "development_ordinals": [1, 2],
+    "confirmation_ordinal": 3,
+    "confirmation_state": "untouched_until_family_and_threshold_freeze",
+    "selection_must_precede_candidate_render": true,
+    "source_quota_failure_stops": true
+  },
+  "shared_analysis_components": {
+    "exact_three_band_analysis": "riotbox.exact_complementary_three_band_analysis.v1",
+    "consumers": ["F2", "static_eq_fit_all_families", "dark_onepole_f25_v1", "bright_exact_split_f75_v1"],
+    "unavailable_event_semantics": "undefined_static_EQ_screen_rejects_every_family_for_that_event_and_required_control_unavailability_fails_control_sanity"
+  },
+  "source_contrast_gate": {
+    "component": "riotbox.percussive_source_contrast.v1",
+    "required_before_event_catalog_freeze_and_candidate_render": true,
+    "exact_source_count": 4,
+    "minimum_unique_partition_cluster_count": 3,
+    "valid_partition_count_required": 1,
+    "metadata_input_allowed": false,
+    "failure": "stop_and_create_a_new_protocol_or_source_snapshot_before_recomputation"
+  },
+  "required_cross_product": {
+    "families": ["F1", "F2", "F3"],
+    "family_versions": [
+      "f1_ab_energy_redistribution_v1",
+      "f2_exact_complementary_three_band_v1",
+      "f3_causal_envelope_contrast_dynamic_residual_v2"
+    ],
+    "f3_actionable_diversity_component": "riotbox.f3_source_response_diversity.v1",
+    "source_count": 4,
+    "event_ordinals": [1, 2],
+    "candidate_event_condition_count": 24,
+    "same_family_version_across_sources": true,
+    "shared_feature_to_parameter_resolver": true,
+    "filename_or_source_constants_allowed": false,
+    "failed_source_fails_family": true,
+    "aggregate_rescue": false,
+    "execution": "not_started"
+  },
+  "rejected_family_history": {
+    "family_version": "f3_os4_onset_residual_v1",
+    "state": "immutable_source_independent_preflight_reject_only",
+    "active_candidate_or_reference": false,
+    "control_reuse": "distortion_os4_d2_v1_non_promotable_negative_confound_only"
+  },
+  "false_positive_control_contract": {
+    "protocol_path": "docs/benchmarks/percussive_force_stage_a_protocol_v1.json",
+    "required_ids": [
+      "hidden_exact_a_a_v1",
+      "gain_plus_3db_v1",
+      "global_rate_four_fifths_v1",
+      "dark_onepole_f25_v1",
+      "bright_exact_split_f75_v1",
+      "distortion_os4_d2_v1",
+      "delayed_duplicate_25ms_minus6db_v1",
+      "detached_click_minus12db_body_v1"
+    ],
+    "scope": "event_ordinal_1_every_positive_source",
+    "may_earn_force": false,
+    "distortion_os4_boundary": "Explicit non-promotable negative confound only; its rejected F3-v1 candidate alias preflight is acknowledged and it cannot provide candidate, reference, safety, or quality evidence.",
+    "sanity_failure": "stop_and_version_protocol_without_candidate_based_retuning"
+  },
+  "natural_directional_reference_controls": {
+    "provider": "Philharmonia Orchestra",
+    "upstream_url": "https://philharmonia.co.uk/resources/sound-samples/",
+    "archive_url": "https://philharmonia-assets.s3-eu-west-1.amazonaws.com/uploads/2020/02/12112005/Percussion.zip",
+    "license_boundary": "Local measurement calibration only; never a Riotbox product source, fixture, generated asset, demo, sampler asset, or positive-source quota member.",
+    "algorithm_selection_allowed": false,
+    "filename_dynamics_are_ground_truth": false,
+    "required_human_sanity_check": "randomized_A_B_plus_reversed_B_A_directional_agreement",
+    "sets": [
+      {
+        "control_set_id": "philharmonia_snare_with_snares_025",
+        "instrument": "snare_drum",
+        "articulation": "with_snares",
+        "members": [
+          {"provisional_dynamic": "mezzo_forte", "local_path": "RIOTBOX-1429/philharmonia_percussion/snare-drum__025_mezzo-forte_with-snares.wav", "sha256": "aadad904f77a838e32c7d14541cbb991e255a3ce6f04d65a13d1839ecd695537"},
+          {"provisional_dynamic": "forte", "local_path": "RIOTBOX-1429/philharmonia_percussion/snare-drum__025_forte_with-snares.wav", "sha256": "84df780596168e9b7dd6a35f869a81f503c32dbaa93aa040b2ae2df41676c23b"},
+          {"provisional_dynamic": "fortissimo", "local_path": "RIOTBOX-1429/philharmonia_percussion/snare-drum__025_fortissimo_with-snares.wav", "sha256": "ab52aefc904a7cf44c0ae69cd7966429cd69f0c15b90d7d97ea8dacada35484a"}
+        ]
+      },
+      {
+        "control_set_id": "philharmonia_whip_struck_together_025",
+        "instrument": "whip",
+        "articulation": "struck_together",
+        "members": [
+          {"provisional_dynamic": "mezzo_forte", "local_path": "RIOTBOX-1429/philharmonia_percussion/whip__025_mezzo-forte_struck-together.wav", "sha256": "cdb71edefa55e6042fe9a8c4e2a91dde6b1ccebf3e20db1e26c6448a2ead1eb6"},
+          {"provisional_dynamic": "forte", "local_path": "RIOTBOX-1429/philharmonia_percussion/whip__025_forte_struck-together.wav", "sha256": "292ed67465dfa1041fd7f667642da6f6ef95d992a696a1dfe72e29f2f41d7a21"},
+          {"provisional_dynamic": "fortissimo", "local_path": "RIOTBOX-1429/philharmonia_percussion/whip__025_fortissimo_struck-together.wav", "sha256": "d48bbd901480fa5240635c0561b73b3cafe6074bc7ee792c29f3fc38e103080b"}
+        ]
+      }
+    ]
+  },
+  "refusal_and_stress_sources": [
+    {
+      "case_id": "oga_bertsz_dnb",
+      "source_family": "dense_full_mix",
+      "matrix_role": "stress",
+      "author": "bertsz",
+      "source_path": "data/test_audio/external/RIOTBOX-1423/wav/stress_oga_bertsz_dnb.wav",
+      "sha256": "09b5fc685fa44193750e7ccd63cd69000f481b2eb8531eb8a6be91dcd6aa0cd5",
+      "allowed_outcomes": ["degraded", "unavailable", "reject"],
+      "positive_coverage": false
+    },
+    {
+      "case_id": "oga_fupi_plimplom",
+      "source_family": "tonal_riff",
+      "matrix_role": "refusal",
+      "author": "Fupi",
+      "source_path": "data/test_audio/external/RIOTBOX-1423/wav/tonal_oga_fupi_plimplom.wav",
+      "sha256": "42a0f50baa156d59b5d8778931fc9ca037ddfee2a3933c95ab4d8ef70a4f0072",
+      "allowed_outcomes": ["degraded", "unavailable", "reject"],
+      "positive_coverage": false
+    },
+    {
+      "case_id": "oga_isaiah658_ambient",
+      "source_family": "pad_noise",
+      "matrix_role": "refusal",
+      "author": "isaiah658",
+      "source_path": "data/test_audio/external/RIOTBOX-1423/wav/pad_oga_isaiah658_ambient.wav",
+      "sha256": "6fe1b8158fa4ad7517f4fef5b1601ead1c0035f4a15d63a8f2b7a43e885fc695",
+      "allowed_outcomes": ["degraded", "unavailable", "reject"],
+      "positive_coverage": false
+    },
+    {
+      "case_id": "oga_killerfishred_short_synth",
+      "source_family": "weak_source",
+      "matrix_role": "refusal",
+      "author": "killerfishred",
+      "source_path": "data/test_audio/external/RIOTBOX-1423/wav/weak_oga_killerfishred_short_synth.wav",
+      "sha256": "743121ce869e98b7cecb413aa88a6026cf79d9d698473ed6b5acad0b1e8df71c",
+      "allowed_outcomes": ["degraded", "unavailable", "reject"],
+      "positive_coverage": false
+    },
+    {
+      "case_id": "oga_laleksic_tap_water",
+      "source_family": "bad_timing",
+      "matrix_role": "refusal",
+      "author": "laleksic",
+      "source_path": "data/test_audio/external/RIOTBOX-1423/wav/bad_timing_oga_laleksic_tap_water.wav",
+      "sha256": "7d6b29ba153c8ebfe531d003ce0207c7d9ac19d90e1a1ad5f695273245eb5840",
+      "allowed_outcomes": ["degraded", "unavailable", "reject"],
+      "positive_coverage": false
+    }
+  ],
+  "typed_refusal_semantics": {
+    "unavailable": {"audio": "none", "positive_coverage": false, "fallback_audio": false, "quality_proof": false, "typed_reason_required": true},
+    "reject": {"audio": "diagnostic_only", "positive_coverage": false, "fallback_audio": false, "quality_proof": false, "typed_reason_required": true},
+    "degraded": {"audio": "labeled_diagnostic_only", "positive_coverage": false, "fallback_audio": false, "quality_proof": false, "typed_reason_required": true}
+  },
+  "active_holdout_union": [
+    {"case_id": "oga_ruok_160bpm", "partition": "holdout_a", "source_path": "data/test_audio/external/RIOTBOX-1423/wav/dense_oga_ruok_160bpm.wav", "sha256": "2d674ceb618f38076be09a83b4100803d41b74c6dc99c64f6197c37abc3cef2d"},
+    {"case_id": "oga_bart_getequipped", "partition": "holdout_a", "source_path": "data/test_audio/external/RIOTBOX-1423/wav/sparse_oga_bart_getequipped.wav", "sha256": "c625239bec045308449f6f6b1787a9233e3884affbfddb34038c38f5a2baef60"},
+    {"case_id": "oga_rami99_electronic", "partition": "holdout_a", "source_path": "data/test_audio/external/RIOTBOX-1423/wav/tonal_oga_rami99_electronic.wav", "sha256": "02d694f652df414a16c15921a6130c329de838705a9e243c035b9696f0f95b52"},
+    {"case_id": "oga_tinyworlds_cyberworld", "partition": "holdout_a", "source_path": "data/test_audio/external/RIOTBOX-1423/wav/pad_oga_tinyworlds_cyberworld.wav", "sha256": "4909849f68ab24b589199e1d3974676dd80689db68165ceaaac625ee682f5b4d"},
+    {"case_id": "oga_illin_robotic", "partition": "holdout_b", "source_path": "data/test_audio/external/RIOTBOX-1423/wav/dense_oga_illin_robotic.wav", "sha256": "626d337e170f67a696f760a8ec82880d5326c364457296b5f7cc47de6a837a4a"},
+    {"case_id": "oga_bretbernhoft_beatloops", "partition": "holdout_b", "source_path": "data/test_audio/external/RIOTBOX-1423/wav/sparse_oga_bretbernhoft_beatloops.wav", "sha256": "7e950adad640fee4c763a9aad508fac49a988c1f34c9cbafba56a73d818dcce4"},
+    {"case_id": "oga_akikazer_menu", "partition": "holdout_b", "source_path": "data/test_audio/external/RIOTBOX-1423/wav/tonal_oga_akikazer_menu.wav", "sha256": "41bad327af79ff60b4cd301c69b5c17e202e7fac586e0d4b80b65c255d151b57"},
+    {"case_id": "oga_srg774_airy", "partition": "holdout_b", "source_path": "data/test_audio/external/RIOTBOX-1423/wav/pad_oga_srg774_airy.wav", "sha256": "cc46ed25aa9d86c8812077c5728460f406800781ac8efbc764c05c829e3d134e"},
+    {"case_id": "oga_laleksic_grind_metal", "partition": "holdout_b", "source_path": "data/test_audio/external/RIOTBOX-1423/wav/bad_timing_oga_laleksic_grind_metal.wav", "sha256": "900f077fb4a86c72a1e1e52ec7a8efbccc2500d796a5d66302b73755ecdc427d"}
+  ],
+  "holdout_protection": {
+    "reject_partitions": ["holdout_a", "holdout_b"],
+    "dynamic_metadata_rejection": ["case_id", "source_path", "sha256"],
+    "read_audio": false,
+    "hash_audio": false,
+    "render_audio": false,
+    "classify_audio": false,
+    "play_audio": false,
+    "glob_or_directory_discovery": false,
+    "disallowed_command": "just source-holdout-rotation-local-files",
+    "access_change_condition": "Stage_B_only_after_complete_unchanged_Stage_A_freeze_and_pass"
+  },
+  "survivor_policy": {
+    "preliminary_survivor": "family_independently_passes_every_positive_source_event_in_raw_and_matched_views_plus_control_sanity",
+    "zero": "stop_stage_a",
+    "one_or_more": "run_unchanged_attack_only_body_only_combined_ablations_and_available_ordinal_3_confirmation",
+    "multiple_full_passes": "one_blinded_trigger_preference_comparison_on_the_preregistered_Golden_event",
+    "unique_preference": "select_exactly_one_frozen_Stage_B_candidate",
+    "tie": "block_Stage_B_preserve_results_no_retune_or_metric_discriminator"
+  },
+  "promotion": {
+    "mechanical_gate_grants": "human_listening_request_only",
+    "raw_and_matched_direction_required": true,
+    "reversed_order_agreement_required": true,
+    "hidden_a_a_same_required": true,
+    "desirable_to_trigger_required": true,
+    "medium_or_high_confidence_required": true,
+    "maximum_review_ready_generations_per_family": 2,
+    "maximum_structural_revisions_per_family": 1,
+    "failed_source_may_be_rescued_by_aggregate": false,
+    "unique_candidate_required": true,
+    "tie_blocks": true,
+    "runtime_mix_integration_allowed_now": false
+  },
+  "historical_negative_evidence": [
+    {"observation_id": "riotbox_1422_h27_v7_musically_weak", "manifest_sha256": "22900ec4d89d285b639ec95cee7ffef35284b6bbe845ab8905975c3cf843268e", "observed_failure_label": "technically_ok_but_musically_weak_and_not_loopable", "role": "design_input_not_executable_control"},
+    {"observation_id": "riotbox_1422_h28_v8_duller_not_harder", "manifest_sha256": "e7d5165814f7e38d7571b085ce1d3e7ccdb27628a26b38aec2c6612a71b082b9", "observed_failure_label": "duller_not_harder", "role": "design_input_not_executable_control"},
+    {"observation_id": "riotbox_1422_h29_v9_no_useful_difference", "manifest_sha256": "436c870c51f3e256d310896531e78879d8dd3ca28e1e9ebbcdc6e2c56952f185", "observed_failure_label": "base_and_hard_perceptually_same", "role": "design_input_not_executable_control"},
+    {"observation_id": "riotbox_1422_h30_v10_no_useful_distinction", "manifest_sha256": "53a9d7ce1b158b04930632003de8501cafd8222246e5116eafde86aeac6f9d16", "observed_failure_label": "no_useful_distinction_from_preceding_attempts", "role": "design_input_not_executable_control"},
+    {"observation_id": "riotbox_1428_h31_rejected_direction_v1", "review_wav_sha256": "788f801b47f14d8b2d600c8d594c991738e09da01656f04f420ebca5ba36b7b3", "observed_failure_label": "lower_or_slower_not_harder", "role": "design_input_not_executable_control"}
+  ],
+  "readiness_scope": {
+    "stage_a_positive_floor": "four_sources_four_authors_three_families_isolated_mechanism_gate",
+    "broader_floor": "Family-specific source-aware readiness still requires at least five development sources and four source families, or a separately versioned narrow-role exception.",
+    "broader_floor_claimed": false,
+    "instrument_quality_claimed": false,
+    "product_path_claimed": false,
+    "loop_quality_claimed": false
+  }
+}
