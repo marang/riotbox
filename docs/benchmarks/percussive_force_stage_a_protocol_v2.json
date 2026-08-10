@@ -1,0 +1,2235 @@
+{
+  "schema": "riotbox.percussive_force_stage_a_protocol.v2",
+  "schema_version": 2,
+  "owner_ticket": "RIOTBOX-1430",
+  "work_class": "contract_enabler",
+  "execution_state": "preregistered_no_v2_source_qualification_or_candidate_render",
+  "evidence_role": "machine_validated_stage_a_v2_retry_preregistration",
+  "quality_proof": false,
+  "product_path_proof": false,
+  "canonical_research_contract": "docs/engineering/percussive_force_and_beat_impact.md",
+  "directly_enabled_outcome": "Enable exactly one fresh RIOTBOX-1428 development-only StageAQualificationSession against the complete frozen Protocol-v2, Registry-v3, and Matrix-v3 stack; the three-family candidate matrix remains forbidden unless all four positive sources pass mechanism-blind admission.",
+  "stage_boundary": {
+    "allowed_now": [
+      "validate_this_protocol_v2_json_contract",
+      "validate_a_complete_metadata_only_registry_v3_and_matrix_v3_snapshot",
+      "implement_and_validate_source_blind_v2_artifact_schemas",
+      "run_one_exact_predeclared_three_file_development_acquisition_and_header_format_session_before_registry_v3_freeze_only_after_the_versioned_acquisition_gate_validates"
+    ],
+    "forbidden_before_this_contract_and_matrix_validate": [
+      "source_feature_computation",
+      "unregistered_or_nonpredeclared_wav_or_pcm_reading",
+      "source_event_qualification",
+      "candidate_or_control_rendering",
+      "generated_audio_artifacts",
+      "human_candidate_playback",
+      "source_preview_or_source_audio_playback",
+      "audio_decode_or_pcm_sample_iteration_outside_strict_header_validation",
+      "holdout_audio_access"
+    ],
+    "forbidden_result_fields": [
+      "actual",
+      "candidate",
+      "computed",
+      "event_records",
+      "feature_results",
+      "gate_result",
+      "human_verdict",
+      "measurement",
+      "policy_results",
+      "qualified",
+      "render",
+      "result",
+      "survivor",
+      "verdict"
+    ],
+    "source_independent_preflight_exception": "A frozen synthetic filter/mechanism preflight may be recorded without source access or candidate rendering; it can only reject a family and may never grant force, source, human, or product evidence.",
+    "batch_acquisition_exception": {
+      "purpose": "identity_hash_format_and_source_suitability_pre_admission_only",
+      "authorization": "protocol_v2_validation_alone_never_authorizes_network_or_source_file_access",
+      "required_preregistration_schema": "riotbox.percussive_force_stage_a_v2_acquisition_batch.v1",
+      "required_access_log_schema": "riotbox.percussive_force_stage_a_v2_acquisition_access_log.v1",
+      "exact_batch_size": 3,
+      "required_before_network_bytes": "one_complete_validator_pinned_metadata_only_three_source_batch_with_exact_page download attachment_byte_count case author pack family and destination identities",
+      "permitted_access": "one_all_or_nothing_no_redirect_session_over_exact_declared_https_urls_and_exact repo_relative_development_destinations_only; stream_at_most_each_declared_attachment byte_count_plus_one_for_sha256_and_strict_RIFF_PCM_header_validation_without_sample decoding_iteration_or_analysis",
+      "path_and_byte_boundaries": "the_validator_pinned_preregistration_is_the_only_authority_for_URL_order_destination and_exact_attachment_bytes; no directory discovery wildcard retry substitute redirect partial survivor or undeclared response byte is permitted",
+      "publication": "publish_no_final_destination_until_all_three_exact_downloads_and_headers_validate",
+      "forbidden": [
+        "feature_or_event_computation",
+        "audio_decode_or_pcm_sample_iteration",
+        "source_preview_or_source_audio_playback",
+        "candidate_or_control_rendering",
+        "holdout_audio_access",
+        "commercial_reference_access",
+        "sequential_survivor_selection"
+      ],
+      "failure": "reject_entire_batch_and_require_a_new_versioned_metadata_decision"
+    }
+  },
+  "change_control": {
+    "single_rule": "Any overall contract value, equation, comparator, topology, role, partition, or stop-rule change requires riotbox.percussive_force_stage_a_protocol.v3 plus the relevant component-version bump and a versioned decision-log entry before any recomputation; it invalidates all earlier Stage-A-v2 results and is forbidden after the first candidate render, human candidate evidence, or holdout access.",
+    "prequalification_specific_rule": "Any detector, anatomy, rhythmic-proxy, source-contrast, ordinal, refusal, or authoritative source-mean binding change additionally bumps riotbox.percussive_force_prequalification.v3 to v4.",
+    "values_are": "experimental_protocol_and_safety_guardrails_not_perceptual_hardness_thresholds",
+    "scalar_retuning_after_results": false,
+    "source_specific_or_filename_specific_constants": false
+  },
+  "component_versions": {
+    "prequalification": "riotbox.percussive_force_prequalification.v3",
+    "impact_role": "riotbox.impact_role.v2",
+    "event_detector": "riotbox.percussive_event_detector.v1",
+    "event_anatomy": "riotbox.percussive_event_anatomy.v2",
+    "source_contrast": "riotbox.percussive_source_contrast.v1",
+    "rhythmic_location_proxy": "riotbox.rhythmic_location_proxy.v1",
+    "event_ordinal_policy": "riotbox.event_ordinal_policy.v1",
+    "exact_three_band_analysis": "riotbox.exact_complementary_three_band_analysis.v1",
+    "f1": "f1_ab_energy_redistribution_v1",
+    "f2": "f2_exact_complementary_three_band_v1",
+    "f3": "f3_causal_envelope_contrast_dynamic_residual_v2",
+    "f3_source_response_diversity": "riotbox.f3_source_response_diversity.v1",
+    "level_matcher": "event_train_rms_attenuation_match_v1",
+    "blind_order": "riotbox.percussive_force_blind.v1",
+    "source_analysis": "riotbox.percussive_force_source_analysis.v2",
+    "unbound_qualification_analysis": "riotbox.percussive_force_stage_a_unbound_qualification_analysis.v2",
+    "bound_event_catalog": "riotbox.percussive_force_stage_a_bound_event_catalog.v2",
+    "qualification_rejection": "riotbox.percussive_force_stage_a_qualification_rejection.v2",
+    "qualification_session": "riotbox.percussive_force_stage_a_qualification_session.v2",
+    "qualification_commit": "riotbox.percussive_force_stage_a_qualification_commit.v1"
+  },
+  "immutable_source_independent_preflight_records": [
+    {
+      "record_schema": "riotbox.percussive_force_synthetic_preflight_record.v1",
+      "family_version": "f3_os4_onset_residual_v1",
+      "probe_id": "three_tone_0071_0193_0317_v1",
+      "input": "mono_f64",
+      "frame_count": 4096,
+      "formula": "x[n]=sum_components(amplitude*sin(2*pi*cycles_per_base_sample*n+phase_radians))",
+      "components": [
+        {
+          "amplitude": 0.44,
+          "cycles_per_base_sample": 0.071,
+          "phase_radians": 0.0
+        },
+        {
+          "amplitude": 0.29,
+          "cycles_per_base_sample": 0.193,
+          "phase_radians": 0.31
+        },
+        {
+          "amplitude": 0.17,
+          "cycles_per_base_sample": 0.317,
+          "phase_radians": 0.79
+        }
+      ],
+      "input_processing": "no_normalization_no_envelope_no_dither",
+      "drive": 3.0,
+      "path_peak_rule": "Each 4x and 8x path independently uses P=max(abs(interpolated_x)) in the same phi formula.",
+      "alignment": "Both filtered and decimated residuals use the exact 64-base-frame total delay.",
+      "comparison_interval_frames": [
+        512,
+        3584
+      ],
+      "comparison_interval_semantics": "half_open",
+      "metric": "10*log10(sum((r4-r8)^2)/sum(r8^2))_without_epsilon_or_floor",
+      "rejected_family_definition": {
+        "candidate_oversampling_factor": 4,
+        "candidate_filter_taps": 257,
+        "candidate_filter_midpoint": 128,
+        "oracle_oversampling_factor": 8,
+        "oracle_filter_taps": 513,
+        "oracle_filter_midpoint": 256,
+        "cutoff_cycles_per_high_rate_sample": "0.45/L",
+        "blackman_coefficients": [
+          0.42,
+          -0.5,
+          0.08
+        ],
+        "window_denominators": [
+          256,
+          512
+        ],
+        "base_rate_total_delay_frames": 64,
+        "drive": 3.0
+      },
+      "required_error_db_max": -60.0,
+      "measured_error_db": -43.38236728008191,
+      "pass": false,
+      "immutable": true,
+      "source_audio_accessed": false,
+      "consequence": "Reject and freeze f3_os4_onset_residual_v1 before any source use; do not retune any value. A replacement requires a separately versioned structural family."
+    }
+  ],
+  "numeric_passport_contract": {
+    "required_fields": [
+      "value",
+      "unit",
+      "scope",
+      "comparator_or_formula_role",
+      "rationale",
+      "change_rule"
+    ],
+    "change_rule_token": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute",
+    "interpretation": "Every value below is a frozen experimental, numerical-stability, safety, or review-cost choice. None independently predicts perceived force."
+  },
+  "numeric_passports": {
+    "input_channel_counts": {
+      "value": [
+        1,
+        2
+      ],
+      "unit": "channels",
+      "scope": "registered_pcm_input",
+      "comparator_or_formula_role": "exact_supported_set",
+      "rationale": "Mono and stereo cover the registered Stage-A sources while retaining energy-preserving channel analysis.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "input_sample_rate_range_hz": {
+      "value": [
+        32000,
+        192000
+      ],
+      "unit": "hertz_inclusive",
+      "scope": "registered_pcm_input",
+      "comparator_or_formula_role": "min_max_supported_native_rate",
+      "rationale": "Bounds the native-rate detector and filters without silently resampling unsupported material.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "analysis_epsilon_lsb_squared": {
+      "value": 1,
+      "unit": "input_lsb_squared",
+      "scope": "all_log_and_energy_denominators",
+      "comparator_or_formula_role": "epsilon_equals_one_input_lsb_squared",
+      "rationale": "Ties numerical protection to source precision instead of an unexplained floating constant.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "minimum_signal_peak_lsb": {
+      "value": 16,
+      "unit": "input_lsb",
+      "scope": "source_event_and_band_signal_guards",
+      "comparator_or_formula_role": "strict_minimum_peak_or_mean_square_reference",
+      "rationale": "Rejects quantization-floor material before topology selection.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "frame_rounding_offset": {
+      "value": 0.5,
+      "unit": "sample_frame",
+      "scope": "all_millisecond_to_frame_conversions",
+      "comparator_or_formula_role": "positive_duration_and_signed_offset_nearest_frame_rules",
+      "rationale": "Makes nearest-frame timing deterministic at native sample rate without forcing a signed zero offset to one frame.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "periodic_hann_coefficients": {
+      "value": [
+        0.5,
+        -0.5
+      ],
+      "unit": "dimensionless",
+      "scope": "detector_STFT_and_source_Welch",
+      "comparator_or_formula_role": "w[n]=a0+a1*cos(2*pi*n/N)",
+      "rationale": "Pins the periodic rather than symmetric Hann convention and prevents library-default drift.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "detector_window_ms": {
+      "value": 8,
+      "unit": "milliseconds",
+      "scope": "detector_periodic_hann",
+      "comparator_or_formula_role": "analysis_window_length",
+      "rationale": "Resolves drum attacks without treating a single sample spike as complete impact.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "detector_hop_ms": {
+      "value": 1,
+      "unit": "milliseconds",
+      "scope": "detector",
+      "comparator_or_formula_role": "hop_length",
+      "rationale": "Supports the one-millisecond onset movement gate.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "detector_log_energy_lag_ms": {
+      "value": 4,
+      "unit": "milliseconds",
+      "scope": "bandwise_novelty",
+      "comparator_or_formula_role": "previous_hop_lag",
+      "rationale": "Measures rapid attack growth rather than static spectral level.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "detector_log_energy_lag_hops": {
+      "value": 4,
+      "unit": "detector_hops",
+      "scope": "bandwise_novelty",
+      "comparator_or_formula_role": "exact_previous_valid_hop_index_delta",
+      "rationale": "Pins the four-millisecond lag to the one-millisecond detector hop without an implicit conversion.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "detector_median_hops": {
+      "value": 3,
+      "unit": "hops",
+      "scope": "novelty_smoothing",
+      "comparator_or_formula_role": "centered_median_width",
+      "rationale": "Suppresses one-hop numerical spikes while retaining attack timing.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "detector_baseline_radius_ms": {
+      "value": 500,
+      "unit": "milliseconds",
+      "scope": "novelty_baseline",
+      "comparator_or_formula_role": "symmetric_radius",
+      "rationale": "Provides a local context long enough to avoid a single-event baseline.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "detector_baseline_exclusion_ms": {
+      "value": 25,
+      "unit": "milliseconds",
+      "scope": "novelty_baseline",
+      "comparator_or_formula_role": "symmetric_anchor_exclusion",
+      "rationale": "Prevents the candidate attack from raising its own baseline.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "detector_minimum_baseline_hops": {
+      "value": 200,
+      "unit": "valid_hops",
+      "scope": "novelty_baseline",
+      "comparator_or_formula_role": "greater_than_or_equal",
+      "rationale": "Rejects unstable edge-local baselines.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "mad_consistency_scale": {
+      "value": 1.4826,
+      "unit": "dimensionless",
+      "scope": "detector_and_anatomy_robust_baselines",
+      "comparator_or_formula_role": "mad_to_normal_consistency_multiplier",
+      "rationale": "Conventional normal-consistency scaling makes the robust spread explicit.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "detector_mad_multiplier": {
+      "value": 3,
+      "unit": "scaled_mad",
+      "scope": "novelty_threshold",
+      "comparator_or_formula_role": "strictly_above_median_plus_value_times_scaled_mad",
+      "rationale": "Conservative event-candidate rejection threshold, not a force score.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "detector_zero_mad_delta": {
+      "value": 1e-06,
+      "unit": "log_energy_novelty",
+      "scope": "zero_mad_novelty_threshold",
+      "comparator_or_formula_role": "strict_additional_delta",
+      "rationale": "Prevents equality with a perfectly flat baseline from becoming an onset.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "detector_coarse_rms_floor_ratio": {
+      "value": 4,
+      "unit": "ratio",
+      "scope": "coarse_broadband_guard",
+      "comparator_or_formula_role": "rms_greater_than_or_equal_local_20th_percentile_times_value",
+      "rationale": "Rejects novelty caused by very low-level numerical texture while preserving the preregistered inclusive guard.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "detector_local_rms_percentile": {
+      "value": 20,
+      "unit": "percent",
+      "scope": "coarse_broadband_guard",
+      "comparator_or_formula_role": "local_reference_percentile",
+      "rationale": "Uses a low local noise reference without requiring silence.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "detector_peak_search_radius_ms": {
+      "value": 6,
+      "unit": "milliseconds",
+      "scope": "coarse_peak",
+      "comparator_or_formula_role": "earliest_plateau_local_max_radius",
+      "rationale": "Stabilizes anchor choice within one attack crest.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "detector_nms_ms": {
+      "value": 30,
+      "unit": "milliseconds",
+      "scope": "coarse_peak_nonmaximum_suppression",
+      "comparator_or_formula_role": "keep_larger_novelty_then_earlier_on_equality",
+      "rationale": "Collapses attack microstructure before anatomy resolves composite roles.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "analysis_band_edges_hz": {
+      "value": [
+        20,
+        160,
+        2500,
+        12000
+      ],
+      "unit": "hertz",
+      "scope": "detector_source_vector_and_band_metrics",
+      "comparator_or_formula_role": "three_half_open_bands_with_final_inclusive_edge",
+      "rationale": "Separates low body, mid body/attack identity, and high bite across audible drum energy.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "rms_envelope_windows_ms": {
+      "value": [
+        1,
+        8,
+        20
+      ],
+      "unit": "milliseconds",
+      "scope": "forward_tagged_anatomy_envelopes",
+      "comparator_or_formula_role": "exact_window_set",
+      "rationale": "Separates physical onset, short body, and decaying tail time scales.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "anchor_search_ms": {
+      "value": [
+        -20,
+        5
+      ],
+      "unit": "milliseconds_relative_to_coarse_anchor",
+      "scope": "physical_onset_search",
+      "comparator_or_formula_role": "inclusive_search_bounds",
+      "rationale": "Allows novelty lag while preventing unrelated earlier events.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "lookbehind_ms": {
+      "value": 20,
+      "unit": "milliseconds",
+      "scope": "event_anatomy",
+      "comparator_or_formula_role": "frozen_pre_onset_context",
+      "rationale": "Supplies local noise and filter warm-up context without spanning a beat.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "onset_fraction_above_baseline": {
+      "value": 0.1,
+      "unit": "fraction_of_peak_minus_baseline",
+      "scope": "physical_onset",
+      "comparator_or_formula_role": "earliest_r1_crossing",
+      "rationale": "Finds the attack foot rather than its crest.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "onset_persistence_ms": {
+      "value": 1,
+      "unit": "milliseconds",
+      "scope": "physical_onset",
+      "comparator_or_formula_role": "minimum_continuous_crossing",
+      "rationale": "Rejects one-sample crossings while retaining immediate attack.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "anatomy_peak_baseline_ratio": {
+      "value": 4,
+      "unit": "ratio",
+      "scope": "physical_onset",
+      "comparator_or_formula_role": "peak_greater_than_or_equal_baseline_times_value",
+      "rationale": "Requires a body-bearing attack at or above the preregistered inclusive local-background ratio.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "lookbehind_peak_ratio_max": {
+      "value": 0.25,
+      "unit": "ratio",
+      "scope": "lookbehind_mask_guard",
+      "comparator_or_formula_role": "lookbehind_rms_over_peak_less_than_or_equal",
+      "rationale": "Rejects attacks masked by a preceding unresolved event.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "attack_peak_search_ms": {
+      "value": 40,
+      "unit": "milliseconds",
+      "scope": "attack_peak_and_turnover",
+      "comparator_or_formula_role": "maximum_time_after_onset",
+      "rationale": "Bounds an immediate percussive attack rather than a slow swell.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "attack_turnover_fraction": {
+      "value": 0.9,
+      "unit": "fraction_of_attack_peak",
+      "scope": "attack_end",
+      "comparator_or_formula_role": "r1_less_than_or_equal_for_persistence",
+      "rationale": "Marks the first sustained departure from the attack crest.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "attack_turnover_persistence_ms": {
+      "value": 3,
+      "unit": "milliseconds",
+      "scope": "attack_end",
+      "comparator_or_formula_role": "continuous_below_threshold",
+      "rationale": "Avoids declaring turnover on a single oscillation.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "body_baseline_multiplier": {
+      "value": 2,
+      "unit": "ratio",
+      "scope": "body_floor",
+      "comparator_or_formula_role": "max_component",
+      "rationale": "Retains physical energy above the local background.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "body_peak_fraction": {
+      "value": 0.1,
+      "unit": "fraction_of_attack_peak",
+      "scope": "body_floor",
+      "comparator_or_formula_role": "max_component",
+      "rationale": "Prevents a loud attack from defining a vanishing body.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "body_minimum_ms": {
+      "value": 20,
+      "unit": "milliseconds",
+      "scope": "body_end",
+      "comparator_or_formula_role": "minimum_duration_before_floor_search",
+      "rationale": "Requires enough sustained material to judge physical body.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "body_below_floor_ms": {
+      "value": 10,
+      "unit": "milliseconds",
+      "scope": "body_end",
+      "comparator_or_formula_role": "continuous_r8_below_floor",
+      "rationale": "Avoids ending the body on a short internal notch.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "body_maximum_ms": {
+      "value": 250,
+      "unit": "milliseconds_after_physical_onset",
+      "scope": "body_resolution",
+      "comparator_or_formula_role": "body_end_less_than_or_equal_onset_plus_value",
+      "rationale": "Separates a complete percussive body from sustained material on one common onset-relative clock.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "tail_baseline_multiplier": {
+      "value": 1.5,
+      "unit": "ratio",
+      "scope": "tail_floor",
+      "comparator_or_formula_role": "max_component",
+      "rationale": "Tracks decay closer to background than the body floor.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "tail_peak_fraction": {
+      "value": 0.05,
+      "unit": "fraction_of_attack_peak",
+      "scope": "tail_floor",
+      "comparator_or_formula_role": "max_component",
+      "rationale": "Keeps source-relative tail resolution bounded for loud attacks.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "tail_minimum_ms": {
+      "value": 10,
+      "unit": "milliseconds",
+      "scope": "tail_end",
+      "comparator_or_formula_role": "minimum_duration_before_floor_search",
+      "rationale": "Prevents the body/tail boundary from also ending the event.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "tail_below_floor_ms": {
+      "value": 20,
+      "unit": "milliseconds",
+      "scope": "tail_end",
+      "comparator_or_formula_role": "continuous_r20_below_floor",
+      "rationale": "Requires a stable return toward local background.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "tail_maximum_ms": {
+      "value": 500,
+      "unit": "milliseconds_after_physical_onset",
+      "scope": "tail_resolution",
+      "comparator_or_formula_role": "tail_end_less_than_or_equal_onset_plus_value",
+      "rationale": "Bounds a complete single impact on the same onset-relative clock before the next rhythmic event.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "diagnostic_window_edges_ms": {
+      "value": [
+        0,
+        10,
+        40,
+        120,
+        250
+      ],
+      "unit": "milliseconds_after_onset",
+      "scope": "fixed_diagnostic_windows",
+      "comparator_or_formula_role": "half_open_edges_clipped_to_event",
+      "rationale": "Supports comparable attack/body/tail diagnostics without replacing source-frozen anatomy.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "composite_fusion_ms": {
+      "value": 12,
+      "unit": "milliseconds",
+      "scope": "source_micropeak_classification",
+      "comparator_or_formula_role": "refined_onsets_within_or_equal_form_one_cluster",
+      "rationale": "Keeps source-native attack microstructure distinct from an audible flam.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "event_valley_peak_fraction": {
+      "value": 0.5,
+      "unit": "fraction_of_smaller_adjacent_peak",
+      "scope": "separate_event_test",
+      "comparator_or_formula_role": "r1_less_than_or_equal",
+      "rationale": "Requires a material envelope valley before declaring a restart.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "event_valley_persistence_ms": {
+      "value": 2,
+      "unit": "milliseconds",
+      "scope": "separate_event_test",
+      "comparator_or_formula_role": "continuous_valley_duration",
+      "rationale": "Rejects oscillatory microstructure as a new hit.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "rhythmic_proxy_window_ms": {
+      "value": 60,
+      "unit": "milliseconds",
+      "scope": "rhythmic_location_proxy",
+      "comparator_or_formula_role": "source_frozen_onset_to_min_body_end_window",
+      "rationale": "Measures early impact location rather than tail duration.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "rhythmic_proxy_quantile": {
+      "value": 0.5,
+      "unit": "cumulative_weight_fraction",
+      "scope": "rhythmic_location_proxy",
+      "comparator_or_formula_role": "first_cumulative_crossing",
+      "rationale": "Uses the median early excess-energy location as a deterministic proxy, not a perceptual centre.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "candidate_onset_tolerance_ms": {
+      "value": 1.0,
+      "unit": "milliseconds",
+      "scope": "all_candidate_integrity_screens",
+      "comparator_or_formula_role": "absolute_movement_less_than_or_equal",
+      "rationale": "Preserves the physical rhythmic placement of the hit.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "candidate_rhythmic_proxy_tolerance_ms": {
+      "value": 5.0,
+      "unit": "milliseconds",
+      "scope": "all_candidate_integrity_screens",
+      "comparator_or_formula_role": "absolute_movement_less_than_or_equal",
+      "rationale": "Allows small articulation shifts without accepting a different rhythmic event.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "source_welch_window_ms": {
+      "value": 32,
+      "unit": "milliseconds",
+      "scope": "whole_source_spectrum",
+      "comparator_or_formula_role": "periodic_hann_window",
+      "rationale": "Provides stable broad-band source contrast at native rate.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "source_welch_hop_ms": {
+      "value": 16,
+      "unit": "milliseconds",
+      "scope": "whole_source_spectrum",
+      "comparator_or_formula_role": "half_window_hop",
+      "rationale": "Conventional half-overlap balances coverage and deterministic cost.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "source_minimum_onsets": {
+      "value": 3,
+      "unit": "detected_onsets",
+      "scope": "source_vector",
+      "comparator_or_formula_role": "greater_than_or_equal",
+      "rationale": "Makes density and IOI variation meaningful.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "source_minimum_resolved_body_events": {
+      "value": 2,
+      "unit": "events",
+      "scope": "source_vector",
+      "comparator_or_formula_role": "greater_than_or_equal",
+      "rationale": "Avoids deriving source articulation from one exceptional hit.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "normalization_density_scale_per_second": {
+      "value": 4,
+      "unit": "onsets_per_second",
+      "scope": "source_vector",
+      "comparator_or_formula_role": "P_scale",
+      "rationale": "Maps representative drum densities without unbounded dominance.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "normalization_ioi_scale_ms": {
+      "value": 250,
+      "unit": "milliseconds",
+      "scope": "source_vector",
+      "comparator_or_formula_role": "one_minus_P_scale",
+      "rationale": "Maps quarter-second spacing to the centre of the bounded rate coordinate.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "normalization_ioi_cv_scale": {
+      "value": 1,
+      "unit": "population_cv",
+      "scope": "source_vector",
+      "comparator_or_formula_role": "P_scale",
+      "rationale": "Keeps regularity and highly variable timing in one bounded coordinate.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "normalization_duration_scale_ms": {
+      "value": 250,
+      "unit": "milliseconds",
+      "scope": "source_vector",
+      "comparator_or_formula_role": "P_scale",
+      "rationale": "Matches the maximum body-resolution scale without using metadata.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "source_distinct_distance_min": {
+      "value": 0.25,
+      "unit": "five_domain_rms_distance",
+      "scope": "source_contrast",
+      "comparator_or_formula_role": "greater_than_or_equal",
+      "rationale": "Preregistered anti-overfit separation, not a perceptual distance claim.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "source_changed_domain_min_delta": {
+      "value": 0.1,
+      "unit": "normalized_domain_distance",
+      "scope": "source_contrast",
+      "comparator_or_formula_role": "greater_than_or_equal",
+      "rationale": "Prevents a single feature family from establishing contrast alone.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "source_changed_domain_minimum_count": {
+      "value": 2,
+      "unit": "domains",
+      "scope": "source_contrast",
+      "comparator_or_formula_role": "greater_than_or_equal",
+      "rationale": "Requires source differences on at least two independent axes.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "positive_source_count": {
+      "value": 4,
+      "unit": "registered_sources",
+      "scope": "isolated_stage_a",
+      "comparator_or_formula_role": "exact",
+      "rationale": "Four independent authors form the preregistered narrow mechanism screen.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "positive_author_count": {
+      "value": 4,
+      "unit": "distinct_authors",
+      "scope": "isolated_stage_a",
+      "comparator_or_formula_role": "exact",
+      "rationale": "Prevents one author's pack style from dominating the narrow four-source gate.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "positive_family_count": {
+      "value": 3,
+      "unit": "registered_percussive_families",
+      "scope": "isolated_stage_a",
+      "comparator_or_formula_role": "exact",
+      "rationale": "Dense break, sparse drums, and electronic drums provide the preregistered narrow taxonomy contrast.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "source_distance_domain_count": {
+      "value": 5,
+      "unit": "normalized_domains",
+      "scope": "source_contrast",
+      "comparator_or_formula_role": "exact_mean_denominator",
+      "rationale": "Rate, irregularity, spectrum, articulation, and duration receive equal domain weight.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "minimum_source_clusters": {
+      "value": 3,
+      "unit": "clusters",
+      "scope": "source_contrast",
+      "comparator_or_formula_role": "greater_than_or_equal",
+      "rationale": "Prevents metadata family labels from standing in for acoustic diversity.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "four_source_partition_count": {
+      "value": 15,
+      "unit": "set_partitions",
+      "scope": "source_contrast",
+      "comparator_or_formula_role": "enumerate_all_and_require_exactly_one_valid",
+      "rationale": "Exhaustive enumeration avoids algorithm-order-dependent clustering.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "valid_source_partition_count": {
+      "value": 1,
+      "unit": "partitions",
+      "scope": "source_contrast",
+      "comparator_or_formula_role": "exact",
+      "rationale": "Ambiguous acoustic clustering stops rather than allowing an implementation-selected partition.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "minimum_events_per_source": {
+      "value": 2,
+      "unit": "eligible_events",
+      "scope": "event_catalog",
+      "comparator_or_formula_role": "greater_than_or_equal",
+      "rationale": "One event cannot establish within-source mechanism stability.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "maximum_frozen_events_per_source": {
+      "value": 3,
+      "unit": "events",
+      "scope": "event_catalog",
+      "comparator_or_formula_role": "less_than_or_equal",
+      "rationale": "Two development events plus one untouched confirmation event bound review cost.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "development_event_ordinals": {
+      "value": [
+        1,
+        2
+      ],
+      "unit": "mechanism_blind_event_ordinals",
+      "scope": "development_cross_product",
+      "comparator_or_formula_role": "exact_partition",
+      "rationale": "The first two eligible non-overlapping events are available to development without touching confirmation.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "confirmation_event_ordinal": {
+      "value": 3,
+      "unit": "mechanism_blind_event_ordinal",
+      "scope": "within_source_confirmation",
+      "comparator_or_formula_role": "exact_when_present",
+      "rationale": "The third eligible event remains untouched until the family and thresholds freeze.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "golden_event_ordinal": {
+      "value": 1,
+      "unit": "mechanism_blind_event_ordinal",
+      "scope": "preregistered_golden_path",
+      "comparator_or_formula_role": "exact_if_eligible",
+      "rationale": "Pins taste review before event features or candidate output can influence selection.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "mask_crossfade_divisor": {
+      "value": 8,
+      "unit": "region_fraction_denominator",
+      "scope": "attack_body_masks",
+      "comparator_or_formula_role": "round_min_region_length_divided_by_value",
+      "rationale": "Scales an equal-power transition to event anatomy rather than a fixed source constant.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "mask_crossfade_endpoint_offset": {
+      "value": 1,
+      "unit": "frame_index_offset",
+      "scope": "attack_body_masks",
+      "comparator_or_formula_role": "theta_index_and_denominator_guard",
+      "rationale": "Keeps the finite sampled transition away from exact zero and pi-over-two endpoints while preserving symmetric equal-power weights.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f1_masked_energy_allocation_multiplier": {
+      "value": 2,
+      "unit": "dimensionless_K",
+      "scope": "F1_masked_resolver",
+      "comparator_or_formula_role": "energy_allocation_multiplier_not_measured_ratio_target",
+      "rationale": "Creates one preregistered attack-emphasis allocation while full-event energy remains conserved; it does not claim the crossfaded or disjoint measured attack/body ratio doubles.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f1_body_energy_retention_min": {
+      "value": 0.5,
+      "unit": "source_body_energy_ratio",
+      "scope": "F1",
+      "comparator_or_formula_role": "greater_than_or_equal",
+      "rationale": "Rejects detached-click body collapse.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "floating_comparison_epsilon_multiplier": {
+      "value": 64,
+      "unit": "machine_epsilon_multiples",
+      "scope": "F1_ratio_and_F2_max_reconstruction",
+      "comparator_or_formula_role": "numerical_only_tolerance",
+      "rationale": "Allows representational rounding but not musical threshold repair.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f2_minimum_split_separation_bins": {
+      "value": 2,
+      "unit": "dft_bins",
+      "scope": "F2",
+      "comparator_or_formula_role": "greater_than_or_equal",
+      "rationale": "Rejects ill-conditioned adjacent split estimates.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f2_attack_spectrum_quantiles": {
+      "value": [
+        0.25,
+        0.75
+      ],
+      "unit": "cumulative_attack_power_fraction",
+      "scope": "F2",
+      "comparator_or_formula_role": "first_crossing_f25_and_f75",
+      "rationale": "Source-adaptive quartiles divide attack power without filename or family constants.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f2_band_trust_lookbehind_ratio": {
+      "value": 4,
+      "unit": "mean_square_ratio",
+      "scope": "F2",
+      "comparator_or_formula_role": "attack_and_body_strictly_above_lookbehind_times_value",
+      "rationale": "Only source-supported bands may receive force shaping.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f2_required_trusted_bands": {
+      "value": 2,
+      "unit": "bands",
+      "scope": "F2",
+      "comparator_or_formula_role": "greater_than_or_equal",
+      "rationale": "Prevents a one-band gain change from posing as multiband impact shaping.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f2_preflight_sample_rates_hz": {
+      "value": [
+        44100,
+        48000,
+        96000
+      ],
+      "unit": "hertz",
+      "scope": "F2_filter_bank_preflight",
+      "comparator_or_formula_role": "exact_test_set",
+      "rationale": "Covers admitted native rate, common runtime rate, and a higher-rate reconstruction case.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f2_preflight_frame_count": {
+      "value": 1024,
+      "unit": "mono_frames",
+      "scope": "F2_filter_bank_preflight",
+      "comparator_or_formula_role": "exact_for_each_signal_and_rate",
+      "rationale": "Provides stable filter state coverage while keeping the algebraic reconstruction test bounded.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f2_preflight_impulse": {
+      "value": {
+        "frame": 256,
+        "amplitude": 0.8
+      },
+      "unit": "frame_and_normalized_sample",
+      "scope": "F2_filter_bank_preflight",
+      "comparator_or_formula_role": "exact_impulse",
+      "rationale": "Tests a non-clipping isolated event after zero-state warm-up.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f2_preflight_dc_amplitude": {
+      "value": 0.21,
+      "unit": "normalized_sample",
+      "scope": "F2_filter_bank_preflight",
+      "comparator_or_formula_role": "exact_constant_sequence",
+      "rationale": "Checks complementary reconstruction for a persistent low-frequency boundary case.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f2_preflight_noise_lcg": {
+      "value": {
+        "seed_u64": "7",
+        "multiplier_u64": "6364136223846793005",
+        "addend_u64": "1",
+        "output": "upper_32_bits_divided_by_u32_max_mapped_to_minus1_plus1",
+        "gain": 0.35
+      },
+      "unit": "unsigned_wrapping_LCG_and_normalized_sample",
+      "scope": "F2_filter_bank_preflight",
+      "comparator_or_formula_role": "exact_deterministic_noise",
+      "rationale": "Exercises broadband state updates reproducibly without a dependency-specific random generator.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f2_preflight_bounded_tones": {
+      "value": [
+        {
+          "amplitude": 0.31,
+          "frequency_hz": 430
+        },
+        {
+          "amplitude": 0.17,
+          "frequency_hz": 3700
+        }
+      ],
+      "unit": "normalized_sample_and_hertz",
+      "scope": "F2_filter_bank_preflight",
+      "comparator_or_formula_role": "sum_of_zero_phase_sines",
+      "rationale": "Exercises separated low/mid attack content below clipping at every preflight rate.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f2_preflight_cutoffs_hz": {
+      "value": [
+        900,
+        5500
+      ],
+      "unit": "hertz",
+      "scope": "F2_reconstruction_only_preflight",
+      "comparator_or_formula_role": "exact_low_and_mid_split",
+      "rationale": "Uses one valid fixed bank solely to falsify reconstruction, never to resolve a source policy.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f2_quantile_golden": {
+      "value": {
+        "sample_rate_hz": 48000,
+        "frame_count": 128,
+        "tone_bins": [
+          8,
+          24
+        ],
+        "tone_amplitude_each": 0.25,
+        "expected_f25_bin": 8,
+        "expected_f75_bin": 24
+      },
+      "unit": "mono_native_rate_frames_DFT_bins_normalized_sample",
+      "scope": "F2_split_estimator_preflight",
+      "comparator_or_formula_role": "exact_known_bin_periodic_Hann_golden",
+      "rationale": "Two separated bin-centred cosines produce non-overlapping analytic Hann 1:4:1 power lobes, fixing both cumulative quartile crossings independently of source data.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f2_reconstruction_rms_tolerance": {
+      "value": 1e-06,
+      "unit": "normalized_rms",
+      "scope": "F2_filter_bank_preflight_and_internal_event_reconstruction",
+      "comparator_or_formula_role": "less_than_or_equal",
+      "rationale": "Numerical internal complementary-reconstruction bound; product output outside the affected event is an exact source copy and this value cannot establish audible force.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_v2_attack_up_ms": {
+      "value": 1,
+      "unit": "milliseconds_63_2_percent_time_constant",
+      "scope": "F3_v2_attack_controller",
+      "comparator_or_formula_role": "exact_rising_smoother_tau",
+      "rationale": "Lets attack contrast engage immediately while remaining causal.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_v2_attack_down_ms": {
+      "value": 8,
+      "unit": "milliseconds_63_2_percent_time_constant",
+      "scope": "F3_v2_attack_controller",
+      "comparator_or_formula_role": "exact_falling_smoother_tau",
+      "rationale": "Carries attack contrast briefly into the physical strike without adding a duplicate onset.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_v2_body_up_ms": {
+      "value": 8,
+      "unit": "milliseconds_63_2_percent_time_constant",
+      "scope": "F3_v2_body_controller",
+      "comparator_or_formula_role": "exact_rising_smoother_tau",
+      "rationale": "Lets body contrast arrive behind the onset instead of becoming a second hit.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_v2_body_down_ms": {
+      "value": 20,
+      "unit": "milliseconds_63_2_percent_time_constant",
+      "scope": "F3_v2_body_controller",
+      "comparator_or_formula_role": "exact_falling_smoother_tau",
+      "rationale": "Retains body continuity through a short percussive decay.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_v2_branch_scale": {
+      "value": 1,
+      "unit": "linear_gain",
+      "scope": "F3_v2_both_residual_branches",
+      "comparator_or_formula_role": "exact_no_target_no_caller_knob",
+      "rationale": "The hypothesis is the causal source-derived contrast trajectory itself rather than another fitted gain target.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_v2_output_factor_range": {
+      "value": [
+        1,
+        2
+      ],
+      "unit": "multiplicative_sample_factor",
+      "scope": "F3_v2_affected_support",
+      "comparator_or_formula_role": "inclusive_range",
+      "rationale": "Pins polarity-preserving bounded reinforcement without waveshaping or transposition.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_v2_branch_contribution_min": {
+      "value": 0.05,
+      "unit": "weighted_delta_rms_over_weighted_source_rms",
+      "scope": "F3_v2_each_branch",
+      "comparator_or_formula_role": "greater_than_or_equal",
+      "rationale": "Rejects a nominal controller branch that is numerically present but mechanically negligible.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_v2_preflight_sample_rates_hz": {
+      "value": [
+        44100,
+        48000,
+        96000
+      ],
+      "unit": "hertz",
+      "scope": "F3_v2_synthetic_preflight",
+      "comparator_or_formula_role": "exact_test_set",
+      "rationale": "Covers admitted, runtime-common, and high-rate causal envelope behavior before source access.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_v2_preflight_alignment_block_frames": {
+      "value": 64,
+      "unit": "frames",
+      "scope": "F3_v2_synthetic_preflight",
+      "comparator_or_formula_role": "M64_rounding_multiple",
+      "rationale": "Makes all synthetic anatomy boundaries carrier-phase aligned and deterministic at each rate.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_v2_preflight_duration_ms": {
+      "value": 96,
+      "unit": "milliseconds_before_M64_rounding",
+      "scope": "F3_v2_synthetic_preflight",
+      "comparator_or_formula_role": "exact_duration",
+      "rationale": "Provides complete lookbehind, attack, body, and post-event context in one bounded synthetic probe.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_v2_preflight_onset_ms": {
+      "value": 24,
+      "unit": "milliseconds_before_M64_rounding",
+      "scope": "F3_v2_synthetic_preflight",
+      "comparator_or_formula_role": "exact_onset",
+      "rationale": "Supplies more than one complete R20 history before the synthetic onset.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_v2_preflight_high_duration_ms": {
+      "value": 4,
+      "unit": "milliseconds_before_M64_rounding",
+      "scope": "F3_v2_step_body_probe",
+      "comparator_or_formula_role": "exact_high_plateau_duration",
+      "rationale": "Creates an attack-to-body contrast transition that is shorter than the body controller rise.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_v2_preflight_attack_duration_ms": {
+      "value": 8,
+      "unit": "milliseconds_before_M64_rounding",
+      "scope": "F3_v2_synthetic_preflight",
+      "comparator_or_formula_role": "exact_attack_region_duration",
+      "rationale": "Matches the preregistered attack-scale envelope while leaving a separate body region.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_v2_preflight_body_duration_ms": {
+      "value": 48,
+      "unit": "milliseconds_before_M64_rounding",
+      "scope": "F3_v2_synthetic_preflight",
+      "comparator_or_formula_role": "exact_onset_relative_body_end",
+      "rationale": "Provides enough body duration for both controller branches and Q falsifiers.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_v2_preflight_constant_amplitude": {
+      "value": 0.25,
+      "unit": "normalized_sample",
+      "scope": "F3_v2_constant_quadrature_probe",
+      "comparator_or_formula_role": "exact",
+      "rationale": "Tests that a constant-amplitude carrier cannot fabricate dynamic contrast.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_v2_preflight_step_amplitudes": {
+      "value": [
+        0.03125,
+        0.375,
+        0.1875,
+        0.03125
+      ],
+      "unit": "normalized_sample_pre_high_body_post",
+      "scope": "F3_v2_step_body_probe",
+      "comparator_or_formula_role": "exact_piecewise_amplitudes",
+      "rationale": "Creates a bounded attack, a lower body, and quiet surrounding context without clipping after reinforcement.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_v2_preflight_low_carrier_cycles_per_sample": {
+      "value": 0.015625,
+      "unit": "cycles_per_sample",
+      "scope": "F3_v2_quadrature_probes",
+      "comparator_or_formula_role": "exact_one_over_64",
+      "rationale": "Provides phase-safe constant instantaneous power on the 64-frame alignment grid.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_v2_preflight_high_carrier_cycles_per_sample": {
+      "value": 0.125,
+      "unit": "cycles_per_sample",
+      "scope": "F3_v2_carrier_invariance_probe",
+      "comparator_or_formula_role": "exact_one_over_8",
+      "rationale": "Falsifies static carrier-frequency EQ dependence while preserving the amplitude envelope.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_v2_preflight_amplitude_scale": {
+      "value": 0.5,
+      "unit": "linear_amplitude_ratio",
+      "scope": "F3_v2_scale_equivariance_probe",
+      "comparator_or_formula_role": "exact",
+      "rationale": "Falsifies absolute-level dependence while keeping the fixed LSB subdominant.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_v2_preflight_pcm_valid_bits": {
+      "value": 16,
+      "unit": "signed_PCM_valid_bits",
+      "scope": "F3_v2_synthetic_preflight",
+      "comparator_or_formula_role": "input_lsb_equals_two_power_minus_15",
+      "rationale": "Pins the synthetic quantization provenance independently of any source registry entry.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_v2_preflight_input_lsb": {
+      "value": 3.0517578125e-05,
+      "unit": "normalized_sample",
+      "scope": "F3_v2_synthetic_preflight",
+      "comparator_or_formula_role": "exact_two_power_minus_15",
+      "rationale": "Makes every synthetic signal-floor comparison exact and reproducible.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_source_response_preflight_q_goldens": {
+      "value": {
+        "44100": [
+          2,
+          9,
+          3,
+          8,
+          4,
+          8,
+          2,
+          4
+        ],
+        "48000": [
+          2,
+          9,
+          3,
+          7,
+          4,
+          8,
+          2,
+          3
+        ],
+        "96000": [
+          2,
+          9,
+          3,
+          7,
+          4,
+          8,
+          2,
+          3
+        ]
+      },
+      "unit": "ordered_u8_controller_response_codes",
+      "scope": "F3_v2_source_response_preflight",
+      "comparator_or_formula_role": "exact_within_rate_golden_and_cross_rate_nondiversity_evidence",
+      "rationale": "Freezes the source-independent controller-response codes without DSP retuning. The one-bin 44.1-kHz differences arise from M64 alignment duration and are below the preregistered two-bin diversity separation, so sample-rate drift cannot earn source diversity or hardness.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "control_gain_db": {
+      "value": 3,
+      "unit": "decibels",
+      "scope": "gain_and_brightness_controls",
+      "comparator_or_formula_role": "linear_gain_10_power_db_over_20",
+      "rationale": "Audible but bounded loudness/brightness confound.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "control_global_rate_ratio": {
+      "value": [
+        4,
+        5
+      ],
+      "unit": "exact_rational_output_over_input_rate",
+      "scope": "global_rate_control",
+      "comparator_or_formula_role": "exact_four_fifths",
+      "rationale": "Creates an unmistakably lower/slower confound without topology tuning.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "control_delay_ms": {
+      "value": 25,
+      "unit": "milliseconds",
+      "scope": "delayed_duplicate_control",
+      "comparator_or_formula_role": "exact_delay",
+      "rationale": "Places the duplicate outside the fused-composite window as an audible flam.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "control_duplicate_gain_db": {
+      "value": -6,
+      "unit": "decibels",
+      "scope": "delayed_duplicate_control",
+      "comparator_or_formula_role": "duplicate_linear_gain",
+      "rationale": "Makes the duplicate audible without matching the original hit level.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "control_body_attenuation_db": {
+      "value": -12,
+      "unit": "decibels",
+      "scope": "detached_click_control",
+      "comparator_or_formula_role": "body_and_tail_linear_gain",
+      "rationale": "Creates a clear click-without-body confound for reviewer sanity.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "control_distortion_drive": {
+      "value": 2,
+      "unit": "dimensionless",
+      "scope": "distortion_only_control",
+      "comparator_or_formula_role": "exact_tanh_drive",
+      "rationale": "Creates the preregistered static-dirt confound without borrowing the source-adaptive F3 resolver.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "matcher_ceiling_dbfs": {
+      "value": -1,
+      "unit": "decibels_full_scale",
+      "scope": "event_train_matcher",
+      "comparator_or_formula_role": "common_attenuation_ceiling",
+      "rationale": "Maintains deterministic headroom without limiting or boost.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "output_peak_absolute_max": {
+      "value": 1.0,
+      "unit": "normalized_full_scale",
+      "scope": "all_candidate_and_control_output",
+      "comparator_or_formula_role": "absolute_peak_strictly_less_than",
+      "rationale": "Rejects full-scale contact or floating-point over-range before review without adding a limiter.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "train_event_maximum_ms": {
+      "value": 500,
+      "unit": "milliseconds",
+      "scope": "review_train",
+      "comparator_or_formula_role": "less_than_or_equal",
+      "rationale": "Carries every anatomy-valid event through its full onset-relative tail limit without truncation.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "train_duration_ms": {
+      "value": 2300,
+      "unit": "milliseconds",
+      "scope": "review_train",
+      "comparator_or_formula_role": "exact",
+      "rationale": "Contains four 550-millisecond-spaced complete hits plus verified terminal silence.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "train_event_count": {
+      "value": 4,
+      "unit": "event_instances",
+      "scope": "review_train",
+      "comparator_or_formula_role": "exact",
+      "rationale": "Provides repeated judgment while remaining within one bounded review pair.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "train_onsets_ms": {
+      "value": [
+        50,
+        600,
+        1150,
+        1700
+      ],
+      "unit": "milliseconds",
+      "scope": "review_train",
+      "comparator_or_formula_role": "exact",
+      "rationale": "Provides repeated judgment at fixed 550-millisecond spacing while preserving each possible 500-millisecond event.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "train_event_complete_by_ms": {
+      "value": 2200,
+      "unit": "milliseconds",
+      "scope": "review_train",
+      "comparator_or_formula_role": "less_than_or_equal",
+      "rationale": "Allows the final onset its full 500-millisecond event and still reserves terminal silence.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "train_terminal_silence_ms": {
+      "value": 100,
+      "unit": "milliseconds",
+      "scope": "review_train",
+      "comparator_or_formula_role": "greater_than_or_equal_minimum",
+      "rationale": "Makes train boundaries unambiguous while allowing an event shorter than its maximum reservation.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "pair_inter_train_silence_ms": {
+      "value": 250,
+      "unit": "milliseconds",
+      "scope": "A_B_review_pair",
+      "comparator_or_formula_role": "exact",
+      "rationale": "Separates two trains without exhausting short-term auditory memory.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "pair_duration_ms": {
+      "value": 4850,
+      "unit": "milliseconds",
+      "scope": "A_B_review_pair",
+      "comparator_or_formula_role": "exact",
+      "rationale": "Two 2.30-second trains plus 250 milliseconds silence remain below the default ten-second human-playback bound.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "control_train_event_maximum_ms": {
+      "value": 650,
+      "unit": "milliseconds",
+      "scope": "false_positive_control_review_train",
+      "comparator_or_formula_role": "less_than_or_equal",
+      "rationale": "Contains the worst frozen 4/5-rate expansion of a 500-millisecond event and the delayed-duplicate extension without truncation.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "control_train_duration_ms": {
+      "value": 2900,
+      "unit": "milliseconds",
+      "scope": "false_positive_control_review_train",
+      "comparator_or_formula_role": "exact",
+      "rationale": "Contains four 700-millisecond-spaced control events plus at least 100 milliseconds terminal silence.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "control_train_onsets_ms": {
+      "value": [
+        50,
+        750,
+        1450,
+        2150
+      ],
+      "unit": "milliseconds",
+      "scope": "false_positive_control_review_train",
+      "comparator_or_formula_role": "exact",
+      "rationale": "Prevents the longest rate-expanded control event from overlapping its next repetition.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "control_train_event_complete_by_ms": {
+      "value": 2800,
+      "unit": "milliseconds",
+      "scope": "false_positive_control_review_train",
+      "comparator_or_formula_role": "less_than_or_equal",
+      "rationale": "Reserves the full 650-millisecond maximum after the final control onset.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "control_train_terminal_silence_ms": {
+      "value": 100,
+      "unit": "milliseconds",
+      "scope": "false_positive_control_review_train",
+      "comparator_or_formula_role": "greater_than_or_equal_minimum",
+      "rationale": "Separates complete control trains unambiguously.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "control_pair_duration_ms": {
+      "value": 6050,
+      "unit": "milliseconds",
+      "scope": "false_positive_control_A_B_pair",
+      "comparator_or_formula_role": "exact",
+      "rationale": "Two 2.90-second control trains plus the common 250-millisecond inter-train silence remain below ten seconds.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "near_identity_delta_rms_min": {
+      "value": 0.05,
+      "unit": "dimensionless_ratio_or_unit_interval_controller_resolution",
+      "scope": "candidate_reject_screen_and_F3_source_response_quantization",
+      "comparator_or_formula_role": "greater_than_or_equal_candidate_delta_and_exact_F3_quantization_divisor",
+      "rationale": "Rejects candidates too close to source and is reused as the 0.05 numerical anti-collapse resolution for F3 controller-response identity. This reuse is not a perceptual hardness threshold and cannot award force.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "identity_correlation_min": {
+      "value": 0.8,
+      "unit": "normalized_waveform_correlation",
+      "scope": "candidate_reject_screen",
+      "comparator_or_formula_role": "greater_than_or_equal",
+      "rationale": "Rejects transformations that erase hit identity.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "attack_spectral_band_count": {
+      "value": 24,
+      "unit": "log_frequency_bands",
+      "scope": "attack_identity_screen",
+      "comparator_or_formula_role": "exact",
+      "rationale": "Provides detailed but bounded source/candidate attack-shape comparison.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "attack_spectral_cosine_min": {
+      "value": 0.75,
+      "unit": "cosine_similarity",
+      "scope": "attack_identity_screen",
+      "comparator_or_formula_role": "greater_than_or_equal",
+      "rationale": "Rejects detached or unrelated attack spectra while permitting shaping.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "body_energy_ratio_range": {
+      "value": [
+        0.5,
+        2.0
+      ],
+      "unit": "candidate_over_source_energy",
+      "scope": "raw_and_matched_body_screen",
+      "comparator_or_formula_role": "inclusive_range",
+      "rationale": "Rejects body collapse and body-dominant masking in both evidence views.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "gain_only_fit_residual_min": {
+      "value": 0.01,
+      "unit": "normalized_rms_residual",
+      "scope": "confound_reject_screen",
+      "comparator_or_formula_role": "greater_than_or_equal",
+      "rationale": "Rejects a candidate explained almost entirely by scalar gain.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "static_eq_fit_residual_min": {
+      "value": 0.03,
+      "unit": "normalized_rms_residual",
+      "scope": "confound_reject_screen",
+      "comparator_or_formula_role": "greater_than_or_equal",
+      "rationale": "Rejects a candidate explained by static exact-band EQ alone.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "static_distortion_fit_residual_min": {
+      "value": 0.03,
+      "unit": "normalized_rms_residual",
+      "scope": "confound_reject_screen",
+      "comparator_or_formula_role": "greater_than_or_equal",
+      "rationale": "Rejects a candidate explained by memoryless odd distortion alone.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_source_response_field_count": {
+      "value": 8,
+      "unit": "ordered_controller_summary_fields",
+      "scope": "riotbox.f3_source_response_diversity.v1",
+      "comparator_or_formula_role": "exact_raw_and_quantized_vector_length",
+      "rationale": "Pins mean and maximum for each of a0, b0, attack state, and body state without importing event length or mask shape.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_source_response_quantized_max": {
+      "value": 20,
+      "unit": "inclusive_u8_code",
+      "scope": "riotbox.f3_source_response_diversity.v1",
+      "comparator_or_formula_role": "floor_one_over_near_identity_resolution_plus_one_half",
+      "rationale": "The maximum is derived from unit-interval controllers and the reused 0.05 numerical resolution; it is not a hardness scale.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "f3_source_response_minimum_quantized_component_distance": {
+      "value": 2,
+      "unit": "quantized_controller_bins",
+      "scope": "F3_actionable_diversity_pair",
+      "comparator_or_formula_role": "maximum_absolute_component_distance_greater_than_or_equal",
+      "rationale": "Requires separation beyond one complete 0.05 quantization-bin width in at least one fixed-horizon controller summary, so a tiny boundary crossing cannot satisfy F3 diversity. Round-nearest code distance two does not claim 0.10 raw separation; this remains reject-only and is not a perceptual hardness threshold.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "minimum_actionable_diversity_hashes_per_family": {
+      "value": 2,
+      "unit": "distinct_family_typed_actionable_identity_hashes",
+      "scope": "complete_four_by_two_development_set_per_family",
+      "comparator_or_formula_role": "greater_than_or_equal",
+      "rationale": "Rejects a family whose source-adaptive policy or typed source-response action collapses across the whole legal development set.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "minimum_clusters_with_distinct_actionable_identity_sets": {
+      "value": 2,
+      "unit": "feature_clusters",
+      "scope": "anti_hardcoding",
+      "comparator_or_formula_role": "greater_than_or_equal_when_declared_causal_inputs_differ",
+      "rationale": "Requires acoustic contrast to propagate into family-typed actionable identity diversity without demanding impossible within-cluster variation.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "boundary_discontinuity_neighborhood_ms": {
+      "value": 1,
+      "unit": "milliseconds_per_side",
+      "scope": "processing_boundary_rejector",
+      "comparator_or_formula_role": "inclusive_local_delta_step_context_excluding_boundary",
+      "rationale": "Compares an edit boundary with its immediate processed neighborhood without judging the physical source onset.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "maximum_review_ready_generations_per_family": {
+      "value": 2,
+      "unit": "generations",
+      "scope": "human_review_stop_rule",
+      "comparator_or_formula_role": "less_than_or_equal",
+      "rationale": "Prevents listener fatigue from repeated indistinguishable candidates.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    },
+    "maximum_structural_revisions_per_family": {
+      "value": 1,
+      "unit": "revisions",
+      "scope": "stage_a_family",
+      "comparator_or_formula_role": "less_than_or_equal",
+      "rationale": "Forces a versioned hypothesis change instead of scalar tuning after failure.",
+      "change_rule": "stage_a_protocol_v3_plus_relevant_component_bump_plus_decision_log_before_recompute"
+    }
+  },
+  "prequalification": {
+    "purpose": "Mechanism-blind rejection and partitioning only; no hardness score and no algorithm-family selection.",
+    "input": {
+      "audio": "registered_PCM_at_native_sample_rate_without_analysis_resampling",
+      "time_representation": "integer_frames_plus_derived_seconds",
+      "supported_channels_ref": "numeric_passports.input_channel_counts",
+      "supported_sample_rate_ref": "numeric_passports.input_sample_rate_range_hz",
+      "analysis_signal": "For each channel c, mu_c is the authoritative binary64 result of per_channel_dc_mean_reduction over every sample of the complete registered source; analysis-only x_prime[c,n]=x[c,n]-mu_c, instantaneous phase-safe power p[n]=(1/C)*sum_c(x_prime[c,n]^2), and instantaneous phase-safe magnitude q[n]=sqrt(p[n]). STFT and Welch sum per-channel powers of Hann-windowed x_prime and never mono-sum channels.",
+      "renderer_signal": "untouched_registered_PCM",
+      "channel_policy": "identical_coefficients_and_timing_per_channel_no_mono_sum",
+      "registered_format_binding": {
+        "inherited_v1_without_source_format": "The source_holdout_rotation.v1 inherited development-entry contract is exactly sample_rate_hz=48000, channels=2, RIFF/WAVE format_tag=1 signed little-endian integer PCM16, container_bits=16, valid_bits=16, block_align=4, and input_lsb=2^-15.",
+        "explicit_v2_source_format": "Require compression_type='NONE', channels in input_channel_counts, native sample_rate_hz in input_sample_rate_range_hz, and sample_width_bits exactly 16 or 24. Map width 16 to RIFF/WAVE format_tag=1 signed little-endian integer PCM16 with container_bits=valid_bits=16 and input_lsb=2^-15; map width 24 identically with container_bits=valid_bits=24 and input_lsb=2^-23.",
+        "qualification_binder": "When source qualification becomes allowed, parse the RIFF/WAVE fmt chunk before PCM decoding and require exact format_tag=1, expected sample rate, expected channels, bits_per_sample=valid_bits, and block_align=channels*(container_bits/8). Reject WAVE_FORMAT_EXTENSIBLE, IEEE float, big-endian RIFX, compression, padding-bit, or metadata/header mismatch without fallback.",
+        "typed_policy": "The resulting F3PcmEncoding and input_lsb are derived only from the pinned registry entry plus verified header and are frozen into every event/policy record; caller override is impossible."
+      },
+      "input_lsb_provenance": "Use registered_format_binding exactly. Only verified signed RIFF/WAVE PCM16 format-tag 1 with valid_bits=16 and input_lsb=2^-15, or verified signed RIFF/WAVE PCM24 format-tag 1 with valid_bits=24 and input_lsb=2^-23, is admitted. Container width alone is insufficient. Missing, mismatched, nonfinite, or nonpositive LSB provenance refuses and is never a caller-tunable knob.",
+      "epsilon_ref": "numeric_passports.analysis_epsilon_lsb_squared",
+      "fail_closed_if": [
+        "empty_input",
+        "unsupported_channel_count",
+        "unsupported_sample_rate",
+        "nonfinite_analysis",
+        "whole_source_peak_not_strictly_greater_than_minimum_signal_peak_lsb_times_input_lsb"
+      ],
+      "per_channel_dc_mean_reduction": {
+        "algorithm_id": "signed_pcm_code_sum_i128_exact_rational_to_ieee754_binary64_round_ties_to_even_v1",
+        "decode": "Decode each verified PCM16 or PCM24 sample to its exact signed integer code; do not convert individual samples to floating point before accumulation.",
+        "accumulation": "For each channel in channel order, initialize signed i128 S_c=0 and checked-add codes in strictly ascending frame index. Any i128 overflow is a typed refusal.",
+        "exact_rational": "mu_c_exact=S_c/(frame_count*2^(valid_bits-1))",
+        "binary64_rounding": "Convert mu_c_exact exactly once to finite IEEE-754 binary64 using roundTiesToEven; no intermediate binary floating operation, reassociation, pairwise or compensated sum, extended precision, fused operation, or implementation-native mean is allowed. An exact zero numerator serializes canonical positive zero.",
+        "serialization": "Serialize the resulting binary64 bit pattern as exactly 16 lowercase big-endian hexadecimal characters per channel in verified channel order.",
+        "golden": {
+          "golden_id": "pcm24_stereo_cancellation_7_frames_v1",
+          "pcm_encoding": "signed_little_endian_integer_pcm24",
+          "valid_bits": 24,
+          "frame_count": 7,
+          "channel_codes_in_frame_order": [
+            [
+              8388607,
+              -8388608,
+              8388607,
+              -8388608,
+              3,
+              -2,
+              2
+            ],
+            [
+              8388607,
+              -8388608,
+              8388607,
+              -8388608,
+              3,
+              -2,
+              0
+            ]
+          ],
+          "exact_signed_code_sums": [
+            1,
+            -1
+          ],
+          "per_channel_dc_mean_f64_bits_be_hex": [
+            "3e52492492492492",
+            "be52492492492492"
+          ]
+        },
+        "failure": "typed_refusal_no_source_analysis_no_event_catalog_no_fallback"
+      }
+    },
+    "impact_roles": {
+      "eligible": [
+        {
+          "role": "body_bearing_single_percussive",
+          "definition": "One resolved event-level onset with attack, physical body, and tail."
+        },
+        {
+          "role": "body_bearing_fused_composite_percussive",
+          "definition": "At least two source-native refined micropeaks fused inside composite_fusion_ms without an event restart."
+        }
+      ],
+      "refusal_reasons": [
+        "physical_onset_unresolved",
+        "multi_event_or_flam",
+        "slow_or_sustained",
+        "lookbehind_masked",
+        "attack_turnover_unresolved",
+        "body_unresolved",
+        "tail_unresolved",
+        "overlapped_event",
+        "insufficient_signal",
+        "unsupported_format",
+        "nonfinite_analysis"
+      ],
+      "ownership": "Eligible roles own only typed percussive_hard evaluation; role assignment never selects F1, F2, or F3."
+    },
+    "event_detector": {
+      "frame_conversion": {
+        "positive_duration": "For ms>0, N(ms)=max(1,floor(fs*ms/1000+frame_rounding_offset)).",
+        "signed_or_zero_offset": "O(ms)=sign(ms)*floor(fs*abs(ms)/1000+frame_rounding_offset), with sign(0)=0 and O(0)=0.",
+        "comparison_domain": "Convert every tolerance, NMS radius, fusion distance, search bound, and persistence duration to integer frames first; compare integer frame indices or deltas only."
+      },
+      "window": "For n=0..N-1 use periodic Hann w[n]=0.5-0.5*cos(2*pi*n/N); only complete windows are available.",
+      "hop": "detector_hop_ms",
+      "fft_size": "next_power_of_two_at_least_window_frames",
+      "frame_timestamp": "start_frame+floor(N/2)",
+      "bands_ref": "numeric_passports.analysis_band_edges_hz",
+      "band_membership": "A bin belongs iff lower_hz<=bin_center_hz<upper_hz; the top band alone also includes bin_center_hz exactly equal to 12000 Hz.",
+      "band_energy": "Sum per-channel squared DFT magnitudes divided by sum(window^2), with no inter-channel mono sum.",
+      "band_novelty": "u_b[k]=max(0,ln(E_b[k]+epsilon)-ln(E_b[k-detector_log_energy_lag_hops]+epsilon)); k indexes valid detector hops and detector_log_energy_lag_hops is exact.",
+      "combined_novelty": "N[k]=sqrt(mean_over_three_bands(u_b[k]^2))",
+      "smoothing": "The 3-hop median uses exactly k-1,k,k+1; an incomplete edge triplet is unavailable.",
+      "baseline": "Within the integer-frame plus_or_minus detector_baseline_radius_ms neighborhood excluding the integer-frame plus_or_minus detector_baseline_exclusion_ms neighborhood, use exactly the same set of valid complete-window hop indices for novelty median, MAD, and the broadband detector_local_rms_percentile pool; require detector_minimum_baseline_hops such hops.",
+      "order_statistics": "For sorted N values, an even-count median is the arithmetic mean of the two middle values; MAD uses that median. Percentile p uses sorted index floor(p*(count-1)).",
+      "threshold": "strict N > median + detector_mad_multiplier * mad_consistency_scale * MAD; when MAD=0 also strict N > median + detector_zero_mad_delta",
+      "broadband_guard": "Coarse RMS is unweighted DC-subtracted RMS over the same complete 8ms samples. It must be at least detector_coarse_rms_floor_ratio times the detector_local_rms_percentile RMS from the exact valid baseline-hop pool and at least minimum_signal_peak_lsb*input_lsb.",
+      "coarse_peak": "Earliest value on the local-maximum plateau over the inclusive plus_or_minus detector_peak_search_radius_ms radius.",
+      "nms": "Candidates whose anchor distance is strictly less than detector_nms_ms conflict; retain greater N, then earlier anchor on equality.",
+      "pre_nms_peaks_retained_for_composite_analysis": true,
+      "envelopes": "R1/R8/R20[n]=sqrt((1/W)*sum_{j=n-W+1..n}(q[j]^2))=sqrt((1/(C*W))*sum_{j,c}(x_prime[c,j]^2)) are standard phase-safe multichannel causal right-aligned RMS values over the full half-open sample interval [n-W+1,n+1), W=N(ms); unavailable until a complete W-frame window exists. This is not RMS of power and therefore does not use fourth-moment weighting."
+    },
+    "event_anatomy": {
+      "anchor_search": "Examine every integer frame s chronologically over inclusive [coarse_anchor-20ms,coarse_anchor+5ms].",
+      "baseline": "For each tested s independently, b_s=median(R1 over exact half-open [s-lookbehind_ms,s))+detector_mad_multiplier*mad_consistency_scale*MAD; require complete envelope windows.",
+      "local_peak": "For each tested s, peak_s=max R1 over inclusive [s,s+attack_peak_search_ms].",
+      "physical_onset": "Choose the earliest s whose peak_s is at least anatomy_peak_baseline_ratio*b_s and minimum_signal_peak_lsb*input_lsb and whose R1[s]>=b_s+onset_fraction_above_baseline*(peak_s-b_s) persists at s and the following N(onset_persistence_ms)-1 values. Freeze that s, b_s, and peak_s; if no tested s passes the complete baseline, peak, signal-floor, and persistence gate, refuse physical_onset_unresolved without claiming edge-only anatomy.",
+      "lookbehind_guard": "The frozen lookbehind contains no event onset and RMS_lookbehind/peak <= lookbehind_peak_ratio_max.",
+      "candidate_lookbehind": "f32-bit-identical source copy for F1, F2, and F3; F2 filter state may warm from lookbehind but filtered reconstruction is inserted only inside [physical_onset,body_end)",
+      "attack_peak": "Earliest frame attaining the maximum R1 from physical onset through onset plus attack_peak_search_ms.",
+      "attack_end": "After the earliest attack peak, choose the earliest R1 <= attack_turnover_fraction*attack_peak persisting at the tested frame and the following N(attack_turnover_persistence_ms)-1 values, with the complete persistence run ending at or before onset+N(attack_peak_search_ms); otherwise refuse.",
+      "body_floor": "max(body_baseline_multiplier*b,body_peak_fraction*attack_peak)",
+      "body_end": "After N(body_minimum_ms) from attack end, choose the first R8 below body_floor at the tested frame and following N(body_below_floor_ms)-1 values; body_end is the first frame of that qualifying run, which is evidence and excluded from body energy. Require the entire qualifying persistence run to finish at or before physical_onset+N(body_maximum_ms) and strictly before the next event lookbehind_start; otherwise refuse.",
+      "tail_floor": "max(tail_baseline_multiplier*b,tail_peak_fraction*attack_peak)",
+      "tail_end": "After N(tail_minimum_ms) from body end, choose the first R20 below tail_floor at the tested frame and following N(tail_below_floor_ms)-1 values; tail_end is the first frame of that qualifying run, which is evidence and excluded from tail energy. Require the entire qualifying persistence run to finish at or before physical_onset+N(tail_maximum_ms) and strictly before the next event lookbehind_start; otherwise refuse.",
+      "interval_convention": "All anatomy and energy intervals are half-open unless a search bound is explicitly declared inclusive.",
+      "fixed_diagnostics": "Half-open windows from numeric_passports.diagnostic_window_edges_ms, clipped to the event.",
+      "comparison_windows": "All candidate integrity and mechanism metrics use source-frozen windows; candidate-adaptive anatomy is diagnostic only."
+    },
+    "composite_policy": {
+      "fused_cluster": "Refined pre-NMS onsets separated by at most composite_fusion_ms form one cluster; at least two makes the fused-composite role.",
+      "separate_event": "After composite_fusion_ms, a refined onset is separate only when detector plus broadband guard independently pass and the preceding composite_fusion_ms contains at least event_valley_persistence_ms continuous R1 <= event_valley_peak_fraction*min(adjacent_peaks).",
+      "otherwise": "body_microtransient",
+      "prior_event_overlap": "A prior event qualifies only when body and tail resolve before the later event lookbehind; otherwise refuse overlapped_event.",
+      "candidate_requirement": "The selected frozen event must resolve exactly one corresponding candidate event-level cluster within integer-frame movement tolerances, and the candidate full-source event-level cluster count must be <= the source count. Increased novelty magnitude alone is not an added onset."
+    },
+    "rhythmic_location_proxy": {
+      "window": "source-frozen [onset,min(body_end,onset+rhythmic_proxy_window_ms)]",
+      "weight": "w[n]=max(0,R1[n]-b)^2",
+      "location": "first frame where cumulative weight reaches rhythmic_proxy_quantile",
+      "zero_weight": "undefined_and_event_refused",
+      "candidate_onset_movement": "absolute integer-frame delta <= N(candidate_onset_tolerance_ms)",
+      "candidate_proxy_movement": "absolute integer-frame delta <= N(candidate_rhythmic_proxy_tolerance_ms)",
+      "perceptual_claim": "not_a_PAT_or_P_centre_measure"
+    },
+    "source_contrast": {
+      "metadata_input_allowed": false,
+      "scope": "whole_registered_source",
+      "raw_features": [
+        "all_event_onset_density_per_second",
+        "median_inter_onset_interval_ms",
+        "population_inter_onset_interval_cv",
+        "low_mid_high_energy_fractions",
+        "median_attack_to_body_mean_power_ratio",
+        "median_resolved_event_duration_onset_to_tail_ms"
+      ],
+      "welch": "Only complete windows; periodic Hann 0.5-0.5*cos(2*pi*n/N), source_welch_window_ms with source_welch_hop_ms, timestamp start+floor(N/2), next-power-of-two zero padding, and per-channel squared magnitudes divided by sum(window^2) then summed in analysis_band_edges_hz with the detector's exact band-membership rule.",
+      "onset_sequence": "All IOIs and density use refined event-level physical onsets, never coarse or pre-NMS micropeaks.",
+      "articulation_energy": "Attack and body use per-channel mean power over their unequal-duration source-frozen half-open regions, not raw unequal-duration energy.",
+      "requirements": "At least source_minimum_onsets and source_minimum_resolved_body_events, positive finite total passband energy and body denominators; no imputation. CV=0 and individual band fraction=0 are valid.",
+      "bounded_map": "P(x,s)=2/pi*atan(x/s)",
+      "normalized_components": {
+        "density": "P(density,normalization_density_scale_per_second)",
+        "ioi_rate": "1-P(median_ioi,normalization_ioi_scale_ms)",
+        "irregularity": "P(population_cv,normalization_ioi_cv_scale)",
+        "attack_body_articulation": "0.5+atan(log2(attack_body_ratio))/pi",
+        "duration": "P(duration,normalization_duration_scale_ms)",
+        "spectrum": "Hellinger=sqrt(max(0,1-sum_b(sqrt(p_b*q_b))))"
+      },
+      "domains": {
+        "rate": "sqrt((delta_density^2+delta_ioi_rate^2)/2)",
+        "irregularity": "absolute_component_delta",
+        "spectrum": "Hellinger_distance",
+        "articulation": "absolute_component_delta",
+        "duration": "absolute_component_delta"
+      },
+      "overall_distance": "D=sqrt(sum_over_source_distance_domain_count(domain_delta^2)/source_distance_domain_count)",
+      "pair_classification": {
+        "distinct": "D >= source_distinct_distance_min and at least source_changed_domain_minimum_count domain deltas >= source_changed_domain_min_delta",
+        "similar": "D < source_distinct_distance_min",
+        "ambiguous": "D >= source_distinct_distance_min but too few changed domains"
+      },
+      "comparison_convention": "Domain deltas are absolute differences of normalized scalar values except the declared 2D RMS rate domain and Hellinger spectrum domain. Every comparison is inclusive as declared except explicitly strict detector and signal-energy guards.",
+      "partitioning": "For exactly positive_source_count sources enumerate all four_source_partition_count set partitions. A partition is valid iff every within-cluster pair is similar and every between-cluster pair is distinct. Require exactly valid_source_partition_count valid partition and at least minimum_source_clusters; otherwise stop and create a new version before expanding the legal corpus."
+    },
+    "event_ordinal_policy": {
+      "construction": "Build all eligible complete records, sort ascending by (physical_onset_frame,coarse_peak_frame), then freeze the first maximum_frozen_events_per_source non-overlapping complete [lookbehind_start,tail_end] windows, keeping the earlier record when windows overlap.",
+      "source_failure": "Fewer than minimum_events_per_source eligible frozen events fails the positive pack.",
+      "development_ordinals": [
+        1,
+        2
+      ],
+      "confirmation_ordinal": 3,
+      "confirmation_state": "untouched_until_family_and_threshold_freeze",
+      "confirmation_when_absent": "no_within_source_confirmation_claim_but_two_event_floor_may_still_pass",
+      "golden_case": {
+        "case_id": "oga_cinameng_can_be_so_beautiful",
+        "event_ordinal": 1,
+        "automatic_fallback": false,
+        "eligibility": "must_pass_identical_mechanism_blind_qualification"
+      }
+    }
+  },
+  "precandidate": {
+    "numeric_representation": {
+      "analysis_and_policy": "f64",
+      "render_output": "f32"
+    },
+    "energy_definitions": {
+      "region_energy": "E_R=sum_over_channels_and_region(x[c,n]^2), without division by channel count",
+      "region_mean_square": "MS_R=E_R/(channel_count*region_frame_count)",
+      "weighted_region_energy": "E_R=sum_c,n(x[c,n]^2*wR[n]), without division by channel count",
+      "weighted_region_mean_square": "MS_R=E_R/(channel_count*sum_n(wR[n]))"
+    },
+    "source_frozen_regions_only": true,
+    "qualification_wrapper": {
+      "single_evidence_path": "Only the versioned Stage-A qualification wrapper may serialize mechanical qualification, cross-product, listening-request, or promotion evidence. Public F1/F2/F3 render functions are unqualified diagnostic primitives even when they return finite audio.",
+      "required_bindings": [
+        "exact source-registry v3 path schema and raw SHA-256 pinned by Matrix v3",
+        "positive source case_id source_path source SHA-256 deterministic registered_format_binding verified RIFF/WAVE format-tag 1 signed PCM encoding valid_bits and derived input_lsb",
+        "frozen event-catalog artifact SHA-256 event identity ordinal impact role physical onset anatomy lookbehind and source-format identity",
+        "eligible body-bearing impact role owned by percussive_hard",
+        "supported channel count and native sample-rate range",
+        "exact family version and resolved feature-to-policy record",
+        "all family-specific preflight status and mechanical reject screens"
+      ],
+      "caller_knobs": "The wrapper derives event boundaries, lookbehind_frames, quantization_lsb, masks, features, and policy values from frozen Registry/Catalog evidence. A caller may select only the frozen source/event/family/view identity and cannot supply or override those values.",
+      "format_gate": "Require channels in input_channel_counts and native sample rate inside input_sample_rate_range_hz before family rendering.",
+      "output_gate": "After f32 rendering and before any qualified serialization, require finite non-silent output and strict abs_peak<output_peak_absolute_max plus every reject-only screen.",
+      "direct_renderer_boundary": "Direct renderer output has quality_proof=false, qualification_state=unqualified_diagnostic, cannot enter a blinded review pack, and cannot be named passed, qualified, survivor, promotion-bearing, or Stage-B-ready.",
+      "binding_failure": "typed_refusal_no_candidate_audio_no_fallback",
+      "authoritative_source_mean_binding": {
+        "field": "per_channel_dc_mean_f64_bits_be_hex",
+        "representation": "one_16_character_lowercase_f64_bit_pattern_per_verified_channel_in_channel_order",
+        "reduction_algorithm_id": "signed_pcm_code_sum_i128_exact_rational_to_ieee754_binary64_round_ties_to_even_v1",
+        "reduction_golden_id": "pcm24_stereo_cancellation_7_frames_v1",
+        "bound_identity": [
+          "protocol_raw_sha256",
+          "source_sha256",
+          "pcm_encoding",
+          "valid_bits",
+          "sample_rate_hz",
+          "channel_count",
+          "frame_count"
+        ],
+        "catalog_ownership": "bound_event_catalog_v2_carries_the_source_analysis_v2_bits_and_renderer_decodes_them_exactly",
+        "candidate_analysis": "subtract_the_same_source_frozen_means_never_candidate_local_means",
+        "decimal_diagnostic_policy": "optional_only_if_reencoding_matches_authoritative_bits_never_a_second_authority",
+        "failure": "typed_refusal_no_candidate_audio_no_fallback"
+      }
+    },
+    "attack_body_masks": {
+      "source_regions": "A=[physical_onset,attack_end) and B=[attack_end,body_end), with lenA and lenB measured in integer frames.",
+      "constraints": "wA and wB are nonnegative, wA+wB<=1, untouched remainder is 1-wA-wB, and both masks equal zero before physical onset and from body_end onward.",
+      "crossfade_frames": "m=max(1,floor(min(lenA,lenB)/mask_crossfade_divisor+0.5)).",
+      "attack_to_body_crossfade": "start=attack_end-floor(m/2); over half-open [start,start+m), i=0..m-1, theta_i=(pi/2)*(i+mask_crossfade_endpoint_offset)/(m+mask_crossfade_endpoint_offset), wA=cos(theta_i)^2 and wB=sin(theta_i)^2. wA=1 on [onset,start); wB=1 on [start+m,body_end-m).",
+      "body_end_fade": "Over half-open [body_end-m,body_end), reuse theta_i in forward order and set wB=cos(theta_i)^2; wA=0.",
+      "index_validation": "Every interval is half-open. Let xfade_end=start+m and body_fade_start=body_end-m; require start>=onset, xfade_end<=body_fade_start, body_fade_start>=attack_end, body_fade_start<body_end, and exact vector bounds; refuse inconsistent boundaries instead of clamping or shortening the frozen masks.",
+      "energies": "EA=sum(x^2*wA); EB=sum(x^2*wB)",
+      "frozen_signal_floor": "For R in {A,B}, require strict MS_R>(minimum_signal_peak_lsb*input_lsb)^2, equivalently E_R>channel_count*sum(wR)*(minimum_signal_peak_lsb*input_lsb)^2. input_lsb and lookbehind/anatomy identity come from the frozen registered event/source policy, never a free caller value.",
+      "refusal": "Refuse nonfinite EA/EB/MS_A/MS_B, nonpositive sum(wR), missing or mismatched LSB provenance, or either region failing the strict frozen_signal_floor.",
+      "ablation_rule": "All attack-only, body-only, and combined ablations reuse the combined candidate's resolved policy values."
+    },
+    "exact_complementary_three_band_analysis": {
+      "id": "riotbox.exact_complementary_three_band_analysis.v1",
+      "shared_consumers": [
+        "F2",
+        "static_eq_fit_all_families",
+        "dark_onepole_f25_v1",
+        "bright_exact_split_f75_v1"
+      ],
+      "split_estimation": "Use raw registered PCM, not whole-source-DC-subtracted analysis PCM, over the frozen half-open attack [physical_onset,attack_end). For each channel apply the exact periodic Hann, compute a direct real DFT, sum squared magnitudes across channels per bin without mono summing, and exclude DC and Nyquist. f25 and f75 are the first bins whose cumulative all-channel power reaches 0.25 and 0.75 of the included-bin total.",
+      "split_refusal": "Refuse missing, zero-total, or nonfinite power; split separation below f2_minimum_split_separation_bins; or either split outside [one_bin,Nyquist_minus_one_bin]. Never clamp.",
+      "state_warmup": "At frozen lookbehind_start set every per-channel L and residual-M pole state to +0.0, then run raw PCM sample-by-sample through lookbehind and the complete event.",
+      "filter_bank": "a(fc)=exp(-2*pi*fc/fs); L=(1-a25)*x+a25*Lprev; R1=x-L; M=(1-a75)*R1+a75*Mprev; H=x-L-M; therefore L+M+H=x apart from the frozen reconstruction tolerances.",
+      "cross_family_failure": "If this common split is unavailable or ill-conditioned, the event's static-EQ confound screen is undefined and rejects F1, F2, and F3 for that event. A required dark or bright control also becomes unavailable and fails control sanity. No family-specific substitute split is allowed.",
+      "version_binding": "Any split, DFT, state, filter, or failure-semantic change requires a protocol v3 and an exact_three_band_analysis component bump before recomputation."
+    },
+    "algorithm_families": [
+      {
+        "family": "F1",
+        "id": "f1_ab_energy_redistribution_v1",
+        "topology": "source_synchronous_multiplicative_attack_body_energy_redistribution",
+        "resolver": "K=f1_masked_energy_allocation_multiplier; gA^2=K*(EA+EB)/(K*EA+EB); gB^2=(EA+EB)/(K*EA+EB)",
+        "bounds": "gA in [1,sqrt(K)] and gB in [1/sqrt(K),1]; the resolver conserves the total full-event energy delta through the masks. K is an allocation multiplier, not a claim that a measured crossfaded or disjoint attack/body ratio becomes exactly K times source.",
+        "render_formula": "g[n]=sqrt((1-wA[n]-wB[n])+wA[n]*gA^2+wB[n]*gB^2); y[c,n]=x[c,n]*g[n]",
+        "outside_body": "bit_identical_dry_before_onset_and_from_body_end",
+        "ablations": {
+          "attack_only": "force_gB=1",
+          "body_only": "force_gA=1",
+          "combined": "resolved_gA_and_gB"
+        },
+        "family_falsifiers": [
+          "Affected-event energy conservation over all channels and exact source-frozen [physical_onset,body_end) must hold in f64 algebra. After f32 output, abs(E_candidate-E_source)<=floating_comparison_epsilon_multiplier*f32_epsilon*max(E_source,E_candidate); both affected-event energies already passed the strict signal floor; otherwise reject.",
+          "Using disjoint half-open source-frozen A=[onset,attack_end) and B=[attack_end,body_end), define each region's all-channel mean power and r=MS_A/MS_B. Refuse zero/nonfinite denominators. Let tol=floating_comparison_epsilon_multiplier*f64_epsilon*max(1,abs(r_source),abs(r_candidate)); require strict r_candidate>r_source+tol.",
+          "Using the same disjoint source-frozen B, candidate body energy must be at least f1_body_energy_retention_min times source body energy.",
+          "no_scalar_or_source_specific_retune"
+        ]
+      },
+      {
+        "family": "F2",
+        "id": "f2_exact_complementary_three_band_v1",
+        "topology": "source_adaptive_exact_complementary_residual_three_band_bank",
+        "analysis_component": "riotbox.exact_complementary_three_band_analysis.v1",
+        "trusted_band_rule": "For each band j, Aj and Bj are channel-summed masked energies while their mean-square divides by channel_count*sum(mask). Both attack and body mean-square must be strictly above max(f2_band_trust_lookbehind_ratio*per-band frozen-lookbehind mean-square,(minimum_signal_peak_lsb*input_lsb)^2); require at least f2_required_trusted_bands. input_lsb and lookbehind are frozen event/source provenance.",
+        "resolver": "Aj and Bj are channel-summed masked band energies without channel averaging; pj=Aj/sum_over_trusted(Aj); Kj=2-pj for trusted bands and Kj=1 for untrusted bands; apply the F1 conservation equations independently per trusted band.",
+        "render_formula": "Sum the three gained complementary bands with common source-frozen masks.",
+        "outside_body": "bit_identical_source_copy_before_physical_onset_and_from_body_end; filtered reconstruction is inserted only inside the frozen affected event",
+        "ablations": {
+          "attack_only": "all_band_gB_equal_1",
+          "body_only": "all_band_gA_equal_1",
+          "combined": "resolved_per_band_gA_and_gB"
+        },
+        "preflight": {
+          "required_before_any_source": true,
+          "signals": [
+            "impulse",
+            "dc",
+            "deterministic_noise",
+            "bounded_real_sequence"
+          ],
+          "sample_rates_ref": "numeric_passports.f2_preflight_sample_rates_hz",
+          "signal_definitions": "At each sample rate use mono f2_preflight_frame_count frames: f2_preflight_impulse; constant f2_preflight_dc_amplitude; wrapping-u64 f2_preflight_noise_lcg; and the sum of f2_preflight_bounded_tones. Use reconstruction-only cutoffs f2_preflight_cutoffs_hz and zero initial state.",
+          "normalized_reconstruction_formula": "sqrt(sum_over_all_frames((L+M+H-x)^2)/sum_over_all_frames(x^2))",
+          "normalized_reconstruction_rms": "less_than_or_equal_f2_reconstruction_rms_tolerance",
+          "maximum_reconstruction_error": "less_than_or_equal_floating_comparison_epsilon_multiplier*f32_epsilon*max(1,input_peak)",
+          "known_bin_quantile_golden": "Use raw, not DC-subtracted, mono x[n]=tone_amplitude_each*cos(2*pi*tone_bins[0]*n/frame_count)+tone_amplitude_each*cos(2*pi*tone_bins[1]*n/frame_count) from numeric_passports.f2_quantile_golden, then the exact periodic-Hann direct DFT with per-channel power summation must return its expected_f25_bin and expected_f75_bin. The separated analytic Hann power lobes have 1:4:1 weights.",
+          "failure": "freeze_and_reject_F2_before_source_processing"
+        }
+      },
+      {
+        "family": "F3",
+        "id": "f3_causal_envelope_contrast_dynamic_residual_v2",
+        "source_response_diversity_component": "riotbox.f3_source_response_diversity.v1",
+        "topology": "causal_source_envelope_contrast_parallel_dynamic_residual",
+        "predecessor_boundary": "f3_os4_onset_residual_v1 is immutable rejected history only and is never an active family, candidate, reference, safety control, or inherited parameter source. F3 v2 inherits no oversampling factor, taps, window, drive, residual target, or scale from F3 v1.",
+        "caller_knobs": "none",
+        "input_and_provenance": "Use frozen raw PCM x, event anatomy, masks, lookbehind, and the exact source-analysis-v2 per-channel whole-source DC mean f64 bit patterns produced only by signed_pcm_code_sum_i128_exact_rational_to_ieee754_binary64_round_ties_to_even_v1 plus registry encoding and valid-bits LSB binding. The renderer decodes those exact channel-ordered bits and never recomputes a source or candidate mean. Signed PCM16 means input_lsb=2^-15; signed PCM24 means input_lsb=2^-23. The resolved policy binds protocol, source, format, sample-rate, channel, and frame-count identity. Missing, malformed, nonfinite, reordered, mismatched, or recomputed mean evidence refuses with no candidate audio or fallback.",
+        "phase_safe_envelopes": "Conditional on the frozen offline means, anatomy, and masks: on source-mean-subtracted x_prime, p[n]=(1/C)*sum_c(x_prime[c,n]^2), q[n]=sqrt(p[n]), and R_t[n]=sqrt(mean(q^2)) over the complete causal right-aligned N(t)-frame window. N(t)=max(1,floor(fs*t/1000+frame_rounding_offset)). Require complete R20 at physical_onset. This is not an end-to-end streaming-causality claim.",
+        "source_floor": "For both frozen weighted A and B require strict MS_R>(minimum_signal_peak_lsb*input_lsb)^2. Let frozen anatomy baseline b remain in RMS units and F=max(b,minimum_signal_peak_lsb*input_lsb).",
+        "raw_contrast": "D(p,q)=max(p-q,0)/max(p,q,F), bounded [0,1]. a0[n]=sqrt(D(R1[n],R8[n])*D(R8[n],R20[n])); b0[n]=D(max(R8[n],R20[n]),R1[n]).",
+        "causal_smoother": "Controller states are canonical +0.0 at physical_onset-1. alpha(tau)=exp(-1/N(tau)). S(u,v;tau_up,tau_down)=alpha*v+(1-alpha)*u, choosing tau_up iff u>v and tau_down otherwise. Attack A smooths a0 with f3_v2_attack_up_ms/f3_v2_attack_down_ms; body B smooths b0 with f3_v2_body_up_ms/f3_v2_body_down_ms. The declared tau is the one-pole 63.2-percent step-response time-constant convention. Process physical_onset through body_end-1 and require every a0,b0,A,B in [0,1].",
+        "branch_support": "rA[c,n]=x[c,n]*wA[n]*A[n] and rB[c,n]=x[c,n]*wB[n]*B[n]. The audible B branch may begin at the frozen A/B crossfade start and that start is recorded. Both branches are canonical +0.0 outside their mask support.",
+        "render_formula": "With exact sA=sB=f3_v2_branch_scale=1, attack_only=x+rA, body_only=x+rB, and combined=x+rA+rB. There is no fitted target or caller knob. Output is bit-identical outside [physical_onset,body_end), retains sample rate, channels, frame count, timebase, polarity, zero crossings, and one source onset, and has per-sample factor in f3_v2_output_factor_range. No limiter, normalizer, resampler, transposer, waveshaper, or band split is permitted.",
+        "branch_contribution": "For R in {A,B}, S_R=sum_n(wR[n]); MS_source_R=sum_c,n(wR[n]*x[c,n]^2)/(C*S_R); MS_branch_R=sum_c,n(rR[c,n]^2)/(C*S_R), where rR already contains wR so its squared mask is intentional. Require finite positive S_R and both mean-squares strictly greater than (minimum_signal_peak_lsb*input_lsb)^2. cR=sqrt(MS_branch_R/MS_source_R)=sqrt(sum(rR^2)/sum(wR*x^2)) must be finite and >=f3_v2_branch_contribution_min; otherwise typed quiet_or_missing_branch refusal. Combined must also pass the global near-identity screen. All sums use every channel and exact frozen mask support.",
+        "ablations": {
+          "attack_only": "x_plus_rA",
+          "body_only": "x_plus_rB",
+          "combined": "x_plus_rA_plus_rB"
+        },
+        "family_falsifiers": {
+          "support": "rA is nonzero only where wA is nonzero; rB is nonzero only where wB is nonzero, including the declared crossfade; A is canonical +0.0 before physical_onset.",
+          "direction": "Recompute candidate R1/R8/R20 with the exact source-frozen DC means and F. Q_attack(z)=sum_n(wA[n]*R1_z[n]^2)/sum_n(wA[n]*R20_z[n]^2); require attack_only Q_attack > source Q_attack by floating_comparison_epsilon_multiplier*f64_epsilon*max(1,abs(values)). Q_body(z)=sum_n(wB[n]*R1_z[n]^2)/sum_n(wB[n]*max(R8_z[n]^2,R20_z[n]^2)); require body_only Q_body > source Q_body by the same tolerance. Zero or nonfinite denominator refuses. Combined Q values are recorded diagnostically and are not direction gates because independent branch interaction is not an isolated ablation. These checks establish controller integrity only, never hardness.",
+          "ablation_identities": "Within normalized error <=floating_comparison_epsilon_multiplier*f32_epsilon: combined-source=(attack_only-source)+(body_only-source); combined-attack_only=body_only-source; combined-body_only=attack_only-source.",
+          "global_gates": "Every generic raw and matched mechanical, safety, confound, identity, timing, body, boundary, and human promotion gate remains mandatory."
+        },
+        "resolved_policy_record": "Record sample_rate_hz, channel_count, registry/LSB provenance, authoritative channel-ordered per_channel_dc_mean_f64_bits_be_hex, b, F, N1/N8/N20 and alpha values, source weighted MS values and floor, masks and regions, cA/cB, exact provenance-only controller hashes, controller implementation hash, ordinary [sA,sB] resolved-policy hash, and the F3 source-response raw eight-vector, quantized eight-vector, and actionable-diversity hash. Filename, title, and path never enter policy selection, controller provenance hashes, or actionable diversity identity.",
+        "controller_hashes": {
+          "evidence_role": "provenance_only_not_actionable_diversity",
+          "domain": "riotbox.f3_causal_envelope_contrast_dynamic_residual_v2.controller.v1",
+          "labels_in_exact_order": [
+            "a0",
+            "b0",
+            "attack_state",
+            "body_state"
+          ],
+          "array_contract": "Each array has exactly source frame_count f64 elements, uses canonical +0.0 outside its computed interval, and rejects negative zero or nonfinite values before hashing.",
+          "preimage": "u32_be(domain_utf8_byte_length)||domain_utf8||u32_be(label_utf8_byte_length)||label_utf8||u32_be(sample_rate_hz)||u32_be(channel_count)||u64_be(frame_count)||u64_be(physical_onset_frame)||u64_be(attack_end_frame)||u64_be(body_end_frame)||u64_be(array_length)||concat_each_f64_to_bits_u64_be",
+          "digest": "lowercase_sha256",
+          "exclusions": "Registry and LSB provenance bind the policy record but source path, filename, title, and registry fields are not controller-hash preimage fields."
+        },
+        "preflight": {
+          "required_before_any_source": true,
+          "sample_rates_ref": "numeric_passports.f3_v2_preflight_sample_rates_hz",
+          "frame_helper": "M64(t_ms)=f3_v2_preflight_alignment_block_frames*max(1,floor((fs*t_ms/1000)/f3_v2_preflight_alignment_block_frames+frame_rounding_offset)). This helper is synthetic-preflight-only.",
+          "signal_common": "Stereo quadrature xL[n]=amplitude[n]*cos(2*pi*carrier*n), xR[n]=amplitude[n]*sin(2*pi*carrier*n), PCM16 valid_bits and exact input_lsb from passports, complete production per-channel whole-source DC means/removal, full production envelopes/controller/masks/render/gates, and raw peak strictly below 1. Every run hashes raw input, a0, b0, attack_state, body_state, ordinary policy, and typed outcome. Every successfully rendered run additionally hashes attack-only, body-only, and combined outputs plus its source-response diversity identity. The expected constant_quadrature_v1 refusal has no output hash and no source-response diversity identity. Repeated runs on the same build/platform must match their applicable hashes; cross-platform conformance uses formulas and tolerances, not brittle hash equality.",
+          "constant_quadrature_v1": "At every rate: duration=M64(96ms), amplitude=1/4, carrier=1/64 cycles/sample, onset=M64(24ms), attack_end=onset+M64(8ms), body_end=onset+M64(48ms). Require a0=b0=A=B=+0.0 within floating_comparison_epsilon_multiplier*f32_epsilon and typed refusal missing_attack_and_body_dynamic_contrast.",
+          "step_body_quadrature_v1": "At every rate: duration=M64(96ms), onset=M64(24ms), high_end=onset+M64(4ms), attack_end=onset+M64(8ms), body_end=onset+M64(48ms); amplitudes are exactly 1/32 before onset, 3/8 on [onset,high_end), 3/16 on [high_end,body_end), and 1/32 afterward; carrier=1/64. Require at least 24ms complete R20 history, abs(input)<3/4, first A>0 exactly at onset with none earlier, first b0>0 and first B>0 each in [high_end,high_end+N1), controller bounds, branch floors, support, factor, ablation identities, isolated Q direction gates, and abs(output)<1.",
+          "amplitude_scale_equivariance_v1": "Rerun step_body_quadrature_v1 with every amplitude multiplied by f3_v2_preflight_amplitude_scale and unchanged subdominant LSB. Recompute frozen anatomy baseline b through the exact production anatomy from the scaled synthetic input/lookbehind; it must resolve and naturally scale. Require each controller array max absolute delta <=floating_comparison_epsilon_multiplier*f32_epsilon and max_abs(2*y_half-y_full)<=floating_comparison_epsilon_multiplier*f32_epsilon*max(1,peak_full).",
+          "polarity_equivariance_v1": "Rerun step_body_quadrature_v1 with -x. Controller arrays must match their positive-input counterparts within floating_comparison_epsilon_multiplier*f32_epsilon and max_abs(y_negative+y_positive)<=floating_comparison_epsilon_multiplier*f32_epsilon*max(1,peak_positive).",
+          "carrier_invariance_v1": "Rerun step_body_quadrature_v1 with carrier=1/8 cycles/sample. Controller arrays must match the 1/64 carrier arrays within floating_comparison_epsilon_multiplier*f32_epsilon. This is anti-static-EQ provenance only and never audible or hardness proof.",
+          "source_response_diversity_identity_v1": "For every sample rate, step_body_quadrature_v1 must produce the riotbox.f3_source_response_diversity.v1 quantized vector and hash; amplitude_scale_equivariance_v1, polarity_equivariance_v1, and carrier_invariance_v1 must each produce the exact same vector and hash at that rate, and the vector must equal numeric_passports.f3_source_response_preflight_q_goldens for that rate. Across rates, record the corresponding vectors and hashes but do not require hash equality because M64 alignment changes physical duration; require every corresponding q-component absolute difference strictly less than f3_source_response_minimum_quantized_component_distance, so sample-rate/alignment drift is not diversity-separated and cannot earn F3 diversity. constant_quadrature_v1 is typed refusal provenance, produces no actionable diversity identity, and cannot count as diversity evidence.",
+          "source_response_diversity_hash_goldens_v1": {
+            "44100": "1b6005e428a738ca882526e0a5febf6e36a855fec344cd373bbe934a8efc6954",
+            "48000": "93d41ec4edb295aaef0df334e2d00efb04a1474ea983dfb1bbe44336ab5b47c5",
+            "96000": "93d41ec4edb295aaef0df334e2d00efb04a1474ea983dfb1bbe44336ab5b47c5"
+          },
+          "failure": "freeze_and_reject_entire_F3_v2_family_before_source_processing_no_scalar_repair"
+        },
+        "causal_scope": "conditional_on_source_frozen_offline_state",
+        "end_to_end_streaming_causal": false,
+        "offline_frozen_state": [
+          "whole_source_dc_means",
+          "event_anatomy",
+          "attack_body_masks"
+        ]
+      }
+    ],
+    "false_positive_controls": [
+      {
+        "control_id": "hidden_exact_a_a_v1",
+        "scope": "event_ordinal_1_every_positive_source",
+        "renderer": "bit_identical_copy",
+        "expected_confound": "same",
+        "can_earn_force": false
+      },
+      {
+        "control_id": "gain_plus_3db_v1",
+        "scope": "event_ordinal_1_every_positive_source",
+        "renderer": "uniform gain 10^(control_gain_db/20), with common pair attenuation only when needed for headroom; no limiter",
+        "expected_confound": "merely_louder",
+        "can_earn_force": false
+      },
+      {
+        "control_id": "global_rate_four_fifths_v1",
+        "scope": "event_ordinal_1_every_positive_source",
+        "renderer": "At unchanged sample rate and channel count, for N input frames set M=ceil((N-1)*5/4)+1. For output m=0..M-1 set p=min(4*m,5*(N-1)), i=floor(p/5), r=p-5*i, and y[c,m]=(1-r/5)*x[c,i]+(r/5)*x[c,min(i+1,N-1)] using exact rational weights before f32 rounding. The complete event is retained and typed playback_rate=[4,5].",
+        "expected_confound": "lower_or_slower_not_harder",
+        "can_earn_force": false
+      },
+      {
+        "control_id": "dark_onepole_f25_v1",
+        "scope": "event_ordinal_1_every_positive_source",
+        "renderer": "Use riotbox.exact_complementary_three_band_analysis.v1 and its source-derived frozen f25; apply the same lookbehind-warmed one-pole low-pass to the complete event.",
+        "expected_confound": "darker_not_harder",
+        "can_earn_force": false
+      },
+      {
+        "control_id": "bright_exact_split_f75_v1",
+        "scope": "event_ordinal_1_every_positive_source",
+        "renderer": "Use riotbox.exact_complementary_three_band_analysis.v1 and its source-derived frozen f75; hi=x-lowpass and y=x+(10^(control_gain_db/20)-1)*hi.",
+        "expected_confound": "brighter_not_harder",
+        "can_earn_force": false
+      },
+      {
+        "control_id": "distortion_os4_d2_v1",
+        "scope": "event_ordinal_1_every_positive_source",
+        "renderer": "Use only the immutable rejected f3_os4_onset_residual_v1 topology record across the complete event with fixed d=control_distortion_drive tanh phi, then exact event RMS attenuation match.",
+        "expected_confound": "dirtier_not_harder",
+        "failed_candidate_alias_preflight_acknowledged": true,
+        "reuse_boundary": "non_promotable_negative_confound_only_never_candidate_reference_safety_or_quality_evidence",
+        "promotable_candidate_path": false,
+        "can_earn_force": false
+      },
+      {
+        "control_id": "delayed_duplicate_25ms_minus6db_v1",
+        "scope": "event_ordinal_1_every_positive_source",
+        "renderer": "dry plus duplicate delayed control_delay_ms at control_duplicate_gain_db, with common attenuation for headroom",
+        "expected_confound": "flam_or_doubled",
+        "can_earn_force": false
+      },
+      {
+        "control_id": "detached_click_minus12db_body_v1",
+        "scope": "event_ordinal_1_every_positive_source",
+        "renderer": "Let m be the frozen attack/body crossfade length and start its frozen crossfade start. Define control sustain mask wS=0 before start; on [start,start+m), theta_i=(pi/2)*(i+1)/(m+1) and wS=sin(theta_i)^2; wS=1 on [start+m,tail_end-m); on [tail_end-m,tail_end), wS=cos(theta_i)^2 in forward i order; wS=0 from tail_end onward. Require start+m<=tail_end-m and exact bounds or refuse. Render y=x*(1+(10^(control_body_attenuation_db/20)-1)*wS), thereby attenuating the physical body and tail rather than only the body mask.",
+        "expected_confound": "click_without_body",
+        "can_earn_force": false
+      }
+    ],
+    "control_sanity_rule": "Every control must audibly and mechanically express its named confound without clipping or silence. Any failure stops Stage A and requires a versioned protocol revision; controls may not be retuned from candidate results and can never earn force promotion.",
+    "level_matcher": {
+      "id": "event_train_rms_attenuation_match_v1",
+      "scope": "complete_train_all_channels",
+      "rms": "R=sqrt(sum(x^2)/(channel_count*frame_count))",
+      "zero_semantics": "both zero invalid; exactly one zero unmatchable; all values must be finite",
+      "target": "T=min(RA,RB); gA=T/RA and gB=T/RB, so only the louder train is attenuated",
+      "headroom": "H=10^(matcher_ceiling_dbfs/20); P=max(gA*peakA,gB*peakB); common h=min(1,H/P); final gains h*gA and h*gB",
+      "forbidden": [
+        "boost",
+        "limiter",
+        "frequency_weighting",
+        "window_selection"
+      ],
+      "raw_view_preserved": true
+    },
+    "review_train": {
+      "candidate_train": {
+        "single_event_maximum": "train_event_maximum_ms",
+        "train_duration": "train_duration_ms",
+        "event_count": 4,
+        "onsets": "numeric_passports.train_onsets_ms",
+        "event_complete_by": "train_event_complete_by_ms",
+        "terminal_silence_minimum": "train_terminal_silence_ms",
+        "pair_duration": "pair_duration_ms"
+      },
+      "false_positive_control_train": {
+        "single_event_maximum": "control_train_event_maximum_ms",
+        "train_duration": "control_train_duration_ms",
+        "event_count": 4,
+        "onsets": "numeric_passports.control_train_onsets_ms",
+        "event_complete_by": "control_train_event_complete_by_ms",
+        "terminal_silence_minimum": "control_train_terminal_silence_ms",
+        "pair_duration": "control_pair_duration_ms"
+      },
+      "pair_layout": "train_A then exactly pair_inter_train_silence_ms silence then train_B",
+      "views": [
+        "raw",
+        "event_train_rms_attenuation_match_v1"
+      ]
+    },
+    "blinding": {
+      "allowed_domain": "riotbox.percussive_force_blind.v1",
+      "allowed_views": [
+        "raw",
+        "event_train_rms_attenuation_match_v1"
+      ],
+      "allowed_repetition_ids": [
+        "primary",
+        "reversed"
+      ],
+      "field_encoding": "Every UTF-8 field is encoded as u32_be(byte_length)||exact_utf8_bytes; every digest is lowercase SHA-256.",
+      "base_pair_id": "pair_id=SHA256(encode ordered [domain,matrix_sha256,event_catalog_sha256,family_version,case_id,ordinal_decimal,view]). matrix_sha256 and event_catalog_sha256 are lowercase raw-byte artifact hashes. repetition_id is intentionally excluded from pair identity.",
+      "artifact_id": "artifact_id=pair_id+'.'+repetition_id+'.wav'; these are the only two artifact IDs for a base pair and filenames never disclose orientation.",
+      "primary_orientation_seed": "Encode ordered [domain,pair_id,'primary']; digest[31]&1 equal zero means source then candidate and one means candidate then source.",
+      "reversed_orientation": "The reversed artifact uses repetition_id='reversed' and exactly inverts the primary orientation. Record its ordered seed fields [domain,pair_id,'reversed'] for identity, but do not hash them or derive a second orientation.",
+      "block_order": "Encode ordered [domain,pair_id], hash, then sort by lexical digest bytes and pair_id on a digest tie. Primary and reversed artifacts remain adjacent within that pair in the exact order ['primary','reversed'].",
+      "hidden_exact_a_a_required": true
+    },
+    "candidate_event_construction": {
+      "full_length_copy": "Allocate the complete registered source PCM shape and begin with an exact f32 bit copy of every source sample. Insert the family transform only over its declared source-frozen half-open affected event support; no concatenated event-only buffer can qualify.",
+      "analysis_reuse": "Reuse the source-frozen per-channel whole-source DC means, source coarse anchor, input_lsb, lookbehind, anatomy regions, masks, and baseline b. Recompute candidate R1/R8/R20 and all candidate detector/anatomy/integrity values from the full-length candidate with those frozen source means and anchor.",
+      "rhythmic_proxy": "Recompute candidate proxy with source-frozen b on [physical_onset,min(body_end,physical_onset+N(rhythmic_proxy_window_ms))). Candidate-adaptive b or anatomy may be diagnostic only and cannot qualify.",
+      "event_count_rule": "Run the exact event-level detector/composite policy over the full-length candidate. No added or increased onset means candidate event-level cluster count must be <= the source event-level cluster count; novelty magnitude changes do not count as an added event. The selected frozen event must still resolve exactly one corresponding candidate cluster within movement tolerances.",
+      "non_silent": "Over source-frozen complete event [physical_onset,tail_end), require finite all-channel event RMS and finite max_abs, each strictly greater than minimum_signal_peak_lsb*input_lsb.",
+      "candidate_pcm_hash": "Domain is riotbox.percussive_force_pcm_f32le.v1. Preimage is u32_le(domain_utf8_byte_length)||domain_utf8||u32_le(sample_rate_hz)||u32_le(channel_count)||u64_le(frame_count)||frame-major interleaved channel-order exact f32.to_bits().to_le_bytes() for every full-length sample. Digest is lowercase SHA-256. Exact byte equality with source is forbidden except hidden_exact_a_a_v1; no sample canonicalization is performed.",
+      "screen_views": {
+        "raw": "Run every reject-only screen on the unmodified full-length source/candidate family render pair.",
+        "event_train_rms_attenuation_match_v1": "Derive the two final attenuation-only scalar gains from the exact complete review trains, then apply the respective source gain and candidate gain to full-length analytical copies of the source and candidate. Scale each side's frozen source per-channel DC means and source-frozen b by that side's nonnegative scalar before recomputing R1/R8/R20, detector, proxy, and screens; never recompute an own-signal mean or baseline. Rerun format/safety/non-silent, event integrity, near-identity, identity, disjoint-body ratio, tail/boundary, gain, EQ, distortion, and rate/timebase screens against the correspondingly attenuated source. Bit-copy and raw candidate-hash rules remain raw-view provenance checks."
+      }
+    },
+    "mechanical_metric_definitions": {
+      "affected_scope": "Unless a narrower metric says otherwise, use source-frozen half-open [physical_onset,body_end), all channels, f64.",
+      "zero_lag_identity_correlation": "On [physical_onset,body_end), subtract each signal's own per-channel arithmetic mean over the window. rho=sum_c,n((x-mu_x_c)*(y-mu_y_c))/sqrt(sum_c,n((x-mu_x_c)^2)*sum_c,n((y-mu_y_c)^2)); zero/nonfinite denominator is confound_screen_undefined.",
+      "near_identity_delta": "sqrt(sum((y-x)^2)/sum(x^2)) on [physical_onset,body_end), all channels; zero/nonfinite source denominator refuses.",
+      "attack_spectral_cosine": "On exact [physical_onset,attack_end), apply periodic Hann over the entire interval, zero-pad to next power of two, and sum per-channel powers without mono summing. Let K=attack_spectral_band_count and U=min(12000,Nyquist); require U>20. Define exact edges e_j=20*(U/20)^(j/K) for j=0..K in f64. Band j<K-1 contains bin centres e_j<=f<e_(j+1); final band also includes f=U. Normalize each nonnegative band-energy vector to unit sum, then compute ordinary vector cosine; zero/nonfinite total or norm refuses. Do not take logarithms of band energy.",
+      "least_squares_common": "On [physical_onset,body_end), all channels, f64, no intercept. normalized_residual=sqrt(sum((y-fit)^2)/sum(y^2)); zero/nonfinite denominator is confound_screen_undefined. For a three-column fit solve the normal equations with deterministic partial pivoting: choose maximum absolute pivot and the lowest row on equality; singular when pivot<=floating_comparison_epsilon_multiplier*f64_epsilon*max(1,max_abs_Gram), which is confound_screen_undefined.",
+      "gain_fit": "One-column basis {x}; use the mathematical least-squares scalar with the common normalized residual.",
+      "static_eq_fit": "Three-column basis is the exact source-derived, lookbehind-warmed {L,M,H} from riotbox.exact_complementary_three_band_analysis.v1. An unavailable/ill-conditioned common split or singular fit is confound_screen_undefined and rejects every family for that event.",
+      "static_distortion_fit": "Three-column basis {x,x^3,x^5}; a singular fit is confound_screen_undefined.",
+      "boundary_discontinuity": "Form the set of all declared processing boundaries for the family/control: A/B crossfade start, A/B crossfade end, body-end fade start, body_end, and any additional branch/control boundary. Deduplicate coincident frame indices. Remove physical_onset from the set; if crossfade_start==physical_onset it is treated only as the exempt physical onset. Let d=y-x. For each remaining boundary b and channel, j=abs(d[b]-d[b-1]). local_max is the maximum identical delta-step over the complete integer-frame plus/minus N(boundary_discontinuity_neighborhood_ms) neighborhood after excluding every delta-step whose right-hand index is any member of the complete declared boundary set, not only b. tol=floating_comparison_epsilon_multiplier*f64_epsilon*max(1,peak_abs(d) over affected scope). Reject if no reference step remains, the neighborhood is incomplete, or j>local_max+tol.",
+      "global_rate_or_pitch": "Typed renderer provenance and timebase screen, not signal pitch estimation. A promotable candidate must declare exact rational playback_rate=[1,1], unchanged sample rate, frame count, and timebase, and no resampler or transposer node. Any mismatch rejects; only global_rate_four_fifths_v1 is exempt as a non-promotable negative control."
+    },
+    "reject_only_mechanical_screens": {
+      "semantics": "These checks may reject unsafe, collapsed, confounded, or identity-destroying output. No metric or aggregate may award perceived hardness.",
+      "format_and_safety": "On each declared screen view require finite output; same sample rate, channels, and full-source frames as source except global_rate_four_fifths_v1; strict abs_peak<output_peak_absolute_max; and candidate_event_construction.non_silent. On the raw view additionally require the exact candidate PCM hash/byte inequality except hidden A/A.",
+      "untouched_regions": "For every promotable F1/F2/F3 render, full-length candidate samples are f32-bit-identical to source before physical_onset and from body_end onward. Control exceptions must declare their full support and cannot promote.",
+      "event_integrity": "Use candidate_event_construction exactly: source-frozen means and anchor, recomputed R1/R8/R20, physical onset movement in integer frames <=N(candidate_onset_tolerance_ms), proxy movement in integer frames <=N(candidate_rhythmic_proxy_tolerance_ms), one corresponding selected-event cluster, and candidate full-source event-level cluster count <= source count. Increased novelty strength alone is not an added onset.",
+      "near_identity": "Using mechanical_metric_definitions.near_identity_delta, reject when the ratio < near_identity_delta_rms_min.",
+      "identity": "Using the exact mechanical metric definitions, reject when zero-lag identity correlation < identity_correlation_min or attack spectral cosine < attack_spectral_cosine_min.",
+      "body": "For raw and event_train_rms_attenuation_match_v1 views separately, sum x[c,n]^2 over all channels and the exact disjoint source-frozen half-open B=[attack_end,body_end). Require finite positive source denominator and inclusive candidate/source energy ratio inside body_energy_ratio_range.",
+      "tail_and_boundaries": "Tail obeys family-specific untouched tolerance; reject nonfinite samples or any failure of mechanical_metric_definitions.boundary_discontinuity.",
+      "gain_confound": "The exact gain fit normalized residual must be >= gain_only_fit_residual_min; undefined rejects.",
+      "eq_confound": "The exact static-EQ fit normalized residual must be >= static_eq_fit_residual_min; undefined rejects.",
+      "distortion_confound": "The exact static-distortion fit normalized residual must be >= static_distortion_fit_residual_min; undefined rejects.",
+      "rate_or_pitch_confound": "Any failure of mechanical_metric_definitions.global_rate_or_pitch rejects; do not estimate pitch from the signal.",
+      "family_direction_checks": "Family-specific energy/residual checks establish integrity only and never hardness."
+    },
+    "anti_hardcoding": {
+      "missing_required_feature": "typed_refusal_without_fallback",
+      "name_and_path_invariance": "Byte-identical output, resolved policy, and family-typed actionable diversity identity after changing only filename/title/path metadata.",
+      "synthetic_monotonic_tests": "Required for every declared feature-to-policy or actionable controller-response mapping without becoming quality proof.",
+      "cross_source_policy_swap": "For F1/F2 the diagnostic must show consequences of applying another source's policy without permitting source constants. F3 has one ordinary [sA,sB] policy by design and instead uses its fixed-horizon actionable controller-response identity; never substitute another source's region-bound controller arrays.",
+      "feature_omission": "Removing a required feature refuses; replacing one feature changes only its declared downstream policy or actionable controller-response identity fields and at least one such field.",
+      "resolved_policy_hash": {
+        "domain": "riotbox.percussive_force_actionable_policy.v1",
+        "common_encoding": "Start u32_be(domain_utf8_byte_length)||domain_utf8||u32_be(family_id_utf8_byte_length)||family_id_utf8. Encode u64 as u64_be, booleans as one byte 0 or 1, f64 as f64.to_bits().to_be_bytes(), and each vector as u64_be(element_count) followed by encoded elements. Require finite f64 and canonical +0.0; reject negative zero. Digest is lowercase SHA-256.",
+        "f1_field_order": [
+          "gA_f64",
+          "gB_f64"
+        ],
+        "f2_field_order": [
+          "f25_hz_f64",
+          "f75_hz_f64",
+          "trusted_L_bool",
+          "trusted_M_bool",
+          "trusted_H_bool",
+          "gA_L_f64",
+          "gA_M_f64",
+          "gA_H_f64",
+          "gB_L_f64",
+          "gB_M_f64",
+          "gB_H_f64",
+          "a25_f64",
+          "a75_f64"
+        ],
+        "f3_field_order": [
+          "sA_f64",
+          "sB_f64"
+        ],
+        "excluded_fields": [
+          "case_id",
+          "source_path",
+          "source_sha256",
+          "filename",
+          "title",
+          "author",
+          "raw_EA",
+          "raw_EB",
+          "absolute_region_indices",
+          "mask_shapes",
+          "anatomy_lengths",
+          "diagnostic_or_outcome_measurements",
+          "verdicts",
+          "artifacts"
+        ],
+        "scope": "Only source-resolved algorithm choices enter. F3 honestly has the constant ordinary [sA,sB] policy. Event anatomy, masks, provenance controller hashes, and diagnostic or outcome measurements remain separately catalog-bound evidence but are excluded so different event lengths cannot satisfy policy diversity when the actual resolver collapses."
+      },
+      "f3_source_response_diversity": {
+        "component": "riotbox.f3_source_response_diversity.v1",
+        "evidence_role": "actionable_controller_response_identity_input_not_generic_diagnostic_measurement_not_hardness_evidence",
+        "horizon": "Exact half-open [physical_onset,physical_onset+N(body_minimum_ms)); require the complete horizon inside the resolved event or refuse without an identity. This relative fixed physical-time horizon never uses attack_end, body_end, mask boundaries, absolute source indices, or source/array length in identity computation.",
+        "raw_field_order": [
+          "mean_a0",
+          "max_a0",
+          "mean_b0",
+          "max_b0",
+          "mean_A",
+          "max_A",
+          "mean_B",
+          "max_B"
+        ],
+        "raw_statistics": "For each controller in field order, traverse the exact horizon in increasing relative-frame order; mean is the f64 sum divided by N(body_minimum_ms), and max is the ordinary maximum. Require every raw field finite, in [0,1], and canonical +0.0; reject negative zero.",
+        "quantization_resolution_ref": "numeric_passports.near_identity_delta_rms_min",
+        "quantization": "For each raw field v, q(v)=floor(v/near_identity_delta_rms_min+0.5)=floor(20*v+0.5), encoded as one u8 in raw_field_order. Require each q integer in [0,f3_source_response_quantized_max]. The reused 0.05 resolution is numerical anti-collapse evidence, not a perceptual hardness threshold.",
+        "domain": "riotbox.f3_source_response_diversity.v1",
+        "family_id": "f3_causal_envelope_contrast_dynamic_residual_v2",
+        "preimage": "u32_be(domain_utf8_byte_length)||domain_utf8||u32_be(family_id_utf8_byte_length)||family_id_utf8||sA_f64_to_bits_u64_be||sB_f64_to_bits_u64_be||q_mean_a0_u8||q_max_a0_u8||q_mean_b0_u8||q_max_b0_u8||q_mean_A_u8||q_max_A_u8||q_mean_B_u8||q_max_B_u8. Require finite canonical +0.0 sA/sB. No sample rate, channel count, frame count, absolute or relative region index, array length, mask, anatomy length, source identity, path, filename, title, author, or provenance controller hash enters the preimage.",
+        "digest": "lowercase_sha256",
+        "record": "Record the raw eight-vector, quantized eight-vector, and digest. These preregistered fixed-horizon controller-response properties directly determine F3 branch modulation and are typed actionable identity inputs, not excluded generic diagnostic or outcome measurements; they remain reject-only and never award hardness.",
+        "robust_pair_separation": "A pair of distinct F3 identity hashes may satisfy the family minimum only when max_i(abs(q_left[i]-q_right[i]))>=f3_source_response_minimum_quantized_component_distance. Distinct hashes separated only by a one-bin boundary cannot count."
+      },
+      "actionable_diversity_identity": {
+        "F1": "resolved_policy_hash",
+        "F2": "resolved_policy_hash",
+        "F3": "f3_source_response_diversity"
+      },
+      "diversity": "Across the complete four-source by two-event set, each family must produce at least minimum_actionable_diversity_hashes_per_family distinct hashes from its typed actionable_diversity_identity. F3 additionally requires at least one counted pair satisfying f3_source_response_minimum_quantized_component_distance. At least minimum_clusters_with_distinct_actionable_identity_sets of the minimum_source_clusters acoustic feature clusters must have different family-typed actionable identity hash sets when their declared causal inputs differ; an F3 cluster distinction counts only through a robustly separated F3 pair.",
+      "source_null": "No source event or required feature means no candidate audio, no synthetic replacement, and typed unavailable/refusal evidence."
+    },
+    "required_cross_product": {
+      "families": [
+        "F1",
+        "F2",
+        "F3"
+      ],
+      "sources": "all_four_frozen_positive_sources",
+      "events": [
+        1,
+        2
+      ],
+      "formula": "3_families_times_4_sources_times_2_events_equals_24_candidate_event_conditions",
+      "same_family_version_across_sources": true,
+      "shared_feature_to_parameter_resolver": true,
+      "failed_positive_source_fails_family": true,
+      "aggregate_average_may_rescue_failure": false,
+      "zero_survivors": "stop_stage_a",
+      "one_or_more_survivors": "run_unchanged_attack_only_body_only_combined_ablations_and_ordinal_3_confirmation_when_present",
+      "multiple_full_passes": "one_blinded_trigger_preference_comparison_on_the_same_preregistered_Golden_event",
+      "preference_tie": "block_Stage_B_preserve_results_no_retune_or_metric_tiebreak"
+    },
+    "human_promotion_gate": {
+      "mechanical_gate_grants": "listening_request_only",
+      "required_views": [
+        "raw",
+        "event_train_rms_attenuation_match_v1"
+      ],
+      "required_directional_fields": {
+        "more_forcefully_struck_direction": true,
+        "clearly_different": true,
+        "recognizable_source_identity": true,
+        "one_audible_event_without_flam_echo_or_detached_duplicate": true,
+        "same_rhythmic_place_and_perceived_timing": true,
+        "physical_body_retained": true,
+        "source_related_bite_retained": true,
+        "desirable_to_trigger": true,
+        "confidence": [
+          "medium",
+          "high"
+        ],
+        "reversed_order_directional_agreement": true,
+        "hidden_exact_a_a_heard_as_same": true
+      },
+      "independent_confound_tags_required": true,
+      "low_or_inconclusive_may_promote": false,
+      "different_but_not_harder": "reject_and_freeze_family_recipe",
+      "aggregate_vote_may_rescue_failed_source": false,
+      "maximum_review_ready_generations_ref": "numeric_passports.maximum_review_ready_generations_per_family",
+      "maximum_structural_revisions_ref": "numeric_passports.maximum_structural_revisions_per_family",
+      "promotion_target": "exactly_one_uniquely_preferred_frozen_mechanism_for_unchanged_Stage_B_product_path_work"
+    }
+  },
+  "readiness_scope": {
+    "stage_a_floor": "Exactly four legal positive sources from four authors spanning exactly three preregistered percussive families. This is an isolated mechanism-falsification floor only.",
+    "broader_source_aware_readiness": "Not claimed. Family-specific source-aware product readiness still requires at least five development sources spanning at least four source families, or a separately versioned narrow-role exception.",
+    "runtime_mix_or_tui_claim": false,
+    "loop_or_instrument_quality_claim": false
+  },
+  "version_decision": "RBX-254",
+  "predecessor": {
+    "path": "docs/benchmarks/percussive_force_stage_a_protocol_v1.json",
+    "schema": "riotbox.percussive_force_stage_a_protocol.v1",
+    "raw_sha256": "35091e697cacb3c187f9a33f4f41ac85aba26832a4214bf3251dfc703edad840",
+    "semantic_sha256": "7681ab68a9fe2261c97b7499e298e9e6dcb7cbe60df64355dceff577d7fc0848",
+    "state": "immutable_historical_rejected_execution_only"
+  },
+  "historical_v1_tombstone": {
+    "qualification_session_id": "2f1e5ba2-ca1e-42b4-b0e1-3faa7591dde9",
+    "qualification_outcome": "positive_source_failed",
+    "executed_implementation_commit": "c60cbb392491950fdbb2edaf15a9f8926db51c71",
+    "executed_implementation_aggregate_sha256": "8285107a8c396c7fcbfd52cbe24e3dc8c3a108c56a57487cdb178977a5b2de94",
+    "matrix_v2_raw_sha256": "aba846138246c95b1c3e5e1973e77bdaa41ce971f799dadadba8edc160967fd6",
+    "matrix_v2_semantic_sha256": "57edb217b8dd17166826274d96ef091bd6fd2a88a9688e37b3ef0b7a6d27e94b",
+    "registry_v2_raw_sha256": "af98af67d5b0ef9f8478bf800438b268af2a4640bed29d8ec7c87fa585eb6812",
+    "registry_v2_semantic_sha256": "6cfe11cd10a5947427a09335fbd4795706c71530b6f6a7e5b9883259bcca8ce1",
+    "generic_edge_only_impulse_interpretation_allowed": false,
+    "runner_state": "stage_a_v1_execution_closed_by_rbx_254"
+  }
+}
