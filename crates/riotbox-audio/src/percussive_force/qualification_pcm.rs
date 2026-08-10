@@ -1,9 +1,12 @@
-//! Exact in-memory WAV/PCM binding for Stage-A qualification.
+//! Source-blind in-memory WAV/PCM binding scaffold for Stage-A qualification.
 //!
 //! This module has no filesystem seam. It binds already-authorized raw WAV
 //! bytes to their frozen registry identity and format before any mechanism may
 //! consume decoded samples. It does not qualify an event, render a candidate,
-//! or establish perceptual force.
+//! or establish perceptual force. The Stage-A v1 qualification runner used an
+//! independent Python binding path; this Rust module is intentionally private
+//! until one future versioned runner owns a reachable Gate -> Bind -> Render
+//! integration. Its tests are format/hash evidence, never source-access proof.
 
 use std::{
     error::Error,
@@ -150,22 +153,56 @@ pub struct StageAPcmFormatProvenance {
     pub maximum_duration_seconds: u32,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct StageABoundPcm {
-    pub case_id: String,
+    case_id: String,
     /// Registry identity only. This path is never opened by this module.
-    pub logical_source_path: String,
-    pub raw_wav_sha256: String,
-    pub pcm_f32le_sha256: String,
-    pub format: StageAPcmFormatProvenance,
-    pub qualification_provenance: StageAQualificationPcmProvenance,
-    pub frame_count: usize,
-    pub interleaved_samples: Vec<f32>,
+    logical_source_path: String,
+    raw_wav_sha256: String,
+    pcm_f32le_sha256: String,
+    format: StageAPcmFormatProvenance,
+    qualification_provenance: StageAQualificationPcmProvenance,
+    frame_count: usize,
+    interleaved_samples: Vec<f32>,
     _seal: StageABoundPcmSeal,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct StageABoundPcmSeal;
+
+impl StageABoundPcm {
+    pub(crate) fn case_id(&self) -> &str {
+        &self.case_id
+    }
+
+    pub(crate) fn logical_source_path(&self) -> &str {
+        &self.logical_source_path
+    }
+
+    pub(crate) fn raw_wav_sha256(&self) -> &str {
+        &self.raw_wav_sha256
+    }
+
+    pub(crate) fn pcm_f32le_sha256(&self) -> &str {
+        &self.pcm_f32le_sha256
+    }
+
+    pub(crate) fn format(&self) -> StageAPcmFormatProvenance {
+        self.format
+    }
+
+    pub(crate) fn qualification_provenance(&self) -> &StageAQualificationPcmProvenance {
+        &self.qualification_provenance
+    }
+
+    pub(crate) fn frame_count(&self) -> usize {
+        self.frame_count
+    }
+
+    pub(crate) fn interleaved_samples(&self) -> &[f32] {
+        &self.interleaved_samples
+    }
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum StageAQualificationPcmError {
@@ -470,7 +507,7 @@ pub(crate) fn authorize_stage_a_development_access(
     })
 }
 
-pub fn bind_stage_a_registry_pcm_wav(
+pub(crate) fn bind_stage_a_registry_pcm_wav(
     authorization: StageAAuthorizedSourceAccess,
     raw_wav_bytes: &[u8],
 ) -> Result<StageABoundPcm, StageAQualificationPcmError> {
@@ -618,7 +655,7 @@ fn is_safe_session_id(session_id: &str) -> bool {
 
 /// Render F3-v2 from an authorized bound source without exposing a second PCM
 /// encoding or LSB input. The existing diagnostic renderer remains unchanged.
-pub fn render_f3_from_stage_a_bound_pcm_v2(
+pub(crate) fn render_f3_from_stage_a_bound_pcm_v2(
     bound_pcm: &StageABoundPcm,
     region: FrozenEventRegion,
 ) -> Result<F3DynamicRenderSet, PercussiveForceError> {

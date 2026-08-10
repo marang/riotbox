@@ -34,6 +34,22 @@ def _expect_contract_error(operation: object, code: str) -> None:
     raise AssertionError(f"expected StageAContractError {code}")
 
 
+def _expect_type_error(operation: object, detail: str) -> None:
+    try:
+        operation()  # type: ignore[operator]
+    except TypeError:
+        return
+    raise AssertionError(detail)
+
+
+def _expect_attribute_error(operation: object, detail: str) -> None:
+    try:
+        operation()  # type: ignore[operator]
+    except AttributeError:
+        return
+    raise AssertionError(detail)
+
+
 def _source(
     onsets_seconds: tuple[float, ...],
     decay_seconds: float,
@@ -130,6 +146,72 @@ def protocol_and_numeric_fixtures() -> analysis.FrozenStageAProtocol:
     _expect_contract_error(
         lambda: analysis.FrozenStageAProtocol.from_bytes(payload + b" "),
         "protocol_pin_mismatch",
+    )
+    _expect_contract_error(
+        lambda: analysis.FrozenStageAProtocol.from_bytes(
+            bytearray(payload)  # type: ignore[arg-type]
+        ),
+        "invalid_protocol_bytes",
+    )
+    _expect_type_error(
+        lambda: analysis.FrozenStageAProtocol(
+            sha256=analysis.EXPECTED_PROTOCOL_SHA256,
+            document={"numeric_passports": {}},
+        ),
+        "callers must not forge a protocol from an expected SHA string",
+    )
+    frozen_channel_counts = protocol.value("input_channel_counts")
+
+    def mutate_nested_protocol_value() -> None:
+        frozen_channel_counts[0] = 99
+
+    _expect_type_error(
+        mutate_nested_protocol_value,
+        "nested protocol arrays must be immutable",
+    )
+
+    def mutate_nested_protocol_mapping() -> None:
+        protocol._document["numeric_passports"]["positive_source_count"]["value"] = 1
+
+    _expect_type_error(
+        mutate_nested_protocol_mapping,
+        "nested protocol mappings must be immutable",
+    )
+    forged = object.__new__(analysis.FrozenStageAProtocol)
+    object.__setattr__(forged, "sha256", analysis.EXPECTED_PROTOCOL_SHA256)
+    object.__setattr__(
+        forged,
+        "_payload",
+        payload.replace(b'"schema_version": 1', b'"schema_version": 2', 1),
+    )
+    object.__setattr__(forged, "_document", protocol._document)
+    _expect_contract_error(
+        lambda: analysis.qualify_four_sources((), protocol=forged),
+        "protocol_pin_mismatch",
+    )
+
+    forged_document = object.__new__(analysis.FrozenStageAProtocol)
+    object.__setattr__(
+        forged_document, "sha256", analysis.EXPECTED_PROTOCOL_SHA256
+    )
+    object.__setattr__(forged_document, "_payload", payload)
+    object.__setattr__(
+        forged_document,
+        "_document",
+        {"numeric_passports": {"positive_source_count": {"value": 0}}},
+    )
+    _expect_attribute_error(
+        lambda: object.__setattr__(
+            forged_document, "revalidated", lambda: forged_document
+        ),
+        "slots must prevent instance-level revalidation shadowing",
+    )
+    forged_result = analysis.qualify_four_sources((), protocol=forged_document)
+    _require(
+        not forged_result.passed
+        and forged_result.refusals[0].reason
+        is analysis.QualificationRefusalReason.SOURCE_COUNT,
+        "entry-point revalidation must ignore a forged in-memory document",
     )
     _require(
         analysis._duration_frames(protocol, 44_100, 8.0) == 353,

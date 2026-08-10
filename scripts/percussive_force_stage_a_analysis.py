@@ -16,6 +16,7 @@ import math
 from dataclasses import dataclass, fields, is_dataclass
 from enum import Enum
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any, Mapping, Sequence
 
 import numpy as np
@@ -129,13 +130,31 @@ def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return result
 
 
-@dataclass(frozen=True)
+def _deep_freeze_json(value: Any) -> Any:
+    if isinstance(value, dict):
+        return MappingProxyType(
+            {key: _deep_freeze_json(child) for key, child in value.items()}
+        )
+    if isinstance(value, list):
+        return tuple(_deep_freeze_json(child) for child in value)
+    return value
+
+
+@dataclass(frozen=True, init=False, slots=True)
 class FrozenStageAProtocol:
     sha256: str
-    document: Mapping[str, Any]
+    _payload: bytes
+    _document: Mapping[str, Any]
+
+    def __init__(self, *_args: Any, **_kwargs: Any) -> None:
+        raise TypeError("FrozenStageAProtocol must be created with from_bytes()")
 
     @classmethod
     def from_bytes(cls, payload: bytes) -> "FrozenStageAProtocol":
+        if not isinstance(payload, bytes):
+            raise StageAContractError(
+                "invalid_protocol_bytes", "protocol payload must be immutable bytes"
+            )
         actual = hashlib.sha256(payload).hexdigest()
         if actual != EXPECTED_PROTOCOL_SHA256:
             raise StageAContractError(
@@ -266,10 +285,27 @@ class FrozenStageAProtocol:
             raise StageAContractError(
                 "prequalification_semantics_mismatch", "reject-only purpose changed"
             )
-        return cls(sha256=actual, document=document)
+        frozen = object.__new__(cls)
+        object.__setattr__(frozen, "sha256", actual)
+        object.__setattr__(frozen, "_payload", bytes(payload))
+        object.__setattr__(frozen, "_document", _deep_freeze_json(document))
+        return frozen
+
+    def revalidated(self) -> "FrozenStageAProtocol":
+        try:
+            payload = self._payload
+        except AttributeError as error:
+            raise StageAContractError(
+                "unvalidated_protocol", "frozen protocol has no validated byte payload"
+            ) from error
+        if not isinstance(payload, bytes):
+            raise StageAContractError(
+                "unvalidated_protocol", "frozen protocol payload must be immutable bytes"
+            )
+        return FrozenStageAProtocol.from_bytes(payload)
 
     def value(self, name: str) -> Any:
-        passports = self.document["numeric_passports"]
+        passports = self._document["numeric_passports"]
         return passports[name]["value"]
 
 
@@ -277,6 +313,17 @@ def load_frozen_protocol(
     path: Path | str = CANONICAL_PROTOCOL_PATH,
 ) -> FrozenStageAProtocol:
     return FrozenStageAProtocol.from_bytes(Path(path).read_bytes())
+
+
+def _revalidate_frozen_protocol(
+    protocol: FrozenStageAProtocol | None,
+) -> FrozenStageAProtocol:
+    frozen = protocol if protocol is not None else load_frozen_protocol()
+    if type(frozen) is not FrozenStageAProtocol:
+        raise StageAContractError(
+            "unvalidated_protocol", "entry point requires the exact frozen protocol"
+        )
+    return FrozenStageAProtocol.revalidated(frozen)
 
 
 @dataclass(frozen=True)
@@ -1355,13 +1402,7 @@ def analyze_source(
     No filename, title, or path field is consumed by the analysis.
     """
 
-    frozen = protocol if protocol is not None else load_frozen_protocol()
-    if not isinstance(frozen, FrozenStageAProtocol) or frozen.sha256 != (
-        EXPECTED_PROTOCOL_SHA256
-    ):
-        raise StageAContractError(
-            "unvalidated_protocol", "analyze_source requires the exact frozen protocol"
-        )
+    frozen = _revalidate_frozen_protocol(protocol)
     metadata = SourceMetadata.coerce(case_metadata)
     if metadata.partition != "development":
         return _empty_analysis(
@@ -1878,7 +1919,7 @@ def qualify_four_sources(
     human, or product-path evidence.
     """
 
-    frozen = protocol if protocol is not None else load_frozen_protocol()
+    frozen = _revalidate_frozen_protocol(protocol)
     expected_count = int(frozen.value("positive_source_count"))
     if len(sources) != expected_count:
         return _qualification_refusal(

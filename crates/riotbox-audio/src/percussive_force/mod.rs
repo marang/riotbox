@@ -10,6 +10,10 @@ mod f2;
 #[allow(dead_code, clippy::manual_range_contains)]
 mod f3;
 mod f3_dynamic;
+// This remains a source-blind, internal decode/hash scaffold until a future
+// versioned qualification runner owns one reachable Gate -> Bind -> Render
+// seam.  It was not executed by the Python-only Stage-A v1 qualification.
+#[allow(dead_code)]
 mod qualification_pcm;
 
 pub use common::{
@@ -39,13 +43,4 @@ pub use f3_dynamic::{
     F3DynamicSyntheticRunRecord, F3PcmEncoding,
     f3_source_response_identities_are_diversity_separated,
     render_f3_causal_envelope_contrast_dynamic_residual_v2, run_f3_dynamic_synthetic_preflight_v2,
-};
-pub use qualification_pcm::{
-    STAGE_A_DEVELOPMENT_ACCESS_LOG_SCHEMA, STAGE_A_PCM_F32LE_HASH_DOMAIN,
-    STAGE_A_QUALIFICATION_SESSION_KIND, STAGE_A_SOURCE_REGISTRY_PATH,
-    STAGE_A_SOURCE_REGISTRY_SCHEMA, STAGE_A_SOURCE_REGISTRY_SHA256, StageAAuthorizedSourceAccess,
-    StageABoundPcm, StageADevelopmentAccessProvenance, StageAPcmEncoding,
-    StageAPcmFormatProvenance, StageAQualificationPcmError, StageAQualificationPcmProvenance,
-    StageAQualificationSessionProvenance, StageARegistryBindingProvenance,
-    bind_stage_a_registry_pcm_wav, render_f3_from_stage_a_bound_pcm_v2,
 };

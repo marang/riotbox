@@ -203,25 +203,25 @@ fn pcm16_integer_goldens_bind_exact_lsb_and_full_source_hash() {
     let bound = bind_stage_a_registry_pcm_wav(expectation(&raw_hash, 48_000, 1, 16), &wave)
         .expect("strict synthetic PCM16 WAV");
 
-    assert_eq!(bound.case_id, CASE_ID);
-    assert_eq!(bound.logical_source_path, LOGICAL_PATH);
-    assert_eq!(bound.raw_wav_sha256, raw_hash);
-    assert_eq!(bound.frame_count, 5);
-    assert_eq!(bound.format.encoding, StageAPcmEncoding::SignedPcm16);
-    assert_eq!(bound.format.container_bits, 16);
-    assert_eq!(bound.format.valid_bits, 16);
-    assert_eq!(bound.format.input_lsb, 2.0_f64.powi(-15));
+    assert_eq!(bound.case_id(), CASE_ID);
+    assert_eq!(bound.logical_source_path(), LOGICAL_PATH);
+    assert_eq!(bound.raw_wav_sha256(), raw_hash);
+    assert_eq!(bound.frame_count(), 5);
+    assert_eq!(bound.format().encoding, StageAPcmEncoding::SignedPcm16);
+    assert_eq!(bound.format().container_bits, 16);
+    assert_eq!(bound.format().valid_bits, 16);
+    assert_eq!(bound.format().input_lsb, 2.0_f64.powi(-15));
     assert_eq!(
-        bound.format.maximum_duration_seconds,
+        bound.format().maximum_duration_seconds,
         STAGE_A_MAXIMUM_DURATION_SECONDS
     );
     assert_eq!(
-        bound.qualification_provenance.registry.sha256,
+        bound.qualification_provenance().registry.sha256,
         STAGE_A_SOURCE_REGISTRY_SHA256
     );
     assert_eq!(
-        bound.interleaved_samples,
-        vec![
+        bound.interleaved_samples(),
+        &[
             -1.0,
             -1.0 / 32_768.0,
             0.0,
@@ -230,7 +230,7 @@ fn pcm16_integer_goldens_bind_exact_lsb_and_full_source_hash() {
         ]
     );
     assert_eq!(
-        bound.pcm_f32le_sha256,
+        bound.pcm_f32le_sha256(),
         "be2abff76fe003c0c2471d736606215695ea777e75049ec1e920aa0d0ae57f2d"
     );
 }
@@ -248,14 +248,14 @@ fn pcm24_integer_goldens_bind_exact_lsb_without_clamping() {
     let bound = bind_stage_a_registry_pcm_wav(expectation(&raw_hash, 44_100, 1, 24), &wave)
         .expect("strict synthetic PCM24 WAV");
 
-    assert_eq!(bound.frame_count, 5);
-    assert_eq!(bound.format.encoding, StageAPcmEncoding::SignedPcm24);
-    assert_eq!(bound.format.container_bits, 24);
-    assert_eq!(bound.format.valid_bits, 24);
-    assert_eq!(bound.format.input_lsb, 2.0_f64.powi(-23));
+    assert_eq!(bound.frame_count(), 5);
+    assert_eq!(bound.format().encoding, StageAPcmEncoding::SignedPcm24);
+    assert_eq!(bound.format().container_bits, 24);
+    assert_eq!(bound.format().valid_bits, 24);
+    assert_eq!(bound.format().input_lsb, 2.0_f64.powi(-23));
     assert_eq!(
-        bound.interleaved_samples,
-        vec![
+        bound.interleaved_samples(),
+        &[
             -1.0,
             -1.0 / 8_388_608.0,
             0.0,
@@ -264,7 +264,7 @@ fn pcm24_integer_goldens_bind_exact_lsb_without_clamping() {
         ]
     );
     assert_eq!(
-        bound.pcm_f32le_sha256,
+        bound.pcm_f32le_sha256(),
         "14240b34f81c3fb475f52f9afa2473705c81259e2b2461022b16e5e654868537"
     );
 }
@@ -490,7 +490,10 @@ fn bound_f3_wrapper_derives_encoding_and_lsb_without_caller_override() {
         .expect("bound F3-v2 render derives encoding from PCM provenance");
     assert_eq!(rendered.policy.pcm_encoding, F3PcmEncoding::SignedPcm16);
     assert_eq!(rendered.policy.pcm_valid_bits, 16);
-    assert_eq!(rendered.policy.normalized_input_lsb, bound.format.input_lsb);
+    assert_eq!(
+        rendered.policy.normalized_input_lsb,
+        bound.format().input_lsb
+    );
 }
 
 #[test]

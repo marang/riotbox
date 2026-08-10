@@ -41,7 +41,9 @@ renderer and does not itself prove or unblock Stage B product promotion.
 `RIOTBOX-1428` then ran its first frozen development-only qualification. Two
 of four sources failed the mechanism-blind event gate, so Stage A stopped
 before candidate rendering, matrix execution, or human listening. Any retry
-now requires a newly versioned preregistration under RBX-252 change control.
+now requires Protocol v2, corrected refusal semantics, a new implementation
+snapshot, and a newly frozen corpus/matrix decision under RBX-252 change
+control. The v1 result remains historical rejection evidence only.
 
 `P016`, `P021`, and `P022` remain subordinate to the active P023 product path.
 Offline renderers, scripted packs, fixture verdicts, reports, and validators
@@ -218,15 +220,17 @@ docs/
 - `benchmarks/percussive_force_development_matrix_v1.json`: unexecuted
   RIOTBOX-1428 Stage-A preregistration draft with source-admission, holdout,
   control, cross-product, and promotion boundaries
-- `benchmarks/percussive_force_stage_a_protocol_v1.json`: RIOTBOX-1428
-  source-blind executable freeze for event qualification, F1--F3 mechanisms,
-  false controls, matching, reject-only screens, and bounded listening
+- `benchmarks/percussive_force_stage_a_protocol_v1.json`: immutable historical
+  RIOTBOX-1428 source-blind execution freeze for event qualification, F1--F3
+  mechanisms, false controls, matching, reject-only screens, and bounded
+  listening; superseded for any retry by the RBX-254 Protocol-v2 boundary
 - `benchmarks/percussive_force_development_matrix_v2.json`: RIOTBOX-1428
   Stage-A execution snapshot binding the admitted source registry and exact
   protocol before source qualification or candidate rendering
 - `reviews/riotbox_1428_stage_a_development_qualification_rejection_2026-08-10.md`:
   first fresh frozen Stage-A development qualification, exact access boundary,
-  two-source mechanical rejection, evidence hashes, and no-render stop rule
+  two-source mechanical rejection, evidence hashes, post-execution audit, and
+  no-render stop rule
 - `engineering/textual_include_inventory_2026-06-29.md`: RIOTBOX-1321 Rust textual include inventory captured
 - `engineering/textual_include_allowlist.txt`: current manual guardrail allowlist for textual include owners/counts captured
 - `specs/source_graph_spec.md`: Source Graph v1 contract captured

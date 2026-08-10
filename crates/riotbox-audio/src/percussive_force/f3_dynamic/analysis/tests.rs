@@ -51,6 +51,42 @@ fn phase_safe_rms_matches_hand_calculated_multichannel_golden() {
 }
 
 #[test]
+fn right_aligned_envelopes_are_prefix_causal_only_after_source_means_are_frozen() {
+    let original = [0.25, -0.25, 0.5, -0.5, 0.125, -0.125];
+    let changed_future = [0.25, -0.25, 0.5, -0.5, 0.75, 0.75];
+    let frozen_means = [0.0];
+    let original_frozen = phase_safe_multichannel_rms_envelopes_with_frozen_means(
+        &original,
+        1,
+        [1, 2, 3],
+        &frozen_means,
+    )
+    .unwrap();
+    let changed_frozen = phase_safe_multichannel_rms_envelopes_with_frozen_means(
+        &changed_future,
+        1,
+        [1, 2, 3],
+        &frozen_means,
+    )
+    .unwrap();
+    assert_eq!(&original_frozen.r1[..4], &changed_frozen.r1[..4]);
+    assert_eq!(&original_frozen.r8[..4], &changed_frozen.r8[..4]);
+    assert_eq!(&original_frozen.r20[..4], &changed_frozen.r20[..4]);
+
+    // Recomputing the offline whole-source mean after changing a future suffix
+    // changes the conditioned analysis state. This intentionally documents why
+    // F3-v2 is not an end-to-end streaming-causal transformation.
+    let original_reconditioned =
+        phase_safe_multichannel_rms_envelopes(&original, 1, [1, 2, 3]).unwrap();
+    let changed_reconditioned =
+        phase_safe_multichannel_rms_envelopes(&changed_future, 1, [1, 2, 3]).unwrap();
+    assert_ne!(
+        original_reconditioned.r1[0].to_bits(),
+        changed_reconditioned.r1[0].to_bits()
+    );
+}
+
+#[test]
 fn causal_controller_uses_strict_positive_first_crossing_golden() {
     let floor = 0.1;
     let raw_attack =

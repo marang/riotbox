@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import hashlib
 import struct
+from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 
@@ -178,6 +180,50 @@ def implementation_snapshot_fixture() -> None:
     )
 
 
+def closed_v1_execution_fixture() -> None:
+    reached: list[str] = []
+
+    def forbidden(name: str) -> object:
+        def callback(*_args: object, **_kwargs: object) -> None:
+            reached.append(name)
+            raise AssertionError(f"closed v1 runner reached {name}")
+
+        return callback
+
+    with (
+        patch.object(
+            qualification,
+            "validate_session_directory",
+            forbidden("session_validation"),
+        ),
+        patch.object(
+            qualification,
+            "validate_repository",
+            forbidden("contract_validation"),
+        ),
+        patch.object(
+            qualification,
+            "run_source_blind_preflight",
+            forbidden("subprocess_preflight"),
+        ),
+        patch.object(
+            qualification,
+            "verify_development_source_files",
+            forbidden("safe_access_gate"),
+        ),
+    ):
+        try:
+            qualification.run_session(Path("/must-not-be-opened-stage-a-v1"))
+        except qualification.StageAV1ExecutionClosed as error:
+            require(
+                error.code == qualification.STAGE_A_V1_EXECUTION_CLOSED_CODE,
+                "closed v1 runner returned the wrong typed refusal",
+            )
+        else:
+            raise AssertionError("closed v1 runner accepted a new session")
+    require(not reached, f"closed v1 runner reached callbacks: {reached}")
+
+
 def main() -> int:
     decode_fixture(
         (-32_768, -1, 0, 1, 32_767),
@@ -197,6 +243,7 @@ def main() -> int:
     )
     capture_owner_fixture()
     implementation_snapshot_fixture()
+    closed_v1_execution_fixture()
     print("PASS: Stage-A qualification owner synthetic fixtures")
     print("source_audio_accessed=false")
     print("holdout_audio_accessed=false")

@@ -1,9 +1,13 @@
-//! Source-general Stage-A F3-v2: causal envelope-contrast dynamics.
+//! Source-general Stage-A F3-v2: source-frozen-state-conditioned causal
+//! envelope-contrast dynamics.
 //!
 //! This family deliberately has no residual-strength parameter. It derives a
 //! sample-synchronous, positive gain trajectory from the frozen 1/8/20 ms
 //! source envelopes and adds the unscaled source-aligned residual. Mechanical
 //! checks may reject it; only the structured human gate can call it harder.
+//! "Causal" applies to the right-aligned envelopes and controller after the
+//! offline whole-source DC means, anatomy, and masks are frozen. It is not an
+//! end-to-end streaming or audio-callback causality claim.
 
 mod analysis;
 mod preflight;
@@ -360,7 +364,7 @@ mod tests {
                         && frame < case.expected_body_state_frame_range[1]),
                 "{case:#?}"
             );
-            assert!(case.strict_causality_pass, "{case:#?}");
+            assert!(case.source_frozen_activation_causality_pass, "{case:#?}");
             assert!(case.actionable_policy_invariance_pass, "{case:#?}");
             assert!(case.source_response_invariance_pass, "{case:#?}");
             assert!(case.global_near_identity_pass, "{case:#?}");

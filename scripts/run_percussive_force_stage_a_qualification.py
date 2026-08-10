@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Run the one authorized RIOTBOX-1428 development-only qualification route.
+"""Historical RIOTBOX-1428 Stage-A v1 qualification implementation.
 
-This owner creates a fresh StageAQualificationSession, invokes the exact-path
-safe-access gate once, keeps verified WAV bytes in memory, binds them to the
-frozen Registry/Matrix metadata, and runs the mechanism-blind detector,
-anatomy, catalog, and source-contrast analysis.  It never discovers a source
-directory, opens holdout audio, renders a candidate, or grants hardness.
+RBX-254 permanently closed this v1/Matrix-v2/Registry-v2 route after its first
+fail-closed execution. ``run_session`` now refuses before session validation,
+contract validation, subprocess preflight, or safe-access callback. The helper
+functions remain only for source-blind format/hash fixtures; the exact executed
+implementation is reconstructible at Git commit
+c60cbb392491950fdbb2edaf15a9f8926db51c71. A future source execution requires
+the separately versioned Protocol-v2 runner.
 """
 
 from __future__ import annotations
@@ -19,7 +21,6 @@ import stat
 import struct
 import subprocess
 import sys
-import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -60,6 +61,7 @@ SESSION_SCHEMA = "riotbox.percussive_force_stage_a_qualification_session.v1"
 CATALOG_SCHEMA = "riotbox.percussive_force_stage_a_bound_event_catalog.v1"
 REJECTION_SCHEMA = "riotbox.percussive_force_stage_a_qualification_rejection.v1"
 COMMIT_SCHEMA = "riotbox.percussive_force_stage_a_qualification_commit.v1"
+STAGE_A_V1_EXECUTION_CLOSED_CODE = "stage_a_v1_execution_closed_by_rbx_254"
 
 IMPLEMENTATION_PATHS = (
     Path("Cargo.toml"),
@@ -114,6 +116,18 @@ SOURCE_BLIND_PREFLIGHT_COMMANDS = (
 
 class QualificationSessionError(RuntimeError):
     """A fail-closed session or binding error."""
+
+
+class StageAV1ExecutionClosed(QualificationSessionError):
+    """Typed refusal for every attempted post-RBX-254 v1 source execution."""
+
+    code = STAGE_A_V1_EXECUTION_CLOSED_CODE
+
+    def __init__(self) -> None:
+        super().__init__(
+            f"{self.code}: Protocol v1 is historical evidence only; "
+            "freeze the RBX-254 Protocol-v2 boundary before source access"
+        )
 
 
 @dataclass(frozen=True)
@@ -610,248 +624,8 @@ def validate_session_directory(path: Path) -> None:
 
 
 def run_session(session_directory: Path) -> tuple[int, dict[str, Any]]:
-    validate_session_directory(session_directory)
-    session_id = str(uuid.uuid4())
-    owner_id = f"riotbox-1428-stage-a-{session_id}"
-    session_path = session_directory / "session.json"
-    access_log_path = session_directory / "development-access-log.json"
-    commit_path = session_directory / "qualification-commit.json"
-    snapshot = ExclusiveJsonSnapshot(session_path)
-    session: dict[str, Any] = {
-        "schema": SESSION_SCHEMA,
-        "session_id": session_id,
-        "session_kind": "StageAQualificationSession",
-        "owner_ticket": "RIOTBOX-1428",
-        "scope": "development_only_exact_four_sources_no_holdout_or_reference_access",
-        "started_at_utc": utc_now(),
-        "status": "source_blind_preflight",
-        "qualification_owner_id": owner_id,
-        "contracts": {
-            "protocol_path": PROTOCOL_PATH.as_posix(),
-            "protocol_sha256": EXPECTED_PROTOCOL_SHA256,
-            "matrix_path": MATRIX_PATH.as_posix(),
-            "matrix_sha256": EXPECTED_MATRIX_SHA256,
-            "registry_path": REGISTRY_PATH.as_posix(),
-            "registry_sha256": EXPECTED_REGISTRY_SHA256,
-        },
-        "holdout_audio_accessed": False,
-        "commercial_reference_accessed": False,
-        "source_directory_discovery_performed": False,
-        "candidate_render_started": False,
-        "human_verdict": "unverified",
-        "quality_proof": False,
-        "hardness_proof": False,
-        "runtime_environment": {
-            "python_version": sys.version,
-            "numpy_version": np.__version__,
-            "byteorder": sys.byteorder,
-        },
-    }
-    snapshot.persist(session)
-    try:
-        protocol_json, _ = read_pinned_json(PROTOCOL_PATH, EXPECTED_PROTOCOL_SHA256)
-        matrix, _ = read_pinned_json(MATRIX_PATH, EXPECTED_MATRIX_SHA256)
-        registry, _ = read_pinned_json(REGISTRY_PATH, EXPECTED_REGISTRY_SHA256)
-        del protocol_json
-        validator_hashes = validate_repository(REPO_ROOT)
-        require(
-            validator_hashes["protocol_sha256"] == EXPECTED_PROTOCOL_SHA256
-            and validator_hashes["matrix_sha256"] == EXPECTED_MATRIX_SHA256
-            and validator_hashes["registry_v2_sha256"] == EXPECTED_REGISTRY_SHA256,
-            "frozen protocol validator returned unexpected contract hashes",
-        )
-        protocol = stage_a.load_frozen_protocol(PROTOCOL_PATH)
-        specs = validate_frozen_source_specs(matrix, registry)
-        implementation_before = implementation_snapshot()
-        session["implementation_snapshot"] = implementation_before
-        session["source_blind_preflight"] = run_source_blind_preflight()
-        require(
-            implementation_snapshot() == implementation_before,
-            "qualification implementation changed during source-blind preflight",
-        )
-        read_pinned_json(PROTOCOL_PATH, EXPECTED_PROTOCOL_SHA256)
-        read_pinned_json(MATRIX_PATH, EXPECTED_MATRIX_SHA256)
-        read_pinned_json(REGISTRY_PATH, EXPECTED_REGISTRY_SHA256)
-        session["status"] = "development_source_access"
-        session["access_log_path"] = access_log_path.as_posix()
-        snapshot.persist(session)
-
-        capture_owner = SourceCaptureOwner(specs)
-        access_result = verify_development_source_files(
-            registry,
-            STAGE_A_REGISTRY_PATH,
-            list(STAGE_A_DEVELOPMENT_CASE_IDS),
-            access_log_path,
-            qualification_owner_id=owner_id,
-            qualification_owner=capture_owner,
-            repo=REPO_ROOT,
-        )
-        finalized_access_records = validate_completed_access_result(
-            access_result,
-            specs,
-            owner_id,
-        )
-        owner_record = access_result["qualification_owner"]
-        require(
-            len(capture_owner.captured) == len(specs),
-            "qualification owner did not receive exactly four sources",
-        )
-        access_log_bytes, _ = read_and_match_access_log(access_log_path, access_result)
-        access_log_sha256 = sha256_bytes(access_log_bytes)
-        session["access_evidence"] = {
-            "access_session_id": access_result["access_session_id"],
-            "access_log_path": access_log_path.as_posix(),
-            "access_log_sha256": access_log_sha256,
-            "access_status": access_result["access_status"],
-            "qualification_status": access_result["qualification_status"],
-            "owner_delivery_status": owner_record["delivery_status"],
-        }
-        session["status"] = "source_feature_computation"
-        snapshot.persist(session)
-
-        source_inputs: list[stage_a.SourceInput] = []
-        source_bindings: list[dict[str, Any]] = []
-        for captured, spec, final_access_record in zip(
-            capture_owner.captured,
-            specs,
-            finalized_access_records,
-            strict=True,
-        ):
-            finalized_capture = CapturedSource(
-                identity=captured.identity,
-                payload=captured.payload,
-                access_record=final_access_record,
-            )
-            source_input, binding = decode_captured_source(finalized_capture, spec)
-            actual_format = final_access_record["actual_source_format"]
-            require(
-                binding["frame_count"] == actual_format["frame_count"]
-                and binding["verified_format"]["sample_rate_hz"]
-                == actual_format["sample_rate_hz"]
-                and binding["verified_format"]["channel_count"]
-                == actual_format["channels"]
-                and binding["verified_format"]["container_bits"]
-                == actual_format["sample_width_bits"]
-                and binding["verified_format"]["block_align"]
-                == actual_format["block_align"],
-                f"qualification PCM reparse diverged from safe access for {spec.case_id}",
-            )
-            source_inputs.append(source_input)
-            source_bindings.append(binding)
-        require(
-            implementation_snapshot() == implementation_before,
-            "qualification implementation changed after development source access",
-        )
-        read_pinned_json(PROTOCOL_PATH, EXPECTED_PROTOCOL_SHA256)
-        read_pinned_json(MATRIX_PATH, EXPECTED_MATRIX_SHA256)
-        read_pinned_json(REGISTRY_PATH, EXPECTED_REGISTRY_SHA256)
-
-        unbound = stage_a.qualify_four_sources(source_inputs, protocol=protocol)
-        require(
-            unbound.qualification_state == "unbound_analysis_only",
-            "analysis bypassed the bound qualification wrapper",
-        )
-        require(
-            implementation_snapshot() == implementation_before,
-            "qualification implementation changed during source analysis",
-        )
-        read_pinned_json(PROTOCOL_PATH, EXPECTED_PROTOCOL_SHA256)
-        read_pinned_json(MATRIX_PATH, EXPECTED_MATRIX_SHA256)
-        read_pinned_json(REGISTRY_PATH, EXPECTED_REGISTRY_SHA256)
-        final_access_log_bytes, _ = read_and_match_access_log(
-            access_log_path,
-            access_result,
-        )
-        require(
-            sha256_bytes(final_access_log_bytes) == access_log_sha256,
-            "development access log changed during source analysis",
-        )
-        for source_input, binding in zip(source_inputs, source_bindings, strict=True):
-            require(
-                pcm_f32le_sha256(
-                    source_input.samples,
-                    source_input.sample_rate_hz,
-                    source_input.samples.shape[1],
-                )
-                == binding["pcm_f32le_sha256"],
-                f"decoded PCM changed during analysis for {binding['case_id']}",
-            )
-        catalog = {
-            "schema": CATALOG_SCHEMA if unbound.passed else REJECTION_SCHEMA,
-            "owner_ticket": "RIOTBOX-1428",
-            "session_id": session_id,
-            "qualification_owner_id": owner_id,
-            "qualification_state": "passed" if unbound.passed else "rejected",
-            "stage_a_qualification_passed": unbound.passed,
-            "contracts": session["contracts"],
-            "implementation_snapshot": implementation_before,
-            "access_evidence": session["access_evidence"],
-            "source_bindings": source_bindings,
-            "mechanism_blind_analysis": unbound.to_dict(),
-            "candidate_render_started": False,
-            "holdout_audio_accessed": False,
-            "commercial_reference_accessed": False,
-            "source_directory_discovery_performed": False,
-            "quality_proof": False,
-            "hardness_proof": False,
-            "human_verdict": "unverified",
-            "next_allowed_action": (
-                "run_unchanged_3_family_by_4_source_by_2_event_matrix"
-                if unbound.passed
-                else "stop_without_candidate_render_or_protocol_retuning"
-            ),
-        }
-        artifact_name = (
-            "event-catalog.json" if unbound.passed else "qualification-rejection.json"
-        )
-        artifact_path = session_directory / artifact_name
-        artifact_sha256 = create_exclusive_json(artifact_path, catalog)
-        session["status"] = (
-            "qualified_event_catalog_frozen" if unbound.passed else "rejected_fail_closed"
-        )
-        session["qualification_artifact"] = {
-            "path": artifact_path.as_posix(),
-            "sha256": artifact_sha256,
-            "passed": unbound.passed,
-        }
-        session["qualification_commit"] = {
-            "required_for_downstream": True,
-            "schema": COMMIT_SCHEMA,
-            "path": commit_path.as_posix(),
-        }
-        session["completed_at_utc"] = utc_now()
-        snapshot.persist(session)
-        session_bytes = session_path.read_bytes()
-        require(
-            json.loads(session_bytes, object_pairs_hook=reject_duplicate_keys) == session,
-            "final persisted session differs from in-process state",
-        )
-        create_exclusive_json(
-            commit_path,
-            {
-                "schema": COMMIT_SCHEMA,
-                "session_id": session_id,
-                "session_path": session_path.as_posix(),
-                "session_sha256": sha256_bytes(session_bytes),
-                "session_status": session["status"],
-                "qualification_artifact_path": artifact_path.as_posix(),
-                "qualification_artifact_sha256": artifact_sha256,
-                "stage_a_qualification_passed": unbound.passed,
-                "access_log_sha256": access_log_sha256,
-                "committed_at_utc": utc_now(),
-            },
-        )
-        return (0 if unbound.passed else 2), session
-    except Exception as error:
-        session["status"] = "rejected_contract_or_execution_failure"
-        session["failure_type"] = type(error).__name__
-        session["failure"] = str(error)[:2_000]
-        session["candidate_render_started"] = False
-        session["completed_at_utc"] = utc_now()
-        snapshot.persist(session)
-        raise
-    finally:
-        snapshot.close()
+    del session_directory
+    raise StageAV1ExecutionClosed()
 
 
 def parse_args() -> argparse.Namespace:

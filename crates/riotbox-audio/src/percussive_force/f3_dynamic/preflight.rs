@@ -91,7 +91,9 @@ pub struct F3DynamicSyntheticPreflightAtRate {
     pub first_raw_body_frame: Option<usize>,
     pub first_body_state_frame: Option<usize>,
     pub expected_body_state_frame_range: [usize; 2],
-    pub strict_causality_pass: bool,
+    /// Activation timing is causal after whole-source means and anatomy are
+    /// frozen offline. This is not an end-to-end streaming-causality claim.
+    pub source_frozen_activation_causality_pass: bool,
     pub amplitude_scale_controller_max_error: f64,
     pub amplitude_scale_output_max_error: f64,
     pub polarity_controller_max_error: f64,
@@ -226,7 +228,7 @@ fn run_synthetic_preflight_at_rate(sample_rate_hz: u32) -> F3DynamicSyntheticPre
     let mut first_attack_state_frame = None;
     let mut first_raw_body_frame = None;
     let mut first_body_state_frame = None;
-    let mut strict_causality_pass = false;
+    let mut source_frozen_activation_causality_pass = false;
     let mut amplitude_scale_controller_max_error = f64::INFINITY;
     let mut polarity_controller_max_error = f64::INFINITY;
     let mut carrier_controller_max_error = f64::INFINITY;
@@ -241,7 +243,8 @@ fn run_synthetic_preflight_at_rate(sample_rate_hz: u32) -> F3DynamicSyntheticPre
         first_raw_body_frame = first_positive(&base.raw_body);
         first_body_state_frame = first_positive(&base.body_state);
         let expected_body_end = step.high_end + frames_for_ms(sample_rate_hz, 1);
-        strict_causality_pass = first_raw_attack_frame == Some(step.region.onset_frame)
+        source_frozen_activation_causality_pass = first_raw_attack_frame
+            == Some(step.region.onset_frame)
             && first_attack_state_frame == Some(step.region.onset_frame)
             && first_raw_body_frame
                 .is_some_and(|frame| frame >= step.high_end && frame < expected_body_end)
@@ -371,7 +374,7 @@ fn run_synthetic_preflight_at_rate(sample_rate_hz: u32) -> F3DynamicSyntheticPre
         && constant_controller_zero_pass
         && step_render_pass
         && all_rendered
-        && strict_causality_pass
+        && source_frozen_activation_causality_pass
         && amplitude_scale_controller_max_error <= controller_tolerance
         && amplitude_scale_output_max_error <= output_tolerance
         && polarity_controller_max_error <= controller_tolerance
@@ -412,7 +415,7 @@ fn run_synthetic_preflight_at_rate(sample_rate_hz: u32) -> F3DynamicSyntheticPre
         first_raw_body_frame,
         first_body_state_frame,
         expected_body_state_frame_range: [step.high_end, expected_body_end],
-        strict_causality_pass,
+        source_frozen_activation_causality_pass,
         amplitude_scale_controller_max_error,
         amplitude_scale_output_max_error,
         polarity_controller_max_error,
