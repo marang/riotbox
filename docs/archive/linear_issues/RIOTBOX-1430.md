@@ -1,61 +1,83 @@
-# `RIOTBOX-1430` P023: Freeze Stage-A Protocol v2 and legal retry snapshot
+# `RIOTBOX-1430` P023: Build qualified source pool and deliver Stage-A listening candidates
 
 - Ticket: `RIOTBOX-1430`
-- Title: `P023: Freeze Stage-A Protocol v2 and legal retry snapshot`
-- Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-1430/p023-freeze-stage-a-protocol-v2-and-legal-retry-snapshot`
+- Title: `P023: Build qualified source pool and deliver Stage-A listening candidates`
+- Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-1430/p023-build-qualified-source-pool-and-deliver-stage-a-listening`
 - Project: `P023 | Sound Excellence / Production Quality`
 - Milestone: `M4 | Controlled Expansion`
 - Status: `Done`
 - Created: `2026-08-10`
 - Started: `2026-08-10`
 - Finished: `2026-08-11`
-- Branch: `feature/riotbox-1430-stage-a-protocol-v2-retry-snapshot`
-- Linear branch: `feature/riotbox-1430-p023-freeze-stage-a-protocol-v2-and-legal-retry-snapshot`
+- Branch: `feature/riotbox-1430-qualified-source-pool-listening`
+- Linear branch: `feature/riotbox-1430-p023-build-qualified-source-pool-and-deliver-stage-a`
 - Assignee: `Markus`
 - Labels: `Audio`, `Feature`, `Spike`, `review-followup`
-- PR: `#1385 (https://github.com/marang/riotbox/pull/1385)`
-- Merge commit: `d00fc35cde6482c7ee5218b1e6a2462862e2f107`
+- PR: `#1387 (https://github.com/marang/riotbox/pull/1387)`
+- Merge commit: `c74956b3e1bb5c2c7c2dac90620abcbb1059b3b3`
 - Deleted from Linear: `Pending fresh token-authenticated cleanup; retained as Done`
-- Verification: `GitHub Rust CI passed cargo fmt, full cargo test, the audio-QA smoke gate, and strict Clippy. Targeted Protocol-v2, Registry-v3, Matrix-v3, analysis, and qualification fixtures passed. Two independent branch reviews found no remaining blocking or major issues.`
-- Docs touched: `docs/research_decision_log.md; docs/reviews/riotbox_1430_stage_a_v2_development_qualification_rejection_2026-08-11.md; AGENTS.md; .codex/skills/riotbox-development/SKILL.md`
-- Follow-ups: `RIOTBOX-1431; any later percussive-force attempt requires a new Protocol-v3 decision`
+- Verification: `GitHub Rust CI passed cargo fmt, cargo test, the audio-QA smoke gate, and strict all-target/all-feature Clippy. The focused 46-test Percussive-Force suite and every new v3/v4/v5/v2 contract, mutation, and source-blind preflight passed. Branch review found no remaining blocking or major issue.`
+- Docs touched: `docs/benchmarks/percussive_force_stage_a_*; docs/benchmarks/percussive_force_development_matrix_*; docs/reviews/riotbox_1430_*; docs/research_decision_log.md`
+- Follow-ups: `RIOTBOX-1428 must continue Stage A with a newly versioned causal mechanism; Stage B remains blocked.`
 
 ## Why This Ticket Existed
 
-The first RIOTBOX-1428 Stage-A admission failed under Protocol v1, and its
-post-execution audit identified evidence-label, protocol-object, and source-set
-problems that could only be corrected before a new source access. This ticket
-froze one legal Protocol-v2 retry without retuning from source results.
+The first four-source Protocol-v2 attempt closed honestly without a candidate,
+but that bounded batch did not satisfy the larger product objective: Riotbox
+still needed a substantial lawful Development pool, fresh source qualification,
+the complete Stage-A mechanism matrix, and a real human hardness verdict.
+
+RIOTBOX-1430 was reopened to correct that scope without retuning Protocol v2 or
+reinterpreting its terminal evidence. Historical PR #1385 and its merge
+`d00fc35cde6482c7ee5218b1e6a2462862e2f107` remain the immutable v2 result.
 
 ## What Shipped
 
-- Frozen Protocol-v2, Registry-v3, and Matrix-v3 contracts for four Development
-  sources from four authors across three source families, while preserving the
-  unopened active holdout union.
-- One bounded Development-only qualification session. Cinameng and Djericmark
-  qualified with three events each; Cyclez yielded one eligible event and
-  Justabeat yielded none, so the four-source admission rejected fail-closed.
-- A terminal rejection record that closes Matrix-v3 rendering and human
-  playback without imputing events, substituting sources, or tuning the frozen
-  algorithms.
-- Removal of 15,791 added executable lines of consumed acquisition machinery
-  and every runnable acquisition command. The durable project rule now keeps
-  future one-off source acquisition operational and small.
-- A typed post-RBX-263 runner refusal plus a source-blind regression fixture
-  proving that no validation or access callback can be reached by a retry.
+- Preregistered fifteen new CC0 Freesound candidates across dense-break,
+  sparse-drums, and electronic-drums families, with distinct authors, exact
+  identities, deterministic order, reserves, and bounded stopping.
+- Admitted thirteen exact Development files. Two incompatible container/format
+  examples remained explicit negative evidence; no parser widening was used to
+  force them through.
+- Ran one fresh Development-only qualification with the unchanged frozen
+  Detector, Anatomy, source-feature, and source-contrast algorithms. Nine
+  sources qualified individually.
+- Selected the first valid frozen combination: DABROmusic, Dr.Skitz, Garzul,
+  and Aikighost, spanning all required families, four authors, and the unique
+  three-cluster contrast partition.
+- Executed all 24 conditions in Matrix v6: three mechanism families by four
+  sources by two events. Nineteen conditions failed renderer/basic gates, four
+  more failed advanced screens, and one F2 condition reached human review.
+- Versioned the attenuation-view screen after it exposed a gain-dependent event
+  identity contradiction. No threshold, renderer, candidate, or source result
+  was tuned; source/candidate raw event identity now remains frozen across
+  diagnostic gain views.
+- Prepared and technically verified the exact local A/B artifact. Markus heard
+  the same 10-second-A / 10-second-B presentation twice and judged B `kaum
+  anders`.
+- Bound `human_verdict=reject`, kept source recognition clear, and froze F2
+  `f2_exact_complementary_three_band_v1` against scalar retuning or further
+  playback.
 
 ## Bounded Outcome
 
-- No Matrix-v3 condition or candidate audio was rendered.
-- No human hardness or musical-quality verdict exists.
-- No RuntimeMix, realtime, TUI, Session, replay, or product-path behavior changed.
-- No holdout audio, commercial reference, or source-directory discovery was used.
-- A later attempt must version Protocol v3 and every affected component before
-  any new source access; Protocol v2 cannot be retuned from this rejection.
+- RIOTBOX-1430 completed the corrected source-pool and structured-listening
+  objective, but produced no positive `percussive_hard` pass.
+- The human rejection overrides mechanical eligibility. F2 v1 is useful
+  negative calibration evidence, not a product-ready mechanism.
+- No RuntimeMix, realtime callback, TUI, ActionCommand, Session, replay,
+  Source-Graph, Ghost, Feral, or product-output behavior changed.
+- No holdout audio, commercial reference, source-directory discovery,
+  credential leakage, reusable downloader subsystem, or fallback music was
+  introduced.
+- RIOTBOX-1428 Stage B remains blocked. A further Stage-A attempt requires a
+  newly versioned causal hypothesis and Decision-Log entry; it may not adjust
+  the frozen F2 recipe from this source result.
 
 ## Links
 
-- [Qualification rejection](../../reviews/riotbox_1430_stage_a_v2_development_qualification_rejection_2026-08-11.md)
-- [Protocol v2](../../benchmarks/percussive_force_stage_a_protocol_v2.json)
-- [Registry v3](../../benchmarks/source_holdout_rotation_v3.json)
-- [Matrix v3](../../benchmarks/percussive_force_development_matrix_v3.json)
+- [Reopened qualification and Matrix-v6 review](../../reviews/riotbox_1430_stage_a_v5_qualification_pass_matrix_v6_freeze_2026-08-11.md)
+- [Protocol v5](../../benchmarks/percussive_force_stage_a_protocol_v5.json)
+- [Bound source set v1](../../benchmarks/percussive_force_stage_a_bound_source_set_v1.json)
+- [Development Matrix v6](../../benchmarks/percussive_force_development_matrix_v6.json)
+- [Historical Protocol-v2 rejection](../../reviews/riotbox_1430_stage_a_v2_development_qualification_rejection_2026-08-11.md)

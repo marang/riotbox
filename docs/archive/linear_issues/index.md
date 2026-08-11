@@ -10,6 +10,8 @@ This index tracks archived Linear ticket history that has been removed from the 
   Index for May 2026 one-file-per-ticket archives.
 - [2026-08.md](./2026-08.md)
   Index for August 2026 one-file-per-ticket archives.
+- [RIOTBOX-1430.md](./RIOTBOX-1430.md)
+  Qualified Stage-A Development source pool, complete Matrix-v6 evidence, and the frozen negative F2 human verdict.
 - [RIOTBOX-16.md](./RIOTBOX-16.md)
   MemPalace evaluation and dev-memory adoption decision.
 - [RIOTBOX-23.md](./RIOTBOX-23.md)
