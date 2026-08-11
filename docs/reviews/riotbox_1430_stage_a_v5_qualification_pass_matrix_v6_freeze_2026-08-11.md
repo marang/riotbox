@@ -27,3 +27,11 @@ Full-source candidate reanalysis remains mandatory before playback.
 No candidate had been rendered when RBX-269 and Matrix v6 were frozen.
 `quality_proof=false`, `hardness_proof=false`, and
 `human_verdict=unverified` remain unchanged.
+
+## Matrix execution and advanced-screen freeze
+
+All 24 conditions executed. Five passed the renderer and first strict screens;
+nineteen were rejected for typed renderer refusal or basic safety/identity/body
+failure. Before opening any surviving candidate WAV for reanalysis, RBX-270
+pins one general advanced-screen implementation and the exact five condition
+IDs. Playback remains forbidden until this screen completes.
