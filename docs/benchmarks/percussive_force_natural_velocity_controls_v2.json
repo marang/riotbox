@@ -1,0 +1,47 @@
+{
+  "schema": "riotbox.percussive_force_natural_velocity_controls.v2",
+  "owner_ticket": "RIOTBOX-1434",
+  "predecessor": {
+    "path": "docs/benchmarks/percussive_force_natural_velocity_controls_v1.json",
+    "raw_sha256": "f618144e02a6654b6a7c08b0773d91454b26e9b4cf8ac7cbcca723961783a78c",
+    "status": "terminal_fail_closed_before_control_audio_open"
+  },
+  "prior_attempt": {
+    "access_log_path": "artifacts/audio_qa/riotbox-1434/natural-velocity-controls-v1/access-log.json",
+    "access_log_sha256": "0a33e8359c4932d72f66b2623d780236005372ed64d0031a212e597eccd47f2c",
+    "failed_access_ordinal": 1,
+    "failure": "The invented data/test_audio/external prefix did not contain the registered RIOTBOX-1429 ancestor.",
+    "wav_opened": false,
+    "source_bytes_read": 0,
+    "directory_discovery_performed": false,
+    "rerun_v1": false
+  },
+  "correction": {
+    "only_change": "resolve_registered_local_path_from_documented_local_audio_root",
+    "local_audio_root": ".download-examples",
+    "matrix_v1_path_resolution_sha256": "3290011471bb1ae0fc66e54c8bb4e1382f82ceee6266245a44755d8f62f1f970",
+    "v1_control_audio_opened": false,
+    "v1_rerun_allowed": false
+  },
+  "inheritance": {
+    "analysis_passport_unchanged": true,
+    "control_catalog_unchanged": true,
+    "control_order_unchanged": true,
+    "control_hashes_unchanged": true,
+    "human_protocol_unchanged": true,
+    "claim_boundary_unchanged": true
+  },
+  "runner": {
+    "path": "scripts/run_percussive_force_natural_velocity_controls_v2.py",
+    "raw_sha256": "4a1f4f7ff2b12374eb768f2287c581938b387aefbfeee925835935a709f38370"
+  },
+  "execution": {
+    "exact_output_path": "artifacts/audio_qa/riotbox-1434/natural-velocity-controls-v2",
+    "maximum_file_reads": 6,
+    "one_read_per_file": true,
+    "directory_discovery": false,
+    "path_substitution": false,
+    "rerun_allowed": false
+  },
+  "stop_rule": "Any mismatch stops without search, substitution, retry, parameter change, or additional source access. Any further correction requires v3 and a new Decision Log entry before access."
+}
