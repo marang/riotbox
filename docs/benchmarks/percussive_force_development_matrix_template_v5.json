@@ -1,0 +1,20 @@
+{
+  "schema": "riotbox.percussive_force_development_matrix_template.v5",
+  "schema_version": 5,
+  "owner_ticket": "RIOTBOX-1430",
+  "status": "preregistered_unbound_template",
+  "protocol": "riotbox.percussive_force_stage_a_protocol.v4",
+  "source_pool": "riotbox.percussive_force_stage_a_source_pool.v2",
+  "selected_set_state": "not_started",
+  "selection_rule": "first_lexicographic_four_source_combination_with_four_authors_all_three_families_and_unchanged_source_contrast",
+  "required_cross_product": {
+    "families": ["f1_ab_energy_redistribution_v1", "f2_exact_complementary_three_band_v1", "f3_causal_envelope_contrast_dynamic_residual_v2"],
+    "source_count": 4,
+    "event_ordinals": [1, 2],
+    "candidate_event_condition_count": 24,
+    "execution": "not_started"
+  },
+  "quality_proof": false,
+  "hardness_proof": false,
+  "human_verdict": "unverified"
+}
