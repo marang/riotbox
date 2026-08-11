@@ -1,0 +1,148 @@
+{
+  "schema": "riotbox.percussive_force_stage_a_protocol.v3",
+  "schema_version": 3,
+  "owner_ticket": "RIOTBOX-1430",
+  "work_class": "audible_vertical_slice",
+  "status": "preregistered_before_new_source_audio_access",
+  "version_decision": "RBX-265",
+  "predecessor": {
+    "path": "docs/benchmarks/percussive_force_stage_a_protocol_v2.json",
+    "schema": "riotbox.percussive_force_stage_a_protocol.v2",
+    "raw_sha256": "b6b35cb14ef34be7f9b7bb6b2bf076ba84842c56914485937f088539e6217878",
+    "terminal_decision": "RBX-263",
+    "terminal_state": "rejected_fail_closed"
+  },
+  "inherited_algorithm_contract": {
+    "policy": "inherit_exact_v2_algorithm_sections_without_copying_or_retuning",
+    "source_path": "docs/benchmarks/percussive_force_stage_a_protocol_v2.json",
+    "sections": [
+      {
+        "json_pointer": "/numeric_passports",
+        "canonical_json_sha256": "0b486bf697d92c48bf6bd42544132c9e974a0f29d747e3ac787c14e684875c4a"
+      },
+      {
+        "json_pointer": "/prequalification",
+        "canonical_json_sha256": "9a1e5683e2e60585578781c84983e7bb3803619570f117a4391bc7958dd34555"
+      },
+      {
+        "json_pointer": "/precandidate",
+        "canonical_json_sha256": "4965700d4bb424f3873ecd0a20dfeb906a2b982eaa9c678b0af0429a5dbddb16"
+      }
+    ],
+    "unchanged_components": {
+      "event_detector": "riotbox.percussive_event_detector.v1",
+      "event_anatomy": "riotbox.percussive_event_anatomy.v2",
+      "source_contrast": "riotbox.percussive_source_contrast.v1",
+      "rhythmic_location_proxy": "riotbox.rhythmic_location_proxy.v1",
+      "event_ordinal_policy": "riotbox.event_ordinal_policy.v1",
+      "f1": "f1_ab_energy_redistribution_v1",
+      "f2": "f2_exact_complementary_three_band_v1",
+      "f3": "f3_causal_envelope_contrast_dynamic_residual_v2"
+    },
+    "forbidden_changes": [
+      "detector_equation_or_threshold",
+      "anatomy_equation_or_threshold",
+      "source_contrast_equation_or_threshold",
+      "event_ordinal_rule",
+      "f1_f2_f3_formula_or_constant",
+      "source_specific_branch_or_constant"
+    ]
+  },
+  "new_components": {
+    "source_pool": "riotbox.percussive_force_stage_a_source_pool.v1",
+    "pool_selection": "riotbox.percussive_force_stage_a_pool_selection.v1",
+    "qualification_session": "riotbox.percussive_force_stage_a_qualification_session.v3",
+    "bound_event_catalog": "riotbox.percussive_force_stage_a_bound_event_catalog.v3",
+    "qualification_rejection": "riotbox.percussive_force_stage_a_qualification_rejection.v3",
+    "matrix_template": "riotbox.percussive_force_development_matrix_template.v4"
+  },
+  "source_pool": {
+    "path": "docs/benchmarks/percussive_force_stage_a_source_pool_v1.json",
+    "schema": "riotbox.percussive_force_stage_a_source_pool.v1",
+    "exact_candidate_count": 15,
+    "exact_author_count": 15,
+    "exact_family_count": 3,
+    "candidates_per_family": 5,
+    "known_v2_sources_are_fresh_acceptance_evidence": false
+  },
+  "access_contract": {
+    "partition": "development_only",
+    "credential_location": "riotbox_scoped_os_keyring_process_memory_only",
+    "transport": "one_off_standard_network_client_no_repository_downloader",
+    "request_order": "source_pool_entries_in_ascending_ordinal_order",
+    "maximum_original_file_gets": 15,
+    "redirects": false,
+    "automatic_retries": false,
+    "previews": false,
+    "directory_discovery": false,
+    "substitution": false,
+    "holdout_audio_access": false,
+    "commercial_reference_access": false,
+    "credential_output_or_repository_storage": false,
+    "identity_checks_before_pcm_iteration": [
+      "exact_freesound_id_url_author_license",
+      "exact_content_length",
+      "exact_metadata_md5",
+      "computed_raw_sha256",
+      "strict_riff_wave_header"
+    ],
+    "accepted_audio": {
+      "container": "RIFF/WAVE",
+      "format_tag": 1,
+      "encoding": "signed_little_endian_integer_pcm",
+      "sample_width_bits": [16, 24],
+      "sample_rate_hz": [44100, 48000],
+      "channel_count": [1, 2],
+      "maximum_duration_seconds": 16
+    },
+    "unsupported_format": "reject_only_that_candidate_before_pcm_iteration"
+  },
+  "qualification_and_selection": {
+    "qualification_order": "all_15_candidates_in_ascending_pool_ordinal",
+    "early_stop": false,
+    "minimum_events_per_source": 2,
+    "maximum_frozen_events_per_source": 3,
+    "candidate_qualification": "unchanged_inherited_detector_anatomy_source_feature_and_event_ordinal_contract",
+    "combination_enumeration": "all_four_source_combinations_of_qualified_candidates_in_lexicographic_pool_ordinal_order",
+    "combination_requirements": {
+      "source_count": 4,
+      "author_count": 4,
+      "family_count": 3,
+      "required_families": ["dense_break", "sparse_drums", "electronic_drums"],
+      "source_contrast": "unchanged_inherited_source_contrast_v1_requires_exactly_one_valid_partition_and_at_least_three_clusters"
+    },
+    "selected_set": "first_combination_meeting_every_requirement",
+    "no_valid_combination": "reject_complete_pool_no_matrix_no_candidate_no_playback_require_new_version_before_more_source_access",
+    "selection_may_change_algorithm_or_threshold": false
+  },
+  "matrix": {
+    "template_path": "docs/benchmarks/percussive_force_development_matrix_template_v4.json",
+    "schema": "riotbox.percussive_force_development_matrix_template.v4",
+    "families": ["F1", "F2", "F3"],
+    "selected_source_count": 4,
+    "event_ordinals": [1, 2],
+    "candidate_event_condition_count": 24,
+    "bound_matrix_generation": "mechanical_from_the_selected_set_and_bound_event_catalog_without_human_or_agent_choice"
+  },
+  "historical_source_roles": {
+    "oga_cinameng_can_be_so_beautiful": "known_positive_development_not_fresh_acceptance",
+    "freesound_djericmark_724939": "known_positive_development_not_fresh_acceptance",
+    "freesound_cyclez_493560": "partial_one_event_stress_source_not_positive_matrix_evidence",
+    "freesound_justabeat_458897": "detector_negative_stress_source_not_positive_matrix_evidence"
+  },
+  "human_gate": {
+    "automation_can_award_hardness": false,
+    "mechanical_pass_grants": "bounded_listening_request_only",
+    "required_claim": "same_recognizable_hit_same_rhythmic_place_more_forcefully_struck",
+    "different_but_not_harder": "reject_and_freeze_recipe",
+    "candidate_playback_before_matrix_pass": false
+  },
+  "change_control": {
+    "after_first_new_source_audio_open": "no_contract_algorithm_threshold_pool_order_family_role_or_selection_change",
+    "required_for_change": "new_protocol_version_plus_affected_component_version_plus_decision_before_fresh_source_access",
+    "v2_artifacts_remain_immutable": true
+  },
+  "quality_proof": false,
+  "hardness_proof": false,
+  "human_verdict": "unverified"
+}

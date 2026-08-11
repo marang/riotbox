@@ -1,0 +1,42 @@
+{
+  "schema": "riotbox.percussive_force_development_matrix_template.v4",
+  "schema_version": 4,
+  "owner_ticket": "RIOTBOX-1430",
+  "status": "preregistered_unbound_template",
+  "protocol": {
+    "path": "docs/benchmarks/percussive_force_stage_a_protocol_v3.json",
+    "schema": "riotbox.percussive_force_stage_a_protocol.v3"
+  },
+  "source_pool": {
+    "path": "docs/benchmarks/percussive_force_stage_a_source_pool_v1.json",
+    "schema": "riotbox.percussive_force_stage_a_source_pool.v1"
+  },
+  "selection_component": "riotbox.percussive_force_stage_a_pool_selection.v1",
+  "selected_set_state": "not_started",
+  "selected_source_count": 4,
+  "selected_author_count": 4,
+  "selected_family_count": 3,
+  "required_families": ["dense_break", "sparse_drums", "electronic_drums"],
+  "event_catalog": {
+    "schema": "riotbox.percussive_force_stage_a_bound_event_catalog.v3",
+    "minimum_events_per_source": 2,
+    "maximum_frozen_events_per_source": 3,
+    "matrix_event_ordinals": [1, 2]
+  },
+  "required_cross_product": {
+    "families": [
+      "f1_ab_energy_redistribution_v1",
+      "f2_exact_complementary_three_band_v1",
+      "f3_causal_envelope_contrast_dynamic_residual_v2"
+    ],
+    "source_count": 4,
+    "event_ordinals": [1, 2],
+    "candidate_event_condition_count": 24,
+    "execution": "not_started"
+  },
+  "binding_rule": "generate_once_mechanically_after_pool_selection_without_changing_this_template",
+  "failed_selection": "no_bound_matrix_no_candidate_render_no_playback",
+  "quality_proof": false,
+  "hardness_proof": false,
+  "human_verdict": "unverified"
+}
