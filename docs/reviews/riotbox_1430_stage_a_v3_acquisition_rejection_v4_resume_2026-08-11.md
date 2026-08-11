@@ -28,3 +28,15 @@ only ordinals 7–15 may be requested under the new freeze.
 
 Evidence state remains `quality_proof=false`, `hardness_proof=false`, and
 `human_verdict=unverified`.
+
+## V4 terminal result and v5 continuation
+
+V4 retried only ordinal 7. Its exact response matched the frozen size and MD5,
+but the extended `fmt` payload's declared extension length did not match the
+actual chunk length. V4 therefore stopped before requests 8–15 and before any
+PCM iteration or qualification.
+
+RBX-267 rejects ordinal 7 permanently and does not broaden the parser again.
+The minimal v5 continuation retains the five existing header-only admissions
+and authorizes only the eight previously untouched ordinals 8–15. All musical
+and analysis rules remain unchanged.

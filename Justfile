@@ -68,6 +68,7 @@ _audio-qa-ci-unlocked:
     just percussive-force-stage-a-v2-contract-fixtures
     just percussive-force-stage-a-v3-contract-fixtures
     just percussive-force-stage-a-v4-contract-fixtures
+    just percussive-force-stage-a-v5-contract-fixtures
     just representative-source-showcase-output-guard-fixtures
     just representative-source-showcase-musical-quality-fixtures
     just automated-musical-fitness-fixtures
@@ -415,6 +416,9 @@ percussive-force-stage-a-v3-contract-fixtures:
 
 percussive-force-stage-a-v4-contract-fixtures:
     python3 scripts/validate_percussive_force_stage_a_protocol_v4.py --fixtures
+
+percussive-force-stage-a-v5-contract-fixtures:
+    python3 scripts/validate_percussive_force_stage_a_protocol_v5.py --fixtures
 
 professional-output-listening-verdict-import-fixtures pack="artifacts/audio_qa/local-professional-output-listening-pack":
     python3 scripts/validate_professional_output_listening_verdict_import_fixtures.py --pack "{{pack}}"
