@@ -3622,3 +3622,17 @@ Why: uniform gain matching is a comparison view, not a new source qualification.
 Evidence: v1's DABRO F2 raw view passed every advanced screen with four source and four candidate events; its matched view alone reported zero and zero after gains `0.9126318163647862` and `0.9131697229268734`, while the unchanged signal-domain fit values still passed. Advanced-screen v2 raw SHA-256 is `fd36358946e2faf20be91cff55bc044b8c11f0b42f1251a97751bb0de34e8584`; its source-blind `--validate-only` preflight passes with `candidate_audio_accessed=false`.
 Consequences: after this decision and implementation are committed, v2 may reanalyze only the exact five Matrix-v6 pre-survivors and must write a new exclusive v2 result. V1 is never overwritten or reclassified. Only a v2 survivor may proceed to bounded structured human review; automation still cannot award hardness or quality.
 Status: accepted
+
+---
+
+### RBX-272
+
+Date: 2026-08-11
+Topic: accept one Matrix-v6 advanced survivor for bounded human review
+Phase: P023 / Sound Excellence
+Question: which exact Matrix-v6 artifact may proceed after committed advanced-screen v2 completes?
+Decision: accept advanced-screen-v2 result SHA-256 `a0339027cf0b194dfa95a5e6baa9b1833ba2102e55fee7524f11aa4d4a11231b`. Exactly `f2_freesound_dabromusic_266735_event1` survives. Bind source `data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/05_dense_266735.wav` at raw SHA-256 `b3ee8908b0433e9d286f6174369cfebe78ee928656e52935d1992fdb2dba7c73` and candidate `artifacts/audio_qa/riotbox-1430/stage-a-v6-matrix/f2_freesound_dabromusic_266735_event1.wav` at raw SHA-256 `7a9e17bae841cebef05d990efcebd571578c73db49e047869afcc47368df0fe2`. Permit one local, ignored, hash-bound A/B review artifact containing the same bounded window and channel/rate mapping in the order raw source, declared silence, raw candidate, declared endpoint silence. The listener question is only whether B preserves the recognizable hit while adding immediate attack, physical body, and bite at `1.0x`; louder, darker, dirtier, or merely different is a reject.
+Why: v2 removes only the diagnostic gain/event-identity contradiction and leaves every numerical threshold and confound screen intact. Its sole survivor is now eligible for the human judgment automation is forbidden to make. A compact A/B comparison minimizes listener fatigue and prevents unrelated unchanged sections of the source from dominating the judgment.
+Evidence: both v2 views retain four source and four candidate events with one corresponding cluster. Raw and matched near-identity deltas are `0.061087517365865644` and `0.061102590446940566`; zero-lag correlations are `0.9981332418439249` and `0.9981332418439247`; attack spectral cosine is `0.9995513290159923`; raw/matched body-energy ratios are `0.9632024733178203` and `0.9643382338950708`; gain-only, static-EQ, static-distortion, and boundary screens pass. Automation still records `quality_proof=false`, `hardness_proof=false`, and `human_verdict=unverified`.
+Consequences: technically preflight the exact A/B WAV, report its segment assignment, format, duration, peak/RMS/LUFS where available, silence/clipping, time-local waveform and spectral deltas, and audible contributor inventory. Then explain the non-priming purpose and obtain fresh readiness before playback. A `different_but_not_harder` verdict rejects and freezes F2 v1; no scalar retuning follows.
+Status: accepted

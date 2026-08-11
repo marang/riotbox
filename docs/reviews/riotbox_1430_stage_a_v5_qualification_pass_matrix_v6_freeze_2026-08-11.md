@@ -53,3 +53,18 @@ source/candidate event classification across both views while continuing to
 compute all signal-domain metrics at each view's declared gains. The v1 result
 remains immutable evidence. V2 must be committed and pass source-blind
 `--validate-only` before it may reopen the exact five candidate WAVs.
+
+## Advanced-screen v2 result and listening handoff
+
+Committed advanced-screen v2 completed once and retained exactly
+`f2_freesound_dabromusic_266735_event1`. Its exclusive ignored result has raw
+SHA-256 `a0339027cf0b194dfa95a5e6baa9b1833ba2102e55fee7524f11aa4d4a11231b`.
+The other four v1 rejections remain unchanged.
+
+The survivor is a full-length, 44.1 kHz stereo Float32 render of the exact
+Development source. It preserves `1.0x` playback and modifies only frozen event
+1 through F2 `f2_exact_complementary_three_band_v1`; all samples outside the
+event support remain bit-identical. Raw and attenuation-matched views both
+retain four source/candidate events and pass every frozen identity, body,
+boundary, and confound screen. This authorizes one bounded structured human
+comparison, not a hardness or quality claim.
