@@ -3788,3 +3788,17 @@ Why: a request to hear the same short comparison once more is evidence that the 
 Evidence: the first `pw-play` invocation exited successfully after the declared 7.126-second artifact and no playback process remained. The listener supplied no snare or whip direction and requested one identical replay before judging.
 Consequences: reverify the exact artifact hash, format, duration, clipping state, and endpoint silence, explain that the same four blocks will repeat, obtain fresh readiness, and play once. Then stop and request the directional response; no third playback is authorized under this decision.
 Status: accepted
+
+---
+
+### RBX-284
+
+Date: 2026-08-11
+Topic: replace the dense four-block sanity presentation with two repeated instrument-specific reviews
+Phase: P023 / Sound Excellence
+Question: how should the natural-control sanity check continue after two identical presentations still did not produce a confident directional response?
+Decision: close the 7.126-second combined presentation as human-inconclusive because it demanded four position judgments too quickly. Do not play it a third time. Freeze builder SHA-256 `5ed27f0c228541952fecb7aae0986f788b5955b73d0602de35cec15b5b6aad9b` to derive two new artifacts solely from the already-verified v1 artifact SHA-256 `fd61c45f3d50c1e4a4d4dae55575ce1508d69bbc454d5325312aa83074236847`, without rereading control sources. Produce separate snare and whip files, each preserving raw frames, level, blinded primary order, and reversed order. Repeat each pair three times per order with `250 ms` between hits, `250 ms` between repetitions, `750 ms` between orders, and `200 ms` endpoint silence. Keep each artifact below 10 seconds and request a separate readiness and verdict for each instrument.
+Why: the repeated request indicates a presentation-design failure, not a hearing failure or negative force verdict. Splitting instruments and repeating each pair gives the listener enough exposures while preserving the exact stimulus identities and avoiding source access, rerendered controls, order learning, or a third replay of an ineffective combined layout.
+Evidence: both combined-artifact playbacks completed at the declared endpoint with no remaining playback process, but the listener supplied no directional result. The v2 builder compiles and its preflight verifies the pinned input artifact and analysis with `control_source_audio_accessed=false`.
+Consequences: after this decision and builder are committed, generate and independently preflight the two artifacts. Present only the snare artifact first. After its verdict is recorded, separately brief and request readiness for the whip artifact. No combined-artifact replay or new control-source read is permitted.
+Status: accepted
