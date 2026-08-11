@@ -354,6 +354,7 @@ def validate_completed_access_result(
     access_result: dict[str, Any],
     specs: tuple[FrozenSourceSpec, ...],
     owner_id: str,
+    requested_case_ids: tuple[str, ...] = STAGE_A_DEVELOPMENT_CASE_IDS,
 ) -> tuple[dict[str, Any], ...]:
     require(
         access_result.get("schema")
@@ -383,7 +384,7 @@ def validate_completed_access_result(
     )
     require(
         tuple(access_result.get("requested_case_ids", ()))
-        == STAGE_A_DEVELOPMENT_CASE_IDS,
+        == requested_case_ids,
         "safe access request identity or order changed",
     )
     owner_record = access_result.get("qualification_owner")

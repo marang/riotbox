@@ -248,6 +248,100 @@ def protocol_and_numeric_fixtures() -> analysis.FrozenStageAProtocol:
     return protocol
 
 
+def protocol_v2_boundary_fixtures() -> None:
+    protocol = analysis.load_frozen_protocol(analysis.CANONICAL_PROTOCOL_V2_PATH)
+    _require(protocol.schema_version == 2, "Protocol-v2 schema version drifted")
+    payload = analysis.CANONICAL_PROTOCOL_V2_PATH.read_bytes()
+    _expect_contract_error(
+        lambda: analysis.FrozenStageAProtocol.from_bytes(payload + b" "),
+        "protocol_pin_mismatch",
+    )
+
+    samples = np.ones((128, CHANNEL_COUNT), dtype=np.float64) * 0.25
+    metadata = _metadata("v2-mean-required", "dense_break", "v2-author", samples)
+    _expect_contract_error(
+        lambda: analysis.analyze_source(
+            metadata,
+            samples,
+            SAMPLE_RATE,
+            INPUT_LSB,
+            protocol=protocol,
+        ),
+        "authoritative_dc_mean_missing",
+    )
+    quiet = np.zeros((128, CHANNEL_COUNT), dtype=np.float64)
+    quiet_result = analysis.analyze_source(
+        _metadata("v2-quiet", "dense_break", "v2-quiet-author", quiet),
+        quiet,
+        SAMPLE_RATE,
+        INPUT_LSB,
+        protocol=protocol,
+        per_channel_dc_mean_f64_bits_be_hex=(
+            "0000000000000000",
+            "0000000000000000",
+        ),
+    )
+    quiet_serialized = quiet_result.to_dict()
+    _require(
+        not quiet_result.qualified
+        and quiet_result.refusals[0].reason
+        is analysis.SourceRefusalReason.INSUFFICIENT_SIGNAL
+        and quiet_serialized["per_channel_dc_mean_f64_bits_be_hex"]
+        == ["0000000000000000", "0000000000000000"],
+        "quiet Protocol-v2 input must retain exact means in its typed rejection",
+    )
+    rejected = analysis._empty_analysis(
+        metadata,
+        protocol,
+        SAMPLE_RATE,
+        analysis.SourceRefusalReason.INSUFFICIENT_SIGNAL,
+        "source-blind fixture",
+        channel_count=CHANNEL_COUNT,
+        frame_count=samples.shape[0],
+    ).to_dict()
+    _require(
+        rejected["schema"] == "riotbox.percussive_force_source_analysis.v2"
+        and rejected["per_channel_dc_mean_f64_bits_be_hex"] == []
+        and "per_channel_dc_means" not in rejected,
+        "Protocol-v2 source analysis must serialize only authoritative mean bits",
+    )
+
+    zeros = np.zeros(10_000, dtype=np.float64)
+    peak = analysis._DetectorPeak(hop_index=0, frame=5_000, novelty=1.0)
+    v2_refinement = analysis._resolve_anatomy(
+        peak,
+        zeros,
+        zeros,
+        zeros,
+        zeros,
+        SAMPLE_RATE,
+        INPUT_LSB,
+        protocol,
+    )
+    _require(
+        v2_refinement.refusal is not None
+        and v2_refinement.refusal.reason
+        is analysis.EventRefusalReason.PHYSICAL_ONSET_UNRESOLVED,
+        "Protocol-v2 unresolved onset must not claim generic edge-only anatomy",
+    )
+    v1 = analysis.load_frozen_protocol()
+    v1_refinement = analysis._resolve_anatomy(
+        peak,
+        zeros,
+        zeros,
+        zeros,
+        zeros,
+        SAMPLE_RATE,
+        INPUT_LSB,
+        v1,
+    )
+    _require(
+        v1_refinement.refusal is not None
+        and v1_refinement.refusal.reason is analysis.EventRefusalReason.EDGE_ONLY_IMPULSE,
+        "historical Protocol-v1 refusal spelling changed",
+    )
+
+
 def fail_closed_input_fixtures(protocol: analysis.FrozenStageAProtocol) -> None:
     quiet = np.full((SAMPLE_RATE, CHANNEL_COUNT), 16.0 * INPUT_LSB)
     quiet[::2] *= -1.0
@@ -614,6 +708,7 @@ def qualification_shape_failures(protocol: analysis.FrozenStageAProtocol) -> Non
 
 def main() -> int:
     protocol = protocol_and_numeric_fixtures()
+    protocol_v2_boundary_fixtures()
     fail_closed_input_fixtures(protocol)
     detector_catalog_and_provenance_fixtures(protocol)
     nms_and_composite_fixtures(protocol)

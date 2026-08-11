@@ -15,6 +15,7 @@ from unittest.mock import patch
 import numpy as np
 
 import run_percussive_force_stage_a_qualification as qualification
+import run_percussive_force_stage_a_v2_qualification as qualification_v2
 from source_holdout_development_access import SourceIdentity
 
 
@@ -28,6 +29,7 @@ def pcm_wave(
     *,
     sample_rate_hz: int,
     sample_width_bits: int,
+    channels: int = 1,
 ) -> bytes:
     if sample_width_bits == 16:
         sample_bytes = b"".join(struct.pack("<h", value) for value in integers)
@@ -38,7 +40,6 @@ def pcm_wave(
         )
     else:
         raise AssertionError("fixture supports only PCM16 and PCM24")
-    channels = 1
     block_align = channels * (sample_width_bits // 8)
     fmt = struct.pack(
         "<HHIIHH",
@@ -165,6 +166,76 @@ def capture_owner_fixture() -> None:
         raise AssertionError("owner accepted an extra delivery")
 
 
+def v2_authoritative_mean_fixture() -> None:
+    channel_codes = (
+        (8_388_607, -8_388_608, 8_388_607, -8_388_608, 3, -2, 2),
+        (8_388_607, -8_388_608, 8_388_607, -8_388_608, 3, -2, 0),
+    )
+    frames = np.asarray(channel_codes, dtype=np.int32).T
+    bits, sums = qualification_v2.authoritative_dc_mean_bits(frames, 24)
+    require(sums == (1, -1), "Protocol-v2 exact signed-code sums drifted")
+    require(
+        bits == ("3e52492492492492", "be52492492492492"),
+        "Protocol-v2 exact rational-to-binary64 golden drifted",
+    )
+    zero_bits, zero_sums = qualification_v2.authoritative_dc_mean_bits(
+        np.asarray(((1, -1), (-1, 1)), dtype=np.int32), 16
+    )
+    require(zero_sums == (0, 0), "zero-sum fixture drifted")
+    require(
+        zero_bits == ("0000000000000000", "0000000000000000"),
+        "exact zero means must serialize canonical positive zero",
+    )
+
+    interleaved = tuple(int(value) for frame in frames for value in frame)
+    payload = pcm_wave(
+        interleaved,
+        sample_rate_hz=48_000,
+        sample_width_bits=24,
+        channels=2,
+    )
+    raw_sha256 = hashlib.sha256(payload).hexdigest()
+    source_format = {
+        "sample_rate_hz": 48_000,
+        "channels": 2,
+        "sample_width_bits": 24,
+        "compression_type": "NONE",
+        "maximum_duration_seconds": 16,
+    }
+    spec = qualification.FrozenSourceSpec(
+        case_id="synthetic_v2_mean",
+        source_family="synthetic_source_blind",
+        author="fixture",
+        source_path="memory/synthetic_v2_mean.wav",
+        source_sha256=raw_sha256,
+        license="synthetic-test-only",
+        partition="development",
+        source_format=source_format,
+    )
+    identity = SourceIdentity(
+        case_id=spec.case_id,
+        source_path=spec.source_path,
+        expected_sha256=raw_sha256,
+        partition="development",
+        source_format=source_format,
+    )
+    access_record = {
+        "case_id": spec.case_id,
+        "source_path": spec.source_path,
+        "expected_sha256": raw_sha256,
+        "actual_sha256": raw_sha256,
+        "access_verification_status": "verified_and_delivered_to_owner",
+    }
+    source, binding = qualification_v2.decode_captured_source(
+        qualification.CapturedSource(identity, payload, access_record), spec
+    )
+    require(
+        source.per_channel_dc_mean_f64_bits_be_hex == bits
+        and binding["per_channel_dc_mean_f64_bits_be_hex"] == list(bits),
+        "Protocol-v2 decoder did not bind its authoritative source means",
+    )
+
+
 def implementation_snapshot_fixture() -> None:
     first = qualification.implementation_snapshot()
     second = qualification.implementation_snapshot()
@@ -177,6 +248,12 @@ def implementation_snapshot_fixture() -> None:
     require(
         len(first["files"]) == len(qualification.IMPLEMENTATION_PATHS),
         "implementation snapshot omitted files",
+    )
+    v2_snapshot = qualification_v2.implementation_snapshot()
+    v2_paths = {entry["path"] for entry in v2_snapshot["files"]}
+    require(
+        "scripts/run_percussive_force_stage_a_qualification.py" in v2_paths,
+        "v2 snapshot omitted its imported qualification helper module",
     )
 
 
@@ -242,6 +319,7 @@ def main() -> int:
         ),
     )
     capture_owner_fixture()
+    v2_authoritative_mean_fixture()
     implementation_snapshot_fixture()
     closed_v1_execution_fixture()
     print("PASS: Stage-A qualification owner synthetic fixtures")
