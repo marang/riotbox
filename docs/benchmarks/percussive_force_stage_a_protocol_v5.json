@@ -1,0 +1,63 @@
+{
+  "schema": "riotbox.percussive_force_stage_a_protocol.v5",
+  "schema_version": 5,
+  "owner_ticket": "RIOTBOX-1430",
+  "status": "preregistered_final_continuation_before_further_audio_access",
+  "version_decision": "RBX-267",
+  "predecessor": {
+    "path": "docs/benchmarks/percussive_force_stage_a_protocol_v4.json",
+    "raw_sha256": "0f7bff0744a0b229136f192b93ea1e537849c30f2906ab9247e279baf567e724",
+    "terminal_access_log": "artifacts/audio_qa/riotbox-1430/stage-a-v4-source-pool-access.json",
+    "terminal_access_log_raw_sha256": "fa15bb32c1b9285f878ffbec676ffae627e8aac1d2ea1d4d810241919abcce9e",
+    "terminal_state": "rejected_fail_closed_before_qualification"
+  },
+  "unchanged_contracts": {
+    "algorithm_source": "docs/benchmarks/percussive_force_stage_a_protocol_v2.json",
+    "algorithm_source_raw_sha256": "b6b35cb14ef34be7f9b7bb6b2bf076ba84842c56914485937f088539e6217878",
+    "detector_anatomy_source_contrast_ordinals_f1_f2_f3": "unchanged",
+    "pcm_wave_admission": "riotbox.percussive_force_stage_a_pcm_wave_admission.v2",
+    "metadata_pool_path": "docs/benchmarks/percussive_force_stage_a_source_pool_v1.json",
+    "metadata_pool_raw_sha256": "9c729eaac4156cb556d9f2538635e04829b3ffec3ad012d742fb765ad1e2a8ba",
+    "matrix_semantics": "docs/benchmarks/percussive_force_development_matrix_template_v5.json"
+  },
+  "source_pool_v3": {
+    "inherited_header_admitted_ordinals": [1, 2, 4, 5, 6],
+    "terminal_rejected_ordinals": [3, 7],
+    "terminal_reasons": {
+      "3": "unsupported_ieee_float_32",
+      "7": "incoherent_extended_fmt_chunk"
+    },
+    "exact_request_ordinals": [8, 9, 10, 11, 12, 13, 14, 15],
+    "maximum_original_file_gets": 8,
+    "qualification_candidates": "inherited_plus_new_header_admissions_in_ascending_original_ordinal"
+  },
+  "access": {
+    "one_off_standard_client": true,
+    "request_order": "ascending_original_pool_ordinal",
+    "redirects": false,
+    "automatic_retries": false,
+    "preview_or_search": false,
+    "directory_discovery": false,
+    "substitution": false,
+    "holdout_audio_access": false,
+    "commercial_reference_access": false,
+    "credential_output_or_storage": false,
+    "any_non_format_contract_violation": "reject_complete_v5_access_fail_closed"
+  },
+  "qualification_and_matrix": {
+    "qualification_session": "riotbox.percussive_force_stage_a_qualification_session.v5",
+    "bound_event_catalog": "riotbox.percussive_force_stage_a_bound_event_catalog.v5",
+    "qualification_rejection": "riotbox.percussive_force_stage_a_qualification_rejection.v5",
+    "early_stop": false,
+    "minimum_events_per_source": 2,
+    "maximum_frozen_events_per_source": 3,
+    "selection": "first_lexicographic_four_source_combination_with_four_authors_all_three_families_and_unchanged_source_contrast",
+    "bound_matrix": "riotbox.percussive_force_development_matrix.v6",
+    "cross_product": "3_families_x_4_sources_x_2_events_equals_24",
+    "no_valid_combination": "reject_no_render_no_playback"
+  },
+  "change_control": "no_further_source_access_after_v5_failure_without_new_version_and_decision",
+  "quality_proof": false,
+  "hardness_proof": false,
+  "human_verdict": "unverified"
+}

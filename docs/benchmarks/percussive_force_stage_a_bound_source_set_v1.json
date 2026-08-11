@@ -1,0 +1,50 @@
+{
+  "schema": "riotbox.percussive_force_stage_a_bound_source_set.v1",
+  "schema_version": 1,
+  "owner_ticket": "RIOTBOX-1430",
+  "status": "frozen_before_pcm_iteration_or_source_feature_computation",
+  "protocol": {
+    "path": "docs/benchmarks/percussive_force_stage_a_protocol_v5.json",
+    "raw_sha256": "455440aabc1a433bbc7fbcc2093b85f6d1c66e1bba081526e082c50ed8248519"
+  },
+  "metadata_pool": {
+    "path": "docs/benchmarks/percussive_force_stage_a_source_pool_v1.json",
+    "raw_sha256": "9c729eaac4156cb556d9f2538635e04829b3ffec3ad012d742fb765ad1e2a8ba"
+  },
+  "access_evidence": [
+    {"path": "artifacts/audio_qa/riotbox-1430/stage-a-v3-source-pool-access.json", "raw_sha256": "417e6b41f8ddb9c03650dc42f7c900d4ff56aebf929caaf38fa3dfe175cb15eb", "admitted_ordinals": [1, 2, 4, 5, 6]},
+    {"path": "artifacts/audio_qa/riotbox-1430/stage-a-v5-source-pool-access.json", "raw_sha256": "dd9be23138651ae226bce7af6f8765e6014f19847a20d342f62fceaedd7cdcbd", "admitted_ordinals": [8, 9, 10, 11, 12, 13, 14, 15]}
+  ],
+  "protected_holdout": {
+    "path": "docs/benchmarks/source_holdout_rotation_v3.json",
+    "raw_sha256": "9e5e03ad64319061a4baaa6cee7c40fc5e993171b0d11003ec29767f273bc502",
+    "metadata_exclusion_only": true,
+    "audio_accessed": false
+  },
+  "qualification_order": [1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15],
+  "entries": [
+    {"ordinal": 1, "case_id": "freesound_alastair_pursloe_183441", "source_family": "dense_break", "author": "Alastair_Pursloe", "source_path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/01_dense_183441.wav", "sha256": "b342ee4a9412de14f460c2c295634c53801f2549c71bfc486644a1b02030abc9", "license": "http://creativecommons.org/publicdomain/zero/1.0/", "partition": "development", "source_format": {"sample_rate_hz": 44100, "channels": 2, "sample_width_bits": 16, "compression_type": "NONE", "maximum_duration_seconds": 16}},
+    {"ordinal": 2, "case_id": "freesound_nenadsimic_268110", "source_family": "dense_break", "author": "NenadSimic", "source_path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/02_dense_268110.wav", "sha256": "6122a35f22ff910fc9291e0eeafc98c910e03a9c563c4ef58d50efa3ec21251c", "license": "http://creativecommons.org/publicdomain/zero/1.0/", "partition": "development", "source_format": {"sample_rate_hz": 44100, "channels": 2, "sample_width_bits": 24, "compression_type": "NONE", "maximum_duration_seconds": 16}},
+    {"ordinal": 4, "case_id": "freesound_schafferdavid_211478", "source_family": "dense_break", "author": "schafferdavid", "source_path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/04_dense_211478.wav", "sha256": "daf38fe7403f8afb9da0d3bf334b50acbbac3c46dd6cf231e4827489b056a57a", "license": "http://creativecommons.org/publicdomain/zero/1.0/", "partition": "development", "source_format": {"sample_rate_hz": 44100, "channels": 2, "sample_width_bits": 16, "compression_type": "NONE", "maximum_duration_seconds": 16}},
+    {"ordinal": 5, "case_id": "freesound_dabromusic_266735", "source_family": "dense_break", "author": "DABROmusic", "source_path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/05_dense_266735.wav", "sha256": "b3ee8908b0433e9d286f6174369cfebe78ee928656e52935d1992fdb2dba7c73", "license": "http://creativecommons.org/publicdomain/zero/1.0/", "partition": "development", "source_format": {"sample_rate_hz": 44100, "channels": 2, "sample_width_bits": 24, "compression_type": "NONE", "maximum_duration_seconds": 16}},
+    {"ordinal": 6, "case_id": "freesound_scydan_385676", "source_family": "sparse_drums", "author": "Scydan", "source_path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/06_sparse_385676.wav", "sha256": "868f0798a9542e9d04ee3c9ab940d50c24d87364417d04a687a4678d7396f033", "license": "http://creativecommons.org/publicdomain/zero/1.0/", "partition": "development", "source_format": {"sample_rate_hz": 44100, "channels": 2, "sample_width_bits": 16, "compression_type": "NONE", "maximum_duration_seconds": 16}},
+    {"ordinal": 8, "case_id": "freesound_vincent_sermonne_423272", "source_family": "sparse_drums", "author": "vincent sermonne", "source_path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/08_sparse_423272.wav", "sha256": "4982d9b04beaafa34b3fe30a2c2ae563892d8939f7cec5928f314addb57b1191", "license": "http://creativecommons.org/publicdomain/zero/1.0/", "partition": "development", "source_format": {"sample_rate_hz": 44100, "channels": 2, "sample_width_bits": 16, "compression_type": "NONE", "maximum_duration_seconds": 16}},
+    {"ordinal": 9, "case_id": "freesound_dr_skitz_353853", "source_family": "sparse_drums", "author": "dr_skitz", "source_path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/09_sparse_353853.wav", "sha256": "e75e1e6248d07b63ad58b8ee74a35c8cac066db808ef3e5daf256f20a5ba858d", "license": "http://creativecommons.org/publicdomain/zero/1.0/", "partition": "development", "source_format": {"sample_rate_hz": 48000, "channels": 2, "sample_width_bits": 16, "compression_type": "NONE", "maximum_duration_seconds": 16}},
+    {"ordinal": 10, "case_id": "freesound_jmarcosfer_591426", "source_family": "sparse_drums", "author": "jmarcosfer", "source_path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/10_sparse_591426.wav", "sha256": "a9be617421c8a3b53c6a4f1d400ba80ca5b83fa330482c4da056701927fbccd8", "license": "http://creativecommons.org/publicdomain/zero/1.0/", "partition": "development", "source_format": {"sample_rate_hz": 48000, "channels": 2, "sample_width_bits": 24, "compression_type": "NONE", "maximum_duration_seconds": 16}},
+    {"ordinal": 11, "case_id": "freesound_paranoye_365847", "source_family": "electronic_drums", "author": "Paranoye", "source_path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/11_electronic_365847.wav", "sha256": "287fbba5e0d3c3b3c0018ece852cf50bd844095aac94958ddddeacd79494cd73", "license": "http://creativecommons.org/publicdomain/zero/1.0/", "partition": "development", "source_format": {"sample_rate_hz": 44100, "channels": 2, "sample_width_bits": 16, "compression_type": "NONE", "maximum_duration_seconds": 16}},
+    {"ordinal": 12, "case_id": "freesound_garzul_213512", "source_family": "electronic_drums", "author": "Garzul", "source_path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/12_electronic_213512.wav", "sha256": "2766f04fb67da49186a6f508ed3bd29f8521942058910d8c456c823c9f390bdb", "license": "http://creativecommons.org/publicdomain/zero/1.0/", "partition": "development", "source_format": {"sample_rate_hz": 44100, "channels": 2, "sample_width_bits": 16, "compression_type": "NONE", "maximum_duration_seconds": 16}},
+    {"ordinal": 13, "case_id": "freesound_aikighost_19059", "source_family": "electronic_drums", "author": "aikighost", "source_path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/13_electronic_19059.wav", "sha256": "b959afcf9654d2654c003fa956485f569b917afec805b57f9816ca22db9d6b4c", "license": "http://creativecommons.org/publicdomain/zero/1.0/", "partition": "development", "source_format": {"sample_rate_hz": 44100, "channels": 2, "sample_width_bits": 16, "compression_type": "NONE", "maximum_duration_seconds": 16}},
+    {"ordinal": 14, "case_id": "freesound_karolist_369570", "source_family": "electronic_drums", "author": "karolist", "source_path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/14_electronic_369570.wav", "sha256": "ade7f0419db53c7b52e04dd150b7dc715dd030350048789cca491d991ce5d851", "license": "http://creativecommons.org/publicdomain/zero/1.0/", "partition": "development", "source_format": {"sample_rate_hz": 48000, "channels": 2, "sample_width_bits": 16, "compression_type": "NONE", "maximum_duration_seconds": 16}},
+    {"ordinal": 15, "case_id": "freesound_xanthorp_51219", "source_family": "electronic_drums", "author": "xanthorp", "source_path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/15_electronic_51219.wav", "sha256": "58cb7e2abd1198bf10c172d8de2b05f647cb9c63425a303dc5808fe35ae6052c", "license": "http://creativecommons.org/publicdomain/zero/1.0/", "partition": "development", "source_format": {"sample_rate_hz": 44100, "channels": 2, "sample_width_bits": 16, "compression_type": "NONE", "maximum_duration_seconds": 16}}
+  ],
+  "source_count": 13,
+  "author_count": 13,
+  "family_count": 3,
+  "minimum_events_per_source": 2,
+  "maximum_frozen_events_per_source": 3,
+  "selection": "first_lexicographic_four_source_combination_with_four_authors_all_three_families_and_unchanged_source_contrast",
+  "candidate_render_started": false,
+  "quality_proof": false,
+  "hardness_proof": false,
+  "human_verdict": "unverified"
+}

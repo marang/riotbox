@@ -66,6 +66,11 @@ _audio-qa-ci-unlocked:
     just sound-excellence-source-corpus-fixtures
     just source-holdout-rotation-fixtures
     just percussive-force-stage-a-v2-contract-fixtures
+    just percussive-force-stage-a-v3-contract-fixtures
+    just percussive-force-stage-a-v4-contract-fixtures
+    just percussive-force-stage-a-v5-contract-fixtures
+    just percussive-force-stage-a-v5-qualification-contracts
+    just percussive-force-stage-a-matrix-v6-v2-contracts
     just representative-source-showcase-output-guard-fixtures
     just representative-source-showcase-musical-quality-fixtures
     just automated-musical-fitness-fixtures
@@ -407,6 +412,21 @@ percussive-force-stage-a-v2-contract-fixtures:
     python3 scripts/validate_percussive_force_stage_a_protocol_v2_fixtures.py
     python3 scripts/percussive_force_stage_a_analysis_fixtures.py
     python3 scripts/percussive_force_stage_a_qualification_fixtures.py
+
+percussive-force-stage-a-v3-contract-fixtures:
+    python3 scripts/validate_percussive_force_stage_a_protocol_v3.py --fixtures
+
+percussive-force-stage-a-v4-contract-fixtures:
+    python3 scripts/validate_percussive_force_stage_a_protocol_v4.py --fixtures
+
+percussive-force-stage-a-v5-contract-fixtures:
+    python3 scripts/validate_percussive_force_stage_a_protocol_v5.py --fixtures
+
+percussive-force-stage-a-v5-qualification-contracts:
+    python3 scripts/run_percussive_force_stage_a_v5_qualification.py --validate-only
+
+percussive-force-stage-a-matrix-v6-v2-contracts:
+    python3 scripts/validate_percussive_force_stage_a_matrix_v6_v2.py --validate-only
 
 professional-output-listening-verdict-import-fixtures pack="artifacts/audio_qa/local-professional-output-listening-pack":
     python3 scripts/validate_professional_output_listening_verdict_import_fixtures.py --pack "{{pack}}"

@@ -1,0 +1,41 @@
+{
+  "schema": "riotbox.percussive_force_stage_a_source_pool.v2",
+  "schema_version": 2,
+  "owner_ticket": "RIOTBOX-1430",
+  "status": "preregistered_resume_before_further_original_audio_access",
+  "predecessor": {
+    "path": "docs/benchmarks/percussive_force_stage_a_source_pool_v1.json",
+    "raw_sha256": "9c729eaac4156cb556d9f2538635e04829b3ffec3ad012d742fb765ad1e2a8ba",
+    "metadata_identities_families_authors_order_unchanged": true
+  },
+  "terminal_v3_access": {
+    "path": "artifacts/audio_qa/riotbox-1430/stage-a-v3-source-pool-access.json",
+    "raw_sha256": "417e6b41f8ddb9c03650dc42f7c900d4ff56aebf929caaf38fa3dfe175cb15eb",
+    "state": "rejected_fail_closed",
+    "requests_attempted": 7,
+    "requests_completed_before_failure": 6,
+    "failure_ordinal": 7,
+    "failure": "strict_pcm_parser_rejected_non_16_byte_fmt_chunk_before_pcm_iteration",
+    "pcm_sample_iteration": false,
+    "playback": false,
+    "holdout_audio_access": false,
+    "commercial_reference_access": false
+  },
+  "inherited_header_only_admissions": [
+    {"ordinal": 1, "id": 183441, "raw_sha256": "b342ee4a9412de14f460c2c295634c53801f2549c71bfc486644a1b02030abc9"},
+    {"ordinal": 2, "id": 268110, "raw_sha256": "6122a35f22ff910fc9291e0eeafc98c910e03a9c563c4ef58d50efa3ec21251c"},
+    {"ordinal": 4, "id": 211478, "raw_sha256": "daf38fe7403f8afb9da0d3bf334b50acbbac3c46dd6cf231e4827489b056a57a"},
+    {"ordinal": 5, "id": 266735, "raw_sha256": "b3ee8908b0433e9d286f6174369cfebe78ee928656e52935d1992fdb2dba7c73"},
+    {"ordinal": 6, "id": 385676, "raw_sha256": "868f0798a9542e9d04ee3c9ab940d50c24d87364417d04a687a4678d7396f033"}
+  ],
+  "terminal_candidate_rejections": [
+    {"ordinal": 3, "id": 217345, "reason": "unsupported_ieee_float_32", "format_tag": 3, "sample_width_bits": 32, "retry": false}
+  ],
+  "exact_resume_request_ordinals": [7, 8, 9, 10, 11, 12, 13, 14, 15],
+  "maximum_original_file_gets": 9,
+  "qualification_candidate_ordinals_if_all_resume_headers_admit": [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+  "selection_uses_predecessor_metadata": true,
+  "quality_proof": false,
+  "hardness_proof": false,
+  "human_verdict": "unverified"
+}
