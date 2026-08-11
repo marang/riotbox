@@ -14,6 +14,7 @@ Usage:
   scripts/research_decision_search.sh "query text"
 
 Behavior:
+  - an exact decision ID such as RBX-252 or RBX-015a returns only that block
   - searches docs/research_decision_log.md with bounded rg output
   - first tries the exact query as a fixed string
   - then falls back to query terms with at least 3 characters
@@ -36,6 +37,27 @@ fi
 
 QUERY="$*"
 
+run_exact_decision_id() {
+  local tmp
+  tmp="$(mktemp)"
+
+  if awk -v id="$QUERY" '
+    $0 == "### " id { found = 1 }
+    found && emitted && ($0 == "---" || $0 ~ /^### RBX-[0-9]+[A-Za-z]?$/) { exit }
+    found { print; emitted = 1 }
+    END { if (!found) exit 1 }
+  ' "$DECISION_LOG" >"$tmp"; then
+    echo "== exact decision: $QUERY =="
+    sed -n "1,${MAX_LINES}p" "$tmp"
+    rm -f "$tmp"
+    return 0
+  fi
+
+  echo "No decision heading found for $QUERY." >&2
+  rm -f "$tmp"
+  return 1
+}
+
 run_rg_search() {
   local tmp
   tmp="$(mktemp)"
@@ -49,9 +71,11 @@ run_rg_search() {
 
   local -a rg_args
   rg_args=(-n -i -F -C "$RG_CONTEXT")
+  local -a terms
+  read -r -a terms <<<"$QUERY"
   local term
   local added=0
-  for term in $QUERY; do
+  for term in "${terms[@]}"; do
     if [ "${#term}" -ge 3 ]; then
       rg_args+=(-e "$term")
       added=$((added + 1))
@@ -75,4 +99,8 @@ run_rg_search() {
   return 1
 }
 
-run_rg_search
+if [[ "$QUERY" =~ ^RBX-[0-9]+[A-Za-z]?$ ]]; then
+  run_exact_decision_id
+else
+  run_rg_search
+fi
