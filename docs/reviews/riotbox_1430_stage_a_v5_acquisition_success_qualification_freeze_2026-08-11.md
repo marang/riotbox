@@ -25,3 +25,10 @@ unchanged mechanical gates pass.
 
 Current evidence state: `quality_proof=false`, `hardness_proof=false`,
 `human_verdict=unverified`.
+
+The compact v5 qualification runner reuses the existing frozen decoder,
+Detector, Anatomy, source-feature, and contrast implementation. Its metadata-
+only contract preflight and the shared synthetic Stage-A analysis fixtures pass
+before the runner's implementation-freeze commit. The runner analyzes every
+bound source once, then applies the preregistered lexicographic combination
+rule; it does not acquire, discover, render, or play audio.
