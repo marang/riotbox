@@ -3496,3 +3496,31 @@ Why: Batch v5 completed all three original-file downloads and strict RIFF/PCM he
 Evidence: the Batch-v5 sealed manifest raw SHA-256 is `4c7fd063ac84609b48f6c99eb24f1f4b3910cee2f644b4e5c8d7ff6d5eb88d55`; its ignored access log raw SHA-256 is `d830789d394fa30ec78040a15061763009914b5cc5d5bb5a2696ad65572c96c2`. Registry-v3 and Matrix-v3 duplicate-key, predecessor-pin, identity, format, cardinality, cross-product, and holdout-tuple checks passed source-blind; an independent Matrix-v3 review reported no findings. Protocol-v2 validation, all 51 mutation fixtures, shared v1/v2 analysis fixtures, qualification-owner fixtures, and development-access fixtures passed before any qualification WAV open.
 Consequences: Registry v3 and Matrix v3 are immutable inputs to this execution. Source results may only pass or reject them; they may not tune or rewrite P2. Any contract change requires Protocol v3, the relevant component-version bump, and a new decision before recomputation. On qualification rejection, stop without matrix render or listening. On pass, execute exactly the frozen 3-family x 4-source x 2-event matrix before any human playback. Holdout audio, commercial references, source-directory discovery, candidate rendering during qualification, and fallback audio remain forbidden.
 Status: accepted
+
+---
+
+### RBX-263
+
+Date: 2026-08-11
+Topic: accept the single Stage-A-v2 qualification rejection and close the frozen Matrix-v3 execution path
+Phase: P023 / Sound Excellence
+Question: what is the terminal consequence of the first Protocol-v2 Development qualification result?
+Decision: accept qualification session `7ecb935c-de82-40c9-8045-05f82293014f` as `rejected_fail_closed`. `oga_cinameng_can_be_so_beautiful` and `freesound_djericmark_724939` qualified with three frozen events each. `freesound_cyclez_493560` produced only one eligible event and `freesound_justabeat_458897` produced none; both failed `insufficient_eligible_events` and `source_feature_requirements_unmet`. Freeze the rejection artifact at raw SHA-256 `f023736a0c1c7b19668a4497015adffe096fc5cea948135320908789704c9f3d` and close Matrix v3 without execution, candidate rendering, or human playback.
+Why: Protocol v2 requires all four positive sources to provide at least two eligible events and complete source-feature vectors before source-contrast partitioning. Missing vectors cannot be imputed and passing sources cannot rescue failed sources. The result is therefore a source-set admission failure, not a tunable detector observation and not a perceptual hardness verdict.
+Evidence: all four exact Development files passed raw SHA-256 and strict signed RIFF/PCM verification. The access log raw SHA-256 is `f892cd4e300c7aec63f345386cc04a8a220b8b1239d4b770ae4dbdb27dcaa0f8`; it records four completed deliveries, no directory discovery, and no holdout audio access. The final session raw SHA-256 is `5ca4bcb032e82399932c1e275b1885362a0bef7e0b1952da41affde5e71de326`; the qualification commit marker raw SHA-256 is `96cee5f546e52f7eeee4aeacce7ba84d822616c84ea929c2b64a7e8b7fac3639`. `docs/reviews/riotbox_1430_stage_a_v2_development_qualification_rejection_2026-08-11.md` records the bounded result.
+Consequences: no Matrix-v3 condition may be rendered or heard, and this session may not be rerun. Protocol v2, Prequalification v3, Detector v1, Anatomy v2, Registry v3, Matrix v3, thresholds, roles, ordinals, and algorithms remain immutable historical inputs. A later attempt requires Protocol v3, every applicable component-version bump, a newly frozen legal Development snapshot, and a new decision before source access. `quality_proof=false`, `hardness_proof=false`, `human_verdict=unverified`, and no Riotbox product-path claim exists.
+Status: accepted
+
+---
+
+### RBX-264
+
+Date: 2026-08-11
+Topic: remove consumed Stage-A acquisition executables after the one-off Development download
+Phase: P023 / Sound Excellence
+Question: which acquisition machinery should remain in the product repository after Batch v5 and qualification are terminal?
+Decision: retain only the final Batch-v5 identity contract, its metadata allowlist, Registry-v3 evidence bindings, decision-log hashes, and the exact Git history. Remove the two consumed downloader generations, their artifact/transaction modules, their validators and mutation fixtures, and every runnable acquisition/reconciliation command. Remove the superseded Batch-v1 through Batch-v4 JSON and review scaffolds from the live tree. Keep the Protocol-v2 validator and the actual Development qualification path.
+Why: acquisition was a one-off operational step, not Riotbox product behavior. The permanent implementation had grown to more than fifteen thousand lines without advancing detection, rendering, listening, or the instrument. Its concurrency, reconciliation, and validator layers no longer protected a callable workflow once Batch v5 completed and would create ongoing review and maintenance cost.
+Evidence: commits `a937e5e8` and `5134399e` preserve the removed acquisition implementations exactly. Final acquisition identity is frozen by `docs/benchmarks/percussive_force_stage_a_v2_acquisition_batch_v5.json`, the allowlist, the sealed-manifest hash `4c7fd063ac84609b48f6c99eb24f1f4b3910cee2f644b4e5c8d7ff6d5eb88d55`, and Registry v3. The executed qualification is independently reproducible at commit `7e32036e`; its implementation snapshot never included or called the removed acquisition modules.
+Consequences: Riotbox has no supported downloader or acquisition-retry subsystem. Future one-off Development acquisition must use an exact allowlist, standard client, OS keyring, bounded local access, and existing hash/WAV primitives; it must not recreate transaction, race, reconciliation, credential, or validator frameworks unless reusable product behavior demonstrably requires them. Deleted files remain recoverable from Git history, but must not be restored as active commands for this consumed batch.
+Status: accepted

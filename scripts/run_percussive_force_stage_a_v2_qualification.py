@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Run the single frozen RIOTBOX-1430 development-only Stage-A-v2 gate.
+"""Historical RIOTBOX-1430 development-only Stage-A-v2 qualification.
 
-The runner validates Protocol v2, Matrix v3, and Registry v3 before opening
-exactly the four registered development WAV paths. It never enumerates a
-source directory, opens holdout audio, renders a candidate, or plays audio.
+RBX-263 consumed and rejected the one authorized session. ``run_session`` now
+refuses before any validation or access callback. The exact executed runner is
+preserved at Git commit 7e32036e; helpers remain for source-blind audit tests.
 """
 
 from __future__ import annotations
@@ -59,6 +59,7 @@ SESSION_SCHEMA = "riotbox.percussive_force_stage_a_qualification_session.v2"
 CATALOG_SCHEMA = "riotbox.percussive_force_stage_a_bound_event_catalog.v2"
 REJECTION_SCHEMA = "riotbox.percussive_force_stage_a_qualification_rejection.v2"
 COMMIT_SCHEMA = "riotbox.percussive_force_stage_a_qualification_commit.v1"
+STAGE_A_V2_EXECUTION_CLOSED_CODE = "stage_a_v2_execution_closed_by_rbx_263"
 PCM_F32LE_HASH_DOMAIN = "riotbox.percussive_force_pcm_f32le.v1"
 IMPLEMENTATION_PATHS = (
     Path("scripts/run_percussive_force_stage_a_v2_qualification.py"),
@@ -71,6 +72,18 @@ IMPLEMENTATION_PATHS = (
     MATRIX_PATH,
     REGISTRY_PATH,
 )
+
+
+class StageAV2ExecutionClosed(shared.QualificationSessionError):
+    """Typed refusal for every attempted post-RBX-263 v2 source execution."""
+
+    code = STAGE_A_V2_EXECUTION_CLOSED_CODE
+
+    def __init__(self) -> None:
+        super().__init__(
+            f"{self.code}: the single Protocol-v2 qualification was consumed and "
+            "rejected; any retry requires Protocol v3 and a new decision"
+        )
 
 
 def require(condition: bool, message: str) -> None:
@@ -468,231 +481,8 @@ def implementation_snapshot() -> dict[str, Any]:
 
 
 def run_session(session_directory: Path) -> tuple[int, dict[str, Any]]:
-    shared.validate_session_directory(session_directory)
-    session_id = str(uuid.uuid4())
-    owner_id = f"riotbox-1430-stage-a-v2-{session_id}"
-    session_path = session_directory / "session.json"
-    access_log_path = session_directory / "development-access-log.json"
-    commit_path = session_directory / "qualification-commit.json"
-    snapshot = shared.ExclusiveJsonSnapshot(session_path)
-    session: dict[str, Any] = {
-        "schema": SESSION_SCHEMA,
-        "session_id": session_id,
-        "session_kind": "StageAQualificationSession",
-        "owner_ticket": "RIOTBOX-1430",
-        "scope": "development_only_exact_four_sources_no_holdout_or_reference_access",
-        "started_at_utc": shared.utc_now(),
-        "status": "source_blind_contract_validation",
-        "qualification_owner_id": owner_id,
-        "contracts": {
-            "protocol_path": PROTOCOL_PATH.as_posix(),
-            "protocol_sha256": EXPECTED_PROTOCOL_SHA256,
-            "matrix_path": MATRIX_PATH.as_posix(),
-            "matrix_sha256": EXPECTED_MATRIX_SHA256,
-            "registry_path": REGISTRY_PATH.as_posix(),
-            "registry_sha256": EXPECTED_REGISTRY_SHA256,
-        },
-        "holdout_audio_accessed": False,
-        "commercial_reference_accessed": False,
-        "source_directory_discovery_performed": False,
-        "candidate_render_started": False,
-        "human_verdict": "unverified",
-        "quality_proof": False,
-        "hardness_proof": False,
-        "runtime_environment": {
-            "python_version": sys.version,
-            "numpy_version": np.__version__,
-            "byteorder": sys.byteorder,
-        },
-    }
-    snapshot.persist(session)
-    try:
-        protocol_json, _ = shared.read_pinned_json(
-            PROTOCOL_PATH, EXPECTED_PROTOCOL_SHA256
-        )
-        matrix, _ = shared.read_pinned_json(MATRIX_PATH, EXPECTED_MATRIX_SHA256)
-        registry, _ = shared.read_pinned_json(REGISTRY_PATH, EXPECTED_REGISTRY_SHA256)
-        validated_protocol = validate_protocol_v2_repository(REPO_ROOT)
-        require(
-            validated_protocol.raw_sha256 == EXPECTED_PROTOCOL_SHA256,
-            "Protocol-v2 validator returned an unexpected pin",
-        )
-        protocol = stage_a.load_frozen_protocol(PROTOCOL_PATH)
-        specs, identities = validate_contracts(protocol_json, matrix, registry)
-        implementation_before = implementation_snapshot()
-        session["implementation_snapshot"] = implementation_before
-        session["status"] = "development_source_access"
-        session["access_log_path"] = access_log_path.as_posix()
-        snapshot.persist(session)
-
-        capture_owner = shared.SourceCaptureOwner(specs)
-        access_result = run_development_access_session(
-            identities,
-            list(POSITIVE_CASE_IDS),
-            repo=REPO_ROOT,
-            registry=PinnedStageARegistry(
-                path=REGISTRY_PATH,
-                schema="riotbox.source_holdout_rotation.v3",
-                raw_sha256=EXPECTED_REGISTRY_SHA256,
-            ),
-            access_log_path=access_log_path,
-            qualification_owner_id=owner_id,
-            qualification_owner=capture_owner,
-        )
-        finalized_records = shared.validate_completed_access_result(
-            access_result,
-            specs,
-            owner_id,
-            requested_case_ids=POSITIVE_CASE_IDS,
-        )
-        require(
-            len(capture_owner.captured) == len(specs) == 4,
-            "qualification owner did not receive exactly four sources",
-        )
-        access_bytes, _ = shared.read_and_match_access_log(
-            access_log_path, access_result
-        )
-        access_sha256 = sha256_bytes(access_bytes)
-        session["access_evidence"] = {
-            "access_session_id": access_result["access_session_id"],
-            "access_log_path": access_log_path.as_posix(),
-            "access_log_sha256": access_sha256,
-            "access_status": access_result["access_status"],
-            "owner_delivery_status": access_result["qualification_owner"][
-                "delivery_status"
-            ],
-        }
-        session["status"] = "source_feature_computation"
-        snapshot.persist(session)
-
-        source_inputs: list[stage_a.SourceInput] = []
-        bindings: list[dict[str, Any]] = []
-        for captured, spec, record in zip(
-            capture_owner.captured, specs, finalized_records, strict=True
-        ):
-            finalized = shared.CapturedSource(
-                identity=captured.identity,
-                payload=captured.payload,
-                access_record=record,
-            )
-            source_input, binding = decode_captured_source(finalized, spec)
-            require(
-                binding["frame_count"] == record["actual_source_format"]["frame_count"],
-                f"qualification PCM reparse diverged for {spec.case_id}",
-            )
-            source_inputs.append(source_input)
-            bindings.append(binding)
-
-        require(
-            implementation_snapshot() == implementation_before,
-            "qualification implementation or contracts changed after source access",
-        )
-        shared.read_pinned_json(PROTOCOL_PATH, EXPECTED_PROTOCOL_SHA256)
-        shared.read_pinned_json(MATRIX_PATH, EXPECTED_MATRIX_SHA256)
-        shared.read_pinned_json(REGISTRY_PATH, EXPECTED_REGISTRY_SHA256)
-        unbound = stage_a.qualify_four_sources(source_inputs, protocol=protocol)
-        require(
-            unbound.schema
-            == "riotbox.percussive_force_stage_a_unbound_qualification_analysis.v2"
-            and unbound.qualification_state == "unbound_analysis_only",
-            "analysis bypassed the frozen v2 qualification boundary",
-        )
-        for source, binding in zip(unbound.sources, bindings, strict=True):
-            serialized = source.to_dict()
-            require(
-                serialized.get("per_channel_dc_mean_f64_bits_be_hex")
-                == binding["per_channel_dc_mean_f64_bits_be_hex"]
-                and "per_channel_dc_means" not in serialized,
-                f"authoritative source mean binding changed for {binding['case_id']}",
-            )
-        require(
-            implementation_snapshot() == implementation_before,
-            "qualification implementation or contracts changed during analysis",
-        )
-        final_access_bytes, _ = shared.read_and_match_access_log(
-            access_log_path, access_result
-        )
-        require(
-            sha256_bytes(final_access_bytes) == access_sha256,
-            "development access log changed during source analysis",
-        )
-
-        artifact = {
-            "schema": CATALOG_SCHEMA if unbound.passed else REJECTION_SCHEMA,
-            "owner_ticket": "RIOTBOX-1430",
-            "session_id": session_id,
-            "qualification_owner_id": owner_id,
-            "qualification_state": "passed" if unbound.passed else "rejected",
-            "stage_a_qualification_passed": unbound.passed,
-            "contracts": session["contracts"],
-            "implementation_snapshot": implementation_before,
-            "access_evidence": session["access_evidence"],
-            "source_bindings": bindings,
-            "mechanism_blind_analysis": unbound.to_dict(),
-            "candidate_render_started": False,
-            "holdout_audio_accessed": False,
-            "commercial_reference_accessed": False,
-            "source_directory_discovery_performed": False,
-            "quality_proof": False,
-            "hardness_proof": False,
-            "human_verdict": "unverified",
-            "next_allowed_action": (
-                "run_unchanged_3_family_by_4_source_by_2_event_matrix"
-                if unbound.passed
-                else "stop_without_candidate_render_or_protocol_retuning"
-            ),
-        }
-        artifact_path = session_directory / (
-            "event-catalog.json" if unbound.passed else "qualification-rejection.json"
-        )
-        artifact_sha256 = shared.create_exclusive_json(artifact_path, artifact)
-        session["status"] = (
-            "qualified_event_catalog_frozen" if unbound.passed else "rejected_fail_closed"
-        )
-        session["qualification_artifact"] = {
-            "path": artifact_path.as_posix(),
-            "sha256": artifact_sha256,
-            "passed": unbound.passed,
-        }
-        session["qualification_commit"] = {
-            "required_for_downstream": True,
-            "schema": COMMIT_SCHEMA,
-            "path": commit_path.as_posix(),
-        }
-        session["completed_at_utc"] = shared.utc_now()
-        snapshot.persist(session)
-        session_bytes = session_path.read_bytes()
-        require(
-            json.loads(session_bytes, object_pairs_hook=shared.reject_duplicate_keys)
-            == session,
-            "final persisted session differs from in-process state",
-        )
-        shared.create_exclusive_json(
-            commit_path,
-            {
-                "schema": COMMIT_SCHEMA,
-                "session_id": session_id,
-                "session_path": session_path.as_posix(),
-                "session_sha256": sha256_bytes(session_bytes),
-                "session_status": session["status"],
-                "qualification_artifact_path": artifact_path.as_posix(),
-                "qualification_artifact_sha256": artifact_sha256,
-                "stage_a_qualification_passed": unbound.passed,
-                "access_log_sha256": access_sha256,
-                "committed_at_utc": shared.utc_now(),
-            },
-        )
-        return (0 if unbound.passed else 2), session
-    except Exception as error:
-        session["status"] = "rejected_contract_or_execution_failure"
-        session["failure_type"] = type(error).__name__
-        session["failure"] = str(error)[:2_000]
-        session["candidate_render_started"] = False
-        session["completed_at_utc"] = shared.utc_now()
-        snapshot.persist(session)
-        raise
-    finally:
-        snapshot.close()
+    del session_directory
+    raise StageAV2ExecutionClosed()
 
 
 def parse_args() -> argparse.Namespace:

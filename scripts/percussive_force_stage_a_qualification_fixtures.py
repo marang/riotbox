@@ -257,6 +257,31 @@ def implementation_snapshot_fixture() -> None:
     )
 
 
+def v2_registry_matrix_contract_fixture() -> None:
+    protocol, _ = qualification_v2.shared.read_pinned_json(
+        qualification_v2.PROTOCOL_PATH,
+        qualification_v2.EXPECTED_PROTOCOL_SHA256,
+    )
+    matrix, _ = qualification_v2.shared.read_pinned_json(
+        qualification_v2.MATRIX_PATH,
+        qualification_v2.EXPECTED_MATRIX_SHA256,
+    )
+    registry, _ = qualification_v2.shared.read_pinned_json(
+        qualification_v2.REGISTRY_PATH,
+        qualification_v2.EXPECTED_REGISTRY_SHA256,
+    )
+    specs, identities = qualification_v2.validate_contracts(
+        protocol,
+        matrix,
+        registry,
+    )
+    require(len(specs) == 4, "v2 contract must bind exactly four positive sources")
+    require(
+        len(identities) == 21,
+        "v2 contract must preserve all 21 Development and holdout identities",
+    )
+
+
 def closed_v1_execution_fixture() -> None:
     reached: list[str] = []
 
@@ -301,6 +326,45 @@ def closed_v1_execution_fixture() -> None:
     require(not reached, f"closed v1 runner reached callbacks: {reached}")
 
 
+def closed_v2_execution_fixture() -> None:
+    reached: list[str] = []
+
+    def forbidden(name: str) -> object:
+        def callback(*_args: object, **_kwargs: object) -> None:
+            reached.append(name)
+            raise AssertionError(f"closed v2 runner reached {name}")
+
+        return callback
+
+    with (
+        patch.object(
+            qualification_v2.shared,
+            "validate_session_directory",
+            forbidden("session_validation"),
+        ),
+        patch.object(
+            qualification_v2,
+            "validate_protocol_v2_repository",
+            forbidden("contract_validation"),
+        ),
+        patch.object(
+            qualification_v2,
+            "run_development_access_session",
+            forbidden("safe_access_gate"),
+        ),
+    ):
+        try:
+            qualification_v2.run_session(Path("/must-not-be-opened-stage-a-v2"))
+        except qualification_v2.StageAV2ExecutionClosed as error:
+            require(
+                error.code == qualification_v2.STAGE_A_V2_EXECUTION_CLOSED_CODE,
+                "closed v2 runner returned the wrong typed refusal",
+            )
+        else:
+            raise AssertionError("closed v2 runner accepted a new session")
+    require(not reached, f"closed v2 runner reached callbacks: {reached}")
+
+
 def main() -> int:
     decode_fixture(
         (-32_768, -1, 0, 1, 32_767),
@@ -321,7 +385,9 @@ def main() -> int:
     capture_owner_fixture()
     v2_authoritative_mean_fixture()
     implementation_snapshot_fixture()
+    v2_registry_matrix_contract_fixture()
     closed_v1_execution_fixture()
+    closed_v2_execution_fixture()
     print("PASS: Stage-A qualification owner synthetic fixtures")
     print("source_audio_accessed=false")
     print("holdout_audio_accessed=false")

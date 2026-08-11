@@ -4,9 +4,24 @@
 
 # Riotbox
 
-**Riotbox is a terminal-first live audio instrument for turning one source track into a controllable jam object.**
+## Product Vision
 
-It is not a DAW (Digital Audio Workstation like Ableton Live, Logic, FL Studio, Reaper, or Bitwig), not a black-box generator, and not a nostalgia simulator. Riotbox is building toward a feral performance workflow where one source file becomes something you can **queue, mutate, capture, resample, recall, and steer in time** from the keyboard.
+> **Riotbox turns one source recording into a source-aware, playable live
+> instrument: it listens, makes musical decisions, transforms material, and
+> responds immediately to the performer.**
+
+Think of Riotbox as a sampler, drum machine, performance sequencer, and
+responsive bandmate combined in one terminal-first instrument. It analyzes the
+source's rhythm, transients, density, and structure; captures distinctive
+material; and lets the musician queue, trigger, mute, choke, retrigger,
+reverse, filter, resample, recall, and reshape it on musical boundaries.
+
+The goal is original, aggressive sample-based rave-punk and breakbeat with hard
+hooks, physical drums, bass pressure, abrupt contrast, and gestures that matter
+on stage. Riotbox is not a DAW, a black-box music generator, or a nostalgia
+simulator. It must never disguise fixed templates or synthetic fallback as
+source intelligence: the source evidence must change the musical decision, and
+that decision must produce an audible, playable consequence.
 
 Right now Riotbox is already a serious prototype:
 
