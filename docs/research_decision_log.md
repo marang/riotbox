@@ -3608,3 +3608,17 @@ Why: renderer success is only the first reject boundary. Reanalysis must be impl
 Evidence: Matrix result raw SHA-256 is `26ade073e0aa993904e8ff304fdae171afcf64147ec28cd4873dc350a69f7e76`. The five listed conditions passed finite/full-length/timebase, strict peak, untouched-region, raw PCM inequality, near-identity, zero-lag correlation, and raw body-energy gates. Advanced-screen runner raw SHA-256 is `925cf271bca91b01646a22a310cc68aad2d77d264d98a65b1c73ee2822a9aa32`; its source-blind contract preflight and synthetic identity/correlation fit goldens pass before candidate access.
 Consequences: only an advanced survivor may be packaged for bounded structured human review. Zero survivors stop without playback. Advanced automation still cannot call a candidate harder, good, or product-ready.
 Status: accepted
+
+---
+
+### RBX-271
+
+Date: 2026-08-11
+Topic: preserve raw event identity across Matrix-v6 attenuation-matched screening
+Phase: P023 / Sound Excellence
+Question: what follows when advanced-screen v1 rejects every pre-survivor and its attenuation-matched view changes the already-qualified event classification solely because uniform view gain was applied before rerunning the amplitude-sensitive detector?
+Decision: accept advanced-screen v1 as immutable terminal evidence with raw result SHA-256 `d78461412f98e145e9767a111c3c5654cdaf8f0b54f84e31d2e56dcf7c9cd406`. It retains zero survivors and authorizes no playback. Freeze `scripts/validate_percussive_force_stage_a_matrix_v6_v2.py` as a versioned correction before reopening any candidate WAV. V2 changes only the event-integrity basis: both raw and attenuation-matched views use the already-qualified raw source event identity and one raw candidate detector/anatomy classification, while every signal-domain metric continues to use the view's declared source/candidate gains. All thresholds, F1/F2/F3 renders, exact candidate hashes, Matrix-v6 conditions, fit bases, body/identity/boundary screens, and the rule that an unavailable or singular confound basis rejects remain unchanged. The four Aikighost `confound_screen_undefined` rejections therefore remain terminal; no candidate-specific exception is permitted.
+Why: uniform gain matching is a comparison view, not a new source qualification. Letting an absolute-level detector erase both sides' raw events makes temporal identity depend on the diagnostic display gain and contradicts RBX-270's source-frozen event identity. Binding event classification before view gain restores that invariant without relaxing a threshold or using a musical result to select behavior.
+Evidence: v1's DABRO F2 raw view passed every advanced screen with four source and four candidate events; its matched view alone reported zero and zero after gains `0.9126318163647862` and `0.9131697229268734`, while the unchanged signal-domain fit values still passed. Advanced-screen v2 raw SHA-256 is `fd36358946e2faf20be91cff55bc044b8c11f0b42f1251a97751bb0de34e8584`; its source-blind `--validate-only` preflight passes with `candidate_audio_accessed=false`.
+Consequences: after this decision and implementation are committed, v2 may reanalyze only the exact five Matrix-v6 pre-survivors and must write a new exclusive v2 result. V1 is never overwritten or reclassified. Only a v2 survivor may proceed to bounded structured human review; automation still cannot award hardness or quality.
+Status: accepted

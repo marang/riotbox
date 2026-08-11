@@ -35,3 +35,21 @@ nineteen were rejected for typed renderer refusal or basic safety/identity/body
 failure. Before opening any surviving candidate WAV for reanalysis, RBX-270
 pins one general advanced-screen implementation and the exact five condition
 IDs. Playback remains forbidden until this screen completes.
+
+## Advanced-screen v1 terminal result and v2 correction freeze
+
+The frozen v1 advanced screen completed once. Its raw result SHA-256 is
+`d78461412f98e145e9767a111c3c5654cdaf8f0b54f84e31d2e56dcf7c9cd406`.
+It retained zero of five pre-survivors, so its own contract forbids playback.
+Four Aikighost conditions were rejected because their exact static-EQ split
+basis was unavailable. Those fail-closed rejections remain terminal.
+
+The DABRO F2 condition passed every raw screen, but the attenuation-matched
+view re-ran the amplitude-sensitive detector after uniform gain matching and
+therefore changed both event counts from four to zero. That contradicts
+RBX-270's already-qualified, source-frozen event identity. No threshold or
+candidate evidence is being relaxed: advanced-screen v2 freezes the raw
+source/candidate event classification across both views while continuing to
+compute all signal-domain metrics at each view's declared gains. The v1 result
+remains immutable evidence. V2 must be committed and pass source-blind
+`--validate-only` before it may reopen the exact five candidate WAVs.
