@@ -52,9 +52,9 @@ reinterpreting its terminal evidence. Historical PR #1385 and its merge
   identity contradiction. No threshold, renderer, candidate, or source result
   was tuned; source/candidate raw event identity now remains frozen across
   diagnostic gain views.
-- Prepared and technically verified the exact local A/B artifact. Markus heard
-  the same 10-second-A / 10-second-B presentation twice and judged B `kaum
-  anders`.
+- Prepared and technically verified the exact local A/B artifact. The reviewer
+  heard the same 10-second-A / 10-second-B presentation twice and judged B
+  perceptually near-identical.
 - Bound `human_verdict=reject`, kept source recognition clear, and froze F2
   `f2_exact_complementary_three_band_v1` against scalar retuning or further
   playback.

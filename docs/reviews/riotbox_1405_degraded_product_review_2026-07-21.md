@@ -74,9 +74,8 @@ Trust:      unavailable | bar/live?
 Start Here: [Space] source preview | timing unavailable
 ```
 
-Reviewer wording:
-
-> "geht so, aber TUI bearbeiten wir sowieso nochmall generell, also ja pass"
+Reviewer summary: bounded pass. The current risk guidance is adequate, while
+the broader TUI still requires a separate general polish pass.
 
 This records a bounded product-handling pass: the risk state is visible, the
 reason is useful enough, and the next safe action is understandable. The

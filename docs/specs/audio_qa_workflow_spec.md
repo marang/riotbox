@@ -30,9 +30,12 @@ Core-owned boundaries:
 - Analysis, file I/O, hashing, observer work, and model calls stay outside the
   realtime callback.
 - Automation may reject but cannot award a musical pass.
-- Before playback, analyze and assign the exact artifact, explain its purpose,
-  obtain fresh readiness, and stop at the announced bound. Do not replay an
-  unchanged recipe merely because technical evidence changed.
+- Before an artifact's first playback, analyze and assign it, explain its
+  purpose, obtain fresh readiness, and stop at the announced bound. An explicit
+  listener request for an immediate replay of unchanged bytes may run directly
+  without another analysis, brief, or readiness gate; still verify the stop and
+  silence. Do not replay an unchanged recipe merely because technical evidence
+  changed.
 
 ## 3. Validation Stack
 

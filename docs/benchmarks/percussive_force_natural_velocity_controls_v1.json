@@ -1,0 +1,136 @@
+{
+  "schema": "riotbox.percussive_force_natural_velocity_controls.v1",
+  "owner_ticket": "RIOTBOX-1434",
+  "work_class": "contract_enabler",
+  "directly_enabled_followup": {
+    "ticket": "RIOTBOX-1435",
+    "outcome": "Implement and human-gate one source-relative multi-cue velocity transfer only if natural-control directions survive technical and bidirectional human sanity checks."
+  },
+  "predecessor_decision": "RBX-279",
+  "purpose": "Measure whether two matched natural dynamic series expose stable directions in attack, decay, local body resonance, and attack brightness before any source-relative transfer is designed.",
+  "claim_boundary": {
+    "filename_dynamics_are_ground_truth": false,
+    "algorithm_selection_allowed": false,
+    "perceptual_threshold_fitting_allowed": false,
+    "hardness_proof": false,
+    "quality_proof": false,
+    "universal_calibration": false,
+    "snare_role": "body_bearing_directional_control",
+    "whip_role": "attack_edge_directional_control_only",
+    "whip_may_establish_retained_body": false
+  },
+  "matrix_v2": {
+    "path": "docs/benchmarks/percussive_force_development_matrix_v2.json",
+    "raw_sha256": "aba846138246c95b1c3e5e1973e77bdaa41ce971f799dadadba8edc160967fd6",
+    "catalog_path": "natural_directional_reference_controls"
+  },
+  "runner": {
+    "path": "scripts/run_percussive_force_natural_velocity_controls_v1.py",
+    "raw_sha256": "b9df59203c4e78b064a30f28aa9ece8b0aada0870c8c2860043db28a18260552"
+  },
+  "analysis": {
+    "envelope_ms": 1.0,
+    "persistence_ms": 2.0,
+    "baseline_percentile": 20,
+    "onset_fraction": 0.05,
+    "attack_search_ms": 50.0,
+    "attack_end_peak_fraction": 0.5,
+    "decay_search_ms": 1000.0,
+    "decay_fraction": 0.1,
+    "attack_spectrum_ms": 50.0
+  },
+  "features": [
+    "attack_time_ms",
+    "decay_time_ms",
+    "body_resonance_hz",
+    "attack_brightness_centroid_hz"
+  ],
+  "direction_rule": "Record mf_to_f, f_to_ff, and mf_to_ff signs independently. A feature is technically monotonic only when both adjacent signs agree and neither is numerically equal. No direction is promoted without the human sanity protocol.",
+  "controls": [
+    {
+      "control_set_id": "philharmonia_snare_with_snares_025",
+      "instrument": "snare_drum",
+      "articulation": "with_snares",
+      "members": [
+        {
+          "case_id": "snare_025_mezzo_forte",
+          "provisional_dynamic": "mezzo_forte",
+          "repo_path": "data/test_audio/external/RIOTBOX-1429/philharmonia_percussion/snare-drum__025_mezzo-forte_with-snares.wav",
+          "sha256": "aadad904f77a838e32c7d14541cbb991e255a3ce6f04d65a13d1839ecd695537"
+        },
+        {
+          "case_id": "snare_025_forte",
+          "provisional_dynamic": "forte",
+          "repo_path": "data/test_audio/external/RIOTBOX-1429/philharmonia_percussion/snare-drum__025_forte_with-snares.wav",
+          "sha256": "84df780596168e9b7dd6a35f869a81f503c32dbaa93aa040b2ae2df41676c23b"
+        },
+        {
+          "case_id": "snare_025_fortissimo",
+          "provisional_dynamic": "fortissimo",
+          "repo_path": "data/test_audio/external/RIOTBOX-1429/philharmonia_percussion/snare-drum__025_fortissimo_with-snares.wav",
+          "sha256": "ab52aefc904a7cf44c0ae69cd7966429cd69f0c15b90d7d97ea8dacada35484a"
+        }
+      ]
+    },
+    {
+      "control_set_id": "philharmonia_whip_struck_together_025",
+      "instrument": "whip",
+      "articulation": "struck_together",
+      "members": [
+        {
+          "case_id": "whip_025_mezzo_forte",
+          "provisional_dynamic": "mezzo_forte",
+          "repo_path": "data/test_audio/external/RIOTBOX-1429/philharmonia_percussion/whip__025_mezzo-forte_struck-together.wav",
+          "sha256": "cdb71edefa55e6042fe9a8c4e2a91dde6b1ccebf3e20db1e26c6448a2ead1eb6"
+        },
+        {
+          "case_id": "whip_025_forte",
+          "provisional_dynamic": "forte",
+          "repo_path": "data/test_audio/external/RIOTBOX-1429/philharmonia_percussion/whip__025_forte_struck-together.wav",
+          "sha256": "292ed67465dfa1041fd7f667642da6f6ef95d992a696a1dfe72e29f2f41d7a21"
+        },
+        {
+          "case_id": "whip_025_fortissimo",
+          "provisional_dynamic": "fortissimo",
+          "repo_path": "data/test_audio/external/RIOTBOX-1429/philharmonia_percussion/whip__025_fortissimo_struck-together.wav",
+          "sha256": "d48bbd901480fa5240635c0561b73b3cafe6074bc7ee792c29f3fc38e103080b"
+        }
+      ]
+    }
+  ],
+  "access": {
+    "mode": "local_measurement_controls_only",
+    "maximum_file_reads": 6,
+    "one_read_per_file": true,
+    "directory_discovery": false,
+    "path_substitution": false,
+    "retry_after_failure": false,
+    "development_audio_access": false,
+    "holdout_audio_access": false,
+    "commercial_reference_audio_access": false,
+    "product_source_use": false,
+    "fixture_use": false,
+    "generated_asset_use": false,
+    "demo_or_sampler_use": false,
+    "source_audio_accessed_before_freeze": false
+  },
+  "execution": {
+    "exact_output_path": "artifacts/audio_qa/riotbox-1434/natural-velocity-controls-v1",
+    "rerun_allowed": false,
+    "write_access_log_before_each_open": true,
+    "technical_analysis_precedes_human_artifact": true
+  },
+  "human_sanity_protocol": {
+    "required": true,
+    "sequence": "randomized_A_B_plus_reversed_B_A_directional_agreement",
+    "fresh_readiness_required": true,
+    "exact_artifact_technical_analysis_required_before_playback": true,
+    "purpose": "Check only whether the listener hears the same directional dynamic change in both presentation orders; do not rank Riotbox candidates or infer universal hardness."
+  },
+  "stop_rules": [
+    "Stop fail-closed on any path, hash, format, count, order, analysis-passport, or access-boundary mismatch.",
+    "Stop without directory search, substitution, retry, parameter change, or additional audio access.",
+    "A technically non-monotonic feature or failed bidirectional human direction remains negative evidence and cannot be tuned into agreement under v1.",
+    "Any change after source results requires a new version and a new Decision Log decision before recomputation."
+  ]
+}

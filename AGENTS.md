@@ -68,9 +68,13 @@ If one is intentionally inapplicable, record why in the PR or working notes.
   listening/measurement references, never product sources, fixtures, generated
   assets, review-pack content, or redistribution material.
 - Fixture verdicts and automated metrics never count as human listening.
-- Before human playback, apply the listening-review skill: preflight the exact
-  artifact, obtain fresh explicit readiness, bound playback, stop audibly at the
-  announced endpoint, and verify silence. Terminate a live runtime immediately
+- Before the first human playback of an artifact, apply the listening-review
+  skill: preflight the exact artifact, obtain fresh explicit readiness, bound
+  playback, stop audibly at the announced endpoint, and verify silence. When
+  the listener explicitly requests `again`, `nochmal`, or an equivalent direct
+  replay of the unchanged artifact, replay it immediately without repeating
+  analysis, the brief, or readiness. Still verify stop/silence. A changed
+  artifact requires the full gate again. Terminate a live runtime immediately
   if transport stop leaves any lane audible.
 - Translate informal human listening comments into neutral professional
   evidence language in durable documentation while preserving their meaning,
@@ -148,6 +152,10 @@ exact `rg`, or a targeted range; do not load it wholesale.
 - Freeze new technical decisions in the decision log and update the owning spec
   when a contract changes; do not bury architecture decisions only in comments,
   Linear, or chat.
+- Keep the Decision Log for durable research, architecture, algorithm,
+  threshold, access-boundary, and product-contract decisions. Routine playback,
+  readiness, replay, status, and other reversible operational steps do not get
+  Decision Log entries.
 - Branch review must cover correctness, architecture drift, missing tests,
   workflow/docs gaps, and risky Rust/module growth. Fix real findings before PR
   when feasible, then perform a short self-review.
