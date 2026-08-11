@@ -29,7 +29,11 @@ just listening-review-fixtures
 - Preflight the exact artifact; invalid, unresolved, or misleading evidence must
   not be played for a verdict.
 - Give a factual, non-priming brief and inventory every audible contributor.
-- Require fresh readiness for every playback; unconfirmed playback is unheard.
+- Require fresh readiness for the first playback of an exact artifact. An
+  explicit listener request for `again`, `nochmal`, or an equivalent direct
+  replay authorizes immediate playback of the unchanged artifact without
+  repeated analysis, briefing, or readiness. Any byte, assignment, contributor,
+  duration, or routing change requires the full gate again.
 - Enforce the contract's bound, audible stop, verified silence, and leak kill.
 - Use committed observer timing, not sleeps, and never transfer a verdict.
 - Technical-only reruns do not need listening; repeated “same” is a stop signal,
@@ -47,3 +51,6 @@ comment's meaning, certainty, and severity; do not embellish or weaken it.
 Quote the listener verbatim only when the exact wording is itself material.
 Do not edit an already hash-bound review artifact solely for editorial
 normalization; normalize its meaning in the durable record that cites it.
+Routine readiness and unchanged-artifact replay are operational review events,
+not Decision Log decisions. Record only the eventual artifact-bound verdict or
+a materially durable protocol/contract change.

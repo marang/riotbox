@@ -171,9 +171,13 @@ bass pressure is the intended target but no recognizable bass is audible, that
 is a bass-pressure failure even when drums, loudness, or general bus energy feel
 forceful. Do not ask for a taste verdict while role assignment is unresolved or
 contradictory. Show a conspicuous listening check and wait for explicit
-readiness before each artifact or repeat; readiness does not carry over between
-playbacks. Playback without that confirmation is treated as unheard and cannot
-support a recorded human verdict.
+readiness before the first playback of each exact artifact. If the listener
+explicitly requests an immediate replay of the unchanged artifact (`again`,
+`nochmal`, or equivalent), play it directly without repeating technical
+analysis, the brief, or readiness. Readiness does not transfer to a changed
+artifact, assignment, contributor set, duration, or route. Playback without the
+required first-play confirmation is treated as unheard and cannot support a
+recorded human verdict.
 
 For a `percussive_hard` claim, apply
 `docs/engineering/percussive_force_and_beat_impact.md`. The candidate must
@@ -226,6 +230,11 @@ preflight identifies a material audible question. If repeated candidates are
 perceptually indistinguishable, stop requesting comparisons; do not convert
 listener fatigue or "no opinion" into a negative verdict, and do not overwrite
 an existing hash-bound review.
+
+Routine readiness, playback, and unchanged-artifact replay are operational
+events. They do not belong in the research Decision Log. Record the resulting
+artifact-bound verdict, or a genuinely durable protocol/contract decision, not
+each reversible interaction step.
 
 After at most two consecutive review-ready generations remain
 `human_verdict: unverified`, stop generating that candidate and perform or

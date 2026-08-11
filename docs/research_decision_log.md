@@ -3774,31 +3774,3 @@ Why: the technical result shows a coherent four-cue progression for the body-bea
 Evidence: completed v2 access-log raw SHA-256 is `4c95af0e816a5ed87c4f9fc0d648a0b59d433d0992314f1ba02d4c67847f04ca`; it records exactly six verified controls, `directory_discovery_performed=false`, and no Development, Holdout, or commercial-reference access. The artifact builder raw SHA-256 is `979dcf7a76b9f6ebac8b08924b68849a175b352da14dbca589448e3e46afdb1d`; Python compilation and its read-only preflight pass with `source_audio_accessed=false`.
 Consequences: after this decision and builder are committed, the builder may execute once at `artifacts/audio_qa/riotbox-1434/natural-velocity-human-sanity-v1`. It must technically verify exact segment identity, silence, format, duration, peak, RMS, clipping, and endpoint before any playback. Then explain the four-block listening task without revealing dynamics, obtain fresh readiness, play once, verify stop/silence, and record the verdict. Any inconsistency is negative evidence; there is no rerender, reordered retry, threshold fit, or parameter change.
 Status: accepted
-
----
-
-### RBX-283
-
-Date: 2026-08-11
-Topic: permit one identical replay after the first natural-control sanity presentation was too dense to judge
-Phase: P023 / Sound Excellence
-Question: how may the human sanity check continue when the listener requests one repeat before giving any directional answer?
-Decision: record the first playback of artifact SHA-256 `fd61c45f3d50c1e4a4d4dae55575ce1508d69bbc454d5325312aa83074236847` as completed without a verdict because the four-block presentation was not yet confidently assessable. Permit exactly one additional playback of those identical bytes. Do not rebuild, reorder, relabel, crop, normalize, reread control audio, or reveal the blinded dynamics before the response. Preserve the original technical analysis, gaps, duration, endpoint silence, and listener question.
-Why: a request to hear the same short comparison once more is evidence that the first presentation did not yet support a reliable human answer, not a negative musical verdict. One identical repeat improves assessability without changing the stimulus or using a partial response to choose a new presentation. It also remains below the two-generation stop rule because no second artifact is generated.
-Evidence: the first `pw-play` invocation exited successfully after the declared 7.126-second artifact and no playback process remained. The listener supplied no snare or whip direction and requested one identical replay before judging.
-Consequences: reverify the exact artifact hash, format, duration, clipping state, and endpoint silence, explain that the same four blocks will repeat, obtain fresh readiness, and play once. Then stop and request the directional response; no third playback is authorized under this decision.
-Status: accepted
-
----
-
-### RBX-284
-
-Date: 2026-08-11
-Topic: replace the dense four-block sanity presentation with two repeated instrument-specific reviews
-Phase: P023 / Sound Excellence
-Question: how should the natural-control sanity check continue after two identical presentations still did not produce a confident directional response?
-Decision: close the 7.126-second combined presentation as human-inconclusive because it demanded four position judgments too quickly. Do not play it a third time. Freeze builder SHA-256 `5ed27f0c228541952fecb7aae0986f788b5955b73d0602de35cec15b5b6aad9b` to derive two new artifacts solely from the already-verified v1 artifact SHA-256 `fd61c45f3d50c1e4a4d4dae55575ce1508d69bbc454d5325312aa83074236847`, without rereading control sources. Produce separate snare and whip files, each preserving raw frames, level, blinded primary order, and reversed order. Repeat each pair three times per order with `250 ms` between hits, `250 ms` between repetitions, `750 ms` between orders, and `200 ms` endpoint silence. Keep each artifact below 10 seconds and request a separate readiness and verdict for each instrument.
-Why: the repeated request indicates a presentation-design failure, not a hearing failure or negative force verdict. Splitting instruments and repeating each pair gives the listener enough exposures while preserving the exact stimulus identities and avoiding source access, rerendered controls, order learning, or a third replay of an ineffective combined layout.
-Evidence: both combined-artifact playbacks completed at the declared endpoint with no remaining playback process, but the listener supplied no directional result. The v2 builder compiles and its preflight verifies the pinned input artifact and analysis with `control_source_audio_accessed=false`.
-Consequences: after this decision and builder are committed, generate and independently preflight the two artifacts. Present only the snare artifact first. After its verdict is recorded, separately brief and request readiness for the whip artifact. No combined-artifact replay or new control-source read is permitted.
-Status: accepted
