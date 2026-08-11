@@ -68,3 +68,30 @@ event support remain bit-identical. Raw and attenuation-matched views both
 retain four source/candidate events and pass every frozen identity, body,
 boundary, and confound screen. This authorizes one bounded structured human
 comparison, not a hardness or quality claim.
+
+## Structured human verdict
+
+The listener requested a longer presentation after the initial bounded event
+comparison. The final verdict is bound only to the transparent looped A/B WAV
+with raw SHA-256
+`384d7a977f7c1f4ccca84a24b2e64790ed3074d13fccdff9d46de4078b8cb368`:
+10.0 seconds of repeated A, 0.5 seconds of silence, 10.0 seconds of repeated B,
+and 0.2 seconds of exact-zero endpoint silence. A and B use the same clean
+121475-frame loop boundary. The presentation is 20.7 seconds, 44.1 kHz stereo
+Float32, has no clipped samples, and contains no product, monitor, support, or
+diagnostic voice.
+
+The exact structured review SHA-256 is
+`84e3cd67d0e764a33595ae0c880922b8bbf97a1dfc7cd3fb8969e6c3692b37ce`.
+Human verdict: `reject`. Listener wording: `kaum anders`. Source recognition
+remained clear, but B did not establish greater percussive hardness. F2 v1 is
+therefore frozen as a negative human result; no scalar retuning or replay of
+the unchanged candidate is allowed.
+
+RIOTBOX-1430 has now delivered the corrected source-pool objective: fifteen
+new lawful metadata candidates, thirteen admitted and freshly qualified,
+four selected sources across the frozen family/author/contrast contract, the
+complete 24-condition matrix, exact candidate artifacts, and a structured
+human result. It does not deliver a positive hardness pass. RIOTBOX-1428 Stage
+B remains blocked and must continue from a newly versioned causal mechanism
+hypothesis rather than reinterpret this result.
