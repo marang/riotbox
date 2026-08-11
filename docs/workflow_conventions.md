@@ -1,6 +1,6 @@
 # Riotbox Workflow Conventions
 
-Version: 0.2
+Version: 0.3
 Status: Active
 Audience: contributors, reviewers, coding agents
 
@@ -8,34 +8,19 @@ Audience: contributors, reviewers, coding agents
 
 ## 1. Purpose
 
-This document is the canonical operational workflow for Riotbox GitHub, Linear,
-PR/CI, branch cleanup, and ticket archive/deletion work.
+This is the canonical operational core and router. It owns cross-system order,
+mandatory gates, continuation, and stop conditions. Focused procedure lives in:
 
-It exists so work stays:
+- [GitHub, PR, Review, And CI](./workflow/github_pr_ci.md)
+- [Linear Lifecycle](./workflow/linear_lifecycle.md)
+- [Archive And Cleanup](./workflow/archive_cleanup.md)
+- [Context And Token Hygiene](./workflow/context_hygiene.md)
 
-- reviewable
-- ticket-linked
-- easy to reconstruct later
-- consistent across code, docs, and planning slices
-
-This is a workflow note, not a product spec. The documentation ownership split is:
-
-- `docs/execution_roadmap.md` owns the product delivery loop and phase direction.
-- `docs/workflow_conventions.md` owns the operational ticket/branch/PR/CI/Linear loop.
-- `AGENTS.md` owns non-negotiable agent guardrails and should point here instead of
-  restating full procedural detail.
-- The `riotbox-development` skill owns Riotbox product, audio, and
-  musician-facing judgment. It should not own operational GitHub / Linear /
-  branch workflow. If a durable product or QA rule emerges there, mirror it into
-  `AGENTS.md` or the relevant spec. If an operational workflow rule emerges,
-  keep it in this document.
-
-When the local `riotbox-development` skill is available, use it for Riotbox
-product/audio implementation judgment. If a recurring Riotbox product failure
-mode or better audio QA pattern is discovered, update that skill when it belongs
-there, validate it, re-read it, and mirror durable repo-facing rules into
-`AGENTS.md` or the relevant spec. Keep GitHub, Linear, PR, CI, branch, archive,
-and closeout procedure in this workflow document.
+Read this core before implementation work, then load only the module needed for
+the current operation. The roadmap owns product direction, `AGENTS.md` owns
+non-negotiable guardrails, and Riotbox skills/specs own product, audio, QA, and
+musician judgment. Modules own operational detail; if one conflicts with this
+core, follow the core and update both.
 
 ---
 
@@ -66,10 +51,13 @@ This operational loop is the execution form of the roadmap's core delivery loop:
 each bounded ticket should move one spec/research/vertical-slice/test/benchmark
 step forward, then leave a clean review and closeout trail before the next slice.
 
-Ticket closeout is a workflow transition, not an agent stop condition.
+When the user explicitly requested phase-level or cross-ticket autonomous
+continuation, ticket closeout is a workflow transition, not a stop condition.
+For a bounded one-ticket request, verified closeout completes the requested
+scope unless the user asks for the next ticket too.
 
-After any ticket reaches closeout, the agent must immediately enter the next
-workflow state:
+While explicit cross-ticket continuation remains active, the agent must enter
+the next workflow state after closeout:
 
 1. verify local `main` is clean and synced
 2. inspect whether any open PR or CI run needs action
@@ -81,8 +69,8 @@ workflow state:
 7. move that issue to `In Progress`
 8. start the next branch and continue implementation
 
-The agent must not send a final or closing response merely because a ticket,
-PR, archive, Linear deletion, or branch cleanup is complete.
+During that explicit continuation scope, the agent must not send a final merely
+because one ticket, PR, archive, Linear deletion, or branch cleanup is complete.
 
 Allowed stop conditions:
 
@@ -97,7 +85,11 @@ Allowed stop conditions:
 - CI, tests, or local validation are failing and the cause cannot yet be
   classified after a reasonable investigation
 
-Non-stop conditions:
+Waiting for the required human verdict is an allowed stop condition; state the
+exact review artifact and next human action.
+
+When explicit phase-level or cross-ticket continuation is active, these are
+non-stop conditions:
 
 - the current ticket is merged, archived, deleted from Linear, or otherwise
   fully closed
@@ -109,9 +101,9 @@ Non-stop conditions:
 - the next slice needs to be derived from roadmap, specs, Linear, and repo state
 - the agent has just given a status update or final-looking progress summary
 
-If none of the allowed stop conditions applies, continue the loop. Choose one
-small coherent next slice, keep Linear state honest, and do not open multiple
-parallel tickets just to avoid stopping.
+If explicit cross-ticket continuation is active and no allowed stop condition
+applies, continue the loop. Choose one small coherent next slice, keep Linear
+state honest, and do not open multiple parallel tickets just to avoid stopping.
 
 No Ticket, No Branch:
 
@@ -133,24 +125,26 @@ without sending a final status report unless an allowed stop condition applies.
 
 Before sending a final response, the agent must ask:
 
-`Did the user explicitly ask me to stop, pause, or only explain/status-report?`
+`Is the requested bounded scope complete, or did the user explicitly request
+phase-level or cross-ticket continuation?`
 
-If the answer is no and no allowed stop condition applies, a final response is
-not allowed. The correct next action is to continue the workflow state machine
-above.
+If the bounded scope is complete and no cross-ticket continuation was requested,
+a concise final handoff is correct. If continuation was requested and no
+allowed stop condition applies, continue the workflow state machine above.
 
 A final response is allowed only when one of these is true:
 
 - the user explicitly says `stop`, `pause`, or asks only for status,
   explanation, or discussion
+- the requested bounded ticket/task is verified complete and the user did not
+  request continuation into another ticket
 - an allowed stop condition from this document applies
 - the agent is blocked after reasonable investigation and can name the concrete
   blocker
 - the user changes the task away from implementation work
 
-This rule exists to counter the agent stop-reflex after successful closeout. A
-successful closeout is evidence that the workflow should continue, not evidence
-that the work session is complete.
+This gate prevents both premature stopping inside an explicitly continued phase
+and unrequested expansion from one completed ticket into another.
 
 ---
 
@@ -173,935 +167,92 @@ For a normal implementation or docs slice:
 11. move the Linear issue to `In Review`
 12. add a human-readable issue update
 13. add a project-level update in the `Riotbox Project Updates` Linear document
-14. treat merge / approval as the boundary for closing this ticket, not as an idle point; when the current PR is locally clean and CI is running or green, continue the main implementation lane on the next bounded backlog slice
+14. treat merge / approval as the boundary for closing this ticket; start the
+    next Linear-first slice while CI runs only when explicit cross-ticket
+    continuation is active
 15. after merge, sync local `main`
 16. move the issue to `Done`
 17. archive useful Linear context before deletion when the ticket should be removed from Linear
-18. delete the merged remote feature branch after the merge is verified
+18. after syncing `main`, delete the merged remote and local feature branches
+    unless the branch is intentionally long-lived
 19. delete the completed Linear issue only after the archive entry exists
 
-This is the default unless the user explicitly asks for something else.
+A prompt such as "weiter" continues the current requested scope. Starting
+another ticket requires an explicit cross-ticket/phase instruction or a newly
+requested issue. Such instructions change only whether another workflow
+iteration runs; they never change steps 0-19 or permit work without an active
+Linear issue.
 
-Explicit user instructions such as "weiter", "warte nicht", "bleib im Loop",
-or "keine Stops bei Slice-Abschluss" change only whether the agent should
-continue to the next workflow iteration. They do not change the order of steps
-0-19 and must not be interpreted as permission to branch, commit, open PRs, or
-merge without an active Linear issue.
+### 3.1 Work Classification
 
-## 3.1 Broad Audio-QA Lock
+Classify every P023 slice before implementation:
 
-Do not run broad audio-QA gates concurrently when they write shared
-`artifacts/audio_qa/local-*` paths. `just audio-qa-ci` is the public broad gate
-and must acquire the repo-local `broad-audio-qa` lock through
-`scripts/with_audio_qa_lock.sh` before it starts deleting or regenerating local
-audio artifacts. `just ci` calls that public gate and therefore inherits the
-same protection.
+- `audible_vertical_slice`: changes the musician journey and must prove the
+  exact live runtime/mixer path when it claims instrument progress
+- `contract_enabler`: changes a prerequisite contract and names exactly one
+  directly enabled audible follow-up issue and outcome
+- `maintenance/regression`: preserves behavior and must not be presented as
+  musical or instrument progress
 
-If a second broad audio-QA run is already active, the next run must fail early
-with a clear lock message instead of racing on shared artifacts. For concurrent
-experiments, run narrower recipes with explicit unique `output=...` arguments
-or wait for the broad gate to finish.
-
-## 3.2 CodeRabbit Reviews
-
-CodeRabbit is configured through `.coderabbit.yaml` as an advisory PR reviewer.
-It does not replace the Riotbox branch-level review, local validation, GitHub
-Actions, Linear-first issue loop, or ticket closeout workflow.
-
-Initial policy:
-
-- keep CodeRabbit automatic PR review enabled
-- keep `request_changes_workflow` disabled until the team explicitly promotes
-  CodeRabbit to a merge gate
-- do not idle on every PR while waiting for CodeRabbit; if CI is clean and no
-  blocking review is present, continue the next Linear-first implementation
-  slice
-- do not forget CodeRabbit after moving on: re-check open PRs for CodeRabbit
-  comments during the normal PR polling loop and before merge
-- treat CodeRabbit findings like any other review signal: fix clear defects,
-  convert useful product/QA findings into tickets or specs, and ignore noise
-  only after checking it against AGENTS.md and the relevant docs
-- if a CodeRabbit finding is relevant but too large or out of scope for the
-  current PR, create or link a follow-up Linear ticket before closing the PR
-- do not let CodeRabbit comments promote scripted diagnostics, hardcoded
-  fallback output, or unverified listening candidates into quality proof
-
-GitHub App installation is an external permission step. A GitHub repository
-owner or organization owner must install CodeRabbit for `marang/riotbox` through
-the CodeRabbit/GitHub UI and grant access only to the Riotbox repository unless
-broader access is intentionally approved.
+Apply the [audio-QA contract](./specs/audio_qa_workflow_spec.md) to audible work.
+Waiting for its required human verdict is an allowed stop condition; state the
+exact review artifact and next human action.
 
 ---
 
 ## 4. Ambiguous Feedback Handling
 
-Product feedback, later ideas, and immediate implementation requests can arrive together.
+Product feedback, later ideas, and immediate implementation requests can arrive
+together.
 
-When the intended next action is ambiguous, ask one concise clarifying question before choosing a work lane. Do not silently turn open-ended feedback into implementation work, and do not silently park an urgent implementation request as a future note.
+When the intended next action is ambiguous, ask one concise clarifying question
+before choosing a work lane. Do not silently turn open-ended feedback into
+implementation work, and do not silently park an urgent implementation request
+as a future note.
 
-If the user labels something as later work, capture it as a ticket, repo note, or roadmap item. If the user asks to continue implementation, proceed with the next bounded roadmap-aligned ticket.
+If the user labels something as later work, capture it as a ticket, repo note,
+or roadmap item. Proceed beyond the current ticket only when the user explicitly
+requests cross-ticket or phase continuation.
 
-## 4.1 Plan Anchoring
+### 4.1 Plan Anchoring
 
-When a new implementation plan becomes an accepted work direction, do not leave it only as a standalone planning file.
-
-Minimum anchoring path:
-
-- keep the detailed plan under `docs/plans/`
-- link it from `docs/README.md`
-- connect it to the relevant phase in `docs/execution_roadmap.md`
-- tighten `docs/phase_definition_of_done.md` when the plan changes phase completion criteria
-- add a short architecture decision to `docs/research_decision_log.md` when the plan freezes a durable direction
-
-Do not duplicate the whole plan across those files. The plan holds the detail; the roadmap, DoD, README, and decision log make it discoverable and binding for future agents.
-
----
-
-## 5. Branch Naming
-
-Preferred branch pattern:
-
-- `feature/<identifier>-<short-slice-name>`
-
-Examples:
-
-- `feature/riotbox-18-analysis-ingest-slice`
-- `feature/riotbox-19-decoded-source-baseline`
-
-Rules:
-
-- keep the name short and human-readable
-- keep one branch aligned to one main issue
-- do not overload a branch with unrelated slices
-- keep the branch under the repo convention even if external tools suggest a different slug
-
-If Linear is configured to generate branch names, it should use the same repo convention instead of a username-prefixed path.
+When a new implementation plan becomes an accepted work direction, do not leave
+it only as a standalone planning file. Keep the detailed plan under
+`docs/plans/`, link it from `docs/README.md`, connect it to the relevant phase in
+`docs/execution_roadmap.md`, tighten `docs/phase_definition_of_done.md` when it
+changes phase completion criteria, and add a short decision-log entry when it
+freezes a durable direction. Do not duplicate the whole plan across those files.
 
 ---
 
-## 6. Commit Scope
-
-Preferred commit style:
-
-- one coherent slice per commit where possible
-- commit message should describe the slice outcome, not just the file touched
-
-Good examples:
-
-- `add first analysis ingest slice`
-- `document branch cleanup helper`
-- `document PR description guideline`
-
-Avoid mixing unrelated cleanup into the same commit unless it is required for the slice to pass.
-
-Do not amend commits unless explicitly requested; prefer a new scoped commit for
-follow-up changes on an open branch.
-
----
-
-## 7. Pull Request Rules
-
-Every completed ticket should normally open a PR.
-
-PR descriptions should include:
-
-- `Why This Matters`
-- `Summary`
-- `Verification`
-- `Drift Check` for non-trivial feature branches
-
-`Why This Matters` must explain:
-
-- what larger phase or milestone the slice belongs to
-- what product path or architecture seam it unlocks
-- what the change practically gives the software, stated in product-runtime
-  terms rather than file names only
-- what the change practically gives the musician, stated in one short
-  musician-facing sentence
-- what remains intentionally bounded, stubbed, or out of scope
-
-`Summary` / `Changes` must describe the practical behavior change, not only a
-code or documentation diff. Keep it concise: mention the contract, workflow,
-screen, audio path, replay behavior, or QA proof the software gains, and the
-musician-facing effect when there is one.
-
-`Drift Check` should answer:
-
-- New `ActionCommand`: yes/no
-- Queue path covered: yes/no/n/a
-- Commit or side-effect path covered: yes/no/n/a
-- Session/replay consequence covered: yes/no/n/a
-- User-visible or observer surface covered: yes/no/n/a
-- Test/QA proof included: yes/no/n/a
-- Added `JamAppState` state: yes/no
-- Added or changed audio-producing behavior: yes/no
-- Shadow-system risk reviewed: yes/no
-
-Do not write PR descriptions as changelogs only.
-
----
-
-## 8. Review Boundary
-
-Once a PR is open for a ticket:
-
-- treat that ticket as being at the review boundary
-- inspect the CI / GitHub Actions output explicitly
-- if CI is red, treat the branch as still active work until the relevant failures are addressed
-- do not let an open or in-flight PR stall the main implementation lane by default
-- if the current PR is clean locally and CI is still running or already green, continue on the next bounded backlog slice instead of idling
-- re-check open PRs periodically and merge them as soon as their gates are clean
-- include CodeRabbit comments in that periodic PR re-check; relevant findings
-  must be fixed on the PR or captured as follow-up tickets before merge
-- small follow-up fixes on the same PR are fine
-- do not silently bundle the next unrelated slice into the same PR
-
-This keeps review history and Linear issue history aligned.
-
-Environment note: use the authenticated local `gh` CLI as the primary GitHub
-PR tool for Riotbox work. Agents must verify `gh auth status` before relying on
-it. Use `gh` for PR creation, PR metadata/status inspection, CI/check summaries,
-and PR merges when available. The GitHub connector may be used as a fallback
-when it is authenticated and working. For read-only status checks, public GitHub
-API responses and Linear diff metadata are acceptable supporting evidence. If
-neither authenticated `gh` nor connector auth is available, the agent can push
-the branch and prepare the PR URL/body, but cannot complete PR creation itself.
-If a PR is already green and merge-ready, SSH `git` may be used as the
-repository-level merge/push fallback, followed by an explicit PR state check.
-
-## 8.1 Branch-Level Review Before PR
-
-Before opening a PR for a finished feature branch:
-
-- run the `code-review` skill when it is available in the current session
-- use that review to surface findings, fix them on the same branch, and answer review questions before the PR is created
-- then do the normal short self-review pass as a final check
-
-Minimum branch-level review expectations:
-
-- correctness and failure paths
-- drift against the active specs in `docs/`
-- whether new behavior is adequately covered by tests
-- whether docs or workflow notes need to move with the code
-- whether any Rust file, including tests and bin helpers, grows beyond the repo's roughly 500-line file budget
-
-If the `code-review` skill is not available in the current session:
-
-- state that clearly in the working notes or PR context
-- fall back to the normal self-review pass instead of skipping review entirely
-
-## 8.1.1 Drift Review Checklist
-
-For each finished feature branch, reviewers should check whether the branch introduced hidden architecture drift.
-
-Minimum questions:
-
-- Did this add or change an `ActionCommand`? If yes, are queue, commit/side-effect, Session/replay, user/observer surface, and QA proof all covered?
-- Did this add state to `JamAppState`? If yes, why is it app-runtime state rather than Session/Core truth?
-- Did this add a new lane, Ghost, Feral, capture, replay, source timing, or persistence path? If yes, does it reuse the existing contracts instead of creating a shadow system?
-- Did this claim an audible product change? If yes, where is the audio, metric, observer/audio, listening manifest, or reproducibility proof?
-- Did this introduce string values that now control behavior? If yes, should they become enums or documented contract fields?
-- Did this increase repeated queue or side-effect patterns? If yes, is a small helper now warranted?
-- Did this add broad app-module imports such as `use super::*`? If yes, is the dependency surface still reviewable?
-
-Record recurring findings in `docs/reviews/` and promote durable rules into `AGENTS.md`, this workflow document, or the relevant spec.
-
-The current detailed guardrail is recorded in `docs/reviews/riotbox_drift_guardrails_2026-05-10.md`.
-
-## 8.1.2 Rust File-Size Budget
-
-Riotbox treats every `.rs` file over roughly 500 lines as a soft refactor candidate, not a hard limit.
-
-This applies to:
-
-- production modules
-- `tests.rs` files
-- bin helpers
-- fixture/test-support modules
-
-The goal is not strict line-count aesthetics. The goal is lower review cost, lower agent context cost, and easier navigation. Large test files are still a problem because they consume context whenever a test area must be inspected.
-
-Never split files mechanically just to satisfy the line budget. A split is useful only when the new files have clear semantic ownership and make future work easier to inspect.
-
-Preferred response when a Rust file crosses the budget:
-
-- split by responsibility, screen, lane, fixture family, command family, or render seam when that boundary is real
-- keep the extraction behavior-preserving when possible, but do not create arbitrary shards
-- use semantic shard names that describe responsibility, such as `event_loop.rs`, `w30_projection.rs`, or `render_policy_tests.rs`
-- avoid durable `01_...rs`, `02_...rs` numbering; numbered shards are not an acceptable final structure
-- avoid mixing behavior changes with file-size cleanup
-- create a follow-up ticket if the split is too large for the current branch
-
-## 8.1.3 Context Hygiene For Agents
-
-Riotbox keeps long-term history and generated evidence in the repo, but normal implementation work should not load all of it into agent context.
-
-Default behavior:
-
-- respect `.rgignore` for broad searches
-- search live source, specs, reviews, and workflow docs first
-- avoid broad searches through `docs/archive/linear_issues/`, generated `artifacts/`, local `data/`, and raw planning transcripts unless the current task needs those paths
-- prefer `rg "..." crates docs/specs docs/reviews docs/workflow_conventions.md AGENTS.md` for architecture or implementation questions
-- prefer exact archive searches such as `rg --no-ignore "RIOTBOX-123" docs/archive/linear_issues` when ticket history is needed
-- prefer exact audio/manifest searches under `artifacts/audio_qa/...` only when validating a specific generated proof
-
-Do not paste large archive batches, generated manifests, raw transcript files, or long audio probe outputs into a PR description or agent summary. Summarize the relevant finding and link the file path instead.
-
-## 8.1.4 Token-Bounded Command Output
-
-Long command output is an operational cost. It can consume enough agent context to slow down implementation or force an avoidable session reset.
-
-Default behavior:
-
-- redirect long CI, QA, cargo, clippy, observer/audio, and generated-pack output to `/tmp/...log`
-- if a command is expected to print more than roughly 100 lines, run it through `scripts/run_compact.sh` or redirect it before starting it
-- report only whether the command passed, plus the relevant final lines or error excerpt
-- when a command fails, show the failing command, exit status, and the smallest useful log excerpt
-- avoid streaming full `just ci`, full `cargo test`, full Linear JSON, full GitHub JSON, large manifests, or generated evidence into the agent context
-- use `GIT_EDITOR=true` for non-interactive rebase/commit continuation when the existing commit message is sufficient
-- set shell tool output limits deliberately; do not request large output unless the task needs it
-- if a tool call unexpectedly emits too much output, switch to compact execution for the next attempt and record the workflow gap if it is recurring
-
-Preferred pattern:
-
-```bash
-scripts/run_compact.sh /tmp/riotbox-ci.log just ci
-```
-
-Manual fallback:
-
-```bash
-just ci >/tmp/riotbox-ci.log 2>&1
-status=$?
-if [ "$status" -ne 0 ]; then
-  tail -n 80 /tmp/riotbox-ci.log
-fi
-exit "$status"
-```
-
-If the log matters for review or later debugging, keep it in `/tmp` for the current session and summarize the important finding in Linear or the PR. Do not commit transient command logs.
-
-## 8.1.5 Token Budget Discipline
-
-The autonomous loop must stay token-efficient. Repeatedly re-reading stable
-workflow docs, streaming large tool payloads, and writing verbose status updates
-can consume more context than the implementation itself.
-
-Default behavior:
-
-- treat `AGENTS.md`, `docs/workflow_conventions.md`, and the active skill as
-  stable after they have been read in the current session; re-read only exact
-  line ranges when the user asks about workflow, the files changed, or a
-  concrete rule must be quoted
-- do not run broad `rg` queries across `AGENTS.md`, the full workflow document,
-  skill files, archives, and specs together unless diagnosing documentation
-  drift; search the smallest relevant file set first
-- never read `docs/research_decision_log.md` wholesale during normal
-  implementation work; it is a large canonical log and should be queried by
-  `just decision-search "query"`, exact `rg` terms, or targeted line ranges
-- use `just decision-search "query"` for normal research-decision retrieval;
-  it is a bounded `rg` helper over `docs/research_decision_log.md` and has no
-  semantic-memory dependency
-- keep Linear issue descriptions, PR bodies, archive notes, and issue comments
-  concise for tiny QA/docs slices; list verification commands once and avoid
-  repeating the same long prose across Linear, PR, archive, and chat
-- poll GitHub Actions with run/job summaries only; fetch full job logs only for
-  failed, cancelled, or suspicious runs
-- while waiting for CI, do not send standalone progress updates more often than
-  necessary; prefer one short update when a gate changes state or a new action
-  starts
-- use `git diff --stat`, `git diff --name-only`, and targeted `git diff -- <file>`
-  before asking for large diffs
-- avoid creating stacked follow-up tickets that touch the same files while an
-  earlier PR is still open unless the dependency is intentional and worth the
-  extra context cost
-
-If token use becomes a concern during a session, finish the active ticket, then
-pause new feature work and run a short token-hygiene pass before continuing.
-That pass should identify the largest context sources and update this workflow
-document when the fix is durable.
-
-## 8.1.6 External Review Freshness
-
-External reviews are point-in-time evidence. Before creating tickets from an
-external review finding:
-
-- verify the finding against current `main`
-- check current Linear, including done or archived issues when the finding may
-  already have shipped
-- check `docs/reviews/` for newer refreshes or bounded audits
-- classify the finding as open, stale, duplicate, superseded, or intentionally
-  deferred
-
-If the review wording is stale but the underlying risk remains valid, create a
-new bounded ticket for the current risk instead of reopening the old issue or
-copying the stale wording.
-
-## 8.2 CI Check After PR Open
-
-After opening a PR, explicitly inspect the GitHub Actions / CI status.
-
-Minimum expectation:
-
-- formatter check passes
-- test suite passes
-- lint / static analysis passes
-- any slice-specific workflow required by the repo is checked
-
-Rules:
-
-- do not assume CI is fine just because local checks passed
-- if a CI failure is caused by the current slice, fix it on the same branch before treating the ticket as cleanly in review
-- mention important CI failures and fixes in the Linear issue update when they happen
-- treat CI checks as merge gates, not as a reason to pause all forward progress
-- when no event or webhook mechanism is available, poll open PR status
-  periodically while continuing on the next bounded slice, but keep polling
-  token-bounded by checking run/job summaries first and fetching logs only for
-  failures or unexpected states
-- do not fall back into standalone status-only updates when there is no blocker
-- if a progress update is necessary, pair it with the next concrete action already being taken
-
-## 8.2.1 Audio-Producing Slice Check
-
-For audio-producing changes, also consult:
-
-- `docs/specs/audio_qa_workflow_spec.md`
-
-Treat that spec as an active workflow guide for audio QA, while staying honest about current repo status.
-
-Current rule:
-
-- do not claim a stronger audio QA process than the repo can actually run today
-- use the strongest currently real checks for the affected seam
-- note clearly when a desired audio QA layer is still planned rather than operational
-
-Minimum expectation today for an audio-producing slice:
-
-- relevant local formatter, test, and lint checks pass
-- relevant audio-facing regression or fixture checks pass when the seam already has them
-- action/log/state assertions prove that the intended user action or render state actually landed
-- output assertions prove the audible seam is not silent, not fallback-collapsed, and within expected metrics for the affected path
-- a local real-session listening pass is done when the slice materially changes behavior that can already be heard
-- the PR or working notes say when the slice could not yet use a fuller offline WAV / listening-pack harness because that harness is still future work
-
-Audio-QA selection should be specific before it is broad:
-
-- first run the smallest real checks that cover the changed seam, such as the
-  affected fixture validator, pack smoke, promotion/import fixture, or render
-  comparison
-- do not treat all audio-QA smokes as the default proof for every small ticket;
-  long professional-output and demo-bank smokes rerender multiple real sources
-  through `feral_grid_pack` and should be paid for when their surface is touched
-  or when branch/merge risk justifies the broader gate
-- run `just ci` before PR or merge when the slice changes release gates,
-  promotion paths, source-derived quality claims, shared validators, core render
-  policy, or other cross-cutting behavior; otherwise document the narrower
-  command set that directly proves the slice
-- if a broad gate is skipped for a narrow slice, say why in the PR validation
-  notes instead of implying the full audio suite ran
-
-Do not close an audio-producing slice with only UI/log proof. If the feature is supposed to sound different, include a buffer regression, offline render comparison, source-vs-control metric check, or documented reason why the output seam is not yet operational.
-
-When manual TUI/audio verification is ambiguous enough that user input timing, unclear commit feedback, audio-device failure, and fallback-like output cannot be separated reliably, use the strongest observer path that exists before guessing. The current first slice is explicit and opt-in:
-
-```bash
-cargo run -p riotbox-app --bin riotbox-app -- --source "data/test_audio/examples/Beat08_128BPM(Full).wav" --observer artifacts/audio_qa/local/user-session/events.ndjson
-```
-
-That observer records launch, keypress, queue / commit, transport, and runtime evidence outside the realtime audio callback. It does not yet record raw host audio or provide a socket-backed monitor; keep those as product/QA work instead of encoding imaginary behavior into the agent workflow.
-
-As the repo gains the missing audio QA harnesses, tighten this section toward the stronger release gates defined in the audio QA workflow spec instead of leaving it as a light note.
-
-## 8.2.2 Audible Work Classes And Listening Stop
-
-Classify every P023 slice before implementation:
-
-- `audible_vertical_slice`: changes the musician journey and must prove the
-  exact live runtime / mixer path when it claims instrument progress
-- `contract_enabler`: changes a prerequisite contract and must name exactly one
-  directly enabled audible follow-up issue and outcome
-- `maintenance/regression`: preserves behavior and must not be presented as
-  musical or instrument progress
-
-A nearest offline render seam is useful partial evidence. It cannot close a
-product-facing audible vertical when the exact live path is operationally in
-scope. Scripted packs, fixture verdicts, reports, and validators stay
-diagnostic until the behavior they measure is owned by the product path.
-
-Use this default sequence for audible work:
-
-1. implement the smallest product-path behavior that should sound different
-2. render or capture the affected output and run the narrow health checks
-3. listen and record the structured verdict when the behavior is review-ready
-4. route a weak / rejected result to one highest-value audio or policy fix
-5. freeze only the smallest regression proof needed to catch that failure again
-
-After at most two consecutive generations of a review-ready candidate that
-still has `human_verdict: unverified`, stop generation for that candidate and
-perform or explicitly hand off structured human listening. Do not continue by
-adding another report, queue, threshold, fixture, or validator unless the
-current failure is genuinely unobservable. Waiting for the required human
-verdict is an allowed stop condition; state the exact review artifact and next
-human action.
-
-## 8.3 Periodic Whole-Codebase Review
-
-Branch-level review is not enough on its own.
-
-On a regular cadence, run the `review-codebase` skill for a broader whole-repo review.
-
-Default cadence:
-
-- after every 5th substantive feature branch or at an active phase checkpoint,
-  whichever comes first
-- docs-only, archive-only, fixture-only, and mechanical maintenance branches do
-  not advance the counter unless they materially change architecture or product
-  contracts
-
-Purpose:
-
-- catch cross-slice architecture drift
-- detect recurring correctness or testing gaps
-- find patterns that do not show up clearly in one branch diff
-
-Expected outputs:
-
-- a review artifact under `docs/reviews/`
-- important resulting decisions or constraints in `docs/research_decision_log.md`
-- workflow or spec updates if the review changes how the repo should be operated
-
-If the `review-codebase` skill is not available in the current session, fall back to a manual whole-codebase review and record that fact explicitly.
-
----
-
-## 9. Linear Updates
-
-Two update layers are expected:
-
-### 9.1 Issue-level update
-
-Add a short, human-readable update on the Linear issue when:
-
-- the ticket moves to `In Review`
-- important findings change the recommendation
-- the PR is merged
-
-The issue update should say:
-
-- what changed
-- what was verified
-- what remains bounded or open
-
-### 9.2 Project-level update
-
-Also add a short entry to the `Riotbox Project Updates` Linear document when:
-
-- a meaningful slice is opened for review
-- a meaningful slice is merged
-- a cross-ticket change affects the roadmap or working mode
-
-This is the reviewable cross-ticket history.
-
-## 9.2.1 Parallel Workflow Lane
-
-When delegation is available, workflow upkeep may run in parallel with implementation instead of waiting until the end.
-
-Preferred split for substantial slices:
-
-- implementation lane:
-  - code changes
-  - tests
-  - branch review
-  - PR content
-  - merge readiness
-- workflow / ops lane:
-  - Linear state transitions
-  - issue comments
-  - project update document entries
-  - repo archive preparation and similar process obligations
-
-Rules:
-
-- treat the workflow / ops lane as real work, not optional cleanup
-- keep code state, git state, Linear state, and archive readiness moving together
-- implementation may continue on the main thread while a parallel workflow lane or subagent keeps Linear state, project updates, and archive obligations aligned
-- the main coordinating agent still owns correctness, final review, and final integration
-- delegation should reduce workflow drift, not hide responsibility for it
-
-## 9.2.2 Linear / Codex Integration
-
-Use the Linear / Codex integration as an operational accelerator, not as a
-product source of truth.
-
-Good uses:
-
-- pull the Linear issue, project, priority, acceptance criteria, and attachments
-  into the working context before starting a branch
-- keep issue state aligned with the workflow: `In Progress`, `In Review`,
-  `Done`, `Canceled`
-- attach PR links, branch links, and short human-readable issue updates
-- maintain the near-term backlog horizon from roadmap, specs, and current repo
-  state
-- inspect Linear-visible diffs and PR metadata as a cross-check alongside `gh`
-- delegate workflow / ops lane tasks such as issue comments, PR link updates,
-  project update entries, archive preparation, and backlog hygiene when the
-  integration can do them reliably
-
-Limits:
-
-- do not treat Linear / Codex output as canonical product truth unless the
-  decision is mirrored into repo docs, specs, decision log, or Git history
-- do not use Linear comments as the only record for architecture, replay,
-  source-timing, Action Lexicon, audio QA, or musician-facing product contracts
-- do not let delegated workflow updates hide responsibility from the main
-  coordinating agent
-- use `gh` for GitHub PR creation, PR status, CI/check summaries, and PR merges;
-  Linear-visible PR data is supporting evidence, not the primary GitHub control
-  plane
-
-## 9.3 Backlog Horizon
-
-Linear should not hold only the current ticket.
-
-Keep two horizons visible:
-
-- active work:
-  - `In Progress`
-  - `In Review`
-- near-term backlog:
-  - the next plausible, already-shaped tickets
-
-Recommended operating shape:
-
-- 1 main ticket in progress
-- 1-5 near-next tickets in backlog
-- milestone-level placeholders for later work when useful
-
-Rules:
-
-- do not leave the working backlog empty if the next likely slices are already clear
-- treat this as a standing workflow rule, not just a planning preference
-- before creating the next branch, ensure Linear has:
-  - exactly one active slice ticket moved to `In Progress`
-  - 1-5 near-next tickets in backlog when the next likely slices are already clear
-- after merging and closing one ticket, it is acceptable for there to be no
-  `In Progress` ticket only for the short transition while selecting the next
-  issue; the next branch must not be created until the next issue is
-  `In Progress`
-- do not over-decompose distant phases into many detailed tickets too early
-- prefer a small, honest backlog over a large speculative ticket tree
-- derive backlog tickets from the roadmap, active specs, and current repo state
-
-## 9.3.1 Automatic Next-Ticket Continuation
-
-Automatic continuation is governed by the Core Rule and Final Response Gate in
-section 2. Do not keep a softer duplicate rule here.
-
-Backlog hygiene supports that rule: when a ticket loop closes and no documented
-stop condition applies, the agent must choose the next smallest coherent
-roadmap-aligned slice from the active backlog or derive one from the roadmap,
-active specs, Linear, and actual repo state.
-
-For P023, `roadmap-aligned` means aligned with the named active phase exit, not
-merely adjacent to the latest measurable report gap. Select work in this order:
-
-1. a waiting structured human review when a review-ready candidate exists
-2. the next unblocked `audible_vertical_slice` on the active Golden Path
-3. a `contract_enabler` only when it names the exact next audible issue it
-   unlocks
-4. maintenance / regression work only when current risk justifies delaying the
-   audible path
-
-Do not select deferred P016, P021, or P022 work unless the issue names the exact
-P023 Golden Path blocker it removes.
-
-This preserves momentum without bypassing roadmap discipline. Continue one
-ticket at a time; do not open multiple parallel tickets merely to avoid
-stopping.
-
-## 9.4 Retention And Cleanup
-
-Linear is the active execution surface, not the canonical long-term archive.
-
-Because the workspace runs on the free tier, completed issues should not accumulate forever.
-
-Use this retention model:
-
-- Linear:
-  - active ticket flow
-  - near-term backlog
-  - recent completed work while it is still operationally useful
-- repo archive:
-  - long-term ticket history worth keeping
-- optional semantic memory:
-  - Riotbox currently has no active semantic-memory tool in the workflow
-  - `just decision-search "query"` is bounded exact/term search, not semantic
-    retrieval
-  - any future semantic-memory layer must be introduced through an explicit
-    ticket, measured bakeoff, and repo-owned source-of-truth rules
-  - archived Linear ticket files should stay out of any future semantic corpus
-
-Before deleting a completed Linear issue, preserve its useful context in repo markdown under `docs/archive/linear_issues/`.
-Do that archive update as part of the normal ticket closeout path, not as a separate default `Archive ...` ticket.
-
-Recommended archive shapes:
-
-- one file per ticket for all archived Linear tickets
-- monthly files such as `2026-05.md` should be indexes, not grouped content archives
-
-Naming and formatting rules:
-
-- use `RIOTBOX-123.md` for one-ticket archive files
-- use `YYYY-MM.md` for monthly index files
-- use ISO dates in all metadata fields: `YYYY-MM-DD`
-- keep the metadata block field order consistent with the archive template
-- use stable final-status values such as:
-  - `Done`
-  - `Canceled`
-  - `Duplicate`
-  - `Superseded`
-
-Each archived ticket entry should include at least:
-
-- ticket id and title
-- Linear project
-- phase or milestone
-- final status such as done, canceled, duplicate, or superseded
-- created date
-- implementation start date when known
-- final status date such as merged, done, canceled, or deleted
-- actual repo feature branch when one existed
-- status date or merge point
-- why the ticket existed
-- what shipped
-- PR link
-- merge commit
-- follow-up tickets or bounded open questions
-
-Useful optional fields:
-
-- Linear-generated branch name when it differs from the real repo branch
-- Linear issue URL
-- labels
-- assignee or owner
-- deleted-from-Linear date
-- verification summary
-- decision-log or spec links touched by the ticket
-
-Recommended metadata block:
-
-```md
-- Ticket: `RIOTBOX-999`
-- Title: `Example ticket`
-- Linear issue: `https://linear.app/...`
-- Project: `Riotbox MVP Buildout`
-- Milestone: `TR-909 MVP`
-- Status: `Done`
-- Created: `2026-04-15`
-- Started: `2026-04-16`
-- Finished: `2026-04-17`
-- Branch: `feature/riotbox-999-example-ticket`
-- Linear branch: `feature/riotbox-999-example-ticket`
-- Assignee: `Markus`
-- Labels: `TUI`, `TR-909`
-- PR: `#99`
-- Merge commit: `abc1234`
-- Deleted from Linear: `2026-04-20`
-- Verification: `cargo fmt --all`, `cargo test`, `cargo clippy --all-targets --all-features -- -D warnings`
-- Docs touched: `docs/research_decision_log.md`
-- Follow-ups: `RIOTBOX-1000`, `RIOTBOX-1001`
-```
-
-Deletion rule:
-
-- do not delete a Linear ticket until:
-  - the PR is merged
-  - the issue is marked done
-  - the repo archive entry exists
-- verify archive presence by exact file or metadata check, not by reading or semantically searching the whole archive:
-  - `test -f docs/archive/linear_issues/RIOTBOX-123.md`
-  - `rg --no-ignore -n '^- Ticket: `RIOTBOX-123`' docs/archive/linear_issues`
-- do not use semantic memory as the deletion gate; exact filesystem / metadata checks are more reliable for cleanup decisions
-- when generating the archive entry, prefer the repo-local helper:
-  - `scripts/archive_linear_issue.py --ticket RIOTBOX-123 --pr 99 --why "..." --shipped "..."`
-  - the helper fetches Linear metadata and optional GitHub PR metadata, writes `docs/archive/linear_issues/RIOTBOX-123.md`, and updates the monthly and root archive indexes
-  - it requires explicit `--why` and at least one `--shipped` entry unless `--allow-placeholders` is intentionally used for a draft
-  - placeholder drafts are not valid closeout handoffs
-- when deleting, prefer the repo-local helper:
-  - `scripts/linear_issue_delete.sh RIOTBOX-123`
-- for repeated cleanup, prefer the repo-local closeout helper:
-  - `scripts/closeout_ticket.sh --ticket RIOTBOX-123 --branch feature/riotbox-123-example --pr 99`
-- the archive and closeout helpers default to dry-run; execute them only when the branch is ready for the corresponding mutation
-- the closeout helper must only be executed after the PR is merged, the issue is marked done, and the archive handoff exists:
-  - `scripts/closeout_ticket.sh --ticket RIOTBOX-123 --branch feature/riotbox-123-example --pr 99 --delete-linear --delete-remote-branch --delete-local-branch --execute`
-- the helper should use token auth via `LINEAR_API_TOKEN`
-- do not treat pasted browser session cookies as the normal cleanup path
-
-GitHub branch cleanup rule:
-
-- after a PR is merged and local `main` is synced, delete the remote feature branch unless it is intentionally long-lived
-- do branch cleanup as part of ticket closeout, alongside the Linear archive/delete path
-- prefer deleting the exact branch used by the merged PR:
-  - `git push origin --delete feature/riotbox-123-example`
-- never delete `main`, release branches, protected branches, or an active branch with an open PR
-- for squash-merged PRs, do not rely only on `git branch --merged`; squash merges can leave branch tips outside `main` even when the PR content is already merged
-- if doing a bulk cleanup, first verify there are no open PRs and then delete only stale non-`main` heads that are known merged, archived, or otherwise obsolete
-
-Priority rule:
-
-- `In Progress` / `In Review` -> `High (2)`
-- honest near-next backlog -> `Medium (3)`
-- distant work -> `Low (4)` or unset
-- archive / repo-ops slices -> usually `Medium (3)` unless urgent
-
-Label rule:
-
-- keep labels orthogonal to projects:
-  - projects answer phase
-  - labels answer slice type
-- keep the base label set small:
-  - `workflow`
-  - `archive`
-  - `ux`
-  - `benchmark`
-  - `review-followup`
-
----
-
-## 10. Automatic vs Manual Behavior
-
-Current practical split:
-
-### Automatic or tool-assisted enough
-
-- local branch creation
-- commit and push flow
-- PR creation, PR status inspection, and PR merges through authenticated `gh`
-- issue state transitions
-- issue deletion through the token-backed `issueDelete` helper after archive handoff
-- issue comments
-- project update document edits
-
-### Still manual or only partially automated
-
-- final judgment about whether a slice is ready for review
-- any direct PR description edits if the available connector/tooling cannot patch the body later
-- issue cleanup choices such as delete vs cancel vs archive
-
-Because of that, the safe rule is:
-
-- make the PR description correct at creation time
-- do not rely on later cleanup if it can be avoided
-
----
-
-## 11. Direct Push To `main`
-
-Normal slice work should not go directly to `main`.
-
-Direct push to `main` is acceptable only when all of the following are true:
-
-- the user explicitly asked for it
-- the change is very small
-- the change is repo-meta or workflow-meta rather than product implementation
-- skipping the PR does not hide meaningful review risk
-
-Examples of acceptable direct-to-`main` exceptions:
-
-- a tiny `AGENTS.md` rule update
-- a very small repo convention note
-
-Examples that should still use a PR:
-
-- code changes
-- architectural changes
-- anything that advances a real product slice
-
----
-
-## 12. Local Sync After Merge
-
-After a PR is merged:
-
-1. switch back to `main`
-2. fetch `origin`
-3. fast-forward local `main`
-
-Do not continue new ticket work on stale local `main`.
-
----
-
-## 13. Issue Lifecycle Notes
-
-Use these workflow states consistently:
-
-- `In Progress` when active work starts
-- `In Review` when the PR is open
-- `Done` when the PR is merged
-- `Canceled` when the issue is obsolete or superseded
-
-For the current Riotbox Linear setup:
-
-- old onboarding noise can be canceled or deleted
-- completed issues should be cleaned up deliberately because the free tier has issue-count limits
-
----
-
-## 14. Current Standing Exceptions
-
-Current known practical exceptions:
-
-- project-level chronological updates currently live in the `Riotbox Project Updates` Linear document
-- tiny workflow-note changes may still be pushed directly to `main` if explicitly approved by the user
-
----
-
-## 15. Choosing The Next Ticket
+## 5. Choosing The Next Ticket
 
 The next ticket should not be chosen ad hoc.
 
-Default decision inputs:
+Use `docs/execution_roadmap.md`, `docs/phase_definition_of_done.md`, the most
+relevant active feature spec, and the real current repo state after the most
+recent merge. Prefer the smallest coherent slice that closes the nearest real
+gap in the current product path. Do not define a long chain of future tickets
+while the current slice is unresolved, and do not open a second architecture,
+UI path, or speculative side branch unless the roadmap explicitly calls for a
+spike.
 
-- `docs/execution_roadmap.md`
-- `docs/phase_definition_of_done.md`
-- the most relevant active feature spec
-- the real current repo state after the most recent merge
+Review artifacts are point-in-time evidence, not the live backlog. Verify older
+findings against current `main`, current Linear, newer bounded reviews, and exact
+archived ticket history when needed before creating a ticket from them.
 
-Review artifacts under `docs/reviews/` are point-in-time evidence, not the live
-backlog. Before creating a ticket from an older review finding, verify the
-finding against current `main`, current Linear issues, and archived ticket
-history when needed. If it already shipped, mark the candidate as duplicate or
-superseded instead of opening another implementation branch.
+When explicit cross-ticket continuation remains active and no documented stop
+condition applies, choose the next smallest coherent roadmap-aligned slice from
+the active backlog or derive one from the roadmap, active specs, Linear, and
+actual repo state.
 
-Decision rule:
+For P023, select work in this order:
 
-- prefer the smallest coherent slice that closes the nearest real gap in the current product path
-- do not define a long chain of future tickets in full detail while the current slice is still unresolved
-- avoid choosing tickets that open a second architecture, second UI path, or speculative side branch unless the roadmap explicitly calls for a spike
+1. a waiting structured human review when a review-ready candidate exists
+2. the next unblocked `audible_vertical_slice` on the active Golden Path
+3. a `contract_enabler` only when it names the exact next audible issue it unlocks
+4. maintenance / regression work only when current risk justifies delaying the audible path
 
-Useful check questions:
-
-1. what phase are we in?
-2. what is the sharpest missing capability or blocker right now?
-3. what is the smallest slice that moves that capability forward?
-4. does this ticket keep Riotbox on the documented product spine?
-5. will the result be easy to review as one coherent PR?
-
----
-
-## 16. Short Version
-
-This is a reminder, not a second source of truth. If this summary ever appears
-to conflict with the detailed sections above, update the summary instead of
-following a stale shortcut.
-
-If unsure, do this:
-
-1. pick one Linear ticket
-2. create one branch
-3. make one coherent slice
-4. verify locally
-5. open one PR with `Why This Matters`
-6. update the issue and project log
-7. inspect CI, fix slice-owned failures, and keep moving on the next bounded slice when the PR is clean instead of waiting idly for merge
-8. after merge, sync `main`
+Do not select deferred P016, P021, or P022 work unless the issue names the exact
+P023 Golden Path blocker it removes. Continue one ticket at a time; do not open
+multiple parallel tickets merely to avoid stopping.

@@ -120,7 +120,42 @@ audio-qa-lock-fixtures:
     scripts/validate_audio_qa_lock_fixtures.sh
 
 decision-search query:
-    ./scripts/research_decision_search.sh "{{query}}"
+    ./scripts/research_decision_search.sh {{quote(query)}}
+
+decision-search-fixtures:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    assert_exact_block() {
+      local id="$1" output heading_count
+      output="$(./scripts/research_decision_search.sh "$id")"
+      heading_count="$(printf '%s\n' "$output" | rg -c '^### RBX-[0-9]+[A-Za-z]?$')"
+      test "$heading_count" -eq 1
+      printf '%s\n' "$output" | rg -q "^### ${id}$"
+      printf '%s\n' "$output" | rg -q '^Status:'
+      if printf '%s\n' "$output" | rg -q '^---$'; then
+        echo "exact decision lookup crossed a record delimiter: $id" >&2
+        return 1
+      fi
+    }
+    assert_exact_block RBX-015
+    assert_exact_block RBX-015a
+    assert_exact_block RBX-025
+    assert_exact_block RBX-252
+    assert_exact_block RBX-264
+    if ./scripts/research_decision_search.sh RBX-999999 >/dev/null 2>&1; then
+      echo 'missing decision ID unexpectedly succeeded' >&2
+      exit 1
+    fi
+    if ./scripts/research_decision_search.sh 'riotbox_no_match_a91f2c7e *' >/dev/null 2>&1; then
+      echo 'wildcard query unexpectedly expanded or matched' >&2
+      exit 1
+    fi
+    injection_query='missing"; printf "\nJUST_INJECTION_EXECUTED\n"; #'
+    injection_output="$(just decision-search "$injection_query" 2>&1 || true)"
+    if printf '%s\n' "$injection_output" | rg -q '^JUST_INJECTION_EXECUTED$'; then
+      echo 'decision-search query escaped its argument boundary' >&2
+      exit 1
+    fi
 
 source-timing-fixture-catalog catalog="crates/riotbox-core/tests/fixtures/source_timing/timing_fixture_catalog.json":
     python3 scripts/validate_source_timing_fixture_catalog.py "{{catalog}}"

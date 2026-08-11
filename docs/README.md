@@ -40,10 +40,14 @@ hypotheses directly to `RIOTBOX-1428` Stage A. `RIOTBOX-1429` changes no
 renderer and does not itself prove or unblock Stage B product promotion.
 `RIOTBOX-1428` then ran its first frozen development-only qualification. Two
 of four sources failed the mechanism-blind event gate, so Stage A stopped
-before candidate rendering, matrix execution, or human listening. Any retry
-now requires Protocol v2, corrected refusal semantics, a new implementation
-snapshot, and a newly frozen corpus/matrix decision under RBX-252 change
-control. The v1 result remains historical rejection evidence only.
+before candidate rendering, matrix execution, or human listening. `RIOTBOX-1430`
+repeated that boundary with the independently frozen Protocol v2 and legal
+development corpus. Two source families qualified three events each, while the
+other two qualified one and zero; the complete four-source contrast contract
+therefore rejected before matrix rendering or listening. Any later retry now
+requires a newly versioned protocol, matrix, registry, implementation snapshot,
+and Decision-Log decision under RBX-252 change control. The v1 and v2 outcomes
+remain historical mechanical rejection evidence, not hardness judgments.
 
 `P016`, `P021`, and `P022` remain subordinate to the active P023 product path.
 Offline renderers, scripted packs, fixture verdicts, reports, and validators
@@ -61,6 +65,9 @@ dense-break baseline and honest negative-source handling.
 - Incoming refinements to the feral addendum should update profile-oriented specs, not the core contracts unless they truly change the core.
 
 ## Recommended Reading / Build Context Order
+
+For ticket, branch, PR/CI, Linear, archive, or cleanup work, start at the
+[Workflow Conventions](./workflow_conventions.md) router.
 
 1. [PRD v1](./prd_v1.md)
 2. [Execution Roadmap](./execution_roadmap.md)
@@ -96,6 +103,9 @@ dense-break baseline and honest negative-source handling.
 32. [MC-202 Real-Source Listening Pack Benchmark](./benchmarks/mc202_real_source_listening_pack_v1_2026-06-18.md)
 33. [MC-202 Producer-Grade Closeout Benchmark](./benchmarks/mc202_producer_grade_closeout_v1_2026-06-18.md)
 
+This is an orientation list, not a mandatory context bundle. Start with the
+entry document relevant to the task and follow only its module routes.
+
 ## Why This Order
 
 - The PRD fixes scope and acceptance criteria for the product spine.
@@ -127,6 +137,11 @@ docs/
   architecture_phase_map.md
   execution_roadmap.md
   workflow_conventions.md
+  workflow/
+    github_pr_ci.md
+    linear_lifecycle.md
+    archive_cleanup.md
+    context_hygiene.md
   dev_environment.md
   recovery_notes.md
   phase_definition_of_done.md
@@ -135,6 +150,9 @@ docs/
     audio_numeric_values.md
     module_policy.md
     percussive_force_and_beat_impact.md
+    percussive_force/
+      research_evidence.md
+      stage_a_design_history.md
     textual_include_allowlist.txt
     textual_include_inventory_2026-06-29.md
   archive/
@@ -150,8 +168,11 @@ docs/
     jam_workflow_baseline_2026-04-17.md
     percussive_force_development_matrix_v1.json
     percussive_force_development_matrix_v2.json
+    percussive_force_development_matrix_v3.json
     percussive_force_stage_a_protocol_v1.json
+    percussive_force_stage_a_protocol_v2.json
     source_holdout_rotation_v2.json
+    source_holdout_rotation_v3.json
   plans/
     riotbox_improvement_tracks_plan.md
     source_timing_intelligence_plan.md
@@ -165,6 +186,7 @@ docs/
     scene_launch_audio_coupling_2026-04-25.md
     external_review_refresh_2026-05-22.md
     tui_include_shell_audit_2026-05-22.md
+    riotbox_1431_agent_context_modularization_2026-08-11.md
   spikes/
     cpal_audio_latency_spike.md
     mempalace_evaluation.md
@@ -196,6 +218,11 @@ docs/
     validation_benchmark_spec.md
     fixture_corpus_spec.md
     audio_qa_workflow_spec.md
+    audio_qa/
+      automated_qa.md
+      listening_review.md
+      manifests_and_artifacts.md
+      status_history_and_future.md
     arrangement_scene_system_spec.md
 ```
 
@@ -204,7 +231,8 @@ docs/
 - `prd_v1.md`: product spine and MVP framing captured
 - `architecture_phase_map.md`: component and P000-P020 phase map captured
 - `execution_roadmap.md`: active roadmap with Source Timing Intelligence anchored
-- `workflow_conventions.md`: active contributor / agent workflow conventions captured
+- `workflow_conventions.md`: compact normative workflow core and task router
+- `workflow/`: focused GitHub/PR/CI, Linear, archive/cleanup, and context-hygiene procedures
 - `dev_environment.md`: sandbox, host, search, and environment notes captured
 - `jam_recipes.md`: learning-path guide captured
 - `recovery_notes.md`: current manual recovery and snapshot-payload label guidance captured
@@ -214,9 +242,10 @@ docs/
 - `engineering/audio_numeric_values.md`: guide to measurements, runtime
   boundaries, QA thresholds, controls, DSP coefficients, recipe parameters, and
   fixture values, including the RIOTBOX-1402 `0.9161` / `0.92` example
-- `engineering/percussive_force_and_beat_impact.md`: RIOTBOX-1429 research on
-  multi-scale beat perception, force, softness, punch, groove, heaviness,
-  cross-genre evidence, analysis vocabulary, and future validation hypotheses
+- `engineering/percussive_force_and_beat_impact.md`: compact active semantic
+  contract and router for percussive force and beat impact
+- `engineering/percussive_force/`: supporting research evidence and explicitly
+  historical Stage-A design material; frozen benchmark JSON remains execution authority
 - `benchmarks/percussive_force_development_matrix_v1.json`: unexecuted
   RIOTBOX-1428 Stage-A preregistration draft with source-admission, holdout,
   control, cross-product, and promotion boundaries
@@ -227,10 +256,17 @@ docs/
 - `benchmarks/percussive_force_development_matrix_v2.json`: RIOTBOX-1428
   Stage-A execution snapshot binding the admitted source registry and exact
   protocol before source qualification or candidate rendering
+- `benchmarks/percussive_force_stage_a_protocol_v2.json` and
+  `benchmarks/percussive_force_development_matrix_v3.json`: immutable
+  RIOTBOX-1430 retry contracts; both are historical after the fail-closed v2
+  qualification and must not be retuned from its source results
 - `reviews/riotbox_1428_stage_a_development_qualification_rejection_2026-08-10.md`:
   first fresh frozen Stage-A development qualification, exact access boundary,
   two-source mechanical rejection, evidence hashes, post-execution audit, and
   no-render stop rule
+- `reviews/riotbox_1430_stage_a_v2_development_qualification_rejection_2026-08-11.md`:
+  second frozen development-only qualification, exact v2 access boundary,
+  four-source event counts, fail-closed stop, and no-render/no-listening result
 - `engineering/textual_include_inventory_2026-06-29.md`: RIOTBOX-1321 Rust textual include inventory captured
 - `engineering/textual_include_allowlist.txt`: current manual guardrail allowlist for textual include owners/counts captured
 - `specs/source_graph_spec.md`: Source Graph v1 contract captured
@@ -244,7 +280,9 @@ docs/
 - `specs/preset_style_spec.md`: preset/style contract captured
 - `specs/validation_benchmark_spec.md`: validation and benchmark contract captured
 - `specs/fixture_corpus_spec.md`: fixture corpus contract captured
-- `specs/audio_qa_workflow_spec.md`: audio QA workflow plan captured
+- `specs/audio_qa_workflow_spec.md`: compact normative audio-QA core and task router
+- `specs/audio_qa/`: automated gates, listening review, manifest/artifact, and
+  implementation-status detail loaded only when relevant
 - `specs/sound_product_readiness_rubric_spec.md`: 10/10 sound-product readiness rubric captured
 - `specs/release_grade_musician_demo_bank_spec.md`: musician demo-bank contract captured
 - `specs/sound_product_2010_future_ideas_spec.md`: post-10/10 sound-product future ideas captured
@@ -257,6 +295,7 @@ docs/
 - `plans/mc202_source_phrase_planning_plan.md`: RIOTBOX-1035 MC-202
   source-derived bass / answer phrase planning plan captured
 - `plans/riotbox_improvement_tracks_plan.md`: RIOTBOX-1320 improvement-track split captured for semantic modules, runtime audio quality, source-backed instrument work, sidecar/provenance, and QA/UX
+- `reviews/riotbox_1431_agent_context_modularization_2026-08-11.md`: reproducible mandatory-context size report, ownership routing audit, and no-drift boundary
 - `archive/linear_issues/README.md`: archive policy started
 - `archive/linear_issues/TEMPLATE.md`: archive template started
 - `archive/linear_issues/index.md`: archive index started
