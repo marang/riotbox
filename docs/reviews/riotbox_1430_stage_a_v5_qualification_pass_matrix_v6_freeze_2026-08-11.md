@@ -83,8 +83,9 @@ diagnostic voice.
 
 The exact structured review SHA-256 is
 `84e3cd67d0e764a33595ae0c880922b8bbf97a1dfc7cd3fb8969e6c3692b37ce`.
-Human verdict: `reject`. Listener wording: `kaum anders`. Source recognition
-remained clear, but B did not establish greater percussive hardness. F2 v1 is
+Human verdict: `reject`. The listener found no meaningful perceptual difference
+that established greater percussive hardness. Source recognition remained
+clear. F2 v1 is
 therefore frozen as a negative human result; no scalar retuning or replay of
 the unchanged candidate is allowed.
 

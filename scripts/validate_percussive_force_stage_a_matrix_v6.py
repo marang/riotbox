@@ -308,13 +308,21 @@ def boundary_pass(
     sample_rate: int,
     protocol: stage_a.FrozenStageAProtocol,
 ) -> bool:
-    count = int(policy["attack_body_crossfade_frames"])
-    boundaries = {
-        event.attack_end_frame - count // 2,
-        event.attack_end_frame - count // 2 + count,
-        event.body_end_frame - int(policy["body_fade_frames"]),
-        event.body_end_frame,
-    }
+    if policy.get("version_id") == "f4_source_native_body_sustain_v1":
+        boundaries = {
+            event.attack_end_frame,
+            event.attack_end_frame + int(policy["body_entry_frames"]),
+            event.body_end_frame - int(policy["body_exit_frames"]),
+            event.body_end_frame,
+        }
+    else:
+        count = int(policy["attack_body_crossfade_frames"])
+        boundaries = {
+            event.attack_end_frame - count // 2,
+            event.attack_end_frame - count // 2 + count,
+            event.body_end_frame - int(policy["body_fade_frames"]),
+            event.body_end_frame,
+        }
     boundaries.discard(event.physical_onset_frame)
     delta = candidate - source
     steps = np.max(np.abs(delta[1:] - delta[:-1]), axis=1)
@@ -473,9 +481,15 @@ def run(matrix_result_path: Path) -> dict[str, Any]:
     protocol = stage_a.load_frozen_protocol(PROTOCOL)
     require(protocol.sha256 == PROTOCOL_SHA, "Protocol-v2 pin changed")
     result, result_raw = load_json(matrix_result_path)
-    require(result.get("schema") == "riotbox.percussive_force_development_matrix_result.v1", "matrix result schema changed")
+    expected_result_schema = {
+        "riotbox.percussive_force_development_matrix.v6": "riotbox.percussive_force_development_matrix_result.v1",
+        "riotbox.percussive_force_development_matrix.v7": "riotbox.percussive_force_development_matrix_result.v2",
+    }.get(str(matrix.get("schema")))
+    require(expected_result_schema is not None, "unsupported matrix schema")
+    require(result.get("schema") == expected_result_schema, "matrix result schema changed")
     require(result.get("matrix_sha256") == MATRIX_SHA, "matrix result binding changed")
-    require(result.get("condition_count") == 24, "matrix result cardinality changed")
+    condition_count = int(matrix["condition_count"])
+    require(result.get("condition_count") == condition_count, "matrix result cardinality changed")
     qualification_path = Path(str(matrix["qualification_artifact_path"]))
     qualification, _ = shared.read_pinned_json(
         qualification_path, str(matrix["qualification_artifact_sha256"])
@@ -487,6 +501,7 @@ def run(matrix_result_path: Path) -> dict[str, Any]:
     source_entries = {entry["case_id"]: entry for entry in source_set["entries"]}
     source_bindings = {entry["case_id"]: entry for entry in qualification["source_bindings"]}
     loaded_sources: dict[str, tuple[stage_a.SourceInput, stage_a.SourceAnalysis]] = {}
+    advanced_source_access_log = []
     advanced = []
     for condition in result["conditions"]:
         base = {
@@ -520,6 +535,15 @@ def run(matrix_result_path: Path) -> dict[str, Any]:
                 f"source reanalysis changed after qualification: {case_id}",
             )
             loaded_sources[case_id] = (source_input, source_analysis)
+            advanced_source_access_log.append(
+                {
+                    "case_id": case_id,
+                    "source_path": source_input.metadata.source_path,
+                    "expected_sha256": source_bindings[case_id]["source_sha256"],
+                    "access_verification_status": "verified_contained_regular_development_file",
+                    "purpose": "frozen_advanced_detector_anatomy_and_confound_screen",
+                }
+            )
         source_input, source_analysis = loaded_sources[case_id]
         output_path = Path(str(condition["output_path"]))
         candidate, rate, channels, output_raw = decode_float_wave(output_path)
@@ -575,15 +599,16 @@ def run(matrix_result_path: Path) -> dict[str, Any]:
     survivors = [item["condition_id"] for item in advanced if item["survived"]]
     return {
         "schema": "riotbox.percussive_force_development_matrix_advanced_result.v1",
-        "owner_ticket": "RIOTBOX-1430",
+        "owner_ticket": matrix["owner_ticket"],
         "matrix_path": MATRIX.as_posix(),
         "matrix_sha256": hashlib.sha256(matrix_raw).hexdigest(),
         "matrix_result_path": matrix_result_path.as_posix(),
         "matrix_result_sha256": hashlib.sha256(result_raw).hexdigest(),
-        "condition_count": 24,
+        "condition_count": condition_count,
         "basic_survivor_count": result["rendered_basic_screen_pass_count"],
         "advanced_survivor_count": len(survivors),
         "survivor_condition_ids": survivors,
+        "advanced_source_access_log": advanced_source_access_log,
         "conditions": advanced,
         "advanced_mechanical_screens_complete": True,
         "candidate_playback_started": False,

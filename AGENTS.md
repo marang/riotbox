@@ -72,6 +72,11 @@ If one is intentionally inapplicable, record why in the PR or working notes.
   artifact, obtain fresh explicit readiness, bound playback, stop audibly at the
   announced endpoint, and verify silence. Terminate a live runtime immediately
   if transport stop leaves any lane audible.
+- Translate informal human listening comments into neutral professional
+  evidence language in durable documentation while preserving their meaning,
+  certainty, and severity. Use verbatim wording only when the exact wording is
+  material. Do not rewrite already hash-bound review evidence solely for
+  editorial normalization; normalize its meaning in the durable record.
 - An isolated-audio claim requires every callback/mixer contributor to be
   silent or named as part of a composite.
 

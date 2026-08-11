@@ -1,0 +1,147 @@
+{
+  "schema": "riotbox.percussive_force_stage_a_protocol.v6",
+  "schema_version": 6,
+  "owner_ticket": "RIOTBOX-1428",
+  "status": "preregistered_source_blind_f4_before_development_candidate_access",
+  "version_decision": "RBX-275",
+  "work_class": "audible_vertical_slice",
+  "predecessor": {
+    "path": "docs/benchmarks/percussive_force_stage_a_protocol_v5.json",
+    "raw_sha256": "455440aabc1a433bbc7fbcc2093b85f6d1c66e1bba081526e082c50ed8248519",
+    "terminal_human_decision": "RBX-273",
+    "terminal_state": "f1_f3_mechanically_rejected_f2_human_rejected_near_identity"
+  },
+  "reused_mechanism_blind_qualification": {
+    "artifact_path": "/tmp/riotbox-1430-stage-a-v5-qualification.nomAyO/event-catalog.json",
+    "raw_sha256": "f35f9412f8e07e6ced0922e6433d12cb9133e49003b257ef5850f2d72337f679",
+    "qualification_session_sha256": "048467631a8284d411a8e825612648b281383455836be03eefdb0a514be7926f",
+    "qualification_access_log_sha256": "2d0ac93c525b624c25bf17b55fd73d21d7be9963ef1e52ad73f09b77cbbce6ab",
+    "reason_reusable": "Detector, anatomy, event boundaries, source identities, and source contrast were frozen before F1-F3 rendering and do not depend on F4.",
+    "requalification_or_event_substitution": false
+  },
+  "historical_family_state": {
+    "f1_ab_energy_redistribution_v1": "immutable_mechanically_rejected",
+    "f2_exact_complementary_three_band_v1": "immutable_human_rejected_near_identity",
+    "f3_causal_envelope_contrast_dynamic_residual_v2": "immutable_mechanically_rejected"
+  },
+  "f4": {
+    "version_id": "f4_source_native_body_sustain_v1",
+    "source_path": "crates/riotbox-audio/src/percussive_force/f4.rs",
+    "source_raw_sha256": "85b6e4f3b19c292ee712a100bf563af90a4a780cac76734ffd36cb9ae782ef0a",
+    "typed_role": "percussive_hard",
+    "causal_question": "Does preserving the exact source attack while dynamically sustaining only an event-coupled source-native low or low-mid body band create a recognizably more forceful strike after level control?",
+    "research_basis": {
+      "source": "Cheshire 2023 thesis synthesis of the registered 2020 varied-velocity snare study",
+      "observed_high_velocity_directions": [
+        "greater energy below 1000 Hz",
+        "longer decay"
+      ],
+      "transfer_limit": "E2 transfer from recorded snares to mixed drum sources; it motivates a falsifiable direction and does not prove force or a universal recipe"
+    },
+    "signal_path": {
+      "playback_rate": [1, 1],
+      "sample_order": "unchanged",
+      "physical_attack": "bit_identical_through_attack_end",
+      "outside_event": "bit_identical",
+      "lookbehind": "20ms_filter_warmup_and_noise_only",
+      "body_bands_hz": [[55, 180], [180, 560], [560, 1120]],
+      "band_filter": "first_order_highpass_at_lower_edge_then_first_order_lowpass_at_upper_edge",
+      "band_filter_coefficient": "exp(-2*pi*edge_hz/sample_rate_hz)",
+      "trust_floor": "max(4*lookbehind_band_mean_square,(16*input_lsb)^2)",
+      "trusted_band": "attack_band_mean_square>trust_floor AND body_band_mean_square>trust_floor",
+      "selection": "trusted_band_with_maximum_body_band_mean_square/trust_floor; exact tie chooses lower band index",
+      "body_envelope": "8ms causal multichannel RMS",
+      "entry": "2ms smoothstep from zero additional gain, capped to one quarter of body length",
+      "exit": "10ms smoothstep to zero additional gain, capped to one quarter of body length",
+      "additional_gain": "0.5*entry*exit*(0.35+0.65*sqrt(1-clamp(envelope/body_peak,0,1)))",
+      "output": "dry_source + additional_gain*selected_source_band inside body only",
+      "limiter": false,
+      "generated_oscillator": false,
+      "delay_or_duplicate": false,
+      "resampling_or_transposition": false
+    },
+    "numeric_passports": {
+      "body_band_edges_hz": {
+        "value": [55, 180, 560, 1120],
+        "role": "fixed source-blind low/low-mid candidate regions below the study-supported 1kHz direction, with the top transition extended to 1120Hz for a bounded filter shoulder",
+        "perceptual_threshold": false
+      },
+      "lookbehind_noise_multiplier": {
+        "value": 4,
+        "role": "inherit the Stage-A event-coupling noise guard",
+        "perceptual_threshold": false
+      },
+      "quantization_lsb_multiplier": {
+        "value": 16,
+        "role": "inherit the Stage-A numerical signal floor",
+        "perceptual_threshold": false
+      },
+      "body_envelope_ms": {
+        "value": 8,
+        "role": "inherit the frozen short-body anatomy timescale",
+        "perceptual_threshold": false
+      },
+      "body_entry_ms": {
+        "value": 2,
+        "role": "bounded click-free transition after the untouched attack",
+        "perceptual_threshold": false
+      },
+      "body_exit_ms": {
+        "value": 10,
+        "role": "bounded click-free return before the frozen body endpoint",
+        "perceptual_threshold": false
+      },
+      "maximum_additional_band_gain": {
+        "value": 0.5,
+        "role": "caps the parallel selected-band contribution at +50 percent without limiting",
+        "perceptual_threshold": false
+      },
+      "minimum_additional_gain_fraction": {
+        "value": 0.35,
+        "role": "keeps body support present before decay deficit becomes large while preserving source-envelope control",
+        "perceptual_threshold": false
+      }
+    },
+    "synthetic_preflight": {
+      "required_tests": [
+        "attack_and_outside_event_bit_identity_with_body_lift",
+        "three_source_body_frequencies_select_three_distinct_bands",
+        "repeat_determinism_at_44100_48000_96000_hz",
+        "missing_source_body_typed_refusal",
+        "headroom_failure_typed_refusal_without_limiter"
+      ],
+      "status_before_freeze": "passed_5_of_5"
+    }
+  },
+  "development_execution": {
+    "matrix": "docs/benchmarks/percussive_force_development_matrix_v7.json",
+    "condition_count": 8,
+    "cross_product": "1_new_family_x_4_prequalified_sources_x_2_frozen_events",
+    "source_open_count": 4,
+    "source_open_order": "selected_source_order_from_matrix_v6",
+    "source_access_log": "embedded_in_exclusive_matrix_v7_result",
+    "directory_discovery": false,
+    "substitution": false,
+    "automatic_retry": false,
+    "holdout_audio_access": false,
+    "commercial_reference_access": false
+  },
+  "mechanical_gates": {
+    "inherited_exactly_from": "docs/benchmarks/percussive_force_stage_a_protocol_v2.json",
+    "raw_and_attenuation_matched_views": true,
+    "candidate_specific_exception": false,
+    "automation_may_award_hardness": false
+  },
+  "stop_rules": {
+    "renderer_or_basic_failure": "terminal_condition_reject",
+    "zero_advanced_survivors": "stop_without_playback",
+    "human_near_identity_or_different_not_harder": "freeze_f4_v1_and_stop_without_scalar_retune",
+    "positive_human_directional_verdict": "freeze_exact_package_before_any_stage_b_or_holdout_access"
+  },
+  "change_control": "Any change to F4 equations, constants, topology, source/event binding, inherited detector/anatomy/mechanical gates, or stop rules requires a new protocol, matrix, Decision Log decision, and recomputation before candidate access.",
+  "holdout_audio_accessed": false,
+  "commercial_reference_accessed": false,
+  "quality_proof": false,
+  "hardness_proof": false,
+  "human_verdict": "unverified"
+}

@@ -8,13 +8,16 @@ use riotbox_audio::percussive_force::{
     F3PcmEncoding, FrozenEventInput, FrozenEventRegion, render_f1_ab_energy_redistribution_v1,
     render_f2_exact_complementary_three_band_v1,
     render_f3_causal_envelope_contrast_dynamic_residual_v2,
+    render_f4_source_native_body_sustain_v1,
 };
 use serde::Deserialize;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
-const MATRIX_SCHEMA: &str = "riotbox.percussive_force_development_matrix.v6";
-const RESULT_SCHEMA: &str = "riotbox.percussive_force_development_matrix_result.v1";
+const MATRIX_SCHEMA_V6: &str = "riotbox.percussive_force_development_matrix.v6";
+const MATRIX_SCHEMA_V7: &str = "riotbox.percussive_force_development_matrix.v7";
+const RESULT_SCHEMA_V1: &str = "riotbox.percussive_force_development_matrix_result.v1";
+const RESULT_SCHEMA_V2: &str = "riotbox.percussive_force_development_matrix_result.v2";
 const PCM_HASH_DOMAIN: &str = "riotbox.percussive_force_pcm_f32le.v1";
 
 #[derive(Debug, Deserialize)]
@@ -67,12 +70,21 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     }
     let matrix_bytes = fs::read(&matrix_path)?;
     let matrix: Matrix = serde_json::from_slice(&matrix_bytes)?;
-    if matrix.schema != MATRIX_SCHEMA
-        || matrix.condition_count != 24
-        || matrix.condition_ids.len() != 24
+    let (families, expected_condition_count, result_schema, matrix_label): (
+        &[&str],
+        usize,
+        &str,
+        &str,
+    ) = match matrix.schema.as_str() {
+        MATRIX_SCHEMA_V6 => (&["F1", "F2", "F3"], 24, RESULT_SCHEMA_V1, "Matrix-v6"),
+        MATRIX_SCHEMA_V7 => (&["F4"], 8, RESULT_SCHEMA_V2, "Matrix-v7"),
+        _ => return Err("unsupported Stage-A matrix schema".into()),
+    };
+    if matrix.condition_count != expected_condition_count
+        || matrix.condition_ids.len() != expected_condition_count
         || matrix.selected_sources.len() != 4
     {
-        return Err("Matrix-v6 identity or cardinality changed".into());
+        return Err(format!("{matrix_label} identity or cardinality changed").into());
     }
     let qualification_bytes = fs::read(&qualification_path)?;
     if sha256_hex(&qualification_bytes) != matrix.qualification_artifact_sha256 {
@@ -80,14 +92,15 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     }
     fs::create_dir_all(&output_dir)?;
 
-    let families = ["F1", "F2", "F3"];
-    let mut results = Vec::with_capacity(24);
+    let mut results = Vec::with_capacity(expected_condition_count);
+    let mut source_access_log = Vec::with_capacity(matrix.selected_sources.len());
     for source in &matrix.selected_sources {
         if source.events.len() != 2 {
             return Err(format!("{} must bind exactly two events", source.case_id).into());
         }
         let source_bytes = fs::read(&source.source_path)?;
-        if sha256_hex(&source_bytes) != source.source_sha256 {
+        let actual_source_sha256 = sha256_hex(&source_bytes);
+        if actual_source_sha256 != source.source_sha256 {
             return Err(format!("source SHA-256 changed: {}", source.case_id).into());
         }
         let decoded = decode_pcm_wave(&source_bytes)?;
@@ -97,6 +110,17 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         {
             return Err(format!("source format changed: {}", source.case_id).into());
         }
+        source_access_log.push(json!({
+            "case_id": source.case_id,
+            "source_path": source.source_path,
+            "expected_sha256": source.source_sha256,
+            "actual_sha256": actual_source_sha256,
+            "byte_count": source_bytes.len(),
+            "sample_rate_hz": decoded.sample_rate_hz,
+            "channel_count": decoded.channel_count,
+            "sample_width_bits": decoded.sample_width_bits,
+            "access": "one_exact_registered_development_file_read"
+        }));
         let source_pcm_sha256 = pcm_f32le_sha256(
             &decoded.samples,
             decoded.sample_rate_hz,
@@ -106,7 +130,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             if !matches!(event.ordinal, 1 | 2) {
                 return Err("matrix event ordinal must be 1 or 2".into());
             }
-            for family in families {
+            for &family in families {
                 let condition_id = format!(
                     "{}_{}_event{}",
                     family.to_ascii_lowercase(),
@@ -194,8 +218,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
-    if results.len() != 24 {
-        return Err("matrix did not execute exactly 24 conditions".into());
+    if results.len() != expected_condition_count {
+        return Err(format!(
+            "matrix did not execute exactly {expected_condition_count} conditions"
+        )
+        .into());
     }
     let actual_condition_ids = results
         .iter()
@@ -209,13 +236,14 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         .filter(|item| item["render_state"] == "rendered_basic_screens_passed")
         .count();
     let result = json!({
-        "schema": RESULT_SCHEMA,
+        "schema": result_schema,
         "matrix_path": matrix_path,
         "matrix_sha256": sha256_hex(&matrix_bytes),
         "qualification_artifact_path": qualification_path,
         "qualification_artifact_sha256": matrix.qualification_artifact_sha256,
-        "condition_count": 24,
+        "condition_count": expected_condition_count,
         "rendered_basic_screen_pass_count": rendered_count,
+        "source_access_log": source_access_log,
         "conditions": results,
         "candidate_render_started": true,
         "advanced_mechanical_screens_complete": false,
@@ -227,7 +255,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     });
     let result_path = output_dir.join("matrix-result.json");
     write_new(&result_path, &serde_json::to_vec_pretty(&result)?)?;
-    println!("PASS: Matrix-v6 rendered 24 conditions");
+    println!("PASS: {matrix_label} rendered {expected_condition_count} conditions");
     println!("rendered_basic_screen_pass_count={rendered_count}");
     println!("result={}", result_path.display());
     println!("human_verdict=unverified");
@@ -345,6 +373,42 @@ fn render_family(
                             },
                             "attack_body_crossfade_frames": policy.attack_body_crossfade_frames,
                             "body_fade_frames": policy.body_fade_frames
+                        }),
+                    )
+                })
+                .map_err(|error| error.to_string())
+        }
+        "F4" => {
+            let lookbehind_frames = input.sample_rate_hz as usize * 20 / 1_000;
+            if onset_frame < lookbehind_frames {
+                return Err("frozen 20ms lookbehind unavailable".to_owned());
+            }
+            let quantization_lsb = 2.0_f64.powi(-(i32::from(sample_width_bits) - 1));
+            render_f4_source_native_body_sustain_v1(input, lookbehind_frames, quantization_lsb)
+                .map(|rendered| {
+                    let policy = &rendered.policy;
+                    (
+                        rendered.combined,
+                        json!({
+                            "version_id": policy.version_id,
+                            "selected_band": format!("{:?}", policy.selected_band),
+                            "selected_band_index": policy.selected_band_index,
+                            "band_edges_hz": policy.band_edges_hz,
+                            "trusted_bands": policy.trusted_bands,
+                            "selected_band_score": policy.selected_band_score,
+                            "lookbehind_frames": policy.lookbehind_frames,
+                            "body_envelope_frames": policy.body_envelope_frames,
+                            "body_entry_frames": policy.body_entry_frames,
+                            "body_exit_frames": policy.body_exit_frames,
+                            "maximum_additional_band_gain": policy.maximum_additional_band_gain,
+                            "maximum_resolved_additional_gain": policy.maximum_resolved_additional_gain,
+                            "body_energy_ratio": policy.body_energy_ratio,
+                            "output_peak": policy.output_peak,
+                            "attack_bit_identical": policy.attack_bit_identical,
+                            "playback_rate": [
+                                policy.playback_rate_numerator,
+                                policy.playback_rate_denominator
+                            ]
                         }),
                     )
                 })

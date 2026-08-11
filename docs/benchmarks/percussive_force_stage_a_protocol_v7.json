@@ -1,0 +1,88 @@
+{
+  "schema": "riotbox.percussive_force_stage_a_protocol.v7",
+  "schema_version": 7,
+  "owner_ticket": "RIOTBOX-1428",
+  "status": "preregistered_advanced_screen_before_candidate_or_source_reaccess",
+  "version_decision": "RBX-276",
+  "predecessor": {
+    "path": "docs/benchmarks/percussive_force_stage_a_protocol_v6.json",
+    "raw_sha256": "e201d1a95936c17206ee1a1e151bcde32d593209b0d07cde7acb5b3aff32420a"
+  },
+  "immutable_f4": {
+    "version_id": "f4_source_native_body_sustain_v1",
+    "source_raw_sha256": "85b6e4f3b19c292ee712a100bf563af90a4a780cac76734ffd36cb9ae782ef0a",
+    "algorithm_equations_constants_topology_changed": false,
+    "detector_anatomy_thresholds_changed": false,
+    "mechanical_thresholds_changed": false,
+    "source_or_event_binding_changed": false
+  },
+  "matrix_result": {
+    "path": "artifacts/audio_qa/riotbox-1428/stage-a-v7-f4-matrix/matrix-result.json",
+    "raw_sha256": "70edb5d8604f12f634c4f4b0828cd3809af603144e94cd06d6294c391883a3c5",
+    "condition_count": 8,
+    "basic_survivor_count": 6,
+    "basic_survivor_ids": [
+      "f4_freesound_dabromusic_266735_event1",
+      "f4_freesound_dabromusic_266735_event2",
+      "f4_freesound_dr_skitz_353853_event1",
+      "f4_freesound_dr_skitz_353853_event2",
+      "f4_freesound_aikighost_19059_event1",
+      "f4_freesound_aikighost_19059_event2"
+    ],
+    "terminal_basic_rejections": [
+      "f4_freesound_garzul_213512_event1",
+      "f4_freesound_garzul_213512_event2"
+    ],
+    "terminal_basic_rejection_reason": "full_candidate_file_absolute_peak_is_not_strictly_below_1_0_due_to_unchanged_source_sample_outside_frozen_event"
+  },
+  "advanced_access": {
+    "purpose": "frozen_detector_anatomy_raw_and_attenuation_matched_confound_screens",
+    "exact_source_case_ids_in_order": [
+      "freesound_dabromusic_266735",
+      "freesound_dr_skitz_353853",
+      "freesound_aikighost_19059"
+    ],
+    "maximum_source_reads": 3,
+    "one_read_per_source": true,
+    "source_access_implementation": "read_contained_regular_file",
+    "candidate_ids": [
+      "f4_freesound_dabromusic_266735_event1",
+      "f4_freesound_dabromusic_266735_event2",
+      "f4_freesound_dr_skitz_353853_event1",
+      "f4_freesound_dr_skitz_353853_event2",
+      "f4_freesound_aikighost_19059_event1",
+      "f4_freesound_aikighost_19059_event2"
+    ],
+    "maximum_candidate_reads": 6,
+    "access_log": "embedded_in_exclusive_advanced_result_v3",
+    "directory_discovery": false,
+    "substitution": false,
+    "automatic_retry": false,
+    "holdout_audio_access": false,
+    "commercial_reference_access": false
+  },
+  "advanced_validator": {
+    "wrapper_path": "scripts/validate_percussive_force_stage_a_matrix_v7.py",
+    "wrapper_raw_sha256": "5c0778763a5b7a32e7612405ba294eb3666c74720d179af26a8bfc971f491b81",
+    "shared_screen_path": "scripts/validate_percussive_force_stage_a_matrix_v6.py",
+    "shared_screen_raw_sha256": "21bd63ea95d709231cd714c58d93a99ee20e98cc3d597375373885447d60b39c",
+    "event_identity": "raw_source_and_candidate_frozen_before_view_gain",
+    "f4_boundaries": "attack_end,attack_end_plus_body_entry,body_end_minus_body_exit,body_end",
+    "inherited_threshold_source": "docs/benchmarks/percussive_force_stage_a_protocol_v2.json",
+    "candidate_specific_exception": false,
+    "automation_may_award_hardness": false
+  },
+  "stop_rules": {
+    "any_identity_access_or_analysis_contract_failure": "stop_fail_closed_without_playback",
+    "zero_advanced_survivors": "stop_without_playback",
+    "advanced_survivor": "freeze_exact_result_and_prepare_at_most_one_technical_preflight_before_human_review"
+  },
+  "change_control": "F4 and all inherited gates remain frozen. Any algorithm, constant, threshold, source/event, candidate, boundary, or stop-rule change requires a new protocol and Decision Log entry before candidate access.",
+  "candidate_audio_accessed_by_advanced_validator": false,
+  "advanced_source_audio_reaccessed": false,
+  "holdout_audio_accessed": false,
+  "commercial_reference_accessed": false,
+  "quality_proof": false,
+  "hardness_proof": false,
+  "human_verdict": "unverified"
+}

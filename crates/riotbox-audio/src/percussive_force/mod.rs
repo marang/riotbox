@@ -10,6 +10,7 @@ mod f2;
 #[allow(dead_code, clippy::manual_range_contains)]
 mod f3;
 mod f3_dynamic;
+mod f4;
 // This remains a source-blind, internal decode/hash scaffold until a future
 // versioned qualification runner owns one reachable Gate -> Bind -> Render
 // seam.  It was not executed by the Python-only Stage-A v1 qualification.
@@ -43,4 +44,8 @@ pub use f3_dynamic::{
     F3DynamicSyntheticRunRecord, F3PcmEncoding,
     f3_source_response_identities_are_diversity_separated,
     render_f3_causal_envelope_contrast_dynamic_residual_v2, run_f3_dynamic_synthetic_preflight_v2,
+};
+pub use f4::{
+    F4_SOURCE_NATIVE_BODY_SUSTAIN_V1, F4BodyBand, F4BodySustainPolicy, F4RenderSet,
+    render_f4_source_native_body_sustain_v1,
 };

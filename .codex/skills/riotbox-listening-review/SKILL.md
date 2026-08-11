@@ -40,3 +40,10 @@ just listening-review-fixtures
 Record the artifact-bound verdict, strongest element, source/hook result, main
 failure, direction, avoid-list, and one concrete follow-up. Every audible PR
 states whether this verdict exists or why it remains `human_verdict: unverified`.
+
+Translate informal listener comments into concise, professional evidence
+language in durable documentation and structured summaries. Preserve the
+comment's meaning, certainty, and severity; do not embellish or weaken it.
+Quote the listener verbatim only when the exact wording is itself material.
+Do not edit an already hash-bound review artifact solely for editorial
+normalization; normalize its meaning in the durable record that cites it.
