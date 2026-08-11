@@ -56,6 +56,8 @@ Why: this keeps strategy, archive history, and implementation contracts separate
 Consequences: future spec work should land in `docs/`, not in new planning sprawl under `plan/`.  
 Status: accepted
 
+---
+
 ### RBX-105
 
 Date: 2026-06-30
@@ -3717,4 +3719,18 @@ Decision: bind the human verdict to A/B artifact SHA-256 `ab239a75fddb1d6a6752dd
 Why: the exact played blocks are not bit-identical, but their difference is both small and concentrated in a low-body decay redistribution. The frozen attenuation match reduces B's otherwise bit-identical attack by about `4.9%`, while the matched total body energy remains essentially unchanged. That leaves no stronger immediate strike cue and asks a listener to infer force from a subtle low-frequency color/decay change. Increasing the same gain would primarily make B darker/heavier and would violate the anti-retuning rule without addressing strike force.
 Evidence: A and B contain twenty exact repeats of their declared `22050`-frame units; the A source excerpt matches exactly, the B candidate/gain assignment differs by at most one Float32 ULP, separator and endpoint silence are exact zero, and no `pw-play` process remained after the announced endpoint. A/B block RMS values are `0.08758846173155786` and `0.08757346556522888`; the difference RMS is `0.007937968263400248`, or `-20.854750817994613 dB` relative to A. Within the body the difference remains `-20.581023832645595 dB` relative to A. The attack correlation is `1.0`, but attenuation lowers its RMS from `0.28922214162824866` to `0.27505380135358365`. Matched total body energy ratio is `1.008410613585245`; the remaining redistribution raises `55–180 Hz` and `180–560 Hz` energy while slightly reducing upper-body/high energy. Every active excerpt sample differs because of the uniform match, proving non-identity but not perceptual relevance.
 Consequences: Stage B and holdout access remain blocked. The next attempt must be a newly versioned source-blind topology that makes a level-controlled immediate attack cue and physical body cue move coherently. It must not reuse F4's scalar, treat extra low body as force, or answer the human rejection with another presentation of the same recipe. Existing Development evidence may motivate the new causal question, but its complete mechanism and constants must freeze before any new candidate access.
+Status: accepted
+
+---
+
+### RBX-279
+
+Date: 2026-08-11
+Topic: close the F4 evidence boundary and route the unexecuted velocity-cue transfer follow-up
+Phase: P023 / Sound Excellence
+Question: what must the RIOTBOX-1428 branch review preserve after F4 was mechanically valid but human-rejected as perceptually near-identical, and which research follow-up remains unexecuted?
+Decision: accept F4 `f4_source_native_body_sustain_v1` as terminal negative Stage-A evidence and preserve its frozen code, contracts, matrix, candidate, and human verdict without rerendering or scalar retuning. Constrain the historical `F4BodySustainPolicy.output_peak` field to its implemented meaning: maximum output observed while processing the modified body interval, not the full-candidate absolute peak. The independent Matrix-v7 `basic_metrics` full-candidate peak remains the authoritative complete-output headroom screen and correctly produced the two Garzul terminal rejections. Route the remaining research handoff through Linear issues RIOTBOX-1434 and RIOTBOX-1435: first validate only the six already registered natural-dynamic controls and freeze bounded multi-cue directions; then implement one structurally distinct source-relative velocity-cue transfer and run its exact eight-condition Development matrix plus human gate. This decision does not authorize opening control, Development, Holdout, or commercial-reference audio.
+Why: the exact A/B assignment and playback were correct, and F4 changed only low-body decay while leaving the raw attack bit-identical; attenuation matching then reduced the attack level. The resulting failure is an ineffective single-domain mechanism, not a renderer-routing bug or a failure of the research model. The original research handoff separately proposed a coupled transformation of attack, decay, local resonance, and brightness after a bounded natural-reference sanity check; that path has not yet been executed. Recording the policy-field scope prevents a region-local diagnostic from being mistaken for complete-output safety while avoiding any post-result change to frozen F4 bytes.
+Evidence: focused Riotbox-audio percussive-force tests, the matrix binary target, Protocol-v6/v7 fail-closed mutation fixtures, Matrix-v7 validate-only contracts, formatting, and strict Riotbox-audio Clippy pass on the reviewed branch. Matrix-v7 full-output analysis records Garzul event ordinals 1 and 2 as terminal because an unchanged source sample outside the event reaches absolute peak `1.0`; no candidate escaped that screen. The exact human-bound F4 artifact and structured review remain pinned by RBX-278.
+Consequences: F4 cannot be replayed, renamed, or tuned into the next family. RIOTBOX-1434 is the sole contract enabler and must create its own versioned pre-access contract and Decision-Log authorization before any natural-control audio is opened. RIOTBOX-1435 is its exact audible follow-up and must freeze topology, equations, constants, and the full-output safety semantics before Development access. RIOTBOX-1428 Stage B and all Holdout access remain blocked until that audible slice earns the directional human pass.
 Status: accepted
