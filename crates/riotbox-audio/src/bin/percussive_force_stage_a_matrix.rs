@@ -360,7 +360,7 @@ fn basic_metrics(
     channels: usize,
     event: MatrixEvent,
 ) -> Result<Value, Box<dyn std::error::Error>> {
-    if source.len() != candidate.len() || source.len() % channels != 0 {
+    if source.len() != candidate.len() || !source.len().is_multiple_of(channels) {
         return Err("candidate shape changed".into());
     }
     let onset = event.physical_onset_frame * channels;

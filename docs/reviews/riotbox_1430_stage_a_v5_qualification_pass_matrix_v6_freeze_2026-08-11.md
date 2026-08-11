@@ -95,3 +95,16 @@ complete 24-condition matrix, exact candidate artifacts, and a structured
 human result. It does not deliver a positive hardness pass. RIOTBOX-1428 Stage
 B remains blocked and must continue from a newly versioned causal mechanism
 hypothesis rather than reinterpret this result.
+
+## Post-execution code hygiene
+
+Full branch CI later exposed one Rust-1.97 Clippy spelling requirement in the
+offline Matrix runner. The expression `source.len() % channels != 0` was
+replaced by the semantically identical
+`!source.len().is_multiple_of(channels)`. The render-time source remains bound
+to SHA-256
+`534f960b5b0afe98ece921d260f4fd30b8c616da8d3b7ab21cfe841f32bd4362`;
+the lint-clean current source has SHA-256
+`f686532c0860e73af9cd9bbd6805777a172b8cb816a1eb95d838aded13edc2c4`.
+No renderer policy, candidate bytes, metric, result, or human evidence changed,
+and no rerender or replay occurred.

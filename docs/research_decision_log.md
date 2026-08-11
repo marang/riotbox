@@ -3650,3 +3650,17 @@ Why: the listener heard the exact same candidate twice in a requested 10-second-
 Evidence: the presentation contains 10.0 seconds of repeated raw source, 0.5 seconds exact-zero separation, 10.0 seconds of repeated F2 candidate, and 0.2 seconds exact-zero endpoint silence. It is 44.1 kHz stereo Float32, 20.7 seconds, unclipped, and uses an identical 121475-frame clean loop boundary for A and B. The source/candidate loop RMS values are `0.09445345038309058` and `0.09444391810932157`; no average-level advantage explains the judgment. Playback stopped with no remaining `pw-play` process after both hearings.
 Consequences: RIOTBOX-1430 may proceed through branch review, CI, PR, and closeout with an explicit negative human outcome. RIOTBOX-1428 Stage B remains blocked. Any further Stage-A force attempt requires a newly versioned causal hypothesis and preregistered contract; F2 v1 is a negative calibration example, not a tuning starting point. RIOTBOX-1431 remains the separate workflow-document optimization follow-up.
 Status: accepted
+
+---
+
+### RBX-274
+
+Date: 2026-08-11
+Topic: accept a post-execution Clippy-only spelling update in the Matrix-v6 offline runner
+Phase: P023 / Sound Excellence
+Question: how should the branch close when Rust 1.97 rejects the render-time runner's manual remainder spelling under `-D warnings` after all candidate and human evidence is already frozen?
+Decision: preserve render-time runner SHA-256 `534f960b5b0afe98ece921d260f4fd30b8c616da8d3b7ab21cfe841f32bd4362` as the executable evidence identity for Matrix v6. Replace only `source.len() % channels != 0` with the Rust-1.97-equivalent `!source.len().is_multiple_of(channels)` and record the lint-clean current source SHA-256 `f686532c0860e73af9cd9bbd6805777a172b8cb816a1eb95d838aded13edc2c4`. Do not rerender, recompute candidate evidence, transfer a verdict to different audio, or change any algorithm/threshold/contract value.
+Why: this is a standard-library predicate spelling change with identical Boolean behavior for the already-validated nonzero channel counts, not a source-result-driven algorithm change. Leaving the warning would fail the repository's mandatory Clippy gate; rerendering exact audio for a source-level lint spelling would create unnecessary duplicate evidence.
+Evidence: the focused 46-test Percussive-Force suite and Matrix binary test target passed before the edit. After the edit, `cargo fmt --check` and `cargo clippy -p riotbox-audio --bin percussive_force_stage_a_matrix -- -D warnings` pass. The historical Matrix result, candidate WAV hashes, advanced results, A/B artifact, and structured human verdict remain unchanged.
+Consequences: the Matrix-v6 result continues to cite the render-time source hash. Reviews must not mistake the post-execution current source hash for a different renderer generation. Full `just ci` must be rerun; no human replay is required because no audio bytes or recipe changed.
+Status: accepted
