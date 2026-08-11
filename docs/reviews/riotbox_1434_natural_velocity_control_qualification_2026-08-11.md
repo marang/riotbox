@@ -18,6 +18,15 @@ directory discovery, Development audio, Holdout audio, or commercial-reference
 audio. These controls remain local measurement references and are not product
 sources, fixtures, generated assets, demos, or sampler material.
 
+Branch review found one historical failure-path limitation in the frozen V2
+runner: `control_audio_accessed` changes to `true` after successful hash,
+format, and analysis completion rather than immediately after the contained
+read returns. A hypothetical post-read rejection would therefore understate
+that read in this Boolean field, although its per-file record would already show
+the attempted open. The completed run is unaffected because all six reads
+succeeded and the final flag is correctly `true`. Do not reuse this one-shot
+runner as a general access logger.
+
 ## Technical Result
 
 The frozen analysis produced these provisional mf → f → ff directions:
