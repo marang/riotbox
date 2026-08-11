@@ -41,6 +41,14 @@ Do not chain contract enablers without landing the named audible follow-up.
 Offline binaries, scripted packs, fixtures, reports, and validators stay
 diagnostic until their behavior is promoted into product ownership.
 
+One-off development-source acquisition is operational work, not a Riotbox
+subsystem. Use the smallest exact allowlist, standard client, OS keyring, and
+existing hash/header checks that preserve the required rights and partition
+boundaries. If acquisition scaffolding starts multiplying validators, artifact
+schemas, transaction states, or crash/race machinery before a real source is
+qualified, stop, remove the scaffolding, and return to the named audible
+follow-up.
+
 ## Product Intelligence Rule
 
 Riotbox must not confuse scaffolding with intelligence.

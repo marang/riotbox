@@ -1,0 +1,109 @@
+{
+  "schema": "riotbox.percussive_force_stage_a_v2_freesound_metadata_allowlist.v1",
+  "schema_version": 1,
+  "owner_ticket": "RIOTBOX-1430",
+  "decision": "RBX-259",
+  "execution_state": "preregistered_metadata_only_no_audio_access",
+  "purpose": "resolve_exact_fields_for_one_later_p2_acquisition_batch_v3",
+  "protocol_binding": {
+    "path": "docs/benchmarks/percussive_force_stage_a_protocol_v2.json",
+    "raw_sha256": "b6b35cb14ef34be7f9b7bb6b2bf076ba84842c56914485937f088539e6217878",
+    "semantic_sha256": "6f8db5d1488168c11bbd13be6c8862b2ae9b70424ce9e3e4887fd87d311b74fb"
+  },
+  "access": {
+    "provider": "Freesound",
+    "origin": "https://freesound.org",
+    "credential_store_selector": {
+      "service": "riotbox-freesound",
+      "credential": "api-client-secret",
+      "application": "stage-a-development-acquisition"
+    },
+    "maximum_metadata_gets": 3,
+    "maximum_bytes_per_response": 65536,
+    "timeout_seconds": 30,
+    "automatic_retry": false,
+    "search": false,
+    "preview": false,
+    "original_file_or_audio_access": false,
+    "holdout_or_commercial_reference_access": false,
+    "source_directory_discovery": false
+  },
+  "accepted_license_representations": [
+    "Creative Commons 0",
+    "http://creativecommons.org/publicdomain/zero/1.0/",
+    "https://creativecommons.org/publicdomain/zero/1.0/"
+  ],
+  "provenance_policy": {
+    "usage": "local_ignored_development_only_not_product_content",
+    "explicit_cc0_required": true,
+    "conflicting_license_allowed": false,
+    "explicit_unauthorized_third_party_rights_statement_allowed": false,
+    "sample_pack_disclosure_is_not_an_automatic_rejection": true
+  },
+  "entries": [
+    {
+      "ordinal": 1,
+      "case_id": "freesound_djericmark_724939",
+      "source_family": "dense_break",
+      "sound_id": 724939,
+      "uploader": "djericmark",
+      "title": "133BPM BREAKBEAT (Live Acoustic Kit) Loop 01",
+      "page_url": "https://freesound.org/people/djericmark/sounds/724939/",
+      "metadata_target": "/apiv2/sounds/724939/",
+      "api_download_target": "/apiv2/sounds/724939/download/",
+      "web_download_target": "/people/djericmark/sounds/724939/download/724939__djericmark__133bpm-breakbeat-live-acoustic-kit-loop-01.wav",
+      "nominal_format": {"sample_rate_hz": 48000, "channels": 2, "sample_width_bits": 24},
+      "destination": "data/test_audio/external/RIOTBOX-1430/freesound/dense_freesound_djericmark_724939.wav",
+      "pack": {"kind": "freesound_internal", "id": 40482, "name": "DRUM LOOPS", "url": "https://freesound.org/people/djericmark/packs/40482/"},
+      "conflicting_license_disclosed": false,
+      "unauthorized_third_party_rights_disclosed": false
+    },
+    {
+      "ordinal": 2,
+      "case_id": "freesound_cyclez_493560",
+      "source_family": "sparse_drums",
+      "sound_id": 493560,
+      "uploader": "Cyclez",
+      "title": "HardTechno Schranz Kick Loop 150 BPM",
+      "page_url": "https://freesound.org/people/Cyclez/sounds/493560/",
+      "metadata_target": "/apiv2/sounds/493560/",
+      "api_download_target": "/apiv2/sounds/493560/download/",
+      "web_download_target": "/people/Cyclez/sounds/493560/download/493560__cyclez__hardtechno-schranz-kick-loop-150-bpm.wav",
+      "nominal_format": {"sample_rate_hz": 44100, "channels": 2, "sample_width_bits": 24},
+      "destination": "data/test_audio/external/RIOTBOX-1430/freesound/sparse_freesound_cyclez_493560.wav",
+      "pack": {"kind": "external_disclosed", "url": "https://www.junodownload.com/products/schranz-samples-from-hard-techno-to-schranz/4346197-02/"},
+      "conflicting_license_disclosed": false,
+      "unauthorized_third_party_rights_disclosed": false
+    },
+    {
+      "ordinal": 3,
+      "case_id": "freesound_justabeat_458897",
+      "source_family": "electronic_drums",
+      "sound_id": 458897,
+      "uploader": "justabeat",
+      "title": "loop_drum_01.wav",
+      "page_url": "https://freesound.org/people/justabeat/sounds/458897/",
+      "metadata_target": "/apiv2/sounds/458897/",
+      "api_download_target": "/apiv2/sounds/458897/download/",
+      "web_download_target": "/people/justabeat/sounds/458897/download/458897__justabeat__loop_drum_01.wav",
+      "nominal_format": {"sample_rate_hz": 48000, "channels": 2, "sample_width_bits": 16},
+      "destination": "data/test_audio/external/RIOTBOX-1430/freesound/electronic_freesound_justabeat_458897.wav",
+      "pack": {"kind": "freesound_internal", "id": 25877, "name": "PO32 Drum Machine Loop", "url": "https://freesound.org/people/justabeat/packs/25877/"},
+      "conflicting_license_disclosed": false,
+      "unauthorized_third_party_rights_disclosed": false
+    }
+  ],
+  "mechanical_result_fields_for_batch_v3": [
+    "exact_license_representation",
+    "filesize",
+    "md5",
+    "api_download_url",
+    "created"
+  ],
+  "success_authorizes": "draft_and_commit_one_exact_p2_acquisition_batch_v3_before_any_original_file_get",
+  "change_control": {
+    "candidate_substitution_after_metadata": false,
+    "p2_algorithm_threshold_or_numeric_change": false,
+    "failure": "stop_without_substitution_or_audio_access"
+  }
+}
