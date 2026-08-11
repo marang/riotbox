@@ -12,6 +12,10 @@ This index tracks archived Linear ticket history that has been removed from the 
   Index for August 2026 one-file-per-ticket archives.
 - [RIOTBOX-1430.md](./RIOTBOX-1430.md)
   Qualified Stage-A Development source pool, complete Matrix-v6 evidence, and the frozen negative F2 human verdict.
+- [RIOTBOX-1434.md](./RIOTBOX-1434.md)
+  Bounded natural-velocity control qualification and terminal cross-control fail-closed result.
+- [RIOTBOX-1435.md](./RIOTBOX-1435.md)
+  Canceled multi-cue implementation because its mandatory frozen directional handoff was absent.
 - [RIOTBOX-16.md](./RIOTBOX-16.md)
   MemPalace evaluation and dev-memory adoption decision.
 - [RIOTBOX-23.md](./RIOTBOX-23.md)
