@@ -39,7 +39,8 @@ those machine-readable claims.
 
 Human direction verdict: **accepted for this iteration**
 
-Reviewer wording: "ja schon besser, lassen wir es so mal"
+Reviewer summary: the iteration was audibly improved enough to keep without
+further parameter tuning.
 
 The candidate is audibly improved enough to freeze rather than continue
 parameter iteration. This is not a claim that Riotbox has reached musical-alpha
@@ -177,12 +178,12 @@ as `riotbox.listening_review.v1` with:
 - source recognition: `source_transformed_but_present`
 - hook after two bars: `clear`
 
-Reviewer wording: "gelungen, hat mir echt gefallen, gute breaks, gute pausen,
-hat auch alles zusammengepasst und es war nicht zu viel. eine gewisse
-aggressivitaet war auch zu hoeren, wir sind am richtigen weg". Markus then
-explicitly confirmed the formal `keep` verdict, that the source was "deutlich
-transformiert, aber noch vorhanden", and that the hook was already present
-within the first two bars.
+Reviewer summary: the complete render was musically successful, with effective
+breaks and pauses, coherent layer interaction without overcrowding, and audible
+aggression. The reviewer judged it to be moving in the intended direction,
+formally confirmed `keep`, described the source as clearly transformed but
+still recognizable, and confirmed that the hook arrived within the first two
+bars.
 
 This is a musician-facing pass for this exact callback-render hash. It freezes
 the accepted sound and permits it to remain a demo-ready candidate. It does not
@@ -194,9 +195,9 @@ found.
 ## Interactive A/B Timing Rejection
 
 Two subsequent real PipeWire/TUI takes used the correct source, preset, command
-order, and Riotbox-only monitor path. Markus judged each take "passabel", then
-heard no meaningful difference in a direct A-then-B comparison: "merklich kein
-unterschied". Technical analysis confirms that this was not useful sound
+order, and Riotbox-only monitor path. The reviewer considered each take
+acceptable in isolation but heard no meaningful difference in a direct
+A-then-B comparison. Technical analysis confirms that this was not useful sound
 variation: the captured source window and MC-202 selection were identical,
 both renders measured `-18.6 LUFS` and `-0.3 dBTP`, and their band deltas stayed
 below `0.03 dB`.
@@ -269,10 +270,11 @@ substantially more high-band energy, the following scene section drops about
 Fill peak. The review therefore did not ask the listener to distinguish
 mechanically identical renders.
 
-After the exact artifact was announced and Markus explicitly confirmed fresh
-readiness, the complete candidate was played once. His verdict was:
-
-> "pass, ich wuerde es bestimmt anders loopen aber die elemente sind schon gut"
+After the exact artifact was announced and the reviewer explicitly confirmed
+fresh readiness, the complete candidate was played once. The resulting verdict
+was `keep`: the individual elements were musically strong and usable, although
+the reviewer would likely arrange the loop differently in later performance
+work.
 
 This records `human_verdict: keep` for the exact live artifact. The candidate
 passes as usable musical material with a clear early hook, transformed-but-
