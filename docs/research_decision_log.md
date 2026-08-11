@@ -56,8 +56,6 @@ Why: this keeps strategy, archive history, and implementation contracts separate
 Consequences: future spec work should land in `docs/`, not in new planning sprawl under `plan/`.  
 Status: accepted
 
----
-
 ### RBX-105
 
 Date: 2026-06-30
@@ -3663,4 +3661,18 @@ Decision: preserve render-time runner SHA-256 `534f960b5b0afe98ece921d260f4fd30b
 Why: this is a standard-library predicate spelling change with identical Boolean behavior for the already-validated nonzero channel counts, not a source-result-driven algorithm change. Leaving the warning would fail the repository's mandatory Clippy gate; rerendering exact audio for a source-level lint spelling would create unnecessary duplicate evidence.
 Evidence: the focused 46-test Percussive-Force suite and Matrix binary test target passed before the edit. After the edit, `cargo fmt --check` and `cargo clippy -p riotbox-audio --bin percussive_force_stage_a_matrix -- -D warnings` pass. The historical Matrix result, candidate WAV hashes, advanced results, A/B artifact, and structured human verdict remain unchanged.
 Consequences: the Matrix-v6 result continues to cite the render-time source hash. Reviews must not mistake the post-execution current source hash for a different renderer generation. Full `just ci` must be rerun; no human replay is required because no audio bytes or recipe changed.
+Status: accepted
+
+---
+
+### RBX-275
+
+Date: 2026-08-11
+Topic: freeze source-blind F4 source-native body sustain before Development candidate access
+Phase: P023 / Sound Excellence
+Question: what new causal Stage-A mechanism may follow the F1/F3 mechanical rejections and the F2 human `kaum anders` rejection without retuning a failed family or using Development results to choose topology and constants?
+Decision: freeze Protocol v6, Matrix v7, and F4 `f4_source_native_body_sustain_v1` before reopening any Development WAV. F4 preserves the physical attack and all samples outside the frozen body exactly, preserves sample order and `1.0x` playback, and selects one event-coupled source-native body band from fixed `55–180`, `180–560`, and `560–1120 Hz` analysis regions. A trusted band must exceed the unchanged `4x` lookbehind-noise or `16 LSB` numerical floor in both attack and body; selection maximizes body mean square over that floor. Only the selected body's decaying source samples receive the frozen bounded smooth gain `0.5*entry*exit*(0.35+0.65*sqrt(1-clamp(envelope/body_peak,0,1)))`, using an `8 ms` causal envelope, `2 ms` entry, and `10 ms` exit. There is no limiter, generated oscillator, delay, duplicate, resampling, transposition, filename branch, or source-specific constant. Reuse the mechanism-blind Protocol-v5 qualification and its exact four sources/eight events; execute only the eight new F4 conditions because F1–F3 remain immutable terminal evidence.
+Why: the prior families changed attack/body level, complementary spectral balance, or dynamic residual yet produced no accepted force mechanism; the sole human-eligible F2 result remained perceptually near-identical. Registered primary evidence reports that higher-velocity snare strikes can retain loudness-controlled identity while showing greater sub-1 kHz energy and longer decay. F4 tests those coupled directions while leaving the recognizable attack untouched. The transfer is only an E2 falsifiable hypothesis across mixed drum sources; automation cannot turn it into a force verdict. Reusing the earlier mechanism-blind event catalog avoids needless source acquisition and qualification while the new exclusive matrix and access log preserve the post-rejection freeze boundary.
+Evidence: F4 source SHA-256 is `85b6e4f3b19c292ee712a100bf563af90a4a780cac76734ffd36cb9ae782ef0a`; the v6/v7-capable matrix runner SHA-256 is `1eccec22f454f9a0309cb0e65aeaebb8b194d2356926fd0b55dd97aae21e932d`. Protocol v6 and Matrix v7 raw SHA-256 values are `e201d1a95936c17206ee1a1e151bcde32d593209b0d07cde7acb5b3aff32420a` and `4018ca070b7cb4193191a8a88c4279cd3bc878b25241c8f57f1f0eaa3227480d`. The unchanged qualification artifact SHA-256 is `f35f9412f8e07e6ced0922e6433d12cb9133e49003b257ef5850f2d72337f679`. Five source-independent tests pass: bit-identical attack/outside support with body change, three body frequencies selecting three distinct bands, deterministic repeats at 44.1/48/96 kHz, missing-body refusal, and headroom refusal without limiting. The v6 validator and four fail-closed mutation fixtures pass with `source_audio_accessed_by_validator=false`; strict Riotbox-audio Clippy passes. No Development candidate, holdout audio, commercial reference, or human playback was accessed during this freeze.
+Consequences: Matrix v7 may now read each of the four exact registered Development paths once, verify hash/header identity, embed the bounded access log, and execute the eight conditions in declared order. The unchanged raw and attenuation-matched mechanical screens remain reject-only. Zero survivors stop without playback. A surviving exact candidate may receive one technically preflighted structured human comparison; `near_identity` or `different_but_not_harder` freezes F4 v1 without scalar retuning. A positive directional verdict must freeze the exact package before any Stage-B or holdout access.
 Status: accepted

@@ -1,0 +1,55 @@
+{
+  "schema": "riotbox.percussive_force_development_matrix.v7",
+  "schema_version": 7,
+  "owner_ticket": "RIOTBOX-1428",
+  "status": "bound_before_f4_candidate_access",
+  "protocol": {
+    "path": "docs/benchmarks/percussive_force_stage_a_protocol_v6.json",
+    "raw_sha256": "e201d1a95936c17206ee1a1e151bcde32d593209b0d07cde7acb5b3aff32420a"
+  },
+  "qualification_artifact_path": "/tmp/riotbox-1430-stage-a-v5-qualification.nomAyO/event-catalog.json",
+  "qualification_artifact_sha256": "f35f9412f8e07e6ced0922e6433d12cb9133e49003b257ef5850f2d72337f679",
+  "qualification_session_sha256": "048467631a8284d411a8e825612648b281383455836be03eefdb0a514be7926f",
+  "qualification_access_log_sha256": "2d0ac93c525b624c25bf17b55fd73d21d7be9963ef1e52ad73f09b77cbbce6ab",
+  "renderer": {
+    "path": "crates/riotbox-audio/src/bin/percussive_force_stage_a_matrix.rs",
+    "raw_sha256": "1eccec22f454f9a0309cb0e65aeaebb8b194d2356926fd0b55dd97aae21e932d",
+    "f4_path": "crates/riotbox-audio/src/percussive_force/f4.rs",
+    "f4_raw_sha256": "85b6e4f3b19c292ee712a100bf563af90a4a780cac76734ffd36cb9ae782ef0a",
+    "f4": "f4_source_native_body_sustain_v1"
+  },
+  "output_directory": "artifacts/audio_qa/riotbox-1428/stage-a-v7-f4-matrix",
+  "condition_order": "selected_source_then_event_ordinal_then_family_F4",
+  "condition_count": 8,
+  "condition_ids": [
+    "f4_freesound_dabromusic_266735_event1",
+    "f4_freesound_dabromusic_266735_event2",
+    "f4_freesound_dr_skitz_353853_event1",
+    "f4_freesound_dr_skitz_353853_event2",
+    "f4_freesound_garzul_213512_event1",
+    "f4_freesound_garzul_213512_event2",
+    "f4_freesound_aikighost_19059_event1",
+    "f4_freesound_aikighost_19059_event2"
+  ],
+  "selected_sources": [
+    {"case_id": "freesound_dabromusic_266735", "source_family": "dense_break", "source_path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/05_dense_266735.wav", "source_sha256": "b3ee8908b0433e9d286f6174369cfebe78ee928656e52935d1992fdb2dba7c73", "sample_rate_hz": 44100, "channel_count": 2, "sample_width_bits": 24, "events": [{"ordinal": 1, "physical_onset_frame": 15395, "attack_end_frame": 15528, "body_end_frame": 20430}, {"ordinal": 2, "physical_onset_frame": 46162, "attack_end_frame": 46295, "body_end_frame": 51047}]},
+    {"case_id": "freesound_dr_skitz_353853", "source_family": "sparse_drums", "source_path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/09_sparse_353853.wav", "source_sha256": "e75e1e6248d07b63ad58b8ee74a35c8cac066db808ef3e5daf256f20a5ba858d", "sample_rate_hz": 48000, "channel_count": 2, "sample_width_bits": 16, "events": [{"ordinal": 1, "physical_onset_frame": 48512, "attack_end_frame": 48726, "body_end_frame": 54276}, {"ordinal": 2, "physical_onset_frame": 97489, "attack_end_frame": 97692, "body_end_frame": 102906}]},
+    {"case_id": "freesound_garzul_213512", "source_family": "electronic_drums", "source_path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/12_electronic_213512.wav", "source_sha256": "2766f04fb67da49186a6f508ed3bd29f8521942058910d8c456c823c9f390bdb", "sample_rate_hz": 44100, "channel_count": 2, "sample_width_bits": 16, "events": [{"ordinal": 1, "physical_onset_frame": 56974, "attack_end_frame": 57563, "body_end_frame": 59738}, {"ordinal": 2, "physical_onset_frame": 77565, "attack_end_frame": 77955, "body_end_frame": 79134}]},
+    {"case_id": "freesound_aikighost_19059", "source_family": "electronic_drums", "source_path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/13_electronic_19059.wav", "source_sha256": "b959afcf9654d2654c003fa956485f569b917afec805b57f9816ca22db9d6b4c", "sample_rate_hz": 44100, "channel_count": 2, "sample_width_bits": 16, "events": [{"ordinal": 1, "physical_onset_frame": 5523, "attack_end_frame": 5602, "body_end_frame": 6484}, {"ordinal": 2, "physical_onset_frame": 22078, "attack_end_frame": 22135, "body_end_frame": 23017}]}
+  ],
+  "source_access": {
+    "exact_registered_development_paths_only": true,
+    "one_read_per_source": true,
+    "access_log_embedded_in_result": true,
+    "directory_discovery": false,
+    "holdout_audio_access": false,
+    "commercial_reference_access": false
+  },
+  "advanced_mechanical_screens": "required_after_rust_render_before_any_playback",
+  "candidate_render_started": false,
+  "holdout_audio_accessed": false,
+  "commercial_reference_accessed": false,
+  "quality_proof": false,
+  "hardness_proof": false,
+  "human_verdict": "unverified"
+}
