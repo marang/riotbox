@@ -97,6 +97,11 @@ Classify P023 work before implementation:
 Do not chain contract enablers without landing the named audible follow-up.
 Offline binaries, scripted packs, fixtures, reports, and validators remain
 diagnostic until the behavior is promoted into product ownership.
+Treat one-off development-source acquisition as an operational task, not a new
+product subsystem. Prefer an exact allowlist, standard network client, OS
+keyring, and existing hash/header validators. Stop and simplify when permanent
+acquisition scaffolding grows beyond the small boundary needed to reach the
+named source qualification or audible follow-up.
 
 ## ActionCommand Rule
 

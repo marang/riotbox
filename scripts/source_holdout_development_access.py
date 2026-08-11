@@ -46,6 +46,16 @@ STAGE_A_REGISTRY_SCHEMA = "riotbox.source_holdout_rotation.v2"
 STAGE_A_REGISTRY_RAW_SHA256 = (
     "af98af67d5b0ef9f8478bf800438b268af2a4640bed29d8ec7c87fa585eb6812"
 )
+STAGE_A_REGISTRY_V3_SCHEMA = "riotbox.source_holdout_rotation.v3"
+STAGE_A_REGISTRY_V3_RAW_SHA256 = (
+    "9e5e03ad64319061a4baaa6cee7c40fc5e993171b0d11003ec29767f273bc502"
+)
+STAGE_A_REGISTRY_PINS = frozenset(
+    {
+        (STAGE_A_REGISTRY_SCHEMA, STAGE_A_REGISTRY_RAW_SHA256),
+        (STAGE_A_REGISTRY_V3_SCHEMA, STAGE_A_REGISTRY_V3_RAW_SHA256),
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -180,8 +190,7 @@ def run_development_access_session(
 
     require(
         isinstance(registry, PinnedStageARegistry)
-        and registry.schema == STAGE_A_REGISTRY_SCHEMA
-        and registry.raw_sha256 == STAGE_A_REGISTRY_RAW_SHA256,
+        and (registry.schema, registry.raw_sha256) in STAGE_A_REGISTRY_PINS,
         "development access requires the frozen Stage-A registry snapshot",
     )
     owner_id = validate_safe_token(
@@ -328,7 +337,8 @@ def assert_registry_pin_current(registry: PinnedStageARegistry) -> None:
 
     current_sha256 = hashlib.sha256(registry.path.read_bytes()).hexdigest()
     require(
-        current_sha256 == registry.raw_sha256 == STAGE_A_REGISTRY_RAW_SHA256,
+        (registry.schema, registry.raw_sha256) in STAGE_A_REGISTRY_PINS
+        and current_sha256 == registry.raw_sha256,
         f"{registry.path}: Stage-A registry changed before development source open",
     )
 

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Frozen RIOTBOX-1428 Stage-A source and event qualification analysis.
+"""Frozen Stage-A source and event qualification analysis.
 
 This module is deliberately decode-independent.  Callers must supply an
 already verified, normalized PCM array with shape ``frames x channels``.  The
 module never opens a source path, discovers a directory, renders a candidate,
 or assigns perceptual hardness.  Its results are reject-only source/event and
-source-contrast evidence under the pinned Stage-A v1 preregistration.
+source-contrast evidence under the pinned Stage-A v1 or v2 preregistration.
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import struct
 from dataclasses import dataclass, fields, is_dataclass
 from enum import Enum
 from pathlib import Path
@@ -26,10 +27,35 @@ EXPECTED_PROTOCOL_SHA256 = (
     "35091e697cacb3c187f9a33f4f41ac85aba26832a4214bf3251dfc703edad840"
 )
 EXPECTED_PROTOCOL_SCHEMA = "riotbox.percussive_force_stage_a_protocol.v1"
+EXPECTED_PROTOCOL_V2_SHA256 = (
+    "b6b35cb14ef34be7f9b7bb6b2bf076ba84842c56914485937f088539e6217878"
+)
+EXPECTED_PROTOCOL_V2_SCHEMA = "riotbox.percussive_force_stage_a_protocol.v2"
 CANONICAL_PROTOCOL_PATH = (
     Path(__file__).resolve().parents[1]
     / "docs/benchmarks/percussive_force_stage_a_protocol_v1.json"
 )
+CANONICAL_PROTOCOL_V2_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "docs/benchmarks/percussive_force_stage_a_protocol_v2.json"
+)
+
+_PROTOCOL_IDENTITIES = {
+    EXPECTED_PROTOCOL_SHA256: {
+        "schema": EXPECTED_PROTOCOL_SCHEMA,
+        "schema_version": 1,
+        "owner_ticket": "RIOTBOX-1428",
+        "execution_state": "preregistered_no_source_qualification_or_candidate_render",
+        "prequalification": "riotbox.percussive_force_prequalification.v2",
+    },
+    EXPECTED_PROTOCOL_V2_SHA256: {
+        "schema": EXPECTED_PROTOCOL_V2_SCHEMA,
+        "schema_version": 2,
+        "owner_ticket": "RIOTBOX-1430",
+        "execution_state": "preregistered_no_v2_source_qualification_or_candidate_render",
+        "prequalification": "riotbox.percussive_force_prequalification.v3",
+    },
+}
 
 
 class StageAContractError(ValueError):
@@ -50,6 +76,7 @@ class ImpactRole(str, Enum):
 
 class EventRefusalReason(str, Enum):
     EDGE_ONLY_IMPULSE = "edge_only_impulse"
+    PHYSICAL_ONSET_UNRESOLVED = "physical_onset_unresolved"
     MULTI_EVENT_OR_FLAM = "multi_event_or_flam"
     SLOW_OR_SUSTAINED = "slow_or_sustained"
     LOOKBEHIND_MASKED = "lookbehind_masked"
@@ -95,6 +122,9 @@ class QualificationRefusalReason(str, Enum):
 
 
 def _json_value(value: Any) -> Any:
+    custom = getattr(value, "_to_json_value", None)
+    if callable(custom):
+        return custom()
     if isinstance(value, Enum):
         return value.value
     if is_dataclass(value):
@@ -156,10 +186,11 @@ class FrozenStageAProtocol:
                 "invalid_protocol_bytes", "protocol payload must be immutable bytes"
             )
         actual = hashlib.sha256(payload).hexdigest()
-        if actual != EXPECTED_PROTOCOL_SHA256:
+        identity = _PROTOCOL_IDENTITIES.get(actual)
+        if identity is None:
             raise StageAContractError(
                 "protocol_pin_mismatch",
-                f"expected {EXPECTED_PROTOCOL_SHA256}, got {actual}",
+                f"expected one of {sorted(_PROTOCOL_IDENTITIES)}, got {actual}",
             )
         try:
             document = json.loads(payload, object_pairs_hook=_reject_duplicate_keys)
@@ -167,21 +198,19 @@ class FrozenStageAProtocol:
             raise StageAContractError("invalid_protocol_json", str(error)) from error
         if not isinstance(document, dict):
             raise StageAContractError("invalid_protocol_root", "root must be an object")
-        if document.get("schema") != EXPECTED_PROTOCOL_SCHEMA:
+        if document.get("schema") != identity["schema"]:
             raise StageAContractError(
                 "protocol_schema_mismatch", "unexpected Stage-A protocol schema"
             )
-        if document.get("schema_version") != 1:
+        if document.get("schema_version") != identity["schema_version"]:
             raise StageAContractError(
-                "protocol_version_mismatch", "schema_version must equal 1"
+                "protocol_version_mismatch", "schema_version does not match the raw pin"
             )
-        if document.get("owner_ticket") != "RIOTBOX-1428":
+        if document.get("owner_ticket") != identity["owner_ticket"]:
             raise StageAContractError(
-                "protocol_owner_mismatch", "owner_ticket must equal RIOTBOX-1428"
+                "protocol_owner_mismatch", "owner_ticket does not match the raw pin"
             )
-        if document.get("execution_state") != (
-            "preregistered_no_source_qualification_or_candidate_render"
-        ):
+        if document.get("execution_state") != identity["execution_state"]:
             raise StageAContractError(
                 "protocol_state_mismatch", "unexpected preregistration state"
             )
@@ -273,11 +302,12 @@ class FrozenStageAProtocol:
                 )
         components = document.get("component_versions")
         prequalification = document.get("prequalification")
-        if not isinstance(components, dict) or components.get("prequalification") != (
-            "riotbox.percussive_force_prequalification.v2"
-        ):
+        if not isinstance(components, dict) or components.get("prequalification") != identity[
+            "prequalification"
+        ]:
             raise StageAContractError(
-                "prequalification_version_mismatch", "expected prequalification v2"
+                "prequalification_version_mismatch",
+                "prequalification component does not match the raw pin",
             )
         if not isinstance(prequalification, dict) or prequalification.get("purpose") != (
             "Mechanism-blind rejection and partitioning only; no hardness score and no algorithm-family selection."
@@ -307,6 +337,10 @@ class FrozenStageAProtocol:
     def value(self, name: str) -> Any:
         passports = self._document["numeric_passports"]
         return passports[name]["value"]
+
+    @property
+    def schema_version(self) -> int:
+        return int(self._document["schema_version"])
 
 
 def load_frozen_protocol(
@@ -454,6 +488,7 @@ class SourceInput:
     samples: np.ndarray
     sample_rate_hz: int
     input_lsb: float
+    per_channel_dc_mean_f64_bits_be_hex: tuple[str, ...] | None = None
 
 
 @dataclass(frozen=True)
@@ -531,6 +566,17 @@ class SourceAnalysis(Serializable):
     quality_proof: bool
     hardness_proof: bool
     refusals: tuple[Refusal, ...]
+
+    def _to_json_value(self) -> dict[str, Any]:
+        value = {
+            field.name: _json_value(getattr(self, field.name)) for field in fields(self)
+        }
+        if self.schema == "riotbox.percussive_force_source_analysis.v2":
+            value["per_channel_dc_mean_f64_bits_be_hex"] = [
+                struct.pack(">d", mean).hex() for mean in self.per_channel_dc_means
+            ]
+            del value["per_channel_dc_means"]
+        return value
 
 
 @dataclass(frozen=True)
@@ -911,9 +957,14 @@ def _resolve_anatomy(
         frozen_peak = local_peak
         break
     if physical_onset is None:
+        refusal_reason = (
+            EventRefusalReason.PHYSICAL_ONSET_UNRESOLVED
+            if protocol.schema_version == 2
+            else EventRefusalReason.EDGE_ONLY_IMPULSE
+        )
         refusal = EventRefusal(
             peak.frame,
-            EventRefusalReason.EDGE_ONLY_IMPULSE,
+            refusal_reason,
             "no physical onset passed the frozen baseline, peak, and persistence gates",
         )
         return _Refinement(
@@ -1350,6 +1401,61 @@ def _source_features(
     )
 
 
+def _source_analysis_schema(protocol: FrozenStageAProtocol) -> str:
+    return (
+        "riotbox.percussive_force_source_analysis.v2"
+        if protocol.schema_version == 2
+        else "riotbox.percussive_force_source_analysis.v1"
+    )
+
+
+def _qualification_analysis_schema(protocol: FrozenStageAProtocol) -> str:
+    return (
+        "riotbox.percussive_force_stage_a_unbound_qualification_analysis.v2"
+        if protocol.schema_version == 2
+        else "riotbox.percussive_force_stage_a_unbound_qualification_analysis.v1"
+    )
+
+
+def _decode_authoritative_dc_means(
+    bits: Sequence[str] | None,
+    channel_count: int,
+    protocol: FrozenStageAProtocol,
+) -> np.ndarray | None:
+    if protocol.schema_version == 1:
+        if bits is not None:
+            raise StageAContractError(
+                "authoritative_dc_mean_not_allowed",
+                "Protocol v1 requires its historical implementation-native mean",
+            )
+        return None
+    if bits is None or len(bits) != channel_count:
+        raise StageAContractError(
+            "authoritative_dc_mean_missing",
+            "Protocol v2 requires one frozen binary64 mean bit pattern per channel",
+        )
+    means: list[float] = []
+    for channel, encoded in enumerate(bits):
+        if (
+            not isinstance(encoded, str)
+            or len(encoded) != 16
+            or encoded != encoded.lower()
+            or any(character not in "0123456789abcdef" for character in encoded)
+        ):
+            raise StageAContractError(
+                "invalid_authoritative_dc_mean",
+                f"channel {channel} mean must be exactly 16 lowercase hex characters",
+            )
+        mean = struct.unpack(">d", bytes.fromhex(encoded))[0]
+        if not math.isfinite(mean) or (mean == 0.0 and encoded != "0000000000000000"):
+            raise StageAContractError(
+                "invalid_authoritative_dc_mean",
+                f"channel {channel} mean must be finite with canonical positive zero",
+            )
+        means.append(mean)
+    return np.asarray(means, dtype=np.float64)
+
+
 def _empty_analysis(
     metadata: SourceMetadata,
     protocol: FrozenStageAProtocol,
@@ -1359,15 +1465,16 @@ def _empty_analysis(
     *,
     channel_count: int = 0,
     frame_count: int = 0,
+    per_channel_dc_means: Sequence[float] = (),
 ) -> SourceAnalysis:
     return SourceAnalysis(
-        schema="riotbox.percussive_force_source_analysis.v1",
+        schema=_source_analysis_schema(protocol),
         protocol_sha256=protocol.sha256,
         metadata=metadata,
         sample_rate_hz=sample_rate_hz,
         channel_count=channel_count,
         frame_count=frame_count,
-        per_channel_dc_means=(),
+        per_channel_dc_means=tuple(float(value) for value in per_channel_dc_means),
         detector=DetectorSummary(
             window_frames=0,
             hop_frames=0,
@@ -1395,6 +1502,7 @@ def analyze_source(
     input_lsb: float,
     *,
     protocol: FrozenStageAProtocol | None = None,
+    per_channel_dc_mean_f64_bits_be_hex: Sequence[str] | None = None,
 ) -> SourceAnalysis:
     """Run frozen mechanism-blind source/event qualification on in-memory PCM.
 
@@ -1521,6 +1629,11 @@ def analyze_source(
             channel_count=channel_count,
             frame_count=frame_count,
         )
+    authoritative_means = _decode_authoritative_dc_means(
+        per_channel_dc_mean_f64_bits_be_hex,
+        channel_count,
+        frozen,
+    )
     signal_floor = float(frozen.value("minimum_signal_peak_lsb")) * float(input_lsb)
     if not float(np.max(np.abs(pcm))) > signal_floor:
         return _empty_analysis(
@@ -1531,9 +1644,16 @@ def analyze_source(
             "whole-source peak is not strictly above the frozen LSB floor",
             channel_count=channel_count,
             frame_count=frame_count,
+            per_channel_dc_means=(
+                authoritative_means if authoritative_means is not None else ()
+            ),
         )
 
-    means = np.mean(pcm, axis=0, dtype=np.float64)
+    means = (
+        authoritative_means
+        if authoritative_means is not None
+        else np.mean(pcm, axis=0, dtype=np.float64)
+    )
     x_prime = pcm - means[None, :]
     q_squared = np.mean(x_prime * x_prime, axis=1, dtype=np.float64)
     if not np.isfinite(q_squared).all():
@@ -1766,7 +1886,7 @@ def analyze_source(
             )
         )
     return SourceAnalysis(
-        schema="riotbox.percussive_force_source_analysis.v1",
+        schema=_source_analysis_schema(frozen),
         protocol_sha256=frozen.sha256,
         metadata=metadata,
         sample_rate_hz=sample_rate,
@@ -1892,7 +2012,7 @@ def _qualification_refusal(
     partitions: Sequence[SourcePartition] = (),
 ) -> StageAQualification:
     return StageAQualification(
-        schema="riotbox.percussive_force_stage_a_unbound_qualification_analysis.v1",
+        schema=_qualification_analysis_schema(protocol),
         qualification_state="unbound_analysis_only",
         protocol_sha256=protocol.sha256,
         sources=tuple(sources),
@@ -1960,6 +2080,9 @@ def qualify_four_sources(
             source.sample_rate_hz,
             source.input_lsb,
             protocol=frozen,
+            per_channel_dc_mean_f64_bits_be_hex=(
+                source.per_channel_dc_mean_f64_bits_be_hex
+            ),
         )
         for source in sources
     )
@@ -2026,7 +2149,7 @@ def qualify_four_sources(
             partitions=valid,
         )
     return StageAQualification(
-        schema="riotbox.percussive_force_stage_a_unbound_qualification_analysis.v1",
+        schema=_qualification_analysis_schema(frozen),
         qualification_state="unbound_analysis_only",
         protocol_sha256=frozen.sha256,
         sources=analyses,
