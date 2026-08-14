@@ -38,16 +38,25 @@ hardness, aggression, bass pressure, groove, and arrangement impact; defines a
 multi-scale beat-analysis rubric; and hands falsifiable source-adaptive
 hypotheses directly to `RIOTBOX-1428` Stage A. `RIOTBOX-1429` changes no
 renderer and does not itself prove or unblock Stage B product promotion.
-`RIOTBOX-1428` then ran its first frozen development-only qualification. Two
-of four sources failed the mechanism-blind event gate, so Stage A stopped
-before candidate rendering, matrix execution, or human listening. `RIOTBOX-1430`
-repeated that boundary with the independently frozen Protocol v2 and legal
-development corpus. Two source families qualified three events each, while the
-other two qualified one and zero; the complete four-source contrast contract
-therefore rejected before matrix rendering or listening. Any later retry now
-requires a newly versioned protocol, matrix, registry, implementation snapshot,
-and Decision-Log decision under RBX-252 change control. The v1 and v2 outcomes
-remain historical mechanical rejection evidence, not hardness judgments.
+`RIOTBOX-1428` and `RIOTBOX-1430` then established a bounded, legally usable
+Development source pool and froze the Stage-A force contracts before opening
+registered audio. The final three-family, four-source, two-event matrix ran
+without holdout access, but the F2 comparison was human-rejected as
+near-identical. `RIOTBOX-1428` subsequently qualified F4 mechanically and again
+received a human near-identity rejection. `RIOTBOX-1434` tested natural
+velocity as a control: the snare difference was audible, while the whip pair
+was not. It therefore failed the declared cross-source control and
+`RIOTBOX-1435` was canceled before implementation. These results remain frozen
+negative evidence; they do not justify more threshold tuning.
+
+`RIOTBOX-1433` has now audited the audible algorithm portfolio and selected the
+next smaller product gap: W-30 already plays, recalls, and replays real source
+PCM, but its Golden Path does not use source evidence to choose the strongest
+hook window. `RIOTBOX-1432` is the exact next audible slice. It will compare at
+most two explainable, pre-frozen selection policies against the current
+transport-selected baseline across three registered Development sources,
+persist the winning decision in capture lineage and Session/replay, and require
+one bounded exact-live human hook comparison. The holdout remains unopened.
 
 `P016`, `P021`, and `P022` remain subordinate to the active P023 product path.
 Offline renderers, scripted packs, fixture verdicts, reports, and validators
@@ -260,6 +269,11 @@ docs/
   `benchmarks/percussive_force_development_matrix_v3.json`: immutable
   RIOTBOX-1430 retry contracts; both are historical after the fail-closed v2
   qualification and must not be retuned from its source results
+- `benchmarks/percussive_force_stage_a_protocol_v7.json` and
+  `benchmarks/percussive_force_development_matrix_v7.json`: late immutable
+  RIOTBOX-1428 F4 qualification snapshots binding the preregistration and
+  mechanical-result identities before the subsequent near-identity human
+  rejection
 - `reviews/riotbox_1428_stage_a_development_qualification_rejection_2026-08-10.md`:
   first fresh frozen Stage-A development qualification, exact access boundary,
   two-source mechanical rejection, evidence hashes, post-execution audit, and
@@ -267,6 +281,15 @@ docs/
 - `reviews/riotbox_1430_stage_a_v2_development_qualification_rejection_2026-08-11.md`:
   second frozen development-only qualification, exact v2 access boundary,
   four-source event counts, fail-closed stop, and no-render/no-listening result
+- `reviews/riotbox_1430_stage_a_v5_qualification_pass_matrix_v6_freeze_2026-08-11.md`:
+  qualified Development pool, executed three-family/four-source/two-event
+  matrix, and frozen F2 near-identity human rejection
+- `reviews/riotbox_1434_natural_velocity_control_qualification_2026-08-11.md`:
+  natural-velocity snare/whip control, exact human result, and fail-closed
+  rejection before any follow-up implementation
+- `reviews/riotbox_1433_audible_algorithm_value_audit_2026-08-12.md`:
+  bounded retain/replace/retire audit and frozen RIOTBOX-1432 W-30 hook-choice
+  handoff
 - `engineering/textual_include_inventory_2026-06-29.md`: RIOTBOX-1321 Rust textual include inventory captured
 - `engineering/textual_include_allowlist.txt`: current manual guardrail allowlist for textual include owners/counts captured
 - `specs/source_graph_spec.md`: Source Graph v1 contract captured
