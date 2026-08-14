@@ -53,7 +53,6 @@ pub fn observer_snapshot(shell: &JamShellState) -> Value {
             "tr909_mode": runtime.tr909_render_mode,
             "tr909_routing": runtime.tr909_render_routing,
             "tr909_profile": runtime.tr909_render_profile,
-            "tr909_counter_rhythm": runtime.tr909_render_counter_rhythm,
             "tr909_support_context": runtime.tr909_render_support_context,
             "tr909_support_accent": runtime.tr909_render_support_accent,
             "mc202_mode": runtime.mc202_render_mode,

@@ -115,33 +115,6 @@ pub enum Tr909PhraseVariation {
     PhraseRelease,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Tr909CounterRhythm {
-    EighthAnswer,
-    LateSixteenthPickup,
-}
-
-/// Diagnostic polarity for the frozen counter-rhythm comparison.
-///
-/// Product projections always use `SourceSupported`. `PhaseControl` exists only so exact-path
-/// audio QA can swap the same four accent/donor slots without changing event count or energy sum.
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
-pub enum Tr909CounterRhythmPhase {
-    #[default]
-    SourceSupported,
-    PhaseControl,
-}
-
-impl Tr909CounterRhythm {
-    #[must_use]
-    pub const fn label(self) -> &'static str {
-        match self {
-            Self::EighthAnswer => "eighth_answer",
-            Self::LateSixteenthPickup => "late_sixteenth_pickup",
-        }
-    }
-}
-
 impl Tr909PhraseVariation {
     #[must_use]
     pub const fn label(self) -> &'static str {
@@ -225,8 +198,6 @@ pub struct Tr909RenderState {
     pub pattern_ref: Option<String>,
     pub pattern_adoption: Option<Tr909PatternAdoption>,
     pub phrase_variation: Option<Tr909PhraseVariation>,
-    pub counter_rhythm: Option<Tr909CounterRhythm>,
-    pub counter_rhythm_phase: Tr909CounterRhythmPhase,
     pub takeover_profile: Option<Tr909TakeoverRenderProfile>,
     pub drum_bus_level: f32,
     pub slam_enabled: bool,
@@ -267,8 +238,6 @@ impl Default for Tr909RenderState {
             pattern_ref: None,
             pattern_adoption: None,
             phrase_variation: None,
-            counter_rhythm: None,
-            counter_rhythm_phase: Tr909CounterRhythmPhase::SourceSupported,
             takeover_profile: None,
             drum_bus_level: 0.0,
             slam_enabled: false,

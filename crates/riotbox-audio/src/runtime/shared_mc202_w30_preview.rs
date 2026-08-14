@@ -10,8 +10,6 @@ impl SharedTr909RenderState {
             source_support_context: AtomicU32::new(0),
             pattern_adoption: AtomicU32::new(0),
             phrase_variation: AtomicU32::new(0),
-            counter_rhythm: AtomicU32::new(0),
-            counter_rhythm_phase: AtomicU32::new(0),
             takeover_profile: AtomicU32::new(0),
             drum_bus_level_bits: AtomicU32::new(0),
             slam_enabled: AtomicBool::new(false),
@@ -46,14 +44,6 @@ impl SharedTr909RenderState {
         );
         self.phrase_variation.store(
             phrase_variation_to_u32(render_state.phrase_variation),
-            Ordering::Relaxed,
-        );
-        self.counter_rhythm.store(
-            counter_rhythm_to_u32(render_state.counter_rhythm),
-            Ordering::Relaxed,
-        );
-        self.counter_rhythm_phase.store(
-            counter_rhythm_phase_to_u32(render_state.counter_rhythm_phase),
             Ordering::Relaxed,
         );
         self.takeover_profile.store(
@@ -112,10 +102,6 @@ impl SharedTr909RenderState {
             ),
             phrase_variation: phrase_variation_from_u32(
                 self.phrase_variation.load(Ordering::Relaxed),
-            ),
-            counter_rhythm: counter_rhythm_from_u32(self.counter_rhythm.load(Ordering::Relaxed)),
-            counter_rhythm_phase: counter_rhythm_phase_from_u32(
-                self.counter_rhythm_phase.load(Ordering::Relaxed),
             ),
             takeover_profile: takeover_profile_from_u32(
                 self.takeover_profile.load(Ordering::Relaxed),

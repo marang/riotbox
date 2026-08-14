@@ -12,8 +12,6 @@ fn runtime_mix_realtime_simulation_matches_full_block_offline_render() {
             routing: Tr909RenderRouting::DrumBusSupport,
             pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
             phrase_variation: Some(Tr909PhraseVariation::PhraseLift),
-            counter_rhythm: None,
-            counter_rhythm_phase: Tr909CounterRhythmPhase::SourceSupported,
             drum_bus_level: 0.68,
             slam_intensity: 0.54,
             ..Tr909RenderState::default()
@@ -66,50 +64,6 @@ fn runtime_mix_realtime_simulation_matches_full_block_offline_render() {
     assert!(!reported.limiter.applied);
     assert_eq!(reported.limiter.limited_sample_count, 0);
     assert_eq!(reported.limiter.pre, reported.limiter.post);
-}
-
-#[test]
-fn counter_rhythm_candidate_and_phase_control_keep_exact_callback_parity() {
-    let frame_count = 96_000;
-    let candidate = RuntimeMixRenderPlan {
-        transport: AudioRuntimeTimingSnapshot {
-            is_transport_running: true,
-            tempo_bpm: 128.0,
-            position_beats: 0.0,
-        },
-        tr909_render: Tr909RenderState {
-            mode: Tr909RenderMode::BreakReinforce,
-            routing: Tr909RenderRouting::DrumBusSupport,
-            pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
-            phrase_variation: Some(Tr909PhraseVariation::PhraseDrive),
-            counter_rhythm: Some(Tr909CounterRhythm::EighthAnswer),
-            drum_bus_level: 0.80,
-            slam_enabled: true,
-            slam_intensity: 0.85,
-            ..Tr909RenderState::default()
-        },
-        ..RuntimeMixRenderPlan::default()
-    };
-    let mut phase_control = candidate.clone();
-    phase_control.tr909_render.counter_rhythm_phase = Tr909CounterRhythmPhase::PhaseControl;
-
-    let candidate_full = render_runtime_mix_offline(&candidate, 48_000, 2, frame_count);
-    let candidate_realtime =
-        render_runtime_mix_realtime_simulation_offline(&candidate, 48_000, 2, frame_count, 128);
-    let phase_output =
-        render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
-            &[RuntimeMixRenderSequenceStep::new(&phase_control, frame_count)],
-            48_000,
-            2,
-            128,
-        )
-        .pop()
-        .expect("phase-control exact-mix render");
-
-    assert_eq!(candidate_full, candidate_realtime);
-    assert!(signal_delta_metrics(&candidate_realtime, &phase_output.samples).rms > 0.01);
-    assert!(!phase_output.limiter.applied);
-    assert_eq!(phase_output.limiter.limited_sample_count, 0);
 }
 
 #[test]
@@ -492,8 +446,6 @@ fn fill_focus_is_typed_to_fill_support_and_the_drum_owned_full_bar_phase() {
         source_support_context: None,
         pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
         phrase_variation: Some(Tr909PhraseVariation::PhraseDriveHardCut),
-        counter_rhythm: None,
-        counter_rhythm_phase: Tr909CounterRhythmPhase::SourceSupported,
         takeover_profile: None,
         drum_bus_level: 0.80,
         slam_enabled: false,
@@ -537,8 +489,6 @@ fn fill_focus_is_typed_to_fill_support_and_the_drum_owned_full_bar_phase() {
     });
     let non_signature_fill = FillFocusRenderState::from_tr909(&RealtimeTr909RenderState {
         phrase_variation: Some(Tr909PhraseVariation::PhraseLift),
-        counter_rhythm: None,
-        counter_rhythm_phase: Tr909CounterRhythmPhase::SourceSupported,
         ..render
     });
     assert_eq!(non_fill.gain_at_frame(48_000, frames_per_beat / 2), 1.0);
@@ -622,8 +572,6 @@ fn fill_focus_uses_the_same_confirmed_source_bar_phase_as_the_fill_recipe() {
         source_support_context: None,
         pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
         phrase_variation: Some(Tr909PhraseVariation::PhraseDriveHardCut),
-        counter_rhythm: None,
-        counter_rhythm_phase: Tr909CounterRhythmPhase::SourceSupported,
         takeover_profile: None,
         drum_bus_level: 0.80,
         slam_enabled: false,
@@ -661,8 +609,6 @@ fn fill_focus_envelope_is_sample_exact_across_callback_partitions() {
         source_support_context: None,
         pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
         phrase_variation: Some(Tr909PhraseVariation::PhraseDriveHardCut),
-        counter_rhythm: None,
-        counter_rhythm_phase: Tr909CounterRhythmPhase::SourceSupported,
         takeover_profile: None,
         drum_bus_level: 0.80,
         slam_enabled: false,
@@ -904,8 +850,6 @@ fn fill_focus_test_plan(
             routing: Tr909RenderRouting::DrumBusSupport,
             pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
             phrase_variation: Some(Tr909PhraseVariation::PhraseDriveHardCut),
-            counter_rhythm: None,
-            counter_rhythm_phase: Tr909CounterRhythmPhase::SourceSupported,
             drum_bus_level: 0.12,
             slam_enabled: false,
             slam_intensity: 0.0,

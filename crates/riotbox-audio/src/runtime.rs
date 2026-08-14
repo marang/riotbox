@@ -13,9 +13,9 @@ use crate::{
     },
     source_audio::SourceAudioCache,
     tr909::{
-        Tr909CounterRhythm, Tr909CounterRhythmPhase, Tr909PatternAdoption, Tr909PhraseVariation,
-        Tr909RenderMode, Tr909RenderRouting, Tr909RenderState, Tr909SourceSupportContext,
-        Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
+        Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
+        Tr909RenderState, Tr909SourceSupportContext, Tr909SourceSupportProfile,
+        Tr909TakeoverRenderProfile,
     },
     w30::{
         W30_PAD_CHOP_SLICE_COUNT, W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN,
@@ -86,17 +86,13 @@ pub use source_monitor::{
 };
 use tr909_fill_voice::{Tr909FillVoiceState, render_tr909_fill_buffer};
 use tr909_tail_telemetry::{
-    RuntimeTelemetry, counter_rhythm_from_u32, counter_rhythm_phase_from_u32,
-    counter_rhythm_phase_to_u32, counter_rhythm_to_u32, envelope_decay, mode_from_u32, mode_to_u32,
-    pattern_adoption_from_u32, pattern_adoption_to_u32, phrase_variation_from_u32,
-    phrase_variation_to_u32, routing_from_u32, routing_to_u32, support_context_from_u32,
-    support_context_to_u32, support_profile_from_u32, support_profile_to_u32,
-    takeover_profile_from_u32, takeover_profile_to_u32, w30_mode_from_u32, w30_mode_to_u32,
-    w30_routing_from_u32, w30_routing_to_u32, w30_source_profile_from_u32,
+    RuntimeTelemetry, envelope_decay, mode_from_u32, mode_to_u32, pattern_adoption_from_u32,
+    pattern_adoption_to_u32, phrase_variation_from_u32, phrase_variation_to_u32, routing_from_u32,
+    routing_to_u32, support_context_from_u32, support_context_to_u32, support_profile_from_u32,
+    support_profile_to_u32, takeover_profile_from_u32, takeover_profile_to_u32, w30_mode_from_u32,
+    w30_mode_to_u32, w30_routing_from_u32, w30_routing_to_u32, w30_source_profile_from_u32,
     w30_source_profile_to_u32,
 };
-#[cfg(test)]
-use w30_tr909_signal_helpers::tr909_voice_balance;
 use w30_tr909_signal_helpers::{
     break_performance_slam, fill_performance_slam, render_gain, render_subdivision,
     should_trigger_step, tr909_step_waveform, trigger_envelope, trigger_frequency,

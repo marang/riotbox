@@ -155,8 +155,6 @@ impl AudioFixtureRenderState {
                     "phrase_anchor" => Tr909PhraseVariation::PhraseAnchor,
                     other => panic!("unknown TR-909 fixture phrase variation: {other}"),
                 }),
-            counter_rhythm: None,
-            counter_rhythm_phase: Tr909CounterRhythmPhase::SourceSupported,
             takeover_profile: self
                 .takeover_profile
                 .as_deref()
