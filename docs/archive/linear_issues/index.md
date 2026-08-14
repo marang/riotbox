@@ -1546,4 +1546,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Attach source graph refs to export artifacts
 - [RIOTBOX-1081.md](./RIOTBOX-1081.md)
   P016: Record product export QA gate in receipts
+- [RIOTBOX-1395.md](./RIOTBOX-1395.md)
+  Workflow: Archive and delete old Done Linear tickets
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
