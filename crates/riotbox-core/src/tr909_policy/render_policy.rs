@@ -217,10 +217,7 @@ pub fn derive_tr909_render_policy_with_scene_context(
         Tr909RenderModePolicy::Takeover => Tr909RenderRoutingPolicy::DrumBusTakeover,
     };
 
-    let source_support = matches!(
-        mode,
-        Tr909RenderModePolicy::SourceSupport | Tr909RenderModePolicy::BreakReinforce
-    )
+    let source_support = matches!(mode, Tr909RenderModePolicy::SourceSupport)
         .then(|| derive_tr909_source_support(source_graph, transport, scene_context))
         .flatten();
     let source_support_profile = source_support.map(|support| support.profile);

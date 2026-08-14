@@ -550,10 +550,10 @@ pub(super) fn render_mix_buffer(
     w30: &mut W30MixRenderState<'_>,
 ) {
     data.fill(0.0);
-    let bed_focus = BedFocusRenderState::from_tr909(tr909_render);
-    if bed_focus.is_active() {
+    let fill_focus = FillFocusRenderState::from_tr909(tr909_render);
+    if fill_focus.is_active() {
         render_non_tr909_bed(data, sample_rate, channel_count, mc202_render, w30);
-        apply_bed_focus_to_non_tr909_bed(data, sample_rate, channel_count, bed_focus);
+        apply_fill_focus_to_non_tr909_bed(data, sample_rate, channel_count, fill_focus);
         render_tr909_buffer(data, sample_rate, channel_count, tr909_render, tr909_state);
         return;
     }

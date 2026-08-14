@@ -45,8 +45,6 @@ mod tr909_fill_voice;
 mod tr909_tail_telemetry;
 mod w30_tr909_signal_helpers;
 
-use fill_focus::{BedFocusRenderState, apply_bed_focus_to_non_tr909_bed};
-#[cfg(test)]
 use fill_focus::{FillFocusRenderState, apply_fill_focus_to_non_tr909_bed};
 pub use public_api_shell::*;
 use render_tr909_w30_preview::{
@@ -79,7 +77,7 @@ use shared_w30_resample_callback::{
 use source_monitor::apply_source_monitor_policy_with_state;
 use source_monitor::{
     SharedSourceMonitorRenderState, SourceMonitorCallbackState,
-    apply_source_monitor_policy_with_state_and_bed_focus,
+    apply_source_monitor_policy_with_state_and_fill_focus,
 };
 pub use source_monitor::{
     SourceMonitorAudioRoute, SourceMonitorAudioSource, SourceMonitorRenderState,

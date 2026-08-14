@@ -278,21 +278,6 @@ Rules:
   deterministic across realtime callback partitions and the exact offline
   RuntimeMix seam; a silent or wrongly routed drum lane must never duck the
   arrangement
-- `tr909_impact_pocket_v1` is the distinct collision-local articulation owned
-  by the existing committed Slam action. It may run only in audible
-  `SourceSupport` or `BreakReinforce` routed to `DrumBusSupport`, with explicit
-  Slam state and a trusted typed source-support profile. `DropDrive` and
-  `SteadyPulse` name the kick downbeat as owner; `BreakLift` names the snare
-  backbeat. `BreakReinforce` derives the same existing profile and context as
-  source support without adding Session or callback state.
-  The non-TR-909 bed reaches `0.30` gain over the `0.0625` beat before the
-  actual owner trigger, holds through `0.03125` beat after it, and recovers by
-  `0.21875` beat after it using smoothstep segments. Blend applies the same
-  envelope to the monitored source; source-only is sample-identical. The drum
-  lane is never boosted by this pocket. Missing profile, inactive Slam,
-  stopped/silent routing, Idle, Fill, and Takeover fail closed to the prior
-  render. This is contextual `drum_punch` / `arrangement_impact`, not isolated
-  `percussive_hard`, and RBX-287 owns its version/change boundary
 - the supported dense-break `MainlineDrive + PhraseDriveHardCut` Fill uses fixed
   callback-local, independently decaying kick, snare-body/noise, and
   metallic-hat voices. The current

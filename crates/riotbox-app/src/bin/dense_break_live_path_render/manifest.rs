@@ -7,7 +7,6 @@ use riotbox_audio::{
         signal_metrics_with_grid,
     },
     source_audio::{SourceAudioCache, write_interleaved_pcm16_wav},
-    tr909::Tr909SourceSupportProfile,
 };
 use riotbox_core::{
     action::{ActionCommand, CommitBoundary},
@@ -44,9 +43,6 @@ const MAX_FILL_EXIT_BOUNDARY_TO_LOCAL_P99_RATIO: f32 = 4.0;
 const MAX_FILL_EXIT_BOUNDARY_TO_ATTACK_RMS_RATIO: f32 = 4.0;
 const LIVE_SEQUENCE_ARTIFACT_PATH: &str = "gestures/06_live_sequence.wav";
 const TR909_FILL_PRIMITIVE_SCHEMA: &str = "riotbox.tr909_fill_recipe.v1";
-const IMPACT_POCKET_PRE_ROLL_BEATS: f64 = 0.0625;
-const IMPACT_POCKET_POST_OWNER_BEATS: f64 = 0.21875;
-const MAX_IMPACT_POCKET_OUTSIDE_DELTA_PEAK: f32 = 1.0e-6;
 
 #[derive(Clone, Copy, Debug)]
 struct SequenceBoundaryMetrics {
@@ -527,14 +523,6 @@ pub fn write_pack(
         }));
     }
 
-    let impact_pocket_manifest = write_impact_pocket_proof(
-        &prepared,
-        &rendered,
-        output_dir,
-        &mut artifacts,
-        &mut failures,
-    )?;
-
     for (path, case_id, role, samples) in [
         (
             "01_all_lane_hook.wav",
@@ -828,7 +816,6 @@ pub fn write_pack(
             ),
         },
         "gesture_transitions": transition_manifest,
-        "tr909_impact_pocket_proof": impact_pocket_manifest,
         "legacy_lane_regression": {
             "riotbox_monitor_action_id": prepared.legacy_riotbox_action_id,
             "frozen_before_live_fill_slam_scene_gestures": true,
@@ -974,111 +961,6 @@ fn all_render_plans_match_bpm(prepared: &PreparedLivePath, expected_bpm: f32) ->
         })
         && matches(prepared.normal_plan.transport.tempo_bpm)
         && matches(prepared.damaged_plan.transport.tempo_bpm)
-}
-
-pub(super) fn write_impact_pocket_proof(
-    prepared: &PreparedLivePath,
-    rendered: &RenderedLivePath,
-    output_dir: &Path,
-    artifacts: &mut Vec<Value>,
-    failures: &mut Vec<String>,
-) -> Result<Value, Box<dyn Error>> {
-    let slam_transition_index = prepared
-        .transitions
-        .iter()
-        .position(|transition| transition.command == ActionCommand::Tr909SetSlam)
-        .ok_or("live sequence did not contain a Slam impact-pocket proof")?;
-    let slam_transition = &prepared.transitions[slam_transition_index];
-    let slam_candidate = &rendered.transition_outputs[slam_transition_index].after;
-    let slam_control = &rendered.impact_pocket_control;
-    let impact_profile = slam_transition
-        .after
-        .tr909_render
-        .source_support_profile
-        .ok_or("Slam impact-pocket candidate omitted source-support ownership")?;
-    let (impact_owner, owner_beat) = match impact_profile {
-        Tr909SourceSupportProfile::BreakLift => ("snare_backbeat", 2.0),
-        Tr909SourceSupportProfile::DropDrive | Tr909SourceSupportProfile::SteadyPulse => {
-            ("kick_downbeat", 0.0)
-        }
-    };
-    let impact_control_path = "gestures/impact_pocket/01_slammed_control.wav";
-    let impact_candidate_path = "gestures/impact_pocket/02_impact_pocket_v1.wav";
-    write_audio_artifact(
-        output_dir,
-        impact_control_path,
-        "tr909-impact-pocket-control",
-        "slammed_control",
-        &slam_control.samples,
-        artifacts,
-    )?;
-    write_audio_artifact(
-        output_dir,
-        impact_candidate_path,
-        "tr909-impact-pocket-v1",
-        "candidate",
-        &slam_candidate.samples,
-        artifacts,
-    )?;
-    gate_exact_mix_limiter(
-        "tr909-impact-pocket-control",
-        "slammed_control",
-        &slam_control.limiter,
-        failures,
-    );
-    gate_exact_mix_limiter(
-        "tr909-impact-pocket-v1",
-        "candidate",
-        &slam_candidate.limiter,
-        failures,
-    );
-    let impact_delta = signal_delta_metrics(&slam_control.samples, &slam_candidate.samples);
-    let (inside_changed_frames, outside_delta_peak) = impact_pocket_locality(
-        &slam_control.samples,
-        &slam_candidate.samples,
-        prepared.source_timing.bpm,
-        slam_transition.after.transport.position_beats,
-        owner_beat,
-    )?;
-    if impact_delta.active_samples == 0 || inside_changed_frames == 0 {
-        failures.push("TR-909 impact pocket produced no local exact-mix change".into());
-    }
-    if outside_delta_peak > MAX_IMPACT_POCKET_OUTSIDE_DELTA_PEAK {
-        failures.push(format!(
-            "TR-909 impact pocket leaked materially outside the frozen owner windows: peak {outside_delta_peak:.9}"
-        ));
-    }
-    Ok(json!({
-        "schema": "riotbox.tr909_impact_pocket_proof.v1",
-        "decision": "RBX-287",
-        "mechanism": "tr909_impact_pocket_v1",
-        "claim": "arrangement_impact_and_contextual_drum_punch",
-        "excluded_claim": "percussive_hard",
-        "performer_action": ActionCommand::Tr909SetSlam.as_str(),
-        "action_id": slam_transition.action_id,
-        "mode": slam_transition.after.tr909_render.mode.label(),
-        "routing": slam_transition.after.tr909_render.routing.label(),
-        "source_support_profile": impact_profile.label(),
-        "impact_owner": impact_owner,
-        "owner_beat": owner_beat,
-        "render_start_position_beats": slam_transition.after.transport.position_beats,
-        "control_disables_only_source_support_profile_and_context": true,
-        "slammed_tr909_render_is_identical": true,
-        "control_artifact": impact_control_path,
-        "candidate_artifact": impact_candidate_path,
-        "control_metrics": metrics_json(signal_metrics(&slam_control.samples)),
-        "candidate_metrics": metrics_json(signal_metrics(&slam_candidate.samples)),
-        "control_limiter": limiter_json(slam_control.limiter),
-        "candidate_limiter": limiter_json(slam_candidate.limiter),
-        "delta": metrics_json(impact_delta),
-        "locality": {
-            "pre_roll_beats": IMPACT_POCKET_PRE_ROLL_BEATS,
-            "post_owner_beats": IMPACT_POCKET_POST_OWNER_BEATS,
-            "inside_changed_frames": inside_changed_frames,
-            "outside_delta_peak": outside_delta_peak,
-            "maximum_outside_delta_peak": MAX_IMPACT_POCKET_OUTSIDE_DELTA_PEAK,
-        },
-    }))
 }
 
 pub(super) fn write_audio_artifact(
@@ -1228,46 +1110,6 @@ fn gesture_window_sample_count(bpm: f32, beats: u32) -> usize {
 
 fn leading_window(samples: &[f32], sample_count: usize) -> &[f32] {
     &samples[..samples.len().min(sample_count)]
-}
-
-fn impact_pocket_locality(
-    control: &[f32],
-    candidate: &[f32],
-    bpm: f32,
-    start_position_beats: f64,
-    owner_beat: f64,
-) -> Result<(usize, f32), Box<dyn Error>> {
-    let channel_count = usize::from(CHANNEL_COUNT);
-    if control.len() != candidate.len() || !control.len().is_multiple_of(channel_count) {
-        return Err("impact-pocket locality buffers do not share complete frame shape".into());
-    }
-    let beats_per_frame = f64::from(bpm) / 60.0 / f64::from(SAMPLE_RATE);
-    let mut inside_changed_frames = 0;
-    let mut outside_delta_peak = 0.0_f32;
-    for (frame_index, (control_frame, candidate_frame)) in control
-        .chunks_exact(channel_count)
-        .zip(candidate.chunks_exact(channel_count))
-        .enumerate()
-    {
-        let delta_peak = control_frame
-            .iter()
-            .zip(candidate_frame)
-            .map(|(left, right)| (right - left).abs())
-            .fold(0.0_f32, f32::max);
-        if delta_peak <= f32::EPSILON {
-            continue;
-        }
-        let position_beats = start_position_beats + frame_index as f64 * beats_per_frame;
-        let relative = (position_beats - owner_beat).rem_euclid(4.0);
-        let inside = relative <= IMPACT_POCKET_POST_OWNER_BEATS
-            || relative >= 4.0 - IMPACT_POCKET_PRE_ROLL_BEATS;
-        if inside {
-            inside_changed_frames += 1;
-        } else {
-            outside_delta_peak = outside_delta_peak.max(delta_peak);
-        }
-    }
-    Ok((inside_changed_frames, outside_delta_peak))
 }
 
 fn sequence_boundary_metrics(
@@ -1477,9 +1319,8 @@ fn canonical_f32_json_number(value: f32) -> Result<Value, serde_json::Error> {
 #[cfg(test)]
 mod tests {
     use super::{
-        anchors_match, canonical_f32_json_number, impact_pocket_locality,
-        mono_waveform_correlation, relevant_window_activity_ratio, sequence_boundary_metrics,
-        waveform_is_too_similar,
+        anchors_match, canonical_f32_json_number, mono_waveform_correlation,
+        relevant_window_activity_ratio, sequence_boundary_metrics, waveform_is_too_similar,
     };
 
     #[test]
@@ -1531,27 +1372,6 @@ mod tests {
             waveform_is_too_similar(inverted_correlation, 0.99),
             "polarity inversion must not masquerade as a different gesture"
         );
-    }
-
-    #[test]
-    fn impact_pocket_locality_uses_the_absolute_transition_grid_phase() {
-        let frame_count = 96_000;
-        let control = vec![0.0; frame_count * 2];
-        let mut candidate = control.clone();
-        let absolute_downbeat_frame = 72_000;
-        candidate[absolute_downbeat_frame * 2] = 0.2;
-        candidate[absolute_downbeat_frame * 2 + 1] = 0.2;
-
-        let (inside, outside_peak) =
-            impact_pocket_locality(&control, &candidate, 120.0, 21.0, 0.0).expect("locality");
-        assert_eq!(inside, 1);
-        assert_eq!(outside_peak, 0.0);
-
-        candidate[0] = 0.1;
-        let (inside, outside_peak) = impact_pocket_locality(&control, &candidate, 120.0, 21.0, 0.0)
-            .expect("locality with leak");
-        assert_eq!(inside, 1);
-        assert!((outside_peak - 0.1).abs() < f32::EPSILON);
     }
 
     #[test]

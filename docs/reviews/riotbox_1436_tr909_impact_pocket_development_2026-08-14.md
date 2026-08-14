@@ -4,7 +4,7 @@ Date: 2026-08-14
 
 Work class: `audible_golden_path_slice`
 
-Result: `technical_pass_human_unverified`
+Result: `terminal_fail_closed`
 
 ## Research Transfer And Product Scope
 
@@ -70,7 +70,7 @@ These measurements establish correct routing, bounded contrast, and absence of
 leakage or limiter substitution. They do not establish musical quality or a
 harder perceived landing.
 
-## Human Review Boundary
+## Human Review Result
 
 The prepared full-mix A/B artifact is sample-exactly assigned as five repeats
 of the slammed control followed by five repeats of the impact-pocket candidate.
@@ -80,11 +80,20 @@ Each half is 9.210417 seconds; the complete comparison is 18.420833 seconds,
 Audible contributors in both halves are the W-30 source-derived hook, unchanged
 TR-909 support, and MC-202 instigator through the exact RuntimeMix and master
 limiter path. The source-monitor lane is absent. B differs only by the
-collision-local bed envelope. Human review must judge whether B makes the kick
-land more decisively without audible pumping, clicks, groove damage, source
-loss, or a merely quieter mix. Until that review is recorded:
+collision-local bed envelope.
 
-- `human_verdict: unverified`
+The bounded full-mix comparison produced no perceptible contrast between A and
+B. The technically verified 129.8 ms bed reduction therefore did not make the
+Slam land harder in the product context. This is a musician-facing weak result,
+not permission to increase the attenuation, window, or another frozen scalar
+after hearing the output.
+
+The mechanism closes fail-closed. Its implementation is removed from the
+product branch before merge, while the preregistered contract and negative
+evidence remain durable. No Holdout access or additional human playback is
+authorized for `tr909_impact_pocket_v1`.
+
+- `human_verdict: technically_ok_but_musically_weak`
 - `quality_proof: false`
 - `hardness_proof: false`
 - Holdout access remains unauthorized.
@@ -99,3 +108,4 @@ loss, or a merely quieter mix. Until that review is recorded:
 - Looped A control: `6628e890bd9df74f0e84fd2cb228bce0c223a639075d138b451ffdb128c0f999`
 - Looped B candidate: `ed0dac69bc818ef3b4842c49ad51b7ab23a4479047e904f9a472c6076ba32207`
 - A-then-B comparison: `4df3f75f165dd4776e2adae098045978c6b1ad66ed187213e457f2c2b1049c04`
+- Structured human verdict: `193938fe259f622789c6f37b620d7ae775bfb2283ae06592902248f3f0e7db56`

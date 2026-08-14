@@ -378,12 +378,12 @@ where
                     resample_state: &mut w30_resample_state,
                 },
             );
-            apply_source_monitor_policy_with_state_and_bed_focus(
+            apply_source_monitor_policy_with_state_and_fill_focus(
                 mix_buffer,
                 sample_rate,
                 channel_count,
                 &source_monitor_state,
-                BedFocusRenderState::from_tr909(&tr909_render_state),
+                FillFocusRenderState::from_tr909(&tr909_render_state),
                 &mut source_monitor_callback_state,
             );
             apply_master_bus_soft_limiter(mix_buffer);

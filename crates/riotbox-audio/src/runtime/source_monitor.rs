@@ -396,22 +396,22 @@ pub(super) fn apply_source_monitor_policy_with_state(
     render: &RealtimeSourceMonitorRenderState<'_>,
     callback_state: &mut SourceMonitorCallbackState,
 ) -> SourceMonitorAudioRoute {
-    apply_source_monitor_policy_with_state_and_bed_focus(
+    apply_source_monitor_policy_with_state_and_fill_focus(
         data,
         sample_rate,
         channel_count,
         render,
-        BedFocusRenderState::inactive(),
+        FillFocusRenderState::inactive(),
         callback_state,
     )
 }
 
-pub(super) fn apply_source_monitor_policy_with_state_and_bed_focus(
+pub(super) fn apply_source_monitor_policy_with_state_and_fill_focus(
     data: &mut [f32],
     sample_rate: u32,
     channel_count: usize,
     render: &RealtimeSourceMonitorRenderState<'_>,
-    bed_focus: BedFocusRenderState,
+    fill_focus: FillFocusRenderState,
     callback_state: &mut SourceMonitorCallbackState,
 ) -> SourceMonitorAudioRoute {
     let route = source_monitor_route(render.mode, render.source, sample_rate, channel_count);
@@ -475,7 +475,7 @@ pub(super) fn apply_source_monitor_policy_with_state_and_bed_focus(
         let source_position =
             playback_start_position + (frame_index as f64 * source_frames_per_output_frame);
         let source_focus_gain = if matches!(route, SourceMonitorAudioRoute::Blend) {
-            bed_focus.gain_at_frame(sample_rate, frame_index)
+            fill_focus.gain_at_frame(sample_rate, frame_index)
         } else {
             1.0
         };

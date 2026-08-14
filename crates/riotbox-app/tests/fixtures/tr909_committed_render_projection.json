@@ -107,8 +107,8 @@
     "expected_routing": "drum_bus_support",
     "expected_pattern_adoption": "mainline_drive",
     "expected_phrase_variation": "phrase_lift",
-    "expected_source_support_profile": "drop_drive",
-    "expected_source_support_context": "transport_bar",
+    "expected_source_support_profile": null,
+    "expected_source_support_context": null,
     "expected_support_accent": "off",
     "expected_takeover_profile": null
   }
