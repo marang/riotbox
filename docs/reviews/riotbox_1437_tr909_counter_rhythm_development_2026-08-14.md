@@ -1,8 +1,8 @@
 # RIOTBOX-1437 TR-909 Counter-Rhythm Development Qualification
 
-Date: 2026-08-14  
-Partition: Development only  
-Holdout access: none  
+Date: 2026-08-14
+Partition: Development only
+Holdout access: none
 Commercial-reference access: none
 
 ## v1 Frozen Result
