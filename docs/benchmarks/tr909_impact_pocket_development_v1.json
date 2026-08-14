@@ -1,0 +1,86 @@
+{
+  "schema": "riotbox.tr909_impact_pocket_development.v1",
+  "ticket": "RIOTBOX-1436",
+  "decision": "RBX-287",
+  "work_class": "audible_vertical_slice",
+  "partition": "development",
+  "mechanism": {
+    "id": "tr909_impact_pocket_v1",
+    "claim": "arrangement_impact_and_contextual_drum_punch",
+    "excluded_claim": "percussive_hard",
+    "pre_roll_beats": 0.0625,
+    "hold_after_owner_beats": 0.03125,
+    "release_beats": 0.1875,
+    "minimum_competing_bed_gain": 0.3,
+    "owner_by_profile": {
+      "drop_drive": "kick_downbeat",
+      "steady_pulse": "kick_downbeat",
+      "break_lift": "snare_backbeat"
+    }
+  },
+  "access": {
+    "directory_discovery_allowed": false,
+    "holdout_audio_allowed": false,
+    "commercial_reference_audio_allowed": false,
+    "source_hash_policy": "capture_sha256_from_the_first_authorized_exact_file_read_and_require_every_later_render_of_that_case_to_match",
+    "maximum_unique_development_files": 3
+  },
+  "cases": [
+    {
+      "case_id": "dense_beat03_130",
+      "source_family": "dense_break",
+      "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+      "bpm": 130.0,
+      "downbeat_seconds": null
+    },
+    {
+      "case_id": "tonal_rusharp_120",
+      "source_family": "tonal_riff",
+      "source_path": "data/test_audio/examples/DH_RushArp_120_A.wav",
+      "bpm": 120.0,
+      "downbeat_seconds": 0.0
+    },
+    {
+      "case_id": "sparse_kicksnr_120",
+      "source_family": "sparse_drums",
+      "source_path": "data/test_audio/examples/DH_BeatC_KickSnr_120-01.wav",
+      "bpm": 120.0,
+      "downbeat_seconds": null
+    }
+  ],
+  "technical_gate": {
+    "exact_runtime_mix": true,
+    "performer_action": "tr909.set_slam",
+    "required_mode": "break_reinforce",
+    "required_routing": "drum_bus_support",
+    "candidate_and_control_share_identical_slammed_tr909_render": true,
+    "control_disables_only_the_derived_source_support_profile": true,
+    "required_unique_source_hashes": 3,
+    "required_case_results": "all_pass",
+    "required_nonzero_local_delta": true,
+    "material_changed_samples_must_remain_inside_frozen_owner_windows": true,
+    "maximum_outside_owner_window_delta_peak": 0.000001,
+    "source_only_must_remain_sample_identical": true,
+    "maximum_pre_limiter_clip_count": 0,
+    "maximum_limited_sample_count": 0,
+    "maximum_post_limiter_clip_count": 0
+  },
+  "human_gate": {
+    "allowed_only_after_technical_gate": true,
+    "maximum_review_ready_generations": 1,
+    "questions": [
+      "Does the committed Slam land clearly harder as a beat?",
+      "Does the source hook and groove remain recognizable?",
+      "Does the pocket avoid clicks, generic pumping, thinning, and timing damage?",
+      "Is the change immediately useful as a live performer gesture?"
+    ],
+    "fail_closed_verdicts": [
+      "near_identity",
+      "different_but_not_harder",
+      "generic_pumping",
+      "audible_click",
+      "groove_damage",
+      "source_identity_loss"
+    ]
+  }
+}
