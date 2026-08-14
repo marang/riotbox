@@ -12,6 +12,8 @@ This index tracks archived Linear ticket history that has been removed from the 
   Index for August 2026 one-file-per-ticket archives.
 - [RIOTBOX-1430.md](./RIOTBOX-1430.md)
   Qualified Stage-A Development source pool, complete Matrix-v6 evidence, and the frozen negative F2 human verdict.
+- [RIOTBOX-1432.md](./RIOTBOX-1432.md)
+  Frozen three-source W-30 hook-selection comparison and fail-closed no-winner product result.
 - [RIOTBOX-1433.md](./RIOTBOX-1433.md)
   Audible-algorithm value audit and frozen product-owned W-30 hook-selection handoff to RIOTBOX-1432.
 - [RIOTBOX-1434.md](./RIOTBOX-1434.md)
