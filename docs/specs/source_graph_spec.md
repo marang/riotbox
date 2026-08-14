@@ -248,7 +248,7 @@ Rules:
   source-derived proof; consumers should expose them as unavailable or
   untrusted provenance when they are inspected
 
-### 7.5.1 W-30 hook-selection evidence
+## 7.6 W-30 Hook-Selection Evidence
 
 The Source Graph may also persist bounded per-bar `W30HookCandidateEvidence`
 produced from decoded source audio after the trusted primary or manually

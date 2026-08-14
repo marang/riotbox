@@ -49,14 +49,15 @@ was not. It therefore failed the declared cross-source control and
 `RIOTBOX-1435` was canceled before implementation. These results remain frozen
 negative evidence; they do not justify more threshold tuning.
 
-`RIOTBOX-1433` has now audited the audible algorithm portfolio and selected the
-next smaller product gap: W-30 already plays, recalls, and replays real source
-PCM, but its Golden Path does not use source evidence to choose the strongest
-hook window. `RIOTBOX-1432` is the exact next audible slice. It will compare at
-most two explainable, pre-frozen selection policies against the current
-transport-selected baseline across three registered Development sources,
-persist the winning decision in capture lineage and Session/replay, and require
-one bounded exact-live human hook comparison. The holdout remains unopened.
+`RIOTBOX-1433` audited the audible algorithm portfolio and selected W-30 hook
+choice as the next smaller product gap. `RIOTBOX-1432` then froze two
+source-blind policies, persisted their evidence and decisions through Source
+Graph and capture lineage, and ran the exact three-source RuntimeMix comparison.
+Dense and sparse failed the frozen downbeat-confidence eligibility gate; both
+policies selected the same tonal bar and produced byte-identical candidate
+output. No policy won, so `FeralBreakAlphaV2` retains the transport-selected
+baseline and no unnecessary human playback occurred. The holdout remains
+unopened.
 
 `P016`, `P021`, and `P022` remain subordinate to the active P023 product path.
 Offline renderers, scripted packs, fixture verdicts, reports, and validators
@@ -290,6 +291,8 @@ docs/
 - `reviews/riotbox_1433_audible_algorithm_value_audit_2026-08-12.md`:
   bounded retain/replace/retire audit and frozen RIOTBOX-1432 W-30 hook-choice
   handoff
+- `reviews/riotbox_1432_w30_source_hook_selection_2026-08-14.md`:
+  exact three-source W-30 comparison and fail-closed no-winner closeout
 - `engineering/textual_include_inventory_2026-06-29.md`: RIOTBOX-1321 Rust textual include inventory captured
 - `engineering/textual_include_allowlist.txt`: current manual guardrail allowlist for textual include owners/counts captured
 - `specs/source_graph_spec.md`: Source Graph v1 contract captured
