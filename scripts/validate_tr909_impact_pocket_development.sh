@@ -61,11 +61,15 @@ mark_status() {
 
 mark_session_failed() {
   local exit_code=$?
+  mark_session_failed_now
+  exit "$exit_code"
+}
+
+mark_session_failed_now() {
   if [[ -f "$access_log" ]]; then
     local tmp="$output/.access-log.tmp"
     jq '.status = "failed_closed"' "$access_log" >"$tmp" && mv "$tmp" "$access_log"
   fi
-  exit "$exit_code"
 }
 trap mark_session_failed ERR
 
@@ -75,16 +79,18 @@ while IFS=$'\t' read -r case_id source_path bpm downbeat; do
     --source "$source_path"
     --bpm "$bpm"
     --output "$output/$case_id"
+    --controlled-source-review
   )
   if [[ "$downbeat" != "null" ]]; then
     args+=(--downbeat-seconds "$downbeat")
   fi
-  manifest="$output/$case_id/gesture-manifest.json"
+  manifest="$output/$case_id/controlled-source-manifest.json"
   if ! cargo run -p riotbox-app --bin dense_break_live_path_render -- "${args[@]}"; then
     if [[ -f "$manifest" ]]; then
       content_hash="$(jq -r '.source.content_hash // "" | sub("^sha256:"; "")' "$manifest")"
       mark_status "$case_id" "opened_then_render_failed_closed" "$content_hash"
     fi
+    mark_session_failed_now
     exit 1
   fi
 
@@ -125,9 +131,9 @@ report="$output/technical-report.json"
 jq -n \
   --slurpfile contract "$contract" \
   --slurpfile access "$access_log" \
-  --slurpfile dense "$output/dense_beat03_130/gesture-manifest.json" \
-  --slurpfile tonal "$output/tonal_rusharp_120/gesture-manifest.json" \
-  --slurpfile sparse "$output/sparse_kicksnr_120/gesture-manifest.json" \
+  --slurpfile dense "$output/dense_beat03_130/controlled-source-manifest.json" \
+  --slurpfile tonal "$output/tonal_rusharp_120/controlled-source-manifest.json" \
+  --slurpfile sparse "$output/sparse_kicksnr_120/controlled-source-manifest.json" \
   '{
     schema: "riotbox.tr909_impact_pocket_development_result.v1",
     ticket: "RIOTBOX-1436",

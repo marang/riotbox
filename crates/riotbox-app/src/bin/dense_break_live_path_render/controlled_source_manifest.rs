@@ -14,7 +14,7 @@ use riotbox_core::{
 use serde_json::{Value, json};
 
 use crate::{
-    manifest::{gate_exact_mix_limiter, limiter_json, metrics_json},
+    manifest::{gate_exact_mix_limiter, limiter_json, metrics_json, write_impact_pocket_proof},
     model::{CHANNEL_COUNT, PreparedLivePath, RenderedLivePath, SAMPLE_RATE},
 };
 
@@ -181,6 +181,14 @@ pub fn write_pack(
         failures.push("controlled 1404 sources unexpectedly assigned bass ownership".into());
     }
 
+    let impact_pocket_manifest = write_impact_pocket_proof(
+        &prepared,
+        &rendered,
+        output_dir,
+        &mut artifacts,
+        &mut failures,
+    )?;
+
     let trigger_action_id = prepared
         .stages
         .iter()
@@ -295,6 +303,7 @@ pub fn write_pack(
             "min_destructive_delta_rms": MIN_DESTRUCTIVE_DELTA_RMS,
             "max_exact_mix_limited_sample_count": 0,
         },
+        "tr909_impact_pocket_proof": impact_pocket_manifest,
         "artifacts": artifacts,
         "failures": failures,
     });

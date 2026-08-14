@@ -527,102 +527,13 @@ pub fn write_pack(
         }));
     }
 
-    let slam_transition_index = prepared
-        .transitions
-        .iter()
-        .position(|transition| transition.command == ActionCommand::Tr909SetSlam)
-        .ok_or("live sequence did not contain a Slam impact-pocket proof")?;
-    let slam_transition = &prepared.transitions[slam_transition_index];
-    let slam_candidate = &rendered.transition_outputs[slam_transition_index].after;
-    let slam_control = &rendered.impact_pocket_control;
-    let impact_profile = slam_transition
-        .after
-        .tr909_render
-        .source_support_profile
-        .ok_or("Slam impact-pocket candidate omitted source-support ownership")?;
-    let (impact_owner, owner_beat) = match impact_profile {
-        Tr909SourceSupportProfile::BreakLift => ("snare_backbeat", 2.0),
-        Tr909SourceSupportProfile::DropDrive | Tr909SourceSupportProfile::SteadyPulse => {
-            ("kick_downbeat", 0.0)
-        }
-    };
-    let impact_control_path = "gestures/impact_pocket/01_slammed_control.wav";
-    let impact_candidate_path = "gestures/impact_pocket/02_impact_pocket_v1.wav";
-    write_audio_artifact(
+    let impact_pocket_manifest = write_impact_pocket_proof(
+        &prepared,
+        &rendered,
         output_dir,
-        impact_control_path,
-        "tr909-impact-pocket-control",
-        "slammed_control",
-        &slam_control.samples,
         &mut artifacts,
-    )?;
-    write_audio_artifact(
-        output_dir,
-        impact_candidate_path,
-        "tr909-impact-pocket-v1",
-        "candidate",
-        &slam_candidate.samples,
-        &mut artifacts,
-    )?;
-    gate_exact_mix_limiter(
-        "tr909-impact-pocket-control",
-        "slammed_control",
-        &slam_control.limiter,
         &mut failures,
-    );
-    gate_exact_mix_limiter(
-        "tr909-impact-pocket-v1",
-        "candidate",
-        &slam_candidate.limiter,
-        &mut failures,
-    );
-    let impact_delta = signal_delta_metrics(&slam_control.samples, &slam_candidate.samples);
-    let (inside_changed_frames, outside_delta_peak) = impact_pocket_locality(
-        &slam_control.samples,
-        &slam_candidate.samples,
-        bpm,
-        slam_transition.after.transport.position_beats,
-        owner_beat,
     )?;
-    if impact_delta.active_samples == 0 || inside_changed_frames == 0 {
-        failures.push("TR-909 impact pocket produced no local exact-mix change".into());
-    }
-    if outside_delta_peak > MAX_IMPACT_POCKET_OUTSIDE_DELTA_PEAK {
-        failures.push(format!(
-            "TR-909 impact pocket leaked materially outside the frozen owner windows: peak {outside_delta_peak:.9}"
-        ));
-    }
-    let impact_pocket_manifest = json!({
-        "schema": "riotbox.tr909_impact_pocket_proof.v1",
-        "decision": "RBX-287",
-        "mechanism": "tr909_impact_pocket_v1",
-        "claim": "arrangement_impact_and_contextual_drum_punch",
-        "excluded_claim": "percussive_hard",
-        "performer_action": ActionCommand::Tr909SetSlam.as_str(),
-        "action_id": slam_transition.action_id,
-        "mode": slam_transition.after.tr909_render.mode.label(),
-        "routing": slam_transition.after.tr909_render.routing.label(),
-        "source_support_profile": impact_profile.label(),
-        "impact_owner": impact_owner,
-        "owner_beat": owner_beat,
-        "render_start_position_beats": slam_transition.after.transport.position_beats,
-        "control_disables_only_source_support_profile_and_context": true,
-        "slammed_tr909_render_is_identical": true,
-        "control_artifact": impact_control_path,
-        "candidate_artifact": impact_candidate_path,
-        "control_metrics": metrics_json(signal_metrics(&slam_control.samples)),
-        "candidate_metrics": metrics_json(signal_metrics(&slam_candidate.samples)),
-        "control_limiter": limiter_json(slam_control.limiter),
-        "candidate_limiter": limiter_json(slam_candidate.limiter),
-        "delta": metrics_json(impact_delta),
-        "locality": {
-            "pre_roll_beats": IMPACT_POCKET_PRE_ROLL_BEATS,
-            "post_owner_beats": IMPACT_POCKET_POST_OWNER_BEATS,
-            "inside_changed_frames": inside_changed_frames,
-            "outside_delta_peak": outside_delta_peak,
-            "maximum_outside_delta_peak": MAX_IMPACT_POCKET_OUTSIDE_DELTA_PEAK,
-        },
-    });
 
     for (path, case_id, role, samples) in [
         (
@@ -1063,6 +974,111 @@ fn all_render_plans_match_bpm(prepared: &PreparedLivePath, expected_bpm: f32) ->
         })
         && matches(prepared.normal_plan.transport.tempo_bpm)
         && matches(prepared.damaged_plan.transport.tempo_bpm)
+}
+
+pub(super) fn write_impact_pocket_proof(
+    prepared: &PreparedLivePath,
+    rendered: &RenderedLivePath,
+    output_dir: &Path,
+    artifacts: &mut Vec<Value>,
+    failures: &mut Vec<String>,
+) -> Result<Value, Box<dyn Error>> {
+    let slam_transition_index = prepared
+        .transitions
+        .iter()
+        .position(|transition| transition.command == ActionCommand::Tr909SetSlam)
+        .ok_or("live sequence did not contain a Slam impact-pocket proof")?;
+    let slam_transition = &prepared.transitions[slam_transition_index];
+    let slam_candidate = &rendered.transition_outputs[slam_transition_index].after;
+    let slam_control = &rendered.impact_pocket_control;
+    let impact_profile = slam_transition
+        .after
+        .tr909_render
+        .source_support_profile
+        .ok_or("Slam impact-pocket candidate omitted source-support ownership")?;
+    let (impact_owner, owner_beat) = match impact_profile {
+        Tr909SourceSupportProfile::BreakLift => ("snare_backbeat", 2.0),
+        Tr909SourceSupportProfile::DropDrive | Tr909SourceSupportProfile::SteadyPulse => {
+            ("kick_downbeat", 0.0)
+        }
+    };
+    let impact_control_path = "gestures/impact_pocket/01_slammed_control.wav";
+    let impact_candidate_path = "gestures/impact_pocket/02_impact_pocket_v1.wav";
+    write_audio_artifact(
+        output_dir,
+        impact_control_path,
+        "tr909-impact-pocket-control",
+        "slammed_control",
+        &slam_control.samples,
+        artifacts,
+    )?;
+    write_audio_artifact(
+        output_dir,
+        impact_candidate_path,
+        "tr909-impact-pocket-v1",
+        "candidate",
+        &slam_candidate.samples,
+        artifacts,
+    )?;
+    gate_exact_mix_limiter(
+        "tr909-impact-pocket-control",
+        "slammed_control",
+        &slam_control.limiter,
+        failures,
+    );
+    gate_exact_mix_limiter(
+        "tr909-impact-pocket-v1",
+        "candidate",
+        &slam_candidate.limiter,
+        failures,
+    );
+    let impact_delta = signal_delta_metrics(&slam_control.samples, &slam_candidate.samples);
+    let (inside_changed_frames, outside_delta_peak) = impact_pocket_locality(
+        &slam_control.samples,
+        &slam_candidate.samples,
+        prepared.source_timing.bpm,
+        slam_transition.after.transport.position_beats,
+        owner_beat,
+    )?;
+    if impact_delta.active_samples == 0 || inside_changed_frames == 0 {
+        failures.push("TR-909 impact pocket produced no local exact-mix change".into());
+    }
+    if outside_delta_peak > MAX_IMPACT_POCKET_OUTSIDE_DELTA_PEAK {
+        failures.push(format!(
+            "TR-909 impact pocket leaked materially outside the frozen owner windows: peak {outside_delta_peak:.9}"
+        ));
+    }
+    Ok(json!({
+        "schema": "riotbox.tr909_impact_pocket_proof.v1",
+        "decision": "RBX-287",
+        "mechanism": "tr909_impact_pocket_v1",
+        "claim": "arrangement_impact_and_contextual_drum_punch",
+        "excluded_claim": "percussive_hard",
+        "performer_action": ActionCommand::Tr909SetSlam.as_str(),
+        "action_id": slam_transition.action_id,
+        "mode": slam_transition.after.tr909_render.mode.label(),
+        "routing": slam_transition.after.tr909_render.routing.label(),
+        "source_support_profile": impact_profile.label(),
+        "impact_owner": impact_owner,
+        "owner_beat": owner_beat,
+        "render_start_position_beats": slam_transition.after.transport.position_beats,
+        "control_disables_only_source_support_profile_and_context": true,
+        "slammed_tr909_render_is_identical": true,
+        "control_artifact": impact_control_path,
+        "candidate_artifact": impact_candidate_path,
+        "control_metrics": metrics_json(signal_metrics(&slam_control.samples)),
+        "candidate_metrics": metrics_json(signal_metrics(&slam_candidate.samples)),
+        "control_limiter": limiter_json(slam_control.limiter),
+        "candidate_limiter": limiter_json(slam_candidate.limiter),
+        "delta": metrics_json(impact_delta),
+        "locality": {
+            "pre_roll_beats": IMPACT_POCKET_PRE_ROLL_BEATS,
+            "post_owner_beats": IMPACT_POCKET_POST_OWNER_BEATS,
+            "inside_changed_frames": inside_changed_frames,
+            "outside_delta_peak": outside_delta_peak,
+            "maximum_outside_delta_peak": MAX_IMPACT_POCKET_OUTSIDE_DELTA_PEAK,
+        },
+    }))
 }
 
 pub(super) fn write_audio_artifact(
