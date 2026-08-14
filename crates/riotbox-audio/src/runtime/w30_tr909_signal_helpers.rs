@@ -436,12 +436,12 @@ pub(super) fn tr909_voice_balance(
     }
     match counter_rhythm_slot(render, subdivision, step_in_bar) {
         Tr909CounterRhythmSlot::Accent => {
-            balance.snare *= 1.5;
-            balance.hat *= 1.5;
+            balance.snare *= 2.0;
+            balance.hat *= 2.0;
         }
         Tr909CounterRhythmSlot::Donor => {
-            balance.snare *= 0.5;
-            balance.hat *= 0.5;
+            balance.snare = 0.0;
+            balance.hat = 0.0;
         }
         Tr909CounterRhythmSlot::Neutral => {}
     }

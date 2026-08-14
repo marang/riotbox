@@ -192,7 +192,7 @@ fn counter_rhythm_reweights_only_two_snare_hat_pairs_and_preserves_anchors_and_k
 
     changed_multipliers.sort_by(f32::total_cmp);
     phase_control_multipliers.sort_by(f32::total_cmp);
-    assert_eq!(changed_multipliers, vec![0.5, 0.5, 1.5, 1.5]);
+    assert_eq!(changed_multipliers, vec![0.0, 0.0, 2.0, 2.0]);
     assert_eq!(phase_control_multipliers, changed_multipliers);
     assert_eq!(changed_multipliers.iter().sum::<f32>(), 4.0);
 
