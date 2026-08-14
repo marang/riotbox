@@ -43,7 +43,24 @@ fn committed_tr909_fill_and_reinforce_write_log_results() {
 
 #[test]
 fn fill_owns_only_its_commit_bar_then_slam_articulates_break_reinforcement() {
-    let graph = sample_graph();
+    let mut graph = sample_graph();
+    graph.phrase_audio_features.push(PhraseAudioFeatures {
+        phrase_index: 2,
+        start_seconds: 8.0,
+        end_seconds: 16.0,
+        start_bar: 5,
+        end_bar: 8,
+        low_band_rms: 0.1,
+        low_mid_ratio: 0.4,
+        low_band_movement: 0.2,
+        transient_density: 0.60,
+        offbeat_onset_density: 0.55,
+        spectral_roughness: 0.3,
+        spectral_brightness: 0.4,
+        hook_restraint_hint: 0.2,
+        confidence: 0.80,
+        provenance_refs: vec!["provider:synthetic-counter-rhythm-test".into()],
+    });
     let mut session = sample_session(&graph);
     session.runtime_state.lane_state.tr909.reinforcement_mode =
         Some(Tr909ReinforcementModeState::BreakReinforce);
@@ -111,6 +128,14 @@ fn fill_owns_only_its_commit_bar_then_slam_articulates_break_reinforcement() {
     );
     assert!(state.runtime.tr909_render.slam_enabled);
     assert!(state.runtime.tr909_render.slam_intensity >= 0.85);
+    assert_eq!(
+        state.runtime.tr909_render.counter_rhythm,
+        Some(Tr909CounterRhythm::LateSixteenthPickup)
+    );
+    assert_eq!(
+        state.runtime_view.tr909_render_counter_rhythm,
+        "late_sixteenth_pickup"
+    );
 }
 
 #[test]

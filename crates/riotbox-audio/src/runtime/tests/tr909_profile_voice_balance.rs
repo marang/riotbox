@@ -133,6 +133,126 @@ fn tr909_source_support_state(
     }
 }
 
+fn counter_rhythm_realtime_state(
+    counter_rhythm: Option<Tr909CounterRhythm>,
+) -> RealtimeTr909RenderState {
+    SharedTr909RenderState::new(&Tr909RenderState {
+        mode: Tr909RenderMode::BreakReinforce,
+        routing: Tr909RenderRouting::DrumBusSupport,
+        pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
+        phrase_variation: Some(Tr909PhraseVariation::PhraseDrive),
+        counter_rhythm,
+        counter_rhythm_phase: Tr909CounterRhythmPhase::SourceSupported,
+        drum_bus_level: 0.80,
+        slam_enabled: true,
+        slam_intensity: 0.85,
+        is_transport_running: true,
+        tempo_bpm: 128.0,
+        position_beats: 0.0,
+        ..Tr909RenderState::default()
+    })
+    .snapshot()
+}
+
+#[test]
+fn counter_rhythm_reweights_only_two_snare_hat_pairs_and_preserves_anchors_and_kick() {
+    let control = counter_rhythm_realtime_state(None);
+    let candidate = counter_rhythm_realtime_state(Some(Tr909CounterRhythm::EighthAnswer));
+    let phase_control = RealtimeTr909RenderState {
+        counter_rhythm_phase: Tr909CounterRhythmPhase::PhaseControl,
+        ..candidate
+    };
+    let subdivision = i64::from(render_subdivision(&candidate));
+    assert_eq!(subdivision, 4);
+
+    let mut changed_multipliers = Vec::new();
+    let mut phase_control_multipliers = Vec::new();
+    for step in 0..subdivision * 4 {
+        let control_balance = tr909_voice_balance(&control, step);
+        let candidate_balance = tr909_voice_balance(&candidate, step);
+        let phase_control_balance = tr909_voice_balance(&phase_control, step);
+        assert_eq!(candidate_balance.kick, control_balance.kick, "step {step}");
+        assert_eq!(phase_control_balance.kick, control_balance.kick, "step {step}");
+
+        if candidate_balance.snare != control_balance.snare {
+            let snare_multiplier = candidate_balance.snare / control_balance.snare;
+            let hat_multiplier = candidate_balance.hat / control_balance.hat;
+            assert!((snare_multiplier - hat_multiplier).abs() < 1.0e-6);
+            changed_multipliers.push(snare_multiplier);
+        } else {
+            assert_eq!(candidate_balance.hat, control_balance.hat, "step {step}");
+        }
+        if phase_control_balance.snare != control_balance.snare {
+            phase_control_multipliers
+                .push(phase_control_balance.snare / control_balance.snare);
+        } else {
+            assert_eq!(phase_control_balance.hat, control_balance.hat, "step {step}");
+        }
+    }
+
+    changed_multipliers.sort_by(f32::total_cmp);
+    phase_control_multipliers.sort_by(f32::total_cmp);
+    assert_eq!(changed_multipliers, vec![0.5, 0.5, 1.5, 1.5]);
+    assert_eq!(phase_control_multipliers, changed_multipliers);
+    assert_eq!(changed_multipliers.iter().sum::<f32>(), 4.0);
+
+    for anchor in [0, subdivision * 2] {
+        assert_eq!(
+            tr909_voice_balance(&candidate, anchor),
+            tr909_voice_balance(&control, anchor)
+        );
+        assert_eq!(
+            tr909_voice_balance(&phase_control, anchor),
+            tr909_voice_balance(&control, anchor)
+        );
+    }
+}
+
+#[test]
+fn frozen_counter_rhythm_families_move_distinct_slots_and_are_audible_offline() {
+    let eighth = counter_rhythm_realtime_state(Some(Tr909CounterRhythm::EighthAnswer));
+    let late = counter_rhythm_realtime_state(Some(Tr909CounterRhythm::LateSixteenthPickup));
+    let subdivision = i64::from(render_subdivision(&eighth));
+
+    let eighth_accent = tr909_voice_balance(&eighth, subdivision / 2);
+    let late_same_slot = tr909_voice_balance(&late, subdivision / 2);
+    assert!(eighth_accent.snare > late_same_slot.snare * 1.4);
+
+    let candidate_audio = render_tr909_offline(&Tr909RenderState {
+        counter_rhythm: Some(Tr909CounterRhythm::EighthAnswer),
+        ..Tr909RenderState {
+            mode: Tr909RenderMode::BreakReinforce,
+            routing: Tr909RenderRouting::DrumBusSupport,
+            pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
+            phrase_variation: Some(Tr909PhraseVariation::PhraseDrive),
+            drum_bus_level: 0.80,
+            slam_enabled: true,
+            slam_intensity: 0.85,
+            is_transport_running: true,
+            tempo_bpm: 128.0,
+            ..Tr909RenderState::default()
+        }
+    }, 48_000, 2, 96_000);
+    let phase_control_audio = render_tr909_offline(&Tr909RenderState {
+        counter_rhythm: Some(Tr909CounterRhythm::EighthAnswer),
+        counter_rhythm_phase: Tr909CounterRhythmPhase::PhaseControl,
+        ..Tr909RenderState {
+            mode: Tr909RenderMode::BreakReinforce,
+            routing: Tr909RenderRouting::DrumBusSupport,
+            pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
+            phrase_variation: Some(Tr909PhraseVariation::PhraseDrive),
+            drum_bus_level: 0.80,
+            slam_enabled: true,
+            slam_intensity: 0.85,
+            is_transport_running: true,
+            tempo_bpm: 128.0,
+            ..Tr909RenderState::default()
+        }
+    }, 48_000, 2, 96_000);
+
+    assert!(signal_delta_metrics(&candidate_audio, &phase_control_audio).rms > 0.01);
+}
+
 fn tr909_low_band_rms(samples: &[f32], sample_rate: u32, channel_count: usize) -> f32 {
     signal_metrics(&tr909_one_pole_lowpass(
         samples,

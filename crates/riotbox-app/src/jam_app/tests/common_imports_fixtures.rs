@@ -16,8 +16,9 @@ use riotbox_audio::{
     },
     source_audio::SourceAudioCache,
     tr909::{
-        Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
-        Tr909SourceSupportContext, Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
+        Tr909CounterRhythm, Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode,
+        Tr909RenderRouting, Tr909SourceSupportContext, Tr909SourceSupportProfile,
+        Tr909TakeoverRenderProfile,
     },
     w30::{
         W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN, W30_PREVIEW_SAMPLE_WINDOW_LEN,

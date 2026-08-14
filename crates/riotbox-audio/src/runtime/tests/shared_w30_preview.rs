@@ -7,6 +7,8 @@ fn shared_render_state_tracks_updates() {
         source_support_profile: None,
         pattern_adoption: None,
         phrase_variation: None,
+        counter_rhythm: None,
+        counter_rhythm_phase: Tr909CounterRhythmPhase::SourceSupported,
         takeover_profile: Some(Tr909TakeoverRenderProfile::ControlledPhrase),
         drum_bus_level: 0.8,
         slam_intensity: 0.9,
@@ -36,6 +38,7 @@ fn shared_render_state_tracks_updates() {
     state.source_support_context = Some(Tr909SourceSupportContext::SceneTarget);
     state.pattern_adoption = Some(Tr909PatternAdoption::MainlineDrive);
     state.phrase_variation = Some(Tr909PhraseVariation::PhraseDrive);
+    state.counter_rhythm = Some(Tr909CounterRhythm::LateSixteenthPickup);
     state.takeover_profile = None;
     shared.update(&state);
 
@@ -57,6 +60,10 @@ fn shared_render_state_tracks_updates() {
     assert_eq!(
         updated.phrase_variation,
         Some(Tr909PhraseVariation::PhraseDrive)
+    );
+    assert_eq!(
+        updated.counter_rhythm,
+        Some(Tr909CounterRhythm::LateSixteenthPickup)
     );
 
     state.source_support_context = Some(Tr909SourceSupportContext::TransportBar);
@@ -294,6 +301,8 @@ fn render_buffer_stays_silent_when_idle() {
             source_support_context: None,
             pattern_adoption: None,
             phrase_variation: None,
+            counter_rhythm: None,
+            counter_rhythm_phase: Tr909CounterRhythmPhase::SourceSupported,
             takeover_profile: None,
             drum_bus_level: 0.8,
             slam_enabled: false,

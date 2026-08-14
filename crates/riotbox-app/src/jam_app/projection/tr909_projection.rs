@@ -7,9 +7,9 @@ use riotbox_audio::{
     },
     source_audio::{SourceAudioCache, SourceAudioWindow},
     tr909::{
-        Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
-        Tr909RenderState, Tr909SourceSupportContext, Tr909SourceSupportProfile,
-        Tr909TakeoverRenderProfile,
+        Tr909CounterRhythm, Tr909CounterRhythmPhase, Tr909PatternAdoption, Tr909PhraseVariation,
+        Tr909RenderMode, Tr909RenderRouting, Tr909RenderState, Tr909SourceSupportContext,
+        Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
     },
     w30::{
         W30_PAD_CHOP_SLICE_COUNT, W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN,
@@ -38,9 +38,10 @@ use riotbox_core::{
         section_for_transport_bar,
     },
     tr909_policy::{
-        Tr909PatternAdoptionPolicy, Tr909PhraseVariationPolicy, Tr909RenderModePolicy,
-        Tr909RenderRoutingPolicy, Tr909SourceSupportContextPolicy, Tr909SourceSupportProfilePolicy,
-        Tr909TakeoverRenderProfilePolicy, derive_tr909_render_policy_with_scene_context,
+        Tr909CounterRhythmPolicy, Tr909PatternAdoptionPolicy, Tr909PhraseVariationPolicy,
+        Tr909RenderModePolicy, Tr909RenderRoutingPolicy, Tr909SourceSupportContextPolicy,
+        Tr909SourceSupportProfilePolicy, Tr909TakeoverRenderProfilePolicy,
+        derive_tr909_render_policy_with_scene_context,
     },
     transport::TransportClockState,
 };
@@ -118,6 +119,17 @@ fn audio_tr909_phrase_variation(
     })
 }
 
+fn audio_tr909_counter_rhythm(
+    counter_rhythm: Option<Tr909CounterRhythmPolicy>,
+) -> Option<Tr909CounterRhythm> {
+    counter_rhythm.map(|counter_rhythm| match counter_rhythm {
+        Tr909CounterRhythmPolicy::EighthAnswer => Tr909CounterRhythm::EighthAnswer,
+        Tr909CounterRhythmPolicy::LateSixteenthPickup => {
+            Tr909CounterRhythm::LateSixteenthPickup
+        }
+    })
+}
+
 pub(super) fn build_tr909_render_state(
     session: &SessionFile,
     transport: &TransportClockState,
@@ -159,6 +171,11 @@ pub(super) fn build_tr909_render_state(
             .and_then(|policy| policy.tr909_phrase_variation)
     })
     .flatten();
+    let resolved_pattern_adoption = character_pattern_adoption.or(policy.pattern_adoption);
+    let counter_rhythm = (resolved_pattern_adoption
+        == Some(Tr909PatternAdoptionPolicy::MainlineDrive))
+    .then(|| audio_tr909_counter_rhythm(policy.counter_rhythm))
+    .flatten();
 
     Tr909RenderState {
         mode: audio_tr909_render_mode(policy.mode),
@@ -166,13 +183,13 @@ pub(super) fn build_tr909_render_state(
         source_support_profile: audio_tr909_source_support_profile(policy.source_support_profile),
         source_support_context: audio_tr909_source_support_context(policy.source_support_context),
         pattern_ref: tr909.pattern_ref.clone(),
-        pattern_adoption: audio_tr909_pattern_adoption(
-            character_pattern_adoption.or(policy.pattern_adoption),
-        ),
+        pattern_adoption: audio_tr909_pattern_adoption(resolved_pattern_adoption),
         phrase_variation: scene_movement_tr909_variation(session)
             .or_else(|| preset_tr909_fill_variation(session, policy.mode))
             .or_else(|| audio_tr909_phrase_variation(character_phrase_variation))
             .or_else(|| audio_tr909_phrase_variation(policy.phrase_variation)),
+        counter_rhythm,
+        counter_rhythm_phase: Tr909CounterRhythmPhase::SourceSupported,
         takeover_profile: audio_tr909_takeover_profile(policy.takeover_profile),
         drum_bus_level: live_policy
             .as_ref()

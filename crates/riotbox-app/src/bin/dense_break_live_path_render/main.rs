@@ -1,6 +1,7 @@
 mod alpha_arc;
 mod alpha_manifest;
 mod controlled_source_manifest;
+mod counter_rhythm_qualification;
 mod live_flow;
 mod manifest;
 mod model;
@@ -18,6 +19,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli_bpm_hint = required_bpm(&args)?;
     let cli_downbeat_seconds = optional_non_negative_f32(&args, "--downbeat-seconds")?;
     let controlled_source_review = args.iter().any(|arg| arg == "--controlled-source-review");
+    let counter_rhythm_qualification = args
+        .iter()
+        .any(|arg| arg == "--counter-rhythm-qualification");
+    let write_counter_rhythm_wavs = args.iter().any(|arg| arg == "--write-counter-rhythm-wavs");
     for directory in [
         "stems",
         "monitor",
@@ -35,6 +40,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         cli_bpm_hint,
         cli_downbeat_seconds,
     )?;
+    if counter_rhythm_qualification {
+        return counter_rhythm_qualification::write_case(
+            prepared,
+            &output_dir,
+            write_counter_rhythm_wavs,
+        );
+    }
     let rendered = rendering::render_live_path(&prepared)?;
     if controlled_source_review {
         controlled_source_manifest::write_pack(prepared, rendered, &source_path, &output_dir)

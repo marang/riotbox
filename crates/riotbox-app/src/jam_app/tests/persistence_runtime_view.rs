@@ -412,6 +412,7 @@ fn runtime_view_surfaces_tr909_render_diagnostics() {
         state.runtime_view.tr909_render_phrase_variation,
         "phrase_lift"
     );
+    assert_eq!(state.runtime_view.tr909_render_counter_rhythm, "unset");
     assert_eq!(
         state.runtime_view.tr909_render_mix_summary,
         "drum bus 0.00 | slam 0.91"

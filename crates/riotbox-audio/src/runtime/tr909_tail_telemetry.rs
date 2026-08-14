@@ -149,6 +149,36 @@ pub(super) const fn phrase_variation_from_u32(value: u32) -> Option<Tr909PhraseV
     }
 }
 
+pub(super) const fn counter_rhythm_to_u32(counter_rhythm: Option<Tr909CounterRhythm>) -> u32 {
+    match counter_rhythm {
+        None => 0,
+        Some(Tr909CounterRhythm::EighthAnswer) => 1,
+        Some(Tr909CounterRhythm::LateSixteenthPickup) => 2,
+    }
+}
+
+pub(super) const fn counter_rhythm_from_u32(value: u32) -> Option<Tr909CounterRhythm> {
+    match value {
+        1 => Some(Tr909CounterRhythm::EighthAnswer),
+        2 => Some(Tr909CounterRhythm::LateSixteenthPickup),
+        _ => None,
+    }
+}
+
+pub(super) const fn counter_rhythm_phase_to_u32(phase: Tr909CounterRhythmPhase) -> u32 {
+    match phase {
+        Tr909CounterRhythmPhase::SourceSupported => 0,
+        Tr909CounterRhythmPhase::PhaseControl => 1,
+    }
+}
+
+pub(super) const fn counter_rhythm_phase_from_u32(value: u32) -> Tr909CounterRhythmPhase {
+    match value {
+        1 => Tr909CounterRhythmPhase::PhaseControl,
+        _ => Tr909CounterRhythmPhase::SourceSupported,
+    }
+}
+
 pub(super) const fn takeover_profile_to_u32(profile: Option<Tr909TakeoverRenderProfile>) -> u32 {
     match profile {
         None => 0,

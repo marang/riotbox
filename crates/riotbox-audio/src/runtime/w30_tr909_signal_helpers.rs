@@ -260,13 +260,65 @@ pub(super) fn tr909_step_waveform(render: &RealtimeTr909RenderState, step: i64, 
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-struct Tr909VoiceBalance {
-    kick: f32,
-    snare: f32,
-    hat: f32,
+pub(super) struct Tr909VoiceBalance {
+    pub(super) kick: f32,
+    pub(super) snare: f32,
+    pub(super) hat: f32,
 }
 
-fn tr909_voice_balance(render: &RealtimeTr909RenderState, step: i64) -> Tr909VoiceBalance {
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Tr909CounterRhythmSlot {
+    Accent,
+    Donor,
+    Neutral,
+}
+
+fn counter_rhythm_slot(
+    render: &RealtimeTr909RenderState,
+    subdivision: i64,
+    step_in_bar: i64,
+) -> Tr909CounterRhythmSlot {
+    if !render.is_transport_running
+        || !render.slam_enabled
+        || render.mode != Tr909RenderMode::BreakReinforce
+        || render.routing != Tr909RenderRouting::DrumBusSupport
+        || render.pattern_adoption != Some(Tr909PatternAdoption::MainlineDrive)
+        || subdivision < 2
+    {
+        return Tr909CounterRhythmSlot::Neutral;
+    }
+
+    let (mut accent, mut donor) = match render.counter_rhythm {
+        Some(Tr909CounterRhythm::EighthAnswer) => (
+            [subdivision / 2, 2 * subdivision + subdivision / 2],
+            [
+                subdivision + subdivision / 2,
+                3 * subdivision + subdivision / 2,
+            ],
+        ),
+        Some(Tr909CounterRhythm::LateSixteenthPickup) => (
+            [2 * subdivision - 1, 4 * subdivision - 1],
+            [subdivision - 1, 3 * subdivision - 1],
+        ),
+        None => return Tr909CounterRhythmSlot::Neutral,
+    };
+    if render.counter_rhythm_phase == Tr909CounterRhythmPhase::PhaseControl {
+        std::mem::swap(&mut accent, &mut donor);
+    }
+
+    if accent.contains(&step_in_bar) {
+        Tr909CounterRhythmSlot::Accent
+    } else if donor.contains(&step_in_bar) {
+        Tr909CounterRhythmSlot::Donor
+    } else {
+        Tr909CounterRhythmSlot::Neutral
+    }
+}
+
+pub(super) fn tr909_voice_balance(
+    render: &RealtimeTr909RenderState,
+    step: i64,
+) -> Tr909VoiceBalance {
     let subdivision = i64::from(render_subdivision(render)).max(1);
     let bar_steps = subdivision * 4;
     let step_in_bar = step.rem_euclid(bar_steps);
@@ -381,6 +433,17 @@ fn tr909_voice_balance(render: &RealtimeTr909RenderState, step: i64) -> Tr909Voi
         balance.kick *= scale;
         balance.snare *= scale;
         balance.hat *= scale;
+    }
+    match counter_rhythm_slot(render, subdivision, step_in_bar) {
+        Tr909CounterRhythmSlot::Accent => {
+            balance.snare *= 1.5;
+            balance.hat *= 1.5;
+        }
+        Tr909CounterRhythmSlot::Donor => {
+            balance.snare *= 0.5;
+            balance.hat *= 0.5;
+        }
+        Tr909CounterRhythmSlot::Neutral => {}
     }
     if matches!(render.mode, Tr909RenderMode::Fill) && step_in_bar >= subdivision * 3 {
         balance.kick *= 1.12;

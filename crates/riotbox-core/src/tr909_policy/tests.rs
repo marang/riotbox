@@ -7,8 +7,8 @@ mod tests {
         session::{Tr909LaneState, Tr909ReinforcementModeState, Tr909TakeoverProfileState},
         source_graph::{
             Asset, AssetType, Candidate, CandidateType, DecodeProfile, EnergyClass,
-            GraphProvenance, QualityClass, Relationship, RelationshipType, Section,
-            SectionLabelHint, SourceDescriptor, SourceGraph,
+            GraphProvenance, PhraseAudioFeatures, QualityClass, Relationship, RelationshipType,
+            Section, SectionLabelHint, SourceDescriptor, SourceGraph,
         },
         transport::{
             DEFAULT_BARS_PER_PHRASE, DEFAULT_BEATS_PER_BAR, TransportClockState,
@@ -145,6 +145,44 @@ mod tests {
             bar_index: grid_position.bar_index,
             phrase_index: grid_position.phrase_index,
             current_scene: Some(SceneId::from("scene-1")),
+        }
+    }
+
+    fn counter_rhythm_graph(
+        transient_density: f32,
+        offbeat_onset_density: f32,
+        confidence: f32,
+    ) -> SourceGraph {
+        let mut graph = sample_graph();
+        graph.phrase_audio_features.push(PhraseAudioFeatures {
+            phrase_index: 1,
+            start_seconds: 0.0,
+            end_seconds: 8.0,
+            start_bar: 1,
+            end_bar: 4,
+            low_band_rms: 0.1,
+            low_mid_ratio: 0.4,
+            low_band_movement: 0.2,
+            transient_density,
+            offbeat_onset_density,
+            spectral_roughness: 0.3,
+            spectral_brightness: 0.4,
+            hook_restraint_hint: 0.2,
+            confidence,
+            provenance_refs: vec!["provider:synthetic-counter-rhythm-test".into()],
+        });
+        graph
+    }
+
+    fn break_reinforce_slam_lane() -> Tr909LaneState {
+        Tr909LaneState {
+            pattern_ref: Some("mainline-counter-rhythm".into()),
+            takeover_enabled: false,
+            takeover_profile: None,
+            slam_enabled: true,
+            fill_armed_next_bar: false,
+            last_fill_bar: None,
+            reinforcement_mode: Some(Tr909ReinforcementModeState::BreakReinforce),
         }
     }
 
@@ -400,6 +438,112 @@ mod tests {
         assert_eq!(
             feral_policy.phrase_variation,
             Some(Tr909PhraseVariationPolicy::PhraseLift)
+        );
+    }
+
+    #[test]
+    fn slam_selects_frozen_counter_rhythm_from_trusted_current_phrase() {
+        let lane = break_reinforce_slam_lane();
+        let eighth = derive_tr909_render_policy(
+            &lane,
+            &transport_state(0.0),
+            Some(&counter_rhythm_graph(0.25, 0.25, 0.35)),
+        );
+        let late = derive_tr909_render_policy(
+            &lane,
+            &transport_state(0.0),
+            Some(&counter_rhythm_graph(0.60, 0.55, 0.80)),
+        );
+
+        assert_eq!(
+            eighth.counter_rhythm,
+            Some(Tr909CounterRhythmPolicy::EighthAnswer)
+        );
+        assert_eq!(
+            late.counter_rhythm,
+            Some(Tr909CounterRhythmPolicy::LateSixteenthPickup)
+        );
+        assert_eq!(
+            Tr909CounterRhythmPolicy::LateSixteenthPickup.label(),
+            "late_sixteenth_pickup"
+        );
+    }
+
+    #[test]
+    fn counter_rhythm_fails_closed_without_every_activation_and_evidence_gate() {
+        let transport = transport_state(0.0);
+        let eligible = counter_rhythm_graph(0.45, 0.40, 0.80);
+        let cases = [
+            counter_rhythm_graph(0.249, 0.40, 0.80),
+            counter_rhythm_graph(0.45, 0.249, 0.80),
+            counter_rhythm_graph(0.45, 0.40, 0.349),
+            counter_rhythm_graph(f32::NAN, 0.40, 0.80),
+        ];
+
+        for graph in &cases {
+            assert_eq!(
+                derive_tr909_render_policy(
+                    &break_reinforce_slam_lane(),
+                    &transport,
+                    Some(graph)
+                )
+                .counter_rhythm,
+                None
+            );
+        }
+
+        let mut slam_off = break_reinforce_slam_lane();
+        slam_off.slam_enabled = false;
+        assert_eq!(
+            derive_tr909_render_policy(&slam_off, &transport, Some(&eligible)).counter_rhythm,
+            None
+        );
+
+        let mut stopped = transport;
+        stopped.is_playing = false;
+        assert_eq!(
+            derive_tr909_render_policy(
+                &break_reinforce_slam_lane(),
+                &stopped,
+                Some(&eligible)
+            )
+            .counter_rhythm,
+            None
+        );
+    }
+
+    #[test]
+    fn counter_rhythm_selection_is_independent_of_source_filename() {
+        let lane = break_reinforce_slam_lane();
+        let transport = transport_state(0.0);
+        let first = counter_rhythm_graph(0.50, 0.42, 0.75);
+        let mut renamed = first.clone();
+        renamed.source.path = "audio/completely-different-name.bin".into();
+
+        assert_eq!(
+            derive_tr909_render_policy(&lane, &transport, Some(&first)).counter_rhythm,
+            derive_tr909_render_policy(&lane, &transport, Some(&renamed)).counter_rhythm
+        );
+    }
+
+    #[test]
+    fn exact_phrase_evidence_precedes_bar_range_fallback() {
+        let mut graph = counter_rhythm_graph(0.50, 0.40, 0.60);
+        let mut overlapping = graph.phrase_audio_features[0].clone();
+        overlapping.phrase_index = 99;
+        overlapping.offbeat_onset_density = 0.70;
+        overlapping.confidence = 0.95;
+        graph.phrase_audio_features.push(overlapping);
+
+        let policy = derive_tr909_render_policy(
+            &break_reinforce_slam_lane(),
+            &transport_state(0.0),
+            Some(&graph),
+        );
+
+        assert_eq!(
+            policy.counter_rhythm,
+            Some(Tr909CounterRhythmPolicy::EighthAnswer)
         );
     }
 }

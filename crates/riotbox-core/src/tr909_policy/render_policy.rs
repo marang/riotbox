@@ -2,8 +2,8 @@ use crate::{
     ids::SceneId,
     session::{Tr909LaneState, Tr909ReinforcementModeState, Tr909TakeoverProfileState},
     source_graph::{
-        EnergyClass, Section, SectionLabelHint, SourceGraph, section_for_projected_scene,
-        section_for_transport_bar,
+        EnergyClass, PhraseAudioFeatures, Section, SectionLabelHint, SourceGraph,
+        section_for_projected_scene, section_for_transport_bar,
     },
     transport::TransportClockState,
 };
@@ -145,6 +145,22 @@ pub enum Tr909PhraseVariationPolicy {
     PhraseRelease,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Tr909CounterRhythmPolicy {
+    EighthAnswer,
+    LateSixteenthPickup,
+}
+
+impl Tr909CounterRhythmPolicy {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::EighthAnswer => "eighth_answer",
+            Self::LateSixteenthPickup => "late_sixteenth_pickup",
+        }
+    }
+}
+
 impl Tr909PhraseVariationPolicy {
     #[must_use]
     pub const fn label(self) -> &'static str {
@@ -166,6 +182,7 @@ pub struct Tr909RenderPolicyProjection {
     pub takeover_profile: Option<Tr909TakeoverRenderProfilePolicy>,
     pub pattern_adoption: Option<Tr909PatternAdoptionPolicy>,
     pub phrase_variation: Option<Tr909PhraseVariationPolicy>,
+    pub counter_rhythm: Option<Tr909CounterRhythmPolicy>,
 }
 
 #[must_use]
@@ -236,6 +253,14 @@ pub fn derive_tr909_render_policy_with_scene_context(
         source_support_profile,
         takeover_profile,
     );
+    let counter_rhythm = derive_tr909_counter_rhythm(
+        tr909,
+        transport,
+        source_graph,
+        mode,
+        routing,
+        pattern_adoption,
+    );
 
     Tr909RenderPolicyProjection {
         mode,
@@ -245,7 +270,71 @@ pub fn derive_tr909_render_policy_with_scene_context(
         takeover_profile,
         pattern_adoption,
         phrase_variation,
+        counter_rhythm,
     }
+}
+
+fn derive_tr909_counter_rhythm(
+    tr909: &Tr909LaneState,
+    transport: &TransportClockState,
+    source_graph: Option<&SourceGraph>,
+    mode: Tr909RenderModePolicy,
+    routing: Tr909RenderRoutingPolicy,
+    pattern_adoption: Option<Tr909PatternAdoptionPolicy>,
+) -> Option<Tr909CounterRhythmPolicy> {
+    if !transport.is_playing
+        || !tr909.slam_enabled
+        || mode != Tr909RenderModePolicy::BreakReinforce
+        || routing != Tr909RenderRoutingPolicy::DrumBusSupport
+        || pattern_adoption != Some(Tr909PatternAdoptionPolicy::MainlineDrive)
+    {
+        return None;
+    }
+
+    let graph = source_graph?;
+    let phrase_index = u32::try_from(transport.phrase_index).ok()?;
+    let bar_index = u32::try_from(transport.bar_index).ok()?;
+    let features = best_current_phrase_audio_features(graph, phrase_index, bar_index)?;
+    if !counter_rhythm_features_are_eligible(features) {
+        return None;
+    }
+
+    if features.offbeat_onset_density >= 0.55 {
+        Some(Tr909CounterRhythmPolicy::LateSixteenthPickup)
+    } else {
+        Some(Tr909CounterRhythmPolicy::EighthAnswer)
+    }
+}
+
+fn best_current_phrase_audio_features(
+    graph: &SourceGraph,
+    phrase_index: u32,
+    bar_index: u32,
+) -> Option<&PhraseAudioFeatures> {
+    let exact_phrase = graph
+        .phrase_audio_features
+        .iter()
+        .filter(|features| features.phrase_index == phrase_index)
+        .max_by(|left, right| left.confidence.total_cmp(&right.confidence));
+    exact_phrase.or_else(|| {
+        graph
+            .phrase_audio_features
+            .iter()
+            .filter(|features| {
+                features.start_bar <= bar_index && bar_index <= features.end_bar
+            })
+            .max_by(|left, right| left.confidence.total_cmp(&right.confidence))
+    })
+}
+
+fn counter_rhythm_features_are_eligible(features: &PhraseAudioFeatures) -> bool {
+    features.has_measured_evidence()
+        && features.confidence.is_finite()
+        && features.transient_density.is_finite()
+        && features.offbeat_onset_density.is_finite()
+        && features.confidence >= 0.35
+        && features.transient_density >= 0.25
+        && features.offbeat_onset_density >= 0.25
 }
 
 #[must_use]

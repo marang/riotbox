@@ -34,6 +34,7 @@ pub struct JamRuntimeView {
     pub tr909_render_pattern_ref: Option<String>,
     pub tr909_render_pattern_adoption: String,
     pub tr909_render_phrase_variation: String,
+    pub tr909_render_counter_rhythm: String,
     pub tr909_render_mix_summary: String,
     pub tr909_render_alignment: String,
     pub tr909_render_transport_summary: String,
@@ -132,6 +133,10 @@ impl JamRuntimeView {
                 .tr909_render
                 .phrase_variation
                 .map_or_else(|| "unset".into(), |variation| variation.label().into()),
+            tr909_render_counter_rhythm: runtime.tr909_render.counter_rhythm.map_or_else(
+                || "unset".into(),
+                |counter_rhythm| counter_rhythm.label().into(),
+            ),
             tr909_render_mix_summary: format!(
                 "drum bus {:.2} | slam {:.2}",
                 runtime.tr909_render.drum_bus_level, runtime.tr909_render.slam_intensity

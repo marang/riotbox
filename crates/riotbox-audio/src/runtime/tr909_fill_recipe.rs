@@ -403,7 +403,7 @@ pub(super) fn prepared_fill_step(
 
 #[cfg(test)]
 mod tests {
-    use crate::tr909::{Tr909RenderMode, Tr909RenderRouting};
+    use crate::tr909::{Tr909CounterRhythmPhase, Tr909RenderMode, Tr909RenderRouting};
 
     use super::*;
 
@@ -415,6 +415,8 @@ mod tests {
             source_support_context: None,
             pattern_adoption: Some(pattern_adoption),
             phrase_variation: Some(Tr909PhraseVariation::PhraseDrive),
+            counter_rhythm: None,
+            counter_rhythm_phase: Tr909CounterRhythmPhase::SourceSupported,
             takeover_profile: None,
             drum_bus_level: 0.80,
             slam_enabled: false,
@@ -429,6 +431,8 @@ mod tests {
     fn phrase_drive_hard_cut_render() -> RealtimeTr909RenderState {
         RealtimeTr909RenderState {
             phrase_variation: Some(Tr909PhraseVariation::PhraseDriveHardCut),
+            counter_rhythm: None,
+            counter_rhythm_phase: Tr909CounterRhythmPhase::SourceSupported,
             ..phrase_drive_render(Tr909PatternAdoption::MainlineDrive)
         }
     }

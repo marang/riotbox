@@ -1034,6 +1034,8 @@ fn render_buffer_produces_audible_samples_for_support_mode() {
             source_support_context: None,
             pattern_adoption: None,
             phrase_variation: None,
+            counter_rhythm: None,
+            counter_rhythm_phase: Tr909CounterRhythmPhase::SourceSupported,
             takeover_profile: None,
             drum_bus_level: 0.8,
             slam_enabled: false,
