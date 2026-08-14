@@ -79,14 +79,21 @@ while IFS=$'\t' read -r case_id source_path bpm downbeat; do
   if [[ "$downbeat" != "null" ]]; then
     args+=(--downbeat-seconds "$downbeat")
   fi
-  cargo run -p riotbox-app --bin dense_break_live_path_render -- "${args[@]}"
-
   manifest="$output/$case_id/gesture-manifest.json"
+  if ! cargo run -p riotbox-app --bin dense_break_live_path_render -- "${args[@]}"; then
+    if [[ -f "$manifest" ]]; then
+      content_hash="$(jq -r '.source.content_hash // "" | sub("^sha256:"; "")' "$manifest")"
+      mark_status "$case_id" "opened_then_render_failed_closed" "$content_hash"
+    fi
+    exit 1
+  fi
+
   python3 scripts/validate_listening_manifest_json.py --require-existing-artifacts "$manifest"
-  jq -e --arg source_path "$source_path" '
+  canonical_source_path="$(realpath "$source_path")"
+  jq -e --arg source_path "$canonical_source_path" '
     .result == "pass"
     and .source.path == $source_path
-    and (.source.content_hash | type == "string" and length == 64)
+    and (.source.content_hash | test("^sha256:[0-9a-f]{64}$"))
     and .tr909_impact_pocket_proof.schema == "riotbox.tr909_impact_pocket_proof.v1"
     and .tr909_impact_pocket_proof.decision == "RBX-287"
     and .tr909_impact_pocket_proof.performer_action == "tr909.set_slam"
@@ -104,7 +111,7 @@ while IFS=$'\t' read -r case_id source_path bpm downbeat; do
     and .tr909_impact_pocket_proof.candidate_limiter.limited_sample_count == 0
     and .tr909_impact_pocket_proof.candidate_limiter.post.clip_count == 0
   ' "$manifest" >/dev/null
-  content_hash="$(jq -r '.source.content_hash' "$manifest")"
+  content_hash="$(jq -r '.source.content_hash | sub("^sha256:"; "")' "$manifest")"
   mark_status "$case_id" "verified_and_rendered" "$content_hash"
 done < <(jq -r '.cases[] | [.case_id, .source_path, (.bpm | tostring), (.downbeat_seconds | tostring)] | @tsv' "$contract")
 

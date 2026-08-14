@@ -581,6 +581,7 @@ pub fn write_pack(
         &slam_control.samples,
         &slam_candidate.samples,
         bpm,
+        slam_transition.after.transport.position_beats,
         owner_beat,
     )?;
     if impact_delta.active_samples == 0 || inside_changed_frames == 0 {
@@ -604,6 +605,7 @@ pub fn write_pack(
         "source_support_profile": impact_profile.label(),
         "impact_owner": impact_owner,
         "owner_beat": owner_beat,
+        "render_start_position_beats": slam_transition.after.transport.position_beats,
         "control_disables_only_source_support_profile_and_context": true,
         "slammed_tr909_render_is_identical": true,
         "control_artifact": impact_control_path,
@@ -1216,6 +1218,7 @@ fn impact_pocket_locality(
     control: &[f32],
     candidate: &[f32],
     bpm: f32,
+    start_position_beats: f64,
     owner_beat: f64,
 ) -> Result<(usize, f32), Box<dyn Error>> {
     let channel_count = usize::from(CHANNEL_COUNT);
@@ -1238,7 +1241,7 @@ fn impact_pocket_locality(
         if delta_peak <= f32::EPSILON {
             continue;
         }
-        let position_beats = frame_index as f64 * beats_per_frame;
+        let position_beats = start_position_beats + frame_index as f64 * beats_per_frame;
         let relative = (position_beats - owner_beat).rem_euclid(4.0);
         let inside = relative <= IMPACT_POCKET_POST_OWNER_BEATS
             || relative >= 4.0 - IMPACT_POCKET_PRE_ROLL_BEATS;
@@ -1458,8 +1461,9 @@ fn canonical_f32_json_number(value: f32) -> Result<Value, serde_json::Error> {
 #[cfg(test)]
 mod tests {
     use super::{
-        anchors_match, canonical_f32_json_number, mono_waveform_correlation,
-        relevant_window_activity_ratio, sequence_boundary_metrics, waveform_is_too_similar,
+        anchors_match, canonical_f32_json_number, impact_pocket_locality,
+        mono_waveform_correlation, relevant_window_activity_ratio, sequence_boundary_metrics,
+        waveform_is_too_similar,
     };
 
     #[test]
@@ -1511,6 +1515,27 @@ mod tests {
             waveform_is_too_similar(inverted_correlation, 0.99),
             "polarity inversion must not masquerade as a different gesture"
         );
+    }
+
+    #[test]
+    fn impact_pocket_locality_uses_the_absolute_transition_grid_phase() {
+        let frame_count = 96_000;
+        let control = vec![0.0; frame_count * 2];
+        let mut candidate = control.clone();
+        let absolute_downbeat_frame = 72_000;
+        candidate[absolute_downbeat_frame * 2] = 0.2;
+        candidate[absolute_downbeat_frame * 2 + 1] = 0.2;
+
+        let (inside, outside_peak) =
+            impact_pocket_locality(&control, &candidate, 120.0, 21.0, 0.0).expect("locality");
+        assert_eq!(inside, 1);
+        assert_eq!(outside_peak, 0.0);
+
+        candidate[0] = 0.1;
+        let (inside, outside_peak) = impact_pocket_locality(&control, &candidate, 120.0, 21.0, 0.0)
+            .expect("locality with leak");
+        assert_eq!(inside, 1);
+        assert!((outside_peak - 0.1).abs() < f32::EPSILON);
     }
 
     #[test]
