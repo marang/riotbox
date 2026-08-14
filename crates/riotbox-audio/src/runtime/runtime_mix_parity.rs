@@ -5,7 +5,7 @@ use crate::{
 };
 
 use super::{
-    FillFocusRenderState,
+    BedFocusRenderState,
     public_api_shell::{
         AudioRuntimeTimingSnapshot, MasterBusLimiterReport, apply_master_bus_soft_limiter,
         master_bus_limiter_ceiling, master_bus_limiter_threshold, signal_metrics,
@@ -19,7 +19,7 @@ use super::{
     },
     source_monitor::{
         SharedSourceMonitorRenderState, SourceMonitorCallbackState, SourceMonitorRenderState,
-        apply_source_monitor_policy_with_state_and_fill_focus,
+        apply_source_monitor_policy_with_state_and_bed_focus,
     },
 };
 
@@ -228,12 +228,12 @@ pub fn render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
                         resample_state: &mut w30_resample_state,
                     },
                 );
-                apply_source_monitor_policy_with_state_and_fill_focus(
+                apply_source_monitor_policy_with_state_and_bed_focus(
                     block,
                     sample_rate,
                     channel_count,
                     &source_monitor_render,
-                    FillFocusRenderState::from_tr909(&tr909_render),
+                    BedFocusRenderState::from_tr909(&tr909_render),
                     &mut source_monitor_callback_state,
                 );
                 pre_limiter_block.copy_from_slice(block);

@@ -167,6 +167,7 @@ pub struct RenderedLivePath {
     pub alpha_source_reference: RuntimeMixRenderOutput,
     pub restart_recall_output: RuntimeMixRenderOutput,
     pub transition_outputs: Vec<RenderedGestureTransition>,
+    pub impact_pocket_control: RuntimeMixRenderOutput,
     pub normal: RuntimeMixRenderOutput,
     pub damaged: RuntimeMixRenderOutput,
     pub w30: RuntimeMixRenderOutput,

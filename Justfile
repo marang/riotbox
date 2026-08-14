@@ -316,6 +316,9 @@ dense-break-live-path-smoke output="artifacts/audio_qa/local-dense-break-live-pa
 dense-break-live-source-matrix output="artifacts/audio_qa/local-dense-break-live-source-matrix":
     scripts/validate_dense_break_live_source_matrix.sh "{{output}}"
 
+tr909-impact-pocket-development output="artifacts/audio_qa/local-tr909-impact-pocket-development":
+    scripts/validate_tr909_impact_pocket_development.sh "{{output}}"
+
 controlled-source-live-matrix output="artifacts/audio_qa/local-controlled-source-live-matrix":
     scripts/validate_controlled_source_live_matrix.sh "{{output}}"
 

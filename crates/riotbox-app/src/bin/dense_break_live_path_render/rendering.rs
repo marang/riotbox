@@ -74,6 +74,27 @@ pub fn render_live_path(
             })
         })
         .collect::<Result<Vec<_>, _>>()?;
+    let slam_transition = prepared
+        .transitions
+        .iter()
+        .find(|transition| transition.command == riotbox_core::action::ActionCommand::Tr909SetSlam)
+        .ok_or("live path omitted the committed TR-909 Slam transition")?;
+    let mut impact_pocket_control_plan = (*slam_transition.after).clone();
+    if impact_pocket_control_plan
+        .tr909_render
+        .source_support_profile
+        .is_none()
+    {
+        return Err("Slam candidate omitted its trusted source-support profile".into());
+    }
+    impact_pocket_control_plan
+        .tr909_render
+        .source_support_profile = None;
+    impact_pocket_control_plan
+        .tr909_render
+        .source_support_context = None;
+    let impact_pocket_control =
+        render_transition_branch(&slam_transition.prefix, &impact_pocket_control_plan, bpm)?;
 
     let normal = render_legacy(&prepared.normal_plan, bpm)?;
     let damaged = render_legacy(&prepared.damaged_plan, bpm)?;
@@ -98,6 +119,7 @@ pub fn render_live_path(
         alpha_source_reference,
         restart_recall_output,
         transition_outputs,
+        impact_pocket_control,
         normal,
         damaged,
         w30,
