@@ -15,7 +15,7 @@
 - Labels: `review-followup`, `benchmark`, `Analysis`, `Audio`, `Feature`
 - PR: `None`
 - Merge commit: `None`
-- Deleted from Linear: `Pending fresh token-authenticated cleanup; retained as Canceled`
+- Deleted from Linear: `2026-08-14`
 - Verification: `Linear records no started state, attachment, branch, or PR. RIOTBOX-1434's hash-bound terminal result proves that the mandatory frozen directional handoff was absent.`
 - Docs touched: `None before cancellation; the dependency result is preserved by RIOTBOX-1434's canonical review and Decision RBX-283.`
 - Follow-ups: `None. A future ticket needs a genuinely new research basis or source-blind causal hypothesis.`

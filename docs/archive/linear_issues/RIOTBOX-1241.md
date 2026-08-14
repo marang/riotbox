@@ -15,7 +15,7 @@
 - Labels: `Audio`
 - PR: `#1216 (https://github.com/marang/riotbox/pull/1216)`
 - Merge commit: `78be75f6fa4e8e41deae60ecf6287a7502c942db`
-- Deleted from Linear: `2026-06-13`
+- Deleted from Linear: `2026-08-14`
 - Verification: `python3 -m py_compile scripts/generate_release_demo_human_review_queue.py scripts/validate_source_family_release_demo_coverage.py; just release-demo-human-review-queue-fixtures; git diff --check; git diff --cached --check; just audio-qa-ci; just ci; GitHub rust-ci pass`
 - Docs touched: `docs/benchmarks/README.md; docs/benchmarks/release_demo_human_review_queue_v1_2026-06-13.md; docs/specs/release_grade_musician_demo_bank_spec.md`
 - Follow-ups: `None`

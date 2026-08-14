@@ -15,7 +15,7 @@
 - Labels: `review-followup`, `Spike`, `Analysis`, `Audio`
 - PR: `#1389 (https://github.com/marang/riotbox/pull/1389)`
 - Merge commit: `0df725b2f60e92ec72158b24a7cfbe842e7086d3`
-- Deleted from Linear: `Pending fresh token-authenticated cleanup; retained as Done`
+- Deleted from Linear: `2026-08-14`
 - Verification: `Both frozen contract validators and all 21 fail-closed mutation fixtures passed; Python compilation, repository validation, branch review, local just ci, and GitHub Rust CI passed.`
 - Docs touched: `docs/benchmarks/percussive_force_natural_velocity_controls_v1.json; docs/benchmarks/percussive_force_natural_velocity_controls_v2.json; docs/reviews/riotbox_1434_natural_velocity_control_qualification_2026-08-11.md; docs/research_decision_log.md`
 - Follow-ups: `RIOTBOX-1435 canceled because this ticket produced no source-general directional handoff.`

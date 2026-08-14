@@ -15,7 +15,7 @@
 - Labels: `review-followup`, `workflow`, `Docs`, `Improvement`
 - PR: `#1386 (https://github.com/marang/riotbox/pull/1386)`
 - Merge commit: `be7f937fe9ea254c3133f6787ee8936cbc4dd7db`
-- Deleted from Linear: `Pending fresh token-authenticated cleanup; retained as Done`
+- Deleted from Linear: `2026-08-14`
 - Verification: `GitHub Rust CI passed cargo fmt, full cargo test, the audio-QA smoke gate, and strict Clippy. Skill validation, Decision-search fixtures, link checks, size assertions, benchmark immutability, and three independent scoped reviews passed.`
 - Docs touched: `AGENTS.md; .codex/skills/; docs/workflow/; docs/specs/audio_qa/; docs/engineering/percussive_force/; docs/reviews/riotbox_1431_agent_context_modularization_2026-08-11.md`
 - Follow-ups: `None; no additional ticket was started by this closeout.`

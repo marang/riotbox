@@ -15,7 +15,7 @@
 - Labels: None
 - PR: `#1117 (https://github.com/marang/riotbox/pull/1117)`
 - Merge commit: `99de1aa758683b9490b65e85dad21eecb6a389a1`
-- Deleted from Linear: `2026-06-03`
+- Deleted from Linear: `2026-08-14`
 - Verification: `cargo fmt --check; git diff --check; cargo test -p riotbox-app stem_package -- --nocapture; cargo test -p riotbox-app export_readiness -- --nocapture; cargo test -p riotbox-app; just ci; GitHub rust-ci pass`
 - Docs touched: `docs/specs/action_lexicon_spec.md; docs/specs/audio_qa_workflow_spec.md; docs/specs/session_file_spec.md; docs/specs/tui_screen_spec.md`
 - Follow-ups: `RIOTBOX-1139 arrangement export receipt placement contract skeleton`

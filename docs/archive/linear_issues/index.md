@@ -1474,4 +1474,76 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Superseded source-backed external-tempo phase from the abandoned RIOTBOX-1422 stack
 - [RIOTBOX-1427.md](./RIOTBOX-1427.md)
   P023: Superseded performer-owned W-30 Hard intent from the abandoned RIOTBOX-1422 stack
+- [RIOTBOX-1264.md](./RIOTBOX-1264.md)
+  MC-202 source-composed bass/answer phrases to producer-grade quality
+- [RIOTBOX-1114.md](./RIOTBOX-1114.md)
+  Add interactive listening-review workflow with structured human feedback
+- [RIOTBOX-1110.md](./RIOTBOX-1110.md)
+  Document automated musical fitness limits and report semantics
+- [RIOTBOX-1113.md](./RIOTBOX-1113.md)
+  Expose automated musical fitness status in generated QA reports
+- [RIOTBOX-1109.md](./RIOTBOX-1109.md)
+  Wire automated musical fitness gate into Justfile and audio QA CI
+- [RIOTBOX-1108.md](./RIOTBOX-1108.md)
+  Add automated musical fitness positive and negative fixture corpus
+- [RIOTBOX-1107.md](./RIOTBOX-1107.md)
+  Implement automated musical fitness validator and schema
+- [RIOTBOX-1032.md](./RIOTBOX-1032.md)
+  Add section-aware source playback repositioning for scene moves
+- [RIOTBOX-1031.md](./RIOTBOX-1031.md)
+  Add scene-chain launch and restore transition proof
+- [RIOTBOX-1030.md](./RIOTBOX-1030.md)
+  Define arrangement scene contract on the existing product spine
+- [RIOTBOX-1413.md](./RIOTBOX-1413.md)
+  Carry MC-202 role as a typed action parameter through queue, commit, and replay
+- [RIOTBOX-1105.md](./RIOTBOX-1105.md)
+  P016: Add stem-package per-stem fallback comparison receipt gate
+- [RIOTBOX-1104.md](./RIOTBOX-1104.md)
+  P016: Add stem-package per-stem lineage receipt gate
+- [RIOTBOX-1102.md](./RIOTBOX-1102.md)
+  P016: Add stem-package manifest normalized JSON proof helper
+- [RIOTBOX-1101.md](./RIOTBOX-1101.md)
+  P016: Add stem-package per-stem non-silence receipt gate
+- [RIOTBOX-1103.md](./RIOTBOX-1103.md)
+  P016: Extract export receipt QA gate projection helpers
+- [RIOTBOX-1100.md](./RIOTBOX-1100.md)
+  P016: Add stem-package per-stem hash-stability QA gate
+- [RIOTBOX-1099.md](./RIOTBOX-1099.md)
+  P016: Add CI-safe stem-package manifest fixture proof
+- [RIOTBOX-1098.md](./RIOTBOX-1098.md)
+  P016: Build stem-package manifest from receipt evidence
+- [RIOTBOX-1097.md](./RIOTBOX-1097.md)
+  P016: Define stem-package manifest schema types
+- [RIOTBOX-1096.md](./RIOTBOX-1096.md)
+  P016: Preflight stem-package manifest and proof artifact entries
+- [RIOTBOX-1095.md](./RIOTBOX-1095.md)
+  P016: Validate stem-package receipt gate readiness remains blocked
+- [RIOTBOX-1094.md](./RIOTBOX-1094.md)
+  P016: Add reserved stem_package export scope to receipts
+- [RIOTBOX-1093.md](./RIOTBOX-1093.md)
+  P016: Project stem-package QA evidence through observer receipts
+- [RIOTBOX-1092.md](./RIOTBOX-1092.md)
+  P016: Add stem package manifest artifact-set identity helpers
+- [RIOTBOX-1091.md](./RIOTBOX-1091.md)
+  P016: Record stem-package QA report as receipt gate evidence
+- [RIOTBOX-1089.md](./RIOTBOX-1089.md)
+  P016: Define stem package export action contract
+- [RIOTBOX-1088.md](./RIOTBOX-1088.md)
+  P016: Validate export receipt lineage during replay planning
+- [RIOTBOX-1087.md](./RIOTBOX-1087.md)
+  P016: Add proof artifact entries to product export receipts
+- [RIOTBOX-1086.md](./RIOTBOX-1086.md)
+  P016: Add product export artifact audio metrics evidence
+- [RIOTBOX-1090.md](./RIOTBOX-1090.md)
+  Workflow: Make Linear-first priority unambiguous
+- [RIOTBOX-1085.md](./RIOTBOX-1085.md)
+  P016: Prove export observer artifact lineage
+- [RIOTBOX-1084.md](./RIOTBOX-1084.md)
+  P016: Extract product export receipt lineage helpers
+- [RIOTBOX-1083.md](./RIOTBOX-1083.md)
+  P016: Attach confirmed timing grid refs to export artifacts
+- [RIOTBOX-1082.md](./RIOTBOX-1082.md)
+  P016: Attach source graph refs to export artifacts
+- [RIOTBOX-1081.md](./RIOTBOX-1081.md)
+  P016: Record product export QA gate in receipts
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.

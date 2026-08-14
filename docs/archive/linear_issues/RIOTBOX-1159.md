@@ -15,7 +15,7 @@
 - Labels: `Core`
 - PR: `#1138 (https://github.com/marang/riotbox/pull/1138)`
 - Merge commit: `113baaac623bffdd2086a350f421863fd80aac3a`
-- Deleted from Linear: `2026-06-03`
+- Deleted from Linear: `2026-08-14`
 - Verification: `cargo fmt; git diff --check; just daw-session-writer-proof-smoke; cargo check -p riotbox-app; cargo test -p riotbox-core -p riotbox-app (/tmp/riotbox-1159-core-app-tests-final.log); just ci (/tmp/riotbox-1159-just-ci-post-split.log); GitHub rust-ci pass`
 - Docs touched: `docs/specs/action_lexicon_spec.md; docs/specs/audio_qa_workflow_spec.md; docs/specs/session_file_spec.md`
 - Follow-ups: `Next P016 slice should decide the next DAW export gate after local writer proof: likely observer lifecycle projection or host-import runner proof harness, while export.daw_session remains disabled.`

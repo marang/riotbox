@@ -15,7 +15,7 @@
 - Labels: `review-followup`, `benchmark`, `Analysis`, `Audio`, `Feature`, `Improvement`
 - PR: `#1391 (https://github.com/marang/riotbox/pull/1391)`
 - Merge commit: `e23aadf3d520f784bc20c3f113222f297a5493a7`
-- Deleted from Linear: `Pending fresh token-authenticated cleanup; retained as Done`
+- Deleted from Linear: `2026-08-14`
 - Verification: `cargo test -p riotbox-core -p riotbox-audio -p riotbox-app`; `cargo clippy -p riotbox-core -p riotbox-audio -p riotbox-app --all-targets --all-features -- -D warnings`; `just ci`; `GitHub rust-ci`; `branch-level code review and self-review`
 - Docs touched: `docs/README.md`, `docs/execution_roadmap.md`, `docs/jam_recipes.md`, `docs/phase_definition_of_done.md`, `docs/research_decision_log.md`, `docs/reviews/riotbox_1432_w30_source_hook_selection_2026-08-14.md`, `docs/specs/audio_core_spec.md`, `docs/specs/session_file_spec.md`, `docs/specs/source_graph_spec.md`
 - Follow-ups: `None; a future hook-selection retry requires a genuinely new research basis and a separately versioned decision`
@@ -48,5 +48,5 @@ selection, persistence, or validation system.
   frozen cross-source diversity gate failed.
 - The failed technical prerequisite correctly prevented human playback and
   Holdout access; no commercial reference informed the result.
-- The Linear issue is retained as `Done` until authenticated issue deletion is
-  available after this archive handoff.
+- The Linear issue was deleted after the archive handoff using the verified
+  token-authenticated cleanup path.

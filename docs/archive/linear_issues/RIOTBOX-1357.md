@@ -15,7 +15,7 @@
 - Labels: `Audio`
 - PR: `#1321 (https://github.com/marang/riotbox/pull/1321)`
 - Merge commit: `15d59a93b8f08011e5669e73a32d8b8cf3229ff9`
-- Deleted from Linear: `2026-07-01`
+- Deleted from Linear: `2026-08-14`
 - Verification: `python -m py_compile; just destructive-variation-professional-smoke; just pro-pressure-source-matrix-smoke; just professional-output-suite-smoke; just sound-quality-readiness-report-smoke; just weak-output-fix-routing-fixtures; just audio-qa-ci; just ci; GitHub rust-ci pass`
 - Docs touched: `docs/specs/audio_qa_workflow_spec.md; docs/execution_roadmap.md; docs/research_decision_log.md`
 - Follow-ups: `None`

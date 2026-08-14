@@ -15,7 +15,7 @@
 - Labels: `Audio`
 - PR: `#1309 (https://github.com/marang/riotbox/pull/1309)`
 - Merge commit: `70634f04515574261f9b294bf08f71418a3a0964`
-- Deleted from Linear: `2026-06-30`
+- Deleted from Linear: `2026-08-14`
 - Verification: `python3 -m py_compile affected MC-202 scripts; just dense-break-performance-pack-smoke artifacts/audio_qa/local-riotbox-1345-dense-pack-smoke; just mc202-producer-grade-closeout-smoke; just demo-bank-promotion-fixtures; just pro-pressure-source-matrix-smoke; just professional-output-suite-smoke; just sound-quality-readiness-report-smoke; just audio-qa-ci; just weak-output-fix-routing-fixtures; just ci; GitHub Rust CI/rust-ci`
 - Docs touched: `docs/research_decision_log.md; docs/plans/mc202_source_phrase_planning_plan.md`
 - Follow-ups: `None`

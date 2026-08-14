@@ -15,7 +15,7 @@
 - Labels: `Core`
 - PR: `#1137 (https://github.com/marang/riotbox/pull/1137)`
 - Merge commit: `5c482c35cece95cdf0113076ed7e929ef27515de`
-- Deleted from Linear: `2026-06-03`
+- Deleted from Linear: `2026-08-14`
 - Verification: `cargo fmt; git diff --check; just ci (/tmp/riotbox-1158-just-ci.log); just ci (/tmp/riotbox-1158-just-ci-rerun.log); GitHub rust-ci pass`
 - Docs touched: `docs/specs/action_lexicon_spec.md; docs/specs/audio_qa_workflow_spec.md; docs/specs/session_file_spec.md`
 - Follow-ups: `RIOTBOX-1159 adds the first CI-safe DAW session writer proof skeleton on top of the reserved boundary.`

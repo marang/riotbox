@@ -15,7 +15,7 @@
 - Labels: `Core`
 - PR: `#1107 (https://github.com/marang/riotbox/pull/1107)`
 - Merge commit: `e9111525902e52aa9fe1a114311785a4f56eb9ea`
-- Deleted from Linear: `2026-06-03`
+- Deleted from Linear: `2026-08-14`
 - Verification: `cargo fmt; cargo test -p riotbox-app stem_package_writer; cargo test -p riotbox-app; git diff --check; scripts/run_compact.sh /tmp/riotbox-1128-just-ci.log just ci; GitHub rust-ci pass`
 - Docs touched: `docs/specs/action_lexicon_spec.md; docs/specs/session_file_spec.md; docs/specs/audio_qa_workflow_spec.md`
 - Follow-ups: `None`

@@ -15,7 +15,7 @@
 - Labels: `Audio`
 - PR: `#1292 (https://github.com/marang/riotbox/pull/1292)`
 - Merge commit: `6c63008e4b92d00fa32388fc199a29e8539a84d3`
-- Deleted from Linear: `2026-06-29`
+- Deleted from Linear: `2026-08-14`
 - Verification: `python3 -m py_compile targeted scripts; just dense-break-performance-pack-smoke; just diverse-test-source-wavs; just professional-source-wav-pack-smoke; just pro-pressure-source-matrix-smoke; just weak-output-fix-routing-fixtures; just sound-quality-readiness-report-smoke; just mc202-producer-grade-closeout-smoke; just professional-output-suite-smoke; just sound-excellence-source-corpus-fixtures; just ci; GitHub rust-ci pass`
 - Docs touched: `AGENTS.md, docs/execution_roadmap.md, docs/specs/audio_qa_workflow_spec.md, .codex/skills/riotbox-rave-punk-production/SKILL.md`
 - Follow-ups: `Continue P023 production fixes from readiness routing; turn diagnostic dropout/stutter and MC-202 movement into product-spine/live workflow when scheduled.`

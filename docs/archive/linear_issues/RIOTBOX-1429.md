@@ -15,7 +15,7 @@
 - Labels: `Analysis`, `Audio`, `Docs`, `Spike`, `review-followup`
 - PR: `#1383 (https://github.com/marang/riotbox/pull/1383)`
 - Merge commit: `f79cc77e6b43280543052bcb701ca3d9d6a145e3`
-- Deleted from Linear: `Pending token-authenticated cleanup; retained as Done`
+- Deleted from Linear: `2026-08-14`
 - Verification: `Final branch review, GitHub Rust CI including the audio-QA smoke gate, cargo fmt, cargo test, strict Clippy, source-holdout rotation fixtures, JSON duplicate-key checks, link checks, and decision/evidence ID checks passed. The active holdout manifest hash remained unchanged.`
 - Docs touched: `docs/engineering/percussive_force_and_beat_impact.md; docs/benchmarks/percussive_force_development_matrix_v1.json; docs/specs/audio_qa_workflow_spec.md; docs/research_decision_log.md; docs/execution_roadmap.md; docs/phase_definition_of_done.md; AGENTS.md; .codex/skills/riotbox-rave-punk-production/SKILL.md`
 - Follow-ups: `RIOTBOX-1428`
@@ -52,4 +52,3 @@ further DSP implementation or scalar tuning.
 - [Canonical paper](../../engineering/percussive_force_and_beat_impact.md)
 - [Stage-A preregistration draft](../../benchmarks/percussive_force_development_matrix_v1.json)
 - [H31 rejected-experiment record](../../reviews/riotbox_1428_h31_stage_a_rejected_experiment_2026-08-02.md)
-

@@ -15,7 +15,7 @@
 - Labels: `review-followup`, `Spike`, `Analysis`, `Audio`, `Improvement`
 - PR: `#1390 (https://github.com/marang/riotbox/pull/1390)`
 - Merge commit: `933d6c8512f454779e856aa626cf2e8645d9b65c`
-- Deleted from Linear: `Pending fresh token-authenticated cleanup; retained as Done`
+- Deleted from Linear: `2026-08-14`
 - Verification: `git diff --check; just decision-search "RBX-284"; just ci; GitHub Rust CI; branch-level code review`
 - Docs touched: `docs/README.md; docs/execution_roadmap.md; docs/phase_definition_of_done.md; docs/research_decision_log.md; docs/reviews/README.md; docs/reviews/riotbox_1433_audible_algorithm_value_audit_2026-08-12.md`
 - Follow-ups: `RIOTBOX-1432`
@@ -47,6 +47,6 @@ algorithm whose replacement could audibly improve the Golden Path.
   human playback or Holdout access informed it.
 - Normal repository CI exercised registered non-holdout regression fixtures,
   but those renders did not select or tune the recommendation.
-- The archive helper could not authenticate to Linear, so this entry was
-  created manually from the verified issue and PR records. The issue remains
-  `Done` until fresh token-authenticated cleanup is available.
+- The archive entry was created manually from verified issue and PR records
+  while helper authentication was unavailable. The issue was later deleted
+  through the verified token-authenticated cleanup path.

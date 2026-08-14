@@ -15,7 +15,7 @@
 - Labels: `Audio`, `Feature`, `Spike`, `review-followup`
 - PR: `#1387 (https://github.com/marang/riotbox/pull/1387)`
 - Merge commit: `c74956b3e1bb5c2c7c2dac90620abcbb1059b3b3`
-- Deleted from Linear: `Pending fresh token-authenticated cleanup; retained as Done`
+- Deleted from Linear: `2026-08-14`
 - Verification: `GitHub Rust CI passed cargo fmt, cargo test, the audio-QA smoke gate, and strict all-target/all-feature Clippy. The focused 46-test Percussive-Force suite and every new v3/v4/v5/v2 contract, mutation, and source-blind preflight passed. Branch review found no remaining blocking or major issue.`
 - Docs touched: `docs/benchmarks/percussive_force_stage_a_*; docs/benchmarks/percussive_force_development_matrix_*; docs/reviews/riotbox_1430_*; docs/research_decision_log.md`
 - Follow-ups: `RIOTBOX-1428 must continue Stage A with a newly versioned causal mechanism; Stage B remains blocked.`

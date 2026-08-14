@@ -15,7 +15,7 @@
 - Labels: `Audio`
 - PR: `#1252 (https://github.com/marang/riotbox/pull/1252)`
 - Merge commit: `1ac9ae95ee4e728848d21f1212f875125380f2bc`
-- Deleted from Linear: `2026-06-15`
+- Deleted from Linear: `2026-08-14`
 - Verification: `git diff --check; cargo test -p riotbox-audio 'w30|mc202|source_monitor' -- --nocapture; cargo test -p riotbox-app 'w30|mc202|source_monitor' -- --nocapture; cargo test -p riotbox-audio feral_grid_pack -- --nocapture; cargo clippy --all-targets --all-features -- -D warnings; just professional-output-listening-pack-smoke; just professional-output-suite-smoke; just ci; GitHub rust-ci pass`
 - Docs touched: `AGENTS.md; docs/plans/mc202_source_phrase_planning_plan.md; docs/specs/action_lexicon_spec.md; docs/specs/audio_core_spec.md; docs/specs/tui_screen_spec.md; .codex/skills/riotbox-development/SKILL.md; .codex/skills/riotbox-rave-punk-production/SKILL.md`
 - Follow-ups: `RIOTBOX-1280, RIOTBOX-1281, RIOTBOX-1282, RIOTBOX-1283, RIOTBOX-1284`

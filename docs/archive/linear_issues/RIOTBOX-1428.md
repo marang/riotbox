@@ -15,7 +15,7 @@
 - Labels: `review-followup`, `Spike`, `Audio`, `Feature`
 - PR: `#1384 (https://github.com/marang/riotbox/pull/1384); #1388 (https://github.com/marang/riotbox/pull/1388)`
 - Merge commit: `5491b146ad4d411c95a9c38fc245ea07b76d044d`
-- Deleted from Linear: `Pending token-authenticated cleanup; retained as Done`
+- Deleted from Linear: `2026-08-14`
 - Verification: `The focused percussive-force suite, Matrix-v7 binary target, Protocol-v6/v7 mutation fixtures, Matrix-v7 validate-only contracts, cargo fmt, strict riotbox-audio Clippy, branch review, and GitHub Rust CI passed.`
 - Docs touched: `docs/benchmarks/percussive_force_stage_a_protocol_v1.json; docs/benchmarks/percussive_force_stage_a_protocol_v6.json; docs/benchmarks/percussive_force_stage_a_protocol_v7.json; docs/benchmarks/percussive_force_development_matrix_v2.json; docs/benchmarks/percussive_force_development_matrix_v7.json; docs/benchmarks/source_holdout_rotation_v2.json; docs/reviews/riotbox_1428_stage_a_development_qualification_rejection_2026-08-10.md; docs/reviews/riotbox_1430_stage_a_v5_qualification_pass_matrix_v6_freeze_2026-08-11.md; docs/research_decision_log.md`
 - Follow-ups: `RIOTBOX-1434 terminated fail-closed; RIOTBOX-1435 canceled because its mandatory handoff was absent.`
