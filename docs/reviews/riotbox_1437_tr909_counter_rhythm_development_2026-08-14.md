@@ -70,3 +70,35 @@ grid, multiplier sum, exact-mix threshold, limiter rule, and human rejection
 rule remains unchanged. The new constants and seed `14370003` are frozen in
 `docs/benchmarks/tr909_counter_rhythm_slam_development_v3.json` under RBX-291
 before any v3 audio access.
+
+## v3 Frozen Result
+
+The bounded v3 session opened exactly the three registered Development files
+and no Holdout or commercial-reference audio. Results were:
+
+| Case | Policy/result | Maximum step-local delta RMS | Limiter |
+| --- | --- | ---: | ---: |
+| `dense_beat03_130` | `eighth_answer` / pass | `0.0278752` | `0` |
+| `tonal_rusharp_120` | typed refusal: resolved tonal live policy is not `MainlineDrive` | n/a | n/a |
+| `sparse_kicksnr_120` | `eighth_answer` / fail | `0.0195691` | `0` |
+
+The technical contract required the dense case plus at least two qualified
+cases. Only dense passed. Sparse remained below the unchanged `0.02` floor,
+and tonal correctly stayed outside a mainline drum-owner gesture. Therefore v3
+stopped fail-closed before writing review WAVs or requesting human listening.
+
+Result: `v3_terminal_fail_closed_pre_review`.
+
+## Product Consequence
+
+The counter-rhythm implementation was removed after qualification. The branch
+retains only the immutable v1-v3 contracts, RBX-289 through RBX-292, and this
+negative Development record. No counter-rhythm Slam behavior or quality claim
+enters Riotbox.
+
+The experiment still narrowed the next causal question: callback-safe
+Snare/Hat weight redistribution, even when it creates two complete donor holes,
+does not transfer robustly across the required source set at the established
+product level. A future audible slice should change the rendered material or
+voice articulation itself, or use source-backed arrangement/chop ownership;
+it must not create v4 by lowering `0.02` or moving the same four multipliers.

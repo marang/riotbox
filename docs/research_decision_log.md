@@ -3900,3 +3900,17 @@ Why: lowering the technical gate would hide the same near-identity risk the user
 Evidence: v2 correctly selected `eighth_answer` for the mandatory dense case and produced clean exact RuntimeMix outputs, but maximum step-local delta RMS was `0.0145695` against the frozen `0.02` minimum. Candidate and phase-control RMS were `0.0904994` and `0.0904681`; both had zero pre-limiter clips, zero limited samples, and zero post-limiter clips. No tonal or sparse Development source, Holdout audio, commercial reference, or human-review artifact was opened in the v2 session.
 Consequences: preserve v2 JSON and report as negative evidence. Implement only the `2.0`/`0.0` role topology, rerun synthetic invariants, then begin one new bounded Development session. Dense qualification and two qualified cases remain mandatory. A v3 technical failure closes this mechanism without a fourth scalar version; a technical pass permits exactly one blinded human comparison and still grants no Holdout or `percussive_hard` claim.
 Status: accepted
+
+---
+
+### RBX-292
+
+Date: 2026-08-14
+Topic: close counter-rhythm Slam after v3 failed source-diverse technical admission
+Phase: P023 / Sound Excellence
+Question: did the source-supported counter-rhythm plus local-space mechanism qualify robustly enough for one human comparison and product retention?
+Decision: no. Accept the v1-v3 record in `docs/reviews/riotbox_1437_tr909_counter_rhythm_development_2026-08-14.md` and close the mechanism as `terminal_fail_closed_pre_review`. v3 passed the mandatory dense case at `0.0278752` maximum step-local delta RMS with no limiter activity, but the tonal case correctly refused non-mainline ownership and sparse reached only `0.0195691` against the unchanged `0.02` floor. Only one of three cases qualified, below the required two. Generate no review artifact, request no human verdict, and remove the counter-rhythm implementation before merge.
+Why: the multi-source gate exists to prevent a mechanism that works only on the Golden Path from entering the instrument. Lowering the delta threshold, overriding tonal ownership, or adding a fourth multiplier version after seeing sparse would convert a bounded experiment into result-driven tuning. Dense success alone cannot substitute for the frozen diversity requirement.
+Evidence: v1 refused dense before rendering because it conflated offbeat selection and admission. v2 corrected that model under RBX-290 but reached only `0.0145695`. v3 added genuine local space under RBX-291. Its exact Development source hashes were dense `e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a`, tonal `ec2a0c930eb338bf81cd5cb4b5fef487e07c140ad40181e1d92b2a0990334e0e`, and sparse `8a970e5d7bd9b29771aba85f75e697c7510940d4404714bfb1e55e210c15f46c`. All opened paths were exact registered Development entries; no source directory, Holdout audio, commercial reference, review WAV, or human playback was accessed.
+Consequences: no `tr909_counter_rhythm_slam_v1`, v2, or v3 behavior lands. Preserve the frozen JSON contracts and negative report. A future slice must change rendered material, voice articulation, or source-backed arrangement/chop ownership; it must not lower the established gate or create another version of the same four-slot multiplier recipe.
+Status: accepted
