@@ -1548,4 +1548,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Record product export QA gate in receipts
 - [RIOTBOX-1395.md](./RIOTBOX-1395.md)
   Workflow: Archive and delete old Done Linear tickets
+- [RIOTBOX-1111.md](./RIOTBOX-1111.md)
+  Workflow: Remove MemPalace dev-memory tooling
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
