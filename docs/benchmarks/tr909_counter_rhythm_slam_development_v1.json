@@ -1,0 +1,145 @@
+{
+  "schema": "riotbox.tr909_counter_rhythm_slam_development.v1",
+  "ticket": "RIOTBOX-1437",
+  "decision": "RBX-289",
+  "work_class": "audible_vertical_slice",
+  "partition": "development",
+  "mechanism": {
+    "id": "tr909_counter_rhythm_slam_v1",
+    "claim": "beat_drive_pattern_topology_and_contextual_arrangement_impact",
+    "excluded_claim": "percussive_hard",
+    "activation": {
+      "performer_action": "tr909.set_slam",
+      "required_mode": "break_reinforce",
+      "required_routing": "drum_bus_support",
+      "required_pattern_adoption": "mainline_drive",
+      "minimum_subdivisions_per_beat": 2,
+      "requires_trusted_phrase_audio_features": true,
+      "minimum_phrase_confidence": 0.35,
+      "minimum_transient_density": 0.25,
+      "minimum_counter_rhythm_offbeat_density": 0.25
+    },
+    "selection": [
+      {
+        "policy": "late_sixteenth_pickup",
+        "minimum_offbeat_onset_density": 0.55
+      },
+      {
+        "policy": "eighth_answer",
+        "minimum_offbeat_onset_density": 0.25,
+        "maximum_offbeat_onset_density_exclusive": 0.55
+      }
+    ],
+    "roles": {
+      "unchanged_anchor_steps_in_bar": [
+        "downbeat_0",
+        "backbeat_2"
+      ],
+      "affected_voices": [
+        "snare",
+        "hat"
+      ],
+      "unchanged_voice": "kick",
+      "accent_multiplier": 1.5,
+      "donor_multiplier": 0.5,
+      "neutral_multiplier": 1.0,
+      "accent_slot_count_per_bar": 2,
+      "donor_slot_count_per_bar": 2,
+      "summed_multiplier_across_changed_slots": 4.0
+    },
+    "step_formulas": {
+      "eighth_answer": {
+        "accent": [
+          "subdivision/2",
+          "2*subdivision + subdivision/2"
+        ],
+        "donor": [
+          "subdivision + subdivision/2",
+          "3*subdivision + subdivision/2"
+        ]
+      },
+      "late_sixteenth_pickup": {
+        "accent": [
+          "2*subdivision - 1",
+          "4*subdivision - 1"
+        ],
+        "donor": [
+          "subdivision - 1",
+          "3*subdivision - 1"
+        ]
+      }
+    },
+    "phase_distributed_control": {
+      "id": "counter_rhythm_phase_control_v1",
+      "same_event_count": true,
+      "same_multiplier_sum": true,
+      "mapping": "swap_accent_and_donor_slots",
+      "product_behavior": false
+    }
+  },
+  "access": {
+    "directory_discovery_allowed": false,
+    "holdout_audio_allowed": false,
+    "commercial_reference_audio_allowed": false,
+    "maximum_unique_development_files": 3
+  },
+  "cases": [
+    {
+      "case_id": "dense_beat03_130",
+      "source_family": "dense_break",
+      "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+      "bpm": 130.0,
+      "downbeat_seconds": null
+    },
+    {
+      "case_id": "tonal_rusharp_120",
+      "source_family": "tonal_riff",
+      "source_path": "data/test_audio/examples/DH_RushArp_120_A.wav",
+      "bpm": 120.0,
+      "downbeat_seconds": 0.0
+    },
+    {
+      "case_id": "sparse_kicksnr_120",
+      "source_family": "sparse_drums",
+      "source_path": "data/test_audio/examples/DH_BeatC_KickSnr_120-01.wav",
+      "bpm": 120.0,
+      "downbeat_seconds": null
+    }
+  ],
+  "technical_gate": {
+    "exact_runtime_mix": true,
+    "required_unique_source_hashes": 3,
+    "minimum_qualified_candidate_cases": 2,
+    "typed_refusal_allowed_for_untrusted_or_below_threshold_evidence": true,
+    "dense_case_must_qualify_for_human_review": true,
+    "anchors_must_remain_sample_identical": true,
+    "kick_lane_must_remain_sample_identical": true,
+    "candidate_and_phase_control_event_counts_must_match": true,
+    "candidate_and_phase_control_multiplier_sums_must_match": true,
+    "minimum_time_local_delta_rms": 0.02,
+    "maximum_pre_limiter_clip_count": 0,
+    "maximum_limited_sample_count": 0,
+    "maximum_post_limiter_clip_count": 0
+  },
+  "human_gate": {
+    "allowed_only_after_technical_gate": true,
+    "maximum_review_ready_generations": 1,
+    "comparison": "blinded_phase_control_vs_source_supported_candidate",
+    "blinded_order_seed": 14370001,
+    "questions": [
+      "Does the source-supported candidate drive harder than the same-count phase control?",
+      "Do the downbeat and backbeat remain stable and easy to follow?",
+      "Does the source hook remain recognizable?",
+      "Does the counter-rhythm avoid arbitrary busyness, groove damage, and generic loudness substitution?",
+      "Is the change immediately useful as the committed Slam gesture?"
+    ],
+    "fail_closed_verdicts": [
+      "near_identity",
+      "different_but_not_better",
+      "arbitrary_busyness",
+      "anchor_loss",
+      "groove_damage",
+      "source_identity_loss"
+    ]
+  }
+}
