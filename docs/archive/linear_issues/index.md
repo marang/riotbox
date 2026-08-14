@@ -1550,4 +1550,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Workflow: Archive and delete old Done Linear tickets
 - [RIOTBOX-1111.md](./RIOTBOX-1111.md)
   Workflow: Remove MemPalace dev-memory tooling
+- [RIOTBOX-1436.md](./RIOTBOX-1436.md)
+  P023: Make live TR-909 Slam land harder with collision-local impact pockets
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
