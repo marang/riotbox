@@ -56,8 +56,6 @@ Why: this keeps strategy, archive history, and implementation contracts separate
 Consequences: future spec work should land in `docs/`, not in new planning sprawl under `plan/`.  
 Status: accepted
 
----
-
 ### RBX-105
 
 Date: 2026-06-30
@@ -3873,4 +3871,18 @@ Decision: freeze `tr909_counter_rhythm_slam_v1` as a derived articulation of the
 Why: H-PATTERN-1 predicts drive from stable anchors plus interpretable violations, not from added loudness, random timing, or maximum density. Existing non-Fill TR-909 behavior carries typed policy names but renders mainly generic fixed grids; trusted source phrase evidence does not yet select an audible counter-role. Reallocating two existing non-anchor accents is causally different from the rejected 129.8 ms mix pocket, remains live-triggerable through Slam, and should be plainly audible as pattern topology without changing the kick owner or inventing more events.
 Evidence: `docs/engineering/percussive_force_and_beat_impact.md` separates drive, groove, pattern topology, interlock, and arrangement impact from isolated strike force. Its Stage-A history preregisters H-PATTERN-1 as explicit anchor plus source-supported counter-rhythm compared with same-count arbitrary distribution. `PhraseAudioFeatures` already persists confidence, transient density, and offbeat-onset density outside the realtime callback. The existing `Tr909SetSlam` action owns queue, commit, Session/replay, observer/UI state, and render projection. No Development WAV, source directory, Holdout audio, or commercial reference was opened or searched to set this mapping or its constants.
 Consequences: add one typed counter-rhythm field to the existing Core render projection and audio render state; derive it deterministically from persisted current-phrase evidence and refuse it otherwise. Keep callback work to fixed integer step classification and voice multiplication. Tests must prove source/path independence, trust and threshold refusal, anchor and kick invariance, exactly two accent/two donor slots, equal multiplier sum, callback partition invariance, and exact-path control identity. Preregister the same three bounded Development sources used by the preceding slice, but require at least two qualified cases and dense Beat03 qualification before human review. The exact candidate/control comparison must reach time-local delta RMS `0.02` without limiting. One bounded blinded human comparison, assigned with seed `14370001`, decides whether the source-supported pattern drives harder than the same-count phase control. Near identity, arbitrary busyness, anchor loss, groove damage, source loss, or `different but not better` closes fail-closed. No Holdout or `percussive_hard` claim is authorized.
+Status: accepted
+
+---
+
+### RBX-290
+
+Date: 2026-08-14
+Topic: replace the counter-rhythm v1 admission mistake with a versioned selector before further Development access
+Phase: P023 / Sound Excellence
+Question: how should RIOTBOX-1437 proceed after the mandatory dense Development case was trusted and highly transient but v1 refused it solely because its offbeat-onset density was below the selector's minimum?
+Decision: close `tr909_counter_rhythm_slam_v1` as `terminal_fail_closed_pre_candidate` and freeze `tr909_counter_rhythm_slam_v2`. Keep confidence at least `0.35`, transient density at least `0.25`, every renderer constant, the two-accent/two-donor topology, kick and anchor invariants, same-count phase control, exact-mix delta threshold, limiter gates, and human rejection rules unchanged. Change only the offbeat selector domain: finite density in `[0.0, 0.55)` selects `eighth_answer`, while density at least `0.55` selects `late_sixteenth_pickup`. Offbeat density chooses the counter-role; it is no longer an admission gate. Freeze seed `14370002` for the still-unspent single v2 human comparison.
+Why: v1 conflated two different questions. Confidence and transient density determine whether measured rhythmic evidence is usable; offbeat density describes where rhythmic activity already sits and should select the complementary response. A highly transient, anchor-heavy source with low offbeat density is not missing evidence. Refusing it prevents H-PATTERN-1 from testing the exact anchor-plus-counter-rhythm case it was designed to test. This is a versioned model correction after a Development refusal, not an in-place threshold retune or a reinterpretation of v1.
+Evidence: the v1 source-blind implementation is commit `7a4b5cbf`. The bounded session opened only registered Development case `dense_beat03_130`; its exact source hash was `e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a`, confidence `0.916584`, transient density `1.0`, and offbeat-onset density `0.125`. The v1 policy refused before rendering; no other Development file, Holdout audio, commercial reference, candidate, or human-review artifact was opened or generated.
+Consequences: preserve v1 JSON and its refusal as immutable negative evidence. Implement only the v2 selector-domain change, rerun source-blind tests, and begin a new bounded Development session before reopening exact registered cases. Dense qualification and at least two qualified cases remain mandatory. If v2 reaches the technical gate, generate at most one blinded exact RuntimeMix comparison; if it fails, stop without further retuning in this version.
 Status: accepted
