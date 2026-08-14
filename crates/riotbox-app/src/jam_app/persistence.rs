@@ -104,7 +104,7 @@ impl JamAppState {
         let pong = client.ping()?;
         let mut graph = client.analyze_source_file(&source_path, analysis_seed)?;
         drop(client);
-        enrich_graph_with_rust_source_timing(&mut graph, &source_path)?;
+        let source_audio = enrich_graph_with_rust_source_timing(&mut graph, &source_path)?;
         if let Some(explicit_source_downbeat_seconds) = explicit_source_downbeat_seconds {
             let explicit_source_bpm = explicit_source_bpm.ok_or_else(|| {
                 JamAppError::InvalidSession(
@@ -120,6 +120,7 @@ impl JamAppState {
         if let Some(explicit_source_bpm) = explicit_source_bpm {
             validate_explicit_source_bpm(&graph, explicit_source_bpm)?;
         }
+        attach_w30_hook_candidate_evidence(&mut graph, &source_audio);
 
         let session =
             session_from_ingested_graph(&graph, &source_path, source_graph_path.as_deref())?;

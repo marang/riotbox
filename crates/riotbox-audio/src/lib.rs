@@ -8,3 +8,4 @@ pub mod source_audio;
 pub mod source_timing_probe;
 pub mod tr909;
 pub mod w30;
+pub mod w30_hook_analysis;

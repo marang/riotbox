@@ -248,6 +248,7 @@ fn source_map_capture_preview_matches_capture_window_on_one_based_preferred_grid
         end_seconds: 8.5,
         start_frame: 384_000,
         end_frame: 408_000,
+        hook_selection: None,
     };
 
     let preview_range = source_map_capture_range_seconds(&graph, &session);

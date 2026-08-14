@@ -189,6 +189,7 @@ fn committed_w30_trigger_preserves_source_window_preview_samples() {
         end_seconds: 1.0,
         start_frame: 0,
         end_frame: 48_000,
+        hook_selection: None,
     });
     session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-b"));
     session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-03"));

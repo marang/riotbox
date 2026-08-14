@@ -1420,15 +1420,15 @@ RIOTBOX-1435 was canceled before implementation. Stage B and Holdout access
 remain blocked, and the isolated force lane is no longer the immediate P023
 priority.
 
-RIOTBOX-1433 now selects the smallest musician-value replacement target: the
-Golden Path already renders, persists, recalls, and replays real W-30 PCM, but
-its supported hook is still the transport-selected capture window rather than
-a source-evidence-selected keeper. RIOTBOX-1432 is the exact next audible slice:
-compare at most two explainable source-evidence policies with that baseline
-across the registered dense, tonal, and sparse positive sources, implement only
-a winner through the existing capture/Session/replay/RuntimeMix spine, and
-require a fresh human comparison. No new validator framework or further
-percussive-force retuning precedes it.
+RIOTBOX-1433 selected W-30 hook choice as the smallest musician-value
+replacement target. RIOTBOX-1432 implemented two pre-frozen policies through
+the existing Source Graph, capture, Session/replay, and RuntimeMix spine, then
+closed without a winner: dense and sparse failed the frozen confidence gate,
+while both policies made the same tonal selection and byte-identical render.
+`FeralBreakAlphaV2` therefore keeps `transport_boundary_v1`; the failed
+three-source prerequisite correctly prevented an uninformative human playback.
+No new validator framework, fallback music, percussive-force retuning, or
+Holdout access resulted.
 
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a

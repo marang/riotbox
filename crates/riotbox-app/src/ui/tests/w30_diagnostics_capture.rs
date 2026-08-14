@@ -364,6 +364,7 @@ fn renders_capture_handoff_source_readiness_for_w30_targets() {
             end_seconds: 3.75,
             start_frame: 60_000,
             end_frame: 180_000,
+            hook_selection: None,
         });
     shell.app.refresh_view();
     shell.app.runtime.w30_preview.source_window_preview =

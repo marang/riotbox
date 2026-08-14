@@ -465,12 +465,13 @@ After exit:
   lineage, replay, and live performance are proven, but Golden Path hook choice
   remains the musician/transport-selected capture window rather than a typed
   source-evidence decision.
-- RIOTBOX-1432 is the next audible vertical slice. It must compare the current
-  capture-window baseline with at most two explainable policies across the
-  registered dense, tonal, and sparse positive sources, implement only a
-  winning product-owned policy through the existing spine, and obtain a fresh
-  human baseline/candidate pass. No winner leaves current behavior unchanged or
-  honestly unavailable; it does not authorize fallback music.
+- RIOTBOX-1432 froze and compared two explainable policies against the current
+  capture-window baseline across the registered dense, tonal, and sparse
+  sources. Dense and sparse did not clear the frozen per-bar confidence gate;
+  both policies selected the same tonal bar and emitted byte-identical
+  candidates. The declared no-winner branch therefore retains
+  `transport_boundary_v1`. The three-source prerequisite blocked human playback,
+  and no fallback music or Holdout access occurred.
 - RIOTBOX-1423 established the broader legal CC0 corpus contract: its general
   candidate matrix covers at least five eligible development sources across
   four typed families and protects two disjoint fresh holdout sets. That broad

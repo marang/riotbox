@@ -6,6 +6,7 @@ use std::{
 use riotbox_audio::{
     source_audio::SourceAudioCache,
     source_timing_probe::{SourceTimingProbeConfig, analyze_source_timing_probe},
+    w30_hook_analysis::analyze_w30_hook_candidates,
 };
 use riotbox_core::{
     action::CommitBoundary,
@@ -49,7 +50,7 @@ pub(super) fn install_explicit_manual_source_grid(
 pub(super) fn enrich_graph_with_rust_source_timing(
     graph: &mut SourceGraph,
     source_path: &Path,
-) -> Result<(), JamAppError> {
+) -> Result<SourceAudioCache, JamAppError> {
     let source = SourceAudioCache::load_pcm_wav(source_path).map_err(|error| {
         JamAppError::InvalidSession(format!(
             "live source timing could not decode {}: {error}",
@@ -88,7 +89,19 @@ pub(super) fn enrich_graph_with_rust_source_timing(
         Some(existing) if !existing.is_empty() => format!("{existing}; {note}"),
         _ => note.into(),
     });
-    Ok(())
+    Ok(source)
+}
+
+pub(super) fn attach_w30_hook_candidate_evidence(
+    graph: &mut SourceGraph,
+    source: &SourceAudioCache,
+) {
+    let Some(primary) = graph.timing.primary_hypothesis() else {
+        graph.w30_hook_candidates.clear();
+        return;
+    };
+    graph.w30_hook_candidates =
+        analyze_w30_hook_candidates(source, &primary.bar_grid, primary.meter.beats_per_bar);
 }
 
 pub(super) fn confirm_explicit_source_bpm(

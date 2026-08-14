@@ -20,6 +20,7 @@ fn w30_snapshot_payload_restore_hydrates_capture_to_pad_artifact_preview_output(
             end_seconds: 2.0,
             start_frame: 0,
             end_frame: 96_000,
+            hook_selection: None,
         }),
         lineage_capture_refs: Vec::new(),
         resample_generation_depth: 0,

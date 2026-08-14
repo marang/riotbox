@@ -49,3 +49,6 @@ Current P023 algorithm-value refresh:
 - [riotbox_1433_audible_algorithm_value_audit_2026-08-12.md](./riotbox_1433_audible_algorithm_value_audit_2026-08-12.md):
   portfolio-wide retain/replace/retire evidence and the frozen bounded handoff
   to RIOTBOX-1432's product-owned W-30 hook selection.
+- [riotbox_1432_w30_source_hook_selection_2026-08-14.md](./riotbox_1432_w30_source_hook_selection_2026-08-14.md):
+  frozen three-source comparison, exact RuntimeMix identities, and fail-closed
+  no-winner verdict with current product behavior retained.

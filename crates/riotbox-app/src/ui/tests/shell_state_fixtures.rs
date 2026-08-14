@@ -361,6 +361,7 @@ fn first_run_captured_shell_state(source_ready: bool) -> JamShellState {
                 end_seconds: 1.0,
                 start_frame: 0,
                 end_frame: 44_100,
+                hook_selection: None,
             }),
             lineage_capture_refs: Vec::new(),
             resample_generation_depth: 0,

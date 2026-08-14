@@ -405,9 +405,13 @@ The bounded early seam is a non-realtime source-audio cache:
 
 - decode source WAV fixtures before callback use
 - store normalized interleaved `f32` samples with explicit sample rate and channel count
+- compute RBX-285 W-30 per-bar hook evidence only during non-realtime source
+  ingest after the final trusted/manual bar grid is known; the frozen analyzer
+  receives decoded PCM and timing spans, never path, filename, or source-id
 - expose bounded sample-window access for source-backed W-30 preview paths
 - project a small fixed-size preview window from `CaptureRef.source_window` into callback-safe W-30 preview state
 - write committed source-window captures as PCM16 WAV artifacts outside the realtime callback when the app has a session path and decoded source cache
+
 - prefer loaded committed capture artifacts for focused W-30 pad playback / trigger state, falling back to source-window projection only for bounded audition surfaces when no artifact is available
 - keep the `2048`-sample mono preview window for bounded audition diagnostics
 - project focused committed pad artifacts into a separate callback-safe `16384`-sample mono representation that spans the full capture duration and carries original sample-rate / frame-count identity, playback rate, direction, loop crossfade, and a bounded source-derived chop plan
@@ -419,6 +423,13 @@ The bounded early seam is a non-realtime source-audio cache:
 - derive chop slice starts outside the callback from quantized short-time energy rises in the real capture; realtime transport and pad triggers may only select and retrigger the prepared bounded plan
 - preserve the action-derived damage transform and capture-artifact identity across Session replay; artifact hydration must not invent macro / grit state that the committed action did not set
 - keep cache loading and source-window projection outside the realtime callback
+
+The existing transport-selected source window remains the default. Only a
+committed `feral_break_alpha_v2` preset with a non-baseline typed hook policy may
+replace a one-bar `CaptureBarGroup` window, and only when persisted eligible
+Source Graph evidence clears the frozen score-lift gate. Failure or insufficient
+evidence retains the baseline with a typed lineage reason; it never synthesizes
+fallback audio.
 
 Current limitation:
 

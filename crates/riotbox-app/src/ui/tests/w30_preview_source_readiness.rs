@@ -8,6 +8,7 @@ fn renders_log_w30_source_window_when_available() {
             end_seconds: 3.75,
             start_frame: 60_000,
             end_frame: 180_000,
+            hook_selection: None,
         });
     shell.active_screen = ShellScreen::Log;
 

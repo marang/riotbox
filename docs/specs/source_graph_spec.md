@@ -248,6 +248,19 @@ Rules:
   source-derived proof; consumers should expose them as unavailable or
   untrusted provenance when they are inspected
 
+## 7.6 W-30 Hook-Selection Evidence
+
+The Source Graph may also persist bounded per-bar `W30HookCandidateEvidence`
+produced from decoded source audio after the trusted primary or manually
+confirmed bar grid is installed. Each entry owns the exact bar index and source
+range, eligibility and typed ineligibility reason, the frozen raw and normalized
+features, and the two versioned policy scores defined by RBX-285.
+
+This evidence is descriptive analysis output. It must be computed outside the
+realtime callback, must not use path, filename, or source-id input, and must not
+silently move ordinary captures. A committed preset-owned capture policy may
+select from it; the resulting decision belongs in capture lineage.
+
 ---
 
 ## 8. Section Objects

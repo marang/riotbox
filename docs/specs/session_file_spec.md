@@ -175,12 +175,20 @@ RuntimeState {
 
 - `active_profile: Option<StyleProfileId>`
 - `active_preset: Option<PerformancePresetId>`
+- `w30_hook_selection_policy: W30HookSelectionPolicy`
 
 The IDs are behavior-relevant replay contract, not display-only metadata.
 Legacy Session V1 files without `style` load with both values unset. The first
 historical preset identity is `feral_break_alpha_v1`; the current UI-selected
 product identity is `feral_break_alpha_v2`, both paired with profile
 `feral_rebuild`.
+
+The W-30 policy is typed and versioned. `transport_boundary_v1` preserves the
+musician/transport boundary. A non-baseline policy may affect only a one-bar
+`CaptureBarGroup` explicitly owned by the committed `feral_break_alpha_v2`
+preset; other capture commands, lengths, and presets retain transport-boundary
+semantics. Applying a preset writes its policy into Session state so save,
+restore, and replay do not depend on hidden app-local state.
 
 The named identity does not cache a second live-performance policy. Bass
 ownership and source-backed lane decisions remain derived from the restored
@@ -1207,7 +1215,7 @@ Minimum provenance:
 - generating action ID
 - resulting assigned pad or bank if applicable
 
-`source_window` is optional for backward compatibility and for captures that are derived from internal resampling rather than a direct source range. When present, it should preserve source id, start/end seconds, and start/end source frames so later raw playback can resolve audio without guessing from UI state.
+`source_window` is optional for backward compatibility and for captures that are derived from internal resampling rather than a direct source range. When present, it should preserve source id, start/end seconds, and start/end source frames so later raw playback can resolve audio without guessing from UI state. It may additionally preserve a typed W-30 hook-selection decision: policy/version, baseline and selected ranges, normalized evidence, candidate and baseline scores, score lift, and the typed retained/replaced reason. Legacy windows without that field deserialize as transport-boundary lineage.
 
 For committed source-backed captures loaded from a session file, `storage_path` should be backed by a real PCM WAV artifact relative to the session file directory unless it is absolute. Artifact writing belongs to the non-realtime app commit path; the audio callback must never write capture files.
 

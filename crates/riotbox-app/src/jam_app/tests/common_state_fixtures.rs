@@ -242,6 +242,7 @@ fn w30_slice_pool_state_with_source_windows(
         end_seconds: 0.5,
         start_frame: 0,
         end_frame: 24_000,
+        hook_selection: None,
     });
     session.captures.push(CaptureRef {
         capture_id: CaptureId::from("cap-02"),
@@ -253,6 +254,7 @@ fn w30_slice_pool_state_with_source_windows(
             end_seconds: 0.55,
             start_frame: 2_400,
             end_frame: 26_400,
+            hook_selection: None,
         }),
         lineage_capture_refs: vec![CaptureId::from("cap-01")],
         resample_generation_depth: 0,
@@ -275,6 +277,7 @@ fn w30_slice_pool_state_with_source_windows(
             end_seconds: 0.623,
             start_frame: 5_904,
             end_frame: 29_904,
+            hook_selection: None,
         }),
         lineage_capture_refs: vec![CaptureId::from("cap-01")],
         resample_generation_depth: 0,

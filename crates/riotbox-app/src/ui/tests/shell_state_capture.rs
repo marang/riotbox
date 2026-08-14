@@ -64,6 +64,7 @@ fn renders_capture_provenance_source_window_when_available() {
             end_seconds: 3.75,
             start_frame: 60_000,
             end_frame: 180_000,
+            hook_selection: None,
         });
     shell.app.refresh_view();
     shell.active_screen = ShellScreen::Capture;
@@ -83,6 +84,7 @@ fn renders_recent_capture_source_window_shorthand_when_available() {
             end_seconds: 3.75,
             start_frame: 60_000,
             end_frame: 180_000,
+            hook_selection: None,
         });
     shell.app.refresh_view();
     shell.active_screen = ShellScreen::Capture;
@@ -100,6 +102,7 @@ fn source_window_formatters_keep_surface_shapes_stable() {
         end_seconds: 3.75,
         start_frame: 60_000,
         end_frame: 180_000,
+        hook_selection: None,
     };
 
     assert_eq!(format_source_window_span(&source_window), "1.25-3.75s");

@@ -88,6 +88,7 @@ fn w30_capture_to_pad_capture_for_action(action_id: u64) -> CaptureRef {
             end_seconds: 3.0,
             start_frame: 48_000,
             end_frame: 144_000,
+            hook_selection: None,
         }),
         lineage_capture_refs: Vec::new(),
         resample_generation_depth: 0,

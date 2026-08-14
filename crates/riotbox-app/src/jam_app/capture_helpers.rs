@@ -1,8 +1,12 @@
 use riotbox_core::{
     action::{Action, ActionCommand, ActionParams, CaptureLengthIntent},
     ids::{BankId, CaptureId, PadId},
-    session::{CaptureRef, CaptureSourceWindow, CaptureTarget, CaptureType, SessionFile},
-    source_graph::SourceGraph,
+    session::{
+        CaptureRef, CaptureSourceWindow, CaptureTarget, CaptureType, SessionFile,
+        W30HookSelectionDecision, W30HookSelectionPolicy, W30HookSelectionReason,
+    },
+    source_graph::{SourceGraph, W30HookCandidateEvidence, W30HookCandidateStatus},
+    style::PerformancePresetId,
     transport::CommitBoundaryState,
     view::jam::source_timing_consumer_readiness,
 };
@@ -93,6 +97,7 @@ pub(in crate::jam_app) fn capture_ref_from_action(
             }
         })
         .unwrap_or(0);
+    let notes = Some(capture_note(action, source_window.as_ref()));
 
     Some(CaptureRef {
         storage_path: format!("captures/{capture_id}.wav"),
@@ -105,7 +110,7 @@ pub(in crate::jam_app) fn capture_ref_from_action(
         created_from_action: Some(action.id),
         assigned_target,
         is_pinned: matches!(action.command, ActionCommand::W30LoopFreeze),
-        notes: Some(capture_note(action)),
+        notes,
     })
 }
 
@@ -128,7 +133,7 @@ fn capture_source_window(
         return None;
     }
 
-    let start_seconds = seconds_for_beat_cursor(graph, boundary.beat_index)?
+    let baseline_start_seconds = seconds_for_beat_cursor(graph, boundary.beat_index)?
         .max(0.0)
         .min(graph.source.duration_seconds);
     let beats_per_bar = graph
@@ -138,10 +143,18 @@ fn capture_source_window(
         .or(graph.timing.meter_hint)
         .map_or(4_u64, |meter| u64::from(meter.beats_per_bar));
     let end_beat = capture_end_beat(session, graph, action, boundary, beats_per_bar);
-    let end_seconds = seconds_for_beat_cursor(graph, end_beat)
+    let baseline_end_seconds = seconds_for_beat_cursor(graph, end_beat)
         .unwrap_or_else(|| seconds_for_beat_cursor_estimate(graph, end_beat))
         .min(graph.source.duration_seconds)
-        .max(start_seconds);
+        .max(baseline_start_seconds);
+    let (start_seconds, end_seconds, hook_selection) = select_w30_hook_window(
+        session,
+        graph,
+        action,
+        baseline_start_seconds,
+        baseline_end_seconds,
+        beats_per_bar,
+    );
     let start_frame = seconds_to_frame(start_seconds, graph.source.sample_rate);
     let end_frame = seconds_to_frame(end_seconds, graph.source.sample_rate);
     if end_frame <= start_frame {
@@ -154,7 +167,186 @@ fn capture_source_window(
         end_seconds,
         start_frame,
         end_frame,
+        hook_selection,
     })
+}
+
+const W30_HOOK_BASELINE_TOLERANCE_SECONDS: f32 = 0.020;
+const W30_HOOK_MINIMUM_SCORE_LIFT: f32 = 0.10;
+
+fn select_w30_hook_window(
+    session: &SessionFile,
+    graph: &SourceGraph,
+    action: &Action,
+    baseline_start_seconds: f32,
+    baseline_end_seconds: f32,
+    beats_per_bar: u64,
+) -> (f32, f32, Option<W30HookSelectionDecision>) {
+    if action.command != ActionCommand::CaptureBarGroup
+        || session.runtime_state.style.active_preset != Some(PerformancePresetId::FeralBreakAlphaV2)
+        || !is_one_bar_capture(session, action, beats_per_bar)
+    {
+        return (baseline_start_seconds, baseline_end_seconds, None);
+    }
+
+    let policy = session.runtime_state.style.w30_hook_selection_policy;
+    let baseline = graph.w30_hook_candidates.iter().find(|candidate| {
+        candidate.status == W30HookCandidateStatus::Eligible
+            && (candidate.start_seconds - baseline_start_seconds).abs()
+                <= W30_HOOK_BASELINE_TOLERANCE_SECONDS
+    });
+    if policy == W30HookSelectionPolicy::TransportBoundaryV1 {
+        return (
+            baseline_start_seconds,
+            baseline_end_seconds,
+            Some(selection_decision(
+                policy,
+                W30HookSelectionReason::TransportBoundaryPolicy,
+                baseline,
+                baseline,
+                baseline_start_seconds,
+                baseline_end_seconds,
+            )),
+        );
+    }
+
+    let eligible = graph
+        .w30_hook_candidates
+        .iter()
+        .filter(|candidate| candidate.status == W30HookCandidateStatus::Eligible)
+        .collect::<Vec<_>>();
+    if eligible.len() < 2 {
+        return retained_hook_window(
+            policy,
+            W30HookSelectionReason::InsufficientEligibleBars,
+            baseline,
+            baseline_start_seconds,
+            baseline_end_seconds,
+        );
+    }
+    let Some(baseline) = baseline else {
+        return retained_hook_window(
+            policy,
+            W30HookSelectionReason::BaselineEvidenceUnavailable,
+            None,
+            baseline_start_seconds,
+            baseline_end_seconds,
+        );
+    };
+    let Some(best) = eligible
+        .into_iter()
+        .filter(|candidate| score(candidate, policy).is_some())
+        .fold(
+            None,
+            |best: Option<&W30HookCandidateEvidence>, candidate| match best {
+                Some(current)
+                    if score(current, policy) > score(candidate, policy)
+                        || (score(current, policy) == score(candidate, policy)
+                            && current.start_seconds <= candidate.start_seconds) =>
+                {
+                    Some(current)
+                }
+                _ => Some(candidate),
+            },
+        )
+    else {
+        return retained_hook_window(
+            policy,
+            W30HookSelectionReason::InsufficientEligibleBars,
+            Some(baseline),
+            baseline_start_seconds,
+            baseline_end_seconds,
+        );
+    };
+    let baseline_score = score(baseline, policy).unwrap_or(0.0);
+    let best_score = score(best, policy).unwrap_or(0.0);
+    if best_score - baseline_score < W30_HOOK_MINIMUM_SCORE_LIFT {
+        return retained_hook_window(
+            policy,
+            W30HookSelectionReason::ScoreLiftBelowMinimum,
+            Some(baseline),
+            baseline_start_seconds,
+            baseline_end_seconds,
+        );
+    }
+
+    (
+        best.start_seconds,
+        best.end_seconds,
+        Some(selection_decision(
+            policy,
+            W30HookSelectionReason::CandidateSelected,
+            Some(baseline),
+            Some(best),
+            baseline_start_seconds,
+            baseline_end_seconds,
+        )),
+    )
+}
+
+fn is_one_bar_capture(session: &SessionFile, action: &Action, beats_per_bar: u64) -> bool {
+    match action.params {
+        ActionParams::Capture { bars: Some(bars) } => u64::from(bars) == 1,
+        _ => {
+            session.runtime_state.capture.length_intent == CaptureLengthIntent::OneBar
+                && beats_per_bar > 0
+        }
+    }
+}
+
+fn retained_hook_window(
+    policy: W30HookSelectionPolicy,
+    reason: W30HookSelectionReason,
+    baseline: Option<&W30HookCandidateEvidence>,
+    baseline_start_seconds: f32,
+    baseline_end_seconds: f32,
+) -> (f32, f32, Option<W30HookSelectionDecision>) {
+    (
+        baseline_start_seconds,
+        baseline_end_seconds,
+        Some(selection_decision(
+            policy,
+            reason,
+            baseline,
+            baseline,
+            baseline_start_seconds,
+            baseline_end_seconds,
+        )),
+    )
+}
+
+fn selection_decision(
+    policy: W30HookSelectionPolicy,
+    reason: W30HookSelectionReason,
+    baseline: Option<&W30HookCandidateEvidence>,
+    selected: Option<&W30HookCandidateEvidence>,
+    baseline_start_seconds: f32,
+    baseline_end_seconds: f32,
+) -> W30HookSelectionDecision {
+    let baseline_score = baseline.and_then(|candidate| score(candidate, policy));
+    let selected_score = selected.and_then(|candidate| score(candidate, policy));
+    W30HookSelectionDecision {
+        policy,
+        reason,
+        baseline_bar_index: baseline.map(|candidate| candidate.bar_index),
+        baseline_start_seconds,
+        baseline_end_seconds,
+        selected_bar_index: selected.map(|candidate| candidate.bar_index),
+        selected_evidence: selected.and_then(|candidate| candidate.normalized_features),
+        baseline_score,
+        selected_score,
+        score_lift: baseline_score
+            .zip(selected_score)
+            .map(|(baseline, selected)| selected - baseline),
+    }
+}
+
+fn score(candidate: &W30HookCandidateEvidence, policy: W30HookSelectionPolicy) -> Option<f32> {
+    match policy {
+        W30HookSelectionPolicy::TransportBoundaryV1 => None,
+        W30HookSelectionPolicy::AttackBodyContrastV1 => candidate.attack_body_contrast_score,
+        W30HookSelectionPolicy::RepetitionSalienceV1 => candidate.repetition_salience_score,
+    }
 }
 
 fn capture_end_beat(
@@ -316,10 +508,17 @@ fn capture_origin_refs(graph: &SourceGraph) -> Vec<String> {
     refs
 }
 
-fn capture_note(action: &Action) -> String {
-    match &action.explanation {
+fn capture_note(action: &Action, source_window: Option<&CaptureSourceWindow>) -> String {
+    let base = match &action.explanation {
         Some(explanation) if !explanation.is_empty() => explanation.clone(),
         _ => format!("capture committed from {}", action.command),
+    };
+    match source_window.and_then(|window| window.hook_selection.as_ref()) {
+        Some(selection) => format!(
+            "{base} | w30 hook policy={:?} reason={:?} bar={:?} lift={:?}",
+            selection.policy, selection.reason, selection.selected_bar_index, selection.score_lift
+        ),
+        None => base,
     }
 }
 
@@ -416,4 +615,121 @@ fn next_capture_id(session: &SessionFile) -> CaptureId {
         "cap-{:02}",
         session.captures.len().saturating_add(1)
     ))
+}
+
+#[cfg(test)]
+mod hook_selection_tests {
+    use riotbox_core::{
+        action::{
+            Action, ActionCommand, ActionParams, ActionStatus, ActionTarget, ActorType,
+            Quantization, UndoPolicy,
+        },
+        ids::ActionId,
+        session::{SessionFile, W30HookSelectionPolicy, W30HookSelectionReason},
+        source_graph::{
+            DecodeProfile, GraphProvenance, SourceDescriptor, SourceGraph,
+            W30HookCandidateEvidence, W30HookCandidateStatus, W30HookFeatures,
+        },
+        style::PerformancePresetId,
+    };
+
+    use super::select_w30_hook_window;
+
+    #[test]
+    fn frozen_policy_selects_earliest_candidate_only_above_lift_gate() {
+        let mut session = session(W30HookSelectionPolicy::AttackBodyContrastV1);
+        let graph = graph_with_scores(&[(1, 0.20), (3, 0.75), (2, 0.75)]);
+        let action = capture_action();
+
+        let (start, end, decision) = select_w30_hook_window(&session, &graph, &action, 0.0, 2.0, 4);
+        let decision = decision.expect("selection decision");
+
+        assert_eq!((start, end), (2.0, 4.0));
+        assert_eq!(decision.reason, W30HookSelectionReason::CandidateSelected);
+        assert_eq!(decision.selected_bar_index, Some(2));
+        assert!((decision.score_lift.expect("lift") - 0.55).abs() < 1.0e-6);
+
+        session.runtime_state.style.w30_hook_selection_policy =
+            W30HookSelectionPolicy::RepetitionSalienceV1;
+        let (start, end, decision) = select_w30_hook_window(&session, &graph, &action, 0.0, 2.0, 4);
+        assert_eq!((start, end), (0.0, 2.0));
+        assert_eq!(
+            decision.expect("retained decision").reason,
+            W30HookSelectionReason::ScoreLiftBelowMinimum
+        );
+    }
+
+    #[test]
+    fn policy_never_changes_non_bar_group_capture() {
+        let session = session(W30HookSelectionPolicy::AttackBodyContrastV1);
+        let graph = graph_with_scores(&[(1, 0.10), (2, 0.90)]);
+        let mut action = capture_action();
+        action.command = ActionCommand::CaptureNow;
+
+        let (start, end, decision) = select_w30_hook_window(&session, &graph, &action, 0.0, 2.0, 4);
+
+        assert_eq!((start, end, decision), (0.0, 2.0, None));
+    }
+
+    fn session(policy: W30HookSelectionPolicy) -> SessionFile {
+        let mut session = SessionFile::new("session", "test", "2026-08-14T00:00:00Z");
+        session.runtime_state.style.active_preset = Some(PerformancePresetId::FeralBreakAlphaV2);
+        session.runtime_state.style.w30_hook_selection_policy = policy;
+        session
+    }
+
+    fn capture_action() -> Action {
+        Action {
+            id: ActionId(1),
+            actor: ActorType::User,
+            command: ActionCommand::CaptureBarGroup,
+            params: ActionParams::Capture { bars: Some(1) },
+            target: ActionTarget::default(),
+            requested_at: 1,
+            quantization: Quantization::NextBar,
+            committed_at: None,
+            status: ActionStatus::Queued,
+            result: None,
+            undo_policy: UndoPolicy::Undoable,
+            explanation: None,
+        }
+    }
+
+    fn graph_with_scores(scores: &[(u32, f32)]) -> SourceGraph {
+        let mut graph = SourceGraph::new(
+            SourceDescriptor {
+                source_id: "source".into(),
+                path: "ignored.wav".into(),
+                content_hash: "hash".into(),
+                duration_seconds: 8.0,
+                sample_rate: 48_000,
+                channel_count: 2,
+                decode_profile: DecodeProfile::NormalizedStereo,
+            },
+            GraphProvenance {
+                sidecar_version: "test".into(),
+                provider_set: vec![],
+                generated_at: "2026-08-14T00:00:00Z".into(),
+                source_hash: "hash".into(),
+                analysis_seed: 1,
+                run_notes: None,
+            },
+        );
+        graph.w30_hook_candidates = scores
+            .iter()
+            .map(|(bar_index, attack_score)| W30HookCandidateEvidence {
+                bar_index: *bar_index,
+                start_seconds: (*bar_index - 1) as f32 * 2.0,
+                end_seconds: *bar_index as f32 * 2.0,
+                downbeat_confidence: 1.0,
+                bar_rms: 0.1,
+                status: W30HookCandidateStatus::Eligible,
+                raw_features: W30HookFeatures::default(),
+                normalized_features: Some(W30HookFeatures::default()),
+                attack_body_contrast_score: Some(*attack_score),
+                repetition_salience_score: Some(0.5),
+            })
+            .collect();
+        graph
+    }
 }
