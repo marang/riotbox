@@ -9,9 +9,13 @@ use riotbox_audio::{
     source_audio::write_interleaved_pcm16_wav,
     tr909::{Tr909CounterRhythmPhase, Tr909PatternAdoption, Tr909RenderMode, Tr909RenderRouting},
 };
+use riotbox_core::transport::TransportClockState;
 use serde_json::json;
 
-use crate::model::{CALLBACK_FRAME_COUNT, CHANNEL_COUNT, PreparedLivePath, SAMPLE_RATE};
+use crate::{
+    live_flow,
+    model::{CALLBACK_FRAME_COUNT, CHANNEL_COUNT, PreparedLivePath, SAMPLE_RATE},
+};
 
 const REVIEW_BARS: usize = 4;
 const MIN_TIME_LOCAL_DELTA_RMS: f32 = 0.02;
@@ -21,7 +25,7 @@ pub fn write_case(
     output_dir: &Path,
     write_wavs: bool,
 ) -> Result<(), Box<dyn Error>> {
-    let slam_stage = prepared
+    prepared
         .stages
         .iter()
         .find(|stage| stage.case_id == "after-s-slam")
@@ -32,7 +36,35 @@ pub fn write_case(
         .find(|proof| proof.case_id == "monitor-blend")
         .ok_or("counter-rhythm qualification could not find committed Blend route")?;
 
-    let mut candidate = (*slam_stage.plan).clone();
+    let graph = prepared
+        .state
+        .source_graph
+        .as_ref()
+        .ok_or("counter-rhythm qualification lost Source Graph")?;
+    let source = &graph.source;
+    let feature = graph
+        .phrase_audio_features
+        .iter()
+        .min_by_key(|evidence| (evidence.phrase_index, evidence.start_bar));
+    let review_feature = feature.ok_or("source graph has no phrase-audio evidence")?;
+    let review_position = prepared
+        .source_timing
+        .bar_start_beat_cursor(u64::from(review_feature.start_bar))
+        .ok_or("counter-rhythm qualification could not map first source phrase to transport")?;
+    let mut review_state = prepared.state.clone();
+    review_state.update_transport_clock(TransportClockState {
+        is_playing: true,
+        position_beats: review_position as f64,
+        beat_index: review_position,
+        bar_index: u64::from(review_feature.start_bar),
+        phrase_index: u64::from(review_feature.phrase_index),
+        current_scene: review_state.runtime.transport.current_scene.clone(),
+    });
+    let mut candidate = live_flow::render_plan(
+        &review_state,
+        prepared.source_timing.bpm,
+        review_position as f64,
+    );
     candidate.source_monitor_render = blend.plan.source_monitor_render.clone();
     let selected = candidate.tr909_render.counter_rhythm;
     let activation_ok = candidate.tr909_render.mode == Tr909RenderMode::BreakReinforce
@@ -40,27 +72,6 @@ pub fn write_case(
         && candidate.tr909_render.slam_enabled
         && candidate.tr909_render.pattern_adoption == Some(Tr909PatternAdoption::MainlineDrive)
         && selected.is_some();
-
-    let graph = prepared
-        .state
-        .source_graph
-        .as_ref()
-        .ok_or("counter-rhythm qualification lost Source Graph")?;
-    let source = &graph.source;
-    let phrase_index = (candidate.transport.position_beats / 16.0).floor() as u32 + 1;
-    let bar_index = (candidate.transport.position_beats / 4.0).floor() as u32 + 1;
-    let feature = graph
-        .phrase_audio_features
-        .iter()
-        .filter(|evidence| evidence.phrase_index == phrase_index)
-        .max_by(|left, right| left.confidence.total_cmp(&right.confidence))
-        .or_else(|| {
-            graph
-                .phrase_audio_features
-                .iter()
-                .filter(|evidence| evidence.start_bar <= bar_index && bar_index <= evidence.end_bar)
-                .max_by(|left, right| left.confidence.total_cmp(&right.confidence))
-        });
     let report_path = output_dir.join("counter-rhythm-qualification.json");
     if !activation_ok {
         fs::write(
