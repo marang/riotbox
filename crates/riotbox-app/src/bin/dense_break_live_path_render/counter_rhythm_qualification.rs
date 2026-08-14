@@ -67,6 +67,8 @@ pub fn write_case(
             report_path,
             serde_json::to_vec_pretty(&json!({
                 "schema": "riotbox.tr909_counter_rhythm_qualification.case.v1",
+                "mechanism": "tr909_counter_rhythm_slam_v2",
+                "decision": "RBX-290",
                 "result": "refused",
                 "source": source,
                 "selection": selected.map(|value| value.label()),
@@ -117,6 +119,8 @@ pub fn write_case(
         report_path,
         serde_json::to_vec_pretty(&json!({
             "schema": "riotbox.tr909_counter_rhythm_qualification.case.v1",
+            "mechanism": "tr909_counter_rhythm_slam_v2",
+            "decision": "RBX-290",
             "result": if passed { "pass" } else { "fail" },
             "source": source,
             "source_feature_evidence": feature.map(|evidence| json!({

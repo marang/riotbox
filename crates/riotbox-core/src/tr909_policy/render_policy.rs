@@ -334,7 +334,7 @@ fn counter_rhythm_features_are_eligible(features: &PhraseAudioFeatures) -> bool 
         && features.offbeat_onset_density.is_finite()
         && features.confidence >= 0.35
         && features.transient_density >= 0.25
-        && features.offbeat_onset_density >= 0.25
+        && features.offbeat_onset_density >= 0.0
 }
 
 #[must_use]

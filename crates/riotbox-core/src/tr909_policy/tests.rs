@@ -475,7 +475,7 @@ mod tests {
         let eligible = counter_rhythm_graph(0.45, 0.40, 0.80);
         let cases = [
             counter_rhythm_graph(0.249, 0.40, 0.80),
-            counter_rhythm_graph(0.45, 0.249, 0.80),
+            counter_rhythm_graph(0.45, -0.001, 0.80),
             counter_rhythm_graph(0.45, 0.40, 0.349),
             counter_rhythm_graph(f32::NAN, 0.40, 0.80),
         ];
@@ -491,6 +491,16 @@ mod tests {
                 None
             );
         }
+
+        assert_eq!(
+            derive_tr909_render_policy(
+                &break_reinforce_slam_lane(),
+                &transport,
+                Some(&counter_rhythm_graph(0.45, 0.125, 0.80))
+            )
+            .counter_rhythm,
+            Some(Tr909CounterRhythmPolicy::EighthAnswer)
+        );
 
         let mut slam_off = break_reinforce_slam_lane();
         slam_off.slam_enabled = false;
