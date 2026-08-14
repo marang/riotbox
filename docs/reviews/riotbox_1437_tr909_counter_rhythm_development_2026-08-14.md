@@ -43,3 +43,30 @@ computed.
 
 The v2 run remains Development-only and may support a bounded musician taste
 decision, not a holdout, release-readiness, or `percussive_hard` claim.
+
+## v2 Frozen Result
+
+After the first-phrase harness alignment was corrected without changing policy
+or audio constants, the mandatory dense case selected `eighth_answer` and
+rendered the exact candidate and phase control. Both paths had zero pre-limiter
+clips, zero limited samples, and zero post-limiter clips. Their maximum
+step-local delta RMS was `0.0145695`, below the frozen `0.02` gate. The v2
+session therefore stopped before opening either remaining Development source
+and generated no review WAV.
+
+Result: `v2_terminal_fail_closed_pre_review`.
+
+## v3 Preregistration Boundary
+
+v2 showed that the selected positions reach the exact product path but its
+`1.5`/`0.5` hierarchy remains too small for the preregistered audibility gate.
+`tr909_counter_rhythm_slam_v3` changes the musical topology rather than lowering
+that gate: the same two donor Snare/Hat positions become actual local holes
+(`0.0`), and the same two counter-role positions receive their conserved weight
+(`2.0`). This combines H-PATTERN-1's answer role with local negative space.
+
+Every source selector, trust gate, kick/anchor promise, affected slot, event
+grid, multiplier sum, exact-mix threshold, limiter rule, and human rejection
+rule remains unchanged. The new constants and seed `14370003` are frozen in
+`docs/benchmarks/tr909_counter_rhythm_slam_development_v3.json` under RBX-291
+before any v3 audio access.
