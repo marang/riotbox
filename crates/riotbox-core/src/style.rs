@@ -55,6 +55,8 @@ impl PerformancePresetId {
                 mc202_role: PresetMc202Role::SourceEvidenceSelected,
                 bass_ownership: PresetBassOwnership::LivePerformancePolicy,
                 source_monitor_mode: SourceMonitorMode::Blend,
+                w30_hook_selection_policy:
+                    crate::session::W30HookSelectionPolicy::TransportBoundaryV1,
                 macro_state: MacroState {
                     source_retain: 0.68,
                     chaos: 0.52,
@@ -89,6 +91,10 @@ impl PerformancePresetId {
                 // source in Blend can double the same break at its original source phase while
                 // the pad restarts its captured downbeat on the performance grid.
                 source_monitor_mode: SourceMonitorMode::Riotbox,
+                // RBX-285 keeps the shipped preset at the current transport boundary until
+                // the frozen Development comparison establishes one candidate winner.
+                w30_hook_selection_policy:
+                    crate::session::W30HookSelectionPolicy::TransportBoundaryV1,
                 macro_state: MacroState {
                     // V2 gives the promoted source hook a more hostile sampler character while
                     // the live performance policy still decides which lane hits hardest.
@@ -119,6 +125,8 @@ impl PerformancePresetId {
         let definition = self.definition();
         session.runtime_state.style.active_profile = Some(definition.profile_id);
         session.runtime_state.style.active_preset = Some(self);
+        session.runtime_state.style.w30_hook_selection_policy =
+            definition.w30_hook_selection_policy;
         session.runtime_state.source_monitor.mode = definition.source_monitor_mode;
         session.runtime_state.macro_state = definition.macro_state;
         session.runtime_state.mixer_state = definition.mixer_state;
@@ -192,6 +200,7 @@ pub struct PerformancePresetDefinition {
     pub mc202_role: PresetMc202Role,
     pub bass_ownership: PresetBassOwnership,
     pub source_monitor_mode: SourceMonitorMode,
+    pub w30_hook_selection_policy: crate::session::W30HookSelectionPolicy,
     pub macro_state: MacroState,
     pub mixer_state: MixerState,
 }
@@ -200,7 +209,7 @@ pub struct PerformancePresetDefinition {
 mod tests {
     use crate::{
         action::SourceMonitorMode,
-        session::{SessionFile, Tr909ReinforcementModeState},
+        session::{SessionFile, Tr909ReinforcementModeState, W30HookSelectionPolicy},
     };
 
     use super::{PerformancePresetId, PresetBassOwnership, StyleProfileId};
@@ -264,6 +273,10 @@ mod tests {
         assert_eq!(
             v2.tr909_reinforcement_mode,
             Tr909ReinforcementModeState::BreakReinforce
+        );
+        assert_eq!(
+            v2.w30_hook_selection_policy,
+            W30HookSelectionPolicy::TransportBoundaryV1
         );
     }
 }

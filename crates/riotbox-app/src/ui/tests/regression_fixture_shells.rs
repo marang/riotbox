@@ -324,6 +324,7 @@ fn w30_committed_shell_state(fixture: &W30RegressionFixture) -> JamShellState {
             end_seconds: source_window.end_seconds,
             start_frame: source_window.start_frame,
             end_frame: source_window.end_frame,
+            hook_selection: None,
         }
     });
     for extra in &fixture.extra_captures {

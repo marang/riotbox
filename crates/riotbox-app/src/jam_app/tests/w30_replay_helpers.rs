@@ -27,6 +27,7 @@ fn w30_source_backed_replay_state() -> (
         end_seconds: 0.5625,
         start_frame: 3_000,
         end_frame: 27_000,
+        hook_selection: None,
     });
     state.refresh_view();
 

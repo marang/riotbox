@@ -119,6 +119,8 @@ pub struct StyleRuntimeState {
     pub active_profile: Option<StyleProfileId>,
     #[serde(default)]
     pub active_preset: Option<PerformancePresetId>,
+    #[serde(default)]
+    pub w30_hook_selection_policy: W30HookSelectionPolicy,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -566,6 +568,42 @@ pub struct CaptureSourceWindow {
     pub end_seconds: f32,
     pub start_frame: u64,
     pub end_frame: u64,
+    #[serde(default)]
+    pub hook_selection: Option<W30HookSelectionDecision>,
+}
+
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum W30HookSelectionPolicy {
+    #[default]
+    TransportBoundaryV1,
+    AttackBodyContrastV1,
+    RepetitionSalienceV1,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum W30HookSelectionReason {
+    TransportBoundaryPolicy,
+    CandidateSelected,
+    InsufficientEligibleBars,
+    BaselineEvidenceUnavailable,
+    ScoreLiftBelowMinimum,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct W30HookSelectionDecision {
+    pub policy: W30HookSelectionPolicy,
+    pub reason: W30HookSelectionReason,
+    pub baseline_bar_index: Option<u32>,
+    pub baseline_start_seconds: f32,
+    pub baseline_end_seconds: f32,
+    pub selected_bar_index: Option<u32>,
+    #[serde(default)]
+    pub selected_evidence: Option<crate::source_graph::W30HookFeatures>,
+    pub baseline_score: Option<f32>,
+    pub selected_score: Option<f32>,
+    pub score_lift: Option<f32>,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

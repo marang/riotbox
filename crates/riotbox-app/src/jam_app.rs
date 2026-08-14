@@ -121,8 +121,9 @@ use helpers::{
     update_logged_action_result,
 };
 use live_source_timing::{
-    confirm_explicit_source_bpm, enrich_graph_with_rust_source_timing,
-    install_explicit_manual_source_grid, validate_explicit_source_bpm,
+    attach_w30_hook_candidate_evidence, confirm_explicit_source_bpm,
+    enrich_graph_with_rust_source_timing, install_explicit_manual_source_grid,
+    validate_explicit_source_bpm,
 };
 pub use product_export::{
     DawSessionExportSurfaceBlocker, DawSessionExportSurfaceGate, DawSessionExportSurfaceStatus,

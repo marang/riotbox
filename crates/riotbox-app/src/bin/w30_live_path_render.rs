@@ -1,6 +1,6 @@
 use std::{env, fs, path::PathBuf};
 
-use riotbox_app::jam_app::JamAppState;
+use riotbox_app::jam_app::{JamAppState, QueueControlResult};
 use riotbox_audio::{
     runtime::{
         AudioRuntimeTimingSnapshot, RuntimeMixRenderPlan,
@@ -9,7 +9,9 @@ use riotbox_audio::{
     source_audio::{SourceAudioCache, write_interleaved_pcm16_wav},
 };
 use riotbox_core::{
-    action::{CaptureLengthIntent, CommitBoundary, SourceMonitorMode},
+    action::{CaptureLengthIntent, CommitBoundary},
+    session::W30HookSelectionPolicy,
+    style::PerformancePresetId,
     transport::CommitBoundaryState,
 };
 
@@ -21,22 +23,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let source_path = required_path(&args, "--source")?;
     let output_dir = required_path(&args, "--output")?;
     let bpm = required_value(&args, "--bpm")?.parse::<f32>()?;
+    let downbeat_seconds = optional_value(&args, "--downbeat-seconds")
+        .map(str::parse::<f32>)
+        .transpose()?;
+    let hook_policy = parse_hook_policy(
+        optional_value(&args, "--hook-policy").unwrap_or("transport_boundary_v1"),
+    )?;
     let include_resample = args.iter().any(|arg| arg == "--include-resample");
     fs::create_dir_all(&output_dir)?;
 
     let session_path = output_dir.join("session.json");
     let graph_path = output_dir.join("source-graph.json");
-    let mut state = JamAppState::analyze_source_file_to_json_with_source_bpm_confirmation(
+    let mut state = JamAppState::analyze_source_file_to_json_with_source_timing_confirmation(
         &source_path,
         &session_path,
         Some(graph_path),
         "python/sidecar/json_stdio_sidecar.py",
         19,
         Some(bpm),
+        downbeat_seconds,
     )?;
     state.set_transport_playing(true);
     let scene_id = state.runtime.transport.current_scene.clone();
-    state.queue_source_monitor_mode(SourceMonitorMode::Riotbox, 90);
+    if state.queue_performance_preset(PerformancePresetId::FeralBreakAlphaV2, 90)
+        != QueueControlResult::Enqueued
+    {
+        return Err("FeralBreakAlphaV2 preset activation was unavailable".into());
+    }
     commit(
         &mut state,
         CommitBoundary::Immediate,
@@ -46,6 +59,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         scene_id.clone(),
         95,
     )?;
+    // This diagnostic override compares the two already-frozen policies through the same
+    // product capture/runtime path. The shipped preset default changes only after a winner.
+    state.session.runtime_state.style.w30_hook_selection_policy = hook_policy;
     state.queue_capture_length_intent(CaptureLengthIntent::OneBar, 96);
     commit(
         &mut state,
@@ -61,12 +77,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     commit(
         &mut state,
         CommitBoundary::Bar,
-        5,
-        2,
+        0,
+        1,
         1,
         scene_id.clone(),
         200,
     )?;
+    let capture = state
+        .session
+        .captures
+        .last()
+        .ok_or("capture commit produced no CaptureRef")?;
+    let source_window = capture
+        .source_window
+        .as_ref()
+        .ok_or("capture commit produced no source window")?;
+    println!(
+        "hook selection: policy={hook_policy:?} range={:.6}-{:.6}s decision={:?}",
+        source_window.start_seconds, source_window.end_seconds, source_window.hook_selection
+    );
     if !state.queue_promote_last_capture(210) {
         return Err("capture promotion was unavailable".into());
     }
@@ -305,4 +334,20 @@ fn required_value<'a>(
     args.get(index + 1)
         .map(String::as_str)
         .ok_or_else(|| format!("missing value for {flag}").into())
+}
+
+fn optional_value<'a>(args: &'a [String], flag: &str) -> Option<&'a str> {
+    args.iter()
+        .position(|arg| arg == flag)
+        .and_then(|index| args.get(index + 1))
+        .map(String::as_str)
+}
+
+fn parse_hook_policy(value: &str) -> Result<W30HookSelectionPolicy, Box<dyn std::error::Error>> {
+    match value {
+        "transport_boundary_v1" => Ok(W30HookSelectionPolicy::TransportBoundaryV1),
+        "attack_body_contrast_v1" => Ok(W30HookSelectionPolicy::AttackBodyContrastV1),
+        "repetition_salience_v1" => Ok(W30HookSelectionPolicy::RepetitionSalienceV1),
+        _ => Err(format!("unsupported --hook-policy {value}").into()),
+    }
 }

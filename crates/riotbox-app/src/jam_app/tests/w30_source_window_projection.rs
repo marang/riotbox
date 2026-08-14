@@ -56,6 +56,7 @@ fn raw_capture_audition_projects_source_window_preview_samples() {
         end_seconds: 1.0,
         start_frame: 0,
         end_frame: 48_000,
+        hook_selection: None,
     });
     let source_audio_cache =
         SourceAudioCache::load_pcm_wav(&source_path).expect("load source audio cache");
@@ -199,6 +200,7 @@ fn promoted_and_recall_w30_previews_project_source_window_preview_samples() {
             end_seconds: 1.0,
             start_frame: 0,
             end_frame: 48_000,
+            hook_selection: None,
         });
         let source_audio_cache =
             SourceAudioCache::load_pcm_wav(&source_path).expect("load source audio cache");

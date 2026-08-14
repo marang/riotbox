@@ -80,6 +80,8 @@ pub struct SourceGraph {
     pub source_map: SourceMapEvidence,
     #[serde(default)]
     pub phrase_audio_features: Vec<PhraseAudioFeatures>,
+    #[serde(default)]
+    pub w30_hook_candidates: Vec<W30HookCandidateEvidence>,
     pub sections: Vec<Section>,
     pub assets: Vec<Asset>,
     pub candidates: Vec<Candidate>,
@@ -97,6 +99,7 @@ impl SourceGraph {
             timing: TimingModel::default(),
             source_map: SourceMapEvidence::default(),
             phrase_audio_features: Vec::new(),
+            w30_hook_candidates: Vec::new(),
             sections: Vec::new(),
             assets: Vec::new(),
             candidates: Vec::new(),
@@ -156,6 +159,42 @@ impl SourceGraph {
 
         supports_break_rebuild && has_hook_or_capture_evidence
     }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum W30HookCandidateStatus {
+    Eligible,
+    IncompleteBar,
+    BarRmsBelowFloor,
+    DownbeatConfidenceBelowFloor,
+}
+
+#[derive(Copy, Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct W30HookFeatures {
+    pub onset_flux: f32,
+    pub body_retention: f32,
+    pub onset_density: f32,
+    pub spectral_contrast: f32,
+    pub repetition_salience: f32,
+    pub phrase_contrast: f32,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct W30HookCandidateEvidence {
+    pub bar_index: u32,
+    pub start_seconds: f32,
+    pub end_seconds: f32,
+    pub downbeat_confidence: Confidence,
+    pub bar_rms: f32,
+    pub status: W30HookCandidateStatus,
+    pub raw_features: W30HookFeatures,
+    #[serde(default)]
+    pub normalized_features: Option<W30HookFeatures>,
+    #[serde(default)]
+    pub attack_body_contrast_score: Option<f32>,
+    #[serde(default)]
+    pub repetition_salience_score: Option<f32>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

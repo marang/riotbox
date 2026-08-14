@@ -20,6 +20,7 @@ fn snapshot_payload_restore_hydrates_capture_now_artifact_preview_output() {
             end_seconds: 1.0,
             start_frame: 0,
             end_frame: 48_000,
+            hook_selection: None,
         }),
         lineage_capture_refs: Vec::new(),
         resample_generation_depth: 0,

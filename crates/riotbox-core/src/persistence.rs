@@ -133,17 +133,18 @@ mod tests {
             ActionId, AssetId, BankId, CaptureId, PadId, SceneId, SectionId, SnapshotId, SourceId,
         },
         session::{
-            ActionCommitRecord, CaptureRef, CaptureTarget, CaptureType, GhostBudgetState,
-            GhostState, GhostSuggestionRecord, GraphStorageMode, Mc202RoleState,
+            ActionCommitRecord, CaptureRef, CaptureSourceWindow, CaptureTarget, CaptureType,
+            GhostBudgetState, GhostState, GhostSuggestionRecord, GraphStorageMode, Mc202RoleState,
             Mc202SourcePhraseCandidateFamilyState, Mc202SourcePhraseNoteBudgetState,
             Mc202SourcePhrasePlanState, Mc202SourcePhraseSlotState, SessionFile, Snapshot,
-            SourceGraphRef, SourceRef,
+            SourceGraphRef, SourceRef, W30HookSelectionDecision, W30HookSelectionPolicy,
+            W30HookSelectionReason,
         },
         source_graph::{
             AnalysisSummary, AnalysisWarning, Asset, AssetType, Candidate, CandidateType,
             DecodeProfile, EnergyClass, GraphProvenance, QualityClass, Relationship,
             RelationshipType, Section, SectionLabelHint, SourceDescriptor, SourceGraph,
-            SourceGraphVersion,
+            SourceGraphVersion, W30HookFeatures,
         },
         style::PerformancePresetId,
         transport::CommitBoundaryState,
@@ -424,7 +425,29 @@ mod tests {
         let dir = tempdir().expect("create temp dir");
         let path = dir.path().join("sessions").join("session.json");
         let graph = sample_graph();
-        let session = sample_session(&graph);
+        let mut session = sample_session(&graph);
+        session.captures[0].source_window = Some(CaptureSourceWindow {
+            source_id: "src-1".into(),
+            start_seconds: 4.0,
+            end_seconds: 6.0,
+            start_frame: 192_000,
+            end_frame: 288_000,
+            hook_selection: Some(W30HookSelectionDecision {
+                policy: W30HookSelectionPolicy::AttackBodyContrastV1,
+                reason: W30HookSelectionReason::CandidateSelected,
+                baseline_bar_index: Some(1),
+                baseline_start_seconds: 0.0,
+                baseline_end_seconds: 2.0,
+                selected_bar_index: Some(3),
+                selected_evidence: Some(W30HookFeatures {
+                    onset_flux: 1.0,
+                    ..W30HookFeatures::default()
+                }),
+                baseline_score: Some(0.2),
+                selected_score: Some(0.7),
+                score_lift: Some(0.5),
+            }),
+        });
 
         save_session_json(&path, &session).expect("save session");
         let loaded = load_session_json(&path).expect("load session");

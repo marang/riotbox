@@ -267,6 +267,17 @@ fn live_ingest_explicit_bpm_persists_graph_confirmation_and_restore_identity() {
             .provider_set
             .contains(&"riotbox-rust-source-timing-probe".into())
     );
+    let restored_graph = restored.source_graph.as_ref().expect("restored graph");
+    assert_eq!(
+        restored_graph.w30_hook_candidates.len(),
+        restored_graph
+            .timing
+            .primary_hypothesis()
+            .expect("restored primary")
+            .bar_grid
+            .len(),
+        "source ingest must persist one W-30 evidence row per analyzed bar"
+    );
 }
 
 #[test]
@@ -317,6 +328,7 @@ fn tonal_live_ingest_requires_and_persists_explicit_manual_grid_phase() {
     assert_eq!(primary.kind, TimingHypothesisKind::Manual);
     assert!(primary.hypothesis_id.starts_with("manual-source-grid-v1-"));
     assert_eq!(primary.bar_grid[0].start_seconds, 0.0);
+    assert_eq!(graph.w30_hook_candidates.len(), primary.bar_grid.len());
     assert!(primary
         .provenance
         .contains(&"musician-manual-source-grid.v1".into()));

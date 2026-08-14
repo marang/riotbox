@@ -998,15 +998,16 @@ cargo run -p riotbox-app --bin riotbox-app -- \
 Then:
 
 1. press `Space` and confirm the source is audible
-2. set the Capture length to `1 bar` with `-` (repeat only if the current
+2. press `F`; verify the header shows profile `feral_rebuild`, preset
+   `Feral Break Alpha v2`, and monitor `Riotbox`. The committed preset now owns
+   any versioned W-30 hook-selection policy before capture. Use `M` for an
+   explicit Source/Blend A/B check; do not leave the raw source doubled under
+   the promoted W-30 performance hook.
+3. set the Capture length to `1 bar` with `-` (repeat only if the current
    length is not yet `1 bar`), then press `c`; wait for the one-bar capture to
    land
-3. press `o`; wait for the raw audition and reject the path if it is unavailable
-4. press `p`; wait for promotion to the focused W-30 pad
-5. press `F`; verify the header shows profile `feral_rebuild`, preset
-   `Feral Break Alpha v2`, and monitor `Riotbox`. Use `M` for an explicit
-   Source/Blend A/B check; do not leave the raw source doubled under the
-   promoted W-30 performance hook.
+4. press `o`; wait for the raw audition and reject the path if it is unavailable
+5. press `p`; wait for promotion to the focused W-30 pad
 6. press `P` once and wait for the committed source-evidence MC-202 decision.
    It may assign bass, punctuation, an instigator, or `stay_out`; this is
    preparation, not one of the four live gestures.
