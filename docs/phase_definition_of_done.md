@@ -455,17 +455,22 @@ After exit:
   timid, the hook is weak, and source recognition is lost. RIOTBOX-1422 and
   RIOTBOX-1428 H31 subsequently failed to establish a defensible
   `percussive_hard` mechanism.
-- RIOTBOX-1429 owns the research-only prerequisite: typed force/beat vocabulary,
-  multi-scale analysis, failure explanation, and an unexecuted preregistration.
-  It changes no renderer and produces no listening candidate.
-- RIOTBOX-1428 is the directly enabled audible vertical slice. Stage A must
-  implement and falsify at least three structurally distinct source-general
-  mechanism families across the registered development matrix. Its separate
-  positive-event gate requires at least four source packs from four authors
-  across dense break, sparse drums, and electronic drums, with two qualified
-  events per pack plus refusal/stress controls. Every surviving family must
-  independently earn mechanical and directional human passes; at most one
-  uniquely preferred frozen mechanism may proceed to Stage B.
+- RIOTBOX-1429 supplied the research-only force/beat prerequisite. RIOTBOX-1428
+  then falsified F1, F2, F3-v2, and F4 across the registered Development
+  evidence without a human `percussive_hard` pass. RIOTBOX-1434's natural
+  controls did not supply a consistent cross-control transfer direction, so
+  RIOTBOX-1435 was canceled before implementation. These results remain frozen
+  negative evidence; Stage B and Holdout access remain blocked.
+- RIOTBOX-1433 identifies the next higher-value product gap: W-30 playback,
+  lineage, replay, and live performance are proven, but Golden Path hook choice
+  remains the musician/transport-selected capture window rather than a typed
+  source-evidence decision.
+- RIOTBOX-1432 is the next audible vertical slice. It must compare the current
+  capture-window baseline with at most two explainable policies across the
+  registered dense, tonal, and sparse positive sources, implement only a
+  winning product-owned policy through the existing spine, and obtain a fresh
+  human baseline/candidate pass. No winner leaves current behavior unchanged or
+  honestly unavailable; it does not authorize fallback music.
 - RIOTBOX-1423 established the broader legal CC0 corpus contract: its general
   candidate matrix covers at least five eligible development sources across
   four typed families and protects two disjoint fresh holdout sets. That broad

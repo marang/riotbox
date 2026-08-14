@@ -1412,15 +1412,23 @@ materially distinct and unclipped, and the old fixed-frequency oscillator and
 fixed tempo are absent. Direct raw-level source-to-tap listening nevertheless
 records `technically_ok_but_musically_weak`: the chop is interesting but very
 timid, Beat03 source recognition is lost, and the two-bar hook is weak.
-RIOTBOX-1422 and the rejected RIOTBOX-1428 H31 experiments then proved that
-measurable gain, attack/body, spectrum, and cross-source differences still do
-not establish a more forceful strike. RIOTBOX-1429 therefore records the
-research prerequisite: the typed multi-scale beat/force model, explanation of
-the failed mechanisms, and preregistered falsifiable source-adaptive hypotheses,
-without a code change or another candidate render. RIOTBOX-1428 is the next
-bounded audible slice and resumes at Stage A to implement and falsify those
-hypotheses; its Stage B product promotion remains blocked until Stage A earns
-mechanical and directional human passes.
+RIOTBOX-1422 and RIOTBOX-1428 subsequently proved across H31 and Stage-A F1–F4
+that measurable gain, attack/body, spectrum, and cross-source differences still
+do not establish a more forceful strike. RIOTBOX-1434's bounded natural-control
+study also closed fail-closed without a source-general transfer direction;
+RIOTBOX-1435 was canceled before implementation. Stage B and Holdout access
+remain blocked, and the isolated force lane is no longer the immediate P023
+priority.
+
+RIOTBOX-1433 now selects the smallest musician-value replacement target: the
+Golden Path already renders, persists, recalls, and replays real W-30 PCM, but
+its supported hook is still the transport-selected capture window rather than
+a source-evidence-selected keeper. RIOTBOX-1432 is the exact next audible slice:
+compare at most two explainable source-evidence policies with that baseline
+across the registered dense, tonal, and sparse positive sources, implement only
+a winner through the existing capture/Session/replay/RuntimeMix spine, and
+require a fresh human comparison. No new validator framework or further
+percussive-force retuning precedes it.
 
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a

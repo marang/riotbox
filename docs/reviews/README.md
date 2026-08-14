@@ -43,3 +43,9 @@ Current P023 rejected-experiment closeouts:
 - [riotbox_1422_h27_h30_rejected_experiment_closeout_2026-08-02.md](./riotbox_1422_h27_h30_rejected_experiment_closeout_2026-08-02.md):
   artifact-bound H27-H30 verdicts, retired V7-V10 mechanism family, and the
   narrow re-extraction boundary for stack-only work that never reached `main`.
+
+Current P023 algorithm-value refresh:
+
+- [riotbox_1433_audible_algorithm_value_audit_2026-08-12.md](./riotbox_1433_audible_algorithm_value_audit_2026-08-12.md):
+  portfolio-wide retain/replace/retire evidence and the frozen bounded handoff
+  to RIOTBOX-1432's product-owned W-30 hook selection.
