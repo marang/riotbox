@@ -56,8 +56,6 @@ Why: this keeps strategy, archive history, and implementation contracts separate
 Consequences: future spec work should land in `docs/`, not in new planning sprawl under `plan/`.  
 Status: accepted
 
----
-
 ### RBX-105
 
 Date: 2026-06-30
@@ -3859,4 +3857,60 @@ Decision: accept `docs/reviews/riotbox_1436_tr909_impact_pocket_development_2026
 Why: the human gate exists specifically to reject technically valid but musically irrelevant output. The candidate changed only a 129.8 ms collision window, with 0.052758 local delta RMS and no leakage, yet did not produce a perceptible harder landing. Retuning the frozen scalars after that observation would turn the experiment into result-driven optimization and repeat the near-identity loop that the contract prohibits.
 Evidence: frozen Development contract SHA-256 `171f21e2ddaafe11631f3022627a93bc6e1bdc328d9f85ce015d42f3a35f84ed`; completed bounded access record `d8b2f8dcbda73e38c2a3e186272a9b29b77dcb83d83db1dbc23e0ba803982b51`; technical report `1c3eaf01b43953f57e1500b8090042240aad015431da806f3fcb8b475df8a061`; exact A-then-B artifact `4df3f75f165dd4776e2adae098045978c6b1ad66ed187213e457f2c2b1049c04`; structured human verdict `193938fe259f622789c6f37b620d7ae775bfb2283ae06592902248f3f0e7db56`. No source-directory discovery, Holdout audio, or commercial reference audio was used.
 Consequences: no `tr909_impact_pocket_v1` product behavior or quality claim lands. Holdout remains unopened and unauthorized. A follow-up may reuse the research only through a genuinely new source-blind, versioned causal mechanism and Linear issue; it must not be a scalar variant of this pocket or another proxy-metric project. Prefer a mechanism whose intended consequence is plainly audible in the exact full mix before expanding validation breadth.
+Status: accepted
+
+---
+
+### RBX-289
+
+Date: 2026-08-14
+Topic: freeze a source-supported anchor/counter-rhythm Slam before RIOTBOX-1437 Development access
+Phase: P023 / Sound Excellence
+Question: how may Riotbox apply RIOTBOX-1429 H-PATTERN-1 after the collision-local RIOTBOX-1436 result was technically valid but inaudible, without scalar-retuning that rejected mechanism or confusing arbitrary busyness with stronger beat drive?
+Decision: freeze `tr909_counter_rhythm_slam_v1` as a derived articulation of the existing committed `Tr909SetSlam` action. Activate only for running `BreakReinforce` routed to `DrumBusSupport`, `slam_enabled == true`, `MainlineDrive`, at least two subdivisions per beat, and trusted current-phrase `PhraseAudioFeatures` with confidence at least `0.35`, transient density at least `0.25`, and offbeat-onset density at least `0.25`. Offbeat density at least `0.55` selects `late_sixteenth_pickup`; `[0.25, 0.55)` selects `eighth_answer`; anything below or untrusted refuses the articulation. Preserve the downbeat kick, beat-three backbeat, every trigger position, and the complete kick voice. Reweight only snare and hat at exactly two non-anchor accent slots and two donor slots per bar with multipliers `1.5` and `0.5`; all other slots remain `1.0`, so changed-slot multiplier sum remains `4.0`. For `eighth_answer`, accent `subdivision/2` and `2*subdivision + subdivision/2`, donating from `subdivision + subdivision/2` and `3*subdivision + subdivision/2`. For `late_sixteenth_pickup`, accent `2*subdivision - 1` and `4*subdivision - 1`, donating from `subdivision - 1` and `3*subdivision - 1`. Freeze a QA-only `counter_rhythm_phase_control_v1` that swaps accent and donor positions while preserving event count and multiplier sum.
+Why: H-PATTERN-1 predicts drive from stable anchors plus interpretable violations, not from added loudness, random timing, or maximum density. Existing non-Fill TR-909 behavior carries typed policy names but renders mainly generic fixed grids; trusted source phrase evidence does not yet select an audible counter-role. Reallocating two existing non-anchor accents is causally different from the rejected 129.8 ms mix pocket, remains live-triggerable through Slam, and should be plainly audible as pattern topology without changing the kick owner or inventing more events.
+Evidence: `docs/engineering/percussive_force_and_beat_impact.md` separates drive, groove, pattern topology, interlock, and arrangement impact from isolated strike force. Its Stage-A history preregisters H-PATTERN-1 as explicit anchor plus source-supported counter-rhythm compared with same-count arbitrary distribution. `PhraseAudioFeatures` already persists confidence, transient density, and offbeat-onset density outside the realtime callback. The existing `Tr909SetSlam` action owns queue, commit, Session/replay, observer/UI state, and render projection. No Development WAV, source directory, Holdout audio, or commercial reference was opened or searched to set this mapping or its constants.
+Consequences: add one typed counter-rhythm field to the existing Core render projection and audio render state; derive it deterministically from persisted current-phrase evidence and refuse it otherwise. Keep callback work to fixed integer step classification and voice multiplication. Tests must prove source/path independence, trust and threshold refusal, anchor and kick invariance, exactly two accent/two donor slots, equal multiplier sum, callback partition invariance, and exact-path control identity. Preregister the same three bounded Development sources used by the preceding slice, but require at least two qualified cases and dense Beat03 qualification before human review. The exact candidate/control comparison must reach time-local delta RMS `0.02` without limiting. One bounded blinded human comparison, assigned with seed `14370001`, decides whether the source-supported pattern drives harder than the same-count phase control. Near identity, arbitrary busyness, anchor loss, groove damage, source loss, or `different but not better` closes fail-closed. No Holdout or `percussive_hard` claim is authorized.
+Status: accepted
+
+---
+
+### RBX-290
+
+Date: 2026-08-14
+Topic: replace the counter-rhythm v1 admission mistake with a versioned selector before further Development access
+Phase: P023 / Sound Excellence
+Question: how should RIOTBOX-1437 proceed after the mandatory dense Development case was trusted and highly transient but v1 refused it solely because its offbeat-onset density was below the selector's minimum?
+Decision: close `tr909_counter_rhythm_slam_v1` as `terminal_fail_closed_pre_candidate` and freeze `tr909_counter_rhythm_slam_v2`. Keep confidence at least `0.35`, transient density at least `0.25`, every renderer constant, the two-accent/two-donor topology, kick and anchor invariants, same-count phase control, exact-mix delta threshold, limiter gates, and human rejection rules unchanged. Change only the offbeat selector domain: finite density in `[0.0, 0.55)` selects `eighth_answer`, while density at least `0.55` selects `late_sixteenth_pickup`. Offbeat density chooses the counter-role; it is no longer an admission gate. Freeze seed `14370002` for the still-unspent single v2 human comparison.
+Why: v1 conflated two different questions. Confidence and transient density determine whether measured rhythmic evidence is usable; offbeat density describes where rhythmic activity already sits and should select the complementary response. A highly transient, anchor-heavy source with low offbeat density is not missing evidence. Refusing it prevents H-PATTERN-1 from testing the exact anchor-plus-counter-rhythm case it was designed to test. This is a versioned model correction after a Development refusal, not an in-place threshold retune or a reinterpretation of v1.
+Evidence: the v1 source-blind implementation is commit `7a4b5cbf`. The bounded session opened only registered Development case `dense_beat03_130`; its exact source hash was `e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a`, confidence `0.916584`, transient density `1.0`, and offbeat-onset density `0.125`. The v1 policy refused before rendering; no other Development file, Holdout audio, commercial reference, candidate, or human-review artifact was opened or generated.
+Consequences: preserve v1 JSON and its refusal as immutable negative evidence. Implement only the v2 selector-domain change, rerun source-blind tests, and begin a new bounded Development session before reopening exact registered cases. Dense qualification and at least two qualified cases remain mandatory. If v2 reaches the technical gate, generate at most one blinded exact RuntimeMix comparison; if it fails, stop without further retuning in this version.
+Status: accepted
+
+---
+
+### RBX-291
+
+Date: 2026-08-14
+Topic: freeze a counter-rhythm plus local-space Slam after v2 missed the audibility floor
+Phase: P023 / Sound Excellence
+Question: what genuinely stronger H-PATTERN-1 mechanism may follow after v2 selected the intended source-backed answer but remained below the frozen exact-mix delta gate?
+Decision: close `tr909_counter_rhythm_slam_v2` as `terminal_fail_closed_pre_review` and freeze `tr909_counter_rhythm_slam_v3`. Preserve the v2 admission and policy selection exactly. At the same two accent slots and same two donor slots, replace the `1.5`/`0.5` hierarchy with `2.0`/`0.0`: two non-anchor Snare/Hat positions become local holes and their conserved weight moves to the two source-selected counter-role positions. Keep the changed-slot multiplier sum at `4.0`, the kick lane and anchor steps unchanged, the trigger grid unchanged, and the QA phase control as the exact accent/donor swap. Preserve the `0.02` local-delta threshold, all limiter gates, and the human rejection rules. Freeze blind-order seed `14370003`.
+Why: lowering the technical gate would hide the same near-identity risk the user already reported. Another small scalar increment would repeat the failed pattern. A zeroed donor creates a discrete rhythmic-space change while the doubled answer creates a clear counter-role; together they alter hierarchy and local negative space without adding events, changing the kick, or raising total changed-slot weight. This remains the same H-PATTERN-1 question but is a qualitatively stronger versioned renderer contract.
+Evidence: v2 correctly selected `eighth_answer` for the mandatory dense case and produced clean exact RuntimeMix outputs, but maximum step-local delta RMS was `0.0145695` against the frozen `0.02` minimum. Candidate and phase-control RMS were `0.0904994` and `0.0904681`; both had zero pre-limiter clips, zero limited samples, and zero post-limiter clips. No tonal or sparse Development source, Holdout audio, commercial reference, or human-review artifact was opened in the v2 session.
+Consequences: preserve v2 JSON and report as negative evidence. Implement only the `2.0`/`0.0` role topology, rerun synthetic invariants, then begin one new bounded Development session. Dense qualification and two qualified cases remain mandatory. A v3 technical failure closes this mechanism without a fourth scalar version; a technical pass permits exactly one blinded human comparison and still grants no Holdout or `percussive_hard` claim.
+Status: accepted
+
+---
+
+### RBX-292
+
+Date: 2026-08-14
+Topic: close counter-rhythm Slam after v3 failed source-diverse technical admission
+Phase: P023 / Sound Excellence
+Question: did the source-supported counter-rhythm plus local-space mechanism qualify robustly enough for one human comparison and product retention?
+Decision: no. Accept the v1-v3 record in `docs/reviews/riotbox_1437_tr909_counter_rhythm_development_2026-08-14.md` and close the mechanism as `terminal_fail_closed_pre_review`. v3 passed the mandatory dense case at `0.0278752` maximum step-local delta RMS with no limiter activity, but the tonal case correctly refused non-mainline ownership and sparse reached only `0.0195691` against the unchanged `0.02` floor. Only one of three cases qualified, below the required two. Generate no review artifact, request no human verdict, and remove the counter-rhythm implementation before merge.
+Why: the multi-source gate exists to prevent a mechanism that works only on the Golden Path from entering the instrument. Lowering the delta threshold, overriding tonal ownership, or adding a fourth multiplier version after seeing sparse would convert a bounded experiment into result-driven tuning. Dense success alone cannot substitute for the frozen diversity requirement.
+Evidence: v1 refused dense before rendering because it conflated offbeat selection and admission. v2 corrected that model under RBX-290 but reached only `0.0145695`. v3 added genuine local space under RBX-291. Its exact Development source hashes were dense `e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a`, tonal `ec2a0c930eb338bf81cd5cb4b5fef487e07c140ad40181e1d92b2a0990334e0e`, and sparse `8a970e5d7bd9b29771aba85f75e697c7510940d4404714bfb1e55e210c15f46c`. All opened paths were exact registered Development entries; no source directory, Holdout audio, commercial reference, review WAV, or human playback was accessed.
+Consequences: no `tr909_counter_rhythm_slam_v1`, v2, or v3 behavior lands. Preserve the frozen JSON contracts and negative report. A future slice must change rendered material, voice articulation, or source-backed arrangement/chop ownership; it must not lower the established gate or create another version of the same four-slot multiplier recipe.
 Status: accepted
