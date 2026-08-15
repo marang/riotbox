@@ -56,13 +56,15 @@
     "holdout_audio_allowed": false,
     "commercial_reference_audio_allowed": false,
     "maximum_unique_development_files": 3,
-    "exact_registered_paths_only": true
+    "exact_registered_paths_only": true,
+    "source_hash_policy": "require_the_previously_recorded_development_sha256_before_any_decode_or_render"
   },
   "cases": [
     {
       "case_id": "dense_beat03_130",
       "source_family": "dense_break",
       "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+      "source_sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
       "bpm": 130.0,
       "expected_applicability": "qualified_candidate"
     },
@@ -70,6 +72,7 @@
       "case_id": "tonal_rusharp_120",
       "source_family": "tonal_riff",
       "source_path": "data/test_audio/examples/DH_RushArp_120_A.wav",
+      "source_sha256": "ec2a0c930eb338bf81cd5cb4b5fef487e07c140ad40181e1d92b2a0990334e0e",
       "bpm": 120.0,
       "expected_applicability": "typed_refusal_source_character"
     },
@@ -77,6 +80,7 @@
       "case_id": "sparse_kicksnr_120",
       "source_family": "sparse_drums",
       "source_path": "data/test_audio/examples/DH_BeatC_KickSnr_120-01.wav",
+      "source_sha256": "8a970e5d7bd9b29771aba85f75e697c7510940d4404714bfb1e55e210c15f46c",
       "bpm": 120.0,
       "expected_applicability": "typed_refusal_source_character"
     }
