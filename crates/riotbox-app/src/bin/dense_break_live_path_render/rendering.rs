@@ -60,6 +60,37 @@ pub fn render_live_path(
             CALLBACK_FRAME_COUNT,
         );
     let alpha_source_reference = render(&source_monitor_plan.plan, monitor_review_frames)?;
+    let cut_hit_frames = bar_frame_count(bpm);
+    let cut_hit_return_slam_only_control = render(
+        &prepared.cut_hit_return_proof.slam_only_control_plan,
+        cut_hit_frames,
+    )?;
+    let cut_hit_return_fill_only_control = render(
+        &prepared.cut_hit_return_proof.fill_only_control_plan,
+        cut_hit_frames,
+    )?;
+    let cut_hit_return_candidate = render(
+        &prepared.cut_hit_return_proof.candidate_plan,
+        cut_hit_frames,
+    )?;
+    let alternate_partition =
+        render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
+            &[RuntimeMixRenderSequenceStep::new(
+                &prepared.cut_hit_return_proof.candidate_plan,
+                cut_hit_frames,
+            )],
+            SAMPLE_RATE,
+            CHANNEL_COUNT,
+            257,
+        )
+        .pop()
+        .ok_or("alternate callback partition omitted cut-hit output")?;
+    let cut_hit_return_callback_partition_invariant =
+        alternate_partition.samples == cut_hit_return_candidate.samples;
+    let cut_hit_return_changed_return = render(
+        &prepared.cut_hit_return_proof.changed_return_plan,
+        cut_hit_frames,
+    )?;
     let restart_recall_output = render(
         &prepared.restart_recall_plan,
         bar_frame_count(bpm).saturating_mul(2),
@@ -96,6 +127,11 @@ pub fn render_live_path(
         stage_outputs,
         alpha_arc_outputs,
         alpha_source_reference,
+        cut_hit_return_slam_only_control,
+        cut_hit_return_fill_only_control,
+        cut_hit_return_candidate,
+        cut_hit_return_changed_return,
+        cut_hit_return_callback_partition_invariant,
         restart_recall_output,
         transition_outputs,
         normal,

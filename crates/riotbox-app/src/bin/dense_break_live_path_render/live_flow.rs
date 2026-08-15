@@ -24,6 +24,7 @@ use riotbox_core::{
 
 use crate::{
     alpha_arc::{prepare_alpha_arc, prepare_restart_recall},
+    cut_hit_return::prepare_cut_hit_return,
     model::{
         CaptureJourneyProof, ConfirmedSourceTiming, GestureCompanionAction, GestureTransition,
         MonitorProof, PreparedLivePath, RenderStage, SceneTransitionProof,
@@ -195,6 +196,7 @@ pub fn prepare(
         live_policy.mc202_intent.label()
     );
     let (alpha_arc_stages, alpha_arc_proof) = prepare_alpha_arc(&state, &source_timing, bpm)?;
+    let cut_hit_return_proof = prepare_cut_hit_return(&state, &source_timing, bpm)?;
 
     let riotbox_plan = render_plan(&state, bpm, phrase_cursor as f64);
     let to_source = set_monitor_mode(&mut state, SourceMonitorMode::Source, phrase_cursor, 420)?;
@@ -632,6 +634,7 @@ pub fn prepare(
         preset_action_id: preset_commit.action_id.0,
         alpha_arc_stages,
         alpha_arc_proof,
+        cut_hit_return_proof,
         restart_recall_plan,
         restart_recall_proof,
         capture_journey_proof: CaptureJourneyProof {

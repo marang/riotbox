@@ -1,6 +1,8 @@
 mod alpha_arc;
 mod alpha_manifest;
 mod controlled_source_manifest;
+mod cut_hit_return;
+mod cut_hit_return_manifest;
 mod live_flow;
 mod manifest;
 mod model;
@@ -36,6 +38,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         cli_downbeat_seconds,
     )?;
     let rendered = rendering::render_live_path(&prepared)?;
+    cut_hit_return_manifest::write_and_validate(&prepared, &rendered, &output_dir)?;
     if controlled_source_review {
         controlled_source_manifest::write_pack(prepared, rendered, &source_path, &output_dir)
     } else {
