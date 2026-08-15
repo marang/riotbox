@@ -58,6 +58,7 @@ include!("tests/mc202_restore_replay.rs");
 include!("tests/fixture_regressions_tr909_slam.rs");
 include!("tests/tr909_takeover_source_support.rs");
 include!("tests/tr909_replay.rs");
+include!("tests/tr909_cut_hit_return.rs");
 include!("tests/w30_replay_core.rs");
 include!("tests/w30_replay_snapshot_variants.rs");
 include!("tests/w30_replay_helpers.rs");

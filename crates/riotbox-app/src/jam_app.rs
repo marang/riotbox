@@ -147,6 +147,7 @@ pub use state::{
     AppRuntimeState, JamAppError, JamAppState, JamFileSet, QueueControlResult, SidecarState,
     SourceAudioRuntimeState, SourceAudioStatus, TransportDriverState,
 };
+pub use tr909_queue::{Tr909CutHitReturnQueueResult, Tr909CutHitReturnUnavailableReason};
 use transport_helpers::{normalize_scene_candidates, transport_clock_from_state};
 
 #[cfg(test)]

@@ -64,7 +64,7 @@ fn renders_more_musical_jam_shell_snapshot() {
     assert!(rendered.contains("next fill"));
     assert!(rendered.contains("wait [==>-] next bar"), "{rendered}");
     assert!(
-        rendered.contains("Primary: w hit | f fill | s slam | y scene jump"),
+        rendered.contains("Primary: w hit | f fill | S cut-hit | s slam | y scene jump"),
         "{rendered}"
     );
     assert!(

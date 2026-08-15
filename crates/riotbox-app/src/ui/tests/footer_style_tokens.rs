@@ -174,7 +174,7 @@ fn help_primary_gesture_line_styles_key_prefixes_without_rewriting_text() {
 
     assert_eq!(
         rendered,
-        "space: play / pause | w: hit | f: fill | s: slam | y: scene jump"
+        "space: play / pause | w: hit | f: fill | S: cut-hit | s: slam | y: scene jump"
     );
     assert_eq!(line.spans[0].content.as_ref(), "space");
     assert_eq!(line.spans[0].style.fg, Some(Color::Cyan));
@@ -182,10 +182,12 @@ fn help_primary_gesture_line_styles_key_prefixes_without_rewriting_text() {
     assert_eq!(line.spans[3].style.fg, Some(Color::Cyan));
     assert_eq!(line.spans[6].content.as_ref(), "f");
     assert_eq!(line.spans[6].style.fg, Some(Color::Cyan));
-    assert_eq!(line.spans[9].content.as_ref(), "s");
+    assert_eq!(line.spans[9].content.as_ref(), "S");
     assert_eq!(line.spans[9].style.fg, Some(Color::Cyan));
-    assert_eq!(line.spans[12].content.as_ref(), "y");
+    assert_eq!(line.spans[12].content.as_ref(), "s");
     assert_eq!(line.spans[12].style.fg, Some(Color::Cyan));
+    assert_eq!(line.spans[15].content.as_ref(), "y");
+    assert_eq!(line.spans[15].style.fg, Some(Color::Cyan));
 }
 
 #[test]
