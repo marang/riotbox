@@ -12,7 +12,7 @@ use riotbox_audio::{
 use riotbox_core::{
     action::{ActionCommand, CaptureLengthIntent, CommitBoundary, SourceMonitorMode, TargetScope},
     ids::SceneId,
-    live_performance_policy::derive_live_performance_policy,
+    live_performance_policy::{LivePerformanceCharacter, derive_live_performance_policy},
     queue::CommittedActionRef,
     source_graph::{primary_grid_anchor_seconds_for_projected_scene, section_for_projected_scene},
     style::PerformancePresetId,
@@ -196,7 +196,15 @@ pub fn prepare(
         live_policy.mc202_intent.label()
     );
     let (alpha_arc_stages, alpha_arc_proof) = prepare_alpha_arc(&state, &source_timing, bpm)?;
-    let cut_hit_return_proof = prepare_cut_hit_return(&state, &source_timing, bpm)?;
+    let (cut_hit_return_proof, cut_hit_return_refusal) =
+        if live_policy.character == LivePerformanceCharacter::DenseBreak {
+            (
+                Some(prepare_cut_hit_return(&state, &source_timing, bpm)?),
+                None,
+            )
+        } else {
+            (None, Some("source_character_not_dense_break"))
+        };
 
     let riotbox_plan = render_plan(&state, bpm, phrase_cursor as f64);
     let to_source = set_monitor_mode(&mut state, SourceMonitorMode::Source, phrase_cursor, 420)?;
@@ -635,6 +643,7 @@ pub fn prepare(
         alpha_arc_stages,
         alpha_arc_proof,
         cut_hit_return_proof,
+        cut_hit_return_refusal,
         restart_recall_plan,
         restart_recall_proof,
         capture_journey_proof: CaptureJourneyProof {

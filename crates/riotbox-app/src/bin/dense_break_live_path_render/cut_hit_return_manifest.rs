@@ -22,6 +22,52 @@ pub(super) fn write_and_validate(
     output_dir: &Path,
 ) -> Result<(), Box<dyn Error>> {
     fs::create_dir_all(output_dir.join("cut-hit-return"))?;
+    let Some(proof) = prepared.cut_hit_return_proof.as_ref() else {
+        let refusal = prepared
+            .cut_hit_return_refusal
+            .ok_or("cut-hit return omitted both proof and typed refusal")?;
+        let report = json!({
+            "schema": "riotbox.tr909_cut_hit_return_exact_runtime_mix.v1",
+            "ticket": "RIOTBOX-1438",
+            "decision": "RBX-293",
+            "contract": "docs/benchmarks/tr909_cut_hit_return_development_v1.json",
+            "result": "typed_refusal",
+            "applicability": refusal,
+            "quality_proof": false,
+            "human_verdict": "not_applicable",
+            "source": {
+                "source_id": prepared.live_policy.source_id.to_string(),
+                "source_character": prepared.live_policy.character.label(),
+                "source_hash": prepared.state.source_graph.as_ref().map(|graph| graph.source.content_hash.as_str()),
+            },
+            "artifacts": [],
+            "failures": [],
+        });
+        fs::write(
+            output_dir.join("cut-hit-return/report.json"),
+            serde_json::to_vec_pretty(&report)?,
+        )?;
+        return Ok(());
+    };
+    let slam_only_control = rendered
+        .cut_hit_return_slam_only_control
+        .as_ref()
+        .ok_or("applicable cut-hit return omitted Slam-only output")?;
+    let fill_only_control = rendered
+        .cut_hit_return_fill_only_control
+        .as_ref()
+        .ok_or("applicable cut-hit return omitted Fill-only output")?;
+    let candidate = rendered
+        .cut_hit_return_candidate
+        .as_ref()
+        .ok_or("applicable cut-hit return omitted candidate output")?;
+    let changed_return = rendered
+        .cut_hit_return_changed_return
+        .as_ref()
+        .ok_or("applicable cut-hit return omitted changed-return output")?;
+    let callback_partition_invariant = rendered
+        .cut_hit_return_callback_partition_invariant
+        .ok_or("applicable cut-hit return omitted callback-partition result")?;
     let mut failures = Vec::new();
     let mut artifacts = Vec::<Value>::new();
     write_audio_artifact(
@@ -29,7 +75,7 @@ pub(super) fn write_and_validate(
         "cut-hit-return/00_slam_only_control.wav",
         "cut-hit-return-slam-only-control",
         "technical_control",
-        &rendered.cut_hit_return_slam_only_control.samples,
+        &slam_only_control.samples,
         &mut artifacts,
     )?;
     write_audio_artifact(
@@ -37,7 +83,7 @@ pub(super) fn write_and_validate(
         "cut-hit-return/01_fill_only_attribution.wav",
         "cut-hit-return-fill-only-attribution",
         "attribution_control",
-        &rendered.cut_hit_return_fill_only_control.samples,
+        &fill_only_control.samples,
         &mut artifacts,
     )?;
     write_audio_artifact(
@@ -45,7 +91,7 @@ pub(super) fn write_and_validate(
         "cut-hit-return/02_candidate.wav",
         "cut-hit-return-candidate",
         "candidate",
-        &rendered.cut_hit_return_candidate.samples,
+        &candidate.samples,
         &mut artifacts,
     )?;
     write_audio_artifact(
@@ -53,24 +99,24 @@ pub(super) fn write_and_validate(
         "cut-hit-return/03_changed_return.wav",
         "cut-hit-return-changed-return",
         "technical_return",
-        &rendered.cut_hit_return_changed_return.samples,
+        &changed_return.samples,
         &mut artifacts,
     )?;
 
     let candidate_pause = step_window(
-        &rendered.cut_hit_return_candidate.samples,
+        &candidate.samples,
         prepared.source_timing.bpm,
         NEGATIVE_SPACE_START_STEP,
         NEGATIVE_SPACE_END_STEP,
     )?;
     let candidate_hit = step_window(
-        &rendered.cut_hit_return_candidate.samples,
+        &candidate.samples,
         prepared.source_timing.bpm,
         NEGATIVE_SPACE_END_STEP,
         HARD_RETURN_END_STEP,
     )?;
     let control_pause = step_window(
-        &rendered.cut_hit_return_slam_only_control.samples,
+        &slam_only_control.samples,
         prepared.source_timing.bpm,
         NEGATIVE_SPACE_START_STEP,
         NEGATIVE_SPACE_END_STEP,
@@ -78,14 +124,9 @@ pub(super) fn write_and_validate(
     let candidate_pause_metrics = signal_metrics(candidate_pause);
     let candidate_hit_metrics = signal_metrics(candidate_hit);
     let control_pause_metrics = signal_metrics(control_pause);
-    let candidate_control_delta = signal_delta_metrics(
-        &rendered.cut_hit_return_slam_only_control.samples,
-        &rendered.cut_hit_return_candidate.samples,
-    );
-    let candidate_fill_delta = signal_delta_metrics(
-        &rendered.cut_hit_return_fill_only_control.samples,
-        &rendered.cut_hit_return_candidate.samples,
-    );
+    let candidate_control_delta =
+        signal_delta_metrics(&slam_only_control.samples, &candidate.samples);
+    let candidate_fill_delta = signal_delta_metrics(&fill_only_control.samples, &candidate.samples);
 
     if !candidate_pause.iter().all(|sample| *sample == 0.0) {
         failures.push("candidate negative-space window was not digitally silent".into());
@@ -105,56 +146,29 @@ pub(super) fn write_and_validate(
     if candidate_control_delta.active_samples == 0 {
         failures.push("candidate was byte-identical to the Slam-only control".into());
     }
-    if !rendered.cut_hit_return_callback_partition_invariant {
+    if !callback_partition_invariant {
         failures.push("candidate changed across callback partitions 128 and 257".into());
     }
-    if prepared
-        .cut_hit_return_proof
-        .candidate_plan
-        .tr909_render
-        .fill_recipe_id()
+    if proof.candidate_plan.tr909_render.fill_recipe_id()
         != Some(Tr909FillRecipeId::PhraseDriveBreakCutStompV2)
     {
         failures.push("candidate did not retain PhraseDriveBreakCutStompV2".into());
     }
-    if prepared
-        .cut_hit_return_proof
-        .changed_return_plan
-        .tr909_render
-        .mode
-        != Tr909RenderMode::BreakReinforce
-        || !prepared
-            .cut_hit_return_proof
-            .changed_return_plan
-            .tr909_render
-            .slam_enabled
+    if proof.changed_return_plan.tr909_render.mode != Tr909RenderMode::BreakReinforce
+        || !proof.changed_return_plan.tr909_render.slam_enabled
     {
         failures.push("next bar did not return to BreakReinforce with Slam held".into());
     }
-    let source_identity_preserved = prepared
-        .cut_hit_return_proof
-        .candidate_plan
-        .source_monitor_render
-        .source
-        == prepared
-            .cut_hit_return_proof
-            .changed_return_plan
-            .source_monitor_render
-            .source;
+    let source_identity_preserved = proof.candidate_plan.source_monitor_render.source
+        == proof.changed_return_plan.source_monitor_render.source;
     if !source_identity_preserved {
         failures.push("source audio identity changed across the cut-hit return".into());
     }
     for (role, output) in [
-        (
-            "slam_only_control",
-            &rendered.cut_hit_return_slam_only_control,
-        ),
-        (
-            "fill_only_attribution",
-            &rendered.cut_hit_return_fill_only_control,
-        ),
-        ("candidate", &rendered.cut_hit_return_candidate),
-        ("changed_return", &rendered.cut_hit_return_changed_return),
+        ("slam_only_control", slam_only_control),
+        ("fill_only_attribution", fill_only_control),
+        ("candidate", candidate),
+        ("changed_return", changed_return),
     ] {
         gate_exact_mix_limiter("cut-hit-return", role, &output.limiter, &mut failures);
     }
@@ -176,12 +190,12 @@ pub(super) fn write_and_validate(
         },
         "gesture": {
             "key": "S",
-            "fill_action_id": prepared.cut_hit_return_proof.fill_action_id,
-            "slam_action_id": prepared.cut_hit_return_proof.slam_action_id,
+            "fill_action_id": proof.fill_action_id,
+            "slam_action_id": proof.slam_action_id,
             "commit_boundary": {
-                "kind": format!("{:?}", prepared.cut_hit_return_proof.commit_boundary.kind),
-                "beat_index": prepared.cut_hit_return_proof.commit_boundary.beat_index,
-                "bar_index": prepared.cut_hit_return_proof.commit_boundary.bar_index,
+                "kind": format!("{:?}", proof.commit_boundary.kind),
+                "beat_index": proof.commit_boundary.beat_index,
+                "bar_index": proof.commit_boundary.bar_index,
             },
             "recipe": "phrase_drive_break_cut_stomp_v2",
             "return_mode": "break_reinforce",
@@ -192,7 +206,7 @@ pub(super) fn write_and_validate(
             "control_non_silent_in_cut_window": control_pause_metrics.rms >= MIN_CONTROL_WINDOW_RMS,
             "late_hit_above_inherited_floor": candidate_hit_metrics.rms >= MIN_HARD_RETURN_RMS,
             "candidate_distinct_from_slam_only": candidate_control_delta.active_samples > 0,
-            "callback_partition_invariant": rendered.cut_hit_return_callback_partition_invariant,
+            "callback_partition_invariant": callback_partition_invariant,
             "no_limiter_activity": failures.iter().all(|failure| !failure.contains("hot exact mix")),
         },
         "metrics": {
@@ -201,10 +215,10 @@ pub(super) fn write_and_validate(
             "candidate_late_hit": metrics_json(candidate_hit_metrics),
             "candidate_vs_slam_control_delta": metrics_json(candidate_control_delta),
             "candidate_vs_fill_only_delta": metrics_json(candidate_fill_delta),
-            "slam_control_limiter": limiter_json(rendered.cut_hit_return_slam_only_control.limiter),
-            "fill_control_limiter": limiter_json(rendered.cut_hit_return_fill_only_control.limiter),
-            "candidate_limiter": limiter_json(rendered.cut_hit_return_candidate.limiter),
-            "changed_return_limiter": limiter_json(rendered.cut_hit_return_changed_return.limiter),
+            "slam_control_limiter": limiter_json(slam_only_control.limiter),
+            "fill_control_limiter": limiter_json(fill_only_control.limiter),
+            "candidate_limiter": limiter_json(candidate.limiter),
+            "changed_return_limiter": limiter_json(changed_return.limiter),
         },
         "artifacts": artifacts,
         "failures": failures,
