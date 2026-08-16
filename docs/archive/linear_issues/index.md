@@ -1554,4 +1554,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Make live TR-909 Slam land harder with collision-local impact pockets
 - [RIOTBOX-1437.md](./RIOTBOX-1437.md)
   P023: Make TR-909 Slam audibly drive harder with source-backed counter-rhythm
+- [RIOTBOX-1438.md](./RIOTBOX-1438.md)
+  P023: Make a source-backed cut–hit–changed-return gesture land audibly in the live mix
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
