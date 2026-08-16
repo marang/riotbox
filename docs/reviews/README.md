@@ -53,6 +53,10 @@ Current P023 rejected-experiment closeouts:
 
 Current P023 algorithm-value refresh:
 
+- [riotbox_1439_delivery_system_audit_2026-08-16.md](./riotbox_1439_delivery_system_audit_2026-08-16.md):
+  environment, research, roadmap, plans, workflow, audio-QA, and skill audit;
+  accepted discovery-before-qualification correction and direct RIOTBOX-1417
+  handoff.
 - [riotbox_1433_audible_algorithm_value_audit_2026-08-12.md](./riotbox_1433_audible_algorithm_value_audit_2026-08-12.md):
   portfolio-wide retain/replace/retire evidence and the frozen bounded handoff
   to RIOTBOX-1432's product-owned W-30 hook selection.

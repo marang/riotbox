@@ -305,8 +305,9 @@ Linear project / phase map:
     source-backed rendered examples and weak-output regressions
 13. `P023 | Sound Excellence / Production Quality` - active immediate track;
     the `RIOTBOX-1396` live, human-passed Usable Musical Alpha first exit closed
-    on 2026-07-21, and `RIOTBOX-1404` owns the next audible source-family
-    expansion
+    on 2026-07-21; `RIOTBOX-1439` now owns the accepted delivery-order
+    correction, `RIOTBOX-1417` is its direct audible MC-202 follow-up, and
+    `RIOTBOX-1399` remains subordinate measured workflow optimization
 
 This is a project / phase overview, not a ticket list. Keep P012, P013, P014,
 and P015 as regression baselines and keep P017-P020 coarse while P023 turns the
@@ -1362,7 +1363,7 @@ The first exit landed in this order:
    `pass`. The accepted elements remain performer-loopable; the review sequence
    is not a fixed composition.
 
-With that exit closed, `RIOTBOX-1404` is the next audible slice: expand the
+After that exit, `RIOTBOX-1404` was the next audible slice: expand the
 human-passed live path to tonal-hook and sparse-pressure material. Its trusted
 tonal source exposes a real prerequisite: unavailable analyzer timing must not
 be converted into a grid by BPM alone. `RIOTBOX-1421` therefore lands first as
@@ -1443,6 +1444,18 @@ P023 delivery slice must establish a provisional Golden Path musical keep in a
 bounded Development exploration before paying the full multi-source promotion
 cost; this changes work order, not the release, source, Holdout, replay, or
 realtime safety gates.
+
+RIOTBOX-1439 formalizes that boundary in
+`docs/plans/p023_audible_delivery_course_correction.md`. New audible mechanisms
+start with one registered Development source, at most three materially distinct
+variants, exact-artifact safety preflight, and an early provisional usefulness
+check. A stop removes temporary behavior; a provisional keep freezes exactly
+one version before product-spine integration, the applicable multi-source
+matrix, replay/callback proof, and formal listening review. Exploration is not
+product progress or promotion evidence. RIOTBOX-1417 applies the order to one
+unmistakably useful MC-202 realized role. RIOTBOX-1399 may optimize the measured
+validation cost but must not displace that audible slice or delete reusable
+local build and evidence state automatically.
 
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a

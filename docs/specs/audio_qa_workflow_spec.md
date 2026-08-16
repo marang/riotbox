@@ -44,6 +44,17 @@ Details: [automated QA](./audio_qa/automated_qa.md), [artifact
 identity](./audio_qa/manifests_and_artifacts.md), and [human
 review](./audio_qa/listening_review.md).
 
+### 3.0 Audible delivery stages
+
+Apply the [P023 audible-delivery plan](../plans/p023_audible_delivery_course_correction.md)
+before this full promotion stack for a new mechanism. Bounded
+`development_exploration` uses registered Development material, exact-artifact
+safety preflight, and an early usefulness check for at most three variants. It
+cannot grant a quality, product, source-general, demo, release, hardness, or
+Holdout claim. Only a provisional keep permits a frozen rebuild and the full
+`product_qualification` stack below. Existing regressions and already-shared
+behavior skip exploration and use their applicable normal gates directly.
+
 ### 3.1 Hard technical gates
 
 ### 3.2 Musical contract gates

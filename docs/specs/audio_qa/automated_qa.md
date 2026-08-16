@@ -298,13 +298,16 @@ For any pack presented as a source showcase:
   whether it is supposed to react to source timing, density, energy, anchors, or
   section role
 
-Shared audible DSP, mix, pattern, and performance-policy tuning also requires a
-bounded source matrix before another Golden Path listening request. The Golden
-Path remains the single human taste target; the matrix is a regression and
+After a bounded Development exploration earns a provisional human keep, shared
+audible DSP, mix, pattern, and performance-policy qualification requires a
+frozen rebuild and bounded source matrix before the formal Golden Path product
+verdict. The early exploratory usefulness check is not promotion evidence and
+is never imported as the formal verdict. The matrix remains a regression and
 overfitting gate. It must include at least three contrasting real sources and
 reject exact-path failure, clipping/limiter concealment, silence, timing
-regression, or near-identical source-backed hook envelopes. The historical
-dense command remains as a compatibility alias:
+regression, or near-identical source-backed hook envelopes. Existing shared
+behavior and regressions enter at this qualification gate directly. The
+historical dense command remains as a compatibility alias:
 
 ```bash
 just dense-break-live-source-matrix

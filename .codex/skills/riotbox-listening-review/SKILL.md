@@ -9,6 +9,12 @@ description: Riotbox structured human listening-review workflow for audible PRs,
 
 Use this skill for human taste verdicts, review packs, or PR notes explaining why `human_verdict` remains `unverified`. Fitness and fixtures detect collapse; they never award a musician-facing pass.
 
+Also use the full playback-safety procedure for an early
+`development_exploration` usefulness check. Keep that response provisional and
+local: it may select or stop a direction but cannot enter a human-label corpus,
+demo bank, release queue, or product-quality claim. A promoted idea is rebuilt
+from its frozen contract and reviewed again during product qualification.
+
 Read the [audio-QA router](../../../docs/specs/audio_qa_workflow_spec.md) before
 every playback task. It alone owns playback/verdict detail and the
 product-vocabulary/source contract.

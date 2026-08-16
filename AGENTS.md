@@ -141,6 +141,10 @@ exact `rg`, or a targeted range; do not load it wholesale.
 - While P023 is active, prefer a waiting structured human review, then the next
   unblocked audible Golden Path slice. Other phase work must name the exact P023
   blocker it removes.
+- For a new audible mechanism, use the bounded Development-exploration stage in
+  `docs/plans/p023_audible_delivery_course_correction.md` before product
+  qualification. Exploration cannot grant product, source-general, release,
+  hardness, or Holdout claims and must honor that plan's stopping rule.
 
 ## Engineering And Review
 
