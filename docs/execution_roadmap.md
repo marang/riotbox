@@ -306,8 +306,9 @@ Linear project / phase map:
 13. `P023 | Sound Excellence / Production Quality` - active immediate track;
     the `RIOTBOX-1396` live, human-passed Usable Musical Alpha first exit closed
     on 2026-07-21; `RIOTBOX-1439` now owns the accepted delivery-order
-    correction, `RIOTBOX-1417` is its direct audible MC-202 follow-up, and
-    `RIOTBOX-1399` remains subordinate measured workflow optimization
+    correction, `RIOTBOX-1417` proved its fail-closed Development stop on three
+    rejected MC-202 instigator variants, and `RIOTBOX-1399` remains subordinate
+    measured workflow optimization
 
 This is a project / phase overview, not a ticket list. Keep P012, P013, P014,
 and P015 as regression baselines and keep P017-P020 coarse while P023 turns the
@@ -1452,10 +1453,14 @@ variants, exact-artifact safety preflight, and an early provisional usefulness
 check. A stop removes temporary behavior; a provisional keep freezes exactly
 one version before product-spine integration, the applicable multi-source
 matrix, replay/callback proof, and formal listening review. Exploration is not
-product progress or promotion evidence. RIOTBOX-1417 applies the order to one
-unmistakably useful MC-202 realized role. RIOTBOX-1399 may optimize the measured
-validation cost but must not displace that audible slice or delete reusable
-local build and evidence state automatically.
+product progress or promotion evidence. RIOTBOX-1417 applied the order and
+stopped correctly: two MC-202 variants remained masked or near-identical, while
+the distinguishable anticipatory full-bed cut damaged the groove through
+repeated pumping interruptions. No variant earned a provisional keep, and all
+temporary behavior was removed before qualification. A successor must propose
+a materially different musical owner or grammar instead of tuning the rejected
+mechanisms. RIOTBOX-1399 may optimize measured validation cost but must not
+delete reusable local build and evidence state automatically.
 
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a

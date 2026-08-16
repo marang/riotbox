@@ -84,9 +84,12 @@ mechanism first receives at most three bounded Development variants and an
 early usefulness check, then only a provisional human keep permits a frozen
 rebuild, product-spine implementation, source-diversity qualification, and
 formal product verdict. This does not weaken any release, replay, realtime,
-source, or Holdout gate. RIOTBOX-1417 is the direct narrowed audible follow-up;
-RIOTBOX-1399 remains the measured validation-cost optimization if it blocks
-that path.
+source, or Holdout gate. `RIOTBOX-1417` applied the correction and stopped
+fail-closed after three MC-202 instigator variants produced no provisional
+keep; no product behavior or qualification claim remains. A successor must use
+a materially different musical owner or grammar rather than tuning the
+rejected retrigger or full-bed-cut mechanisms. `RIOTBOX-1399` remains the
+measured validation-cost optimization when it blocks an audible path.
 
 ## Documentation Rules
 

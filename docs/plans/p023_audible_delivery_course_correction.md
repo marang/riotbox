@@ -82,9 +82,13 @@ Generated `target/` and `artifacts/` trees are reusable local state. Never
 delete them automatically. RIOTBOX-1399 owns measured command/runtime and safe
 retention improvements when those costs block the audible path.
 
-## Immediate Follow-Up
+## First Application
 
-RIOTBOX-1417 applies this order to one source-derived MC-202 realized role. Its
-first question is whether one bounded bass, answer, punctuation, or stay-out
-decision is unmistakably useful in the accepted live mix. Only a provisional
-keep permits the existing three-source qualification and full product closeout.
+RIOTBOX-1417 applied this order to one source-derived MC-202 instigator role.
+Three materially distinct Development variants produced no provisional human
+keep, so temporary behavior was removed and the work stopped before frozen
+qualification. The negative result is preserved in
+`docs/reviews/riotbox_1417_mc202_realized_role_development_rejection_2026-08-16.md`.
+Any successor must be a new Linear-first audible slice with a materially
+different musical owner or grammar, not more scalar tuning of the rejected
+retrigger or full-bed-cut mechanisms.
