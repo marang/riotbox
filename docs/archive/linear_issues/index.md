@@ -1558,4 +1558,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Make a source-backed cut–hit–changed-return gesture land audibly in the live mix
 - [RIOTBOX-1439.md](./RIOTBOX-1439.md)
   P023: Separate bounded audible discovery from product qualification
+- [RIOTBOX-1417.md](./RIOTBOX-1417.md)
+  P023: Make one MC-202 realized role unmistakably useful on the live Golden Path
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
