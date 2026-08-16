@@ -8,12 +8,11 @@ use ratatui::{
 use riotbox_core::view::jam::SceneJumpAvailabilityView;
 
 use super::{
-    ADVANCED_GESTURES, GESTURE_CAPTURE, GESTURE_CUT_HIT, GESTURE_FILL, GESTURE_HIT,
-    GESTURE_SCENE_JUMP, GESTURE_UNDO, JamShellState, JamViewMode, LANE_GESTURES, ShellScreen,
-    footer_ok_line, footer_scene_affordance_cue, footer_status_line, footer_warning_line,
-    recovery_warning_line, render_gesture_items, source_monitor_route_compact_label,
-    spans_with_primary_gesture_keys, spans_with_primary_legend_keys, style_pending_cue,
-    style_primary_control,
+    ADVANCED_GESTURES, GESTURE_CAPTURE, GESTURE_FILL, GESTURE_HIT, GESTURE_SCENE_JUMP,
+    GESTURE_UNDO, JamShellState, JamViewMode, LANE_GESTURES, ShellScreen, footer_ok_line,
+    footer_scene_affordance_cue, footer_status_line, footer_warning_line, recovery_warning_line,
+    render_gesture_items, source_monitor_route_compact_label, spans_with_primary_gesture_keys,
+    spans_with_primary_legend_keys, style_pending_cue, style_primary_control,
 };
 
 pub(super) fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
@@ -127,7 +126,6 @@ fn render_primary_gesture_items(shell: &JamShellState) -> String {
     let gestures = [
         ("w", GESTURE_HIT),
         ("f", GESTURE_FILL),
-        ("S", GESTURE_CUT_HIT),
         ("s", "slam"),
         ("y", scene_jump_primary_label(shell)),
         ("c", GESTURE_CAPTURE),
@@ -141,7 +139,6 @@ pub(super) fn render_help_primary_gesture_items(shell: &JamShellState) -> String
     let gestures = [
         ("w", GESTURE_HIT),
         ("f", GESTURE_FILL),
-        ("S", GESTURE_CUT_HIT),
         ("s", "slam"),
         ("y", scene_jump_primary_label(shell)),
     ];

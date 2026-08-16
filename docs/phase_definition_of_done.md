@@ -472,6 +472,15 @@ After exit:
   candidates. The declared no-winner branch therefore retains
   `transport_boundary_v1`. The three-source prerequisite blocked human playback,
   and no fallback music or Holdout access occurred.
+- RIOTBOX-1436's clean local impact pocket was not audible, RIOTBOX-1437's
+  counter-rhythm failed the frozen source-diversity minimum, and RIOTBOX-1438's
+  exact cut-hit-return candidate was technically distinct but produced no
+  preferred or clearly stronger full musical arc. The RIOTBOX-1438 review did
+  retain an important positive boundary: both existing source transformations
+  were musically useful and the source stayed recognizable. Only the new
+  automatic composition is removed. P023 follow-ups must now prove a bounded
+  provisional Golden Path keep before broad qualification; exploration alone
+  is not phase completion or promotion proof.
 - RIOTBOX-1423 established the broader legal CC0 corpus contract: its general
   candidate matrix covers at least five eligible development sources across
   four typed families and protects two disjoint fresh holdout sets. That broad

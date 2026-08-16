@@ -149,10 +149,6 @@ impl JamShellState {
                 self.status_message = queued_status_message(GESTURE_FILL, "next bar");
                 ShellKeyOutcome::QueueTr909Fill
             }
-            KeyCode::Char('S') => {
-                self.status_message = queued_status_message(GESTURE_CUT_HIT, "next bar");
-                ShellKeyOutcome::QueueTr909CutHitReturn
-            }
             KeyCode::Char('d') => {
                 self.status_message = queued_status_message(GESTURE_PUSH, "next phrase");
                 ShellKeyOutcome::QueueTr909Reinforce

@@ -1430,6 +1430,20 @@ three-source prerequisite correctly prevented an uninformative human playback.
 No new validator framework, fallback music, percussive-force retuning, or
 Holdout access resulted.
 
+RIOTBOX-1436 through RIOTBOX-1438 now add a decisive delivery boundary. A
+collision-local impact pocket passed its technical gates but was inaudible; a
+source-backed four-slot counter-rhythm did not transfer across the frozen
+Development set; and the cut-hit-return composition passed exact RuntimeMix
+gates while its complete A/B arc remained perceptually near-identical apart
+from the opening. The last review also confirmed that the underlying source
+transformations are musically useful. Riotbox therefore retains those existing
+Fill/Slam/cut/hit/return building blocks, removes only the unqualified new
+one-key gesture, and pauses further scalar or micro-impact variants. The next
+P023 delivery slice must establish a provisional Golden Path musical keep in a
+bounded Development exploration before paying the full multi-source promotion
+cost; this changes work order, not the release, source, Holdout, replay, or
+realtime safety gates.
+
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a
 quality guardrail, not a replacement for the current sound-product priority:

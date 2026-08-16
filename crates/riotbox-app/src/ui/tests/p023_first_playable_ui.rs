@@ -468,10 +468,7 @@ fn narrow_terminal_keeps_monitor_onramp_and_help_recovery_keys_visible() {
     assert!(help.contains("Esc / ? / h: close help"), "{help}");
     assert!(help.contains("Primary gestures"), "{help}");
     assert!(help.contains("M: monitor source -> blend"), "{help}");
-    assert!(
-        help.contains("w: hit | f: fill | S: cut-hit | s: slam"),
-        "{help}"
-    );
+    assert!(help.contains("w: hit | f: fill | s: slam"), "{help}");
     assert!(
         help.contains("y: request next scene (when ready) | Y: restore prior scene"),
         "{help}"

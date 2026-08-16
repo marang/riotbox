@@ -112,10 +112,6 @@ fn shell_state_handles_help_refresh_and_action_keys() {
         ShellKeyOutcome::QueueTr909Fill
     );
     assert_eq!(
-        shell.handle_key_code(KeyCode::Char('S')),
-        ShellKeyOutcome::QueueTr909CutHitReturn
-    );
-    assert_eq!(
         shell.handle_key_code(KeyCode::Char('d')),
         ShellKeyOutcome::QueueTr909Reinforce
     );

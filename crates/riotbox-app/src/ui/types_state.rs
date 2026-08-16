@@ -104,7 +104,6 @@ pub enum ShellKeyOutcome {
     QueueMc202GenerateInstigator,
     QueueMc202MutatePhrase,
     QueueTr909Fill,
-    QueueTr909CutHitReturn,
     QueueTr909Reinforce,
     QueueTr909Slam,
     QueueTr909Takeover,
@@ -151,7 +150,6 @@ const GESTURE_PRESSURE: &str = "pressure";
 const GESTURE_INSTIGATE: &str = "instigate";
 const GESTURE_PHRASE: &str = "phrase";
 const GESTURE_FILL: &str = "fill";
-const GESTURE_CUT_HIT: &str = "cut-hit";
 const GESTURE_PUSH: &str = "push";
 const GESTURE_SLAM: &str = "slam";
 const GESTURE_TAKEOVER: &str = "takeover";

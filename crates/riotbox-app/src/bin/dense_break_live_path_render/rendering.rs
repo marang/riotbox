@@ -60,41 +60,6 @@ pub fn render_live_path(
             CALLBACK_FRAME_COUNT,
         );
     let alpha_source_reference = render(&source_monitor_plan.plan, monitor_review_frames)?;
-    let cut_hit_frames = bar_frame_count(bpm);
-    let (
-        cut_hit_return_slam_only_control,
-        cut_hit_return_fill_only_control,
-        cut_hit_return_candidate,
-        cut_hit_return_changed_return,
-        cut_hit_return_callback_partition_invariant,
-    ) = if let Some(proof) = prepared.cut_hit_return_proof.as_ref() {
-        let slam_only = render(&proof.slam_only_control_plan, cut_hit_frames)?;
-        let fill_only = render(&proof.fill_only_control_plan, cut_hit_frames)?;
-        let candidate = render(&proof.candidate_plan, cut_hit_frames)?;
-        let alternate_partition =
-            render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
-                &[RuntimeMixRenderSequenceStep::new(
-                    &proof.candidate_plan,
-                    cut_hit_frames,
-                )],
-                SAMPLE_RATE,
-                CHANNEL_COUNT,
-                257,
-            )
-            .pop()
-            .ok_or("alternate callback partition omitted cut-hit output")?;
-        let partition_invariant = alternate_partition.samples == candidate.samples;
-        let changed_return = render(&proof.changed_return_plan, cut_hit_frames)?;
-        (
-            Some(slam_only),
-            Some(fill_only),
-            Some(candidate),
-            Some(changed_return),
-            Some(partition_invariant),
-        )
-    } else {
-        (None, None, None, None, None)
-    };
     let restart_recall_output = render(
         &prepared.restart_recall_plan,
         bar_frame_count(bpm).saturating_mul(2),
@@ -131,11 +96,6 @@ pub fn render_live_path(
         stage_outputs,
         alpha_arc_outputs,
         alpha_source_reference,
-        cut_hit_return_slam_only_control,
-        cut_hit_return_fill_only_control,
-        cut_hit_return_candidate,
-        cut_hit_return_changed_return,
-        cut_hit_return_callback_partition_invariant,
         restart_recall_output,
         transition_outputs,
         normal,

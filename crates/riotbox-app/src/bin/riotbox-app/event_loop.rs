@@ -199,22 +199,6 @@ fn run_event_loop(
                     shell.app.queue_tr909_fill(timestamp_now());
                     shell.set_error_status("queued TR-909 fill for next bar");
                 }
-                ShellKeyOutcome::QueueTr909CutHitReturn => {
-                    match shell.app.queue_tr909_cut_hit_return(timestamp_now()) {
-                        crate::jam_app::Tr909CutHitReturnQueueResult::Enqueued => {
-                            shell.set_error_status("queued source-backed cut-hit return for next bar");
-                        }
-                        crate::jam_app::Tr909CutHitReturnQueueResult::AlreadyPending => {
-                            shell.set_error_status("TR-909 fill or slam change already queued");
-                        }
-                        crate::jam_app::Tr909CutHitReturnQueueResult::Unavailable(reason) => {
-                            shell.set_error_status(format!(
-                                "cut-hit return unavailable: {}",
-                                reason.label()
-                            ));
-                        }
-                    }
-                }
                 ShellKeyOutcome::QueueTr909Reinforce => {
                     shell.app.queue_tr909_reinforce(timestamp_now());
                     shell.set_error_status("queued TR-909 reinforcement for next phrase");

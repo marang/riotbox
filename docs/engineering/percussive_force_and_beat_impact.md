@@ -67,6 +67,17 @@ candidate. The algorithm families and experiment design in
 handoff for RIOTBOX-1428 Stage A. They are not implemented mechanisms and do
 not claim instrument progress.
 
+RIOTBOX-1428, RIOTBOX-1434, RIOTBOX-1436, and RIOTBOX-1437 have since exhausted
+the current isolated-force, natural-control, local-pocket, and four-slot
+counter-rhythm directions without a transferable human pass. RIOTBOX-1438 also
+showed that technically valid composition of useful existing source
+transformations can still fail to create a stronger full musical arc. These are
+frozen negative boundaries, not invitations to derive another scalar version.
+Further P023 work should first seek an unmistakable hook, arrangement, lane, or
+performance win through bounded Development exploration. A future
+`percussive_hard` claim still requires a new versioned decision and the complete
+typed contract here.
+
 ## Typed Vocabulary
 
 Words such as `hard`, `punch`, and `pressure` are too ambiguous without a

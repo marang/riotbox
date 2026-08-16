@@ -119,7 +119,6 @@ pub fn shell_key_outcome_label(outcome: ShellKeyOutcome) -> &'static str {
         ShellKeyOutcome::QueueMc202GenerateInstigator => "queue_mc202_generate_instigator",
         ShellKeyOutcome::QueueMc202MutatePhrase => "queue_mc202_mutate_phrase",
         ShellKeyOutcome::QueueTr909Fill => "queue_tr909_fill",
-        ShellKeyOutcome::QueueTr909CutHitReturn => "queue_tr909_cut_hit_return",
         ShellKeyOutcome::QueueTr909Reinforce => "queue_tr909_reinforce",
         ShellKeyOutcome::QueueTr909Slam => "queue_tr909_slam",
         ShellKeyOutcome::QueueTr909Takeover => "queue_tr909_takeover",

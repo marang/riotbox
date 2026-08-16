@@ -70,8 +70,6 @@ pub struct PreparedLivePath {
     pub preset_action_id: u64,
     pub alpha_arc_stages: Vec<RenderStage>,
     pub alpha_arc_proof: AlphaArcProof,
-    pub cut_hit_return_proof: Option<CutHitReturnProof>,
-    pub cut_hit_return_refusal: Option<&'static str>,
     pub restart_recall_plan: Box<RuntimeMixRenderPlan>,
     pub restart_recall_proof: RestartRecallProof,
     pub capture_journey_proof: CaptureJourneyProof,
@@ -83,16 +81,6 @@ pub struct PreparedLivePath {
     pub legacy_riotbox_action_id: u64,
     pub normal_plan: RuntimeMixRenderPlan,
     pub damaged_plan: RuntimeMixRenderPlan,
-}
-
-pub struct CutHitReturnProof {
-    pub fill_action_id: u64,
-    pub slam_action_id: u64,
-    pub commit_boundary: riotbox_core::transport::CommitBoundaryState,
-    pub slam_only_control_plan: Box<RuntimeMixRenderPlan>,
-    pub fill_only_control_plan: Box<RuntimeMixRenderPlan>,
-    pub candidate_plan: Box<RuntimeMixRenderPlan>,
-    pub changed_return_plan: Box<RuntimeMixRenderPlan>,
 }
 
 pub struct CaptureJourneyProof {
@@ -177,11 +165,6 @@ pub struct RenderedLivePath {
     pub stage_outputs: Vec<RuntimeMixRenderOutput>,
     pub alpha_arc_outputs: Vec<RuntimeMixRenderOutput>,
     pub alpha_source_reference: RuntimeMixRenderOutput,
-    pub cut_hit_return_slam_only_control: Option<RuntimeMixRenderOutput>,
-    pub cut_hit_return_fill_only_control: Option<RuntimeMixRenderOutput>,
-    pub cut_hit_return_candidate: Option<RuntimeMixRenderOutput>,
-    pub cut_hit_return_changed_return: Option<RuntimeMixRenderOutput>,
-    pub cut_hit_return_callback_partition_invariant: Option<bool>,
     pub restart_recall_output: RuntimeMixRenderOutput,
     pub transition_outputs: Vec<RenderedGestureTransition>,
     pub normal: RuntimeMixRenderOutput,
