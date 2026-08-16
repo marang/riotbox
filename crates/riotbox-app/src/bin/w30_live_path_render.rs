@@ -3,13 +3,14 @@ use std::{env, fs, path::PathBuf};
 use riotbox_app::jam_app::{JamAppState, QueueControlResult};
 use riotbox_audio::{
     runtime::{
-        AudioRuntimeTimingSnapshot, RuntimeMixRenderPlan,
+        AudioRuntimeTimingSnapshot, RuntimeMixRenderPlan, SourceMonitorRenderState,
         render_runtime_mix_realtime_simulation_offline, signal_delta_metrics, signal_metrics,
     },
     source_audio::{SourceAudioCache, write_interleaved_pcm16_wav},
+    w30::W30PreviewRenderState,
 };
 use riotbox_core::{
-    action::{CaptureLengthIntent, CommitBoundary},
+    action::{CaptureLengthIntent, CommitBoundary, SourceMonitorMode},
     session::W30HookSelectionPolicy,
     style::PerformancePresetId,
     transport::CommitBoundaryState,
@@ -30,6 +31,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         optional_value(&args, "--hook-policy").unwrap_or("transport_boundary_v1"),
     )?;
     let include_resample = args.iter().any(|arg| arg == "--include-resample");
+    let explore_hook_turnaround = args.iter().any(|arg| arg == "--explore-hook-turnaround-v1");
     fs::create_dir_all(&output_dir)?;
 
     let session_path = output_dir.join("session.json");
@@ -122,6 +124,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     print_w30_render_summary("normal", &state.runtime.w30_preview);
+    let normal_render = state.runtime.w30_preview.clone();
     let normal = render_state(&state, bpm);
     if state.queue_w30_apply_damage_profile(410).is_none() {
         return Err("W-30 damage gesture was unavailable".into());
@@ -150,6 +153,37 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         CHANNEL_COUNT,
         &damaged,
     )?;
+    if explore_hook_turnaround {
+        let (control, candidate) = render_hook_turnaround_v1(&normal_render, bpm);
+        write_interleaved_pcm16_wav(
+            output_dir.join("05_w30_hook_turnaround_control.wav"),
+            SAMPLE_RATE,
+            CHANNEL_COUNT,
+            &control,
+        )?;
+        write_interleaved_pcm16_wav(
+            output_dir.join("06_w30_hook_turnaround_candidate_v1.wav"),
+            SAMPLE_RATE,
+            CHANNEL_COUNT,
+            &candidate,
+        )?;
+
+        let control_metrics = signal_metrics(&control);
+        let candidate_metrics = signal_metrics(&candidate);
+        let delta = signal_delta_metrics(&control, &candidate);
+        println!("hook-turnaround control: {control_metrics:?}");
+        println!("hook-turnaround candidate-v1: {candidate_metrics:?}");
+        println!("hook-turnaround delta: {delta:?}");
+        if control_metrics.rms <= 0.001
+            || candidate_metrics.rms <= 0.001
+            || candidate_metrics.peak_abs >= 0.99
+            || delta.rms <= 0.001
+        {
+            return Err(
+                "W-30 hook-turnaround exploration was silent, clipped, or collapsed".into(),
+            );
+        }
+    }
     let resample_outputs = if include_resample {
         if state.queue_w30_internal_resample(510).is_none() {
             return Err("W-30 internal resample was unavailable".into());
@@ -234,6 +268,86 @@ fn render_state(state: &JamAppState, bpm: f32) -> Vec<f32> {
         w30_preview_render: state.runtime.w30_preview.clone(),
         w30_resample_tap: Default::default(),
         source_monitor_render: state.source_monitor_render_state(),
+    };
+    render_runtime_mix_realtime_simulation_offline(
+        &plan,
+        SAMPLE_RATE,
+        CHANNEL_COUNT,
+        frame_count,
+        128,
+    )
+}
+
+/// Development-only sampler articulation for RIOTBOX-1440.
+///
+/// The control and candidate use identical segment boundaries so reset behavior cannot explain
+/// their difference. The candidate establishes one full source hook, anchors the next downbeat,
+/// turns the source around for two beats, chokes one beat of forward source attacks, and then
+/// returns to the unmodified hook. Only the W-30 lane is audible.
+fn render_hook_turnaround_v1(render: &W30PreviewRenderState, bpm: f32) -> (Vec<f32>, Vec<f32>) {
+    let segments = [
+        (0.0_f64, 4.0_f32),
+        (4.0, 1.0),
+        (5.0, 2.0),
+        (7.0, 1.0),
+        (8.0, 4.0),
+    ];
+    let mut control = Vec::new();
+    let mut candidate = Vec::new();
+
+    for (index, (position_beats, duration_beats)) in segments.into_iter().enumerate() {
+        control.extend(render_w30_only_segment(
+            render,
+            bpm,
+            position_beats,
+            duration_beats,
+        ));
+
+        let mut articulated = render.clone();
+        if let Some(pad) = articulated.pad_playback.as_mut() {
+            match index {
+                2 => {
+                    pad.reverse = true;
+                    pad.gate_step_fraction = 0.68;
+                }
+                3 => {
+                    pad.reverse = false;
+                    pad.gate_step_fraction = 0.34;
+                }
+                _ => {}
+            }
+        }
+        candidate.extend(render_w30_only_segment(
+            &articulated,
+            bpm,
+            position_beats,
+            duration_beats,
+        ));
+    }
+
+    (control, candidate)
+}
+
+fn render_w30_only_segment(
+    render: &W30PreviewRenderState,
+    bpm: f32,
+    position_beats: f64,
+    duration_beats: f32,
+) -> Vec<f32> {
+    let frame_count = (duration_beats * 60.0 / bpm * SAMPLE_RATE as f32)
+        .round()
+        .max(1.0) as usize;
+    let plan = RuntimeMixRenderPlan {
+        transport: AudioRuntimeTimingSnapshot {
+            is_transport_running: true,
+            tempo_bpm: bpm,
+            position_beats,
+        },
+        tr909_render: Default::default(),
+        mc202_render: Default::default(),
+        w30_preview_render: render.clone(),
+        w30_resample_tap: Default::default(),
+        source_monitor_render: SourceMonitorRenderState::control_only(SourceMonitorMode::Riotbox),
     };
     render_runtime_mix_realtime_simulation_offline(
         &plan,

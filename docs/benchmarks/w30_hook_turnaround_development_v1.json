@@ -1,0 +1,166 @@
+{
+  "schema": "riotbox.w30_hook_turnaround_development.v1",
+  "ticket": "RIOTBOX-1440",
+  "decision": "RBX-296",
+  "work_class": "audible_vertical_slice",
+  "partition": "development",
+  "mechanism": {
+    "id": "w30_hook_turnaround_v1",
+    "claim": "source_recognizable_live_hook_articulation",
+    "excluded_claims": [
+      "percussive_hard",
+      "source_selection_quality",
+      "source_general_quality_before_qualification",
+      "demo_or_release_readiness"
+    ],
+    "performer_gesture": "w30.hook_turnaround",
+    "gesture_key": "H",
+    "quantization": "next_bar",
+    "action_target": "current_focused_promoted_w30_capture",
+    "activation": {
+      "requires_running_transport": true,
+      "requires_source_backed_pad_playback": true,
+      "requires_focused_promoted_capture": true,
+      "requires_positive_finite_trusted_tempo": true,
+      "requires_no_pending_w30_pad_cue": true,
+      "target_capture_must_remain_focused": true,
+      "missing_or_inapplicable_behavior": "visible_refusal_without_audio_or_fallback"
+    },
+    "timeline_relative_to_committed_start_beat": [
+      {
+        "half_open_beat_range": [0.0, 1.0],
+        "playback": "ordinary_forward_source_hook",
+        "reverse": false,
+        "gate_step_fraction": 0.0
+      },
+      {
+        "half_open_beat_range": [1.0, 3.0],
+        "playback": "reverse_source_pickup",
+        "reverse": true,
+        "gate_step_fraction": 0.68
+      },
+      {
+        "half_open_beat_range": [3.0, 4.0],
+        "playback": "forward_source_choke",
+        "reverse": false,
+        "gate_step_fraction": 0.34
+      },
+      {
+        "half_open_beat_range": [4.0, null],
+        "playback": "ordinary_forward_source_hook_return",
+        "reverse": false,
+        "gate_step_fraction": 0.0
+      }
+    ],
+    "unchanged_dimensions": {
+      "playback_rate": 1.0,
+      "source_pcm": "unchanged_exact_capture_pcm",
+      "chop_plan": "existing_source_derived_transient_chop_plan",
+      "grit": "unchanged_from_pre_gesture_state",
+      "music_bus_level": "unchanged_from_pre_gesture_state",
+      "other_lanes": "unchanged",
+      "source_monitor": "unchanged"
+    },
+    "provenance_boundary": {
+      "source_evidence_owns": [
+        "captured_pcm",
+        "source_identity_and_lineage",
+        "transient_derived_chop_starts",
+        "trusted_tempo"
+      ],
+      "performer_gesture_owns": [
+        "turnaround_start",
+        "four_beat_articulation_timeline",
+        "return_to_ordinary_hook"
+      ],
+      "primitive_or_fallback_audio_added": false
+    }
+  },
+  "exploration_keep": {
+    "case_id": "dense_beat03_130",
+    "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+    "source_sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+    "control_sha256": "7f79cad897c64d38aa91f5ac79b0cef3b858eef45e6c70a5e06d0d13483b2b8c",
+    "candidate_sha256": "9d1744875e9178b9fa28c738a826c703ddd8779c8578e1c7e846ab460cd07a75",
+    "duration_seconds": 5.538458,
+    "human_result": "provisional_keep",
+    "human_meaning": "turnaround_is_clearly_audible_musically_useful_worth_live_triggering_and_preserves_recognizable_hook_identity",
+    "qualification_evidence": false
+  },
+  "access": {
+    "directory_discovery_allowed": false,
+    "holdout_audio_allowed": false,
+    "commercial_reference_audio_allowed": false,
+    "maximum_unique_development_files": 3,
+    "exact_registered_paths_only": true,
+    "source_hash_policy": "require_previously_recorded_development_sha256_before_decode_or_render"
+  },
+  "qualification_cases": [
+    {
+      "case_id": "dense_beat03_130",
+      "source_family": "dense_break",
+      "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+      "source_sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+      "bpm": 130.0
+    },
+    {
+      "case_id": "tonal_rusharp_120",
+      "source_family": "tonal_riff",
+      "source_path": "data/test_audio/examples/DH_RushArp_120_A.wav",
+      "source_sha256": "ec2a0c930eb338bf81cd5cb4b5fef487e07c140ad40181e1d92b2a0990334e0e",
+      "bpm": 120.0,
+      "downbeat_seconds": 0.0
+    },
+    {
+      "case_id": "sparse_kicksnr_120",
+      "source_family": "sparse_drums",
+      "source_path": "data/test_audio/examples/DH_BeatC_KickSnr_120-01.wav",
+      "source_sha256": "8a970e5d7bd9b29771aba85f75e697c7510940d4404714bfb1e55e210c15f46c",
+      "bpm": 120.0
+    }
+  ],
+  "technical_gate": {
+    "source_blind_rebuild_required": true,
+    "exact_runtime_mix": true,
+    "all_three_registered_cases_must_qualify": true,
+    "control": "same_product_state_without_w30_hook_turnaround_committed_at_the_boundary",
+    "isolated_w30_contributor_inventory_required": true,
+    "first_relative_beat_must_match_control_sample_exactly": true,
+    "reverse_pickup_and_forward_choke_must_each_differ_from_control": true,
+    "ordinary_return_from_relative_beat_four_must_match_control_sample_exactly": true,
+    "source_identity_and_capture_lineage_must_remain_unchanged": true,
+    "maximum_pre_limiter_clip_count": 0,
+    "maximum_limited_sample_count": 0,
+    "maximum_post_limiter_clip_count": 0,
+    "callback_partition_invariance_required": true,
+    "session_round_trip_required": true,
+    "replay_state_equivalence_required": true,
+    "missing_source_must_be_silent_without_fallback": true
+  },
+  "stopping_rule": {
+    "no_mapping_constant_timeline_or_threshold_changes_in_v1": true,
+    "technical_failure": "terminal_fail_closed_without_human_playback_or_v1_retuning",
+    "source_loss_or_perceptual_near_identity": "terminal_fail_closed_without_v1_retuning",
+    "different_but_not_useful": "terminal_fail_closed_without_v1_retuning"
+  },
+  "human_gate": {
+    "allowed_only_after_complete_technical_gate": true,
+    "maximum_review_ready_generations": 1,
+    "comparison": "bounded_product_control_then_w30_hook_turnaround_v1_candidate",
+    "questions": [
+      "Is the four-beat turnaround immediately obvious and useful?",
+      "Does the recognizable source hook survive the reverse pickup and choke?",
+      "Does the ordinary hook return cleanly and on time?",
+      "Would the performer trigger this gesture live?",
+      "Are there clicks, timing damage, source loss, or a pasted-on result?"
+    ],
+    "fail_closed_verdicts": [
+      "near_identity",
+      "source_identity_loss",
+      "not_worth_triggering",
+      "groove_or_timing_damage",
+      "audible_click",
+      "pasted_on_result"
+    ]
+  }
+}

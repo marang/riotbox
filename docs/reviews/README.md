@@ -56,6 +56,10 @@ Current P023 rejected-experiment closeouts:
 
 Current P023 algorithm-value refresh:
 
+- [riotbox_1440_w30_hook_turnaround_development_2026-08-16.md](./riotbox_1440_w30_hook_turnaround_development_2026-08-16.md):
+  provisional keep for one clearly audible, source-recognizable W-30 hook
+  turnaround and the frozen boundary before product qualification.
+
 - [riotbox_1439_delivery_system_audit_2026-08-16.md](./riotbox_1439_delivery_system_audit_2026-08-16.md):
   environment, research, roadmap, plans, workflow, audio-QA, and skill audit;
   accepted discovery-before-qualification correction and direct RIOTBOX-1417
