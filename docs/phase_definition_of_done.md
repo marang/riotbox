@@ -359,6 +359,10 @@ Boundary:
 - Broad positive source-family expansion and negative-source coverage did not
   block this first exit; they now proceed from the accepted dense-break
   baseline in the documented order.
+- The accepted order for a new audible mechanism is defined by
+  `docs/plans/p023_audible_delivery_course_correction.md`: bounded Development
+  exploration may earn a provisional keep, but only a frozen rebuild through
+  the normal product-qualification gates can count toward phase completion.
 
 Done when:
 
@@ -434,6 +438,8 @@ finished arrangement, export, or release readiness.
 
 Not sufficient for exit:
 
+- a Development exploration, exploratory artifact, or provisional usefulness
+  verdict, even when the musical direction is worth keeping
 - a control-path, queue, log, or observer assertion without live output proof
 - a nearest offline render seam without the exact live product path
 - scripted or fixture-backed `pass` data

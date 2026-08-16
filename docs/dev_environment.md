@@ -72,3 +72,27 @@ Useful Arch host mounts:
 
 - Use `host.containers.internal` for host-local TCP services.
 - Do not assume `localhost` means the host. In the sandbox it is container-local.
+
+## Current Course-Correction Environment Boundary
+
+The dated RIOTBOX-1439 capability and cost measurements live in
+`docs/reviews/riotbox_1439_delivery_system_audit_2026-08-16.md`. The durable
+environment rules are:
+
+- Rust/Cargo, `just`, FFmpeg/ffprobe, `jq`, ALSA development metadata,
+  PipeWire playback, GitHub auth, and Linear access are expected for the full
+  local workflow; recheck them when the execution context changes.
+- `.env.local` stays ignored. Never print or copy its secret values into logs,
+  issues, artifacts, or commits, and keep environment/credential files untracked.
+- Select `just` recipes from the active contract; recipe count is not evidence
+  quality.
+- Local `target/` and `artifacts/` trees are reusable state. Never clean either
+  automatically; inspect exact targets and ask before material deletion.
+- Keep `just ci` as the final PR gate. RIOTBOX-1399 owns a measured scoped inner
+  loop when validation cost blocks audible delivery.
+
+For new audible work, follow the
+[P023 audible-delivery plan](./plans/p023_audible_delivery_course_correction.md):
+focused seam tests and one exact render/preflight during exploration, applicable
+product/source gates during qualification, and the broad workflow gate before
+merge.

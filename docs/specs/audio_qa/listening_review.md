@@ -179,6 +179,14 @@ artifact, assignment, contributor set, duration, or route. Playback without the
 required first-play confirmation is treated as unheard and cannot support a
 recorded human verdict.
 
+An early `development_exploration` playback follows the same preflight,
+readiness, bounded-playback, replay, and stop/silence safety rules. Its narrow
+question is whether the intended role is obvious, useful, and worth performing.
+Treat the answer as a provisional local direction only: do not import it into a
+human-label corpus, demo bank, release queue, or product-quality claim. A kept
+idea must be rebuilt from its later frozen contract and receive the normal
+formal structured review during product qualification.
+
 For a `percussive_hard` claim, apply
 `docs/engineering/percussive_force_and_beat_impact.md`. The candidate must
 preserve one onset, `1.0x` playback, recognizable hit identity, immediate

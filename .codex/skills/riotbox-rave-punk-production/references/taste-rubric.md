@@ -50,9 +50,14 @@ output without a memorable hook.
   may succeed through reviewed degraded/unavailable/reject behavior instead of
   forced demo-ready music.
 
-Run every shared audible change through the development-source gate owned by
-the audio-QA spec before asking for another taste verdict. The matrix prevents
-overfitting and collapse; it never replaces the Golden Path human judgment.
+For a new mechanism, run the bounded Development exploration owned by the
+audio-QA spec before full product implementation: one exact registered source,
+the owning plan's bounded variant budget, and an early usefulness check. A
+provisional keep then authorizes the frozen rebuild and development-source
+matrix before the formal product verdict. Existing shared behavior and
+regressions use their normal gates directly. The matrix prevents overfitting
+and collapse; it never replaces human judgment or upgrades the exploratory
+direction into evidence.
 
 ## Pressure And Gesture Judgment
 

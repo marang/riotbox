@@ -79,11 +79,23 @@ behavior lands in the live product path. Broader positive source-family
 coverage and source-backed W-30 resampling now follow from the accepted
 dense-break baseline and honest negative-source handling.
 
+`RIOTBOX-1439` owns the accepted delivery-order correction: a new audible
+mechanism first receives at most three bounded Development variants and an
+early usefulness check, then only a provisional human keep permits a frozen
+rebuild, product-spine implementation, source-diversity qualification, and
+formal product verdict. This does not weaken any release, replay, realtime,
+source, or Holdout gate. RIOTBOX-1417 is the direct narrowed audible follow-up;
+RIOTBOX-1399 remains the measured validation-cost optimization if it blocks
+that path.
+
 ## Documentation Rules
 
 - Stable core contracts live in `docs/`.
 - Exploratory thinking and generative planning stay in `plan/`.
 - Accepted implementation plans live in `docs/plans/` and should be anchored from the roadmap, phase definition of done, README, and decision log when they freeze a durable direction.
+- [P023 Audible Delivery Course Correction](./plans/p023_audible_delivery_course_correction.md)
+  owns the Development-exploration versus product-qualification order for new
+  audible mechanisms.
 - Profile behavior must be expressed as policy, preset, or scoring extensions, not as a parallel product architecture.
 - Incoming refinements to the feral addendum should update profile-oriented specs, not the core contracts unless they truly change the core.
 

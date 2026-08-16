@@ -50,6 +50,18 @@ Reuse an artifact's stored timing identity rather than substituting fixture
 timing, and preserve historical versioned controls unless their owning contract
 explicitly authorizes a compatibility change.
 
+## Discover Before Qualifying
+
+For a new audible mechanism, apply the
+[P023 audible-delivery plan](../../../docs/plans/p023_audible_delivery_course_correction.md).
+Start with bounded Development exploration on one exact registered source,
+focused safety/output preflight, and the owning plan's bounded variant budget.
+Ask early whether the intended role is obvious, useful, and worth performing.
+Do not build complete product surfaces, a source matrix, or a new validator
+framework for an unkept idea. Only a provisional keep permits a frozen rebuild,
+product-spine implementation, multi-source qualification, and formal product
+verdict. Exploration never authorizes Holdout access or a quality claim.
+
 ## Musician Path
 
 For a musician-facing change, establish what the user presses, waits for, sees,

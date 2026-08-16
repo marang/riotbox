@@ -151,7 +151,20 @@ Acceptance shape:
 
 ## Backlog Order
 
-The first backlog wave should be:
+This 2026-06 ordering is now a capability inventory, not the active execution
+queue. During P023, use the audible-delivery course correction and select one
+audible Golden Path slice first. Pull structural work ahead only when it names
+and removes a measured blocker for that slice.
+
+Current ordering:
+
+1. Bounded audible Development exploration on the active Golden Path.
+2. Frozen product qualification for one provisionally kept mechanism.
+3. The smallest runtime, source, module, or QA blocker that prevents steps 1 or
+   2; RIOTBOX-1399 owns measured validation-loop cost.
+4. Remaining capability work below, selected one semantic slice at a time.
+
+Capability inventory:
 
 1. Include inventory and module policy guardrail.
 2. Source Graph include-shell migration.
@@ -169,5 +182,6 @@ The first backlog wave should be:
 14. Sidecar protocol/provenance hardening.
 15. First-playable UX/readability hardening.
 
-This order can be adjusted per phase pressure, but the backlog must stay split:
-do not collapse instrument-lane work into one broad "make audio better" ticket.
+Do not interpret the numbered capability inventory as permission to run nine
+engineering slices before musician value. The backlog must stay split: do not
+collapse instrument-lane work into one broad "make audio better" ticket.

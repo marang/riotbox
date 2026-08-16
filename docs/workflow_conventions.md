@@ -198,6 +198,14 @@ Apply the [audio-QA contract](./specs/audio_qa_workflow_spec.md) to audible work
 Waiting for its required human verdict is an allowed stop condition; state the
 exact review artifact and next human action.
 
+For a new audible mechanism, `audible_vertical_slice` contains two ordered
+stages from the [P023 audible-delivery plan](./plans/p023_audible_delivery_course_correction.md):
+bounded `development_exploration`, then `product_qualification` only after a
+provisional human keep. Exploration is not a fourth work class and cannot close
+the ticket as product progress. Do not build complete product surfaces,
+multi-source promotion packs, or a new validator framework merely to hear an
+unkept idea.
+
 ---
 
 ## 4. Ambiguous Feedback Handling
@@ -252,6 +260,10 @@ For P023, select work in this order:
 2. the next unblocked `audible_vertical_slice` on the active Golden Path
 3. a `contract_enabler` only when it names the exact next audible issue it unlocks
 4. maintenance / regression work only when current risk justifies delaying the audible path
+
+Inside a selected audible slice, prefer the smallest exact Development
+exploration that can falsify musician value before broad qualification. Keep
+release/PR gates intact; change their order, not their strength.
 
 Do not select deferred P016, P021, or P022 work unless the issue names the exact
 P023 Golden Path blocker it removes. Continue one ticket at a time; do not open
