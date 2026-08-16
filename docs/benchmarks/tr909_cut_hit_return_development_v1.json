@@ -1,0 +1,132 @@
+{
+  "schema": "riotbox.tr909_cut_hit_return_development.v1",
+  "ticket": "RIOTBOX-1438",
+  "decision": "RBX-293",
+  "work_class": "audible_vertical_slice",
+  "partition": "development",
+  "mechanism": {
+    "id": "tr909_cut_hit_return_v1",
+    "claim": "source_backed_arrangement_impact_and_contextual_drum_punch",
+    "excluded_claim": "percussive_hard",
+    "performer_gesture": "tr909.cut_hit_return",
+    "gesture_key": "S",
+    "composed_actions": [
+      {
+        "command": "tr909.fill_next",
+        "quantization": "next_bar"
+      },
+      {
+        "command": "tr909.set_slam",
+        "target": "enabled",
+        "intensity": "max_of_current_tr909_slam_and_0.85",
+        "quantization": "next_bar"
+      }
+    ],
+    "activation": {
+      "requires_running_transport": true,
+      "required_preset": "feral_break_alpha_v2",
+      "required_source_character": "dense_break",
+      "requires_trusted_live_performance_policy": true,
+      "required_mode": "break_reinforce",
+      "required_source_monitor_mode": "riotbox",
+      "requires_slam_disabled_before_queue": true,
+      "requires_no_pending_fill_or_slam": true
+    },
+    "rendered_vocabulary": {
+      "fill_variation": "phrase_drive_hard_cut",
+      "recipe": "phrase_drive_break_cut_stomp_v2",
+      "cut": "whole_bar_non_tr909_bed_focus_handoff",
+      "negative_space": "beat_four_steps_25_through_29_rest_after_step_24_choke",
+      "hit": "single_late_dive_stomp_at_step_30",
+      "return": "automatic_next_bar_break_reinforce_with_slam_held"
+    },
+    "provenance_boundary": {
+      "source_evidence_owns": [
+        "gesture_eligibility",
+        "transport_timing",
+        "source_backed_bed_cut_and_return_context"
+      ],
+      "primitive_renderer_owns": "late_dive_stomp",
+      "source_intelligence_claim_for_drum_hit": false,
+      "missing_or_inapplicable_source_behavior": "visible_refusal_without_audio_or_fallback"
+    }
+  },
+  "access": {
+    "directory_discovery_allowed": false,
+    "holdout_audio_allowed": false,
+    "commercial_reference_audio_allowed": false,
+    "maximum_unique_development_files": 3,
+    "exact_registered_paths_only": true,
+    "source_hash_policy": "require_the_previously_recorded_development_sha256_before_any_decode_or_render"
+  },
+  "cases": [
+    {
+      "case_id": "dense_beat03_130",
+      "source_family": "dense_break",
+      "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+      "source_sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+      "bpm": 130.0,
+      "expected_applicability": "qualified_candidate"
+    },
+    {
+      "case_id": "tonal_rusharp_120",
+      "source_family": "tonal_riff",
+      "source_path": "data/test_audio/examples/DH_RushArp_120_A.wav",
+      "source_sha256": "ec2a0c930eb338bf81cd5cb4b5fef487e07c140ad40181e1d92b2a0990334e0e",
+      "bpm": 120.0,
+      "expected_applicability": "typed_refusal_source_character"
+    },
+    {
+      "case_id": "sparse_kicksnr_120",
+      "source_family": "sparse_drums",
+      "source_path": "data/test_audio/examples/DH_BeatC_KickSnr_120-01.wav",
+      "source_sha256": "8a970e5d7bd9b29771aba85f75e697c7510940d4404714bfb1e55e210c15f46c",
+      "bpm": 120.0,
+      "expected_applicability": "typed_refusal_source_character"
+    }
+  ],
+  "technical_gate": {
+    "exact_runtime_mix": true,
+    "dense_case_must_qualify": true,
+    "minimum_qualified_candidate_cases": 1,
+    "typed_inapplicability_is_not_a_sound_failure": true,
+    "candidate_control": "same_state_with_only_tr909_set_slam_committed_at_the_same_bar",
+    "attribution_control": "same_state_with_only_tr909_fill_next_committed_at_the_same_bar",
+    "candidate_must_use_declared_recipe": true,
+    "cut_negative_space_must_be_digitally_silent": true,
+    "late_stomp_must_be_non_silent": true,
+    "next_bar_must_return_to_break_reinforce": true,
+    "slam_must_remain_enabled_after_return": true,
+    "source_backed_bed_must_return_with_same_source_identity": true,
+    "candidate_must_be_materially_distinct_from_slam_only_control": true,
+    "maximum_pre_limiter_clip_count": 0,
+    "maximum_limited_sample_count": 0,
+    "maximum_post_limiter_clip_count": 0,
+    "callback_partition_invariance_required": true,
+    "replay_state_equivalence_required": true
+  },
+  "stopping_rule": {
+    "no_scalar_or_threshold_retuning_in_v1": true,
+    "technical_failure": "terminal_fail_closed_without_human_playback",
+    "perceptual_near_identity": "terminal_fail_closed_without_v1_retuning"
+  },
+  "human_gate": {
+    "allowed_only_after_technical_gate": true,
+    "maximum_review_ready_generations": 1,
+    "comparison": "bounded_slam_only_control_then_cut_hit_return_candidate",
+    "questions": [
+      "Is the cut, decisive hit, and changed return immediately obvious?",
+      "Does the source-backed break identity survive the gesture?",
+      "Does the gesture feel more useful than the held Slam-only control?",
+      "Are there clicks, clipping, timing damage, or an artificial pasted-on result?"
+    ],
+    "fail_closed_verdicts": [
+      "near_identity",
+      "different_but_not_more_impactful",
+      "source_identity_loss",
+      "groove_damage",
+      "audible_click",
+      "pasted_on_result"
+    ]
+  }
+}

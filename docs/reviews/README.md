@@ -43,6 +43,13 @@ Current P023 rejected-experiment closeouts:
 - [riotbox_1422_h27_h30_rejected_experiment_closeout_2026-08-02.md](./riotbox_1422_h27_h30_rejected_experiment_closeout_2026-08-02.md):
   artifact-bound H27-H30 verdicts, retired V7-V10 mechanism family, and the
   narrow re-extraction boundary for stack-only work that never reached `main`.
+- [riotbox_1436_tr909_impact_pocket_development_2026-08-14.md](./riotbox_1436_tr909_impact_pocket_development_2026-08-14.md):
+  technically clean but inaudible local-impact result and removed mechanism.
+- [riotbox_1437_tr909_counter_rhythm_development_2026-08-14.md](./riotbox_1437_tr909_counter_rhythm_development_2026-08-14.md):
+  dense success, source-diversity failure, and removed counter-rhythm family.
+- [riotbox_1438_cut_hit_return_development_2026-08-15.md](./riotbox_1438_cut_hit_return_development_2026-08-15.md):
+  useful underlying transformations, near-identical full-arc verdict, and
+  removed one-key composition.
 
 Current P023 algorithm-value refresh:
 

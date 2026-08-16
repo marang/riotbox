@@ -59,6 +59,19 @@ output. No policy won, so `FeralBreakAlphaV2` retains the transport-selected
 baseline and no unnecessary human playback occurred. The holdout remains
 unopened.
 
+`RIOTBOX-1436` and `RIOTBOX-1437` then closed two further bounded TR-909
+experiments without product behavior: a technically clean collision-local
+impact pocket was inaudible, while a source-backed counter-rhythm passed the
+dense case but failed the frozen source-diversity gate. `RIOTBOX-1438` reused
+the already valuable Fill/Slam cut-hit-return vocabulary as one new live
+gesture. Its dense exact RuntimeMix qualification passed mechanically and the
+listener judged both source transformations musically useful, but the full A/B
+arcs were substantially similar apart from B's opening. The new one-key gesture
+therefore closes fail-closed and is removed; existing Fill, Slam, cut, hit,
+return, and source transformation behavior remains. The next P023 work must
+restore an early audible-discovery step before expensive promotion proof and
+must not reopen scalar force tuning.
+
 `P016`, `P021`, and `P022` remain subordinate to the active P023 product path.
 Offline renderers, scripted packs, fixture verdicts, reports, and validators
 remain diagnostic evidence; they do not count as instrument progress until the
