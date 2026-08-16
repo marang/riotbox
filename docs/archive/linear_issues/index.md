@@ -1560,4 +1560,10 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Separate bounded audible discovery from product qualification
 - [RIOTBOX-1417.md](./RIOTBOX-1417.md)
   P023: Make one MC-202 realized role unmistakably useful on the live Golden Path
+- [RIOTBOX-1183.md](./RIOTBOX-1183.md)
+  P016: Add DAW audible-output proof export-action CLI smoke
+- [RIOTBOX-1207.md](./RIOTBOX-1207.md)
+  Define 10/10 technical audio-QA release gate
+- [RIOTBOX-1209.md](./RIOTBOX-1209.md)
+  Add sound-quality readiness report for engineers and musicians
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
