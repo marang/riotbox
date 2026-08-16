@@ -50,6 +50,9 @@ Current P023 rejected-experiment closeouts:
 - [riotbox_1438_cut_hit_return_development_2026-08-15.md](./riotbox_1438_cut_hit_return_development_2026-08-15.md):
   useful underlying transformations, near-identical full-arc verdict, and
   removed one-key composition.
+- [riotbox_1417_mc202_realized_role_development_rejection_2026-08-16.md](./riotbox_1417_mc202_realized_role_development_rejection_2026-08-16.md):
+  three bounded MC-202 instigator variants, no provisional human keep, and the
+  retired retrigger/full-bed-cut mechanism family.
 
 Current P023 algorithm-value refresh:
 
