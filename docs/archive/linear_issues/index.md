@@ -1556,4 +1556,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Make TR-909 Slam audibly drive harder with source-backed counter-rhythm
 - [RIOTBOX-1438.md](./RIOTBOX-1438.md)
   P023: Make a source-backed cut–hit–changed-return gesture land audibly in the live mix
+- [RIOTBOX-1439.md](./RIOTBOX-1439.md)
+  P023: Separate bounded audible discovery from product qualification
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
