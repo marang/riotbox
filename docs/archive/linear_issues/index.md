@@ -1566,4 +1566,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Define 10/10 technical audio-QA release gate
 - [RIOTBOX-1209.md](./RIOTBOX-1209.md)
   Add sound-quality readiness report for engineers and musicians
+- [RIOTBOX-1440.md](./RIOTBOX-1440.md)
+  P023: Prove one source-recognizable W-30 hook articulation
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
