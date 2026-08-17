@@ -214,6 +214,7 @@ fn pad_playback_from_interleaved(
         loop_crossfade_sample_count: sample_count.min(128).min(sample_count / 4),
         chop_slice_count: W30_PAD_CHOP_SLICE_COUNT,
         chop_slice_starts,
+        hook_articulation: None,
         samples: playback,
     })
 }

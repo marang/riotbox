@@ -61,6 +61,7 @@ pub use version_types::{
     SourceMonitorUndoSnapshotState, SourceRef, SourceTimingGridConfirmationState,
     SourceTimingRuntimeState, StyleRuntimeState, Tr909FillUndoSnapshotState, Tr909LaneState,
     Tr909ReinforcementModeState, Tr909TakeoverProfileState, TransportRuntimeState,
-    UndoRuntimeState, W30HookSelectionDecision, W30HookSelectionPolicy, W30HookSelectionReason,
-    W30LaneState, W30PreviewModeState,
+    UndoRuntimeState, W30HookArticulationProfileState, W30HookArticulationState,
+    W30HookSelectionDecision, W30HookSelectionPolicy, W30HookSelectionReason, W30LaneState,
+    W30PreviewModeState,
 };

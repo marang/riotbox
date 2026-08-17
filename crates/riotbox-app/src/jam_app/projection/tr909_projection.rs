@@ -15,7 +15,8 @@ use riotbox_audio::{
         W30_PAD_CHOP_SLICE_COUNT, W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN,
         W30_PREVIEW_SAMPLE_WINDOW_LEN, W30_RESAMPLE_SOURCE_WINDOW_LEN,
         W30PadPlaybackSampleWindow, W30PreviewRenderMode, W30PreviewRenderRouting,
-        W30PreviewRenderState, W30PreviewSampleWindow, W30PreviewSourceProfile,
+        W30HookArticulationProfile, W30HookArticulationRenderState, W30PreviewRenderState,
+        W30PreviewSampleWindow, W30PreviewSourceProfile,
         W30ResampleSourceWindow, W30ResampleTapAvailability, W30ResampleTapMode,
         W30ResampleTapRouting, W30ResampleTapSourceProfile, W30ResampleTapState,
     },
@@ -30,7 +31,7 @@ use riotbox_core::{
     session::{
         Mc202PhraseIntentState, Mc202RoleState, SceneMovementDirectionState,
         SceneMovementKindState, SceneMovementLaneIntentState, SceneMovementState, SessionFile,
-        W30PreviewModeState,
+        W30HookArticulationProfileState, W30PreviewModeState,
     },
     style::PerformancePresetId,
     source_graph::{
@@ -543,7 +544,7 @@ pub(super) fn build_w30_preview_render_state(
     } else {
         None
     };
-    let pad_playback = if !matches!(mode, W30PreviewRenderMode::Idle) {
+    let mut pad_playback = if !matches!(mode, W30PreviewRenderMode::Idle) {
         let transform = w30_pad_playback_transform(
             session,
             live_policy.as_ref().map(|policy| policy.destructive_intent),
@@ -555,6 +556,25 @@ pub(super) fn build_w30_preview_render_state(
         None
     };
     let has_preview_material = source_window_preview.is_some() || pad_playback.is_some();
+    let hook_articulation = w30.hook_articulation.as_ref().and_then(|articulation| {
+        let capture = capture?;
+        if capture.capture_id != articulation.capture_id || pad_playback.is_none() || tempo_bpm <= 0.0
+        {
+            return None;
+        }
+        let profile = match articulation.profile {
+            W30HookArticulationProfileState::TurnaroundV1 => {
+                W30HookArticulationProfile::TurnaroundV1
+            }
+        };
+        Some(W30HookArticulationRenderState {
+            profile,
+            started_at_beat: articulation.started_at_beat,
+        })
+    });
+    if let Some(pad_playback) = pad_playback.as_mut() {
+        pad_playback.hook_articulation = hook_articulation;
+    }
     let routing = if has_preview_material {
         W30PreviewRenderRouting::MusicBusPreview
     } else {

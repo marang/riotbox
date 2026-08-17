@@ -19,11 +19,11 @@ use crate::{
     },
     w30::{
         W30_PAD_CHOP_SLICE_COUNT, W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN,
-        W30_PREVIEW_SAMPLE_WINDOW_LEN, W30_RESAMPLE_SOURCE_WINDOW_LEN, W30PadPlaybackSampleWindow,
-        W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewRenderState,
-        W30PreviewSampleWindow, W30PreviewSourceProfile, W30ResampleSourceWindow,
-        W30ResampleTapMode, W30ResampleTapRouting, W30ResampleTapSourceProfile,
-        W30ResampleTapState,
+        W30_PREVIEW_SAMPLE_WINDOW_LEN, W30_RESAMPLE_SOURCE_WINDOW_LEN, W30HookArticulationProfile,
+        W30PadPlaybackSampleWindow, W30PreviewRenderMode, W30PreviewRenderRouting,
+        W30PreviewRenderState, W30PreviewSampleWindow, W30PreviewSourceProfile,
+        W30ResampleSourceWindow, W30ResampleTapMode, W30ResampleTapRouting,
+        W30ResampleTapSourceProfile, W30ResampleTapState,
     },
 };
 

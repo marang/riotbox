@@ -81,7 +81,6 @@ impl JamAppState {
         let CaptureTarget::W30Pad { bank_id, pad_id } = capture.assigned_target.clone()? else {
             return None;
         };
-
         let mut draft = ActionDraft::new(
             ActorType::User,
             ActionCommand::W30LiveRecall,
@@ -281,6 +280,55 @@ impl JamAppState {
         draft.explanation = Some(format!(
             "apply {} damage profile to {} on W-30 pad {bank_id}/{pad_id}",
             Self::W30_DAMAGE_PROFILE_LABEL,
+            capture.capture_id
+        ));
+        self.queue.enqueue(draft, requested_at);
+        self.refresh_view();
+        Some(QueueControlResult::Enqueued)
+    }
+
+    pub fn queue_w30_hook_turnaround(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Option<QueueControlResult> {
+        if self.w30_pad_cue_pending() {
+            return Some(QueueControlResult::AlreadyPending);
+        }
+
+        let capture = self.triggerable_w30_capture()?.clone();
+        let CaptureTarget::W30Pad { bank_id, pad_id } = capture.assigned_target.clone()? else {
+            return None;
+        };
+        let capture_id = capture.capture_id.to_string();
+        let render = &self.runtime.w30_preview;
+        if !self.runtime.transport.is_playing
+            || !render.is_transport_running
+            || !render.tempo_bpm.is_finite()
+            || render.tempo_bpm <= 0.0
+            || render.routing != riotbox_audio::w30::W30PreviewRenderRouting::MusicBusPreview
+            || render.pad_playback.is_none()
+            || render.capture_id.as_deref() != Some(capture_id.as_str())
+        {
+            return None;
+        }
+
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::W30HookTurnaround,
+            Quantization::NextBar,
+            ActionTarget {
+                scope: Some(TargetScope::LaneW30),
+                bank_id: Some(bank_id.clone()),
+                pad_id: Some(pad_id.clone()),
+                ..Default::default()
+            },
+        );
+        draft.params = ActionParams::Mutation {
+            intensity: 1.0,
+            target_id: Some(capture_id),
+        };
+        draft.explanation = Some(format!(
+            "turn around {} on W-30 pad {bank_id}/{pad_id} on next bar",
             capture.capture_id
         ));
         self.queue.enqueue(draft, requested_at);

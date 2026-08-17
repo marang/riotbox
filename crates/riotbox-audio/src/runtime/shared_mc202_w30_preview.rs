@@ -510,6 +510,8 @@ pub(super) struct RealtimeW30PadPlaybackSampleWindow {
     pub(super) loop_crossfade_sample_count: usize,
     pub(super) chop_slice_count: usize,
     pub(super) chop_slice_starts: [u32; W30_PAD_CHOP_SLICE_COUNT],
+    pub(super) hook_articulation_profile: Option<W30HookArticulationProfile>,
+    pub(super) hook_articulation_started_at_beat: u64,
     pub(super) samples: [f32; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN],
 }
 
@@ -539,6 +541,8 @@ impl Default for RealtimeW30PadPlaybackSampleWindow {
             loop_crossfade_sample_count: 0,
             chop_slice_count: 0,
             chop_slice_starts: [0; W30_PAD_CHOP_SLICE_COUNT],
+            hook_articulation_profile: None,
+            hook_articulation_started_at_beat: 0,
             samples: [0.0; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN],
         }
     }
@@ -568,6 +572,8 @@ pub(super) struct SharedW30PreviewRenderState {
     pub(super) pad_chop_slice_count: AtomicU32,
     pub(super) pad_chop_slice_starts: [AtomicU32; W30_PAD_CHOP_SLICE_COUNT],
     pub(super) pad_samples: [AtomicU32; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN],
+    pub(super) hook_articulation_profile: AtomicU32,
+    pub(super) hook_articulation_started_at_beat: AtomicU64,
     pub(super) music_bus_level_bits: AtomicU32,
     pub(super) grit_level_bits: AtomicU32,
     pub(super) is_transport_running: AtomicBool,

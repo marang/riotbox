@@ -131,6 +131,7 @@ pub fn shell_key_outcome_label(outcome: ShellKeyOutcome) -> &'static str {
         ShellKeyOutcome::QueueW30SwapBank => "queue_w30_swap_bank",
         ShellKeyOutcome::QueueW30BrowseSlicePool => "queue_w30_browse_slice_pool",
         ShellKeyOutcome::QueueW30ApplyDamageProfile => "queue_w30_apply_damage_profile",
+        ShellKeyOutcome::QueueW30HookTurnaround => "queue_w30_hook_turnaround",
         ShellKeyOutcome::QueueW30LoopFreeze => "queue_w30_loop_freeze",
         ShellKeyOutcome::QueueW30LiveRecall => "queue_w30_live_recall",
         ShellKeyOutcome::QueueW30Audition => "queue_w30_audition",

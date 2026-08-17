@@ -282,6 +282,7 @@ fn jam_action_label(command: &str) -> String {
         "w30.swap_bank" => GESTURE_BANK.into(),
         "w30.browse_slice_pool" => GESTURE_BROWSE.into(),
         "w30.apply_damage_profile" => GESTURE_DAMAGE.into(),
+        "w30.hook_turnaround" => GESTURE_TURNAROUND.into(),
         "w30.loop_freeze" => GESTURE_FREEZE.into(),
         "w30.live_recall" => GESTURE_RECALL.into(),
         "w30.audition_raw_capture" => GESTURE_AUDITION.into(),
