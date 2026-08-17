@@ -1,7 +1,9 @@
 use riotbox_core::{
     action::{Action, ActionCommand, ActionParams, ActionResult},
     ids::CaptureId,
-    session::{SessionFile, W30PreviewModeState},
+    session::{
+        SessionFile, W30HookArticulationProfileState, W30HookArticulationState, W30PreviewModeState,
+    },
     transport::CommitBoundaryState,
 };
 
@@ -18,6 +20,7 @@ pub(in crate::jam_app) fn apply_w30_side_effects(
             | ActionCommand::W30SwapBank
             | ActionCommand::W30BrowseSlicePool
             | ActionCommand::W30ApplyDamageProfile
+            | ActionCommand::W30HookTurnaround
             | ActionCommand::W30LoopFreeze
             | ActionCommand::W30StepFocus
             | ActionCommand::W30AuditionRawCapture
@@ -62,6 +65,12 @@ pub(in crate::jam_app) fn apply_w30_side_effects(
             .w30
             .preview_mode
             .unwrap_or(W30PreviewModeState::LiveRecall),
+        ActionCommand::W30HookTurnaround => session
+            .runtime_state
+            .lane_state
+            .w30
+            .preview_mode
+            .unwrap_or(W30PreviewModeState::LiveRecall),
         ActionCommand::W30LiveRecall
         | ActionCommand::W30SwapBank
         | ActionCommand::W30BrowseSlicePool
@@ -92,6 +101,16 @@ pub(in crate::jam_app) fn apply_w30_side_effects(
         };
         session.runtime_state.macro_state.w30_grit =
             session.runtime_state.macro_state.w30_grit.max(grit);
+    }
+
+    if action.command == ActionCommand::W30HookTurnaround
+        && let (Some(capture_id), Some(boundary)) = (capture_id.clone(), boundary)
+    {
+        session.runtime_state.lane_state.w30.hook_articulation = Some(W30HookArticulationState {
+            profile: W30HookArticulationProfileState::TurnaroundV1,
+            capture_id,
+            started_at_beat: boundary.beat_index,
+        });
     }
 
     if let Some(logged_action) = session
@@ -154,6 +173,10 @@ pub(in crate::jam_app) fn apply_w30_side_effects(
                         JamAppState::W30_DAMAGE_PROFILE_LABEL
                     )
                 },
+            ),
+            ActionCommand::W30HookTurnaround => capture_id.as_ref().map_or_else(
+                || format!("turned around W-30 pad {bank_id}/{pad_id}"),
+                |capture_id| format!("turned around {capture_id} on W-30 pad {bank_id}/{pad_id}"),
             ),
             ActionCommand::W30AuditionRawCapture => capture_id.as_ref().map_or_else(
                 || format!("auditioned raw capture on W-30 preview {bank_id}/{pad_id}"),

@@ -247,6 +247,7 @@ falls back visibly to `four_bars`.
 - `w30.browse_slice_pool`
 - `w30.step_focus`
 - `w30.apply_damage_profile`
+- `w30.hook_turnaround`
 - `w30.loop_freeze`
 - `tr909.fill_next`
 - `tr909.set_slam`

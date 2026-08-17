@@ -120,6 +120,8 @@ fn w30_pad_playback_uses_duration_window_beyond_fixed_preview_len() {
             loop_crossfade_sample_count: 128,
             chop_slice_count: 0,
             chop_slice_starts: [0; W30_PAD_CHOP_SLICE_COUNT],
+            hook_articulation_profile: None,
+            hook_articulation_started_at_beat: 0,
             samples: pad_samples,
         },
         music_bus_level: 0.64,
@@ -177,6 +179,8 @@ fn w30_pad_playback_cursor_preserves_full_capture_duration() {
         loop_crossfade_sample_count: 128,
         chop_slice_count: 0,
         chop_slice_starts: [0; W30_PAD_CHOP_SLICE_COUNT],
+        hook_articulation_profile: None,
+        hook_articulation_started_at_beat: 0,
         samples,
     };
     let mut state = W30PreviewCallbackState::default();
@@ -299,6 +303,8 @@ fn w30_damage_direction_and_rate_change_sample_motion() {
         loop_crossfade_sample_count: 128,
         chop_slice_count: 0,
         chop_slice_starts: [0; W30_PAD_CHOP_SLICE_COUNT],
+        hook_articulation_profile: None,
+        hook_articulation_started_at_beat: 0,
         samples,
     };
     let damaged = RealtimeW30PadPlaybackSampleWindow {
@@ -347,6 +353,8 @@ fn w30_loop_crossfade_keeps_wrap_boundary_click_safe() {
         loop_crossfade_sample_count: 128,
         chop_slice_count: 0,
         chop_slice_starts: [0; W30_PAD_CHOP_SLICE_COUNT],
+        hook_articulation_profile: None,
+        hook_articulation_started_at_beat: 0,
         samples,
     };
     let mut state = W30PreviewCallbackState {
@@ -379,6 +387,8 @@ fn w30_pad_trigger_attack_fades_in_once_without_loop_wrap_dropout() {
         loop_crossfade_sample_count: 64,
         chop_slice_count: 0,
         chop_slice_starts: [0; W30_PAD_CHOP_SLICE_COUNT],
+        hook_articulation_profile: None,
+        hook_articulation_started_at_beat: 0,
         samples: [0.8; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN],
     };
     let mut state = W30PreviewCallbackState::default();

@@ -305,6 +305,19 @@ pub enum W30PreviewModeState {
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+pub enum W30HookArticulationProfileState {
+    TurnaroundV1,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct W30HookArticulationState {
+    pub profile: W30HookArticulationProfileState,
+    pub capture_id: CaptureId,
+    pub started_at_beat: u64,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum Tr909TakeoverProfileState {
     ControlledPhraseTakeover,
     SceneLockTakeover,
@@ -347,6 +360,8 @@ pub struct W30LaneState {
     pub active_bank: Option<BankId>,
     pub focused_pad: Option<PadId>,
     pub last_capture: Option<CaptureId>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hook_articulation: Option<W30HookArticulationState>,
 }
 
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]

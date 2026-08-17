@@ -59,6 +59,75 @@ fn queue_w30_trigger_pad_targets_focused_lane_capture_on_next_beat() {
 }
 
 #[test]
+fn queue_w30_hook_turnaround_targets_focused_capture_on_next_bar() {
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    state.session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+        bank_id: BankId::from("bank-a"),
+        pad_id: PadId::from("pad-01"),
+    });
+    state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
+    state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-01"));
+    state.session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
+    state.capture_audio_cache.insert(
+        CaptureId::from("cap-01"),
+        source_cache_for_w30_diversity(127.0),
+    );
+    state.set_transport_playing(true);
+    state.refresh_view();
+
+    assert_eq!(
+        state.queue_w30_hook_turnaround(626),
+        Some(QueueControlResult::Enqueued)
+    );
+
+    let pending = state.queue.pending_actions();
+    assert_eq!(pending.len(), 1);
+    assert_eq!(pending[0].command, ActionCommand::W30HookTurnaround);
+    assert_eq!(pending[0].quantization, Quantization::NextBar);
+    assert_eq!(
+        pending[0].target.bank_id.as_ref().map(ToString::to_string),
+        Some("bank-a".into())
+    );
+    assert_eq!(
+        pending[0].target.pad_id.as_ref().map(ToString::to_string),
+        Some("pad-01".into())
+    );
+    assert_eq!(
+        pending[0].params,
+        ActionParams::Mutation {
+            intensity: 1.0,
+            target_id: Some("cap-01".into()),
+        }
+    );
+}
+
+#[test]
+fn queue_w30_hook_turnaround_refuses_stopped_or_missing_source_state() {
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    state.session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+        bank_id: BankId::from("bank-a"),
+        pad_id: PadId::from("pad-01"),
+    });
+    state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
+    state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-01"));
+    state.session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
+    state.refresh_view();
+
+    assert_eq!(state.queue_w30_hook_turnaround(627), None);
+    assert!(state.queue.pending_actions().is_empty());
+
+    state.set_transport_playing(true);
+    state.refresh_view();
+    assert_eq!(state.queue_w30_hook_turnaround(628), None);
+    assert!(state.queue.pending_actions().is_empty());
+}
+
+#[test]
 fn queue_w30_step_focus_targets_next_promoted_pad_on_next_beat() {
     let graph = sample_graph();
     let session = sample_session(&graph);
@@ -432,4 +501,3 @@ fn queue_w30_browse_slice_pool_prefers_feral_capture_and_changes_preview_window(
         "feral W-30 preview should differ from cyclic slice-pool preview"
     );
 }
-

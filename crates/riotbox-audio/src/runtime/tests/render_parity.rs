@@ -933,6 +933,7 @@ fn runtime_mix_duration_pad() -> W30PadPlaybackSampleWindow {
         loop_crossfade_sample_count: 128,
         chop_slice_count: 0,
         chop_slice_starts: [0; W30_PAD_CHOP_SLICE_COUNT],
+        hook_articulation: None,
         samples,
     }
 }

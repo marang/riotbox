@@ -168,6 +168,10 @@ fn shell_state_handles_help_refresh_and_action_keys() {
         ShellKeyOutcome::QueueW30ApplyDamageProfile
     );
     assert_eq!(
+        shell.handle_key_code(KeyCode::Char('H')),
+        ShellKeyOutcome::QueueW30HookTurnaround
+    );
+    assert_eq!(
         shell.handle_key_code(KeyCode::Char('z')),
         ShellKeyOutcome::QueueW30LoopFreeze
     );

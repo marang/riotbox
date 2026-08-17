@@ -166,6 +166,7 @@ fn shared_w30_preview_state_tracks_updates() {
             loop_crossfade_sample_count: 128,
             chop_slice_count: 2,
             chop_slice_starts: [512, 2_048, 0, 0, 0, 0, 0, 0],
+            hook_articulation: None,
             samples: [0.2; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN],
         }),
         music_bus_level: 0.55,

@@ -586,6 +586,7 @@ fn supported_action_list_documents_the_initial_executor_subset() {
             ActionCommand::W30BrowseSlicePool,
             ActionCommand::W30StepFocus,
             ActionCommand::W30ApplyDamageProfile,
+            ActionCommand::W30HookTurnaround,
             ActionCommand::W30CaptureToPad,
             ActionCommand::W30LoopFreeze,
             ActionCommand::PromoteResample,

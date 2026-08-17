@@ -177,8 +177,6 @@ pub(super) fn render_w30_preview_buffer(
     } else {
         f64::from(w30_preview_idle_bpm(render)) / 60.0 / f64::from(sample_rate.max(1))
     };
-    let pad_grid_gate = w30_pad_grid_gate(render, sample_rate);
-
     for frame_index in 0..frame_count {
         if transport_running {
             let step = w30_current_step(state.beat_position, render);
@@ -207,7 +205,7 @@ pub(super) fn render_w30_preview_buffer(
             state.lfo_phase = (state.lfo_phase + 1.8 / sample_rate.max(1) as f32).fract();
             0.45 + 0.55 * ((std::f32::consts::TAU * state.lfo_phase).sin() * 0.5 + 0.5)
         };
-        let waveform = w30_preview_waveform_for_frame(render, state, sample_rate, pad_grid_gate);
+        let waveform = w30_preview_waveform_for_frame(render, state, sample_rate);
         let stop_gain = transport_stop_gain(
             state.transport_stop_latched,
             &mut state.transport_stop_fade_frames_remaining,
@@ -235,12 +233,18 @@ fn w30_preview_waveform_for_frame(
     render: &RealtimeW30PreviewRenderState,
     state: &mut W30PreviewCallbackState,
     sample_rate: u32,
-    pad_grid_gate: Option<W30PadGridGate>,
 ) -> f32 {
     if w30_pad_playback_active(render) {
-        let sample = w30_pad_playback_sample(&render.pad_playback, state, sample_rate);
+        let articulation = w30_hook_articulation_frame(render, state.beat_position);
+        let reverse = articulation.map_or(render.pad_playback.reverse, |frame| frame.reverse);
+        let gate_fraction = articulation.map_or(render.pad_playback.gate_step_fraction, |frame| {
+            frame.gate_step_fraction
+        });
+        let sample =
+            w30_pad_playback_sample_with_reverse(&render.pad_playback, state, sample_rate, reverse);
         let characterized = w30_source_backed_character(sample, render.grit_level, state);
-        return characterized * w30_pad_grid_gate_gain(pad_grid_gate, state);
+        let gate = w30_pad_grid_gate_for_fraction(render, sample_rate, gate_fraction);
+        return characterized * w30_pad_grid_gate_gain(gate, state);
     }
 
     if w30_source_window_active(render) {
@@ -258,11 +262,20 @@ pub(super) struct W30PadGridGate {
     fade_frames: f32,
 }
 
+#[cfg(test)]
 pub(super) fn w30_pad_grid_gate(
     render: &RealtimeW30PreviewRenderState,
     sample_rate: u32,
 ) -> Option<W30PadGridGate> {
-    let gate_fraction = render.pad_playback.gate_step_fraction.clamp(0.0, 1.0);
+    w30_pad_grid_gate_for_fraction(render, sample_rate, render.pad_playback.gate_step_fraction)
+}
+
+fn w30_pad_grid_gate_for_fraction(
+    render: &RealtimeW30PreviewRenderState,
+    sample_rate: u32,
+    gate_step_fraction: f32,
+) -> Option<W30PadGridGate> {
+    let gate_fraction = gate_step_fraction.clamp(0.0, 1.0);
     if !gate_fraction.is_finite()
         || gate_fraction <= f32::EPSILON
         || !render.tempo_bpm.is_finite()
@@ -367,10 +380,20 @@ fn w30_pad_playback_active(render: &RealtimeW30PreviewRenderState) -> bool {
     !matches!(render.mode, W30PreviewRenderMode::Idle) && render.pad_playback.sample_count > 0
 }
 
+#[cfg(test)]
 pub(super) fn w30_pad_playback_sample(
     window: &RealtimeW30PadPlaybackSampleWindow,
     state: &mut W30PreviewCallbackState,
     output_sample_rate: u32,
+) -> f32 {
+    w30_pad_playback_sample_with_reverse(window, state, output_sample_rate, window.reverse)
+}
+
+fn w30_pad_playback_sample_with_reverse(
+    window: &RealtimeW30PadPlaybackSampleWindow,
+    state: &mut W30PreviewCallbackState,
+    output_sample_rate: u32,
+    reverse: bool,
 ) -> f32 {
     let sample_count = window.sample_count.min(W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN);
     if sample_count == 0 {
@@ -394,8 +417,8 @@ pub(super) fn w30_pad_playback_sample(
     } else {
         logical_cursor.min(sample_count.saturating_sub(1) as f32)
     };
-    let sample = interpolated_pad_sample(window, sample_count, wrapped_cursor);
-    let sample = apply_pad_loop_crossfade(window, sample_count, wrapped_cursor, sample);
+    let sample = interpolated_pad_sample(window, sample_count, wrapped_cursor, reverse);
+    let sample = apply_pad_loop_crossfade(window, sample_count, wrapped_cursor, sample, reverse);
     let sample = apply_pad_edge_envelope(window, state, sample_count, wrapped_cursor, sample);
     state.pad_playback_cursor = if window.loop_enabled {
         (logical_cursor + cursor_increment) % sample_count as f32
@@ -410,16 +433,17 @@ fn interpolated_pad_sample(
     window: &RealtimeW30PadPlaybackSampleWindow,
     sample_count: usize,
     cursor: f32,
+    reverse: bool,
 ) -> f32 {
     let base = cursor.floor() as usize % sample_count;
     let next = (base + 1).min(sample_count - 1);
     let fraction = cursor.fract();
-    let index = if window.reverse {
+    let index = if reverse {
         sample_count - 1 - base
     } else {
         base
     };
-    let next_index = if window.reverse {
+    let next_index = if reverse {
         sample_count - 1 - next
     } else {
         next
@@ -432,6 +456,7 @@ fn apply_pad_loop_crossfade(
     sample_count: usize,
     cursor: f32,
     sample: f32,
+    reverse: bool,
 ) -> f32 {
     let crossfade = window.loop_crossfade_sample_count.min(sample_count / 2);
     if !window.loop_enabled || crossfade == 0 || cursor < (sample_count - crossfade) as f32 {
@@ -440,8 +465,51 @@ fn apply_pad_loop_crossfade(
 
     let fade_position = cursor - (sample_count - crossfade) as f32;
     let mix = (fade_position / crossfade as f32).clamp(0.0, 1.0);
-    let head = interpolated_pad_sample(window, sample_count, fade_position);
+    let head = interpolated_pad_sample(window, sample_count, fade_position, reverse);
     sample * (1.0 - mix) + head * mix
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+struct W30HookArticulationFrame {
+    reverse: bool,
+    gate_step_fraction: f32,
+}
+
+fn w30_hook_articulation_frame(
+    render: &RealtimeW30PreviewRenderState,
+    position_beats: f64,
+) -> Option<W30HookArticulationFrame> {
+    let profile = render.pad_playback.hook_articulation_profile?;
+    let relative_beat =
+        position_beats - render.pad_playback.hook_articulation_started_at_beat as f64;
+    if !relative_beat.is_finite() {
+        return None;
+    }
+    // Transport position advances in floating-point sample increments. Snap only values that are
+    // already within a sub-sample tolerance of an integer beat so the frozen [1, 3, 4] boundaries
+    // land on the intended callback frame instead of one frame late.
+    let nearest_beat = relative_beat.round();
+    let relative_beat = if (relative_beat - nearest_beat).abs() <= 1.0e-9 {
+        nearest_beat
+    } else {
+        relative_beat
+    };
+
+    match profile {
+        W30HookArticulationProfile::TurnaroundV1 if (1.0..3.0).contains(&relative_beat) => {
+            Some(W30HookArticulationFrame {
+                reverse: true,
+                gate_step_fraction: 0.68,
+            })
+        }
+        W30HookArticulationProfile::TurnaroundV1 if (3.0..4.0).contains(&relative_beat) => {
+            Some(W30HookArticulationFrame {
+                reverse: false,
+                gate_step_fraction: 0.34,
+            })
+        }
+        W30HookArticulationProfile::TurnaroundV1 => None,
+    }
 }
 
 fn apply_pad_edge_envelope(

@@ -7,7 +7,10 @@ use crate::{
         plan_source_window_loop_capture_replay_hydration,
         plan_source_window_pad_capture_replay_hydration, plan_w30_artifact_replay_hydration,
     },
-    session::{CaptureTarget, SessionFile, W30PreviewModeState},
+    session::{
+        CaptureTarget, SessionFile, W30HookArticulationProfileState, W30HookArticulationState,
+        W30PreviewModeState,
+    },
 };
 
 pub(super) fn apply_promote_capture_to_w30_pad(
@@ -259,6 +262,12 @@ pub(super) fn apply_w30_cue(
             .w30
             .preview_mode
             .unwrap_or(W30PreviewModeState::LiveRecall),
+        ActionCommand::W30HookTurnaround => session
+            .runtime_state
+            .lane_state
+            .w30
+            .preview_mode
+            .unwrap_or(W30PreviewModeState::LiveRecall),
         ActionCommand::W30LiveRecall
         | ActionCommand::W30TriggerPad
         | ActionCommand::W30SwapBank
@@ -293,7 +302,15 @@ pub(super) fn apply_w30_cue(
     session.runtime_state.lane_state.w30.focused_pad = Some(pad_id);
     session.runtime_state.lane_state.w30.preview_mode = Some(preview_mode);
     if let Some(capture_id) = capture_id {
-        session.runtime_state.lane_state.w30.last_capture = Some(capture_id);
+        session.runtime_state.lane_state.w30.last_capture = Some(capture_id.clone());
+        if action.command == ActionCommand::W30HookTurnaround {
+            session.runtime_state.lane_state.w30.hook_articulation =
+                Some(W30HookArticulationState {
+                    profile: W30HookArticulationProfileState::TurnaroundV1,
+                    capture_id,
+                    started_at_beat: entry.commit_record.boundary.beat_index,
+                });
+        }
     }
 
     if matches!(

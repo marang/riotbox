@@ -216,6 +216,7 @@ const fn replay_command_family(command: ActionCommand) -> &'static str {
         | ActionCommand::W30BrowseSlicePool
         | ActionCommand::W30StepFocus
         | ActionCommand::W30ApplyDamageProfile
+        | ActionCommand::W30HookTurnaround
         | ActionCommand::W30LoopFreeze => "W-30",
         ActionCommand::TransportPlay
         | ActionCommand::TransportPause

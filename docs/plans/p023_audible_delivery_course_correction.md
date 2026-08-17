@@ -2,7 +2,7 @@
 
 Status: accepted operating plan
 Linear: RIOTBOX-1439
-Direct audible follow-up: RIOTBOX-1417
+Direct audible follow-ups: RIOTBOX-1417, RIOTBOX-1440
 
 ## Purpose
 
@@ -92,3 +92,13 @@ qualification. The negative result is preserved in
 Any successor must be a new Linear-first audible slice with a materially
 different musical owner or grammar, not more scalar tuning of the rejected
 retrigger or full-bed-cut mechanisms.
+
+RIOTBOX-1440 then applied the keep path successfully. One source-recognizable
+W-30 sampler turnaround earned an early Development keep, was frozen before
+product work, rebuilt as the explicit `w30.hook_turnaround` action without
+retuning, and passed dense, tonal, and sparse Development qualification through
+the existing Action/Session/replay/RuntimeMix spine. The one formal product A/B
+also passed: the effect remained useful, source-recognizable, cleanly returning,
+and worth live triggering. This validates the course-correction order while
+remaining a bounded W-30 articulation result, not a hardness, Golden Path, or
+release-readiness claim.

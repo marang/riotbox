@@ -52,6 +52,26 @@ pub enum W30PreviewSourceProfile {
     PromotedAudition,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum W30HookArticulationProfile {
+    TurnaroundV1,
+}
+
+impl W30HookArticulationProfile {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::TurnaroundV1 => "turnaround_v1",
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub struct W30HookArticulationRenderState {
+    pub profile: W30HookArticulationProfile,
+    pub started_at_beat: u64,
+}
+
 impl W30PreviewSourceProfile {
     #[must_use]
     pub const fn label(self) -> &'static str {
@@ -176,6 +196,7 @@ pub struct W30PadPlaybackSampleWindow {
     pub loop_crossfade_sample_count: usize,
     pub chop_slice_count: usize,
     pub chop_slice_starts: [u32; W30_PAD_CHOP_SLICE_COUNT],
+    pub hook_articulation: Option<W30HookArticulationRenderState>,
     pub samples: [f32; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN],
 }
 

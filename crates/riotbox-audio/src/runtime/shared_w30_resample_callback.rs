@@ -26,6 +26,8 @@ impl SharedW30PreviewRenderState {
             pad_chop_slice_count: AtomicU32::new(0),
             pad_chop_slice_starts: std::array::from_fn(|_| AtomicU32::new(0)),
             pad_samples: std::array::from_fn(|_| AtomicU32::new(0.0_f32.to_bits())),
+            hook_articulation_profile: AtomicU32::new(0),
+            hook_articulation_started_at_beat: AtomicU64::new(0),
             music_bus_level_bits: AtomicU32::new(0),
             grit_level_bits: AtomicU32::new(0),
             is_transport_running: AtomicBool::new(false),
@@ -163,6 +165,18 @@ impl SharedW30PreviewRenderState {
             }
             self.pad_chop_slice_count
                 .store(chop_slice_count as u32, Ordering::Relaxed);
+            let (articulation_profile, articulation_started_at_beat) = pad_playback
+                .hook_articulation
+                .map_or((0, 0), |articulation| {
+                    (
+                        w30_hook_articulation_profile_to_u32(Some(articulation.profile)),
+                        articulation.started_at_beat,
+                    )
+                });
+            self.hook_articulation_profile
+                .store(articulation_profile, Ordering::Relaxed);
+            self.hook_articulation_started_at_beat
+                .store(articulation_started_at_beat, Ordering::Relaxed);
             for (index, sample) in pad_playback.samples.iter().copied().enumerate() {
                 self.pad_samples[index].store(sample.to_bits(), Ordering::Relaxed);
             }
@@ -183,6 +197,9 @@ impl SharedW30PreviewRenderState {
             self.pad_loop_crossfade_sample_count
                 .store(0, Ordering::Relaxed);
             self.pad_chop_slice_count.store(0, Ordering::Relaxed);
+            self.hook_articulation_profile.store(0, Ordering::Relaxed);
+            self.hook_articulation_started_at_beat
+                .store(0, Ordering::Relaxed);
         }
     }
 
@@ -219,8 +236,28 @@ impl SharedW30PreviewRenderState {
                 .min(sample_count),
             chop_slice_count,
             chop_slice_starts,
+            hook_articulation_profile: w30_hook_articulation_profile_from_u32(
+                self.hook_articulation_profile.load(Ordering::Relaxed),
+            ),
+            hook_articulation_started_at_beat: self
+                .hook_articulation_started_at_beat
+                .load(Ordering::Relaxed),
             samples,
         }
+    }
+}
+
+fn w30_hook_articulation_profile_to_u32(profile: Option<W30HookArticulationProfile>) -> u32 {
+    match profile {
+        Some(W30HookArticulationProfile::TurnaroundV1) => 1,
+        None => 0,
+    }
+}
+
+fn w30_hook_articulation_profile_from_u32(value: u32) -> Option<W30HookArticulationProfile> {
+    match value {
+        1 => Some(W30HookArticulationProfile::TurnaroundV1),
+        _ => None,
     }
 }
 

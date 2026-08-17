@@ -1,8 +1,8 @@
-# RIOTBOX-1440 W-30 Hook-Turnaround Development Exploration
+# RIOTBOX-1440 W-30 Hook-Turnaround Development Qualification
 
 Date: 2026-08-16  
 Partition: Development only  
-Result: `provisional_keep`  
+Result: `pass`
 Holdout access: none  
 Commercial-reference access: none
 
@@ -76,3 +76,57 @@ observer/UI, and exact RuntimeMix, then qualify all three registered
 Development sources before a formal structured human review. Qualification may
 reject but may not tune v1.
 
+## Product Qualification
+
+The source-blind rebuild adds the explicit `w30.hook_turnaround` performer
+action on `H` through the established queue/commit, Session/replay,
+observer/UI, source-backed W-30 projection, and exact RuntimeMix path. The
+action is refused before queueing unless transport is running, trusted tempo is
+positive and finite, the focused promoted capture matches the rendered pad,
+and source-backed pad audio is available. Missing material remains silent with
+no fallback. The existing Damage action and pre-gesture grit remain unchanged.
+
+After the source-blind Core, Audio, and App suites passed, one fresh bounded
+Development-only `StageAQualificationSession` opened exactly the three frozen
+paths. All expected source hashes matched before decode or render. No source
+directory, Holdout audio, or commercial reference was opened. The completed
+access log is local at
+`artifacts/audio_qa/riotbox-1440/w30-hook-turnaround-v1/access-log.json`
+(SHA-256
+`9ce23f1dda1433bac78f17786f3196c35a7331c12ecea301ea100c3cb632a4c6`).
+
+| Case | Reverse delta RMS | Choke delta RMS | Peak | Clips / limited | Boundaries |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `dense_beat03_130` | `0.067343` | `0.048255` | `0.399897` | `0 / 0` | sample-exact |
+| `tonal_rusharp_120` | `0.137809` | `0.078858` | `0.268649` | `0 / 0` | sample-exact |
+| `sparse_kicksnr_120` | `0.096941` | `0.028423` | `0.369202` | `0 / 0` | sample-exact |
+
+Every case preserved the first relative beat and ordinary return from relative
+beat four sample-exactly, differed from control in both frozen articulation
+windows, produced identical output with 128- and 257-frame callback
+partitions, preserved capture lineage/grit/Source Monitor, and produced zero
+active samples in the missing-source control. Session JSON round-trip and
+replay equivalence passed in source-blind automated tests.
+
+Exactly one formal review-ready generation was produced from the dense product
+path. Both artifacts are stereo PCM16 at 48 kHz, `5.538458` seconds, and contain
+four control pre-roll beats, the four-beat gesture span, and four ordinary
+return beats. Pre-roll and return are sample-identical; only the intended
+middle differs.
+
+| Review role | Artifact | SHA-256 | Peak | RMS |
+| --- | --- | --- | ---: | ---: |
+| A: product control | `07_review_A_control.wav` | `cf5c892b71cc9f32e29f572aa79d187506be30f8ed94791b627ffbdbcd6101bd` | `0.399897` | `0.068574` |
+| B: `w30_hook_turnaround_v1` | `08_review_B_candidate_v1.wav` | `da0cbb1cc1cde2c14cd298e272d94881ec6a0073dcec070fa263a9e9d8ebd4b1` | `0.399897` | `0.064287` |
+
+## Formal Human Result
+
+After fresh readiness, A and B were played separately once and each stopped at
+its declared `5.538458`-second endpoint with silence verified. The project
+musician affirmed that the turnaround is a good, musically acceptable effect;
+the combined structured response also affirmed clear usefulness, retained hook
+identity, clean return, and willingness to trigger it live. No click, timing
+damage, source loss, pasted-on quality, or other objection was reported. This
+is a qualified positive product pass rather than a claim that the gesture alone
+makes a beat harder, completes the Golden Path, or establishes demo/release
+readiness.

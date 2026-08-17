@@ -1462,6 +1462,16 @@ a materially different musical owner or grammar instead of tuning the rejected
 mechanisms. RIOTBOX-1399 may optimize measured validation cost but must not
 delete reusable local build and evidence state automatically.
 
+RIOTBOX-1440 is the first successful keep-to-product application of that
+boundary. The frozen `w30_hook_turnaround_v1` now owns one explicit `H` gesture
+through queue/commit, Session/replay, observer/UI, and exact RuntimeMix. Dense,
+tonal, and sparse registered Development sources passed exact boundary,
+callback-partition, limiter, lineage, and missing-source gates without retuning;
+the single formal dense A/B earned a qualified human product pass for a useful,
+source-recognizable effect with a clean return and live-trigger value. This is
+real bounded musician value, but it does not claim percussive hardness, complete
+the all-lane P023 Golden Path, or authorize Holdout/demo/release promotion.
+
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a
 quality guardrail, not a replacement for the current sound-product priority:
