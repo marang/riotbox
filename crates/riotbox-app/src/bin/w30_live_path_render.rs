@@ -286,8 +286,21 @@ fn qualify_hook_turnaround_v1(
 ) -> Result<(), Box<dyn std::error::Error>> {
     const START_BEAT: u64 = 8;
     let frame_count = (5.0 * 60.0 / bpm * SAMPLE_RATE as f32).round() as usize;
-    let samples_per_beat = ((60.0 / bpm * SAMPLE_RATE as f32).round() as usize)
-        .saturating_mul(usize::from(CHANNEL_COUNT));
+    let beat_one = qualification_sample_offset_at_beat_boundary(
+        START_BEAT as f64,
+        START_BEAT as f64 + 1.0,
+        bpm,
+    )?;
+    let beat_three = qualification_sample_offset_at_beat_boundary(
+        START_BEAT as f64,
+        START_BEAT as f64 + 3.0,
+        bpm,
+    )?;
+    let beat_four = qualification_sample_offset_at_beat_boundary(
+        START_BEAT as f64,
+        START_BEAT as f64 + 4.0,
+        bpm,
+    )?;
     let control_plan = isolated_w30_plan(control_render.clone(), bpm, START_BEAT as f64);
     let control = render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
         &[RuntimeMixRenderSequenceStep::new(
@@ -363,19 +376,19 @@ fn qualify_hook_turnaround_v1(
     if candidate.samples != partition_control.samples {
         return Err("hook turnaround changed across callback partitions".into());
     }
-    if candidate.samples[..samples_per_beat] != control.samples[..samples_per_beat] {
+    if candidate.samples[..beat_one] != control.samples[..beat_one] {
         return Err("hook turnaround changed the frozen first relative beat".into());
     }
-    if candidate.samples[4 * samples_per_beat..] != control.samples[4 * samples_per_beat..] {
+    if candidate.samples[beat_four..] != control.samples[beat_four..] {
         return Err("hook turnaround did not return sample-exactly on relative beat four".into());
     }
     let reverse_delta = signal_delta_metrics(
-        &control.samples[samples_per_beat..3 * samples_per_beat],
-        &candidate.samples[samples_per_beat..3 * samples_per_beat],
+        &control.samples[beat_one..beat_three],
+        &candidate.samples[beat_one..beat_three],
     );
     let choke_delta = signal_delta_metrics(
-        &control.samples[3 * samples_per_beat..4 * samples_per_beat],
-        &candidate.samples[3 * samples_per_beat..4 * samples_per_beat],
+        &control.samples[beat_three..beat_four],
+        &candidate.samples[beat_three..beat_four],
     );
     if reverse_delta.rms <= 0.001 || choke_delta.rms <= 0.001 {
         return Err("hook turnaround reverse or choke window collapsed into control".into());
@@ -464,8 +477,16 @@ fn qualify_hook_turnaround_v1(
         {
             return Err("formal review artifact clipped or invoked the limiter".into());
         }
-        let four_beats = 4 * samples_per_beat;
-        let eight_beats = 8 * samples_per_beat;
+        let four_beats = qualification_sample_offset_at_beat_boundary(
+            review_position_beats,
+            review_position_beats + 4.0,
+            bpm,
+        )?;
+        let eight_beats = qualification_sample_offset_at_beat_boundary(
+            review_position_beats,
+            review_position_beats + 8.0,
+            bpm,
+        )?;
         if review_candidate.samples[..four_beats] != review_control.samples[..four_beats]
             || review_candidate.samples[eight_beats..] != review_control.samples[eight_beats..]
         {
@@ -539,6 +560,43 @@ fn qualify_hook_turnaround_v1(
     )?;
     println!("hook-turnaround qualification: {result}");
     Ok(())
+}
+
+/// Return the interleaved-sample offset of the callback frame at a transport beat boundary.
+///
+/// The runtime advances its `f64` transport position once per rendered frame and snaps values
+/// already within `1e-9` beat of an integer articulation boundary. Repeating that operation here
+/// avoids multiplying a separately rounded one-beat length, which drifts by several frames at
+/// non-integer product tempos.
+fn qualification_sample_offset_at_beat_boundary(
+    start_position_beats: f64,
+    target_position_beats: f64,
+    bpm: f32,
+) -> Result<usize, Box<dyn std::error::Error>> {
+    if !start_position_beats.is_finite()
+        || !target_position_beats.is_finite()
+        || target_position_beats < start_position_beats
+        || !bpm.is_finite()
+        || bpm <= 0.0
+    {
+        return Err("invalid hook-turnaround qualification beat boundary".into());
+    }
+
+    const BOUNDARY_SNAP_BEATS: f64 = 1.0e-9;
+    let beats_per_frame = f64::from(bpm) / 60.0 / f64::from(SAMPLE_RATE);
+    let maximum_frames =
+        ((target_position_beats - start_position_beats) / beats_per_frame).ceil() as usize + 2;
+    let mut position_beats = start_position_beats;
+    for frame in 0..=maximum_frames {
+        if position_beats >= target_position_beats
+            || (position_beats - target_position_beats).abs() <= BOUNDARY_SNAP_BEATS
+        {
+            return Ok(frame.saturating_mul(usize::from(CHANNEL_COUNT)));
+        }
+        position_beats += beats_per_frame;
+    }
+
+    Err("hook-turnaround qualification beat boundary was unreachable".into())
 }
 
 fn isolated_w30_plan(
