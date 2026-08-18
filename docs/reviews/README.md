@@ -56,6 +56,9 @@ Current P023 rejected-experiment closeouts:
 
 Current P023 algorithm-value refresh:
 
+- [riotbox_1441_w30_hook_turnaround_transfer_observation_2026-08-18.md](./riotbox_1441_w30_hook_turnaround_transfer_observation_2026-08-18.md):
+  five-source listening observations, source-dependent usefulness, improved
+  phrase-scale review method, and formal fail-closed qualification boundary.
 - [riotbox_1440_w30_hook_turnaround_development_2026-08-16.md](./riotbox_1440_w30_hook_turnaround_development_2026-08-16.md):
   passed W-30 hook-turnaround exploration, three-source product qualification,
   and formal human review.
