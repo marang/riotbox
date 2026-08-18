@@ -91,6 +91,16 @@ a materially different musical owner or grammar rather than tuning the
 rejected retrigger or full-bed-cut mechanisms. `RIOTBOX-1399` remains the
 measured validation-cost optimization when it blocks an audible path.
 
+`RIOTBOX-1440` subsequently shipped the first kept mechanism under that order:
+the source-backed W-30 Hook Turnaround earned a formal product pass on its
+bounded qualification source. `RIOTBOX-1441` then found the unchanged gesture
+usable on four of five additional Development sources and clearly beneficial
+on three, while one source lost groove and musical usefulness. Its longer
+source-first comparisons were more reliable than the initial short presentation
+but exceeded the frozen review duration and lacked one completed five-source
+access log. The transfer result therefore remains informative human evidence,
+not a formal qualification pass; no Holdout or commercial reference was used.
+
 ## Documentation Rules
 
 - Stable core contracts live in `docs/`.

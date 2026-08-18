@@ -154,6 +154,48 @@ Think of Riotbox as a hybrid of:
 
 The current shell is built for one job: make an analyzed loop or track feel like a playable performance object instead of a static file.
 
+## Effect Language And Intended Use
+
+Riotbox is growing toward a compact performance vocabulary rather than a long
+list of interchangeable effects. Each gesture should have an obvious musical
+role, land on a trusted beat, bar, or phrase boundary, and preserve recognizable
+source character unless the performer deliberately asks for destruction.
+
+| Effect family | What it does | When to use it |
+| --- | --- | --- |
+| **Hook Turnaround** | Reverses part of a recognizable hook and returns cleanly to the loop | At the end of a phrase to break repetition or announce a transition |
+| **Choke / Silence Cut** | Removes the active material abruptly | Immediately before a drop or a hard return |
+| **Reverse** | Pulls a hit or source fragment backward | To create suction into a transition or a surprising hook variation |
+| **Retrigger / Stutter** | Repeats a short fragment rhythmically | To build tension, make fills, or introduce controlled chaos |
+| **Pitch Dive** | Pulls pitch and energy downward | For a destructive exit, breakdown, or transition |
+| **Filter Slam** | Narrows or opens the spectrum quickly | To create a strong contrast between a build and its return |
+| **Damage / Bitcrush** | Makes source material rougher, grainier, and more aggressive | As a short punk accent or damaged payoff rather than a permanent wash |
+| **Dropout And Restore** | Removes musical roles and brings them back in a changed state | For large arrangement contrasts and a stronger re-entry |
+| **Pressure Lift** | Raises drum, bass, or hook pressure selectively | During a build, according to the kind of energy the source can support |
+| **Source Chop / Loop Mutation** | Turns recognizable source material into a new hook or loop | To create playable riffs while retaining the identity of the recording |
+| **Scene Or Role Swap** | Moves leadership between source, drums, bass, and the sample hook | For larger live transitions and clearly changed sections |
+
+The intended workflow is consistent across these families:
+
+1. Riotbox analyzes the source and identifies material that can support a
+   musical intervention.
+2. The performer chooses an intention such as a turnaround, dropout, or
+   pressure lift.
+3. Riotbox schedules it on an appropriate musical boundary.
+4. The gesture transforms the source audibly without hiding behind a generic
+   replacement pattern.
+5. The performance either returns cleanly or moves into a deliberate new
+   scene.
+
+The performer currently owns most gesture choices. Future source intelligence,
+Ghost, and Feral behavior may recommend suitable gestures or execute them in an
+explicit assist mode, but should not stack effects arbitrarily. The effect
+families above describe the intended product language, not a promise that every
+item is already complete or assigned to a delivery ticket. Hook Turnaround is
+the most recently implemented and positively reviewed addition; other families
+range from playable early behavior to planned musical depth and broader source
+qualification.
+
 ## What You Can Do Today
 
 Today’s build already lets you:
