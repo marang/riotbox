@@ -101,6 +101,12 @@ but exceeded the frozen review duration and lacked one completed five-source
 access log. The transfer result therefore remains informative human evidence,
 not a formal qualification pass; no Holdout or commercial reference was used.
 
+`RIOTBOX-1442` provisionally kept one continuous W-30 Pitch Dive after the
+first bounded Development source produced a clearly transformed, musically
+useful exit with recognizable source identity. The exact curve and terminal
+fade are frozen before the requested four-source transfer observation. This is
+not yet product behavior, source-general qualification, or a hardness claim.
+
 ## Documentation Rules
 
 - Stable core contracts live in `docs/`.
