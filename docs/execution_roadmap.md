@@ -1472,6 +1472,18 @@ source-recognizable effect with a clean return and live-trigger value. This is
 real bounded musician value, but it does not claim percussive hardness, complete
 the all-lane P023 Golden Path, or authorize Holdout/demo/release promotion.
 
+RIOTBOX-1441 adds informative five-source transfer evidence without changing
+that mechanism. The ordinary W-30 transformation was useful on all five
+sources; Hook Turnaround was usable on four, clearly improved three, and
+reduced groove and musical usefulness on one despite remaining clear. Longer
+source-first phrase repetition also corrected one premature short-comparison
+rejection. Those longer reviews exceeded the frozen ten-second presentation
+bound and were not covered by one completed five-source access log, so the
+formal transfer qualification closes fail-closed rather than retroactively
+relaxing its contract. The product keeps Hook Turnaround as a performer-owned,
+source-dependent articulation; future intelligence may recommend or audition
+it but must not assume it is universally beneficial.
+
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a
 quality guardrail, not a replacement for the current sound-product priority:
