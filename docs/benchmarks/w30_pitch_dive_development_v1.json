@@ -1,0 +1,98 @@
+{
+  "schema": "riotbox.w30_pitch_dive_development.v1",
+  "ticket": "RIOTBOX-1442",
+  "decision": "RBX-299",
+  "work_class": "development_exploration_keep",
+  "partition": "development",
+  "mechanism": {
+    "id": "w30_pitch_dive_v1",
+    "claim": "source_recognizable_transition_exit",
+    "excluded_claims": [
+      "percussive_hard",
+      "source_selection_quality",
+      "source_general_quality_before_qualification",
+      "demo_or_release_readiness"
+    ],
+    "intended_performer_gesture": "w30.pitch_dive",
+    "intended_quantization": "next_bar",
+    "intended_action_target": "current_focused_promoted_w30_capture",
+    "render_order": "after_existing_source_backed_w30_render_before_music_bus_mix",
+    "ordinary_pre_roll_beats": 8.0,
+    "gesture_length_beats": 4.0,
+    "continuous_tape_brake": {
+      "normalized_progress": "clamp(local_beat / 4.0, 0.0, 1.0)",
+      "playback_rate": "pow(0.35, normalized_progress)",
+      "source_cursor": "continuous_from_control_frame_at_gesture_start",
+      "sample_interpolation": "linear_per_channel",
+      "terminal_fade_beats": 0.15,
+      "terminal_gain": "clamp((4.0 - local_beat) / 0.15, 0.0, 1.0)",
+      "terminal_frame": "explicit_zero"
+    },
+    "unchanged_dimensions": {
+      "source_pcm": "unchanged_exact_capture_pcm",
+      "preceding_w30_transformation": "unchanged",
+      "first_eight_beats": "sample_exact_to_control",
+      "grit": "unchanged_from_pre_gesture_state",
+      "music_bus_level": "unchanged_from_pre_gesture_state",
+      "other_lanes": "unchanged",
+      "source_monitor": "unchanged"
+    },
+    "completed_exit_behavior": "silence_after_beat_twelve",
+    "missing_or_inapplicable_behavior": "visible_refusal_without_audio_or_fallback"
+  },
+  "exploration_keep": {
+    "case_id": "dense_beat03_130",
+    "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+    "source_sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+    "source_anchor_sha256": "d22c8b7b5cafacebbf14ad89eafa868658ecc6dedae8598b5e26be59be9b7149",
+    "input_w30_control_sha256": "a7326f8a16fd76d4b9d7959c3a871724a763555f05b0edc4f6fb1ac69d6c31f7",
+    "bounded_control_sha256": "2f88e4bcfd8097d0dba26e36d54c1ba09b03a79ff1d888ebdea17d9cc4f5ab10",
+    "candidate_sha256": "95479de1a150993e76de4dc37e7eb3fb9f92e928655cedcdafe16ef42205b0e0",
+    "source_control_candidate_review_sha256": "3c8c441f1fec7af62ca467aaf84d1cb378acd3a672afb9b93a9c8b265aaceace",
+    "source_candidate_review_sha256": "a96450a74c6d2e1b0a9a6f443b9dbca7002c5376a8ae59fa881142941dad006b",
+    "duration_seconds": 5.538458,
+    "sample_rate_hz": 48000,
+    "channels": 2,
+    "sample_format": "pcm_s16le",
+    "first_eight_beats_sample_exact": true,
+    "final_four_beat_delta_rms": 0.08813367038965225,
+    "candidate_peak_abs": 0.39988401532173157,
+    "candidate_rms": 0.06699083000421524,
+    "candidate_clip_count": 0,
+    "terminal_frame_is_silent": true,
+    "human_result": "provisional_keep",
+    "human_meaning": "pitch_dive_is_clearly_transformed_yet_source_recognizable_musically_useful_and_worth_transfer_observation",
+    "qualification_evidence": false
+  },
+  "variant_evidence_boundary": {
+    "rendered_variant_count": 3,
+    "human_reviewed_variants": [
+      "continuous_tape_brake"
+    ],
+    "unplayed_variants_without_human_evidence": [
+      "stepped_machine_fall",
+      "late_plunge_choke"
+    ],
+    "stopping_reason": "first_variant_earned_explicit_keep"
+  },
+  "access": {
+    "directory_discovery_allowed": false,
+    "holdout_audio_allowed": false,
+    "commercial_reference_audio_allowed": false,
+    "maximum_unique_development_files": 1,
+    "exact_registered_paths_only": true
+  },
+  "promotion_boundary": {
+    "exploration_code_is_product_evidence": false,
+    "source_blind_rebuild_required": true,
+    "queue_commit_session_replay_observer_and_runtime_mix_required": true,
+    "fresh_source_diverse_development_qualification_required": true,
+    "formal_human_review_required": true,
+    "holdout_authorized": false
+  },
+  "stopping_rule": {
+    "no_mapping_constant_timeline_or_threshold_changes_in_v1": true,
+    "transfer_or_qualification_may_reject_but_may_not_tune_v1": true,
+    "required_change": "new_version_and_decision_log_entry"
+  }
+}

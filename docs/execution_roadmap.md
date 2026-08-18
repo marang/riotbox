@@ -1484,6 +1484,15 @@ relaxing its contract. The product keeps Hook Turnaround as a performer-owned,
 source-dependent articulation; future intelligence may recommend or audition
 it but must not assume it is universally beneficial.
 
+RIOTBOX-1442 provisionally keeps `w30_pitch_dive_v1` as the next audible
+Development direction. On one registered dense source, the four-beat
+continuous tape-brake exit was clearly transformed, retained recognizable
+source identity, and was judged especially successful. The curve, four-beat
+timeline, and terminal fade are frozen before the user-requested observation
+on four additional registered Development sources. Product-spine integration,
+source-diverse qualification, Holdout, hardness, and release claims remain
+unearned.
+
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a
 quality guardrail, not a replacement for the current sound-product priority:
