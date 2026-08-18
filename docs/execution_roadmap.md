@@ -1493,6 +1493,14 @@ on four additional registered Development sources. Product-spine integration,
 source-diverse qualification, Holdout, hardness, and release claims remain
 unearned.
 
+RIOTBOX-1443 adds positive four-source transfer evidence for that unchanged
+recipe. Across two dense breaks, sparse drums, and a tonal riff, the ordinary
+W-30 transformation was useful and the Pitch Dive was preferred in every case,
+with no reported groove, clarity, or source-identity loss. The temporary
+renderer is removed. The next slice may integrate the exact RBX-299 behavior
+through the product spine and qualify its exact RuntimeMix output; it may not
+retune from these source results.
+
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a
 quality guardrail, not a replacement for the current sound-product priority:

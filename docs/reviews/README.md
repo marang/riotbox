@@ -65,6 +65,9 @@ Current P023 algorithm-value refresh:
 - [riotbox_1442_w30_pitch_dive_development_2026-08-18.md](./riotbox_1442_w30_pitch_dive_development_2026-08-18.md):
   provisionally kept a source-recognizable continuous W-30 pitch-dive exit and
   froze the exact recipe before transfer observation and product integration.
+- [riotbox_1443_w30_pitch_dive_transfer_observation_2026-08-18.md](./riotbox_1443_w30_pitch_dive_transfer_observation_2026-08-18.md):
+  positive four-source transfer observation for the unchanged W-30 Pitch Dive
+  across dense-break, sparse-drum, and tonal-riff material.
 
 - [riotbox_1439_delivery_system_audit_2026-08-16.md](./riotbox_1439_delivery_system_audit_2026-08-16.md):
   environment, research, roadmap, plans, workflow, audio-QA, and skill audit;

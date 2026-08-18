@@ -107,6 +107,12 @@ useful exit with recognizable source identity. The exact curve and terminal
 fade are frozen before the requested four-source transfer observation. This is
 not yet product behavior, source-general qualification, or a hardness claim.
 
+`RIOTBOX-1443` then observed that unchanged frozen Pitch Dive on four additional
+registered Development sources. A was useful in all four cases and B was
+preferred in all four, spanning dense breaks, sparse drums, and a tonal riff.
+This supports the next source-blind product-integration slice without per-source
+tuning; formal product qualification and Holdout remain unearned.
+
 ## Documentation Rules
 
 - Stable core contracts live in `docs/`.
