@@ -156,6 +156,8 @@ exact `rg`, or a targeted range; do not load it wholesale.
 - Freeze new technical decisions in the decision log and update the owning spec
   when a contract changes; do not bury architecture decisions only in comments,
   Linear, or chat.
+- Append every new `RBX-*` Decision Log entry at end-of-file in monotonically
+  increasing ID order; never insert it through a repeated generic field anchor.
 - Keep the Decision Log for durable research, architecture, algorithm,
   threshold, access-boundary, and product-contract decisions. Routine playback,
   readiness, replay, status, and other reversible operational steps do not get
