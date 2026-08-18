@@ -4026,3 +4026,17 @@ Why: silently accepting the mismatch or substituting inside the already-open v1 
 Evidence: v1 verified the four expected file hashes, rendered product-path controls for its first three sources, then stopped while analyzing the fourth. No pitch-dive candidate or human playback was produced in v1. The rejected source, Holdout audio, source directories, and commercial-reference audio were not used to change the frozen effect.
 Consequences: create a fresh v2 access log before any v2 source read, verify all four exact hashes, and reuse the already-rendered first-three controls only after re-verification. Generate exactly one frozen candidate and one source-first repeated composite per v2 source. Further access, timing, render, or playback failure stops without in-place replacement. No product, hardness, universal-source, Golden Path, Holdout, demo, or release claim is authorized.
 Status: accepted
+
+---
+
+### RBX-301
+
+Date: 2026-08-18
+Topic: use a previously qualified tonal case after a second stale source-tempo mismatch
+Phase: P023 / Sound Excellence
+Question: what final bounded source set should RIOTBOX-1443 use after its v2 replacement also failed unchanged tempo admission before any pitch-dive candidate or playback?
+Decision: close v2 fail-closed and use `docs/plans/riotbox_1443_w30_pitch_dive_four_source_transfer_v3.md`. Replace only `freesound_jmarcosfer_591426`, whose registered 94 BPM disagreed with the current Rust timing candidate of 141.07 BPM, with previously registered and qualified `tonal_rusharp_120` at exact path `data/test_audio/examples/DH_RushArp_120_A.wav`, SHA-256 `ec2a0c930eb338bf81cd5cb4b5fef487e07c140ad40181e1d92b2a0990334e0e`, 120 BPM, and downbeat 0.0 seconds. Keep the other three sources and every RBX-299 mechanism, render, presentation, and claim boundary unchanged. Do not search for or substitute another source in v3.
+Why: a second selection from the old external declared-BPM registry would repeat the same avoidable admission risk. The tonal case is already part of the frozen W-30 Development matrix and previously passed exact product timing, while also adding useful family diversity to the requested four observations.
+Evidence: v2 reverified its four exact hashes but stopped while analyzing its replacement source. No v2 pitch-dive candidate or human playback was produced. Neither timing refusal informed the pitch-dive curve, fade, gain, or source transformation.
+Consequences: create a fresh v3 access log before reading any v3 source, verify all four hashes, and allow reuse of the first-three v1 controls only after re-verification. Generate exactly one frozen candidate and source-first repeated composite per source. A v3 contract failure stops without another replacement. No product, hardness, universal-source, Golden Path, Holdout, demo, or release claim is authorized.
+Status: accepted
