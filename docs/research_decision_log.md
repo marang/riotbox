@@ -4040,3 +4040,17 @@ Why: a second selection from the old external declared-BPM registry would repeat
 Evidence: v2 reverified its four exact hashes but stopped while analyzing its replacement source. No v2 pitch-dive candidate or human playback was produced. Neither timing refusal informed the pitch-dive curve, fade, gain, or source transformation.
 Consequences: create a fresh v3 access log before reading any v3 source, verify all four hashes, and allow reuse of the first-three v1 controls only after re-verification. Generate exactly one frozen candidate and source-first repeated composite per source. A v3 contract failure stops without another replacement. No product, hardness, universal-source, Golden Path, Holdout, demo, or release claim is authorized.
 Status: accepted
+
+---
+
+### RBX-302
+
+Date: 2026-08-18
+Topic: accept four-source Pitch Dive transfer and authorize source-blind product integration
+Phase: P023 / Sound Excellence
+Question: did unchanged `w30_pitch_dive_v1` transfer broadly enough to justify implementing its exact frozen recipe through the Riotbox product spine?
+Decision: yes. Accept `docs/reviews/riotbox_1443_w30_pitch_dive_transfer_observation_2026-08-18.md` as positive Development transfer evidence and authorize a separate Linear-first product-integration slice for unchanged RBX-299. Do not change the exponential rate curve, eight-beat pre-roll, four-beat exit, continuous cursor, linear interpolation, terminal fade, source-backed ownership, or fail-closed behavior. Remove the temporary exploration renderer before merge.
+Why: all four additional source-bound reviews produced the same musical result: the ordinary W-30 transformation was useful and the Pitch Dive improved it. The effect transferred across two dense breaks, sparse drums, and a tonal riff without reported groove, clarity, usefulness, or source-identity damage. This is substantially stronger musician-value evidence than a one-source keep and warrants paying the product-spine integration cost.
+Evidence: the completed v3 access log is SHA-256 `d20a9162b09f32992176acadf296226a89ab24af866b3825c9f2cb5e4536dc1e`. The four exact A/B and source-first composite identities, final-four-beat delta RMS values, formats, durations, loudness measurements, and neutral human observations are bound in the RIOTBOX-1443 review. The two earlier source-set versions stopped before any candidate or playback and did not tune the mechanism. No source directory, Holdout audio, or commercial-reference audio was used.
+Consequences: the product slice must add the existing intended `w30.pitch_dive` action through queue/commit, Session/replay, observer/UI, and exact RuntimeMix with visible refusal and no fallback. Rebuild source-blind from the contract, prove callback partition invariance, source lineage, exact unchanged pre-roll, terminal behavior, limiter safety, Session round-trip, replay equivalence, and missing-source silence across a bounded registered Development set. Require only one fresh exact-product human review after complete technical admission; do not repeat the four exploratory comparisons unless the product bytes materially diverge. Qualification may reject but may not retune v1. Holdout, hardness, Golden Path, demo, and release claims remain unauthorized.
+Status: accepted

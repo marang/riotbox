@@ -1,6 +1,6 @@
 # RIOTBOX-1443 W-30 Pitch-Dive Four-Source Transfer Observation v2
 
-Status: pre-source brief
+Status: terminal fail-closed pre-candidate
 Partition: Development only
 Mechanism changes: none
 Holdout access: prohibited
