@@ -1,9 +1,9 @@
 # RIOTBOX-1442 W-30 Pitch-Dive Development Exploration
 
-Date: 2026-08-18  
-Partition: Development only  
-Result: `provisional_keep`  
-Holdout access: none  
+Date: 2026-08-18
+Partition: Development only
+Result: `provisional_keep`
+Holdout access: none
 Commercial-reference access: none
 
 ## Narrow Question

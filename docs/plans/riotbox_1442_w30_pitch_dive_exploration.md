@@ -1,9 +1,9 @@
 # RIOTBOX-1442 W-30 Pitch-Dive Development Exploration
 
 Status: completed with provisional keep
-Partition: Development only  
-Variant budget: three review-ready candidates maximum  
-Holdout access: prohibited  
+Partition: Development only
+Variant budget: three review-ready candidates maximum
+Holdout access: prohibited
 Commercial-reference access: prohibited
 
 ## Narrow Question
