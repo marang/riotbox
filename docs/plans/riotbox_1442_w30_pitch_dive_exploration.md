@@ -1,6 +1,6 @@
 # RIOTBOX-1442 W-30 Pitch-Dive Development Exploration
 
-Status: pre-source exploration brief  
+Status: completed with provisional keep
 Partition: Development only  
 Variant budget: three review-ready candidates maximum  
 Holdout access: prohibited  
@@ -70,3 +70,14 @@ creates a musically useful exit, avoids accidental mud/clicks/tail leakage, and
 would be triggered live. A keep is provisional Development direction only. If
 no candidate earns a keep, remove temporary rendering behavior and preserve one
 concise negative record.
+
+## Result
+
+The first topology, `continuous_tape_brake`, earned a provisional Development
+keep. The listener judged the presented material useful, the pitch dive
+especially successful, and the candidate clearly transformed while retaining
+recognizable source identity. Per the stopping rule, the two remaining rendered
+topologies were not played and carry no human evidence. The exact kept recipe is
+frozen in `docs/benchmarks/w30_pitch_dive_development_v1.json`; transfer
+observation, product integration, and source-diverse qualification remain
+separate work.

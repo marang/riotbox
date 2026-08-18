@@ -148,3 +148,5 @@ Current benchmark artifacts:
   Frozen H30/V10 evidence; the local-only WAV is hash-bound but not committed, and structured listening found no useful distinction.
 - [w30_hook_turnaround_development_v1.json](./w30_hook_turnaround_development_v1.json)
   Frozen RIOTBOX-1440 W-30 source-hook turnaround: provisional Development keep, exact four-beat articulation, three-source qualification boundary, and no Holdout authorization.
+- [w30_pitch_dive_development_v1.json](./w30_pitch_dive_development_v1.json)
+  Frozen RIOTBOX-1442 continuous W-30 pitch-dive exit: one-source provisional Development keep, exact playback curve and terminal fade, source-blind promotion boundary, and no Holdout authorization.
