@@ -132,10 +132,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     print_w30_render_summary("normal", &state.runtime.w30_preview);
     let normal_render = state.runtime.w30_preview.clone();
     if qualify_hook_turnaround {
+        let exact_product_bpm = normal_render.tempo_bpm;
+        if !exact_product_bpm.is_finite() || exact_product_bpm <= 0.0 {
+            return Err("W-30 qualification has no positive finite product tempo".into());
+        }
         qualify_hook_turnaround_v1(
             &mut state,
             &normal_render,
-            bpm,
+            exact_product_bpm,
             &output_dir,
             scene_id,
             prepare_hook_turnaround_review,
@@ -500,6 +504,7 @@ fn qualify_hook_turnaround_v1(
     let result = serde_json::json!({
         "schema": "riotbox.w30_hook_turnaround_qualification_case.v1",
         "mechanism": "w30_hook_turnaround_v1",
+        "exact_product_tempo_bpm": bpm,
         "committed_start_beat": START_BEAT,
         "isolated_contributors": ["w30_preview"],
         "control": {

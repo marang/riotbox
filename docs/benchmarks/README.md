@@ -150,3 +150,5 @@ Current benchmark artifacts:
   Frozen RIOTBOX-1440 W-30 source-hook turnaround: provisional Development keep, exact four-beat articulation, three-source qualification boundary, and no Holdout authorization.
 - [w30_hook_turnaround_transfer_qualification_v1.json](./w30_hook_turnaround_transfer_qualification_v1.json)
   Frozen RIOTBOX-1441 transfer check for the unchanged shipped turnaround: five additional registered Development sources, five bounded paired human comparisons, and no Holdout authorization.
+- [w30_hook_turnaround_transfer_qualification_v2.json](./w30_hook_turnaround_transfer_qualification_v2.json)
+  Frozen RIOTBOX-1441 retry after v1 rejected one declared/detected tempo mismatch before playback; the next registered dense source replaces it while every mechanism and review gate stays unchanged.

@@ -1,0 +1,119 @@
+{
+  "schema": "riotbox.w30_hook_turnaround_transfer_qualification.v2",
+  "ticket": "RIOTBOX-1441",
+  "decision": "RBX-298",
+  "partition": "development",
+  "predecessor": {
+    "path": "docs/benchmarks/w30_hook_turnaround_transfer_qualification_v1.json",
+    "raw_sha256": "18d1584e03820e6d2b9d0e0289991cfa43c472aa3e75c4bbd58a2b2ebfb91cfa",
+    "result": "terminal_fail_closed_before_human_playback"
+  },
+  "mechanism_contract": {
+    "path": "docs/benchmarks/w30_hook_turnaround_development_v1.json",
+    "raw_sha256": "078102ab7e1987904706873e53b2d98917e63d09d10676b41d156b9235e86d84",
+    "mechanism": "w30_hook_turnaround_v1",
+    "changes_allowed": false
+  },
+  "development_registry": {
+    "path": "docs/benchmarks/percussive_force_stage_a_bound_source_set_v1.json",
+    "raw_sha256": "7ec185a51233d83c49d8227b0e81acb2ca83c24bc31783a9343dc71d090e47a6",
+    "required_partition": "development"
+  },
+  "protected_holdout": {
+    "path": "docs/benchmarks/source_holdout_rotation_v3.json",
+    "raw_sha256": "9e5e03ad64319061a4baaa6cee7c40fc5e993171b0d11003ec29767f273bc502",
+    "metadata_exclusion_only": true,
+    "audio_access_allowed": false
+  },
+  "v1_rejection": {
+    "case_id": "freesound_nenadsimic_268110",
+    "declared_bpm": 160.0,
+    "detected_bpm": 164.06,
+    "maximum_allowed_delta_bpm": 1.0,
+    "human_playback_occurred": false,
+    "replacement_rule": "next_dense_break_in_frozen_pool_ordinal_order_with_explicit_registered_bpm"
+  },
+  "qualification_cases": [
+    {
+      "ordinal": 1,
+      "case_id": "freesound_alastair_pursloe_183441",
+      "source_family": "dense_break",
+      "author": "Alastair_Pursloe",
+      "source_path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/01_dense_183441.wav",
+      "source_sha256": "b342ee4a9412de14f460c2c295634c53801f2549c71bfc486644a1b02030abc9",
+      "declared_bpm": 135.0
+    },
+    {
+      "ordinal": 5,
+      "case_id": "freesound_dabromusic_266735",
+      "source_family": "dense_break",
+      "author": "DABROmusic",
+      "source_path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/05_dense_266735.wav",
+      "source_sha256": "b3ee8908b0433e9d286f6174369cfebe78ee928656e52935d1992fdb2dba7c73",
+      "declared_bpm": 172.0
+    },
+    {
+      "ordinal": 9,
+      "case_id": "freesound_dr_skitz_353853",
+      "source_family": "sparse_drums",
+      "author": "dr_skitz",
+      "source_path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/09_sparse_353853.wav",
+      "source_sha256": "e75e1e6248d07b63ad58b8ee74a35c8cac066db808ef3e5daf256f20a5ba858d",
+      "declared_bpm": 120.0
+    },
+    {
+      "ordinal": 10,
+      "case_id": "freesound_jmarcosfer_591426",
+      "source_family": "sparse_drums",
+      "author": "jmarcosfer",
+      "source_path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/10_sparse_591426.wav",
+      "source_sha256": "a9be617421c8a3b53c6a4f1d400ba80ca5b83fa330482c4da056701927fbccd8",
+      "declared_bpm": 94.0
+    },
+    {
+      "ordinal": 13,
+      "case_id": "freesound_aikighost_19059",
+      "source_family": "electronic_drums",
+      "author": "aikighost",
+      "source_path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/13_electronic_19059.wav",
+      "source_sha256": "b959afcf9654d2654c003fa956485f569b917afec805b57f9816ca22db9d6b4c",
+      "declared_bpm": 120.0
+    }
+  ],
+  "inherited_without_change_from_v1": [
+    "access",
+    "technical_gate",
+    "human_gate",
+    "stopping_rule",
+    "claim_boundary"
+  ],
+  "access": {
+    "fresh_access_log_must_exist_before_first_v2_source_read": true,
+    "maximum_unique_development_files": 5,
+    "exact_registered_paths_only": true,
+    "hash_required_before_decode_or_render": true,
+    "directory_discovery_allowed": false,
+    "holdout_audio_allowed": false,
+    "commercial_reference_audio_allowed": false
+  },
+  "technical_gate": {
+    "all_five_cases_must_pass_before_human_playback": true,
+    "use_exact_committed_product_tempo_for_runtime_render": true,
+    "all_other_gates": "identical_to_v1"
+  },
+  "human_gate": {
+    "listening_case_count": 5,
+    "one_paired_control_then_candidate_artifact_per_source": true,
+    "maximum_review_ready_generations_per_source": 1,
+    "maximum_paired_artifact_duration_seconds": 10.0,
+    "all_other_gates": "identical_to_v1"
+  },
+  "stopping_rule": {
+    "mechanism_or_threshold_changes_allowed": false,
+    "source_substitution_after_v2_results_allowed": false,
+    "technical_failure": "stop_fail_closed_without_playback",
+    "human_failure": "record_source_bound_result_without_retuning_v1",
+    "required_change": "new_versioned_contract_and_decision"
+  },
+  "claim_boundary": "identical_to_v1"
+}
