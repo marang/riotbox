@@ -1578,4 +1578,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Observe frozen W-30 pitch dive on four additional sources
 - [RIOTBOX-1445.md](./RIOTBOX-1445.md)
   P023: Explore one source-backed W-30 filter slam
+- [RIOTBOX-1446.md](./RIOTBOX-1446.md)
+  P023: Integrate and qualify the frozen W-30 Filter Slam
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
