@@ -193,8 +193,9 @@ explicit assist mode, but should not stack effects arbitrarily. The effect
 families above describe the intended product language, not a promise that every
 item is already complete or assigned to a delivery ticket. Hook Turnaround and
 Pitch Dive are implemented performer-owned W-30 gestures with positive bounded
-product reviews. Other families range from playable early behavior to planned
-musical depth and broader source qualification.
+product reviews. Filter Slam has a provisional eight-beat Development keep but
+is not yet a product action. Other families range from playable early behavior
+to planned musical depth and broader source qualification.
 
 ## What You Can Do Today
 

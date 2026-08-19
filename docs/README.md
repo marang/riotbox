@@ -123,6 +123,15 @@ preferred the Pitch Dive's musical payoff. This is a bounded W-30 product pass;
 Holdout, hardness, universal-source, Golden-Path, demo, and release claims
 remain unearned.
 
+`RIOTBOX-1445` then provisionally kept a materially different W-30 Filter Slam.
+A four-beat filter arc was audible but underdeveloped; the accepted eight-beat
+version gradually closes for four beats, deepens for two, holds dark for one,
+and opens back to ordinary W-30 on the final beat. The project musician judged
+that longer version good and live-usable, with eight beats close to the minimum
+duration needed for the movement to register. RBX-304 freezes the exact heard
+mechanism before any source-blind product rebuild. It is not yet a product
+action, source-general qualification, or release claim.
+
 ## Documentation Rules
 
 - Stable core contracts live in `docs/`.

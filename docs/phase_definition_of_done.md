@@ -494,6 +494,11 @@ After exit:
   control plus a preferred, source-recognizable Pitch Dive. This adds one real
   performer-owned destructive transition to the P023 vocabulary; it does not
   complete the all-lane Golden Path or authorize Holdout/demo/release claims.
+- RIOTBOX-1445 provisionally keeps an eight-beat W-30 Filter Slam after its
+  shorter predecessor was audible but underdeveloped. The exact staged close,
+  hold, and open-return mechanism is frozen under RBX-304, but remains
+  Development evidence until a separate source-blind product rebuild passes
+  source-diverse exact-output qualification and formal review.
 - RIOTBOX-1423 established the broader legal CC0 corpus contract: its general
   candidate matrix covers at least five eligible development sources across
   four typed families and protects two disjoint fresh holdout sets. That broad

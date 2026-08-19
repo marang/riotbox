@@ -1,0 +1,140 @@
+{
+  "schema": "riotbox.w30_filter_slam_development.v1",
+  "ticket": "RIOTBOX-1445",
+  "decision": "RBX-304",
+  "work_class": "development_exploration_keep",
+  "partition": "development",
+  "mechanism": {
+    "id": "w30_filter_slam_v1",
+    "claim": "source_recognizable_long_form_filter_build_and_open_return",
+    "excluded_claims": [
+      "percussive_hard",
+      "source_selection_quality",
+      "source_general_quality_before_qualification",
+      "demo_or_release_readiness"
+    ],
+    "intended_performer_gesture": "w30.filter_slam",
+    "intended_quantization": "next_bar",
+    "intended_action_target": "current_focused_promoted_w30_capture",
+    "render_order": "after_existing_source_backed_w30_control_sample_before_shared_mix_and_limiter",
+    "review_context_pre_roll_beats": 8.0,
+    "gesture_length_beats": 8.0,
+    "timeline": [
+      {
+        "relative_beats": [0.0, 4.0],
+        "role": "gradual_close",
+        "cutoff_hz": [14000.0, 1800.0],
+        "q": [0.707, 0.85]
+      },
+      {
+        "relative_beats": [4.0, 6.0],
+        "role": "deep_close",
+        "cutoff_hz": [1800.0, 280.0],
+        "q": [0.85, 1.2]
+      },
+      {
+        "relative_beats": [6.0, 7.0],
+        "role": "dark_hold",
+        "cutoff_hz": [280.0, 280.0],
+        "q": [1.2, 1.2]
+      },
+      {
+        "relative_beats": [7.0, 8.0],
+        "role": "open_slam_return",
+        "cutoff_hz": [280.0, 280.0],
+        "q": [1.2, 1.2]
+      }
+    ],
+    "dynamic_lowpass": {
+      "topology": "rbj_biquad_lowpass_direct_form_ii_transposed_per_channel",
+      "normalized_segment_progress": "clamp(local_segment_frame / segment_frame_count, 0.0, 1.0)",
+      "progress_shape": "p * p * (3.0 - 2.0 * p)",
+      "cutoff_interpolation": "start_hz * pow(end_hz / start_hz, shaped_progress)",
+      "q_interpolation": "start_q + (end_q - start_q) * shaped_progress",
+      "coefficient_update": "once_per_audio_frame_from_runtime_sample_rate",
+      "makeup_gain": 1.0
+    },
+    "open_return": {
+      "starts_at_relative_beat": 7.0,
+      "crossfade_seconds": 0.02,
+      "wet_gain": "clamp(1.0 - elapsed_seconds / 0.02, 0.0, 1.0)",
+      "dry_gain": "1.0 - wet_gain",
+      "after_crossfade": "sample_exact_ordinary_w30_control"
+    },
+    "unchanged_dimensions": {
+      "source_pcm": "unchanged_exact_capture_pcm",
+      "preceding_w30_transformation": "unchanged",
+      "playback_rate": "unchanged",
+      "gate_and_reverse": "unchanged",
+      "grit": "unchanged_from_pre_gesture_state",
+      "music_bus_level": "unchanged_from_pre_gesture_state",
+      "other_lanes": "unchanged",
+      "source_monitor": "unchanged"
+    },
+    "minimum_equivalent_duration_beats": 8.0,
+    "shorter_variants_are_equivalent": false,
+    "completed_behavior": "ordinary_w30_control_after_relative_beat_eight",
+    "missing_or_inapplicable_behavior": "visible_refusal_without_audio_or_fallback"
+  },
+  "exploration_keep": {
+    "case_id": "dense_beat03_130",
+    "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+    "source_sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+    "source_anchor_sha256": "d22c8b7b5cafacebbf14ad89eafa868658ecc6dedae8598b5e26be59be9b7149",
+    "bounded_control_sha256": "09266320813a3d01b1ed67fb9abd3e12ffef389167f9493a17e47d2d6f0d1e2e",
+    "candidate_sha256": "a7ad09ee9674ccf5e8e511e717824a23f138c69b2b218f72c515441bf6e57487",
+    "preflight_report_sha256": "5d410b77ece21034cf175a88038c5d9ff25bcde664dff72248c6769a5ee9620f",
+    "access_log_sha256": "124d7a47f96ac8c10b8c130aac39c3b6b0d05511f711f7afb5b494871db0a165",
+    "duration_seconds": 7.384625,
+    "sample_rate_hz": 48000,
+    "channels": 2,
+    "sample_format": "pcm_s16le",
+    "first_eight_review_beats_sample_exact": true,
+    "effect_span_delta_rms": 0.02161571705162902,
+    "effect_span_waveform_correlation": 0.9463355456826305,
+    "presence_2000_8000_hz_delta_db": -4.754815529701966,
+    "air_8000_20000_hz_delta_db": -20.94638849979759,
+    "control_lufs": -22.1,
+    "candidate_lufs": -22.2,
+    "control_peak_abs": 0.399871826171875,
+    "candidate_peak_abs": 0.399871826171875,
+    "candidate_clip_count": 0,
+    "post_crossfade_return_delta_rms": 0.0,
+    "human_result": "provisional_keep",
+    "human_meaning": "the_eight_beat_filter_arc_is_a_good_live_usable_effect_and_its_duration_is_near_the_minimum_needed_for_the_movement_to_register",
+    "qualification_evidence": false
+  },
+  "variant_evidence_boundary": {
+    "rendered_variant_count": 2,
+    "human_reviewed_variants": [
+      "four_beat_closing_sweep_then_open_slam_v1",
+      "eight_beat_staged_lowpass_build_then_open_slam_v2"
+    ],
+    "variant_results": {
+      "four_beat_closing_sweep_then_open_slam_v1": "audible_but_underdeveloped_and_too_short",
+      "eight_beat_staged_lowpass_build_then_open_slam_v2": "provisional_keep"
+    },
+    "unused_variant_budget": 1,
+    "stopping_reason": "second_variant_earned_explicit_keep"
+  },
+  "access": {
+    "directory_discovery_allowed": false,
+    "holdout_audio_allowed": false,
+    "commercial_reference_audio_allowed": false,
+    "maximum_unique_development_files": 1,
+    "exact_registered_paths_only": true
+  },
+  "promotion_boundary": {
+    "exploration_code_is_product_evidence": false,
+    "source_blind_rebuild_required": true,
+    "queue_commit_session_replay_observer_and_runtime_mix_required": true,
+    "fresh_source_diverse_development_qualification_required": true,
+    "formal_human_review_required": true,
+    "holdout_authorized": false
+  },
+  "stopping_rule": {
+    "no_mapping_constant_timeline_or_threshold_changes_in_v1": true,
+    "qualification_may_reject_but_may_not_tune_v1": true,
+    "required_change": "new_version_and_decision_log_entry"
+  }
+}

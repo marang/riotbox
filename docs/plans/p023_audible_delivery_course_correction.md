@@ -3,7 +3,7 @@
 Status: accepted operating plan
 Linear: RIOTBOX-1439
 Direct audible follow-ups: RIOTBOX-1417, RIOTBOX-1440, RIOTBOX-1442,
-RIOTBOX-1443, RIOTBOX-1444
+RIOTBOX-1443, RIOTBOX-1444, RIOTBOX-1445
 
 ## Purpose
 
@@ -112,3 +112,11 @@ four-source technical matrix and single formal product review passed without
 retuning. This independently confirms that the corrected order can deliver a
 second audible performer gesture while preserving fail-closed source access,
 replay, realtime, and claim boundaries.
+
+RIOTBOX-1445 applies the same early-value boundary to a new W-30 Filter Slam.
+The four-beat first variant was audible but too short to mature musically. A
+materially longer eight-beat staged close, hold, and open-return arc earned a
+provisional keep, with the listener identifying that duration as close to the
+minimum needed for the gesture to register. RBX-304 freezes the exact heard
+version; no third variant, product-spine behavior, source matrix, Holdout, or
+release claim follows from the exploration itself.
