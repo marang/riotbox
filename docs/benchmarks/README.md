@@ -158,3 +158,5 @@ Current benchmark artifacts:
   Frozen RIOTBOX-1444 product qualification: four exact registered Development cases, exact RuntimeMix and replay gates, one representative product listening review, and no Holdout or retuning authorization.
 - [w30_filter_slam_development_v1.json](./w30_filter_slam_development_v1.json)
   Frozen RIOTBOX-1445 W-30 Filter Slam: one-source provisional Development keep for the exact eight-beat staged close, hold, and open-return arc; shorter variants are not equivalent and product qualification remains separate.
+- [w30_filter_slam_product_qualification_v1.json](./w30_filter_slam_product_qualification_v1.json)
+  Frozen RIOTBOX-1446 product qualification: four exact registered Development cases, exact RuntimeMix/state/replay gates, one representative product listening review, and no Holdout or retuning authorization.

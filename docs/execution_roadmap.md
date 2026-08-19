@@ -1524,6 +1524,19 @@ mapping before any source-blind product rebuild. Product-spine integration,
 source-diverse qualification, Holdout, hardness, and release claims remain
 unearned.
 
+RIOTBOX-1446 completes the source-blind product rebuild and bounded
+qualification of that unchanged mechanism. `w30.filter_slam` now owns the
+next-bar queue/commit path, typed Session/replay profile and boundary, visible
+observer/UI cue, and exact per-channel RuntimeMix filter. Two dense, one sparse,
+and one tonal Development source passed the immutable matrix: the effect window
+remained causal, the 20 ms return restored ordinary W-30 sample-exactly,
+128/257-frame callbacks matched, limiter use and clips stayed zero, neighboring
+state was unchanged, and missing source emitted no fallback. The single formal
+product review records a clear, musically useful, source-recognizable long-form
+gesture with a clean return and live value. This is a bounded W-30 product keep,
+not hardness, universal source quality, complete Golden Path, Holdout, demo, or
+release evidence.
+
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a
 quality guardrail, not a replacement for the current sound-product priority:

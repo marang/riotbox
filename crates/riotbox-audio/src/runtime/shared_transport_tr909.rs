@@ -291,11 +291,12 @@ where
     let callback_transport = Arc::clone(&shared.transport);
     let mut render_state = Tr909CallbackState::default();
     let mut transport_state = TransportTimingCallbackState::default();
-    let mut w30_preview_state = W30PreviewCallbackState::with_sample_rate(config.sample_rate);
+    let channel_count = usize::from(config.channels.max(1));
+    let mut w30_preview_state =
+        W30PreviewCallbackState::with_sample_rate_and_channels(config.sample_rate, channel_count);
     let mut w30_resample_state = W30ResampleTapCallbackState::default();
     let mut source_monitor_callback_state = SourceMonitorCallbackState::default();
     let sample_rate = config.sample_rate;
-    let channel_count = usize::from(config.channels.max(1));
     let mut mix_buffer = vec![0.0; callback_scratch_sample_count(config, channel_count)];
     let mut last_transport_snapshot = callback_transport.snapshot();
     let mut last_tr909_render_snapshot = shared.tr909_render.snapshot();

@@ -430,6 +430,15 @@ The bounded early seam is a non-realtime source-audio cache:
   history is allocated during callback-state preparation; overflow or missing
   source material fails silent. The action does not alter capture lineage,
   grit, Source Monitor, or the existing Hook Turnaround profile
+- apply `filter_slam_v1` to the ordinary source-backed W-30 control sample
+  before bus mix with one Direct Form II Transposed RBJ low-pass state per
+  output channel. Update coefficients once per audio frame from the runtime
+  sample rate. Across relative beats `[0,4)`, move cutoff exponentially from
+  14 kHz to 1.8 kHz while Q moves from `0.707` to `0.85`; across `[4,6)`, move
+  to 280 Hz/Q `1.2`; hold through beat seven; then crossfade filtered to dry
+  over exactly 20 ms and preserve ordinary W-30 sample-exactly thereafter.
+  Each moving segment uses `p²(3-2p)`. The action does not alter source PCM,
+  playback rate, gate/reverse, grit, bus level, Source Monitor, or other lanes
 - keep cache loading and source-window projection outside the realtime callback
 
 The existing transport-selected source window remains the default. Only a

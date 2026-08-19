@@ -159,7 +159,8 @@ pub fn render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
         SharedSourceMonitorRenderState::new(&first_plan.source_monitor_render);
     let mut transport_state = TransportTimingCallbackState::default();
     let mut tr909_state = Tr909CallbackState::default();
-    let mut w30_preview_state = W30PreviewCallbackState::with_sample_rate(sample_rate);
+    let mut w30_preview_state =
+        W30PreviewCallbackState::with_sample_rate_and_channels(sample_rate, channel_count);
     let mut w30_resample_state = W30ResampleTapCallbackState::default();
     let mut source_monitor_callback_state = SourceMonitorCallbackState::default();
 

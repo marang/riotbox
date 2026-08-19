@@ -1,0 +1,124 @@
+{
+  "schema": "riotbox.w30_filter_slam_product_qualification.v1",
+  "ticket": "RIOTBOX-1446",
+  "decision": "RBX-305",
+  "partition": "development",
+  "mechanism_contract": {
+    "path": "docs/benchmarks/w30_filter_slam_development_v1.json",
+    "mechanism": "w30_filter_slam_v1",
+    "mutable_after_source_access": false
+  },
+  "product_path": {
+    "action": "w30.filter_slam",
+    "quantization": "next_bar",
+    "target": "current_focused_promoted_w30_capture",
+    "audible_path": "queue_commit_session_projection_exact_runtime_mix",
+    "isolated_contributors": [
+      "w30_preview"
+    ]
+  },
+  "source_set": [
+    {
+      "case_id": "dense_beat03_130",
+      "family": "dense_break",
+      "path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+      "sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+      "confirmation_bpm": 130.0,
+      "expected_product_bpm": 130.0,
+      "downbeat_seconds": null
+    },
+    {
+      "case_id": "freesound_alastair_pursloe_183441",
+      "family": "dense_break",
+      "path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/01_dense_183441.wav",
+      "sha256": "b342ee4a9412de14f460c2c295634c53801f2549c71bfc486644a1b02030abc9",
+      "confirmation_bpm": 135.0,
+      "expected_product_bpm": 135.11032,
+      "downbeat_seconds": null
+    },
+    {
+      "case_id": "freesound_dr_skitz_353853",
+      "family": "sparse_drums",
+      "path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/09_sparse_353853.wav",
+      "sha256": "e75e1e6248d07b63ad58b8ee74a35c8cac066db808ef3e5daf256f20a5ba858d",
+      "confirmation_bpm": 120.0,
+      "expected_product_bpm": 119.68088,
+      "downbeat_seconds": null
+    },
+    {
+      "case_id": "tonal_rusharp_120",
+      "family": "tonal_riff",
+      "path": "data/test_audio/examples/DH_RushArp_120_A.wav",
+      "sha256": "ec2a0c930eb338bf81cd5cb4b5fef487e07c140ad40181e1d92b2a0990334e0e",
+      "confirmation_bpm": 120.0,
+      "expected_product_bpm": 120.0,
+      "downbeat_seconds": 0.0
+    }
+  ],
+  "access": {
+    "fresh_access_log_required_before_first_file_read": true,
+    "maximum_unique_development_files": 4,
+    "exact_paths_and_hashes_only": true,
+    "directory_discovery_allowed": false,
+    "holdout_audio_allowed": false,
+    "commercial_reference_audio_allowed": false,
+    "source_replacement_allowed": false
+  },
+  "admission": {
+    "maximum_absolute_product_bpm_delta": 1.0,
+    "all_four_cases_must_pass_before_human_playback": true,
+    "failure_policy": "stop_fail_closed_without_retuning_or_replacement"
+  },
+  "technical_gates": {
+    "source_sha256_exact": true,
+    "frozen_curve_and_timeline_exact": true,
+    "minimum_effect_through_return_delta_rms_exclusive": 0.001,
+    "sample_exact_after_twenty_ms_return": true,
+    "callback_partitions_sample_exact": [
+      128,
+      257
+    ],
+    "pre_limiter_clip_count": 0,
+    "limited_sample_count": 0,
+    "post_limiter_clip_count": 0,
+    "capture_lineage_unchanged": true,
+    "grit_unchanged": true,
+    "music_bus_level_unchanged": true,
+    "source_monitor_unchanged": true,
+    "other_lanes_unchanged": true,
+    "missing_source_active_samples": 0,
+    "session_round_trip_and_replay_equivalence": true
+  },
+  "human_review": {
+    "count": 1,
+    "only_after_complete_technical_matrix": true,
+    "representative_case": "dense_beat03_130",
+    "order": [
+      "bounded_source_context_repeated_four_times",
+      "one_second_silence",
+      "A_exact_product_control_repeated_twice",
+      "one_second_silence",
+      "B_exact_product_filter_slam_repeated_twice"
+    ],
+    "questions": [
+      "is_the_eight_beat_filter_arc_clearly_audible",
+      "does_the_long_form_close_hold_and_return_read_as_one_gesture",
+      "does_recognizable_source_identity_survive",
+      "does_the_return_remain_clean_and_musically_useful",
+      "is_it_worth_triggering_live"
+    ],
+    "repeat_four_transfer_reviews": false
+  },
+  "claims_excluded": [
+    "percussive_hard",
+    "universal_source_quality",
+    "complete_golden_path",
+    "holdout",
+    "demo_readiness",
+    "release_readiness"
+  ],
+  "stopping_rule": {
+    "qualification_may_reject_but_may_not_tune_v1": true,
+    "required_mechanism_change": "new_version_and_decision_log_entry"
+  }
+}

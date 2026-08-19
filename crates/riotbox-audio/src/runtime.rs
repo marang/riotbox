@@ -43,6 +43,7 @@ mod source_monitor;
 mod tr909_fill_recipe;
 mod tr909_fill_voice;
 mod tr909_tail_telemetry;
+mod w30_filter_slam;
 mod w30_tr909_signal_helpers;
 
 use fill_focus::{FillFocusRenderState, apply_fill_focus_to_non_tr909_bed};
@@ -93,6 +94,7 @@ use tr909_tail_telemetry::{
     w30_mode_to_u32, w30_routing_from_u32, w30_routing_to_u32, w30_source_profile_from_u32,
     w30_source_profile_to_u32,
 };
+use w30_filter_slam::{W30FilterSlamCallbackState, w30_filter_slam_frame, w30_filter_slam_sample};
 use w30_tr909_signal_helpers::{
     break_performance_slam, fill_performance_slam, render_gain, render_subdivision,
     should_trigger_step, tr909_step_waveform, trigger_envelope, trigger_frequency,

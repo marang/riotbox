@@ -499,6 +499,13 @@ After exit:
   hold, and open-return mechanism is frozen under RBX-304, but remains
   Development evidence until a separate source-blind product rebuild passes
   source-diverse exact-output qualification and formal review.
+- RIOTBOX-1446 promotes that unchanged Filter Slam through the normal product
+  spine. Four registered Development sources passed its immutable RuntimeMix,
+  replay, callback, limiter, lineage, neighboring-state, and missing-source
+  gates, and the one formal product review records a clear, musically useful,
+  source-recognizable gesture with a clean return and live value. This adds a
+  second long-form W-30 transition profile without completing the all-lane
+  Golden Path or authorizing Holdout/demo/release claims.
 - RIOTBOX-1423 established the broader legal CC0 corpus contract: its general
   candidate matrix covers at least five eligible development sources across
   four typed families and protects two disjoint fresh holdout sets. That broad

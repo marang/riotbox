@@ -22,6 +22,7 @@ pub(in crate::jam_app) fn apply_w30_side_effects(
             | ActionCommand::W30ApplyDamageProfile
             | ActionCommand::W30HookTurnaround
             | ActionCommand::W30PitchDive
+            | ActionCommand::W30FilterSlam
             | ActionCommand::W30LoopFreeze
             | ActionCommand::W30StepFocus
             | ActionCommand::W30AuditionRawCapture
@@ -66,7 +67,9 @@ pub(in crate::jam_app) fn apply_w30_side_effects(
             .w30
             .preview_mode
             .unwrap_or(W30PreviewModeState::LiveRecall),
-        ActionCommand::W30HookTurnaround | ActionCommand::W30PitchDive => session
+        ActionCommand::W30HookTurnaround
+        | ActionCommand::W30PitchDive
+        | ActionCommand::W30FilterSlam => session
             .runtime_state
             .lane_state
             .w30
@@ -106,13 +109,16 @@ pub(in crate::jam_app) fn apply_w30_side_effects(
 
     if matches!(
         action.command,
-        ActionCommand::W30HookTurnaround | ActionCommand::W30PitchDive
+        ActionCommand::W30HookTurnaround
+            | ActionCommand::W30PitchDive
+            | ActionCommand::W30FilterSlam
     ) && let (Some(capture_id), Some(boundary)) = (capture_id.clone(), boundary)
     {
         session.runtime_state.lane_state.w30.hook_articulation = Some(W30HookArticulationState {
             profile: match action.command {
                 ActionCommand::W30HookTurnaround => W30HookArticulationProfileState::TurnaroundV1,
                 ActionCommand::W30PitchDive => W30HookArticulationProfileState::PitchDiveV1,
+                ActionCommand::W30FilterSlam => W30HookArticulationProfileState::FilterSlamV1,
                 _ => unreachable!("checked above"),
             },
             capture_id,
@@ -188,6 +194,10 @@ pub(in crate::jam_app) fn apply_w30_side_effects(
             ActionCommand::W30PitchDive => capture_id.as_ref().map_or_else(
                 || format!("pitch-dived W-30 pad {bank_id}/{pad_id}"),
                 |capture_id| format!("pitch-dived {capture_id} on W-30 pad {bank_id}/{pad_id}"),
+            ),
+            ActionCommand::W30FilterSlam => capture_id.as_ref().map_or_else(
+                || format!("filter-slammed W-30 pad {bank_id}/{pad_id}"),
+                |capture_id| format!("filter-slammed {capture_id} on W-30 pad {bank_id}/{pad_id}"),
             ),
             ActionCommand::W30AuditionRawCapture => capture_id.as_ref().map_or_else(
                 || format!("auditioned raw capture on W-30 preview {bank_id}/{pad_id}"),

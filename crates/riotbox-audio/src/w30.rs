@@ -56,6 +56,7 @@ pub enum W30PreviewSourceProfile {
 pub enum W30HookArticulationProfile {
     TurnaroundV1,
     PitchDiveV1,
+    FilterSlamV1,
 }
 
 impl W30HookArticulationProfile {
@@ -64,6 +65,7 @@ impl W30HookArticulationProfile {
         match self {
             Self::TurnaroundV1 => "turnaround_v1",
             Self::PitchDiveV1 => "pitch_dive_v1",
+            Self::FilterSlamV1 => "filter_slam_v1",
         }
     }
 }
