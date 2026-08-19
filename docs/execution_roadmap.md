@@ -1514,6 +1514,16 @@ clear hook, recognizable transformed source identity, and a stronger musical
 payoff for B. This is a bounded performer-gesture pass, not hardness, universal
 source quality, full Golden Path, Holdout, demo, or release evidence.
 
+RIOTBOX-1445 provisionally keeps `w30_filter_slam_v1` as the next audible
+Development direction. A four-beat close/open motion was audible but did not
+develop long enough; the eight-beat successor uses a staged four-beat close,
+two-beat deepening, one-beat dark hold, and final-beat open return. The listener
+judged that exact longer version good and live-usable while identifying eight
+beats as close to its minimum effective duration. RBX-304 freezes the heard
+mapping before any source-blind product rebuild. Product-spine integration,
+source-diverse qualification, Holdout, hardness, and release claims remain
+unearned.
+
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a
 quality guardrail, not a replacement for the current sound-product priority:
