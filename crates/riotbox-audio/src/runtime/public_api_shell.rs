@@ -176,7 +176,10 @@ pub fn render_w30_preview_offline(
     frame_count: usize,
 ) -> Vec<f32> {
     let shared_state = SharedW30PreviewRenderState::new(render_state);
-    let mut callback_state = W30PreviewCallbackState::with_sample_rate(sample_rate);
+    let mut callback_state = W30PreviewCallbackState::with_sample_rate_and_channels(
+        sample_rate,
+        usize::from(channel_count),
+    );
     let mut buffer = vec![0.0; frame_count.saturating_mul(usize::from(channel_count))];
 
     render_w30_preview_buffer(

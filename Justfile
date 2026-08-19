@@ -288,6 +288,12 @@ w30-pitch-dive-product-qualification session:
 w30-pitch-dive-product-review-artifact session:
     python3 scripts/run_w30_pitch_dive_product_qualification.py --session "{{session}}" --prepare-review-from-passed-session
 
+w30-filter-slam-product-qualification session:
+    python3 scripts/run_w30_filter_slam_product_qualification.py --session "{{session}}"
+
+w30-filter-slam-product-review-artifact session:
+    python3 scripts/run_w30_filter_slam_product_qualification.py --session "{{session}}" --prepare-review-from-passed-session
+
 lane-recipe-pack date="local" duration="2.0":
     cargo run -p riotbox-audio --bin lane_recipe_pack -- --date "{{date}}" --duration-seconds "{{duration}}"
 

@@ -301,6 +301,13 @@ impl JamAppState {
         self.queue_w30_hook_articulation(requested_at, ActionCommand::W30PitchDive)
     }
 
+    pub fn queue_w30_filter_slam(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Option<QueueControlResult> {
+        self.queue_w30_hook_articulation(requested_at, ActionCommand::W30FilterSlam)
+    }
+
     fn queue_w30_hook_articulation(
         &mut self,
         requested_at: TimestampMs,
@@ -308,7 +315,9 @@ impl JamAppState {
     ) -> Option<QueueControlResult> {
         debug_assert!(matches!(
             command,
-            ActionCommand::W30HookTurnaround | ActionCommand::W30PitchDive
+            ActionCommand::W30HookTurnaround
+                | ActionCommand::W30PitchDive
+                | ActionCommand::W30FilterSlam
         ));
         if self.w30_pad_cue_pending() {
             return Some(QueueControlResult::AlreadyPending);
@@ -353,6 +362,10 @@ impl JamAppState {
             ),
             ActionCommand::W30PitchDive => format!(
                 "pitch-dive {} on W-30 pad {bank_id}/{pad_id} after eight beats",
+                capture.capture_id
+            ),
+            ActionCommand::W30FilterSlam => format!(
+                "filter-slam {} on W-30 pad {bank_id}/{pad_id} for eight beats",
                 capture.capture_id
             ),
             _ => unreachable!("W-30 hook articulation helper received another command"),

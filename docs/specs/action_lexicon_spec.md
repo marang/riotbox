@@ -249,6 +249,7 @@ falls back visibly to `four_bars`.
 - `w30.apply_damage_profile`
 - `w30.hook_turnaround`
 - `w30.pitch_dive`
+- `w30.filter_slam`
 - `w30.loop_freeze`
 - `tr909.fill_next`
 - `tr909.set_slam`
@@ -271,6 +272,15 @@ start beat into Session state. It must refuse visibly before queueing when
 transport, trusted positive tempo, the matching focused capture, or hydrated
 source-backed pad audio is unavailable. It never creates fallback music or
 silently retargets another capture.
+
+`w30.filter_slam` is an explicit performer-owned long-form W-30 articulation.
+It targets the current focused promoted capture, queues for the next bar, and
+commits typed `filter_slam_v1` profile, capture identity, and start beat into
+Session state. Its eight-beat ownership is fixed even though the filtered-to-dry
+return completes during the final beat. It must refuse visibly before queueing
+when transport, trusted positive tempo, the matching focused capture, or
+hydrated source-backed pad audio is unavailable. It never creates fallback
+music, changes the source, or silently retargets another capture.
 
 TR-909 source-support render projection may consume the same Feral Source Graph
 evidence to choose a stronger bounded support profile, for example lifting

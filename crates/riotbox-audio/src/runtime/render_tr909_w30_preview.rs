@@ -107,6 +107,7 @@ pub(super) fn render_w30_preview_buffer(
         state.beat_position = render.position_beats;
         state.last_trigger_revision = render.trigger_revision;
         state.pitch_dive.reset();
+        state.filter_slam.reset();
         return;
     }
 
@@ -126,6 +127,7 @@ pub(super) fn render_w30_preview_buffer(
         state.last_character_input = 0.0;
         state.character_edge_memory = 0.0;
         state.pitch_dive.reset();
+        state.filter_slam.reset();
         return;
     }
 
@@ -144,6 +146,7 @@ pub(super) fn render_w30_preview_buffer(
         state.last_pad_playback_signature = w30_pad_playback_signature(render);
         state.last_trigger_revision = render.trigger_revision;
         state.pitch_dive.reset();
+        state.filter_slam.reset();
         state.was_active = true;
     }
 
@@ -219,14 +222,25 @@ pub(super) fn render_w30_preview_buffer(
             * tremolo
             * w30_render_gain(render, transport_running)
             * stop_gain;
-        let sample =
+        let articulation_sample =
             w30_post_render_articulation_sample(control_sample, render, state, state.beat_position);
+        let filter_slam_frame = w30_filter_slam_frame(render, state.beat_position, sample_rate);
+        if filter_slam_frame.is_some() {
+            state
+                .filter_slam
+                .prepare(render.pad_playback.hook_articulation_started_at_beat);
+        } else {
+            state.filter_slam.reset();
+        }
         if transport_running && !w30_pad_playback_active(render) {
             state.envelope *= w30_envelope_decay(render);
         }
 
         let base = frame_index * channel_count;
         for channel in 0..channel_count {
+            let sample = filter_slam_frame.map_or(articulation_sample, |frame| {
+                w30_filter_slam_sample(articulation_sample, channel, frame, &mut state.filter_slam)
+            });
             data[base + channel] += sample;
         }
 
@@ -556,6 +570,7 @@ pub(super) fn w30_hook_articulation_frame(
             })
         }
         W30HookArticulationProfile::PitchDiveV1 => None,
+        W30HookArticulationProfile::FilterSlamV1 => None,
     }
 }
 

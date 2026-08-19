@@ -251,6 +251,7 @@ fn w30_hook_articulation_profile_to_u32(profile: Option<W30HookArticulationProfi
     match profile {
         Some(W30HookArticulationProfile::TurnaroundV1) => 1,
         Some(W30HookArticulationProfile::PitchDiveV1) => 2,
+        Some(W30HookArticulationProfile::FilterSlamV1) => 3,
         None => 0,
     }
 }
@@ -259,6 +260,7 @@ fn w30_hook_articulation_profile_from_u32(value: u32) -> Option<W30HookArticulat
     match value {
         1 => Some(W30HookArticulationProfile::TurnaroundV1),
         2 => Some(W30HookArticulationProfile::PitchDiveV1),
+        3 => Some(W30HookArticulationProfile::FilterSlamV1),
         _ => None,
     }
 }
@@ -575,10 +577,15 @@ pub(super) struct W30PreviewCallbackState {
     pub(super) transport_stop_fade_frames_remaining: u32,
     pub(super) last_position_beats: f64,
     pub(super) pitch_dive: W30PitchDiveCallbackState,
+    pub(super) filter_slam: W30FilterSlamCallbackState,
 }
 
 impl W30PreviewCallbackState {
     pub(super) fn with_sample_rate(sample_rate: u32) -> Self {
+        Self::with_sample_rate_and_channels(sample_rate, 2)
+    }
+
+    pub(super) fn with_sample_rate_and_channels(sample_rate: u32, channel_count: usize) -> Self {
         Self {
             beat_position: 0.0,
             oscillator_phase: 0.0,
@@ -604,6 +611,7 @@ impl W30PreviewCallbackState {
             transport_stop_fade_frames_remaining: 0,
             last_position_beats: 0.0,
             pitch_dive: W30PitchDiveCallbackState::with_sample_rate(sample_rate),
+            filter_slam: W30FilterSlamCallbackState::with_channel_count(channel_count),
         }
     }
 }

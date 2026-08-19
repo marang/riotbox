@@ -262,7 +262,9 @@ pub(super) fn apply_w30_cue(
             .w30
             .preview_mode
             .unwrap_or(W30PreviewModeState::LiveRecall),
-        ActionCommand::W30HookTurnaround | ActionCommand::W30PitchDive => session
+        ActionCommand::W30HookTurnaround
+        | ActionCommand::W30PitchDive
+        | ActionCommand::W30FilterSlam => session
             .runtime_state
             .lane_state
             .w30
@@ -305,7 +307,9 @@ pub(super) fn apply_w30_cue(
         session.runtime_state.lane_state.w30.last_capture = Some(capture_id.clone());
         if matches!(
             action.command,
-            ActionCommand::W30HookTurnaround | ActionCommand::W30PitchDive
+            ActionCommand::W30HookTurnaround
+                | ActionCommand::W30PitchDive
+                | ActionCommand::W30FilterSlam
         ) {
             session.runtime_state.lane_state.w30.hook_articulation =
                 Some(W30HookArticulationState {
@@ -314,6 +318,9 @@ pub(super) fn apply_w30_cue(
                             W30HookArticulationProfileState::TurnaroundV1
                         }
                         ActionCommand::W30PitchDive => W30HookArticulationProfileState::PitchDiveV1,
+                        ActionCommand::W30FilterSlam => {
+                            W30HookArticulationProfileState::FilterSlamV1
+                        }
                         _ => unreachable!("checked above"),
                     },
                     capture_id,
