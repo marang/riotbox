@@ -1576,4 +1576,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Discover a source-recognizable W-30 pitch-dive exit
 - [RIOTBOX-1443.md](./RIOTBOX-1443.md)
   P023: Observe frozen W-30 pitch dive on four additional sources
+- [RIOTBOX-1445.md](./RIOTBOX-1445.md)
+  P023: Explore one source-backed W-30 filter slam
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
