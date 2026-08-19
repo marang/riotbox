@@ -366,6 +366,103 @@ fn committed_w30_hook_turnaround_persists_and_replays_the_exact_boundary_without
 }
 
 #[test]
+fn committed_w30_pitch_dive_persists_projects_and_replays_without_grit_change() {
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph.clone()), ActionQueue::new());
+
+    state.session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+        bank_id: BankId::from("bank-a"),
+        pad_id: PadId::from("pad-01"),
+    });
+    state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
+    state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-01"));
+    state.session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
+    state.session.runtime_state.lane_state.w30.preview_mode = Some(W30PreviewModeState::LiveRecall);
+    state.session.runtime_state.macro_state.w30_grit = 0.31;
+    state.capture_audio_cache.insert(
+        CaptureId::from("cap-01"),
+        source_cache_for_w30_diversity(127.0),
+    );
+    state.refresh_view();
+    let replay_base = state.session.clone();
+
+    assert_eq!(
+        state.queue_w30_pitch_dive(631),
+        Some(QueueControlResult::Enqueued)
+    );
+    let committed = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Bar,
+            beat_index: 64,
+            bar_index: 16,
+            phrase_index: 4,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        731,
+    );
+
+    assert_eq!(committed.len(), 1);
+    assert_eq!(state.session.runtime_state.macro_state.w30_grit, 0.31);
+    let articulation = state
+        .session
+        .runtime_state
+        .lane_state
+        .w30
+        .hook_articulation
+        .as_ref()
+        .expect("committed pitch-dive articulation");
+    assert_eq!(
+        articulation.profile,
+        riotbox_core::session::W30HookArticulationProfileState::PitchDiveV1
+    );
+    assert_eq!(articulation.capture_id, CaptureId::from("cap-01"));
+    assert_eq!(articulation.started_at_beat, 64);
+    let projected = state
+        .runtime
+        .w30_preview
+        .pad_playback
+        .as_ref()
+        .and_then(|pad| pad.hook_articulation)
+        .expect("projected pitch-dive articulation");
+    assert_eq!(
+        projected.profile,
+        riotbox_audio::w30::W30HookArticulationProfile::PitchDiveV1
+    );
+    assert_eq!(projected.started_at_beat, 64);
+    assert_eq!(
+        state
+            .session
+            .action_log
+            .actions
+            .last()
+            .and_then(|action| action.result.as_ref())
+            .map(|result| result.summary.as_str()),
+        Some("pitch-dived cap-01 on W-30 pad bank-a/pad-01")
+    );
+
+    let serialized = serde_json::to_string(&state.session).expect("serialize pitch-dive session");
+    let restored: SessionFile =
+        serde_json::from_str(&serialized).expect("restore pitch-dive session");
+    assert_eq!(
+        restored.runtime_state.lane_state.w30.hook_articulation,
+        state.session.runtime_state.lane_state.w30.hook_articulation
+    );
+
+    let plan = riotbox_core::replay::build_committed_replay_plan(&state.session.action_log)
+        .expect("build pitch-dive replay plan");
+    let mut replayed = replay_base;
+    replayed.action_log = state.session.action_log.clone();
+    riotbox_core::replay::apply_replay_plan_to_session(&mut replayed, &plan)
+        .expect("replay pitch dive");
+    assert_eq!(
+        replayed.runtime_state.lane_state.w30.hook_articulation,
+        state.session.runtime_state.lane_state.w30.hook_articulation
+    );
+    assert_eq!(replayed.runtime_state.macro_state.w30_grit, 0.31);
+}
+
+#[test]
 fn duration_aware_w30_pad_output_changes_with_capture_source() {
     let graph = sample_graph();
     let session = sample_session(&graph);

@@ -487,6 +487,13 @@ After exit:
   automatic composition is removed. P023 follow-ups must now prove a bounded
   provisional Golden Path keep before broad qualification; exploration alone
   is not phase completion or promotion proof.
+- RIOTBOX-1444 promotes the frozen, transfer-positive W-30 Pitch Dive through
+  the normal product spine. Four registered Development sources passed its
+  immutable exact-RuntimeMix, replay, callback, limiter, lineage, and
+  missing-source gates, and the one formal product review records a useful
+  control plus a preferred, source-recognizable Pitch Dive. This adds one real
+  performer-owned destructive transition to the P023 vocabulary; it does not
+  complete the all-lane Golden Path or authorize Holdout/demo/release claims.
 - RIOTBOX-1423 established the broader legal CC0 corpus contract: its general
   candidate matrix covers at least five eligible development sources across
   four typed families and protects two disjoint fresh holdout sets. That broad

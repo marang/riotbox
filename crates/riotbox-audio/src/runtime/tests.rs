@@ -4,6 +4,7 @@ include!("tests/fixtures_lifecycle.rs");
 include!("tests/shared_w30_preview.rs");
 include!("tests/w30_resample_support.rs");
 include!("tests/w30_hook_turnaround.rs");
+include!("tests/w30_pitch_dive.rs");
 include!("tests/mix_offline_tr909.rs");
 include!("tests/tr909_profile_voice_balance.rs");
 include!("tests/fixture_regressions_variations.rs");

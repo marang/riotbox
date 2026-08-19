@@ -154,3 +154,5 @@ Current benchmark artifacts:
   Frozen RIOTBOX-1441 retry after v1 rejected one declared/detected tempo mismatch before playback; the next registered dense source replaces it while every mechanism and review gate stays unchanged.
 - [w30_pitch_dive_development_v1.json](./w30_pitch_dive_development_v1.json)
   Frozen RIOTBOX-1442 continuous W-30 pitch-dive exit: one-source provisional Development keep, exact playback curve and terminal fade, source-blind promotion boundary, and no Holdout authorization.
+- [w30_pitch_dive_product_qualification_v1.json](./w30_pitch_dive_product_qualification_v1.json)
+  Frozen RIOTBOX-1444 product qualification: four exact registered Development cases, exact RuntimeMix and replay gates, one representative product listening review, and no Holdout or retuning authorization.

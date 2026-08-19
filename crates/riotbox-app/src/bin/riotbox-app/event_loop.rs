@@ -355,6 +355,21 @@ fn run_event_loop(
                             .set_error_status("no committed W-30 pad available to turn around"),
                     }
                 }
+                ShellKeyOutcome::QueueW30PitchDive => {
+                    match shell.app.queue_w30_pitch_dive(timestamp_now()) {
+                        Some(crate::jam_app::QueueControlResult::Enqueued) => {
+                            shell.set_error_status("queued W-30 pitch dive for next bar");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyPending) => {
+                            shell.set_error_status("W-30 pad cue already queued");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyInState) => {
+                            shell.set_error_status("W-30 pitch dive already active");
+                        }
+                        None => shell
+                            .set_error_status("no committed W-30 pad available to pitch-dive"),
+                    }
+                }
                 ShellKeyOutcome::QueueW30LoopFreeze => {
                     match shell.app.queue_w30_loop_freeze(timestamp_now()) {
                         Some(crate::jam_app::QueueControlResult::Enqueued) => {

@@ -191,10 +191,10 @@ The performer currently owns most gesture choices. Future source intelligence,
 Ghost, and Feral behavior may recommend suitable gestures or execute them in an
 explicit assist mode, but should not stack effects arbitrarily. The effect
 families above describe the intended product language, not a promise that every
-item is already complete or assigned to a delivery ticket. Hook Turnaround is
-the most recently implemented and positively reviewed addition; other families
-range from playable early behavior to planned musical depth and broader source
-qualification.
+item is already complete or assigned to a delivery ticket. Hook Turnaround and
+Pitch Dive are implemented performer-owned W-30 gestures with positive bounded
+product reviews. Other families range from playable early behavior to planned
+musical depth and broader source qualification.
 
 ## What You Can Do Today
 
@@ -207,7 +207,7 @@ Today’s build already lets you:
 - drive early lane behavior for:
   - **TR-909**: fill, reinforce, slam, takeover, release, scene-lock
   - **MC-202**: role, follower, answer, pressure, instigator, phrase mutation, touch
-  - **W-30**: trigger, live recall, audition, bank swap, browse, damage, freeze, resample
+  - **W-30**: trigger, live recall, audition, bank swap, browse, damage, Hook Turnaround, Pitch Dive, freeze, resample
 - capture, promote, pin, and reuse material in the W-30 flow
 - perform a scene jump and restore with `y` / `Y`
 - see pending, committed, rejected, and undone actions clearly

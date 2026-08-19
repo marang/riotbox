@@ -113,6 +113,16 @@ preferred in all four, spanning dense breaks, sparse drums, and a tonal riff.
 This supports the next source-blind product-integration slice without per-source
 tuning; formal product qualification and Holdout remain unearned.
 
+`RIOTBOX-1444` rebuilt that exact frozen Pitch Dive as the explicit
+`w30.pitch_dive` performer action through queue/commit, Session/replay,
+observer/UI, and exact RuntimeMix. All four registered Development cases passed
+the frozen source, boundary, callback-partition, limiter, lineage, replay, and
+missing-source gates. The single representative formal product review retained
+recognizable source identity and a clear hook, judged the control useful, and
+preferred the Pitch Dive's musical payoff. This is a bounded W-30 product pass;
+Holdout, hardness, universal-source, Golden-Path, demo, and release claims
+remain unearned.
+
 ## Documentation Rules
 
 - Stable core contracts live in `docs/`.

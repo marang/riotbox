@@ -417,6 +417,7 @@ pub enum ActionCommand {
     W30StepFocus,
     W30ApplyDamageProfile,
     W30HookTurnaround,
+    W30PitchDive,
     W30LoopFreeze,
     Tr909FillNext,
     Tr909SetSlam,
@@ -501,6 +502,7 @@ impl ActionCommand {
         Self::W30StepFocus,
         Self::W30ApplyDamageProfile,
         Self::W30HookTurnaround,
+        Self::W30PitchDive,
         Self::W30LoopFreeze,
         Self::Tr909FillNext,
         Self::Tr909SetSlam,
@@ -610,6 +612,7 @@ impl ActionCommand {
             | Self::W30StepFocus
             | Self::W30ApplyDamageProfile
             | Self::W30HookTurnaround
+            | Self::W30PitchDive
             | Self::W30LoopFreeze
             | Self::Tr909FillNext
             | Self::Tr909SetSlam
@@ -685,6 +688,7 @@ impl ActionCommand {
             Self::W30StepFocus => "w30.step_focus",
             Self::W30ApplyDamageProfile => "w30.apply_damage_profile",
             Self::W30HookTurnaround => "w30.hook_turnaround",
+            Self::W30PitchDive => "w30.pitch_dive",
             Self::W30LoopFreeze => "w30.loop_freeze",
             Self::Tr909FillNext => "tr909.fill_next",
             Self::Tr909SetSlam => "tr909.set_slam",

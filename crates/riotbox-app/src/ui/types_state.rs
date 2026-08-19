@@ -117,6 +117,7 @@ pub enum ShellKeyOutcome {
     QueueW30BrowseSlicePool,
     QueueW30ApplyDamageProfile,
     QueueW30HookTurnaround,
+    QueueW30PitchDive,
     QueueW30LoopFreeze,
     QueueW30LiveRecall,
     QueueW30Audition,
@@ -164,6 +165,7 @@ const GESTURE_BANK: &str = "bank";
 const GESTURE_BROWSE: &str = "browse";
 const GESTURE_DAMAGE: &str = "damage";
 const GESTURE_TURNAROUND: &str = "turnaround";
+const GESTURE_PITCH_DIVE: &str = "pitch dive";
 const GESTURE_FREEZE: &str = "freeze";
 const GESTURE_RECALL: &str = "recall";
 const GESTURE_AUDITION: &str = "audition";
@@ -194,6 +196,7 @@ const LANE_GESTURES: &[(&str, &str)] = &[
     ("B", GESTURE_BANK),
     ("j", GESTURE_BROWSE),
     ("H", GESTURE_TURNAROUND),
+    ("V", GESTURE_PITCH_DIVE),
 ];
 
 const HELP_PRIMARY_CONFIRM_GESTURES: &[(&str, &str)] = &[

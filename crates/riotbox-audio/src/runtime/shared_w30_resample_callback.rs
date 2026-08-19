@@ -250,6 +250,7 @@ impl SharedW30PreviewRenderState {
 fn w30_hook_articulation_profile_to_u32(profile: Option<W30HookArticulationProfile>) -> u32 {
     match profile {
         Some(W30HookArticulationProfile::TurnaroundV1) => 1,
+        Some(W30HookArticulationProfile::PitchDiveV1) => 2,
         None => 0,
     }
 }
@@ -257,6 +258,7 @@ fn w30_hook_articulation_profile_to_u32(profile: Option<W30HookArticulationProfi
 fn w30_hook_articulation_profile_from_u32(value: u32) -> Option<W30HookArticulationProfile> {
     match value {
         1 => Some(W30HookArticulationProfile::TurnaroundV1),
+        2 => Some(W30HookArticulationProfile::PitchDiveV1),
         _ => None,
     }
 }
@@ -516,7 +518,38 @@ pub(super) struct CallbackTimingSnapshot {
     pub(super) completed_position_beats: f64,
 }
 
-#[derive(Debug, Default)]
+const W30_PITCH_DIVE_HISTORY_SECONDS: usize = 5;
+
+#[derive(Debug)]
+pub(super) struct W30PitchDiveCallbackState {
+    pub(super) history: Vec<f32>,
+    pub(super) write_frame: u64,
+    pub(super) source_cursor: f64,
+    pub(super) active: bool,
+}
+
+impl W30PitchDiveCallbackState {
+    fn with_sample_rate(sample_rate: u32) -> Self {
+        Self {
+            history: vec![
+                0.0;
+                (sample_rate.max(1) as usize)
+                    .saturating_mul(W30_PITCH_DIVE_HISTORY_SECONDS)
+            ],
+            write_frame: 0,
+            source_cursor: 0.0,
+            active: false,
+        }
+    }
+
+    pub(super) fn reset(&mut self) {
+        self.write_frame = 0;
+        self.source_cursor = 0.0;
+        self.active = false;
+    }
+}
+
+#[derive(Debug)]
 pub(super) struct W30PreviewCallbackState {
     pub(super) beat_position: f64,
     pub(super) oscillator_phase: f32,
@@ -541,6 +574,44 @@ pub(super) struct W30PreviewCallbackState {
     pub(super) transport_stop_latched: bool,
     pub(super) transport_stop_fade_frames_remaining: u32,
     pub(super) last_position_beats: f64,
+    pub(super) pitch_dive: W30PitchDiveCallbackState,
+}
+
+impl W30PreviewCallbackState {
+    pub(super) fn with_sample_rate(sample_rate: u32) -> Self {
+        Self {
+            beat_position: 0.0,
+            oscillator_phase: 0.0,
+            lfo_phase: 0.0,
+            source_sample_cursor: 0.0,
+            pad_playback_cursor: 0.0,
+            pad_playback_age_frames: 0,
+            last_character_input: 0.0,
+            character_edge_memory: 0.0,
+            last_source_window_signature: 0,
+            last_pad_playback_signature: 0,
+            envelope: 0.0,
+            last_step: 0,
+            last_trigger_revision: 0,
+            was_active: false,
+            last_mode: None,
+            last_routing: None,
+            last_source_profile: None,
+            last_music_bus_level: 0.0,
+            last_grit_level: 0.0,
+            last_transport_running: false,
+            transport_stop_latched: false,
+            transport_stop_fade_frames_remaining: 0,
+            last_position_beats: 0.0,
+            pitch_dive: W30PitchDiveCallbackState::with_sample_rate(sample_rate),
+        }
+    }
+}
+
+impl Default for W30PreviewCallbackState {
+    fn default() -> Self {
+        Self::with_sample_rate(48_000)
+    }
 }
 
 #[derive(Debug, Default)]

@@ -291,6 +291,25 @@ impl JamAppState {
         &mut self,
         requested_at: TimestampMs,
     ) -> Option<QueueControlResult> {
+        self.queue_w30_hook_articulation(requested_at, ActionCommand::W30HookTurnaround)
+    }
+
+    pub fn queue_w30_pitch_dive(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Option<QueueControlResult> {
+        self.queue_w30_hook_articulation(requested_at, ActionCommand::W30PitchDive)
+    }
+
+    fn queue_w30_hook_articulation(
+        &mut self,
+        requested_at: TimestampMs,
+        command: ActionCommand,
+    ) -> Option<QueueControlResult> {
+        debug_assert!(matches!(
+            command,
+            ActionCommand::W30HookTurnaround | ActionCommand::W30PitchDive
+        ));
         if self.w30_pad_cue_pending() {
             return Some(QueueControlResult::AlreadyPending);
         }
@@ -314,7 +333,7 @@ impl JamAppState {
 
         let mut draft = ActionDraft::new(
             ActorType::User,
-            ActionCommand::W30HookTurnaround,
+            command,
             Quantization::NextBar,
             ActionTarget {
                 scope: Some(TargetScope::LaneW30),
@@ -327,10 +346,17 @@ impl JamAppState {
             intensity: 1.0,
             target_id: Some(capture_id),
         };
-        draft.explanation = Some(format!(
-            "turn around {} on W-30 pad {bank_id}/{pad_id} on next bar",
-            capture.capture_id
-        ));
+        draft.explanation = Some(match command {
+            ActionCommand::W30HookTurnaround => format!(
+                "turn around {} on W-30 pad {bank_id}/{pad_id} on next bar",
+                capture.capture_id
+            ),
+            ActionCommand::W30PitchDive => format!(
+                "pitch-dive {} on W-30 pad {bank_id}/{pad_id} after eight beats",
+                capture.capture_id
+            ),
+            _ => unreachable!("W-30 hook articulation helper received another command"),
+        });
         self.queue.enqueue(draft, requested_at);
         self.refresh_view();
         Some(QueueControlResult::Enqueued)

@@ -18,6 +18,10 @@ use riotbox_core::{
     transport::CommitBoundaryState,
 };
 
+mod w30_live_path_render_modules;
+
+use w30_live_path_render_modules::pitch_dive_qualification::qualify_pitch_dive_v1;
+
 const SAMPLE_RATE: u32 = 48_000;
 const CHANNEL_COUNT: u16 = 2;
 
@@ -35,9 +39,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let include_resample = args.iter().any(|arg| arg == "--include-resample");
     let explore_hook_turnaround = args.iter().any(|arg| arg == "--explore-hook-turnaround-v1");
     let qualify_hook_turnaround = args.iter().any(|arg| arg == "--qualify-hook-turnaround-v1");
+    let qualify_pitch_dive = args.iter().any(|arg| arg == "--qualify-pitch-dive-v1");
     let prepare_hook_turnaround_review = args
         .iter()
         .any(|arg| arg == "--prepare-hook-turnaround-review");
+    let prepare_pitch_dive_review = args.iter().any(|arg| arg == "--prepare-pitch-dive-review");
+    if qualify_hook_turnaround && qualify_pitch_dive {
+        return Err("select only one W-30 qualification mode".into());
+    }
     fs::create_dir_all(&output_dir)?;
 
     let session_path = output_dir.join("session.json");
@@ -131,6 +140,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     print_w30_render_summary("normal", &state.runtime.w30_preview);
     let normal_render = state.runtime.w30_preview.clone();
+    if qualify_pitch_dive {
+        let exact_product_bpm = normal_render.tempo_bpm;
+        if !exact_product_bpm.is_finite() || exact_product_bpm <= 0.0 {
+            return Err("W-30 qualification has no positive finite product tempo".into());
+        }
+        qualify_pitch_dive_v1(
+            &mut state,
+            &normal_render,
+            exact_product_bpm,
+            &output_dir,
+            scene_id,
+            prepare_pitch_dive_review,
+        )?;
+        state.save()?;
+        return Ok(());
+    }
     if qualify_hook_turnaround {
         let exact_product_bpm = normal_render.tempo_bpm;
         if !exact_product_bpm.is_finite() || exact_product_bpm <= 0.0 {

@@ -11,7 +11,7 @@ fn source_monitor_mode_cycles_through_all_reachable_modes() {
 
 #[test]
 fn action_command_lexicon_labels_are_unique_and_complete() {
-    assert_eq!(ActionCommand::all().len(), 62);
+    assert_eq!(ActionCommand::all().len(), 63);
 
     let labels = ActionCommand::all()
         .iter()
@@ -30,7 +30,7 @@ fn action_command_replay_coverage_is_declared_for_every_command() {
         .count();
     let unsupported = ActionCommand::all().len() - supported;
 
-    assert_eq!(supported, 44);
+    assert_eq!(supported, 45);
     assert_eq!(unsupported, 18);
 }
 

@@ -1501,6 +1501,19 @@ renderer is removed. The next slice may integrate the exact RBX-299 behavior
 through the product spine and qualify its exact RuntimeMix output; it may not
 retune from these source results.
 
+RIOTBOX-1444 completes that source-blind product-integration slice. The frozen
+`w30_pitch_dive_v1` now owns the explicit `w30.pitch_dive` action through
+queue/commit, typed Session/replay state, observer/UI, and the exact RuntimeMix
+W-30 path. Two dense, one sparse-drum, and one tonal Development source passed
+the immutable four-case qualification without retuning: eight pre-roll beats
+remain sample-exact, the final four-beat tape-brake stays materially distinct,
+beat twelve is silent, 128/257-frame callback partitions match, the limiter is
+unused, capture/grit/source-monitor state is preserved, and missing source
+material stays silent. The one formal dense product review records `keep`, a
+clear hook, recognizable transformed source identity, and a stronger musical
+payoff for B. This is a bounded performer-gesture pass, not hardness, universal
+source quality, full Golden Path, Holdout, demo, or release evidence.
+
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a
 quality guardrail, not a replacement for the current sound-product priority:

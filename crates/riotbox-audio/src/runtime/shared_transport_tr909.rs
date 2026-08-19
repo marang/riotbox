@@ -291,7 +291,7 @@ where
     let callback_transport = Arc::clone(&shared.transport);
     let mut render_state = Tr909CallbackState::default();
     let mut transport_state = TransportTimingCallbackState::default();
-    let mut w30_preview_state = W30PreviewCallbackState::default();
+    let mut w30_preview_state = W30PreviewCallbackState::with_sample_rate(config.sample_rate);
     let mut w30_resample_state = W30ResampleTapCallbackState::default();
     let mut source_monitor_callback_state = SourceMonitorCallbackState::default();
     let sample_rate = config.sample_rate;

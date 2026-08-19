@@ -248,6 +248,7 @@ falls back visibly to `four_bars`.
 - `w30.step_focus`
 - `w30.apply_damage_profile`
 - `w30.hook_turnaround`
+- `w30.pitch_dive`
 - `w30.loop_freeze`
 - `tr909.fill_next`
 - `tr909.set_slam`
@@ -262,6 +263,14 @@ non-current capture whose `source_origin_refs` match a `CaptureCandidate` asset
 or supported `HookFragment`. This remains the same queued
 `w30.browse_slice_pool` action; Feral policy changes target selection, not the
 Action Lexicon or commit semantics.
+
+`w30.pitch_dive` is an explicit performer-owned destructive W-30 articulation.
+It targets the current focused promoted capture, queues for the next bar, and
+commits a typed `pitch_dive_v1` articulation profile plus capture identity and
+start beat into Session state. It must refuse visibly before queueing when
+transport, trusted positive tempo, the matching focused capture, or hydrated
+source-backed pad audio is unavailable. It never creates fallback music or
+silently retargets another capture.
 
 TR-909 source-support render projection may consume the same Feral Source Graph
 evidence to choose a stronger bounded support profile, for example lifting

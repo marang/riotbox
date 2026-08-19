@@ -258,6 +258,7 @@ fn ghost_action_is_destructive(command: ActionCommand) -> bool {
             | ActionCommand::Mc202MutatePhrase
             | ActionCommand::W30ApplyDamageProfile
             | ActionCommand::W30HookTurnaround
+            | ActionCommand::W30PitchDive
             | ActionCommand::W30LoopFreeze
             | ActionCommand::PromoteResample
             | ActionCommand::Tr909Takeover
