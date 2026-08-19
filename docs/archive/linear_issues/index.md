@@ -1568,4 +1568,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add sound-quality readiness report for engineers and musicians
 - [RIOTBOX-1440.md](./RIOTBOX-1440.md)
   P023: Prove one source-recognizable W-30 hook articulation
+- [RIOTBOX-1444.md](./RIOTBOX-1444.md)
+  P023: Integrate and qualify the frozen W-30 pitch-dive exit
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
