@@ -307,6 +307,7 @@ pub enum W30PreviewModeState {
 #[serde(rename_all = "snake_case")]
 pub enum W30HookArticulationProfileState {
     TurnaroundV1,
+    PitchDiveV1,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

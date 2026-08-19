@@ -2,7 +2,8 @@
 
 Status: accepted operating plan
 Linear: RIOTBOX-1439
-Direct audible follow-ups: RIOTBOX-1417, RIOTBOX-1440
+Direct audible follow-ups: RIOTBOX-1417, RIOTBOX-1440, RIOTBOX-1442,
+RIOTBOX-1443, RIOTBOX-1444
 
 ## Purpose
 
@@ -102,3 +103,12 @@ also passed: the effect remained useful, source-recognizable, cleanly returning,
 and worth live triggering. This validates the course-correction order while
 remaining a bounded W-30 articulation result, not a hardness, Golden Path, or
 release-readiness claim.
+
+RIOTBOX-1442 through RIOTBOX-1444 apply the same keep path to a materially
+different W-30 exit. One continuous Pitch Dive earned an early Development
+keep, was frozen before four-source transfer observation, and was then rebuilt
+source-blind as `w30.pitch_dive` through the product spine. The immutable
+four-source technical matrix and single formal product review passed without
+retuning. This independently confirms that the corrected order can deliver a
+second audible performer gesture while preserving fail-closed source access,
+replay, realtime, and claim boundaries.

@@ -172,6 +172,10 @@ fn shell_state_handles_help_refresh_and_action_keys() {
         ShellKeyOutcome::QueueW30HookTurnaround
     );
     assert_eq!(
+        shell.handle_key_code(KeyCode::Char('V')),
+        ShellKeyOutcome::QueueW30PitchDive
+    );
+    assert_eq!(
         shell.handle_key_code(KeyCode::Char('z')),
         ShellKeyOutcome::QueueW30LoopFreeze
     );

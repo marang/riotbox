@@ -566,6 +566,9 @@ pub(super) fn build_w30_preview_render_state(
             W30HookArticulationProfileState::TurnaroundV1 => {
                 W30HookArticulationProfile::TurnaroundV1
             }
+            W30HookArticulationProfileState::PitchDiveV1 => {
+                W30HookArticulationProfile::PitchDiveV1
+            }
         };
         Some(W30HookArticulationRenderState {
             profile,

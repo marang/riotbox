@@ -106,6 +106,7 @@ pub(super) fn render_w30_preview_buffer(
         state.character_edge_memory = 0.0;
         state.beat_position = render.position_beats;
         state.last_trigger_revision = render.trigger_revision;
+        state.pitch_dive.reset();
         return;
     }
 
@@ -124,6 +125,7 @@ pub(super) fn render_w30_preview_buffer(
         state.envelope = 0.0;
         state.last_character_input = 0.0;
         state.character_edge_memory = 0.0;
+        state.pitch_dive.reset();
         return;
     }
 
@@ -141,6 +143,7 @@ pub(super) fn render_w30_preview_buffer(
         state.last_source_window_signature = w30_source_window_signature(render);
         state.last_pad_playback_signature = w30_pad_playback_signature(render);
         state.last_trigger_revision = render.trigger_revision;
+        state.pitch_dive.reset();
         state.was_active = true;
     }
 
@@ -211,11 +214,13 @@ pub(super) fn render_w30_preview_buffer(
             &mut state.transport_stop_fade_frames_remaining,
             transport_stop_fade_frames,
         );
-        let sample = waveform
+        let control_sample = waveform
             * state.envelope
             * tremolo
             * w30_render_gain(render, transport_running)
             * stop_gain;
+        let sample =
+            w30_post_render_articulation_sample(control_sample, render, state, state.beat_position);
         if transport_running && !w30_pad_playback_active(render) {
             state.envelope *= w30_envelope_decay(render);
         }
@@ -235,7 +240,14 @@ fn w30_preview_waveform_for_frame(
     sample_rate: u32,
 ) -> f32 {
     if w30_pad_playback_active(render) {
-        let articulation = w30_hook_articulation_frame(render, state.beat_position);
+        let articulation = if matches!(
+            render.pad_playback.hook_articulation_profile,
+            Some(W30HookArticulationProfile::PitchDiveV1)
+        ) {
+            None
+        } else {
+            w30_hook_articulation_frame(render, state.beat_position)
+        };
         let reverse = articulation.map_or(render.pad_playback.reverse, |frame| frame.reverse);
         let gate_fraction = articulation.map_or(render.pad_playback.gate_step_fraction, |frame| {
             frame.gate_step_fraction
@@ -470,12 +482,16 @@ fn apply_pad_loop_crossfade(
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-struct W30HookArticulationFrame {
-    reverse: bool,
-    gate_step_fraction: f32,
+pub(super) struct W30HookArticulationFrame {
+    pub(super) reverse: bool,
+    pub(super) gate_step_fraction: f32,
+    pub(super) playback_rate_multiplier: f32,
+    pub(super) terminal_gain: f32,
+    pub(super) continuous_cursor: bool,
+    pub(super) silent: bool,
 }
 
-fn w30_hook_articulation_frame(
+pub(super) fn w30_hook_articulation_frame(
     render: &RealtimeW30PreviewRenderState,
     position_beats: f64,
 ) -> Option<W30HookArticulationFrame> {
@@ -500,16 +516,102 @@ fn w30_hook_articulation_frame(
             Some(W30HookArticulationFrame {
                 reverse: true,
                 gate_step_fraction: 0.68,
+                playback_rate_multiplier: 1.0,
+                terminal_gain: 1.0,
+                continuous_cursor: false,
+                silent: false,
             })
         }
         W30HookArticulationProfile::TurnaroundV1 if (3.0..4.0).contains(&relative_beat) => {
             Some(W30HookArticulationFrame {
                 reverse: false,
                 gate_step_fraction: 0.34,
+                playback_rate_multiplier: 1.0,
+                terminal_gain: 1.0,
+                continuous_cursor: false,
+                silent: false,
             })
         }
         W30HookArticulationProfile::TurnaroundV1 => None,
+        W30HookArticulationProfile::PitchDiveV1 if (8.0..12.0).contains(&relative_beat) => {
+            let local_beat = relative_beat - 8.0;
+            let progress = (local_beat / 4.0).clamp(0.0, 1.0);
+            Some(W30HookArticulationFrame {
+                reverse: render.pad_playback.reverse,
+                gate_step_fraction: render.pad_playback.gate_step_fraction,
+                playback_rate_multiplier: 0.35_f32.powf(progress as f32),
+                terminal_gain: ((4.0 - local_beat) / 0.15).clamp(0.0, 1.0) as f32,
+                continuous_cursor: true,
+                silent: false,
+            })
+        }
+        W30HookArticulationProfile::PitchDiveV1 if relative_beat >= 12.0 => {
+            Some(W30HookArticulationFrame {
+                reverse: render.pad_playback.reverse,
+                gate_step_fraction: render.pad_playback.gate_step_fraction,
+                playback_rate_multiplier: 0.35,
+                terminal_gain: 0.0,
+                continuous_cursor: true,
+                silent: true,
+            })
+        }
+        W30HookArticulationProfile::PitchDiveV1 => None,
     }
+}
+
+fn w30_post_render_articulation_sample(
+    control_sample: f32,
+    render: &RealtimeW30PreviewRenderState,
+    state: &mut W30PreviewCallbackState,
+    position_beats: f64,
+) -> f32 {
+    if !matches!(
+        render.pad_playback.hook_articulation_profile,
+        Some(W30HookArticulationProfile::PitchDiveV1)
+    ) {
+        state.pitch_dive.reset();
+        return control_sample;
+    }
+
+    let Some(frame) = w30_hook_articulation_frame(render, position_beats) else {
+        state.pitch_dive.reset();
+        return control_sample;
+    };
+    if frame.silent {
+        state.pitch_dive.reset();
+        return 0.0;
+    }
+
+    let history_len = state.pitch_dive.history.len();
+    if history_len < 2 {
+        return 0.0;
+    }
+    if !state.pitch_dive.active {
+        state.pitch_dive.reset();
+        state.pitch_dive.active = true;
+    }
+
+    let write_frame = state.pitch_dive.write_frame;
+    let lag_frames = write_frame as f64 - state.pitch_dive.source_cursor;
+    if !lag_frames.is_finite()
+        || lag_frames < 0.0
+        || lag_frames.ceil() as usize >= history_len.saturating_sub(1)
+    {
+        return 0.0;
+    }
+
+    state.pitch_dive.history[write_frame as usize % history_len] = control_sample;
+    let source_floor = state.pitch_dive.source_cursor.floor();
+    let source_fraction = (state.pitch_dive.source_cursor - source_floor) as f32;
+    let source_frame = source_floor as u64;
+    let next_source_frame = source_frame.saturating_add(1).min(write_frame);
+    let first = state.pitch_dive.history[source_frame as usize % history_len];
+    let second = state.pitch_dive.history[next_source_frame as usize % history_len];
+    let resampled = first + (second - first) * source_fraction;
+
+    state.pitch_dive.source_cursor += f64::from(frame.playback_rate_multiplier);
+    state.pitch_dive.write_frame = write_frame.saturating_add(1);
+    resampled * frame.terminal_gain
 }
 
 fn apply_pad_edge_envelope(

@@ -201,6 +201,10 @@ impl JamShellState {
                 self.status_message = queued_status_message(GESTURE_TURNAROUND, "next bar");
                 ShellKeyOutcome::QueueW30HookTurnaround
             }
+            KeyCode::Char('V') => {
+                self.status_message = queued_status_message(GESTURE_PITCH_DIVE, "next bar");
+                ShellKeyOutcome::QueueW30PitchDive
+            }
             KeyCode::Char('z') => {
                 self.status_message = queued_status_message(GESTURE_FREEZE, "next phrase");
                 ShellKeyOutcome::QueueW30LoopFreeze

@@ -55,6 +55,7 @@ pub enum W30PreviewSourceProfile {
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum W30HookArticulationProfile {
     TurnaroundV1,
+    PitchDiveV1,
 }
 
 impl W30HookArticulationProfile {
@@ -62,6 +63,7 @@ impl W30HookArticulationProfile {
     pub const fn label(self) -> &'static str {
         match self {
             Self::TurnaroundV1 => "turnaround_v1",
+            Self::PitchDiveV1 => "pitch_dive_v1",
         }
     }
 }

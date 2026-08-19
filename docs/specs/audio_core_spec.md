@@ -422,6 +422,14 @@ The bounded early seam is a non-realtime source-audio cache:
   capture, point-sampling it, or decoding in realtime
 - derive chop slice starts outside the callback from quantized short-time energy rises in the real capture; realtime transport and pad triggers may only select and retrigger the prepared bounded plan
 - preserve the action-derived damage transform and capture-artifact identity across Session replay; artifact hydration must not invent macro / grit state that the committed action did not set
+- apply committed W-30 articulation only after the ordinary source-backed W-30
+  render and before bus mix. `pitch_dive_v1` preserves its first eight relative
+  beats sample-exactly, then reads the existing rendered W-30 history causally
+  for four beats with frozen rate `0.35 ^ progress`, fades over the final
+  `0.15` beat, and emits silence from relative beat twelve. Its fixed-capacity
+  history is allocated during callback-state preparation; overflow or missing
+  source material fails silent. The action does not alter capture lineage,
+  grit, Source Monitor, or the existing Hook Turnaround profile
 - keep cache loading and source-window projection outside the realtime callback
 
 The existing transport-selected source window remains the default. Only a

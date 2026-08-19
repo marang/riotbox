@@ -282,6 +282,12 @@ w30-smoke-source-diff source date="local-source-diff" start="0.0" source_duratio
 w30-smoke-generated-source-diff:
     scripts/validate_generated_w30_source_diff.sh
 
+w30-pitch-dive-product-qualification session:
+    python3 scripts/run_w30_pitch_dive_product_qualification.py --session "{{session}}"
+
+w30-pitch-dive-product-review-artifact session:
+    python3 scripts/run_w30_pitch_dive_product_qualification.py --session "{{session}}" --prepare-review-from-passed-session
+
 lane-recipe-pack date="local" duration="2.0":
     cargo run -p riotbox-audio --bin lane_recipe_pack -- --date "{{date}}" --duration-seconds "{{duration}}"
 

@@ -407,6 +407,7 @@ impl JamAppState {
                     | ActionCommand::W30BrowseSlicePool
                     | ActionCommand::W30ApplyDamageProfile
                     | ActionCommand::W30HookTurnaround
+                    | ActionCommand::W30PitchDive
                     | ActionCommand::W30LoopFreeze
                     | ActionCommand::W30LiveRecall
                     | ActionCommand::W30StepFocus
