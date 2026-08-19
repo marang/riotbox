@@ -1570,4 +1570,10 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Prove one source-recognizable W-30 hook articulation
 - [RIOTBOX-1444.md](./RIOTBOX-1444.md)
   P023: Integrate and qualify the frozen W-30 pitch-dive exit
+- [RIOTBOX-1441.md](./RIOTBOX-1441.md)
+  P023: Qualify W-30 hook turnaround on five additional sources
+- [RIOTBOX-1442.md](./RIOTBOX-1442.md)
+  P023: Discover a source-recognizable W-30 pitch-dive exit
+- [RIOTBOX-1443.md](./RIOTBOX-1443.md)
+  P023: Observe frozen W-30 pitch dive on four additional sources
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
