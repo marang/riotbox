@@ -3,7 +3,8 @@
 Status: accepted operating plan
 Linear: RIOTBOX-1439
 Direct audible follow-ups: RIOTBOX-1417, RIOTBOX-1440, RIOTBOX-1442,
-RIOTBOX-1443, RIOTBOX-1444, RIOTBOX-1445, RIOTBOX-1446, RIOTBOX-1447
+RIOTBOX-1443, RIOTBOX-1444, RIOTBOX-1445, RIOTBOX-1446, RIOTBOX-1447,
+RIOTBOX-1449
 
 ## Purpose
 
@@ -147,3 +148,13 @@ well executed, harmonically coherent, source-clear, and useful, with the three
 gestures serving distinct co-equal roles. The result closes this exact sequence
 only; no automatic ordering, simultaneous stacking, source-general, Holdout,
 demo, or release policy follows from it.
+
+RIOTBOX-1449 returns to the missing MC-202 musical owner with a topology
+different from RIOTBOX-1417's retrigger and full-bed-cut failures. An exact
+registered electronic-drum source selected a valid source-derived sparse
+offbeat answer and passed the controlled RuntimeMix diagnostic, but the
+full-mix A/B was perceptually unchanged: the lane occupied only about 2.4% of
+frames and remained masked in the intended low-frequency bands. The temporary
+Development selector was removed and no scalar continuation is allowed.
+RIOTBOX-1450 owns only the separate role-integrity defect revealed during
+preflight; it cannot promote the rejected answer.

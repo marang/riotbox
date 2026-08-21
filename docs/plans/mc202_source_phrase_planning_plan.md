@@ -4,12 +4,15 @@ Status: accepted implementation plan; upgraded by RIOTBOX-1262 and RIOTBOX-1264
 Linear: RIOTBOX-1035, RIOTBOX-1262, RIOTBOX-1263, RIOTBOX-1264
 Phase: P013+ / P023 sound-quality follow-up
 
-Execution status (2026-08-16): this document preserves the architecture and
-historical implementation chain; it is not the live backlog. RIOTBOX-1417 is
-the sole current audible follow-up. It first applies RIOTBOX-1439's bounded
-Development exploration to one realized MC-202 role. Do not reopen or recreate
-the older numbered ticket chain from this plan; verify current Linear and
-`main` before deriving any further slice.
+Execution status (2026-08-21): this document preserves the architecture and
+historical implementation chain; it is not the live backlog. RIOTBOX-1417
+rejected retrigger and full-bed-cut instigator mechanisms. RIOTBOX-1449 then
+tested a materially different source-derived sparse-answer role, but its
+technically valid full-mix A/B was perceptually unchanged and received no
+provisional keep. RIOTBOX-1450 owns the separate fail-closed intent-role
+contract defect. Do not reopen or recreate the older numbered ticket chain
+from this plan; verify current Linear and `main` before deriving another
+audible slice.
 
 ## Goal
 

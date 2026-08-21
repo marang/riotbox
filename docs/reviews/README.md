@@ -53,6 +53,9 @@ Current P023 rejected-experiment closeouts:
 - [riotbox_1417_mc202_realized_role_development_rejection_2026-08-16.md](./riotbox_1417_mc202_realized_role_development_rejection_2026-08-16.md):
   three bounded MC-202 instigator variants, no provisional human keep, and the
   retired retrigger/full-bed-cut mechanism family.
+- [riotbox_1449_mc202_answer_development_rejection_2026-08-21.md](./riotbox_1449_mc202_answer_development_rejection_2026-08-21.md):
+  source-derived sparse-answer selection, technically valid but perceptually
+  unchanged full-mix A/B, and the separate intent-role fail-closed follow-up.
 
 Current P023 algorithm-value refresh:
 

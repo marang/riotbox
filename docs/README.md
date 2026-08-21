@@ -156,6 +156,14 @@ hook remained clear. This closes only the reviewed sequence; automatic order,
 simultaneous stacking, source-general, Holdout, demo, and release claims remain
 excluded.
 
+`RIOTBOX-1449` then tested the missing MC-202 owner through a materially
+different source-derived sparse offbeat answer. The controlled exact RuntimeMix
+diagnostic passed, but the full-mix A/B was perceptually unchanged: the new lane
+was too temporally sparse and masked in its intended low-frequency bands. The
+temporary Development selection seam is removed and no mechanism is promoted.
+`RIOTBOX-1450` owns the separate fail-closed bug in which an explicit MC-202
+intent could otherwise commit a mismatched candidate family.
+
 ## Documentation Rules
 
 - Stable core contracts live in `docs/`.
