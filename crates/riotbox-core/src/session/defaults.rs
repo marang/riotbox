@@ -169,6 +169,48 @@ mod tests {
     }
 
     #[test]
+    fn mc202_source_phrase_families_enforce_requested_role_ownership() {
+        use Mc202SourcePhraseCandidateFamilyState::{
+            CallBackStab, FillPickupInstigator, HookRestraintGhostAnswer, SparseOffbeatAnswer,
+            SubPressureShove,
+        };
+
+        assert!(SubPressureShove.supports_role(Mc202RoleState::Pressure));
+        assert!(!FillPickupInstigator.supports_role(Mc202RoleState::Pressure));
+        assert!(SparseOffbeatAnswer.supports_role(Mc202RoleState::Answer));
+        assert!(CallBackStab.supports_role(Mc202RoleState::Answer));
+        assert!(HookRestraintGhostAnswer.supports_role(Mc202RoleState::Answer));
+        assert!(FillPickupInstigator.supports_role(Mc202RoleState::Instigator));
+        assert!(CallBackStab.supports_role(Mc202RoleState::Follower));
+        assert!(!SubPressureShove.supports_role(Mc202RoleState::Answer));
+
+        let mismatched_plan = Mc202SourcePhrasePlanState {
+            source_id: SourceId::from("src-mismatch"),
+            source_section_id: None,
+            phrase_slot: Mc202SourcePhraseSlotState {
+                phrase_index: 1,
+                start_bar: 0,
+                end_bar: 7,
+            },
+            source_expression: None,
+            role: Mc202RoleState::Pressure,
+            rhythm_cells: [Some(0); 16],
+            note_budget: Mc202SourcePhraseNoteBudgetState::Push,
+            touch: 0.84,
+            confidence: 0.9,
+            candidate_family: Some(FillPickupInstigator),
+            candidate_count: 7,
+            rejected_candidate_count: 1,
+            candidate_provenance_refs: vec!["candidate_family:fill_pickup_instigator".into()],
+            candidate_scorecards: Vec::new(),
+            phrase_memory_distance: 1.0,
+            fallback_reason: None,
+        };
+
+        assert!(!mismatched_plan.is_source_derived());
+    }
+
+    #[test]
     fn mc202_phrase_intent_preserves_existing_mutation_variant_label() {
         assert_eq!(Mc202PhraseIntentState::Base.label(), "base");
         assert_eq!(Mc202PhraseIntentState::Base.phrase_variant(), None);

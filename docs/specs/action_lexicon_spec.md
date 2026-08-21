@@ -314,6 +314,14 @@ available. If timing is untrusted or no phrase slot exists, the field remains
 not as primitive fallback or source-derived MC-202 phrase intelligence. It must
 not route hardcoded MC-202 replacement audio to the music bus.
 
+The requested MC-202 performer role is a hard candidate-family gate, not a
+scoring hint. A role action may commit an explicit non-audible
+`fallback_control` decision when no compatible source-derived family survives,
+but it must not substitute another family's audible behavior. An explicit
+`mc202.mutate_phrase` may reuse the current compatible family despite the
+ordinary repetition-memory gate; it still cannot bypass source eligibility or
+role compatibility.
+
 `source_timing.revert_grid` has an MC-202 consequence: reverting the confirmed
 grid for a source also clears any MC-202 source phrase plan tied to that source.
 Replay must apply the same consequence so restored sessions cannot keep playing

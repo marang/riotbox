@@ -1,6 +1,6 @@
 use riotbox_core::{
     action::{Action, ActionCommand, ActionParams, ActionResult},
-    session::{Mc202PhraseIntentState, Mc202RoleState, SessionFile},
+    session::{Mc202PhraseIntentState, Mc202RoleState, Mc202SourcePhrasePlanState, SessionFile},
     source_graph::SourceGraph,
     transport::CommitBoundaryState,
 };
@@ -44,21 +44,27 @@ pub(in crate::jam_app) fn apply_mc202_side_effects(
                 ActionParams::Mutation { intensity, .. } => intensity.clamp(0.0, 1.0),
                 _ => mc202_set_role_default_touch(role),
             };
-            let source_phrase_plan =
-                match derive_mc202_source_phrase_plan(session, source_graph, boundary, role, touch)
-                {
-                    Ok(plan) => plan,
-                    Err(reason) => {
-                        set_logged_mc202_result(
-                            session,
-                            action,
-                            false,
-                            format!("MC-202 role unavailable: {reason}"),
-                        );
-                        return;
-                    }
-                };
+            let source_phrase_plan = match derive_mc202_source_phrase_plan(
+                session,
+                source_graph,
+                boundary,
+                role,
+                touch,
+                false,
+            ) {
+                Ok(plan) => plan,
+                Err(reason) => {
+                    set_logged_mc202_result(
+                        session,
+                        action,
+                        false,
+                        format!("MC-202 role unavailable: {reason}"),
+                    );
+                    return;
+                }
+            };
 
+            let unavailable_reason = mc202_source_phrase_unavailable_reason(&source_phrase_plan);
             session.runtime_state.lane_state.mc202.role = Some(role);
             session.runtime_state.lane_state.mc202.phrase_ref =
                 Some(boundary_phrase_ref(boundary, role_label));
@@ -66,12 +72,15 @@ pub(in crate::jam_app) fn apply_mc202_side_effects(
             session.runtime_state.macro_state.mc202_touch = touch;
             session.runtime_state.lane_state.mc202.source_phrase_plan = source_phrase_plan;
 
-            set_logged_mc202_result(
-                session,
-                action,
-                true,
-                format!("set MC-202 role to {role_label} at {touch:.2}"),
+            let summary = unavailable_reason.map_or_else(
+                || format!("set MC-202 role to {role_label} at {touch:.2}"),
+                |reason| {
+                    format!(
+                        "MC-202 role {role_label} unavailable: {reason}; committed silent degraded state"
+                    )
+                },
             );
+            set_logged_mc202_result(session, action, true, summary);
         }
         ActionCommand::Mc202GenerateFollower => {
             apply_generated_role(
@@ -141,6 +150,7 @@ pub(in crate::jam_app) fn apply_mc202_side_effects(
                 boundary,
                 current_role,
                 effective_touch,
+                true,
             ) {
                 Ok(plan) => plan,
                 Err(reason) => {
@@ -154,18 +164,22 @@ pub(in crate::jam_app) fn apply_mc202_side_effects(
                 }
             };
 
+            let unavailable_reason = mc202_source_phrase_unavailable_reason(&source_phrase_plan);
             session.runtime_state.lane_state.mc202.role = Some(current_role);
             session.runtime_state.lane_state.mc202.phrase_ref = Some(phrase_ref.clone());
             session.runtime_state.lane_state.mc202.phrase_variant = intent.phrase_variant();
             session.runtime_state.macro_state.mc202_touch = effective_touch;
             session.runtime_state.lane_state.mc202.source_phrase_plan = source_phrase_plan;
 
-            set_logged_mc202_result(
-                session,
-                action,
-                true,
-                format!("mutated MC-202 phrase {phrase_ref} as {variant}"),
+            let summary = unavailable_reason.map_or_else(
+                || format!("mutated MC-202 phrase {phrase_ref} as {variant}"),
+                |reason| {
+                    format!(
+                        "MC-202 {current_role_label} mutation unavailable: {reason}; committed silent degraded state"
+                    )
+                },
             );
+            set_logged_mc202_result(session, action, true, summary);
         }
         _ => {}
     }
@@ -192,6 +206,7 @@ fn apply_generated_role(
         boundary,
         role,
         effective_touch,
+        false,
     ) {
         Ok(plan) => plan,
         Err(reason) => {
@@ -205,21 +220,37 @@ fn apply_generated_role(
         }
     };
 
+    let unavailable_reason = mc202_source_phrase_unavailable_reason(&source_phrase_plan);
     session.runtime_state.lane_state.mc202.role = Some(role);
     session.runtime_state.lane_state.mc202.phrase_ref = Some(phrase_ref.clone());
     session.runtime_state.lane_state.mc202.phrase_variant = None;
     session.runtime_state.macro_state.mc202_touch = effective_touch;
     session.runtime_state.lane_state.mc202.source_phrase_plan = source_phrase_plan;
 
-    set_logged_mc202_result(
-        session,
-        action,
-        true,
-        format!(
-            "generated MC-202 {role_label} phrase {phrase_ref} at {:.2}",
-            effective_touch
-        ),
+    let summary = unavailable_reason.map_or_else(
+        || {
+            format!(
+                "generated MC-202 {role_label} phrase {phrase_ref} at {:.2}",
+                effective_touch
+            )
+        },
+        |reason| {
+            format!("MC-202 {role_label} unavailable: {reason}; committed silent degraded state")
+        },
     );
+    set_logged_mc202_result(session, action, true, summary);
+}
+
+fn mc202_source_phrase_unavailable_reason(
+    source_phrase_plan: &Option<Mc202SourcePhrasePlanState>,
+) -> Option<String> {
+    source_phrase_plan.as_ref().and_then(|plan| {
+        (!plan.is_source_derived()).then(|| {
+            plan.fallback_reason
+                .clone()
+                .unwrap_or_else(|| "source_phrase_plan_degraded".into())
+        })
+    })
 }
 
 fn mc202_set_role_default_touch(role: Mc202RoleState) -> f32 {

@@ -171,6 +171,9 @@ fn committed_mc202_answer_with_confirmed_source_timing_stores_and_renders_source
         end_bar: 15,
         confidence: 0.91,
     }];
+    add_phrase_audio_features(
+        &mut graph, 2, 0.13, 0.18, 0.20, 0.42, 0.82, 0.30, 0.20, 0.18,
+    );
     let mut session = sample_session(&graph);
     session.runtime_state.source_timing.confirmed_grid = Some(SourceTimingGridConfirmationState {
         source_id: SourceId::from("src-1"),
@@ -232,6 +235,18 @@ fn committed_mc202_answer_with_confirmed_source_timing_stores_and_renders_source
 fn committed_mc202_answer_derives_distinct_source_phrase_plans_for_distinct_sources() {
     let mut graph_a = source_phrase_test_graph("src-a", "hash-a", 126.0, 7, 2);
     graph_a.candidates[0].tags = vec!["loop".into(), "straight_break".into()];
+    add_phrase_audio_features(
+        &mut graph_a,
+        2,
+        0.13,
+        0.18,
+        0.20,
+        0.42,
+        0.82,
+        0.30,
+        0.20,
+        0.18,
+    );
     let mut graph_b = source_phrase_test_graph("src-b", "hash-b", 143.0, 41, 5);
     graph_b.analysis_summary.hook_candidate_count = 1;
     graph_b.candidates[0].candidate_type = CandidateType::HookCandidate;
@@ -239,6 +254,18 @@ fn committed_mc202_answer_derives_distinct_source_phrase_plans_for_distinct_sour
     graph_b.sections[0].label_hint = SectionLabelHint::Build;
     graph_b.sections[0].energy_class = EnergyClass::Peak;
     graph_b.sections[0].tags = vec!["build".into(), "riser".into()];
+    add_phrase_audio_features(
+        &mut graph_b,
+        2,
+        0.07,
+        0.12,
+        0.05,
+        0.62,
+        0.22,
+        0.34,
+        0.50,
+        0.86,
+    );
 
     let mut state_a = confirmed_source_phrase_state(graph_a);
     let mut state_b = confirmed_source_phrase_state(graph_b);
@@ -927,17 +954,40 @@ fn prepare_mc202_recipe_source_fixture(state: &mut JamAppState, phrase_index: u3
         end_bar: start_bar + 3,
         confidence: 0.91,
     }];
+    let requested_role = state
+        .queue
+        .pending_actions()
+        .last()
+        .and_then(|action| match action.command {
+            ActionCommand::Mc202GenerateFollower => Some(Mc202RoleState::Follower),
+            ActionCommand::Mc202GenerateAnswer => Some(Mc202RoleState::Answer),
+            ActionCommand::Mc202GeneratePressure => Some(Mc202RoleState::Pressure),
+            ActionCommand::Mc202GenerateInstigator => Some(Mc202RoleState::Instigator),
+            ActionCommand::Mc202MutatePhrase => {
+                state.session.runtime_state.lane_state.mc202.role
+            }
+            _ => None,
+        })
+        .unwrap_or(Mc202RoleState::Answer);
+    let features = match requested_role {
+        Mc202RoleState::Leader | Mc202RoleState::Follower => {
+            [0.10, 0.18, 0.12, 0.90, 0.12, 0.46, 0.18, 0.20]
+        }
+        Mc202RoleState::Answer => [0.13, 0.18, 0.20, 0.42, 0.82, 0.30, 0.20, 0.18],
+        Mc202RoleState::Pressure => [0.34, 0.82, 0.88, 0.34, 0.20, 0.42, 0.18, 0.12],
+        Mc202RoleState::Instigator => [0.16, 0.22, 0.18, 0.86, 0.72, 0.74, 0.48, 0.14],
+    };
     add_phrase_audio_features(
         graph,
         phrase_index,
-        0.34,
-        0.82,
-        0.88,
-        0.34,
-        0.20,
-        0.42,
-        0.18,
-        0.12,
+        features[0],
+        features[1],
+        features[2],
+        features[3],
+        features[4],
+        features[5],
+        features[6],
+        features[7],
     );
     state.session.runtime_state.source_timing.confirmed_grid =
         Some(SourceTimingGridConfirmationState {

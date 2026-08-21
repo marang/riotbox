@@ -618,7 +618,7 @@ mod tests {
     }
 
     #[test]
-    fn callback_candidate_resolves_to_answer_even_when_pressure_was_requested() {
+    fn callback_candidate_resolves_to_answer_for_compatible_answer_role() {
         let (mut session, graph) = dense_break_context();
         session.runtime_state.source_timing.confirmed_grid =
             Some(SourceTimingGridConfirmationState {
@@ -628,6 +628,7 @@ mod tests {
                 confirmed_at: 100,
             });
         let mut plan = pressure_source_plan(graph.source.source_id.clone());
+        plan.role = Mc202RoleState::Answer;
         plan.candidate_family = Some(Mc202SourcePhraseCandidateFamilyState::CallBackStab);
         plan.source_expression
             .as_mut()
@@ -655,6 +656,7 @@ mod tests {
                 confirmed_at: 100,
             });
         let mut plan = pressure_source_plan(graph.source.source_id.clone());
+        plan.role = Mc202RoleState::Answer;
         plan.candidate_family = Some(Mc202SourcePhraseCandidateFamilyState::CallBackStab);
         session.runtime_state.lane_state.mc202.source_phrase_plan = Some(plan);
         PerformancePresetId::FeralBreakAlphaV2.apply_to_session(&mut session);
@@ -682,6 +684,7 @@ mod tests {
                 confirmed_at: 100,
             });
         let mut plan = pressure_source_plan(graph.source.source_id.clone());
+        plan.role = Mc202RoleState::Instigator;
         plan.candidate_family = Some(Mc202SourcePhraseCandidateFamilyState::FillPickupInstigator);
         session.runtime_state.lane_state.mc202.source_phrase_plan = Some(plan);
 
@@ -704,6 +707,7 @@ mod tests {
                 confirmed_at: 100,
             });
         let mut plan = pressure_source_plan(graph.source.source_id.clone());
+        plan.role = Mc202RoleState::Instigator;
         plan.candidate_family = Some(Mc202SourcePhraseCandidateFamilyState::FillPickupInstigator);
         session.runtime_state.lane_state.mc202.source_phrase_plan = Some(plan);
         graph
@@ -743,6 +747,7 @@ mod tests {
                 confirmed_at: 100,
             });
         let mut plan = pressure_source_plan(graph.source.source_id.clone());
+        plan.role = Mc202RoleState::Instigator;
         plan.candidate_family = Some(Mc202SourcePhraseCandidateFamilyState::FillPickupInstigator);
         session.runtime_state.lane_state.mc202.source_phrase_plan = Some(plan);
         graph
@@ -782,6 +787,7 @@ mod tests {
                 confirmed_at: 100,
             });
         let mut plan = pressure_source_plan(graph.source.source_id.clone());
+        plan.role = Mc202RoleState::Instigator;
         plan.candidate_family = Some(Mc202SourcePhraseCandidateFamilyState::FillPickupInstigator);
         session.runtime_state.lane_state.mc202.source_phrase_plan = Some(plan);
         graph
@@ -814,6 +820,7 @@ mod tests {
                 confirmed_at: 100,
             });
         let mut plan = pressure_source_plan(graph.source.source_id.clone());
+        plan.role = Mc202RoleState::Instigator;
         plan.candidate_family = Some(Mc202SourcePhraseCandidateFamilyState::FillPickupInstigator);
         session.runtime_state.lane_state.mc202.source_phrase_plan = Some(plan);
 
@@ -845,6 +852,7 @@ mod tests {
                 confirmed_at: 100,
             });
         let mut plan = pressure_source_plan(graph.source.source_id.clone());
+        plan.role = Mc202RoleState::Answer;
         plan.candidate_family = Some(Mc202SourcePhraseCandidateFamilyState::CallBackStab);
         session.runtime_state.lane_state.mc202.source_phrase_plan = Some(plan);
         let committed_policy =

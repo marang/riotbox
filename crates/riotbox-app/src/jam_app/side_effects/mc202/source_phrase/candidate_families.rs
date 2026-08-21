@@ -2,14 +2,14 @@ use riotbox_core::{
     session::{
         Mc202RoleState, Mc202SourcePhraseCandidateFamilyState,
         Mc202SourcePhraseCandidateScoreState, Mc202SourcePhraseExpressionState,
-        Mc202SourcePhraseNoteBudgetState, Mc202SourcePhrasePlanState,
+        Mc202SourcePhraseNoteBudgetState,
     },
     source_graph::{Mc202SourcePhraseFeatureVector, PhraseSpan, Section, SourceGraph},
 };
 
 use super::{
-    add_source_phrase_accent, source_phrase_contour_offset, source_phrase_fingerprint,
-    source_phrase_note_budget,
+    Mc202PhraseMemoryRequest, add_source_phrase_accent, source_phrase_contour_offset,
+    source_phrase_fingerprint, source_phrase_note_budget,
 };
 
 mod groove_map;
@@ -48,7 +48,7 @@ pub(super) fn choose_source_phrase_candidate(
     phrase_slot: &PhraseSpan,
     features: &Mc202SourcePhraseFeatureVector,
     expression: &Mc202SourcePhraseExpressionState,
-    previous_plan: Option<&Mc202SourcePhrasePlanState>,
+    phrase_memory: Mc202PhraseMemoryRequest<'_>,
 ) -> Mc202SourcePhraseCandidateSelection {
     let contour = source_phrase_contour_offset(section, expression);
     let fingerprint = source_phrase_fingerprint(graph, section, phrase_slot);
@@ -92,10 +92,15 @@ pub(super) fn choose_source_phrase_candidate(
     ];
 
     for candidate in &mut candidates {
-        candidate.phrase_memory = phrase_memory_distance(previous_plan, candidate);
+        candidate.phrase_memory = phrase_memory_distance(phrase_memory.previous_plan, candidate);
         candidate.rejection_reason = candidate
             .rejection_reason
-            .or_else(|| phrase_memory_rejection_reason(previous_plan, candidate));
+            .or_else(|| role_family_rejection_reason(role, candidate.family))
+            .or_else(|| {
+                (!phrase_memory.explicit_mutation)
+                    .then(|| phrase_memory_rejection_reason(phrase_memory.previous_plan, candidate))
+                    .flatten()
+            });
         candidate.score = candidate_score(
             candidate.family,
             role,
@@ -305,6 +310,14 @@ fn candidate_rejection_reason(
     }
 }
 
+fn role_family_rejection_reason(
+    role: Mc202RoleState,
+    family: Mc202SourcePhraseCandidateFamilyState,
+) -> Option<&'static str> {
+    (family.is_source_derived() && !family.supports_role(role))
+        .then_some("requested_role_family_mismatch")
+}
+
 fn candidate_note_budget(
     role: Mc202RoleState,
     section: Option<&Section>,
@@ -397,15 +410,11 @@ fn candidate_fallback_reason(
     family: Mc202SourcePhraseCandidateFamilyState,
     selected_rejection_reason: Option<&'static str>,
 ) -> Option<String> {
-    selected_rejection_reason
-        .map(str::to_owned)
-        .or_else(|| match family {
-            Mc202SourcePhraseCandidateFamilyState::StayOut => {
-                Some("stay_out_candidate_family".into())
-            }
-            Mc202SourcePhraseCandidateFamilyState::FallbackControl => {
-                Some("fallback_control_candidate_family".into())
-            }
-            _ => None,
-        })
+    match family {
+        Mc202SourcePhraseCandidateFamilyState::StayOut => Some("stay_out_candidate_family".into()),
+        Mc202SourcePhraseCandidateFamilyState::FallbackControl => {
+            Some("no_role_compatible_source_candidate".into())
+        }
+        _ => selected_rejection_reason.map(str::to_owned),
+    }
 }

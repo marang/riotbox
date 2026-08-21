@@ -80,7 +80,22 @@ fn committed_mc202_answer_passes_cross_source_diversity_gate_for_feature_familie
 
     for case in cases {
         let mut state = confirmed_source_phrase_state(case.graph);
-        let rendered = commit_source_derived_answer(&mut state);
+        let role = match case.expected_family {
+            Mc202SourcePhraseCandidateFamilyState::SubPressureShove => Mc202RoleState::Pressure,
+            Mc202SourcePhraseCandidateFamilyState::SparseOffbeatAnswer
+            | Mc202SourcePhraseCandidateFamilyState::CallBackStab
+            | Mc202SourcePhraseCandidateFamilyState::HookRestraintGhostAnswer => {
+                Mc202RoleState::Answer
+            }
+            Mc202SourcePhraseCandidateFamilyState::FillPickupInstigator => {
+                Mc202RoleState::Instigator
+            }
+            Mc202SourcePhraseCandidateFamilyState::StayOut
+            | Mc202SourcePhraseCandidateFamilyState::FallbackControl => {
+                panic!("quality gate requires an audible source-derived family")
+            }
+        };
+        let rendered = commit_source_derived_role(&mut state, role);
         let plan = state
             .session
             .runtime_state

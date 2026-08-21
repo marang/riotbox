@@ -1,7 +1,7 @@
 # MC-202 Source Phrase Planning Plan
 
-Status: accepted implementation plan; upgraded by RIOTBOX-1262 and RIOTBOX-1264
-Linear: RIOTBOX-1035, RIOTBOX-1262, RIOTBOX-1263, RIOTBOX-1264
+Status: accepted implementation plan; intent integrity corrected by RIOTBOX-1450
+Linear: RIOTBOX-1035, RIOTBOX-1262, RIOTBOX-1263, RIOTBOX-1264, RIOTBOX-1450
 Phase: P013+ / P023 sound-quality follow-up
 
 Execution status (2026-08-21): this document preserves the architecture and
@@ -9,8 +9,10 @@ historical implementation chain; it is not the live backlog. RIOTBOX-1417
 rejected retrigger and full-bed-cut instigator mechanisms. RIOTBOX-1449 then
 tested a materially different source-derived sparse-answer role, but its
 technically valid full-mix A/B was perceptually unchanged and received no
-provisional keep. RIOTBOX-1450 owns the separate fail-closed intent-role
-contract defect. Do not reopen or recreate the older numbered ticket chain
+provisional keep. RIOTBOX-1450 closes the separate fail-closed intent-role
+contract defect: an explicit role can now select only a compatible family,
+otherwise the committed result is degraded silence. Do not reopen or recreate
+the older numbered ticket chain
 from this plan; verify current Linear and `main` before deriving another
 audible slice.
 
@@ -155,6 +157,11 @@ yet" than to hear a reusable fallback phrase that appears to be product output.
      rejected with explicit phrase-memory reasons, selected memory distance is
      stored in provenance, and repeated commits must produce a changed plan /
      render or an explicit fallback/stay-out reason.
+   - RIOTBOX-1450 makes requested performer role a hard typed family gate.
+     Mismatched families are rejected and persisted/replayed mismatches remain
+     silent. Only explicit phrase mutation may bypass the repetition-memory
+     rejection for the same compatible family; it cannot bypass evidence or
+     role ownership.
 
 5. Render source-derived plans on the existing MC-202 audio seam.
    - Project a committed source phrase plan into `Mc202RenderState`.

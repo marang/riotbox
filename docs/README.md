@@ -164,6 +164,13 @@ temporary Development selection seam is removed and no mechanism is promoted.
 `RIOTBOX-1450` owns the separate fail-closed bug in which an explicit MC-202
 intent could otherwise commit a mismatched candidate family.
 
+`RIOTBOX-1450` now closes that defect as a contract enabler. Explicit pressure,
+instigator, answer, leader, and follower intents gate the compatible typed
+candidate families before selection. If no compatible source-derived family
+survives, the decision is persisted and shown as degraded silence; restore and
+replay cannot turn a historical mismatch into audible output. This changes no
+MC-202 synthesis algorithm and is not a musical-quality pass.
+
 ## Documentation Rules
 
 - Stable core contracts live in `docs/`.

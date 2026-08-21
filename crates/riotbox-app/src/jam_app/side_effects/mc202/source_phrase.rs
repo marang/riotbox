@@ -15,12 +15,18 @@ mod candidate_families;
 
 use candidate_families::choose_source_phrase_candidate;
 
+struct Mc202PhraseMemoryRequest<'a> {
+    previous_plan: Option<&'a Mc202SourcePhrasePlanState>,
+    explicit_mutation: bool,
+}
+
 pub(super) fn derive_mc202_source_phrase_plan(
     session: &SessionFile,
     source_graph: Option<&SourceGraph>,
     boundary: Option<&CommitBoundaryState>,
     role: Mc202RoleState,
     touch: f32,
+    explicit_phrase_mutation: bool,
 ) -> Result<Option<Mc202SourcePhrasePlanState>, &'static str> {
     let Some(graph) = source_graph else {
         return Ok(None);
@@ -70,12 +76,15 @@ pub(super) fn derive_mc202_source_phrase_plan(
         &phrase_slot,
         &features,
         &source_expression,
-        session
-            .runtime_state
-            .lane_state
-            .mc202
-            .source_phrase_plan
-            .as_ref(),
+        Mc202PhraseMemoryRequest {
+            previous_plan: session
+                .runtime_state
+                .lane_state
+                .mc202
+                .source_phrase_plan
+                .as_ref(),
+            explicit_mutation: explicit_phrase_mutation,
+        },
     );
     let fallback_reason = source_fallback_reason.or(candidate_selection.fallback_reason.clone());
     let rhythm_cells =
