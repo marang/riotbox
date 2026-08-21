@@ -389,7 +389,7 @@ fn committed_mc202_answer_scorecards_record_phrase_memory_after_previous_plan() 
 }
 
 #[test]
-fn committed_mc202_answer_changes_candidate_family_between_pressure_and_hook_sources() {
+fn committed_mc202_roles_select_compatible_families_between_pressure_and_hook_sources() {
     let mut pressure_graph =
         source_phrase_test_graph("src-pressure", "hash-pressure", 134.0, 23, 2);
     add_phrase_audio_features(
@@ -422,7 +422,7 @@ fn committed_mc202_answer_changes_candidate_family_between_pressure_and_hook_sou
     let mut pressure_state = confirmed_source_phrase_state(pressure_graph);
     let mut hook_state = confirmed_source_phrase_state(hook_graph);
 
-    let pressure_render = commit_source_derived_answer(&mut pressure_state);
+    let pressure_render = commit_source_derived_pressure(&mut pressure_state);
     let hook_render = commit_source_derived_answer(&mut hook_state);
     let pressure_render_plan = pressure_state
         .runtime
@@ -618,8 +618,8 @@ fn committed_mc202_answer_changes_or_rejects_candidates_when_measured_audio_is_r
     let mut measured_state = confirmed_source_phrase_state(measured_graph);
     let mut metadata_only_state = confirmed_source_phrase_state(metadata_only_graph);
 
-    commit_source_derived_answer(&mut measured_state);
-    commit_source_derived_answer(&mut metadata_only_state);
+    commit_source_answer_without_render(&mut measured_state);
+    commit_source_answer_without_render(&mut metadata_only_state);
     let measured_plan = measured_state
         .session
         .runtime_state

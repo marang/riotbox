@@ -307,8 +307,9 @@ Linear project / phase map:
     the `RIOTBOX-1396` live, human-passed Usable Musical Alpha first exit closed
     on 2026-07-21; `RIOTBOX-1439` now owns the accepted delivery-order
     correction, `RIOTBOX-1417` proved its fail-closed Development stop on three
-    rejected MC-202 instigator variants, and `RIOTBOX-1399` remains subordinate
-    measured workflow optimization
+    rejected MC-202 instigator variants, `RIOTBOX-1450` closes the MC-202
+    explicit-intent mismatch with persisted degraded silence, and
+    `RIOTBOX-1399` remains subordinate measured workflow optimization
 
 This is a project / phase overview, not a ticket list. Keep P012, P013, P014,
 and P015 as regression baselines and keep P017-P020 coarse while P023 turns the

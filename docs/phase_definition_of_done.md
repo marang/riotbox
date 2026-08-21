@@ -524,6 +524,11 @@ After exit:
   in its intended low-frequency owner bands, so it receives no provisional
   keep and adds no P023 completion evidence. RIOTBOX-1450 separately owns the
   discovered explicit-intent role-integrity defect.
+- RIOTBOX-1450 closes that role-integrity defect without a new sound claim:
+  requested MC-202 intent is now a hard typed family gate, no compatible
+  candidate commits visible degraded silence, and persisted mismatch evidence
+  remains silent through restore/replay. This is a contract enabler, not a
+  musical or P023 completion pass.
 - RIOTBOX-1423 established the broader legal CC0 corpus contract: its general
   candidate matrix covers at least five eligible development sources across
   four typed families and protects two disjoint fresh holdout sets. That broad

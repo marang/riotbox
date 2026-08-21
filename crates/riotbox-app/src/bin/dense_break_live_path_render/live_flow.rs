@@ -153,8 +153,8 @@ pub fn prepare(
         1,
     )?)?;
     require_committed_command(&state, &preset_commit, ActionCommand::PresetActivate)?;
-    if state.queue_mc202_generate_pressure(311) != QueueControlResult::Enqueued {
-        return Err("MC-202 pressure generation was unavailable".into());
+    if state.queue_mc202_generate_instigator(311) != QueueControlResult::Enqueued {
+        return Err("MC-202 instigator generation was unavailable".into());
     }
     commit(
         &mut state,

@@ -221,9 +221,13 @@ action, or persistence system.
 
 Rules:
 
-- the selected MC-202 candidate family determines the audible intent
-  (`bass_pressure`, `punctuate`, `instigate`, or `stay_out`); a legacy/requested
-  role must not force a source candidate to behave as bass
+- the requested MC-202 role first gates eligible source-derived families:
+  `pressure` -> `sub_pressure_shove`, `instigator` ->
+  `fill_pickup_instigator`, `answer` -> sparse-answer / callback /
+  hook-restraint, and `leader` / `follower` -> callback; if none survives, the
+  lane projects explicit degraded silence instead of another audible intent
+- within that compatible set, the selected MC-202 candidate family determines
+  the audible intent (`bass_pressure`, `punctuate`, `instigate`, or `stay_out`)
 - bass ownership is explicit: only a trusted `sub_pressure_shove` candidate may
   assign it to MC-202; all other candidates report `unassigned` rather than
   implying that a weak answer or pickup is the bass lane

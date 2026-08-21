@@ -53,7 +53,7 @@ impl Mc202SourcePhrasePlanState {
     pub fn is_source_derived(&self) -> bool {
         let family_is_source_derived = self
             .candidate_family
-            .is_none_or(Mc202SourcePhraseCandidateFamilyState::is_source_derived);
+            .is_none_or(|family| family.is_source_derived() && family.supports_role(self.role));
         self.fallback_reason.is_none() && family_is_source_derived
     }
 }
@@ -118,6 +118,21 @@ impl Mc202SourcePhraseCandidateFamilyState {
     #[must_use]
     pub const fn is_source_derived(self) -> bool {
         !matches!(self, Self::StayOut | Self::FallbackControl)
+    }
+
+    #[must_use]
+    pub const fn supports_role(self, role: Mc202RoleState) -> bool {
+        match role {
+            Mc202RoleState::Pressure => matches!(self, Self::SubPressureShove),
+            Mc202RoleState::Answer => matches!(
+                self,
+                Self::SparseOffbeatAnswer | Self::CallBackStab | Self::HookRestraintGhostAnswer
+            ),
+            Mc202RoleState::Instigator => matches!(self, Self::FillPickupInstigator),
+            Mc202RoleState::Leader | Mc202RoleState::Follower => {
+                matches!(self, Self::CallBackStab)
+            }
+        }
     }
 }
 

@@ -311,8 +311,13 @@ candidate-family decision, the matching Source Graph, and confirmed timing. It
 is intentionally not stored as another Session object. In particular, MC-202
 owns bass only when the persisted family is `sub_pressure_shove`; answer,
 callback, pickup, stay-out, and fallback families leave bass ownership
-unassigned. A requested compatibility role may remain recorded for action and
-replay identity, but it does not override the selected family's audible role.
+unassigned. Requested role is a hard family-compatibility contract: `pressure`
+permits only `sub_pressure_shove`, `instigator` only
+`fill_pickup_instigator`, `answer` only the sparse-answer, callback, or
+hook-restraint families, and `leader` / `follower` only callback. A persisted
+family that does not support its requested role remains replay evidence but is
+not source-derived render truth; restore and projection must expose degraded
+state and silence instead of changing the performer's intent.
 
 When `source_timing.revert_grid` clears a matching confirmed grid, any
 MC-202 `source_phrase_plan` tied to that source id must also be cleared in

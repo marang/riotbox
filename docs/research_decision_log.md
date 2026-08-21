@@ -4124,3 +4124,17 @@ Why: the three mechanisms have individual Development qualification and positive
 Evidence: RIOTBOX-1447 source-blind inspection and tests established RBX-306 recovery semantics after a completed Pitch Dive. Existing frozen contracts own every gesture curve and gate. No RIOTBOX-1447 Development source audio, source directory, Holdout audio, or commercial-reference audio was opened before this journey contract and hash were frozen.
 Consequences: create one fresh bounded access log before opening the exact registered Development file; verify identity before decode; stop fail-closed on any contract, tempo, action-order, state, replay, render, limiter, missing-source, or re-entry violation. Source results may reject this journey but may not change gesture algorithms, thresholds, timing, order, or source choice. Any required change needs a new contract version and Decision. A pass may document the three manual roles and one concise recipe, but cannot claim automatic composition, universal source quality, Holdout, demo, or release readiness.
 Status: accepted
+
+---
+
+### RBX-308
+
+Date: 2026-08-21
+Topic: fail closed when explicit MC-202 performer intent has no compatible candidate family
+Phase: P023 / Sound Excellence
+Question: may source-derived MC-202 selection substitute a different audible family when the family requested by an explicit performer role fails eligibility?
+Decision: no. Requested role is a hard typed compatibility gate before selection: `pressure` permits only `sub_pressure_shove`; `instigator` only `fill_pickup_instigator`; `answer` permits `sparse_offbeat_answer`, `call_back_stab`, or `hook_restraint_ghost_answer`; and `leader` / `follower` permit only `call_back_stab`. If no compatible source-derived family survives, commit observable `fallback_control` with reason `no_role_compatible_source_candidate`, project silence, and preserve that degraded decision in Session and replay. Historical persisted plans whose requested role and selected family disagree remain evidence but no longer qualify as source-derived render plans. An explicit `mc202.mutate_phrase` may bypass only the ordinary phrase-memory repetition rejection for the same compatible family; source eligibility and role compatibility remain mandatory.
+Why: treating role fit as a soft score allowed an explicit pressure request to become a pickup/instigator phrase after the pressure family failed. That changed performer intent silently and could assign audible behavior the musician did not request. Keeping the requested role while emitting another family is less honest than visible degraded silence.
+Evidence: RIOTBOX-1450 reproduces a source feature vector where `fill_pickup_instigator` is eligible but `sub_pressure_shove` is not. The corrected exact queue/commit path records the mismatch rejection, persists degraded replay truth, produces empty cells, projects `Mc202RenderRouting::Silent`, and remains silent after `JamAppState::from_parts` restore. Existing role-compatible generation, mutation, snapshot, and replay tests remain green. No Development source audio, source directory, Holdout audio, or commercial-reference audio was opened.
+Consequences: supersede only the RBX-136 allowance that requested role and selected audible family may differ. The selected compatible family still owns audible intent and bass ownership. Do not retune candidate scores, source gates, synthesis, or frozen audio contracts under this decision. Any future many-to-many role mapping requires a new typed contract and Decision.
+Status: accepted

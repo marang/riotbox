@@ -203,6 +203,10 @@ Current implementation:
   reconstruction may still be used by higher app restore helpers, but it is not
   allowed to invent fallback audio or preserve stale source phrase state when
   the commit record does not carry a plan.
+- Replay preserves a historical MC-202 plan whose requested role and candidate
+  family disagree, but projection must classify it as non-source-derived and
+  remain silent/degraded. Replay must not reinterpret the requested role,
+  replace the family, or resurrect the mismatch as audible output.
 - The shared dense-break `LivePerformancePolicy` is derived projection, not
   replay truth. After the Source Graph, timing confirmation, and committed
   source phrase plan are restored, app projection must derive the same lane
