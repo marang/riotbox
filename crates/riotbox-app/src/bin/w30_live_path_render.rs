@@ -12,8 +12,8 @@ use riotbox_audio::{
     w30::W30PreviewRenderState,
 };
 use riotbox_core::{
-    action::{CaptureLengthIntent, CommitBoundary, SourceMonitorMode},
-    session::W30HookSelectionPolicy,
+    action::{ActionCommand, CaptureLengthIntent, CommitBoundary, SourceMonitorMode},
+    session::{W30HookArticulationProfileState, W30HookSelectionPolicy},
     style::PerformancePresetId,
     transport::CommitBoundaryState,
 };
@@ -44,6 +44,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let qualify_hook_turnaround = args.iter().any(|arg| arg == "--qualify-hook-turnaround-v1");
     let qualify_pitch_dive = args.iter().any(|arg| arg == "--qualify-pitch-dive-v1");
     let qualify_filter_slam = args.iter().any(|arg| arg == "--qualify-filter-slam-v1");
+    let qualify_gesture_vocabulary = args
+        .iter()
+        .any(|arg| arg == "--qualify-gesture-vocabulary-v1");
     let prepare_hook_turnaround_review = args
         .iter()
         .any(|arg| arg == "--prepare-hook-turnaround-review");
@@ -53,6 +56,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         qualify_hook_turnaround,
         qualify_pitch_dive,
         qualify_filter_slam,
+        qualify_gesture_vocabulary,
     ]
     .into_iter()
     .filter(|selected| *selected)
@@ -154,6 +158,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     print_w30_render_summary("normal", &state.runtime.w30_preview);
     let normal_render = state.runtime.w30_preview.clone();
+    if qualify_gesture_vocabulary {
+        let exact_product_bpm = normal_render.tempo_bpm;
+        if !exact_product_bpm.is_finite() || exact_product_bpm <= 0.0 {
+            return Err("W-30 qualification has no positive finite product tempo".into());
+        }
+        qualify_gesture_vocabulary_v1(
+            &mut state,
+            &normal_render,
+            exact_product_bpm,
+            &output_dir,
+            scene_id,
+        )?;
+        state.save()?;
+        return Ok(());
+    }
     if qualify_filter_slam {
         let exact_product_bpm = normal_render.tempo_bpm;
         if !exact_product_bpm.is_finite() || exact_product_bpm <= 0.0 {
@@ -166,6 +185,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             &output_dir,
             scene_id,
             prepare_filter_slam_review,
+            8,
         )?;
         state.save()?;
         return Ok(());
@@ -182,6 +202,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             &output_dir,
             scene_id,
             prepare_pitch_dive_review,
+            8,
         )?;
         state.save()?;
         return Ok(());
@@ -198,6 +219,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             &output_dir,
             scene_id,
             prepare_hook_turnaround_review,
+            8,
         )?;
         state.save()?;
         return Ok(());
@@ -338,25 +360,25 @@ fn qualify_hook_turnaround_v1(
     output_dir: &std::path::Path,
     scene_id: Option<riotbox_core::ids::SceneId>,
     prepare_review: bool,
+    start_beat: u64,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    const START_BEAT: u64 = 8;
     let frame_count = (5.0 * 60.0 / bpm * SAMPLE_RATE as f32).round() as usize;
     let beat_one = qualification_sample_offset_at_beat_boundary(
-        START_BEAT as f64,
-        START_BEAT as f64 + 1.0,
+        start_beat as f64,
+        start_beat as f64 + 1.0,
         bpm,
     )?;
     let beat_three = qualification_sample_offset_at_beat_boundary(
-        START_BEAT as f64,
-        START_BEAT as f64 + 3.0,
+        start_beat as f64,
+        start_beat as f64 + 3.0,
         bpm,
     )?;
     let beat_four = qualification_sample_offset_at_beat_boundary(
-        START_BEAT as f64,
-        START_BEAT as f64 + 4.0,
+        start_beat as f64,
+        start_beat as f64 + 4.0,
         bpm,
     )?;
-    let control_plan = isolated_w30_plan(control_render.clone(), bpm, START_BEAT as f64);
+    let control_plan = isolated_w30_plan(control_render.clone(), bpm, start_beat as f64);
     let control = render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
         &[RuntimeMixRenderSequenceStep::new(
             &control_plan,
@@ -372,10 +394,19 @@ fn qualify_hook_turnaround_v1(
     let captures_before = state.session.captures.clone();
     let grit_before = state.session.runtime_state.macro_state.w30_grit;
     let source_monitor_before = state.session.runtime_state.source_monitor.clone();
-    if state.queue_w30_hook_turnaround(410) != Some(QueueControlResult::Enqueued) {
+    let requested_at = 400 + start_beat * 10;
+    if state.queue_w30_hook_turnaround(requested_at) != Some(QueueControlResult::Enqueued) {
         return Err("W-30 hook turnaround was unavailable".into());
     }
-    commit(state, CommitBoundary::Bar, START_BEAT, 3, 1, scene_id, 500)?;
+    commit(
+        state,
+        CommitBoundary::Bar,
+        start_beat,
+        start_beat / 4 + 1,
+        start_beat / 16 + 1,
+        scene_id,
+        requested_at + 1,
+    )?;
     let articulation = state
         .session
         .runtime_state
@@ -384,7 +415,8 @@ fn qualify_hook_turnaround_v1(
         .hook_articulation
         .as_ref()
         .ok_or("hook turnaround commit produced no Session articulation")?;
-    if articulation.started_at_beat != START_BEAT
+    if articulation.profile != W30HookArticulationProfileState::TurnaroundV1
+        || articulation.started_at_beat != start_beat
         || articulation.capture_id.to_string()
             != state
                 .runtime
@@ -403,7 +435,7 @@ fn qualify_hook_turnaround_v1(
     }
 
     let candidate_plan =
-        isolated_w30_plan(state.runtime.w30_preview.clone(), bpm, START_BEAT as f64);
+        isolated_w30_plan(state.runtime.w30_preview.clone(), bpm, start_beat as f64);
     let candidate = render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
         &[RuntimeMixRenderSequenceStep::new(
             &candidate_plan,
@@ -461,7 +493,7 @@ fn qualify_hook_turnaround_v1(
     missing_source_render.pad_playback = None;
     missing_source_render.source_window_preview = None;
     missing_source_render.routing = riotbox_audio::w30::W30PreviewRenderRouting::Silent;
-    let missing_source_plan = isolated_w30_plan(missing_source_render, bpm, START_BEAT as f64);
+    let missing_source_plan = isolated_w30_plan(missing_source_render, bpm, start_beat as f64);
     let missing_source = render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
         &[RuntimeMixRenderSequenceStep::new(
             &missing_source_plan,
@@ -490,7 +522,7 @@ fn qualify_hook_turnaround_v1(
         &candidate.samples,
     )?;
     let review = if prepare_review {
-        let review_position_beats = START_BEAT.saturating_sub(4) as f64;
+        let review_position_beats = start_beat.saturating_sub(4) as f64;
         let review_frame_count = (12.0 * 60.0 / bpm * SAMPLE_RATE as f32).round() as usize;
         let review_control_plan =
             isolated_w30_plan(control_render.clone(), bpm, review_position_beats);
@@ -581,7 +613,7 @@ fn qualify_hook_turnaround_v1(
         "schema": "riotbox.w30_hook_turnaround_qualification_case.v1",
         "mechanism": "w30_hook_turnaround_v1",
         "exact_product_tempo_bpm": bpm,
-        "committed_start_beat": START_BEAT,
+        "committed_start_beat": start_beat,
         "isolated_contributors": ["w30_preview"],
         "control": {
             "peak_abs": control.limiter.post.peak_abs,
@@ -615,6 +647,299 @@ fn qualify_hook_turnaround_v1(
     )?;
     println!("hook-turnaround qualification: {result}");
     Ok(())
+}
+
+fn qualify_gesture_vocabulary_v1(
+    state: &mut JamAppState,
+    initial_control: &W30PreviewRenderState,
+    bpm: f32,
+    output_dir: &std::path::Path,
+    scene_id: Option<riotbox_core::ids::SceneId>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let replay_base = state.session.clone();
+    let suffix_start = state.session.action_log.actions.len();
+
+    qualify_hook_turnaround_v1(
+        state,
+        initial_control,
+        bpm,
+        output_dir,
+        scene_id.clone(),
+        false,
+        8,
+    )?;
+    let hook_render = state.runtime.w30_preview.clone();
+    let hook_reentry = qualify_ordinary_w30_reentry(
+        state,
+        bpm,
+        output_dir,
+        scene_id.clone(),
+        13,
+        "hook_turnaround",
+    )?;
+    let after_hook = state.runtime.w30_preview.clone();
+
+    qualify_pitch_dive_v1(
+        state,
+        &after_hook,
+        bpm,
+        output_dir,
+        scene_id.clone(),
+        false,
+        16,
+    )?;
+    let pitch_render = state.runtime.w30_preview.clone();
+    let pitch_reentry =
+        qualify_ordinary_w30_reentry(state, bpm, output_dir, scene_id.clone(), 29, "pitch_dive")?;
+    let after_pitch = state.runtime.w30_preview.clone();
+
+    qualify_filter_slam_v1(
+        state,
+        &after_pitch,
+        bpm,
+        output_dir,
+        scene_id.clone(),
+        false,
+        32,
+    )?;
+    let filter_render = state.runtime.w30_preview.clone();
+    let filter_reentry =
+        qualify_ordinary_w30_reentry(state, bpm, output_dir, scene_id, 41, "filter_slam")?;
+    let after_filter = state.runtime.w30_preview.clone();
+
+    let journey_plans = [
+        isolated_w30_plan(hook_render, bpm, 8.0),
+        isolated_w30_plan(after_hook.clone(), bpm, 13.0),
+        isolated_w30_plan(pitch_render, bpm, 16.0),
+        isolated_w30_plan(after_pitch.clone(), bpm, 29.0),
+        isolated_w30_plan(filter_render, bpm, 32.0),
+        isolated_w30_plan(after_filter, bpm, 41.0),
+    ];
+    let journey_beats = [5.0_f32, 3.0, 13.0, 3.0, 9.0, 4.0];
+    let journey_steps = journey_plans
+        .iter()
+        .zip(journey_beats)
+        .map(|(plan, beats)| {
+            RuntimeMixRenderSequenceStep::new(
+                plan,
+                (beats * 60.0 / bpm * SAMPLE_RATE as f32).round() as usize,
+            )
+        })
+        .collect::<Vec<_>>();
+    let journey_outputs = render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
+        &journey_steps,
+        SAMPLE_RATE,
+        CHANNEL_COUNT,
+        128,
+    );
+    let journey_partition_outputs =
+        render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
+            &journey_steps,
+            SAMPLE_RATE,
+            CHANNEL_COUNT,
+            257,
+        );
+    if journey_outputs.len() != journey_steps.len()
+        || journey_partition_outputs.len() != journey_steps.len()
+    {
+        return Err("gesture-vocabulary journey omitted a sequence step".into());
+    }
+    let journey_samples = journey_outputs
+        .iter()
+        .flat_map(|output| output.samples.iter().copied())
+        .collect::<Vec<_>>();
+    let journey_partition_samples = journey_partition_outputs
+        .iter()
+        .flat_map(|output| output.samples.iter().copied())
+        .collect::<Vec<_>>();
+    if journey_samples != journey_partition_samples {
+        return Err("gesture-vocabulary journey changed across callback partitions".into());
+    }
+    let journey_metrics = signal_metrics(&journey_samples);
+    let pre_limiter_clip_count = journey_outputs
+        .iter()
+        .map(|output| output.limiter.pre.clip_count)
+        .sum::<usize>();
+    let limited_sample_count = journey_outputs
+        .iter()
+        .map(|output| output.limiter.limited_sample_count)
+        .sum::<usize>();
+    let post_limiter_clip_count = journey_outputs
+        .iter()
+        .map(|output| output.limiter.post.clip_count)
+        .sum::<usize>();
+    if journey_metrics.active_samples == 0
+        || journey_metrics.rms <= 0.001
+        || pre_limiter_clip_count != 0
+        || limited_sample_count != 0
+        || post_limiter_clip_count != 0
+    {
+        return Err("gesture-vocabulary journey was silent, clipped, or limited".into());
+    }
+    let journey_path = output_dir.join("08_w30_gesture_vocabulary_journey.wav");
+    write_interleaved_pcm16_wav(&journey_path, SAMPLE_RATE, CHANNEL_COUNT, &journey_samples)?;
+
+    let expected_order = [
+        ActionCommand::W30HookTurnaround,
+        ActionCommand::W30TriggerPad,
+        ActionCommand::W30PitchDive,
+        ActionCommand::W30TriggerPad,
+        ActionCommand::W30FilterSlam,
+        ActionCommand::W30TriggerPad,
+    ];
+    let suffix = &state.session.action_log.actions[suffix_start..];
+    let actual_order = suffix
+        .iter()
+        .map(|action| action.command)
+        .collect::<Vec<_>>();
+    if actual_order != expected_order {
+        return Err(format!("gesture-vocabulary action order diverged: {actual_order:?}").into());
+    }
+
+    let serialized = serde_json::to_vec(&state.session)?;
+    let restored: riotbox_core::session::SessionFile = serde_json::from_slice(&serialized)?;
+    if restored != state.session {
+        return Err("gesture-vocabulary Session round trip diverged".into());
+    }
+
+    let suffix_action_ids = suffix.iter().map(|action| action.id).collect::<Vec<_>>();
+    let mut suffix_log = state.session.action_log.clone();
+    suffix_log.actions = suffix.to_vec();
+    suffix_log
+        .commit_records
+        .retain(|record| suffix_action_ids.contains(&record.action_id));
+    let replay_plan = riotbox_core::replay::build_committed_replay_plan(&suffix_log)
+        .map_err(|error| format!("gesture-vocabulary replay plan failed: {error:?}"))?;
+    let mut replayed = replay_base;
+    replayed.action_log = suffix_log.clone();
+    riotbox_core::replay::apply_replay_plan_to_session(&mut replayed, &replay_plan)
+        .map_err(|error| format!("gesture-vocabulary replay execution failed: {error:?}"))?;
+    if replayed.runtime_state.lane_state.w30 != state.session.runtime_state.lane_state.w30
+        || replayed.runtime_state.macro_state.w30_grit
+            != state.session.runtime_state.macro_state.w30_grit
+        || replayed.runtime_state.source_monitor != state.session.runtime_state.source_monitor
+        || replayed.captures != state.session.captures
+    {
+        return Err(
+            "gesture-vocabulary suffix replay diverged from committed Session state".into(),
+        );
+    }
+
+    let result = serde_json::json!({
+        "schema": "riotbox.w30_gesture_vocabulary_golden_path_qualification_case.v1",
+        "exact_product_tempo_bpm": bpm,
+        "isolated_contributors": ["w30_preview"],
+        "action_order": actual_order.iter().map(|command| command.as_str()).collect::<Vec<_>>(),
+        "roles": [
+            {"role": "phrase_variation", "mechanism": "w30_hook_turnaround_v1", "committed_start_beat": 8},
+            {"role": "destructive_exit", "mechanism": "w30_pitch_dive_v1", "committed_start_beat": 16},
+            {"role": "long_build_and_return", "mechanism": "w30_filter_slam_v1", "committed_start_beat": 32}
+        ],
+        "ordinary_reentries": [hook_reentry, pitch_reentry, filter_reentry],
+        "continuous_journey": {
+            "path": journey_path.file_name().and_then(|name| name.to_str()),
+            "start_beat": 8,
+            "end_beat": 45,
+            "duration_beats": 37,
+            "peak_abs": journey_metrics.peak_abs,
+            "rms": journey_metrics.rms,
+            "active_samples": journey_metrics.active_samples,
+            "pre_limiter_clip_count": pre_limiter_clip_count,
+            "limited_sample_count": limited_sample_count,
+            "post_limiter_clip_count": post_limiter_clip_count,
+            "callback_partition_128_vs_257_sample_exact": true
+        },
+        "session_round_trip_exact": true,
+        "suffix_replay_equivalent": true,
+        "capture_lineage_unchanged": true,
+        "source_monitor_unchanged": true,
+        "final_articulation_cleared": state.session.runtime_state.lane_state.w30.hook_articulation.is_none()
+    });
+    fs::write(
+        output_dir.join("gesture-vocabulary-qualification.json"),
+        serde_json::to_vec_pretty(&result)?,
+    )?;
+    println!("gesture-vocabulary qualification: {result}");
+    Ok(())
+}
+
+fn qualify_ordinary_w30_reentry(
+    state: &mut JamAppState,
+    bpm: f32,
+    output_dir: &std::path::Path,
+    scene_id: Option<riotbox_core::ids::SceneId>,
+    beat_index: u64,
+    after_role: &str,
+) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
+    if state.queue_w30_trigger_pad(400 + beat_index * 10) != Some(QueueControlResult::Enqueued) {
+        return Err(format!("ordinary W-30 re-entry after {after_role} was unavailable").into());
+    }
+    commit(
+        state,
+        CommitBoundary::Beat,
+        beat_index,
+        beat_index / 4 + 1,
+        beat_index / 16 + 1,
+        scene_id,
+        401 + beat_index * 10,
+    )?;
+    if state
+        .session
+        .runtime_state
+        .lane_state
+        .w30
+        .hook_articulation
+        .is_some()
+        || state
+            .runtime
+            .w30_preview
+            .pad_playback
+            .as_ref()
+            .and_then(|pad| pad.hook_articulation)
+            .is_some()
+    {
+        return Err(
+            format!("ordinary W-30 re-entry after {after_role} kept old articulation").into(),
+        );
+    }
+
+    let frame_count = (2.0 * 60.0 / bpm * SAMPLE_RATE as f32).round() as usize;
+    let plan = isolated_w30_plan(state.runtime.w30_preview.clone(), bpm, beat_index as f64);
+    let output = render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
+        &[RuntimeMixRenderSequenceStep::new(&plan, frame_count)],
+        SAMPLE_RATE,
+        CHANNEL_COUNT,
+        128,
+    )
+    .pop()
+    .ok_or("ordinary W-30 re-entry produced no output")?;
+    if output.limiter.post.active_samples == 0
+        || output.limiter.post.rms <= 0.001
+        || output.limiter.pre.clip_count != 0
+        || output.limiter.limited_sample_count != 0
+        || output.limiter.post.clip_count != 0
+    {
+        return Err(
+            format!("ordinary W-30 re-entry after {after_role} was silent or limited").into(),
+        );
+    }
+    write_interleaved_pcm16_wav(
+        output_dir.join(format!("07_reentry_after_{after_role}.wav")),
+        SAMPLE_RATE,
+        CHANNEL_COUNT,
+        &output.samples,
+    )?;
+    Ok(serde_json::json!({
+        "after_role": after_role,
+        "committed_beat": beat_index,
+        "articulation_cleared": true,
+        "active_samples": output.limiter.post.active_samples,
+        "peak_abs": output.limiter.post.peak_abs,
+        "rms": output.limiter.post.rms,
+        "pre_limiter_clip_count": output.limiter.pre.clip_count,
+        "limited_sample_count": output.limiter.limited_sample_count,
+        "post_limiter_clip_count": output.limiter.post.clip_count
+    }))
 }
 
 /// Return the interleaved-sample offset of the callback frame at a transport beat boundary.

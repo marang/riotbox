@@ -1,0 +1,100 @@
+{
+  "schema": "riotbox.w30_gesture_vocabulary_golden_path_qualification.v1",
+  "ticket": "RIOTBOX-1447",
+  "partition": "development",
+  "mutable_after_source_access": false,
+  "purpose": "qualify three already-frozen W-30 gestures as distinct performer-owned roles in one live Golden Path journey",
+  "source": {
+    "case_id": "dense_beat03_130",
+    "path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+    "sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+    "confirmation_bpm": 130.0,
+    "expected_product_bpm": 130.0
+  },
+  "access": {
+    "fresh_access_log_required_before_first_file_read": true,
+    "maximum_unique_development_files": 1,
+    "exact_path_and_hash_only": true,
+    "directory_discovery_allowed": false,
+    "holdout_audio_allowed": false,
+    "commercial_reference_audio_allowed": false,
+    "source_replacement_allowed": false
+  },
+  "frozen_gestures": [
+    {
+      "role": "phrase_variation",
+      "action": "w30.hook_turnaround",
+      "mechanism": "w30_hook_turnaround_v1",
+      "contract": "docs/benchmarks/w30_hook_turnaround_development_v1.json",
+      "committed_start_beat": 8
+    },
+    {
+      "role": "destructive_exit",
+      "action": "w30.pitch_dive",
+      "mechanism": "w30_pitch_dive_v1",
+      "contract": "docs/benchmarks/w30_pitch_dive_development_v1.json",
+      "committed_start_beat": 16
+    },
+    {
+      "role": "long_build_and_return",
+      "action": "w30.filter_slam",
+      "mechanism": "w30_filter_slam_v1",
+      "contract": "docs/benchmarks/w30_filter_slam_development_v1.json",
+      "committed_start_beat": 32
+    }
+  ],
+  "ordinary_reentry": {
+    "decision": "RBX-306",
+    "action": "w30.trigger_pad",
+    "committed_beats": [13, 29, 41],
+    "prior_articulation_must_be_cleared": true,
+    "output_must_be_active": true
+  },
+  "product_path": {
+    "audible_path": "queue_commit_session_projection_exact_runtime_mix",
+    "isolated_contributors": ["w30_preview"],
+    "performer_triggered_only": true,
+    "automatic_gesture_selection_allowed": false,
+    "gesture_stacking_allowed": false
+  },
+  "technical_gates": {
+    "source_sha256_exact": true,
+    "product_tempo_maximum_absolute_delta": 1.0,
+    "each_frozen_gesture_case_must_pass_its_existing_exact_gate": true,
+    "journey_action_order_exact": true,
+    "ordinary_reentry_state_and_output_required_after_each_gesture": true,
+    "session_round_trip_and_full_replay_equivalence": true,
+    "pre_limiter_clip_count": 0,
+    "limited_sample_count": 0,
+    "post_limiter_clip_count": 0,
+    "capture_lineage_unchanged": true,
+    "source_monitor_unchanged": true,
+    "other_lanes_unchanged": true,
+    "missing_source_active_samples": 0
+  },
+  "failure_policy": "stop_fail_closed_without_retuning_reordering_or_source_replacement",
+  "human_review": {
+    "count": 1,
+    "only_after_complete_technical_pass": true,
+    "artifact": "one_source_first_journey_with_bounded_role_segments_and_one_second_pauses",
+    "questions": [
+      "are_the_three_roles_audibly_distinct",
+      "does_each_role_remain_musically_useful",
+      "does_ordinary_playback_recover_cleanly_after_each_role",
+      "does_the_sequence_feel_like_one_playable_performer_vocabulary"
+    ]
+  },
+  "claims_excluded": [
+    "automatic_composition",
+    "source_selection_intelligence",
+    "percussive_hardness",
+    "universal_source_quality",
+    "holdout",
+    "demo_readiness",
+    "release_readiness"
+  ],
+  "stopping_rule": {
+    "qualification_may_reject_but_may_not_tune_or_reorder_v1": true,
+    "required_change": "new_contract_version_and_decision_log_entry"
+  }
+}

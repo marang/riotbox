@@ -26,21 +26,21 @@ pub(crate) fn qualify_pitch_dive_v1(
     output_dir: &Path,
     scene_id: Option<SceneId>,
     prepare_review: bool,
+    start_beat: u64,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    const START_BEAT: u64 = 8;
     const CONTROL_BEATS: f32 = 13.0;
     let frame_count = (CONTROL_BEATS * 60.0 / bpm * SAMPLE_RATE as f32).round() as usize;
     let beat_eight = qualification_sample_offset_at_beat_boundary(
-        START_BEAT as f64,
-        START_BEAT as f64 + 8.0,
+        start_beat as f64,
+        start_beat as f64 + 8.0,
         bpm,
     )?;
     let beat_twelve = qualification_sample_offset_at_beat_boundary(
-        START_BEAT as f64,
-        START_BEAT as f64 + 12.0,
+        start_beat as f64,
+        start_beat as f64 + 12.0,
         bpm,
     )?;
-    let control_plan = isolated_w30_plan(control_render.clone(), bpm, START_BEAT as f64);
+    let control_plan = isolated_w30_plan(control_render.clone(), bpm, start_beat as f64);
     let control = render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
         &[RuntimeMixRenderSequenceStep::new(
             &control_plan,
@@ -56,10 +56,19 @@ pub(crate) fn qualify_pitch_dive_v1(
     let captures_before = state.session.captures.clone();
     let grit_before = state.session.runtime_state.macro_state.w30_grit;
     let source_monitor_before = state.session.runtime_state.source_monitor.clone();
-    if state.queue_w30_pitch_dive(410) != Some(QueueControlResult::Enqueued) {
+    let requested_at = 400 + start_beat * 10;
+    if state.queue_w30_pitch_dive(requested_at) != Some(QueueControlResult::Enqueued) {
         return Err("W-30 pitch dive was unavailable".into());
     }
-    commit(state, CommitBoundary::Bar, START_BEAT, 3, 1, scene_id, 500)?;
+    commit(
+        state,
+        CommitBoundary::Bar,
+        start_beat,
+        start_beat / 4 + 1,
+        start_beat / 16 + 1,
+        scene_id,
+        requested_at + 1,
+    )?;
     let articulation = state
         .session
         .runtime_state
@@ -69,7 +78,7 @@ pub(crate) fn qualify_pitch_dive_v1(
         .as_ref()
         .ok_or("pitch-dive commit produced no Session articulation")?;
     if articulation.profile != W30HookArticulationProfileState::PitchDiveV1
-        || articulation.started_at_beat != START_BEAT
+        || articulation.started_at_beat != start_beat
         || articulation.capture_id.to_string()
             != state
                 .runtime
@@ -88,7 +97,7 @@ pub(crate) fn qualify_pitch_dive_v1(
     }
 
     let candidate_plan =
-        isolated_w30_plan(state.runtime.w30_preview.clone(), bpm, START_BEAT as f64);
+        isolated_w30_plan(state.runtime.w30_preview.clone(), bpm, start_beat as f64);
     let candidate = render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
         &[RuntimeMixRenderSequenceStep::new(
             &candidate_plan,
@@ -148,7 +157,7 @@ pub(crate) fn qualify_pitch_dive_v1(
     missing_source_render.pad_playback = None;
     missing_source_render.source_window_preview = None;
     missing_source_render.routing = riotbox_audio::w30::W30PreviewRenderRouting::Silent;
-    let missing_source_plan = isolated_w30_plan(missing_source_render, bpm, START_BEAT as f64);
+    let missing_source_plan = isolated_w30_plan(missing_source_render, bpm, start_beat as f64);
     let missing_source = render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
         &[RuntimeMixRenderSequenceStep::new(
             &missing_source_plan,
@@ -180,7 +189,7 @@ pub(crate) fn qualify_pitch_dive_v1(
         "schema": "riotbox.w30_pitch_dive_qualification_case.v1",
         "mechanism": "w30_pitch_dive_v1",
         "exact_product_tempo_bpm": bpm,
-        "committed_start_beat": START_BEAT,
+        "committed_start_beat": start_beat,
         "isolated_contributors": ["w30_preview"],
         "control": limiter_metrics(&control),
         "candidate": limiter_metrics(&candidate),

@@ -506,6 +506,12 @@ After exit:
   source-recognizable gesture with a clean return and live value. This adds a
   second long-form W-30 transition profile without completing the all-lane
   Golden Path or authorizing Holdout/demo/release claims.
+- RIOTBOX-1447 proves that a new explicit ordinary W-30 performer intent
+  supersedes a completed timed articulation in live Session state, RuntimeMix,
+  and replay. The bounded Development journey passes clean re-entry after Hook
+  Turnaround, Pitch Dive, and Filter Slam. This is transition-integrity proof;
+  musical gesture combinations and preferred ordering remain unverified and
+  are not a P023 completion claim.
 - RIOTBOX-1423 established the broader legal CC0 corpus contract: its general
   candidate matrix covers at least five eligible development sources across
   four typed families and protects two disjoint fresh holdout sets. That broad

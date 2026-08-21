@@ -1537,6 +1537,16 @@ gesture with a clean return and live value. This is a bounded W-30 product keep,
 not hardness, universal source quality, complete Golden Path, Holdout, demo, or
 release evidence.
 
+RIOTBOX-1447 qualifies the shared ordinary W-30 re-entry seam rather than
+adding another effect. A source-blind audit found that persisted terminal Pitch
+Dive state could keep a later normal hit silent. Explicit live recall, trigger,
+raw/promoted audition, and damage intents now supersede the prior timed
+articulation identically in live execution and replay. One exact Development
+journey passed action-order, output, callback-partition, limiter,
+missing-source, Session round-trip, and replay gates; the musician accepted the
+clean transitions. This does not rank or approve gesture combinations, freeze
+a preferred ordering, or add automatic arrangement behavior.
+
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a
 quality guardrail, not a replacement for the current sound-product priority:

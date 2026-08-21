@@ -538,6 +538,20 @@ impl ActionCommand {
         Self::ALL
     }
 
+    /// Whether this committed performer intent restarts ordinary W-30 playback
+    /// and therefore supersedes any persisted timed hook articulation.
+    #[must_use]
+    pub const fn supersedes_w30_hook_articulation(self) -> bool {
+        matches!(
+            self,
+            Self::W30LiveRecall
+                | Self::W30TriggerPad
+                | Self::W30AuditionRawCapture
+                | Self::W30AuditionPromoted
+                | Self::W30ApplyDamageProfile
+        )
+    }
+
     /// Whether live undo has typed state restoration and replay may therefore
     /// omit a historical commit marked `Undone` without diverging from runtime.
     #[must_use]

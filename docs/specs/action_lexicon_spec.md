@@ -282,6 +282,15 @@ when transport, trusted positive tempo, the matching focused capture, or
 hydrated source-backed pad audio is unavailable. It never creates fallback
 music, changes the source, or silently retargets another capture.
 
+A committed ordinary W-30 playback intent explicitly supersedes any persisted
+timed hook articulation. `w30.live_recall`, `w30.trigger_pad`,
+`w30.audition_raw_capture`, `w30.audition_promoted`, and
+`w30.apply_damage_profile` clear the prior typed articulation at their commit
+boundary. This makes a normal performer hit recover from a completed
+destructive exit without hidden time-based expiry. Navigation-only bank,
+slice-pool, and focus actions do not clear the articulation because they do not
+themselves request audible playback.
+
 TR-909 source-support render projection may consume the same Feral Source Graph
 evidence to choose a stronger bounded support profile, for example lifting
 neutral `steady_pulse` support into `break_lift`. This changes render policy

@@ -58,6 +58,9 @@ pub(in crate::jam_app) fn apply_w30_side_effects(
 
     session.runtime_state.lane_state.w30.active_bank = Some(bank_id.clone());
     session.runtime_state.lane_state.w30.focused_pad = Some(pad_id.clone());
+    if action.command.supersedes_w30_hook_articulation() {
+        session.runtime_state.lane_state.w30.hook_articulation = None;
+    }
     session.runtime_state.lane_state.w30.preview_mode = Some(match action.command {
         ActionCommand::W30AuditionRawCapture => W30PreviewModeState::RawCaptureAudition,
         ActionCommand::W30AuditionPromoted => W30PreviewModeState::PromotedAudition,

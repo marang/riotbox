@@ -35,6 +35,36 @@ fn action_command_replay_coverage_is_declared_for_every_command() {
 }
 
 #[test]
+fn ordinary_w30_playback_intents_are_the_only_articulation_superseders() {
+    let superseders = ActionCommand::all()
+        .iter()
+        .copied()
+        .filter(|command| command.supersedes_w30_hook_articulation())
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        superseders,
+        vec![
+            ActionCommand::W30LiveRecall,
+            ActionCommand::W30TriggerPad,
+            ActionCommand::W30AuditionRawCapture,
+            ActionCommand::W30AuditionPromoted,
+            ActionCommand::W30ApplyDamageProfile,
+        ]
+    );
+    for navigation_or_gesture in [
+        ActionCommand::W30SwapBank,
+        ActionCommand::W30BrowseSlicePool,
+        ActionCommand::W30StepFocus,
+        ActionCommand::W30HookTurnaround,
+        ActionCommand::W30PitchDive,
+        ActionCommand::W30FilterSlam,
+    ] {
+        assert!(!navigation_or_gesture.supersedes_w30_hook_articulation());
+    }
+}
+
+#[test]
 fn typed_undo_semantics_are_limited_to_restorable_runtime_state() {
     for command in [
         ActionCommand::Mc202SetRole,
