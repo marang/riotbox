@@ -463,6 +463,111 @@ fn committed_w30_pitch_dive_persists_projects_and_replays_without_grit_change() 
 }
 
 #[test]
+fn ordinary_w30_trigger_recovers_from_completed_pitch_dive_in_live_state_and_replay() {
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph.clone()), ActionQueue::new());
+
+    state.session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+        bank_id: BankId::from("bank-a"),
+        pad_id: PadId::from("pad-01"),
+    });
+    state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
+    state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-01"));
+    state.session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
+    state.session.runtime_state.lane_state.w30.preview_mode = Some(W30PreviewModeState::LiveRecall);
+    state.capture_audio_cache.insert(
+        CaptureId::from("cap-01"),
+        source_cache_for_w30_diversity(127.0),
+    );
+    state.refresh_view();
+    let replay_base = state.session.clone();
+
+    assert_eq!(
+        state.queue_w30_pitch_dive(700),
+        Some(QueueControlResult::Enqueued)
+    );
+    assert_eq!(
+        state
+            .commit_ready_actions(
+                CommitBoundaryState {
+                    kind: CommitBoundary::Bar,
+                    beat_index: 64,
+                    bar_index: 16,
+                    phrase_index: 4,
+                    scene_id: Some(SceneId::from("scene-1")),
+                },
+                701,
+            )
+            .len(),
+        1
+    );
+    assert!(
+        state
+            .session
+            .runtime_state
+            .lane_state
+            .w30
+            .hook_articulation
+            .is_some()
+    );
+
+    assert_eq!(
+        state.queue_w30_trigger_pad(702),
+        Some(QueueControlResult::Enqueued)
+    );
+    assert_eq!(
+        state
+            .commit_ready_actions(
+                CommitBoundaryState {
+                    kind: CommitBoundary::Beat,
+                    beat_index: 77,
+                    bar_index: 20,
+                    phrase_index: 5,
+                    scene_id: Some(SceneId::from("scene-1")),
+                },
+                703,
+            )
+            .len(),
+        1
+    );
+    assert_eq!(
+        state.session.runtime_state.lane_state.w30.hook_articulation,
+        None
+    );
+    assert_eq!(
+        state
+            .runtime
+            .w30_preview
+            .pad_playback
+            .as_ref()
+            .and_then(|pad| pad.hook_articulation),
+        None
+    );
+    let recovered = render_w30_preview_offline(&state.runtime.w30_preview, 48_000, 2, 48_000);
+    let recovered_metrics = signal_metrics(&recovered);
+    assert!(
+        recovered_metrics.active_samples > 1_000 && recovered_metrics.rms > 0.005,
+        "ordinary W-30 re-entry stayed silent: {recovered_metrics:?}"
+    );
+
+    let plan = riotbox_core::replay::build_committed_replay_plan(&state.session.action_log)
+        .expect("build pitch-dive re-entry replay plan");
+    let mut replayed = replay_base;
+    replayed.action_log = state.session.action_log.clone();
+    riotbox_core::replay::apply_replay_plan_to_session(&mut replayed, &plan)
+        .expect("replay pitch dive followed by ordinary trigger");
+    assert_eq!(
+        replayed.runtime_state.lane_state.w30.hook_articulation,
+        state.session.runtime_state.lane_state.w30.hook_articulation
+    );
+    assert_eq!(
+        replayed.runtime_state.lane_state.w30.last_capture,
+        Some(CaptureId::from("cap-01"))
+    );
+}
+
+#[test]
 fn committed_w30_filter_slam_persists_projects_and_replays_without_other_lane_changes() {
     let graph = sample_graph();
     let session = sample_session(&graph);

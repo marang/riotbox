@@ -302,6 +302,9 @@ pub(super) fn apply_w30_cue(
 
     session.runtime_state.lane_state.w30.active_bank = Some(bank_id);
     session.runtime_state.lane_state.w30.focused_pad = Some(pad_id);
+    if action.command.supersedes_w30_hook_articulation() {
+        session.runtime_state.lane_state.w30.hook_articulation = None;
+    }
     session.runtime_state.lane_state.w30.preview_mode = Some(preview_mode);
     if let Some(capture_id) = capture_id {
         session.runtime_state.lane_state.w30.last_capture = Some(capture_id.clone());

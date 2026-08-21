@@ -3,7 +3,7 @@
 Status: accepted operating plan
 Linear: RIOTBOX-1439
 Direct audible follow-ups: RIOTBOX-1417, RIOTBOX-1440, RIOTBOX-1442,
-RIOTBOX-1443, RIOTBOX-1444, RIOTBOX-1445, RIOTBOX-1446
+RIOTBOX-1443, RIOTBOX-1444, RIOTBOX-1445, RIOTBOX-1446, RIOTBOX-1447
 
 ## Purpose
 
@@ -129,3 +129,12 @@ confirms that the long arc is clear, musically useful, source-recognizable,
 cleanly returning, and worth retaining live. This third successful application
 of the corrected order reinforces the operating plan; it remains bounded W-30
 gesture evidence rather than full P023 or release completion.
+
+RIOTBOX-1447 does not start a fourth effect cycle. It closes a product-journey
+gap shared by the three kept W-30 gestures: a durable completed articulation,
+especially Pitch Dive's intentional terminal silence, must be superseded by a
+new explicit ordinary performer intent in both live Session state and replay.
+The one-source technical journey proves clean ordinary re-entry after each
+gesture. Human evidence is limited to transition integrity; musical gesture
+combinations and preferred ordering remain unassessed until a concrete
+performance use case warrants a separate bounded review.

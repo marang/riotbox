@@ -294,6 +294,12 @@ w30-filter-slam-product-qualification session:
 w30-filter-slam-product-review-artifact session:
     python3 scripts/run_w30_filter_slam_product_qualification.py --session "{{session}}" --prepare-review-from-passed-session
 
+w30-gesture-vocabulary-qualification session:
+    python3 scripts/run_w30_gesture_vocabulary_qualification.py --session "{{session}}"
+
+w30-gesture-vocabulary-review-artifact session:
+    python3 scripts/run_w30_gesture_vocabulary_qualification.py --session "{{session}}" --prepare-review-from-passed-session
+
 lane-recipe-pack date="local" duration="2.0":
     cargo run -p riotbox-audio --bin lane_recipe_pack -- --date "{{date}}" --duration-seconds "{{duration}}"
 

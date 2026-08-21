@@ -4096,3 +4096,31 @@ Why: RIOTBOX-1445 established musician value on one Development source but did n
 Evidence: before this decision, RIOTBOX-1446 implemented the intended action through the established W-30 path and passed source-blind focused tests for queue/refusal, commit, Session round-trip, replay equivalence, frozen coefficient/timeline boundaries, causal output delta, exact post-return output, callback partition invariance, finite output, and unchanged neighboring state. The full workspace library test suite also passed. No RIOTBOX-1446 qualification source, source directory, Holdout audio, or commercial-reference audio was opened before freezing this contract.
 Consequences: create one fresh bounded access log before the first exact Development file read, verify every listed SHA-256 before decode, and stop the whole matrix on any identity, tempo, render, limiter, state, replay, or missing-source violation. No substitution or source-result-driven adjustment is allowed. A necessary curve, timing, coefficient, duration, render-order, mapping, threshold, or ownership change requires a new version and Decision. Qualification cannot claim percussive hardness, universal source quality, complete Golden Path, Holdout, demo, or release readiness.
 Status: accepted
+
+---
+
+### RBX-306
+
+Date: 2026-08-21
+Topic: make explicit ordinary W-30 intent supersede a completed timed articulation
+Phase: P023 / Sound Excellence
+Question: how does a performer recover ordinary W-30 playback after a persisted timed articulation such as the destructive `w30_pitch_dive_v1` exit has completed?
+Decision: a committed `w30.live_recall`, `w30.trigger_pad`, `w30.audition_raw_capture`, `w30.audition_promoted`, or `w30.apply_damage_profile` action clears the typed Session `hook_articulation` at the same commit boundary in both live execution and replay. A later `w30.hook_turnaround`, `w30.pitch_dive`, or `w30.filter_slam` action continues to replace it with its own typed profile and start boundary. Navigation-only bank, pool, and focus actions do not clear it because they do not themselves express an audible restart. The frozen DSP profiles, durations, coefficients, thresholds, and terminal behavior remain unchanged.
+Why: `w30_pitch_dive_v1` deliberately renders silence after its destructive exit, while the owning articulation is durable Session state. Without an explicit supersession rule, an ordinary pad trigger or recall can remain trapped behind that completed silent profile indefinitely. Recovery must follow a committed performer action, not hidden callback expiry or app-local state, and replay must reproduce the same journey.
+Evidence: source-blind RIOTBOX-1447 state-flow inspection traced the persisted articulation through Session projection into RuntimeMix and confirmed that none of the ordinary W-30 playback intents cleared it. No Development source audio, source directory, Holdout audio, or commercial-reference audio was opened for this decision.
+Consequences: expose one typed `ActionCommand` classification for the five superseding actions; apply it before W-30 state projection in live and replay execution; document the Action Lexicon and replay consequence; and prove state, replay, and post-exit audible recovery with source-blind tests. This decision does not authorize automatic articulation expiry, source-driven retuning, gesture stacking, or a new effect.
+Status: accepted
+
+---
+
+### RBX-307
+
+Date: 2026-08-21
+Topic: freeze the one-source live Golden Path qualification for the kept W-30 gesture vocabulary
+Phase: P023 / Sound Excellence
+Question: what exact bounded journey may determine whether Hook Turnaround, Pitch Dive, and Filter Slam work as three distinct performer-owned roles rather than isolated effect demos?
+Decision: freeze `docs/benchmarks/w30_gesture_vocabulary_golden_path_qualification_v1.json` at SHA-256 `80b3433c20168e8b1cc42c399af017faa21a06e509b8240e569485a001d3a7fb`. Use only registered Development source `dense_beat03_130` through the exact queue/commit, typed Session/replay, projection, and isolated RuntimeMix W-30 path. Commit unchanged Hook Turnaround at beat 8 as phrase variation, ordinary trigger re-entry at beat 13, unchanged Pitch Dive at beat 16 as destructive exit, re-entry at beat 29, unchanged Filter Slam at beat 32 as long build/return, and re-entry at beat 41. Each frozen gesture must pass its existing exact product gate, every re-entry must clear the prior articulation and emit active ordinary source-backed output, and the complete action log must round-trip and replay equivalently before one bounded source-first human journey review.
+Why: the three mechanisms have individual Development qualification and positive listening evidence, but that does not yet prove a playable vocabulary or clean transitions between their roles. One chronological performer-owned journey tests the missing product claim directly without inventing automatic selection, stacking gestures, retuning DSP, or multiplying source reviews.
+Evidence: RIOTBOX-1447 source-blind inspection and tests established RBX-306 recovery semantics after a completed Pitch Dive. Existing frozen contracts own every gesture curve and gate. No RIOTBOX-1447 Development source audio, source directory, Holdout audio, or commercial-reference audio was opened before this journey contract and hash were frozen.
+Consequences: create one fresh bounded access log before opening the exact registered Development file; verify identity before decode; stop fail-closed on any contract, tempo, action-order, state, replay, render, limiter, missing-source, or re-entry violation. Source results may reject this journey but may not change gesture algorithms, thresholds, timing, order, or source choice. Any required change needs a new contract version and Decision. A pass may document the three manual roles and one concise recipe, but cannot claim automatic composition, universal source quality, Holdout, demo, or release readiness.
+Status: accepted

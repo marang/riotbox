@@ -26,20 +26,20 @@ pub(crate) fn qualify_filter_slam_v1(
     output_dir: &Path,
     scene_id: Option<SceneId>,
     prepare_review: bool,
+    start_beat: u64,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    const START_BEAT: u64 = 8;
     const CONTROL_BEATS: f32 = 9.0;
     const RETURN_SECONDS: f32 = 0.02;
     let frame_count = (CONTROL_BEATS * 60.0 / bpm * SAMPLE_RATE as f32).round() as usize;
     let beat_seven = qualification_sample_offset_at_beat_boundary(
-        START_BEAT as f64,
-        START_BEAT as f64 + 7.0,
+        start_beat as f64,
+        start_beat as f64 + 7.0,
         bpm,
     )?;
     let return_sample = beat_seven.saturating_add(
         (RETURN_SECONDS * SAMPLE_RATE as f32).round() as usize * usize::from(CHANNEL_COUNT),
     );
-    let control_plan = isolated_w30_plan(control_render.clone(), bpm, START_BEAT as f64);
+    let control_plan = isolated_w30_plan(control_render.clone(), bpm, start_beat as f64);
     let control = render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
         &[RuntimeMixRenderSequenceStep::new(
             &control_plan,
@@ -58,10 +58,19 @@ pub(crate) fn qualify_filter_slam_v1(
     let source_monitor_before = state.session.runtime_state.source_monitor.clone();
     let mc202_before = state.session.runtime_state.lane_state.mc202.clone();
     let tr909_before = state.session.runtime_state.lane_state.tr909.clone();
-    if state.queue_w30_filter_slam(410) != Some(QueueControlResult::Enqueued) {
+    let requested_at = 400 + start_beat * 10;
+    if state.queue_w30_filter_slam(requested_at) != Some(QueueControlResult::Enqueued) {
         return Err("W-30 filter slam was unavailable".into());
     }
-    commit(state, CommitBoundary::Bar, START_BEAT, 3, 1, scene_id, 500)?;
+    commit(
+        state,
+        CommitBoundary::Bar,
+        start_beat,
+        start_beat / 4 + 1,
+        start_beat / 16 + 1,
+        scene_id,
+        requested_at + 1,
+    )?;
     let articulation = state
         .session
         .runtime_state
@@ -71,7 +80,7 @@ pub(crate) fn qualify_filter_slam_v1(
         .as_ref()
         .ok_or("filter-slam commit produced no Session articulation")?;
     if articulation.profile != W30HookArticulationProfileState::FilterSlamV1
-        || articulation.started_at_beat != START_BEAT
+        || articulation.started_at_beat != start_beat
         || articulation.capture_id.to_string()
             != state
                 .runtime
@@ -93,7 +102,7 @@ pub(crate) fn qualify_filter_slam_v1(
     }
 
     let candidate_plan =
-        isolated_w30_plan(state.runtime.w30_preview.clone(), bpm, START_BEAT as f64);
+        isolated_w30_plan(state.runtime.w30_preview.clone(), bpm, start_beat as f64);
     let candidate = render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
         &[RuntimeMixRenderSequenceStep::new(
             &candidate_plan,
@@ -149,7 +158,7 @@ pub(crate) fn qualify_filter_slam_v1(
     missing_source_render.pad_playback = None;
     missing_source_render.source_window_preview = None;
     missing_source_render.routing = riotbox_audio::w30::W30PreviewRenderRouting::Silent;
-    let missing_source_plan = isolated_w30_plan(missing_source_render, bpm, START_BEAT as f64);
+    let missing_source_plan = isolated_w30_plan(missing_source_render, bpm, start_beat as f64);
     let missing_source = render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
         &[RuntimeMixRenderSequenceStep::new(
             &missing_source_plan,
@@ -181,7 +190,7 @@ pub(crate) fn qualify_filter_slam_v1(
         "schema": "riotbox.w30_filter_slam_qualification_case.v1",
         "mechanism": "w30_filter_slam_v1",
         "exact_product_tempo_bpm": bpm,
-        "committed_start_beat": START_BEAT,
+        "committed_start_beat": start_beat,
         "isolated_contributors": ["w30_preview"],
         "control": limiter_metrics(&control),
         "candidate": limiter_metrics(&candidate),

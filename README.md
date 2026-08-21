@@ -168,7 +168,7 @@ source character unless the performer deliberately asks for destruction.
 | **Reverse** | Pulls a hit or source fragment backward | To create suction into a transition or a surprising hook variation |
 | **Retrigger / Stutter** | Repeats a short fragment rhythmically | To build tension, make fills, or introduce controlled chaos |
 | **Pitch Dive** | Pulls pitch and energy downward | For a destructive exit, breakdown, or transition |
-| **Filter Slam** | Narrows or opens the spectrum quickly | To create a strong contrast between a build and its return |
+| **Filter Slam** | Closes gradually, deepens, holds dark, then returns open | For a long build-and-return contrast rather than a quick accent |
 | **Damage / Bitcrush** | Makes source material rougher, grainier, and more aggressive | As a short punk accent or damaged payoff rather than a permanent wash |
 | **Dropout And Restore** | Removes musical roles and brings them back in a changed state | For large arrangement contrasts and a stronger re-entry |
 | **Pressure Lift** | Raises drum, bass, or hook pressure selectively | During a build, according to the kind of energy the source can support |
@@ -208,8 +208,10 @@ Today’s build already lets you:
 - drive early lane behavior for:
   - **TR-909**: fill, reinforce, slam, takeover, release, scene-lock
   - **MC-202**: role, follower, answer, pressure, instigator, phrase mutation, touch
-  - **W-30**: trigger, live recall, audition, bank swap, browse, damage, Hook Turnaround, Pitch Dive, freeze, resample
+  - **W-30**: trigger, live recall, audition, bank swap, browse, damage, Hook Turnaround, Pitch Dive, Filter Slam, freeze, resample
 - capture, promote, pin, and reuse material in the W-30 flow
+- return to ordinary W-30 playback with an explicit hit, recall, audition, or
+  damage action after a completed timed articulation
 - perform a scene jump and restore with `y` / `Y`
 - see pending, committed, rejected, and undone actions clearly
 

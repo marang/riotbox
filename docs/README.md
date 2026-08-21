@@ -132,6 +132,22 @@ duration needed for the movement to register. RBX-304 freezes the exact heard
 mechanism before any source-blind product rebuild. It is not yet a product
 action, source-general qualification, or release claim.
 
+`RIOTBOX-1446` rebuilt that unchanged eight-beat Filter Slam as the explicit
+`w30.filter_slam` performer action through queue/commit, typed Session/replay,
+observer/UI, and exact RuntimeMix. Its four-source Development matrix and one
+representative formal product review passed without Holdout or commercial
+references. This is a bounded product gesture, not automatic arrangement or a
+universal source-quality claim.
+
+`RIOTBOX-1447` then found and fixed a shared W-30 transition defect rather than
+adding another effect: a completed destructive Pitch Dive could leave ordinary
+pad playback trapped behind persisted terminal silence. Explicit ordinary hit,
+recall, audition, and damage intents now supersede a prior timed articulation
+identically in live Session state and replay. One exact Development journey
+passed technical state/output/replay gates and the musician accepted the clean
+re-entry. Musical combinations and preferred gesture ordering were explicitly
+not assessed and remain future work only when a concrete use case warrants it.
+
 ## Documentation Rules
 
 - Stable core contracts live in `docs/`.
