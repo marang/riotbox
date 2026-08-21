@@ -907,11 +907,15 @@ fn require_registry_match(
 fn decode_signed_pcm(bytes: &[u8], bits_per_sample: u16) -> Vec<f32> {
     match bits_per_sample {
         16 => bytes
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|sample| f32::from(i16::from_le_bytes([sample[0], sample[1]])) / 32_768.0)
             .collect(),
         24 => bytes
-            .chunks_exact(3)
+            .as_chunks::<3>()
+            .0
+            .iter()
             .map(|sample| {
                 let unsigned = i32::from(sample[0])
                     | (i32::from(sample[1]) << 8)

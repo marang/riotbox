@@ -170,7 +170,7 @@ pub(super) fn source_response_identity_from_summary(
         }
         quantized_summary[index] = quantized as u8;
     }
-    for (controller_index, pair) in raw_summary.chunks_exact(2).enumerate() {
+    for (controller_index, pair) in raw_summary.as_chunks::<2>().0.iter().enumerate() {
         if pair[0] > pair[1] {
             return Err(IdentityInputError::SourceResponseMeanExceedsMaximum {
                 controller: SOURCE_RESPONSE_CONTROLLER_LABELS[controller_index],

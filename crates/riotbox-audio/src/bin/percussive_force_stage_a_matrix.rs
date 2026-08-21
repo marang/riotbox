@@ -585,11 +585,15 @@ fn decode_pcm_wave(bytes: &[u8]) -> Result<DecodedWave, Box<dyn std::error::Erro
         return Err("source PCM alignment changed".into());
     }
     let samples = if bits == 16 {
-        data.chunks_exact(2)
+        data.as_chunks::<2>()
+            .0
+            .iter()
             .map(|chunk| i16::from_le_bytes([chunk[0], chunk[1]]) as f32 / 32768.0)
             .collect()
     } else {
-        data.chunks_exact(3)
+        data.as_chunks::<3>()
+            .0
+            .iter()
             .map(|chunk| {
                 let unsigned =
                     i32::from(chunk[0]) | (i32::from(chunk[1]) << 8) | (i32::from(chunk[2]) << 16);

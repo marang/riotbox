@@ -89,7 +89,13 @@ fn w30_filter_slam_changes_only_the_frozen_window_and_returns_sample_exactly() {
     );
     assert!(candidate.iter().all(|sample| sample.is_finite()));
     assert!(candidate.iter().all(|sample| sample.abs() <= 1.0));
-    assert!(candidate.chunks_exact(CHANNEL_COUNT).all(|frame| frame[0] == frame[1]));
+    assert!(
+        candidate
+            .as_chunks::<CHANNEL_COUNT>()
+            .0
+            .iter()
+            .all(|frame| frame[0] == frame[1])
+    );
 }
 
 #[test]
@@ -125,7 +131,9 @@ fn w30_filter_slam_processes_every_configured_output_channel() {
     );
 
     assert!(candidate
-        .chunks_exact(CHANNEL_COUNT)
+        .as_chunks::<CHANNEL_COUNT>()
+        .0
+        .iter()
         .all(|frame| frame.iter().all(|sample| *sample == frame[0])));
     assert!(region_delta_rms(&candidate, &control) > 0.001);
 }

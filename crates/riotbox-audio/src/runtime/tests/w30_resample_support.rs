@@ -920,7 +920,7 @@ fn w30_resample_tap_is_deterministic_and_follows_source_material() {
     let repeated = render(&source);
     let contrasting = render(&inverted);
     let mut raw_source = [0.0_f32; 1_024];
-    for (frame, stereo) in raw_source.chunks_exact_mut(2).enumerate() {
+    for (frame, stereo) in raw_source.as_chunks_mut::<2>().0.iter_mut().enumerate() {
         stereo.fill(source.source_audio.samples[frame]);
     }
     let dry_delta_rms = (first
