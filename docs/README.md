@@ -171,6 +171,16 @@ survives, the decision is persisted and shown as degraded silence; restore and
 replay cannot turn a historical mismatch into audible output. This changes no
 MC-202 synthesis algorithm and is not a musical-quality pass.
 
+`RIOTBOX-1451` then found a genuinely useful single-source MC-202 bass-pressure
+pedal in bounded Development exploration: the musician clearly heard and kept
+the added low-end owner. Its unchanged frozen v1 product rebuild nevertheless
+failed the first transfer case because a different source-derived anchor layout
+made the lane active for `48.92%` of frames and forced limiter intervention.
+Qualification stopped before later sources or formal playback. The unqualified
+product behavior was removed and no v2 tuning was admitted; the result is
+durable positive discovery plus negative transfer evidence, not shipped MC-202
+bass pressure or P023 completion.
+
 ## Documentation Rules
 
 - Stable core contracts live in `docs/`.

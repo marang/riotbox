@@ -1,0 +1,155 @@
+{
+  "schema": "riotbox.mc202_sub_pressure_shove_product_qualification.v1",
+  "ticket": "RIOTBOX-1451",
+  "decision": "RBX-310",
+  "partition": "development",
+  "mechanism_contract": {
+    "path": "docs/benchmarks/mc202_sub_pressure_shove_development_v1.json",
+    "sha256": "4a0a06f70fc8f5170b8c671878342fd3a1779831a804fd8182aa8e36e32efd36",
+    "mechanism": "mc202_sub_pressure_shove_v1",
+    "mutable_after_source_access": false
+  },
+  "source_registry": {
+    "path": "docs/benchmarks/source_holdout_rotation_v3.json",
+    "schema": "riotbox.source_holdout_rotation.v3",
+    "sha256": "9e5e03ad64319061a4baaa6cee7c40fc5e993171b0d11003ec29767f273bc502"
+  },
+  "product_path": {
+    "action": "mc202.generate_pressure",
+    "quantization": "next_phrase",
+    "required_role": "pressure",
+    "required_candidate_family": "sub_pressure_shove",
+    "required_session_profile": "sub_pressure_shove_v1",
+    "audible_path": "queue_commit_session_projection_exact_runtime_mix_music_bus_bass",
+    "control_contributors": ["w30_preview", "tr909"],
+    "candidate_contributors": ["w30_preview", "tr909", "mc202"],
+    "isolated_causal_contributor": "mc202"
+  },
+  "source_set": [
+    {
+      "case_id": "freesound_cyclez_493560",
+      "family": "sparse_drums",
+      "path": "data/test_audio/external/RIOTBOX-1430/freesound/sparse_freesound_cyclez_493560.wav",
+      "sha256": "4c17679b77bc78376282c5db118ef2fa9f87a5c669cf0cc284b91a38ad3fb485"
+    },
+    {
+      "case_id": "oga_cinameng_can_be_so_beautiful",
+      "family": "dense_break",
+      "path": "data/test_audio/external/RIOTBOX-1423/wav/dense_oga_cinameng_can_be_so_beautiful.wav",
+      "sha256": "bf5fa8c5bc15e39d79cb51a08a54ccc4d663ab4996149b29153bd0e1febebd6f"
+    },
+    {
+      "case_id": "oga_frosty_ham_osdrums",
+      "family": "electronic_drums",
+      "path": "data/test_audio/external/RIOTBOX-1423/wav/sparse_oga_frosty_ham_osdrums.wav",
+      "sha256": "7e412dd16e701d1f2b3a8c0d66fbb24ec0164691e6761a93eca8b4bb60d32bb2"
+    },
+    {
+      "case_id": "freesound_djericmark_724939",
+      "family": "dense_break",
+      "path": "data/test_audio/external/RIOTBOX-1430/freesound/dense_freesound_djericmark_724939.wav",
+      "sha256": "73c8aa5257d46ce3efdf07f5d60da994da15999237be9a30d005104634e57624"
+    },
+    {
+      "case_id": "freesound_justabeat_458897",
+      "family": "electronic_drums",
+      "path": "data/test_audio/external/RIOTBOX-1430/freesound/electronic_freesound_justabeat_458897.wav",
+      "sha256": "2a020f15967e27d2f2d35e32384caf7c948de83ba904b1d1a9aa89aee175594d"
+    }
+  ],
+  "access": {
+    "fresh_access_log_required_before_first_file_read": true,
+    "maximum_unique_development_files": 5,
+    "exact_registry_paths_and_hashes_only": true,
+    "directory_discovery_allowed": false,
+    "holdout_audio_allowed": false,
+    "commercial_reference_audio_allowed": false,
+    "source_replacement_allowed": false
+  },
+  "timing_admission": {
+    "detector": "unchanged_product_source_timing_probe_primary_hypothesis",
+    "minimum_bpm": 20.0,
+    "maximum_bpm": 400.0,
+    "manual_retuning_from_qualification_results": false,
+    "missing_primary_hypothesis": "fail_closed"
+  },
+  "per_case_outcomes": {
+    "allowed": [
+      "audible_sub_pressure_shove_v1",
+      "typed_source_refusal"
+    ],
+    "audible_requirements": {
+      "committed_role": "pressure",
+      "candidate_family": "sub_pressure_shove",
+      "session_profile": "sub_pressure_shove_v1",
+      "routing": "music_bus_bass",
+      "minimum_isolated_mc202_rms_exclusive": 0.005,
+      "minimum_isolated_mc202_active_frame_ratio_exclusive": 0.1,
+      "minimum_a_b_delta_rms_exclusive": 0.005,
+      "a_b_delta_must_match_isolated_mc202_stem": true,
+      "minimum_low_band_delta_share_35_160_hz": 0.55
+    },
+    "refusal_requirements": {
+      "candidate_family": "fallback_control",
+      "fallback_reason_required": true,
+      "routing": "silent",
+      "active_output_samples": 0
+    }
+  },
+  "matrix_acceptance": {
+    "all_five_cases_must_reach_one_allowed_outcome": true,
+    "minimum_audible_case_count": 2,
+    "minimum_audible_source_family_count": 2,
+    "wrong_role_or_family_allowed": false,
+    "failure_policy": "stop_fail_closed_without_retuning_or_replacement"
+  },
+  "technical_gates": {
+    "source_sha256_exact_before_and_after_render": true,
+    "frozen_mechanism_constants_exact": true,
+    "callback_partitions_sample_exact": [128, 257],
+    "pre_limiter_clip_count": 0,
+    "limited_sample_count": 0,
+    "post_limiter_clip_count": 0,
+    "w30_tr909_source_monitor_and_music_bus_controls_unchanged_between_a_and_b": true,
+    "missing_or_untrusted_source_active_samples": 0,
+    "session_json_round_trip_and_replay_equivalence": true,
+    "historical_unversioned_pressure_render_unchanged": true
+  },
+  "human_review": {
+    "count": 1,
+    "only_after_complete_technical_matrix": true,
+    "representative_selection": "first_audible_case_in_frozen_priority_order",
+    "priority_order": [
+      "freesound_cyclez_493560",
+      "oga_frosty_ham_osdrums",
+      "freesound_djericmark_724939",
+      "freesound_justabeat_458897",
+      "oga_cinameng_can_be_so_beautiful"
+    ],
+    "order": [
+      "bounded_source_context",
+      "one_second_silence",
+      "A_exact_product_control_without_mc202",
+      "one_second_silence",
+      "B_exact_product_candidate_with_mc202_sub_pressure_shove_v1"
+    ],
+    "questions": [
+      "is_the_added_mc202_bass_pressure_clearly_audible",
+      "does_it_add_musically_useful_low_end_weight",
+      "does_the_source_groove_and_transformed_identity_survive",
+      "is_the_pressure_phrase_worth_triggering_live"
+    ]
+  },
+  "claims_excluded": [
+    "percussive_hard",
+    "universal_source_quality",
+    "automatic_composition",
+    "complete_golden_path",
+    "holdout",
+    "demo_or_release_readiness"
+  ],
+  "stopping_rule": {
+    "qualification_may_reject_but_may_not_tune_v1": true,
+    "required_mechanism_change": "new_version_and_decision_log_entry"
+  }
+}
