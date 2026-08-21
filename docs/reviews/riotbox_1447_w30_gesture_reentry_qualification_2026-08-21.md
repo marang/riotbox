@@ -114,4 +114,14 @@ path. It does not add or reapprove an effect, rank the three effects, endorse
 their tested order as an arrangement, authorize automatic selection or
 stacking, or claim source-general, Holdout, demo, release, or percussive-hard
 readiness. A future combination review requires a concrete musical use case and
-a new bounded artifact rather than inheriting this transition verdict.
+a new bounded artifact assignment, fresh readiness, and a new verdict rather
+than inheriting this transition verdict.
+
+## Subsequent Combination Review
+
+RIOTBOX-1448 later assigned the unchanged exact journey to a new bounded
+musical-review purpose with fresh preflight, readiness, playback, and a new
+structured verdict. That separate review keeps the fixed sequence as coherent
+and harmonically compatible while preserving the no-ranking, no-automatic-
+ordering, and no-stacking boundaries. See
+`docs/reviews/riotbox_1448_w30_gesture_sequence_musical_review_2026-08-21.md`.

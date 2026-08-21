@@ -148,6 +148,14 @@ passed technical state/output/replay gates and the musician accepted the clean
 re-entry. Musical combinations and preferred gesture ordering were explicitly
 not assessed and remain future work only when a concrete use case warrants it.
 
+`RIOTBOX-1448` subsequently reviewed that exact fixed sequence for the concrete
+purpose of a complete performer arc. The musician kept the sequence as
+harmonically coherent and well executed, found all three gestures effective in
+different roles without a meaningful ranking, and confirmed that source and
+hook remained clear. This closes only the reviewed sequence; automatic order,
+simultaneous stacking, source-general, Holdout, demo, and release claims remain
+excluded.
+
 ## Documentation Rules
 
 - Stable core contracts live in `docs/`.

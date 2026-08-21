@@ -510,8 +510,13 @@ After exit:
   supersedes a completed timed articulation in live Session state, RuntimeMix,
   and replay. The bounded Development journey passes clean re-entry after Hook
   Turnaround, Pitch Dive, and Filter Slam. This is transition-integrity proof;
-  musical gesture combinations and preferred ordering remain unverified and
-  are not a P023 completion claim.
+  at the RIOTBOX-1447 boundary, musical gesture combinations and preferred
+  ordering remained unverified and were not a P023 completion claim.
+- RIOTBOX-1448 separately keeps that exact fixed gesture sequence as a coherent
+  and harmonically compatible performer arc. The gestures remain co-equal in
+  distinct roles and the source/hook stays clear. This closes only the reviewed
+  sequence, not automatic ordering, simultaneous stacking, source-general,
+  Holdout, demo, release, or overall P023 completion.
 - RIOTBOX-1423 established the broader legal CC0 corpus contract: its general
   candidate matrix covers at least five eligible development sources across
   four typed families and protects two disjoint fresh holdout sets. That broad
