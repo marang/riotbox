@@ -1584,4 +1584,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Qualify the kept W-30 gesture vocabulary in the live Golden Path
 - [RIOTBOX-1448.md](./RIOTBOX-1448.md)
   P023: Evaluate the W-30 gesture sequence as one musical journey
+- [RIOTBOX-1449.md](./RIOTBOX-1449.md)
+  P023: Discover a source-backed MC-202 answer role
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
