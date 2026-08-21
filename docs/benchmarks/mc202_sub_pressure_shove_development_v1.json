@@ -1,0 +1,102 @@
+{
+  "schema": "riotbox.mc202_sub_pressure_shove_development.v1",
+  "ticket": "RIOTBOX-1451",
+  "decision": "RBX-309",
+  "work_class": "development_exploration_keep",
+  "partition": "development",
+  "mechanism": {
+    "id": "mc202_sub_pressure_shove_v1",
+    "claimed_role": "source_derived_phrase_carrying_bass_low_end_pressure_pedal",
+    "excluded_claims": [
+      "percussive_hard",
+      "universal_source_quality",
+      "complete_golden_path",
+      "holdout",
+      "demo_or_release_readiness"
+    ],
+    "performer_action": "mc202.generate_pressure",
+    "quantization": "next_phrase",
+    "required_role": "pressure",
+    "required_candidate_family": "sub_pressure_shove",
+    "session_profile": "sub_pressure_shove_v1",
+    "render_order": "source_derived_mc202_plan_through_existing_runtime_mix_music_bus_bass_before_shared_limiter",
+    "anchor_continuity": {
+      "maximum_backward_scan_sixteenths": 15,
+      "hold_end": "next_active_source_derived_anchor_in_the_sixteen_step_cycle",
+      "maximum_hold_steps": 15,
+      "non_destructive_gate_minimum": "hold_steps + 0.96_sixteenth",
+      "destructive_anchor_gate": "unchanged_existing_pressure_gate",
+      "destructive_omission_and_two_bar_turnaround": "unchanged"
+    },
+    "density_normalization": {
+      "active_fraction": "popcount(active_mask) / 16",
+      "gain_multiplier": "sqrt(clamp(active_fraction, 0, 1))",
+      "applies_to": "all_sub_pressure_shove_v1_anchors_including_destructive_anchors"
+    },
+    "unchanged_dimensions": {
+      "source_analysis_and_candidate_selection": "unchanged",
+      "rhythm_cells_and_semitones": "source_derived_and_unchanged",
+      "pressure_sound_design": "unchanged",
+      "pitch_punch_and_destructive_dive": "unchanged",
+      "touch_and_music_bus_level": "unchanged",
+      "w30_tr909_source_monitor_and_master_limiter": "unchanged"
+    },
+    "historical_session_behavior": "missing_session_profile_preserves_legacy_pressure_render",
+    "missing_or_incompatible_source_behavior": "observable_degraded_silence_without_fallback_audio"
+  },
+  "exploration_keep": {
+    "case_id": "freesound_cyclez_493560",
+    "source_path": "data/test_audio/external/RIOTBOX-1430/freesound/sparse_freesound_cyclez_493560.wav",
+    "source_sha256": "4c17679b77bc78376282c5db118ef2fa9f87a5c669cf0cc284b91a38ad3fb485",
+    "confirmed_bpm": 150.0,
+    "access_log_sha256": "79b973eefb65ca05f58cfba90792a1915c68e3153ef67956a54a80ee0d2b84d6",
+    "control_a_sha256": "c52af84397f3685e5f06565f197245d06db118579ea52c629405e41bc3e3b4dd",
+    "candidate_b_sha256": "7177ad49b69058fce3854460b47d5377fbfa2af6066f4db74a0a02a5c7c60f78",
+    "review_artifact_sha256": "90c0903ef134e4d9f207b07323ca53d6ef21f3f9120c744934280f251c9569fc",
+    "component_duration_seconds": 6.4,
+    "sample_rate_hz": 48000,
+    "channels": 2,
+    "sample_format": "pcm_s16le",
+    "control_lufs": -20.6,
+    "candidate_lufs": -15.0,
+    "control_true_peak_dbfs": -4.9,
+    "candidate_true_peak_dbfs": -0.7,
+    "candidate_clip_count": 0,
+    "a_b_waveform_correlation": 0.39581,
+    "a_b_delta_rms": 0.17784,
+    "a_b_delta_active_frame_ratio": 0.3018,
+    "mc202_stem_rms": 0.17783834,
+    "mc202_stem_peak": 0.68861514,
+    "delta_matches_mc202_stem": true,
+    "human_result": "provisional_keep",
+    "human_meaning": "both source_driven_transformations_are_musically_successful_and_the_added_gentle_mc202_bass_pressure_in_b_is_clearly_audible_and_valuable",
+    "qualification_evidence": false
+  },
+  "variant_evidence_boundary": {
+    "rendered_variant_count": 2,
+    "first_variant_result": "technically_rejected_before_playback_due_to_limiter_activity",
+    "second_variant_result": "provisional_keep",
+    "unused_variant_budget": 1,
+    "stopping_reason": "second_variant_earned_explicit_keep"
+  },
+  "access": {
+    "directory_discovery_allowed": false,
+    "holdout_audio_allowed": false,
+    "commercial_reference_audio_allowed": false,
+    "maximum_unique_development_files": 1,
+    "exact_registered_paths_only": true
+  },
+  "promotion_boundary": {
+    "exploration_code_is_product_evidence": false,
+    "source_blind_versioned_session_rebuild_required": true,
+    "queue_commit_session_replay_observer_and_runtime_mix_required": true,
+    "fresh_source_diverse_development_qualification_required": true,
+    "formal_human_review_required": true,
+    "holdout_authorized": false
+  },
+  "stopping_rule": {
+    "no_mapping_constant_topology_or_threshold_changes_in_v1": true,
+    "qualification_may_reject_but_may_not_tune_v1": true,
+    "required_change": "new_version_and_decision_log_entry"
+  }
+}

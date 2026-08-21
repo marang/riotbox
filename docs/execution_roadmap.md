@@ -308,7 +308,9 @@ Linear project / phase map:
     on 2026-07-21; `RIOTBOX-1439` now owns the accepted delivery-order
     correction, `RIOTBOX-1417` proved its fail-closed Development stop on three
     rejected MC-202 instigator variants, `RIOTBOX-1450` closes the MC-202
-    explicit-intent mismatch with persisted degraded silence, and
+    explicit-intent mismatch with persisted degraded silence, `RIOTBOX-1451`
+    keeps one exact MC-202 bass-pressure exploration but rejects its product
+    transfer at the first frozen limiter gate without admitting v2 tuning, and
     `RIOTBOX-1399` remains subordinate measured workflow optimization
 
 This is a project / phase overview, not a ticket list. Keep P012, P013, P014,
@@ -1565,6 +1567,18 @@ W-30/TR-909 material in its intended bass and low-mid bands. The temporary
 Development selector is removed, no product behavior is promoted, and scalar
 tuning is prohibited. RIOTBOX-1450 owns only the separate explicit-intent
 fail-closed correction before another audible MC-202 topology is attempted.
+
+RIOTBOX-1451 subsequently found the missing owner on one exact registered
+Development source: the source-derived multi-beat MC-202 pedal was clearly
+audible, musically useful, source-preserving, and worth keeping in the bounded
+exploration. The unchanged frozen v1 rebuild did not transfer safely to the
+product timing path. Its first qualification plan extended effective held
+coverage enough to produce `42` pre-limiter clips and `552` limiter
+interventions, so the matrix stopped before later sources or formal review.
+The unqualified profile and qualification-only behavior are removed. This
+preserves the discovery direction but adds no product, source-general, Holdout,
+hardness, demo, release, or P023 completion evidence; any successor must be a
+new Linear-first slice with a materially different mix/ownership mechanism.
 
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a

@@ -529,6 +529,13 @@ After exit:
   candidate commits visible degraded silence, and persisted mismatch evidence
   remains silent through restore/replay. This is a contract enabler, not a
   musical or P023 completion pass.
+- RIOTBOX-1451 provisionally keeps one exact source-derived MC-202
+  bass-pressure pedal in Development, but its unchanged v1 product rebuild
+  fails the first frozen transfer case through limiter activity. The matrix
+  stops before later sources and formal listening, the unqualified product
+  behavior is removed, and no v2 retry is admitted in the ticket. This is
+  useful discovery and negative transfer evidence, not an MC-202 product pass
+  or P023 completion evidence.
 - RIOTBOX-1423 established the broader legal CC0 corpus contract: its general
   candidate matrix covers at least five eligible development sources across
   four typed families and protects two disjoint fresh holdout sets. That broad
