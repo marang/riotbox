@@ -186,7 +186,9 @@ fn manual_phrase_grid(bars: &[BarSpan], seconds_per_bar: f32) -> Vec<PhraseSpan>
         .copied()
         .collect::<Vec<_>>();
     full_bars
-        .chunks_exact(DEFAULT_BARS_PER_PHRASE as usize)
+        .as_chunks::<{ DEFAULT_BARS_PER_PHRASE as usize }>()
+        .0
+        .iter()
         .enumerate()
         .map(|(index, chunk)| PhraseSpan {
             phrase_index: u32::try_from(index + 1).unwrap_or(u32::MAX),
