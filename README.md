@@ -197,6 +197,12 @@ gestures with positive bounded product reviews. Other families range from
 playable early behavior to planned musical depth and broader source
 qualification.
 
+A bounded source-first review also kept the deliberate sequence Hook
+Turnaround, ordinary re-entry, Pitch Dive, ordinary re-entry, Filter Slam,
+ordinary re-entry as a coherent and harmonically compatible performance arc.
+The three gestures remain distinct, co-equal performer choices; this result is
+not an automatic ordering or arbitrary stacking policy.
+
 ## What You Can Do Today
 
 Today’s build already lets you:
