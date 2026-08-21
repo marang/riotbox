@@ -1588,4 +1588,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Discover a source-backed MC-202 answer role
 - [RIOTBOX-1450.md](./RIOTBOX-1450.md)
   P023: Fail closed on mismatched MC-202 performer intent
+- [RIOTBOX-1451.md](./RIOTBOX-1451.md)
+  P023: Discover one phrase-carrying MC-202 sub-pressure shove
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
