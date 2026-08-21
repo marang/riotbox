@@ -86,6 +86,26 @@ reason. The durable interpretation is therefore:
 - `combined_gesture_musical_verdict: unverified`
 - `automatic_or_preferred_ordering_claim: false`
 
+After CI completion, a focused non-combination confirmation presented the
+unchanged normal control, one second of silence, the unchanged Pitch Dive
+candidate, one second of silence, and the unchanged ordinary re-entry four
+times. Their SHA-256 values were respectively
+`7140c8f24e383dc6a7cb75bc6183e03727ef8b5f068b28e9d08ead8371a5ebab`,
+`40ecd9ed895138c21954fb7164743c0b7c8bf97af3cdc4ec1c37dc689fa079bd`,
+and `1d7056a220f3c0c2194f2fdb6ef9b4d3dd4d0f852a97f2045e9a5285355a0f9a`.
+Playback reached the announced endpoint and left no player active. The musician
+confirmed that the normal beat returned after Pitch Dive and noted that its
+onset sounded slightly different. Exact follow-up analysis found the first 100
+milliseconds waveform-correlated at `1.000` with the matching normal chop step,
+but with a stronger explicit-retrigger attack (`0.245` versus `0.160` RMS over
+the first 20 milliseconds). From 100 to 900 milliseconds the correlation was
+`0.996`. The Hook Turnaround, Pitch Dive, and Filter Slam re-entry files were
+byte-identical to one another. The audible difference was therefore the normal
+performer-trigger attack, not residual Pitch Dive processing. This confirmation
+strengthens only the ordinary-re-entry verdict; it does not assess a gesture
+combination or claim that a fresh trigger is identical to an already-running
+chop step.
+
 ## Claim Boundary
 
 RIOTBOX-1447 qualifies explicit ordinary W-30 recovery after a timed gesture
