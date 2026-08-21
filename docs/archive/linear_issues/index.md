@@ -1582,4 +1582,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Integrate and qualify the frozen W-30 Filter Slam
 - [RIOTBOX-1447.md](./RIOTBOX-1447.md)
   P023: Qualify the kept W-30 gesture vocabulary in the live Golden Path
+- [RIOTBOX-1448.md](./RIOTBOX-1448.md)
+  P023: Evaluate the W-30 gesture sequence as one musical journey
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
