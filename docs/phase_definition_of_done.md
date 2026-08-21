@@ -517,6 +517,13 @@ After exit:
   distinct roles and the source/hook stays clear. This closes only the reviewed
   sequence, not automatic ordering, simultaneous stacking, source-general,
   Holdout, demo, release, or overall P023 completion.
+- RIOTBOX-1449 tested a source-derived MC-202 sparse offbeat answer after its
+  requested pressure family failed the source-evidence gate. The controlled
+  RuntimeMix diagnostic passed, but the musician heard no A/B distinction in
+  the complete mix. The answer was confined to about 2.4% of frames and masked
+  in its intended low-frequency owner bands, so it receives no provisional
+  keep and adds no P023 completion evidence. RIOTBOX-1450 separately owns the
+  discovered explicit-intent role-integrity defect.
 - RIOTBOX-1423 established the broader legal CC0 corpus contract: its general
   candidate matrix covers at least five eligible development sources across
   four typed families and protects two disjoint fresh holdout sets. That broad

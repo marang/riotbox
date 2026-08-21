@@ -1555,6 +1555,16 @@ combination question for the reviewed sequence only; it does not establish an
 automatic or universal order, simultaneous stacking, broader source coverage,
 Holdout, demo, or release readiness.
 
+RIOTBOX-1449 then tested a materially different MC-202 owner rather than
+reopening RIOTBOX-1417's instigator mechanisms. One registered electronic-drum
+source selects a valid `sparse_offbeat_answer` and passes the controlled exact
+RuntimeMix diagnostic, but the full-mix A/B remains perceptually unchanged.
+The answer occupies only about 2.4% of frames and is masked below the existing
+W-30/TR-909 material in its intended bass and low-mid bands. The temporary
+Development selector is removed, no product behavior is promoted, and scalar
+tuning is prohibited. RIOTBOX-1450 owns only the separate explicit-intent
+fail-closed correction before another audible MC-202 topology is attempted.
+
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a
 quality guardrail, not a replacement for the current sound-product priority:
