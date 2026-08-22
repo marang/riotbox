@@ -1580,6 +1580,19 @@ preserves the discovery direction but adds no product, source-general, Holdout,
 hardness, demo, release, or P023 completion evidence; any successor must be a
 new Linear-first slice with a materially different mix/ownership mechanism.
 
+RIOTBOX-1452 tested that required mix/ownership change through three bounded
+Development variants without scaling the MC-202 voice. Two low-band handoffs
+failed the technical gate through limiter intervention. A transient-protected
+center-bus sustain handoff eliminated clipping and limiter activity and became
+clearly audible, but the musician rejected the complete B mix as over-layered
+because too many effects operated simultaneously. The temporary seam is
+removed at the three-variant limit. The MC-202 voice remains a useful direction,
+but the tested handoffs add no product or P023 completion evidence. One new
+Linear-first successor may test a restrained ownership change that preserves
+W-30/TR-909 attacks and hook without persistent bus processing or effect
+stacking; otherwise MC-202 pressure stays out while foundation gaps take
+priority.
+
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a
 quality guardrail, not a replacement for the current sound-product priority:

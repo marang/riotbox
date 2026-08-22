@@ -181,6 +181,15 @@ product behavior was removed and no v2 tuning was admitted; the result is
 durable positive discovery plus negative transfer evidence, not shipped MC-202
 bass pressure or P023 completion.
 
+`RIOTBOX-1452` then tested three materially different non-additive handoffs for
+that MC-202 voice. Two retained limiter intervention; the third preserved
+support attacks and stereo sides with zero clipping or limiter activity and was
+clearly audible. The musician nevertheless rejected the complete B mix because
+the broad center-bus processing made too many effects operate at once. The
+temporary behavior is removed at the exploration limit. This narrows the next
+attempt to one restrained ownership change and adds no product, source-general,
+Holdout, hardness, demo, release, or P023 completion evidence.
+
 ## Documentation Rules
 
 - Stable core contracts live in `docs/`.
