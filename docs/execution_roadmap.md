@@ -1593,6 +1593,17 @@ W-30/TR-909 attacks and hook without persistent bus processing or effect
 stacking; otherwise MC-202 pressure stays out while foundation gaps take
 priority.
 
+RIOTBOX-1453 exercised that one restrained successor through phrase-level
+turn-taking: no support bus or stem level changed, and the exact previously
+kept MC-202 voice entered only after one ordinary W-30/TR-909 phrase. The
+artifact passed source access, assignment, clipping, and stop/silence gates,
+but the listener immediately recognized it as the same periodic addition
+already assessed under RIOTBOX-1451. Entry timing alone did not create a new
+musical question, so no verdict transfers, no second variant runs, and the
+temporary seam is removed. MC-202 pressure is `stay-out` for the current
+complete gesture journey; the next active priority is a bounded Foundation
+Completion inventory and closure slice.
+
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a
 quality guardrail, not a replacement for the current sound-product priority:

@@ -190,6 +190,14 @@ temporary behavior is removed at the exploration limit. This narrows the next
 attempt to one restrained ownership change and adds no product, source-general,
 Holdout, hardness, demo, release, or P023 completion evidence.
 
+`RIOTBOX-1453` applies that restrained check without new DSP: the unchanged
+RIOTBOX-1451 MC-202 voice enters only after one ordinary W-30/TR-909 phrase.
+Although technically safe and exactly assigned, the listener recognizes it as
+the same periodic addition already reviewed, with only a later entry point.
+No new verdict or second variant follows; the temporary seam is removed and
+MC-202 pressure stays out of the current combined gesture journey while the
+remaining Foundation Completion gaps take priority.
+
 ## Documentation Rules
 
 - Stable core contracts live in `docs/`.

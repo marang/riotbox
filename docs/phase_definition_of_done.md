@@ -543,6 +543,12 @@ After exit:
   at the three-variant limit. A new restrained successor may change one bounded
   ownership relationship; continued tuning, simultaneous effect stacking, and
   any product or P023 completion claim remain prohibited.
+- RIOTBOX-1453 then tests the restrained temporal alternative without changing
+  DSP, bus balance, or stem levels. Its technically valid phrase-late entry is
+  immediately recognized as the same previously reviewed periodic MC-202
+  addition, so it receives no new musical verdict and no second variant. The
+  temporary behavior is removed and MC-202 pressure remains `stay-out` for the
+  current combined gesture journey while Foundation Completion takes priority.
 - RIOTBOX-1423 established the broader legal CC0 corpus contract: its general
   candidate matrix covers at least five eligible development sources across
   four typed families and protects two disjoint fresh holdout sets. That broad

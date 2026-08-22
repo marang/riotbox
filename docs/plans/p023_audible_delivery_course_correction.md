@@ -4,7 +4,7 @@ Status: accepted operating plan
 Linear: RIOTBOX-1439
 Direct audible follow-ups: RIOTBOX-1417, RIOTBOX-1440, RIOTBOX-1442,
 RIOTBOX-1443, RIOTBOX-1444, RIOTBOX-1445, RIOTBOX-1446, RIOTBOX-1447,
-RIOTBOX-1449, RIOTBOX-1451, RIOTBOX-1452
+RIOTBOX-1449, RIOTBOX-1451, RIOTBOX-1452, RIOTBOX-1453
 
 ## Purpose
 
@@ -169,3 +169,12 @@ over-layered because too many effects operated simultaneously. The temporary
 exploration seam is removed. A successor may test one restrained, bounded
 ownership change in a new Linear-first slice; it must not continue tuning any
 of the three rejected mechanisms.
+
+RIOTBOX-1453 tested that restrained direction without bus processing or stem
+scaling: the exact RIOTBOX-1451 MC-202 voice remained absent for one ordinary
+phrase and entered unchanged in the next. Technical assignment and safety
+passed, but the listener immediately identified the result as the same
+periodic addition already reviewed; only its four-bar entry point was new. The
+playback therefore grants no new verdict, no second variant is justified, and
+the temporary seam is removed. MC-202 pressure stays out of the current full
+gesture journey while Foundation Completion takes priority.
