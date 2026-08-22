@@ -19,13 +19,10 @@ use crate::{
 /// matrix constrains it: the accepted Beat03 dense break stays inside the neutral band, while
 /// the trusted RushArp tonal source and BeatC sparse drum source clear opposite sides.
 pub const LIVE_PERFORMANCE_CHARACTER_CONTRAST_MARGIN: f32 = 0.10;
+pub const LIVE_PERFORMANCE_POLICY_SCHEMA: &str = "riotbox.live_performance_policy.v2";
 const DENSE_TR909_LEAD_TRANSIENT_THRESHOLD: f32 = 0.72;
 const DEFAULT_TRANSIENT_BACKBEAT: f32 = 0.55;
 const TONAL_W30_MUSIC_LEVEL: f32 = 0.70;
-const TONAL_TR909_DRUM_BASE: f32 = 0.50;
-const TONAL_TR909_DRUM_TRANSIENT_SCALE: f32 = 0.12;
-const TONAL_TR909_SLAM_BASE: f32 = 0.28;
-const TONAL_TR909_SLAM_TRANSIENT_SCALE: f32 = 0.10;
 const SPARSE_W30_MUSIC_LEVEL: f32 = 0.38;
 const SPARSE_TR909_DRUM_BASE: f32 = 0.84;
 const SPARSE_TR909_DRUM_TRANSIENT_SCALE: f32 = 0.15;
@@ -84,6 +81,24 @@ pub enum LivePerformanceMc202Intent {
     Punctuate,
     Instigate,
     StayOut,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum LivePerformanceTr909Intent {
+    Lead,
+    Support,
+    StayOut,
+}
+
+impl LivePerformanceTr909Intent {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Lead => "lead",
+            Self::Support => "support",
+            Self::StayOut => "stay_out",
+        }
+    }
 }
 
 impl LivePerformanceMc202Intent {
@@ -145,6 +160,7 @@ pub struct LivePerformancePolicy {
     pub lead: LivePerformanceLead,
     pub bass_owner: LivePerformanceBassOwner,
     pub mc202_intent: LivePerformanceMc202Intent,
+    pub tr909_intent: LivePerformanceTr909Intent,
     pub w30_music_level: f32,
     /// Trusted current-section transient evidence used to derive TR-909 pressure, when present.
     pub source_transient_backbeat_evidence: Option<f32>,
@@ -251,6 +267,16 @@ pub fn derive_live_performance_policy(
             LivePerformanceDestructiveIntent::PitchDrag
         }
     };
+    let tr909_intent = match (character, lead) {
+        (LivePerformanceCharacter::TonalHook, _) => LivePerformanceTr909Intent::StayOut,
+        (LivePerformanceCharacter::SparsePressure, _) => LivePerformanceTr909Intent::Lead,
+        (LivePerformanceCharacter::DenseBreak, LivePerformanceLead::Tr909Pressure) => {
+            LivePerformanceTr909Intent::Lead
+        }
+        (LivePerformanceCharacter::DenseBreak, LivePerformanceLead::W30Hook) => {
+            LivePerformanceTr909Intent::Support
+        }
+    };
     let mc202_music_level = match mc202_intent {
         LivePerformanceMc202Intent::BassPressure => 0.76 + bass_pressure * 0.16,
         LivePerformanceMc202Intent::Punctuate
@@ -296,14 +322,10 @@ pub fn derive_live_performance_policy(
                 None,
                 None,
             ),
-            // Let the captured tonal phrase lead. A steady anchor remains audible, while the
-            // reduced drum/slam allocation and MC-202 stay-out prevent pitch collision.
-            LivePerformanceCharacter::TonalHook => (
-                TONAL_TR909_DRUM_BASE + transient_backbeat * TONAL_TR909_DRUM_TRANSIENT_SCALE,
-                TONAL_TR909_SLAM_BASE + transient_backbeat * TONAL_TR909_SLAM_TRANSIENT_SCALE,
-                Some(Tr909PatternAdoptionPolicy::SupportPulse),
-                Some(Tr909PhraseVariationPolicy::PhraseAnchor),
-            ),
+            // The source-backed tonal phrase owns the held state. A weak independent pulse did
+            // not add pressure and became incoherently exposed during destructive exits.
+            // Explicit Fill and Scene movement remain performer-owned overrides in projection.
+            LivePerformanceCharacter::TonalHook => (0.0, 0.0, None, None),
             // Sparse drum material receives a harder mainline anchor, but PhraseAnchor avoids
             // turning every held bar into a fill. The MC-202 becomes a quiet punctuation layer,
             // never an undeclared bass owner.
@@ -328,6 +350,7 @@ pub fn derive_live_performance_policy(
         lead,
         bass_owner,
         mc202_intent,
+        tr909_intent,
         // The policy owns the musical balance, while the committed Session mixer remains an
         // explicit headroom ceiling. Ignoring that ceiling made a named preset unable to protect
         // the exact live mixer from source-dependent hot peaks.
@@ -566,6 +589,7 @@ mod tests {
             .expect("section-mismatched dense policy stays explicit");
 
         assert_eq!(policy.mc202_intent, LivePerformanceMc202Intent::StayOut);
+        assert_eq!(policy.tr909_intent, LivePerformanceTr909Intent::Support);
         assert_eq!(policy.bass_owner, LivePerformanceBassOwner::Unassigned);
         assert_eq!(policy.mc202_music_level, 0.0);
         assert_eq!(policy.mc202_touch_floor, 0.0);
@@ -723,16 +747,12 @@ mod tests {
         );
         assert_eq!(policy.lead, LivePerformanceLead::W30Hook);
         assert_eq!(policy.mc202_intent, LivePerformanceMc202Intent::StayOut);
+        assert_eq!(policy.tr909_intent, LivePerformanceTr909Intent::StayOut);
         assert_eq!(policy.bass_owner, LivePerformanceBassOwner::Unassigned);
-        assert_eq!(
-            policy.tr909_pattern_adoption,
-            Some(Tr909PatternAdoptionPolicy::SupportPulse)
-        );
-        assert_eq!(
-            policy.tr909_phrase_variation,
-            Some(Tr909PhraseVariationPolicy::PhraseAnchor)
-        );
-        assert!(policy.tr909_drum_level < 0.70);
+        assert_eq!(policy.tr909_pattern_adoption, None);
+        assert_eq!(policy.tr909_phrase_variation, None);
+        assert_eq!(policy.tr909_drum_level, 0.0);
+        assert_eq!(policy.tr909_slam_floor, 0.0);
         assert_eq!(policy.mc202_music_level, 0.0);
     }
 

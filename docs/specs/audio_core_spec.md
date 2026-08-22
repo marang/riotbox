@@ -246,9 +246,10 @@ Rules:
   offbeat onset density, and hook-restraint evidence; source paths or filenames
   must never control the branch. Missing/untrusted evidence preserves the
   human-passed `dense_break` default
-- `tonal_hook` promotes the source-backed W-30 capture, uses restrained TR-909
-  anchor vocabulary, and may convert a generic fill-pickup MC-202 decision to
-  explicit `stay_out`. `sparse_pressure` assigns drum/transient impact to
+- `tonal_hook` promotes the source-backed W-30 capture and assigns both TR-909
+  and a generic fill-pickup MC-202 decision to explicit `stay_out` for the held
+  state. An explicit committed Fill or Scene movement may still override that
+  default. `sparse_pressure` assigns drum/transient impact to
   TR-909, keeps the W-30 source rhythm audible, and converts that generic pickup
   to bounded punctuation. A trusted explicit bass/answer/stay-out candidate
   retains its own role; character policy must not steal or invent bass ownership

@@ -18,6 +18,7 @@ pub const MIN_MONITOR_DELTA_RMS: f32 = 0.005;
 pub const MIN_ISOLATED_TR909_REGRESSION_RMS: f32 = 0.005;
 pub const MAX_SOURCE_MONITOR_SILENCE_RATIO: f64 = 0.05;
 pub const MAX_EXACT_MIX_LIMITED_SAMPLE_COUNT: usize = 0;
+pub const TONAL_PITCH_DIVE_ACTIVE_BEATS: u32 = 12;
 
 #[derive(Clone)]
 pub struct MonitorProof {
@@ -81,6 +82,23 @@ pub struct PreparedLivePath {
     pub legacy_riotbox_action_id: u64,
     pub normal_plan: RuntimeMixRenderPlan,
     pub damaged_plan: RuntimeMixRenderPlan,
+    pub tonal_journey: Option<Box<TonalJourney>>,
+}
+
+pub struct TonalJourney {
+    pub state: Box<JamAppState>,
+    pub held_plan: Box<RuntimeMixRenderPlan>,
+    pub contrast_plan: Box<RuntimeMixRenderPlan>,
+    pub reentry_plan: Box<RuntimeMixRenderPlan>,
+    pub restart_recall_plan: Box<RuntimeMixRenderPlan>,
+    pub proof: TonalJourneyProof,
+    pub restart_recall_proof: RestartRecallProof,
+}
+
+pub struct TonalJourneyProof {
+    pub contrast_action_id: u64,
+    pub reentry_action_id: u64,
+    pub ordinary_reentry_cleared_articulation: bool,
 }
 
 pub struct CaptureJourneyProof {

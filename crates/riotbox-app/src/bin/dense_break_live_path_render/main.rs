@@ -5,6 +5,8 @@ mod live_flow;
 mod manifest;
 mod model;
 mod rendering;
+mod tonal_journey;
+mod tonal_live_manifest;
 
 use std::{env, fs, path::PathBuf};
 
@@ -18,6 +20,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli_bpm_hint = required_bpm(&args)?;
     let cli_downbeat_seconds = optional_non_negative_f32(&args, "--downbeat-seconds")?;
     let controlled_source_review = args.iter().any(|arg| arg == "--controlled-source-review");
+    let tonal_live_review = args.iter().any(|arg| arg == "--tonal-live-review");
+    if controlled_source_review && tonal_live_review {
+        return Err("choose only one review mode".into());
+    }
     for directory in [
         "stems",
         "monitor",
@@ -25,6 +31,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "gestures/proofs",
         "alpha",
         "controlled",
+        "tonal",
     ] {
         fs::create_dir_all(output_dir.join(directory))?;
     }
@@ -35,10 +42,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         cli_bpm_hint,
         cli_downbeat_seconds,
     )?;
-    let rendered = rendering::render_live_path(&prepared)?;
-    if controlled_source_review {
+    if tonal_live_review {
+        tonal_live_manifest::write_pack(prepared, &source_path, &output_dir)
+    } else if controlled_source_review {
+        let rendered = rendering::render_live_path(&prepared)?;
         controlled_source_manifest::write_pack(prepared, rendered, &source_path, &output_dir)
     } else {
+        let rendered = rendering::render_live_path(&prepared)?;
         manifest::write_pack(prepared, rendered, &source_path, &output_dir)
     }
 }

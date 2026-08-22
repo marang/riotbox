@@ -28,6 +28,7 @@ use crate::{
         CaptureJourneyProof, ConfirmedSourceTiming, GestureCompanionAction, GestureTransition,
         MonitorProof, PreparedLivePath, RenderStage, SceneTransitionProof,
     },
+    tonal_journey,
 };
 
 pub fn prepare(
@@ -188,10 +189,11 @@ pub fn prepare(
             )
         })?;
     println!(
-        "live performance policy: character={} lead={} bass_owner={} mc202_intent={}",
+        "live performance policy: character={} lead={} bass_owner={} tr909_intent={} mc202_intent={}",
         live_policy.character.label(),
         live_policy.lead.label(),
         live_policy.bass_owner.label(),
+        live_policy.tr909_intent.label(),
         live_policy.mc202_intent.label()
     );
     let (alpha_arc_stages, alpha_arc_proof) = prepare_alpha_arc(&state, &source_timing, bpm)?;
@@ -258,6 +260,12 @@ pub fn prepare(
     require_committed_command(&state, &w_commit, ActionCommand::W30TriggerPad)?;
     let after_w = render_plan(&state, bpm, w_cursor as f64);
     let (normal_plan, damaged_plan) = prepare_legacy_pressure_regression(&state, bpm, fill_cursor)?;
+    let tonal_journey = (live_policy.character
+        == riotbox_core::live_performance_policy::LivePerformanceCharacter::TonalHook)
+        .then(|| {
+            tonal_journey::prepare(&state, output_dir, &source_timing, bpm, preset_id).map(Box::new)
+        })
+        .transpose()?;
     transitions.push(gesture_transition(
         "w-hit",
         "w",
@@ -622,7 +630,7 @@ pub fn prepare(
 
     state.save()?;
     let (restart_recall_plan, restart_recall_proof) =
-        prepare_restart_recall(output_dir, &source_timing, bpm, preset_id)?;
+        prepare_restart_recall(output_dir, &source_timing, bpm, preset_id, 12)?;
 
     Ok(PreparedLivePath {
         state,
@@ -652,6 +660,7 @@ pub fn prepare(
         legacy_riotbox_action_id: back_to_riotbox.action_id.0,
         normal_plan,
         damaged_plan,
+        tonal_journey,
     })
 }
 

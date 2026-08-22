@@ -86,9 +86,14 @@ def validate_case(manifest: dict, expected_character: str) -> None:
     assert policy["bass_owner"] == "unassigned"
     assert policy["source_evidence"]["confidence"] >= 0.35
     if expected_character == "tonal_hook":
+        assert policy["schema"] == "riotbox.live_performance_policy.v2"
         assert policy["lead"] == "w30_hook"
+        assert policy["tr909_intent"] == "stay_out"
         assert policy["mc202_intent"] == "stay_out"
         assert manifest["metrics"]["mc202"]["rms"] <= manifest["thresholds"][
+            "max_intentional_stay_out_rms"
+        ]
+        assert manifest["metrics"]["tr909"]["rms"] <= manifest["thresholds"][
             "max_intentional_stay_out_rms"
         ]
         assert policy["destructive_intent"] == "pitch_drag"

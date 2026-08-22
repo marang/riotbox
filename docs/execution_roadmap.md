@@ -1389,6 +1389,17 @@ free-running source-kick drift by replacing rate acceleration with a grid-locked
 source chop/choke. RIOTBOX-1404 is therefore complete; continue with the next
 bounded P023 slice instead of widening this source set again.
 
+RIOTBOX-1454 then exercised the accepted tonal behavior as an actual capture,
+performance, re-entry, and restart/recall journey. Its first exact live review
+kept the source-derived W-30 hook but rejected the weak TR-909 support pulse and
+the long Pitch Dive presentation: the pulse added no pressure and became
+musically incoherent when exposed during the destructive exit. RBX-315 therefore
+versions the shared live policy to v2 before rerender: tonal held state assigns
+TR-909 and generic MC-202 to typed `stay_out`, preserves explicit Fill/Scene
+overrides, and returns directly after the unchanged Pitch Dive's active window.
+The v1 artifact remains negative evidence; README/Recipe promotion still waits
+for a fresh exact v2 human pass.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing

@@ -22,6 +22,7 @@ pub(super) fn prepare_restart_recall(
     source_timing: &ConfirmedSourceTiming,
     bpm: f32,
     preset_id: PerformancePresetId,
+    recall_bar_index: u64,
 ) -> Result<(Box<RuntimeMixRenderPlan>, RestartRecallProof), Box<dyn Error>> {
     let mut state = JamAppState::from_json_files(
         output_dir.join("session.json"),
@@ -41,8 +42,8 @@ pub(super) fn prepare_restart_recall(
         .clone()
         .ok_or("Feral Break Alpha restart lost the promoted W-30 capture")?;
     let recall_cursor = source_timing
-        .bar_start_beat_cursor(12)
-        .ok_or("Feral Break Alpha cannot resolve restart recall bar 12")?;
+        .bar_start_beat_cursor(recall_bar_index)
+        .ok_or_else(|| format!("live path cannot resolve restart recall bar {recall_bar_index}"))?;
     state.set_transport_playing(true);
     if state.queue_w30_live_recall(3_000) != Some(QueueControlResult::Enqueued) {
         return Err("Feral Break Alpha live recall was unavailable after restart".into());
