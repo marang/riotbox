@@ -137,6 +137,61 @@ fn runtime_mix_plan_sequence_preserves_callback_state_and_segment_lengths() {
 }
 
 #[test]
+fn exact_runtime_mix_sequence_replaces_source_pcm_without_stale_playback() {
+    let source_a = SourceAudioCache::from_interleaved_samples(
+        "source-a.wav",
+        1_000,
+        1,
+        vec![0.25; 1_024],
+    )
+    .expect("source A cache");
+    let source_b = SourceAudioCache::from_interleaved_samples(
+        "source-b.wav",
+        1_000,
+        1,
+        vec![-0.5; 1_024],
+    )
+    .expect("source B cache");
+    let source_a_plan = RuntimeMixRenderPlan {
+        transport: AudioRuntimeTimingSnapshot {
+            is_transport_running: true,
+            tempo_bpm: 60.0,
+            position_beats: 0.0,
+        },
+        source_monitor_render: SourceMonitorRenderState {
+            mode: riotbox_core::action::SourceMonitorMode::Source,
+            source: Some(SourceMonitorAudioSource::from_cache(&source_a)),
+            is_transport_running: true,
+            tempo_bpm: 60.0,
+            position_beats: 0.0,
+            ..SourceMonitorRenderState::default()
+        },
+        ..RuntimeMixRenderPlan::default()
+    };
+    let mut source_b_plan = source_a_plan.clone();
+    source_b_plan.source_monitor_render.source =
+        Some(SourceMonitorAudioSource::from_cache(&source_b));
+
+    let segments = render_runtime_mix_plan_sequence_realtime_simulation_offline(
+        &[
+            RuntimeMixRenderSequenceStep::new(&source_a_plan, 128),
+            RuntimeMixRenderSequenceStep::new(&source_b_plan, 128),
+        ],
+        1_000,
+        1,
+        64,
+    );
+
+    assert!(segments[0]
+        .iter()
+        .all(|sample| (*sample - 0.25 * 0.88).abs() < 1.0e-6));
+    assert!(segments[1]
+        .iter()
+        .all(|sample| (*sample + 0.5 * 0.88).abs() < 1.0e-6));
+    assert!(signal_delta_metrics(&segments[0], &segments[1]).rms > 0.6);
+}
+
+#[test]
 fn exact_runtime_mix_transport_stop_fades_and_silences_all_w30_paths() {
     let running = RuntimeMixRenderPlan {
         transport: AudioRuntimeTimingSnapshot {

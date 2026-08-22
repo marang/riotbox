@@ -27,6 +27,7 @@ use crate::{
     },
 };
 
+use arc_swap::{ArcSwap, Guard};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
 #[cfg(test)]

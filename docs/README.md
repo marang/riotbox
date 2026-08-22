@@ -198,6 +198,17 @@ No new verdict or second variant follows; the temporary seam is removed and
 MC-202 pressure stays out of the current combined gesture journey while the
 remaining Foundation Completion gaps take priority.
 
+`RIOTBOX-1410` is the first bounded Foundation Completion closure. It replaces
+the source monitor's construction-only PCM ownership with one coherent atomic
+snapshot for source, mode/gains, and anchors. Control refreshes cannot silently
+replace PCM; explicit replacement changes the exact RuntimeMix from source A to
+source B without stale playback, while absent replacement remains degraded /
+silent with no fallback. The callback reads without locks or allocation, and
+old PCM is reclaimed from the control side. This is a regression/contract
+enabler, not a new effect or human sound-quality pass. The remaining named
+foundation gaps are the existing transport Action-Lexicon repair in
+`RIOTBOX-1407` and sidecar trust boundary in `RIOTBOX-1334`.
+
 ## Documentation Rules
 
 - Stable core contracts live in `docs/`.

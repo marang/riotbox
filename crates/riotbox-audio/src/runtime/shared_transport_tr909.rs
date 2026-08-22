@@ -232,8 +232,15 @@ impl AudioRuntimeShell {
         self.w30_resample_tap.update(render_state);
     }
 
-    pub fn update_source_monitor_render_state(&self, render_state: &SourceMonitorRenderState) {
-        self.source_monitor.update(render_state);
+    /// Updates monitor mode and anchors while explicitly retaining the prepared source PCM.
+    pub fn update_source_monitor_control_state(&self, render_state: &SourceMonitorRenderState) {
+        self.source_monitor.update_controls(render_state);
+    }
+
+    /// Atomically replaces prepared source PCM together with monitor mode and anchors.
+    pub fn replace_source_monitor_render_state(&self, render_state: &SourceMonitorRenderState) {
+        self.source_monitor
+            .replace_source_and_controls(render_state);
     }
 
     pub fn stop(&mut self) {
@@ -303,7 +310,6 @@ where
     let mut last_mc202_render_snapshot = shared.mc202_render.snapshot();
     let mut last_w30_preview_snapshot = shared.w30_preview.snapshot();
     let mut last_w30_resample_snapshot = shared.w30_resample_tap.snapshot();
-    let mut last_source_monitor_control_snapshot = shared.source_monitor.control_snapshot();
 
     device.build_output_stream(
         config,
@@ -354,13 +360,8 @@ where
             w30_resample_render_state.is_transport_running = callback_timing.is_transport_running;
             w30_resample_render_state.tempo_bpm = callback_timing.tempo_bpm;
             w30_resample_render_state.position_beats = callback_timing.render_position_beats;
-            let source_monitor_control_snapshot = shared
-                .source_monitor
-                .control_snapshot_or_previous(&last_source_monitor_control_snapshot);
-            last_source_monitor_control_snapshot = source_monitor_control_snapshot;
-            let mut source_monitor_state = shared
-                .source_monitor
-                .render_snapshot_from_control(source_monitor_control_snapshot);
+            let source_monitor_snapshot = shared.source_monitor.snapshot();
+            let mut source_monitor_state = source_monitor_snapshot.render_state();
             source_monitor_state.is_transport_running = callback_timing.is_transport_running;
             source_monitor_state.tempo_bpm = callback_timing.tempo_bpm;
             source_monitor_state.position_beats = callback_timing.render_position_beats;

@@ -56,6 +56,8 @@ Why: this keeps strategy, archive history, and implementation contracts separate
 Consequences: future spec work should land in `docs/`, not in new planning sprawl under `plan/`.  
 Status: accepted
 
+---
+
 ### RBX-105
 
 Date: 2026-06-30
@@ -4179,4 +4181,18 @@ Decision: reject the product-transfer claim for `mc202_sub_pressure_shove_v1` wi
 Why: the exact exploration artifact was musically successful, but the unchanged product timing path produced a materially different anchor topology. The resulting isolated MC-202 lane was active for `48.92%` of frames at RMS `0.250163`; the exact held RuntimeMix produced `42` pre-limiter clips and `552` limiter interventions. This is a product-transfer failure, not permission to tune after qualification evidence. The ticket explicitly prohibits such tuning, and the P023 stopping rule requires rejected temporary/product behavior to be removed rather than iterated past its boundary.
 Evidence: the fresh v1 qualification access log, SHA-256 `33e84061805658eccf8c2687114e53087992018577528b3a0cdf1ab479ab87fd`, opened only registered Development case `freesound_cyclez_493560` and stopped before any later source or human playback. The failed exact manifest SHA-256 is `ccb258617c1145824b8f971792a7e03a15c9ab37a497f92106069fc93c15e366`. The earlier exact human-kept review artifact remains SHA-256 `90c0903ef134e4d9f207b07323ca53d6ef21f3f9120c744934280f251c9569fc`. No Holdout, commercial-reference audio, or source directory was accessed.
 Consequences: close RIOTBOX-1451 as a successful bounded discovery with rejected product transfer, not as shipped MC-202 bass-pressure behavior. Any successor must be a new Linear-first audible slice and materially change the mix/ownership mechanism; it may not resume scalar or duration-normalization tuning against this consumed Development result. No hardness, source-general, Holdout, demo, or release claim follows.
+Status: accepted
+
+---
+
+### RBX-312
+
+Date: 2026-08-22
+Topic: publish source-monitor PCM ownership and controls as one realtime-safe snapshot
+Phase: P023 / Foundation Completion
+Question: how may a running audio runtime replace decoded source PCM without letting the selected source, monitor controls, anchors, and callback-visible audio diverge or making the callback free large source buffers?
+Decision: replace the source monitor's construction-only PCM field plus separate control atomics with one immutable `ArcSwap` snapshot that owns source PCM metadata, monitor mode-derived gains, and source anchors together. Split updates explicitly: `update_source_monitor_control_state` retains the current source regardless of the source field in its control projection, while `replace_source_monitor_render_state` atomically installs the complete replacement snapshot, including an absent source. Serialize writers only on the control side. The callback performs one lock-free snapshot load and borrows its prepared PCM without allocation, I/O, or blocking. When a writer replaces a snapshot still borrowed by the callback, retain it in a control-owned retirement queue and reclaim it only from a later control-side publication after the callback guard is gone. An absent replacement routes Source to `source_unavailable` and silence, while Blend retains only its real Riotbox component; never retain stale PCM as an implicit fallback.
+Why: the previous `SharedSourceMonitorRenderState::update` changed mode and anchors but silently ignored `render_state.source`, so a future live source switch could present source B while continuing to play source A. A lock or an `Arc` clone/drop on every callback would repair ownership at the cost of realtime risk. Publishing one immutable snapshot makes assignment coherent, and control-side retirement prevents the callback from becoming the last owner that frees a large decoded buffer.
+Evidence: source-blind RIOTBOX-1410 tests replace constant source-A PCM with materially different source-B PCM through both the callback policy and the exact RuntimeMix sequence, prove source and anchors change together, prove control-only updates preserve the current source, and prove an explicit missing replacement produces typed unavailable silence. A held callback guard keeps the retired source snapshot control-owned until release, after which a later control update reclaims it. Focused `riotbox-audio` tests pass. No Development or Holdout audio, source directory, or commercial-reference audio was opened or played.
+Consequences: use the control-only API for ordinary event-loop monitor refresh and the named replacement API whenever the prepared source cache changes. Do not add a second app-local source owner, callback lock, callback allocation, stale-source fallback, or observer-only proof. Exact output regressions remain required for any future live source-switch surface; this decision changes no musical renderer, effect, source-selection policy, or listening verdict.
 Status: accepted

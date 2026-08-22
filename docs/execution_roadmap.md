@@ -1604,6 +1604,20 @@ temporary seam is removed. MC-202 pressure is `stay-out` for the current
 complete gesture journey; the next active priority is a bounded Foundation
 Completion inventory and closure slice.
 
+RIOTBOX-1410 is selected as the first Foundation Completion closure because a
+live source replacement could otherwise leave the callback playing the old PCM
+after the app had accepted new source/control state. Source PCM, monitor
+mode/gains, and anchors now publish as one immutable atomic snapshot. The live
+control path has an explicitly source-preserving update, while a separate named
+replacement path installs new PCM or honest unavailable state. Focused
+callback and exact RuntimeMix tests prove A-to-B replacement, coherent anchors,
+no stale-source playback, missing-source silence, and control-side retirement
+of old PCM ownership without callback locks or allocation. This changes no
+musical policy and requires no repeated listening. The remaining bounded
+Foundation inventory keeps RIOTBOX-1407's transport Action-Lexicon repair and
+RIOTBOX-1334's sidecar trust boundary visible instead of returning to effect
+experiments or TUI polish.
+
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a
 quality guardrail, not a replacement for the current sound-product priority:

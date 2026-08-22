@@ -96,7 +96,8 @@ fn source_monitor_mode_change_uses_callback_persistent_gain_ramp() {
     let shared = SharedSourceMonitorRenderState::new(&source_render);
     let mut callback_state = SourceMonitorCallbackState::default();
     let mut source_block = vec![0.0; 4];
-    let mut render = shared.snapshot();
+    let snapshot = shared.snapshot();
+    let mut render = snapshot.render_state();
     render.is_transport_running = true;
     render.tempo_bpm = 60.0;
     apply_source_monitor_policy_with_state(
@@ -107,12 +108,13 @@ fn source_monitor_mode_change_uses_callback_persistent_gain_ramp() {
         &mut callback_state,
     );
 
-    shared.update(&SourceMonitorRenderState {
+    shared.update_controls(&SourceMonitorRenderState {
         mode: SourceMonitorMode::Riotbox,
         ..source_render
     });
     let mut riotbox_block = vec![1.0; 8];
-    let mut render = shared.snapshot();
+    let snapshot = shared.snapshot();
+    let mut render = snapshot.render_state();
     render.is_transport_running = true;
     render.tempo_bpm = 60.0;
     render.position_beats = 0.004;
@@ -155,7 +157,8 @@ fn source_monitor_anchor_jump_crossfades_from_previous_source_cursor() {
     let shared = SharedSourceMonitorRenderState::new(&initial);
     let mut callback_state = SourceMonitorCallbackState::default();
     let mut before = vec![0.0; 100];
-    let mut render = shared.snapshot();
+    let snapshot = shared.snapshot();
+    let mut render = snapshot.render_state();
     render.is_transport_running = true;
     render.tempo_bpm = 60.0;
     apply_source_monitor_policy_with_state(
@@ -167,7 +170,8 @@ fn source_monitor_anchor_jump_crossfades_from_previous_source_cursor() {
     );
 
     let mut after = vec![0.0; 8];
-    let mut render = shared.snapshot();
+    let snapshot = shared.snapshot();
+    let mut render = snapshot.render_state();
     render.is_transport_running = true;
     render.tempo_bpm = 60.0;
     render.position_beats = 1.0;
@@ -219,7 +223,8 @@ fn source_monitor_transport_stop_fades_previous_cursor_without_file_start_blip()
     let shared = SharedSourceMonitorRenderState::new(&running);
     let mut callback_state = SourceMonitorCallbackState::default();
     let mut before = vec![0.0; 100];
-    let mut render = shared.snapshot();
+    let snapshot = shared.snapshot();
+    let mut render = snapshot.render_state();
     render.is_transport_running = true;
     render.tempo_bpm = 60.0;
     render.position_beats = 1.0;
@@ -232,7 +237,8 @@ fn source_monitor_transport_stop_fades_previous_cursor_without_file_start_blip()
     );
 
     let mut stopped = vec![0.0; 8];
-    let mut render = shared.snapshot();
+    let snapshot = shared.snapshot();
+    let mut render = snapshot.render_state();
     render.is_transport_running = false;
     render.tempo_bpm = 60.0;
     render.position_beats = 1.1;
@@ -554,7 +560,7 @@ fn source_monitor_scene_anchor_repositions_source_excerpt_from_commit_boundary()
 }
 
 #[test]
-fn source_monitor_shared_state_updates_scene_anchor_without_replacing_source() {
+fn source_monitor_control_update_changes_anchor_without_replacing_source() {
     let source = SourceAudioCache::from_interleaved_samples(
         "source.wav",
         480,
@@ -579,23 +585,25 @@ fn source_monitor_shared_state_updates_scene_anchor_without_replacing_source() {
         .interleaved_samples()
         .as_ptr();
     let snapshot = shared.snapshot();
-    let snapshot_source = snapshot.source.expect("snapshot source");
+    let snapshot_render = snapshot.render_state();
+    let snapshot_source = snapshot_render.source.expect("snapshot source");
 
     assert_eq!(snapshot_source.interleaved_samples().as_ptr(), render_source_ptr);
-    assert_eq!(snapshot.source_anchor_seconds, Some(4.0));
-    assert_eq!(snapshot.source_anchor_position_beats, 16.0);
+    assert_eq!(snapshot_render.source_anchor_seconds, Some(4.0));
+    assert_eq!(snapshot_render.source_anchor_position_beats, 16.0);
 
-    shared.update(&SourceMonitorRenderState {
+    shared.update_controls(&SourceMonitorRenderState {
         source: None,
         source_anchor_seconds: None,
         source_anchor_position_beats: 0.0,
         ..render
     });
     let cleared_anchor = shared.snapshot();
+    let cleared_anchor_render = cleared_anchor.render_state();
 
-    assert!(cleared_anchor.source.is_some());
-    assert_eq!(cleared_anchor.source_anchor_seconds, None);
-    assert_eq!(cleared_anchor.source_anchor_position_beats, 0.0);
+    assert!(cleared_anchor_render.source.is_some());
+    assert_eq!(cleared_anchor_render.source_anchor_seconds, None);
+    assert_eq!(cleared_anchor_render.source_anchor_position_beats, 0.0);
 }
 
 fn source_with_bar_markers(frames_per_bar: usize) -> Vec<f32> {

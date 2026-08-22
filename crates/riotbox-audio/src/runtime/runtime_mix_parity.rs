@@ -107,8 +107,8 @@ pub fn render_runtime_mix_realtime_simulation_offline(
 /// Renders plan steps through the exact product mix seam while retaining callback state.
 ///
 /// Each returned buffer corresponds to the step at the same index. Plan updates occur only
-/// between simulated callbacks. The first plan owns the source-audio allocation for the whole
-/// sequence, matching the live runtime; later plans may update its monitor mode and anchor.
+/// between simulated callbacks. Every step atomically publishes its complete source-monitor
+/// snapshot, so a source replacement cannot combine stale PCM with new controls or anchors.
 #[must_use]
 pub fn render_runtime_mix_plan_sequence_realtime_simulation_offline(
     steps: &[RuntimeMixRenderSequenceStep<'_>],
@@ -177,7 +177,7 @@ pub fn render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
             shared_mc202.update(&plan.mc202_render);
             shared_w30_preview.update(&plan.w30_preview_render);
             shared_w30_resample.update(&plan.w30_resample_tap);
-            shared_source_monitor.update(&plan.source_monitor_render);
+            shared_source_monitor.replace_source_and_controls(&plan.source_monitor_render);
 
             let mut output = vec![0.0; step.frame_count.saturating_mul(channel_count)];
             let mut pre_limiter = vec![0.0; output.len()];
@@ -209,8 +209,8 @@ pub fn render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
                 w30_resample_render.is_transport_running = timing.is_transport_running;
                 w30_resample_render.tempo_bpm = timing.tempo_bpm;
                 w30_resample_render.position_beats = timing.render_position_beats;
-                let mut source_monitor_render = shared_source_monitor
-                    .render_snapshot_from_control(shared_source_monitor.control_snapshot());
+                let source_monitor_snapshot = shared_source_monitor.snapshot();
+                let mut source_monitor_render = source_monitor_snapshot.render_state();
                 source_monitor_render.is_transport_running = timing.is_transport_running;
                 source_monitor_render.tempo_bpm = timing.tempo_bpm;
                 source_monitor_render.position_beats = timing.render_position_beats;

@@ -5,6 +5,7 @@ edition.workspace = true
 license-file.workspace = true
 
 [dependencies]
+arc-swap = "1.7"
 cpal = "0.17.3"
 riotbox-core = { path = "../riotbox-core" }
 serde = { version = "1", features = ["derive"] }
