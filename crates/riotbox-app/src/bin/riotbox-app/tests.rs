@@ -560,6 +560,8 @@ mod tests {
 
     mod source_monitor_control;
 
+    mod transport_control;
+
     mod source_map_navigation_control {
         use super::*;
 

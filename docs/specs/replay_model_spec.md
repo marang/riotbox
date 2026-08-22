@@ -229,6 +229,12 @@ Current supported structural commands:
 - `unlock.object`
 - `ghost.set_mode`
 
+Live Jam/TUI Play/Pause input reaches this executor through committed
+`transport.play` / `transport.pause` actions, not through app-local transport
+mutation. Both commands commit immediately at the current clock boundary, and
+replay must restore the same Session transport state without consulting the
+key label, status message, or observer text.
+
 Current supported musical commands:
 
 - `mc202.set_role`

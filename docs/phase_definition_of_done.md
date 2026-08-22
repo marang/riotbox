@@ -555,8 +555,13 @@ After exit:
   RuntimeMix regressions prove A-to-B output rather than stale playback. Missing
   replacement remains degraded/silent without fallback; old PCM ownership is
   reclaimed outside the callback. This is a contract enabler, not new musical
-  behavior or a human listening pass. RIOTBOX-1407 and RIOTBOX-1334 remain the
-  named transport-spine and sidecar-trust foundation gaps.
+  behavior or a human listening pass.
+- RIOTBOX-1407 is the second bounded Foundation Completion closure: the live
+  Jam/TUI transport toggle commits the existing `transport.play` /
+  `transport.pause` action immediately at the current clock boundary. Session,
+  runtime/audio-driver request, observer history, and replay now converge on
+  that one action without transport latency, a second action family, or TUI
+  polish. RIOTBOX-1334 remains the named sidecar-trust foundation gap.
 - RIOTBOX-1423 established the broader legal CC0 corpus contract: its general
   candidate matrix covers at least five eligible development sources across
   four typed families and protects two disjoint fresh holdout sets. That broad

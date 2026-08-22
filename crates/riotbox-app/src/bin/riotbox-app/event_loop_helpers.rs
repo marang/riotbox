@@ -147,6 +147,19 @@ fn source_monitor_commit_status(
     })
 }
 
+fn commit_transport_toggle(
+    shell: &mut JamShellState,
+    requested_at: u64,
+) -> Vec<CommittedActionRef> {
+    let toggle = shell.app.commit_transport_toggle(requested_at);
+    shell.set_error_status(match toggle.command {
+        ActionCommand::TransportPlay => "transport started",
+        ActionCommand::TransportPause => "transport paused",
+        _ => unreachable!("transport toggle only emits play or pause"),
+    });
+    toggle.committed
+}
+
 fn record_key_outcome_then_immediate_commit(
     observer: &mut UserSessionObserver,
     timestamp_ms: u64,

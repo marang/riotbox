@@ -3,7 +3,21 @@ use super::{
     transport_helpers::{crossed_commit_boundary, transport_clock_for_state},
 };
 use riotbox_audio::runtime::AudioRuntimeTimingSnapshot;
-use riotbox_core::{TimestampMs, queue::CommittedActionRef, transport::TransportClockState};
+use riotbox_core::{
+    TimestampMs,
+    action::{
+        ActionCommand, ActionDraft, ActionTarget, ActorType, CommitBoundary, Quantization,
+        TargetScope,
+    },
+    queue::CommittedActionRef,
+    transport::TransportClockState,
+};
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TransportToggleCommit {
+    pub command: ActionCommand,
+    pub committed: Vec<CommittedActionRef>,
+}
 
 impl JamAppState {
     pub fn update_transport_clock(&mut self, clock: TransportClockState) {
@@ -26,6 +40,45 @@ impl JamAppState {
         self.runtime.transport_driver.last_audio_position_beats =
             is_playing.then_some(self.runtime.transport.beat_index);
         self.runtime.transport_driver.pending_audio_is_playing = Some(is_playing);
+    }
+
+    /// Commit the musician-facing Play/Pause toggle through the Action Lexicon.
+    ///
+    /// Transport toggles are immediate performer actions: they use the current
+    /// transport clock as their commit boundary and do not wait for a future
+    /// beat, bar, or phrase.
+    pub fn commit_transport_toggle(&mut self, requested_at: TimestampMs) -> TransportToggleCommit {
+        let command = if self.runtime.transport.is_playing {
+            ActionCommand::TransportPause
+        } else {
+            ActionCommand::TransportPlay
+        };
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            command,
+            Quantization::Immediate,
+            ActionTarget {
+                scope: Some(TargetScope::Session),
+                ..Default::default()
+            },
+        );
+        draft.explanation = Some(
+            match command {
+                ActionCommand::TransportPlay => "start transport",
+                ActionCommand::TransportPause => "pause transport",
+                _ => unreachable!("transport toggle only emits play or pause"),
+            }
+            .into(),
+        );
+        self.queue.enqueue(draft, requested_at);
+
+        let boundary = self
+            .runtime
+            .transport
+            .boundary_state(CommitBoundary::Immediate);
+        let committed = self.commit_ready_actions(boundary, requested_at);
+
+        TransportToggleCommit { command, committed }
     }
 
     pub fn advance_transport_by(
@@ -89,5 +142,95 @@ impl JamAppState {
         }
 
         Vec::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use riotbox_core::{
+        action::{ActionCommand, ActionParams, ActionStatus, CommitBoundary, TargetScope},
+        queue::ActionQueue,
+        replay::{apply_replay_plan_to_session, build_committed_replay_plan},
+        session::SessionFile,
+    };
+
+    use super::JamAppState;
+
+    #[test]
+    fn musician_transport_toggle_commits_play_and_pause_through_every_live_surface() {
+        let mut session =
+            SessionFile::new("transport-toggle", "riotbox-test", "2026-08-22T00:00:00Z");
+        session.runtime_state.transport.position_beats = 12.5;
+        let mut state = JamAppState::from_parts(session, None, ActionQueue::new());
+
+        let play = state.commit_transport_toggle(100);
+
+        assert_eq!(play.command, ActionCommand::TransportPlay);
+        assert_eq!(play.committed.len(), 1);
+        assert_eq!(play.committed[0].boundary.kind, CommitBoundary::Immediate);
+        assert_eq!(play.committed[0].commit_sequence, 1);
+        let play_action = state
+            .queue
+            .history_action(play.committed[0].action_id)
+            .expect("queued play action committed into queue history");
+        assert_eq!(play_action.command, ActionCommand::TransportPlay);
+        assert_eq!(play_action.params, ActionParams::Empty);
+        assert_eq!(play_action.target.scope, Some(TargetScope::Session));
+        assert_eq!(play_action.status, ActionStatus::Committed);
+        assert!(state.queue.pending_actions().is_empty());
+        assert!(state.session.runtime_state.transport.is_playing);
+        assert!(state.runtime.transport.is_playing);
+        assert_eq!(
+            state.runtime.transport_driver.pending_audio_is_playing,
+            Some(true)
+        );
+        assert_eq!(state.session.action_log.actions.len(), 1);
+        assert_eq!(state.session.action_log.commit_records.len(), 1);
+
+        let pause = state.commit_transport_toggle(200);
+
+        assert_eq!(pause.command, ActionCommand::TransportPause);
+        assert_eq!(pause.committed.len(), 1);
+        assert_eq!(pause.committed[0].boundary.kind, CommitBoundary::Immediate);
+        assert_eq!(pause.committed[0].commit_sequence, 2);
+        assert!(!state.session.runtime_state.transport.is_playing);
+        assert!(!state.runtime.transport.is_playing);
+        assert_eq!(state.runtime.transport.position_beats, 12.5);
+        assert_eq!(
+            state.runtime.transport_driver.pending_audio_is_playing,
+            Some(false)
+        );
+        assert_eq!(state.session.action_log.actions.len(), 2);
+        assert_eq!(state.session.action_log.commit_records.len(), 2);
+    }
+
+    #[test]
+    fn committed_transport_toggle_replays_to_the_same_transport_state() {
+        let mut baseline =
+            SessionFile::new("transport-replay", "riotbox-test", "2026-08-22T00:00:00Z");
+        baseline.runtime_state.transport.position_beats = 12.5;
+        let mut live = JamAppState::from_parts(baseline.clone(), None, ActionQueue::new());
+
+        live.commit_transport_toggle(100);
+        let play_plan =
+            build_committed_replay_plan(&live.session.action_log).expect("committed play plan");
+        let mut replayed_play = baseline.clone();
+        apply_replay_plan_to_session(&mut replayed_play, &play_plan)
+            .expect("replay committed play action");
+        assert_eq!(
+            replayed_play.runtime_state.transport,
+            live.session.runtime_state.transport
+        );
+
+        live.commit_transport_toggle(200);
+        let pause_plan =
+            build_committed_replay_plan(&live.session.action_log).expect("committed pause plan");
+        let mut replayed_pause = baseline;
+        apply_replay_plan_to_session(&mut replayed_pause, &pause_plan)
+            .expect("replay committed play and pause actions");
+        assert_eq!(
+            replayed_pause.runtime_state.transport,
+            live.session.runtime_state.transport
+        );
     }
 }

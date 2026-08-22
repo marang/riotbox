@@ -205,9 +205,16 @@ replace PCM; explicit replacement changes the exact RuntimeMix from source A to
 source B without stale playback, while absent replacement remains degraded /
 silent with no fallback. The callback reads without locks or allocation, and
 old PCM is reclaimed from the control side. This is a regression/contract
-enabler, not a new effect or human sound-quality pass. The remaining named
-foundation gaps are the existing transport Action-Lexicon repair in
-`RIOTBOX-1407` and sidecar trust boundary in `RIOTBOX-1334`.
+enabler, not a new effect or human sound-quality pass.
+
+`RIOTBOX-1407` is the second bounded Foundation Completion closure. The live
+Jam/TUI Play/Pause path now enqueues and immediately commits the existing
+`transport.play` / `transport.pause` action at the current clock boundary.
+Session/runtime state, the audio-driver request, observer history, and replay
+therefore share one product-spine action instead of a direct UI mutation. This
+preserves immediate transport response and adds no TUI polish or audible
+effect. The remaining named Foundation gap is the sidecar trust boundary in
+`RIOTBOX-1334`.
 
 ## Documentation Rules
 

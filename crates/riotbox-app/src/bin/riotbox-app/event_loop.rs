@@ -55,13 +55,9 @@ fn run_event_loop(
                 }
                 ShellKeyOutcome::Continue => {}
                 ShellKeyOutcome::ToggleTransport => {
-                    let next_is_playing = !shell.app.runtime.transport.is_playing;
-                    shell.app.set_transport_playing(next_is_playing);
-                    shell.set_error_status(if next_is_playing {
-                        "transport started"
-                    } else {
-                        "transport paused"
-                    });
+                    let requested_at = timestamp_now();
+                    let committed = commit_transport_toggle(&mut shell, requested_at);
+                    immediate_observer_commit = Some((requested_at, committed));
                 }
                 ShellKeyOutcome::QueuePerformancePreset(preset_id) => {
                     let requested_at = timestamp_now();

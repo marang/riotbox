@@ -1618,6 +1618,16 @@ Foundation inventory keeps RIOTBOX-1407's transport Action-Lexicon repair and
 RIOTBOX-1334's sidecar trust boundary visible instead of returning to effect
 experiments or TUI polish.
 
+RIOTBOX-1407 is the second bounded Foundation Completion closure. Space-driven
+Play/Pause now creates the existing typed `transport.play` or
+`transport.pause` action, commits it immediately at the current transport
+clock, and feeds the normal Session side effect, runtime/audio-driver mirror,
+observer commit, and replay executor. Focused live-control and headless probe
+tests prove the same action identity and state transition without adding a
+second transport command, musical-boundary delay, or app-local replay truth.
+RIOTBOX-1334 is the remaining named Foundation gap before returning to a new
+audible Golden Path slice.
+
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a
 quality guardrail, not a replacement for the current sound-product priority:
