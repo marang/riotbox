@@ -1598,4 +1598,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Make source-monitor updates replace source ownership explicitly
 - [RIOTBOX-1407.md](./RIOTBOX-1407.md)
   P023: Route live TUI transport through Action Lexicon commit and replay
+- [RIOTBOX-1334.md](./RIOTBOX-1334.md)
+  P023: Harden sidecar protocol versioning and provenance boundaries
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
