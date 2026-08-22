@@ -269,6 +269,11 @@ Show:
   previous / next phrase. These controls should commit as `transport.seek`,
   preserve play / pause state, clamp at bounds, and update the playhead / region
   row from Session-derived transport state.
+- The Jam surface Play/Pause toggle is performer input and must commit the
+  existing `transport.play` or `transport.pause` action immediately at the
+  current clock boundary. The visible status, Session/runtime transport,
+  observer commit, audio-driver request, and replay must all describe that same
+  action; the key handler must not mutate transport truth directly.
 - section labels should be conservative. When semantic confidence is weak, show
   neutral labels such as `section A`, `section B`, and `section C` instead of
   inventing `hook`, `drop`, or `break` labels.

@@ -148,12 +148,21 @@ fn apply_probe_key(
 
     match outcome {
         ShellKeyOutcome::ToggleTransport => {
-            let next_is_playing = !shell.app.runtime.transport.is_playing;
-            shell.app.set_transport_playing(next_is_playing);
-            shell.set_error_status(if next_is_playing {
-                "transport started"
-            } else {
-                "transport paused"
+            let transport = shell.app.runtime.transport.clone();
+            let boundary = transport.boundary_state(CommitBoundary::Immediate);
+            let toggle = shell.app.commit_transport_toggle(timestamp_ms);
+            immediate_committed = toggle.committed;
+            require_immediate_commit(
+                shell,
+                &immediate_committed,
+                &boundary,
+                toggle.command,
+                "transport toggle",
+            )?;
+            shell.set_error_status(match toggle.command {
+                ActionCommand::TransportPlay => "transport started",
+                ActionCommand::TransportPause => "transport paused",
+                _ => unreachable!("transport toggle only emits play or pause"),
             });
         }
         ShellKeyOutcome::QueueSourceMonitorMode(mode) => {

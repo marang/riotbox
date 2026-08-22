@@ -141,6 +141,13 @@ Optional target references:
 - `transport.stop`
 - `transport.seek`
 
+The musician-facing Jam/TUI Play/Pause toggle commits `transport.play` or
+`transport.pause` immediately at the current transport-clock boundary. The
+same committed action must update Session transport truth, the runtime/audio
+transport driver, observer history, and replay. UI code must not call a direct
+transport-state setter for performer input; low-level setters are reserved for
+clock/runtime synchronization and tests that exercise that seam explicitly.
+
 `transport.seek` may be used for musician-facing Source Map bar and phrase
 navigation. The shell may expose typed intents such as previous / next bar and
 previous / next phrase, but the committed product truth remains a structured

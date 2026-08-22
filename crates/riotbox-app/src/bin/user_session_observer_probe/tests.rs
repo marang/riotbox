@@ -116,9 +116,20 @@ fn writes_recipe2_mc202_observer_stream() {
     assert_eq!(events.matches(r#""boundary":"Phrase""#).count(), 5);
 
     let parsed = parse_events(&events);
+    let (_, play_ref) = committed_command(&parsed, "transport.play", "Immediate");
+    assert_eq!(play_ref["beat_index"], 0);
+    assert_eq!(play_ref["bar_index"], 1);
+    assert_eq!(play_ref["phrase_index"], 1);
     let first_commit = parsed
         .iter()
-        .find(|event| event["event"] == "transport_commit")
+        .find(|event| {
+            event["event"] == "transport_commit"
+                && event["committed"].as_array().is_some_and(|committed| {
+                    committed
+                        .iter()
+                        .any(|committed| committed["boundary"] == "Phrase")
+                })
+        })
         .expect("first phrase commit");
     let committed = &first_commit["committed"][0];
     assert_eq!(committed["beat_index"], 16);
@@ -161,6 +172,7 @@ fn writes_first_playable_jam_observer_stream() {
     );
 
     for (key, outcome) in [
+        ("space", "toggle_transport"),
         ("c", "queue_capture_bar"),
         ("o", "queue_w30_audition"),
         ("p", "promote_last_capture"),
@@ -208,6 +220,9 @@ fn writes_first_playable_jam_observer_stream() {
         1
     );
     assert_commit_position(preset_ref, 20, 6, 2);
+
+    let (_, play_ref) = committed_command(&parsed, "transport.play", "Immediate");
+    assert_commit_position(play_ref, 0, 1, 1);
 
     let (_, pressure_ref) = committed_command(&parsed, "mc202.generate_pressure", "Phrase");
     assert_commit_position(pressure_ref, 32, 9, 3);
@@ -284,7 +299,7 @@ fn writes_first_playable_jam_observer_stream() {
         .collect::<Vec<_>>();
     assert_eq!(
         committed_beats,
-        [16, 20, 20, 20, 32, 33, 36, 40, 44, 48, 48]
+        [0, 16, 20, 20, 20, 32, 33, 36, 40, 44, 48, 48]
     );
     assert!(committed_beats.windows(2).all(|pair| pair[0] <= pair[1]));
     let committed_scenes = parsed
@@ -305,6 +320,7 @@ fn writes_first_playable_jam_observer_stream() {
             "scene-01-break",
             "scene-01-break",
             "scene-01-break",
+            "scene-01-break",
             "scene-02-drop",
             "scene-02-drop",
         ]
@@ -312,7 +328,7 @@ fn writes_first_playable_jam_observer_stream() {
 
     let final_snapshot = &parsed.last().expect("final event")["snapshot"];
     assert_eq!(final_snapshot["queue"]["pending_count"], 0);
-    assert_eq!(final_snapshot["queue"]["session_log_count"], 11);
+    assert_eq!(final_snapshot["queue"]["session_log_count"], 12);
     assert_eq!(
         final_snapshot["capture"]["source_window"]["source_id"],
         "src-first-playable-jam"
@@ -328,7 +344,7 @@ fn writes_first_playable_jam_observer_stream() {
     assert_eq!(events.matches(r#""boundary":"Phrase""#).count(), 2);
     assert_eq!(events.matches(r#""boundary":"Bar""#).count(), 6);
     assert_eq!(events.matches(r#""boundary":"Beat""#).count(), 2);
-    assert_eq!(events.matches(r#""boundary":"Immediate""#).count(), 1);
+    assert_eq!(events.matches(r#""boundary":"Immediate""#).count(), 2);
 }
 
 #[test]

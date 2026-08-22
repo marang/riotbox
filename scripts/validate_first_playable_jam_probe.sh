@@ -73,6 +73,7 @@ jq -s -e \
     and any(.[]; .event == "key_outcome" and .key == "y" and .outcome == "queue_scene_select")
     and any(.[]; .event == "key_outcome" and .key == "Y" and .outcome == "queue_scene_restore")
     and any(.[]; .event == "key_outcome" and .key == "D" and .outcome == "queue_w30_apply_damage_profile")
+    and committed_command("transport.play"; "Immediate"; 0; 1; 1)
     and committed_command("capture.bar_group"; "Phrase"; 16; 5; 2)
     and committed_command("w30.audition_raw_capture"; "Bar"; 20; 6; 2)
     and committed_command("promote.capture_to_pad"; "Bar"; 20; 6; 2)
@@ -107,13 +108,13 @@ jq -s -e \
                 and .command == "w30.apply_damage_profile"
                 and .status == "Committed")))
     and ([.[] | select(.event == "transport_commit") | .committed[].beat_index] as $beats
-      | $beats == [16, 20, 20, 20, 32, 33, 36, 40, 44, 48, 48]
+      | $beats == [0, 16, 20, 20, 20, 32, 33, 36, 40, 44, 48, 48]
         and all(range(1; $beats | length); $beats[.] >= $beats[. - 1]))
-    and ([.[] | select(.event == "transport_commit") | .committed[].scene_id] == ["scene-01-break", "scene-01-break", "scene-01-break", "scene-01-break", "scene-01-break", "scene-01-break", "scene-01-break", "scene-01-break", "scene-01-break", "scene-02-drop", "scene-02-drop"])
+    and ([.[] | select(.event == "transport_commit") | .committed[].scene_id] == ["scene-01-break", "scene-01-break", "scene-01-break", "scene-01-break", "scene-01-break", "scene-01-break", "scene-01-break", "scene-01-break", "scene-01-break", "scene-01-break", "scene-02-drop", "scene-02-drop"])
     and any(.[]; .event == "transport_commit" and .timestamp_ms == 1000 and .snapshot.runtime.w30_preview_target == "bank-a / pad-01 | cap-01")
     and any(.[]; .event == "transport_commit" and .timestamp_ms == 1400 and .snapshot.runtime.tr909_mode == "fill" and .snapshot.runtime.tr909_routing == "drum_bus_support")
     and any(.[]; .event == "transport_commit" and .timestamp_ms == 1600 and .snapshot.scene.active_scene == "scene-02-drop" and .snapshot.scene.last_movement.from_scene == "scene-01-break" and .snapshot.scene.last_movement.to_scene == "scene-02-drop" and .snapshot.scene.source_monitor.source_anchor_seconds == 16.0 and .snapshot.capture.source_window.source_id == "src-first-playable-jam")
-    and any(.[]; .event == "transport_commit" and .timestamp_ms == 1800 and (.committed | length) == 2 and .snapshot.scene.active_scene == "scene-01-break" and .snapshot.scene.last_movement.kind == "restore" and .snapshot.scene.last_movement.from_scene == "scene-02-drop" and .snapshot.scene.last_movement.to_scene == "scene-01-break" and .snapshot.queue.pending_count == 0 and .snapshot.queue.session_log_count == 11 and .snapshot.transport.beat_index == 48 and .snapshot.transport.bar_index == 13 and .snapshot.transport.phrase_index == 4 and .snapshot.transport.current_scene == "scene-01-break")' \
+    and any(.[]; .event == "transport_commit" and .timestamp_ms == 1800 and (.committed | length) == 2 and .snapshot.scene.active_scene == "scene-01-break" and .snapshot.scene.last_movement.kind == "restore" and .snapshot.scene.last_movement.from_scene == "scene-02-drop" and .snapshot.scene.last_movement.to_scene == "scene-01-break" and .snapshot.queue.pending_count == 0 and .snapshot.queue.session_log_count == 12 and .snapshot.transport.beat_index == 48 and .snapshot.transport.bar_index == 13 and .snapshot.transport.phrase_index == 4 and .snapshot.transport.current_scene == "scene-01-break")' \
   "$observer_fixture"
 
 if [[ -n "$reuse_exact_mix_dir" ]]; then
