@@ -1397,8 +1397,14 @@ musically incoherent when exposed during the destructive exit. RBX-315 therefore
 versions the shared live policy to v2 before rerender: tonal held state assigns
 TR-909 and generic MC-202 to typed `stay_out`, preserves explicit Fill/Scene
 overrides, and returns directly after the unchanged Pitch Dive's active window.
-The v1 artifact remains negative evidence; README/Recipe promotion still waits
-for a fresh exact v2 human pass.
+The v1 artifact remains negative evidence. The exact v2 rerender then proved
+that the generated journey and restart recall are sample-exact to W-30-only
+output while TR-909, MC-202, and Source Monitor remain silent. Its first review
+identified and removed one artificial review-only separator; the corrected
+29-second artifact received `keep`, retained a clear recognizable transformed
+hook, and preserved the already-qualified Pitch Dive unchanged. This closes the
+tonal capture/performance/re-entry/restart journey without reopening Pitch Dive
+source qualification or claiming zero-downtime audio across process restart.
 
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness

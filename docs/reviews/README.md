@@ -74,6 +74,12 @@ Current P023 algorithm-value refresh:
 - [riotbox_1444_w30_pitch_dive_product_qualification_2026-08-19.md](./riotbox_1444_w30_pitch_dive_product_qualification_2026-08-19.md):
   source-blind product integration, passed four-source exact-RuntimeMix matrix,
   and positive formal human product review for the frozen W-30 Pitch Dive.
+- [riotbox_1454_tonal_live_journey_v1_rejection_2026-08-22.md](./riotbox_1454_tonal_live_journey_v1_rejection_2026-08-22.md):
+  exact-live rejection of the weak tonal TR-909 support pulse and overlong
+  Pitch Dive presentation before the versioned live-policy correction.
+- [riotbox_1454_tonal_live_journey_v2_acceptance_2026-08-22.md](./riotbox_1454_tonal_live_journey_v2_acceptance_2026-08-22.md):
+  W-30-only tonal capture, Pitch Dive, ordinary re-entry, and restart/recall
+  journey with a positive structured human review.
 - [riotbox_1445_w30_filter_slam_development_2026-08-19.md](./riotbox_1445_w30_filter_slam_development_2026-08-19.md):
   provisionally kept the exact eight-beat W-30 Filter Slam after a shorter
   audible but underdeveloped variant, with product integration still separate.

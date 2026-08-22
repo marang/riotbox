@@ -197,6 +197,12 @@ gestures with positive bounded product reviews. Other families range from
 playable early behavior to planned musical depth and broader source
 qualification.
 
+The tonal live path also has a bounded positive journey review: a promoted
+source-derived W-30 hook can hold, perform the unchanged Pitch Dive, return to
+ordinary playback, survive a saved-session restart, and recall cleanly. Tonal
+held state keeps TR-909 and generic MC-202 out unless an explicit performer
+override owns them.
+
 A bounded source-first review also kept the deliberate sequence Hook
 Turnaround, ordinary re-entry, Pitch Dive, ordinary re-entry, Filter Slam,
 ordinary re-entry as a coherent and harmonically compatible performance arc.
@@ -298,6 +304,8 @@ Best next moves from there:
 - `Recipe 14` if you want the first-playable observer action contract checked
   alongside the exact RuntimeMix dense-break pack
 - `Recipe 15` if you want an offline Feral grid listening pack and need to choose `auto` versus explicit BPM honestly
+- `Recipe 17` if you want the exact tonal W-30 hold, Pitch Dive, re-entry, and
+  restart/recall proof as well as the dense Feral Break Alpha path
 - `Recipe 7` if you want a longer Golden Path practice run with monitor handoff,
   four performance gestures, and restore
 
