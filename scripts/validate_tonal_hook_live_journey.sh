@@ -63,7 +63,7 @@ jq -e \
   and .exact_mixer_proof.callback_partitions_sample_exact == true
   and .exact_mixer_proof.pitch_dive_first_eight_beats_sample_exact_to_held_w30 == true
   and .exact_mixer_proof.pitch_dive_active_tail_delta_rms >= .thresholds.min_isolated_pitch_dive_active_tail_delta_rms
-  and .exact_mixer_proof.human_review_sequence_duration_seconds == 30
+  and .exact_mixer_proof.human_review_sequence_duration_seconds == 29
   and .metrics.w30.rms >= .thresholds.min_lane_rms
   and .metrics.tr909.rms <= .thresholds.max_tr909_stay_out_rms
   and .metrics.mc202.rms <= .thresholds.max_mc202_stay_out_rms

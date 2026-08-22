@@ -314,7 +314,6 @@ pub fn write_pack(
         one_second_silence.as_slice(),
         contrast.samples.as_slice(),
         reentry.samples.as_slice(),
-        one_second_silence.as_slice(),
         restart.samples.as_slice(),
         one_second_silence.as_slice(),
     ]
