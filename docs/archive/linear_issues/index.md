@@ -1594,4 +1594,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Explore a phrase-local low-end handoff for MC-202 pressure
 - [RIOTBOX-1453.md](./RIOTBOX-1453.md)
   P023: Test restrained MC-202 pressure through effect turn-taking
+- [RIOTBOX-1410.md](./RIOTBOX-1410.md)
+  Make source-monitor updates replace source ownership explicitly
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
