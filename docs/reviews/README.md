@@ -80,6 +80,9 @@ Current P023 algorithm-value refresh:
 - [riotbox_1454_tonal_live_journey_v2_acceptance_2026-08-22.md](./riotbox_1454_tonal_live_journey_v2_acceptance_2026-08-22.md):
   W-30-only tonal capture, Pitch Dive, ordinary re-entry, and restart/recall
   journey with a positive structured human review.
+- [p023_tonal_live_boundary_checkpoint_2026-08-22.md](./p023_tonal_live_boundary_checkpoint_2026-08-22.md):
+  focused current-state architecture review of the typed character policy,
+  live audio projection, tonal exact-mix proof, and restart/recall boundary.
 - [riotbox_1445_w30_filter_slam_development_2026-08-19.md](./riotbox_1445_w30_filter_slam_development_2026-08-19.md):
   provisionally kept the exact eight-beat W-30 Filter Slam after a shorter
   audible but underdeveloped variant, with product integration still separate.
