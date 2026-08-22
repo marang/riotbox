@@ -50,6 +50,19 @@ RuntimeMix callback proof establishes:
 The final manifest SHA-256 is
 `28a95aae429361de50b3590e0feabf99f4426e35e1bdb43a818c006a2fe0b27d`.
 
+## Cross-Character Regression
+
+The existing controlled Development matrix passed after one fail-closed run
+exposed and removed an obsolete dense-only `BreakReinforce` precondition from
+the tonal preparation path. No audio algorithm or threshold changed. The fresh
+three-source rerun proved exact duplicate stability for tonal and sparse cases,
+distinct dense/tonal/sparse envelopes, silent tonal TR-909 and MC-202, unchanged
+dense TR-909 lead plus MC-202 instigation, and unchanged sparse TR-909 lead plus
+MC-202 punctuation. The matrix report SHA-256 is
+`8f995e83438a31db08d041e7f7ae6f88ccfbfd7e13262139309c3f2eb6301072`;
+its completed bounded access-log SHA-256 is
+`852c388abd57f5cd29281e84250ecd989ee2f2b9a868f893d4e1eb33b6f3796c`.
+
 ## Human Review
 
 The final stereo 48 kHz PCM16 review artifact is exactly `29.0` seconds,
