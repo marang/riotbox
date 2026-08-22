@@ -100,6 +100,7 @@
                 direction: SceneTransitionDirectionView::Drop,
                 tr909_intent: SceneTransitionLaneIntentView::Release,
                 mc202_intent: SceneTransitionLaneIntentView::Anchor,
+                w30_intent: SceneTransitionW30IntentView::Pin,
                 intensity: 0.55,
             })
         );
@@ -110,6 +111,7 @@
                 direction: SceneTransitionDirectionView::Drop,
                 tr909_intent: SceneTransitionLaneIntentView::Release,
                 mc202_intent: SceneTransitionLaneIntentView::Anchor,
+                w30_intent: SceneTransitionW30IntentView::Pin,
                 intensity: 0.55,
             })
         );

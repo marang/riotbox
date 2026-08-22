@@ -376,6 +376,7 @@ pub struct SceneMovementView {
     pub direction: String,
     pub tr909_intent: String,
     pub mc202_intent: String,
+    pub w30_intent: String,
     pub intensity: f32,
     pub from_scene: Option<String>,
     pub to_scene: String,
@@ -425,6 +426,20 @@ pub enum SceneTransitionLaneIntentView {
     Anchor,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SceneTransitionW30IntentView {
+    Pin,
+}
+
+impl SceneTransitionW30IntentView {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Pin => "pin",
+        }
+    }
+}
+
 impl SceneTransitionLaneIntentView {
     #[must_use]
     pub const fn label(self) -> &'static str {
@@ -443,5 +458,6 @@ pub struct SceneTransitionPolicyView {
     pub direction: SceneTransitionDirectionView,
     pub tr909_intent: SceneTransitionLaneIntentView,
     pub mc202_intent: SceneTransitionLaneIntentView,
+    pub w30_intent: SceneTransitionW30IntentView,
     pub intensity: f32,
 }

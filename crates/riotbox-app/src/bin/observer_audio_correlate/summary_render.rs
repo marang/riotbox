@@ -237,6 +237,7 @@ fn observer_scene_movement_json(movement: &ObserverSceneMovementEvidence) -> ser
         "direction": &movement.direction,
         "tr909_intent": &movement.tr909_intent,
         "mc202_intent": &movement.mc202_intent,
+        "w30_intent": &movement.w30_intent,
         "intensity": movement.intensity,
         "from_scene": &movement.from_scene,
         "to_scene": &movement.to_scene,
@@ -275,13 +276,14 @@ fn format_observer_scene_movement(summary: &CorrelationSummary) -> String {
         || "none".to_string(),
         |movement| {
             format!(
-                "{} {} -> {} direction={} 909={} 202={} intensity={:.3} bar={} phrase={} source_locked={} source_anchor={}",
+                "{} {} -> {} direction={} 909={} 202={} w30={} intensity={:.3} bar={} phrase={} source_locked={} source_anchor={}",
                 movement.kind,
                 movement.from_scene.as_deref().unwrap_or("none"),
                 movement.to_scene,
                 movement.direction,
                 movement.tr909_intent,
                 movement.mc202_intent,
+                movement.w30_intent,
                 movement.intensity,
                 movement.committed_bar_index,
                 movement.committed_phrase_index,

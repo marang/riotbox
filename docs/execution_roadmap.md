@@ -1634,6 +1634,18 @@ outside-CWD regressions keep stub output explicitly non-promotional. With all
 three named Foundation closures complete, selection returns to the highest
 value unblocked audible Golden Path slice.
 
+RIOTBOX-1336 takes that next bounded Scene/W-30 slice. Its Development-only
+scene-owned material-recall v1 was clearly audible but stopped after the human
+and independent technical reviews found the recalled middle phrase locally
+pitch- and groove-incoherent. The stable control remained musically usable,
+though not the listener's preferred taste. The temporary recall behavior is
+removed rather than tuned against the result. The product correction makes the
+existing W-30 Scene role explicit as typed `pin` ownership through Session,
+replay, observer, Jam view, UI cues, and mixed-output proof: scene launch and
+restore keep the focused source-backed W-30 material unchanged while TR-909 and
+MC-202 carry the current audible Scene contrast. Any future Scene-owned W-30
+recall or resample role needs a new qualified mechanism and Decision.
+
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a
 quality guardrail, not a replacement for the current sound-product priority:

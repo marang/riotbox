@@ -16,10 +16,33 @@ fn p014_scene_chain_launch_restore_replay_proves_transition_state_and_mix() {
     session.runtime_state.lane_state.tr909.pattern_ref = Some("p014-scene-chain-support".into());
     session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Follower);
     session.runtime_state.lane_state.mc202.phrase_variant = None;
+    session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+        bank_id: BankId::from("bank-a"),
+        pad_id: PadId::from("pad-01"),
+    });
 
     let base_session = session.clone();
     let mut committed_state =
         JamAppState::from_parts(session, Some(graph.clone()), ActionQueue::new());
+    committed_state.capture_audio_cache.insert(
+        CaptureId::from("cap-01"),
+        SourceAudioCache::from_interleaved_samples(
+            "fixture://p014-scene-pinned-w30",
+            48_000,
+            1,
+            (0..96_000)
+                .map(|frame| {
+                    let phase = frame as f32 / 48_000.0 * std::f32::consts::TAU * 181.0;
+                    let transient = if frame % 12_000 < 96 { 0.45 } else { 0.0 };
+                    phase.sin() * 0.32 + transient
+                })
+                .collect(),
+        )
+        .expect("Scene Pin fixture capture audio"),
+    );
+    committed_state.refresh_view();
+    let pinned_w30 = committed_state.runtime.w30_preview.clone();
+    assert!(pinned_w30.pad_playback.is_some());
     let contract = &committed_state.jam_view.scene.arrangement_contract;
     assert_eq!(contract.scene_count, 3);
     assert!(contract.has_active_scene);
@@ -51,6 +74,7 @@ fn p014_scene_chain_launch_restore_replay_proves_transition_state_and_mix() {
             direction: SceneMovementDirectionState::Rise,
             tr909_intent: SceneMovementLaneIntentState::Drive,
             mc202_intent: SceneMovementLaneIntentState::Lift,
+            w30_intent: SceneMovementW30IntentState::Pin,
             committed_bar_index: 9,
             committed_phrase_index: 2,
         },
@@ -75,6 +99,7 @@ fn p014_scene_chain_launch_restore_replay_proves_transition_state_and_mix() {
         committed_state.runtime.mc202_render.contour_hint,
         Mc202ContourHint::Lift
     );
+    assert_eq!(committed_state.runtime.w30_preview, pinned_w30);
     let first_drop = render_scene_recipe_mix_buffer(&committed_state);
 
     assert_eq!(
@@ -91,6 +116,7 @@ fn p014_scene_chain_launch_restore_replay_proves_transition_state_and_mix() {
             direction: SceneMovementDirectionState::Drop,
             tr909_intent: SceneMovementLaneIntentState::Release,
             mc202_intent: SceneMovementLaneIntentState::Anchor,
+            w30_intent: SceneMovementW30IntentState::Pin,
             committed_bar_index: 10,
             committed_phrase_index: 2,
         },
@@ -111,6 +137,7 @@ fn p014_scene_chain_launch_restore_replay_proves_transition_state_and_mix() {
         committed_state.runtime.tr909_render.phrase_variation,
         Some(Tr909PhraseVariation::PhraseRelease)
     );
+    assert_eq!(committed_state.runtime.w30_preview, pinned_w30);
     let second_intro = render_scene_recipe_mix_buffer(&committed_state);
 
     assert_eq!(
@@ -127,6 +154,7 @@ fn p014_scene_chain_launch_restore_replay_proves_transition_state_and_mix() {
             direction: SceneMovementDirectionState::Rise,
             tr909_intent: SceneMovementLaneIntentState::Drive,
             mc202_intent: SceneMovementLaneIntentState::Lift,
+            w30_intent: SceneMovementW30IntentState::Pin,
             committed_bar_index: 11,
             committed_phrase_index: 2,
         },
@@ -147,6 +175,7 @@ fn p014_scene_chain_launch_restore_replay_proves_transition_state_and_mix() {
         committed_state.runtime.mc202_render.contour_hint,
         Mc202ContourHint::Lift
     );
+    assert_eq!(committed_state.runtime.w30_preview, pinned_w30);
     let restored_drop = render_scene_recipe_mix_buffer(&committed_state);
 
     let scene_commands = committed_state
@@ -185,7 +214,10 @@ fn p014_scene_chain_launch_restore_replay_proves_transition_state_and_mix() {
         &graph,
     )
     .expect("P014 graph-aware Scene chain replay applies launch/restore plan");
-    let replayed_state = JamAppState::from_parts(replayed_session, Some(graph), ActionQueue::new());
+    let mut replayed_state =
+        JamAppState::from_parts(replayed_session, Some(graph), ActionQueue::new());
+    replayed_state.capture_audio_cache = committed_state.capture_audio_cache.clone();
+    replayed_state.refresh_view();
     let replayed_drop = render_scene_recipe_mix_buffer(&replayed_state);
 
     assert_eq!(report.applied_action_ids.len(), 3);
@@ -208,6 +240,10 @@ fn p014_scene_chain_launch_restore_replay_proves_transition_state_and_mix() {
     assert_eq!(
         replayed_state.runtime.mc202_render,
         committed_state.runtime.mc202_render
+    );
+    assert_eq!(
+        replayed_state.runtime.w30_preview,
+        committed_state.runtime.w30_preview
     );
 
     assert_recipe_buffers_match(
@@ -270,6 +306,7 @@ struct SceneChainMovementExpectation<'a> {
     direction: SceneMovementDirectionState,
     tr909_intent: SceneMovementLaneIntentState,
     mc202_intent: SceneMovementLaneIntentState,
+    w30_intent: SceneMovementW30IntentState,
     committed_bar_index: u64,
     committed_phrase_index: u64,
 }
@@ -294,6 +331,7 @@ fn assert_scene_chain_movement(
     assert_eq!(movement.direction, expected.direction);
     assert_eq!(movement.tr909_intent, expected.tr909_intent);
     assert_eq!(movement.mc202_intent, expected.mc202_intent);
+    assert_eq!(movement.w30_intent, expected.w30_intent);
     assert_eq!(movement.committed_bar_index, expected.committed_bar_index);
     assert_eq!(
         movement.committed_phrase_index,
@@ -312,5 +350,6 @@ fn assert_scene_chain_movement(
     assert_eq!(view_movement.direction, movement.direction.label());
     assert_eq!(view_movement.tr909_intent, movement.tr909_intent.label());
     assert_eq!(view_movement.mc202_intent, movement.mc202_intent.label());
+    assert_eq!(view_movement.w30_intent, movement.w30_intent.label());
     assert!(state.jam_view.scene.arrangement_contract.has_landed_movement);
 }

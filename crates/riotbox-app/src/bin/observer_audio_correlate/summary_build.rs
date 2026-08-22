@@ -49,6 +49,7 @@ struct ObserverSceneMovementEvidence {
     direction: String,
     tr909_intent: String,
     mc202_intent: String,
+    w30_intent: String,
     intensity: f64,
     from_scene: Option<String>,
     to_scene: String,
@@ -454,6 +455,10 @@ fn collect_observer_scene_movement(
             None => return (None, true),
         },
         mc202_intent: match non_empty_string(movement, "mc202_intent") {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        w30_intent: match non_empty_string(movement, "w30_intent") {
             Some(value) => value,
             None => return (None, true),
         },

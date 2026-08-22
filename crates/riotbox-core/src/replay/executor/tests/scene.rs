@@ -5,7 +5,7 @@ use crate::{
     replay::{apply_graph_aware_replay_plan_to_session, build_replay_target_plan},
     session::{
         SceneMovementDirectionState, SceneMovementKindState, SceneMovementLaneIntentState,
-        SessionFile,
+        SceneMovementW30IntentState, SessionFile,
     },
     source_graph::{
         AnalysisSummary, DecodeProfile, EnergyClass, GraphProvenance, QualityClass, Section,
@@ -127,9 +127,55 @@ fn graph_aware_scene_replay_hydrates_last_movement_from_source_graph() {
     assert_eq!(movement.direction, SceneMovementDirectionState::Rise);
     assert_eq!(movement.tr909_intent, SceneMovementLaneIntentState::Drive);
     assert_eq!(movement.mc202_intent, SceneMovementLaneIntentState::Lift);
+    assert_eq!(movement.w30_intent, SceneMovementW30IntentState::Pin);
     assert_eq!(movement.intensity, 0.75);
     assert_eq!(movement.committed_bar_index, 1);
     assert_eq!(movement.committed_phrase_index, 0);
+}
+
+#[test]
+fn legacy_scene_movement_without_w30_intent_defaults_to_pin() {
+    let action_log = action_log(vec![scene_action(
+        1,
+        ActionCommand::SceneLaunch,
+        "scene-02-drop",
+        100,
+    )]);
+    let plan = build_replay_target_plan(&action_log, &[], 1).expect("origin plan");
+    let graph = scene_energy_graph();
+    let mut session = projected_scene_session("legacy-session", "scene-01-intro");
+    apply_graph_aware_replay_plan_to_session(&mut session, &plan.suffix, &graph)
+        .expect("graph-aware scene replay succeeds");
+
+    let mut payload = serde_json::to_value(&session).expect("serialize session");
+    payload["runtime_state"]["scene_state"]["last_movement"]
+        .as_object_mut()
+        .expect("last movement object")
+        .remove("w30_intent");
+    payload["runtime_state"]["scene_state"]["active_projection_movement"]
+        .as_object_mut()
+        .expect("active projection movement object")
+        .remove("w30_intent");
+
+    let restored: SessionFile = serde_json::from_value(payload).expect("load legacy session");
+    assert_eq!(
+        restored
+            .runtime_state
+            .scene_state
+            .last_movement
+            .as_ref()
+            .map(|movement| movement.w30_intent),
+        Some(SceneMovementW30IntentState::Pin)
+    );
+    assert_eq!(
+        restored
+            .runtime_state
+            .scene_state
+            .active_projection_movement
+            .as_ref()
+            .map(|movement| movement.w30_intent),
+        Some(SceneMovementW30IntentState::Pin)
+    );
 }
 
 fn scene_session(session_id: &str, active_scene: &str) -> SessionFile {

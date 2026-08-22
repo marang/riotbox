@@ -569,6 +569,16 @@ After exit:
   independent of process CWD. Stub graphs remain transport scaffold and cannot
   qualify release/demo or sound quality. The named Foundation inventory is
   closed.
+- RIOTBOX-1336 rejects its first arbitrary Scene-owned W-30 material recall
+  after the changed middle phrase is audible but locally pitch- and
+  groove-incoherent. The stable A control remains usable but is not the
+  listener's preferred taste; the temporary recall behavior is removed without
+  result-driven tuning. The retained product correction types the current W-30
+  Scene role as `pin` through Session, replay, observer, Jam view, UI cues, and
+  mixed-output proof, keeping focused source-backed W-30 material sample-exact
+  while TR-909 and MC-202 express Scene contrast. This is explicit ownership
+  and negative exploration evidence, not a new audible effect or P023
+  completion claim.
 - RIOTBOX-1423 established the broader legal CC0 corpus contract: its general
   candidate matrix covers at least five eligible development sources across
   four typed families and protects two disjoint fresh holdout sets. That broad

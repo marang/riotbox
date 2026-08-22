@@ -121,6 +121,7 @@ fn scene_movement_view(session: &SessionFile) -> Option<SceneMovementView> {
         direction: movement.direction.label().into(),
         tr909_intent: movement.tr909_intent.label().into(),
         mc202_intent: movement.mc202_intent.label().into(),
+        w30_intent: movement.w30_intent.label().into(),
         intensity: movement.intensity,
         from_scene: movement.from_scene.as_ref().map(ToString::to_string),
         to_scene: movement.to_scene.to_string(),
@@ -140,6 +141,7 @@ fn scene_transition_policy(
         direction,
         tr909_intent: tr909_transition_intent(direction),
         mc202_intent: mc202_transition_intent(direction),
+        w30_intent: SceneTransitionW30IntentView::Pin,
         intensity: scene_transition_intensity(direction),
     })
 }

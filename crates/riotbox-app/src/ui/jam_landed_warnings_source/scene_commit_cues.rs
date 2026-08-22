@@ -102,6 +102,11 @@ pub(super) fn scene_post_commit_cue_line(shell: &JamShellState) -> Option<Line<'
             movement.mc202_intent.clone(),
             style_pending_detail(),
         ));
+        spans.push(Span::styled(" w30 ", style_low_emphasis()));
+        spans.push(Span::styled(
+            movement.w30_intent.clone(),
+            style_pending_detail(),
+        ));
     }
 
     spans.extend([

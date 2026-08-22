@@ -74,6 +74,11 @@ fn scene_pending_line(shell: &JamShellState) -> Line<'static> {
             policy.mc202_intent.label(),
             style_pending_detail(),
         ));
+        spans.push(Span::styled(" | w30 ", style_low_emphasis()));
+        spans.push(Span::styled(
+            policy.w30_intent.label(),
+            style_pending_detail(),
+        ));
     } else if let Some(energy_delta) = energy_delta_label(
         shell.app.jam_view.scene.active_scene_energy.as_deref(),
         scene_energy_label_for_scene_id(shell, scene_id.as_str()),

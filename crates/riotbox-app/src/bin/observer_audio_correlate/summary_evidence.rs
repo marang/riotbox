@@ -95,6 +95,12 @@ fn scene_movement_audio_evidence_failures(summary: &CorrelationSummary) -> Vec<S
     if movement.can_use_source_locked_scene_movement && movement.source_anchor_seconds.is_none() {
         failures.push("scene_movement.source_anchor_seconds=missing".to_string());
     }
+    if movement.w30_intent != "pin" {
+        failures.push(format!(
+            "scene_movement.w30_intent={}",
+            movement.w30_intent
+        ));
+    }
 
     failures
 }

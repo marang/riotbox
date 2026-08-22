@@ -414,6 +414,8 @@ pub struct SceneMovementState {
     pub direction: SceneMovementDirectionState,
     pub tr909_intent: SceneMovementLaneIntentState,
     pub mc202_intent: SceneMovementLaneIntentState,
+    #[serde(default)]
+    pub w30_intent: SceneMovementW30IntentState,
     pub intensity: f32,
     pub committed_bar_index: u64,
     pub committed_phrase_index: u64,
@@ -472,6 +474,27 @@ impl SceneMovementLaneIntentState {
             Self::Lift => "lift",
             Self::Release => "release",
             Self::Anchor => "anchor",
+        }
+    }
+}
+
+/// W-30 ownership during a landed Scene movement.
+///
+/// `Pin` deliberately keeps the focused source-backed W-30 material stable while the other
+/// lanes express the Scene contrast. New recall or resample roles require a separately qualified
+/// audible contract rather than silently changing material on Scene launch.
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SceneMovementW30IntentState {
+    #[default]
+    Pin,
+}
+
+impl SceneMovementW30IntentState {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Pin => "pin",
         }
     }
 }

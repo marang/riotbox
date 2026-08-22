@@ -60,7 +60,8 @@ use riotbox_core::{
         Mc202RoleState, Mc202SourcePhraseCandidateFamilyState,
         Mc202SourcePhraseNoteBudgetState, Mc202SourcePhrasePlanState,
         Mc202SourcePhraseSlotState, SceneMovementDirectionState, SceneMovementLaneIntentState,
-        SessionFile, Snapshot, SourceGraphRef, SourceRef, SourceTimingGridConfirmationState,
+        SceneMovementW30IntentState, SessionFile, Snapshot, SourceGraphRef, SourceRef,
+        SourceTimingGridConfirmationState,
         STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID, STEM_PACKAGE_FALLBACK_COMPARISON_QA_GATE_ID,
         STEM_PACKAGE_HASH_STABILITY_QA_GATE_ID, STEM_PACKAGE_LINEAGE_QA_GATE_ID,
         STEM_PACKAGE_NON_SILENCE_QA_GATE_ID,
@@ -77,7 +78,7 @@ use riotbox_core::{
     view::jam::{
         CaptureTargetKindView, SceneJumpAvailabilityView, SceneTransitionDirectionView,
         SceneTransitionKindView, SceneTransitionLaneIntentView, SceneTransitionPolicyView,
-        W30PendingAuditionKind,
+        SceneTransitionW30IntentView, W30PendingAuditionKind,
     },
 };
 use riotbox_sidecar::client::ClientError as SidecarClientError;
