@@ -12,7 +12,7 @@ use riotbox_audio::{
 use riotbox_core::{
     action::{ActionCommand, CaptureLengthIntent, CommitBoundary, SourceMonitorMode, TargetScope},
     ids::SceneId,
-    live_performance_policy::derive_live_performance_policy,
+    live_performance_policy::{LivePerformanceTr909Intent, derive_live_performance_policy},
     queue::CommittedActionRef,
     source_graph::{primary_grid_anchor_seconds_for_projected_scene, section_for_projected_scene},
     style::PerformancePresetId,
@@ -28,6 +28,7 @@ use crate::{
         CaptureJourneyProof, ConfirmedSourceTiming, GestureCompanionAction, GestureTransition,
         MonitorProof, PreparedLivePath, RenderStage, SceneTransitionProof,
     },
+    tonal_journey,
 };
 
 pub fn prepare(
@@ -35,7 +36,8 @@ pub fn prepare(
     output_dir: &Path,
     cli_bpm_hint: f32,
     cli_downbeat_seconds: Option<f32>,
-) -> Result<PreparedLivePath, Box<dyn Error>> {
+    tonal_live_review: bool,
+) -> Result<Box<PreparedLivePath>, Box<dyn Error>> {
     let mut state = JamAppState::analyze_source_file_to_json_with_source_timing_confirmation(
         source_path,
         output_dir.join("session.json"),
@@ -188,13 +190,29 @@ pub fn prepare(
             )
         })?;
     println!(
-        "live performance policy: character={} lead={} bass_owner={} mc202_intent={}",
+        "live performance policy: character={} lead={} bass_owner={} tr909_intent={} mc202_intent={}",
         live_policy.character.label(),
         live_policy.lead.label(),
         live_policy.bass_owner.label(),
+        live_policy.tr909_intent.label(),
         live_policy.mc202_intent.label()
     );
-    let (alpha_arc_stages, alpha_arc_proof) = prepare_alpha_arc(&state, &source_timing, bpm)?;
+    if tonal_live_review
+        && live_policy.character
+            != riotbox_core::live_performance_policy::LivePerformanceCharacter::TonalHook
+    {
+        return Err(format!(
+            "tonal live review requires tonal_hook policy, got {}",
+            live_policy.character.label()
+        )
+        .into());
+    }
+    let (alpha_arc_stages, alpha_arc_proof) = if tonal_live_review {
+        (Vec::new(), None)
+    } else {
+        let (stages, proof) = prepare_alpha_arc(&state, &source_timing, bpm)?;
+        (stages, Some(proof))
+    };
 
     let riotbox_plan = render_plan(&state, bpm, phrase_cursor as f64);
     let to_source = set_monitor_mode(&mut state, SourceMonitorMode::Source, phrase_cursor, 420)?;
@@ -257,7 +275,48 @@ pub fn prepare(
     )?)?;
     require_committed_command(&state, &w_commit, ActionCommand::W30TriggerPad)?;
     let after_w = render_plan(&state, bpm, w_cursor as f64);
-    let (normal_plan, damaged_plan) = prepare_legacy_pressure_regression(&state, bpm, fill_cursor)?;
+    let (normal_plan, damaged_plan) =
+        prepare_legacy_pressure_regression(&state, bpm, fill_cursor, live_policy.character)?;
+    let tonal_journey = tonal_live_review
+        .then(|| {
+            tonal_journey::prepare(&state, output_dir, &source_timing, bpm, preset_id).map(Box::new)
+        })
+        .transpose()?;
+    if tonal_live_review {
+        if tonal_journey.is_none() {
+            return Err("tonal live review omitted its tonal journey".into());
+        }
+        return Ok(Box::new(PreparedLivePath {
+            state,
+            source_timing,
+            live_policy,
+            preset_id,
+            preset_action_id: preset_commit.action_id.0,
+            alpha_arc_stages,
+            alpha_arc_proof,
+            restart_recall_plan: None,
+            restart_recall_proof: None,
+            capture_journey_proof: CaptureJourneyProof {
+                capture_action_id: capture_commit.action_id.0,
+                raw_audition_action_id: audition_commit.action_id.0,
+                promotion_action_id: promotion_commit.action_id.0,
+            },
+            monitor_proofs,
+            stages,
+            transitions,
+            scene_transition_proof: None,
+            monitor_action_ids: [
+                preset_commit.action_id.0,
+                to_source.action_id.0,
+                to_blend.action_id.0,
+                back_to_riotbox.action_id.0,
+            ],
+            legacy_riotbox_action_id: back_to_riotbox.action_id.0,
+            normal_plan,
+            damaged_plan,
+            tonal_journey,
+        }));
+    }
     transitions.push(gesture_transition(
         "w-hit",
         "w",
@@ -283,10 +342,16 @@ pub fn prepare(
 
     update_transport_position(&mut state, slam_cursor);
     let before_s = render_plan(&state, bpm, slam_cursor as f64);
-    if !matches!(before_s.tr909_render.mode, Tr909RenderMode::BreakReinforce) {
+    let expected_pre_slam_mode = if live_policy.tr909_intent == LivePerformanceTr909Intent::StayOut
+    {
+        Tr909RenderMode::Idle
+    } else {
+        Tr909RenderMode::BreakReinforce
+    };
+    if before_s.tr909_render.mode != expected_pre_slam_mode {
         return Err(format!(
-            "w did not retain break reinforcement before s: got {:?}",
-            before_s.tr909_render.mode
+            "w changed the source-character TR-909 intent before s: expected {expected_pre_slam_mode:?}, got {:?}",
+            before_s.tr909_render.mode,
         )
         .into());
     }
@@ -622,9 +687,9 @@ pub fn prepare(
 
     state.save()?;
     let (restart_recall_plan, restart_recall_proof) =
-        prepare_restart_recall(output_dir, &source_timing, bpm, preset_id)?;
+        prepare_restart_recall(output_dir, &source_timing, bpm, preset_id, 12)?;
 
-    Ok(PreparedLivePath {
+    Ok(Box::new(PreparedLivePath {
         state,
         source_timing,
         live_policy,
@@ -632,8 +697,8 @@ pub fn prepare(
         preset_action_id: preset_commit.action_id.0,
         alpha_arc_stages,
         alpha_arc_proof,
-        restart_recall_plan,
-        restart_recall_proof,
+        restart_recall_plan: Some(restart_recall_plan),
+        restart_recall_proof: Some(restart_recall_proof),
         capture_journey_proof: CaptureJourneyProof {
             capture_action_id: capture_commit.action_id.0,
             raw_audition_action_id: audition_commit.action_id.0,
@@ -642,7 +707,7 @@ pub fn prepare(
         monitor_proofs,
         stages,
         transitions,
-        scene_transition_proof,
+        scene_transition_proof: Some(scene_transition_proof),
         monitor_action_ids: [
             preset_commit.action_id.0,
             to_source.action_id.0,
@@ -652,7 +717,8 @@ pub fn prepare(
         legacy_riotbox_action_id: back_to_riotbox.action_id.0,
         normal_plan,
         damaged_plan,
-    })
+        tonal_journey: None,
+    }))
 }
 
 fn confirmed_source_timing(
@@ -727,11 +793,14 @@ fn prepare_legacy_pressure_regression(
     state: &JamAppState,
     bpm: f32,
     damage_commit_cursor: u64,
+    character: riotbox_core::live_performance_policy::LivePerformanceCharacter,
 ) -> Result<(RuntimeMixRenderPlan, RuntimeMixRenderPlan), Box<dyn Error>> {
-    if !matches!(
-        state.runtime.tr909_render.mode,
-        Tr909RenderMode::BreakReinforce
-    ) {
+    if character != riotbox_core::live_performance_policy::LivePerformanceCharacter::TonalHook
+        && !matches!(
+            state.runtime.tr909_render.mode,
+            Tr909RenderMode::BreakReinforce
+        )
+    {
         return Err(format!(
             "legacy pressure regression requires TR-909 break reinforcement before f/s, got {:?}",
             state.runtime.tr909_render.mode

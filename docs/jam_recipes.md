@@ -1075,8 +1075,9 @@ sparse each render twice. Review `controlled/01_held_character_loop.wav` inside
 `tonal-a` and `sparse-a`; each is one four-bar held instrument state (about
 eight seconds), not the dense Alpha gesture medley.
 `controlled/02_destructive_variation.wav` asks a separate mutation question.
-The tonal expectation is a recognizable W-30 pitch/riff with restrained drums
-and silent MC-202. The sparse expectation is a retained source rhythm plus
+The tonal expectation is a recognizable W-30 pitch/riff with silent TR-909 and
+MC-202 unless an explicit Fill, Takeover, Slam, or Scene movement owns an
+override. The sparse expectation is a retained source rhythm plus
 harder TR-909 drum/transient attack, bounded MC-202 punctuation, and a
 grid-locked W-30 chop/choke; source kicks between the fixed-grid drums are a
 failure. Neither source currently owns bass, so absent bass pressure must not
@@ -1088,6 +1089,34 @@ human loop usefulness and character in separate structured listening reviews.
 RIOTBOX-1404's tonal/sparse held loops and both destructive variants received
 `keep`; later audible changes require fresh reviews rather than inheriting those
 verdicts.
+
+### Exact tonal hold, Pitch Dive, re-entry, and restart recall
+
+Run the accepted Development-only tonal journey:
+
+```bash
+just tonal-hook-live-journey
+```
+
+The proof uses the registered manual `120 BPM` / zero-downbeat identity for the
+local `DH_RushArp_120_A.wav` Development source. It exercises the real capture,
+raw audition, promotion, committed tonal live policy, held W-30 hook,
+`w30.pitch_dive`, ordinary re-entry, Session save, process reconstruction,
+recall, and trigger path. It fails closed if the source identity is wrong,
+another generated lane contributes, callback partitions differ, re-entry keeps
+the articulation, restart loses the preset/capture, or clipping/limiting occurs.
+
+Review `tonal/06_human_review_sequence.wav` only after exact-artifact preflight.
+The accepted 29-second presentation is source context, held hook, Pitch Dive,
+direct ordinary re-entry, restart recall, and final silence. TR-909, MC-202, and
+Source Monitor are silent throughout the generated stages. The immediate
+review join before restart recall avoids manufacturing a musical gap; it does
+not claim zero-downtime audio while the application process itself restarts.
+
+RIOTBOX-1454 records `keep`, a clear hook, and recognizable transformed source
+identity for this journey. That verdict validates integration of the existing
+Pitch Dive; it does not repeat or widen the five-source Pitch Dive qualification
+from RIOTBOX-1442 through RIOTBOX-1444.
 
 ## Current Limits
 

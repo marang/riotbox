@@ -60,10 +60,12 @@ pub fn render_live_path(
             CALLBACK_FRAME_COUNT,
         );
     let alpha_source_reference = render(&source_monitor_plan.plan, monitor_review_frames)?;
-    let restart_recall_output = render(
-        &prepared.restart_recall_plan,
-        bar_frame_count(bpm).saturating_mul(2),
-    )?;
+    let restart_recall_plan = prepared
+        .restart_recall_plan
+        .as_deref()
+        .ok_or("dense live render omitted restart/recall plan")?;
+    let restart_recall_output =
+        render(restart_recall_plan, bar_frame_count(bpm).saturating_mul(2))?;
     let transition_outputs = prepared
         .transitions
         .iter()
@@ -151,7 +153,7 @@ fn render_transition_branch(
     .ok_or_else(|| "transition render produced no exact-mix segment".into())
 }
 
-fn render(
+pub(super) fn render(
     plan: &RuntimeMixRenderPlan,
     frame_count: usize,
 ) -> Result<RuntimeMixRenderOutput, Box<dyn std::error::Error>> {
@@ -181,7 +183,7 @@ fn bar_frame_count(bpm: f32) -> usize {
     beat_frame_count(bpm).saturating_mul(4)
 }
 
-fn only_w30(plan: &RuntimeMixRenderPlan) -> RuntimeMixRenderPlan {
+pub(super) fn only_w30(plan: &RuntimeMixRenderPlan) -> RuntimeMixRenderPlan {
     RuntimeMixRenderPlan {
         tr909_render: Default::default(),
         mc202_render: Default::default(),
@@ -190,7 +192,7 @@ fn only_w30(plan: &RuntimeMixRenderPlan) -> RuntimeMixRenderPlan {
     }
 }
 
-fn only_tr909(plan: &RuntimeMixRenderPlan) -> RuntimeMixRenderPlan {
+pub(super) fn only_tr909(plan: &RuntimeMixRenderPlan) -> RuntimeMixRenderPlan {
     RuntimeMixRenderPlan {
         mc202_render: Default::default(),
         w30_preview_render: Default::default(),
@@ -200,12 +202,22 @@ fn only_tr909(plan: &RuntimeMixRenderPlan) -> RuntimeMixRenderPlan {
     }
 }
 
-fn only_mc202(plan: &RuntimeMixRenderPlan) -> RuntimeMixRenderPlan {
+pub(super) fn only_mc202(plan: &RuntimeMixRenderPlan) -> RuntimeMixRenderPlan {
     RuntimeMixRenderPlan {
         tr909_render: Default::default(),
         w30_preview_render: Default::default(),
         w30_resample_tap: Default::default(),
         source_monitor_render: SourceMonitorRenderState::control_only(SourceMonitorMode::Riotbox),
+        ..plan.clone()
+    }
+}
+
+pub(super) fn only_source_monitor(plan: &RuntimeMixRenderPlan) -> RuntimeMixRenderPlan {
+    RuntimeMixRenderPlan {
+        tr909_render: Default::default(),
+        mc202_render: Default::default(),
+        w30_preview_render: Default::default(),
+        w30_resample_tap: Default::default(),
         ..plan.clone()
     }
 }

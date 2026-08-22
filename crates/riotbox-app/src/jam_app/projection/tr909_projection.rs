@@ -26,6 +26,7 @@ use riotbox_core::{
     ids::{CaptureId, SceneId},
     live_performance_policy::{
         LivePerformanceDestructiveIntent, LivePerformanceMc202Intent,
+        LivePerformanceTr909Intent,
         derive_live_performance_policy,
     },
     session::{
@@ -140,6 +141,28 @@ pub(super) fn build_tr909_render_state(
         scene_context,
     );
     let live_policy = source_graph.and_then(|graph| derive_live_performance_policy(session, graph));
+    let explicit_held_state_override = matches!(
+        policy.mode,
+        Tr909RenderModePolicy::Fill | Tr909RenderModePolicy::Takeover
+    ) || tr909.slam_enabled
+        || scene_movement_tr909_variation(session).is_some()
+        || scene_movement_tr909_slam(session) > 0.0;
+    if live_policy.as_ref().is_some_and(|policy| {
+        policy.tr909_intent == LivePerformanceTr909Intent::StayOut
+            && !explicit_held_state_override
+    }) {
+        return Tr909RenderState {
+            is_transport_running: transport.is_playing,
+            tempo_bpm,
+            position_beats: transport.position_beats,
+            source_bar_grid_anchor_position_beats: live_policy
+                .as_ref()
+                .and_then(|policy| policy.source_bar_grid_anchor_beat_cursor)
+                .map(|cursor| cursor as f64),
+            current_scene_id: transport.current_scene.as_ref().map(ToString::to_string),
+            ..Tr909RenderState::default()
+        };
+    }
     let character_pattern_adoption = matches!(
         policy.mode,
         Tr909RenderModePolicy::SourceSupport | Tr909RenderModePolicy::BreakReinforce

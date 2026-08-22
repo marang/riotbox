@@ -8,7 +8,8 @@ use riotbox_audio::{
 use riotbox_core::{
     action::ActionCommand,
     live_performance_policy::{
-        LIVE_PERFORMANCE_CHARACTER_CONTRAST_MARGIN, LivePerformanceCharacter,
+        LIVE_PERFORMANCE_CHARACTER_CONTRAST_MARGIN, LIVE_PERFORMANCE_POLICY_SCHEMA,
+        LivePerformanceCharacter,
     },
 };
 use serde_json::{Value, json};
@@ -25,7 +26,7 @@ const MAX_INTENTIONAL_STAY_OUT_RMS: f32 = 1.0e-5;
 const MIN_DESTRUCTIVE_DELTA_RMS: f32 = 0.01;
 
 pub fn write_pack(
-    prepared: PreparedLivePath,
+    prepared: Box<PreparedLivePath>,
     rendered: RenderedLivePath,
     source_path: &Path,
     output_dir: &Path,
@@ -128,10 +129,10 @@ pub fn write_pack(
             destructive_delta.rms, destructive_metrics.clip_count
         ));
     }
-    if w30_metrics.rms < MIN_AUDIBLE_LANE_RMS || tr909_metrics.rms < MIN_AUDIBLE_LANE_RMS {
+    if w30_metrics.rms < MIN_AUDIBLE_LANE_RMS {
         failures.push(format!(
-            "required W-30/TR-909 roles were inaudible: w30 {:.6}, tr909 {:.6}",
-            w30_metrics.rms, tr909_metrics.rms
+            "required W-30 role was inaudible: rms {:.6}",
+            w30_metrics.rms
         ));
     }
     match prepared.live_policy.character {
@@ -142,14 +143,20 @@ pub fn write_pack(
                     mc202_metrics.rms
                 ));
             }
-            if w30_metrics.rms <= tr909_metrics.rms {
+            if tr909_metrics.rms > MAX_INTENTIONAL_STAY_OUT_RMS {
                 failures.push(format!(
-                    "tonal W-30 hook did not lead TR-909 support: w30 {:.6}, tr909 {:.6}",
-                    w30_metrics.rms, tr909_metrics.rms
+                    "tonal TR-909 stay-out leaked audio: rms {:.8}",
+                    tr909_metrics.rms
                 ));
             }
         }
         LivePerformanceCharacter::SparsePressure => {
+            if tr909_metrics.rms < MIN_AUDIBLE_LANE_RMS {
+                failures.push(format!(
+                    "sparse TR-909 transient layer was inaudible: rms {:.6}",
+                    tr909_metrics.rms
+                ));
+            }
             if mc202_metrics.rms < MIN_AUDIBLE_LANE_RMS {
                 failures.push(format!(
                     "sparse MC-202 punctuation was inaudible: rms {:.6}",
@@ -169,6 +176,12 @@ pub fn write_pack(
             }
         }
         LivePerformanceCharacter::DenseBreak => {
+            if tr909_metrics.rms < MIN_AUDIBLE_LANE_RMS {
+                failures.push(format!(
+                    "dense TR-909 pressure was inaudible: rms {:.6}",
+                    tr909_metrics.rms
+                ));
+            }
             if mc202_metrics.rms < MIN_AUDIBLE_LANE_RMS {
                 failures.push(format!(
                     "dense MC-202 instigator was inaudible: rms {:.6}",
@@ -239,12 +252,13 @@ pub fn write_pack(
             "source_bar_grid_anchor_beat_cursor": prepared.live_policy.source_bar_grid_anchor_beat_cursor,
         },
         "source_character_policy": {
-            "schema": "riotbox.live_performance_character.v1",
+            "schema": LIVE_PERFORMANCE_POLICY_SCHEMA,
             "character": prepared.live_policy.character.label(),
             "destructive_intent": prepared.live_policy.destructive_intent.label(),
             "lead": prepared.live_policy.lead.label(),
             "bass_owner": prepared.live_policy.bass_owner.label(),
             "mc202_intent": prepared.live_policy.mc202_intent.label(),
+            "tr909_intent": prepared.live_policy.tr909_intent.label(),
             "classification_margin": LIVE_PERFORMANCE_CHARACTER_CONTRAST_MARGIN,
             "source_evidence": {
                 "feature_path": "source_graph.phrase_audio_features",
@@ -275,7 +289,7 @@ pub fn write_pack(
         },
         "role_expectations": {
             "bass": "unassigned; absent bass pressure is not a failure",
-            "tonal_hook": "W-30 source hook must lead; TR-909 anchors; MC-202 stays out",
+            "tonal_hook": "W-30 source hook leads alone; TR-909 and MC-202 stay out unless an explicit performer override owns them",
             "sparse_pressure": "TR-909 drum/transient impact must lead; W-30 preserves source rhythm; MC-202 only punctuates",
         },
         "metrics": {
