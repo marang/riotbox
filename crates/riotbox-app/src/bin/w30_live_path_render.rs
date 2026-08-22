@@ -73,7 +73,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         &source_path,
         &session_path,
         Some(graph_path),
-        "python/sidecar/json_stdio_sidecar.py",
+        riotbox_sidecar::path::bundled_sidecar_script_path(),
         19,
         Some(bpm),
         downbeat_seconds,

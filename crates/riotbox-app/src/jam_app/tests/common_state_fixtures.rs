@@ -301,10 +301,7 @@ fn w30_slice_pool_state_with_source_windows(
 }
 
 fn sidecar_script_path() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../python/sidecar/json_stdio_sidecar.py")
-        .canonicalize()
-        .expect("resolve sidecar script path")
+    riotbox_sidecar::path::bundled_sidecar_script_path()
 }
 
 fn write_pcm16_wave(

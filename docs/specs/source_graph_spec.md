@@ -489,6 +489,18 @@ Rules:
 
 - provider names and versions must be recorded
 - if analysis changes materially across versions, the session layer must detect this
+- `graph_generated_at` must be the truthful UTC graph-generation time supplied
+  by one explicit sidecar clock boundary; tests inject a fixed clock instead of
+  depending on wall-clock timing
+- the Rust client must complete and validate the versioned sidecar handshake
+  before accepting graph data; incompatible versions fail with both expected
+  and received values
+- request-less sidecar errors retain their provider code and message; request-id
+  validation applies only when the provider supplied an ID
+- `stub.transport` plus the `stub_transport_only` warning identifies transport
+  scaffold output. It is never source-derived, release/demo-ready, or quality
+  proof regardless of graph confidence values. The normal source-file analysis
+  client rejects empty or `stub.*` provider sets before returning the graph.
 
 ---
 

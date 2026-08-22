@@ -16,6 +16,7 @@ clippy:
 ci:
     cargo fmt --check
     cargo test
+    just sidecar-contract-fixtures
     just source-timing-fixture-catalog-validator-fixtures
     just source-timing-analyzer-skeleton-fixtures
     just source-timing-fixture-evaluator
@@ -40,6 +41,9 @@ ci:
     just audio-qa-lock-fixtures
     just audio-qa-ci
     cargo clippy --all-targets --all-features -- -D warnings
+
+sidecar-contract-fixtures:
+    python3 -m unittest discover -s python/sidecar -p 'test_*.py'
 
 audio-qa-ci:
     scripts/with_audio_qa_lock.sh broad-audio-qa just _audio-qa-ci-unlocked

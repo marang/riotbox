@@ -6,6 +6,7 @@ import math
 import os
 import sys
 import wave
+from datetime import datetime, timezone
 
 
 PROTOCOL_VERSION = "0.1"
@@ -16,6 +17,10 @@ SOURCE_MAP_BUCKET_COUNT = 32
 PHRASE_FEATURE_WINDOW_FRAMES = 512
 PHRASE_FEATURE_HOP_FRAMES = 256
 LOWPASS_CUTOFF_HZ = 180.0
+
+
+def utc_generated_at() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
 def write_message(message: dict) -> None:
@@ -121,7 +126,6 @@ def build_stub_graph(source: dict, analysis_seed: int) -> dict:
         "provenance": {
             "sidecar_version": SIDECAR_VERSION,
             "provider_set": ["stub.transport"],
-            "generated_at": "2026-04-12T19:30:00Z",
             "source_hash": source_hash,
             "analysis_seed": analysis_seed,
             "run_notes": "stdio ndjson spike",
@@ -643,7 +647,6 @@ def build_graph_from_decoded_wave(source_path: str, analysis_seed: int) -> dict:
         "provenance": {
             "sidecar_version": SIDECAR_VERSION,
             "provider_set": ["decoded.wav_baseline"],
-            "generated_at": "2026-04-12T22:30:00Z",
             "source_hash": content_hash,
             "analysis_seed": analysis_seed,
             "run_notes": "decoded source-file ingest baseline",
@@ -651,95 +654,111 @@ def build_graph_from_decoded_wave(source_path: str, analysis_seed: int) -> dict:
     }
 
 
-for raw_line in sys.stdin:
-    line = raw_line.strip()
-    if not line:
-        continue
-
-    try:
-        message = json.loads(line)
-    except json.JSONDecodeError as error:
-        write_message(
-            {
-                "type": "error",
-                "request_id": None,
-                "code": "invalid_json",
-                "message": str(error),
-                "retryable": False,
-            }
-        )
-        continue
-
+def handle_message(message: dict, clock=utc_generated_at) -> dict:
     request_type = message.get("type")
 
     if request_type == "ping":
-        write_message(
-            {
-                "type": "pong",
-                "request_id": message["request_id"],
-                "protocol_version": PROTOCOL_VERSION,
-                "sidecar_version": SIDECAR_VERSION,
-            }
-        )
-    elif request_type == "build_source_graph_stub":
-        write_message(
-            {
-                "type": "source_graph_built",
-                "request_id": message["request_id"],
-                "graph": build_stub_graph(message["source"], message["analysis_seed"]),
-            }
-        )
-    elif request_type == "analyze_source_file":
+        return {
+            "type": "pong",
+            "request_id": message["request_id"],
+            "protocol_version": PROTOCOL_VERSION,
+            "sidecar_version": SIDECAR_VERSION,
+        }
+    if request_type == "build_source_graph_stub":
+        graph = build_stub_graph(message["source"], message["analysis_seed"])
+        graph["provenance"]["generated_at"] = clock()
+        return {
+            "type": "source_graph_built",
+            "request_id": message["request_id"],
+            "graph": graph,
+        }
+    if request_type == "analyze_source_file":
         try:
             graph = build_graph_from_decoded_wave(message["source_path"], message["analysis_seed"])
         except FileNotFoundError as error:
-            write_message(
-                {
-                    "type": "error",
-                    "request_id": message.get("request_id"),
-                    "code": "source_missing",
-                    "message": f"source file not found: {error}",
-                    "retryable": False,
-                }
-            )
-            continue
+            return {
+                "type": "error",
+                "request_id": message.get("request_id"),
+                "code": "source_missing",
+                "message": f"source file not found: {error}",
+                "retryable": False,
+            }
         except (ValueError, wave.Error) as error:
-            write_message(
-                {
-                    "type": "error",
-                    "request_id": message.get("request_id"),
-                    "code": "source_unsupported",
-                    "message": str(error),
-                    "retryable": False,
-                }
-            )
-            continue
+            return {
+                "type": "error",
+                "request_id": message.get("request_id"),
+                "code": "source_unsupported",
+                "message": str(error),
+                "retryable": False,
+            }
         except OSError as error:
+            return {
+                "type": "error",
+                "request_id": message.get("request_id"),
+                "code": "source_unreadable",
+                "message": str(error),
+                "retryable": False,
+            }
+
+        graph["provenance"]["generated_at"] = clock()
+        return {
+            "type": "source_graph_built",
+            "request_id": message["request_id"],
+            "graph": graph,
+        }
+    return {
+        "type": "error",
+        "request_id": message.get("request_id"),
+        "code": "unknown_request",
+        "message": f"unknown request type: {request_type}",
+        "retryable": False,
+    }
+
+
+def main() -> None:
+    for raw_line in sys.stdin:
+        line = raw_line.strip()
+        if not line:
+            continue
+
+        try:
+            message = json.loads(line)
+        except json.JSONDecodeError as error:
             write_message(
                 {
                     "type": "error",
-                    "request_id": message.get("request_id"),
-                    "code": "source_unreadable",
+                    "request_id": None,
+                    "code": "invalid_json",
                     "message": str(error),
                     "retryable": False,
                 }
             )
             continue
 
-        write_message(
-            {
-                "type": "source_graph_built",
-                "request_id": message["request_id"],
-                "graph": graph,
-            }
-        )
-    else:
-        write_message(
-            {
+        if not isinstance(message, dict):
+            write_message(
+                {
+                    "type": "error",
+                    "request_id": None,
+                    "code": "invalid_request",
+                    "message": "request must be a JSON object",
+                    "retryable": False,
+                }
+            )
+            continue
+
+        try:
+            response = handle_message(message)
+        except (KeyError, TypeError) as error:
+            response = {
                 "type": "error",
                 "request_id": message.get("request_id"),
-                "code": "unknown_request",
-                "message": f"unknown request type: {request_type}",
+                "code": "invalid_request",
+                "message": str(error),
                 "retryable": False,
             }
-        )
+        write_message(response)
+
+
+if __name__ == "__main__":
+    main()

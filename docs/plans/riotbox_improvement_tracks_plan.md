@@ -127,6 +127,13 @@ Acceptance shape:
 - UI and reports distinguish stub, fallback, degraded, and source-derived data
 - release/demo paths cannot silently consume stub output as quality proof
 
+RIOTBOX-1334 closes this bounded trust slice: the client now validates protocol
+compatibility before graph use, preserves request-less errors, applies separate
+bounded control/analysis timeouts, consumes truthful injected-clock provenance,
+and resolves the repository sidecar without a process-CWD dependency. Static
+protocol fixtures keep success, mismatch, timeout, and error behavior reviewable;
+`stub.transport` remains explicitly ineligible for quality proof.
+
 ## Track E: QA, CI, And First-Playable UX
 
 Problem: Riotbox needs quality signals that catch sound regressions before a

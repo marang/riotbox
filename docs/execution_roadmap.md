@@ -1625,8 +1625,14 @@ clock, and feeds the normal Session side effect, runtime/audio-driver mirror,
 observer commit, and replay executor. Focused live-control and headless probe
 tests prove the same action identity and state transition without adding a
 second transport command, musical-boundary delay, or app-local replay truth.
-RIOTBOX-1334 is the remaining named Foundation gap before returning to a new
-audible Golden Path slice.
+RIOTBOX-1334 closes the final named Foundation gap: protocol compatibility is
+validated before graph acceptance, graph generation time comes from one
+injectable UTC clock boundary, request-less provider errors remain intact,
+control and analysis use separate configurable bounded deadlines, and bundled
+sidecar discovery no longer depends on process CWD. Golden success/failure and
+outside-CWD regressions keep stub output explicitly non-promotional. With all
+three named Foundation closures complete, selection returns to the highest
+value unblocked audible Golden Path slice.
 
 RIOTBOX-1320 accepts the improvement-track split in
 `docs/plans/riotbox_improvement_tracks_plan.md`. That plan is binding as a

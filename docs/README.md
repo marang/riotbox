@@ -213,8 +213,18 @@ Jam/TUI Play/Pause path now enqueues and immediately commits the existing
 Session/runtime state, the audio-driver request, observer history, and replay
 therefore share one product-spine action instead of a direct UI mutation. This
 preserves immediate transport response and adds no TUI polish or audible
-effect. The remaining named Foundation gap is the sidecar trust boundary in
-`RIOTBOX-1334`.
+effect.
+
+`RIOTBOX-1334` closes the third and final named Foundation Completion gap. The
+sidecar now negotiates protocol compatibility before graph acceptance, stamps
+truthful clock-injected provenance, preserves request-less provider errors,
+uses separate bounded control/analysis deadlines, and resolves its bundled
+script independently of process CWD. Static failure fixtures and an
+outside-repository-CWD launch regression cover those boundaries. Stub transport
+graphs remain explicitly non-source-derived scaffold and cannot support
+release/demo or quality claims. The named Foundation inventory is therefore
+closed; the next slice may return to the highest-value unblocked audible Golden
+Path gap.
 
 ## Documentation Rules
 

@@ -3,7 +3,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     let mut source_path = None;
     let mut session_path = None;
     let mut source_graph_path = None;
-    let mut sidecar_script_path = Some(PathBuf::from(DEFAULT_SIDECAR_PATH));
+    let mut sidecar_script_path = None;
     let mut analysis_seed = 19_u64;
     let mut explicit_source_bpm = None;
     let mut explicit_source_downbeat_seconds = None;
@@ -393,7 +393,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             session_path,
             source_graph_path,
             sidecar_script_path: sidecar_script_path
-                .unwrap_or_else(|| PathBuf::from(DEFAULT_SIDECAR_PATH)),
+                .unwrap_or_else(bundled_sidecar_script_path),
             analysis_seed,
             explicit_source_bpm,
             explicit_source_downbeat_seconds,
