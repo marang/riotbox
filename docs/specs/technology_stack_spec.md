@@ -91,6 +91,14 @@ Clarification:
 
 - this applies to persisted artifacts in v1, not to a permanently frozen RPC or sidecar transport choice
 - sidecar transport encoding should be revisited once the request/response contract becomes more stable
+- the current stdio client negotiates protocol version `0.1` before accepting a
+  graph and rejects incompatible peers with a typed expected/received mismatch
+- control requests use a bounded 10-second default deadline; decoded-source
+  analysis uses a separately configurable bounded 120-second default deadline
+  so a real offline analysis is not governed by the handshake budget
+- the repository-bundled sidecar path is derived from the compiled crate
+  location, not process CWD; `--sidecar` remains the explicit override and an
+  unavailable configured script fails before spawn with its exact path
 
 ### 3.5 TUI direction
 

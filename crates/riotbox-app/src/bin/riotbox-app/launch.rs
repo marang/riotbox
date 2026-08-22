@@ -28,9 +28,10 @@ use riotbox_core::{
     view::jam::SceneJumpAvailabilityView,
 };
 use serde_json::{Value, json};
+use riotbox_sidecar::path::bundled_sidecar_script_path;
 
 const DEFAULT_SESSION_PATH: &str = "data/sessions/jam-session.json";
-const DEFAULT_SIDECAR_PATH: &str = "python/sidecar/json_stdio_sidecar.py";
+const DEFAULT_SIDECAR_PATH: &str = "repository-bundled sidecar (CWD-independent)";
 const INPUT_POLL: Duration = Duration::from_millis(50);
 
 #[derive(Clone, Debug)]

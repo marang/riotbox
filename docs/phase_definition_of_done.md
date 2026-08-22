@@ -561,7 +561,14 @@ After exit:
   `transport.pause` action immediately at the current clock boundary. Session,
   runtime/audio-driver request, observer history, and replay now converge on
   that one action without transport latency, a second action family, or TUI
-  polish. RIOTBOX-1334 remains the named sidecar-trust foundation gap.
+  polish.
+- RIOTBOX-1334 is the third and final named Foundation Completion closure:
+  version mismatch fails before graph trust, provenance time is truthful and
+  deterministically testable, request-less provider errors stay typed,
+  operation-specific timeouts remain bounded, and bundled-sidecar launch is
+  independent of process CWD. Stub graphs remain transport scaffold and cannot
+  qualify release/demo or sound quality. The named Foundation inventory is
+  closed.
 - RIOTBOX-1423 established the broader legal CC0 corpus contract: its general
   candidate matrix covers at least five eligible development sources across
   four typed families and protects two disjoint fresh holdout sets. That broad

@@ -52,10 +52,7 @@ fn ingest_observer_source_map_uses_decoded_bucket_evidence() {
 }
 
 fn sidecar_script_path() -> std::path::PathBuf {
-    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../python/sidecar/json_stdio_sidecar.py")
-        .canonicalize()
-        .expect("resolve sidecar script path")
+    riotbox_sidecar::path::bundled_sidecar_script_path()
 }
 
 fn write_rising_pcm16_wave(

@@ -3,13 +3,10 @@ use riotbox_core::{
     source_graph::{DecodeProfile, SourceDescriptor},
 };
 use riotbox_sidecar::client::StdioSidecarClient;
-use std::path::PathBuf;
+use riotbox_sidecar::path::bundled_sidecar_script_path;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let script_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../python/sidecar/json_stdio_sidecar.py");
-
-    let mut client = StdioSidecarClient::spawn_python(script_path)?;
+    let mut client = StdioSidecarClient::spawn_python(bundled_sidecar_script_path())?;
     let pong = client.ping()?;
 
     println!(

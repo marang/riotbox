@@ -40,7 +40,7 @@ pub fn prepare(
         source_path,
         output_dir.join("session.json"),
         Some(output_dir.join("source-graph.json")),
-        "python/sidecar/json_stdio_sidecar.py",
+        riotbox_sidecar::path::bundled_sidecar_script_path(),
         23,
         Some(cli_bpm_hint),
         cli_downbeat_seconds,

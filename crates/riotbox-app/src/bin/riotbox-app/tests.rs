@@ -160,12 +160,15 @@ mod tests {
                 source_path,
                 session_path,
                 source_graph_path,
+                sidecar_script_path,
                 analysis_seed,
                 ..
             } => {
                 assert_eq!(source_path, PathBuf::from("input.wav"));
                 assert_eq!(session_path, PathBuf::from("session.json"));
                 assert_eq!(source_graph_path, Some(PathBuf::from("graph.json")));
+                assert!(sidecar_script_path.is_absolute());
+                assert!(sidecar_script_path.is_file());
                 assert_eq!(analysis_seed, 19);
             }
             LaunchMode::Load { .. } => panic!("expected ingest mode"),
@@ -183,6 +186,25 @@ mod tests {
             | LaunchMode::DawSessionWriterProofApply { .. }
             | LaunchMode::DawSessionWriterExportExecute { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected ingest mode"),
+        }
+    }
+
+    #[test]
+    fn parse_args_retains_explicit_sidecar_override() {
+        let mode = parse_args([
+            "--source".into(),
+            "input.wav".into(),
+            "--sidecar".into(),
+            "custom/provider.py".into(),
+        ])
+        .expect("parse explicit sidecar override");
+
+        match mode.mode {
+            LaunchMode::Ingest {
+                sidecar_script_path,
+                ..
+            } => assert_eq!(sidecar_script_path, PathBuf::from("custom/provider.py")),
+            _ => panic!("expected ingest mode"),
         }
     }
 
