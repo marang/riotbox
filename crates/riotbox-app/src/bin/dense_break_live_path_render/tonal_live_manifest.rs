@@ -31,7 +31,7 @@ const MIN_CONTRAST_DELTA_RMS: f32 = 0.005;
 const MIN_PITCH_DIVE_ACTIVE_TAIL_DELTA_RMS: f32 = 0.001;
 
 pub fn write_pack(
-    mut prepared: PreparedLivePath,
+    mut prepared: Box<PreparedLivePath>,
     source_path: &Path,
     output_dir: &Path,
 ) -> Result<(), Box<dyn Error>> {

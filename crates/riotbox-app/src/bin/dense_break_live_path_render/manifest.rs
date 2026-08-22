@@ -55,7 +55,7 @@ struct SequenceBoundaryMetrics {
 }
 
 pub fn write_pack(
-    prepared: PreparedLivePath,
+    prepared: Box<PreparedLivePath>,
     rendered: RenderedLivePath,
     source_path: &Path,
     output_dir: &Path,

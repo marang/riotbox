@@ -37,7 +37,7 @@ pub fn prepare(
     cli_bpm_hint: f32,
     cli_downbeat_seconds: Option<f32>,
     tonal_live_review: bool,
-) -> Result<PreparedLivePath, Box<dyn Error>> {
+) -> Result<Box<PreparedLivePath>, Box<dyn Error>> {
     let mut state = JamAppState::analyze_source_file_to_json_with_source_timing_confirmation(
         source_path,
         output_dir.join("session.json"),
@@ -287,7 +287,7 @@ pub fn prepare(
         if tonal_journey.is_none() {
             return Err("tonal live review omitted its tonal journey".into());
         }
-        return Ok(PreparedLivePath {
+        return Ok(Box::new(PreparedLivePath {
             state,
             source_timing,
             live_policy,
@@ -316,7 +316,7 @@ pub fn prepare(
             normal_plan,
             damaged_plan,
             tonal_journey,
-        });
+        }));
     }
     transitions.push(gesture_transition(
         "w-hit",
@@ -684,7 +684,7 @@ pub fn prepare(
     let (restart_recall_plan, restart_recall_proof) =
         prepare_restart_recall(output_dir, &source_timing, bpm, preset_id, 12)?;
 
-    Ok(PreparedLivePath {
+    Ok(Box::new(PreparedLivePath {
         state,
         source_timing,
         live_policy,
@@ -713,7 +713,7 @@ pub fn prepare(
         normal_plan,
         damaged_plan,
         tonal_journey,
-    })
+    }))
 }
 
 fn confirmed_source_timing(

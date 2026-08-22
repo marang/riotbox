@@ -26,7 +26,7 @@ const MAX_INTENTIONAL_STAY_OUT_RMS: f32 = 1.0e-5;
 const MIN_DESTRUCTIVE_DELTA_RMS: f32 = 0.01;
 
 pub fn write_pack(
-    prepared: PreparedLivePath,
+    prepared: Box<PreparedLivePath>,
     rendered: RenderedLivePath,
     source_path: &Path,
     output_dir: &Path,
