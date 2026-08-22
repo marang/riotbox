@@ -12,7 +12,7 @@ use riotbox_audio::{
 use riotbox_core::{
     action::{ActionCommand, CaptureLengthIntent, CommitBoundary, SourceMonitorMode, TargetScope},
     ids::SceneId,
-    live_performance_policy::derive_live_performance_policy,
+    live_performance_policy::{LivePerformanceTr909Intent, derive_live_performance_policy},
     queue::CommittedActionRef,
     source_graph::{primary_grid_anchor_seconds_for_projected_scene, section_for_projected_scene},
     style::PerformancePresetId,
@@ -343,10 +343,16 @@ pub fn prepare(
 
     update_transport_position(&mut state, slam_cursor);
     let before_s = render_plan(&state, bpm, slam_cursor as f64);
-    if !matches!(before_s.tr909_render.mode, Tr909RenderMode::BreakReinforce) {
+    let expected_pre_slam_mode = if live_policy.tr909_intent == LivePerformanceTr909Intent::StayOut
+    {
+        Tr909RenderMode::Idle
+    } else {
+        Tr909RenderMode::BreakReinforce
+    };
+    if before_s.tr909_render.mode != expected_pre_slam_mode {
         return Err(format!(
-            "w did not retain break reinforcement before s: got {:?}",
-            before_s.tr909_render.mode
+            "w changed the source-character TR-909 intent before s: expected {expected_pre_slam_mode:?}, got {:?}",
+            before_s.tr909_render.mode,
         )
         .into());
     }
