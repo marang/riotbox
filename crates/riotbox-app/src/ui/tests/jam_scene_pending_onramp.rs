@@ -79,7 +79,7 @@ fn scene_pending_line_styles_define_intent_hierarchy() {
 
     assert_eq!(
         rendered,
-        "launch -> scene-02-drop @ next bar | policy rise | 909 drive | 202 lift"
+        "launch -> scene-02-drop @ next bar | policy rise | 909 drive | 202 lift | w30 pin"
     );
     assert_eq!(line.spans[0].content.as_ref(), "launch");
     assert_eq!(line.spans[0].style.fg, Some(Color::Yellow));
@@ -103,6 +103,7 @@ fn scene_pending_line_styles_define_intent_hierarchy() {
     );
     assert_eq!(line.spans[8].content.as_ref(), "drive");
     assert_eq!(line.spans[10].content.as_ref(), "lift");
+    assert_eq!(line.spans[12].content.as_ref(), "pin");
 }
 
 #[test]

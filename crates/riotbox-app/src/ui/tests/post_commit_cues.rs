@@ -140,6 +140,7 @@ fn scene_post_commit_cue_surfaces_landed_movement() {
         direction: SceneMovementDirectionState::Rise,
         tr909_intent: SceneMovementLaneIntentState::Drive,
         mc202_intent: SceneMovementLaneIntentState::Lift,
+        w30_intent: riotbox_core::session::SceneMovementW30IntentState::Pin,
         intensity: 0.75,
         committed_bar_index: 9,
         committed_phrase_index: 2,
@@ -154,7 +155,7 @@ fn scene_post_commit_cue_surfaces_landed_movement() {
         .collect::<String>();
 
     assert!(
-        rendered.contains("move rise 909 drive 202 lift"),
+        rendered.contains("move rise 909 drive 202 lift w30 pin"),
         "{rendered}"
     );
 }

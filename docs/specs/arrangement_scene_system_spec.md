@@ -104,6 +104,15 @@ Every P014 arrangement or scene slice must:
 - label fallback, manual-confirm, explicit-BPM, and locked-grid behavior
   honestly instead of treating every source as grid-locked
 
+Landed Scene movement also carries an explicit typed W-30 intent. The current
+intent is `pin`: `scene.launch` and `scene.restore` keep the focused
+source-backed W-30 capture, pad assignment, articulation, and damage/resample
+state unchanged while TR-909 and MC-202 express the Scene contrast. Session,
+replay, Jam view, observer output, pending/landed UI cues, and mixed-output QA
+must agree on this ownership. A future W-30 `recall`, `resample`, or other
+material-changing intent requires a new typed contract and separately qualified
+audible mechanism; it must not enter as an implicit Scene-launch side effect.
+
 ## 4. Out Of Scope For The First Contract
 
 The first P014 contract does not implement:
@@ -169,8 +178,9 @@ Current P014 transition proof:
 - `cargo test -p riotbox-app p014_scene_chain_launch_restore_replay_proves_transition_state_and_mix -- --nocapture`
   proves a three-step manual scene chain (`scene.launch`, `scene.launch`,
   `scene.restore`) through Session scene state, queue / commit records,
-  graph-aware replay, Jam view movement projection, and non-collapsed mixed
-  TR-909 / MC-202 output deltas.
+  graph-aware replay, Jam view movement projection, explicit W-30 `pin`
+  ownership, and non-collapsed mixed TR-909 / MC-202 / W-30 output deltas. The
+  focused W-30 output stays sample-exact across launch, restore, and replay.
 
 Current P014 source playback reposition proof:
 

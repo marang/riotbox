@@ -257,6 +257,7 @@ fn scene_jump_restore_replay_proves_state_and_mixed_audio_path() {
             direction: SceneTransitionDirectionView::Drop,
             tr909_intent: SceneTransitionLaneIntentView::Release,
             mc202_intent: SceneTransitionLaneIntentView::Anchor,
+            w30_intent: SceneTransitionW30IntentView::Pin,
             intensity: 0.55,
         })
     );
@@ -357,6 +358,7 @@ fn scene_jump_restore_replay_proves_state_and_mixed_audio_path() {
             direction: SceneTransitionDirectionView::Rise,
             tr909_intent: SceneTransitionLaneIntentView::Drive,
             mc202_intent: SceneTransitionLaneIntentView::Lift,
+            w30_intent: SceneTransitionW30IntentView::Pin,
             intensity: 0.75,
         })
     );

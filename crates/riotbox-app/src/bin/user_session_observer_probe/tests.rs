@@ -440,6 +440,7 @@ fn writes_p014_scene_movement_observer_stream() {
     assert_eq!(scene["last_movement"]["direction"], "rise");
     assert_eq!(scene["last_movement"]["tr909_intent"], "drive");
     assert_eq!(scene["last_movement"]["mc202_intent"], "lift");
+    assert_eq!(scene["last_movement"]["w30_intent"], "pin");
     assert_eq!(scene["last_movement"]["from_scene"], "scene-01-break");
     assert_eq!(scene["last_movement"]["to_scene"], "scene-02-drop");
     assert_eq!(scene["last_movement"]["committed_bar_index"], 10);

@@ -358,6 +358,7 @@ fn scene_observer_snapshot(shell: &JamShellState) -> Value {
             "direction": movement.direction.as_str(),
             "tr909_intent": movement.tr909_intent.as_str(),
             "mc202_intent": movement.mc202_intent.as_str(),
+            "w30_intent": movement.w30_intent.as_str(),
             "intensity": movement.intensity,
             "from_scene": movement.from_scene.as_deref(),
             "to_scene": movement.to_scene.as_str(),

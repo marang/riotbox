@@ -20,6 +20,7 @@ fn correlates_scene_movement_observer_to_output_evidence() {
     assert_eq!(movement.direction, "rise");
     assert_eq!(movement.tr909_intent, "drive");
     assert_eq!(movement.mc202_intent, "lift");
+    assert_eq!(movement.w30_intent, "pin");
     assert_eq!(movement.from_scene.as_deref(), Some("scene-01-break"));
     assert_eq!(movement.to_scene, "scene-02-drop");
     assert!(movement.can_use_source_locked_scene_movement);
@@ -69,7 +70,7 @@ fn scene_movement_observer_with_anchor(source_anchor_seconds: Option<f64>) -> St
         r#"{"event":"audio_runtime","status":"started","host":"headless-probe"}"#.to_string(),
         r#"{"event":"key_outcome","key":"y","outcome":"queue_scene_select"}"#.to_string(),
         format!(
-            r#"{{"event":"transport_commit","committed":[{{"action_id":42,"boundary":"NextBar","beat_index":36,"bar_index":9,"phrase_index":2,"commit_sequence":1}}],"snapshot":{{"scene":{{"active_scene":"scene-02-drop","last_movement":{{"kind":"launch","direction":"rise","tr909_intent":"drive","mc202_intent":"lift","intensity":0.84,"from_scene":"scene-01-break","to_scene":"scene-02-drop","committed_bar_index":9,"committed_phrase_index":2}},"arrangement_contract":{{"can_use_source_locked_scene_movement":true}},"source_monitor":{{"source_anchor_seconds":{source_anchor},"source_anchor_position_beats":36.0}}}}}}}}"#
+            r#"{{"event":"transport_commit","committed":[{{"action_id":42,"boundary":"NextBar","beat_index":36,"bar_index":9,"phrase_index":2,"commit_sequence":1}}],"snapshot":{{"scene":{{"active_scene":"scene-02-drop","last_movement":{{"kind":"launch","direction":"rise","tr909_intent":"drive","mc202_intent":"lift","w30_intent":"pin","intensity":0.84,"from_scene":"scene-01-break","to_scene":"scene-02-drop","committed_bar_index":9,"committed_phrase_index":2}},"arrangement_contract":{{"can_use_source_locked_scene_movement":true}},"source_monitor":{{"source_anchor_seconds":{source_anchor},"source_anchor_position_beats":36.0}}}}}}}}"#
         ),
     ]
     .join("\n")

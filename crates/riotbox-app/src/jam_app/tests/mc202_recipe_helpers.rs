@@ -1133,9 +1133,10 @@ fn render_scene_recipe_mix_buffer(state: &JamAppState) -> Vec<f32> {
     let frame_count = 44_100;
     let mut tr909 = render_tr909_offline(&state.runtime.tr909_render, 44_100, 2, frame_count);
     let mc202 = render_mc202_offline(&state.runtime.mc202_render, 44_100, 2, frame_count);
+    let w30 = render_w30_preview_offline(&state.runtime.w30_preview, 44_100, 2, frame_count);
 
-    for (left, right) in tr909.iter_mut().zip(mc202.iter()) {
-        *left += *right;
+    for ((mix, mc202), w30) in tr909.iter_mut().zip(mc202.iter()).zip(w30.iter()) {
+        *mix += *mc202 + *w30;
     }
 
     let metrics = signal_metrics(&tr909);

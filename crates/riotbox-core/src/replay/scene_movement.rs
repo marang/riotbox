@@ -4,7 +4,7 @@ use crate::{
     ids::SceneId,
     session::{
         SceneMovementDirectionState, SceneMovementKindState, SceneMovementLaneIntentState,
-        SceneMovementState, SceneState, SessionFile,
+        SceneMovementState, SceneMovementW30IntentState, SceneState, SessionFile,
     },
     source_graph::{EnergyClass, SourceGraph, section_for_projected_scene},
     transport::CommitBoundaryState,
@@ -119,6 +119,7 @@ pub fn derive_scene_movement_state(
         direction,
         tr909_intent: scene_movement_tr909_intent(direction),
         mc202_intent: scene_movement_mc202_intent(direction),
+        w30_intent: SceneMovementW30IntentState::Pin,
         intensity: scene_movement_intensity(direction),
         committed_bar_index: boundary.bar_index,
         committed_phrase_index: boundary.phrase_index,
