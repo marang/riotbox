@@ -1,9 +1,9 @@
 # RIOTBOX-1454 Tonal Live Journey v2 Acceptance
 
-Date: 2026-08-22  
-Partition: Development only  
-Decision: RBX-315  
-Result: bounded exact-live journey keep
+- Date: 2026-08-22
+- Partition: Development only
+- Decision: RBX-315
+- Result: bounded exact-live journey keep
 
 ## Scope
 

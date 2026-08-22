@@ -86,7 +86,6 @@ pub struct PreparedLivePath {
 }
 
 pub struct TonalJourney {
-    pub state: Box<JamAppState>,
     pub held_plan: Box<RuntimeMixRenderPlan>,
     pub contrast_plan: Box<RuntimeMixRenderPlan>,
     pub reentry_plan: Box<RuntimeMixRenderPlan>,

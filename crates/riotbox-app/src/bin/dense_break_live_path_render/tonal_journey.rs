@@ -93,7 +93,6 @@ pub(super) fn prepare(
         prepare_restart_recall(output_dir, source_timing, bpm, preset_id, 14)?;
 
     Ok(TonalJourney {
-        state,
         held_plan,
         contrast_plan,
         reentry_plan,

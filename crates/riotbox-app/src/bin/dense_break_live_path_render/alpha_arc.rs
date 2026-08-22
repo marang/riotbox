@@ -31,7 +31,7 @@ pub(super) fn prepare_restart_recall(
     let preset_survived_restart =
         state.session.runtime_state.style.active_preset == Some(preset_id);
     if !preset_survived_restart {
-        return Err("Feral Break Alpha preset identity did not survive restart".into());
+        return Err("live path preset identity did not survive restart".into());
     }
     let capture_id = state
         .session
@@ -40,13 +40,13 @@ pub(super) fn prepare_restart_recall(
         .w30
         .last_capture
         .clone()
-        .ok_or("Feral Break Alpha restart lost the promoted W-30 capture")?;
+        .ok_or("live path restart lost the promoted W-30 capture")?;
     let recall_cursor = source_timing
         .bar_start_beat_cursor(recall_bar_index)
         .ok_or_else(|| format!("live path cannot resolve restart recall bar {recall_bar_index}"))?;
     state.set_transport_playing(true);
     if state.queue_w30_live_recall(3_000) != Some(QueueControlResult::Enqueued) {
-        return Err("Feral Break Alpha live recall was unavailable after restart".into());
+        return Err("live path W-30 recall was unavailable after restart".into());
     }
     let scene = current_scene(&state);
     let recall_commit = one_commit(commit(
@@ -60,7 +60,7 @@ pub(super) fn prepare_restart_recall(
     require_committed_command(&state, &recall_commit, ActionCommand::W30LiveRecall)?;
 
     if state.queue_w30_trigger_pad(3_100) != Some(QueueControlResult::Enqueued) {
-        return Err("Feral Break Alpha trigger was unavailable after restart recall".into());
+        return Err("live path W-30 trigger was unavailable after restart recall".into());
     }
     let trigger_cursor = recall_cursor.saturating_add(1);
     let scene = current_scene(&state);
@@ -76,7 +76,7 @@ pub(super) fn prepare_restart_recall(
     let plan = render_plan(&state, bpm, trigger_cursor as f64);
     if plan.w30_preview_render.routing != W30PreviewRenderRouting::MusicBusPreview {
         return Err(format!(
-            "Feral Break Alpha restart trigger routing was {:?}",
+            "live path restart trigger routing was {:?}",
             plan.w30_preview_render.routing
         )
         .into());

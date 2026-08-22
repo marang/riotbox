@@ -277,8 +277,7 @@ pub fn prepare(
     let after_w = render_plan(&state, bpm, w_cursor as f64);
     let (normal_plan, damaged_plan) =
         prepare_legacy_pressure_regression(&state, bpm, fill_cursor, live_policy.character)?;
-    let tonal_journey = (live_policy.character
-        == riotbox_core::live_performance_policy::LivePerformanceCharacter::TonalHook)
+    let tonal_journey = tonal_live_review
         .then(|| {
             tonal_journey::prepare(&state, output_dir, &source_timing, bpm, preset_id).map(Box::new)
         })
@@ -718,7 +717,7 @@ pub fn prepare(
         legacy_riotbox_action_id: back_to_riotbox.action_id.0,
         normal_plan,
         damaged_plan,
-        tonal_journey,
+        tonal_journey: None,
     }))
 }
 

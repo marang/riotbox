@@ -46,7 +46,6 @@ pub fn write_pack(
         .tonal_journey
         .take()
         .ok_or("tonal live review omitted its performer journey")?;
-    journey.state.save()?;
 
     let bpm = prepared.source_timing.bpm;
     let plans = [
@@ -335,7 +334,7 @@ pub fn write_pack(
     )?;
     artifacts.push(artifact("source", "source_reference", "00_source.wav"));
 
-    let source_descriptor = &journey
+    let source_descriptor = &prepared
         .state
         .source_graph
         .as_ref()

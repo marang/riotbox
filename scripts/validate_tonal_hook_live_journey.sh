@@ -57,10 +57,19 @@ jq -e \
   and .source_character_policy.mc202_intent == "stay_out"
   and .source_character_policy.tr909_intent == "stay_out"
   and .journey.contrast == "w30.pitch_dive"
+  and .journey.held_beats == 16
+  and .journey.contrast_beats == 12
+  and .journey.ordinary_reentry_beats == 8
+  and .journey.restart_review_beats == 8
   and .journey.ordinary_reentry_cleared_articulation == true
   and .journey.saved_before_restart == true
   and .journey.restart_preset_survived == true
   and .exact_mixer_proof.callback_partitions_sample_exact == true
+  and .exact_mixer_proof.generated_journey_sample_exact_to_w30_only == true
+  and .exact_mixer_proof.restart_recall_sample_exact_to_w30_only == true
+  and .exact_mixer_proof.tr909_journey_max_rms <= .thresholds.max_tr909_stay_out_rms
+  and .exact_mixer_proof.mc202_journey_max_rms <= .thresholds.max_mc202_stay_out_rms
+  and .exact_mixer_proof.source_monitor_journey_max_rms <= .thresholds.max_tr909_stay_out_rms
   and .exact_mixer_proof.pitch_dive_first_eight_beats_sample_exact_to_held_w30 == true
   and .exact_mixer_proof.pitch_dive_active_tail_delta_rms >= .thresholds.min_isolated_pitch_dive_active_tail_delta_rms
   and .exact_mixer_proof.human_review_sequence_duration_seconds == 29
