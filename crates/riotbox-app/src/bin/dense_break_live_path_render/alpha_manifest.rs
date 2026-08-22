@@ -42,6 +42,18 @@ pub(super) fn write_and_validate(
     artifacts: &mut Vec<Value>,
     failures: &mut Vec<String>,
 ) -> Result<AlphaManifestEvidence, Box<dyn Error>> {
+    let alpha_arc_proof = prepared
+        .alpha_arc_proof
+        .as_ref()
+        .ok_or("dense live path omitted Alpha arc proof")?;
+    let restart_recall_proof = prepared
+        .restart_recall_proof
+        .as_ref()
+        .ok_or("dense live path omitted restart/recall proof")?;
+    let restart_recall_plan = prepared
+        .restart_recall_plan
+        .as_deref()
+        .ok_or("dense live path omitted restart/recall plan")?;
     if prepared.alpha_arc_stages.len() != 5
         || rendered.alpha_arc_outputs.len() != prepared.alpha_arc_stages.len()
     {
@@ -262,17 +274,17 @@ pub(super) fn write_and_validate(
             "duration_bars": alpha_arc_total_beats / 4,
             "stages": alpha_arc_stage_manifest,
             "actions": {
-                "hook": prepared.alpha_arc_proof.hook_action_id,
-                "pressure_lift": prepared.alpha_arc_proof.pressure_action_id,
-                "destructive_fill": prepared.alpha_arc_proof.destructive_fill_action_id,
-                "role_swap": prepared.alpha_arc_proof.role_swap_action_id,
-                "return": prepared.alpha_arc_proof.return_action_id,
-                "return_damage": prepared.alpha_arc_proof.return_damage_action_id,
+                "hook": alpha_arc_proof.hook_action_id,
+                "pressure_lift": alpha_arc_proof.pressure_action_id,
+                "destructive_fill": alpha_arc_proof.destructive_fill_action_id,
+                "role_swap": alpha_arc_proof.role_swap_action_id,
+                "return": alpha_arc_proof.return_action_id,
+                "return_damage": alpha_arc_proof.return_damage_action_id,
             },
             "scenes": {
-                "original": prepared.alpha_arc_proof.original_scene,
-                "contrast": prepared.alpha_arc_proof.contrast_scene,
-                "returned": prepared.alpha_arc_proof.returned_scene,
+                "original": alpha_arc_proof.original_scene,
+                "contrast": alpha_arc_proof.contrast_scene,
+                "returned": alpha_arc_proof.returned_scene,
             },
             "hook_to_pressure_delta": metrics_json(alpha_hook_pressure_delta),
             "hook_to_changed_return_delta": metrics_json(alpha_hook_return_delta),
@@ -312,13 +324,13 @@ pub(super) fn write_and_validate(
             "human_verdict": "unverified",
         }),
         restart_recall: json!({
-            "preset_survived_restart": prepared.restart_recall_proof.preset_survived_restart,
-            "capture_id": prepared.restart_recall_proof.capture_id.as_str(),
-            "recall_action_id": prepared.restart_recall_proof.recall_action_id,
-            "trigger_action_id": prepared.restart_recall_proof.trigger_action_id,
+            "preset_survived_restart": restart_recall_proof.preset_survived_restart,
+            "capture_id": restart_recall_proof.capture_id.as_str(),
+            "recall_action_id": restart_recall_proof.recall_action_id,
+            "trigger_action_id": restart_recall_proof.trigger_action_id,
             "artifact": ALPHA_RESTART_RECALL_ARTIFACT_PATH,
-            "monitor_mode": prepared.restart_recall_plan.source_monitor_render.mode.as_str(),
-            "w30_routing": prepared.restart_recall_plan.w30_preview_render.routing.label(),
+            "monitor_mode": restart_recall_plan.source_monitor_render.mode.as_str(),
+            "w30_routing": restart_recall_plan.w30_preview_render.routing.label(),
             "metrics": metrics_json(restart_recall_metrics),
             "limiter": limiter_json(rendered.restart_recall_output.limiter),
         }),
@@ -327,8 +339,8 @@ pub(super) fn write_and_validate(
             "raw_audition_action_id": prepared.capture_journey_proof.raw_audition_action_id,
             "promotion_action_id": prepared.capture_journey_proof.promotion_action_id,
             "saved_before_restart": true,
-            "restart_recall_action_id": prepared.restart_recall_proof.recall_action_id,
-            "restart_trigger_action_id": prepared.restart_recall_proof.trigger_action_id,
+            "restart_recall_action_id": restart_recall_proof.recall_action_id,
+            "restart_trigger_action_id": restart_recall_proof.trigger_action_id,
             "sequence": [
                 "capture",
                 "raw_audition",

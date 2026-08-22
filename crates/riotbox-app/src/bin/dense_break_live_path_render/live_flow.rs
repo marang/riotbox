@@ -36,6 +36,7 @@ pub fn prepare(
     output_dir: &Path,
     cli_bpm_hint: f32,
     cli_downbeat_seconds: Option<f32>,
+    tonal_live_review: bool,
 ) -> Result<PreparedLivePath, Box<dyn Error>> {
     let mut state = JamAppState::analyze_source_file_to_json_with_source_timing_confirmation(
         source_path,
@@ -196,7 +197,22 @@ pub fn prepare(
         live_policy.tr909_intent.label(),
         live_policy.mc202_intent.label()
     );
-    let (alpha_arc_stages, alpha_arc_proof) = prepare_alpha_arc(&state, &source_timing, bpm)?;
+    if tonal_live_review
+        && live_policy.character
+            != riotbox_core::live_performance_policy::LivePerformanceCharacter::TonalHook
+    {
+        return Err(format!(
+            "tonal live review requires tonal_hook policy, got {}",
+            live_policy.character.label()
+        )
+        .into());
+    }
+    let (alpha_arc_stages, alpha_arc_proof) = if tonal_live_review {
+        (Vec::new(), None)
+    } else {
+        let (stages, proof) = prepare_alpha_arc(&state, &source_timing, bpm)?;
+        (stages, Some(proof))
+    };
 
     let riotbox_plan = render_plan(&state, bpm, phrase_cursor as f64);
     let to_source = set_monitor_mode(&mut state, SourceMonitorMode::Source, phrase_cursor, 420)?;
@@ -267,6 +283,41 @@ pub fn prepare(
             tonal_journey::prepare(&state, output_dir, &source_timing, bpm, preset_id).map(Box::new)
         })
         .transpose()?;
+    if tonal_live_review {
+        if tonal_journey.is_none() {
+            return Err("tonal live review omitted its tonal journey".into());
+        }
+        return Ok(PreparedLivePath {
+            state,
+            source_timing,
+            live_policy,
+            preset_id,
+            preset_action_id: preset_commit.action_id.0,
+            alpha_arc_stages,
+            alpha_arc_proof,
+            restart_recall_plan: None,
+            restart_recall_proof: None,
+            capture_journey_proof: CaptureJourneyProof {
+                capture_action_id: capture_commit.action_id.0,
+                raw_audition_action_id: audition_commit.action_id.0,
+                promotion_action_id: promotion_commit.action_id.0,
+            },
+            monitor_proofs,
+            stages,
+            transitions,
+            scene_transition_proof: None,
+            monitor_action_ids: [
+                preset_commit.action_id.0,
+                to_source.action_id.0,
+                to_blend.action_id.0,
+                back_to_riotbox.action_id.0,
+            ],
+            legacy_riotbox_action_id: back_to_riotbox.action_id.0,
+            normal_plan,
+            damaged_plan,
+            tonal_journey,
+        });
+    }
     transitions.push(gesture_transition(
         "w-hit",
         "w",
@@ -641,8 +692,8 @@ pub fn prepare(
         preset_action_id: preset_commit.action_id.0,
         alpha_arc_stages,
         alpha_arc_proof,
-        restart_recall_plan,
-        restart_recall_proof,
+        restart_recall_plan: Some(restart_recall_plan),
+        restart_recall_proof: Some(restart_recall_proof),
         capture_journey_proof: CaptureJourneyProof {
             capture_action_id: capture_commit.action_id.0,
             raw_audition_action_id: audition_commit.action_id.0,
@@ -651,7 +702,7 @@ pub fn prepare(
         monitor_proofs,
         stages,
         transitions,
-        scene_transition_proof,
+        scene_transition_proof: Some(scene_transition_proof),
         monitor_action_ids: [
             preset_commit.action_id.0,
             to_source.action_id.0,

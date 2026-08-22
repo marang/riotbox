@@ -60,10 +60,12 @@ pub fn render_live_path(
             CALLBACK_FRAME_COUNT,
         );
     let alpha_source_reference = render(&source_monitor_plan.plan, monitor_review_frames)?;
-    let restart_recall_output = render(
-        &prepared.restart_recall_plan,
-        bar_frame_count(bpm).saturating_mul(2),
-    )?;
+    let restart_recall_plan = prepared
+        .restart_recall_plan
+        .as_deref()
+        .ok_or("dense live render omitted restart/recall plan")?;
+    let restart_recall_output =
+        render(restart_recall_plan, bar_frame_count(bpm).saturating_mul(2))?;
     let transition_outputs = prepared
         .transitions
         .iter()

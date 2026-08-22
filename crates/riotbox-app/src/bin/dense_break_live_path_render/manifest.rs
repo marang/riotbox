@@ -61,6 +61,10 @@ pub fn write_pack(
     output_dir: &Path,
 ) -> Result<(), Box<dyn Error>> {
     let bpm = prepared.source_timing.bpm;
+    let scene_transition_proof = prepared
+        .scene_transition_proof
+        .as_ref()
+        .ok_or("dense live path omitted Scene transition proof")?;
     // Source Graph is serialized directly from typed structs, while `json!`
     // first widens `f32` values inside `Value`. Preserve the Source Graph's
     // canonical f32 JSON number so the cross-artifact timing identity remains
@@ -790,29 +794,29 @@ pub fn write_pack(
         },
         "performance_stages": stage_manifest,
         "scene_transition_proof": {
-            "launch_action_id": prepared.scene_transition_proof.launch_action_id,
-            "restore_action_id": prepared.scene_transition_proof.restore_action_id,
-            "pre_jump_scene": prepared.scene_transition_proof.pre_jump_scene.as_str(),
-            "launched_scene": prepared.scene_transition_proof.launched_scene.as_str(),
-            "restored_scene": prepared.scene_transition_proof.restored_scene.as_str(),
-            "pre_jump_render_anchor_seconds": prepared.scene_transition_proof.pre_jump_render_anchor_seconds,
-            "expected_launch_anchor_seconds": prepared.scene_transition_proof.expected_launch_anchor_seconds,
-            "expected_restore_anchor_seconds": prepared.scene_transition_proof.expected_restore_anchor_seconds,
-            "launched_anchor_seconds": prepared.scene_transition_proof.launched_anchor_seconds,
-            "restored_anchor_seconds": prepared.scene_transition_proof.restored_anchor_seconds,
-            "mc202_plan_source_section": prepared.scene_transition_proof.mc202_plan_source_section.as_deref(),
-            "launched_source_section": prepared.scene_transition_proof.launched_source_section.as_deref(),
-            "launch_mc202_stayed_out_for_section_mismatch": prepared.scene_transition_proof.launch_mc202_stayed_out_for_section_mismatch,
-            "restore_audio_projection_matches_pre_jump": prepared.scene_transition_proof.restore_audio_projection_matches_pre_jump,
-            "launch_changed_scene": prepared.scene_transition_proof.pre_jump_scene != prepared.scene_transition_proof.launched_scene,
+            "launch_action_id": scene_transition_proof.launch_action_id,
+            "restore_action_id": scene_transition_proof.restore_action_id,
+            "pre_jump_scene": scene_transition_proof.pre_jump_scene.as_str(),
+            "launched_scene": scene_transition_proof.launched_scene.as_str(),
+            "restored_scene": scene_transition_proof.restored_scene.as_str(),
+            "pre_jump_render_anchor_seconds": scene_transition_proof.pre_jump_render_anchor_seconds,
+            "expected_launch_anchor_seconds": scene_transition_proof.expected_launch_anchor_seconds,
+            "expected_restore_anchor_seconds": scene_transition_proof.expected_restore_anchor_seconds,
+            "launched_anchor_seconds": scene_transition_proof.launched_anchor_seconds,
+            "restored_anchor_seconds": scene_transition_proof.restored_anchor_seconds,
+            "mc202_plan_source_section": scene_transition_proof.mc202_plan_source_section.as_deref(),
+            "launched_source_section": scene_transition_proof.launched_source_section.as_deref(),
+            "launch_mc202_stayed_out_for_section_mismatch": scene_transition_proof.launch_mc202_stayed_out_for_section_mismatch,
+            "restore_audio_projection_matches_pre_jump": scene_transition_proof.restore_audio_projection_matches_pre_jump,
+            "launch_changed_scene": scene_transition_proof.pre_jump_scene != scene_transition_proof.launched_scene,
             "launch_anchor_matches_expected": anchors_match(
-                prepared.scene_transition_proof.launched_anchor_seconds,
-                prepared.scene_transition_proof.expected_launch_anchor_seconds,
+                scene_transition_proof.launched_anchor_seconds,
+                scene_transition_proof.expected_launch_anchor_seconds,
             ),
-            "restore_returned_to_pre_jump_scene": prepared.scene_transition_proof.restored_scene == prepared.scene_transition_proof.pre_jump_scene,
+            "restore_returned_to_pre_jump_scene": scene_transition_proof.restored_scene == scene_transition_proof.pre_jump_scene,
             "restore_anchor_matches_expected": anchors_match(
-                prepared.scene_transition_proof.restored_anchor_seconds,
-                prepared.scene_transition_proof.expected_restore_anchor_seconds,
+                scene_transition_proof.restored_anchor_seconds,
+                scene_transition_proof.expected_restore_anchor_seconds,
             ),
         },
         "gesture_transitions": transition_manifest,
@@ -844,22 +848,13 @@ pub fn write_pack(
         "failures": failures,
     });
     manifest["scene_transition_proof"]["return_damage_action_id"] =
-        json!(prepared.scene_transition_proof.return_damage_action_id);
-    manifest["scene_transition_proof"]["restore_only_lane_projection_matches_pre_jump"] = json!(
-        prepared
-            .scene_transition_proof
-            .restore_only_lane_projection_matches_pre_jump
-    );
-    manifest["scene_transition_proof"]["changed_return_w30_differs_from_restore_only"] = json!(
-        prepared
-            .scene_transition_proof
-            .changed_return_w30_differs_from_restore_only
-    );
-    manifest["scene_transition_proof"]["changed_return_non_w30_projection_matches_restore_only"] = json!(
-        prepared
-            .scene_transition_proof
-            .changed_return_non_w30_projection_matches_restore_only
-    );
+        json!(scene_transition_proof.return_damage_action_id);
+    manifest["scene_transition_proof"]["restore_only_lane_projection_matches_pre_jump"] =
+        json!(scene_transition_proof.restore_only_lane_projection_matches_pre_jump);
+    manifest["scene_transition_proof"]["changed_return_w30_differs_from_restore_only"] =
+        json!(scene_transition_proof.changed_return_w30_differs_from_restore_only);
+    manifest["scene_transition_proof"]["changed_return_non_w30_projection_matches_restore_only"] =
+        json!(scene_transition_proof.changed_return_non_w30_projection_matches_restore_only);
     manifest["pattern_provenance"] = pattern_provenance;
     manifest["primitive_renderer_boundary"] = primitive_renderer_boundary;
     manifest["fill_exit_boundary_proof"] = fill_exit_boundary_manifest;

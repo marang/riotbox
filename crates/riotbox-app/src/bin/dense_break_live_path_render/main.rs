@@ -41,6 +41,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         &output_dir,
         cli_bpm_hint,
         cli_downbeat_seconds,
+        tonal_live_review,
     )?;
     if tonal_live_review {
         tonal_live_manifest::write_pack(prepared, &source_path, &output_dir)
