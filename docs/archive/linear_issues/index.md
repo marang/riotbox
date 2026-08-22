@@ -1596,4 +1596,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Test restrained MC-202 pressure through effect turn-taking
 - [RIOTBOX-1410.md](./RIOTBOX-1410.md)
   Make source-monitor updates replace source ownership explicitly
+- [RIOTBOX-1407.md](./RIOTBOX-1407.md)
+  P023: Route live TUI transport through Action Lexicon commit and replay
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
