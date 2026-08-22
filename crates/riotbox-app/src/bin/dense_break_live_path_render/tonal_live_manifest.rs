@@ -17,7 +17,7 @@ use serde_json::{Value, json};
 use crate::{
     manifest::{gate_exact_mix_limiter, limiter_json, metrics_json},
     model::{CHANNEL_COUNT, PreparedLivePath, SAMPLE_RATE, TONAL_PITCH_DIVE_ACTIVE_BEATS},
-    rendering::{only_mc202, only_tr909, only_w30, render},
+    rendering::{only_mc202, only_source_monitor, only_tr909, only_w30, render},
 };
 
 const HELD_BEATS: u32 = 16;
@@ -57,6 +57,18 @@ pub fn write_pack(
     let beats = [HELD_BEATS, CONTRAST_BEATS, REENTRY_BEATS];
     let callback_128 = render_sequence(&plans, beats, bpm, 128);
     let callback_257 = render_sequence(&plans, beats, bpm, 257);
+    let w30_plans = plans.map(only_w30);
+    let tr909_plans = plans.map(only_tr909);
+    let mc202_plans = plans.map(only_mc202);
+    let source_monitor_plans = plans.map(only_source_monitor);
+    let w30_plan_refs = w30_plans.each_ref();
+    let tr909_plan_refs = tr909_plans.each_ref();
+    let mc202_plan_refs = mc202_plans.each_ref();
+    let source_monitor_plan_refs = source_monitor_plans.each_ref();
+    let w30_sequence = render_sequence(&w30_plan_refs, beats, bpm, 128);
+    let tr909_sequence = render_sequence(&tr909_plan_refs, beats, bpm, 128);
+    let mc202_sequence = render_sequence(&mc202_plan_refs, beats, bpm, 128);
+    let source_monitor_sequence = render_sequence(&source_monitor_plan_refs, beats, bpm, 128);
     let callback_partition_sample_exact = outputs_sample_exact(&callback_128, &callback_257);
     if callback_128.len() != 3 {
         return Err("tonal journey did not render exactly three stages".into());
@@ -68,6 +80,16 @@ pub fn write_pack(
         &journey.restart_recall_plan,
         frames_for_beats(bpm, RESTART_BEATS),
     )?;
+    let restart_w30 = render(
+        &only_w30(&journey.restart_recall_plan),
+        frames_for_beats(bpm, RESTART_BEATS),
+    )?;
+    let generated_journey_sample_exact_to_w30_only =
+        outputs_sample_exact(&callback_128, &w30_sequence);
+    let restart_sample_exact_to_w30_only = restart.samples == restart_w30.samples;
+    let tr909_journey_max_rms = maximum_stage_rms(&tr909_sequence, bpm);
+    let mc202_journey_max_rms = maximum_stage_rms(&mc202_sequence, bpm);
+    let source_monitor_journey_max_rms = maximum_stage_rms(&source_monitor_sequence, bpm);
     let source = SourceAudioCache::load_pcm_wav(source_path)?;
     let source_context_frame_count = (source.frame_count() as f64 * f64::from(SAMPLE_RATE)
         / f64::from(source.sample_rate.max(1)))
@@ -157,6 +179,21 @@ pub fn write_pack(
             "Pitch Dive isolated active-tail delta collapsed: rms {:.6}",
             w30_pitch_dive_active_tail_delta.rms
         ));
+    }
+    if !generated_journey_sample_exact_to_w30_only {
+        failures.push("generated_journey_contains_non_w30_audio".to_owned());
+    }
+    if !restart_sample_exact_to_w30_only {
+        failures.push("restart_recall_contains_non_w30_audio".to_owned());
+    }
+    for (lane, rms) in [
+        ("tr909", tr909_journey_max_rms),
+        ("mc202", mc202_journey_max_rms),
+        ("source_monitor", source_monitor_journey_max_rms),
+    ] {
+        if rms > MAX_STAY_OUT_RMS {
+            failures.push(format!("{lane}_journey_not_silent:{rms:.6}"));
+        }
     }
     if w30_metrics.rms < MIN_LANE_RMS {
         failures.push(format!(
@@ -373,6 +410,11 @@ pub fn write_pack(
             "limiter_activity_gated": true,
             "pitch_dive_first_eight_beats_sample_exact_to_held_w30": w30_pitch_dive_first_half_sample_exact,
             "pitch_dive_active_tail_delta_rms": w30_pitch_dive_active_tail_delta.rms,
+            "generated_journey_sample_exact_to_w30_only": generated_journey_sample_exact_to_w30_only,
+            "restart_recall_sample_exact_to_w30_only": restart_sample_exact_to_w30_only,
+            "tr909_journey_max_rms": tr909_journey_max_rms,
+            "mc202_journey_max_rms": mc202_journey_max_rms,
+            "source_monitor_journey_max_rms": source_monitor_journey_max_rms,
             "human_review_sequence_duration_seconds": human_review_sequence.len() as f64 / f64::from(CHANNEL_COUNT) / f64::from(SAMPLE_RATE),
         },
         "metrics": {
@@ -447,6 +489,15 @@ fn outputs_sample_exact(
             .iter()
             .zip(second)
             .all(|(left, right)| left.samples == right.samples)
+}
+
+fn maximum_stage_rms(outputs: &[RuntimeMixRenderOutput], bpm: f32) -> f32 {
+    outputs
+        .iter()
+        .map(|output| {
+            signal_metrics_with_grid(&output.samples, SAMPLE_RATE, CHANNEL_COUNT, bpm, 4).rms
+        })
+        .fold(0.0, f32::max)
 }
 
 fn write_artifact(

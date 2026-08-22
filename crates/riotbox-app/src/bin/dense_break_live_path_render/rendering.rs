@@ -212,6 +212,16 @@ pub(super) fn only_mc202(plan: &RuntimeMixRenderPlan) -> RuntimeMixRenderPlan {
     }
 }
 
+pub(super) fn only_source_monitor(plan: &RuntimeMixRenderPlan) -> RuntimeMixRenderPlan {
+    RuntimeMixRenderPlan {
+        tr909_render: Default::default(),
+        mc202_render: Default::default(),
+        w30_preview_render: Default::default(),
+        w30_resample_tap: Default::default(),
+        ..plan.clone()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use riotbox_audio::source_audio::SourceAudioCache;
