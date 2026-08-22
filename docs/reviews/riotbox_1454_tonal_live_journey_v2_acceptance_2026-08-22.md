@@ -18,7 +18,7 @@ The representative source is the registered Development-only
 `ec2a0c930eb338bf81cd5cb4b5fef487e07c140ad40181e1d92b2a0990334e0e`,
 with manual `120 BPM` and zero-second downbeat. The completed bounded access log
 has SHA-256
-`918a9f70db2c43dad8b824fc9577dccc881215ebbdd664b8253a9849775edcde`;
+`72729c361bac8148a1752acbeab6a48c33b5aaa3be0278e136c410f22b44eecd`;
 it records one exact Development file, no directory discovery, and no Holdout
 or commercial-reference access.
 
@@ -61,7 +61,7 @@ dense TR-909 lead plus MC-202 instigation, and unchanged sparse TR-909 lead plus
 MC-202 punctuation. The matrix report SHA-256 is
 `8f995e83438a31db08d041e7f7ae6f88ccfbfd7e13262139309c3f2eb6301072`;
 its completed bounded access-log SHA-256 is
-`852c388abd57f5cd29281e84250ecd989ee2f2b9a868f893d4e1eb33b6f3796c`.
+`61b363402bf884555c7019ea53d3051ff71753c1f76dae8c83d3a207a33fd466`.
 
 ## Human Review
 
