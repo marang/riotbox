@@ -1,6 +1,9 @@
 use super::*;
 use riotbox_core::action::SourceMonitorMode;
 
+#[cfg(test)]
+mod replacement_tests;
+
 const SOURCE_GAIN: f32 = 0.88;
 const BLEND_SOURCE_GAIN: f32 = 0.62;
 const BLEND_RIOTBOX_GAIN: f32 = 0.62;
@@ -105,141 +108,129 @@ impl SourceMonitorRenderState {
 }
 
 pub(super) struct SharedSourceMonitorRenderState {
-    revision: AtomicU64,
-    mode: AtomicU32,
-    source_gain_bits: AtomicU32,
-    riotbox_gain_bits: AtomicU32,
-    source_anchor_present: AtomicBool,
-    source_anchor_seconds_bits: AtomicU64,
-    source_anchor_position_beats_bits: AtomicU64,
-    source: Option<SourceMonitorAudioSource>,
+    snapshot: ArcSwap<SourceMonitorSharedSnapshot>,
+    // Serializes control-side writers and defers old-snapshot reclamation away from the callback.
+    retired_snapshots: Mutex<Vec<Arc<SourceMonitorSharedSnapshot>>>,
 }
 
 impl SharedSourceMonitorRenderState {
     pub(super) fn new(render_state: &SourceMonitorRenderState) -> Self {
-        let shared = Self {
-            revision: AtomicU64::new(0),
-            mode: AtomicU32::new(source_monitor_mode_to_u32(render_state.mode)),
-            source_gain_bits: AtomicU32::new(SOURCE_GAIN.to_bits()),
-            riotbox_gain_bits: AtomicU32::new(1.0_f32.to_bits()),
-            source_anchor_present: AtomicBool::new(false),
-            source_anchor_seconds_bits: AtomicU64::new(0.0_f64.to_bits()),
-            source_anchor_position_beats_bits: AtomicU64::new(0.0_f64.to_bits()),
-            source: render_state.source.clone(),
-        };
-        shared.update(render_state);
-        shared
+        Self {
+            snapshot: ArcSwap::from_pointee(SourceMonitorSharedSnapshot::from_render_state(
+                render_state,
+            )),
+            retired_snapshots: Mutex::new(Vec::new()),
+        }
     }
 
-    pub(super) fn update(&self, render_state: &SourceMonitorRenderState) {
-        begin_coherent_snapshot_update(&self.revision);
-        self.mode.store(
-            source_monitor_mode_to_u32(render_state.mode),
-            Ordering::Relaxed,
-        );
-        match render_state.mode {
-            SourceMonitorMode::Source => {
-                self.source_gain_bits
-                    .store(SOURCE_GAIN.to_bits(), Ordering::Relaxed);
-                self.riotbox_gain_bits
-                    .store(0.0_f32.to_bits(), Ordering::Relaxed);
-            }
-            SourceMonitorMode::Blend => {
-                self.source_gain_bits
-                    .store(BLEND_SOURCE_GAIN.to_bits(), Ordering::Relaxed);
-                self.riotbox_gain_bits
-                    .store(BLEND_RIOTBOX_GAIN.to_bits(), Ordering::Relaxed);
-            }
-            SourceMonitorMode::Riotbox => {
-                self.source_gain_bits
-                    .store(0.0_f32.to_bits(), Ordering::Relaxed);
-                self.riotbox_gain_bits
-                    .store(1.0_f32.to_bits(), Ordering::Relaxed);
-            }
+    pub(super) fn update_controls(&self, render_state: &SourceMonitorRenderState) {
+        let mut retired = self
+            .retired_snapshots
+            .lock()
+            .expect("source-monitor writer mutex poisoned");
+        let current = self.snapshot.load();
+        if current.controls_match(render_state) {
+            return;
         }
-        self.source_anchor_present.store(
-            render_state.source_anchor_seconds.is_some(),
-            Ordering::Relaxed,
+        let next =
+            SourceMonitorSharedSnapshot::from_control_state(render_state, current.source.clone());
+        drop(current);
+        self.publish(next, &mut retired);
+    }
+
+    pub(super) fn replace_source_and_controls(&self, render_state: &SourceMonitorRenderState) {
+        let mut retired = self
+            .retired_snapshots
+            .lock()
+            .expect("source-monitor writer mutex poisoned");
+        self.publish(
+            SourceMonitorSharedSnapshot::from_render_state(render_state),
+            &mut retired,
         );
-        self.source_anchor_seconds_bits.store(
-            render_state.source_anchor_seconds.unwrap_or(0.0).to_bits(),
-            Ordering::Relaxed,
-        );
-        self.source_anchor_position_beats_bits.store(
-            render_state.source_anchor_position_beats.to_bits(),
-            Ordering::Relaxed,
-        );
-        finish_coherent_snapshot_update(&self.revision);
+    }
+
+    pub(super) fn snapshot(&self) -> Guard<Arc<SourceMonitorSharedSnapshot>> {
+        self.snapshot.load()
     }
 
     #[cfg(test)]
-    pub(super) fn snapshot(&self) -> RealtimeSourceMonitorRenderState<'_> {
-        self.render_snapshot_from_control(self.control_snapshot())
+    fn retired_snapshot_count(&self) -> usize {
+        self.retired_snapshots
+            .lock()
+            .expect("source-monitor writer mutex poisoned")
+            .len()
     }
 
-    pub(super) fn control_snapshot(&self) -> RealtimeSourceMonitorControlSnapshot {
-        coherent_snapshot(&self.revision, || self.read_control_fields())
-    }
-
-    pub(super) fn control_snapshot_or_previous(
+    fn publish(
         &self,
-        previous: &RealtimeSourceMonitorControlSnapshot,
-    ) -> RealtimeSourceMonitorControlSnapshot {
-        coherent_snapshot_or(&self.revision, previous, || self.read_control_fields())
+        next: SourceMonitorSharedSnapshot,
+        retired: &mut Vec<Arc<SourceMonitorSharedSnapshot>>,
+    ) {
+        let previous = self.snapshot.swap(Arc::new(next));
+        retired.retain(|snapshot| Arc::strong_count(snapshot) > 1);
+        if Arc::strong_count(&previous) > 1 {
+            retired.push(previous);
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub(super) struct SourceMonitorSharedSnapshot {
+    mode: SourceMonitorMode,
+    source_gain: f32,
+    riotbox_gain: f32,
+    source: Option<SourceMonitorAudioSource>,
+    source_anchor_seconds: Option<f64>,
+    source_anchor_position_beats: f64,
+}
+
+impl SourceMonitorSharedSnapshot {
+    fn from_render_state(render_state: &SourceMonitorRenderState) -> Self {
+        Self::from_control_state(render_state, render_state.source.clone())
     }
 
-    pub(super) fn render_snapshot_from_control(
-        &self,
-        control: RealtimeSourceMonitorControlSnapshot,
-    ) -> RealtimeSourceMonitorRenderState<'_> {
+    fn from_control_state(
+        render_state: &SourceMonitorRenderState,
+        source: Option<SourceMonitorAudioSource>,
+    ) -> Self {
+        let (source_gain, riotbox_gain) = source_monitor_gains(render_state.mode);
+        Self {
+            mode: render_state.mode,
+            source_gain,
+            riotbox_gain,
+            source,
+            source_anchor_seconds: render_state.source_anchor_seconds,
+            source_anchor_position_beats: render_state.source_anchor_position_beats,
+        }
+    }
+
+    pub(super) fn render_state(&self) -> RealtimeSourceMonitorRenderState<'_> {
         RealtimeSourceMonitorRenderState {
-            mode: control.mode,
-            source_gain: control.source_gain,
-            riotbox_gain: control.riotbox_gain,
+            mode: self.mode,
+            source_gain: self.source_gain,
+            riotbox_gain: self.riotbox_gain,
             source: self.source.as_ref(),
             is_transport_running: false,
             tempo_bpm: 128.0,
             position_beats: 0.0,
-            source_anchor_seconds: control.source_anchor_seconds,
-            source_anchor_position_beats: control.source_anchor_position_beats,
+            source_anchor_seconds: self.source_anchor_seconds,
+            source_anchor_position_beats: self.source_anchor_position_beats,
         }
     }
 
-    fn read_control_fields(&self) -> RealtimeSourceMonitorControlSnapshot {
-        RealtimeSourceMonitorControlSnapshot {
-            mode: source_monitor_mode_from_u32(self.mode.load(Ordering::Relaxed)),
-            source_gain: f32::from_bits(self.source_gain_bits.load(Ordering::Relaxed)),
-            riotbox_gain: f32::from_bits(self.riotbox_gain_bits.load(Ordering::Relaxed)),
-            source_anchor_seconds: self
-                .source_anchor_present
-                .load(Ordering::Relaxed)
-                .then(|| f64::from_bits(self.source_anchor_seconds_bits.load(Ordering::Relaxed))),
-            source_anchor_position_beats: f64::from_bits(
-                self.source_anchor_position_beats_bits
-                    .load(Ordering::Relaxed),
-            ),
-        }
+    fn controls_match(&self, render_state: &SourceMonitorRenderState) -> bool {
+        // Transport timing is overlaid from the shared transport snapshot inside the callback.
+        self.mode == render_state.mode
+            && self.source_anchor_seconds == render_state.source_anchor_seconds
+            && self.source_anchor_position_beats == render_state.source_anchor_position_beats
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub(super) struct RealtimeSourceMonitorControlSnapshot {
-    pub(super) mode: SourceMonitorMode,
-    pub(super) source_gain: f32,
-    pub(super) riotbox_gain: f32,
-    pub(super) source_anchor_seconds: Option<f64>,
-    pub(super) source_anchor_position_beats: f64,
-}
-
-impl Default for RealtimeSourceMonitorControlSnapshot {
-    fn default() -> Self {
-        Self {
-            mode: SourceMonitorMode::Source,
-            source_gain: SOURCE_GAIN,
-            riotbox_gain: 0.0,
-            source_anchor_seconds: None,
-            source_anchor_position_beats: 0.0,
-        }
+fn source_monitor_gains(mode: SourceMonitorMode) -> (f32, f32) {
+    match mode {
+        SourceMonitorMode::Source => (SOURCE_GAIN, 0.0),
+        SourceMonitorMode::Blend => (BLEND_SOURCE_GAIN, BLEND_RIOTBOX_GAIN),
+        SourceMonitorMode::Riotbox => (0.0, 1.0),
     }
 }
 
@@ -284,22 +275,6 @@ impl Default for SourceMonitorCallbackState {
             anchor_transition_frames_remaining: 0,
             anchor_transition_total_frames: 0,
         }
-    }
-}
-
-pub(super) fn source_monitor_mode_to_u32(mode: SourceMonitorMode) -> u32 {
-    match mode {
-        SourceMonitorMode::Source => 0,
-        SourceMonitorMode::Blend => 1,
-        SourceMonitorMode::Riotbox => 2,
-    }
-}
-
-pub(super) fn source_monitor_mode_from_u32(value: u32) -> SourceMonitorMode {
-    match value {
-        1 => SourceMonitorMode::Blend,
-        2 => SourceMonitorMode::Riotbox,
-        _ => SourceMonitorMode::Source,
     }
 }
 

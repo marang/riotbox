@@ -137,6 +137,13 @@ Rules:
 
 - decode and normalize the source outside the realtime callback
 - hand the callback only prepared PCM buffers and bounded realtime-safe state
+- publish source PCM ownership, monitor mode/gains, and source anchors as one
+  immutable atomic snapshot; control-only updates must explicitly retain the
+  current source, while only a named source-replacement operation may install
+  new PCM or make source availability absent
+- source-snapshot reads in the callback must remain lock-free and allocation-free;
+  replaced snapshots and their PCM ownership are retired and reclaimed from the
+  control side so the callback never becomes responsible for freeing a source
 - map transport position to source frame position through the selected timing /
   source-time contract outside expensive callback work
 - source seek updates callback-consumable cursor state without file I/O

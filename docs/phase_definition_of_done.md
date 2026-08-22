@@ -549,6 +549,14 @@ After exit:
   addition, so it receives no new musical verdict and no second variant. The
   temporary behavior is removed and MC-202 pressure remains `stay-out` for the
   current combined gesture journey while Foundation Completion takes priority.
+- RIOTBOX-1410 is the first bounded Foundation Completion closure: explicit
+  control-only source-monitor refresh retains current PCM, explicit replacement
+  atomically publishes PCM plus mode/gains and anchors, and exact callback /
+  RuntimeMix regressions prove A-to-B output rather than stale playback. Missing
+  replacement remains degraded/silent without fallback; old PCM ownership is
+  reclaimed outside the callback. This is a contract enabler, not new musical
+  behavior or a human listening pass. RIOTBOX-1407 and RIOTBOX-1334 remain the
+  named transport-spine and sidecar-trust foundation gaps.
 - RIOTBOX-1423 established the broader legal CC0 corpus contract: its general
   candidate matrix covers at least five eligible development sources across
   four typed families and protects two disjoint fresh holdout sets. That broad
