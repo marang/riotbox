@@ -259,7 +259,8 @@ pub fn prepare(
     )?)?;
     require_committed_command(&state, &w_commit, ActionCommand::W30TriggerPad)?;
     let after_w = render_plan(&state, bpm, w_cursor as f64);
-    let (normal_plan, damaged_plan) = prepare_legacy_pressure_regression(&state, bpm, fill_cursor)?;
+    let (normal_plan, damaged_plan) =
+        prepare_legacy_pressure_regression(&state, bpm, fill_cursor, live_policy.character)?;
     let tonal_journey = (live_policy.character
         == riotbox_core::live_performance_policy::LivePerformanceCharacter::TonalHook)
         .then(|| {
@@ -736,11 +737,14 @@ fn prepare_legacy_pressure_regression(
     state: &JamAppState,
     bpm: f32,
     damage_commit_cursor: u64,
+    character: riotbox_core::live_performance_policy::LivePerformanceCharacter,
 ) -> Result<(RuntimeMixRenderPlan, RuntimeMixRenderPlan), Box<dyn Error>> {
-    if !matches!(
-        state.runtime.tr909_render.mode,
-        Tr909RenderMode::BreakReinforce
-    ) {
+    if character != riotbox_core::live_performance_policy::LivePerformanceCharacter::TonalHook
+        && !matches!(
+            state.runtime.tr909_render.mode,
+            Tr909RenderMode::BreakReinforce
+        )
+    {
         return Err(format!(
             "legacy pressure regression requires TR-909 break reinforcement before f/s, got {:?}",
             state.runtime.tr909_render.mode
