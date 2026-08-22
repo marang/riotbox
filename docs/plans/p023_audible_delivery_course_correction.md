@@ -4,7 +4,7 @@ Status: accepted operating plan
 Linear: RIOTBOX-1439
 Direct audible follow-ups: RIOTBOX-1417, RIOTBOX-1440, RIOTBOX-1442,
 RIOTBOX-1443, RIOTBOX-1444, RIOTBOX-1445, RIOTBOX-1446, RIOTBOX-1447,
-RIOTBOX-1449
+RIOTBOX-1449, RIOTBOX-1451, RIOTBOX-1452
 
 ## Purpose
 
@@ -158,3 +158,14 @@ frames and remained masked in the intended low-frequency bands. The temporary
 Development selector was removed and no scalar continuation is allowed.
 RIOTBOX-1450 owns only the separate role-integrity defect revealed during
 preflight; it cannot promote the rejected answer.
+
+RIOTBOX-1451 then provisionally kept one source-derived multi-beat MC-202
+pressure pedal in Development, but its frozen v1 product transfer failed the
+first source case through clipping and limiter intervention. RIOTBOX-1452
+tested three materially different non-additive mix-ownership topologies. Only
+the transient-protected center-bus handoff reached a technically safe and
+clearly audible candidate, but the musician rejected its broad processing as
+over-layered because too many effects operated simultaneously. The temporary
+exploration seam is removed. A successor may test one restrained, bounded
+ownership change in a new Linear-first slice; it must not continue tuning any
+of the three rejected mechanisms.

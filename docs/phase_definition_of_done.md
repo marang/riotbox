@@ -536,6 +536,13 @@ After exit:
   behavior is removed, and no v2 retry is admitted in the ticket. This is
   useful discovery and negative transfer evidence, not an MC-202 product pass
   or P023 completion evidence.
+- RIOTBOX-1452 tests three non-additive mix-ownership topologies without
+  scaling that MC-202 voice. The only technically safe candidate is clearly
+  audible but receives a human reject because broad center-bus processing
+  makes the complete mix feel over-layered. The temporary behavior is removed
+  at the three-variant limit. A new restrained successor may change one bounded
+  ownership relationship; continued tuning, simultaneous effect stacking, and
+  any product or P023 completion claim remain prohibited.
 - RIOTBOX-1423 established the broader legal CC0 corpus contract: its general
   candidate matrix covers at least five eligible development sources across
   four typed families and protects two disjoint fresh holdout sets. That broad
