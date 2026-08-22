@@ -1592,4 +1592,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Discover one phrase-carrying MC-202 sub-pressure shove
 - [RIOTBOX-1452.md](./RIOTBOX-1452.md)
   P023: Explore a phrase-local low-end handoff for MC-202 pressure
+- [RIOTBOX-1453.md](./RIOTBOX-1453.md)
+  P023: Test restrained MC-202 pressure through effect turn-taking
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
