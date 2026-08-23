@@ -289,6 +289,15 @@ when transport, trusted positive tempo, the matching focused capture, or
 hydrated source-backed pad audio is unavailable. It never creates fallback
 music, changes the source, or silently retargets another capture.
 
+`w30.apply_damage_profile` is a persistent, capture-scoped performer toggle.
+For the exact focused capture, a committed positive mutation intensity applies
+the selected damage profile and a committed zero intensity bypasses it. The
+queue derives the next state from the latest committed damage action for that
+same capture; damage state from another capture must not leak across focus,
+recall, or restart. The command and its Next Bar quantization remain unchanged.
+An ordinary W-30 trigger clears a timed hook articulation but does not silently
+bypass persistent damage.
+
 A committed ordinary W-30 playback intent explicitly supersedes any persisted
 timed hook articulation. `w30.live_recall`, `w30.trigger_pad`,
 `w30.audition_raw_capture`, `w30.audition_promoted`, and

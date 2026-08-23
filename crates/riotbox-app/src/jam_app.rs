@@ -155,7 +155,8 @@ use riotbox_core::TimestampMs;
 
 impl JamAppState {
     pub(super) const W30_DAMAGE_PROFILE_LABEL: &str = "shred";
-    pub(super) const W30_DAMAGE_PROFILE_GRIT: f32 = 0.82;
+    pub(super) const W30_DAMAGE_PROFILE_GRIT: f32 =
+        riotbox_core::w30_damage_policy::W30_DAMAGE_PROFILE_ACTIVE_INTENSITY;
     pub(super) const W30_LOOP_FREEZE_LABEL: &str = "freeze";
 }
 

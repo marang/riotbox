@@ -266,6 +266,53 @@ fn committed_w30_damage_profile_updates_grit_and_log_result() {
             .map(|result| result.summary.as_str()),
         Some("applied shred damage profile to cap-01 on W-30 pad bank-a/pad-01")
     );
+
+    assert_eq!(
+        state.queue_w30_apply_damage_profile(721),
+        Some(QueueControlResult::Enqueued)
+    );
+    assert!(matches!(
+        &state.queue.pending_actions()[0].params,
+        ActionParams::Mutation {
+            intensity,
+            target_id: Some(target_id),
+        } if *intensity == 0.0 && target_id == "cap-01"
+    ));
+    assert_eq!(
+        state.queue.pending_actions()[0].explanation.as_deref(),
+        Some("bypass shred damage profile on cap-01 at W-30 pad bank-a/pad-01")
+    );
+
+    let bypassed = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Bar,
+            beat_index: 49,
+            bar_index: 13,
+            phrase_index: 3,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        820,
+    );
+
+    assert_eq!(bypassed.len(), 1);
+    let ordinary_playback = state
+        .runtime
+        .w30_preview
+        .pad_playback
+        .as_ref()
+        .expect("bypassed pad playback");
+    assert_eq!(ordinary_playback.playback_rate, 1.0);
+    assert_eq!(ordinary_playback.gate_step_fraction, 0.0);
+    assert_eq!(
+        state
+            .session
+            .action_log
+            .actions
+            .last()
+            .and_then(|action| action.result.as_ref())
+            .map(|result| result.summary.as_str()),
+        Some("bypassed shred damage profile for cap-01 on W-30 pad bank-a/pad-01")
+    );
 }
 
 #[test]

@@ -20,6 +20,13 @@ pub const MAX_SOURCE_MONITOR_SILENCE_RATIO: f64 = 0.05;
 pub const MAX_EXACT_MIX_LIMITED_SAMPLE_COUNT: usize = 0;
 pub const TONAL_PITCH_DIVE_ACTIVE_BEATS: u32 = 12;
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum ExactLiveReviewMode {
+    Standard,
+    Tonal,
+    Sparse,
+}
+
 #[derive(Clone)]
 pub struct MonitorProof {
     pub case_id: &'static str,
@@ -82,7 +89,26 @@ pub struct PreparedLivePath {
     pub legacy_riotbox_action_id: u64,
     pub normal_plan: RuntimeMixRenderPlan,
     pub damaged_plan: RuntimeMixRenderPlan,
+    pub sparse_journey: Option<Box<SparseJourney>>,
     pub tonal_journey: Option<Box<TonalJourney>>,
+}
+
+pub struct SparseJourney {
+    pub held_plan: Box<RuntimeMixRenderPlan>,
+    pub damage_plan: Box<RuntimeMixRenderPlan>,
+    pub reentry_plan: Box<RuntimeMixRenderPlan>,
+    pub restart_recall_plan: Box<RuntimeMixRenderPlan>,
+    pub proof: SparseJourneyProof,
+    pub restart_recall_proof: RestartRecallProof,
+}
+
+pub struct SparseJourneyProof {
+    pub damage_action_id: u64,
+    pub bypass_action_id: u64,
+    pub damage_intensity: f32,
+    pub bypass_intensity: f32,
+    pub damage_gate_step_fraction: f32,
+    pub reentry_gate_step_fraction: f32,
 }
 
 pub struct TonalJourney {

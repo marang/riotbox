@@ -325,7 +325,6 @@ const W30_DAMAGE_PITCH_DRAG_DEPTH: f32 = 0.27;
 const W30_DAMAGE_PITCH_DRAG_MIN_RATE: f32 = 0.72;
 /// Retain only the source-derived attack portion of each grid retrigger. This keeps
 /// percussion already present in a sparse source from drifting between the TR-909 hits.
-const W30_DAMAGE_TRANSIENT_BITE_GATE_STEP_FRACTION: f32 = 0.44;
 
 impl Default for W30PadPlaybackTransform {
     fn default() -> Self {
@@ -339,21 +338,16 @@ impl Default for W30PadPlaybackTransform {
 
 fn w30_pad_playback_transform(
     session: &SessionFile,
+    capture_id: &CaptureId,
     destructive_intent: Option<LivePerformanceDestructiveIntent>,
 ) -> W30PadPlaybackTransform {
-    let Some(intensity) = last_committed_w30_damage_action(session).and_then(|action| {
-        if let ActionParams::Mutation { intensity, .. } = action.params {
-            Some(intensity.clamp(0.0, 1.0))
-        } else {
-            None
-        }
-    }) else {
+    let Some(intensity) = latest_committed_w30_damage_intensity(session, capture_id) else {
         return W30PadPlaybackTransform::default();
     };
 
     let (playback_rate, gate_step_fraction) = match destructive_intent {
         Some(LivePerformanceDestructiveIntent::TransientBite) => {
-            (1.0, W30_DAMAGE_TRANSIENT_BITE_GATE_STEP_FRACTION * intensity)
+            (1.0, W30_TRANSIENT_BITE_GATE_STEP_FRACTION * intensity)
         }
         Some(LivePerformanceDestructiveIntent::PitchDrag) | None => {
             (
@@ -486,12 +480,5 @@ fn last_committed_w30_trigger_action(session: &SessionFile) -> Option<&Action> {
                     | ActionCommand::W30AuditionRawCapture
                     | ActionCommand::W30AuditionPromoted
             )
-    })
-}
-
-fn last_committed_w30_damage_action(session: &SessionFile) -> Option<&Action> {
-    session.action_log.actions.iter().rev().find(|action| {
-        action.status == ActionStatus::Committed
-            && matches!(action.command, ActionCommand::W30ApplyDamageProfile)
     })
 }

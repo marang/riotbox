@@ -25,10 +25,10 @@ use riotbox_core::{
 use crate::{
     alpha_arc::{prepare_alpha_arc, prepare_restart_recall},
     model::{
-        CaptureJourneyProof, ConfirmedSourceTiming, GestureCompanionAction, GestureTransition,
-        MonitorProof, PreparedLivePath, RenderStage, SceneTransitionProof,
+        CaptureJourneyProof, ConfirmedSourceTiming, ExactLiveReviewMode, GestureCompanionAction,
+        GestureTransition, MonitorProof, PreparedLivePath, RenderStage, SceneTransitionProof,
     },
-    tonal_journey,
+    sparse_journey, tonal_journey,
 };
 
 pub fn prepare(
@@ -36,7 +36,7 @@ pub fn prepare(
     output_dir: &Path,
     cli_bpm_hint: f32,
     cli_downbeat_seconds: Option<f32>,
-    tonal_live_review: bool,
+    exact_live_review: ExactLiveReviewMode,
 ) -> Result<Box<PreparedLivePath>, Box<dyn Error>> {
     let mut state = JamAppState::analyze_source_file_to_json_with_source_timing_confirmation(
         source_path,
@@ -197,7 +197,7 @@ pub fn prepare(
         live_policy.tr909_intent.label(),
         live_policy.mc202_intent.label()
     );
-    if tonal_live_review
+    if exact_live_review == ExactLiveReviewMode::Tonal
         && live_policy.character
             != riotbox_core::live_performance_policy::LivePerformanceCharacter::TonalHook
     {
@@ -207,7 +207,18 @@ pub fn prepare(
         )
         .into());
     }
-    let (alpha_arc_stages, alpha_arc_proof) = if tonal_live_review {
+    if exact_live_review == ExactLiveReviewMode::Sparse
+        && live_policy.character
+            != riotbox_core::live_performance_policy::LivePerformanceCharacter::SparsePressure
+    {
+        return Err(format!(
+            "sparse live review requires sparse_pressure policy, got {}",
+            live_policy.character.label()
+        )
+        .into());
+    }
+    let (alpha_arc_stages, alpha_arc_proof) = if exact_live_review != ExactLiveReviewMode::Standard
+    {
         (Vec::new(), None)
     } else {
         let (stages, proof) = prepare_alpha_arc(&state, &source_timing, bpm)?;
@@ -277,14 +288,25 @@ pub fn prepare(
     let after_w = render_plan(&state, bpm, w_cursor as f64);
     let (normal_plan, damaged_plan) =
         prepare_legacy_pressure_regression(&state, bpm, fill_cursor, live_policy.character)?;
-    let tonal_journey = tonal_live_review
+    let tonal_journey = (exact_live_review == ExactLiveReviewMode::Tonal)
         .then(|| {
             tonal_journey::prepare(&state, output_dir, &source_timing, bpm, preset_id).map(Box::new)
         })
         .transpose()?;
-    if tonal_live_review {
+    let sparse_journey = (exact_live_review == ExactLiveReviewMode::Sparse)
+        .then(|| {
+            sparse_journey::prepare(&state, output_dir, &source_timing, bpm, preset_id)
+                .map(Box::new)
+        })
+        .transpose()?;
+    if exact_live_review != ExactLiveReviewMode::Standard {
         if tonal_journey.is_none() {
-            return Err("tonal live review omitted its tonal journey".into());
+            if exact_live_review == ExactLiveReviewMode::Tonal {
+                return Err("tonal live review omitted its tonal journey".into());
+            }
+        }
+        if sparse_journey.is_none() && exact_live_review == ExactLiveReviewMode::Sparse {
+            return Err("sparse live review omitted its sparse journey".into());
         }
         return Ok(Box::new(PreparedLivePath {
             state,
@@ -314,6 +336,7 @@ pub fn prepare(
             legacy_riotbox_action_id: back_to_riotbox.action_id.0,
             normal_plan,
             damaged_plan,
+            sparse_journey,
             tonal_journey,
         }));
     }
@@ -717,6 +740,7 @@ pub fn prepare(
         legacy_riotbox_action_id: back_to_riotbox.action_id.0,
         normal_plan,
         damaged_plan,
+        sparse_journey: None,
         tonal_journey: None,
     }))
 }
