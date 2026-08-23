@@ -4252,3 +4252,17 @@ Why: damage persistence is intentional performer state, so an ordinary trigger m
 Evidence: source-blind Core coverage proves exact-capture isolation and latest-commit precedence; app queue/commit/output coverage proves the second invocation commits a truthful bypass and restores playback rate `1.0` with no transient gate. Focused Core and app tests pass without opening Development or Holdout audio, source directories, or commercial references.
 Consequences: RIOTBOX-1455 may now exercise held Sparse Pressure, explicit `transient_bite` apply, explicit bypass into ordinary re-entry, save/restart, recall, and trigger through the existing product spine. A missing, malformed, non-finite, uncommitted, undone, or different-capture damage entry grants no active transform. This decision makes no source-general, hardness, quality, Holdout, demo, or release claim; the exact Development journey still requires technical qualification and human listening.
 Status: accepted
+
+---
+
+### RBX-317
+
+Date: 2026-08-23
+Topic: make source-phrase MC-202 rendering sample-grid deterministic across realtime callback sizes
+Phase: P023 / Controlled Expansion
+Question: how must the MC-202 source-phrase renderer advance time after the first RIOTBOX-1455 qualification run found callback-size-dependent PCM?
+Decision: version the MC-202 source-phrase render clock as `riotbox.mc202_source_phrase_renderer.v2` before any corrected Development rerender. Convert each callback's transport beat position to the nearest representable absolute audio frame, then derive every sample's beat and oscillator phase from that integer frame plus the in-buffer frame offset. Keep the committed source phrase, note selection, pitch, envelopes, sound design, lane level, live policy, and all musical thresholds unchanged. Require exact PCM equality for isolated MC-202 and the complete RuntimeMix journey at 128- and 257-frame callback partitions.
+Why: the rejected v1 exact journey isolated divergence to MC-202 in all three live stages while W-30 and TR-909 remained sample-exact. The stateless renderer recomputed oscillator time from differently grouped floating-point callback start positions, so mathematically equivalent timelines acquired last-bit PCM differences. Audio output is sample-grid discrete; anchoring phase to the nearest absolute frame removes callback partitioning from musical time without adding state, smoothing, retuning, or a new phrase path.
+Evidence: RIOTBOX-1455 Development access session `80d95e1c-6dd4-40cd-8388-be1c2966c21a` opened only registered case `sparse_kicksnr_120` and rejected manifest SHA-256 `297674b73f8af71ec0808d0a18ebff7d8ff64b340320eaa1c36676381a6d0d12` solely for callback divergence. A diagnostic rerender from the already-produced local source artifact isolated equality as W-30 `true`, TR-909 `true`, and MC-202 `false`; it did not reopen Development or Holdout material. Synthetic renderer tests reproduce the partition boundary and bind the corrected v2 clock before a new access session.
+Consequences: the rejected v1 artifact remains negative evidence and cannot be promoted. RIOTBOX-1455 may start one new bounded Development access session only after v2 tests pass source-blind. Any remaining callback divergence, musical failure, or gate failure stops without threshold or sound-design tuning. This decision grants no source-general, hardness, Holdout, demo, release, or human-quality claim.
+Status: accepted

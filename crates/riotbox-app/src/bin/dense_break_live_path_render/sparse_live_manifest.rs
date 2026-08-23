@@ -2,6 +2,7 @@ use std::{error::Error, path::Path};
 
 use riotbox_audio::{
     listening_manifest::{LISTENING_MANIFEST_SCHEMA_VERSION, write_manifest_json},
+    mc202::MC202_SOURCE_PHRASE_RENDERER_SCHEMA,
     runtime::{
         RuntimeMixRenderOutput, RuntimeMixRenderPlan, RuntimeMixRenderSequenceStep,
         render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report,
@@ -74,6 +75,12 @@ pub fn write_pack(
     let tr909 = render_isolated_sequence(&plans, &beats, bpm, only_tr909);
     let mc202 = render_isolated_sequence(&plans, &beats, bpm, only_mc202);
     let source_monitor = render_isolated_sequence(&plans, &beats, bpm, only_source_monitor);
+    let w30_callback_257 =
+        render_isolated_sequence_with_callback(&plans, &beats, bpm, only_w30, 257);
+    let tr909_callback_257 =
+        render_isolated_sequence_with_callback(&plans, &beats, bpm, only_tr909, 257);
+    let mc202_callback_257 =
+        render_isolated_sequence_with_callback(&plans, &beats, bpm, only_mc202, 257);
     let restart_w30 = render(
         &only_w30(&journey.restart_recall_plan),
         frames_for_beats(bpm, RESTART_BEATS),
@@ -125,7 +132,13 @@ pub fn write_pack(
         );
     }
     if !callback_partition_sample_exact {
-        failures.push("128- and 257-frame callback partitions diverged".into());
+        failures.push(format!(
+            "128- and 257-frame callback partitions diverged: stages={:?} w30={} tr909={} mc202={}",
+            stage_sample_exact(&callback_128, &callback_257),
+            outputs_sample_exact(&w30, &w30_callback_257),
+            outputs_sample_exact(&tr909, &tr909_callback_257),
+            outputs_sample_exact(&mc202, &mc202_callback_257),
+        ));
     }
     for (stage, rms) in [
         ("held", held_metrics.rms),
@@ -417,9 +430,14 @@ pub fn write_pack(
             "tr909_intent": prepared.live_policy.tr909_intent.label(),
             "mc202_intent": prepared.live_policy.mc202_intent.label(),
         },
+        "mc202_source_phrase_renderer_schema": MC202_SOURCE_PHRASE_RENDERER_SCHEMA,
         "exact_mixer_proof": {
             "kind": "runtime_mix_callback_block_realtime_simulation",
             "callback_partitions_sample_exact": callback_partition_sample_exact,
+            "callback_partition_stage_sample_exact": stage_sample_exact(&callback_128, &callback_257),
+            "w30_callback_partitions_sample_exact": outputs_sample_exact(&w30, &w30_callback_257),
+            "tr909_callback_partitions_sample_exact": outputs_sample_exact(&tr909, &tr909_callback_257),
+            "mc202_callback_partitions_sample_exact": outputs_sample_exact(&mc202, &mc202_callback_257),
             "source_monitor_included": false,
             "source_monitor_max_rms": source_monitor_max_rms,
             "master_limiter_included": true,
@@ -475,9 +493,19 @@ fn render_isolated_sequence(
     bpm: f32,
     isolate: fn(&RuntimeMixRenderPlan) -> RuntimeMixRenderPlan,
 ) -> Vec<RuntimeMixRenderOutput> {
+    render_isolated_sequence_with_callback(plans, beats, bpm, isolate, 128)
+}
+
+fn render_isolated_sequence_with_callback(
+    plans: &[&RuntimeMixRenderPlan; 3],
+    beats: &[u32; 3],
+    bpm: f32,
+    isolate: fn(&RuntimeMixRenderPlan) -> RuntimeMixRenderPlan,
+    callback_frames: usize,
+) -> Vec<RuntimeMixRenderOutput> {
     let isolated = plans.map(isolate);
     let refs = isolated.each_ref();
-    render_sequence(&refs, beats, bpm, 128)
+    render_sequence(&refs, beats, bpm, callback_frames)
 }
 
 fn render_sequence(
@@ -514,6 +542,17 @@ fn outputs_sample_exact(
             .iter()
             .zip(second)
             .all(|(left, right)| left.samples == right.samples)
+}
+
+fn stage_sample_exact(
+    first: &[RuntimeMixRenderOutput],
+    second: &[RuntimeMixRenderOutput],
+) -> Vec<bool> {
+    first
+        .iter()
+        .zip(second)
+        .map(|(left, right)| left.samples == right.samples)
+        .collect()
 }
 
 fn metrics(

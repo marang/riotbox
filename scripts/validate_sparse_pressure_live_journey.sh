@@ -58,6 +58,7 @@ jq -e \
   and .source_character_policy.bass_owner == "unassigned"
   and .source_character_policy.tr909_intent == "lead"
   and .source_character_policy.mc202_intent == "punctuate"
+  and .mc202_source_phrase_renderer_schema == "riotbox.mc202_source_phrase_renderer.v2"
   and .journey.held_beats == 16
   and .journey.damage_beats == 16
   and .journey.ordinary_reentry_beats == 8
@@ -66,6 +67,10 @@ jq -e \
   and .journey.saved_before_restart == true
   and .journey.restart_preset_survived == true
   and .exact_mixer_proof.callback_partitions_sample_exact == true
+  and (.exact_mixer_proof.callback_partition_stage_sample_exact | all)
+  and .exact_mixer_proof.w30_callback_partitions_sample_exact == true
+  and .exact_mixer_proof.tr909_callback_partitions_sample_exact == true
+  and .exact_mixer_proof.mc202_callback_partitions_sample_exact == true
   and .exact_mixer_proof.damage_gate_step_fraction == 0.3608
   and .exact_mixer_proof.expected_damage_gate_step_fraction == 0.3608
   and .exact_mixer_proof.reentry_gate_step_fraction == 0
