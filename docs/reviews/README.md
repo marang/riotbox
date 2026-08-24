@@ -59,6 +59,10 @@ Current P023 rejected-experiment closeouts:
 
 Current P023 algorithm-value refresh:
 
+- [riotbox_1460_corrected_negative_family_qualification_2026-08-24.md](./riotbox_1460_corrected_negative_family_qualification_2026-08-24.md):
+  fresh exact-live and restart qualification of corrected Beat20 handling,
+  human product passes for `weak_source` and `bad_timing`, and preserved
+  release/quality blockers.
 - [riotbox_1441_w30_hook_turnaround_transfer_observation_2026-08-18.md](./riotbox_1441_w30_hook_turnaround_transfer_observation_2026-08-18.md):
   five-source listening observations, source-dependent usefulness, improved
   phrase-scale review method, and formal fail-closed qualification boundary.

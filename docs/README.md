@@ -48,6 +48,14 @@ retaining three alternatives and explicit musician confirmation; four varied
 registered Development cases show no cue misactivation. This corrects the
 current explanation but does not retroactively promote the rejected
 RIOTBOX-1459 family records.
+`RIOTBOX-1460` now rebuilds those two records from the corrected current
+product state. Exact live and restart evidence keeps phase zero as the
+suggestion, all three alternatives, explicit confirmation, stopped transport,
+source-only monitoring, idle generated lanes, and no fallback. That handling
+earned a fresh bounded human product pass without replaying unchanged audio.
+`weak_source` and `bad_timing` now satisfy their reviewed-negative contracts;
+only `dense_break`, `sparse_drums`, and `tonal_riff` remain without family
+success, while release readiness and every quality claim remain blocked.
 `RIOTBOX-1408` has now replaced the synthetic W-30
 resample-tap proxy with hydrated capture audio through the exact live path.
 Determinism, three-source diversity, replay identity, and missing-source silence
