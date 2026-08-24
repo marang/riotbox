@@ -21,7 +21,7 @@ CORPUS_TO_DEMO_FAMILIES = {
     "dense_break": {"dense_break"},
     "sparse_drums": {"sparse_bass_pressure"},
     "tonal_riff": {"tonal_hook"},
-    "pad_noise": {"tonal_pad"},
+    "pad_noise": {"pad_noise", "tonal_pad"},
     "weak_source": {"weak_source"},
     "bad_timing": {"bad_timing"},
 }
@@ -125,7 +125,9 @@ def build_report(
         "human_verdict_boundary": (
             "Positive source families require a demo-ready human-pass entry. "
             "Weak and bad-timing families instead require a reviewed degraded, "
-            "unavailable, or reject product-path outcome with no fallback music."
+            "unavailable, or reject product-path outcome with no fallback music. "
+            "Pad/noise accepts either result according to its trusted timing and "
+            "reviewed product decision."
         ),
         "source_corpus": str(source_corpus_path),
         "demo_bank": str(demo_bank_path) if demo_bank_path is not None else None,
@@ -179,11 +181,13 @@ def family_coverage(
         for entry in matching_entries
         if evidence.human_verdict_is_eligible(entry, evidence_mode)
     ]
-    requires_degraded_or_reject = source_family in evidence.NEGATIVE_SUCCESS_FAMILIES
+    success_requirement = evidence.success_requirement_for_family(source_family)
+    allows_demo_ready = success_requirement != evidence.DEGRADED_SUCCESS
+    allows_degraded_or_reject = success_requirement != evidence.DEMO_READY_SUCCESS
     demo_ready_entries = [
         entry
         for entry in matching_entries
-        if not requires_degraded_or_reject
+        if allows_demo_ready
         and entry.get("human_verdict") == "pass"
         and entry.get("demo_readiness") == "demo_ready"
         and evidence.human_verdict_is_eligible(entry, evidence_mode)
@@ -193,12 +197,13 @@ def family_coverage(
         for entry in matching_entries
         if evidence.degraded_or_reject_is_eligible(entry, evidence_mode)
     ]
-    family_success_entries = (
-        degraded_or_reject_entries if requires_degraded_or_reject else demo_ready_entries
-    )
+    family_success_entries = [
+        *demo_ready_entries,
+        *(degraded_or_reject_entries if allows_degraded_or_reject else []),
+    ]
     if demo_ready_entries:
         status = "demo_ready_covered"
-    elif degraded_or_reject_entries:
+    elif allows_degraded_or_reject and degraded_or_reject_entries:
         status = "reviewed_degraded_or_reject"
     elif human_entries:
         status = "human_verdict_non_demo"
@@ -219,11 +224,7 @@ def family_coverage(
         "demo_ready_entry_ids": entry_ids(demo_ready_entries),
         "degraded_or_reject_entry_ids": entry_ids(degraded_or_reject_entries),
         "family_success_entry_ids": entry_ids(family_success_entries),
-        "success_requirement": (
-            "reviewed_degraded_or_reject"
-            if requires_degraded_or_reject
-            else "demo_ready_human_pass"
-        ),
+        "success_requirement": success_requirement,
         "unverified_entry_ids": entry_ids(
             [entry for entry in matching_entries if entry.get("human_verdict") == "unverified"]
         ),
@@ -254,7 +255,7 @@ def coverage_blockers(families: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 }
             )
         if (
-            family["success_requirement"] == "demo_ready_human_pass"
+            family["success_requirement"] == evidence.DEMO_READY_SUCCESS
             and not family["demo_ready_entry_ids"]
         ):
             blockers.append(
@@ -266,7 +267,7 @@ def coverage_blockers(families: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 }
             )
         if (
-            family["success_requirement"] == "reviewed_degraded_or_reject"
+            family["success_requirement"] == evidence.DEGRADED_SUCCESS
             and not family["degraded_or_reject_entry_ids"]
         ):
             blockers.append(
@@ -277,6 +278,22 @@ def coverage_blockers(families: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     "reason": (
                         "Weak and bad-timing families require a reviewed degraded, "
                         "unavailable, or reject product-path outcome without fallback music."
+                    ),
+                }
+            )
+        if (
+            family["success_requirement"] == evidence.DUAL_PATH_SUCCESS
+            and not family["family_success_entry_ids"]
+        ):
+            blockers.append(
+                {
+                    "code": "source_family_demo_or_degraded_review_missing",
+                    "source_family": source_family,
+                    "severity": "release_blocking",
+                    "reason": (
+                        "Pad/noise requires either a demo-ready human pass or a "
+                        "reviewed degraded, unavailable, or reject product outcome "
+                        "without fallback music."
                     ),
                 }
             )
@@ -390,16 +407,16 @@ def validate_family(family: Any, index: int, failures: list[str]) -> None:
     )
     check(
         family.get("success_requirement")
-        in {"demo_ready_human_pass", "reviewed_degraded_or_reject"},
+        in {
+            evidence.DEMO_READY_SUCCESS,
+            evidence.DEGRADED_SUCCESS,
+            evidence.DUAL_PATH_SUCCESS,
+        },
         f"families_{index}_success_requirement_invalid",
         failures,
     )
     source_family = family.get("source_family")
-    expected_requirement = (
-        "reviewed_degraded_or_reject"
-        if source_family in evidence.NEGATIVE_SUCCESS_FAMILIES
-        else "demo_ready_human_pass"
-    )
+    expected_requirement = evidence.success_requirement_for_family(str(source_family))
     check(
         family.get("success_requirement") == expected_requirement,
         f"families_{index}_success_requirement_mismatch",

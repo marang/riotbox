@@ -74,6 +74,45 @@ python3 scripts/degraded_product_review.py record \
   --reviewer fixture-listener
 python3 scripts/degraded_product_review.py validate "$tmp/review/review.json"
 
+mkdir -p "$tmp/live-review"
+jq '.evidence_role = "live_product_review" | .human_review.reviewer = "Markus"' \
+  "$tmp/review/review.json" >"$tmp/live-review/review.json"
+cp "$tmp/review/prompt.md" "$tmp/live-review/prompt.md"
+python3 scripts/degraded_product_review.py validate \
+  --require-human-pass "$tmp/live-review/review.json"
+
+jq -n '{
+  schema:"riotbox.release_grade_demo_bank.v1",
+  schema_version:1,
+  readiness_rubric_schema:"riotbox.sound_product_readiness_rubric.v1",
+  evidence_role:"live_review",
+  hidden_taste_oracle_allowed:false,
+  entries:[]
+}' >"$tmp/live-bank.json"
+python3 scripts/degraded_product_review.py promote \
+  --review "$tmp/live-review/review.json" \
+  --bank "$tmp/live-bank.json" \
+  --entry-id "bad-timing-human-degraded" \
+  --fix-category ui_cue \
+  --demo-worthiness-note "Reviewed safe degraded handling, not demo-ready music."
+python3 scripts/validate_release_grade_demo_bank.py "$tmp/live-bank.json"
+
+jq '.entries += [{entry_id:"expired-legacy-evidence"}]' \
+  "$tmp/live-bank.json" >"$tmp/invalid-existing-bank.json"
+invalid_bank_sha="$(sha256sum "$tmp/invalid-existing-bank.json" | cut -d ' ' -f1)"
+if python3 scripts/degraded_product_review.py promote \
+  --review "$tmp/live-review/review.json" \
+  --bank "$tmp/invalid-existing-bank.json" \
+  --entry-id "bad-timing-human-degraded" \
+  --fix-category ui_cue \
+  --demo-worthiness-note "An invalid existing bank must fail before overwrite." \
+  >"$tmp/invalid-existing-bank.out" 2>&1; then
+  echo "expected invalid existing live bank promotion to fail" >&2
+  exit 1
+fi
+grep -q "source_family" "$tmp/invalid-existing-bank.out"
+test "$(sha256sum "$tmp/invalid-existing-bank.json" | cut -d ' ' -f1)" = "$invalid_bank_sha"
+
 if python3 scripts/degraded_product_review.py validate \
   --require-human-pass "$tmp/review/review.json" >"$tmp/fixture-live.out" 2>&1; then
   echo "expected fixture-calibration review to fail live human-pass validation" >&2

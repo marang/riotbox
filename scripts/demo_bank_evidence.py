@@ -24,8 +24,20 @@ DEGRADED_OR_REJECT_EVIDENCE_SCHEMA = (
     "riotbox.demo_bank_degraded_or_reject_review_evidence.v1"
 )
 NEGATIVE_SUCCESS_FAMILIES = {"weak_source", "bad_timing"}
+DUAL_PATH_SUCCESS_FAMILIES = {"pad_noise"}
+DEMO_READY_SUCCESS = "demo_ready_human_pass"
+DEGRADED_SUCCESS = "reviewed_degraded_or_reject"
+DUAL_PATH_SUCCESS = "demo_ready_or_reviewed_degraded_or_reject"
 LIVE_REVIEW_BANK_ROLE = "live_review"
 HEX_64_RE = re.compile(r"^[0-9a-f]{64}$")
+
+
+def success_requirement_for_family(source_family: str) -> str:
+    if source_family in NEGATIVE_SUCCESS_FAMILIES:
+        return DEGRADED_SUCCESS
+    if source_family in DUAL_PATH_SUCCESS_FAMILIES:
+        return DUAL_PATH_SUCCESS
+    return DEMO_READY_SUCCESS
 
 
 def resolve_demo_bank_path(

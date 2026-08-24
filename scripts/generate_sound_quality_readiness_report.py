@@ -84,7 +84,7 @@ CORPUS_TO_DEMO_FAMILIES = {
     "dense_break": {"dense_break"},
     "sparse_drums": {"sparse_bass_pressure"},
     "tonal_riff": {"tonal_hook"},
-    "pad_noise": {"tonal_pad"},
+    "pad_noise": {"pad_noise", "tonal_pad"},
     "weak_source": {"weak_source"},
     "bad_timing": {"bad_timing"},
 }
@@ -354,20 +354,20 @@ def source_family_coverage(
         mapped = CORPUS_TO_DEMO_FAMILIES.get(family, {family})
         has_any_candidate = bool(mapped & all_demo_families)
         has_human_verdict = bool(mapped & human_families)
-        success_requirement = (
-            "reviewed_degraded_or_reject"
-            if family in evidence.NEGATIVE_SUCCESS_FAMILIES
-            else "demo_ready_human_pass"
-        )
+        success_requirement = evidence.success_requirement_for_family(family)
         has_demo_ready = (
             bool(mapped & demo_families)
-            if success_requirement == "demo_ready_human_pass"
+            if success_requirement != evidence.DEGRADED_SUCCESS
             else False
         )
+        has_degraded_or_reject = bool(mapped & degraded_or_reject_families)
         has_family_success = (
-            bool(mapped & degraded_or_reject_families)
-            if success_requirement == "reviewed_degraded_or_reject"
-            else has_demo_ready
+            has_degraded_or_reject
+            if success_requirement == evidence.DEGRADED_SUCCESS
+            else has_demo_ready or (
+                success_requirement == evidence.DUAL_PATH_SUCCESS
+                and has_degraded_or_reject
+            )
         )
         corpus_case_ids = [
             str(entry.get("case_id"))
@@ -386,8 +386,8 @@ def source_family_coverage(
                 "has_family_success": has_family_success,
                 "status": (
                     "reviewed_degraded_or_reject"
-                    if success_requirement == "reviewed_degraded_or_reject"
-                    and has_family_success
+                    if has_degraded_or_reject and not has_demo_ready
+                    and success_requirement != evidence.DEMO_READY_SUCCESS
                     else source_family_coverage_status(
                         has_any_candidate,
                         has_human_verdict,
@@ -2164,12 +2164,17 @@ def readiness_blockers(
     missing_positive_families = [
         family
         for family in missing_families
-        if family not in evidence.NEGATIVE_SUCCESS_FAMILIES
+        if evidence.success_requirement_for_family(family) == evidence.DEMO_READY_SUCCESS
     ]
     missing_negative_families = [
         family
         for family in missing_families
-        if family in evidence.NEGATIVE_SUCCESS_FAMILIES
+        if evidence.success_requirement_for_family(family) == evidence.DEGRADED_SUCCESS
+    ]
+    missing_dual_path_families = [
+        family
+        for family in missing_families
+        if evidence.success_requirement_for_family(family) == evidence.DUAL_PATH_SUCCESS
     ]
     if missing_positive_families:
         blockers.append(
@@ -2187,6 +2192,18 @@ def readiness_blockers(
                 "severity": "release_blocking",
                 "families": missing_negative_families,
                 "reason": "Weak and bad-timing families need reviewed degraded/unavailable/reject success without fallback music.",
+            }
+        )
+    if missing_dual_path_families:
+        blockers.append(
+            {
+                "code": "source_family_demo_or_degraded_review_missing",
+                "severity": "release_blocking",
+                "families": missing_dual_path_families,
+                "reason": (
+                    "Pad/noise needs either demo-ready human-pass coverage or a "
+                    "reviewed degraded/unavailable/reject outcome without fallback music."
+                ),
             }
         )
     if demo["unverified_candidate_ids"]:
@@ -2482,11 +2499,7 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             failures.append(f"source_family_coverage_{index}_not_object")
             continue
         source_family = family.get("source_family")
-        expected_requirement = (
-            "reviewed_degraded_or_reject"
-            if source_family in evidence.NEGATIVE_SUCCESS_FAMILIES
-            else "demo_ready_human_pass"
-        )
+        expected_requirement = evidence.success_requirement_for_family(str(source_family))
         check(
             family.get("success_requirement") == expected_requirement,
             f"source_family_coverage_{index}_success_requirement_mismatch",
@@ -3517,6 +3530,7 @@ def validate_current_p023_contract(
             "source_family_human_verdict_missing",
             "source_family_demo_ready_coverage_missing",
             "source_family_degraded_or_reject_review_missing",
+            "source_family_demo_or_degraded_review_missing",
             "human_review_queue_unverified_candidates_present",
         }.issubset(blocker_codes),
         "p023_contract_required_blockers_missing",

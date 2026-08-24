@@ -28,6 +28,7 @@ SOURCE_FAMILIES = {
     "dense_break",
     "tonal_hook",
     "tonal_pad",
+    "pad_noise",
     "kick_snare_loop",
     "sparse_bass_pressure",
     "weak_source",
