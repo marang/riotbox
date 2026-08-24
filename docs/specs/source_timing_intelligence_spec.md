@@ -1,6 +1,6 @@
 # Riotbox Source Timing Intelligence Spec
 
-Version: 0.1
+Version: 0.2
 Status: Draft
 Audience: core, audio, analysis, TUI, QA, Ghost
 
@@ -702,6 +702,33 @@ detection:
 - the primary candidate may expose a shifted bar grid only when the bounded
   phase score is stronger
 - `AmbiguousDownbeat` remains visible while scoring is only onset-presence based
+
+The versioned `source-timing-probe.repeated-loop-boundary-prior.v1` cue may
+reorder that scaffold's already-ambiguous primary phase toward the file
+boundary. It does not add confidence or lock a grid. The cue applies only when
+all of these frozen conditions hold:
+
+- the raw accent winner is not phase zero, while phase zero has a positive
+  score within the existing `downbeat_ambiguity_margin` of that winner
+- source duration fits an integer two through eight complete bars with at most
+  `0.03` bar error at the candidate BPM and declared meter
+- onset matching uses `(seconds_per_beat * 0.18).clamp(0.035, 0.08)` seconds;
+  an onset exists at the file boundary within that tolerance, and the first bar
+  contains at least one onset per declared beat
+- bar assignment admits an onset up to one quarter of that tolerance before a
+  boundary as the following bar's boundary onset
+- every later bar uniquely matches the first bar with at least `0.60` coverage
+  across the larger onset count and at least `0.55` mean matched-strength
+  similarity
+
+When selected, phase zero becomes the explicit primary, the raw accent winner
+remains an `AlternateDownbeat`, the evidence margin remains non-stable, and
+`AmbiguousDownbeat` explains that a repeated full-bar loop suggests the file
+boundary but still requires confirmation. Missing boundary onset, incomplete
+bar fit, one-bar material, non-repeating onset layout, mismatched accent
+strength, or a clear non-boundary accent winner leaves the v0 selection
+unchanged. The cue never uses filenames and never upgrades `needs_review` /
+manual-confirm timing to `ready` or `locked_grid`.
 
 Probe-derived anchors may now classify bounded musical grid roles inside a
 primary timing hypothesis:

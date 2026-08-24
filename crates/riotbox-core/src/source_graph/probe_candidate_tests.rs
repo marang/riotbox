@@ -8,6 +8,8 @@ mod confidence_report_tests;
 mod evidence_report_tests;
 #[path = "probe_candidate_tests/groove_tests.rs"]
 mod groove_tests;
+#[path = "probe_candidate_tests/loop_boundary_tests.rs"]
+mod loop_boundary_tests;
 #[path = "probe_candidate_tests/readiness_report_tests.rs"]
 mod readiness_report_tests;
 

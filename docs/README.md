@@ -41,6 +41,13 @@ placed the musical downbeat at the file boundary while the probe selected beat
 3. Both new structured reviews are therefore `needs_fix`, not reconstructed
 passes; `weak_source` and `bad_timing` remain unresolved until the existing
 RIOTBOX-1033 detector-quality work supplies stronger musical phase evidence.
+`RIOTBOX-1033` now supplies that bounded evidence without inventing a lock:
+repeated complete-bar onset structure may reorder only an already-ambiguous
+phase toward the file boundary. Beat20 consequently suggests phase zero while
+retaining three alternatives and explicit musician confirmation; four varied
+registered Development cases show no cue misactivation. This corrects the
+current explanation but does not retroactively promote the rejected
+RIOTBOX-1459 family records.
 `RIOTBOX-1408` has now replaced the synthetic W-30
 resample-tap proxy with hydrated capture audio through the exact live path.
 Determinism, three-source diversity, replay identity, and missing-source silence

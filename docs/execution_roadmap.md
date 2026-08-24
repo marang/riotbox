@@ -1462,6 +1462,17 @@ and `bad_timing` remain open; RIOTBOX-1033 owns the bounded detector-quality
 follow-up and must preserve manual-confirm fallback until stronger musical
 phase evidence earns a versioned contract change.
 
+RIOTBOX-1033 freezes and qualifies that bounded contract change. The v1
+repeated-loop boundary cue applies only to an already-ambiguous phase with a
+complete multi-bar fit, boundary onset, and repeated onset/accent structure.
+The exact Beat20 live path now suggests phase zero instead of phase two while
+retaining all alternatives, `degraded / needs_user_confirmation`, stopped
+transport, and no generated fallback. Dense, sparse, tonal, and electronic
+Development contrasts do not activate the cue. This removes the detector-side
+explanation defect; it does not retroactively promote RIOTBOX-1459 evidence or
+claim automatic grid lock, arbitrary-source timing, Holdout, demo, quality, or
+release readiness.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing
