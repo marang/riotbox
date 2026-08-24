@@ -79,6 +79,15 @@ Missing human verdicts must be reported as `human_verdict: unverified`.
 Weak human verdicts block demo-ready claims and must route to a concrete fix
 category.
 
+Aggregate readiness is outcome-aware. A weak or failed demo-bank verdict that
+also supplies eligible reviewed degraded / unavailable / reject evidence for a
+negative-success or dual-path family counts as that family's successful product
+outcome; it must not be reintroduced as a generic weak-output production
+blocker. The same reviewed outcome may resolve the matching edge-source
+diagnostic blocker. Unresolved edge families, weak/failed positive-demo
+families, scripted diagnostics, missing reviews, and all unrelated release
+gates remain blocking.
+
 ---
 
 ## 4. Musical Dimensions

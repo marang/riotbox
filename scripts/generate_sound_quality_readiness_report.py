@@ -207,6 +207,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     )
     weak_summary = weak_routing_summary(weak_routing, args.weak_routing)
     suite_summary = professional_suite_summary(professional_suite, args.professional_output_suite)
+    reconcile_source_selection_risk(suite_summary, source_families)
     perform_risk_cue_summary = perform_risk_cue_contract_summary(
         perform_risk_cue_contract,
         args.perform_risk_cue_contract,
@@ -455,11 +456,22 @@ def demo_bank_summary(
     ]
     verdict_counts = Counter(str(entry.get("human_verdict")) for entry in eligible_human_entries)
     readiness_counts = Counter(str(entry.get("demo_readiness")) for entry in eligible_human_entries)
+    reviewed_outcome_entries = [
+        entry
+        for entry in eligible_human_entries
+        if reviewed_outcome_satisfies_family_contract(entry, evidence_mode)
+    ]
+    reviewed_outcome_ids = {str(entry.get("entry_id")) for entry in reviewed_outcome_entries}
+    unresolved_weak_or_fail_entries = [
+        entry
+        for entry in eligible_human_entries
+        if entry.get("human_verdict") in {"weak", "fail"}
+        and str(entry.get("entry_id")) not in reviewed_outcome_ids
+    ]
     weak_fix_categories = sorted(
         {
             category
-            for entry in eligible_human_entries
-            if entry.get("human_verdict") in {"weak", "fail"}
+            for entry in unresolved_weak_or_fail_entries
             for category in list(entry.get("fix_categories", []))
             if isinstance(category, str) and category
         }
@@ -469,17 +481,8 @@ def demo_bank_summary(
         for entry in entries
         if entry.get("human_verdict") == "unverified" or entry.get("demo_readiness") == "unverified"
     ]
-    weak_or_fail = [
-        {
-            "entry_id": str(entry.get("entry_id")),
-            "human_verdict": str(entry.get("human_verdict")),
-            "demo_readiness": str(entry.get("demo_readiness")),
-            "fix_categories": list(entry.get("fix_categories", [])),
-            "reason": str(entry.get("demo_worthiness_note", "")),
-        }
-        for entry in eligible_human_entries
-        if entry.get("human_verdict") in {"weak", "fail"}
-    ]
+    weak_or_fail = [demo_bank_entry_summary(entry) for entry in unresolved_weak_or_fail_entries]
+    reviewed_outcomes = [demo_bank_entry_summary(entry) for entry in reviewed_outcome_entries]
     return {
         "path": str(path) if path is not None else None,
         "entry_count": len(entries),
@@ -489,8 +492,85 @@ def demo_bank_summary(
         "demo_readiness_counts": dict(sorted(readiness_counts.items())),
         "unverified_candidate_ids": unverified,
         "weak_or_fail_entries": weak_or_fail,
+        "reviewed_degraded_or_reject_entries": reviewed_outcomes,
         "weak_fix_categories": weak_fix_categories,
     }
+
+
+def demo_bank_entry_summary(entry: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "entry_id": str(entry.get("entry_id")),
+        "source_family": str(entry.get("source_family")),
+        "human_verdict": str(entry.get("human_verdict")),
+        "demo_readiness": str(entry.get("demo_readiness")),
+        "fix_categories": list(entry.get("fix_categories", [])),
+        "reason": str(entry.get("demo_worthiness_note", "")),
+    }
+
+
+def reviewed_outcome_satisfies_family_contract(
+    entry: dict[str, Any],
+    evidence_mode: str,
+) -> bool:
+    if not evidence.degraded_or_reject_is_eligible(entry, evidence_mode):
+        return False
+    demo_family = str(entry.get("source_family") or "")
+    corpus_family = next(
+        (
+            family
+            for family, aliases in CORPUS_TO_DEMO_FAMILIES.items()
+            if demo_family in aliases
+        ),
+        demo_family,
+    )
+    return evidence.success_requirement_for_family(corpus_family) in {
+        evidence.DEGRADED_SUCCESS,
+        evidence.DUAL_PATH_SUCCESS,
+    }
+
+
+def reconcile_source_selection_risk(
+    suite: dict[str, Any],
+    coverage: dict[str, Any],
+) -> None:
+    risk = object_or_empty(suite.get("source_selection_risk"))
+    if not risk:
+        return
+    blocked = set(string_list(risk.get("blocked_source_families")))
+    reviewed = {
+        str(family.get("source_family"))
+        for family in list_or_empty(coverage.get("families"))
+        if isinstance(family, dict)
+        and family.get("status") == "reviewed_degraded_or_reject"
+        and family.get("has_family_success") is True
+    }
+    resolved = sorted(blocked & reviewed)
+    unresolved = sorted(blocked - reviewed)
+    actions = string_list(risk.get("required_review_actions"))
+    unresolved_actions = [
+        action
+        for action in actions
+        if not (
+            action == "audition_pad_noise_texture_before_demo_promotion"
+            and "pad_noise" not in unresolved
+        )
+        and not (
+            action == "confirm_timing_before_bar_locked_moves"
+            and "bad_timing" not in unresolved
+        )
+        and not (
+            action == "keep_as_diagnostic_until_human_verdict"
+            and not unresolved
+        )
+    ]
+    risk.update(
+        {
+            "reviewed_product_outcome_families": resolved,
+            "unresolved_blocked_source_families": unresolved,
+            "unresolved_required_review_actions": unresolved_actions,
+            "aggregate_edge_promotion_blocked": bool(unresolved),
+        }
+    )
 
 
 def release_demo_review_pack_summary(report: dict[str, Any] | None, path: Path) -> dict[str, Any]:
@@ -1935,8 +2015,8 @@ def source_selection_priority_detail(
     source_families = string_list(candidate.get("source_families"))
     artifact_refs = string_list(candidate.get("artifact_refs"))
     demotion_reasons = string_list(risk.get("demotion_reasons"))
-    review_actions = string_list(risk.get("required_review_actions"))
-    blocked_families = string_list(risk.get("blocked_source_families"))
+    review_actions = string_list(risk.get("unresolved_required_review_actions"))
+    blocked_families = string_list(risk.get("unresolved_blocked_source_families"))
     covered_policy_families = string_list(
         source_policy.get("promotion_allowed_source_families")
     ) or string_list(source_policy.get("source_families"))
@@ -2056,8 +2136,8 @@ def ui_cue_priority_detail(
     case_ids = string_list(candidate.get("case_ids"))
     source_families = string_list(candidate.get("source_families"))
     artifact_refs = string_list(candidate.get("artifact_refs"))
-    review_actions = string_list(risk.get("required_review_actions"))
-    blocked_families = string_list(risk.get("blocked_source_families"))
+    review_actions = string_list(risk.get("unresolved_required_review_actions"))
+    blocked_families = string_list(risk.get("unresolved_blocked_source_families"))
     generic_step = str(candidate.get("software_next_step") or "")
     cue_reasons = sorted(
         set(review_actions)
@@ -2242,18 +2322,20 @@ def readiness_blockers(
         )
     else:
         source_selection_risk = object_or_empty(suite.get("source_selection_risk"))
-        if (
-            number(source_selection_risk.get("edge_blocked_case_count")) >= 1.0
-            and source_selection_risk.get("edge_promotion_allowed") is False
-        ):
+        if source_selection_risk.get("aggregate_edge_promotion_blocked") is True:
             blockers.append(
                 {
                     "code": "edge_source_selection_promotion_blocked",
                     "severity": "production_blocking",
-                    "families": list(source_selection_risk.get("blocked_source_families") or []),
+                    "families": list(
+                        source_selection_risk.get(
+                            "unresolved_blocked_source_families"
+                        )
+                        or []
+                    ),
                     "reason": (
-                        "Bad-timing and pad/noise edge sources are correctly blocked "
-                        "from demo promotion until source-selection review or fixes land."
+                        "Unresolved edge-source families remain blocked from demo "
+                        "promotion until their required product review or fix lands."
                     ),
                 }
             )
@@ -2507,6 +2589,63 @@ def validate_report(report: dict[str, Any]) -> list[str]:
         )
     unverified = nested_list(report, "demo_bank", "unverified_candidate_ids")
     weak_entries = nested_list(report, "demo_bank", "weak_or_fail_entries")
+    reviewed_outcome_entries = nested_list(
+        report,
+        "demo_bank",
+        "reviewed_degraded_or_reject_entries",
+    )
+    reviewed_coverage_families = {
+        str(family.get("source_family"))
+        for family in coverage_families
+        if isinstance(family, dict)
+        and family.get("status") == "reviewed_degraded_or_reject"
+        and family.get("has_family_success") is True
+    }
+    weak_entry_ids = {
+        str(entry.get("entry_id"))
+        for entry in weak_entries
+        if isinstance(entry, dict)
+    }
+    reviewed_outcome_ids = {
+        str(entry.get("entry_id"))
+        for entry in reviewed_outcome_entries
+        if isinstance(entry, dict)
+    }
+    check(
+        weak_entry_ids.isdisjoint(reviewed_outcome_ids),
+        "reviewed_negative_outcomes_still_counted_as_weak_or_fail",
+        failures,
+    )
+    for index, entry in enumerate(reviewed_outcome_entries):
+        if not isinstance(entry, dict):
+            failures.append(f"reviewed_negative_outcome_{index}_not_object")
+            continue
+        source_family = str(entry.get("source_family") or "")
+        corpus_family = next(
+            (
+                family
+                for family, aliases in CORPUS_TO_DEMO_FAMILIES.items()
+                if source_family in aliases
+            ),
+            source_family,
+        )
+        check(
+            entry.get("human_verdict") in {"weak", "fail"}
+            and entry.get("demo_readiness") == "not_demo_ready",
+            f"reviewed_negative_outcome_{index}_verdict_invalid",
+            failures,
+        )
+        check(
+            evidence.success_requirement_for_family(corpus_family)
+            in {evidence.DEGRADED_SUCCESS, evidence.DUAL_PATH_SUCCESS},
+            f"reviewed_negative_outcome_{index}_family_not_eligible",
+            failures,
+        )
+        check(
+            corpus_family in reviewed_coverage_families,
+            f"reviewed_negative_outcome_{index}_coverage_not_reconciled",
+            failures,
+        )
     weak_routing = object_or_empty(report.get("weak_output_routing"))
     weak_available = nested_value(report, "weak_output_routing", "available")
     weak_fix_summary = nested_value(report, "weak_output_routing", "production_fix_summary")
@@ -2578,6 +2717,52 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             failures,
         )
         if isinstance(suite_source_selection_risk, dict):
+            raw_blocked_families = set(
+                string_list(suite_source_selection_risk.get("blocked_source_families"))
+            )
+            reviewed_product_families = set(
+                string_list(
+                    suite_source_selection_risk.get(
+                        "reviewed_product_outcome_families"
+                    )
+                )
+            )
+            unresolved_blocked_families = set(
+                string_list(
+                    suite_source_selection_risk.get(
+                        "unresolved_blocked_source_families"
+                    )
+                )
+            )
+            check(
+                reviewed_product_families
+                == raw_blocked_families & reviewed_coverage_families,
+                "professional_suite_source_selection_resolved_families_stale",
+                failures,
+            )
+            check(
+                unresolved_blocked_families
+                == raw_blocked_families - reviewed_coverage_families,
+                "professional_suite_source_selection_unresolved_families_stale",
+                failures,
+            )
+            check(
+                reviewed_product_families.isdisjoint(unresolved_blocked_families),
+                "professional_suite_source_selection_resolved_unresolved_overlap",
+                failures,
+            )
+            check(
+                reviewed_product_families | unresolved_blocked_families
+                == raw_blocked_families,
+                "professional_suite_source_selection_reconciliation_stale",
+                failures,
+            )
+            check(
+                suite_source_selection_risk.get("aggregate_edge_promotion_blocked")
+                == bool(unresolved_blocked_families),
+                "professional_suite_source_selection_aggregate_block_state_stale",
+                failures,
+            )
             check(
                 number(suite_source_selection_risk.get("edge_blocked_case_count")) >= 2.0,
                 "professional_suite_source_selection_blocked_count_too_low",
@@ -3389,7 +3574,7 @@ def validate_report(report: dict[str, Any]) -> list[str]:
         validate_ui_cue_priority(ui_cue_priority, failures)
 
     next_action_items = list_or_empty(report.get("next_actions"))
-    if evidence_mode == evidence.FIXTURE_CALIBRATION:
+    if is_canonical_fixture_calibration(demo_bank_evidence):
         validate_current_p023_contract(report, blockers, failures)
         validate_current_next_actions(report, next_action_items, failures)
 
@@ -3415,6 +3600,15 @@ def validate_report(report: dict[str, Any]) -> list[str]:
     check(isinstance(fix_categories, list) and bool(fix_categories), "next_fix_categories_missing", failures)
     check(isinstance(report.get("musician_summary"), str) and report["musician_summary"], "musician_summary_missing", failures)
     return failures
+
+
+def is_canonical_fixture_calibration(demo_bank_evidence: dict[str, Any]) -> bool:
+    path = demo_bank_evidence.get("demo_bank_path")
+    return (
+        demo_bank_evidence.get("mode") == evidence.FIXTURE_CALIBRATION
+        and isinstance(path, str)
+        and Path(path).resolve() == DEFAULT_DEMO_BANK.resolve()
+    )
 
 
 def validate_current_p023_contract(
@@ -3810,10 +4004,14 @@ def markdown_report(report: dict[str, Any]) -> str:
                 "- Source-selection risk: "
                 f"blocked `{source_selection_risk.get('edge_blocked_case_count')}`, "
                 f"families `{', '.join(source_selection_risk.get('blocked_source_families', []))}`, "
+                "reviewed product outcomes "
+                f"`{', '.join(source_selection_risk.get('reviewed_product_outcome_families', []))}`, "
+                "unresolved families "
+                f"`{', '.join(source_selection_risk.get('unresolved_blocked_source_families', []))}`, "
                 "demotions "
                 f"`{', '.join(source_selection_risk.get('demotion_reasons', []))}`, "
-                "review actions "
-                f"`{', '.join(source_selection_risk.get('required_review_actions', []))}`"
+                "unresolved review actions "
+                f"`{', '.join(source_selection_risk.get('unresolved_required_review_actions', []))}`"
             ),
             (
                 "- Current evidence reconciliation: "

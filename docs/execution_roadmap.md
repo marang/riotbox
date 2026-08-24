@@ -1442,6 +1442,15 @@ through this reviewed unavailable outcome, while `tonal_pad` remains a legacy
 alias. This creates no demo-ready or global quality claim; five formal family
 outcomes and release readiness remain blocked.
 
+RIOTBOX-1458 makes the aggregate readiness consumer honor that already-owned
+outcome contract. Eligible reviewed degraded / unavailable / reject entries no
+longer reappear as generic weak/fail production blockers, and matching
+professional-suite edge diagnostics are reconciled against the reviewed live
+product family before aggregate blocking. The RIOTBOX-1457 live report now
+resolves `pad_noise` while retaining `bad_timing` as the only unresolved edge
+family; positive-family weak outputs and every unrelated release or quality
+gate remain unchanged.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing
