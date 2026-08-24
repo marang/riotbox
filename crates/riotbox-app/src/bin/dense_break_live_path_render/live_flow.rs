@@ -300,10 +300,8 @@ pub fn prepare(
         })
         .transpose()?;
     if exact_live_review != ExactLiveReviewMode::Standard {
-        if tonal_journey.is_none() {
-            if exact_live_review == ExactLiveReviewMode::Tonal {
-                return Err("tonal live review omitted its tonal journey".into());
-            }
+        if tonal_journey.is_none() && exact_live_review == ExactLiveReviewMode::Tonal {
+            return Err("tonal live review omitted its tonal journey".into());
         }
         if sparse_journey.is_none() && exact_live_review == ExactLiveReviewMode::Sparse {
             return Err("sparse live review omitted its sparse journey".into());

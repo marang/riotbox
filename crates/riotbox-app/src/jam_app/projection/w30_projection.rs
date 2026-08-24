@@ -323,8 +323,6 @@ struct W30PadPlaybackTransform {
 
 const W30_DAMAGE_PITCH_DRAG_DEPTH: f32 = 0.27;
 const W30_DAMAGE_PITCH_DRAG_MIN_RATE: f32 = 0.72;
-/// Retain only the source-derived attack portion of each grid retrigger. This keeps
-/// percussion already present in a sparse source from drifting between the TR-909 hits.
 
 impl Default for W30PadPlaybackTransform {
     fn default() -> Self {
