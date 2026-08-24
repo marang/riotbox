@@ -1610,4 +1610,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Reconcile accepted exact-live journeys into live readiness
 - [RIOTBOX-1457.md](./RIOTBOX-1457.md)
   P023: Prove the exact live pad/noise product outcome
+- [RIOTBOX-1458.md](./RIOTBOX-1458.md)
+  P023: Make aggregate readiness honor reviewed negative outcomes
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
