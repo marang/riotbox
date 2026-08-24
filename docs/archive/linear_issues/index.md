@@ -1608,4 +1608,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Prove the exact live sparse-pressure journey through restart and recall
 - [RIOTBOX-1456.md](./RIOTBOX-1456.md)
   P023: Reconcile accepted exact-live journeys into live readiness
+- [RIOTBOX-1457.md](./RIOTBOX-1457.md)
+  P023: Prove the exact live pad/noise product outcome
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
