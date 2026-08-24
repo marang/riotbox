@@ -1418,6 +1418,18 @@ and its distinct Transient Bite state. This closes the bounded sparse live
 journey without claiming universal hardness, bass, source transfer, Holdout, or
 zero-downtime restart behavior.
 
+RIOTBOX-1456 reconciles those accepted exact-live journeys with the stricter
+release-demo bank instead of treating every durable listening note as promotion
+proof. The current live bank counts zero eligible human verdicts: the dense and
+sparse reviews lack professional-pack `audio_judge_label` metadata, the tonal
+structured review is not present at a durable local path, and the negative
+RIOTBOX-1405 review refs point to expired temporary files. The validators stay
+fail-closed and no kept journey is relabeled `demo_ready`. Product work should
+not repeat generic dense, tonal, or sparse exploration; the next uncovered
+audible outcome is one exact live `pad_noise` journey through the existing
+timing and no-fallback contracts. Formal release-demo promotion remains a
+separate evidence-closeout task using professional listening packs.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing

@@ -549,6 +549,20 @@ After exit:
   addition, so it receives no new musical verdict and no second variant. The
   temporary behavior is removed and MC-202 pressure remains `stay-out` for the
   current combined gesture journey while Foundation Completion takes priority.
+- RIOTBOX-1454 and RIOTBOX-1455 close bounded exact-live tonal and sparse
+  capture/performance/re-entry/restart journeys with structured human `keep`
+  verdicts. They expand the accepted product-path evidence beyond dense-break,
+  but their Development-only claim boundaries explicitly exclude demo and
+  release readiness.
+- RIOTBOX-1456 reconciles those keeps with the release-demo contract without
+  inflating them. The extant dense and sparse reviews lack the required
+  professional-pack `audio_judge_label`, the tonal structured review is no
+  longer present at a durable local path, and the RIOTBOX-1405 negative reviews
+  are referenced through expired temporary paths. Live readiness therefore
+  correctly counts zero eligible human verdicts. This does not reopen the
+  accepted dense, tonal, or sparse musical journeys; the next uncovered product
+  outcome is the exact live `pad_noise` path, while release-demo promotion
+  remains separate formal evidence work.
 - RIOTBOX-1410 is the first bounded Foundation Completion closure: explicit
   control-only source-monitor refresh retains current PCM, explicit replacement
   atomically publishes PCM plus mode/gains and anchors, and exact callback /
