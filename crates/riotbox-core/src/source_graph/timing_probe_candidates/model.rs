@@ -40,9 +40,11 @@ pub fn timing_model_from_probe_bpm_candidates(
     let primary_bpm = primary_period.bpm;
 
     let downbeat_phases = downbeat_phase_scores(input, primary_bpm);
-    let primary_phase = downbeat_phases.first().copied().unwrap_or_default();
-    let ambiguous_phases = ambiguous_downbeat_phases(&downbeat_phases, policy).collect::<Vec<_>>();
-    let primary = probe_bpm_hypothesis(
+    let primary_selection = select_downbeat_phase(input, primary_bpm, &downbeat_phases, policy);
+    let primary_phase = primary_selection.phase;
+    let ambiguous_phases =
+        ambiguous_downbeat_phases(&downbeat_phases, primary_phase, policy).collect::<Vec<_>>();
+    let mut primary = probe_bpm_hypothesis(
         "probe-bpm-primary".into(),
         TimingHypothesisKind::Primary,
         primary_bpm,
@@ -54,6 +56,7 @@ pub fn timing_model_from_probe_bpm_candidates(
         primary_phase.offset_beats,
         input,
     );
+    record_loop_boundary_provenance(&mut primary, primary_selection);
     let primary_drift_high = has_high_drift(&primary.drift);
     let primary_phrase_uncertain = primary.phrase_grid.is_empty()
         || !ambiguous_phases.is_empty()
@@ -98,59 +101,65 @@ pub fn timing_model_from_probe_bpm_candidates(
             continue;
         }
 
-        let phase = best_downbeat_phase(input, period.bpm);
-        hypotheses.push(probe_bpm_hypothesis(
+        let selection = best_downbeat_phase_selection(input, period.bpm, policy);
+        let mut hypothesis = probe_bpm_hypothesis(
             format!("probe-bpm-period-{:.2}", period.bpm),
             kind,
             period.bpm,
             ProbeBpmHypothesisScoring {
                 confidence: policy.alternative_confidence,
                 beat_period_score: period.score,
-                downbeat_score: phase.score,
+                downbeat_score: selection.phase.score,
             },
-            phase.offset_beats,
+            selection.phase.offset_beats,
             input,
-        ));
+        );
+        record_loop_boundary_provenance(&mut hypothesis, selection);
+        hypotheses.push(hypothesis);
     }
 
     const BPM_BOUNDARY_EPSILON: f32 = 0.01;
 
     if primary_bpm / 2.0 + BPM_BOUNDARY_EPSILON >= policy.min_bpm {
         let half_bpm = (primary_bpm / 2.0).max(policy.min_bpm);
-        let half_phase = best_downbeat_phase(input, half_bpm);
+        let half_selection = best_downbeat_phase_selection(input, half_bpm, policy);
         let half_period_score = period_score_for_bpm(&period_scores, half_bpm)
             .map_or(primary_period.score, |score| score.score);
-        hypotheses.push(probe_bpm_hypothesis(
+        let mut hypothesis = probe_bpm_hypothesis(
             "probe-bpm-half-time".into(),
             TimingHypothesisKind::HalfTime,
             half_bpm,
             ProbeBpmHypothesisScoring {
                 confidence: policy.alternative_confidence,
                 beat_period_score: half_period_score,
-                downbeat_score: half_phase.score,
+                downbeat_score: half_selection.phase.score,
             },
-            half_phase.offset_beats,
+            half_selection.phase.offset_beats,
             input,
-        ));
+        );
+        record_loop_boundary_provenance(&mut hypothesis, half_selection);
+        hypotheses.push(hypothesis);
         warnings.push(TimingWarningCode::HalfTimePossible);
     }
     if primary_bpm * 2.0 <= policy.max_bpm + BPM_BOUNDARY_EPSILON {
         let double_bpm = (primary_bpm * 2.0).min(policy.max_bpm);
-        let double_phase = best_downbeat_phase(input, double_bpm);
+        let double_selection = best_downbeat_phase_selection(input, double_bpm, policy);
         let double_period_score = period_score_for_bpm(&period_scores, double_bpm)
             .map_or(primary_period.score, |score| score.score);
-        hypotheses.push(probe_bpm_hypothesis(
+        let mut hypothesis = probe_bpm_hypothesis(
             "probe-bpm-double-time".into(),
             TimingHypothesisKind::DoubleTime,
             double_bpm,
             ProbeBpmHypothesisScoring {
                 confidence: policy.alternative_confidence,
                 beat_period_score: double_period_score,
-                downbeat_score: double_phase.score,
+                downbeat_score: double_selection.phase.score,
             },
-            double_phase.offset_beats,
+            double_selection.phase.offset_beats,
             input,
-        ));
+        );
+        record_loop_boundary_provenance(&mut hypothesis, double_selection);
+        hypotheses.push(hypothesis);
         warnings.push(TimingWarningCode::DoubleTimePossible);
     }
 
@@ -171,10 +180,26 @@ pub fn timing_model_from_probe_bpm_candidates(
             .into_iter()
             .map(|code| TimingWarning {
                 code,
-                message: probe_bpm_warning_message(code, input).into(),
+                message: probe_bpm_warning_message(
+                    code,
+                    input,
+                    primary_selection.used_loop_boundary_prior,
+                )
+                .into(),
             })
             .collect(),
         degraded_policy,
+    }
+}
+
+fn record_loop_boundary_provenance(
+    hypothesis: &mut TimingHypothesis,
+    selection: DownbeatPhaseSelection,
+) {
+    if selection.used_loop_boundary_prior {
+        hypothesis
+            .provenance
+            .push("source-timing-probe.repeated-loop-boundary-prior.v1".into());
     }
 }
 

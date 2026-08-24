@@ -325,8 +325,12 @@ fn normalized_onset_times_and_strengths(
 fn probe_bpm_warning_message(
     code: TimingWarningCode,
     input: &SourceTimingProbeBpmCandidateInput,
+    used_loop_boundary_prior: bool,
 ) -> &'static str {
     match code {
+        TimingWarningCode::AmbiguousDownbeat if used_loop_boundary_prior => {
+            "repeated full-bar loop suggests the file boundary, but alternate bar starts require confirmation"
+        }
         TimingWarningCode::AmbiguousDownbeat => {
             "BPM candidate has only preliminary downbeat scoring"
         }

@@ -585,6 +585,12 @@ After exit:
   `bad_timing` records are `needs_fix` and remain ineligible for promotion.
   RIOTBOX-1033 owns stronger musical phase evidence; manual-confirm fallback
   remains mandatory until that work earns a versioned contract change.
+- RIOTBOX-1033 now freezes and qualifies the bounded repeated-loop boundary cue.
+  It corrects Beat20's suggested phase from beat 3 to the file boundary while
+  retaining three alternatives, explicit confirmation, stopped transport, and
+  no fallback; four varied registered Development cases show no cue
+  misactivation. This is a detector-explanation closure, not an automatic lock
+  or retroactive promotion of the RIOTBOX-1459 negative-family reviews.
 - RIOTBOX-1410 is the first bounded Foundation Completion closure: explicit
   control-only source-monitor refresh retains current PCM, explicit replacement
   atomically publishes PCM plus mode/gains and anchors, and exact callback /
