@@ -2,18 +2,21 @@
 set -euo pipefail
 
 output="${1:-artifacts/audio_qa/local-sparse-pressure-live-journey}"
+mode="${2:-render}"
 source='data/test_audio/examples/DH_BeatC_KickSnr_120-01.wav'
 expected_sha='8a970e5d7bd9b29771aba85f75e697c7510940d4404714bfb1e55e210c15f46c'
 
-actual_sha="$(sha256sum -- "$source" | cut -d ' ' -f 1)"
-test "$actual_sha" = "$expected_sha"
+if [[ "$mode" != "--validate-existing" ]]; then
+  actual_sha="$(sha256sum -- "$source" | cut -d ' ' -f 1)"
+  test "$actual_sha" = "$expected_sha"
 
-cargo run -p riotbox-app --bin dense_break_live_path_render -- \
-  --source "$source" \
-  --output "$output" \
-  --bpm 120 \
-  --downbeat-seconds 0 \
-  --sparse-live-review
+  cargo run -p riotbox-app --bin dense_break_live_path_render -- \
+    --source "$source" \
+    --output "$output" \
+    --bpm 120 \
+    --downbeat-seconds 0 \
+    --sparse-live-review
+fi
 
 python3 scripts/validate_listening_manifest_json.py \
   --require-existing-artifacts \
@@ -62,7 +65,8 @@ jq -e \
   and .journey.held_beats == 16
   and .journey.damage_beats == 16
   and .journey.ordinary_reentry_beats == 8
-  and .journey.damage_intensity == 0.82
+  and .journey.damage_intensity > 0.819999
+  and .journey.damage_intensity < 0.820001
   and .journey.bypass_intensity == 0
   and .journey.saved_before_restart == true
   and .journey.restart_preset_survived == true
@@ -71,8 +75,10 @@ jq -e \
   and .exact_mixer_proof.w30_callback_partitions_sample_exact == true
   and .exact_mixer_proof.tr909_callback_partitions_sample_exact == true
   and .exact_mixer_proof.mc202_callback_partitions_sample_exact == true
-  and .exact_mixer_proof.damage_gate_step_fraction == 0.3608
-  and .exact_mixer_proof.expected_damage_gate_step_fraction == 0.3608
+  and .exact_mixer_proof.damage_gate_step_fraction > 0.360799
+  and .exact_mixer_proof.damage_gate_step_fraction < 0.360801
+  and .exact_mixer_proof.expected_damage_gate_step_fraction > 0.360799
+  and .exact_mixer_proof.expected_damage_gate_step_fraction < 0.360801
   and .exact_mixer_proof.reentry_gate_step_fraction == 0
   and .exact_mixer_proof.restart_gate_step_fraction == 0
   and .exact_mixer_proof.source_monitor_max_rms <= .thresholds.max_source_monitor_rms

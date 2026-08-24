@@ -1118,6 +1118,31 @@ identity for this journey. That verdict validates integration of the existing
 Pitch Dive; it does not repeat or widen the five-source Pitch Dive qualification
 from RIOTBOX-1442 through RIOTBOX-1444.
 
+### Exact sparse hold, Transient Bite, re-entry, and restart recall
+
+Run the accepted Development-only sparse journey:
+
+```bash
+just sparse-pressure-live-journey
+```
+
+The proof uses the registered manual `120 BPM` / zero-downbeat identity for the
+local `DH_BeatC_KickSnr_120-01.wav` Development source. It exercises the real
+capture, raw audition, promotion, committed sparse live policy, held W-30 chop
+with TR-909 transient ownership and bounded MC-202 punctuation,
+capture-scoped `transient_bite`, explicit bypass, ordinary re-entry, Session
+save, process reconstruction, recall, and trigger. It fails closed if the source
+identity is wrong, capture-scoped damage spills, any generated contributor is
+missing or unnamed, callback partitions differ, bypass retains the
+articulation, restart loses the preset/capture, or clipping/limiting occurs.
+
+Review `sparse/06_human_review_sequence.wav` only after exact-artifact
+preflight. The accepted 31-second presentation is source context, held sparse
+state, Transient Bite, explicit bypass/ordinary re-entry, restart recall, and
+final silence. RIOTBOX-1455 records `keep` for both musical states and clear
+differentiation while preserving recognizable transformed source character.
+It does not grant a bass, universal hardness, or source-transfer claim.
+
 ## Current Limits
 
 The current prototype is still not a finished “load a loop and instantly get a polished remix” instrument.

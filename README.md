@@ -168,6 +168,7 @@ source character unless the performer deliberately asks for destruction.
 | **Reverse** | Pulls a hit or source fragment backward | To create suction into a transition or a surprising hook variation |
 | **Retrigger / Stutter** | Repeats a short fragment rhythmically | To build tension, make fills, or introduce controlled chaos |
 | **Pitch Dive** | Pulls pitch and energy downward | For a destructive exit, breakdown, or transition |
+| **Transient Bite** | Chokes each captured W-30 trigger into a shorter, sharper rhythmic fragment while the drum transient remains in front | To tighten a sparse groove or create a more clipped alternate performance state |
 | **Filter Slam** | Closes gradually, deepens, holds dark, then returns open | For a long build-and-return contrast rather than a quick accent |
 | **Damage / Bitcrush** | Makes source material rougher, grainier, and more aggressive | As a short punk accent or damaged payoff rather than a permanent wash |
 | **Dropout And Restore** | Removes musical roles and brings them back in a changed state | For large arrangement contrasts and a stronger re-entry |
@@ -202,6 +203,13 @@ source-derived W-30 hook can hold, perform the unchanged Pitch Dive, return to
 ordinary playback, survive a saved-session restart, and recall cleanly. Tonal
 held state keeps TR-909 and generic MC-202 out unless an explicit performer
 override owns them.
+
+The sparse live path also has a bounded positive journey review: a promoted
+source-derived W-30 chop can hold with TR-909 transient ownership and bounded
+MC-202 punctuation, switch into capture-scoped Transient Bite, bypass the
+articulation for ordinary playback, survive a saved-session restart, and recall
+cleanly. Transient Bite is a deliberate alternate state, not an automatic
+hardness or bass claim.
 
 A bounded source-first review also kept the deliberate sequence Hook
 Turnaround, ordinary re-entry, Pitch Dive, ordinary re-entry, Filter Slam,
@@ -306,6 +314,8 @@ Best next moves from there:
 - `Recipe 15` if you want an offline Feral grid listening pack and need to choose `auto` versus explicit BPM honestly
 - `Recipe 17` if you want the exact tonal W-30 hold, Pitch Dive, re-entry, and
   restart/recall proof as well as the dense Feral Break Alpha path
+- the exact sparse journey if you want the held sparse state, Transient Bite,
+  explicit bypass, ordinary re-entry, and restart/recall proof
 - `Recipe 7` if you want a longer Golden Path practice run with monitor handoff,
   four performance gestures, and restore
 
