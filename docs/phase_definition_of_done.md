@@ -570,6 +570,13 @@ After exit:
   product-handling pass without audio playback. The live bank now counts
   `pad_noise` as `reviewed_degraded_or_reject`, not `demo_ready`; the other five
   formal source-family outcomes and overall release readiness remain open.
+- RIOTBOX-1458 aligns aggregate readiness with those family outcomes. Eligible
+  reviewed degraded / unavailable / reject success no longer counts again as a
+  generic weak/fail production defect, and only unresolved edge-source families
+  retain the aggregate source-selection blocker. The exact RIOTBOX-1457 live
+  evidence therefore resolves `pad_noise` but still blocks `bad_timing`, all
+  missing positive-family evidence, scripted diagnostic proof, and overall
+  release readiness.
 - RIOTBOX-1410 is the first bounded Foundation Completion closure: explicit
   control-only source-monitor refresh retains current PCM, explicit replacement
   atomically publishes PCM plus mode/gains and anchors, and exact callback /

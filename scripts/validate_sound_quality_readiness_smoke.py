@@ -10,7 +10,12 @@ import sys
 from pathlib import Path
 from typing import Any, Callable
 
-from generate_sound_quality_readiness_report import validate_report
+from generate_sound_quality_readiness_report import (
+    demo_bank_summary,
+    readiness_blockers,
+    reconcile_source_selection_risk,
+    validate_report,
+)
 
 
 DEFAULT_OUTPUT = Path("artifacts/audio_qa/local-sound-quality-readiness-report")
@@ -34,6 +39,7 @@ def main() -> int:
             raise ValueError(f"{report_json}: {', '.join(failures)}")
         validate_markdown(markdown, args.output)
         validate_mutation_fixtures(report)
+        validate_outcome_reconciliation_fixture()
     except (OSError, TypeError, ValueError, json.JSONDecodeError) as error:
         print(f"invalid sound-quality readiness smoke: {error}", file=sys.stderr)
         return 1
@@ -156,6 +162,20 @@ def validate_mutation_fixtures(report: dict[str, Any]) -> None:
     )
     expect_failure(
         report,
+        "stale_aggregate_edge_block_state",
+        lambda data: set_field(
+            nested_object(
+                data,
+                "professional_output_suite",
+                "source_selection_risk",
+            ),
+            "aggregate_edge_promotion_blocked",
+            False,
+        ),
+        "professional_suite_source_selection_aggregate_block_state_stale",
+    )
+    expect_failure(
+        report,
         "missing_professional_suite_source_character_context",
         lambda data: nested_object(data, "professional_output_suite").pop(
             "source_character_selection",
@@ -220,6 +240,177 @@ def validate_mutation_fixtures(report: dict[str, Any]) -> None:
         "missing_candidate_review_pack",
         remove_bad_timing_review_pack,
         "release_demo_review_pack_bad-timing-beat20-unverified-candidate_candidate_context_missing",
+    )
+
+
+def validate_outcome_reconciliation_fixture() -> None:
+    def reviewed_entry(
+        entry_id: str,
+        source_family: str,
+        outcome: str,
+    ) -> dict[str, Any]:
+        return {
+            "entry_id": entry_id,
+            "source_family": source_family,
+            "human_verdict": "fail",
+            "demo_readiness": "not_demo_ready",
+            "fix_categories": ["source_selection"],
+            "demo_worthiness_note": "Reviewed negative product outcome.",
+            "degraded_or_reject_evidence": {
+                "schema": "riotbox.demo_bank_degraded_or_reject_review_evidence.v1",
+                "outcome": outcome,
+                "product_path_reviewed": True,
+                "fallback_music_present": False,
+                "reason": "Fixture-calibration product handling stayed honest.",
+            },
+        }
+
+    entries = [
+        reviewed_entry("pad-reviewed-unavailable", "pad_noise", "unavailable"),
+        reviewed_entry("timing-reviewed-reject", "bad_timing", "reject"),
+        reviewed_entry("weak-reviewed-degraded", "weak_source", "degraded"),
+        reviewed_entry("sparse-must-stay-weak", "sparse_bass_pressure", "degraded"),
+    ]
+    demo = demo_bank_summary(entries, None, "fixture_calibration")
+    reviewed_ids = {
+        str(entry.get("entry_id"))
+        for entry in list_field(demo, "reviewed_degraded_or_reject_entries")
+        if isinstance(entry, dict)
+    }
+    weak_ids = {
+        str(entry.get("entry_id"))
+        for entry in list_field(demo, "weak_or_fail_entries")
+        if isinstance(entry, dict)
+    }
+    require(
+        reviewed_ids
+        == {
+            "pad-reviewed-unavailable",
+            "timing-reviewed-reject",
+            "weak-reviewed-degraded",
+        },
+        "eligible reviewed-negative outcome classification changed",
+    )
+    require(
+        weak_ids == {"sparse-must-stay-weak"},
+        "positive-family weak output escaped production blocking",
+    )
+
+    suite = {
+        "available": True,
+        "result": "pass",
+        "scripted_generation": False,
+        "quality_proof": True,
+        "source_selection_risk": {
+            "blocked_source_families": ["bad_timing", "pad_noise"],
+            "required_review_actions": [
+                "audition_pad_noise_texture_before_demo_promotion",
+                "confirm_timing_before_bar_locked_moves",
+                "keep_as_diagnostic_until_human_verdict",
+            ],
+        },
+    }
+    coverage = {
+        "families": [
+            {
+                "source_family": "bad_timing",
+                "status": "reviewed_degraded_or_reject",
+                "has_family_success": True,
+            },
+            {
+                "source_family": "pad_noise",
+                "status": "reviewed_degraded_or_reject",
+                "has_family_success": True,
+            },
+        ],
+        "missing_demo_candidate_families": [],
+        "missing_human_verdict_families": [],
+        "missing_family_success_families": [],
+    }
+    reconcile_source_selection_risk(suite, coverage)
+    risk = nested_object(suite, "source_selection_risk")
+    require(
+        risk.get("reviewed_product_outcome_families") == ["bad_timing", "pad_noise"]
+        and risk.get("unresolved_blocked_source_families") == []
+        and risk.get("aggregate_edge_promotion_blocked") is False,
+        "reviewed edge-source outcomes did not clear aggregate risk",
+    )
+
+    blockers = readiness_blockers(
+        coverage,
+        demo,
+        {"available": True, "result": "pass"},
+        suite,
+        {
+            "available": True,
+            "result": "pass",
+            "review_queue_count": 0,
+            "candidates": [],
+            "source_families": [],
+        },
+        {"demo_bank_state": "available"},
+    )
+    weak_blocker = next(
+        (
+            blocker
+            for blocker in blockers
+            if blocker.get("code") == "weak_or_fail_demo_bank_entries_present"
+        ),
+        None,
+    )
+    require(
+        isinstance(weak_blocker, dict)
+        and weak_blocker.get("entries") == ["sparse-must-stay-weak"],
+        "generic weak blocker did not retain only the positive-family failure",
+    )
+    require(
+        all(
+            blocker.get("code") != "edge_source_selection_promotion_blocked"
+            for blocker in blockers
+        ),
+        "reviewed edge-source outcomes still emitted aggregate blocker",
+    )
+
+    partial_coverage = copy.deepcopy(coverage)
+    for family in list_field(partial_coverage, "families"):
+        if isinstance(family, dict) and family.get("source_family") == "bad_timing":
+            family["status"] = "candidate_only"
+            family["has_family_success"] = False
+    partial_suite = copy.deepcopy(suite)
+    reconcile_source_selection_risk(partial_suite, partial_coverage)
+    partial_risk = nested_object(partial_suite, "source_selection_risk")
+    require(
+        partial_risk.get("reviewed_product_outcome_families") == ["pad_noise"]
+        and partial_risk.get("unresolved_blocked_source_families") == ["bad_timing"]
+        and partial_risk.get("unresolved_required_review_actions")
+        == [
+            "confirm_timing_before_bar_locked_moves",
+            "keep_as_diagnostic_until_human_verdict",
+        ]
+        and partial_risk.get("aggregate_edge_promotion_blocked") is True,
+        "partial edge-source review did not retain only unresolved timing risk",
+    )
+    partial_blockers = readiness_blockers(
+        partial_coverage,
+        demo,
+        {"available": True, "result": "pass"},
+        partial_suite,
+        {
+            "available": True,
+            "result": "pass",
+            "review_queue_count": 0,
+            "candidates": [],
+            "source_families": [],
+        },
+        {"demo_bank_state": "available"},
+    )
+    require(
+        any(
+            blocker.get("code") == "edge_source_selection_promotion_blocked"
+            and blocker.get("families") == ["bad_timing"]
+            for blocker in partial_blockers
+        ),
+        "partial edge-source review did not keep bad_timing blocked",
     )
 
 

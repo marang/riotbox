@@ -30,8 +30,11 @@ not a sound-quality pass. `RIOTBOX-1457` now adds the exact registered
 pad/noise outcome: untrusted soft-attack timing stays visibly unavailable, all
 generated lanes stay silent, and no fallback music is invented. That handling
 earned a bounded human product pass and satisfies the pad/noise dual-path
-coverage contract without becoming a demo-ready sound claim. `RIOTBOX-1408`
-has now replaced the synthetic W-30
+coverage contract without becoming a demo-ready sound claim. `RIOTBOX-1458`
+now makes aggregate readiness honor that result: `pad_noise` no longer returns
+as a generic weak/fail or unresolved edge blocker, while the still-unresolved
+`bad_timing` family and every unrelated quality/release gate remain blocked.
+`RIOTBOX-1408` has now replaced the synthetic W-30
 resample-tap proxy with hydrated capture audio through the exact live path.
 Determinism, three-source diversity, replay identity, and missing-source silence
 pass, but direct source-to-tap listening rated the result
