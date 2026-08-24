@@ -1612,4 +1612,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Prove the exact live pad/noise product outcome
 - [RIOTBOX-1458.md](./RIOTBOX-1458.md)
   P023: Make aggregate readiness honor reviewed negative outcomes
+- [RIOTBOX-1459.md](./RIOTBOX-1459.md)
+  P023: Re-establish durable weak-source and bad-timing outcomes
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
