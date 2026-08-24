@@ -591,6 +591,15 @@ After exit:
   no fallback; four varied registered Development cases show no cue
   misactivation. This is a detector-explanation closure, not an automatic lock
   or retroactive promotion of the RIOTBOX-1459 negative-family reviews.
+- RIOTBOX-1460 rebuilds fresh `weak_source` and `bad_timing` reviews from the
+  corrected current state. Exact live and restart proof retains phase zero as
+  the suggestion, three alternatives, explicit confirmation, stopped
+  transport, source-only monitoring, idle generated lanes, and no fallback.
+  That accurate cautious handling earns a bounded human product pass without
+  replaying unchanged audio. Both negative families now satisfy their formal
+  reviewed-outcome contract; only the positive `dense_break`, `sparse_drums`,
+  and `tonal_riff` family successes remain open, while release and quality
+  claims stay blocked.
 - RIOTBOX-1410 is the first bounded Foundation Completion closure: explicit
   control-only source-monitor refresh retains current PCM, explicit replacement
   atomically publishes PCM plus mode/gains and anchors, and exact callback /

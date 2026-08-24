@@ -1473,6 +1473,18 @@ explanation defect; it does not retroactively promote RIOTBOX-1459 evidence or
 claim automatic grid lock, arbitrary-source timing, Holdout, demo, quality, or
 release readiness.
 
+RIOTBOX-1460 rebuilds the two rejected negative-family records from that
+corrected current state instead of mutating RIOTBOX-1459 evidence. The exact
+live and restart paths suggest phase zero, retain three alternatives and
+explicit confirmation, run the real callback with stopped transport, keep all
+generated lanes idle, and provide no fallback music. The visible degraded
+state, reason, and safe confirmation action earn a fresh bounded human product
+pass without replaying unchanged audio. `weak_source` and `bad_timing`
+therefore satisfy their reviewed-negative family contracts. The live
+readiness consumers remove only those owned blockers: `dense_break`,
+`sparse_drums`, and `tonal_riff` remain without family success, and release
+readiness plus all quality claims remain blocked.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing
