@@ -577,6 +577,14 @@ After exit:
   evidence therefore resolves `pad_noise` but still blocks `bad_timing`, all
   missing positive-family evidence, scripted diagnostic proof, and overall
   release readiness.
+- RIOTBOX-1459 proves that expired negative-family reviews cannot be recreated
+  merely because the live path still fails safely. Beat20 again reaches
+  `degraded / needs_user_confirmation` with stopped transport and no generated
+  fallback, but fresh listening places the downbeat at the file boundary while
+  the preliminary detector selects beat 3. The distinct `weak_source` and
+  `bad_timing` records are `needs_fix` and remain ineligible for promotion.
+  RIOTBOX-1033 owns stronger musical phase evidence; manual-confirm fallback
+  remains mandatory until that work earns a versioned contract change.
 - RIOTBOX-1410 is the first bounded Foundation Completion closure: explicit
   control-only source-monitor refresh retains current PCM, explicit replacement
   atomically publishes PCM plus mode/gains and anchors, and exact callback /

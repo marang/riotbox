@@ -34,6 +34,13 @@ coverage contract without becoming a demo-ready sound claim. `RIOTBOX-1458`
 now makes aggregate readiness honor that result: `pad_noise` no longer returns
 as a generic weak/fail or unresolved edge blocker, while the still-unresolved
 `bad_timing` family and every unrelated quality/release gate remain blocked.
+`RIOTBOX-1459` then attempted to recreate the expired Beat20 negative-family
+evidence without inferring a verdict from old Markdown. The exact live path
+again failed safely to `degraded / needs_user_confirmation`, but fresh listening
+placed the musical downbeat at the file boundary while the probe selected beat
+3. Both new structured reviews are therefore `needs_fix`, not reconstructed
+passes; `weak_source` and `bad_timing` remain unresolved until the existing
+RIOTBOX-1033 detector-quality work supplies stronger musical phase evidence.
 `RIOTBOX-1408` has now replaced the synthetic W-30
 resample-tap proxy with hydrated capture audio through the exact live path.
 Determinism, three-source diversity, replay identity, and missing-source silence
