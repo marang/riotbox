@@ -5,6 +5,8 @@ mod live_flow;
 mod manifest;
 mod model;
 mod rendering;
+mod sparse_journey;
+mod sparse_live_manifest;
 mod tonal_journey;
 mod tonal_live_manifest;
 
@@ -21,7 +23,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli_downbeat_seconds = optional_non_negative_f32(&args, "--downbeat-seconds")?;
     let controlled_source_review = args.iter().any(|arg| arg == "--controlled-source-review");
     let tonal_live_review = args.iter().any(|arg| arg == "--tonal-live-review");
-    if controlled_source_review && tonal_live_review {
+    let sparse_live_review = args.iter().any(|arg| arg == "--sparse-live-review");
+    if [
+        controlled_source_review,
+        tonal_live_review,
+        sparse_live_review,
+    ]
+    .into_iter()
+    .filter(|enabled| *enabled)
+    .count()
+        > 1
+    {
         return Err("choose only one review mode".into());
     }
     for directory in [
@@ -31,6 +43,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "gestures/proofs",
         "alpha",
         "controlled",
+        "sparse",
         "tonal",
     ] {
         fs::create_dir_all(output_dir.join(directory))?;
@@ -41,10 +54,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         &output_dir,
         cli_bpm_hint,
         cli_downbeat_seconds,
-        tonal_live_review,
+        match (tonal_live_review, sparse_live_review) {
+            (true, false) => model::ExactLiveReviewMode::Tonal,
+            (false, true) => model::ExactLiveReviewMode::Sparse,
+            _ => model::ExactLiveReviewMode::Standard,
+        },
     )?;
     if tonal_live_review {
         tonal_live_manifest::write_pack(prepared, &source_path, &output_dir)
+    } else if sparse_live_review {
+        sparse_live_manifest::write_pack(prepared, &source_path, &output_dir)
     } else if controlled_source_review {
         let rendered = rendering::render_live_path(&prepared)?;
         controlled_source_manifest::write_pack(prepared, rendered, &source_path, &output_dir)

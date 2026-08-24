@@ -176,20 +176,29 @@ pub(in crate::jam_app) fn apply_w30_side_effects(
                     },
                 )
             }
-            ActionCommand::W30ApplyDamageProfile => capture_id.as_ref().map_or_else(
-                || {
-                    format!(
-                        "applied {} damage profile on W-30 pad {bank_id}/{pad_id}",
-                        JamAppState::W30_DAMAGE_PROFILE_LABEL
-                    )
-                },
-                |capture_id| {
-                    format!(
-                        "applied {} damage profile to {capture_id} on W-30 pad {bank_id}/{pad_id}",
-                        JamAppState::W30_DAMAGE_PROFILE_LABEL
-                    )
-                },
-            ),
+            ActionCommand::W30ApplyDamageProfile => {
+                let bypassed = matches!(
+                    action.params,
+                    ActionParams::Mutation { intensity, .. } if intensity <= 0.0
+                );
+                capture_id.as_ref().map_or_else(
+                    || {
+                        format!(
+                            "{} {} damage profile on W-30 pad {bank_id}/{pad_id}",
+                            if bypassed { "bypassed" } else { "applied" },
+                            JamAppState::W30_DAMAGE_PROFILE_LABEL
+                        )
+                    },
+                    |capture_id| {
+                        format!(
+                            "{} {} damage profile {} {capture_id} on W-30 pad {bank_id}/{pad_id}",
+                            if bypassed { "bypassed" } else { "applied" },
+                            JamAppState::W30_DAMAGE_PROFILE_LABEL,
+                            if bypassed { "for" } else { "to" }
+                        )
+                    },
+                )
+            }
             ActionCommand::W30HookTurnaround => capture_id.as_ref().map_or_else(
                 || format!("turned around W-30 pad {bank_id}/{pad_id}"),
                 |capture_id| format!("turned around {capture_id} on W-30 pad {bank_id}/{pad_id}"),

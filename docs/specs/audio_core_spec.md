@@ -214,6 +214,11 @@ Rules:
 - lane ownership of sound generation is clear
 - cross-lane influence happens through explicit control or bus routing, not hidden coupling
 - MC-202 renders only trusted `source_phrase_plan` material on the music bus.
+- MC-202 source-phrase renderer v2 maps each callback transport position to
+  the nearest absolute audio frame and derives in-buffer musical time from that
+  integer frame. Equivalent timelines must therefore be sample-exact across
+  callback partitions; callback size must not alter oscillator phase, phrase
+  selection, or envelopes.
   Primitive phrase-shape labels may remain compatibility / diagnostic state,
   but they must not produce hardcoded musical fallback output when no
   source-derived plan exists.

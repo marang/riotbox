@@ -1406,6 +1406,18 @@ hook, and preserved the already-qualified Pitch Dive unchanged. This closes the
 tonal capture/performance/re-entry/restart journey without reopening Pitch Dive
 source qualification or claiming zero-downtime audio across process restart.
 
+RIOTBOX-1455 now exercises the sparse counterpart as an exact capture,
+performance, capture-scoped Transient Bite, explicit bypass, ordinary re-entry,
+and restart/recall journey. The first run failed closed on MC-202 callback-size
+dependence; RBX-317 corrected transport sampling without changing the musical
+phrase or the frozen Sparse/Transient Bite parameters. The fresh exact rerender
+passes 128/257-frame W-30, TR-909, and MC-202 identity, keeps Source Monitor
+silent during generated stages, preserves the promoted capture across restart,
+and records a structured human `keep` for both the held sparse transformation
+and its distinct Transient Bite state. This closes the bounded sparse live
+journey without claiming universal hardness, bass, source transfer, Holdout, or
+zero-downtime restart behavior.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing

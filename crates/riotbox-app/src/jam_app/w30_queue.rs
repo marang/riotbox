@@ -9,6 +9,7 @@ use riotbox_core::{
         TargetScope,
     },
     session::CaptureTarget,
+    w30_damage_policy::latest_committed_w30_damage_intensity,
 };
 
 impl JamAppState {
@@ -273,15 +274,31 @@ impl JamAppState {
                 ..Default::default()
             },
         );
+        let current_intensity =
+            latest_committed_w30_damage_intensity(&self.session, &capture.capture_id)
+                .unwrap_or(0.0);
+        let next_intensity = if current_intensity > 0.0 {
+            0.0
+        } else {
+            Self::W30_DAMAGE_PROFILE_GRIT
+        };
         draft.params = ActionParams::Mutation {
-            intensity: Self::W30_DAMAGE_PROFILE_GRIT,
+            intensity: next_intensity,
             target_id: Some(capture.capture_id.to_string()),
         };
-        draft.explanation = Some(format!(
-            "apply {} damage profile to {} on W-30 pad {bank_id}/{pad_id}",
-            Self::W30_DAMAGE_PROFILE_LABEL,
-            capture.capture_id
-        ));
+        draft.explanation = Some(if next_intensity > 0.0 {
+            format!(
+                "apply {} damage profile to {} on W-30 pad {bank_id}/{pad_id}",
+                Self::W30_DAMAGE_PROFILE_LABEL,
+                capture.capture_id
+            )
+        } else {
+            format!(
+                "bypass {} damage profile on {} at W-30 pad {bank_id}/{pad_id}",
+                Self::W30_DAMAGE_PROFILE_LABEL,
+                capture.capture_id
+            )
+        });
         self.queue.enqueue(draft, requested_at);
         self.refresh_view();
         Some(QueueControlResult::Enqueued)

@@ -45,6 +45,9 @@ use riotbox_core::{
         Tr909TakeoverRenderProfilePolicy, derive_tr909_render_policy_with_scene_context,
     },
     transport::TransportClockState,
+    w30_damage_policy::{
+        W30_TRANSIENT_BITE_GATE_STEP_FRACTION, latest_committed_w30_damage_intensity,
+    },
 };
 
 mod source_phrase_render;
@@ -568,11 +571,12 @@ pub(super) fn build_w30_preview_render_state(
         None
     };
     let mut pad_playback = if !matches!(mode, W30PreviewRenderMode::Idle) {
-        let transform = w30_pad_playback_transform(
-            session,
-            live_policy.as_ref().map(|policy| policy.destructive_intent),
-        );
         capture.and_then(|capture| {
+            let transform = w30_pad_playback_transform(
+                session,
+                &capture.capture_id,
+                live_policy.as_ref().map(|policy| policy.destructive_intent),
+            );
             build_w30_capture_artifact_playback(capture, capture_audio_cache, transform)
         })
     } else {

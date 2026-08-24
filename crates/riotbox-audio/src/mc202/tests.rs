@@ -440,10 +440,52 @@ fn render_is_stable_across_callback_chunk_boundaries() {
         split_frames as f64 * f64::from(render.tempo_bpm) / 60.0 / 44_100.0;
     render_mc202_buffer(&mut chunked[split_samples..], 44_100, 2, &second_render);
 
-    let max_delta = whole
-        .iter()
-        .zip(chunked.iter())
-        .map(|(whole, chunked)| (whole - chunked).abs())
-        .fold(0.0_f32, f32::max);
-    assert!(max_delta < 0.0001, "max chunk boundary delta {max_delta}");
+    assert_eq!(whole, chunked);
+}
+
+#[test]
+fn source_phrase_render_is_sample_exact_across_realtime_callback_partitions() {
+    let render = Mc202RenderState {
+        mode: Mc202RenderMode::Instigator,
+        routing: Mc202RenderRouting::MusicBusBass,
+        phrase_shape: Mc202PhraseShape::InstigatorSpike,
+        source_phrase_plan: Some(source_plan()),
+        touch: 0.78,
+        is_transport_running: true,
+        tempo_bpm: 120.0,
+        position_beats: 16.0,
+        ..Mc202RenderState::default()
+    };
+
+    let callback_128 = render_in_callback_blocks(render, 48_000, 2, 192_000, 128);
+    let callback_257 = render_in_callback_blocks(render, 48_000, 2, 192_000, 257);
+    assert_eq!(callback_128, callback_257);
+}
+
+fn render_in_callback_blocks(
+    render: Mc202RenderState,
+    sample_rate: u32,
+    channel_count: usize,
+    frame_count: usize,
+    callback_frames: usize,
+) -> Vec<f32> {
+    let mut output = Vec::with_capacity(frame_count * channel_count);
+    for frame_offset in (0..frame_count).step_by(callback_frames) {
+        let block_frames = (frame_count - frame_offset).min(callback_frames);
+        let mut block = vec![0.0; block_frames * channel_count];
+        render_mc202_buffer(
+            &mut block,
+            sample_rate,
+            channel_count,
+            &Mc202RenderState {
+                position_beats: render.position_beats
+                    + frame_offset as f64 * f64::from(render.tempo_bpm)
+                        / 60.0
+                        / f64::from(sample_rate),
+                ..render
+            },
+        );
+        output.extend(block);
+    }
+    output
 }

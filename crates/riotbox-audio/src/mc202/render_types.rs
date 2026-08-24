@@ -2,6 +2,8 @@ use super::source_phrase_sound_design::{
     mc202_source_phrase_sample, mc202_source_phrase_sound_design,
 };
 
+pub const MC202_SOURCE_PHRASE_RENDERER_SCHEMA: &str = "riotbox.mc202_source_phrase_renderer.v2";
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Mc202RenderMode {
     Idle,
@@ -194,9 +196,11 @@ pub fn render_mc202_buffer(
     let sample_rate = sample_rate.max(1) as f64;
     let tempo_bpm = render.tempo_bpm.max(1.0) as f64;
     let touch = render.touch.clamp(0.0, 1.0);
+    let position_frame = (render.position_beats * 60.0 / tempo_bpm * sample_rate).round();
 
     for frame in 0..buffer.len() / channel_count {
-        let beat = render.position_beats + frame as f64 * tempo_bpm / 60.0 / sample_rate;
+        let absolute_frame = position_frame + frame as f64;
+        let beat = absolute_frame * tempo_bpm / 60.0 / sample_rate;
         let sixteenth = (beat * 4.0).floor() as usize;
         let step_phase = (beat * 4.0).fract() as f32;
         let Some(source_step) = source_plan_voice(source_phrase_plan, render.mode, sixteenth)
