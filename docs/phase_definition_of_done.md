@@ -563,6 +563,13 @@ After exit:
   accepted dense, tonal, or sparse musical journeys; the next uncovered product
   outcome is the exact live `pad_noise` path, while release-demo promotion
   remains separate formal evidence work.
+- RIOTBOX-1457 closes that exact `pad_noise` outcome without forcing music from
+  untrusted timing. The registered Development Fadapad source reaches
+  `unavailable / sparse_onsets` with stopped transport, silent generated lanes,
+  and no fallback; the visible reason and safe source-preview path earn a human
+  product-handling pass without audio playback. The live bank now counts
+  `pad_noise` as `reviewed_degraded_or_reject`, not `demo_ready`; the other five
+  formal source-family outcomes and overall release readiness remain open.
 - RIOTBOX-1410 is the first bounded Foundation Completion closure: explicit
   control-only source-monitor refresh retains current PCM, explicit replacement
   atomically publishes PCM plus mode/gains and anchors, and exact callback /

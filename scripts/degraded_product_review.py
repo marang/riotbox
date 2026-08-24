@@ -242,6 +242,9 @@ def promote_review(args: argparse.Namespace) -> None:
     entries = list_field(bank, "entries", "bank")
     bank["entries"] = [item for item in entries if not isinstance(item, dict) or item.get("entry_id") != args.entry_id]
     bank["entries"].append(entry)
+    from validate_release_grade_demo_bank import validate_manifest as validate_demo_bank
+
+    validate_demo_bank(bank, args.bank)
     args.bank.parent.mkdir(parents=True, exist_ok=True)
     write_json(args.bank, bank)
     print(f"degraded product review promoted: {args.entry_id} -> {args.bank}")

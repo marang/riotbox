@@ -55,7 +55,9 @@ release coverage is outcome-aware rather than uniformly demo-oriented:
 - negative-family reviews use the explicit `weak_source` or `bad_timing`
   demo-bank family rather than a generic `other` alias
 - `pad_noise` may satisfy either path depending on trusted timing / source
-  evidence and the reviewed product decision
+  evidence and the reviewed product decision; live product reviews use the
+  canonical `pad_noise` family while existing `tonal_pad` entries remain a
+  compatible bank alias
 
 The first bounded P023 Usable Musical Alpha exit requires one dense-break human
 pass through the exact live product path. Broader family coverage remains a

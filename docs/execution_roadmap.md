@@ -1430,6 +1430,18 @@ audible outcome is one exact live `pad_noise` journey through the existing
 timing and no-fallback contracts. Formal release-demo promotion remains a
 separate evidence-closeout task using professional listening packs.
 
+RIOTBOX-1457 now closes that exact `pad_noise` journey through the registered
+Development Fadapad source. With no manual timing supplied, the live product
+correctly reports `unavailable / sparse_onsets`, keeps transport stopped and
+all generated lanes silent, and emits no fallback music. The risk state,
+reason, and source-preview next action earn a structured human product-handling
+pass without an audio audition. The already-owned dual-path pad/noise contract
+is now implemented consistently in the demo bank, source-family coverage,
+review queue, and aggregate readiness report: canonical `pad_noise` may count
+through this reviewed unavailable outcome, while `tonal_pad` remains a legacy
+alias. This creates no demo-ready or global quality claim; five formal family
+outcomes and release readiness remain blocked.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing

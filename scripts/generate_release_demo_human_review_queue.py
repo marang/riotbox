@@ -230,10 +230,15 @@ def review_queue_entry(
         )
     elif missing_demo_ready:
         priority = "medium"
-        if gap and gap["success_requirement"] == "reviewed_degraded_or_reject":
+        if gap and gap["success_requirement"] == evidence.DEGRADED_SUCCESS:
             action = (
                 "Review whether the live product correctly degrades, becomes unavailable, "
                 "or rejects this source without fallback music."
+            )
+        elif gap and gap["success_requirement"] == evidence.DUAL_PATH_SUCCESS:
+            action = (
+                "Review either a source-backed demo candidate or the live "
+                "degraded/unavailable outcome selected by trusted timing evidence."
             )
         else:
             action = (
@@ -325,14 +330,22 @@ def next_actions(
                 {
                     "category": (
                         "degraded_or_reject_review"
-                        if family["success_requirement"] == "reviewed_degraded_or_reject"
-                        else "demo_promotion"
+                        if family["success_requirement"] == evidence.DEGRADED_SUCCESS
+                        else (
+                            "demo_or_degraded_review"
+                            if family["success_requirement"] == evidence.DUAL_PATH_SUCCESS
+                            else "demo_promotion"
+                        )
                     ),
                     "target": family["source_family"],
                     "action": (
                         "Review the live degraded/unavailable/reject outcome and confirm no fallback music leaks."
-                        if family["success_requirement"] == "reviewed_degraded_or_reject"
-                        else "Review the strongest candidate for possible demo-ready promotion or fix routing."
+                        if family["success_requirement"] == evidence.DEGRADED_SUCCESS
+                        else (
+                            "Review the timing-selected demo or degraded/unavailable pad/noise outcome."
+                            if family["success_requirement"] == evidence.DUAL_PATH_SUCCESS
+                            else "Review the strongest candidate for possible demo-ready promotion or fix routing."
+                        )
                     ),
                 }
             )

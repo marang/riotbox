@@ -26,7 +26,12 @@ demo-bank evidence unless a real, hash-matched human review is supplied
 explicitly. `RIOTBOX-1405` has now proven honest live
 degraded/unavailable handling for weak and bad-timing sources without generated
 replacement music; both negative families have a bounded human product pass,
-not a sound-quality pass. `RIOTBOX-1408` has now replaced the synthetic W-30
+not a sound-quality pass. `RIOTBOX-1457` now adds the exact registered
+pad/noise outcome: untrusted soft-attack timing stays visibly unavailable, all
+generated lanes stay silent, and no fallback music is invented. That handling
+earned a bounded human product pass and satisfies the pad/noise dual-path
+coverage contract without becoming a demo-ready sound claim. `RIOTBOX-1408`
+has now replaced the synthetic W-30
 resample-tap proxy with hydrated capture audio through the exact live path.
 Determinism, three-source diversity, replay identity, and missing-source silence
 pass, but direct source-to-tap listening rated the result
