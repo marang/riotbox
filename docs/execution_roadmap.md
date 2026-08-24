@@ -1451,6 +1451,17 @@ resolves `pad_noise` while retaining `bad_timing` as the only unresolved edge
 family; positive-family weak outputs and every unrelated release or quality
 gate remain unchanged.
 
+RIOTBOX-1459 rechecks the expired RIOTBOX-1405 Beat20 evidence instead of
+reconstructing it from durable prose. The exact live and restart paths remain
+safe: timing is `degraded / needs_user_confirmation`, transport stays stopped,
+generated lanes remain idle, and no fallback appears. Fresh listening does not
+accept the explanation, however: the reviewer hears the file boundary as the
+downbeat, while the preliminary probe selects beat 3. The two family records
+are therefore durable `needs_fix` evidence and are not promoted. `weak_source`
+and `bad_timing` remain open; RIOTBOX-1033 owns the bounded detector-quality
+follow-up and must preserve manual-confirm fallback until stronger musical
+phase evidence earns a versioned contract change.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing
