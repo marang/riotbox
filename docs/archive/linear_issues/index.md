@@ -1618,4 +1618,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P012+: Strengthen Source Timing detector quality for arrangement use
 - [RIOTBOX-1460.md](./RIOTBOX-1460.md)
   P023: Requalify Beat20 negative-family handling with corrected phase
+- [RIOTBOX-1461.md](./RIOTBOX-1461.md)
+  P023: Qualify the accepted dense-break journey for live release-demo coverage
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
