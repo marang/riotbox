@@ -1604,4 +1604,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Add Scene Brain audible lane-target and restore-contrast proof
 - [RIOTBOX-1454.md](./RIOTBOX-1454.md)
   P023: Prove the exact live tonal-hook journey through restart and recall
+- [RIOTBOX-1455.md](./RIOTBOX-1455.md)
+  P023: Prove the exact live sparse-pressure journey through restart and recall
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
