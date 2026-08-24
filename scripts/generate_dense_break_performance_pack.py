@@ -119,6 +119,10 @@ MIN_DENSE_ANSWER_STAB_MARGIN = 0.15
 MIN_DENSE_ANSWER_PRESSURE_SNAP_RATIO = 1.06
 MIN_DENSE_ANSWER_BITE_SCORE = 1.0
 TARGET_PERFORMANCE_PEAK = 0.92
+PRESENTATION_SAFETY_SCHEMA = "riotbox.audio_presentation_true_peak_safety.v1"
+TRUE_PEAK_OVERSAMPLE_FACTOR = 4
+MAX_PRESENTATION_TRUE_PEAK_DBTP = -1.0
+TARGET_PRESENTATION_TRUE_PEAK_DBTP = -1.2
 MAX_PAD_NOISE_LOW_BAND_RMS = 0.030
 MIN_PAD_NOISE_HIGH_BAND_RATIO = 0.180
 MIN_PAD_NOISE_TRANSIENT_SCORE = 0.050
@@ -516,6 +520,23 @@ def main() -> int:
             bar_frames,
         )
 
+    presentation_safety = build_presentation_safety(
+        source_audio,
+        performance,
+        sections,
+        rebuild_only_performance,
+    )
+    presentation_gain = presentation_safety["uniform_gain"]
+    presentation_source_audio = apply_presentation_gain(source_audio, presentation_gain)
+    presentation_sections = {
+        name: apply_presentation_gain(samples, presentation_gain)
+        for name, samples in sections.items()
+    }
+    presentation_rebuild_only_performance = apply_presentation_gain(
+        rebuild_only_performance,
+        presentation_gain,
+    )
+
     audio_files = {
         "source_window": "00_source_window.wav",
         "chop_hook": "01_chop_hook.wav",
@@ -524,21 +545,24 @@ def main() -> int:
         "restore_hit": "04_restore_hit.wav",
         "rebuild_only_performance": "05_rebuild_only_performance.wav",
     }
-    write_wav(output / audio_files["source_window"], source_audio)
-    write_wav(output / audio_files["chop_hook"], sections["chop_hook"])
-    write_wav(output / audio_files["pressure_lift"], sections["pressure_lift"])
-    write_wav(output / audio_files["dropout_stutter"], sections["dropout_stutter"])
-    write_wav(output / audio_files["restore_hit"], sections["restore_hit"])
-    write_wav(output / audio_files["rebuild_only_performance"], rebuild_only_performance)
+    write_wav(output / audio_files["source_window"], presentation_source_audio)
+    write_wav(output / audio_files["chop_hook"], presentation_sections["chop_hook"])
+    write_wav(output / audio_files["pressure_lift"], presentation_sections["pressure_lift"])
+    write_wav(output / audio_files["dropout_stutter"], presentation_sections["dropout_stutter"])
+    write_wav(output / audio_files["restore_hit"], presentation_sections["restore_hit"])
+    write_wav(
+        output / audio_files["rebuild_only_performance"],
+        presentation_rebuild_only_performance,
+    )
     visual_files = write_visual_evidence(
         output,
         {
-            "source_window": source_audio,
-            "chop_hook": sections["chop_hook"],
-            "pressure_lift": sections["pressure_lift"],
-            "dropout_stutter": sections["dropout_stutter"],
-            "restore_hit": sections["restore_hit"],
-            "rebuild_only_performance": rebuild_only_performance,
+            "source_window": presentation_source_audio,
+            "chop_hook": presentation_sections["chop_hook"],
+            "pressure_lift": presentation_sections["pressure_lift"],
+            "dropout_stutter": presentation_sections["dropout_stutter"],
+            "restore_hit": presentation_sections["restore_hit"],
+            "rebuild_only_performance": presentation_rebuild_only_performance,
         },
     )
 
@@ -558,6 +582,7 @@ def main() -> int:
         rebuild_only_performance,
         rebuild_only_sections,
         bar_frames,
+        presentation_safety,
     )
     write_reports(output, report)
     if report["result"] != "pass":
@@ -3830,6 +3855,7 @@ def build_report(
     rebuild_only_performance: np.ndarray,
     rebuild_only_sections: dict[str, np.ndarray],
     bar_frames: int,
+    presentation_safety: dict[str, Any],
 ) -> dict:
     metrics = {
         "source_window": metrics_to_json(audio_metrics(source_audio)),
@@ -3868,6 +3894,8 @@ def build_report(
     failure_codes = failure_codes_for(
         metrics, proof, source_policy.pressure_lift_policy.source_family
     )
+    if presentation_safety.get("result") != "pass":
+        failure_codes.append("presentation_true_peak_unsafe")
     failure_codes.extend(
         fallback_selection_strategy_failure_codes(
             asdict(source_policy),
@@ -4028,6 +4056,8 @@ def build_report(
             "min_source_selection_score_lift": MIN_SOURCE_SELECTION_SCORE_LIFT,
             "target_performance_peak": TARGET_PERFORMANCE_PEAK,
         },
+        "metrics_gain_domain": "pre_presentation_uniform_gain",
+        "presentation_safety": presentation_safety,
         "files": audio_files,
         "visuals": visual_files,
         "metrics": metrics,
@@ -5367,6 +5397,103 @@ def write_wav(path: Path, samples: np.ndarray) -> None:
         wav.setsampwidth(2)
         wav.setframerate(SAMPLE_RATE)
         wav.writeframes(pcm.tobytes())
+
+
+def build_presentation_safety(
+    source_window: np.ndarray,
+    source_layered_reference: np.ndarray,
+    source_layered_sections: dict[str, np.ndarray],
+    rebuild_only_performance: np.ndarray,
+) -> dict[str, Any]:
+    measured = {
+        "source_window": conservative_true_peak_amplitude(source_window),
+        "source_layered_reference": conservative_true_peak_amplitude(
+            source_layered_reference
+        ),
+        "rebuild_only_performance": conservative_true_peak_amplitude(
+            rebuild_only_performance
+        ),
+        **{
+            name: conservative_true_peak_amplitude(samples)
+            for name, samples in source_layered_sections.items()
+        },
+    }
+    maximum_pre_gain = max(measured.values(), default=0.0)
+    target_amplitude = db_to_amplitude(TARGET_PRESENTATION_TRUE_PEAK_DBTP)
+    uniform_gain = (
+        min(1.0, target_amplitude / maximum_pre_gain)
+        if maximum_pre_gain > 1e-12
+        else 1.0
+    )
+    post_gain = {name: peak * uniform_gain for name, peak in measured.items()}
+    maximum_post_gain = max(post_gain.values(), default=0.0)
+    maximum_post_gain_dbtp = amplitude_to_db(maximum_post_gain)
+    return {
+        "schema": PRESENTATION_SAFETY_SCHEMA,
+        "schema_version": 1,
+        "result": (
+            "pass"
+            if maximum_post_gain_dbtp <= MAX_PRESENTATION_TRUE_PEAK_DBTP
+            else "fail"
+        ),
+        "estimator": "conservative_four_x_bandlimited_fft_v1",
+        "oversample_factor": TRUE_PEAK_OVERSAMPLE_FACTOR,
+        "max_allowed_true_peak_dbtp": MAX_PRESENTATION_TRUE_PEAK_DBTP,
+        "normalization_target_true_peak_dbtp": TARGET_PRESENTATION_TRUE_PEAK_DBTP,
+        "uniform_gain": uniform_gain,
+        "uniform_gain_db": amplitude_to_db(uniform_gain),
+        "maximum_pre_gain_true_peak_dbtp": amplitude_to_db(maximum_pre_gain),
+        "maximum_post_gain_true_peak_dbtp": maximum_post_gain_dbtp,
+        "pre_gain_true_peak_dbtp": {
+            name: amplitude_to_db(peak) for name, peak in measured.items()
+        },
+        "post_gain_true_peak_dbtp": {
+            name: amplitude_to_db(peak) for name, peak in post_gain.items()
+        },
+        "coverage": {
+            "00_source_window.wav": "source_window",
+            "01_chop_hook.wav": "chop_hook",
+            "02_pressure_lift.wav": "pressure_lift",
+            "03_dropout_stutter.wav": "dropout_stutter",
+            "04_restore_hit.wav": "restore_hit",
+            "05_rebuild_only_performance.wav": "rebuild_only_performance",
+        },
+        "application": (
+            "one uniform presentation-only gain is applied to every emitted WAV and "
+            "waveform; source-relative level, section ratios, and the frozen musical "
+            "render remain unchanged"
+        ),
+        "quality_proof": False,
+        "human_verdict": "unverified",
+    }
+
+
+def conservative_true_peak_amplitude(samples: np.ndarray) -> float:
+    if samples.size == 0:
+        return 0.0
+    frame_count = samples.shape[0]
+    maximum = 0.0
+    for channel in range(samples.shape[1]):
+        signal = samples[:, channel].astype(np.float64, copy=False)
+        spectrum = np.fft.rfft(signal)
+        oversampled = np.fft.irfft(
+            spectrum,
+            n=frame_count * TRUE_PEAK_OVERSAMPLE_FACTOR,
+        ) * TRUE_PEAK_OVERSAMPLE_FACTOR
+        maximum = max(maximum, float(np.max(np.abs(oversampled))))
+    return maximum
+
+
+def apply_presentation_gain(samples: np.ndarray, gain: float) -> np.ndarray:
+    return (samples * gain).astype(np.float32)
+
+
+def db_to_amplitude(value: float) -> float:
+    return math.pow(10.0, value / 20.0)
+
+
+def amplitude_to_db(value: float) -> float:
+    return 20.0 * math.log10(max(value, 1e-12))
 
 
 def wav_duration(path: Path) -> float:

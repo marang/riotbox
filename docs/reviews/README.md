@@ -59,6 +59,9 @@ Current P023 rejected-experiment closeouts:
 
 Current P023 algorithm-value refresh:
 
+- [riotbox_1461_dense_break_release_demo_qualification_2026-08-24.md](./riotbox_1461_dense_break_release_demo_qualification_2026-08-24.md):
+  safe fresh Dense professional qualification, human rejection of the
+  foundational transformation, and bounded `chop_policy` follow-up routing.
 - [riotbox_1460_corrected_negative_family_qualification_2026-08-24.md](./riotbox_1460_corrected_negative_family_qualification_2026-08-24.md):
   fresh exact-live and restart qualification of corrected Beat20 handling,
   human product passes for `weak_source` and `bad_timing`, and preserved

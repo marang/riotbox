@@ -12,8 +12,10 @@ from typing import Any, Callable
 
 from generate_sound_quality_readiness_report import (
     demo_bank_summary,
+    next_actions,
     readiness_blockers,
     reconcile_source_selection_risk,
+    routed_next_fix_categories,
     validate_report,
 )
 
@@ -294,6 +296,51 @@ def validate_outcome_reconciliation_fixture() -> None:
     require(
         weak_ids == {"sparse-must-stay-weak"},
         "positive-family weak output escaped production blocking",
+    )
+
+    routed_demo = copy.deepcopy(demo)
+    for entry in list_field(routed_demo, "weak_or_fail_entries"):
+        if isinstance(entry, dict) and entry.get("entry_id") == "sparse-must-stay-weak":
+            entry["fix_categories"] = ["chop_policy"]
+    routed_demo["weak_fix_categories"] = ["chop_policy"]
+    failed_positive_coverage = {
+        "missing_family_success_families": ["sparse_drums"],
+        "missing_human_verdict_families": [],
+    }
+    empty_review_queue = {"candidates": []}
+    current_evidence = {
+        "current_product_top_candidate_category": "none",
+        "stale_fixture_only_categories": ["chop_policy"],
+    }
+    categories = routed_next_fix_categories(
+        failed_positive_coverage,
+        routed_demo,
+        {"fix_categories": []},
+        current_evidence,
+        empty_review_queue,
+        True,
+    )
+    require(
+        categories == ["chop_policy"],
+        "current human failure category was incorrectly suppressed as stale fixture evidence",
+    )
+    actions = next_actions(
+        failed_positive_coverage,
+        routed_demo,
+        {"fix_categories": []},
+        {"available": True},
+        current_evidence,
+        empty_review_queue,
+        {"demo_bank_state": "available"},
+    )
+    require(
+        any(
+            action.get("category") == "chop_policy"
+            and action.get("target") == "sparse_drums"
+            and action.get("entry_ids") == ["sparse-must-stay-weak"]
+            for action in actions
+        ),
+        "current human failure did not route its bounded production correction",
     )
 
     suite = {

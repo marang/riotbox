@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 from typing import Any
@@ -13,6 +14,7 @@ from typing import Any
 SCHEMA = "riotbox.professional_output_listening_pack.v1"
 MC202_GATE_FIELD = "mc202_source_composed_review_gate"
 EXPECTED_FAMILIES = ["dense_break", "sparse_bass_pressure", "tonal_hook"]
+PRESENTATION_SAFETY_SCHEMA = "riotbox.audio_presentation_true_peak_safety.v1"
 
 
 def main() -> int:
@@ -127,6 +129,12 @@ def validate_case(
     check(gate.get("promotion_blocked_until_human_pass") is True, f"{prefix}_promotion_not_blocked", failures)
     check(gate.get("source_composed_evidence") is True, f"{prefix}_source_composed_missing", failures)
     check(gate.get("primitive_or_template_only") is False, f"{prefix}_primitive_template_leaked", failures)
+    if case.get("source_family") == "dense_break":
+        validate_presentation_safety(
+            object_or_empty(case.get("presentation_safety")),
+            prefix,
+            failures,
+        )
     if require_review_files:
         review = Path(str(case.get("review", "")))
         prompt = report_path.parent / "reviews" / str(case.get("case_id", "")) / "prompt.md"
@@ -149,6 +157,18 @@ def validate_case(
                 f"{prefix}_audio_judge_gate_mismatch",
                 failures,
             )
+            if case.get("source_family") == "dense_break":
+                review_safety = object_or_empty(review_data.get("presentation_safety"))
+                validate_presentation_safety(
+                    review_safety,
+                    f"{prefix}_review",
+                    failures,
+                )
+                check(
+                    review_safety == case.get("presentation_safety"),
+                    f"{prefix}_review_presentation_safety_mismatch",
+                    failures,
+                )
 
 
 def run_mutation_fixtures(report: dict[str, Any], path: Path) -> None:
@@ -168,6 +188,25 @@ def run_mutation_fixtures(report: dict[str, Any], path: Path) -> None:
             case[MC202_GATE_FIELD]["primitive_or_template_only"] = True
     fixtures.append(("tonal_regressed_to_primitive", mutated, "case_1_source_composed_missing"))
 
+    mutated = json.loads(json.dumps(report))
+    dense = next(case for case in mutated["cases"] if case["source_family"] == "dense_break")
+    dense["presentation_safety"]["result"] = "fail"
+    dense["presentation_safety"]["maximum_post_gain_true_peak_dbtp"] = 0.5
+    fixtures.append(
+        ("dense_true_peak_unsafe", mutated, "case_0_presentation_safety_not_passed")
+    )
+
+    mutated = json.loads(json.dumps(report))
+    dense = next(case for case in mutated["cases"] if case["source_family"] == "dense_break")
+    dense["presentation_safety"]["coverage"].pop("03_dropout_stutter.wav")
+    fixtures.append(
+        (
+            "dense_true_peak_incomplete_coverage",
+            mutated,
+            "case_0_presentation_safety_coverage_mismatch",
+        )
+    )
+
     for name, fixture, expected in fixtures:
         failures = validate_report(fixture, path, require_review_files=False)
         if expected not in failures:
@@ -185,12 +224,119 @@ def object_or_empty(value: Any) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
 
 
+def validate_presentation_safety(
+    safety: dict[str, Any],
+    prefix: str,
+    failures: list[str],
+) -> None:
+    check(
+        safety.get("schema") == PRESENTATION_SAFETY_SCHEMA,
+        f"{prefix}_presentation_safety_schema_mismatch",
+        failures,
+    )
+    check(
+        safety.get("result") == "pass",
+        f"{prefix}_presentation_safety_not_passed",
+        failures,
+    )
+    check(
+        safety.get("estimator") == "conservative_four_x_bandlimited_fft_v1",
+        f"{prefix}_presentation_safety_estimator_mismatch",
+        failures,
+    )
+    check(
+        safety.get("oversample_factor") == 4,
+        f"{prefix}_presentation_safety_oversample_mismatch",
+        failures,
+    )
+    check(
+        safety.get("schema_version") == 1,
+        f"{prefix}_presentation_safety_version_mismatch",
+        failures,
+    )
+    maximum = finite_number(safety.get("max_allowed_true_peak_dbtp"))
+    target = finite_number(safety.get("normalization_target_true_peak_dbtp"))
+    measured = finite_number(safety.get("maximum_post_gain_true_peak_dbtp"))
+    gain = finite_number(safety.get("uniform_gain"))
+    gain_db = finite_number(safety.get("uniform_gain_db"))
+    check(maximum == -1.0, f"{prefix}_presentation_safety_limit_mismatch", failures)
+    check(target == -1.2, f"{prefix}_presentation_safety_target_mismatch", failures)
+    check(
+        measured is not None and maximum is not None and measured <= maximum,
+        f"{prefix}_presentation_true_peak_unsafe",
+        failures,
+    )
+    check(
+        gain is not None and 0.0 < gain <= 1.0,
+        f"{prefix}_presentation_safety_gain_invalid",
+        failures,
+    )
+    check(
+        gain is not None
+        and gain_db is not None
+        and math.isclose(gain_db, 20.0 * math.log10(gain), abs_tol=1e-9),
+        f"{prefix}_presentation_safety_gain_db_mismatch",
+        failures,
+    )
+    expected_coverage = {
+        "00_source_window.wav": "source_window",
+        "01_chop_hook.wav": "chop_hook",
+        "02_pressure_lift.wav": "pressure_lift",
+        "03_dropout_stutter.wav": "dropout_stutter",
+        "04_restore_hit.wav": "restore_hit",
+        "05_rebuild_only_performance.wav": "rebuild_only_performance",
+    }
+    coverage = object_or_empty(safety.get("coverage"))
+    check(
+        coverage == expected_coverage,
+        f"{prefix}_presentation_safety_coverage_mismatch",
+        failures,
+    )
+    pre_gain = object_or_empty(safety.get("pre_gain_true_peak_dbtp"))
+    post_gain = object_or_empty(safety.get("post_gain_true_peak_dbtp"))
+    measurement_keys = set(expected_coverage.values()) | {"source_layered_reference"}
+    check(
+        set(pre_gain) == measurement_keys and set(post_gain) == measurement_keys,
+        f"{prefix}_presentation_safety_measurements_incomplete",
+        failures,
+    )
+    for name in sorted(measurement_keys):
+        pre = finite_number(pre_gain.get(name))
+        post = finite_number(post_gain.get(name))
+        check(
+            pre is not None
+            and post is not None
+            and gain_db is not None
+            and math.isclose(post, pre + gain_db, abs_tol=1e-8),
+            f"{prefix}_presentation_safety_{name}_gain_mismatch",
+            failures,
+        )
+        check(
+            post is not None and maximum is not None and post <= maximum,
+            f"{prefix}_presentation_safety_{name}_unsafe",
+            failures,
+        )
+    check(safety.get("quality_proof") is False, f"{prefix}_presentation_claims_quality", failures)
+    check(
+        safety.get("human_verdict") == "unverified",
+        f"{prefix}_presentation_claims_human_verdict",
+        failures,
+    )
+
+
 def number(value: Any) -> float:
     if isinstance(value, bool) or value is None:
         return 0.0
     if isinstance(value, (int, float)):
         return float(value)
     return 0.0
+
+
+def finite_number(value: Any) -> float | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    result = float(value)
+    return result if math.isfinite(result) else None
 
 
 def check(condition: bool, code: str, failures: list[str]) -> None:
