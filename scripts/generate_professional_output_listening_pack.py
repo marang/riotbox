@@ -159,6 +159,7 @@ def render_dense_case(repo: Path, output: Path, date: str) -> dict:
         "candidate": str(case_dir / report["files"]["rebuild_only_performance"]),
         "source_report": str(case_dir / "performance-report.json"),
         "source_report_sha256": sha256_file(case_dir / "performance-report.json"),
+        "presentation_safety": report["presentation_safety"],
         "expected": "Dense break should hit with clear chop hook, pressure lift, destructive stutter, and bigger restore.",
         },
         evidence_role="listening_review_scaffold",
@@ -233,6 +234,8 @@ def create_review_pack(
     review["demo_readiness"] = demo_readiness["demo_readiness"]
     review["demo_worthy_reason"] = demo_readiness["demo_worthy_reason"]
     review["not_demo_worthy_reason"] = demo_readiness["not_demo_worthy_reason"]
+    if case.get("presentation_safety") is not None:
+        review["presentation_safety"] = case["presentation_safety"]
     review[MC202_GATE_FIELD] = mc202_gate
     review[MC202_ROLE_FIELD] = mc202_role
     review["audio_judge_label"] = build_audio_judge_label(

@@ -141,6 +141,17 @@ Passing those validators proves the diagnostic boundary and contract shape only;
 it does not promote scripted professional-source, edge, non-dense, dense-break,
 or agent-review renders to product-quality proof.
 
+The dense-break performance pack additionally owns the versioned presentation
+safety contract `riotbox.audio_presentation_true_peak_safety.v1`. Its core
+source-derived render and musical metrics stay in the pre-presentation gain
+domain. Before writing review WAVs, a conservative four-times band-limited
+true-peak estimate derives one shared gain for the source window, all sectional
+outputs, and the rebuild-only performance. The target is `-1.2 dBTP`; the hard
+maximum is `-1.0 dBTP`. The report must name estimator, coverage, pre/post
+estimates, gain, and the explicit non-quality/non-human boundary. Professional
+listening-pack validation must reject a missing, mutated, or failed safety
+contract before playback or promotion.
+
 ## 6. Output Layout
 
 Local audio QA output should use a stable structure.

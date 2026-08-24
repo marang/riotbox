@@ -256,22 +256,14 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
 
     release_readiness = "release_ready" if not blockers else "blocked"
     quality_claim_allowed = release_readiness == "release_ready"
-    stale_categories = set(
-        string_list(current_evidence.get("stale_fixture_only_categories"))
+    next_fix_categories = routed_next_fix_categories(
+        source_families,
+        demo_summary,
+        weak_summary,
+        current_evidence,
+        review_summary,
+        bool(blockers),
     )
-    raw_next_fix_categories = set(weak_summary["fix_categories"]) | set(
-        demo_summary["weak_fix_categories"]
-    )
-    next_fix_categories = sorted(
-        category for category in raw_next_fix_categories if category not in stale_categories
-    )
-    if (
-        source_families["missing_human_verdict_families"]
-        or source_families["missing_family_success_families"]
-    ):
-        next_fix_categories = sorted(set(next_fix_categories) | {"source_selection"})
-    if not next_fix_categories and blockers:
-        next_fix_categories = ["source_selection", "fixture_threshold"]
 
     return {
         "schema": SCHEMA,
@@ -506,6 +498,74 @@ def demo_bank_entry_summary(entry: dict[str, Any]) -> dict[str, Any]:
         "fix_categories": list(entry.get("fix_categories", [])),
         "reason": str(entry.get("demo_worthiness_note", "")),
     }
+
+
+def actionable_human_failure_entries(
+    coverage: dict[str, Any],
+    demo: dict[str, Any],
+    review_queue: dict[str, Any],
+) -> dict[str, list[dict[str, Any]]]:
+    queued_families = {
+        str(candidate.get("source_family"))
+        for candidate in list_or_empty(review_queue.get("candidates"))
+        if isinstance(candidate, dict) and candidate.get("source_family")
+    }
+    actionable: dict[str, list[dict[str, Any]]] = {}
+    for family in string_list(coverage.get("missing_family_success_families")):
+        aliases = CORPUS_TO_DEMO_FAMILIES.get(family, {family})
+        if aliases & queued_families:
+            continue
+        matching = [
+            entry
+            for entry in list_or_empty(demo.get("weak_or_fail_entries"))
+            if isinstance(entry, dict) and entry.get("source_family") in aliases
+        ]
+        if matching:
+            actionable[family] = matching
+    return actionable
+
+
+def routed_next_fix_categories(
+    coverage: dict[str, Any],
+    demo: dict[str, Any],
+    weak: dict[str, Any],
+    current_evidence: dict[str, Any],
+    review_queue: dict[str, Any],
+    has_blockers: bool,
+) -> list[str]:
+    actionable_failures = actionable_human_failure_entries(
+        coverage,
+        demo,
+        review_queue,
+    )
+    human_fix_categories = {
+        category
+        for entries in actionable_failures.values()
+        for entry in entries
+        for category in string_list(entry.get("fix_categories"))
+    }
+    stale_categories = set(
+        string_list(current_evidence.get("stale_fixture_only_categories"))
+    )
+    raw_categories = set(weak["fix_categories"]) | set(demo["weak_fix_categories"])
+    categories = {
+        category
+        for category in raw_categories
+        if category not in stale_categories or category in human_fix_categories
+    }
+    categories.update(human_fix_categories)
+
+    missing_success = set(
+        string_list(coverage.get("missing_family_success_families"))
+    )
+    missing_human = set(
+        string_list(coverage.get("missing_human_verdict_families"))
+    )
+    if missing_human or missing_success - set(actionable_failures):
+        categories.add("source_selection")
+    if not categories and has_blockers:
+        categories.update({"source_selection", "fixture_threshold"})
+    return sorted(categories)
 
 
 def reviewed_outcome_satisfies_family_contract(
@@ -2397,10 +2457,46 @@ def next_actions(
         coverage["missing_family_success_families"],
         key=lambda family: (0 if family == "dense_break" else 1, family),
     )
+    actionable_failures = actionable_human_failure_entries(
+        coverage,
+        demo,
+        review_queue,
+    )
+    handled_human_categories: set[str] = set()
     for family in ordered_missing_families:
         if demo_bank_evidence.get("demo_bank_state") != "available" and family == "dense_break":
             continue
         candidate = review_candidate_by_family.get(str(family))
+        human_failures = actionable_failures.get(str(family), [])
+        if human_failures and not candidate:
+            entry_ids = [str(entry.get("entry_id")) for entry in human_failures]
+            fix_categories = sorted(
+                {
+                    category
+                    for entry in human_failures
+                    for category in string_list(entry.get("fix_categories"))
+                }
+            ) or ["source_selection"]
+            reason = "; ".join(
+                str(entry.get("reason"))
+                for entry in human_failures
+                if str(entry.get("reason") or "").strip()
+            )
+            for category in fix_categories:
+                actions.append(
+                    {
+                        "category": category,
+                        "target": family,
+                        "entry_ids": entry_ids,
+                        "reason": reason,
+                        "action": (
+                            f"Correct the human-reviewed {family} candidate through "
+                            f"a bounded {category} slice before re-evaluating it."
+                        ),
+                    }
+                )
+                handled_human_categories.add(category)
+            continue
         action = {
             "category": "source_selection",
             "target": family,
@@ -2431,6 +2527,8 @@ def next_actions(
     )
     current_top = str(current_evidence.get("current_product_top_candidate_category") or "")
     for category in sorted(set(weak["fix_categories"]) | set(demo["weak_fix_categories"])):
+        if category in handled_human_categories:
+            continue
         if category in stale_categories and current_top in {"", "none"}:
             continue
         actions.append(

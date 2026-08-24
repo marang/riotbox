@@ -56,6 +56,14 @@ earned a fresh bounded human product pass without replaying unchanged audio.
 `weak_source` and `bad_timing` now satisfy their reviewed-negative contracts;
 only `dense_break`, `sparse_drums`, and `tonal_riff` remain without family
 success, while release readiness and every quality claim remain blocked.
+`RIOTBOX-1461` then rebuilds a fresh current-state professional Dense candidate
+because the historical temporary live-review WAV no longer exists. A newly
+frozen uniform true-peak presentation gate rejects the first `+6.0 dBTP`
+candidate before playback and makes the replacement safe to review. The human
+review rejects the foundational transformation as musically unusable despite
+understandable sectional intent; Dense remains non-demo-ready and now routes
+to one bounded `chop_policy` foundation correction rather than another source
+search. Sparse and tonal positive-family candidates remain separately open.
 `RIOTBOX-1408` has now replaced the synthetic W-30
 resample-tap proxy with hydrated capture audio through the exact live path.
 Determinism, three-source diversity, replay identity, and missing-source silence

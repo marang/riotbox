@@ -1485,6 +1485,20 @@ readiness consumers remove only those owned blockers: `dense_break`,
 `sparse_drums`, and `tonal_riff` remain without family success, and release
 readiness plus all quality claims remain blocked.
 
+RIOTBOX-1461 attempts the next positive-family release-demo closeout without
+relabeling the missing temporary RIOTBOX-1402 artifact. It opens only the exact
+registered Beat03 Development source and builds a fresh current-state Dense
+professional diagnostic pack. The first candidate is rejected before playback
+after independent analysis finds `+6.0 dBTP`; RBX-319 therefore freezes one
+uniform presentation-only true-peak safety gain for every emitted WAV. The
+safe candidate passes technical preflight but receives a human `reject`: its
+sectional intention is understandable, while the foundational transformation
+is not musically usable and masks the added modification. Dense remains
+non-demo-ready. Readiness now preserves that current human failure as a
+bounded `chop_policy` correction instead of incorrectly asking for another
+Dense source-selection pass. Sparse and tonal source-family candidates remain
+open, and no release, quality, Holdout, or source-general claim follows.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing

@@ -600,6 +600,15 @@ After exit:
   reviewed-outcome contract; only the positive `dense_break`, `sparse_drums`,
   and `tonal_riff` family successes remain open, while release and quality
   claims stay blocked.
+- RIOTBOX-1461 rebuilds a fresh current-state Dense professional diagnostic
+  candidate because the old temporary RIOTBOX-1402 WAV is unavailable. A
+  versioned uniform true-peak presentation gate rejects the initial `+6.0
+  dBTP` artifact before playback and makes the exact replacement technically
+  safe. Human review still rejects the foundational transformation as
+  musically unusable despite understandable higher-level intent. Dense remains
+  non-demo-ready and routes to a bounded `chop_policy` foundation correction;
+  `sparse_drums` and `tonal_riff` remain separate missing positive-family
+  successes. This is fail-closed evidence, not P023 completion.
 - RIOTBOX-1410 is the first bounded Foundation Completion closure: explicit
   control-only source-monitor refresh retains current PCM, explicit replacement
   atomically publishes PCM plus mode/gains and anchors, and exact callback /

@@ -25,6 +25,17 @@ The same reasons must appear in `review.json` and the human review prompt so a
 reviewer hears the candidate with the intended musical target and the current
 quality boundary in view.
 
+Dense-break professional listening packs must also carry
+`riotbox.audio_presentation_true_peak_safety.v1` in both the case and its
+`review.json`. The contract uses a conservative four-times band-limited
+true-peak estimate, allows no emitted presentation WAV above `-1.0 dBTP`, and
+targets `-1.2 dBTP` before quantization. When attenuation is required, one
+uniform presentation-only gain applies to the source window and every candidate
+section so source-relative level and section ratios do not change. Core musical
+metrics remain explicitly pre-presentation; the safety gain, pre/post estimates,
+coverage, and claim boundary must be reported. Missing or failed safety evidence
+blocks human playback and demo-bank promotion.
+
 Release-demo human-review queues use
 `riotbox.release_demo_human_review_queue.v1`. They are review worklists, not
 quality proof. Every queued candidate must remain
