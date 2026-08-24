@@ -1614,4 +1614,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Make aggregate readiness honor reviewed negative outcomes
 - [RIOTBOX-1459.md](./RIOTBOX-1459.md)
   P023: Re-establish durable weak-source and bad-timing outcomes
+- [RIOTBOX-1033.md](./RIOTBOX-1033.md)
+  P012+: Strengthen Source Timing detector quality for arrangement use
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
