@@ -1622,4 +1622,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Qualify the accepted dense-break journey for live release-demo coverage
 - [RIOTBOX-1462.md](./RIOTBOX-1462.md)
   P023: Repair the foundational dense-break chop before effect re-evaluation
+- [RIOTBOX-1463.md](./RIOTBOX-1463.md)
+  P023: Qualify dense-break foundation chop v1 through the product spine
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
