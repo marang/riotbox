@@ -208,7 +208,6 @@ fn pad_playback_from_interleaved(
         playback_frame_count: frame_count.try_into().unwrap_or(u64::MAX),
         sample_count,
         loop_enabled: true,
-        playback_grammar: riotbox_audio::w30::W30PadPlaybackGrammar::HalfBeatChopV1,
         playback_rate: transform.playback_rate,
         reverse: transform.reverse,
         gate_step_fraction: transform.gate_step_fraction,

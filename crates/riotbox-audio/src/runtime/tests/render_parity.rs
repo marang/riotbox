@@ -982,7 +982,6 @@ fn runtime_mix_duration_pad() -> W30PadPlaybackSampleWindow {
         playback_frame_count: 96_000,
         sample_count: W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN,
         loop_enabled: true,
-        playback_grammar: W30PadPlaybackGrammar::HalfBeatChopV1,
         playback_rate: 1.0,
         reverse: false,
         gate_step_fraction: 0.0,

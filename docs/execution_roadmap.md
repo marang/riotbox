@@ -1582,6 +1582,19 @@ with source-free dummy contract artifacts. No musical or numeric fixture result
 was inspected or allowed to change product behavior; the recovered sparse
 family claim remains bounded exactly as above.
 
+RIOTBOX-1468 moves the remaining Dense blocker away from the exhausted
+two-beat answer selector and tests one continuous source-native full-bar W-30
+grammar. Source-blind tests pass callback-partition, complete-bar, contrast,
+and missing-source behavior. V1 stops before render on a rounded-metadata timing
+conflict; v2 corrects only that authority and completes one exact Development
+render. Its one hash-bound recovery then fails the unchanged aggregate audio
+safety/boundary preflight without reopening the source, rerendering, or
+playing the artifact. Because the logger did not retain the individual failed
+audio subgate, no second analysis or speculative diagnosis is allowed. The
+temporary Runtime grammar is removed and v2 remains negative evidence only.
+Dense is still the sole missing positive demo family; release readiness,
+Holdout, universal quality, and P023 completion remain blocked.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing

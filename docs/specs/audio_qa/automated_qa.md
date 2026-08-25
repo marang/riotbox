@@ -25,6 +25,12 @@ These checks prevent obviously broken audio behavior:
 - transport and commit timing remain stable
 - callback timing stays inside benchmark limits
 
+An artifact runner must durably write the complete computed per-gate metrics
+and identities before enforcing an aggregate technical pass assertion. Its
+fail-closed record must therefore retain the exact failed gate values even when
+the runner aborts. A missing per-gate record is an evidence failure and cannot
+be repaired by guessing, replay, or an unregistered analysis retry.
+
 ### 3.2 Musical contract gates
 
 These checks validate behavior against product intent rather than "beauty":

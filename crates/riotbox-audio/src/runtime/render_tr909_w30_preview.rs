@@ -138,7 +138,7 @@ pub(super) fn render_w30_preview_buffer(
         state.oscillator_phase = 0.0;
         state.lfo_phase = 0.0;
         state.source_sample_cursor = 0.0;
-        reset_w30_pad_playback_cursor(state, w30_chop_slice_cursor(render, state.last_step));
+        state.pad_playback_cursor = w30_chop_slice_cursor(render, state.last_step);
         state.pad_playback_age_frames = 0;
         state.last_character_input = 0.0;
         state.character_edge_memory = 0.0;
@@ -160,7 +160,7 @@ pub(super) fn render_w30_preview_buffer(
     let pad_playback_signature = w30_pad_playback_signature(render);
     if pad_playback_signature != state.last_pad_playback_signature {
         state.last_pad_playback_signature = pad_playback_signature;
-        reset_w30_pad_playback_cursor(state, w30_chop_slice_cursor(render, state.last_step));
+        state.pad_playback_cursor = w30_chop_slice_cursor(render, state.last_step);
         state.pad_playback_age_frames = 0;
         state.last_character_input = 0.0;
         state.character_edge_memory = 0.0;
@@ -172,7 +172,7 @@ pub(super) fn render_w30_preview_buffer(
             w30_trigger_envelope(render) * (0.85 + render.trigger_velocity.clamp(0.0, 1.0) * 0.3),
         );
         state.oscillator_phase = 0.0;
-        reset_w30_pad_playback_cursor(state, w30_chop_slice_cursor(render, state.last_step));
+        state.pad_playback_cursor = w30_chop_slice_cursor(render, state.last_step);
         state.pad_playback_age_frames = 0;
     }
 
@@ -194,7 +194,7 @@ pub(super) fn render_w30_preview_buffer(
                         state.source_sample_cursor = 0.0;
                     }
                     if w30_pad_playback_active(render) {
-                        reset_w30_pad_playback_cursor(state, w30_chop_slice_cursor(render, step));
+                        state.pad_playback_cursor = w30_chop_slice_cursor(render, step);
                         state.pad_playback_age_frames = 0;
                         state.last_character_input = 0.0;
                         state.character_edge_memory = 0.0;
@@ -431,16 +431,6 @@ fn w30_pad_playback_sample_with_reverse(
     let output_frame_count = (playback_frame_count as f64 * f64::from(output_sample_rate.max(1))
         / f64::from(source_sample_rate))
     .max(1.0);
-    if window.playback_grammar == W30PadPlaybackGrammar::SourceNativeFullBarV1 {
-        return w30_source_native_pad_playback_sample(
-            window,
-            state,
-            sample_count,
-            output_frame_count,
-            reverse,
-        );
-    }
-
     let cursor_increment = (sample_count as f64 / output_frame_count
         * f64::from(window.playback_rate.clamp(0.25, 4.0))) as f32;
     let logical_cursor = state.pad_playback_cursor;
@@ -461,47 +451,8 @@ fn w30_pad_playback_sample_with_reverse(
     } else {
         logical_cursor + cursor_increment
     };
-    state.source_native_pad_playback_cursor = f64::from(state.pad_playback_cursor);
     state.pad_playback_age_frames = state.pad_playback_age_frames.saturating_add(1);
     sample
-}
-
-fn w30_source_native_pad_playback_sample(
-    window: &RealtimeW30PadPlaybackSampleWindow,
-    state: &mut W30PreviewCallbackState,
-    sample_count: usize,
-    output_frame_count: f64,
-    reverse: bool,
-) -> f32 {
-    let logical_cursor = state.source_native_pad_playback_cursor;
-    if !window.loop_enabled && logical_cursor >= sample_count as f64 {
-        return 0.0;
-    }
-    let wrapped_cursor = if window.loop_enabled {
-        logical_cursor % sample_count as f64
-    } else {
-        logical_cursor.min(sample_count.saturating_sub(1) as f64)
-    };
-    let wrapped_cursor_f32 = wrapped_cursor as f32;
-    let sample = interpolated_pad_sample(window, sample_count, wrapped_cursor_f32, reverse);
-    let sample =
-        apply_pad_loop_crossfade(window, sample_count, wrapped_cursor_f32, sample, reverse);
-    let sample = apply_pad_edge_envelope(window, state, sample_count, wrapped_cursor_f32, sample);
-    let cursor_increment =
-        sample_count as f64 / output_frame_count * f64::from(window.playback_rate.clamp(0.25, 4.0));
-    state.source_native_pad_playback_cursor = if window.loop_enabled {
-        (logical_cursor + cursor_increment) % sample_count as f64
-    } else {
-        logical_cursor + cursor_increment
-    };
-    state.pad_playback_cursor = state.source_native_pad_playback_cursor as f32;
-    state.pad_playback_age_frames = state.pad_playback_age_frames.saturating_add(1);
-    sample
-}
-
-fn reset_w30_pad_playback_cursor(state: &mut W30PreviewCallbackState, cursor: f32) {
-    state.pad_playback_cursor = cursor;
-    state.source_native_pad_playback_cursor = f64::from(cursor);
 }
 
 fn interpolated_pad_sample(
@@ -726,13 +677,6 @@ pub(super) fn w30_pad_playback_signature(render: &RealtimeW30PreviewRenderState)
         .wrapping_add(render.pad_playback.source_end_frame)
         .wrapping_add(render.pad_playback.sample_count as u64)
         .wrapping_add(u64::from(render.pad_playback.loop_enabled))
-        .wrapping_add(
-            match render.pad_playback.playback_grammar {
-                W30PadPlaybackGrammar::HalfBeatChopV1 => 0_u64,
-                W30PadPlaybackGrammar::SourceNativeFullBarV1 => 1_u64,
-            }
-            .wrapping_mul(37),
-        )
         .wrapping_add(u64::from(render.pad_playback.reverse).wrapping_mul(17))
         .wrapping_add(u64::from(render.pad_playback.playback_rate.to_bits()).wrapping_mul(19))
         .wrapping_add(u64::from(render.pad_playback.gate_step_fraction.to_bits()).wrapping_mul(29))
@@ -753,9 +697,6 @@ pub(super) fn w30_pad_playback_signature(render: &RealtimeW30PreviewRenderState)
 }
 
 pub(super) fn w30_chop_slice_cursor(render: &RealtimeW30PreviewRenderState, step: i64) -> f32 {
-    if render.pad_playback.playback_grammar == W30PadPlaybackGrammar::SourceNativeFullBarV1 {
-        return 0.0;
-    }
     let count = render
         .pad_playback
         .chop_slice_count
@@ -1021,9 +962,6 @@ fn w30_current_step(position_beats: f64, render: &RealtimeW30PreviewRenderState)
 
 fn w30_preview_subdivision(render: &RealtimeW30PreviewRenderState) -> u32 {
     if w30_pad_playback_active(render) {
-        if render.pad_playback.playback_grammar == W30PadPlaybackGrammar::SourceNativeFullBarV1 {
-            return 1;
-        }
         return if render.pad_playback.playback_rate < 0.95 {
             4
         } else {
@@ -1041,9 +979,6 @@ fn w30_preview_subdivision(render: &RealtimeW30PreviewRenderState) -> u32 {
 
 pub(super) fn should_trigger_w30_step(render: &RealtimeW30PreviewRenderState, step: i64) -> bool {
     if w30_pad_playback_active(render) {
-        if render.pad_playback.playback_grammar == W30PadPlaybackGrammar::SourceNativeFullBarV1 {
-            return false;
-        }
         return render.pad_playback.playback_rate >= 0.95
             || !matches!(step.rem_euclid(16), 3 | 7 | 11);
     }

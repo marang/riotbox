@@ -220,3 +220,18 @@ material-contrast gates. It therefore stops without WAV or listening. This is
 the third and final causal topology for the current foundation-answer role;
 future work must select a different musical owner or grammar rather than tune
 the selector, increase its event count, or loosen its gates.
+
+RIOTBOX-1466 and RIOTBOX-1467 then close the unchanged tonal and sparse live
+journeys through exact current product-path identity and narrow prior-verdict
+reuse, avoiding duplicate listening. `tonal_riff` and `sparse_drums` now have
+positive demo-family evidence; Dense is the sole remaining positive-family
+blocker.
+
+RIOTBOX-1468 tests a genuinely different Dense owner: continuous source-native
+full-bar playback instead of another answer selector. Source-blind callback and
+missing-source tests pass, but the bounded exact Development artifact fails its
+unchanged aggregate audio safety/boundary preflight. The one authorized
+recovery performs no source reopen or rerender and still fails before human
+playback. The temporary Runtime grammar is removed. Dense remains non-demo-ready;
+a successor needs a new Linear-first causal slice rather than v2 tuning or
+reuse of consumed artifacts.

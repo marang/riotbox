@@ -63,6 +63,10 @@ Current P023 algorithm-value refresh:
   complete three-source product-spine qualification of frozen Dense foundation
   chop v1, formal clarity-loss verdict, removal of unqualified behavior, and
   retained exact confirmed-BPM replay correction.
+- [riotbox_1468_dense_source_native_bar_development_rejection_2026-08-25.md](./riotbox_1468_dense_source_native_bar_development_rejection_2026-08-25.md):
+  source-blind continuous full-bar W-30 exploration, exact fail-closed
+  Development recovery, technical rejection before playback, and removal of
+  the temporary Runtime grammar.
 - [riotbox_1462_dense_break_foundation_chop_exploration_2026-08-25.md](./riotbox_1462_dense_break_foundation_chop_exploration_2026-08-25.md):
   one source-only long-slice foundation variant, exact-artifact technical
   preflight, provisional human keep, and frozen product-qualification handoff.

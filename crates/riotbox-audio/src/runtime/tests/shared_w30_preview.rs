@@ -160,7 +160,6 @@ fn shared_w30_preview_state_tracks_updates() {
             playback_frame_count: 96_000,
             sample_count: W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN,
             loop_enabled: true,
-            playback_grammar: W30PadPlaybackGrammar::HalfBeatChopV1,
             playback_rate: 0.82,
             reverse: true,
             gate_step_fraction: 0.36,
