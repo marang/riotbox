@@ -80,6 +80,14 @@ Development session finds no coherent two-beat source cell that satisfies both
 the local-weight and material-contrast gates, so it stops before rendering or
 human listening. Dense remains non-demo-ready; neither result authorizes
 threshold tuning, Holdout access, or a quality/release claim.
+`RIOTBOX-1465` applies research hypothesis H-CHOP-1 as the third and final
+topology for this foundation-answer role: two complete source events are
+selected by source-relative role and accent rank without moving their target
+onsets. The exact Development result preserves local weight and clarity, but
+fails both material-contrast gates and stops before WAV creation or listening.
+The current answer role is therefore closed rather than tuned into a v4. Any
+future Dense foundation attempt must introduce a different musical owner or
+grammar through a new Linear-first contract; Dense remains non-demo-ready.
 `RIOTBOX-1408` has now replaced the synthetic W-30
 resample-tap proxy with hydrated capture audio through the exact live path.
 Determinism, three-source diversity, replay identity, and missing-source silence

@@ -1,0 +1,197 @@
+{
+  "schema": "riotbox.dense_break_foundation_chop.v3",
+  "schema_version": 3,
+  "status": "frozen",
+  "owner_ticket": "RIOTBOX-1465",
+  "attempt_limit": {
+    "role": "third_and_final_causal_topology_for_current_dense_foundation_answer",
+    "predecessors": [
+      {
+        "mechanism": "riotbox.dense_break_foundation_chop.v1",
+        "outcome": "rejected_product_clarity_loss",
+        "decision": "RBX-324"
+      },
+      {
+        "mechanism": "riotbox.dense_break_foundation_chop.v2",
+        "outcome": "rejected_no_eligible_coherent_two_beat_cell",
+        "decision": "RBX-326"
+      }
+    ],
+    "v4_same_role_or_selector_allowed_after_reject": false
+  },
+  "research_basis": {
+    "hypothesis": "H-CHOP-1_articulation_preserving_reuse",
+    "path": "docs/engineering/percussive_force/stage_a_design_history.md",
+    "transfer": "select source-derived event variants by role and source-relative accent rank on the same onset grid"
+  },
+  "audible_role": "source-recognizable two-bar dense-break foundation answer with role-correct articulation variation and unchanged target onsets",
+  "mechanism": {
+    "input": {
+      "bars": 2,
+      "beats_per_bar": 4,
+      "requires_confirmed_beat_grid": true,
+      "playback_rate": 1.0,
+      "beat_frame_quantization": "round(source_sample_rate_hz * 60 / confirmed_bpm)",
+      "phrase_frame_count": "beat_frame_count * 8",
+      "source_window_policy": "loop exact non-empty source audio from phrase start only as needed to fill phrase_frame_count"
+    },
+    "anchor": {
+      "target": "beats_0_through_5",
+      "operation": "sample_exact_passthrough"
+    },
+    "detector_and_anatomy": {
+      "protocol": "docs/benchmarks/percussive_force_stage_a_protocol_v2.json",
+      "raw_sha256": "b6b35cb14ef34be7f9b7bb6b2bf076ba84842c56914485937f088539e6217878",
+      "reuse": "unchanged_detector_nms_physical_onset_20ms_lookbehind_attack_body_tail_and_composite_ownership",
+      "consumer_catalog": "all_NMS_primaries_with_complete_nonoverlapping_anatomy_without_the_Stage_A_maximum_three_event_publication_cap",
+      "eligible_impact_context": "single_nonfused_primary_only_with_no_onset_in_lookbehind_and_tail_strictly_before_next_event_lookbehind",
+      "new_detector_or_anatomy_threshold": false
+    },
+    "role_and_accent": {
+      "context": "exact half-open [lookbehind_start,tail_end)",
+      "low_band_estimator": "per_channel_one_pole_lowpass_165_hz_stereo_rms_v1",
+      "level_estimator": "stereo_broadband_rms_v1",
+      "low_band_share": "context_low_band_rms / context_broadband_rms",
+      "role_partition": {
+        "sort": "ascending low_band_share then physical_onset_frame",
+        "eligible_splits": "at least two contexts on each side",
+        "selection": "largest adjacent share gap with earlier split tie break",
+        "separation_gate": "selected gap must be strictly greater than half the complete source share span",
+        "upper_attack": "share on lower side of selected split",
+        "low_body": "share on upper side of selected split",
+        "inseparable": "zero span or failed separation gate rejects complete source"
+      },
+      "accent_rank": "ascending attack_peak_rms then physical_onset_frame within role",
+      "maximum_absolute_rank_distance": 1
+    },
+    "target_selection": {
+      "window": "beats_6_through_7",
+      "required_roles": [
+        "low_body",
+        "upper_attack"
+      ],
+      "per_role": "strongest attack_peak_rms with earlier onset tie break",
+      "required_target_count": 2,
+      "context_must_be_fully_inside_answer": true,
+      "target_physical_onset_frame": "sample_exact_invariant"
+    },
+    "donor_selection": {
+      "window": "beats_0_through_5_only",
+      "same_role_required": true,
+      "unique_donor_per_target": true,
+      "accent_rank_distance_max": 1,
+      "window_length": "max(target complete anatomy context frame count, donor complete anatomy context frame count) + exact 2ms post-tail context",
+      "alignment": "donor lookbehind start maps to target lookbehind start so the identical 20ms onset offset preserves target onset",
+      "complete_context": "the equal-length target and donor windows include both complete anatomy tails before the appended 2ms exit-fade context; unavailable post-tail source context rejects",
+      "crosstalk": "no other eligible physical onset may occur inside either render window after its mapped onset",
+      "eligibility": {
+        "absolute_context_low_band_delta_db_max": 4.0,
+        "absolute_context_level_delta_db_max": 4.0,
+        "absolute_attack_peak_rms_delta_db_max": 3.0
+      },
+      "selection_order": [
+        "lowest_absolute_accent_rank_distance",
+        "lowest_absolute_context_low_band_delta_db",
+        "lowest_absolute_context_level_delta_db",
+        "lowest_absolute_attack_peak_rms_delta_db",
+        "earliest_donor_physical_onset_frame"
+      ]
+    },
+    "render": {
+      "operation": "copy the exact equal-length donor window spanning both complete anatomy lengths plus exact 2ms post-tail context into the target window",
+      "crossfade_shape": "linear",
+      "crossfade_duration_ms": 2.0,
+      "crossfades": "target context entry and exit only",
+      "donor_internal_splice_count": 0,
+      "target_event_count_changed": false,
+      "target_onset_grid_changed": false,
+      "donor_reuse_count_max": 1
+    },
+    "answer_gates": {
+      "whole_answer_absolute_low_band_delta_db_max": 3.0,
+      "whole_answer_absolute_level_delta_db_max": 3.0,
+      "each_corresponding_half_beat_absolute_low_band_delta_db_max": 4.0,
+      "each_corresponding_half_beat_absolute_level_delta_db_max": 4.0,
+      "whole_phrase_normalized_rms_delta_min": 0.2,
+      "whole_phrase_absolute_waveform_correlation_max": 0.96
+    },
+    "forbidden": {
+      "v1_fixed_mixed_slice_answer": true,
+      "v2_whole_two_beat_cell_selection": true,
+      "detector_or_anatomy_retune": true,
+      "source_specific_exception": true,
+      "filename_rule": true,
+      "canonical_single_donor_repetition": true,
+      "eq_or_filter_repair": true,
+      "gain_compensation": true,
+      "support_lane": true,
+      "generated_drum_replacement": true,
+      "pitch_or_time_change": true,
+      "bus_effect": true,
+      "fallback_music": true
+    }
+  },
+  "source_blind_falsification": {
+    "required_cases": [
+      "reuses_frozen_detector_and_complete_event_anatomy_on_generated_audio",
+      "maps_one_low_body_and_one_upper_attack_target",
+      "uses_two_unique_same_role_nearest_accent_donors",
+      "preserves_first_six_beats_sample_exactly",
+      "preserves_target_onset_alignment",
+      "rejects_near_identical_role_variants"
+    ],
+    "fresh_registered_source_opened_before_freeze": false
+  },
+  "development_exploration": {
+    "stage": "development_exploration_only",
+    "source": {
+      "case_id": "dense_beat03_130",
+      "registry": "docs/benchmarks/sound_excellence_source_corpus_v1.json",
+      "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+      "sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+      "confirmed_bpm": 130.0,
+      "source_format": {
+        "sample_rate_hz": 44100,
+        "channels": 2,
+        "sample_width_bits": 24,
+        "compression_type": "NONE",
+        "maximum_duration_seconds": 4
+      }
+    },
+    "active_holdout_collision_registry": {
+      "path": "docs/benchmarks/source_holdout_rotation_v2.json",
+      "schema": "riotbox.source_holdout_rotation.v2",
+      "raw_sha256": "af98af67d5b0ef9f8478bf800438b268af2a4640bed29d8ec7c87fa585eb6812"
+    },
+    "access": "one fresh exclusive exact-path DevelopmentSourceAccessSession after v3 contract and Decision freeze",
+    "technical_reject_artifact": "JSON only; no WAV",
+    "eligible_artifact": "source and v3 candidate only; four repeats each; one uniform presentation-only safety gain",
+    "human_review": "one bounded usefulness review only after exact-artifact technical preflight and fresh readiness",
+    "variant_limit": 1
+  },
+  "stopping_rule": {
+    "reject_on": [
+      "detector_or_anatomy_refusal",
+      "missing_or_inseparable_roles",
+      "missing_target_role",
+      "no_unique_same_role_accent_matched_donor",
+      "crosstalk_or_incomplete_donor_context",
+      "answer_clarity_or_contrast_gate_failure",
+      "artifact_or_onset_grid_change",
+      "groove_clarity_or_source_loss",
+      "not_worth_triggering"
+    ],
+    "post_access_change_requires_new_version_and_decision": true,
+    "v4_same_role_or_selector_allowed_after_reject": false
+  },
+  "claim_boundary": {
+    "product_behavior": false,
+    "source_general": false,
+    "quality_proof": false,
+    "percussive_hard": false,
+    "holdout_authorized": false,
+    "demo_ready": false,
+    "release_ready": false,
+    "p023_complete": false
+  }
+}

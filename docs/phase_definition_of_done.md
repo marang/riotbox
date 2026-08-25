@@ -633,6 +633,13 @@ After exit:
   stops before render or listening, without threshold changes or source
   substitution. V2 is negative evidence only; Dense remains non-demo-ready and
   a successor requires a new Linear-first topology, version, and Decision.
+- RIOTBOX-1465 freezes and tests the H-CHOP-1 event-context topology as the
+  third and final attempt for the current Dense foundation-answer role. Two
+  complete role- and accent-matched substitutions preserve target onsets and
+  pass every local weight/level gate, but fail both frozen material-contrast
+  gates. The session stops before WAV or listening, v3 remains negative
+  evidence only, and the current answer role is closed rather than tuned into
+  v4. Any future attempt requires a different musical owner or grammar.
 - RIOTBOX-1410 is the first bounded Foundation Completion closure: explicit
   control-only source-monitor refresh retains current PCM, explicit replacement
   atomically publishes PCM plus mode/gains and anchors, and exact callback /
