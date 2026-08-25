@@ -1,0 +1,107 @@
+{
+  "schema": "riotbox.dense_break_source_native_bar_exploration.v2",
+  "schema_version": 2,
+  "ticket": "RIOTBOX-1468",
+  "status": "frozen_source_blind_after_v1_technical_rejection_before_second_development_access",
+  "predecessor": {
+    "path": "docs/benchmarks/dense_break_source_native_bar_exploration_v1.json",
+    "sha256": "027c1cb6e007f5e2d8064fa1db40a5b91dbea2c890dd101310297c4375441fef",
+    "outcome": "technical_rejection_before_audio_render",
+    "failed_access_log_path": "artifacts/development/riotbox-1468/access-log-2026-08-25-a.json",
+    "failed_access_log_sha256": "b096212befcbf9fdf50a2b9f9bb200c155218dacca947514c9c24941c372de05",
+    "failure": "declared 130.0 BPM transport differed from the confirmed source-bar timing by 178 source frames",
+    "audio_artifacts_rendered": false,
+    "human_playback_performed": false
+  },
+  "sole_change": {
+    "field": "mechanism.input.runtime_tempo_authority",
+    "v1": "declared_bpm",
+    "v2": "confirmed_capture_bar_bpm_v1",
+    "formula": "source_sample_rate_hz * 60 * beats_per_bar / capture_playback_frame_count",
+    "requirements": {
+      "capture_playback_frame_count_positive": true,
+      "source_sample_rate_positive": true,
+      "derived_bpm_positive_and_finite": true,
+      "runtime_render_uses_derived_bpm_exactly": true,
+      "source_bar_to_runtime_bar_mismatch_frames_max": 1
+    },
+    "rationale": "The capture window already follows the confirmed Source Timing bar grid; the exploration renderer must consume that authority instead of reintroducing the rounded filename/declaration hint."
+  },
+  "unchanged_v1_contract": {
+    "musical_owner": "w30_pad_playback_grammar",
+    "control": "half_beat_chop_v1",
+    "candidate": "source_native_full_bar_v1",
+    "candidate_variants": 1,
+    "playback_rate": 1.0,
+    "pitch_change_semitones": 0.0,
+    "reverse": false,
+    "gate_step_fraction": 0.0,
+    "internal_source_order": "sample_order_preserved",
+    "transport_retrigger_count_per_bar": 0,
+    "loop_restart": "exact_one_bar_capture_window_boundary_only",
+    "loop_crossfade": "existing_w30_pad_loop_crossfade_v1",
+    "w30_grit": 0.64,
+    "music_bus_level": 0.58,
+    "additional_lane_count": 0,
+    "additional_effect_count": 0,
+    "callback_frame_counts": [
+      128,
+      257
+    ],
+    "callback_outputs_must_be_sample_exact": true,
+    "maximum_true_peak_dbtp": -1.0,
+    "maximum_clipped_integer_samples": 0,
+    "candidate_boundary_jump_limit": "max(0.12, source_boundary_jump_abs * 1.5)",
+    "control_candidate_delta_rms_min": 0.001,
+    "presentation_bars_each": 4,
+    "pause_seconds": 1.0,
+    "uniform_safety_gain_only": true
+  },
+  "development_access": {
+    "registry_path": "docs/benchmarks/sound_excellence_source_corpus_v1.json",
+    "registry_sha256": "67b5b8b2882575cf70fa61aacf25ae282c17714fe51ffcb13f905458e025d552",
+    "case_id": "dense_beat03_130",
+    "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+    "source_sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+    "declared_bpm_metadata_only": 130.0,
+    "partition": "development",
+    "source_format": {
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "sample_width_bits": 24,
+      "compression_type": "NONE",
+      "maximum_duration_seconds": 16
+    },
+    "maximum_unique_source_files": 1,
+    "fresh_exclusive_access_log_required_before_first_open": true,
+    "directory_discovery_forbidden": true,
+    "holdout_audio_access": false,
+    "commercial_reference_access": false
+  },
+  "stopping_rule": {
+    "maximum_candidate_variants": 1,
+    "remaining_human_reviews": 1,
+    "reject_on": [
+      "source_identity_or_groove_loss",
+      "clarity_or_low_frequency_weight_loss",
+      "click_or_loop_boundary_artifact",
+      "unclear_or_musically_useless_delta",
+      "callback_or_restart_divergence",
+      "unsafe_output",
+      "not_worth_performing"
+    ],
+    "post_second_access_change_requires_new_version_and_decision": true,
+    "no_second_candidate_after_verdict": true
+  },
+  "claim_boundary": {
+    "development_exploration_only": true,
+    "product_behavior": false,
+    "source_general": false,
+    "quality_proof": false,
+    "percussive_hard": false,
+    "holdout_authorized": false,
+    "demo_ready": false,
+    "release_ready": false,
+    "p023_complete": false
+  }
+}

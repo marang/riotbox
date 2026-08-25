@@ -1,0 +1,72 @@
+{
+  "schema": "riotbox.dense_break_source_native_bar_preflight_recovery.v1",
+  "schema_version": 1,
+  "ticket": "RIOTBOX-1468",
+  "status": "frozen_before_generated_artifact_audio_analysis",
+  "qualification_contract": {
+    "path": "docs/benchmarks/dense_break_source_native_bar_exploration_v2.json",
+    "sha256": "ac71e8daa9f862a8341910d63e0457cd657e6506808eda4032d132b4fb443517"
+  },
+  "incident": {
+    "access_log_path": "artifacts/development/riotbox-1468/access-log-2026-08-25-b.json",
+    "access_log_sha256": "94cd1552246aeee802ad157ebd807ada01783aff3f49ed87bc764eaff9e08acf",
+    "source_read_count": 1,
+    "source_identity_verified": true,
+    "renderer_exit_code": 0,
+    "failure_stage": "generated_artifact_technical_preflight",
+    "failure": "the reused metric module had not initialized its numpy binding",
+    "human_playback_performed": false,
+    "musical_or_numeric_audio_result_inspected_before_recovery_freeze": false
+  },
+  "exact_artifacts": {
+    "root": "artifacts/development/riotbox-1468/source-native-bar-2026-08-25-b/render",
+    "source": {
+      "path": "00_source_full_bar_loop.wav",
+      "sha256": "81631714660a88601f250a9b4e57225924bbdb976f1ea78e06ad536e9a2c46fe"
+    },
+    "control": {
+      "path": "01_w30_half_beat_chop_control.wav",
+      "sha256": "b64b24faadd9175ddcccf13ba6eba31732bcd622ef0143a4cd9d38b80efe744d"
+    },
+    "candidate": {
+      "path": "02_w30_source_native_full_bar_candidate_v1.wav",
+      "sha256": "838cb4c1074cb2230cf69128494fe423c7479ab91afb8b9702518fd91edda3bd"
+    },
+    "runtime_report": {
+      "path": "source-native-full-bar-runtime-report.json",
+      "sha256": "970bd8aa7ae03950aa9e9c3991bdbc5e6ade2d05f74f520c45cb4e897f551ce9"
+    },
+    "session": {
+      "path": "session.json",
+      "sha256": "347dee73d506f4ce46e82964486d1cfff0b589214f98064ff7b998d24983168c"
+    }
+  },
+  "authorized_recovery": {
+    "initialize_existing_numpy_metric_binding": true,
+    "verify_every_pinned_artifact_before_analysis": true,
+    "run_unchanged_v2_technical_preflight": true,
+    "write_one_recovery_log_and_exploration_result": true,
+    "source_audio_reopen": false,
+    "source_directory_discovery": false,
+    "rerender": false,
+    "artifact_replacement": false,
+    "algorithm_or_threshold_change": false,
+    "human_playback_before_technical_pass": false
+  },
+  "stopping_rule": {
+    "any_identity_mismatch": "fail_closed",
+    "any_technical_gate_failure": "reject_without_retry",
+    "technical_pass": "permit_the_one_remaining_v2_human_review",
+    "further_recovery_or_source_access": false
+  },
+  "claim_boundary": {
+    "development_exploration_only": true,
+    "product_behavior": false,
+    "source_general": false,
+    "quality_proof": false,
+    "holdout_authorized": false,
+    "demo_ready": false,
+    "release_ready": false,
+    "p023_complete": false
+  }
+}

@@ -650,6 +650,12 @@ After exit:
   inventing bass-pressure evidence. `tonal_riff` and `sparse_drums` are now
   demo-ready covered; `dense_break` is the only missing family success, so
   release, Holdout, universal-quality, and P023-completion claims stay blocked.
+- RIOTBOX-1468 tests continuous source-native full-bar W-30 playback as a new
+  Dense musical owner rather than a fourth answer selector. Source-blind tests
+  pass, but the exact Development candidate fails the unchanged aggregate
+  audio safety/boundary preflight during its sole no-source-reopen recovery.
+  No playback or human verdict occurs, the temporary Runtime grammar is
+  removed, and `dense_break` remains the only missing positive-family success.
 - RIOTBOX-1410 is the first bounded Foundation Completion closure: explicit
   control-only source-monitor refresh retains current PCM, explicit replacement
   atomically publishes PCM plus mode/gains and anchors, and exact callback /
