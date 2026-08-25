@@ -12,6 +12,7 @@ pub(super) fn apply_source_timing_replay_action(
     let ActionParams::SourceTimingGrid {
         source_id: Some(ref source_id),
         ref hypothesis_id,
+        confirmed_bpm,
     } = action.params
     else {
         return Err(ReplayExecutionError::InvalidParams {
@@ -20,6 +21,15 @@ pub(super) fn apply_source_timing_replay_action(
             expected: "ActionParams::SourceTimingGrid { source_id: Some(_) }",
         });
     };
+    if action.command == ActionCommand::SourceTimingConfirmGrid
+        && confirmed_bpm.is_some_and(|bpm| !bpm.is_finite() || bpm <= 0.0)
+    {
+        return Err(ReplayExecutionError::InvalidParams {
+            action_id: action.id,
+            command: action.command,
+            expected: "SourceTimingGrid confirmed_bpm must be positive and finite when present",
+        });
+    }
 
     match action.command {
         ActionCommand::SourceTimingConfirmGrid => {
@@ -30,6 +40,7 @@ pub(super) fn apply_source_timing_replay_action(
                     confirmed_by_action: action.id,
                     confirmed_at: action.committed_at.unwrap_or(action.requested_at),
                 });
+            session.runtime_state.source_timing.confirmed_bpm = confirmed_bpm;
         }
         ActionCommand::SourceTimingRevertGrid
             if session
@@ -43,6 +54,7 @@ pub(super) fn apply_source_timing_replay_action(
                 }) =>
         {
             session.runtime_state.source_timing.confirmed_grid = None;
+            session.runtime_state.source_timing.confirmed_bpm = None;
             if session
                 .runtime_state
                 .lane_state

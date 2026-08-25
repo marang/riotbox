@@ -617,6 +617,15 @@ After exit:
   source-diversity qualification in RIOTBOX-1463. It is not yet product
   behavior or a formal family/demo/quality pass, so the Dense positive-family
   blocker remains.
+- RIOTBOX-1463 rebuilds frozen v1 through the full product spine and passes its
+  three-source Development technical matrix, including exact callback
+  partitions, restart, replay, observer, no-fallback, and limiter gates. Formal
+  listening still rejects the answer slice because its clear hook loses
+  low-frequency weight and clarity and becomes unintentionally radio-like.
+  The unqualified behavior is removed and Dense remains non-demo-ready; only
+  the generally correct exact confirmed-BPM Session/replay fix is retained.
+  Any successor requires a new version and pre-access Decision rather than v1
+  tuning.
 - RIOTBOX-1410 is the first bounded Foundation Completion closure: explicit
   control-only source-monitor refresh retains current PCM, explicit replacement
   atomically publishes PCM plus mode/gains and anchors, and exact callback /

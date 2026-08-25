@@ -12,10 +12,14 @@ pub(in crate::jam_app) fn apply_source_timing_side_effects(
             let ActionParams::SourceTimingGrid {
                 source_id: Some(source_id),
                 hypothesis_id,
+                confirmed_bpm,
             } = &action.params
             else {
                 return false;
             };
+            if confirmed_bpm.is_some_and(|bpm| !bpm.is_finite() || bpm <= 0.0) {
+                return false;
+            }
 
             session.runtime_state.source_timing.confirmed_grid =
                 Some(SourceTimingGridConfirmationState {
@@ -24,12 +28,14 @@ pub(in crate::jam_app) fn apply_source_timing_side_effects(
                     confirmed_by_action: action.id,
                     confirmed_at: action.committed_at.unwrap_or(action.requested_at),
                 });
+            session.runtime_state.source_timing.confirmed_bpm = *confirmed_bpm;
             true
         }
         ActionCommand::SourceTimingRevertGrid => {
             let ActionParams::SourceTimingGrid {
                 source_id: Some(source_id),
                 hypothesis_id,
+                ..
             } = &action.params
             else {
                 return false;
@@ -45,6 +51,7 @@ pub(in crate::jam_app) fn apply_source_timing_side_effects(
                 })
             {
                 session.runtime_state.source_timing.confirmed_grid = None;
+                session.runtime_state.source_timing.confirmed_bpm = None;
                 if session
                     .runtime_state
                     .lane_state
@@ -98,6 +105,10 @@ mod tests {
         assert_eq!(confirmed.hypothesis_id.as_deref(), Some("primary-grid"));
         assert_eq!(confirmed.confirmed_by_action, ActionId(1));
         assert_eq!(confirmed.confirmed_at, 100);
+        assert_eq!(
+            session.runtime_state.source_timing.confirmed_bpm,
+            Some(128.0)
+        );
     }
 
     #[test]
@@ -107,10 +118,26 @@ mod tests {
         action.params = ActionParams::SourceTimingGrid {
             source_id: None,
             hypothesis_id: Some("primary-grid".into()),
+            confirmed_bpm: Some(128.0),
         };
 
         assert!(!apply_source_timing_side_effects(&mut session, &action));
         assert!(session.runtime_state.source_timing.confirmed_grid.is_none());
+    }
+
+    #[test]
+    fn source_timing_side_effect_rejects_invalid_confirmed_bpm() {
+        let mut session = SessionFile::new("session-1", "riotbox-test", "2026-05-23T12:21:30Z");
+        let mut action = confirm_grid_action("src-1", Some("primary-grid"), 100);
+        action.params = ActionParams::SourceTimingGrid {
+            source_id: Some(SourceId::from("src-1")),
+            hypothesis_id: Some("primary-grid".into()),
+            confirmed_bpm: Some(-128.0),
+        };
+
+        assert!(!apply_source_timing_side_effects(&mut session, &action));
+        assert!(session.runtime_state.source_timing.confirmed_grid.is_none());
+        assert!(session.runtime_state.source_timing.confirmed_bpm.is_none());
     }
 
     #[test]
@@ -123,6 +150,7 @@ mod tests {
 
         assert!(apply_source_timing_side_effects(&mut session, &revert));
         assert!(session.runtime_state.source_timing.confirmed_grid.is_none());
+        assert!(session.runtime_state.source_timing.confirmed_bpm.is_none());
     }
 
     #[test]
@@ -159,6 +187,10 @@ mod tests {
 
         assert!(!apply_source_timing_side_effects(&mut session, &revert));
         assert!(session.runtime_state.source_timing.confirmed_grid.is_some());
+        assert_eq!(
+            session.runtime_state.source_timing.confirmed_bpm,
+            Some(128.0)
+        );
         assert!(
             session
                 .runtime_state
@@ -181,6 +213,7 @@ mod tests {
             params: ActionParams::SourceTimingGrid {
                 source_id: Some(SourceId::from(source_id)),
                 hypothesis_id: hypothesis_id.map(Into::into),
+                confirmed_bpm: Some(128.0),
             },
             target: ActionTarget::default(),
             requested_at,

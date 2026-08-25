@@ -254,14 +254,19 @@ Rules:
   source audition; this confirmation is a persisted trust state, not a local TUI
   flag
 - the confirmation action is `source_timing.confirm_grid`; it is a session-scope
-  immediate action with structured `source_id` and optional `hypothesis_id`
-  params
+  immediate action with structured `source_id`, optional `hypothesis_id`, and
+  optional positive finite `confirmed_bpm` params
 - confirmation must preserve the original timing evidence and record user
   provenance, so replay / restore can distinguish analyzed confidence from
   user-accepted musical trust
 - session runtime state stores the accepted grid as
   `runtime_state.source_timing.confirmed_grid`, including source id,
   hypothesis id, confirming action id, and confirmation timestamp
+- session runtime state also stores the exact accepted BPM as
+  `runtime_state.source_timing.confirmed_bpm` when available. Trusted timing
+  consumers prefer it over the analyzer estimate until confirmation is
+  reverted; this matters when explicit BPM admission accepted a nearby but not
+  byte-identical analyzer estimate
 - observer surfaces should expose `grid_confirmed`, confirmed source /
   hypothesis ids, confirming action id, and confirmation timestamp beside the
   analyzed timing evidence
@@ -301,8 +306,8 @@ Rules:
   `source_timing.confirm_grid` only when the Rust probe produced a primary grid
   within 1 BPM of the supplied positive finite value. Missing or mismatched
   candidates fail before ingest persistence; successful confirmation retains
-  source id, hypothesis id, action id, and timestamp through Session restore and
-  replay.
+  the exact supplied BPM alongside source id, hypothesis id, action id, and
+  timestamp through Session restore and replay.
 - `riotbox-app --source-bpm <bpm> --source-downbeat-seconds <seconds>` is the
   explicit exception for a musician who knows the tempo and first-downbeat
   phase of timing-poor tonal material. Both values are required to construct a
@@ -317,8 +322,9 @@ Rules:
   selected kind as `musician_manual`.
 - confirmation is explicitly revertible through `source_timing.revert_grid`;
   that action clears a matching `runtime_state.source_timing.confirmed_grid`
-  value through queue / commit / replay rather than deleting or weakening the
-  original Source Graph timing evidence
+  and `runtime_state.source_timing.confirmed_bpm` value through queue / commit /
+  replay rather than deleting or weakening the original Source Graph timing
+  evidence
 
 That summary may collapse Source Graph detail into bounded musician language
 such as `grid locked`, `needs confirm`, `listen first`, `fallback grid`, or

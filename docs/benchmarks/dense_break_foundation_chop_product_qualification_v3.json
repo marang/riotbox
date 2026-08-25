@@ -1,0 +1,187 @@
+{
+  "schema": "riotbox.dense_break_foundation_chop_product_qualification.v3",
+  "schema_version": 3,
+  "status": "preregistered_after_v2_restart_failure_before_complete_rerun",
+  "ticket": "RIOTBOX-1463",
+  "decision": "RBX-323",
+  "supersedes": {
+    "path": "docs/benchmarks/dense_break_foundation_chop_product_qualification_v2.json",
+    "raw_sha256": "a758dd84726846f41280bbf0d7399567625d9e7cb3d6bb37f5c5c59090e3cd4d",
+    "failed_access_log_path": "artifacts/development/riotbox-1463/access-log-v2.json",
+    "failed_access_log_sha256": "58aeea16df41f7240341e2f264186bb77e05e8bd7123e6e2f25fc6de13933b2b",
+    "sole_change": "derive_foundation_callback_start_phase_from_elapsed_transport_output_frames",
+    "source_cases_opened_before_v3_freeze": [
+      "dense_beat03_130",
+      "freesound_alastair_pursloe_183441",
+      "freesound_dabromusic_266735"
+    ],
+    "musical_mapping_changed": false,
+    "source_set_changed": false
+  },
+  "partition": "development",
+  "mechanism_contract": {
+    "path": "docs/benchmarks/dense_break_foundation_chop_v1.json",
+    "raw_sha256": "79671dd532459d2c4dd25636a989c3c088e515555eae1936fa7145e5aef3b2a6",
+    "mechanism": "dense_break_foundation_chop_v1",
+    "changes_allowed_after_source_access": false
+  },
+  "product_owner": {
+    "preset_action": "preset.activate",
+    "preset_id": "feral_break_alpha_v3",
+    "capture_action": "capture.bar_group",
+    "promotion_action": "promote.capture_to_pad",
+    "playback_actions": [
+      "w30.live_recall",
+      "w30.trigger_pad"
+    ],
+    "persistent_recipe": "dense_break_foundation_chop_v1",
+    "promotion_quantization": "next_bar",
+    "target": "exact_capture_and_explicit_w30_pad",
+    "audible_path": "queue_commit_capture_lineage_session_projection_exact_runtime_mix",
+    "new_action_command_allowed": false,
+    "automatic_arrangement_allowed": false
+  },
+  "development_registry": {
+    "path": "docs/benchmarks/percussive_force_stage_a_bound_source_set_v1.json",
+    "raw_sha256": "7ec185a51233d83c49d8227b0e81acb2ca83c24bc31783a9343dc71d090e47a6",
+    "required_partition": "development"
+  },
+  "selection": {
+    "rule": "use_the_existing_exploration_case_then_the_first_two_registered_dense_break_cases_in_frozen_pool_order_that_have_exact_hashes_explicit_usable_bpm_and_no_prior_tempo_admission_failure",
+    "selected_source_count": 3,
+    "selected_author_count": 3,
+    "selected_family_counts": {
+      "dense_break": 3
+    },
+    "narrow_role_exception": "three_source_same_family_product_qualification_only_no_source_general_claim"
+  },
+  "source_set": [
+    {
+      "ordinal": 0,
+      "case_id": "dense_beat03_130",
+      "family": "dense_break",
+      "author": "MusicRadar SampleRadar",
+      "path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+      "sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+      "confirmation_bpm": 130.0,
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "sample_width_bits": 24
+    },
+    {
+      "ordinal": 1,
+      "case_id": "freesound_alastair_pursloe_183441",
+      "family": "dense_break",
+      "author": "Alastair_Pursloe",
+      "path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/01_dense_183441.wav",
+      "sha256": "b342ee4a9412de14f460c2c295634c53801f2549c71bfc486644a1b02030abc9",
+      "confirmation_bpm": 135.0,
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "sample_width_bits": 16
+    },
+    {
+      "ordinal": 5,
+      "case_id": "freesound_dabromusic_266735",
+      "family": "dense_break",
+      "author": "DABROmusic",
+      "path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/05_dense_266735.wav",
+      "sha256": "b3ee8908b0433e9d286f6174369cfebe78ee928656e52935d1992fdb2dba7c73",
+      "confirmation_bpm": 172.0,
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "sample_width_bits": 24
+    }
+  ],
+  "access": {
+    "fresh_access_log_required_before_first_file_read": true,
+    "maximum_unique_development_files": 3,
+    "exact_paths_and_hashes_only": true,
+    "hash_required_before_decode_or_render": true,
+    "directory_discovery_allowed": false,
+    "source_replacement_allowed": false,
+    "holdout_audio_allowed": false,
+    "commercial_reference_audio_allowed": false
+  },
+  "admission": {
+    "confirmed_grid_required": true,
+    "beats_per_bar": 4,
+    "confirmation_bpm_must_equal_preregistered_value": true,
+    "minimum_source_frames": 1,
+    "supported_channel_counts": [
+      1,
+      2
+    ],
+    "supported_sample_width_bits": [
+      16,
+      24
+    ],
+    "all_three_cases_must_pass_before_human_playback": true,
+    "failure_policy": "stop_fail_closed_without_retuning_or_replacement"
+  },
+  "technical_gates": {
+    "source_sha256_exact": true,
+    "frozen_mapping_and_two_millisecond_linear_splices_exact": true,
+    "beats_zero_through_five_sample_exact_before_callback_projection": true,
+    "beat_six_uses_source_beat_four": true,
+    "beat_seven_first_half_uses_source_beat_five_second_half": true,
+    "beat_seven_second_half_returns_to_exact_source_position": true,
+    "callback_partitions_sample_exact": [
+      128,
+      257
+    ],
+    "pre_limiter_clip_count": 0,
+    "limited_sample_count": 0,
+    "post_limiter_clip_count": 0,
+    "capture_lineage_and_recipe_persisted": true,
+    "promotion_and_trigger_observer_visible": true,
+    "session_round_trip_and_replay_equivalence": true,
+    "restart_mid_phrase_transport_phase_equivalence": true,
+    "missing_source_active_samples": 0,
+    "fallback_music_active_samples": 0,
+    "other_lanes_active_samples": 0
+  },
+  "human_review": {
+    "count": 1,
+    "only_after_complete_technical_matrix": true,
+    "representative_case": "dense_beat03_130",
+    "order": [
+      "bounded_source_context_repeated_twice",
+      "one_second_silence",
+      "A_exact_product_straight_control_repeated_twice",
+      "one_second_silence",
+      "B_exact_product_foundation_chop_v1_repeated_twice"
+    ],
+    "questions": [
+      "is_the_two_bar_hook_clearly_audible",
+      "does_recognizable_source_identity_survive",
+      "are_groove_and_clarity_preserved",
+      "is_the_anchor_deviation_return_musically_useful",
+      "is_it_worth_using_as_a_dense_break_foundation"
+    ],
+    "exploration_verdict_transfer_allowed": false,
+    "repeat_transfer_reviews": false
+  },
+  "stopping_rule": {
+    "reject_on": [
+      "source_identity_loss",
+      "groove_or_clarity_loss",
+      "weak_or_unusable_two_bar_hook",
+      "replay_restart_or_callback_divergence",
+      "unsafe_output",
+      "wrong_product_owner"
+    ],
+    "qualification_may_reject_but_may_not_tune_v1": true,
+    "required_mechanism_or_source_set_change": "new_version_and_decision_log_entry"
+  },
+  "claims_excluded": [
+    "source_general_quality",
+    "percussive_hard",
+    "holdout",
+    "automatic_arrangement",
+    "higher_effect_combination",
+    "complete_golden_path",
+    "demo_readiness",
+    "release_readiness"
+  ]
+}

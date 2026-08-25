@@ -219,11 +219,16 @@ User-confirmed timing trust must be represented explicitly:
 - `source_timing.confirmed_grid.hypothesis_id`
 - `source_timing.confirmed_grid.confirmed_by_action`
 - `source_timing.confirmed_grid.confirmed_at`
+- `source_timing.confirmed_bpm`, carrying the exact positive finite BPM
+  accepted by that action when available
 - enough provenance to distinguish analyzed confidence from user acceptance
 - undo / revert consequence
 
 The session must preserve the original Source Graph evidence. Confirming a grid
-does not silently rewrite the analysis payload.
+does not silently rewrite the analysis payload. Source-window and transport
+consumers prefer the persisted `confirmed_bpm` while the matching grid remains
+trusted, so restore does not substitute a nearby analyzer estimate for an
+explicitly accepted BPM. Reverting the grid clears both values.
 
 For a typed Source Graph `Manual` hypothesis, the same confirmation state and
 action/replay contract applies. Its hypothesis provenance owns the declared BPM

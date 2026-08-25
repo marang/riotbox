@@ -34,6 +34,10 @@ fn source_timing_grid_confirmation_queues_commits_and_persists_session_truth() {
     assert_eq!(confirmed.confirmed_by_action, committed[0].action_id);
     assert_eq!(confirmed.confirmed_at, 120);
     assert_eq!(
+        state.session.runtime_state.source_timing.confirmed_bpm,
+        Some(126.0)
+    );
+    assert_eq!(
         state.queue_source_timing_grid_confirmation(121),
         QueueControlResult::AlreadyInState
     );
@@ -80,6 +84,7 @@ fn source_timing_grid_revert_queues_commits_and_clears_session_truth() {
         ActionCommand::SourceTimingRevertGrid
     );
     assert!(state.session.runtime_state.source_timing.confirmed_grid.is_none());
+    assert!(state.session.runtime_state.source_timing.confirmed_bpm.is_none());
     assert_eq!(
         state.queue_source_timing_grid_revert(141),
         QueueControlResult::AlreadyInState

@@ -29,6 +29,7 @@ fn commits_grid_and_reports_status() {
         riotbox_core::action::ActionParams::SourceTimingGrid {
             source_id: Some(SourceId::from("src-confirm")),
             hypothesis_id: Some("primary-grid".into()),
+            confirmed_bpm: Some(128.0),
         }
     );
 

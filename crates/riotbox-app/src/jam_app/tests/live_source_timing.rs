@@ -148,6 +148,10 @@ fn manual_confirm_timing_stays_silent_until_explicit_bpm_confirmation_commits() 
         state.session.action_log.actions.last().map(|action| action.command),
         Some(ActionCommand::SourceTimingConfirmGrid)
     );
+    assert_eq!(
+        state.session.runtime_state.source_timing.confirmed_bpm,
+        Some(126.0)
+    );
     assert!(state.session.runtime_state.source_timing.confirmed_grid.is_some());
 }
 
@@ -241,6 +245,10 @@ fn live_ingest_explicit_bpm_persists_graph_confirmation_and_restore_identity() {
         state.session.action_log.actions.last().map(|action| action.command),
         Some(ActionCommand::SourceTimingConfirmGrid)
     );
+    assert_eq!(
+        state.session.runtime_state.source_timing.confirmed_bpm,
+        Some(128.0)
+    );
 
     let restored = JamAppState::from_json_files(&session_path, Some(&graph_path))
         .expect("restore confirmed timing state");
@@ -248,16 +256,15 @@ fn live_ingest_explicit_bpm_persists_graph_confirmation_and_restore_identity() {
         restored.session.runtime_state.source_timing.confirmed_grid,
         state.session.runtime_state.source_timing.confirmed_grid
     );
-    assert!((
+    assert_eq!(
         super::transport_helpers::trusted_source_timing_bpm(
             &restored.session,
             restored.source_graph.as_ref(),
         )
         .expect("trusted restored BPM")
-            - 128.0
-    )
-        .abs()
-        <= 1.0);
+        .to_bits(),
+        128.0_f32.to_bits()
+    );
     assert!(
         restored
             .source_graph
@@ -352,6 +359,10 @@ fn tonal_live_ingest_requires_and_persists_explicit_manual_grid_phase() {
     assert_eq!(
         restored.session.runtime_state.source_timing.confirmed_grid,
         state.session.runtime_state.source_timing.confirmed_grid
+    );
+    assert_eq!(
+        restored.session.runtime_state.source_timing.confirmed_bpm,
+        Some(120.0)
     );
 }
 

@@ -32,6 +32,7 @@ fn plan_executor_replays_source_transport_capture_state_for_restore_projection()
             ActionParams::SourceTimingGrid {
                 source_id: Some(SourceId::from("src-1")),
                 hypothesis_id: Some("primary-grid".into()),
+                confirmed_bpm: Some(128.0),
             },
             350,
         ),
@@ -68,4 +69,8 @@ fn plan_executor_replays_source_transport_capture_state_for_restore_projection()
     assert_eq!(confirmed.hypothesis_id.as_deref(), Some("primary-grid"));
     assert_eq!(confirmed.confirmed_by_action, ActionId(4));
     assert_eq!(confirmed.confirmed_at, 350);
+    assert_eq!(
+        session.runtime_state.source_timing.confirmed_bpm,
+        Some(128.0)
+    );
 }
