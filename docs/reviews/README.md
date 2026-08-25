@@ -59,6 +59,9 @@ Current P023 rejected-experiment closeouts:
 
 Current P023 algorithm-value refresh:
 
+- [riotbox_1462_dense_break_foundation_chop_exploration_2026-08-25.md](./riotbox_1462_dense_break_foundation_chop_exploration_2026-08-25.md):
+  one source-only long-slice foundation variant, exact-artifact technical
+  preflight, provisional human keep, and frozen product-qualification handoff.
 - [riotbox_1461_dense_break_release_demo_qualification_2026-08-24.md](./riotbox_1461_dense_break_release_demo_qualification_2026-08-24.md):
   safe fresh Dense professional qualification, human rejection of the
   foundational transformation, and bounded `chop_policy` follow-up routing.

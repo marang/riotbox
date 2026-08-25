@@ -1499,6 +1499,18 @@ bounded `chop_policy` correction instead of incorrectly asking for another
 Dense source-selection pass. Sparse and tonal source-family candidates remain
 open, and no release, quality, Holdout, or source-general claim follows.
 
+RIOTBOX-1462 applies the bounded audible-delivery correction to that exact
+failure before another effect or source search. Source-blind variant v1 keeps
+six beats exact, forms one sparse long-slice answer across the final 1.5 beats,
+and adds no reverse grains, generated support, pitch/time change, or bus
+processing. Exact Beat03 preflight shows a material but source-close change,
+safe true peak, and no splice defect; the bounded human check gives it a
+provisional keep as a usable foundation with retained groove/clarity and a
+useful two-bar hook. RBX-320 freezes that exact recipe for a separate
+product-spine and source-diversity qualification slice, RIOTBOX-1463. Dense
+remains non-demo-ready until that successor passes; no product, source-general,
+quality, Holdout, demo, release, or P023-completion claim follows.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing

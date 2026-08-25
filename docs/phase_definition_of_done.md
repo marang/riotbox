@@ -609,6 +609,14 @@ After exit:
   non-demo-ready and routes to a bounded `chop_policy` foundation correction;
   `sparse_drums` and `tonal_riff` remain separate missing positive-family
   successes. This is fail-closed evidence, not P023 completion.
+- RIOTBOX-1462 executes that bounded Dense foundation exploration before any
+  higher-level effect. One source-only long-slice v1 keeps six beats exact,
+  changes only the final 1.5 beats, passes exact technical preflight, and earns
+  a provisional human keep for musical usability, retained groove/clarity, and
+  a useful hook. RBX-320 freezes it for a separate product-spine and
+  source-diversity qualification in RIOTBOX-1463. It is not yet product
+  behavior or a formal family/demo/quality pass, so the Dense positive-family
+  blocker remains.
 - RIOTBOX-1410 is the first bounded Foundation Completion closure: explicit
   control-only source-monitor refresh retains current PCM, explicit replacement
   atomically publishes PCM plus mode/gains and anchors, and exact callback /
