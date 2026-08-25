@@ -1628,4 +1628,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Freeze and test a clarity-preserving Dense foundation answer v2
 - [RIOTBOX-1465.md](./RIOTBOX-1465.md)
   P023: Test a role-aware articulation-preserving Dense answer v3
+- [RIOTBOX-1466.md](./RIOTBOX-1466.md)
+  P023: Qualify the exact tonal-riff journey for release-demo family success
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
