@@ -1,29 +1,21 @@
 #!/usr/bin/env python3
-"""Freeze-check and render one clarity-preserving Dense foundation v2 exploration."""
+"""Retained source-blind falsification for rejected Dense foundation v2."""
 
 from __future__ import annotations
 
 import argparse
 import hashlib
-import io
 import json
 import math
 import sys
-import wave
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
 import generate_dense_break_performance_pack as dense
-from source_holdout_development_access import (
-    SourceIdentity,
-    load_pinned_stage_a_registry,
-    run_development_access_session,
-)
 
 
-SCHEMA = "riotbox.dense_break_foundation_clarity_exploration.v2"
 CONTRACT = Path("docs/benchmarks/dense_break_foundation_chop_v2.json")
 CONTRACT_SHA256 = "b0338bd87e9c536f80f725e9a1f891f4df67b43a370de10564f2fa60884b0020"
 REGISTRY = Path("docs/benchmarks/source_holdout_rotation_v2.json")
@@ -38,32 +30,24 @@ LOCAL_LOW_BAND_LIMIT_DB = 4.0
 LOCAL_LEVEL_LIMIT_DB = 4.0
 MIN_NORMALIZED_DELTA = 0.20
 MAX_ABSOLUTE_CORRELATION = 0.96
-LOOP_COUNT = 4
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--fixtures", action="store_true")
-    parser.add_argument("--output", type=Path)
-    parser.add_argument("--access-log", type=Path)
     args = parser.parse_args()
 
     try:
         dense.require_numpy()
         repo = Path(__file__).resolve().parent.parent
-        contract = validate_frozen_contract(repo)
-        if args.fixtures:
-            run_source_blind_fixtures()
-            print("valid Dense foundation clarity v2 source-blind fixtures")
-            return 0
-        require(args.output is not None, "--output is required")
-        require(args.access_log is not None, "--access-log is required")
-        run_development_session(repo, contract, args.output, args.access_log)
-    except (OSError, ValueError, wave.Error) as error:
+        validate_frozen_contract(repo)
+        require(args.fixtures, "rejected v2 retains only --fixtures")
+        run_source_blind_fixtures()
+    except (OSError, ValueError) as error:
         print(f"Dense foundation clarity v2 failed: {error}", file=sys.stderr)
         return 1
 
-    print(f"Dense foundation clarity v2 exploration written: {args.output}")
+    print("valid Dense foundation clarity v2 source-blind fixtures")
     return 0
 
 
@@ -177,175 +161,6 @@ def replace(target: np.ndarray, start: int, chunk: np.ndarray, fade: int) -> Non
     replacement[:fade] = original[:fade] * (1.0 - ramp) + replacement[:fade] * ramp
     replacement[-fade:] = replacement[-fade:] * (1.0 - ramp) + original[-fade:] * ramp
     target[start : start + replacement.shape[0]] = replacement
-
-
-def run_development_session(
-    repo: Path,
-    contract: dict[str, Any],
-    output_arg: Path,
-    access_log_arg: Path,
-) -> None:
-    output = resolve(repo, output_arg)
-    access_log = resolve(repo, access_log_arg)
-    allowed = (repo / "artifacts" / "development" / "riotbox-1464").resolve()
-    require(allowed == output.parent.resolve(), f"output must be directly below {allowed}")
-    require(allowed == access_log.parent.resolve(), f"access log must be directly below {allowed}")
-    require(not output.exists(), f"refusing to overwrite output: {output}")
-    require(not access_log.exists(), f"refusing to overwrite access log: {access_log}")
-
-    registry_path = repo / REGISTRY
-    registry_manifest = json.loads(registry_path.read_text())
-    registry, registry_manifest = load_pinned_stage_a_registry(
-        registry_path,
-        registry_manifest,
-    )
-    default_format = registry_manifest["source_format_default"]
-    identities = [
-        SourceIdentity(
-            case_id=entry["case_id"],
-            source_path=entry["source_path"],
-            expected_sha256=entry["sha256"],
-            partition=entry["partition"],
-            source_format=default_format,
-        )
-        for entry in registry_manifest["entries"]
-        if entry["partition"].startswith("holdout_")
-    ]
-    source_contract = contract["development_exploration"]["source"]
-    identities.append(
-        SourceIdentity(
-            case_id=source_contract["case_id"],
-            source_path=source_contract["source_path"],
-            expected_sha256=source_contract["sha256"],
-            partition="development",
-            source_format=source_contract["source_format"],
-        )
-    )
-
-    def owner(identity: SourceIdentity, payload: bytes, verified: dict[str, Any]) -> None:
-        require(identity.case_id == CASE_ID, "unexpected delivered source")
-        render_verified_payload(payload, verified, source_contract, output)
-
-    run_development_access_session(
-        identities,
-        [CASE_ID],
-        repo=repo,
-        registry=registry,
-        access_log_path=access_log,
-        qualification_owner_id="riotbox-1464-clarity-v2-exploration",
-        qualification_owner=owner,
-    )
-
-
-def render_verified_payload(
-    payload: bytes,
-    verified: dict[str, Any],
-    source_contract: dict[str, Any],
-    output: Path,
-) -> None:
-    with wave.open(io.BytesIO(payload), "rb") as wav:
-        channels = wav.getnchannels()
-        sample_rate = wav.getframerate()
-        sample_width = wav.getsampwidth()
-        frames = wav.readframes(wav.getnframes())
-    require(sample_rate == dense.SAMPLE_RATE, "verified source sample rate drifted")
-    require(channels == dense.CHANNELS, "verified source channel count drifted")
-    source_all = dense.decode_pcm_frames(frames, sample_width, channels, Path(CASE_ID))
-    beat_frames = dense.frames_for_beats(source_contract["confirmed_bpm"], 1)
-    phrase_frames = beat_frames * 8
-    require(source_all.shape[0] > 0, "verified source is empty")
-    repeats = math.ceil(phrase_frames / source_all.shape[0])
-    source = np.tile(source_all, (repeats, 1))[:phrase_frames].astype(np.float32)
-    candidate, selection = render_answer(source, beat_frames, sample_rate)
-    source_loop = np.tile(source, (LOOP_COUNT, 1))
-    candidate_loop = np.tile(candidate, (LOOP_COUNT, 1))
-    safety = presentation_safety({"source": source_loop, "candidate": candidate_loop})
-    require(safety["result"] == "pass", "presentation safety failed")
-    gain = float(safety["uniform_gain"])
-    rendered = {
-        "00_source_two_bar_loop.wav": dense.apply_presentation_gain(source_loop, gain),
-        "01_candidate_v2_two_bar_loop.wav": dense.apply_presentation_gain(
-            candidate_loop, gain
-        ),
-    }
-    output.mkdir(parents=True, exist_ok=False)
-    for name, audio in rendered.items():
-        dense.write_wav(output / name, audio)
-    report = {
-        "schema": SCHEMA,
-        "schema_version": 2,
-        "ticket": "RIOTBOX-1464",
-        "stage": "development_exploration",
-        "result": "technically_eligible_for_human_usefulness_review",
-        "source": {
-            "case_id": CASE_ID,
-            "path": source_contract["source_path"],
-            "sha256": source_contract["sha256"],
-            "confirmed_bpm": source_contract["confirmed_bpm"],
-            "verified_access": verified,
-        },
-        "selection": selection,
-        "comparison": {
-            "normalized_rms_delta": dense.normalized_rms_delta(source, candidate),
-            "waveform_correlation": dense.waveform_correlation(source, candidate),
-            "source_rms": dense.rms(source),
-            "candidate_rms": dense.rms(candidate),
-            "source_low_band_rms": low_band_rms(source, sample_rate),
-            "candidate_low_band_rms": low_band_rms(candidate, sample_rate),
-        },
-        "files": {name: {"sha256": sha256_file(output / name)} for name in rendered},
-        "presentation": {
-            "loop_count": LOOP_COUNT,
-            "duration_seconds_each": source_loop.shape[0] / dense.SAMPLE_RATE,
-            "playback_order": ["source", "candidate_v2"],
-            "pause_seconds": 1.0,
-        },
-        "presentation_safety": safety,
-        "evidence_boundary": {
-            "human_verdict": "unverified",
-            "product_behavior": False,
-            "source_general": False,
-            "holdout_access": False,
-            "quality_proof": False,
-            "demo_ready": False,
-            "release_ready": False,
-        },
-    }
-    (output / "exploration-report.json").write_text(json.dumps(report, indent=2) + "\n")
-
-
-def presentation_safety(signals: dict[str, np.ndarray]) -> dict[str, Any]:
-    peaks = {
-        name: dense.conservative_true_peak_amplitude(audio)
-        for name, audio in signals.items()
-    }
-    maximum = max(peaks.values(), default=0.0)
-    target = dense.db_to_amplitude(dense.TARGET_PRESENTATION_TRUE_PEAK_DBTP)
-    gain = min(1.0, target / maximum) if maximum > 1e-12 else 1.0
-    post = {name: peak * gain for name, peak in peaks.items()}
-    maximum_post = max(post.values(), default=0.0)
-    result = (
-        "pass"
-        if dense.amplitude_to_db(maximum_post)
-        <= dense.MAX_PRESENTATION_TRUE_PEAK_DBTP
-        else "fail"
-    )
-    return {
-        "schema": dense.PRESENTATION_SAFETY_SCHEMA,
-        "schema_version": 1,
-        "result": result,
-        "estimator": "conservative_four_x_bandlimited_fft_v1",
-        "uniform_gain": gain,
-        "uniform_gain_db": dense.amplitude_to_db(gain),
-        "max_allowed_true_peak_dbtp": dense.MAX_PRESENTATION_TRUE_PEAK_DBTP,
-        "normalization_target_true_peak_dbtp": dense.TARGET_PRESENTATION_TRUE_PEAK_DBTP,
-        "pre_gain_true_peak_dbtp": {
-            name: dense.amplitude_to_db(value) for name, value in peaks.items()
-        },
-        "post_gain_true_peak_dbtp": {
-            name: dense.amplitude_to_db(value) for name, value in post.items()
-        },
-    }
 
 
 def run_source_blind_fixtures() -> None:
@@ -571,10 +386,6 @@ def validate_frozen_contract(repo: Path) -> dict[str, Any]:
         "frozen collision registry hash changed",
     )
     return contract
-
-
-def resolve(repo: Path, path: Path) -> Path:
-    return path if path.is_absolute() else repo / path
 
 
 def sha256_file(path: Path) -> str:

@@ -83,7 +83,7 @@ Dense remains non-demo-ready.
 ## Evidence Identities
 
 - frozen v2 contract: `b0338bd87e9c536f80f725e9a1f891f4df67b43a370de10564f2fa60884b0020`
-- source-blind renderer/fixture implementation:
-  `b1d4ea9139da38eab83f5594177907df34545a21b4514cc59f988043b9582ccb`
+- retained source-blind selector/fixture implementation:
+  `aaca095c31c015be5f2f7c1a61fb6c819439b730861fb40d464899ef58b2af59`
 - failed-closed Development access log:
   `8d3f827039f70aede5d46b57ee97cf0c91b80a4d3df1c33b62056e7057ab2e26`
