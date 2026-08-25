@@ -1,0 +1,131 @@
+{
+  "schema": "riotbox.dense_break_source_native_bar_exploration.v1",
+  "schema_version": 1,
+  "ticket": "RIOTBOX-1468",
+  "status": "frozen_source_blind_before_development_access",
+  "causal_question": "Does continuous source-native full-bar W-30 playback preserve the performed dense-break fingerprint better than the current half-beat chop grammar while retaining useful W-30 character?",
+  "mechanism": {
+    "owner": "w30_pad_playback_grammar",
+    "control": "half_beat_chop_v1",
+    "candidate": "source_native_full_bar_v1",
+    "input": {
+      "capture_command": "capture.bar_group",
+      "capture_length_bars": 1,
+      "beats_per_bar": 4,
+      "requires_trusted_or_manually_confirmed_bar_grid": true,
+      "requires_source_bpm_equal_to_runtime_bpm": true,
+      "maximum_bar_duration_mismatch_frames": 1,
+      "requires_nonempty_source_audio": true,
+      "missing_or_untrusted_input_behavior": "fail_closed_without_audio_or_fallback"
+    },
+    "candidate_mapping": {
+      "playback_rate": 1.0,
+      "pitch_change_semitones": 0.0,
+      "reverse": false,
+      "gate_step_fraction": 0.0,
+      "internal_source_order": "sample_order_preserved",
+      "transport_retrigger_count_per_bar": 0,
+      "loop_restart": "exact_one_bar_capture_window_boundary_only",
+      "loop_crossfade": "existing_w30_pad_loop_crossfade_v1",
+      "w30_grit": "existing_feral_break_alpha_v2_value_0.64",
+      "music_bus_level": "existing_feral_break_alpha_v2_value_0.58",
+      "additional_lane_count": 0,
+      "additional_effect_count": 0
+    },
+    "control_mapping": {
+      "transport_subdivision_per_beat": 2,
+      "source_derived_chop_plan": "existing_eight_slice_plan",
+      "retrigger_policy": "existing_half_beat_chop_v1"
+    },
+    "presentation": {
+      "source_context_bars": 4,
+      "control_bars": 4,
+      "candidate_bars": 4,
+      "order": [
+        "source",
+        "control",
+        "candidate"
+      ],
+      "pause_seconds": 1.0,
+      "uniform_safety_gain_only": true
+    },
+    "synthetic_proof": {
+      "callback_frame_counts": [
+        128,
+        257
+      ],
+      "callback_outputs_must_be_sample_exact": true,
+      "full_bar_source_order_must_be_preserved": true,
+      "half_beat_retriggers_must_be_absent": true,
+      "current_control_must_remain_unchanged": true,
+    "missing_audio_must_render_silence": true
+    },
+    "technical_preflight": {
+      "maximum_true_peak_dbtp": -1.0,
+      "maximum_clipped_integer_samples": 0,
+      "candidate_boundary_jump_limit": "max(0.12, source_boundary_jump_abs * 1.5)",
+      "finite_samples_required": true,
+      "control_candidate_delta_rms_min": 0.001
+    },
+    "forbidden": {
+      "dense_answer_v1_v2_v3_selector_reuse": true,
+      "threshold_tuning": true,
+      "source_substitution_after_results": true,
+      "eq_or_gain_repair": true,
+      "event_replacement": true,
+      "pitch_or_time_effect": true,
+      "generated_support_lane": true,
+      "tr909_or_mc202_addition": true,
+      "higher_level_w30_gesture": true,
+      "automatic_arrangement": true,
+      "fallback_music": true
+    }
+  },
+  "development_access": {
+    "registry_path": "docs/benchmarks/sound_excellence_source_corpus_v1.json",
+    "registry_sha256": "67b5b8b2882575cf70fa61aacf25ae282c17714fe51ffcb13f905458e025d552",
+    "case_id": "dense_beat03_130",
+    "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+    "source_sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+    "declared_bpm": 130.0,
+    "partition": "development",
+    "source_format": {
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "sample_width_bits": 24,
+      "compression_type": "NONE",
+      "maximum_duration_seconds": 16
+    },
+    "maximum_unique_source_files": 1,
+    "fresh_exclusive_access_log_required_before_first_open": true,
+    "directory_discovery_forbidden": true,
+    "holdout_audio_access": false,
+    "commercial_reference_access": false
+  },
+  "stopping_rule": {
+    "maximum_candidate_variants": 1,
+    "human_reviews": 1,
+    "reject_on": [
+      "source_identity_or_groove_loss",
+      "clarity_or_low_frequency_weight_loss",
+      "click_or_loop_boundary_artifact",
+      "unclear_or_musically_useless_delta",
+      "callback_or_restart_divergence",
+      "unsafe_output",
+      "not_worth_performing"
+    ],
+    "post_access_change_requires_new_version_and_decision": true,
+    "no_second_variant_after_verdict": true
+  },
+  "claim_boundary": {
+    "development_exploration_only": true,
+    "product_behavior": false,
+    "source_general": false,
+    "quality_proof": false,
+    "percussive_hard": false,
+    "holdout_authorized": false,
+    "demo_ready": false,
+    "release_ready": false,
+    "p023_complete": false
+  }
+}

@@ -82,6 +82,7 @@ _audio-qa-ci-unlocked:
     just dense-break-live-path-smoke
     just dense-break-foundation-chop-exploration-fixtures
     just dense-break-foundation-event-context-v3-fixtures
+    just dense-break-source-native-bar-v1-fixtures
     just pro-pressure-source-matrix-smoke
     just professional-source-wav-pack-smoke
     just edge-source-professional-diagnostics-smoke
@@ -345,6 +346,16 @@ dense-break-foundation-clarity-v2-fixtures:
 
 dense-break-foundation-event-context-v3-fixtures:
     python3 scripts/generate_dense_break_foundation_event_context_v3.py --fixtures
+
+dense-break-source-native-bar-v1-fixtures:
+    python3 scripts/validate_dense_break_source_native_bar_exploration.py
+    cargo test -p riotbox-audio source_native_full_bar
+
+dense-break-source-native-bar-v1 session:
+    python3 scripts/run_dense_break_source_native_bar_exploration.py --session "{{session}}"
+
+dense-break-source-native-bar-preflight-recovery session:
+    python3 scripts/run_dense_break_source_native_bar_exploration.py --session "{{session}}" --recover-preflight
 
 dense-break-live-source-matrix output="artifacts/audio_qa/local-dense-break-live-source-matrix":
     scripts/validate_dense_break_live_source_matrix.sh "{{output}}"

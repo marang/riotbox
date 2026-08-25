@@ -19,6 +19,7 @@ impl SharedW30PreviewRenderState {
             pad_playback_frame_count: AtomicU64::new(0),
             pad_sample_count: AtomicU32::new(0),
             pad_loop_enabled: AtomicBool::new(false),
+            pad_playback_grammar: AtomicU32::new(0),
             pad_playback_rate_bits: AtomicU32::new(1.0_f32.to_bits()),
             pad_reverse: AtomicBool::new(false),
             pad_gate_step_fraction_bits: AtomicU32::new(0.0_f32.to_bits()),
@@ -149,6 +150,10 @@ impl SharedW30PreviewRenderState {
                 .store(pad_playback.playback_frame_count, Ordering::Relaxed);
             self.pad_loop_enabled
                 .store(pad_playback.loop_enabled, Ordering::Relaxed);
+            self.pad_playback_grammar.store(
+                w30_pad_playback_grammar_to_u32(pad_playback.playback_grammar),
+                Ordering::Relaxed,
+            );
             self.pad_playback_rate_bits
                 .store(pad_playback.playback_rate.to_bits(), Ordering::Relaxed);
             self.pad_reverse
@@ -189,6 +194,7 @@ impl SharedW30PreviewRenderState {
             self.pad_source_sample_rate.store(0, Ordering::Relaxed);
             self.pad_playback_frame_count.store(0, Ordering::Relaxed);
             self.pad_loop_enabled.store(false, Ordering::Relaxed);
+            self.pad_playback_grammar.store(0, Ordering::Relaxed);
             self.pad_playback_rate_bits
                 .store(1.0_f32.to_bits(), Ordering::Relaxed);
             self.pad_reverse.store(false, Ordering::Relaxed);
@@ -225,6 +231,9 @@ impl SharedW30PreviewRenderState {
             playback_frame_count: self.pad_playback_frame_count.load(Ordering::Relaxed),
             sample_count,
             loop_enabled: self.pad_loop_enabled.load(Ordering::Relaxed),
+            playback_grammar: w30_pad_playback_grammar_from_u32(
+                self.pad_playback_grammar.load(Ordering::Relaxed),
+            ),
             playback_rate: f32::from_bits(self.pad_playback_rate_bits.load(Ordering::Relaxed)),
             reverse: self.pad_reverse.load(Ordering::Relaxed),
             gate_step_fraction: f32::from_bits(
@@ -244,6 +253,20 @@ impl SharedW30PreviewRenderState {
                 .load(Ordering::Relaxed),
             samples,
         }
+    }
+}
+
+const fn w30_pad_playback_grammar_to_u32(grammar: W30PadPlaybackGrammar) -> u32 {
+    match grammar {
+        W30PadPlaybackGrammar::HalfBeatChopV1 => 0,
+        W30PadPlaybackGrammar::SourceNativeFullBarV1 => 1,
+    }
+}
+
+const fn w30_pad_playback_grammar_from_u32(value: u32) -> W30PadPlaybackGrammar {
+    match value {
+        1 => W30PadPlaybackGrammar::SourceNativeFullBarV1,
+        _ => W30PadPlaybackGrammar::HalfBeatChopV1,
     }
 }
 
@@ -558,6 +581,7 @@ pub(super) struct W30PreviewCallbackState {
     pub(super) lfo_phase: f32,
     pub(super) source_sample_cursor: f32,
     pub(super) pad_playback_cursor: f32,
+    pub(super) source_native_pad_playback_cursor: f64,
     pub(super) pad_playback_age_frames: u64,
     pub(super) last_character_input: f32,
     pub(super) character_edge_memory: f32,
@@ -592,6 +616,7 @@ impl W30PreviewCallbackState {
             lfo_phase: 0.0,
             source_sample_cursor: 0.0,
             pad_playback_cursor: 0.0,
+            source_native_pad_playback_cursor: 0.0,
             pad_playback_age_frames: 0,
             last_character_input: 0.0,
             character_edge_memory: 0.0,

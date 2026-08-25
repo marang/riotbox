@@ -184,6 +184,14 @@ pub struct W30PreviewSampleWindow {
     pub samples: [f32; W30_PREVIEW_SAMPLE_WINDOW_LEN],
 }
 
+/// Selects the transport relationship of a promoted source-backed pad.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum W30PadPlaybackGrammar {
+    #[default]
+    HalfBeatChopV1,
+    SourceNativeFullBarV1,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct W30PadPlaybackSampleWindow {
     pub source_start_frame: u64,
@@ -192,6 +200,7 @@ pub struct W30PadPlaybackSampleWindow {
     pub playback_frame_count: u64,
     pub sample_count: usize,
     pub loop_enabled: bool,
+    pub playback_grammar: W30PadPlaybackGrammar,
     pub playback_rate: f32,
     pub reverse: bool,
     /// Fraction of one W-30 trigger step kept audible before a short choke.
