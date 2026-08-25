@@ -1620,4 +1620,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Requalify Beat20 negative-family handling with corrected phase
 - [RIOTBOX-1461.md](./RIOTBOX-1461.md)
   P023: Qualify the accepted dense-break journey for live release-demo coverage
+- [RIOTBOX-1462.md](./RIOTBOX-1462.md)
+  P023: Repair the foundational dense-break chop before effect re-evaluation
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
