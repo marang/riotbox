@@ -1,0 +1,212 @@
+{
+  "schema": "riotbox.sparse_drums_release_demo_qualification.v1",
+  "schema_version": 1,
+  "status": "frozen",
+  "owner_ticket": "RIOTBOX-1467",
+  "purpose": "qualify the unchanged exact sparse live journey for one formal sparse_drums release-demo family outcome without inventing bass-pressure evidence",
+  "predecessor_evidence": {
+    "sparse_product_review": {
+      "ticket": "RIOTBOX-1455",
+      "decisions": [
+        "RBX-316",
+        "RBX-317"
+      ],
+      "review_path": "docs/reviews/riotbox_1455_sparse_live_journey_acceptance_2026-08-24.md",
+      "review_document_sha256": "d4969c33241ad27decde439b9c6ec241fbcbde8641824fee4b74c4457a4b200a",
+      "structured_review_path": "artifacts/audio_qa/riotbox-1455/listening-review-v2/review.json",
+      "structured_review_sha256": "7091d1699500857e5cde043fba0930409ede3848d170f999597507f20bd30184",
+      "result": "bounded_exact_live_keep_not_release_demo_evidence"
+    },
+    "readiness_gap": {
+      "ticket": "RIOTBOX-1456",
+      "review_path": "docs/reviews/riotbox_1456_live_readiness_reconciliation_2026-08-24.md",
+      "result": "sparse_review_durable_but_missing_audio_judge_label"
+    },
+    "identity_reuse_precedent": {
+      "ticket": "RIOTBOX-1466",
+      "decision": "RBX-330",
+      "result": "duplicate_listening_for_hash_identical_product_evidence_prohibited"
+    }
+  },
+  "promotion_evidence": {
+    "gate_schema": "riotbox.exact_product_path_review_gate.v2",
+    "route": "exact_product_path_with_explicit_active_lane_roles",
+    "required_product_path_kind": "exact_runtime_mix_live_journey",
+    "mutually_exclusive_with_mc202_source_composed_gate": true,
+    "source_family": "sparse_drums",
+    "release_coverage_alias": "sparse_drums",
+    "scripted_performer_driver_allowed": true,
+    "hardcoded_musical_output_allowed": false,
+    "primitive_or_template_only_allowed": false,
+    "fallback_music_allowed": false,
+    "mc202_bass_pressure_claim_allowed": false,
+    "quality_proof_before_human_pass": false,
+    "required_lane_roles": {
+      "w30": "source_transform",
+      "tr909": "hardest_transient",
+      "mc202": "punctuation",
+      "source_monitor": "stay_out",
+      "bass_owner": "unassigned"
+    }
+  },
+  "product_journey": {
+    "renderer": "riotbox-app/dense_break_live_path_render --sparse-live-review",
+    "product_path": "JamAppState queue/commit -> Session/runtime projection -> exact callback-block RuntimeMix -> master limiter",
+    "live_policy_schema": "riotbox.live_performance_policy.v2",
+    "character": "sparse_pressure",
+    "lead": "tr909_pressure",
+    "bass_owner": "unassigned",
+    "tr909_intent": "lead",
+    "mc202_intent": "punctuate",
+    "contrast_action": "w30.apply_damage_profile",
+    "contrast_profile": "transient_bite",
+    "damage_contract": {
+      "apply_intensity": 0.82,
+      "bypass_intensity": 0.0,
+      "full_gate_fraction": 0.44,
+      "expected_gate_step_fraction": 0.3608,
+      "capture_scoped": true,
+      "retune_allowed": false
+    },
+    "mc202_renderer_schema": "riotbox.mc202_source_phrase_renderer.v2",
+    "journey": {
+      "held_beats": 16,
+      "contrast_beats": 16,
+      "ordinary_reentry_beats": 8,
+      "restart_review_beats": 8,
+      "ordinary_reentry_clears_articulation": true,
+      "restart_preserves_preset": true,
+      "restart_returns_ordinary": true
+    }
+  },
+  "technical_gates": {
+    "manifest_result": "pass",
+    "source_backed": true,
+    "source_timing_backed": true,
+    "source_content_hash_exact": true,
+    "manual_bpm": 120.0,
+    "manual_downbeat_seconds": 0.0,
+    "callback_partitions_sample_exact": true,
+    "w30_callback_partitions_sample_exact": true,
+    "tr909_callback_partitions_sample_exact": true,
+    "mc202_callback_partitions_sample_exact": true,
+    "active_contributors_sample_exact": true,
+    "restart_recall_sample_exact": true,
+    "capture_scoped_damage_proven": true,
+    "ordinary_reentry_and_restart_bypass_proven": true,
+    "source_monitor_rms_max": 0.00001,
+    "damage_delta_rms_min": 0.005,
+    "tr909_hardest_transient_proven": true,
+    "limited_sample_count_max": 0,
+    "clip_count_max": 0,
+    "required_artifacts": [
+      "00_source.wav",
+      "source-graph.json",
+      "session.json",
+      "sparse-live-manifest.json",
+      "sparse/00_source_context.wav",
+      "sparse/01_held.wav",
+      "sparse/02_transient_bite.wav",
+      "sparse/03_ordinary_reentry.wav",
+      "sparse/04_restart_recall.wav",
+      "sparse/06_human_review_sequence.wav",
+      "stems/01_w30_held.wav",
+      "stems/02_tr909_held.wav",
+      "stems/03_mc202_held.wav",
+      "stems/04_w30_damage.wav"
+    ]
+  },
+  "source": {
+    "case_id": "sparse_kicksnr_120",
+    "source_family": "sparse_drums",
+    "path": "data/test_audio/examples/DH_BeatC_KickSnr_120-01.wav",
+    "sha256": "8a970e5d7bd9b29771aba85f75e697c7510940d4404714bfb1e55e210c15f46c",
+    "confirmed_bpm": 120.0,
+    "downbeat_seconds": 0.0,
+    "source_corpus": {
+      "path": "docs/benchmarks/sound_excellence_source_corpus_v1.json",
+      "raw_sha256": "67b5b8b2882575cf70fa61aacf25ae282c17714fe51ffcb13f905458e025d552"
+    },
+    "active_holdout_collision_registry": {
+      "path": "docs/benchmarks/source_holdout_rotation_v2.json",
+      "raw_sha256": "af98af67d5b0ef9f8478bf800438b268af2a4640bed29d8ec7c87fa585eb6812"
+    }
+  },
+  "development_session": {
+    "session_limit": 1,
+    "exact_path_only": true,
+    "directory_discovery": false,
+    "holdout_audio_access": false,
+    "commercial_reference_access": false,
+    "output_root": "artifacts/development/riotbox-1467",
+    "base_live_demo_bank": {
+      "path": "artifacts/development/riotbox-1466/qualification-v1/demo-bank.json",
+      "raw_sha256": "d49891aff8efa244582ed833965c4b16ce8c34a2ebb151fb3bbf6c42e6df28d0"
+    }
+  },
+  "presentation": {
+    "artifact": "sparse/06_human_review_sequence.wav",
+    "audible_order": [
+      "source_context",
+      "one_second_pause",
+      "held_sparse_state",
+      "one_second_pause",
+      "transient_bite",
+      "ordinary_reentry",
+      "restart_recall",
+      "one_second_terminal_silence"
+    ],
+    "expected_duration_seconds": 31.0,
+    "true_peak_estimator": "riotbox.audio_presentation_true_peak_safety.v1",
+    "maximum_true_peak_dbtp": -1.0,
+    "uniform_presentation_gain_only": true,
+    "identity_reuse_audio_sha256": "64bb983b5fccdeced71b03c8d07bd031726a52995a60a6a89aeab8cda8f1c69d",
+    "listening_question_if_changed": "Is this complete exact sparse product journey strong, clear, source-recognizable, and replay-worthy enough to serve as a formal sparse_drums demo-family example?"
+  },
+  "identity_reuse_gate": {
+    "schema": "riotbox.hash_identical_human_verdict_reuse.v1",
+    "prior_product_manifest_sha256": "0d8359819210acd99cc2f49aeef999e80adca5fd9ef1d41f7994624c83fbc80d",
+    "prior_audio_sha256": "64bb983b5fccdeced71b03c8d07bd031726a52995a60a6a89aeab8cda8f1c69d",
+    "prior_human_verdict": "keep",
+    "prior_strongest_element": "chop",
+    "prior_source_recognition": "source_transformed_but_present",
+    "prior_hook_after_two_bars": "clear",
+    "additional_playback_if_identical": false,
+    "changed_artifact_requires_fresh_review": true
+  },
+  "human_review": {
+    "changed_artifact_review_limit": 1,
+    "allowed_verdicts": [
+      "keep",
+      "technically_ok_but_musically_weak",
+      "reject"
+    ],
+    "audio_judge_label_required": true,
+    "pass_consequence": "promote exact entry as sparse_drums demo_ready and satisfy sparse_drums release coverage only",
+    "weak_or_fail_consequence": "promote reviewed non-demo outcome with one concrete fix category and stop without tuning"
+  },
+  "forbidden": {
+    "sparse_policy_retune": true,
+    "transient_bite_retune": true,
+    "mc202_phrase_retune": true,
+    "mix_retune": true,
+    "source_substitution": true,
+    "alternative_variant": true,
+    "inferred_or_strengthened_verdict": true,
+    "duplicate_playback": true,
+    "scripted_diagnostic_substitution": true,
+    "fallback_music": true,
+    "holdout_audio": true,
+    "bass_pressure_claim": true
+  },
+  "claim_boundary": {
+    "before_human_pass_or_identity_reuse": "technical_exact_product_evidence_only",
+    "maximum_success": "one_sparse_drums_release_demo_family_success",
+    "mc202_bass_pressure": false,
+    "source_general": false,
+    "holdout": false,
+    "universal_quality": false,
+    "release_ready": false,
+    "p023_complete": false
+  }
+}

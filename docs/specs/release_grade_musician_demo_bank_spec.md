@@ -25,6 +25,11 @@ just demo-bank-promotion-fixtures
 just mc202-producer-grade-closeout-smoke
 ```
 
+`demo-bank-promotion-fixtures` is a source-free contract test. It uses small
+dummy artifacts with real SHA-256 identities to exercise promotion, MC-202,
+exact-product, prior-verdict-reuse, and mutation failures; it must not generate
+or open Development, Holdout, or commercial-reference audio.
+
 ---
 
 ## 2. Entry Contract

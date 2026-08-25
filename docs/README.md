@@ -88,6 +88,16 @@ fails both material-contrast gates and stops before WAV creation or listening.
 The current answer role is therefore closed rather than tuned into a v4. Any
 future Dense foundation attempt must introduce a different musical owner or
 grammar through a new Linear-first contract; Dense remains non-demo-ready.
+`RIOTBOX-1466` and `RIOTBOX-1467` then qualify the unchanged current tonal and
+sparse product journeys rather than adding more effects. Their exact product
+manifests and review audio are bit-identical to the hash-bound RIOTBOX-1454 and
+RIOTBOX-1455 human keeps, so narrow identity contracts reuse those verdicts
+without duplicate listening or new musical evidence. The sparse route keeps
+W-30 as source transform, TR-909 as hardest transient, MC-202 as punctuation,
+and bass ownership unassigned instead of inventing a bass-pressure claim. The
+live demo bank now covers `tonal_riff` and `sparse_drums`; only `dense_break`
+still lacks positive family success. Release readiness, Holdout, universal
+quality, and P023 completion remain blocked.
 `RIOTBOX-1408` has now replaced the synthetic W-30
 resample-tap proxy with hydrated capture audio through the exact live path.
 Determinism, three-source diversity, replay identity, and missing-source silence

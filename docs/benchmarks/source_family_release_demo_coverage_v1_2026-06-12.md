@@ -41,8 +41,11 @@ contract, not a musical judge and not a quality proof.
 
 Additional unverified candidates can be added beside an existing weak/fail
 human verdict to give reviewers better material. That must not promote the
-family: for example, sparse-drums coverage stays `human_verdict_non_demo` until
-a structured human pass marks a sparse-bass-pressure entry `demo_ready`.
+family: sparse-drums coverage stays `human_verdict_non_demo` until a structured
+human pass marks either a `sparse_bass_pressure` entry or an exact
+`sparse_drums` product journey `demo_ready`. The latter must preserve its typed
+lane roles and must not turn secondary MC-202 punctuation or an unassigned bass
+role into a bass-pressure claim.
 
 `bad_timing` uses its own demo-bank family even when it shares a WAV with
 `weak_source`. A cautious timing candidate may satisfy bad-timing candidate

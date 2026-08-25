@@ -10,13 +10,16 @@ from typing import Any
 
 REUSE_FIELD = "human_verdict_provenance"
 REUSE_SCHEMA = "riotbox.hash_identical_human_verdict_reuse.v1"
-CONTRACT_SCHEMA = "riotbox.tonal_riff_release_demo_evidence_reuse.v2"
-EXPECTED_CONTRACT_PATH = Path(
-    "docs/benchmarks/tonal_riff_release_demo_evidence_reuse_v2.json"
-)
-EXPECTED_CONTRACT_SHA256 = (
-    "cfdab651ceae05a494ccee5637a5e4fc3fb47bef24901b4ca5e76531a402cfa0"
-)
+APPROVED_CONTRACTS = {
+    "docs/benchmarks/tonal_riff_release_demo_evidence_reuse_v2.json": (
+        "riotbox.tonal_riff_release_demo_evidence_reuse.v2",
+        "cfdab651ceae05a494ccee5637a5e4fc3fb47bef24901b4ca5e76531a402cfa0",
+    ),
+    "docs/benchmarks/sparse_drums_release_demo_evidence_reuse_v1.json": (
+        "riotbox.sparse_drums_release_demo_evidence_reuse.v1",
+        "d0a658f12e75366d0243a230ddbb28af85746e0c7a5c601d3271b81ee5ed46c5",
+    ),
+}
 VERDICT_DIMENSIONS = (
     "strongest_element",
     "source_recognition",
@@ -45,13 +48,11 @@ def validate_reuse_evidence(
     )
     contract_ref = object_field(evidence, "reuse_contract", path)
     contract_path = resolve_repo_path(string_field(contract_ref, "path", path))
-    expected_contract_path = resolve_repo_path(EXPECTED_CONTRACT_PATH.as_posix())
+    contract_spec = approved_contract(contract_path)
+    require(contract_spec is not None, f"{path}: verdict-reuse contract path changed")
+    contract_schema, contract_sha256 = contract_spec
     require(
-        contract_path.resolve() == expected_contract_path.resolve(),
-        f"{path}: verdict-reuse contract path changed",
-    )
-    require(
-        string_field(contract_ref, "sha256", path) == EXPECTED_CONTRACT_SHA256,
+        string_field(contract_ref, "sha256", path) == contract_sha256,
         f"{path}: verdict-reuse contract pin changed",
     )
     require(contract_path.is_file(), f"{path}: verdict-reuse contract missing")
@@ -60,7 +61,7 @@ def validate_reuse_evidence(
         f"{path}: verdict-reuse contract hash changed",
     )
     contract = read_json(contract_path)
-    require(contract.get("schema") == CONTRACT_SCHEMA, f"{path}: verdict-reuse contract schema changed")
+    require(contract.get("schema") == contract_schema, f"{path}: verdict-reuse contract schema changed")
     require(contract.get("status") == "frozen", f"{path}: verdict-reuse contract is not frozen")
     prior = object_field(contract, "prior_human_evidence", contract_path)
     current = object_field(contract, "current_exact_evidence", contract_path)
@@ -81,18 +82,19 @@ def validate_reuse_evidence(
         )
     require(
         prior.get("audio_sha256") == current_audio_sha256
-        and current.get("audio_sha256") == current_audio_sha256,
+        and current_hash(current, "audio_sha256") == current_audio_sha256,
         f"{path}: current audio is not bit-identical to prior reviewed audio",
     )
     require(
         prior.get("product_manifest_sha256") == current_product_manifest_sha256
-        and current.get("product_manifest_sha256") == current_product_manifest_sha256,
+        and current_hash(current, "product_manifest_sha256")
+        == current_product_manifest_sha256,
         f"{path}: current product manifest is not identical to prior reviewed product manifest",
     )
     require(
-        current.get("bit_identical_to_prior_artifact") is True
-        and current.get("product_manifest_identical_to_prior") is True
-        and current.get("algorithm_or_threshold_change") is False,
+        current_identity_required(current, "bit_identical_to_prior_artifact")
+        and current_identity_required(current, "product_manifest_identical_to_prior")
+        and current_change_forbidden(current, "algorithm_or_threshold_change"),
         f"{path}: frozen exact-identity conditions are incomplete",
     )
     require(
@@ -115,6 +117,25 @@ def validate_reuse_evidence(
         f"`human_verdict: {expected_prior_human_verdict}`",
     ):
         require(token in document, f"{path}: prior review document does not bind {token}")
+
+
+def approved_contract(contract_path: Path) -> tuple[str, str] | None:
+    for relative_path, spec in APPROVED_CONTRACTS.items():
+        if contract_path.resolve() == resolve_repo_path(relative_path).resolve():
+            return spec
+    return None
+
+
+def current_hash(current: dict[str, Any], field: str) -> Any:
+    return current.get(field, current.get(f"required_{field}"))
+
+
+def current_identity_required(current: dict[str, Any], field: str) -> bool:
+    return current.get(field) is True or current.get(f"{field}_required") is True
+
+
+def current_change_forbidden(current: dict[str, Any], field: str) -> bool:
+    return current.get(field) is False or current.get(f"{field}_allowed") is False
 
 
 def resolve_repo_path(value: str) -> Path:

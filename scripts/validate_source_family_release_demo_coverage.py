@@ -17,16 +17,6 @@ SOURCE_CORPUS_SCHEMA = "riotbox.sound_excellence_source_corpus.v1"
 DEMO_BANK_SCHEMA = "riotbox.release_grade_demo_bank.v1"
 DEFAULT_SOURCE_CORPUS = Path("docs/benchmarks/sound_excellence_source_corpus_v1.json")
 DEFAULT_DEMO_BANK = Path("scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json")
-CORPUS_TO_DEMO_FAMILIES = {
-    "dense_break": {"dense_break"},
-    "sparse_drums": {"sparse_bass_pressure"},
-    "tonal_riff": {"tonal_hook"},
-    "pad_noise": {"pad_noise", "tonal_pad"},
-    "weak_source": {"weak_source"},
-    "bad_timing": {"bad_timing"},
-}
-
-
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source-corpus", type=Path, default=DEFAULT_SOURCE_CORPUS)
@@ -169,7 +159,7 @@ def family_coverage(
     demo_entries: list[Any],
     evidence_mode: str,
 ) -> dict[str, Any]:
-    aliases = CORPUS_TO_DEMO_FAMILIES.get(source_family, {source_family})
+    aliases = evidence.CORPUS_TO_DEMO_FAMILIES.get(source_family, {source_family})
     matching_entries = [
         entry
         for entry in demo_entries

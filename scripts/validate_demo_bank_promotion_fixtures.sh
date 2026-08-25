@@ -7,20 +7,161 @@ cd "$repo"
 tmp="$(mktemp -d "$repo/artifacts/audio_qa/local-demo-bank-promotion-fixtures.XXXXXX")"
 trap 'rm -rf "$tmp"' EXIT
 
-python3 scripts/generate_professional_output_listening_pack.py \
-  --output "$tmp/pack" \
-  --date "local-demo-bank-promotion-fixtures" >/dev/null
-python3 scripts/generate_mc202_real_source_listening_pack.py \
-  --output "$tmp/real-source" \
-  --date "local-demo-bank-promotion-fixtures-real-source" >/dev/null
-python3 scripts/generate_mc202_producer_grade_closeout.py \
-  --professional-pack "$tmp/pack/professional-output-listening-pack.json" \
-  --real-source-pack "$tmp/real-source/mc202-real-source-listening-pack.json" \
-  --output "$tmp/closeout" \
-  --date "local-demo-bank-promotion-fixtures-closeout" >/dev/null
-closeout="$tmp/closeout/mc202-producer-grade-closeout.json"
+render_dir="$tmp/pack/renders/dense_beat03_130"
+dense_review_dir="$tmp/pack/reviews/dense_beat03_130"
+tonal_review_dir="$tmp/pack/reviews/tonal_rusharp_120"
+sparse_review_dir="$tmp/pack/reviews/sparse_kicksnr_120"
+mkdir -p "$render_dir" "$dense_review_dir" "$tonal_review_dir" "$sparse_review_dir" "$tmp/closeout"
 
-pass_review="$tmp/pack/reviews/dense_beat03_130/review.json"
+jq -n '{schema:"riotbox.demo_bank_promotion_fixture.performance_report.v1"}' >"$render_dir/performance-report.json"
+jq -n '{schema:"riotbox.demo_bank_promotion_fixture.agent_review.v1"}' >"$render_dir/agent-review.json"
+printf 'fixture-source-window\n' >"$render_dir/00_source_window.wav"
+printf 'fixture-rebuild-only-performance\n' >"$render_dir/05_rebuild_only_performance.wav"
+printf '# Fixture listening prompt\n' >"$dense_review_dir/prompt.md"
+jq -n '{schema:"riotbox.listening_review.metrics.v1",schema_version:1}' >"$dense_review_dir/metrics.json"
+
+performance_hash="$(sha256sum "$render_dir/performance-report.json" | cut -d ' ' -f1)"
+agent_hash="$(sha256sum "$render_dir/agent-review.json" | cut -d ' ' -f1)"
+source_hash="$(sha256sum "$render_dir/00_source_window.wav" | cut -d ' ' -f1)"
+candidate_hash="$(sha256sum "$render_dir/05_rebuild_only_performance.wav" | cut -d ' ' -f1)"
+
+pass_review="$dense_review_dir/review.json"
+jq -n \
+  --arg report "$render_dir/performance-report.json" \
+  --arg report_hash "$performance_hash" \
+  --arg agent "$render_dir/agent-review.json" \
+  --arg agent_hash "$agent_hash" \
+  --arg source "$render_dir/00_source_window.wav" \
+  --arg source_hash "$source_hash" \
+  --arg candidate "$render_dir/05_rebuild_only_performance.wav" \
+  --arg candidate_hash "$candidate_hash" \
+  '{
+    schema:"riotbox.listening_review.v1",
+    schema_version:1,
+    ticket:"RIOTBOX-1197",
+    technical_status:"pass",
+    automated_musical_fitness_status:"pass",
+    human_verdict:"unverified",
+    strongest_element:"none",
+    source_recognition:"unverified",
+    hook_after_two_bars:"unverified",
+    failure_reason:"",
+    preferred_direction:"",
+    avoid:[],
+    concrete_follow_up:"",
+    expected_audible_behavior:"Fixture-only promotion contract; no source audio is read.",
+    artifacts:{
+      candidate_audio:[$candidate],
+      source_audio:"fixtures/dense-source.wav",
+      metrics_json:"metrics.json",
+      prompt_markdown:"prompt.md"
+    },
+    audio_judge_label:{
+      created_at:"fixture",
+      source_family:"dense_break",
+      source_id:"dense_beat03_130",
+      review_pack_schema:"riotbox.demo_bank_promotion_fixture.v1",
+      review_pack_id:"fixture:dense_beat03_130",
+      artifact_identity:{
+        performance_report_sha256:$report_hash,
+        agent_review_sha256:$agent_hash,
+        audio_sha256:{source_window:$source_hash,rebuild_only_performance:$candidate_hash}
+      },
+      artifact_paths:{
+        performance_report:$report,
+        agent_review:$agent,
+        audio:{source_window:$source,rebuild_only_performance:$candidate}
+      },
+      reason_tags:{
+        hook_clarity:"clear",
+        hardest_hit:"break_transient",
+        bass_pressure:"present",
+        destructive_contrast:"strong",
+        source_character:"source_transformed_but_present",
+        replay_value_after_eight_bars:"high"
+      },
+      mc202_source_composed_review_gate:{
+        schema:"riotbox.mc202_source_composed_review_gate.v1",
+        result:"pass",
+        source_family:"dense_break",
+        family_kind:"dense_break",
+        source_composed_evidence:true,
+        primitive_or_template_only:false,
+        quality_proof:false,
+        human_verdict:"unverified",
+        demo_readiness:"unverified",
+        promotion_blocked_until_human_pass:true,
+        template_only_blocks_promotion:true,
+        failure_codes:[]
+      },
+      mc202_role_evidence:{
+        schema:"riotbox.mc202_role_evidence.v1",
+        source_family:"dense_break",
+        role:"pressure_answer",
+        result:"pass",
+        proof_scope:"demo_bank_promotion_gate",
+        source_derived:true,
+        quality_proof:false,
+        failure_codes:[],
+        musician_reason:"Fixture-only source-composed role evidence."
+      },
+      summary:"Fixture-only dense promotion evidence."
+    }
+  }' >"$pass_review"
+
+cp "$dense_review_dir/prompt.md" "$tonal_review_dir/prompt.md"
+cp "$dense_review_dir/metrics.json" "$tonal_review_dir/metrics.json"
+jq '
+  .artifacts.source_audio = "fixtures/tonal-source.wav"
+  | .audio_judge_label.source_family = "tonal_hook"
+  | .audio_judge_label.source_id = "tonal_rusharp_120"
+  | .audio_judge_label.mc202_source_composed_review_gate.source_family = "tonal_hook"
+  | .audio_judge_label.mc202_source_composed_review_gate.family_kind = "non_dense_break"
+  | .audio_judge_label.mc202_role_evidence.source_family = "tonal_hook"
+  | .audio_judge_label.mc202_role_evidence.role = "hook_restraint_stab_answer"
+' "$pass_review" >"$tonal_review_dir/review.json"
+
+cp "$dense_review_dir/prompt.md" "$sparse_review_dir/prompt.md"
+cp "$dense_review_dir/metrics.json" "$sparse_review_dir/metrics.json"
+cp "$pass_review" "$sparse_review_dir/review.json"
+
+closeout="$tmp/closeout/mc202-producer-grade-closeout.json"
+jq -n \
+  --arg candidate "$render_dir/05_rebuild_only_performance.wav" \
+  --arg candidate_hash "$candidate_hash" \
+  '{
+    schema:"riotbox.mc202_producer_grade_closeout.v1",
+    quality_proof:false,
+    automated_musical_approval:false,
+    review_candidates:[
+      {
+        case_id:"dense_beat03_130",
+        source_family:"dense_break",
+        candidate:$candidate,
+        candidate_sha256:$candidate_hash,
+        mc202_producer_fix_route:{
+          proposed_fix_categories:["human_listening"],
+          quality_proof:false,
+          automated_musical_approval:false
+        }
+      },
+      {
+        case_id:"tonal_rusharp_120",
+        source_family:"tonal_hook",
+        candidate:$candidate,
+        candidate_sha256:$candidate_hash,
+        mc202_producer_fix_route:{
+          proposed_fix_categories:["human_listening"],
+          quality_proof:false,
+          automated_musical_approval:false
+        }
+      }
+    ],
+    mc202_producer_fix_candidates:[
+      {category:"human_listening",case_ids:["dense_beat03_130","tonal_rusharp_120"]}
+    ]
+  }' >"$closeout"
+
 python3 scripts/listening_review_workflow.py record \
   --review "$pass_review" \
   --human-verdict keep \
@@ -140,6 +281,51 @@ jq -e '
   and (.entries[0] | has("mc202_source_composed_review_gate") | not)
 ' "$tmp/live-bank-exact-product.json" >/dev/null
 
+sparse_exact_product_review="$tmp/pack/reviews/dense_beat03_130/sparse-exact-product-review.json"
+jq '
+  .audio_judge_label.source_family = "sparse_drums"
+  | .audio_judge_label.exact_product_path_review_gate.schema = "riotbox.exact_product_path_review_gate.v2"
+  | .audio_judge_label.exact_product_path_review_gate.source_family = "sparse_drums"
+  | .audio_judge_label.exact_product_path_review_gate.active_contributors_sample_exact = true
+  | .audio_judge_label.exact_product_path_review_gate.unassigned_role_not_claimed = true
+  | .audio_judge_label.exact_product_path_review_gate.lane_roles = {
+      w30: "source_transform",
+      tr909: "hardest_transient",
+      mc202: "punctuation",
+      source_monitor: "stay_out",
+      bass_owner: "unassigned"
+    }
+' "$exact_product_review" > "$sparse_exact_product_review"
+python3 scripts/promote_listening_review_to_demo_bank.py \
+  --review "$sparse_exact_product_review" \
+  --demo-bank "$tmp/live-bank-empty.json" \
+  --json-output "$tmp/live-bank-sparse-exact-product.json" \
+  --entry-id sparse-exact-product-pass \
+  --demo-worthiness-note "Exact sparse RuntimeMix journey earned a structured human pass without a bass-pressure claim." \
+  --require-artifact-hashes >/dev/null
+jq -e '
+  .entries[0].source_family == "sparse_drums"
+  and .entries[0].exact_product_path_review_gate.schema == "riotbox.exact_product_path_review_gate.v2"
+  and .entries[0].exact_product_path_review_gate.lane_roles.mc202 == "punctuation"
+  and .entries[0].exact_product_path_review_gate.lane_roles.bass_owner == "unassigned"
+' "$tmp/live-bank-sparse-exact-product.json" >/dev/null
+
+invalid_sparse_roles="$tmp/pack/reviews/dense_beat03_130/invalid-sparse-exact-product-review.json"
+jq '.audio_judge_label.exact_product_path_review_gate.lane_roles.bass_owner = "mc202"' \
+  "$sparse_exact_product_review" > "$invalid_sparse_roles"
+if python3 scripts/promote_listening_review_to_demo_bank.py \
+  --review "$invalid_sparse_roles" \
+  --demo-bank "$tmp/live-bank-empty.json" \
+  --json-output "$tmp/live-bank-invalid-sparse-exact-product.json" \
+  --entry-id sparse-invalid-exact-product \
+  --demo-worthiness-note "This should not promote." \
+  --require-artifact-hashes >"$tmp/invalid-sparse-exact-product.out" 2>&1; then
+  cat "$tmp/invalid-sparse-exact-product.out" >&2
+  echo "expected invalid sparse exact-product lane roles to fail" >&2
+  exit 1
+fi
+grep -q "sparse lane roles changed" "$tmp/invalid-sparse-exact-product.out"
+
 python3 - <<'PY'
 from copy import deepcopy
 from pathlib import Path
@@ -177,6 +363,26 @@ def validate(value, verdict_dimensions=dimensions):
     )
 
 validate(evidence)
+sparse_evidence = {
+    "schema": "riotbox.hash_identical_human_verdict_reuse.v1",
+    "result": "pass",
+    "reuse_contract": {
+        "path": "docs/benchmarks/sparse_drums_release_demo_evidence_reuse_v1.json",
+        "sha256": "d0a658f12e75366d0243a230ddbb28af85746e0c7a5c601d3271b81ee5ed46c5",
+    },
+    "prior_ticket": "RIOTBOX-1455",
+    "prior_structured_review_sha256": "7091d1699500857e5cde043fba0930409ede3848d170f999597507f20bd30184",
+    "current_replay_created_new_verdict": False,
+    "new_quality_evidence": False,
+}
+validate_reuse_evidence(
+    sparse_evidence,
+    Path("sparse-reuse-fixture"),
+    current_audio_sha256="64bb983b5fccdeced71b03c8d07bd031726a52995a60a6a89aeab8cda8f1c69d",
+    current_product_manifest_sha256="0d8359819210acd99cc2f49aeef999e80adca5fd9ef1d41f7994624c83fbc80d",
+    expected_prior_human_verdict="keep",
+    current_verdict_dimensions=dimensions,
+)
 mutations = []
 replay_claim = deepcopy(evidence)
 replay_claim["current_replay_created_new_verdict"] = True

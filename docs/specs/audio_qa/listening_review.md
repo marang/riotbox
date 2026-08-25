@@ -86,10 +86,14 @@ honest refusal to satisfy the negative-family contract without forcing weak or
 untrusted material into demo music.
 
 Structured demo-bank promotion accepts exactly one technical evidence route.
-MC-202 review candidates retain the source-composed MC-202 gate and typed role
-evidence. An already-qualified exact product journey whose policy assigns
-MC-202 `stay_out` may instead carry
-`riotbox.exact_product_path_review_gate.v1`. That gate must bind source and
+MC-202 review candidates that claim MC-202 bass/answer quality retain the
+source-composed MC-202 gate and typed role evidence. An already-qualified exact
+product journey whose policy assigns MC-202 `stay_out` may instead carry
+`riotbox.exact_product_path_review_gate.v1`. Version 2 also permits a complete
+exact sparse-drums journey with active W-30, TR-909, and secondary MC-202
+contributors only when their frozen lane roles and sample-exact output are
+explicitly bound and an unassigned bass role is not claimed. The exact gate
+must bind source and
 timing evidence, Source Graph/capture lineage, Action Lexicon queue/commit,
 Session/replay, exact RuntimeMix callback partitions, restart recall, the
 source-derived lane-role decision, absent fallback/primitive output, and the
@@ -97,7 +101,8 @@ hash-bound reviewed artifact. A scripted performer driver is allowed because
 it executes committed product actions; it remains non-quality technical
 evidence until the structured human verdict. The exact-product and MC-202
 routes are mutually exclusive, so an intentionally silent MC-202 lane cannot
-block a valid W-30-owned journey or be relabeled as MC-202 evidence.
+block a valid W-30-owned journey, while secondary punctuation cannot be
+relabeled as source-composed bass-pressure evidence.
 
 A prior human verdict may be reused without another playback only when a frozen
 `riotbox.hash_identical_human_verdict_reuse.v1` record proves that both the

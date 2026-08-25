@@ -640,6 +640,16 @@ After exit:
   gates. The session stops before WAV or listening, v3 remains negative
   evidence only, and the current answer role is closed rather than tuned into
   v4. Any future attempt requires a different musical owner or grammar.
+- RIOTBOX-1466 and RIOTBOX-1467 qualify the unchanged current tonal and sparse
+  product journeys for their positive release-demo families. Each bounded
+  Development rebuild passes the exact product-spine and RuntimeMix gates and
+  is bit-identical to its prior structured human `keep`; narrow hash-identity
+  contracts therefore reuse those verdicts without another taste judgment.
+  Sparse promotion preserves W-30 source transformation, TR-909 transient
+  leadership, MC-202 punctuation, and unassigned bass ownership instead of
+  inventing bass-pressure evidence. `tonal_riff` and `sparse_drums` are now
+  demo-ready covered; `dense_break` is the only missing family success, so
+  release, Holdout, universal-quality, and P023-completion claims stay blocked.
 - RIOTBOX-1410 is the first bounded Foundation Completion closure: explicit
   control-only source-monitor refresh retains current PCM, explicit replacement
   atomically publishes PCM plus mode/gains and anchors, and exact callback /

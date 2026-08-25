@@ -1559,6 +1559,29 @@ positive `tonal_riff` family success. `dense_break` and `sparse_drums` remain
 the two missing positive-family successes, so release readiness, Holdout,
 universal quality, and P023 completion remain blocked.
 
+RIOTBOX-1467 applies the same exact-identity discipline to the unchanged
+sparse product journey without relabeling it as MC-202 bass pressure. One
+bounded Development session passes Source Graph/capture, queue/commit,
+Session/replay/restart, callback-partition, limiter, clipping, and typed
+lane-role gates with W-30 as source transform, TR-909 as hardest transient,
+MC-202 as punctuation, Source Monitor out, and bass ownership unassigned. The
+current 31-second manifest and audio are bit-identical to the hash-bound
+RIOTBOX-1455 human `keep`, so RBX-331 reuses that verdict without playback or
+new musical evidence. Direct `sparse_drums` and historical
+`sparse_bass_pressure` aliases now share one readiness mapping. The live demo
+bank has two positive family successes, `tonal_riff` and `sparse_drums`; only
+`dense_break` remains without family success. Release readiness, Holdout,
+universal quality, and P023 completion remain blocked.
+
+During RIOTBOX-1467 branch review, a legacy promotion fixture unexpectedly
+regenerated a professional source-WAV pack after qualification identity was
+already closed. The run stopped immediately. RBX-332 discloses the two
+registered Development accesses, excludes their outputs, pins every unchanged
+qualification hash, prohibits further source access, and replaces the fixture
+with source-free dummy contract artifacts. No musical or numeric fixture result
+was inspected or allowed to change product behavior; the recovered sparse
+family claim remains bounded exactly as above.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing

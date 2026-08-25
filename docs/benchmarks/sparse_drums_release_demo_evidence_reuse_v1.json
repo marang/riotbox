@@ -1,0 +1,76 @@
+{
+  "schema": "riotbox.sparse_drums_release_demo_evidence_reuse.v1",
+  "schema_version": 1,
+  "status": "frozen",
+  "owner_ticket": "RIOTBOX-1467",
+  "purpose": "prevent duplicate listening when the current exact sparse product artifact is bit-identical to the durable RIOTBOX-1455 human evidence",
+  "base_qualification": {
+    "path": "docs/benchmarks/sparse_drums_release_demo_qualification_v1.json",
+    "raw_sha256": "03e7c6da9a9c28bb70f7a93ff35ef7d9280b0330cd66b95bf8b871e921923acc",
+    "technical_result_if_all_gates_pass": "technically_eligible_for_identity_reuse_or_one_changed_artifact_review"
+  },
+  "prior_human_evidence": {
+    "ticket": "RIOTBOX-1455",
+    "document_path": "docs/reviews/riotbox_1455_sparse_live_journey_acceptance_2026-08-24.md",
+    "document_sha256": "d4969c33241ad27decde439b9c6ec241fbcbde8641824fee4b74c4457a4b200a",
+    "structured_review_path": "artifacts/audio_qa/riotbox-1455/listening-review-v2/review.json",
+    "structured_review_sha256": "7091d1699500857e5cde043fba0930409ede3848d170f999597507f20bd30184",
+    "human_verdict": "keep",
+    "strongest_element": "chop",
+    "source_recognition": "source_transformed_but_present",
+    "hook_after_two_bars": "clear",
+    "product_manifest_sha256": "0d8359819210acd99cc2f49aeef999e80adca5fd9ef1d41f7994624c83fbc80d",
+    "audio_sha256": "64bb983b5fccdeced71b03c8d07bd031726a52995a60a6a89aeab8cda8f1c69d"
+  },
+  "current_exact_evidence": {
+    "session": "v1",
+    "product_manifest_path": "artifacts/development/riotbox-1467/qualification-v1/sparse-live-manifest.json",
+    "required_product_manifest_sha256": "0d8359819210acd99cc2f49aeef999e80adca5fd9ef1d41f7994624c83fbc80d",
+    "audio_path": "artifacts/development/riotbox-1467/qualification-v1/sparse/06_human_review_sequence.wav",
+    "required_audio_sha256": "64bb983b5fccdeced71b03c8d07bd031726a52995a60a6a89aeab8cda8f1c69d",
+    "bit_identical_to_prior_artifact_required": true,
+    "product_manifest_identical_to_prior_required": true,
+    "source_identity_identical_required": true,
+    "product_path_identical_required": true,
+    "algorithm_or_threshold_change_allowed": false
+  },
+  "reuse_rule": {
+    "schema": "riotbox.hash_identical_human_verdict_reuse.v1",
+    "allow_structured_record_reconstruction": true,
+    "require_prior_document_hash": true,
+    "require_prior_structured_review_hash": true,
+    "require_exact_audio_hash_match": true,
+    "require_exact_product_manifest_hash_match": true,
+    "require_same_human_verdict_dimensions": true,
+    "current_replay_created_new_verdict": false,
+    "additional_human_playback_required": false
+  },
+  "current_replay": {
+    "occurred": false,
+    "created_new_quality_evidence": false,
+    "created_new_verdict": false,
+    "must_not_be_requested_if_identity_matches": true
+  },
+  "forbidden": {
+    "different_audio_hash": true,
+    "different_product_manifest_hash": true,
+    "changed_algorithm_or_threshold": true,
+    "inferred_or_upgraded_verdict": true,
+    "second_human_verdict_for_identical_audio": true,
+    "additional_playback_for_identical_audio": true,
+    "source_reopen_after_identity": true,
+    "rerender_after_identity": true,
+    "holdout_access": true,
+    "bass_pressure_claim": true
+  },
+  "claim_boundary": {
+    "maximum_success": "reuse the existing RIOTBOX-1455 human keep for one hash-identical sparse_drums demo-family entry",
+    "new_human_verdict": false,
+    "new_musical_evidence": false,
+    "mc202_bass_pressure": false,
+    "source_general": false,
+    "holdout": false,
+    "release_ready": false,
+    "p023_complete": false
+  }
+}
