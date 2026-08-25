@@ -12,6 +12,14 @@ from pathlib import Path
 from typing import Any
 
 import demo_bank_evidence as evidence
+from hash_identical_human_verdict_reuse import (
+    REUSE_FIELD,
+    validate_reuse_evidence,
+)
+from exact_product_path_review_gate import (
+    GATE_FIELD as EXACT_PRODUCT_GATE_FIELD,
+    validate_promotion_gate as validate_exact_product_gate,
+)
 from listening_review_workflow import validate_review
 from mc202_source_composed_review_gate import (
     MC202_GATE_FIELD,
@@ -107,14 +115,55 @@ def build_demo_bank_entry(
     validate_structured_review(review, review_path)
     human_verdict = VERDICT_MAP[human_verdict_raw]
     metadata = object_field(review, LABEL_METADATA_FIELD, review_path)
-    mc202_gate = object_field(metadata, MC202_GATE_FIELD, review_path)
-    validate_promotion_gate(mc202_gate, review_path)
-    mc202_role = object_field(metadata, MC202_ROLE_FIELD, review_path)
-    validate_role_evidence_for_promotion(mc202_role, mc202_gate, review_path)
+    exact_product_gate = metadata.get(EXACT_PRODUCT_GATE_FIELD)
+    if exact_product_gate is None:
+        mc202_gate = object_field(metadata, MC202_GATE_FIELD, review_path)
+        validate_promotion_gate(mc202_gate, review_path)
+        mc202_role = object_field(metadata, MC202_ROLE_FIELD, review_path)
+        validate_role_evidence_for_promotion(mc202_role, mc202_gate, review_path)
+    else:
+        require(
+            isinstance(exact_product_gate, dict),
+            f"{review_path}: {EXACT_PRODUCT_GATE_FIELD} must be object",
+        )
+        require(
+            metadata.get(MC202_GATE_FIELD) is None and metadata.get(MC202_ROLE_FIELD) is None,
+            f"{review_path}: choose exact product-path or MC-202 promotion evidence, not both",
+        )
+        validate_exact_product_gate(
+            exact_product_gate,
+            review_path,
+            expected_source_family=string_field(metadata, "source_family", review_path),
+        )
+        mc202_gate = None
+        mc202_role = None
     identity = object_field(metadata, "artifact_identity", review_path)
     paths = object_field(metadata, "artifact_paths", review_path)
     audio_paths = object_field(paths, "audio", review_path)
     audio_identity = object_field(identity, "audio_sha256", review_path)
+    verdict_reuse = review.get(REUSE_FIELD)
+    if verdict_reuse is not None:
+        require(isinstance(verdict_reuse, dict), f"{review_path}: {REUSE_FIELD} must be object")
+        validate_reuse_evidence(
+            verdict_reuse,
+            review_path,
+            current_audio_sha256=string_field(
+                audio_identity,
+                "rebuild_only_performance",
+                review_path,
+            ),
+            current_product_manifest_sha256=string_field(
+                identity,
+                "performance_report_sha256",
+                review_path,
+            ),
+            expected_prior_human_verdict=human_verdict_raw,
+            current_verdict_dimensions={
+                "strongest_element": string_field(review, "strongest_element", review_path),
+                "source_recognition": string_field(review, "source_recognition", review_path),
+                "hook_after_two_bars": string_field(review, "hook_after_two_bars", review_path),
+            },
+        )
 
     rebuild_only_performance = resolve_review_path(
         review_path,
@@ -133,12 +182,13 @@ def build_demo_bank_entry(
             review_path,
             "performance_report_sha256",
         )
-        assert_hash_matches(
-            resolve_review_path(review_path, string_field(paths, "agent_review", review_path)),
-            identity.get("agent_review_sha256"),
-            review_path,
-            "agent_review_sha256",
-        )
+        if exact_product_gate is None or "agent_review" in paths or "agent_review_sha256" in identity:
+            assert_hash_matches(
+                resolve_review_path(review_path, string_field(paths, "agent_review", review_path)),
+                identity.get("agent_review_sha256"),
+                review_path,
+                "agent_review_sha256",
+            )
         assert_hash_matches(
             rebuild_only_performance,
             audio_identity.get("rebuild_only_performance"),
@@ -156,6 +206,10 @@ def build_demo_bank_entry(
     require(prompt_path.is_file(), f"{review_path}: missing review prompt artifact: {prompt_path}")
     producer_fix_routing = None
     if mc202_producer_closeout is not None:
+        require(
+            exact_product_gate is None,
+            f"{review_path}: MC-202 producer closeout cannot route an exact product-path review",
+        )
         closeout = read_json_object(mc202_producer_closeout)
         producer_fix_routing = producer_fix_routing_for_review(
             closeout=closeout,
@@ -209,12 +263,17 @@ def build_demo_bank_entry(
             "review_path": str(review_path),
             "review_sha256": sha256_file(review_path),
         },
-        MC202_GATE_FIELD: mc202_gate,
-        MC202_ROLE_FIELD: mc202_role,
         "musical_summary": musical_summary(review, metadata, human_verdict),
     }
+    if exact_product_gate is not None:
+        entry[EXACT_PRODUCT_GATE_FIELD] = exact_product_gate
+    else:
+        entry[MC202_GATE_FIELD] = mc202_gate
+        entry[MC202_ROLE_FIELD] = mc202_role
     if producer_fix_routing is not None:
         entry["mc202_producer_fix_routing"] = producer_fix_routing
+    if verdict_reuse is not None:
+        entry[REUSE_FIELD] = verdict_reuse
     return entry
 
 

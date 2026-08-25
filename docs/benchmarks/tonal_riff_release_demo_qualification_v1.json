@@ -1,0 +1,171 @@
+{
+  "schema": "riotbox.tonal_riff_release_demo_qualification.v1",
+  "schema_version": 1,
+  "status": "frozen",
+  "owner_ticket": "RIOTBOX-1466",
+  "purpose": "qualify the unchanged exact tonal live journey for one formal tonal_riff release-demo family outcome",
+  "predecessor_evidence": {
+    "tonal_product_review": {
+      "ticket": "RIOTBOX-1454",
+      "decision": "RBX-315",
+      "review_path": "docs/reviews/riotbox_1454_tonal_live_journey_v2_acceptance_2026-08-22.md",
+      "structured_review_sha256": "8c67d9a45c21e0e061906e1310c2fc64f790c9590aba4e3f51e687420c5365ea",
+      "result": "bounded_exact_live_keep_not_release_demo_evidence"
+    },
+    "readiness_gap": {
+      "ticket": "RIOTBOX-1456",
+      "review_path": "docs/reviews/riotbox_1456_live_readiness_reconciliation_2026-08-24.md",
+      "result": "tonal_review_not_durably_promotable_and_missing_audio_judge_label"
+    },
+    "dense_role_close": {
+      "ticket": "RIOTBOX-1465",
+      "decision": "RBX-328",
+      "result": "current_dense_foundation_answer_role_closed"
+    }
+  },
+  "promotion_evidence": {
+    "gate_schema": "riotbox.exact_product_path_review_gate.v1",
+    "route": "exact_product_path_alternative_to_mc202_source_composed_evidence",
+    "required_product_path_kind": "exact_runtime_mix_live_journey",
+    "mutually_exclusive_with_mc202_gate": true,
+    "source_family": "tonal_hook",
+    "release_coverage_alias": "tonal_riff",
+    "scripted_performer_driver_allowed": true,
+    "hardcoded_musical_output_allowed": false,
+    "primitive_or_template_only_allowed": false,
+    "fallback_music_allowed": false,
+    "quality_proof_before_human_pass": false
+  },
+  "product_journey": {
+    "renderer": "riotbox-app/dense_break_live_path_render --tonal-live-review",
+    "product_path": "JamAppState queue/commit -> Session/runtime projection -> exact callback-block RuntimeMix -> master limiter",
+    "live_policy_schema": "riotbox.live_performance_policy.v2",
+    "character": "tonal_hook",
+    "lead": "w30_hook",
+    "tr909_intent": "stay_out",
+    "mc202_intent": "stay_out",
+    "contrast_action": "w30.pitch_dive",
+    "pitch_dive_contract": {
+      "path": "docs/benchmarks/w30_pitch_dive_product_qualification_v1.json",
+      "raw_sha256": "1fad3f6979f40e8a6fc4f4142dfa99290a5da35524fc55f7ab0bbaa8112230da",
+      "retune_allowed": false
+    },
+    "journey": {
+      "held_beats": 16,
+      "contrast_beats": 12,
+      "ordinary_reentry_beats": 8,
+      "restart_review_beats": 8,
+      "ordinary_reentry_clears_articulation": true,
+      "restart_preserves_preset": true
+    }
+  },
+  "technical_gates": {
+    "manifest_result": "pass",
+    "source_backed": true,
+    "source_timing_backed": true,
+    "source_content_hash_exact": true,
+    "manual_bpm": 120.0,
+    "manual_downbeat_seconds": 0.0,
+    "callback_partitions_sample_exact": true,
+    "generated_journey_sample_exact_to_w30_only": true,
+    "restart_recall_sample_exact_to_w30_only": true,
+    "pitch_dive_first_eight_beats_sample_exact_to_held_w30": true,
+    "pitch_dive_active_tail_delta_rms_min": 0.001,
+    "tr909_journey_rms_max": 0.00001,
+    "mc202_journey_rms_max": 0.00001,
+    "source_monitor_journey_rms_max": 0.00001,
+    "limited_sample_count_max": 0,
+    "clip_count_max": 0,
+    "required_artifacts": [
+      "00_source.wav",
+      "source-graph.json",
+      "session.json",
+      "tonal-live-manifest.json",
+      "tonal/00_source_context.wav",
+      "tonal/01_held_hook.wav",
+      "tonal/02_pitch_dive.wav",
+      "tonal/03_ordinary_reentry.wav",
+      "tonal/04_restart_recall.wav",
+      "tonal/06_human_review_sequence.wav"
+    ]
+  },
+  "source": {
+    "case_id": "tonal_rusharp_120",
+    "source_family": "tonal_riff",
+    "professional_family_alias": "tonal_hook",
+    "path": "data/test_audio/examples/DH_RushArp_120_A.wav",
+    "sha256": "ec2a0c930eb338bf81cd5cb4b5fef487e07c140ad40181e1d92b2a0990334e0e",
+    "confirmed_bpm": 120.0,
+    "downbeat_seconds": 0.0,
+    "source_corpus": {
+      "path": "docs/benchmarks/sound_excellence_source_corpus_v1.json",
+      "raw_sha256": "67b5b8b2882575cf70fa61aacf25ae282c17714fe51ffcb13f905458e025d552"
+    },
+    "active_holdout_collision_registry": {
+      "path": "docs/benchmarks/source_holdout_rotation_v2.json",
+      "raw_sha256": "af98af67d5b0ef9f8478bf800438b268af2a4640bed29d8ec7c87fa585eb6812"
+    }
+  },
+  "development_session": {
+    "session_limit": 1,
+    "exact_path_only": true,
+    "directory_discovery": false,
+    "holdout_audio_access": false,
+    "commercial_reference_access": false,
+    "output_root": "artifacts/development/riotbox-1466",
+    "base_live_demo_bank": {
+      "path": "artifacts/audio_qa/local/live-review/RIOTBOX-1461/demo-bank.json",
+      "raw_sha256": "ca6c141f78589015f67f42edb3180f3a9663df409c6199260568ca35105d78c9"
+    }
+  },
+  "presentation": {
+    "artifact": "tonal/06_human_review_sequence.wav",
+    "audible_order": [
+      "source_context",
+      "one_second_pause",
+      "held_w30_hook",
+      "one_second_pause",
+      "pitch_dive",
+      "ordinary_reentry",
+      "restart_recall",
+      "one_second_terminal_silence"
+    ],
+    "expected_duration_seconds": 29.0,
+    "true_peak_estimator": "riotbox.audio_presentation_true_peak_safety.v1",
+    "maximum_true_peak_dbtp": -1.0,
+    "normalization_target_dbtp": -1.2,
+    "uniform_presentation_gain_only": true,
+    "listening_question": "Is this complete exact tonal product journey strong, clear, source-recognizable, and replay-worthy enough to serve as a formal tonal_riff demo-family example?"
+  },
+  "human_review": {
+    "review_limit": 1,
+    "allowed_verdicts": [
+      "keep",
+      "technically_ok_but_musically_weak",
+      "reject"
+    ],
+    "audio_judge_label_required": true,
+    "pass_consequence": "promote exact entry as tonal_hook demo_ready and satisfy tonal_riff release-coverage alias only",
+    "weak_or_fail_consequence": "promote reviewed non-demo outcome with one concrete fix category and stop without tuning"
+  },
+  "forbidden": {
+    "pitch_dive_retune": true,
+    "live_policy_retune": true,
+    "mix_retune": true,
+    "source_substitution": true,
+    "alternative_variant": true,
+    "old_verdict_relabel": true,
+    "scripted_diagnostic_substitution": true,
+    "fallback_music": true,
+    "holdout_audio": true
+  },
+  "claim_boundary": {
+    "before_human_pass": "technical_exact_product_evidence_only",
+    "maximum_success": "one_tonal_riff_release_demo_family_success",
+    "source_general": false,
+    "holdout": false,
+    "universal_quality": false,
+    "release_ready": false,
+    "p023_complete": false
+  }
+}

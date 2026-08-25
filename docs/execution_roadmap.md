@@ -1547,6 +1547,18 @@ future Dense foundation slice must own a different musical grammar rather than
 tune this selector. Dense remains non-demo-ready, and all Holdout, quality,
 demo, release, and P023-completion claims remain blocked.
 
+RIOTBOX-1466 qualifies the unchanged current tonal product journey instead of
+adding or tuning another effect. Its exact Source Graph/capture, queue/commit,
+Session/replay/restart, and RuntimeMix evidence passes with W-30 as sole
+generated owner and TR-909/MC-202 intentionally `stay_out`. The current
+29-second product manifest and reviewed audio are bit-identical to the
+hash-bound RIOTBOX-1454 human `keep`; RBX-330 therefore reuses that verdict
+through a narrow validated identity contract and records the unnecessary
+RIOTBOX-1466 replay as creating no new verdict. The live demo bank now has one
+positive `tonal_riff` family success. `dense_break` and `sparse_drums` remain
+the two missing positive-family successes, so release readiness, Holdout,
+universal quality, and P023 completion remain blocked.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing

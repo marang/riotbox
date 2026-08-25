@@ -96,6 +96,131 @@ jq -e '
   and (.entries[0].human_review_evidence.review_sha256 | length) == 64
 ' "$tmp/live-bank-promoted.json" >/dev/null
 
+exact_product_review="$tmp/pack/reviews/dense_beat03_130/exact-product-review.json"
+jq '
+  del(.audio_judge_label.mc202_source_composed_review_gate)
+  | del(.audio_judge_label.mc202_role_evidence)
+  | del(.audio_judge_label.artifact_identity.agent_review_sha256)
+  | del(.audio_judge_label.artifact_paths.agent_review)
+  | .audio_judge_label.exact_product_path_review_gate = {
+      schema: "riotbox.exact_product_path_review_gate.v1",
+      result: "pass",
+      source_family: "dense_break",
+      product_path_kind: "exact_runtime_mix_live_journey",
+      source_backed: true,
+      source_timing_backed: true,
+      source_graph_capture_lineage_proven: true,
+      action_lexicon_queue_commit_proven: true,
+      session_replay_proven: true,
+      callback_partitions_sample_exact: true,
+      restart_recall_sample_exact: true,
+      source_role_decision_proven: true,
+      scripted_performer_driver: true,
+      hardcoded_musical_output: false,
+      primitive_or_template_only: false,
+      fallback_music_present: false,
+      quality_proof: false,
+      human_verdict: "unverified",
+      promotion_blocked_until_human_pass: true,
+      failure_codes: []
+    }
+' "$live_review" > "$exact_product_review"
+python3 scripts/promote_listening_review_to_demo_bank.py \
+  --review "$exact_product_review" \
+  --demo-bank "$tmp/live-bank-empty.json" \
+  --json-output "$tmp/live-bank-exact-product.json" \
+  --entry-id dense-beat03-exact-product-pass \
+  --demo-worthiness-note "Exact RuntimeMix product journey earned a structured human pass." \
+  --require-artifact-hashes >/dev/null
+jq -e '
+  .entries[0].exact_product_path_review_gate.result == "pass"
+  and .entries[0].exact_product_path_review_gate.product_path_kind == "exact_runtime_mix_live_journey"
+  and .entries[0].exact_product_path_review_gate.scripted_performer_driver == true
+  and .entries[0].exact_product_path_review_gate.hardcoded_musical_output == false
+  and (.entries[0] | has("mc202_source_composed_review_gate") | not)
+' "$tmp/live-bank-exact-product.json" >/dev/null
+
+python3 - <<'PY'
+from copy import deepcopy
+from pathlib import Path
+
+from scripts.hash_identical_human_verdict_reuse import validate_reuse_evidence
+
+evidence = {
+    "schema": "riotbox.hash_identical_human_verdict_reuse.v1",
+    "result": "pass",
+    "reuse_contract": {
+        "path": "docs/benchmarks/tonal_riff_release_demo_evidence_reuse_v2.json",
+        "sha256": "cfdab651ceae05a494ccee5637a5e4fc3fb47bef24901b4ca5e76531a402cfa0",
+    },
+    "prior_ticket": "RIOTBOX-1454",
+    "prior_structured_review_sha256": "8c67d9a45c21e0e061906e1310c2fc64f790c9590aba4e3f51e687420c5365ea",
+    "current_replay_created_new_verdict": False,
+    "new_quality_evidence": False,
+}
+dimensions = {
+    "strongest_element": "chop",
+    "source_recognition": "source_transformed_but_present",
+    "hook_after_two_bars": "clear",
+}
+audio_sha256 = "24eca9572537d81d6ed87c61c13806a0c679092d8f8f73723e2015bfff490e6b"
+manifest_sha256 = "28a95aae429361de50b3590e0feabf99f4426e35e1bdb43a818c006a2fe0b27d"
+
+def validate(value, verdict_dimensions=dimensions):
+    validate_reuse_evidence(
+        value,
+        Path("reuse-fixture"),
+        current_audio_sha256=audio_sha256,
+        current_product_manifest_sha256=manifest_sha256,
+        expected_prior_human_verdict="keep",
+        current_verdict_dimensions=verdict_dimensions,
+    )
+
+validate(evidence)
+mutations = []
+replay_claim = deepcopy(evidence)
+replay_claim["current_replay_created_new_verdict"] = True
+mutations.append((replay_claim, dimensions))
+contract_drift = deepcopy(evidence)
+contract_drift["reuse_contract"]["sha256"] = "0" * 64
+mutations.append((contract_drift, dimensions))
+changed_dimensions = dict(dimensions)
+changed_dimensions["strongest_element"] = "bass"
+mutations.append((evidence, changed_dimensions))
+for value, verdict_dimensions in mutations:
+    try:
+        validate(value, verdict_dimensions)
+    except ValueError:
+        continue
+    raise SystemExit("expected hash-identical verdict reuse mutation to fail")
+PY
+
+invalid_exact_product_review="$tmp/pack/reviews/dense_beat03_130/invalid-exact-product-review.json"
+jq '.audio_judge_label.exact_product_path_review_gate.callback_partitions_sample_exact = false' \
+  "$exact_product_review" > "$invalid_exact_product_review"
+if python3 scripts/promote_listening_review_to_demo_bank.py \
+  --review "$invalid_exact_product_review" \
+  --demo-bank "$tmp/live-bank-empty.json" \
+  --json-output "$tmp/live-bank-invalid-exact-product.json" \
+  --entry-id dense-beat03-invalid-exact-product \
+  --demo-worthiness-note "This should not promote." \
+  --require-artifact-hashes >"$tmp/invalid-exact-product.out" 2>&1; then
+  cat "$tmp/invalid-exact-product.out" >&2
+  echo "expected invalid exact product-path gate to fail" >&2
+  exit 1
+fi
+grep -q "callback_partitions_sample_exact must be true" "$tmp/invalid-exact-product.out"
+
+invalid_exact_demo_bank="$tmp/demo-bank-invalid-exact-product.json"
+jq '.entries[0].exact_product_path_review_gate.fallback_music_present = true' \
+  "$tmp/live-bank-exact-product.json" > "$invalid_exact_demo_bank"
+if python3 scripts/validate_release_grade_demo_bank.py "$invalid_exact_demo_bank" >"$tmp/invalid-exact-demo-bank.out" 2>&1; then
+  cat "$tmp/invalid-exact-demo-bank.out" >&2
+  echo "expected invalid exact product-path demo-bank evidence to fail" >&2
+  exit 1
+fi
+grep -q "fallback_music_present must be false" "$tmp/invalid-exact-demo-bank.out"
+
 invalid_demo_bank_role="$tmp/demo-bank-invalid-role.json"
 jq '(.entries[] | select(.entry_id == "dense-beat03-promoted-fixture") | .mc202_role_evidence.role) = "bass_pressure"' \
   "$tmp/demo-bank-pass.json" > "$invalid_demo_bank_role"

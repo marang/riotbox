@@ -85,6 +85,33 @@ useful reason, and `fallback_music_present: false`. This allows
 honest refusal to satisfy the negative-family contract without forcing weak or
 untrusted material into demo music.
 
+Structured demo-bank promotion accepts exactly one technical evidence route.
+MC-202 review candidates retain the source-composed MC-202 gate and typed role
+evidence. An already-qualified exact product journey whose policy assigns
+MC-202 `stay_out` may instead carry
+`riotbox.exact_product_path_review_gate.v1`. That gate must bind source and
+timing evidence, Source Graph/capture lineage, Action Lexicon queue/commit,
+Session/replay, exact RuntimeMix callback partitions, restart recall, the
+source-derived lane-role decision, absent fallback/primitive output, and the
+hash-bound reviewed artifact. A scripted performer driver is allowed because
+it executes committed product actions; it remains non-quality technical
+evidence until the structured human verdict. The exact-product and MC-202
+routes are mutually exclusive, so an intentionally silent MC-202 lane cannot
+block a valid W-30-owned journey or be relabeled as MC-202 evidence.
+
+A prior human verdict may be reused without another playback only when a frozen
+`riotbox.hash_identical_human_verdict_reuse.v1` record proves that both the
+reviewed audio SHA-256 and exact product-manifest SHA-256 are identical, binds
+the durable prior review document and structured-review identities, preserves
+the same verdict dimensions, and records that no algorithm or threshold
+changed. The reconstructed structured record must retain the original verdict
+and reviewer meaning; it is not a fresh review or new quality evidence. A
+different audio or product-manifest hash, an inferred stronger verdict, or an
+unbound prior review requires normal fresh preflight and human readiness. If an
+unnecessary replay occurred before exact identity was recognized, record it as
+creating no new verdict and do not ask the listener to judge the unchanged
+artifact again.
+
 Live negative-family evidence must resolve to a hash-bound
 `riotbox.degraded_product_review.v1`, not a generic listening-review JSON. The
 review binds the exact source, Source Graph, Session, and observer stream;
