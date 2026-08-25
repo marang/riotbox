@@ -1,0 +1,104 @@
+{
+  "schema": "riotbox.dense_break_foundation_chop.v1",
+  "schema_version": 1,
+  "status": "frozen_for_product_qualification",
+  "owner_ticket": "RIOTBOX-1462",
+  "audible_role": "source-recognizable two-bar dense-break foundation hook",
+  "mechanism": {
+    "input": {
+      "bars": 2,
+      "beats_per_bar": 4,
+      "requires_confirmed_beat_grid": true,
+      "playback_rate": 1.0,
+      "beat_frame_quantization": "round(sample_rate_hz * 60 / bpm)",
+      "phrase_frame_count": "beat_frame_count * 8",
+      "source_window_policy": "loop exact source audio from phrase start to fill phrase_frame_count",
+      "empty_source_behavior": "fail_closed"
+    },
+    "mapping": [
+      {
+        "target": "beats_0_through_5",
+        "source": "same_positions",
+        "operation": "sample_exact_passthrough"
+      },
+      {
+        "target": "beat_6",
+        "source": "beat_4",
+        "operation": "full_beat_substitution"
+      },
+      {
+        "target": "beat_7_first_half",
+        "source": "beat_5_second_half",
+        "operation": "half_beat_substitution"
+      },
+      {
+        "target": "beat_7_second_half",
+        "source": "same_position",
+        "operation": "sample_exact_return"
+      }
+    ],
+    "splice": {
+      "crossfade_shape": "linear",
+      "crossfade_duration_ms": 2.0,
+      "apply_at_replacement_start": true,
+      "apply_at_replacement_end": true
+    },
+    "forbidden": {
+      "reverse": true,
+      "granular_micro_hits": true,
+      "additive_source_layers": true,
+      "support_instruments": true,
+      "bus_effects": true,
+      "pitch_change": true,
+      "time_stretch": true,
+      "missing_source_fallback_music": true
+    }
+  },
+  "exploration_evidence": {
+    "evidence_role": "development_exploration_only",
+    "source_case_id": "dense_beat03_130",
+    "source_sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+    "source_presentation_sha256": "b8243a1678a36b3f5c0a82cb6427eaad81b92a0934c76ab9614027d0d9abdbe0",
+    "candidate_sha256": "4813485ae93fe44f589523ca700a904371f908814a05f1226037371a655294ea",
+    "access_log_sha256": "975cb5e3f4e3641d1368788dea882b60b026b7a9f53e84dbe13542a3677c41df",
+    "exploration_report_sha256": "82db802ede8f303a4060a36952bc6489b22a614b2fb42beb076a109a591c1fa3",
+    "human_verdict": "provisional_keep",
+    "formal_product_verdict": false
+  },
+  "qualification_contract": {
+    "rebuild_from_this_contract": true,
+    "implementation_must_be_source_blind": true,
+    "required_product_surfaces": [
+      "source_graph_or_capture_lineage",
+      "session_and_replay",
+      "action_lexicon_queue_and_commit",
+      "observer_and_user_visible_state",
+      "exact_runtime_mix_output"
+    ],
+    "source_diversity_set_must_be_preregistered_before_access": true,
+    "callback_partition_invariance_required": true,
+    "exact_output_and_formal_human_review_required": true,
+    "qualification_may_reject_but_may_not_tune_v1": true,
+    "required_change_creates_new_version_and_decision": true
+  },
+  "stopping_rule": {
+    "reject_on": [
+      "source_identity_loss",
+      "groove_or_clarity_loss",
+      "weak_or_unusable_two_bar_hook",
+      "replay_or_callback_divergence",
+      "unsafe_output",
+      "wrong_product_owner"
+    ],
+    "no_source_substitution_after_results": true
+  },
+  "claim_boundary": {
+    "product_behavior": false,
+    "source_general": false,
+    "quality_proof": false,
+    "percussive_hard": false,
+    "holdout_authorized": false,
+    "demo_ready": false,
+    "release_ready": false
+  }
+}

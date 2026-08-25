@@ -64,6 +64,13 @@ review rejects the foundational transformation as musically unusable despite
 understandable sectional intent; Dense remains non-demo-ready and now routes
 to one bounded `chop_policy` foundation correction rather than another source
 search. Sparse and tonal positive-family candidates remain separately open.
+`RIOTBOX-1462` completes that Development exploration with one source-only
+long-slice answer: the first six beats remain exact, only the final 1.5 beats
+form a bounded deviation/return, and no generated support or bus treatment is
+present. Exact Beat03 review provisionally keeps v1 as musically usable with
+preserved groove/clarity and a useful hook. RBX-320 freezes the recipe for a
+separate product-spine/source-diversity qualification in RIOTBOX-1463; Dense
+is not yet demo-ready and no quality or release claim is added.
 `RIOTBOX-1408` has now replaced the synthetic W-30
 resample-tap proxy with hydrated capture audio through the exact live path.
 Determinism, three-source diversity, replay identity, and missing-source silence

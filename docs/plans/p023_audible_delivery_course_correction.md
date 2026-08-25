@@ -178,3 +178,13 @@ periodic addition already reviewed; only its four-bar entry point was new. The
 playback therefore grants no new verdict, no second variant is justified, and
 the temporary seam is removed. MC-202 pressure stays out of the current full
 gesture journey while Foundation Completion takes priority.
+
+RIOTBOX-1462 applies the keep path to the foundational Dense failure from
+RIOTBOX-1461. The first source-blind variant replaces dense micrograin/reverse
+and generated-support stacking with one sparse source-only long-slice answer:
+six beats remain exact and only the final 1.5 beats deviate before a clean
+return. Exact Beat03 preflight passes and the early human check provisionally
+keeps the result as musically usable, groove-clear, and hook-useful. RBX-320
+freezes the exact v1 mapping and 2 ms splices; RIOTBOX-1463 must now rebuild
+and qualify it through the product spine and a preregistered
+Development diversity set without retuning.

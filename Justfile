@@ -80,6 +80,7 @@ _audio-qa-ci-unlocked:
     just automated-musical-fitness-fixtures
     just agent-musical-review-pack-smoke
     just dense-break-live-path-smoke
+    just dense-break-foundation-chop-exploration-fixtures
     just pro-pressure-source-matrix-smoke
     just professional-source-wav-pack-smoke
     just edge-source-professional-diagnostics-smoke
@@ -334,6 +335,9 @@ dense-break-performance-pack-smoke output="artifacts/audio_qa/local-dense-break-
 
 dense-break-live-path-smoke output="artifacts/audio_qa/local-dense-break-live-path-smoke" bpm="132":
     scripts/validate_dense_break_live_path.sh "{{output}}" "{{bpm}}"
+
+dense-break-foundation-chop-exploration-fixtures:
+    python3 scripts/generate_dense_break_foundation_chop_exploration.py --fixtures
 
 dense-break-live-source-matrix output="artifacts/audio_qa/local-dense-break-live-source-matrix":
     scripts/validate_dense_break_live_source_matrix.sh "{{output}}"
