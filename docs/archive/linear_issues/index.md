@@ -1626,4 +1626,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Qualify dense-break foundation chop v1 through the product spine
 - [RIOTBOX-1464.md](./RIOTBOX-1464.md)
   P023: Freeze and test a clarity-preserving Dense foundation answer v2
+- [RIOTBOX-1465.md](./RIOTBOX-1465.md)
+  P023: Test a role-aware articulation-preserving Dense answer v3
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
