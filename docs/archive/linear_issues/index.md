@@ -1632,4 +1632,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Qualify the exact tonal-riff journey for release-demo family success
 - [RIOTBOX-1467.md](./RIOTBOX-1467.md)
   P023: Qualify the exact sparse-drums journey for release-demo family success
+- [RIOTBOX-1468.md](./RIOTBOX-1468.md)
+  P023: Explore source-native full-bar playback for the Dense foundation
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
