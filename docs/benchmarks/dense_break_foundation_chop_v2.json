@@ -1,0 +1,147 @@
+{
+  "schema": "riotbox.dense_break_foundation_chop.v2",
+  "schema_version": 2,
+  "status": "frozen_before_fresh_development_source_access",
+  "owner_ticket": "RIOTBOX-1464",
+  "predecessor": {
+    "mechanism": "riotbox.dense_break_foundation_chop.v1",
+    "outcome": "rejected_after_product_qualification",
+    "decision": "RBX-324",
+    "not_a_scalar_retune": true
+  },
+  "audible_role": "source-recognizable two-bar dense-break foundation answer with preserved local weight and clarity",
+  "mechanism": {
+    "input": {
+      "bars": 2,
+      "beats_per_bar": 4,
+      "requires_confirmed_beat_grid": true,
+      "playback_rate": 1.0,
+      "beat_frame_quantization": "round(sample_rate_hz * 60 / confirmed_bpm)",
+      "phrase_frame_count": "beat_frame_count * 8",
+      "source_window_policy": "loop exact non-empty source audio from phrase start only as needed to fill phrase_frame_count",
+      "empty_source_behavior": "fail_closed"
+    },
+    "anchor": {
+      "target": "beats_0_through_5",
+      "source": "same_positions",
+      "operation": "sample_exact_passthrough"
+    },
+    "answer_selector": {
+      "target_cell": "beats_6_through_7",
+      "candidate_cells": [
+        "beats_0_through_1",
+        "beats_2_through_3",
+        "beats_4_through_5"
+      ],
+      "candidate_alignment": "two_beat_cells_starting_on_even_beat_indices_only",
+      "candidate_operation": "copy_one_contiguous_source_native_two_beat_cell_without_internal_splice",
+      "analysis_sample_rate_hz": "source_sample_rate_hz",
+      "low_band_estimator": "per_channel_one_pole_lowpass_165_hz_stereo_rms_v1",
+      "level_estimator": "stereo_broadband_rms_v1",
+      "local_partition": "four_corresponding_half_beat_windows",
+      "eligibility": {
+        "whole_cell_absolute_low_band_delta_db_max": 3.0,
+        "whole_cell_absolute_level_delta_db_max": 3.0,
+        "each_half_beat_absolute_low_band_delta_db_max": 4.0,
+        "each_half_beat_absolute_level_delta_db_max": 4.0,
+        "normalized_rms_delta_min": 0.2,
+        "absolute_waveform_correlation_max": 0.96
+      },
+      "selection_order": [
+        "lowest_sum_of_absolute_whole_and_mean_local_low_band_and_level_deltas",
+        "lowest_absolute_waveform_correlation",
+        "highest_normalized_rms_delta",
+        "lowest_source_start_beat"
+      ],
+      "no_eligible_candidate_behavior": "fail_closed_without_render_or_fallback_music"
+    },
+    "splice": {
+      "crossfade_shape": "linear",
+      "crossfade_duration_ms": 2.0,
+      "apply_at_answer_entry": true,
+      "apply_at_phrase_end_return": true,
+      "internal_answer_splice_count": 0
+    },
+    "forbidden": {
+      "v1_fixed_full_plus_half_beat_mapping": true,
+      "eq_or_filter_repair": true,
+      "gain_compensation": true,
+      "source_specific_exception": true,
+      "filename_rule": true,
+      "reverse": true,
+      "granular_micro_hits": true,
+      "additive_source_layers": true,
+      "support_instruments": true,
+      "bus_effects": true,
+      "pitch_change": true,
+      "time_stretch": true,
+      "missing_source_fallback_music": true
+    }
+  },
+  "source_blind_falsification": {
+    "required_cases": [
+      "selects_one_energy_matched_but_materially_different_coherent_cell",
+      "preserves_first_six_beats_sample_exactly",
+      "copies_selected_cell_sample_exactly_away_from_two_boundary_crossfades",
+      "rejects_only_locally_thin_candidates",
+      "rejects_near_identical_candidates",
+      "resolves_exact_ties_deterministically"
+    ],
+    "fresh_registered_source_audio_opened_before_freeze": false
+  },
+  "development_exploration": {
+    "stage": "development_exploration_only",
+    "source": {
+      "case_id": "dense_beat03_130",
+      "registry": "docs/benchmarks/sound_excellence_source_corpus_v1.json",
+      "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+      "sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+      "confirmed_bpm": 130.0,
+      "source_format": {
+        "sample_rate_hz": 44100,
+        "channels": 2,
+        "sample_width_bits": 24,
+        "compression_type": "NONE",
+        "maximum_duration_seconds": 4
+      }
+    },
+    "active_holdout_collision_registry": {
+      "path": "docs/benchmarks/source_holdout_rotation_v2.json",
+      "schema": "riotbox.source_holdout_rotation.v2",
+      "raw_sha256": "af98af67d5b0ef9f8478bf800438b268af2a4640bed29d8ec7c87fa585eb6812"
+    },
+    "access": "one fresh exclusive exact-path DevelopmentSourceAccessSession after contract and Decision freeze",
+    "artifact": "source and v2 candidate only; four repeats each; one uniform presentation-only safety gain",
+    "human_review": "one bounded usefulness review after exact-artifact technical preflight and fresh readiness",
+    "variant_limit": 1
+  },
+  "stopping_rule": {
+    "reject_on": [
+      "no_eligible_answer_cell",
+      "unclear_or_near_identical_answer",
+      "source_identity_loss",
+      "groove_or_clarity_loss",
+      "local_low_frequency_or_level_collapse",
+      "weak_or_unusable_two_bar_hook",
+      "unsafe_output",
+      "not_worth_triggering"
+    ],
+    "post_access_algorithm_or_constant_change_requires_new_version_and_decision": true,
+    "no_source_substitution_after_results": true
+  },
+  "promotion_boundary": {
+    "provisional_keep_only": true,
+    "separate_product_spine_and_source_diversity_qualification_required": true,
+    "exploratory_artifact_or_verdict_cannot_be_reused_as_product_evidence": true
+  },
+  "claim_boundary": {
+    "product_behavior": false,
+    "source_general": false,
+    "quality_proof": false,
+    "percussive_hard": false,
+    "holdout_authorized": false,
+    "demo_ready": false,
+    "release_ready": false,
+    "p023_complete": false
+  }
+}

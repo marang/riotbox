@@ -1524,6 +1524,17 @@ before fresh source access; no Holdout, quality, demo, release, or P023 closure
 follows. The independent exact confirmed-BPM Session/replay correction remains
 as product-spine correctness.
 
+RIOTBOX-1464 tests that successor without tuning v1. Source-blind fixtures and
+RBX-325 freeze a coherent two-beat v2 selector that protects whole-cell and
+corresponding half-beat low-band/level continuity while requiring material
+contrast. One exact-path Development session then finds no eligible cell among
+the three allowed source-native candidates and stops before render or human
+listening. This prevents another radio-like local-weight collapse but does not
+yet produce a usable Dense foundation. V2 is retained only as negative
+evidence; any successor needs a materially different Linear-first topology and
+new pre-access version/Decision. Dense remains non-demo-ready, with all
+Holdout, quality, demo, release, and P023-completion claims blocked.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing

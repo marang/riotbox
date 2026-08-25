@@ -71,6 +71,15 @@ present. Exact Beat03 review provisionally keeps v1 as musically usable with
 preserved groove/clarity and a useful hook. RBX-320 freezes the recipe for a
 separate product-spine/source-diversity qualification in RIOTBOX-1463; Dense
 is not yet demo-ready and no quality or release claim is added.
+`RIOTBOX-1463` subsequently passes the complete frozen three-source technical
+matrix but rejects v1 in formal product listening: its answer loses local
+low-frequency weight and clarity and sounds unintentionally radio-like. The
+unqualified behavior is removed. `RIOTBOX-1464` then freezes and tests a
+materially different clarity-preserving v2 selector. Its single bounded
+Development session finds no coherent two-beat source cell that satisfies both
+the local-weight and material-contrast gates, so it stops before rendering or
+human listening. Dense remains non-demo-ready; neither result authorizes
+threshold tuning, Holdout access, or a quality/release claim.
 `RIOTBOX-1408` has now replaced the synthetic W-30
 resample-tap proxy with hydrated capture audio through the exact live path.
 Determinism, three-source diversity, replay identity, and missing-source silence
