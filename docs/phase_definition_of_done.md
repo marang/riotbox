@@ -626,6 +626,13 @@ After exit:
   the generally correct exact confirmed-BPM Session/replay fix is retained.
   Any successor requires a new version and pre-access Decision rather than v1
   tuning.
+- RIOTBOX-1464 freezes one materially different v2 before fresh source access:
+  a coherent two-beat answer must preserve whole-cell and corresponding
+  half-beat low-band/level continuity while remaining materially distinct. Its
+  one exact-path Development session finds no eligible source-native cell and
+  stops before render or listening, without threshold changes or source
+  substitution. V2 is negative evidence only; Dense remains non-demo-ready and
+  a successor requires a new Linear-first topology, version, and Decision.
 - RIOTBOX-1410 is the first bounded Foundation Completion closure: explicit
   control-only source-monitor refresh retains current PCM, explicit replacement
   atomically publishes PCM plus mode/gains and anchors, and exact callback /

@@ -339,6 +339,9 @@ dense-break-live-path-smoke output="artifacts/audio_qa/local-dense-break-live-pa
 dense-break-foundation-chop-exploration-fixtures:
     python3 scripts/generate_dense_break_foundation_chop_exploration.py --fixtures
 
+dense-break-foundation-clarity-v2-fixtures:
+    python3 scripts/generate_dense_break_foundation_clarity_v2.py --fixtures
+
 dense-break-live-source-matrix output="artifacts/audio_qa/local-dense-break-live-source-matrix":
     scripts/validate_dense_break_live_source_matrix.sh "{{output}}"
 

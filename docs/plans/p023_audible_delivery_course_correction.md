@@ -199,3 +199,13 @@ v1 therefore fails its own stopping rule. The unqualified preset/recipe/audio
 behavior is removed, while the exact confirmed-BPM Session/replay correction
 found during qualification is retained. Any clarity-preserving successor must
 be a new Linear-first version frozen before fresh source access.
+
+RIOTBOX-1464 supplies that new v2 without tuning v1. Before source access,
+RBX-325 freezes one coherent two-beat-cell selector with whole/local
+low-band-and-level protection plus a material-contrast requirement. Generated
+fixtures falsify local-collapse and near-copy cases. The one permitted exact
+Development source session then finds no eligible cell among the three
+source-native candidates and stops before render or human listening. This is a
+valid fail-closed outcome, not permission to loosen thresholds or substitute a
+source. V2 remains concise negative evidence; any successor needs a materially
+different Linear-first topology and a new pre-access version and Decision.
