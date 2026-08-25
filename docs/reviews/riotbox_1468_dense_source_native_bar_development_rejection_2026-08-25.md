@@ -65,6 +65,29 @@ No listening review occurred. The exact candidate did not pass technical
 preflight, so presenting it would violate the frozen gate and create no
 admissible musical verdict. No prior artifact was replayed as a substitute.
 
+## Post-Rejection CI Boundary Incident
+
+During closeout, the normal broad `just ci` command reached existing
+source-backed audio-QA generators. The run was stopped as soon as the bounded
+log made that access visible. Before stop, those legacy generators had reopened
+exact registered Development paths including Beat03 and several unrelated
+corpus cases. No Holdout or commercial reference was accessed and the scripts
+used exact paths rather than directory discovery.
+
+All generated incident outputs are excluded. No musical or numeric incident
+result changed this ticket, and the v1 access log, v2 access log, recovery log,
+and runtime report retained their exact hashes. RBX-337 therefore preserves
+only the already completed negative result and prohibits resuming broad local
+audio QA under this ticket. Final validation uses source-free code and exact
+contract gates. The workflow now requires a static source-access compatibility
+check before broad audio QA.
+
+A subsequent documentation search contained unescaped shell backticks and
+accidentally invoked `just ci` again. That orphaned process was detected and
+terminated while still in `cargo test`, before reaching any source-backed
+audio-QA generator. The incident record includes this operator error; it added
+no detected source exposure and supplies no evidence.
+
 ## Consequence
 
 Frozen v2 is rejected and its temporary public Runtime grammar, renderer route,
@@ -88,4 +111,5 @@ or P023-completion claim follows.
 - v2 failed-closed access log: `94cd1552246aeee802ad157ebd807ada01783aff3f49ed87bc764eaff9e08acf`
 - failed-closed recovery log: `ee1f8aac27499571c05cf3d794f54fe81576caea04acf012b163fc3ba441cfac`
 - exact runtime report: `970bd8aa7ae03950aa9e9c3991bdbc5e6ade2d05f74f520c45cb4e897f551ce9`
+- post-rejection CI access incident: `ed4e1301527419c22798d7d6e74b0f225368d878867e5ff0d96c3df510db8f16`
 - source-blind implementation commit: `68e73383`

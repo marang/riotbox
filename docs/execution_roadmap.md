@@ -1595,6 +1595,12 @@ temporary Runtime grammar is removed and v2 remains negative evidence only.
 Dense is still the sole missing positive demo family; release readiness,
 Holdout, universal quality, and P023 completion remain blocked.
 
+A later local broad-CI closeout attempt is stopped when legacy source-backed
+smokes reopen registered Development files after the RIOTBOX-1468 boundary has
+closed. RBX-337 excludes those outputs, binds unchanged negative-result hashes,
+and requires source-access compatibility checking before future broad local
+audio QA. The incident changes no musical or readiness result.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing

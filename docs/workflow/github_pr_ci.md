@@ -258,6 +258,17 @@ with a clear lock message instead of racing on shared artifacts. For concurrent
 experiments, run narrower recipes with explicit unique `output=...` arguments
 or wait for the broad gate to finish.
 
+Before invoking `just ci` or `just audio-qa-ci`, compare the active ticket's
+frozen source-access contract with the recipes in the broad gate. A contract
+that forbids further Development or Holdout reads also forbids broad local
+audio QA when any included generator opens such audio, even if that generator
+belongs to an unrelated historical smoke. In that state, run source-free code
+gates (`cargo fmt --check`, `cargo test`, `cargo check --workspace`, and
+`cargo clippy --all-targets --all-features -- -D warnings`) plus the exact
+source-free validators for the touched contracts. Record the broad gate as
+intentionally not run locally because of the access boundary. Do not interpret
+the normal preference for `just ci` as authority to reopen a source.
+
 ### Audio-Producing Slice Check
 
 For audio-producing changes, also consult
