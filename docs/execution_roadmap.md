@@ -1535,6 +1535,18 @@ evidence; any successor needs a materially different Linear-first topology and
 new pre-access version/Decision. Dense remains non-demo-ready, with all
 Holdout, quality, demo, release, and P023-completion claims blocked.
 
+RIOTBOX-1465 then tests the H-CHOP-1 alternative as the third and final causal
+topology for the current foundation-answer role. The frozen v3 selector keeps
+the six-beat anchor and target onsets exact while replacing one `upper_attack`
+and one `low_body` context with unique same-role, nearest-accent source events.
+One exact-path Development session finds clean roles and excellent weight and
+level continuity, avoiding v1's radio-like loss, but the result remains below
+both material-contrast gates and stops before WAV creation or human listening.
+V3 is retained as negative evidence and the current answer role is closed; a
+future Dense foundation slice must own a different musical grammar rather than
+tune this selector. Dense remains non-demo-ready, and all Holdout, quality,
+demo, release, and P023-completion claims remain blocked.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing

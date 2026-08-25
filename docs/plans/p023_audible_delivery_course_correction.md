@@ -209,3 +209,14 @@ source-native candidates and stops before render or human listening. This is a
 valid fail-closed outcome, not permission to loosen thresholds or substitute a
 source. V2 remains concise negative evidence; any successor needs a materially
 different Linear-first topology and a new pre-access version and Decision.
+
+RIOTBOX-1465 tests that materially different successor by applying H-CHOP-1 to
+complete event contexts instead of whole cells or fixed beat slices. Frozen v3
+maps one `upper_attack` and one `low_body` target to unique same-role,
+nearest-accent donors while preserving the six-beat anchor and target onset
+grid. Its one exact Development session avoids v1's clarity and weight loss,
+but the resulting phrase is too correlated with the source and misses both
+material-contrast gates. It therefore stops without WAV or listening. This is
+the third and final causal topology for the current foundation-answer role;
+future work must select a different musical owner or grammar rather than tune
+the selector, increase its event count, or loosen its gates.
