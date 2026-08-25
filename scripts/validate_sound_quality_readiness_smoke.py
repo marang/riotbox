@@ -16,6 +16,7 @@ from generate_sound_quality_readiness_report import (
     readiness_blockers,
     reconcile_source_selection_risk,
     routed_next_fix_categories,
+    source_family_coverage,
     validate_report,
 )
 
@@ -42,6 +43,7 @@ def main() -> int:
         validate_markdown(markdown, args.output)
         validate_mutation_fixtures(report)
         validate_outcome_reconciliation_fixture()
+        validate_direct_sparse_drums_alias_fixture()
     except (OSError, TypeError, ValueError, json.JSONDecodeError) as error:
         print(f"invalid sound-quality readiness smoke: {error}", file=sys.stderr)
         return 1
@@ -458,6 +460,38 @@ def validate_outcome_reconciliation_fixture() -> None:
             for blocker in partial_blockers
         ),
         "partial edge-source review did not keep bad_timing blocked",
+    )
+
+
+def validate_direct_sparse_drums_alias_fixture() -> None:
+    coverage = source_family_coverage(
+        {
+            "required_source_families": ["sparse_drums"],
+            "entries": [
+                {
+                    "case_id": "sparse_kicksnr_120",
+                    "source_family": "sparse_drums",
+                }
+            ],
+        },
+        [
+            {
+                "entry_id": "sparse-drums-exact-product-pass",
+                "source_family": "sparse_drums",
+                "human_verdict": "pass",
+                "demo_readiness": "demo_ready",
+            }
+        ],
+        Path("fixture-source-corpus.json"),
+        "fixture_calibration",
+    )
+    sparse = first_dict_item(coverage, "families")
+    require(
+        sparse.get("demo_bank_family_aliases")
+        == ["sparse_bass_pressure", "sparse_drums"]
+        and sparse.get("status") == "demo_ready_covered"
+        and coverage.get("missing_family_success_families") == [],
+        "direct sparse_drums release-demo pass was not recognized by readiness",
     )
 
 

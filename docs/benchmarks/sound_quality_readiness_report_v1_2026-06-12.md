@@ -43,3 +43,10 @@ The report exposes:
 This is a status and actionability report. It does not approve audio, replace
 human listening, or promote scripted diagnostic evidence into product-quality
 proof.
+
+The report and the focused source-family gate consume the same shared alias
+contract. In particular, canonical `sparse_drums` accepts either the historical
+`sparse_bass_pressure` route or a direct `sparse_drums` exact-product route;
+the latter does not imply MC-202 bass ownership. A valid empty human-review
+queue means no current bank entry needs listening and does not require a
+fabricated empty review pack.

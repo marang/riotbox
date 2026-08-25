@@ -30,6 +30,14 @@ DEGRADED_SUCCESS = "reviewed_degraded_or_reject"
 DUAL_PATH_SUCCESS = "demo_ready_or_reviewed_degraded_or_reject"
 LIVE_REVIEW_BANK_ROLE = "live_review"
 HEX_64_RE = re.compile(r"^[0-9a-f]{64}$")
+CORPUS_TO_DEMO_FAMILIES = {
+    "dense_break": {"dense_break"},
+    "sparse_drums": {"sparse_bass_pressure", "sparse_drums"},
+    "tonal_riff": {"tonal_hook"},
+    "pad_noise": {"pad_noise", "tonal_pad"},
+    "weak_source": {"weak_source"},
+    "bad_timing": {"bad_timing"},
+}
 
 
 def success_requirement_for_family(source_family: str) -> str:

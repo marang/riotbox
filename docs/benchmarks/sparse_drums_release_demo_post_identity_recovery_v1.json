@@ -1,0 +1,60 @@
+{
+  "schema": "riotbox.sparse_drums_release_demo_post_identity_recovery.v1",
+  "schema_version": 1,
+  "status": "frozen",
+  "owner_ticket": "RIOTBOX-1467",
+  "purpose": "recover fail-closed from an unrelated source-opening regression fixture without hiding the access or repeating the exact sparse qualification",
+  "base_qualification": {
+    "path": "docs/benchmarks/sparse_drums_release_demo_qualification_v1.json",
+    "sha256": "03e7c6da9a9c28bb70f7a93ff35ef7d9280b0330cd66b95bf8b871e921923acc",
+    "completed_before_incident": true
+  },
+  "incident": {
+    "path": "artifacts/development/riotbox-1467/post-identity-access-incident-v1.json",
+    "sha256": "3aef844e84bfcbdf047b50d78f7c69b6d210820c862ade18ca16ada5fc69ee66",
+    "classification": "post_identity_registered_development_fixture_access",
+    "fixture_completed": false,
+    "stopped_fail_closed": true
+  },
+  "required_isolation": {
+    "registered_development_sources_only": true,
+    "source_directory_discovery": false,
+    "holdout_audio_access": false,
+    "commercial_reference_access": false,
+    "musical_or_numeric_result_inspected": false,
+    "generated_fixture_output_eligible_for_ticket_evidence": false,
+    "product_or_contract_tuning_from_fixture_output": false,
+    "qualification_artifact_mutation": false
+  },
+  "required_qualification_identity": {
+    "product_manifest_sha256": "0d8359819210acd99cc2f49aeef999e80adca5fd9ef1d41f7994624c83fbc80d",
+    "review_audio_sha256": "64bb983b5fccdeced71b03c8d07bd031726a52995a60a6a89aeab8cda8f1c69d",
+    "qualification_access_log_sha256": "0ac681427e3214677113d925473e004f715eb73467763c8f155efc06f10885e1",
+    "demo_bank_sha256": "1a38d5e390924de06795f74736aa384951e67ba44294e53db54e4364a3ecaec1",
+    "coverage_sha256": "6b048cda5bcd560a5b8e68eb7d2f31d0df75f89fd27e1006be3b47f48a892df0",
+    "readiness_report_sha256": "c13f959fc23d35f96eee6dd797018149fea06dd2bea607de3779d68131c58324"
+  },
+  "remediation": {
+    "promotion_fixture_must_be_source_free": true,
+    "promotion_fixture_may_use_small_dummy_artifacts": true,
+    "promotion_fixture_must_preserve_hash_and_gate_mutations": true,
+    "further_source_access": false,
+    "qualification_rerender": false,
+    "additional_human_playback": false
+  },
+  "recovery_rule": {
+    "result_if_every_required_field_and_hash_matches": "qualification_evidence_remains_admissible_after_disclosed_fail_closed_recovery",
+    "result_if_any_required_field_or_hash_mismatches": "invalidate_riotbox_1467_qualification",
+    "new_musical_evidence": false,
+    "new_human_verdict": false
+  },
+  "claim_boundary": {
+    "maximum_success": "retain_one_sparse_drums_release_demo_family_success",
+    "source_general": false,
+    "mc202_bass_pressure": false,
+    "holdout": false,
+    "universal_quality": false,
+    "release_ready": false,
+    "p023_complete": false
+  }
+}

@@ -177,3 +177,14 @@ Current benchmark artifacts:
 - [tonal_riff_release_demo_evidence_reuse_v2.json](./tonal_riff_release_demo_evidence_reuse_v2.json)
   Frozen hash-identity correction that reuses the existing RIOTBOX-1454 human
   keep only for bit-identical audio and product-manifest evidence.
+- [sparse_drums_release_demo_qualification_v1.json](./sparse_drums_release_demo_qualification_v1.json)
+  Frozen RIOTBOX-1467 exact sparse product-path qualification with one
+  registered Development source, explicit active-lane roles, and no invented
+  bass-pressure ownership.
+- [sparse_drums_release_demo_evidence_reuse_v1.json](./sparse_drums_release_demo_evidence_reuse_v1.json)
+  Frozen hash-identity contract that reuses the existing RIOTBOX-1455 human
+  keep only for bit-identical audio and product-manifest evidence.
+- [sparse_drums_release_demo_post_identity_recovery_v1.json](./sparse_drums_release_demo_post_identity_recovery_v1.json)
+  Frozen RIOTBOX-1467 fail-closed recovery after an unrelated regression
+  fixture reopened registered Development audio; it excludes those outputs,
+  pins unchanged qualification identity, and prohibits further source access.

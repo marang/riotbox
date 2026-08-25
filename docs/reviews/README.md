@@ -100,6 +100,10 @@ Current P023 algorithm-value refresh:
 - [riotbox_1466_tonal_riff_release_demo_acceptance_2026-08-25.md](./riotbox_1466_tonal_riff_release_demo_acceptance_2026-08-25.md):
   exact current tonal product qualification, bit-identical prior-verdict reuse
   without another taste judgment, and one demo-ready `tonal_riff` family entry.
+- [riotbox_1467_sparse_drums_release_demo_acceptance_2026-08-25.md](./riotbox_1467_sparse_drums_release_demo_acceptance_2026-08-25.md):
+  exact current sparse product qualification, honest W-30/TR-909/MC-202 lane
+  roles, bit-identical prior-verdict reuse without playback, and one demo-ready
+  `sparse_drums` family entry.
 - [p023_tonal_live_boundary_checkpoint_2026-08-22.md](./p023_tonal_live_boundary_checkpoint_2026-08-22.md):
   focused current-state architecture review of the typed character policy,
   live audio projection, tonal exact-mix proof, and restart/recall boundary.

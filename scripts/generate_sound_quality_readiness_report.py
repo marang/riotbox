@@ -80,15 +80,6 @@ MIN_TR909_RENDERED_DRUM_PRESSURE_CASES = 8
 MAX_TR909_RENDERED_SOURCE_FIRST_RATIO = 0.08
 MAX_TR909_RENDERED_SUPPORT_RATIO = 0.46
 
-CORPUS_TO_DEMO_FAMILIES = {
-    "dense_break": {"dense_break"},
-    "sparse_drums": {"sparse_bass_pressure"},
-    "tonal_riff": {"tonal_hook"},
-    "pad_noise": {"pad_noise", "tonal_pad"},
-    "weak_source": {"weak_source"},
-    "bad_timing": {"bad_timing"},
-}
-
 PERFORM_RISK_CUE_SCHEMA = "riotbox.jam_perform_risk_cue_contract.v1"
 
 def main() -> int:
@@ -344,7 +335,7 @@ def source_family_coverage(
 
     families = []
     for family in required:
-        mapped = CORPUS_TO_DEMO_FAMILIES.get(family, {family})
+        mapped = evidence.CORPUS_TO_DEMO_FAMILIES.get(family, {family})
         has_any_candidate = bool(mapped & all_demo_families)
         has_human_verdict = bool(mapped & human_families)
         success_requirement = evidence.success_requirement_for_family(family)
@@ -512,7 +503,7 @@ def actionable_human_failure_entries(
     }
     actionable: dict[str, list[dict[str, Any]]] = {}
     for family in string_list(coverage.get("missing_family_success_families")):
-        aliases = CORPUS_TO_DEMO_FAMILIES.get(family, {family})
+        aliases = evidence.CORPUS_TO_DEMO_FAMILIES.get(family, {family})
         if aliases & queued_families:
             continue
         matching = [
@@ -578,7 +569,7 @@ def reviewed_outcome_satisfies_family_contract(
     corpus_family = next(
         (
             family
-            for family, aliases in CORPUS_TO_DEMO_FAMILIES.items()
+            for family, aliases in evidence.CORPUS_TO_DEMO_FAMILIES.items()
             if demo_family in aliases
         ),
         demo_family,
@@ -2722,7 +2713,7 @@ def validate_report(report: dict[str, Any]) -> list[str]:
         corpus_family = next(
             (
                 family
-                for family, aliases in CORPUS_TO_DEMO_FAMILIES.items()
+                for family, aliases in evidence.CORPUS_TO_DEMO_FAMILIES.items()
                 if source_family in aliases
             ),
             source_family,

@@ -38,6 +38,7 @@ SOURCE_FAMILIES = {
     "tonal_pad",
     "pad_noise",
     "kick_snare_loop",
+    "sparse_drums",
     "sparse_bass_pressure",
     "weak_source",
     "other",
