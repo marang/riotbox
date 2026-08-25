@@ -93,6 +93,9 @@ Must be replayed or represented as durable committed state:
 - Ghost-accepted actions
 - profile or preset changes that alter behavior
 - snapshot save points and their action cursor
+- source-timing grid trust together with the exact accepted BPM; replay of
+  `source_timing.confirm_grid` restores both and replay of the matching revert
+  clears both without rewriting Source Graph analysis
 
 Rule:
 

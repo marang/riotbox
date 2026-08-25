@@ -119,7 +119,9 @@ pub(super) fn confirm_explicit_source_bpm(
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_millis() as u64;
-    if state.queue_source_timing_grid_confirmation(timestamp) != QueueControlResult::Enqueued {
+    if state.queue_source_timing_grid_confirmation_at_bpm(timestamp, Some(explicit_source_bpm))
+        != QueueControlResult::Enqueued
+    {
         return Err(JamAppError::InvalidSession(
             "explicit source BPM confirmation could not be queued".into(),
         ));

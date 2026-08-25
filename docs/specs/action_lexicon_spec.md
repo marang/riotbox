@@ -171,13 +171,17 @@ that snapshot and refreshes the derived audio route.
 `source_timing.confirm_grid` records that the user accepted the currently
 selected timing hypothesis after source audition. It uses `session` scope,
 commits immediately, and carries structured `source_id` plus optional
-`hypothesis_id` parameters so replay / restore can distinguish analyzed
-confidence from user-accepted musical trust.
+`hypothesis_id` and `confirmed_bpm` parameters so replay / restore can
+distinguish analyzed confidence from user-accepted musical trust. The BPM is
+the exact positive finite value accepted by the musician; for explicit
+`--source-bpm` confirmation it must not be replaced by the nearby analyzer
+estimate that merely admitted the confirmation.
 
 `source_timing.revert_grid` removes a matching user confirmation through the
 same session-scope action path without deleting the original Source Timing
 evidence. It carries the confirmed `source_id` plus optional `hypothesis_id` so
-replay can distinguish the trust-state removal from analysis changes.
+replay can distinguish the trust-state removal from analysis changes; commit
+and replay clear the corresponding accepted BPM with the grid trust state.
 
 ### 6.1.2 Performance preset activation
 

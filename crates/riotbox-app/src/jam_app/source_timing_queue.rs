@@ -12,9 +12,27 @@ impl JamAppState {
         &mut self,
         requested_at: TimestampMs,
     ) -> QueueControlResult {
+        let confirmed_bpm = self.source_graph.as_ref().and_then(|graph| {
+            graph
+                .timing
+                .primary_hypothesis()
+                .map(|hypothesis| hypothesis.bpm)
+                .or(graph.timing.bpm_estimate)
+        });
+        self.queue_source_timing_grid_confirmation_at_bpm(requested_at, confirmed_bpm)
+    }
+
+    pub(in crate::jam_app) fn queue_source_timing_grid_confirmation_at_bpm(
+        &mut self,
+        requested_at: TimestampMs,
+        confirmed_bpm: Option<f32>,
+    ) -> QueueControlResult {
         let Some(graph) = self.source_graph.as_ref() else {
             return QueueControlResult::AlreadyInState;
         };
+        if confirmed_bpm.is_some_and(|bpm| !bpm.is_finite() || bpm <= 0.0) {
+            return QueueControlResult::AlreadyInState;
+        }
         let source_id = graph.source.source_id.clone();
         let hypothesis_id = graph.timing.primary_hypothesis_id.clone();
 
@@ -35,6 +53,7 @@ impl JamAppState {
             .is_some_and(|confirmed| {
                 confirmed.source_id == source_id
                     && confirmed.hypothesis_id.as_deref() == hypothesis_id.as_deref()
+                    && self.session.runtime_state.source_timing.confirmed_bpm == confirmed_bpm
             })
         {
             return QueueControlResult::AlreadyInState;
@@ -53,6 +72,7 @@ impl JamAppState {
         draft.params = ActionParams::SourceTimingGrid {
             source_id: Some(source_id),
             hypothesis_id: hypothesis_id.clone(),
+            confirmed_bpm,
         };
         draft.undo_policy = UndoPolicy::NotUndoable {
             reason: "source timing grid confirmation requires a dedicated revert action".into(),
@@ -103,6 +123,7 @@ impl JamAppState {
         draft.params = ActionParams::SourceTimingGrid {
             source_id: Some(source_id),
             hypothesis_id: hypothesis_id.clone(),
+            confirmed_bpm: self.session.runtime_state.source_timing.confirmed_bpm,
         };
         draft.undo_policy = UndoPolicy::NotUndoable {
             reason: "source timing grid revert is an explicit trust-state action".into(),

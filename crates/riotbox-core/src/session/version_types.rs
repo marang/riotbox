@@ -129,10 +129,12 @@ pub struct SourceMonitorRuntimeState {
     pub mode: SourceMonitorMode,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct SourceTimingRuntimeState {
     #[serde(default)]
     pub confirmed_grid: Option<SourceTimingGridConfirmationState>,
+    #[serde(default)]
+    pub confirmed_bpm: Option<f32>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

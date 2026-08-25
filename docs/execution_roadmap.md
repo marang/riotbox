@@ -1511,6 +1511,19 @@ product-spine and source-diversity qualification slice, RIOTBOX-1463. Dense
 remains non-demo-ready until that successor passes; no product, source-general,
 quality, Holdout, demo, release, or P023-completion claim follows.
 
+RIOTBOX-1463 then rebuilds frozen v1 through the existing capture, Session,
+replay, observer, and exact RuntimeMix path. After two audit-preserved
+fail-closed harness corrections, the fresh three-source Development matrix
+passes every technical gate. The one formal product review nevertheless
+records `technically_ok_but_musically_weak`: the two-bar hook is clear and the
+source remains recognizable, but the fixed answer slice loses low-frequency
+weight and clarity and sounds unintentionally radio-like. V1 therefore fails
+its frozen stopping rule and its product exposure is removed. Dense remains
+non-demo-ready. A successor must be a new clarity-preserving version frozen
+before fresh source access; no Holdout, quality, demo, release, or P023 closure
+follows. The independent exact confirmed-BPM Session/replay correction remains
+as product-spine correctness.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing

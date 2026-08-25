@@ -162,3 +162,12 @@ Current benchmark artifacts:
   Frozen RIOTBOX-1446 product qualification: four exact registered Development cases, exact RuntimeMix/state/replay gates, one representative product listening review, and no Holdout or retuning authorization.
 - [dense_break_foundation_chop_v1.json](./dense_break_foundation_chop_v1.json)
   Frozen RIOTBOX-1462 sparse two-bar Dense foundation chop: one-source provisional Development keep, exact long-slice mapping and splice policy, and a separate product-spine/source-diversity qualification boundary.
+- [dense_break_foundation_chop_product_qualification_v1.json](./dense_break_foundation_chop_product_qualification_v1.json)
+  Superseded RIOTBOX-1463 product-spine qualification; its first session stopped before rendering on the misdeclared Beat03 PCM width.
+- [dense_break_foundation_chop_product_qualification_v2.json](./dense_break_foundation_chop_product_qualification_v2.json)
+  Superseded metadata-corrected RIOTBOX-1463 matrix; it passed 130 and 135 BPM, then stopped on exact restart divergence in the 172 BPM callback case.
+- [dense_break_foundation_chop_product_qualification_v3.json](./dense_break_foundation_chop_product_qualification_v3.json)
+  Final RIOTBOX-1463 matrix for the unchanged Dense foundation chop: all three
+  technical product cases passed after the restart correction, but the formal
+  review rejected v1 for clarity and low-frequency loss; no product behavior
+  was retained.

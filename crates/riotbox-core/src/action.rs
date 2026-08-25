@@ -273,6 +273,8 @@ pub enum ActionParams {
     SourceTimingGrid {
         source_id: Option<SourceId>,
         hypothesis_id: Option<String>,
+        #[serde(default)]
+        confirmed_bpm: Option<f32>,
     },
     ProductExport {
         #[serde(default = "default_export_scope")]

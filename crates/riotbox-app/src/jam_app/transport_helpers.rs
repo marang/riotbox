@@ -17,11 +17,17 @@ pub(in crate::jam_app) fn trusted_source_timing_bpm(
     source_timing_consumer_readiness(Some(graph), session)
         .can_use_source_window_grid()
         .then(|| {
-            graph
-                .timing
-                .primary_hypothesis()
-                .map(|hypothesis| hypothesis.bpm)
-                .or(graph.timing.bpm_estimate)
+            session
+                .runtime_state
+                .source_timing
+                .confirmed_bpm
+                .or_else(|| {
+                    graph
+                        .timing
+                        .primary_hypothesis()
+                        .map(|hypothesis| hypothesis.bpm)
+                        .or(graph.timing.bpm_estimate)
+                })
         })
         .flatten()
         .filter(|bpm| bpm.is_finite() && *bpm > 0.0)

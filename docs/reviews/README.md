@@ -59,6 +59,10 @@ Current P023 rejected-experiment closeouts:
 
 Current P023 algorithm-value refresh:
 
+- [riotbox_1463_dense_break_foundation_chop_product_rejection_2026-08-25.md](./riotbox_1463_dense_break_foundation_chop_product_rejection_2026-08-25.md):
+  complete three-source product-spine qualification of frozen Dense foundation
+  chop v1, formal clarity-loss verdict, removal of unqualified behavior, and
+  retained exact confirmed-BPM replay correction.
 - [riotbox_1462_dense_break_foundation_chop_exploration_2026-08-25.md](./riotbox_1462_dense_break_foundation_chop_exploration_2026-08-25.md):
   one source-only long-slice foundation variant, exact-artifact technical
   preflight, provisional human keep, and frozen product-qualification handoff.

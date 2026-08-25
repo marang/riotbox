@@ -35,6 +35,7 @@ fn plan_executor_applies_supported_structural_actions_in_commit_order() {
             ActionParams::SourceTimingGrid {
                 source_id: Some(SourceId::from("src-1")),
                 hypothesis_id: Some("primary-grid".into()),
+                confirmed_bpm: Some(128.0),
             },
             350,
         ),
@@ -44,6 +45,7 @@ fn plan_executor_applies_supported_structural_actions_in_commit_order() {
             ActionParams::SourceTimingGrid {
                 source_id: Some(SourceId::from("src-1")),
                 hypothesis_id: Some("primary-grid".into()),
+                confirmed_bpm: Some(128.0),
             },
             375,
         ),
@@ -225,6 +227,7 @@ fn plan_executor_rejects_source_timing_confirmation_without_source_id() {
         ActionParams::SourceTimingGrid {
             source_id: None,
             hypothesis_id: Some("primary-grid".into()),
+            confirmed_bpm: Some(128.0),
         },
         100,
     )]);
@@ -240,6 +243,36 @@ fn plan_executor_rejects_source_timing_confirmation_without_source_id() {
             action_id: ActionId(1),
             command: ActionCommand::SourceTimingConfirmGrid,
             expected: "ActionParams::SourceTimingGrid { source_id: Some(_) }"
+        }
+    );
+    assert_eq!(session, original_session);
+}
+
+#[test]
+fn plan_executor_rejects_invalid_source_timing_confirmed_bpm() {
+    let action_log = action_log(vec![action(
+        1,
+        ActionCommand::SourceTimingConfirmGrid,
+        ActionParams::SourceTimingGrid {
+            source_id: Some(SourceId::from("src-1")),
+            hypothesis_id: Some("primary-grid".into()),
+            confirmed_bpm: Some(-128.0),
+        },
+        100,
+    )]);
+    let plan = build_committed_replay_plan(&action_log).expect("valid replay plan");
+    let mut session = SessionFile::new("session-1", "riotbox-test", "2026-05-23T12:00:00Z");
+    let original_session = session.clone();
+
+    let error = apply_replay_plan_to_session(&mut session, &plan)
+        .expect_err("invalid accepted BPM must fail replay closed");
+
+    assert_eq!(
+        error,
+        ReplayExecutionError::InvalidParams {
+            action_id: ActionId(1),
+            command: ActionCommand::SourceTimingConfirmGrid,
+            expected: "SourceTimingGrid confirmed_bpm must be positive and finite when present",
         }
     );
     assert_eq!(session, original_session);

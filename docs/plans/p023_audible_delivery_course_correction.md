@@ -188,3 +188,14 @@ keeps the result as musically usable, groove-clear, and hook-useful. RBX-320
 freezes the exact v1 mapping and 2 ms splices; RIOTBOX-1463 must now rebuild
 and qualify it through the product spine and a preregistered
 Development diversity set without retuning.
+
+RIOTBOX-1463 completes that qualification and demonstrates why the formal
+review remains a hard gate. Three exact Development cases pass source identity,
+mapping, callback partition, restart, Session/replay, observer, silence, and
+limiter checks without retuning. The product-path review still finds the fixed
+answer slice unacceptably thin and radio-like: the hook is clear and otherwise
+usable, but low-frequency weight and clarity collapse in the deviation. Frozen
+v1 therefore fails its own stopping rule. The unqualified preset/recipe/audio
+behavior is removed, while the exact confirmed-BPM Session/replay correction
+found during qualification is retained. Any clarity-preserving successor must
+be a new Linear-first version frozen before fresh source access.
