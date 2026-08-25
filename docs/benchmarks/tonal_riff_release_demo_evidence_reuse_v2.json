@@ -1,0 +1,73 @@
+{
+  "schema": "riotbox.tonal_riff_release_demo_evidence_reuse.v2",
+  "schema_version": 2,
+  "status": "frozen",
+  "owner_ticket": "RIOTBOX-1466",
+  "purpose": "prevent a duplicate taste verdict when the current exact product artifact is bit-identical to already hash-bound human evidence",
+  "base_qualification": {
+    "path": "docs/benchmarks/tonal_riff_release_demo_qualification_v1.json",
+    "raw_sha256": "114dc61683e42b323df77d2783ecdb144e4bb1969015846da66e650590b75207",
+    "technical_result": "technically_eligible_for_one_professional_human_review"
+  },
+  "prior_human_evidence": {
+    "ticket": "RIOTBOX-1454",
+    "document_path": "docs/reviews/riotbox_1454_tonal_live_journey_v2_acceptance_2026-08-22.md",
+    "document_sha256": "59678762e51b1267f402393d2223006179aeb82566141c44a3739da0afa97ea2",
+    "structured_review_sha256": "8c67d9a45c21e0e061906e1310c2fc64f790c9590aba4e3f51e687420c5365ea",
+    "human_verdict": "keep",
+    "strongest_element": "chop",
+    "source_recognition": "source_transformed_but_present",
+    "hook_after_two_bars": "clear",
+    "product_manifest_sha256": "28a95aae429361de50b3590e0feabf99f4426e35e1bdb43a818c006a2fe0b27d",
+    "audio_sha256": "24eca9572537d81d6ed87c61c13806a0c679092d8f8f73723e2015bfff490e6b"
+  },
+  "current_exact_evidence": {
+    "session": "v1",
+    "product_manifest_path": "artifacts/development/riotbox-1466/qualification-v1/tonal-live-manifest.json",
+    "product_manifest_sha256": "28a95aae429361de50b3590e0feabf99f4426e35e1bdb43a818c006a2fe0b27d",
+    "audio_path": "artifacts/development/riotbox-1466/qualification-v1/review/00_tonal_release_demo_presentation.wav",
+    "audio_sha256": "24eca9572537d81d6ed87c61c13806a0c679092d8f8f73723e2015bfff490e6b",
+    "bit_identical_to_prior_artifact": true,
+    "product_manifest_identical_to_prior": true,
+    "source_identity_identical": true,
+    "product_path_identical": true,
+    "algorithm_or_threshold_change": false
+  },
+  "reuse_rule": {
+    "schema": "riotbox.hash_identical_human_verdict_reuse.v1",
+    "allow_structured_record_reconstruction": true,
+    "require_prior_document_hash": true,
+    "require_prior_structured_review_hash": true,
+    "require_exact_audio_hash_match": true,
+    "require_exact_product_manifest_hash_match": true,
+    "require_same_human_verdict_dimensions": true,
+    "current_replay_created_new_verdict": false,
+    "additional_human_playback_required": false
+  },
+  "current_replay": {
+    "occurred_before_duplicate_identity_was acted upon": true,
+    "created_new_quality_evidence": false,
+    "created_new_verdict": false,
+    "must_not_be_presented_as_fresh_review": true
+  },
+  "forbidden": {
+    "different_audio_hash": true,
+    "different_product_manifest_hash": true,
+    "changed_algorithm_or_threshold": true,
+    "inferred_or_upgraded_verdict": true,
+    "second_human_verdict": true,
+    "additional_playback": true,
+    "source_reopen": true,
+    "rerender": true,
+    "holdout_access": true
+  },
+  "claim_boundary": {
+    "maximum_success": "reuse the existing RIOTBOX-1454 human keep for one hash-identical tonal_riff demo-family entry",
+    "new_human_verdict": false,
+    "new_musical_evidence": false,
+    "source_general": false,
+    "holdout": false,
+    "release_ready": false,
+    "p023_complete": false
+  }
+}

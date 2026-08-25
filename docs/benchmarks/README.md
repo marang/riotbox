@@ -171,3 +171,9 @@ Current benchmark artifacts:
   technical product cases passed after the restart correction, but the formal
   review rejected v1 for clarity and low-frequency loss; no product behavior
   was retained.
+- [tonal_riff_release_demo_qualification_v1.json](./tonal_riff_release_demo_qualification_v1.json)
+  Frozen RIOTBOX-1466 exact tonal product-path qualification with one registered
+  Development source, one technical render, and no retuning or Holdout access.
+- [tonal_riff_release_demo_evidence_reuse_v2.json](./tonal_riff_release_demo_evidence_reuse_v2.json)
+  Frozen hash-identity correction that reuses the existing RIOTBOX-1454 human
+  keep only for bit-identical audio and product-manifest evidence.

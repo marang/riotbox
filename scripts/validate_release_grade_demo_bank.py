@@ -11,6 +11,14 @@ from pathlib import Path
 from typing import Any
 
 import demo_bank_evidence as evidence
+from hash_identical_human_verdict_reuse import (
+    REUSE_FIELD,
+    validate_reuse_evidence,
+)
+from exact_product_path_review_gate import (
+    GATE_FIELD as EXACT_PRODUCT_GATE_FIELD,
+    validate_promotion_gate as validate_exact_product_gate,
+)
 from mc202_source_composed_review_gate import (
     MC202_GATE_FIELD,
     MC202_ROLE_FIELD,
@@ -192,6 +200,8 @@ def validate_entry(
     validate_artifact_ref(object_field(entry, "review_prompt", prefix), "review_prompt", prefix, ".md")
     validate_musical_summary(object_field(entry, "musical_summary", prefix), prefix)
     validate_optional_mc202_role_evidence(entry, path, index)
+    validate_optional_exact_product_path_evidence(entry, path, index)
+    validate_optional_human_verdict_reuse(entry, path, index, verdict)
 
     fix_categories = string_list(entry, "fix_categories", prefix, allow_empty=True)
     unknown_categories = sorted(set(fix_categories) - FIX_CATEGORIES)
@@ -283,6 +293,59 @@ def validate_optional_mc202_role_evidence(entry: dict[str, Any], path: Path, ind
     require(isinstance(role, dict), f"{prefix}.{MC202_ROLE_FIELD} must be object")
     validate_promotion_gate(gate, path)
     validate_role_evidence_for_promotion(role, gate, path)
+
+
+def validate_optional_exact_product_path_evidence(
+    entry: dict[str, Any], path: Path, index: int
+) -> None:
+    gate = entry.get(EXACT_PRODUCT_GATE_FIELD)
+    if gate is None:
+        return
+    prefix = f"{path}: entries[{index}]"
+    require(
+        entry.get(MC202_GATE_FIELD) is None and entry.get(MC202_ROLE_FIELD) is None,
+        f"{prefix}: choose exact product-path or MC-202 promotion evidence, not both",
+    )
+    require(isinstance(gate, dict), f"{prefix}.{EXACT_PRODUCT_GATE_FIELD} must be object")
+    validate_exact_product_gate(
+        gate,
+        path,
+        expected_source_family=str(entry["source_family"]),
+    )
+
+
+def validate_optional_human_verdict_reuse(
+    entry: dict[str, Any], path: Path, index: int, verdict: str
+) -> None:
+    reuse = entry.get(REUSE_FIELD)
+    if reuse is None:
+        return
+    prefix = f"{path}: entries[{index}]"
+    require(isinstance(reuse, dict), f"{prefix}.{REUSE_FIELD} must be object")
+    expected_prior_verdict = {
+        "pass": "keep",
+        "weak": "technically_ok_but_musically_weak",
+        "fail": "reject",
+    }.get(verdict)
+    require(expected_prior_verdict is not None, f"{prefix}: unverified verdict cannot reuse evidence")
+    rendered = object_field(entry, "rendered_wav", prefix)
+    metrics = object_field(entry, "metrics", prefix)
+    human_evidence = object_field(entry, "human_review_evidence", prefix)
+    review_path = Path(non_empty_string(human_evidence.get("review_path"), f"{prefix}.review_path"))
+    require(review_path.is_file(), f"{prefix}: reused human review is missing")
+    review = read_json_object(review_path)
+    validate_reuse_evidence(
+        reuse,
+        path,
+        current_audio_sha256=str(rendered["sha256"]),
+        current_product_manifest_sha256=str(metrics["sha256"]),
+        expected_prior_human_verdict=expected_prior_verdict,
+        current_verdict_dimensions={
+            "strongest_element": str(review.get("strongest_element")),
+            "source_recognition": str(review.get("source_recognition")),
+            "hook_after_two_bars": str(review.get("hook_after_two_bars")),
+        },
+    )
 
 
 def validate_artifact_ref(ref: dict[str, Any], field: str, prefix: str, suffix: str) -> None:

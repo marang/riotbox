@@ -97,6 +97,9 @@ Current P023 algorithm-value refresh:
 - [riotbox_1455_sparse_live_journey_acceptance_2026-08-24.md](./riotbox_1455_sparse_live_journey_acceptance_2026-08-24.md):
   exact sparse capture, Transient Bite, explicit bypass, ordinary re-entry, and
   restart/recall journey with a positive structured human review.
+- [riotbox_1466_tonal_riff_release_demo_acceptance_2026-08-25.md](./riotbox_1466_tonal_riff_release_demo_acceptance_2026-08-25.md):
+  exact current tonal product qualification, bit-identical prior-verdict reuse
+  without another taste judgment, and one demo-ready `tonal_riff` family entry.
 - [p023_tonal_live_boundary_checkpoint_2026-08-22.md](./p023_tonal_live_boundary_checkpoint_2026-08-22.md):
   focused current-state architecture review of the typed character policy,
   live audio projection, tonal exact-mix proof, and restart/recall boundary.
