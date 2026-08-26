@@ -112,6 +112,10 @@ Current P023 algorithm-value refresh:
   exact current sparse product qualification, honest W-30/TR-909/MC-202 lane
   roles, bit-identical prior-verdict reuse without playback, and one demo-ready
   `sparse_drums` family entry.
+- [riotbox_1474_dense_break_release_demo_acceptance_2026-08-26.md](./riotbox_1474_dense_break_release_demo_acceptance_2026-08-26.md):
+  exact current W-30 Dense journey qualification, one fresh structured human
+  keep, completed positive source-family coverage, and preserved aggregate
+  quality/readiness blockers.
 - [p023_tonal_live_boundary_checkpoint_2026-08-22.md](./p023_tonal_live_boundary_checkpoint_2026-08-22.md):
   focused current-state architecture review of the typed character policy,
   live audio projection, tonal exact-mix proof, and restart/recall boundary.

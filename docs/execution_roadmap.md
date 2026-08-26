@@ -1670,6 +1670,22 @@ successor would require a new Linear-first, versioned, phrase-aware mechanism;
 v1 receives no timing tune or replay. No source-general, Holdout, hardness,
 demo, release, universal-quality, or P023-completion claim follows.
 
+RIOTBOX-1474 closes the missing positive Dense demo-family success without
+adding or retuning another mechanism. RBX-345 freezes the current 130 BPM
+W-30-only product journey: explicit Hook Turnaround, Pitch Dive, and Filter
+Slam actions alternate with three ordinary re-entries, then restart/recall
+returns to ordinary W-30. One bounded registered Development source passes the
+full product-spine, exact callback, replay, restart, isolation, limiter, and
+no-fallback gates. A fresh structured human `keep` finds the complete arc
+coherent and replay-worthy with clear source identity and hook. `dense_break`
+is now `demo_ready_covered`, so every required positive or reviewed-negative
+source family has a qualifying outcome and no human review remains queued. The
+aggregate sound-quality report still blocks overall release: the historical
+failed Dense professional candidate remains an active `chop_policy` input and
+the scripted professional suite is diagnostic only. No new-effect,
+source-general, Holdout, hardness, universal-quality, release-ready, or P023
+completion claim follows.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing
