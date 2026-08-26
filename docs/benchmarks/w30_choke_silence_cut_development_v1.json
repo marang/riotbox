@@ -1,0 +1,113 @@
+{
+  "schema": "riotbox.w30_choke_silence_cut_development.v1",
+  "schema_version": 1,
+  "status": "frozen",
+  "owner_ticket": "RIOTBOX-1472",
+  "stage": "development_exploration",
+  "question": "is one explicit W-30 silence cut obvious, musically useful, cleanly returning, and worth triggering live?",
+  "duplicate_audit": {
+    "dedicated_w30_choke_action_exists": false,
+    "dedicated_w30_choke_session_profile_exists": false,
+    "hook_turnaround_difference": "TurnaroundV1 combines a two-beat reverse with a one-beat short gate and is not a pure silence cut",
+    "pitch_dive_difference": "PitchDiveV1 ends in persistent silence until a new ordinary performer intent and does not return automatically",
+    "tr909_difference": "TR-909 choke behavior is drum-lane-owned and cannot prove a W-30 source-hook gesture",
+    "loop_freeze_difference": "w30.loop_freeze materializes reusable capture audio and is not a mute articulation"
+  },
+  "existing_foundation": {
+    "ticket": "RIOTBOX-1471",
+    "path": "artifacts/development/riotbox-1470/qualification-v1/05_w30_dense_foundation_control.wav",
+    "sha256": "baccaa2dcff86e2965571ed3ba4dd4443904fa7c8f3e6b3bb9fd02725637627c",
+    "sample_rate_hz": 48000,
+    "channels": 2,
+    "sample_width_bits": 16,
+    "frame_count": 288000,
+    "duration_seconds": 6.0,
+    "product_bpm": 130.0,
+    "candidate_rerender_allowed": false
+  },
+  "development_source": {
+    "registry_path": "docs/benchmarks/sound_excellence_source_corpus_v1.json",
+    "registry_sha256": "67b5b8b2882575cf70fa61aacf25ae282c17714fe51ffcb13f905458e025d552",
+    "case_id": "dense_beat03_130",
+    "source_family": "dense_break",
+    "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+    "source_sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+    "bpm": 130.0,
+    "source_format": {
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "sample_width_bits": 24,
+      "compression_type": "NONE",
+      "maximum_duration_seconds": 16
+    },
+    "maximum_source_opens": 1,
+    "fresh_exclusive_access_log_before_open": true,
+    "directory_discovery_forbidden": true,
+    "holdout_audio_access": false,
+    "commercial_reference_access": false
+  },
+  "variant_v1": {
+    "id": "w30_choke_silence_cut_v1",
+    "nominal_establish_beats": 4.0,
+    "fade_out_position": "immediately before silence_cut_start_beat",
+    "silence_cut_start_beat": 4.0,
+    "silence_cut_end_beat": 5.0,
+    "silence_cut_beats": 1.0,
+    "fade_milliseconds": 5.0,
+    "fade_curve": "quarter_wave_sine_cosine_amplitude_taper",
+    "return_behavior": "sample_exact_control_after_fade_in",
+    "support_lanes": {
+      "tr909": "stay_out",
+      "mc202": "stay_out",
+      "source_monitor": "stay_out"
+    },
+    "product_action_or_session_state": false,
+    "missing_source_fallback": false
+  },
+  "technical_gates": {
+    "source_and_foundation_sha256_exact": true,
+    "control_and_candidate_format_identical": true,
+    "control_and_candidate_duration_identical": true,
+    "prefix_before_fade_sample_exact": true,
+    "one_beat_cut_pcm_zero": true,
+    "return_after_fade_sample_exact": true,
+    "candidate_peak_not_above_control": true,
+    "clipped_sample_count": 0,
+    "boundary_delta_rule": "candidate edge delta must not exceed the greater of the matching control edge delta and 0.02 full scale",
+    "candidate_materially_distinct": true
+  },
+  "human_review": {
+    "maximum_reviews_for_v1": 1,
+    "playback_order": [
+      "verified_source",
+      "unchanged_w30_control",
+      "w30_choke_silence_cut_v1"
+    ],
+    "pause_seconds_between_items": 1,
+    "named_total_bound_seconds": 20,
+    "questions": [
+      "is the silence cut obvious?",
+      "does the return feel clean and intentional?",
+      "is the gesture musically useful and worth triggering live?"
+    ]
+  },
+  "stopping_rule": {
+    "maximum_causal_variants": 3,
+    "execute_only_v1_before_human_feedback": true,
+    "near_identity_wrong_owner_click_accidental_gap_source_loss_or_not_worth_triggering_stops_v1": true,
+    "no_scalar_micro_tuning": true,
+    "no_product_spine_multi_source_holdout_or_new_validator_framework_before_keep": true
+  },
+  "claim_boundary": {
+    "maximum_success": "one provisional Development keep for w30_choke_silence_cut_v1",
+    "product": false,
+    "source_general": false,
+    "holdout": false,
+    "demo": false,
+    "release_ready": false,
+    "percussive_hardness": false,
+    "automatic_arrangement": false,
+    "universal_quality": false,
+    "p023_complete": false
+  }
+}

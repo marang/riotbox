@@ -273,3 +273,16 @@ claiming a complete demo-ready family. Source-general, Holdout, support-lane,
 release, universal-quality, and P023-completion claims remain blocked. Further
 work must move to the next real Golden Path gap instead of replaying the
 unchanged control.
+
+RIOTBOX-1472 then explores one genuinely new W-30-owned gap on that kept
+foundation: a dedicated one-beat silence cut with a clean automatic return.
+The source-blind duplicate audit distinguishes it from Hook Turnaround's
+reverse/short-gate phrase, Pitch Dive's persistent terminal silence, TR-909
+choke behavior, and Loop Freeze. One exact registered Development source and
+the first causal variant pass the frozen technical gates. The listener finds
+the cut clearly recognizable and musically fitting, so the exact v1 mechanism
+receives a provisional keep without spending the remaining variant budget.
+RBX-342 freezes the heard timing and taper; the temporary exploration runner is
+removed. RIOTBOX-1473 owns the separate source-blind product rebuild and
+source-diverse qualification. This result grants no product, source-general,
+Holdout, hardness, demo, release, universal-quality, or P023-completion claim.
