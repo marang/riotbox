@@ -1641,6 +1641,21 @@ is not thereby a complete demo-ready family. Source-general, Holdout,
 support-lane, universal-quality, release, and P023-completion claims remain
 blocked, and the next slice must target a genuine remaining product gap.
 
+RIOTBOX-1472 targets that next gap with a bounded Development exploration of a
+dedicated W-30 silence cut. Source-blind inspection confirms that the action is
+not already product-reachable and is causally distinct from Hook Turnaround,
+Pitch Dive, TR-909 choke, and Loop Freeze. The first frozen variant advances
+the ordinary W-30 phrase toward relative beat four, tapers for 5 ms immediately
+before that boundary, emits one exact beat of silence, and returns automatically
+to the advancing ordinary phrase. One exact
+registered Development source passes access, identity, isolation, timing,
+boundary, clipping, and return gates. The human review finds the cut clearly
+recognizable and musically fitting, earning a provisional keep. RBX-342 freezes
+the heard v1 mechanism and RIOTBOX-1473 owns its separate source-blind product
+integration and source-diverse qualification. Until that succeeds, the result
+is neither product behavior nor demo, release, Holdout, hardness,
+source-general, universal-quality, or P023-completion evidence.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing
