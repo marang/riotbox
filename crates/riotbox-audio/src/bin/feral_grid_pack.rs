@@ -1,7 +1,17 @@
 #[path = "feral_grid_pack/manifest.rs"]
 mod manifest;
+#[path = "feral_grid_pack/product_stem_contributions.rs"]
+mod product_stem_contributions;
 
 use manifest::write_manifest;
+#[cfg(test)]
+use product_stem_contributions::{
+    PRODUCT_STEM_RECONSTRUCTION_RULE, PRODUCT_STEM_RECONSTRUCTION_SCHEMA,
+};
+use product_stem_contributions::{
+    ProductStemContributionRender, ProductStemReconstructionReport,
+    render_product_stem_contributions, validate_written_product_stem_reconstruction,
+};
 
 #[cfg(test)]
 use riotbox_audio::listening_manifest::LISTENING_MANIFEST_SCHEMA_VERSION;

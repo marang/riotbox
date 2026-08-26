@@ -86,27 +86,6 @@ fn render_generated_support_mix(tr909: &[f32], mc202: &[f32], w30: &[f32]) -> Ve
     render_mix_with_master_bus_report(tr909, mc202, w30, GENERATED_SUPPORT_MIX_POLICY).0
 }
 
-fn render_generated_support_mix_with_master_bus_report(
-    tr909: &[f32],
-    mc202: &[f32],
-    w30: &[f32],
-    grid: &Grid,
-    source_contour: Mc202SourceContourProfile,
-) -> (Vec<f32>, MasterBusLimiterReport) {
-    render_mix_with_master_bus_report(
-        tr909,
-        mc202,
-        w30,
-        generated_support_mix_policy_for_source_contour_and_stems(
-            tr909,
-            mc202,
-            w30,
-            grid,
-            source_contour,
-        ),
-    )
-}
-
 fn generated_support_mix_policy_for_source_contour_and_stems(
     tr909: &[f32],
     mc202: &[f32],

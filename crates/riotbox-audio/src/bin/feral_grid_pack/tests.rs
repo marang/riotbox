@@ -431,6 +431,9 @@ mod tests {
                 .is_file()
         );
         assert!(output_dir.join("stems/03_mc202_bass_pressure.wav").is_file());
+        assert!(output_dir.join("stems/product/01_stem_drums.wav").is_file());
+        assert!(output_dir.join("stems/product/02_stem_music.wav").is_file());
+        assert!(output_dir.join("stems/product/03_stem_bass.wav").is_file());
         assert!(output_dir.join("04_riotbox_source_first_mix.wav").is_file());
         assert!(
             output_dir
@@ -499,6 +502,11 @@ mod tests {
             assert!(text.contains("Source timing warnings: `"));
         }
         assert!(report.contains("Source timing BPM: `primary="));
+        assert!(readme.contains("stems/product/01_stem_drums.wav"));
+        assert!(readme.contains("stems/product/02_stem_music.wav"));
+        assert!(readme.contains("stems/product/03_stem_bass.wav"));
+        assert!(readme.contains("reconstruct the written generated-support mix"));
+        assert!(readme.contains("does not make stem export a musician action"));
     }
 
     include!("tests_helpers.rs");
