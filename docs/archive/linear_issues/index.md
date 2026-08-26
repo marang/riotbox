@@ -1651,4 +1651,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Split PR validation from broad phase audio-QA
 - [RIOTBOX-1476.md](./RIOTBOX-1476.md)
   Complete musician product-mix export proof handoff
+- [RIOTBOX-1477.md](./RIOTBOX-1477.md)
+  Publish source-matched reconstructable product stems
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
