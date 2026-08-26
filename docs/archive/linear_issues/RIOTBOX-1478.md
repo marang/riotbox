@@ -31,3 +31,4 @@ The existing source-derived MC-202 phrase plan was applied in rendering, but leg
 ## Notes
 
 - No DSP, phrase-planning algorithm, threshold, registered Development source, Holdout, commercial reference, or playback changed. Full-mix SHA-256 remained 612bbd6ad874c5308f639753ac28f42c61b7ca386759be64a0bc9c9b41e3a828.
+- Decision `RBX-350` supersedes the legacy `RBX-092` origin boundary for the version-2 handoff; version 1 remains historical evidence and is not reinterpreted.
