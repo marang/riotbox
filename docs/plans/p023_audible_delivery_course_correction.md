@@ -260,3 +260,16 @@ rounded `confirmed_bpm: 130.0` into Runtime instead of the earlier confirmed
 prior verdict is reused and the temporary seam is removed. A Linear-first
 successor must resolve the single typed confirmed-tempo authority across the
 product spine before another source qualification. Dense remains non-demo-ready.
+
+RIOTBOX-1471 corrects the RIOTBOX-1470 handoff source-blind: RBX-324 already
+establishes the explicitly accepted `130.0 BPM` as correct product-spine truth,
+so no timing code change is needed. The exact existing RIOTBOX-1470 artifact is
+technically preflighted without rerendering and receives one source-first human
+`keep` as a usable W-30-led Dense foundation. The listener recognizes the
+mechanism as established behavior; the result is therefore classified as
+maintenance/regression confirmation, not new audible progress. This
+establishes one bounded positive W-30-led `dense_break` foundation without
+claiming a complete demo-ready family. Source-general, Holdout, support-lane,
+release, universal-quality, and P023-completion claims remain blocked. Further
+work must move to the next real Golden Path gap instead of replaying the
+unchanged control.

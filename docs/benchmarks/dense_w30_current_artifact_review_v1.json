@@ -1,0 +1,129 @@
+{
+  "schema": "riotbox.dense_w30_current_artifact_review.v1",
+  "schema_version": 1,
+  "status": "frozen",
+  "owner_ticket": "RIOTBOX-1471",
+  "purpose": "qualify the current exact-confirmed-tempo ordinary W-30 Dense foundation without changing or rerendering the product artifact",
+  "timing_contract_correction": {
+    "decision": "RBX-324",
+    "implementation_commit": "12e262df3028917c1dda2a22f7b6413ed1d2e7b7",
+    "explicit_confirmed_bpm": 130.0,
+    "prior_analyzer_bpm": 130.28494262695312,
+    "current_product_behavior_is_intentional": true,
+    "source_timing_code_change_required": false,
+    "stale_prior_human_identity_is_the_blocker": true
+  },
+  "prior_qualification_evidence": {
+    "ticket": "RIOTBOX-1470",
+    "access_log_path": "artifacts/development/riotbox-1470/access-log-2026-08-26-a.json",
+    "access_log_sha256": "238a19378ade5c1bf9c94e4450f10a3374cf9eedc9b515424fb7fe65cd750eac",
+    "qualification_result_path": "artifacts/development/riotbox-1470/qualification-v1/dense-w30-foundation-qualification.json",
+    "qualification_result_sha256": "a4c3a6d25a900a26748906bebe26434a8820d6ae26817b12bdb74dd8f9a8fb40",
+    "product_manifest_path": "artifacts/development/riotbox-1470/qualification-v1/dense-w30-foundation-product-manifest.json",
+    "product_manifest_sha256": "3906af09b1bce218baf973cdd2bd3e054eefc12ece7b637f7f95e364e64dca1f",
+    "candidate_audio_path": "artifacts/development/riotbox-1470/qualification-v1/05_w30_dense_foundation_control.wav",
+    "candidate_audio_sha256": "baccaa2dcff86e2965571ed3ba4dd4443904fa7c8f3e6b3bb9fd02725637627c",
+    "human_playback_occurred": false,
+    "human_verdict_created": false,
+    "technically_passing_gates": [
+      "callback_partitions_sample_exact",
+      "restart_sample_exact",
+      "missing_source_silent",
+      "no_pre_limiter_clips",
+      "no_limiter_intervention",
+      "no_post_limiter_clips",
+      "non_silent"
+    ],
+    "failed_identity_gates_are_not_reused": [
+      "audio_bit_identical_to_prior_reviewed_control",
+      "product_manifest_bit_identical_to_prior_reconstruction"
+    ]
+  },
+  "development_source_access": {
+    "registry_path": "docs/benchmarks/sound_excellence_source_corpus_v1.json",
+    "registry_sha256": "67b5b8b2882575cf70fa61aacf25ae282c17714fe51ffcb13f905458e025d552",
+    "case_id": "dense_beat03_130",
+    "source_family": "dense_break",
+    "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+    "source_sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+    "partition": "development",
+    "source_format": {
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "sample_width_bits": 24,
+      "compression_type": "NONE",
+      "maximum_duration_seconds": 16
+    },
+    "maximum_registered_source_opens": 1,
+    "purpose": "copy exact verified bytes into one local ignored source-first review presentation",
+    "fresh_exclusive_access_log_before_open": true,
+    "directory_discovery_forbidden": true,
+    "holdout_audio_access": false,
+    "commercial_reference_access": false
+  },
+  "product_path": {
+    "id": "ordinary_promoted_w30_control_v1",
+    "owner": "w30",
+    "product_bpm": 130.0,
+    "lane_roles": {
+      "w30": "source_transform_foundation",
+      "tr909": "stay_out",
+      "mc202": "stay_out",
+      "source_monitor": "stay_out"
+    },
+    "candidate_rerender_allowed": false,
+    "product_code_change_allowed": false,
+    "dsp_timing_gain_mix_selector_or_mapping_change_allowed": false
+  },
+  "technical_preflight": {
+    "candidate_sha256_required": "baccaa2dcff86e2965571ed3ba4dd4443904fa7c8f3e6b3bb9fd02725637627c",
+    "candidate_sample_rate_hz": 48000,
+    "candidate_channels": 2,
+    "candidate_sample_width_bits": 16,
+    "candidate_frame_count": 288000,
+    "candidate_duration_seconds": 6.0,
+    "candidate_non_silent": true,
+    "candidate_clipped_samples": 0,
+    "source_sha256_required": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+    "presentation_copies_must_be_byte_identical": true,
+    "playback_order": [
+      "source",
+      "current_w30_foundation"
+    ],
+    "human_playback_before_complete_preflight": false
+  },
+  "human_review": {
+    "maximum_reviews": 1,
+    "source_first": true,
+    "candidate_duration_seconds": 6.0,
+    "source_duration_seconds_maximum": 16.0,
+    "question": "is the W-30 transformation musically useful as the Dense foundation before support lanes?",
+    "verdicts": [
+      "keep",
+      "weak",
+      "fail"
+    ],
+    "new_verdict_required": true,
+    "prior_verdict_reuse": false,
+    "repeat_only_on_explicit_direct_request": true
+  },
+  "stopping_rule": {
+    "maximum_existing_candidate_artifacts": 1,
+    "maximum_registered_source_opens": 1,
+    "maximum_human_reviews": 1,
+    "fail_closed_on_any_identity_format_safety_or_presentation_mismatch": true,
+    "no_rerender_retune_tolerance_match_second_source_or_second_candidate": true,
+    "changed_artifact_or_mechanism_requires_new_version_and_decision": true
+  },
+  "claim_boundary": {
+    "maximum_success": "one dense_break W-30-led positive-family foundation",
+    "source_general": false,
+    "holdout": false,
+    "percussive_hardness": false,
+    "automatic_arrangement": false,
+    "support_lane_quality": false,
+    "universal_quality": false,
+    "release_ready": false,
+    "p023_complete": false
+  }
+}
