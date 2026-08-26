@@ -36,6 +36,13 @@ re-entries, restart/recall to ordinary W-30, isolation, limiter, clipping, and
 missing-source gates. W-30 is the sole active generated contributor; TR-909,
 MC-202, and Source Monitor stay out.
 
+No action or observer surface changes in this slice. The pinned individual
+product qualifications own the existing TUI/observer consequences for all
+three gestures; the current source-blind workspace tests recheck their key
+outcomes, observer labels, and W-30 cue labels. The exact RIOTBOX-1474 run then
+proves the six committed actions and their Session/runtime consequences rather
+than inventing a second journey-specific observer model.
+
 The qualification report has SHA-256
 `1dd244a7173fa780c6b4d5a2f7bb2dc1f11c4939ee98e9bd589a54285d80c38d`,
 the gesture-vocabulary report
