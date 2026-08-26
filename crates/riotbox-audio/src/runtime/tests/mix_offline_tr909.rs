@@ -56,7 +56,6 @@ fn render_mix_buffer_includes_live_mc202_bass_seam() {
                 position_beats: 32.0,
             },
             preview_state: &mut w30_preview_state,
-            stereo_side_samples: None,
             resample_render: &RealtimeW30ResampleTapState {
                 mode: W30ResampleTapMode::Idle,
                 routing: W30ResampleTapRouting::Silent,

@@ -1601,6 +1601,17 @@ closed. RBX-337 excludes those outputs, binds unchanged negative-result hashes,
 and requires source-access compatibility checking before future broad local
 audio QA. The incident changes no musical or readiness result.
 
+RIOTBOX-1469 next isolates the W-30 channel topology instead of adding another
+Dense gesture or selector. The one frozen stereo-preserving candidate passes
+all source-blind and exact Development gates: real Side information survives,
+the complete Mid and center attacks remain effectively unchanged, 128/257-frame
+callbacks and restart are sample-exact, and no clipping, limiter activity, or
+fallback occurs. The sole human check remains monitoring-inconclusive on the
+available notebook speakers. Because metrics cannot award musical usefulness,
+there is no provisional keep or qualification handoff; the temporary Runtime
+seam is removed. Dense remains the sole missing positive demo family, and all
+release, Holdout, universal-quality, and P023-completion claims remain blocked.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing

@@ -67,6 +67,10 @@ Current P023 algorithm-value refresh:
   source-blind continuous full-bar W-30 exploration, exact fail-closed
   Development recovery, technical rejection before playback, and removal of
   the temporary Runtime grammar.
+- [riotbox_1469_w30_stereo_pad_development_stop_2026-08-26.md](./riotbox_1469_w30_stereo_pad_development_stop_2026-08-26.md):
+  technically successful stereo-preserving W-30 exploration, monitoring-bound
+  inconclusive human usefulness check, explicit stop without promotion, and
+  removal of the temporary Runtime seam.
 - [riotbox_1462_dense_break_foundation_chop_exploration_2026-08-25.md](./riotbox_1462_dense_break_foundation_chop_exploration_2026-08-25.md):
   one source-only long-slice foundation variant, exact-artifact technical
   preflight, provisional human keep, and frozen product-qualification handoff.
