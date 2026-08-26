@@ -656,6 +656,13 @@ After exit:
   audio safety/boundary preflight during its sole no-source-reopen recovery.
   No playback or human verdict occurs, the temporary Runtime grammar is
   removed, and `dense_break` remains the only missing positive-family success.
+- RIOTBOX-1469 isolates stereo channel preservation rather than introducing
+  another Dense gesture, selector, or layer. The exact candidate passes every
+  frozen technical gate and preserves material Side information with an
+  effectively unchanged center, sample-exact callback partitions/restart, and
+  no clipping or fallback. The one human usefulness check is inconclusive on
+  the available notebook speakers; automation cannot promote it, so the
+  temporary Runtime seam is removed without a qualification handoff.
 - RIOTBOX-1410 is the first bounded Foundation Completion closure: explicit
   control-only source-monitor refresh retains current PCM, explicit replacement
   atomically publishes PCM plus mode/gains and anchors, and exact callback /

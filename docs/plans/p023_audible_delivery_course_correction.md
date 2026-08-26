@@ -235,3 +235,17 @@ recovery performs no source reopen or rerender and still fails before human
 playback. The temporary Runtime grammar is removed. Dense remains non-demo-ready;
 a successor needs a new Linear-first causal slice rather than v2 tuning or
 reuse of consumed artifacts.
+
+RIOTBOX-1469 then isolates channel topology rather than adding another gesture,
+selector, lane, or effect. One source-blind candidate preserves the existing
+W-30 Mid path while carrying registered left/right Side information through
+independent per-channel character state. The sole exact Development session
+passes every frozen technical gate: stereo survives materially, the center and
+attacks remain effectively unchanged, callback partitions and restart are
+sample-exact, and no clipping or fallback occurs. The bounded human check is
+inconclusive because the available notebook speakers do not support reliable
+stereo judgment. Automation cannot promote musical usefulness, the one-review
+budget admits no replay on another monitor, and no provisional keep follows.
+The temporary seam is removed; the exact contract and feasibility evidence
+remain for a future Linear-first slice only if suitable stereo monitoring makes
+the musician-facing question observable.
