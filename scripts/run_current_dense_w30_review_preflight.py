@@ -22,8 +22,12 @@ from source_holdout_development_access import (
 )
 
 
-CONTRACT = Path("docs/benchmarks/dense_w30_current_artifact_review_v1.json")
-CONTRACT_SHA256 = "e674807ba5c5fdb9572f50d82f2a1a8975bfc92960e655b19605d6780bbb86d3"
+CONTRACT = Path("docs/benchmarks/dense_w30_current_artifact_review_v2.json")
+CONTRACT_SHA256 = "18f531c5fdbf899058d173c8cd839cdf8533775f4f51e1c7259f0933a2293e5a"
+V1_CONTRACT = Path("docs/benchmarks/dense_w30_current_artifact_review_v1.json")
+V1_CONTRACT_SHA256 = "e674807ba5c5fdb9572f50d82f2a1a8975bfc92960e655b19605d6780bbb86d3"
+V1_FAILED_ACCESS_LOG = Path("artifacts/development/riotbox-1471/access-log-2026-08-26-a.json")
+V1_FAILED_ACCESS_LOG_SHA256 = "5c990a6294f1eb4672252c822243f4051ff2c668b910ea520f6e037b7696f561"
 SOURCE = Path("data/test_audio/examples/Beat03_130BPM(Full).wav")
 SOURCE_SHA256 = "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a"
 SOURCE_FORMAT = {
@@ -84,12 +88,14 @@ def validate_source_blind(repo: Path) -> None:
     contract_path = repo / CONTRACT
     require(sha256_file(contract_path) == CONTRACT_SHA256, "frozen review contract hash changed")
     contract = read_json(contract_path)
-    require(contract.get("schema") == "riotbox.dense_w30_current_artifact_review.v1", "contract schema changed")
+    require(contract.get("schema") == "riotbox.dense_w30_current_artifact_review.v2", "contract schema changed")
     require(contract.get("status") == "frozen", "contract is not frozen")
     require(contract["timing_contract_correction"]["current_product_behavior_is_intentional"] is True, "timing correction changed")
     require(contract["product_path"]["product_code_change_allowed"] is False, "product-code boundary changed")
     require(contract["stopping_rule"]["maximum_registered_source_opens"] == 1, "source-open budget changed")
     require(contract["human_review"]["maximum_reviews"] == 1, "review budget changed")
+    require(sha256_file(repo / V1_CONTRACT) == V1_CONTRACT_SHA256, "v1 contract changed")
+    require(sha256_file(repo / V1_FAILED_ACCESS_LOG) == V1_FAILED_ACCESS_LOG_SHA256, "v1 failed access log changed")
     resolved = {}
     for label, (relative, expected) in PRIOR_FILES.items():
         path = repo / relative
@@ -158,7 +164,7 @@ def run(repo: Path, output: Path, access_log_path: Path) -> None:
     require(not output.exists(), f"review output already exists: {output}")
     output.mkdir(parents=True)
     log: dict[str, Any] = {
-        "schema": "riotbox.dense_w30_current_artifact_review_access.v1",
+        "schema": "riotbox.dense_w30_current_artifact_review_access.v2",
         "ticket": "RIOTBOX-1471",
         "started_at_utc": utc_now(),
         "contract": {"path": CONTRACT.as_posix(), "sha256": CONTRACT_SHA256},
@@ -201,15 +207,8 @@ def run(repo: Path, output: Path, access_log_path: Path) -> None:
                 on_open=record_open,
                 return_payload=True,
             )
-            source_sample_bytes = source_result.pop("sample_bytes")
-            sample_values = [
-                int.from_bytes(source_sample_bytes[index:index + 3], "little", signed=True)
-                for index in range(0, len(source_sample_bytes), 3)
-            ]
-            source_peak = max((abs(value) for value in sample_values), default=0)
-            source_rms = math.sqrt(sum(value * value for value in sample_values) / max(1, len(sample_values))) / 8_388_608.0
             opened.update(source_result)
-            opened.update({"peak_abs": source_peak / 8_388_608.0, "rms": source_rms, "status": "verified"})
+            opened.update({"status": "verified"})
 
             source_copy = output / "00_verified_source.wav"
             candidate_copy = output / "01_current_w30_foundation.wav"
@@ -218,7 +217,7 @@ def run(repo: Path, output: Path, access_log_path: Path) -> None:
             require(sha256_file(source_copy) == SOURCE_SHA256, "source presentation changed bytes")
             require(sha256_file(candidate_copy) == CANDIDATE_SHA256, "candidate presentation changed bytes")
             preflight = {
-                "schema": "riotbox.dense_w30_current_artifact_review_preflight.v1",
+                "schema": "riotbox.dense_w30_current_artifact_review_preflight.v2",
                 "ticket": "RIOTBOX-1471",
                 "result": "technically_eligible_for_one_source_first_human_review",
                 "playback_order": [source_copy.as_posix(), candidate_copy.as_posix()],
@@ -257,8 +256,8 @@ def main() -> int:
     else:
         run(
             repo,
-            repo / "artifacts/development/riotbox-1471/review-v1",
-            repo / "artifacts/development/riotbox-1471/access-log-2026-08-26-a.json",
+            repo / "artifacts/development/riotbox-1471/review-v2",
+            repo / "artifacts/development/riotbox-1471/access-log-2026-08-26-b.json",
         )
     return 0
 
