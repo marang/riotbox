@@ -1,0 +1,44 @@
+{
+  "schema": "riotbox.release_demo_evidence_reconciliation.v1",
+  "schema_version": 1,
+  "status": "frozen",
+  "owner_ticket": "RIOTBOX-1475",
+  "decision": "RBX-346",
+  "purpose": "bind the complete current live release-demo bank, retain superseded negative evidence, and let only exact human-reviewed product paths own aggregate quality proof",
+  "evidence_mode": "live_readiness",
+  "demo_bank": {
+    "sha256": "dfd04750c010493e06f99d73139963a6666239cef78912f34235091481aa4864",
+    "evidence_role": "live_review"
+  },
+  "supersessions": [
+    {
+      "superseded_entry_id": "dense-beat03-130-professional-fail",
+      "successor_entry_id": "dense-beat03-current-w30-journey-human-pass",
+      "negative_evidence_retained": true,
+      "reason": "The RIOTBOX-1461 scripted-professional transformation remains a valid rejected Dense artifact, while RIOTBOX-1474 is the later exact-product human-pass journey for the same registered source and family."
+    }
+  ],
+  "quality_evidence": {
+    "positive_entry_ids": [
+      "dense-beat03-current-w30-journey-human-pass",
+      "sparse-kicksnr-exact-product-human-pass",
+      "tonal-rusharp-exact-product-human-pass"
+    ],
+    "reviewed_negative_entry_ids": [
+      "bad-timing-beat20-human-degraded",
+      "pad-noise-fadapad-human-unavailable",
+      "weak-source-beat20-human-degraded"
+    ],
+    "fixture_or_scripted_quality_proof_allowed": false
+  },
+  "claim_boundary": {
+    "scripted_professional_suite_role": "diagnostic_context_only",
+    "historical_negative_evidence_deleted_or_relabelled": false,
+    "new_audio_evidence": false,
+    "new_human_verdict": false,
+    "new_sound_or_algorithm": false,
+    "holdout_access": false,
+    "source_general_quality": false,
+    "universal_quality": false
+  }
+}

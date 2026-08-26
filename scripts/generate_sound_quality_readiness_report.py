@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 import demo_bank_evidence as evidence
+import release_demo_evidence_reconciliation as release_evidence
 from sound_quality_readiness_human_review import (
     DEFAULT_HUMAN_REVIEW_QUEUE,
     human_review_queue_summary,
@@ -18,7 +19,7 @@ from sound_quality_readiness_human_review import (
 )
 
 
-SCHEMA = "riotbox.sound_quality_readiness_report.v1"
+SCHEMA = "riotbox.sound_quality_readiness_report.v2"
 RUBRIC_SCHEMA = "riotbox.sound_product_readiness_rubric.v1"
 SOURCE_CORPUS_SCHEMA = "riotbox.sound_excellence_source_corpus.v1"
 DEMO_BANK_SCHEMA = "riotbox.release_grade_demo_bank.v1"
@@ -87,6 +88,7 @@ def main() -> int:
     parser.add_argument("--rubric", type=Path, default=DEFAULT_RUBRIC)
     parser.add_argument("--source-corpus", type=Path, default=DEFAULT_SOURCE_CORPUS)
     parser.add_argument("--demo-bank", type=Path)
+    parser.add_argument("--release-demo-evidence-reconciliation", type=Path)
     parser.add_argument(
         "--evidence-mode",
         choices=sorted(evidence.EVIDENCE_MODES),
@@ -138,6 +140,11 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         if demo_bank_path is not None
         else evidence.empty_demo_bank(DEMO_BANK_SCHEMA)
     )
+    release_evidence_contract = (
+        read_optional_json_object(args.release_demo_evidence_reconciliation)
+        if args.release_demo_evidence_reconciliation is not None
+        else None
+    )
     human_review_queue_path = args.human_review_queue
     release_demo_review_packs_path = args.release_demo_review_packs
     if args.evidence_mode == evidence.FIXTURE_CALIBRATION:
@@ -174,6 +181,14 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         if demo_bank_path is not None
         else []
     )
+    release_evidence_summary = release_evidence.summarize(
+        release_evidence_contract,
+        args.release_demo_evidence_reconciliation,
+        demo_bank,
+        demo_bank_path,
+        raw_demo_entries,
+        args.evidence_mode,
+    )
     demo_entries = evidence.usable_entries(
         demo_bank,
         raw_demo_entries,
@@ -195,6 +210,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         demo_entries,
         demo_bank_path,
         args.evidence_mode,
+        release_evidence_summary,
     )
     weak_summary = weak_routing_summary(weak_routing, args.weak_routing)
     suite_summary = professional_suite_summary(professional_suite, args.professional_output_suite)
@@ -243,6 +259,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         suite_summary,
         review_summary,
         demo_bank_evidence,
+        release_evidence_summary,
     )
 
     release_readiness = "release_ready" if not blockers else "blocked"
@@ -258,7 +275,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
 
     return {
         "schema": SCHEMA,
-        "schema_version": 1,
+        "schema_version": 2,
         "created_at": args.date,
         "result": "pass",
         "phase": "P023",
@@ -283,6 +300,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "source_family_coverage": source_families,
         "demo_bank_evidence": demo_bank_evidence,
         "demo_bank": demo_summary,
+        "release_demo_evidence_reconciliation": release_evidence_summary,
         "weak_output_routing": weak_summary,
         "professional_output_suite": suite_summary,
         "jam_perform_risk_cue_contract": perform_risk_cue_summary,
@@ -430,7 +448,15 @@ def demo_bank_summary(
     entries: list[Any],
     path: Path | None,
     evidence_mode: str,
+    release_evidence_summary: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    reconciliation = object_or_empty(release_evidence_summary)
+    superseded_ids = set(string_list(reconciliation.get("superseded_entry_ids")))
+    supersessions_by_id = {
+        str(item.get("superseded_entry_id")): item
+        for item in list_or_empty(reconciliation.get("supersessions"))
+        if isinstance(item, dict)
+    }
     eligible_human_entries = [
         entry
         for entry in entries
@@ -450,6 +476,16 @@ def demo_bank_summary(
         for entry in eligible_human_entries
         if entry.get("human_verdict") in {"weak", "fail"}
         and str(entry.get("entry_id")) not in reviewed_outcome_ids
+        and str(entry.get("entry_id")) not in superseded_ids
+    ]
+    superseded_weak_or_fail_entries = [
+        {
+            **demo_bank_entry_summary(entry),
+            "supersession": supersessions_by_id[str(entry.get("entry_id"))],
+        }
+        for entry in eligible_human_entries
+        if entry.get("human_verdict") in {"weak", "fail"}
+        and str(entry.get("entry_id")) in superseded_ids
     ]
     weak_fix_categories = sorted(
         {
@@ -475,6 +511,7 @@ def demo_bank_summary(
         "demo_readiness_counts": dict(sorted(readiness_counts.items())),
         "unverified_candidate_ids": unverified,
         "weak_or_fail_entries": weak_or_fail,
+        "superseded_weak_or_fail_entries": superseded_weak_or_fail_entries,
         "reviewed_degraded_or_reject_entries": reviewed_outcomes,
         "weak_fix_categories": weak_fix_categories,
     }
@@ -2261,7 +2298,9 @@ def readiness_blockers(
     suite: dict[str, Any],
     review_queue: dict[str, Any],
     demo_bank_evidence: dict[str, Any],
+    release_evidence_summary: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
+    release_evidence_summary = object_or_empty(release_evidence_summary)
     blockers: list[dict[str, Any]] = []
     if demo_bank_evidence.get("demo_bank_state") != "available":
         blockers.append(
@@ -2390,12 +2429,25 @@ def readiness_blockers(
                     ),
                 }
             )
-    if suite.get("scripted_generation") is True or suite.get("quality_proof") is False:
+    suite_quality_proof = (
+        suite.get("scripted_generation") is not True
+        and suite.get("quality_proof") is True
+    )
+    product_quality_proof = (
+        release_evidence_summary.get("available") is True
+        and release_evidence_summary.get("result") == "pass"
+        and release_evidence_summary.get("scripted_generation") is False
+        and release_evidence_summary.get("quality_proof") is True
+    )
+    if not suite_quality_proof and not product_quality_proof:
         blockers.append(
             {
                 "code": "professional_suite_diagnostic_only",
                 "severity": "claim_blocking",
-                "reason": "The current professional-output suite remains scripted diagnostic evidence, not quality proof.",
+                "reason": (
+                    "The professional-output suite remains diagnostic; release quality "
+                    "requires a validated non-fixture product-evidence reconciliation."
+                ),
             }
         )
     if not review_queue["available"] or review_queue["result"] != "pass":
@@ -2582,9 +2634,12 @@ def musician_summary(blockers: list[dict[str, Any]], fix_categories: list[str]) 
 def validate_report(report: dict[str, Any]) -> list[str]:
     failures: list[str] = []
     check(report.get("schema") == SCHEMA, "schema_mismatch", failures)
-    check(report.get("schema_version") == 1, "schema_version_mismatch", failures)
+    check(report.get("schema_version") == 2, "schema_version_mismatch", failures)
     check(report.get("result") == "pass", "result_not_pass", failures)
     demo_bank_evidence = object_or_empty(report.get("demo_bank_evidence"))
+    release_evidence_summary = object_or_empty(
+        report.get("release_demo_evidence_reconciliation")
+    )
     evidence_mode = demo_bank_evidence.get("mode")
     check(
         evidence_mode in evidence.EVIDENCE_MODES,
@@ -2609,6 +2664,23 @@ def validate_report(report: dict[str, Any]) -> list[str]:
         "demo_bank_evidence_identity_stale",
         failures,
     )
+    failures.extend(release_evidence.validate_summary(release_evidence_summary))
+    if release_evidence_summary.get("available") is True:
+        check(
+            release_evidence_summary.get("evidence_mode") == evidence_mode,
+            "release_demo_evidence_mode_mismatch",
+            failures,
+        )
+        check(
+            evidence_paths_match(
+                release_evidence_summary.get("demo_bank_path"),
+                demo_bank_evidence.get("demo_bank_path"),
+            )
+            and release_evidence_summary.get("demo_bank_sha256")
+            == demo_bank_evidence.get("demo_bank_sha256"),
+            "release_demo_evidence_bank_identity_mismatch",
+            failures,
+        )
     if (
         evidence_mode == evidence.LIVE_READINESS
         and demo_bank_evidence.get("demo_bank_state") != "available"
@@ -2678,6 +2750,11 @@ def validate_report(report: dict[str, Any]) -> list[str]:
         )
     unverified = nested_list(report, "demo_bank", "unverified_candidate_ids")
     weak_entries = nested_list(report, "demo_bank", "weak_or_fail_entries")
+    superseded_weak_entries = nested_list(
+        report,
+        "demo_bank",
+        "superseded_weak_or_fail_entries",
+    )
     reviewed_outcome_entries = nested_list(
         report,
         "demo_bank",
@@ -2700,9 +2777,19 @@ def validate_report(report: dict[str, Any]) -> list[str]:
         for entry in reviewed_outcome_entries
         if isinstance(entry, dict)
     }
+    superseded_weak_ids = {
+        str(entry.get("entry_id"))
+        for entry in superseded_weak_entries
+        if isinstance(entry, dict)
+    }
     check(
         weak_entry_ids.isdisjoint(reviewed_outcome_ids),
         "reviewed_negative_outcomes_still_counted_as_weak_or_fail",
+        failures,
+    )
+    check(
+        weak_entry_ids.isdisjoint(superseded_weak_ids),
+        "superseded_failures_still_counted_as_active_weak_or_fail",
         failures,
     )
     for index, entry in enumerate(reviewed_outcome_entries):
@@ -2748,6 +2835,7 @@ def validate_report(report: dict[str, Any]) -> list[str]:
     suite_available = nested_value(report, "professional_output_suite", "available")
     suite_scripted = nested_value(report, "professional_output_suite", "scripted_generation")
     suite_quality = nested_value(report, "professional_output_suite", "quality_proof")
+    product_quality = release_evidence_summary.get("quality_proof") is True
     suite_source_character = nested_value(
         report,
         "professional_output_suite",
@@ -3675,8 +3763,11 @@ def validate_report(report: dict[str, Any]) -> list[str]:
         check(not weak_entries, "release_ready_with_weak_entries", failures)
         check(weak_available is True, "release_ready_without_weak_routing", failures)
         check(suite_available is True, "release_ready_without_professional_suite", failures)
-        check(suite_scripted is not True, "release_ready_from_scripted_suite", failures)
-        check(suite_quality is True, "release_ready_without_quality_proof", failures)
+        check(
+            product_quality or (suite_scripted is not True and suite_quality is True),
+            "release_ready_without_quality_proof",
+            failures,
+        )
         check(not review_candidates, "release_ready_with_human_review_queue_candidates", failures)
 
     if blockers:
@@ -3686,7 +3777,11 @@ def validate_report(report: dict[str, Any]) -> list[str]:
         check(report.get("quality_claim_allowed") is True, "release_ready_must_allow_quality_claim", failures)
 
     fix_categories = report.get("next_fix_categories")
-    check(isinstance(fix_categories, list) and bool(fix_categories), "next_fix_categories_missing", failures)
+    check(isinstance(fix_categories, list), "next_fix_categories_invalid", failures)
+    if release_readiness == "release_ready":
+        check(fix_categories == [], "release_ready_with_next_fix_categories", failures)
+    else:
+        check(bool(fix_categories), "next_fix_categories_missing", failures)
     check(isinstance(report.get("musician_summary"), str) and report["musician_summary"], "musician_summary_missing", failures)
     return failures
 
@@ -4011,6 +4106,10 @@ def markdown_report(report: dict[str, Any]) -> str:
         f"- Demo-bank evidence mode: {report['demo_bank_evidence']['mode']}",
         f"- Demo-bank state: {report['demo_bank_evidence']['demo_bank_state']}",
         f"- Fixture only: {str(report['demo_bank_evidence']['fixture_only']).lower()}",
+        (
+            "- Product-evidence quality proof: "
+            f"{str(object_or_empty(report.get('release_demo_evidence_reconciliation')).get('quality_proof') is True).lower()}"
+        ),
         "",
         "## Blockers",
         "",
@@ -4057,6 +4156,9 @@ def markdown_report(report: dict[str, Any]) -> str:
     else:
         lines.append("- missing")
     suite = object_or_empty(report.get("professional_output_suite"))
+    release_evidence_summary = object_or_empty(
+        report.get("release_demo_evidence_reconciliation")
+    )
     current_evidence = object_or_empty(report.get("current_evidence_reconciliation"))
     source_selection_priority = object_or_empty(report.get("source_selection_priority"))
     ui_cue_priority = object_or_empty(report.get("ui_cue_priority"))
@@ -4069,6 +4171,7 @@ def markdown_report(report: dict[str, Any]) -> str:
     drum_pressure = object_or_empty(suite.get("drum_pressure"))
     destructive = object_or_empty(suite.get("destructive_gesture"))
     mix_balance = object_or_empty(suite.get("mix_balance"))
+    lines.extend(release_evidence.markdown_lines(release_evidence_summary))
     lines.extend(
         [
             "",

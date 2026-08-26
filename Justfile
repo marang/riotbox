@@ -108,6 +108,7 @@ _audio-qa-ci-unlocked:
     just musical-pass-gate-policy-fixtures
     just sound-product-readiness-rubric-fixtures
     just release-grade-demo-bank-fixtures
+    just release-demo-evidence-reconciliation-fixtures
     just demo-bank-promotion-fixtures
     just sound-product-2010-future-ideas-fixtures
     just listening-manifest-validate-generated-packs
@@ -548,6 +549,9 @@ release-grade-demo-bank-fixtures:
     tmp="$(mktemp -d)" && jq '.entries[-1].quality_claim = true' scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json >"$tmp/unverified-quality-claim.json" && if python3 scripts/validate_release_grade_demo_bank.py "$tmp/unverified-quality-claim.json" >"$tmp/unverified-quality-claim.out" 2>&1; then cat "$tmp/unverified-quality-claim.out" >&2; rm -rf "$tmp"; echo "expected unverified quality-claim fixture to fail" >&2; exit 1; fi && grep -q "unverified entries must not claim quality" "$tmp/unverified-quality-claim.out" && rm -rf "$tmp"
     tmp="$(mktemp -d)" && jq '(.entries[] | select(.entry_id == "bad-timing-beat20-unverified-candidate")) |= (del(.rendered_wav) | .human_verdict = "fail" | .demo_readiness = "not_demo_ready" | .fix_categories = ["source_selection"] | .degraded_or_reject_evidence = {schema:"riotbox.demo_bank_degraded_or_reject_review_evidence.v1",outcome:"reject",product_path_reviewed:true,fallback_music_present:false,reason:"Fixture-calibration rejection keeps timing-safe output honest."})' scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json >"$tmp/reviewed-negative-no-wav.json" && python3 scripts/validate_release_grade_demo_bank.py "$tmp/reviewed-negative-no-wav.json" && rm -rf "$tmp"
     tmp="$(mktemp -d)" && jq 'del(.entries[-1].rendered_wav)' scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json >"$tmp/unverified-no-wav.json" && if python3 scripts/validate_release_grade_demo_bank.py "$tmp/unverified-no-wav.json" >"$tmp/unverified-no-wav.out" 2>&1; then cat "$tmp/unverified-no-wav.out" >&2; echo "expected unverified entry without rendered WAV to fail" >&2; exit 1; fi && grep -q "rendered_wav may be omitted only" "$tmp/unverified-no-wav.out" && rm -rf "$tmp"
+
+release-demo-evidence-reconciliation-fixtures:
+    python3 scripts/validate_release_demo_evidence_reconciliation_fixtures.py
 
 source-family-release-demo-coverage-fixtures output="artifacts/audio_qa/local-source-family-release-demo-coverage":
     mkdir -p "{{output}}"

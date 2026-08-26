@@ -160,6 +160,16 @@ def validate_mutation_fixtures(report: dict[str, Any]) -> None:
     )
     expect_failure(
         report,
+        "fixture_reconciliation_claims_quality",
+        lambda data: set_field(
+            nested_object(data, "release_demo_evidence_reconciliation"),
+            "quality_proof",
+            True,
+        ),
+        "release_demo_evidence_reconciliation_stale",
+    )
+    expect_failure(
+        report,
         "premature_release_ready_report",
         lambda data: set_field(data, "release_readiness", "release_ready"),
         "release_ready_without_required_coverage",
