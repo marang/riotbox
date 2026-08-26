@@ -1,0 +1,224 @@
+{
+  "capture": {
+    "assigned_target": {
+      "W30Pad": {
+        "bank_id": "bank-a",
+        "pad_id": "pad-01"
+      }
+    },
+    "capture_id": "cap-01",
+    "capture_type": "Pad",
+    "created_from_action": 4,
+    "lineage_capture_refs": [],
+    "resample_generation_depth": 0,
+    "source_origin_refs": [
+      "src-e752819f53f7",
+      "asset-loop-1"
+    ],
+    "source_window": {
+      "end_frame": 81237,
+      "end_seconds": 1.8421161,
+      "hook_selection": {
+        "baseline_bar_index": null,
+        "baseline_end_seconds": 1.8421161,
+        "baseline_score": null,
+        "baseline_start_seconds": 0.0,
+        "policy": "transport_boundary_v1",
+        "reason": "transport_boundary_policy",
+        "score_lift": null,
+        "selected_bar_index": null,
+        "selected_evidence": null,
+        "selected_score": null
+      },
+      "source_id": "src-e752819f53f7",
+      "start_frame": 0,
+      "start_seconds": 0.0
+    },
+    "storage_path": "captures/cap-01.wav"
+  },
+  "lane_roles": {
+    "mc202": "stay_out",
+    "source_monitor": "stay_out",
+    "tr909": "stay_out",
+    "w30": "source_transform_foundation"
+  },
+  "performer_path": {
+    "actions": [
+      {
+        "command": "SourceTimingConfirmGrid",
+        "params": {
+          "SourceTimingGrid": {
+            "hypothesis_id": "probe-bpm-primary",
+            "source_id": "src-e752819f53f7"
+          }
+        },
+        "quantization": "Immediate",
+        "status": "Committed",
+        "target": {
+          "bank_id": null,
+          "loop_id": null,
+          "object_id": "probe-bpm-primary",
+          "pad_id": null,
+          "scene_id": null,
+          "scope": "Session"
+        }
+      },
+      {
+        "command": "PresetActivate",
+        "params": {
+          "Preset": {
+            "preset_id": "feral_break_alpha_v2"
+          }
+        },
+        "quantization": "Immediate",
+        "status": "Committed",
+        "target": {
+          "bank_id": null,
+          "loop_id": null,
+          "object_id": "feral_break_alpha_v2",
+          "pad_id": null,
+          "scene_id": null,
+          "scope": "Session"
+        }
+      },
+      {
+        "command": "CaptureSetLength",
+        "params": {
+          "CaptureLength": {
+            "intent": "one_bar"
+          }
+        },
+        "quantization": "Immediate",
+        "status": "Committed",
+        "target": {
+          "bank_id": null,
+          "loop_id": null,
+          "object_id": "capture-length",
+          "pad_id": null,
+          "scene_id": null,
+          "scope": "Session"
+        }
+      },
+      {
+        "command": "CaptureBarGroup",
+        "params": {
+          "Capture": {
+            "bars": null
+          }
+        },
+        "quantization": "NextBar",
+        "status": "Committed",
+        "target": {
+          "bank_id": null,
+          "loop_id": null,
+          "object_id": null,
+          "pad_id": null,
+          "scene_id": null,
+          "scope": "LaneW30"
+        }
+      },
+      {
+        "command": "PromoteCaptureToPad",
+        "params": {
+          "Promotion": {
+            "capture_id": "cap-01",
+            "destination": "w30:bank-a/pad-01"
+          }
+        },
+        "quantization": "NextBar",
+        "status": "Committed",
+        "target": {
+          "bank_id": "bank-a",
+          "loop_id": null,
+          "object_id": null,
+          "pad_id": "pad-01",
+          "scene_id": null,
+          "scope": "LaneW30"
+        }
+      },
+      {
+        "command": "W30TriggerPad",
+        "params": {
+          "Mutation": {
+            "intensity": 0.84,
+            "target_id": "cap-01"
+          }
+        },
+        "quantization": "NextBeat",
+        "status": "Committed",
+        "target": {
+          "bank_id": "bank-a",
+          "loop_id": null,
+          "object_id": null,
+          "pad_id": "pad-01",
+          "scene_id": null,
+          "scope": "LaneW30"
+        }
+      }
+    ],
+    "control_captured_before_any_articulation": true
+  },
+  "product_path": "ordinary_promoted_w30_control_v1",
+  "render": {
+    "audio_sha256": "7140c8f24e383dc6a7cb75bc6183e03727ef8b5f068b28e9d08ead8371a5ebab",
+    "beat_count": 13.0,
+    "channel_count": 2,
+    "isolated_contributors": [
+      "w30_preview"
+    ],
+    "limited_sample_count": 0,
+    "peak_abs": 0.3998969793319702,
+    "post_limiter_clip_count": 0,
+    "pre_limiter_clip_count": 0,
+    "rms": 0.06911306083202362,
+    "sample_rate_hz": 48000,
+    "start_beat": 8.0
+  },
+  "schema": "riotbox.dense_w30_foundation_product_manifest.v1",
+  "session_state": {
+    "hook_selection_policy": "transport_boundary_v1",
+    "macro_state": {
+      "capture_eagerness": 0.76,
+      "chaos": 0.58,
+      "dirt_room_intensity": 0.74,
+      "mc202_touch": 0.82,
+      "scene_aggression": 0.86,
+      "source_retain": 0.56,
+      "tr909_slam": 0.76,
+      "w30_grit": 0.6888
+    },
+    "mixer_state": {
+      "drum_level": 0.88,
+      "fx_send_level": 0.38,
+      "master_level": 0.82,
+      "music_level": 0.58,
+      "source_level": 0.6
+    },
+    "preset": "feral_break_alpha_v2",
+    "profile": "feral_rebuild",
+    "source_monitor_mode": "riotbox",
+    "w30": {
+      "active_bank": "bank-a",
+      "focused_pad": "pad-01",
+      "hook_articulation": null,
+      "last_capture": "cap-01",
+      "preview_mode": "live_recall"
+    }
+  },
+  "source": {
+    "case_id": "dense_beat03_130",
+    "channel_count": 2,
+    "content_hash": "sha256:e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+    "decode_profile": "Native",
+    "sample_rate_hz": 44100,
+    "source_id": "src-e752819f53f7"
+  },
+  "timing": {
+    "confirmed_hypothesis_id": "probe-bpm-primary",
+    "meter": {
+      "beat_unit": 4,
+      "beats_per_bar": 4
+    },
+    "product_bpm": 130.28494262695312
+  }
+}

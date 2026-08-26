@@ -1612,6 +1612,19 @@ there is no provisional keep or qualification handoff; the temporary Runtime
 seam is removed. Dense remains the sole missing positive demo family, and all
 release, Holdout, universal-quality, and P023-completion claims remain blocked.
 
+RIOTBOX-1470 then tests the smaller product-first hypothesis that the already
+useful ordinary promoted W-30 path can own Dense by itself while TR-909,
+MC-202, and Source Monitor stay out. One exact Development session passes the
+full product/runtime/safety boundary but stops before playback because neither
+the current audio nor its canonical product manifest is identical to the prior
+positive RIOTBOX-1444 control. The current action records rounded
+`confirmed_bpm: 130.0` and the Runtime renders at `130.0 BPM`; the prior control
+used confirmed `130.28494262695312 BPM`. No old verdict is reused and the
+temporary qualification seam is removed. The next foundation slice must resolve
+one typed confirmed-tempo authority through Session, Runtime, replay/restore,
+and observer surfaces source-blind before another Dense qualification. Dense
+therefore remains the sole missing positive demo family.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing

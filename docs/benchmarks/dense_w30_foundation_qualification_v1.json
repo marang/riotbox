@@ -1,0 +1,155 @@
+{
+  "schema": "riotbox.dense_w30_foundation_qualification.v1",
+  "schema_version": 1,
+  "status": "frozen",
+  "owner_ticket": "RIOTBOX-1470",
+  "purpose": "qualify the already useful ordinary promoted W-30 transformation as the sole Dense foundation before any support-lane stacking",
+  "prior_human_evidence": {
+    "ticket": "RIOTBOX-1444",
+    "document_path": "docs/reviews/riotbox_1470_dense_w30_prior_evidence_reconstruction_2026-08-26.md",
+    "document_sha256": "f83a5feb3cfbc39a7eada5b34da934295927b3d28bb5529cdda6c6c535883cf0",
+    "structured_review_path": "artifacts/audio_qa/local/listening-reviews/RIOTBOX-1444/review.json",
+    "structured_review_sha256": "99b757860d90c2bceb055c586a8005b64ee867afaea8cccfc7799469fab71a8e",
+    "human_verdict": "keep",
+    "strongest_element": "chop",
+    "source_recognition": "source_transformed_but_present",
+    "hook_after_two_bars": "clear",
+    "product_manifest_path": "docs/benchmarks/dense_w30_foundation_prior_product_manifest_v1.json",
+    "product_manifest_sha256": "6b593663a24ae130e2352ea1dcbe09489ba86ac3f32d8efb68b6ac7c4709c69a",
+    "audio_sha256": "7140c8f24e383dc6a7cb75bc6183e03727ef8b5f068b28e9d08ead8371a5ebab"
+  },
+  "development_access": {
+    "registry_path": "docs/benchmarks/sound_excellence_source_corpus_v1.json",
+    "registry_sha256": "67b5b8b2882575cf70fa61aacf25ae282c17714fe51ffcb13f905458e025d552",
+    "case_id": "dense_beat03_130",
+    "source_family": "dense_break",
+    "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+    "source_sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+    "declared_bpm_metadata_only": 130.0,
+    "partition": "development",
+    "source_format": {
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "sample_width_bits": 24,
+      "compression_type": "NONE",
+      "maximum_duration_seconds": 16
+    },
+    "maximum_unique_source_files": 1,
+    "maximum_source_open_count": 1,
+    "fresh_exclusive_access_log_required_before_first_open": true,
+    "directory_discovery_forbidden": true,
+    "holdout_audio_access": false,
+    "commercial_reference_access": false
+  },
+  "product_path": {
+    "id": "ordinary_promoted_w30_control_v1",
+    "exact_committed_actions": [
+      "SourceTimingConfirmGrid",
+      "PresetActivate",
+      "CaptureSetLength",
+      "CaptureBarGroup",
+      "PromoteCaptureToPad",
+      "W30TriggerPad"
+    ],
+    "preset": "feral_break_alpha_v2",
+    "capture_length": "one_bar",
+    "hook_selection_policy": "transport_boundary_v1",
+    "w30_trigger_velocity": 0.84,
+    "w30_grit": 0.6888,
+    "music_bus_level": 0.58,
+    "start_beat": 8.0,
+    "render_beat_count": 13.0,
+    "callback_frame_counts": [
+      128,
+      257
+    ],
+    "output_sample_rate_hz": 48000,
+    "output_channels": 2,
+    "isolated_contributors": [
+      "w30_preview"
+    ],
+    "new_dsp_or_gesture": false,
+    "source_monitor_audible": false,
+    "fallback_audio": false
+  },
+  "lane_roles": {
+    "w30": "source_transform_foundation",
+    "tr909": "stay_out",
+    "mc202": "stay_out",
+    "source_monitor": "stay_out"
+  },
+  "technical_gates": {
+    "exact_six_action_commit_path": true,
+    "one_capture_lineage": true,
+    "session_and_source_graph_persisted": true,
+    "callback_partition_sample_exact": true,
+    "restart_sample_exact": true,
+    "missing_source_silent": true,
+    "pre_limiter_clip_count": 0,
+    "limited_sample_count": 0,
+    "post_limiter_clip_count": 0,
+    "non_silent": true,
+    "exact_prior_audio_sha256_required": "7140c8f24e383dc6a7cb75bc6183e03727ef8b5f068b28e9d08ead8371a5ebab",
+    "exact_prior_product_manifest_sha256_required": "6b593663a24ae130e2352ea1dcbe09489ba86ac3f32d8efb68b6ac7c4709c69a"
+  },
+  "current_exact_evidence": {
+    "session": "v1",
+    "product_manifest_path": "artifacts/development/riotbox-1470/qualification-v1/dense-w30-foundation-product-manifest.json",
+    "required_product_manifest_sha256": "6b593663a24ae130e2352ea1dcbe09489ba86ac3f32d8efb68b6ac7c4709c69a",
+    "audio_path": "artifacts/development/riotbox-1470/qualification-v1/05_w30_dense_foundation_control.wav",
+    "required_audio_sha256": "7140c8f24e383dc6a7cb75bc6183e03727ef8b5f068b28e9d08ead8371a5ebab",
+    "bit_identical_to_prior_artifact_required": true,
+    "product_manifest_identical_to_prior_required": true,
+    "source_identity_identical_required": true,
+    "product_path_identical_required": true,
+    "algorithm_or_threshold_change_allowed": false
+  },
+  "reuse_rule": {
+    "schema": "riotbox.hash_identical_human_verdict_reuse.v1",
+    "allow_structured_record_reconstruction": true,
+    "require_prior_document_hash": true,
+    "require_prior_structured_review_hash": true,
+    "require_exact_audio_hash_match": true,
+    "require_exact_product_manifest_hash_match": true,
+    "require_same_human_verdict_dimensions": true,
+    "current_replay_created_new_verdict": false,
+    "additional_human_playback_required": false
+  },
+  "stopping_rule": {
+    "maximum_qualification_renders": 1,
+    "maximum_human_reviews": 0,
+    "fail_closed_on_any_contract_source_product_runtime_safety_or_identity_mismatch": true,
+    "no_retry_second_source_retune_or_tolerance_match_under_v1": true,
+    "post_access_algorithm_threshold_gain_timing_role_or_mapping_change_requires_new_version_and_decision": true
+  },
+  "forbidden": {
+    "new_dsp": true,
+    "new_gesture": true,
+    "new_arrangement": true,
+    "new_selector": true,
+    "eq_or_gain_tuning": true,
+    "dry_source_or_source_monitor": true,
+    "tr909_or_mc202_support": true,
+    "hardcoded_missing_source_fallback": true,
+    "different_audio_hash": true,
+    "different_product_manifest_hash": true,
+    "second_human_verdict": true,
+    "additional_playback": true,
+    "source_reopen": true,
+    "holdout_access": true,
+    "commercial_reference_access": true
+  },
+  "claim_boundary": {
+    "maximum_success": "reuse the existing RIOTBOX-1444 human keep for one hash-identical Dense W-30-led foundation journey with every support lane staying out",
+    "dense_break_demo_family_success": true,
+    "new_human_verdict": false,
+    "new_musical_evidence": false,
+    "source_general": false,
+    "percussive_hardness": false,
+    "holdout": false,
+    "automatic_arrangement": false,
+    "release_ready": false,
+    "universal_quality": false,
+    "p023_complete": false
+  }
+}
