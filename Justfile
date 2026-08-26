@@ -95,6 +95,7 @@ _audio-qa-ci-unlocked:
     just weak-output-fix-routing-fixtures
     just professional-output-suite-smoke
     just source-family-release-demo-coverage-fixtures
+    just dense-break-release-demo-qualification-fixtures
     just release-demo-human-review-queue-fixtures
     just release-demo-listening-review-packs-fixtures
     just sound-quality-readiness-report-smoke
@@ -305,6 +306,12 @@ w30-gesture-vocabulary-qualification session:
 
 w30-gesture-vocabulary-review-artifact session:
     python3 scripts/run_w30_gesture_vocabulary_qualification.py --session "{{session}}" --prepare-review-from-passed-session
+
+dense-break-release-demo-qualification session="v1":
+    python3 scripts/run_dense_break_release_demo_qualification.py --session "{{session}}"
+
+dense-break-release-demo-qualification-fixtures:
+    python3 scripts/run_dense_break_release_demo_qualification.py --source-blind-fixtures
 
 lane-recipe-pack date="local" duration="2.0":
     cargo run -p riotbox-audio --bin lane_recipe_pack -- --date "{{date}}" --duration-seconds "{{duration}}"

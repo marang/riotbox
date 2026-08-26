@@ -188,3 +188,7 @@ Current benchmark artifacts:
   Frozen RIOTBOX-1467 fail-closed recovery after an unrelated regression
   fixture reopened registered Development audio; it excludes those outputs,
   pins unchanged qualification identity, and prohibits further source access.
+- [dense_break_release_demo_qualification_v1.json](./dense_break_release_demo_qualification_v1.json)
+  Frozen RIOTBOX-1474 exact current W-30 Dense journey qualification with one
+  registered Development source, strict old/current tempo-identity separation,
+  at most one changed-artifact review, and no retuning or Holdout access.
