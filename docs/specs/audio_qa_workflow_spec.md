@@ -99,6 +99,11 @@ Small changes may review only that pack; larger ones need a broader smoke pack.
 State-only work proves its nearest render consumer; logs alone are insufficient.
 Source-derived work names its audibility mode. A claimed new result requires
 `rebuild-only`; `source-layer` must be explicitly optional or transitional.
+The normal PR baseline is source-free `just ci`. It complements rather than
+replaces the exact audio/source/listening gates above. Broad phase/release
+regression uses guarded `just ci-broad`, may open registered Development audio
+only under an active authorization, and never authorizes Holdout or commercial
+reference access.
 
 ## 11. Improvement Loop
 

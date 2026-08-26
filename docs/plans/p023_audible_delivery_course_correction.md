@@ -76,13 +76,14 @@ version. A required change creates a new version and Decision.
   do not run the broad phase suite after every variant.
 - Qualification: focused product-spine, source-matrix, callback, replay, and
   listening gates selected by the frozen claim.
-- PR/merge: branch review and the broad gate required by the workflow; `just
-  ci` remains the current final default until RIOTBOX-1399 lands a measured
-  scoped replacement.
+- PR/merge: branch review, source-free `just ci`, and the exact qualification
+  gates selected by the frozen claim. The guarded `just ci-broad` is a
+  phase/release regression, not a per-variant or automatic per-PR cost.
 
 Generated `target/` and `artifacts/` trees are reusable local state. Never
-delete them automatically. RIOTBOX-1399 owns measured command/runtime and safe
-retention improvements when those costs block the audible path.
+delete them automatically. RIOTBOX-1399 split the source-free PR gate from the
+guarded broad regression and removed repeated professional-pack generation;
+neither command cleans reusable trees automatically.
 
 ## First Application
 

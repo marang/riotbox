@@ -25,24 +25,30 @@ from mc202_source_composed_review_gate import (
 SCHEMA = "riotbox.professional_output_listening_pack.v1"
 DEFAULT_OUTPUT = Path("artifacts/audio_qa/local-professional-output-listening-pack")
 DEFAULT_PROFESSIONAL_WAV_PACK = Path("artifacts/audio_qa/local-professional-source-wav-pack")
+DEFAULT_DENSE_BREAK_PACK = Path("artifacts/audio_qa/local-dense-break-performance-pack")
+DENSE_BREAK_SOURCE = Path("data/test_audio/examples/Beat03_130BPM(Full).wav")
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--professional-wav-pack", type=Path, default=DEFAULT_PROFESSIONAL_WAV_PACK)
+    parser.add_argument("--dense-break-pack", type=Path, default=DEFAULT_DENSE_BREAK_PACK)
     parser.add_argument("--date", default="local-professional-output-listening-pack")
     parser.add_argument("--label-created-at")
     parser.add_argument("--ticket", default="RIOTBOX-1197")
     parser.add_argument("--reuse-professional-wav-pack", action="store_true")
+    parser.add_argument("--reuse-dense-break-pack", action="store_true")
     parser.add_argument("--keep-output", action="store_true")
     args = parser.parse_args()
 
     repo = repo_root()
     output = resolve_repo_path(repo, args.output)
     professional_wav_pack = resolve_repo_path(repo, args.professional_wav_pack)
+    dense_break_pack = resolve_repo_path(repo, args.dense_break_pack)
     ensure_safe_output(repo, output)
     ensure_safe_output(repo, professional_wav_pack)
+    ensure_safe_output(repo, dense_break_pack)
     if output.exists() and not args.keep_output:
         shutil.rmtree(output)
     output.mkdir(parents=True, exist_ok=True)
@@ -52,7 +58,10 @@ def main() -> int:
     else:
         render_professional_wav_pack(repo, professional_wav_pack, args.date)
     professional_report = read_json(professional_wav_pack / "professional-source-wav-pack.json")
-    dense_case = render_dense_case(repo, output, args.date)
+    if args.reuse_dense_break_pack:
+        dense_case = case_from_dense_break_pack(repo, dense_break_pack)
+    else:
+        dense_case = render_dense_case(repo, output, args.date)
     cases = [dense_case] + [
         case_from_professional_report(professional_wav_pack, case)
         for case in professional_report["cases"]
@@ -134,13 +143,43 @@ def require_professional_wav_pack(output: Path) -> None:
         raise SystemExit(f"professional WAV pack must pass before reuse: {report_path}")
 
 
+def case_from_dense_break_pack(repo: Path, case_dir: Path) -> dict:
+    report_path = case_dir / "performance-report.json"
+    if not report_path.is_file():
+        raise SystemExit(f"missing dense-break pack report: {report_path}")
+    report = read_json(report_path)
+    if report.get("schema") != "riotbox.dense_break_performance_pack.v1":
+        raise SystemExit(f"invalid dense-break pack schema: {report_path}")
+    if report.get("result") != "pass":
+        raise SystemExit(f"dense-break pack must pass before reuse: {report_path}")
+    files = report.get("files")
+    if not isinstance(files, dict) or not isinstance(files.get("rebuild_only_performance"), str):
+        raise SystemExit(f"dense-break pack is missing its candidate path: {report_path}")
+    candidate = case_dir / files["rebuild_only_performance"]
+    try:
+        candidate.resolve().relative_to(case_dir.resolve())
+    except ValueError as error:
+        raise SystemExit(f"dense-break candidate escapes its pack: {candidate}") from error
+    if not candidate.is_file():
+        raise SystemExit(f"missing dense-break candidate for reuse: {candidate}")
+    source_value = report.get("source")
+    if not isinstance(source_value, str) or not source_value:
+        raise SystemExit(f"dense-break pack is missing its source path: {report_path}")
+    source = Path(source_value)
+    if not source.is_absolute():
+        source = repo / source
+    if source.resolve() != (repo / DENSE_BREAK_SOURCE).resolve():
+        raise SystemExit(f"dense-break reuse requires exact source {DENSE_BREAK_SOURCE}: {source}")
+    return dense_case(case_dir, report, DENSE_BREAK_SOURCE.as_posix())
+
+
 def render_dense_case(repo: Path, output: Path, date: str) -> dict:
     case_dir = output / "renders" / "dense_beat03_130"
     command = [
         sys.executable,
         "scripts/generate_dense_break_performance_pack.py",
         "--source",
-        "data/test_audio/examples/Beat03_130BPM(Full).wav",
+        DENSE_BREAK_SOURCE.as_posix(),
         "--bpm",
         "130.000000",
         "--output",
@@ -150,11 +189,15 @@ def render_dense_case(repo: Path, output: Path, date: str) -> dict:
     ]
     run_or_exit(repo, command, case_dir / "listening-render.log")
     report = read_json(case_dir / "performance-report.json")
+    return dense_case(case_dir, report, DENSE_BREAK_SOURCE.as_posix())
+
+
+def dense_case(case_dir: Path, report: dict, source: str) -> dict:
     return apply_evidence_boundary(
         {
         "case_id": "dense_beat03_130",
         "source_family": "dense_break",
-        "source": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+        "source": source,
         "output": str(case_dir),
         "candidate": str(case_dir / report["files"]["rebuild_only_performance"]),
         "source_report": str(case_dir / "performance-report.json"),
