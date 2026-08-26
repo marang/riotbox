@@ -54,7 +54,10 @@ fn observer_snapshot_reports_completed_product_export_lifecycle() {
             confirmed_by_action: ActionId(8),
             confirmed_at: 880,
         });
-    let mut state = JamAppState::from_parts(session, None, ActionQueue::new());
+    let mut graph = ghost_capture_candidate_graph();
+    graph.source.content_hash =
+        "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee".into();
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
     let receipt = state
         .commit_product_mix_export_from_proof(&proof_path, &destination, 900)
         .expect("commit product export");

@@ -233,9 +233,36 @@ Today’s build already lets you:
 - return to ordinary W-30 playback with an explicit hit, recall, audition, or
   damage action after a completed timed articulation
 - perform a scene jump and restore with `y` / `Y`
+- build a reproducible proof handoff for the current source and export its
+  validated `full_grid_mix` through the existing product-export action
 - see pending, committed, rejected, and undone actions clearly
 
 The honest status: **this is already playable as a prototype shell, but it is not yet a finished musician product.**
+
+### Export The Bounded Product Mix
+
+The current export is deliberately narrow: it exports the deterministic
+Feral-grid `full_grid_mix`, not stems, a DAW session, or a live recording.
+First build a reusable proof bundle from the same source; the handoff directory
+must not already exist:
+
+```bash
+just product-export-handoff "path/to/source.wav" "artifacts/local/my-source-export-handoff"
+```
+
+Then start or load the matching Riotbox session with that proof and a separate
+destination directory:
+
+```bash
+cargo run -p riotbox-app --bin riotbox-app -- \
+  --source "path/to/source.wav" \
+  --product-export-proof "artifacts/local/my-source-export-handoff/product_export_proof.json" \
+  --product-export-destination "exports/my-source-mix"
+```
+
+The Jam export control succeeds only when the proof source hash matches the
+active Source Graph. Missing or stale proof input fails visibly without a
+receipt or a stuck queued action.
 
 ## Start In 5 Steps
 

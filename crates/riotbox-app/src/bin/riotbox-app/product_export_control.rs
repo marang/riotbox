@@ -1,13 +1,28 @@
-fn queue_product_mix_export(shell: &mut JamShellState, requested_at: u64) {
-    match shell.app.queue_product_mix_export(requested_at, None) {
-        crate::jam_app::QueueControlResult::Enqueued => {
-            shell.set_error_status("queued export full_grid_mix | proof handoff writes receipt");
-        }
-        crate::jam_app::QueueControlResult::AlreadyPending => {
-            shell.set_error_status("export full_grid_mix already queued");
-        }
-        crate::jam_app::QueueControlResult::AlreadyInState => {
-            shell.set_error_status("export full_grid_mix already available");
+fn execute_product_mix_export(
+    shell: &mut JamShellState,
+    handoff: Option<&ProductMixExportHandoff>,
+    requested_at: u64,
+) {
+    let Some(handoff) = handoff else {
+        let reason = "product mix export unavailable: launch with --product-export-proof and --product-export-destination";
+        shell
+            .app
+            .reject_product_mix_export_request(requested_at, reason);
+        shell.set_error_status(reason);
+        return;
+    };
+
+    match shell.app.commit_product_mix_export_from_active_source_proof(
+        &handoff.proof_path,
+        &handoff.destination_path,
+        requested_at,
+    ) {
+        Ok(receipt) => shell.set_error_status(format!(
+            "exported full_grid_mix | receipt {}",
+            receipt.receipt_id
+        )),
+        Err(error) => {
+            shell.set_error_status(format!("product mix export failed: {error}"));
         }
     }
 }

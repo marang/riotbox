@@ -1,8 +1,4 @@
-use std::{
-    fs,
-    io::Read,
-    path::{Path, PathBuf},
-};
+use std::{fs, io::Read, path::Path};
 
 use riotbox_core::{
     TimestampMs,
@@ -12,23 +8,16 @@ use riotbox_core::{
         StemPackageLineagePolicy, TargetScope, UndoPolicy,
     },
     export_readiness::{
-        ExportReadinessContract, ExportScope, ProductExportBoundary, ProductExportDestinationKind,
-        ProductExportReproducibilityProof, ProductExportRole, STEM_PACKAGE_LOCAL_CI_PACK_ID,
+        ExportScope, ProductExportBoundary, ProductExportDestinationKind, ProductExportRole,
+        STEM_PACKAGE_LOCAL_CI_PACK_ID,
     },
     ids::ActionId,
     queue::QueueEnqueueResult,
-    session::{ExportArtifactRole, ExportArtifactSetEntry, ExportReceiptState},
-    transport::CommitBoundaryState,
+    session::ExportArtifactRole,
 };
 use sha2::{Digest, Sha256};
 
-use super::{
-    JamAppError, JamAppState, QueueControlResult,
-    helpers::update_logged_action_result,
-    product_export_receipt::{
-        attach_product_export_artifact_audio_metrics, attach_product_export_artifact_lineage,
-    },
-};
+use super::{JamAppError, JamAppState, QueueControlResult};
 
 pub(in crate::jam_app) use super::product_export_artifact_preflight::{
     ExportReceiptArtifactPreflightError, preflight_export_receipt_artifacts,
@@ -38,6 +27,7 @@ mod daw_session_export_commit;
 mod daw_session_export_queue;
 mod daw_session_surface_gate;
 mod live_recording_export_queue;
+mod product_mix_export_commit;
 pub use daw_session_surface_gate::{
     DawSessionExportSurfaceBlocker, DawSessionExportSurfaceGate, DawSessionExportSurfaceStatus,
     daw_session_export_surface_gate_for_session,
@@ -296,160 +286,6 @@ impl JamAppState {
     pub fn daw_session_export_surface_gate(&self) -> DawSessionExportSurfaceGate {
         daw_session_export_surface_gate_for_session(&self.session)
     }
-
-    pub fn commit_product_mix_export_from_proof(
-        &mut self,
-        proof_path: impl AsRef<Path>,
-        destination_dir: impl AsRef<Path>,
-        requested_at: TimestampMs,
-    ) -> Result<ExportReceiptState, JamAppError> {
-        let destination_dir = destination_dir.as_ref();
-        let action_id = self.pending_export_action_id().unwrap_or_else(|| {
-            self.queue_product_mix_export(
-                requested_at,
-                Some(destination_dir.to_string_lossy().into_owned()),
-            );
-            self.pending_export_action_id()
-                .expect("queued export action should be pending")
-        });
-
-        let export_result = prepare_product_mix_export(proof_path.as_ref(), destination_dir);
-        let written = match export_result {
-            Ok(written) => written,
-            Err(error) => {
-                self.queue.reject(action_id, error.to_string());
-                self.refresh_view();
-                return Err(error);
-            }
-        };
-
-        let boundary = CommitBoundaryState {
-            kind: riotbox_core::action::CommitBoundary::Immediate,
-            beat_index: self.runtime.transport.beat_index,
-            bar_index: self.runtime.transport.bar_index,
-            phrase_index: self.runtime.transport.phrase_index,
-            scene_id: self.runtime.transport.current_scene.clone(),
-        };
-        let mut receipt = ExportReceiptState::from_readiness_contract(
-            action_id,
-            requested_at,
-            &written.contract,
-            written.artifact_path.to_string_lossy().into_owned(),
-            written.proof_path.to_string_lossy().into_owned(),
-            None,
-        );
-        receipt
-            .artifact_set
-            .push(ExportArtifactSetEntry::product_export_proof(
-                written.proof_path.to_string_lossy().into_owned(),
-                written.proof_hash.clone(),
-            ));
-        attach_product_export_artifact_lineage(&mut receipt, &self.session);
-        attach_product_export_artifact_audio_metrics(&mut receipt);
-        let result_summary = format!(
-            "exported {} receipt {} hash {}",
-            written.contract.export_role.as_str(),
-            receipt.receipt_id,
-            written.contract.export_sha256
-        );
-
-        let mut committed_ref = self
-            .queue
-            .commit_pending_after_side_effect(
-                action_id,
-                boundary.clone(),
-                requested_at,
-                result_summary.clone(),
-            )
-            .ok_or_else(|| {
-                JamAppError::InvalidSession(format!(
-                    "queued export action {action_id} was not ready to commit"
-                ))
-            })?;
-        let action = self
-            .queue
-            .history_action(committed_ref.action_id)
-            .cloned()
-            .ok_or_else(|| {
-                JamAppError::InvalidSession(format!(
-                    "committed export action {} missing from queue history",
-                    committed_ref.action_id
-                ))
-            })?;
-
-        self.record_committed_action(action, &mut committed_ref, requested_at);
-        self.session.export_receipts.push(receipt.clone());
-        update_logged_action_result(&mut self.session, action_id, result_summary);
-        self.runtime.last_commit_boundary = Some(boundary);
-        self.refresh_view();
-
-        Ok(receipt)
-    }
-
-    fn pending_export_action_id(&self) -> Option<ActionId> {
-        self.queue
-            .pending_actions()
-            .into_iter()
-            .find(|action| action.command == ActionCommand::ExportProductMix)
-            .map(|action| action.id)
-    }
-}
-
-struct WrittenProductMixExport {
-    contract: ExportReadinessContract,
-    artifact_path: PathBuf,
-    proof_path: PathBuf,
-    proof_hash: String,
-}
-
-fn prepare_product_mix_export(
-    proof_path: &Path,
-    destination_dir: &Path,
-) -> Result<WrittenProductMixExport, JamAppError> {
-    let proof: ProductExportReproducibilityProof =
-        serde_json::from_str(&fs::read_to_string(proof_path)?)?;
-    let contract = ExportReadinessContract::from_product_export_proof(&proof)
-        .map_err(|error| JamAppError::InvalidSession(format!("{error:?}")))?;
-    let source_artifact = resolve_proof_artifact_path(proof_path, &contract.export_artifact);
-    let source_hash = sha256_file(&source_artifact)?;
-    if source_hash != contract.export_sha256 {
-        return Err(JamAppError::InvalidSession(format!(
-            "export artifact hash mismatch for {}: proof {} actual {}",
-            contract.export_role.as_str(),
-            contract.export_sha256,
-            source_hash
-        )));
-    }
-
-    fs::create_dir_all(destination_dir)?;
-    let artifact_file_name = source_artifact.file_name().ok_or_else(|| {
-        JamAppError::InvalidSession("export artifact path has no file name".into())
-    })?;
-    let destination_artifact = destination_dir.join(artifact_file_name);
-    copy_file_if_distinct(&source_artifact, &destination_artifact)?;
-
-    let destination_proof = destination_dir.join("product_export_proof.json");
-    copy_file_if_distinct(proof_path, &destination_proof)?;
-    let proof_hash = sha256_file(&destination_proof)?;
-
-    Ok(WrittenProductMixExport {
-        contract,
-        artifact_path: destination_artifact,
-        proof_path: destination_proof,
-        proof_hash,
-    })
-}
-
-fn resolve_proof_artifact_path(proof_path: &Path, artifact_path: &str) -> PathBuf {
-    let artifact_path = PathBuf::from(artifact_path);
-    if artifact_path.is_absolute() {
-        artifact_path
-    } else {
-        proof_path
-            .parent()
-            .unwrap_or_else(|| Path::new(""))
-            .join(artifact_path)
-    }
 }
 
 pub(super) fn sha256_file(path: &Path) -> Result<String, JamAppError> {
@@ -464,11 +300,4 @@ pub(super) fn sha256_file(path: &Path) -> Result<String, JamAppError> {
         digest.update(&buffer[..read]);
     }
     Ok(format!("{:x}", digest.finalize()))
-}
-
-fn copy_file_if_distinct(from: &Path, to: &Path) -> Result<(), JamAppError> {
-    if from != to {
-        fs::copy(from, to)?;
-    }
-    Ok(())
 }

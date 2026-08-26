@@ -387,9 +387,26 @@ Boundary:
   export path succeeds.
 - It is not undoable; the action result and export receipt describe a
   completed file side effect rather than musical state to roll back.
-- The bounded Jam/TUI trigger is `E`; it queues the existing
-  `export.product_mix` action and surfaces receipt/failure feedback without
-  adding a second export state model.
+- The bounded Jam/TUI trigger is `E`. Interactive launch may provide the
+  existing proof boundary through `--product-export-proof <proof.json>` plus
+  `--product-export-destination <dir>`; `E` then validates and writes through
+  the existing `export.product_mix` action without adding a second export
+  state model.
+- The proof `source_sha256` must equal the active Source Graph content hash
+  before the app writes files or attaches active-Session lineage. A missing
+  handoff, missing active Source Graph, stale/mismatched proof, or file failure
+  rejects the action, writes no receipt, surfaces the reason, and leaves no
+  pending export action.
+- Proof validation, hashing, and file I/O run on the app/control thread, never
+  on the realtime audio callback. Successful export bytes remain hash-identical
+  to the already validated proof artifact.
+- The writer never overwrites destination files. A complete hash-identical
+  bundle is an idempotent success; an incomplete or different existing bundle
+  rejects before mutation.
+- `just product-export-handoff <source> <destination>` is the musician-facing
+  producer for the launch handoff. It renders the same explicit source twice,
+  validates reproducibility, and atomically publishes a proof plus its relative
+  `full_grid_mix` artifact into a new destination directory.
 - Replay must not blindly rewrite files as a hidden side effect.
 - Stem package export and live recording export have typed reserved Core action
   contracts, but remain out of runnable TUI/Ghost/user scope until queue,
