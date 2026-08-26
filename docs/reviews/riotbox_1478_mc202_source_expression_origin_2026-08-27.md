@@ -42,8 +42,9 @@ material even though the rendered phrase plan and source contour were present.
 ## Evidence
 
 - Rust Feral-grid suite: 44/44 pass
-- Rust observer/audio correlation suite: 60/60 pass; source-derived MC-202
-  evidence fails closed when its render plan is not applied
+- Rust observer/audio correlation suite: 61/61 pass; source-derived MC-202
+  evidence fails closed when its render plan is not applied or a source-failure
+  fallback is claimed
 - Python product-stem contract mutations: 13/13 pass
 - Source-free synthetic double-render and published-v2 validation: pass
 - Synthetic source SHA-256:

@@ -183,6 +183,32 @@ fn strict_evidence_rejects_unapplied_mc202_source_expression_plan() {
 }
 
 #[test]
+fn strict_evidence_rejects_mc202_source_failure_fallback() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let observer_path = temp.path().join("events.ndjson");
+    let manifest_path = temp.path().join("manifest.json");
+    fs::write(&observer_path, synthetic_observer()).expect("write observer");
+    fs::write(
+        &manifest_path,
+        super::summary_smoke_tests::synthetic_manifest().replace(
+            "\"source_failure_fallback\": false",
+            "\"source_failure_fallback\": true",
+        ),
+    )
+    .expect("write manifest");
+
+    let summary = build_summary(&observer_path, &manifest_path).expect("summary");
+    let error = validate_required_evidence(&summary).expect_err("source-failure fallback");
+
+    assert!(
+        error
+            .to_string()
+            .contains("mc202_bass_pressure.source_failure_fallback=true")
+    );
+    assert!(render_markdown(&summary).contains("fallback `yes`"));
+}
+
+#[test]
 fn strict_evidence_rejects_malformed_lane_source_grid_alignment() {
     let temp = tempfile::tempdir().expect("tempdir");
     let observer_path = temp.path().join("events.ndjson");
