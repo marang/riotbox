@@ -1686,6 +1686,24 @@ the scripted professional suite is diagnostic only. No new-effect,
 source-general, Holdout, hardness, universal-quality, release-ready, or P023
 completion claim follows.
 
+RIOTBOX-1475 closes the two remaining aggregate P023 readiness contradictions
+without changing sound or reopening source material. RBX-346 freezes an
+explicit release-demo evidence reconciliation against the unchanged live bank:
+the rejected RIOTBOX-1461 scripted Dense candidate remains intact and visible
+as superseded negative evidence, while the later RIOTBOX-1474 exact-product
+human pass becomes its same-source, same-family current successor. Aggregate
+quality proof now belongs only to the complete non-fixture product set: exact
+RuntimeMix human passes for Dense, sparse, and tonal, plus reviewed no-fallback
+degraded/unavailable behavior for bad-timing, pad/noise, and weak sources. The
+scripted professional suite remains required diagnostic context with
+`quality_proof: false`. The v2 readiness report therefore has complete
+six-family success, zero active weak/fail entries, zero queued reviews, no
+blockers, and `release_readiness: release_ready` for the covered P023
+release-demo scope. This completes that expanded P023 readiness scope; it does
+not claim universal source quality, Holdout evidence, percussive hardness,
+automatic arrangement, Riotbox 1.0 release, or that future product work is
+finished.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing

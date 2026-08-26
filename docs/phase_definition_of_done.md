@@ -686,6 +686,18 @@ After exit:
   historical Dense `chop_policy` failure and diagnostic-only professional
   suite; no Holdout, source-general, hardness, or universal-quality claim is
   added.
+- RIOTBOX-1475 closes those two aggregate blockers through RBX-346 without
+  mutating the bank or sound. The RIOTBOX-1461 Dense failure remains durable
+  superseded negative evidence; its same-source RIOTBOX-1474 exact-product
+  human pass owns current Dense quality. Exact-product human passes cover
+  Dense, sparse, and tonal, while reviewed no-fallback degraded/unavailable
+  outcomes cover bad-timing, pad/noise, and weak sources. The scripted
+  professional suite stays diagnostic with `quality_proof: false`. The v2
+  aggregate report has no active weak/fail entry, no queued review, complete
+  six-family success, and `release_readiness: release_ready` for the covered
+  expanded P023 release-demo scope. Universal source quality, Holdout,
+  percussive hardness, automatic arrangement, and Riotbox 1.0 release remain
+  outside this completion claim.
 - RIOTBOX-1410 is the first bounded Foundation Completion closure: explicit
   control-only source-monitor refresh retains current PCM, explicit replacement
   atomically publishes PCM plus mode/gains and anchors, and exact callback /

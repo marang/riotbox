@@ -877,6 +877,28 @@ quality.
 This preserves regression controls without letting old hookless examples hide
 the instrument's current audible state.
 
+`riotbox.sound_quality_readiness_report.v2` separates that diagnostic
+reconciliation from release-quality ownership. A live release-demo bank remains
+immutable evidence: an older weak/fail entry may stop being an active production
+blocker only when a frozen `riotbox.release_demo_evidence_reconciliation.v1`
+names a later successor with the same source family and source path. The
+successor must be an eligible non-fixture human `pass`, be `demo_ready`, and
+carry a passing exact-product-path gate. The old verdict, fix category,
+artifact, review, and hashes remain visible under
+`superseded_weak_or_fail_entries`; they are never deleted or relabeled.
+
+For covered-scope release quality, that reconciliation must bind exact
+RuntimeMix human-pass entries for `dense_break`, `sparse_drums`, and
+`tonal_riff`, plus reviewed no-fallback degraded/unavailable product outcomes
+for `bad_timing`, `pad_noise`, and `weak_source`. The professional-output suite
+remains required current diagnostic context and must keep
+`scripted_generation: true` and `quality_proof: false`; it cannot grant or veto
+the human product-quality decision once the complete validated product set is
+present. Fixture-calibration reconciliation may exercise lifecycle mutations
+but must always return `quality_proof: false`. Any stale bank, contract, review,
+source identity, product gate, family coverage, unresolved weak/fail entry, or
+queued candidate fails closed.
+
 P023 Hook/Chop riff playback diagnostics also expose
 `hook_chop_riff_hit_pattern_source_derived`,
 `hook_chop_riff_hit_count`, `hook_chop_riff_velocity_span`, and
