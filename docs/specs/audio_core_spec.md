@@ -596,8 +596,10 @@ Current limiter policy:
   most `1.5 / 32768`
 - product-stem attribution and WAV/proof validation are deterministic offline
   work only. They do not run on the realtime callback, create a musician stem
-  action, remove the MC-202 primitive-renderer boundary, or claim isolated
-  pre-bus lane audio
+  action, or claim isolated pre-bus lane audio. The MC-202 contribution may use
+  `source_derived` origin only after the already rendered source-expression
+  plan, source-contour delta, bass-pressure proof, source-grid alignment, and
+  no-fallback evidence all pass; otherwise publication stops fail-closed
 
 Offline and realtime-simulation renders should become comparable under the same
 state, with explicit tolerances where backend buffer boundaries or floating

@@ -98,13 +98,7 @@ render_grid_export() {
       and .feral_scorecard.readiness == "ready"
       and .feral_scorecard.source_backed == true
       and .feral_scorecard.fallback_like == false
-      and .primitive_renderer_boundary.schema == "riotbox.primitive_renderer_boundary.v1"
-      and .primitive_renderer_boundary.evidence_role == "non_product_diagnostic_control"
-      and .primitive_renderer_boundary.product_output_allowed == false
-      and .primitive_renderer_boundary.quality_proof == false
-      and .primitive_renderer_boundary.demo_readiness == "unverified"
-      and .primitive_renderer_boundary.promotion_blocked == true
-      and ([.primitive_renderer_boundary.affected_paths[]] | sort == ["metrics.mc202_bass_pressure.pattern_origin"])
+      and (has("primitive_renderer_boundary") | not)
       and (.feral_scorecard.lane_gestures | index("mc202 question/answer")) == null
       and .metrics.full_grid_mix.signal.rms > 0.000001
       and .metrics.full_grid_mix.low_band.rms > 0.000001
@@ -121,9 +115,16 @@ render_grid_export() {
       and .metrics.tr909_source_accent_dynamics.distinct_accent_count >= 3
       and .metrics.tr909_source_accent_dynamics.accent_span >= .metrics.tr909_source_accent_dynamics.min_required_accent_span
       and .metrics.w30_source_trigger_variation.pattern_origin == "source_derived"
-      and .metrics.mc202_bass_pressure.pattern_origin == "primitive_renderer"
+      and .metrics.mc202_bass_pressure.pattern_origin == "source_derived"
       and .metrics.mc202_bass_pressure.applied == true
+      and .metrics.mc202_bass_pressure.source_expression_render_plan_applied == true
+      and (.metrics.mc202_bass_pressure.source_expression_role | IN("bass_pressure", "answer_lift", "hook_restraint_hold"))
+      and .metrics.mc202_bass_pressure.source_failure_fallback == false
       and .metrics.mc202_bass_pressure.reason == "mc202_source_grid_proof_renderer"
+      and .metrics.mc202_source_contour.pattern_origin == "source_derived_contour"
+      and .metrics.mc202_source_contour.applied == true
+      and .metrics.mc202_source_contour.source_contour_delta_rms >= .metrics.mc202_source_contour.min_required_delta_rms
+      and .metrics.mc202_source_grid_alignment.hit_ratio >= 0.50
       and .metrics.mc202_bass_pressure_stem.signal.rms > 0.000001
       and .metrics.w30_feral_source_chop.signal.rms > 0.000001
       and (.metrics | has("mc202_question_answer_delta") | not)' \

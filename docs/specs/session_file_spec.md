@@ -484,11 +484,13 @@ Rules:
 - the current internal stem-package local CI receipt boundary is
   `stem_package.local_ci_package_v1` with `export_role: package_manifest`;
   it must not reuse the `feral-grid-demo` product-mix identity
-- the separate `riotbox.product_stem_handoff.v1` developer handoff may publish
+- the separate `riotbox.product_stem_handoff.v2` developer handoff may publish
   three source-matched Feral-grid contribution stems plus the unchanged full
   mix and prove their reconstruction, but it creates no action, receipt, or
-  Session/replay mutation. Its `feral-grid-demo` identity belongs to the
-  existing render recipe and must not be mistaken for the reserved
+  Session/replay mutation. V2 requires explicit applied MC-202 source-expression
+  plan, source-contour, bass-pressure, source-grid, and no-fallback evidence and
+  does not reinterpret V1. Its `feral-grid-demo` identity belongs to the existing
+  render recipe and must not be mistaken for the reserved
   `stem_package.local_ci_package_v1` receipt boundary
 - the first reserved live-recording receipt boundary is
   `live_recording.receipt_contract_v1` with

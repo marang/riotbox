@@ -47,7 +47,6 @@ struct ListeningPackManifest {
     source_window_seconds: f32,
     artifacts: Vec<ManifestArtifact>,
     feral_scorecard: ManifestFeralScorecard,
-    primitive_renderer_boundary: ManifestPrimitiveRendererBoundary,
     source_timing: ManifestSourceTimingReadiness,
     thresholds: ManifestThresholds,
     metrics: ManifestPackMetrics,
@@ -70,18 +69,6 @@ struct ManifestFeralScorecard {
     lane_gestures: [&'static str; 3],
     material_sources: [&'static str; 3],
     warnings: [&'static str; 1],
-}
-
-#[derive(Serialize)]
-struct ManifestPrimitiveRendererBoundary {
-    schema: &'static str,
-    evidence_role: &'static str,
-    product_output_allowed: bool,
-    quality_proof: bool,
-    demo_readiness: &'static str,
-    promotion_blocked: bool,
-    affected_paths: [&'static str; 1],
-    musician_message: &'static str,
 }
 
 #[derive(Serialize)]
@@ -200,7 +187,6 @@ pub(super) fn write_manifest(
         source_window_seconds,
         artifacts: manifest_artifacts(&output_dir),
         feral_scorecard: manifest_feral_scorecard(),
-        primitive_renderer_boundary: manifest_primitive_renderer_boundary(),
         source_timing: manifest_source_timing_readiness(
             &source_timing_analysis.readiness,
             grid_bpm,
@@ -308,19 +294,6 @@ fn manifest_feral_scorecard() -> ManifestFeralScorecard {
             "source-backed w30 window",
         ],
         warnings: ["offline QA pack, not live arranger"],
-    }
-}
-
-fn manifest_primitive_renderer_boundary() -> ManifestPrimitiveRendererBoundary {
-    ManifestPrimitiveRendererBoundary {
-        schema: "riotbox.primitive_renderer_boundary.v1",
-        evidence_role: "non_product_diagnostic_control",
-        product_output_allowed: false,
-        quality_proof: false,
-        demo_readiness: "unverified",
-        promotion_blocked: true,
-        affected_paths: ["metrics.mc202_bass_pressure.pattern_origin"],
-        musician_message: "Primitive renderer lanes are diagnostic controls; source-derived product plans or unavailable/degraded state are required before demo or product promotion. TR-909 kick pressure is source-derived only when its source profile and accent-dynamics evidence pass.",
     }
 }
 

@@ -34,6 +34,7 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
          - TR-909 source-grid alignment: `{}`\n\
          - MC-202 source-grid alignment: `{}`\n\
          - MC-202 bass-pressure origin: `{}` applied `{}`\n\
+         - MC-202 source-expression: plan `{}` role `{}` fallback `{}` contour `{}` applied `{}` delta `{}` min `{}`\n\
          - W-30 source-grid alignment: `{}`\n\n\
          - W-30 source-loop closure: `{}`\n\n\
          - Scene movement/audio evidence: `{}`\n\n\
@@ -85,6 +86,13 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
         format_source_grid_alignment(&summary.mc202_source_grid_alignment),
         summary.mc202_bass_pressure_pattern_origin,
         format_optional_bool(summary.mc202_bass_pressure_applied),
+        format_optional_bool(summary.mc202_source_expression_render_plan_applied),
+        summary.mc202_source_expression_role,
+        format_optional_bool(summary.mc202_source_failure_fallback),
+        summary.mc202_source_contour_pattern_origin,
+        format_optional_bool(summary.mc202_source_contour_applied),
+        format_optional_f64(summary.mc202_source_contour_delta_rms),
+        format_optional_f64(summary.mc202_source_contour_min_required_delta_rms),
         format_source_grid_alignment(&summary.w30_source_grid_alignment),
         format_w30_source_loop_closure(summary),
         format_scene_movement_audio_evidence(summary),
@@ -218,6 +226,13 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
                 "mc202_source_grid_alignment": summary.mc202_source_grid_alignment.as_ref().map(source_grid_alignment_json),
                 "mc202_bass_pressure_pattern_origin": &summary.mc202_bass_pressure_pattern_origin,
                 "mc202_bass_pressure_applied": summary.mc202_bass_pressure_applied,
+                "mc202_source_expression_render_plan_applied": summary.mc202_source_expression_render_plan_applied,
+                "mc202_source_expression_role": &summary.mc202_source_expression_role,
+                "mc202_source_failure_fallback": summary.mc202_source_failure_fallback,
+                "mc202_source_contour_pattern_origin": &summary.mc202_source_contour_pattern_origin,
+                "mc202_source_contour_applied": summary.mc202_source_contour_applied,
+                "mc202_source_contour_delta_rms": summary.mc202_source_contour_delta_rms,
+                "mc202_source_contour_min_required_delta_rms": summary.mc202_source_contour_min_required_delta_rms,
                 "w30_source_grid_alignment": summary.w30_source_grid_alignment.as_ref().map(source_grid_alignment_json),
                 "w30_source_loop_closure": summary.w30_source_loop_closure.as_ref().map(w30_source_loop_closure_json),
                 "w30_candidate_rms": summary.w30_candidate_rms,

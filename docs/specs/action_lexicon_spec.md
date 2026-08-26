@@ -413,7 +413,10 @@ Boundary:
   after two renders are hash-stable and the frozen PCM-sum reconstruction gate
   passes. It does not queue or commit `export.stem_package`, create a Session
   receipt, expose a TUI/Ghost action, or claim DAW/release readiness. The bass
-  contribution retains the explicit MC-202 primitive-renderer limitation.
+  contribution is source-derived only when the versioned proof binds an applied
+  non-empty MC-202 source-expression plan, applied source contour, passing
+  source-grid alignment, passing bass pressure, and no source-failure fallback.
+  This origin proof does not itself make the reserved action runnable.
 - Replay must not blindly rewrite files as a hidden side effect.
 - Stem package export and live recording export have typed reserved Core action
   contracts, but remain out of runnable TUI/Ghost/user scope until queue,

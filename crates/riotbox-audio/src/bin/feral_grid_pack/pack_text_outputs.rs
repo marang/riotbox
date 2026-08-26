@@ -27,7 +27,7 @@ fn write_report(
              - TR-909 kick pressure: `{}` origin `{}` evidence `{}` profile `{}` anchors `{}` gain `{:.6}` low-band ratio `{:.6}` delta `{:.6}` peak `{:.6}`\n\
              - TR-909 source-accent dynamics: `{}` origin `source_derived` distinct accents `{}` span `{:.6}` source-energy span `{:.6}`\n\
              - TR-909 rendered drum pressure: `{}` origin `{}` evidence `{}` support contribution `{:.6}` source-first ratio `{:.6}` headroom `{:.6}` support ratio `{:.6}` low-band `{:.6}` full-low `{:.6}` grid-hit `{:.6}`\n\
-             - MC-202 bass pressure: `{}` role `{}` source-expression `{}` plan `{}` legacy origin `primitive_renderer` mode `{}` shape `{}` budget `{}` variation `{}` distinct bar profiles `{}` bar similarity `{:.6}` RMS `{:.6}` low-band `{:.6}` low/mid `{:.6}` low/high `{:.6}` reinforcement `{:.6}` touch `{:.3}` level `{:.3}` peak `{:.6}`\n\
+             - MC-202 bass pressure: `{}` role `{}` source-expression `{}` plan `{}` origin `{}` fallback `{}` mode `{}` shape `{}` budget `{}` variation `{}` distinct bar profiles `{}` bar similarity `{:.6}` RMS `{:.6}` low-band `{:.6}` low/mid `{:.6}` low/high `{:.6}` reinforcement `{:.6}` touch `{:.3}` level `{:.3}` peak `{:.6}`\n\
              - MC-202 source contour: `{}` origin `source_derived_contour` contour `{}` budget `{}` delta RMS `{:.6}` touch boost `{:.3}` level boost `{:.3}` low/mid/high `{:.6}` / `{:.6}` / `{:.6}` density `{:.6}`\n\
              - W-30 source-chop reason: `{}`\n\
              - W-30 source-chop preview RMS: `{:.6}` from source RMS `{:.6}` with gain `{:.6}`\n\
@@ -120,6 +120,8 @@ fn write_report(
             report
                 .mc202_bass_pressure
                 .source_expression_render_plan_applied,
+            report.mc202_bass_pressure.pattern_origin.label(),
+            report.mc202_bass_pressure.source_failure_fallback,
             report.mc202_bass_pressure.mode.label(),
             report.mc202_bass_pressure.phrase_shape.label(),
             report.mc202_bass_pressure.note_budget.label(),
@@ -297,10 +299,10 @@ fn write_readme(
              ## Files\n\n\
              - `stems/01_tr909_beat_fill.wav`: source-aware TR-909 support rendered on the same grid.\n\
              - `stems/02_w30_feral_source_chop.wav`: W-30 source-backed Feral chop with articulate source-window selection and bounded loudness normalization.\n\
-             - `stems/03_mc202_bass_pressure.wav`: primitive MC-202 source-grid proof bass pressure with source-contoured low-end reinforcement; audible and grid-bound, but not yet a source-derived phrase planner.\n\
+             - `stems/03_mc202_bass_pressure.wav`: source-derived MC-202 bass pressure rendered from the applied source-expression phrase plan and source contour.\n\
              - `stems/product/01_stem_drums.wav`: post-bus TR-909 contribution to the generated-support product mix.\n\
              - `stems/product/02_stem_music.wav`: post-bus W-30 contribution to the generated-support product mix.\n\
-             - `stems/product/03_stem_bass.wav`: post-bus MC-202 contribution to the generated-support product mix; it retains the primitive-renderer limitation.\n\
+             - `stems/product/03_stem_bass.wav`: post-bus source-derived MC-202 contribution to the generated-support product mix.\n\
              - `04_riotbox_source_first_mix.wav`: listen here first; source-backed W-30 leads and generated support stays secondary.\n\
              - `05_riotbox_generated_support_mix.wav`: generated-support mix; TR-909 and MC-202 add bounded low-end movement under the source-backed W-30 lane.\n\
              - `grid-report.md`: timing, source-timing readiness, and output metrics.\n\
@@ -310,8 +312,8 @@ fn write_readme(
              This is an offline QA/listening pack. It proves the render seams can align musically,\n\
              and the three product contribution stems reconstruct the written generated-support mix\n\
              within the frozen PCM16 tolerance. It does not make stem export a musician action,\n\
-             remove the MC-202 primitive-renderer limitation, or mean the live TUI mixer exposes\n\
-             this whole arrangement path directly.\n",
+             grant release readiness, or mean the live TUI mixer exposes this whole arrangement\n\
+             path directly.\n",
             args.source_path.display(),
             grid.bpm,
             grid_bpm_source_label(grid_bpm.source),

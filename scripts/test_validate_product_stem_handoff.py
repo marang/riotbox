@@ -9,8 +9,9 @@ from pathlib import Path
 from scripts.validate_product_stem_handoff import (
     ARTIFACT_CONTRACT,
     BOUNDARY,
-    EXPECTED_LIMITATION,
     MATERIAL_STATUS,
+    MC202_MIN_SOURCE_GRID_HIT_RATIO,
+    MC202_SOURCE_EXPRESSION_SCHEMA,
     RECONSTRUCTION_RULE,
     RECONSTRUCTION_SCHEMA,
     SCHEMA,
@@ -84,14 +85,66 @@ class ProductStemHandoffValidationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "reconstruction tolerance"):
             validate_published_proof(self.proof)
 
-    def test_primitive_lane_cannot_be_silently_promoted(self) -> None:
+    def test_primitive_lane_cannot_be_silently_reintroduced(self) -> None:
         proof = json.loads(self.proof.read_text())
-        proof["renderer_status"]["primitive_renderer_boundary"][
-            "product_output_allowed"
+        next(
+            artifact
+            for artifact in proof["artifacts"]
+            if artifact["role"] == "stem_bass"
+        )["origin"] = "primitive_renderer"
+        self.proof.write_text(json.dumps(proof))
+
+        with self.assertRaisesRegex(ValueError, "origin mismatch"):
+            validate_published_proof(self.proof)
+
+    def test_primitive_boundary_cannot_be_reintroduced(self) -> None:
+        proof = json.loads(self.proof.read_text())
+        proof["renderer_status"]["primitive_renderer_boundary"] = {
+            "product_output_allowed": False
+        }
+        self.proof.write_text(json.dumps(proof))
+
+        with self.assertRaisesRegex(ValueError, "stale or unknown"):
+            validate_published_proof(self.proof)
+
+    def test_unapplied_source_expression_plan_fails_closed(self) -> None:
+        proof = json.loads(self.proof.read_text())
+        proof["renderer_status"]["mc202_source_expression"][
+            "source_expression_render_plan_applied"
+        ] = False
+        self.proof.write_text(json.dumps(proof))
+
+        with self.assertRaisesRegex(ValueError, "render_plan_applied"):
+            validate_published_proof(self.proof)
+
+    def test_source_failure_fallback_fails_closed(self) -> None:
+        proof = json.loads(self.proof.read_text())
+        proof["renderer_status"]["mc202_source_expression"][
+            "source_failure_fallback"
         ] = True
         self.proof.write_text(json.dumps(proof))
 
-        with self.assertRaisesRegex(ValueError, "product_output_allowed"):
+        with self.assertRaisesRegex(ValueError, "source_failure_fallback"):
+            validate_published_proof(self.proof)
+
+    def test_weak_source_contour_fails_closed(self) -> None:
+        proof = json.loads(self.proof.read_text())
+        proof["renderer_status"]["mc202_source_expression"][
+            "source_contour_delta_rms"
+        ] = 0.0
+        self.proof.write_text(json.dumps(proof))
+
+        with self.assertRaisesRegex(ValueError, "contour is below"):
+            validate_published_proof(self.proof)
+
+    def test_weak_source_grid_alignment_fails_closed(self) -> None:
+        proof = json.loads(self.proof.read_text())
+        proof["renderer_status"]["mc202_source_expression"][
+            "source_grid_hit_ratio"
+        ] = MC202_MIN_SOURCE_GRID_HIT_RATIO - 0.01
+        self.proof.write_text(json.dumps(proof))
+
+        with self.assertRaisesRegex(ValueError, "grid alignment"):
             validate_published_proof(self.proof)
 
     def test_reconstruction_tolerance_cannot_be_relaxed(self) -> None:
@@ -160,17 +213,22 @@ class ProductStemHandoffValidationTests(unittest.TestCase):
                 "max_allowed_rms_error": 1.5 / 32_768.0,
             },
             "renderer_status": {
-                "primitive_renderer_boundary": {
-                    "schema": "riotbox.primitive_renderer_boundary.v1",
-                    "evidence_role": "non_product_diagnostic_control",
-                    "product_output_allowed": False,
-                    "quality_proof": False,
-                    "demo_readiness": "unverified",
-                    "promotion_blocked": True,
-                    "affected_paths": ["metrics.mc202_bass_pressure.pattern_origin"],
-                    "musician_message": "fixture",
+                "mc202_source_expression": {
+                    "schema": MC202_SOURCE_EXPRESSION_SCHEMA,
+                    "pattern_origin": "source_derived",
+                    "bass_pressure_applied": True,
+                    "bass_pressure_reason": "mc202_source_grid_proof_renderer",
+                    "source_expression_render_plan_applied": True,
+                    "source_expression_role": "bass_pressure",
+                    "source_failure_fallback": False,
+                    "source_contour_origin": "source_derived_contour",
+                    "source_contour_applied": True,
+                    "source_contour_delta_rms": 0.01,
+                    "source_contour_min_required_delta_rms": 0.001,
+                    "source_grid_hit_ratio": 0.75,
+                    "source_grid_min_required_hit_ratio": MC202_MIN_SOURCE_GRID_HIT_RATIO,
                 },
-                "limitations": [EXPECTED_LIMITATION],
+                "limitations": [],
             },
         }
         proof_path = self.root / "product_stem_handoff_proof.json"

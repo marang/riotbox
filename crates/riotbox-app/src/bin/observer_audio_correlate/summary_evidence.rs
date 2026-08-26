@@ -121,6 +121,61 @@ fn mc202_bass_pressure_failures(summary: &CorrelationSummary) -> Vec<String> {
     let mut failures = Vec::new();
     match summary.mc202_bass_pressure_pattern_origin.as_str() {
         "primitive_renderer" => {}
+        "source_derived" => {
+            match summary.mc202_source_expression_render_plan_applied {
+                Some(true) => {}
+                Some(false) => failures.push(
+                    "mc202_bass_pressure.source_expression_render_plan_applied=false"
+                        .to_string(),
+                ),
+                None => failures.push(
+                    "mc202_bass_pressure.source_expression_render_plan_applied=missing"
+                        .to_string(),
+                ),
+            }
+            if !matches!(
+                summary.mc202_source_expression_role.as_str(),
+                "bass_pressure" | "answer_lift" | "hook_restraint_hold"
+            ) {
+                failures.push(format!(
+                    "mc202_bass_pressure.source_expression_role={}",
+                    summary.mc202_source_expression_role
+                ));
+            }
+            match summary.mc202_source_failure_fallback {
+                Some(false) => {}
+                Some(true) => failures
+                    .push("mc202_bass_pressure.source_failure_fallback=true".to_string()),
+                None => failures
+                    .push("mc202_bass_pressure.source_failure_fallback=missing".to_string()),
+            }
+            if summary.mc202_source_contour_pattern_origin != "source_derived_contour" {
+                failures.push(format!(
+                    "mc202_source_contour.pattern_origin={}",
+                    summary.mc202_source_contour_pattern_origin
+                ));
+            }
+            match summary.mc202_source_contour_applied {
+                Some(true) => {}
+                Some(false) => {
+                    failures.push("mc202_source_contour.applied=false".to_string())
+                }
+                None => failures.push("mc202_source_contour.applied=missing".to_string()),
+            }
+            match (
+                summary.mc202_source_contour_delta_rms,
+                summary.mc202_source_contour_min_required_delta_rms,
+            ) {
+                (Some(delta), Some(minimum))
+                    if delta >= 0.0 && minimum >= 0.0 && delta >= minimum =>
+                {
+                }
+                (Some(delta), Some(minimum)) => failures.push(format!(
+                    "mc202_source_contour.delta_rms={delta:.6}<min={minimum:.6}"
+                )),
+                _ => failures.push("mc202_source_contour.delta_rms=missing".to_string()),
+            }
+        }
         "compatibility_silent" => {
             failures.push("mc202_bass_pressure.pattern_origin=compatibility_silent".to_string());
         }
