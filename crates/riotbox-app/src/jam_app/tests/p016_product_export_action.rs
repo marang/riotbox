@@ -179,6 +179,90 @@ fn product_mix_export_rejects_without_receipt_when_proof_artifact_hash_fails() {
 }
 
 #[test]
+fn product_mix_export_rejects_source_mismatch_before_writing_or_attaching_lineage() {
+    let temp = tempdir().expect("tempdir");
+    let proof_dir = temp.path().join("proof");
+    let destination = temp.path().join("export");
+    fs::create_dir_all(&proof_dir).expect("create proof dir");
+    let artifact_path = proof_dir.join("full_grid_mix.wav");
+    write_pcm16_wave(&artifact_path, 1_000, 1, 0.01);
+    let artifact_hash = sha256_bytes(&fs::read(&artifact_path).expect("read artifact"));
+    let proof_path = proof_dir.join("product_export_proof.json");
+    write_product_export_proof(&proof_path, "full_grid_mix.wav", &artifact_hash);
+
+    let mut graph = sample_graph();
+    graph.source.content_hash = "sha256:different-source".into();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    let error = state
+        .commit_product_mix_export_from_active_source_proof(&proof_path, &destination, 901)
+        .expect_err("source mismatch must reject export");
+
+    assert!(error.to_string().contains("product mix export source mismatch"));
+    assert!(!destination.exists());
+    assert!(state.session.export_receipts.is_empty());
+    assert!(state.queue.pending_actions().is_empty());
+    let rejected = state
+        .queue
+        .history()
+        .iter()
+        .find(|action| action.command == ActionCommand::ExportProductMix)
+        .expect("rejected export action");
+    assert_eq!(rejected.status, ActionStatus::Rejected);
+    assert!(
+        rejected
+            .result
+            .as_ref()
+            .expect("rejection result")
+            .summary
+            .contains("source mismatch")
+    );
+}
+
+#[test]
+fn active_source_product_mix_export_rejects_missing_source_identity_without_pending_action() {
+    let temp = tempdir().expect("tempdir");
+    let mut state = JamAppState::from_parts(
+        SessionFile::new("export-no-source", "0.1.0", "2026-08-26T00:00:00Z"),
+        None,
+        ActionQueue::new(),
+    );
+
+    let error = state
+        .commit_product_mix_export_from_active_source_proof(
+            temp.path().join("proof.json"),
+            temp.path().join("export"),
+            902,
+        )
+        .expect_err("missing active source must reject export");
+
+    assert!(error.to_string().contains("active Source Graph identity"));
+    assert!(state.queue.pending_actions().is_empty());
+    assert!(state.session.export_receipts.is_empty());
+    assert_eq!(state.queue.history().len(), 1);
+    assert_eq!(state.queue.history()[0].status, ActionStatus::Rejected);
+}
+
+#[test]
+fn explicit_product_mix_rejection_consumes_an_existing_pending_request() {
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    state.queue_product_mix_export(903, None);
+
+    let rejected_action = state.reject_product_mix_export_request(
+        904,
+        "product mix export handoff is unavailable",
+    );
+
+    assert!(state.queue.pending_actions().is_empty());
+    assert_eq!(state.queue.history().len(), 1);
+    assert_eq!(state.queue.history()[0].id, rejected_action);
+    assert_eq!(state.queue.history()[0].status, ActionStatus::Rejected);
+}
+
+#[test]
 fn reserved_stem_package_export_queue_attempt_is_rejected_without_receipt() {
     let graph = sample_graph();
     let session = sample_session(&graph);
@@ -435,7 +519,7 @@ fn write_product_export_proof(path: &Path, export_artifact: &str, export_hash: &
             "pack_id": "feral-grid-demo",
             "export_role": "full_grid_mix",
             "export_artifact": export_artifact,
-            "source_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "source_sha256": "hash-1",
             "export_sha256": export_hash,
             "normalized_manifest_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
             "audio_artifact_sha256": {

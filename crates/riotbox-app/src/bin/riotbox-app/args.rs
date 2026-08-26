@@ -11,6 +11,8 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     let mut saw_sidecar_flag = false;
     let mut saw_seed_flag = false;
     let mut observer_path = None;
+    let mut product_export_proof_path = None;
+    let mut product_export_destination_path = None;
     let mut stem_package_local_ci_dry_run = false;
     let mut stem_package_local_ci_execute = false;
     let mut stem_package_local_ci_report = false;
@@ -109,6 +111,14 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
                 sidecar_script_path = Some(next_path(&mut args, "--sidecar")?);
             }
             "--observer" => observer_path = Some(next_path(&mut args, "--observer")?),
+            "--product-export-proof" => {
+                product_export_proof_path =
+                    Some(next_path(&mut args, "--product-export-proof")?);
+            }
+            "--product-export-destination" => {
+                product_export_destination_path =
+                    Some(next_path(&mut args, "--product-export-destination")?);
+            }
             "--seed" => {
                 saw_seed_flag = true;
                 let value = args
@@ -153,6 +163,27 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     if explicit_source_downbeat_seconds.is_some() && explicit_source_bpm.is_none() {
         return Err("--source-downbeat-seconds requires --source-bpm <bpm>".into());
     }
+    let product_mix_export_handoff = match (
+        product_export_proof_path,
+        product_export_destination_path,
+    ) {
+        (Some(proof_path), Some(destination_path)) => Some(ProductMixExportHandoff {
+            proof_path,
+            destination_path,
+        }),
+        (Some(_), None) => {
+            return Err(
+                "--product-export-proof requires --product-export-destination <dir>".into(),
+            );
+        }
+        (None, Some(_)) => {
+            return Err(
+                "--product-export-destination requires --product-export-proof <proof.json>"
+                    .into(),
+            );
+        }
+        (None, None) => None,
+    };
 
     let stem_package_mode_count = [
         stem_package_local_ci_dry_run,
@@ -207,6 +238,16 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     {
         return Err(
             "DAW session modes cannot be combined with stem package modes or read-only readiness reports"
+                .into(),
+        );
+    }
+    if product_mix_export_handoff.is_some()
+        && (stem_package_mode_count > 0
+            || read_only_report_mode_count > 0
+            || daw_session_mode_count > 0)
+    {
+        return Err(
+            "product mix export proof handoff is available only for interactive source/session launches"
                 .into(),
         );
     }
@@ -397,6 +438,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             analysis_seed,
             explicit_source_bpm,
             explicit_source_downbeat_seconds,
+            product_mix_export_handoff,
         },
         None => {
             if !saw_session_flag {
@@ -406,6 +448,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             LaunchMode::Load {
                 session_path,
                 source_graph_path,
+                product_mix_export_handoff,
             }
         }
     };

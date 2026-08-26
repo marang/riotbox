@@ -19,6 +19,7 @@ fn observer_snapshot_records_recovery_startup_probe_without_selecting_candidate(
     let mode = LaunchMode::Load {
         session_path: session_path.clone(),
         source_graph_path: None,
+        product_mix_export_handoff: None,
     };
     let shell = shell_for_loaded_state(
         JamAppState::from_parts(
@@ -97,6 +98,7 @@ fn observer_snapshot_reports_app_invalid_recovery_candidate_as_broken() {
     let mode = LaunchMode::Load {
         session_path: session_path.clone(),
         source_graph_path: None,
+        product_mix_export_handoff: None,
     };
     let shell = shell_for_loaded_state(
         JamAppState::from_parts(

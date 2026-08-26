@@ -39,6 +39,7 @@ enum LaunchMode {
     Load {
         session_path: PathBuf,
         source_graph_path: Option<PathBuf>,
+        product_mix_export_handoff: Option<ProductMixExportHandoff>,
     },
     Ingest {
         source_path: PathBuf,
@@ -48,6 +49,7 @@ enum LaunchMode {
         analysis_seed: u64,
         explicit_source_bpm: Option<f32>,
         explicit_source_downbeat_seconds: Option<f32>,
+        product_mix_export_handoff: Option<ProductMixExportHandoff>,
     },
     StemPackageLocalCiDryRun {
         destination_path: PathBuf,
@@ -104,6 +106,28 @@ enum LaunchMode {
         session_path: PathBuf,
         destination_path: PathBuf,
     },
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct ProductMixExportHandoff {
+    proof_path: PathBuf,
+    destination_path: PathBuf,
+}
+
+impl LaunchMode {
+    fn product_mix_export_handoff(&self) -> Option<&ProductMixExportHandoff> {
+        match self {
+            Self::Load {
+                product_mix_export_handoff,
+                ..
+            }
+            | Self::Ingest {
+                product_mix_export_handoff,
+                ..
+            } => product_mix_export_handoff.as_ref(),
+            _ => None,
+        }
+    }
 }
 
 pub fn run() -> Result<(), Box<dyn std::error::Error>> {
@@ -218,6 +242,7 @@ fn load_state(mode: LaunchMode) -> Result<JamAppState, JamAppError> {
         LaunchMode::Load {
             session_path,
             source_graph_path,
+            ..
         } => JamAppState::from_json_files(session_path, source_graph_path),
         LaunchMode::Ingest {
             source_path,
@@ -227,6 +252,7 @@ fn load_state(mode: LaunchMode) -> Result<JamAppState, JamAppError> {
             analysis_seed,
             explicit_source_bpm,
             explicit_source_downbeat_seconds,
+            ..
         } => JamAppState::analyze_source_file_to_json_with_source_timing_confirmation(
             source_path,
             session_path,

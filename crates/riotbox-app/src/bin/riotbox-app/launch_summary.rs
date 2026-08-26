@@ -3,11 +3,16 @@ fn launch_summary(launch: &AppLaunch) -> Value {
         LaunchMode::Load {
             session_path,
             source_graph_path,
+            product_mix_export_handoff,
         } => json!({
             "mode": "load",
             "session_path": session_path,
             "source_graph_path": source_graph_path,
             "observer_path": launch.observer_path,
+            "product_mix_export_handoff": product_mix_export_handoff.as_ref().map(|handoff| json!({
+                "proof_path": handoff.proof_path,
+                "destination_path": handoff.destination_path,
+            })),
         }),
         LaunchMode::Ingest {
             source_path,
@@ -17,6 +22,7 @@ fn launch_summary(launch: &AppLaunch) -> Value {
             analysis_seed,
             explicit_source_bpm,
             explicit_source_downbeat_seconds,
+            product_mix_export_handoff,
         } => json!({
             "mode": "ingest",
             "source_path": source_path,
@@ -27,6 +33,10 @@ fn launch_summary(launch: &AppLaunch) -> Value {
             "explicit_source_bpm": explicit_source_bpm,
             "explicit_source_downbeat_seconds": explicit_source_downbeat_seconds,
             "observer_path": launch.observer_path,
+            "product_mix_export_handoff": product_mix_export_handoff.as_ref().map(|handoff| json!({
+                "proof_path": handoff.proof_path,
+                "destination_path": handoff.destination_path,
+            })),
         }),
         LaunchMode::StemPackageLocalCiDryRun {
             destination_path,

@@ -31,7 +31,14 @@ if source_window_seconds > source_seconds:
 PY
 
 tmpdir="$(mktemp -d)"
-trap 'rm -rf "$tmpdir"' EXIT
+handoff_stage=""
+cleanup() {
+  rm -rf "$tmpdir"
+  if [[ -n "$handoff_stage" ]]; then
+    rm -rf "$handoff_stage"
+  fi
+}
+trap cleanup EXIT
 
 source_a="$tmpdir/source-a.wav"
 source_b="$tmpdir/source-b.wav"
@@ -39,8 +46,27 @@ run_a="$tmpdir/run-a"
 run_b="$tmpdir/run-b"
 proof="$tmpdir/product-export-proof.json"
 
-python3 scripts/write_synthetic_break_wav.py "$source_a" "$source_seconds"
-python3 scripts/write_synthetic_break_wav.py "$source_b" "$source_seconds"
+source_override="${RIOTBOX_PRODUCT_EXPORT_SOURCE:-}"
+handoff_dir="${RIOTBOX_PRODUCT_EXPORT_HANDOFF_DIR:-}"
+if [[ -n "$source_override" || -n "$handoff_dir" ]]; then
+  if [[ -z "$source_override" || -z "$handoff_dir" ]]; then
+    echo "RIOTBOX_PRODUCT_EXPORT_SOURCE and RIOTBOX_PRODUCT_EXPORT_HANDOFF_DIR must be supplied together" >&2
+    exit 1
+  fi
+  if [[ ! -f "$source_override" ]]; then
+    echo "product export source is not a file: $source_override" >&2
+    exit 1
+  fi
+  if [[ -e "$handoff_dir" ]]; then
+    echo "product export handoff destination already exists: $handoff_dir" >&2
+    exit 1
+  fi
+  source_a="$source_override"
+  source_b="$source_override"
+else
+  python3 scripts/write_synthetic_break_wav.py "$source_a" "$source_seconds"
+  python3 scripts/write_synthetic_break_wav.py "$source_b" "$source_seconds"
+fi
 
 source_hash_a="$(sha256sum "$source_a" | awk '{print $1}')"
 source_hash_b="$(sha256sum "$source_b" | awk '{print $1}')"
@@ -105,3 +131,52 @@ python3 scripts/validate_product_export_reproducibility.py \
   --write-proof "$proof" \
   "$run_a/manifest.json" \
   "$run_b/manifest.json"
+
+publish_handoff_dir="$handoff_dir"
+report_handoff=false
+if [[ -z "$publish_handoff_dir" ]]; then
+  publish_handoff_dir="$tmpdir/handoff-smoke"
+else
+  report_handoff=true
+fi
+
+artifact_rel="$(python3 - "$proof" <<'PY'
+import json
+import sys
+from pathlib import Path, PurePosixPath
+
+value = json.loads(Path(sys.argv[1]).read_text()).get("export_artifact")
+if not isinstance(value, str) or not value.strip():
+    raise SystemExit("product export proof has no export_artifact")
+path = PurePosixPath(value)
+if path.is_absolute() or ".." in path.parts:
+    raise SystemExit(f"product export artifact must be a contained relative path: {value}")
+print(path.as_posix())
+PY
+)"
+artifact_source="$run_a/$artifact_rel"
+if [[ ! -f "$artifact_source" ]]; then
+  echo "validated product export artifact is missing: $artifact_source" >&2
+  exit 1
+fi
+
+handoff_parent="$(dirname "$publish_handoff_dir")"
+mkdir -p "$handoff_parent"
+handoff_stage="$(mktemp -d "$handoff_parent/.riotbox-product-export-handoff.XXXXXX")"
+mkdir -p "$handoff_stage/$(dirname "$artifact_rel")"
+cp "$artifact_source" "$handoff_stage/$artifact_rel"
+cp "$proof" "$handoff_stage/product_export_proof.json"
+mv -T -- "$handoff_stage" "$publish_handoff_dir"
+handoff_stage=""
+
+published_hash="$(sha256sum "$publish_handoff_dir/$artifact_rel" | awk '{print $1}')"
+expected_hash="$(jq -r '.export_sha256' "$publish_handoff_dir/product_export_proof.json")"
+if [[ "$published_hash" != "$expected_hash" ]]; then
+  echo "published product export handoff hash mismatch: $published_hash != $expected_hash" >&2
+  exit 1
+fi
+
+if [[ "$report_handoff" == true ]]; then
+  echo "product export handoff ready: $publish_handoff_dir"
+  echo "proof: $publish_handoff_dir/product_export_proof.json"
+fi

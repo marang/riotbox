@@ -318,6 +318,7 @@ mod tests {
             LaunchMode::Load {
                 session_path,
                 source_graph_path,
+                ..
             } => {
                 assert_eq!(session_path, PathBuf::from("session.json"));
                 assert_eq!(source_graph_path, Some(PathBuf::from("graph.json")));
@@ -349,6 +350,7 @@ mod tests {
             LaunchMode::Load {
                 session_path,
                 source_graph_path,
+                ..
             } => {
                 assert_eq!(session_path, PathBuf::from("session.json"));
                 assert_eq!(source_graph_path, None);
@@ -406,6 +408,7 @@ mod tests {
         let surface = recovery_surface_for_launch(&LaunchMode::Load {
             session_path,
             source_graph_path: None,
+            product_mix_export_handoff: None,
         })
         .expect("load mode scans recovery candidates");
 
@@ -437,6 +440,7 @@ mod tests {
         let mode = LaunchMode::Load {
             session_path,
             source_graph_path: None,
+            product_mix_export_handoff: None,
         };
 
         let mut shell = shell_for_loaded_state(
@@ -468,6 +472,7 @@ mod tests {
             mode: LaunchMode::Load {
                 session_path: PathBuf::from("session.json"),
                 source_graph_path: None,
+                product_mix_export_handoff: None,
             },
             observer_path: Some(observer_path.clone()),
         };
@@ -612,6 +617,12 @@ mod tests {
         use super::*;
 
         include!("tests/export_observer.rs");
+    }
+
+    mod product_export_control {
+        use super::*;
+
+        include!("tests/product_export_control.rs");
     }
 
     mod export_arrangement_observer {

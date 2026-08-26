@@ -2023,3 +2023,8 @@ the P015 bounded exit: no automatic arranger, second Scene Graph, hidden
 replay/timing truth, product taste oracle, host-audio soak claim, or full
 DAW/stem export claim without a new Action Lexicon, Session/replay, observer,
 and output-QA contract.
+
+The accepted P023 live musical alpha exit reopened P016 on 2026-08-26.
+RIOTBOX-1476 resumes it with the smallest existing-contract completion slice:
+the musician product-mix proof handoff must commit or fail closed before any
+wider stem, DAW, or live-recording surface is considered.

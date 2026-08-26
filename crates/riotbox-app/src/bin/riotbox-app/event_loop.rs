@@ -443,7 +443,11 @@ fn run_event_loop(
                     }
                 }
                 ShellKeyOutcome::QueueProductMixExport => {
-                    queue_product_mix_export(&mut shell, timestamp_now());
+                    execute_product_mix_export(
+                        &mut shell,
+                        launch.mode.product_mix_export_handoff(),
+                        timestamp_now(),
+                    );
                 }
                 ShellKeyOutcome::ConfirmSourceTimingGrid => {
                     confirm_source_timing_grid(&mut shell, timestamp_now());

@@ -497,6 +497,12 @@ Rules:
   full-grid WAV and the copied product-export proof JSON while preserving the
   legacy `artifact_path`, `proof_path`, `export_hash`, and
   `normalized_manifest_hash` fields for older readers
+- musician-triggered `export.product_mix` may attach the active Source Graph
+  and timing-grid lineage only after the proof `source_sha256` matches the
+  active Source Graph content hash. Missing or mismatched active identity
+  rejects without a receipt and without a pending action; a developer proof
+  transaction without active Source Graph validation must not borrow Session
+  lineage for its artifact
 - current `export.product_mix` proof entries use role `product_export_proof`,
   media type `json`, local proof path, and SHA-256 of the copied proof file so
   the receipt pack can reason about all written files through `artifact_set[]`

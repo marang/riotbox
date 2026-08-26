@@ -1014,6 +1014,9 @@ full-grid-export-reproducibility-smoke:
 product-export-reproducibility-smoke:
     scripts/validate_full_grid_export_reproducibility.sh
 
+product-export-handoff source destination:
+    RIOTBOX_PRODUCT_EXPORT_SOURCE="{{source}}" RIOTBOX_PRODUCT_EXPORT_HANDOFF_DIR="{{destination}}" scripts/validate_full_grid_export_reproducibility.sh
+
 stem-package-local-ci-report-smoke:
     cargo test -p riotbox-app --test stem_package_report_smoke -- --nocapture
 
