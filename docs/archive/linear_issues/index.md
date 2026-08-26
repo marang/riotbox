@@ -1637,4 +1637,6 @@ This index tracks archived Linear ticket history that has been removed from the 
 - [RIOTBOX-1469.md](./RIOTBOX-1469.md)
 - [RIOTBOX-1470.md](./RIOTBOX-1470.md)
   P023: Explore stereo-preserving W-30 pad playback for the Dense foundation
+- [RIOTBOX-1471.md](./RIOTBOX-1471.md)
+  P023: Qualify the current confirmed-tempo W-30 Dense foundation
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
