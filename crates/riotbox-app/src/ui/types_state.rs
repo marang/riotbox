@@ -119,6 +119,7 @@ pub enum ShellKeyOutcome {
     QueueW30HookTurnaround,
     QueueW30PitchDive,
     QueueW30FilterSlam,
+    QueueW30SilenceCut,
     QueueW30LoopFreeze,
     QueueW30LiveRecall,
     QueueW30Audition,
@@ -168,6 +169,7 @@ const GESTURE_DAMAGE: &str = "damage";
 const GESTURE_TURNAROUND: &str = "turnaround";
 const GESTURE_PITCH_DIVE: &str = "pitch dive";
 const GESTURE_FILTER_SLAM: &str = "filter slam";
+const GESTURE_SILENCE_CUT: &str = "silence cut";
 const GESTURE_FREEZE: &str = "freeze";
 const GESTURE_RECALL: &str = "recall";
 const GESTURE_AUDITION: &str = "audition";
@@ -200,6 +202,7 @@ const LANE_GESTURES: &[(&str, &str)] = &[
     ("H", GESTURE_TURNAROUND),
     ("V", GESTURE_PITCH_DIVE),
     ("L", GESTURE_FILTER_SLAM),
+    ("X", GESTURE_SILENCE_CUT),
 ];
 
 const HELP_PRIMARY_CONFIRM_GESTURES: &[(&str, &str)] = &[
@@ -235,6 +238,7 @@ const HELP_ADVANCED_GESTURES_D: &[(&str, &str)] = &[
     ("E", GESTURE_EXPORT),
     ("D", GESTURE_DAMAGE),
     ("H", GESTURE_TURNAROUND),
+    ("X", GESTURE_SILENCE_CUT),
     ("z", GESTURE_FREEZE),
     ("l", GESTURE_RECALL),
     ("o", GESTURE_AUDITION),

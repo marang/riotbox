@@ -23,6 +23,7 @@ mod w30_live_path_render_modules;
 use w30_live_path_render_modules::{
     filter_slam_qualification::qualify_filter_slam_v1,
     pitch_dive_qualification::qualify_pitch_dive_v1,
+    silence_cut_qualification::qualify_silence_cut_v1,
 };
 
 const SAMPLE_RATE: u32 = 48_000;
@@ -44,6 +45,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let qualify_hook_turnaround = args.iter().any(|arg| arg == "--qualify-hook-turnaround-v1");
     let qualify_pitch_dive = args.iter().any(|arg| arg == "--qualify-pitch-dive-v1");
     let qualify_filter_slam = args.iter().any(|arg| arg == "--qualify-filter-slam-v1");
+    let qualify_silence_cut = args.iter().any(|arg| arg == "--qualify-silence-cut-v1");
     let qualify_gesture_vocabulary = args
         .iter()
         .any(|arg| arg == "--qualify-gesture-vocabulary-v1");
@@ -52,10 +54,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .any(|arg| arg == "--prepare-hook-turnaround-review");
     let prepare_pitch_dive_review = args.iter().any(|arg| arg == "--prepare-pitch-dive-review");
     let prepare_filter_slam_review = args.iter().any(|arg| arg == "--prepare-filter-slam-review");
+    let prepare_silence_cut_review = args.iter().any(|arg| arg == "--prepare-silence-cut-review");
     if [
         qualify_hook_turnaround,
         qualify_pitch_dive,
         qualify_filter_slam,
+        qualify_silence_cut,
         qualify_gesture_vocabulary,
     ]
     .into_iter()
@@ -158,6 +162,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     print_w30_render_summary("normal", &state.runtime.w30_preview);
     let normal_render = state.runtime.w30_preview.clone();
+    if qualify_silence_cut {
+        let exact_product_bpm = normal_render.tempo_bpm;
+        if !exact_product_bpm.is_finite() || exact_product_bpm <= 0.0 {
+            return Err("W-30 qualification has no positive finite product tempo".into());
+        }
+        qualify_silence_cut_v1(
+            &mut state,
+            &normal_render,
+            exact_product_bpm,
+            &output_dir,
+            scene_id,
+            prepare_silence_cut_review,
+            8,
+        )?;
+        state.save()?;
+        return Ok(());
+    }
     if qualify_gesture_vocabulary {
         let exact_product_bpm = normal_render.tempo_bpm;
         if !exact_product_bpm.is_finite() || exact_product_bpm <= 0.0 {

@@ -41,6 +41,8 @@ include!("tests/capture_w30_audition.rs");
 include!("tests/w30_source_window_projection.rs");
 include!("tests/w30_source_window_artifacts.rs");
 include!("tests/w30_queue_core.rs");
+#[path = "tests/w30_silence_cut.rs"]
+mod w30_silence_cut;
 include!("tests/w30_queue_conflicts_live_recall.rs");
 include!("tests/w30_committed_bank_damage.rs");
 include!("tests/w30_committed_preview.rs");

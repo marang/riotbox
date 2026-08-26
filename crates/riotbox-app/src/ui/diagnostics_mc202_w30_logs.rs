@@ -285,6 +285,7 @@ fn jam_action_label(command: &str) -> String {
         "w30.hook_turnaround" => GESTURE_TURNAROUND.into(),
         "w30.pitch_dive" => GESTURE_PITCH_DIVE.into(),
         "w30.filter_slam" => GESTURE_FILTER_SLAM.into(),
+        "w30.silence_cut" => GESTURE_SILENCE_CUT.into(),
         "w30.loop_freeze" => GESTURE_FREEZE.into(),
         "w30.live_recall" => GESTURE_RECALL.into(),
         "w30.audition_raw_capture" => GESTURE_AUDITION.into(),

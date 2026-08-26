@@ -261,6 +261,7 @@ falls back visibly to `four_bars`.
 - `w30.hook_turnaround`
 - `w30.pitch_dive`
 - `w30.filter_slam`
+- `w30.silence_cut`
 - `w30.loop_freeze`
 - `tr909.fill_next`
 - `tr909.set_slam`
@@ -292,6 +293,17 @@ return completes during the final beat. It must refuse visibly before queueing
 when transport, trusted positive tempo, the matching focused capture, or
 hydrated source-backed pad audio is unavailable. It never creates fallback
 music, changes the source, or silently retargets another capture.
+
+`w30.silence_cut` is an explicit performer-owned W-30 articulation. It targets
+the current focused promoted capture, queues for the next bar, and commits a
+typed `silence_cut_v1` profile, capture identity, and start beat into Session
+state. Ordinary W-30 playback advances for four relative beats, tapers out over
+5 ms immediately before beat four, emits exact silence from relative beat four
+through beat five, tapers back over 5 ms, and then resumes the continuously
+advancing ordinary control. It must refuse visibly before queueing when
+transport, trusted positive tempo, the matching focused capture, or hydrated
+source-backed pad audio is unavailable. It never creates fallback music,
+changes the source, or silently retargets another capture.
 
 `w30.apply_damage_profile` is a persistent, capture-scoped performer toggle.
 For the exact focused capture, a committed positive mutation intensity applies

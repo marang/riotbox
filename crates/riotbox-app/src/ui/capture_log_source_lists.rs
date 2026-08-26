@@ -14,6 +14,7 @@ fn capture_or_recall_cue_label(shell: &JamShellState) -> String {
                     | "w30.hook_turnaround"
                     | "w30.pitch_dive"
                     | "w30.filter_slam"
+                    | "w30.silence_cut"
                     | "w30.loop_freeze"
                     | "w30.live_recall"
                     | "w30.audition_raw_capture"

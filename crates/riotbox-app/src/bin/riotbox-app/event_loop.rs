@@ -381,6 +381,21 @@ fn run_event_loop(
                             .set_error_status("no committed W-30 pad available to filter-slam"),
                     }
                 }
+                ShellKeyOutcome::QueueW30SilenceCut => {
+                    match shell.app.queue_w30_silence_cut(timestamp_now()) {
+                        Some(crate::jam_app::QueueControlResult::Enqueued) => {
+                            shell.set_error_status("queued W-30 silence cut for next bar");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyPending) => {
+                            shell.set_error_status("W-30 pad cue already queued");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyInState) => {
+                            shell.set_error_status("W-30 silence cut already active");
+                        }
+                        None => shell
+                            .set_error_status("no committed W-30 pad available to silence-cut"),
+                    }
+                }
                 ShellKeyOutcome::QueueW30LoopFreeze => {
                     match shell.app.queue_w30_loop_freeze(timestamp_now()) {
                         Some(crate::jam_app::QueueControlResult::Enqueued) => {

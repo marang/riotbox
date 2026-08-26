@@ -271,7 +271,9 @@ Per lane, store only the state required to reproduce behavior:
 - MC-202 role, phrase references, committed phrase variant, and source phrase
   plan when a trusted Source Graph phrase slot was used
 - W-30 preview intent plus bank/pad focus, current capture reference, and any
-  committed typed hook-articulation profile with its target capture and start beat
+  committed typed hook-articulation profile with its target capture and start
+  beat. Current profiles are `turnaround_v1`, `pitch_dive_v1`,
+  `filter_slam_v1`, and `silence_cut_v1`
 - TR-909 takeover, pattern, and reinforcement state
 
 MC-202 role and phrase-variant fields use stable compatibility labels in

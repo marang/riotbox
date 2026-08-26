@@ -6,6 +6,8 @@ include!("tests/w30_resample_support.rs");
 include!("tests/w30_hook_turnaround.rs");
 include!("tests/w30_pitch_dive.rs");
 include!("tests/w30_filter_slam.rs");
+#[path = "tests/w30_silence_cut.rs"]
+mod w30_silence_cut;
 include!("tests/mix_offline_tr909.rs");
 include!("tests/tr909_profile_voice_balance.rs");
 include!("tests/fixture_regressions_variations.rs");

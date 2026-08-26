@@ -57,6 +57,7 @@ pub enum W30HookArticulationProfile {
     TurnaroundV1,
     PitchDiveV1,
     FilterSlamV1,
+    SilenceCutV1,
 }
 
 impl W30HookArticulationProfile {
@@ -66,6 +67,7 @@ impl W30HookArticulationProfile {
             Self::TurnaroundV1 => "turnaround_v1",
             Self::PitchDiveV1 => "pitch_dive_v1",
             Self::FilterSlamV1 => "filter_slam_v1",
+            Self::SilenceCutV1 => "silence_cut_v1",
         }
     }
 }

@@ -1656,6 +1656,19 @@ integration and source-diverse qualification. Until that succeeds, the result
 is neither product behavior nor demo, release, Holdout, hardness,
 source-general, universal-quality, or P023-completion evidence.
 
+RIOTBOX-1473 then rebuilds that frozen gesture through the existing product
+spine as typed `w30.silence_cut`: performer queue and next-bar commit, persisted
+Session/replay articulation, observer/UI surface, and the isolated W-30
+RuntimeMix path. RBX-343 freezes a four-case Development qualification before
+any source access, covering two dense breaks, sparse drums, and a tonal riff.
+Every case must prove the exact 5 ms taper, one-beat PCM-zero cut, sample-exact
+automatic return, callback-partition invariance, clean limiter path, preserved
+capture/mix/other-lane state, and missing-source silence. Only a complete
+technical matrix may unlock one source-first formal product review; source
+results may reject v1 but may not tune it. Until both stages pass, this remains
+unqualified product implementation and grants no source-general, Holdout,
+hardness, demo, release, universal-quality, or P023-completion claim.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing

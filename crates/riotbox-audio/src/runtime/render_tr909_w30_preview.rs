@@ -571,6 +571,45 @@ pub(super) fn w30_hook_articulation_frame(
         }
         W30HookArticulationProfile::PitchDiveV1 => None,
         W30HookArticulationProfile::FilterSlamV1 => None,
+        W30HookArticulationProfile::SilenceCutV1 => {
+            const FADE_SECONDS: f64 = 0.005;
+            let fade_beats = f64::from(render.tempo_bpm) * FADE_SECONDS / 60.0;
+            if !fade_beats.is_finite() || fade_beats <= 0.0 {
+                return None;
+            }
+            if ((4.0 - fade_beats)..4.0).contains(&relative_beat) {
+                let progress = ((relative_beat - (4.0 - fade_beats)) / fade_beats).clamp(0.0, 1.0);
+                Some(W30HookArticulationFrame {
+                    reverse: render.pad_playback.reverse,
+                    gate_step_fraction: render.pad_playback.gate_step_fraction,
+                    playback_rate_multiplier: 1.0,
+                    terminal_gain: (progress * std::f64::consts::FRAC_PI_2).cos() as f32,
+                    continuous_cursor: true,
+                    silent: false,
+                })
+            } else if (4.0..5.0).contains(&relative_beat) {
+                Some(W30HookArticulationFrame {
+                    reverse: render.pad_playback.reverse,
+                    gate_step_fraction: render.pad_playback.gate_step_fraction,
+                    playback_rate_multiplier: 1.0,
+                    terminal_gain: 0.0,
+                    continuous_cursor: true,
+                    silent: true,
+                })
+            } else if (5.0..(5.0 + fade_beats)).contains(&relative_beat) {
+                let progress = ((relative_beat - 5.0) / fade_beats).clamp(0.0, 1.0);
+                Some(W30HookArticulationFrame {
+                    reverse: render.pad_playback.reverse,
+                    gate_step_fraction: render.pad_playback.gate_step_fraction,
+                    playback_rate_multiplier: 1.0,
+                    terminal_gain: (progress * std::f64::consts::FRAC_PI_2).sin() as f32,
+                    continuous_cursor: true,
+                    silent: false,
+                })
+            } else {
+                None
+            }
+        }
     }
 }
 
@@ -580,12 +619,25 @@ fn w30_post_render_articulation_sample(
     state: &mut W30PreviewCallbackState,
     position_beats: f64,
 ) -> f32 {
-    if !matches!(
-        render.pad_playback.hook_articulation_profile,
-        Some(W30HookArticulationProfile::PitchDiveV1)
-    ) {
-        state.pitch_dive.reset();
-        return control_sample;
+    match render.pad_playback.hook_articulation_profile {
+        Some(W30HookArticulationProfile::SilenceCutV1) => {
+            state.pitch_dive.reset();
+            return w30_hook_articulation_frame(render, position_beats).map_or(
+                control_sample,
+                |frame| {
+                    if frame.silent {
+                        0.0
+                    } else {
+                        control_sample * frame.terminal_gain
+                    }
+                },
+            );
+        }
+        Some(W30HookArticulationProfile::PitchDiveV1) => {}
+        _ => {
+            state.pitch_dive.reset();
+            return control_sample;
+        }
     }
 
     let Some(frame) = w30_hook_articulation_frame(render, position_beats) else {
