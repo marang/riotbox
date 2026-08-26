@@ -663,6 +663,17 @@ After exit:
   no clipping or fallback. The one human usefulness check is inconclusive on
   the available notebook speakers; automation cannot promote it, so the
   temporary Runtime seam is removed without a qualification handoff.
+- RIOTBOX-1471 resolves the remaining current-artifact identity question
+  without changing the established W-30 mechanism. Exact accepted `130.0 BPM`
+  remains the correct Session/replay/Runtime authority; the already rendered
+  current candidate passes bounded source and presentation preflight and earns
+  a structured human `keep` as a usable Dense foundation. The listener
+  recognizes it as existing behavior, so this is maintenance/regression
+  confirmation rather than new musical functionality. `dense_break` now has
+  one bounded positive W-30-led foundation alongside the qualified tonal and
+  sparse journeys, but this does not by itself establish a complete demo-ready
+  Dense family. Broader source, Holdout, support-lane, release,
+  universal-quality, and P023 completion remain outside this evidence.
 - RIOTBOX-1410 is the first bounded Foundation Completion closure: explicit
   control-only source-monitor refresh retains current PCM, explicit replacement
   atomically publishes PCM plus mode/gains and anchors, and exact callback /

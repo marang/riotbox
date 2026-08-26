@@ -1625,6 +1625,22 @@ one typed confirmed-tempo authority through Session, Runtime, replay/restore,
 and observer surfaces source-blind before another Dense qualification. Dense
 therefore remains the sole missing positive demo family.
 
+RIOTBOX-1471 corrects that handoff without reverting the current product. RBX-324
+already makes the explicitly accepted `130.0 BPM` the correct Session, replay,
+and Runtime truth; the earlier `130.28494262695312 BPM` artifact is stale
+identity, not a target for a timing fix. One bounded Development-only review
+reuses the exact RIOTBOX-1470 candidate without rerendering, passes source,
+format, non-silence, clipping, and presentation-identity preflight, and records
+a structured human `keep`: the established W-30 chop remains usable as the
+Dense foundation and transformed source character remains present. The
+listener recognized it as existing behavior, so this is explicitly regression
+confirmation rather than a new audible mechanism; hook-after-two-bars strength
+was not separately reassessed. `dense_break` now has one bounded positive W-30
+foundation alongside the qualified `tonal_riff` and `sparse_drums` journeys; it
+is not thereby a complete demo-ready family. Source-general, Holdout,
+support-lane, universal-quality, release, and P023-completion claims remain
+blocked, and the next slice must target a genuine remaining product gap.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing
