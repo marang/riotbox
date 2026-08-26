@@ -200,6 +200,11 @@ mod tests {
         );
         assert!(mc202_pressure.source_expression_render_plan_applied);
         assert_eq!(
+            mc202_pressure.pattern_origin,
+            Mc202PatternOrigin::SourceDerived
+        );
+        assert!(!mc202_pressure.source_failure_fallback);
+        assert_eq!(
             mc202_pressure.source_expression_role,
             MC202_SOURCE_EXPRESSION_ROLE_BASS_PRESSURE
         );
@@ -274,6 +279,11 @@ mod tests {
 
         assert!(mc202_pressure.applied, "{mc202_pressure:?}");
         assert!(mc202_pressure.source_expression_render_plan_applied);
+        assert_eq!(
+            mc202_pressure.pattern_origin,
+            Mc202PatternOrigin::SourceDerived
+        );
+        assert!(!mc202_pressure.source_failure_fallback);
         assert_eq!(
             mc202_pressure.source_expression_role,
             MC202_SOURCE_EXPRESSION_ROLE_HOOK_RESTRAINT_HOLD

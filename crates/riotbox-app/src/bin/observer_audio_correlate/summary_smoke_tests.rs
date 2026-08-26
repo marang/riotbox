@@ -90,6 +90,18 @@ fn summarizes_synthetic_observer_and_manifest() {
             max_allowed_peak_offset_ms: 70.0,
         })
     );
+    assert_eq!(summary.mc202_bass_pressure_pattern_origin, "source_derived");
+    assert_eq!(
+        summary.mc202_source_expression_render_plan_applied,
+        Some(true)
+    );
+    assert_eq!(summary.mc202_source_expression_role, "bass_pressure");
+    assert_eq!(summary.mc202_source_failure_fallback, Some(false));
+    assert_eq!(
+        summary.mc202_source_contour_pattern_origin,
+        "source_derived_contour"
+    );
+    assert_eq!(summary.mc202_source_contour_applied, Some(true));
     assert_eq!(
         summary.w30_source_grid_alignment,
         Some(SourceGridOutputDriftEvidence {
@@ -290,7 +302,7 @@ fn synthetic_observer() -> String {
         + "\n"
 }
 
-fn synthetic_manifest() -> String {
+pub(super) fn synthetic_manifest() -> String {
     r#"{
   "pack_id": "feral-grid-demo",
   "result": "pass",
@@ -342,8 +354,17 @@ fn synthetic_manifest() -> String {
       "max_allowed_peak_offset_ms": 70.0
     },
     "mc202_bass_pressure": {
-      "pattern_origin": "primitive_renderer",
-      "applied": true
+      "pattern_origin": "source_derived",
+      "applied": true,
+      "source_expression_render_plan_applied": true,
+      "source_expression_role": "bass_pressure",
+      "source_failure_fallback": false
+    },
+    "mc202_source_contour": {
+      "pattern_origin": "source_derived_contour",
+      "applied": true,
+      "source_contour_delta_rms": 0.01,
+      "min_required_delta_rms": 0.001
     },
     "mc202_source_grid_alignment": {
       "beat_count": 8,

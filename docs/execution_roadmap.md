@@ -2032,3 +2032,9 @@ RIOTBOX-1477 follows with the next bounded foundation slice: publish
 source-matched post-bus drum, music, and bass contribution stems that
 reconstruct the unchanged product mix, while keeping the path development-only
 until the reserved stem action, receipt, and musician workflow are implemented.
+RIOTBOX-1478 removes the remaining MC-202 origin blocker without changing the
+sound: the existing applied source-expression plan may reach the versioned
+Development stem proof only when source-contour, bass-pressure, lane-grid, and
+no-fallback evidence all pass. The next slice may wire the reserved stem action
+and Session receipt, but must validate the handoff source against active Session
+lineage and must not reuse the hardcoded local-CI fixture as musician material.

@@ -279,10 +279,11 @@ just product-stem-handoff "path/to/source.wav" "artifacts/local/my-source-stems"
 The published PCM16 drum, music, and bass contributions reconstruct the
 generated-support `full_grid_mix` by direct sample summation within the frozen
 tolerance. The proof binds the source hash, format/grid, artifact hashes,
-reconstruction rule, and current renderer limitations. This is development-only:
-it does not commit `export.stem_package`, create a Session receipt, claim a DAW
-package, or promote the current primitive MC-202 bass phrase to product-quality
-source intelligence.
+reconstruction rule, and explicit MC-202 source-expression origin evidence.
+The bass contribution is accepted only when the existing source-derived phrase
+plan, source-contour delta, source-grid alignment, and no-fallback gates all
+pass. This is still development-only: it does not commit
+`export.stem_package`, create a Session receipt, or claim a DAW/release package.
 
 ## Start In 5 Steps
 

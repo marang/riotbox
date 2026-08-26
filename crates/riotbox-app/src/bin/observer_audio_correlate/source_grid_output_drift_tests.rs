@@ -157,6 +157,32 @@ fn strict_evidence_rejects_mc202_compatibility_silent_alignment() {
 }
 
 #[test]
+fn strict_evidence_rejects_unapplied_mc202_source_expression_plan() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let observer_path = temp.path().join("events.ndjson");
+    let manifest_path = temp.path().join("manifest.json");
+    fs::write(&observer_path, synthetic_observer()).expect("write observer");
+    fs::write(
+        &manifest_path,
+        super::summary_smoke_tests::synthetic_manifest().replace(
+            "\"source_expression_render_plan_applied\": true",
+            "\"source_expression_render_plan_applied\": false",
+        ),
+    )
+    .expect("write manifest");
+
+    let summary = build_summary(&observer_path, &manifest_path).expect("summary");
+    let error = validate_required_evidence(&summary).expect_err("unapplied source-expression plan");
+
+    assert!(
+        error
+            .to_string()
+            .contains("mc202_bass_pressure.source_expression_render_plan_applied=false")
+    );
+    assert!(render_markdown(&summary).contains("MC-202 source-expression: plan `no`"));
+}
+
+#[test]
 fn strict_evidence_rejects_malformed_lane_source_grid_alignment() {
     let temp = tempfile::tempdir().expect("tempdir");
     let observer_path = temp.path().join("events.ndjson");

@@ -1,9 +1,11 @@
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct Mc202BassPressureProof {
+    pattern_origin: Mc202PatternOrigin,
     applied: bool,
     pressure_role: &'static str,
     source_expression_render_plan_applied: bool,
     source_expression_role: &'static str,
+    source_failure_fallback: bool,
     mode: Mc202RenderMode,
     phrase_shape: Mc202PhraseShape,
     note_budget: Mc202NoteBudget,
@@ -22,6 +24,21 @@ struct Mc202BassPressureProof {
     active_sample_ratio: f32,
     peak_abs: f32,
     reason: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Mc202PatternOrigin {
+    SourceDerived,
+    Unavailable,
+}
+
+impl Mc202PatternOrigin {
+    const fn label(self) -> &'static str {
+        match self {
+            Self::SourceDerived => PATTERN_ORIGIN_SOURCE_DERIVED,
+            Self::Unavailable => "unavailable",
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -60,6 +77,7 @@ struct ManifestMc202BassPressureProof {
     pressure_role: &'static str,
     source_expression_render_plan_applied: bool,
     source_expression_role: &'static str,
+    source_failure_fallback: bool,
     mode: &'static str,
     phrase_shape: &'static str,
     note_budget: &'static str,
@@ -107,7 +125,6 @@ const MC202_BASS_PRESSURE_DIAGNOSTIC_MAX_PEAK: f32 = 0.085;
 const MC202_DENSE_DROP_DIAGNOSTIC_MAX_PEAK: f32 = 0.050;
 const MC202_DENSE_DROP_MIN_EVENTS_PER_BAR: f32 = 70.0;
 const MC202_SOURCE_CONTOUR_MIN_DELTA_RMS: f32 = 0.00025;
-const MC202_PATTERN_ORIGIN_PRIMITIVE_RENDERER: &str = PATTERN_ORIGIN_PRIMITIVE_RENDERER;
 const MC202_PATTERN_ORIGIN_SOURCE_DERIVED_CONTOUR: &str = "source_derived_contour";
 const MC202_PRESSURE_ROLE_WITH_SOURCE_CONTOUR: &str = "bass_pressure_with_source_contour";
 const MC202_PRESSURE_ROLE_WITHOUT_PRESSURE: &str = "bass_phrase_without_pressure";
@@ -124,11 +141,12 @@ fn manifest_mc202_bass_pressure_proof(
     proof: Mc202BassPressureProof,
 ) -> ManifestMc202BassPressureProof {
     ManifestMc202BassPressureProof {
-        pattern_origin: MC202_PATTERN_ORIGIN_PRIMITIVE_RENDERER,
+        pattern_origin: proof.pattern_origin.label(),
         applied: proof.applied,
         pressure_role: proof.pressure_role,
         source_expression_render_plan_applied: proof.source_expression_render_plan_applied,
         source_expression_role: proof.source_expression_role,
+        source_failure_fallback: proof.source_failure_fallback,
         mode: proof.mode.label(),
         phrase_shape: proof.phrase_shape.label(),
         note_budget: proof.note_budget.label(),
@@ -227,13 +245,14 @@ fn render_mc202_bass_pressure_with_source_contour(
     );
     let phrase_variation_applied = grid.bars > 1;
     let distinct_bar_profile_count = if phrase_variation_applied { 2 } else { 1 };
+    let source_expression_render_plan_applied = primary_state
+        .source_phrase_plan
+        .is_some_and(|plan| !plan.is_empty());
     let applied = metrics.signal.rms >= MC202_BASS_PRESSURE_MIN_SIGNAL_RMS
         && metrics.low_band.rms >= MC202_BASS_PRESSURE_MIN_LOW_BAND_RMS
         && low_to_mid_energy_ratio >= MC202_BASS_PRESSURE_MIN_LOW_TO_MID_ENERGY_RATIO
         && pressure_reinforcement_gain > 0.0
-        && primary_state
-            .source_phrase_plan
-            .is_some_and(|plan| !plan.is_empty())
+        && source_expression_render_plan_applied
         && metrics.signal.peak_abs > 0.0;
     let active_sample_ratio = if samples.is_empty() {
         0.0
@@ -243,20 +262,28 @@ fn render_mc202_bass_pressure_with_source_contour(
     let source_contour_delta_rms = rms_delta(&samples, &control_samples, grid);
     let source_contour_applied =
         source_contour_delta_rms >= MC202_SOURCE_CONTOUR_MIN_DELTA_RMS;
+    let pattern_origin = if applied
+        && source_expression_render_plan_applied
+        && source_contour_applied
+    {
+        Mc202PatternOrigin::SourceDerived
+    } else {
+        Mc202PatternOrigin::Unavailable
+    };
 
     (
         samples,
         Mc202BassPressureProof {
+            pattern_origin,
             applied,
             pressure_role: if applied {
                 MC202_PRESSURE_ROLE_WITH_SOURCE_CONTOUR
             } else {
                 MC202_PRESSURE_ROLE_WITHOUT_PRESSURE
             },
-            source_expression_render_plan_applied: primary_state
-                .source_phrase_plan
-                .is_some_and(|plan| !plan.is_empty()),
+            source_expression_render_plan_applied,
             source_expression_role: mc202_source_expression_role(source_contour),
+            source_failure_fallback: false,
             mode: primary_state.mode,
             phrase_shape: primary_state.phrase_shape,
             note_budget: primary_state.note_budget,

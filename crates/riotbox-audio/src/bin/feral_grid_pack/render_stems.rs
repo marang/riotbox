@@ -389,6 +389,23 @@ fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>
         .into());
     }
 
+    if report.mc202_bass_pressure.pattern_origin != Mc202PatternOrigin::SourceDerived
+        || !report
+            .mc202_bass_pressure
+            .source_expression_render_plan_applied
+        || report.mc202_bass_pressure.source_failure_fallback
+    {
+        return Err(format!(
+            "MC-202 source-expression origin is unavailable: origin {}, render plan applied {}, fallback {}",
+            report.mc202_bass_pressure.pattern_origin.label(),
+            report
+                .mc202_bass_pressure
+                .source_expression_render_plan_applied,
+            report.mc202_bass_pressure.source_failure_fallback
+        )
+        .into());
+    }
+
     if !report.mc202_bass_pressure.applied {
         return Err(format!(
             "MC-202 bass pressure was too weak: low-band RMS {:.6}, low/mid energy ratio {:.6}, reinforcement gain {:.6}",

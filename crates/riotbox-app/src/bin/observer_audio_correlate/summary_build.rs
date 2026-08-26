@@ -36,6 +36,13 @@ struct CorrelationSummary {
     mc202_source_grid_alignment_malformed: bool,
     mc202_bass_pressure_pattern_origin: String,
     mc202_bass_pressure_applied: Option<bool>,
+    mc202_source_expression_render_plan_applied: Option<bool>,
+    mc202_source_expression_role: String,
+    mc202_source_failure_fallback: Option<bool>,
+    mc202_source_contour_pattern_origin: String,
+    mc202_source_contour_applied: Option<bool>,
+    mc202_source_contour_delta_rms: Option<f64>,
+    mc202_source_contour_min_required_delta_rms: Option<f64>,
     w30_source_grid_alignment: Option<SourceGridOutputDriftEvidence>,
     w30_source_grid_alignment_malformed: bool,
     w30_source_loop_closure: Option<W30SourceLoopClosureEvidence>,
@@ -156,6 +163,34 @@ fn build_summary_from_events(
             .unwrap_or_else(|| "unknown".to_string());
     let mc202_bass_pressure_applied =
         collect_metric_bool(&manifest, "mc202_bass_pressure", "applied");
+    let mc202_source_expression_render_plan_applied = collect_metric_bool(
+        &manifest,
+        "mc202_bass_pressure",
+        "source_expression_render_plan_applied",
+    );
+    let mc202_source_expression_role =
+        collect_metric_string(&manifest, "mc202_bass_pressure", "source_expression_role")
+            .unwrap_or_else(|| "unknown".to_string());
+    let mc202_source_failure_fallback = collect_metric_bool(
+        &manifest,
+        "mc202_bass_pressure",
+        "source_failure_fallback",
+    );
+    let mc202_source_contour_pattern_origin =
+        collect_metric_string(&manifest, "mc202_source_contour", "pattern_origin")
+            .unwrap_or_else(|| "unknown".to_string());
+    let mc202_source_contour_applied =
+        collect_metric_bool(&manifest, "mc202_source_contour", "applied");
+    let mc202_source_contour_delta_rms = collect_metric_f64(
+        &manifest,
+        "mc202_source_contour",
+        "source_contour_delta_rms",
+    );
+    let mc202_source_contour_min_required_delta_rms = collect_metric_f64(
+        &manifest,
+        "mc202_source_contour",
+        "min_required_delta_rms",
+    );
     let (w30_source_grid_alignment, w30_source_grid_alignment_malformed) =
         collect_source_grid_alignment(&manifest, "w30_source_grid_alignment");
     let (w30_source_loop_closure, w30_source_loop_closure_malformed) =
@@ -237,6 +272,13 @@ fn build_summary_from_events(
         mc202_source_grid_alignment_malformed,
         mc202_bass_pressure_pattern_origin,
         mc202_bass_pressure_applied,
+        mc202_source_expression_render_plan_applied,
+        mc202_source_expression_role,
+        mc202_source_failure_fallback,
+        mc202_source_contour_pattern_origin,
+        mc202_source_contour_applied,
+        mc202_source_contour_delta_rms,
+        mc202_source_contour_min_required_delta_rms,
         w30_source_grid_alignment,
         w30_source_grid_alignment_malformed,
         w30_source_loop_closure,
@@ -561,6 +603,14 @@ fn collect_metric_bool(manifest: &Value, metric_key: &str, field: &str) -> Optio
         .get(metric_key)?
         .get(field)?
         .as_bool()
+}
+
+fn collect_metric_f64(manifest: &Value, metric_key: &str, field: &str) -> Option<f64> {
+    manifest
+        .get("metrics")?
+        .get(metric_key)?
+        .get(field)?
+        .as_f64()
 }
 
 fn collect_w30_source_loop_closure(

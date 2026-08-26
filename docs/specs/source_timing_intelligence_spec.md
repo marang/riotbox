@@ -928,11 +928,13 @@ bounded BPM policy:
   `metrics.mc202_source_grid_alignment`, so the bass-pressure stem cannot pass
   strict showcase QA only because stronger TR-909, W-30, or full-mix peaks stay
   grid-locked
-- Current Feral-grid MC-202 bass support may use a `primitive_renderer` proof
-  phrase to satisfy lane-specific source-grid output evidence. It must stay
-  labeled as primitive support until a source-derived phrase planner exists, and
-  it must not be presented as extracted or source-derived MC-202 musical
-  intelligence.
+- Current Feral-grid MC-202 bass support applies a bounded
+  `Mc202SourcePhraseRenderPlan` derived from the selected source window and may
+  report `pattern_origin: source_derived` only when that non-empty plan is
+  actually rendered, the source-contour delta and bass-pressure gates pass, the
+  lane-specific grid hit ratio is at least `0.5`, and no source-failure fallback
+  exists. Missing evidence makes the Development export unavailable rather than
+  reviving a primitive bass phrase.
 - The first source-derived phrase planner is tracked by RIOTBOX-1035 and
   `docs/plans/mc202_source_phrase_planning_plan.md`. A committed
   `lane_state.mc202.source_phrase_plan` is the minimum Session/Core marker that
@@ -942,6 +944,9 @@ bounded BPM policy:
   phrase planning; product-quality claims require source features to change
   musical placement, density, contour, role, or stay-out decisions and to pass
   cross-source diversity gates.
+- The Feral-grid proof computes this plan inside its offline Development render;
+  it does not by itself create the committed `lane_state.mc202.source_phrase_plan`
+  required by a musician Session/action workflow.
 - P013 may add bounded source-section MC-202 contour evidence under
   `metrics.mc202_source_contour`, where source energy/density shapes contour,
   touch, or support level and is compared against a primitive support control.

@@ -164,7 +164,7 @@ For each \`packs/<case>/<window>/\` directory:
 
 1. \`00_source_window.wav\`: raw source comparison window.
 2. \`stems/02_w30_feral_source_chop.wav\`: source-backed W-30 chop.
-3. \`stems/03_mc202_bass_pressure.wav\`: primitive MC-202 source-grid proof bass pressure; audible and grid-bound, but not yet source-derived phrase planning.
+3. \`stems/03_mc202_bass_pressure.wav\`: source-derived MC-202 bass pressure from the applied source-expression plan and source contour; Development QA only.
 4. \`04_riotbox_source_first_mix.wav\`: source-first Riotbox render.
 5. \`05_riotbox_generated_support_mix.wav\`: generated-support mix.
 

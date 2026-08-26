@@ -47,13 +47,7 @@ jq -e \
     and .source_timing.downbeat_status == "stable"
     and .source_timing.anchor_evidence.primary_anchor_count > 0
     and .source_timing_bpm_delta > 0.0
-    and .primitive_renderer_boundary.schema == "riotbox.primitive_renderer_boundary.v1"
-    and .primitive_renderer_boundary.evidence_role == "non_product_diagnostic_control"
-    and .primitive_renderer_boundary.product_output_allowed == false
-    and .primitive_renderer_boundary.quality_proof == false
-    and .primitive_renderer_boundary.demo_readiness == "unverified"
-    and .primitive_renderer_boundary.promotion_blocked == true
-    and ([.primitive_renderer_boundary.affected_paths[]] | sort == ["metrics.mc202_bass_pressure.pattern_origin"])
+    and (has("primitive_renderer_boundary") | not)
     and .metrics.source_grid_output_drift.hit_ratio >= 0.75
     and .metrics.source_grid_output_drift.max_peak_offset_ms <= .metrics.source_grid_output_drift.max_allowed_peak_offset_ms
     and .metrics.tr909_source_grid_alignment.hit_ratio >= 0.95
@@ -69,9 +63,15 @@ jq -e \
     and .metrics.tr909_source_accent_dynamics.anchor_count >= 2
     and .metrics.tr909_source_accent_dynamics.distinct_accent_count >= 3
     and .metrics.tr909_source_accent_dynamics.accent_span >= .metrics.tr909_source_accent_dynamics.min_required_accent_span
-    and .metrics.mc202_bass_pressure.pattern_origin == "primitive_renderer"
+    and .metrics.mc202_bass_pressure.pattern_origin == "source_derived"
     and .metrics.mc202_bass_pressure.applied == true
+    and .metrics.mc202_bass_pressure.source_expression_render_plan_applied == true
+    and (.metrics.mc202_bass_pressure.source_expression_role | IN("bass_pressure", "answer_lift", "hook_restraint_hold"))
+    and .metrics.mc202_bass_pressure.source_failure_fallback == false
     and .metrics.mc202_bass_pressure.reason == "mc202_source_grid_proof_renderer"
+    and .metrics.mc202_source_contour.pattern_origin == "source_derived_contour"
+    and .metrics.mc202_source_contour.applied == true
+    and .metrics.mc202_source_contour.source_contour_delta_rms >= .metrics.mc202_source_contour.min_required_delta_rms
     and .metrics.mc202_bass_pressure.signal_rms > 0.000001
     and .metrics.mc202_source_grid_alignment.hit_ratio >= 0.50
     and .metrics.w30_source_grid_alignment.hit_ratio >= 0.50

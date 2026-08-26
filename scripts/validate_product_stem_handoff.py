@@ -31,15 +31,21 @@ except ModuleNotFoundError:
     )
 
 
-SCHEMA = "riotbox.product_stem_handoff.v1"
-SCHEMA_VERSION = 1
+SCHEMA = "riotbox.product_stem_handoff.v2"
+SCHEMA_VERSION = 2
 PROOF_FILE = "product_stem_handoff_proof.json"
 BOUNDARY = "feral-grid generated-support product stems"
 MATERIAL_STATUS = "development_only"
 RECONSTRUCTION_SCHEMA = "riotbox.product_stem_reconstruction.v1"
 RECONSTRUCTION_RULE = "pcm_sum_v1"
-EXPECTED_LIMITATION = "mc202_primitive_renderer_non_product"
 EXPECTED_PACK_ID = "feral-grid-demo"
+MC202_SOURCE_EXPRESSION_SCHEMA = "riotbox.mc202_source_expression_origin.v1"
+MC202_SOURCE_EXPRESSION_ROLES = {
+    "bass_pressure",
+    "answer_lift",
+    "hook_restraint_hold",
+}
+MC202_MIN_SOURCE_GRID_HIT_RATIO = 0.50
 PCM16_DECODE_SCALE = 32_767.0
 PCM_MAX_ABS_ERROR = 3.0 / 32_768.0
 PCM_MAX_RMS_ERROR = 1.5 / 32_768.0
@@ -53,7 +59,7 @@ ARTIFACT_CONTRACT = (
         "stem_bass",
         "product_stem_bass",
         "stems/stem_bass.wav",
-        "primitive_renderer",
+        "source_derived",
     ),
     ("full_grid_mix", "full_grid_mix", "full_grid_mix.wav", "composite"),
 )
@@ -130,9 +136,9 @@ def build_proof(manifest_a_path: Path, manifest_b_path: Path) -> dict[str, Any]:
         )
 
     reconstruction = require_reconstruction(normalized_a)
-    primitive_boundary = require_primitive_boundary(manifest_a)
-    if primitive_boundary != require_primitive_boundary(manifest_b):
-        raise ValueError("primitive renderer boundaries differ across renders")
+    mc202_source_expression = require_mc202_source_expression(manifest_a)
+    if mc202_source_expression != require_mc202_source_expression(manifest_b):
+        raise ValueError("MC-202 source-expression evidence differs across renders")
     grid = {
         "sample_rate_hz": require_positive_int(normalized_a, "sample_rate"),
         "channel_count": require_positive_int(normalized_a, "channel_count"),
@@ -158,8 +164,8 @@ def build_proof(manifest_a_path: Path, manifest_b_path: Path) -> dict[str, Any]:
         "artifacts": artifacts,
         "reconstruction": reconstruction,
         "renderer_status": {
-            "primitive_renderer_boundary": primitive_boundary,
-            "limitations": [EXPECTED_LIMITATION],
+            "mc202_source_expression": mc202_source_expression,
+            "limitations": [],
         },
     }
 
@@ -188,23 +194,63 @@ def require_reconstruction(normalized: dict[str, Any]) -> dict[str, Any]:
     return dict(value)
 
 
-def require_primitive_boundary(normalized: dict[str, Any]) -> dict[str, Any]:
-    value = require_object(normalized.get("primitive_renderer_boundary"), "primitive boundary")
-    expected = {
-        "schema": "riotbox.primitive_renderer_boundary.v1",
-        "evidence_role": "non_product_diagnostic_control",
-        "product_output_allowed": False,
-        "quality_proof": False,
-        "demo_readiness": "unverified",
-        "promotion_blocked": True,
+def require_mc202_source_expression(manifest: dict[str, Any]) -> dict[str, Any]:
+    if "primitive_renderer_boundary" in manifest or contains_field_value(
+        manifest, "pattern_origin", "primitive_renderer"
+    ):
+        raise ValueError("MC-202 source-expression manifest retains primitive renderer evidence")
+
+    metrics = require_object(manifest.get("metrics"), "metrics")
+    pressure = require_object(metrics.get("mc202_bass_pressure"), "MC-202 bass pressure")
+    contour = require_object(metrics.get("mc202_source_contour"), "MC-202 source contour")
+    alignment = require_object(
+        metrics.get("mc202_source_grid_alignment"), "MC-202 source-grid alignment"
+    )
+
+    if pressure.get("pattern_origin") != "source_derived":
+        raise ValueError("MC-202 bass pressure origin is not source-derived")
+    if pressure.get("applied") is not True:
+        raise ValueError("MC-202 bass pressure was not applied")
+    if pressure.get("source_expression_render_plan_applied") is not True:
+        raise ValueError("MC-202 source-expression render plan was not applied")
+    source_expression_role = pressure.get("source_expression_role")
+    if source_expression_role not in MC202_SOURCE_EXPRESSION_ROLES:
+        raise ValueError("MC-202 source-expression role is not registered")
+    if pressure.get("source_failure_fallback") is not False:
+        raise ValueError("MC-202 source-expression path cannot use source-failure fallback")
+    if pressure.get("reason") != "mc202_source_grid_proof_renderer":
+        raise ValueError("MC-202 bass-pressure reason does not prove the source-grid renderer")
+
+    if contour.get("pattern_origin") != "source_derived_contour":
+        raise ValueError("MC-202 source-contour origin mismatch")
+    if contour.get("applied") is not True:
+        raise ValueError("MC-202 source contour was not applied")
+    contour_delta = require_non_negative_number(contour, "source_contour_delta_rms")
+    contour_minimum = require_non_negative_number(contour, "min_required_delta_rms")
+    if contour_delta < contour_minimum:
+        raise ValueError("MC-202 source contour is below its declared minimum")
+
+    grid_hit_ratio = require_non_negative_number(alignment, "hit_ratio")
+    if grid_hit_ratio > 1.0 or grid_hit_ratio < MC202_MIN_SOURCE_GRID_HIT_RATIO:
+        raise ValueError("MC-202 source-grid alignment is below the frozen minimum")
+
+    return {
+        "schema": MC202_SOURCE_EXPRESSION_SCHEMA,
+        "pattern_origin": pressure["pattern_origin"],
+        "bass_pressure_applied": pressure["applied"],
+        "bass_pressure_reason": pressure["reason"],
+        "source_expression_render_plan_applied": pressure[
+            "source_expression_render_plan_applied"
+        ],
+        "source_expression_role": source_expression_role,
+        "source_failure_fallback": pressure["source_failure_fallback"],
+        "source_contour_origin": contour["pattern_origin"],
+        "source_contour_applied": contour["applied"],
+        "source_contour_delta_rms": contour_delta,
+        "source_contour_min_required_delta_rms": contour_minimum,
+        "source_grid_hit_ratio": grid_hit_ratio,
+        "source_grid_min_required_hit_ratio": MC202_MIN_SOURCE_GRID_HIT_RATIO,
     }
-    for field, expected_value in expected.items():
-        if value.get(field) != expected_value:
-            raise ValueError(f"primitive renderer boundary {field} must be {expected_value!r}")
-    affected = value.get("affected_paths")
-    if affected != ["metrics.mc202_bass_pressure.pattern_origin"]:
-        raise ValueError("primitive renderer affected path mismatch")
-    return dict(value)
 
 
 def stage_bundle(proof_path: Path, manifest_path: Path, destination: Path) -> None:
@@ -393,12 +439,45 @@ def validate_proof_contract(proof: dict[str, Any]) -> None:
         raise ValueError("declared RMS reconstruction error exceeds tolerance")
 
     renderer_status = require_object(proof.get("renderer_status"), "renderer status")
-    boundary = require_object(
-        renderer_status.get("primitive_renderer_boundary"), "primitive renderer boundary"
+    if set(renderer_status) != {"mc202_source_expression", "limitations"}:
+        raise ValueError("product stem renderer status contains stale or unknown fields")
+    require_mc202_source_expression_proof(
+        renderer_status.get("mc202_source_expression")
     )
-    require_primitive_boundary({"primitive_renderer_boundary": boundary})
-    if renderer_status.get("limitations") != [EXPECTED_LIMITATION]:
+    if renderer_status.get("limitations") != []:
         raise ValueError("product stem renderer limitations mismatch")
+
+
+def require_mc202_source_expression_proof(value: Any) -> dict[str, Any]:
+    evidence = require_object(value, "MC-202 source-expression proof")
+    expected = {
+        "schema": MC202_SOURCE_EXPRESSION_SCHEMA,
+        "pattern_origin": "source_derived",
+        "bass_pressure_applied": True,
+        "bass_pressure_reason": "mc202_source_grid_proof_renderer",
+        "source_expression_render_plan_applied": True,
+        "source_failure_fallback": False,
+        "source_contour_origin": "source_derived_contour",
+        "source_contour_applied": True,
+        "source_grid_min_required_hit_ratio": MC202_MIN_SOURCE_GRID_HIT_RATIO,
+    }
+    for field, expected_value in expected.items():
+        if evidence.get(field) != expected_value:
+            raise ValueError(
+                f"MC-202 source-expression proof {field} must be {expected_value!r}"
+            )
+    if evidence.get("source_expression_role") not in MC202_SOURCE_EXPRESSION_ROLES:
+        raise ValueError("MC-202 source-expression proof role is not registered")
+    contour_delta = require_non_negative_number(evidence, "source_contour_delta_rms")
+    contour_minimum = require_non_negative_number(
+        evidence, "source_contour_min_required_delta_rms"
+    )
+    if contour_delta < contour_minimum:
+        raise ValueError("MC-202 source-expression proof contour is below its minimum")
+    grid_hit_ratio = require_non_negative_number(evidence, "source_grid_hit_ratio")
+    if grid_hit_ratio > 1.0 or grid_hit_ratio < MC202_MIN_SOURCE_GRID_HIT_RATIO:
+        raise ValueError("MC-202 source-expression proof grid alignment is too weak")
+    return evidence
 
 
 def require_frozen_reconstruction_tolerances(reconstruction: dict[str, Any]) -> None:
@@ -445,6 +524,18 @@ def is_sha256(value: Any) -> bool:
     return isinstance(value, str) and len(value) == 64 and all(
         character in "0123456789abcdef" for character in value
     )
+
+
+def contains_field_value(value: Any, field: str, expected: Any) -> bool:
+    if isinstance(value, dict):
+        if value.get(field) == expected:
+            return True
+        return any(
+            contains_field_value(item, field, expected) for item in value.values()
+        )
+    if isinstance(value, list):
+        return any(contains_field_value(item, field, expected) for item in value)
+    return False
 
 
 def require_object(value: Any, name: str) -> dict[str, Any]:
