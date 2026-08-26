@@ -1653,4 +1653,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Complete musician product-mix export proof handoff
 - [RIOTBOX-1477.md](./RIOTBOX-1477.md)
   Publish source-matched reconstructable product stems
+- [RIOTBOX-1478.md](./RIOTBOX-1478.md)
+  Migrate proven MC-202 source-expression origin into product stems
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
