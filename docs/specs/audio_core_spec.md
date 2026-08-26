@@ -456,14 +456,6 @@ The bounded early seam is a non-realtime source-audio cache:
   over exactly 20 ms and preserve ordinary W-30 sample-exactly thereafter.
   Each moving segment uses `p²(3-2p)`. The action does not alter source PCM,
   playback rate, gate/reverse, grit, bus level, Source Monitor, or other lanes
-- apply `silence_cut_v1` after the ordinary source-backed W-30 control render
-  and before bus mix. Preserve the advancing ordinary control until a 5 ms
-  quarter-wave cosine amplitude taper immediately before relative beat four,
-  emit exact PCM zero across relative beats `[4,5)`, restore through a 5 ms
-  quarter-wave sine amplitude taper, and preserve the ordinary advancing
-  control sample-exactly after the taper. The action does not alter source PCM,
-  playback cursor/rate, gate/reverse, grit, bus level, Source Monitor, or other
-  lanes. Missing source-backed pad material remains silent
 - keep cache loading and source-window projection outside the realtime callback
 
 The existing transport-selected source window remains the default. Only a

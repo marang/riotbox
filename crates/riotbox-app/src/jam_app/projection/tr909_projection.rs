@@ -599,9 +599,6 @@ pub(super) fn build_w30_preview_render_state(
             W30HookArticulationProfileState::FilterSlamV1 => {
                 W30HookArticulationProfile::FilterSlamV1
             }
-            W30HookArticulationProfileState::SilenceCutV1 => {
-                W30HookArticulationProfile::SilenceCutV1
-            }
         };
         Some(W30HookArticulationRenderState {
             profile,

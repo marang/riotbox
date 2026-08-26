@@ -622,7 +622,6 @@ fn supported_action_list_documents_the_initial_executor_subset() {
             ActionCommand::W30HookTurnaround,
             ActionCommand::W30PitchDive,
             ActionCommand::W30FilterSlam,
-            ActionCommand::W30SilenceCut,
             ActionCommand::W30CaptureToPad,
             ActionCommand::W30LoopFreeze,
             ActionCommand::PromoteResample,

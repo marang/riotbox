@@ -194,10 +194,8 @@ explicit assist mode, but should not stack effects arbitrarily. The effect
 families above describe the intended product language, not a promise that every
 item is already complete or assigned to a delivery ticket. Hook Turnaround,
 Pitch Dive, and the eight-beat Filter Slam are implemented performer-owned W-30
-gestures with positive bounded product reviews. Silence Cut is now an explicit
-performer-owned W-30 gesture under source-diverse product qualification; its
-Development keep is not yet a formal product verdict. Other families range
-from playable early behavior to planned musical depth and broader source
+gestures with positive bounded product reviews. Other families range from
+playable early behavior to planned musical depth and broader source
 qualification.
 
 The tonal live path also has a bounded positive journey review: a promoted
@@ -230,7 +228,7 @@ Today’s build already lets you:
 - drive early lane behavior for:
   - **TR-909**: fill, reinforce, slam, takeover, release, scene-lock
   - **MC-202**: role, follower, answer, pressure, instigator, phrase mutation, touch
-  - **W-30**: trigger, live recall, audition, bank swap, browse, damage, Hook Turnaround, Pitch Dive, Filter Slam, Silence Cut, freeze, resample
+  - **W-30**: trigger, live recall, audition, bank swap, browse, damage, Hook Turnaround, Pitch Dive, Filter Slam, freeze, resample
 - capture, promote, pin, and reuse material in the W-30 flow
 - return to ordinary W-30 playback with an explicit hit, recall, audition, or
   damage action after a completed timed articulation

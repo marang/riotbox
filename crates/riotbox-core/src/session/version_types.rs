@@ -311,7 +311,6 @@ pub enum W30HookArticulationProfileState {
     TurnaroundV1,
     PitchDiveV1,
     FilterSlamV1,
-    SilenceCutV1,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

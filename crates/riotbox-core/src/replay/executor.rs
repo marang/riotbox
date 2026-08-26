@@ -63,7 +63,6 @@ const REPLAY_SUPPORTED_ACTION_COMMANDS: &[ActionCommand] = &[
     ActionCommand::W30HookTurnaround,
     ActionCommand::W30PitchDive,
     ActionCommand::W30FilterSlam,
-    ActionCommand::W30SilenceCut,
     ActionCommand::W30CaptureToPad,
     ActionCommand::W30LoopFreeze,
     ActionCommand::PromoteResample,
@@ -434,8 +433,7 @@ pub fn apply_replay_entry_to_session(
         | ActionCommand::W30ApplyDamageProfile => apply_w30_cue(session, entry)?,
         ActionCommand::W30HookTurnaround
         | ActionCommand::W30PitchDive
-        | ActionCommand::W30FilterSlam
-        | ActionCommand::W30SilenceCut => {
+        | ActionCommand::W30FilterSlam => {
             apply_w30_cue(session, entry)?;
         }
         ActionCommand::W30CaptureToPad => apply_w30_capture_to_pad_hydrated_cue(session, entry)?,

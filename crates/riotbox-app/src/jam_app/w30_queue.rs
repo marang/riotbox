@@ -325,13 +325,6 @@ impl JamAppState {
         self.queue_w30_hook_articulation(requested_at, ActionCommand::W30FilterSlam)
     }
 
-    pub fn queue_w30_silence_cut(
-        &mut self,
-        requested_at: TimestampMs,
-    ) -> Option<QueueControlResult> {
-        self.queue_w30_hook_articulation(requested_at, ActionCommand::W30SilenceCut)
-    }
-
     fn queue_w30_hook_articulation(
         &mut self,
         requested_at: TimestampMs,
@@ -342,7 +335,6 @@ impl JamAppState {
             ActionCommand::W30HookTurnaround
                 | ActionCommand::W30PitchDive
                 | ActionCommand::W30FilterSlam
-                | ActionCommand::W30SilenceCut
         ));
         if self.w30_pad_cue_pending() {
             return Some(QueueControlResult::AlreadyPending);
@@ -391,10 +383,6 @@ impl JamAppState {
             ),
             ActionCommand::W30FilterSlam => format!(
                 "filter-slam {} on W-30 pad {bank_id}/{pad_id} for eight beats",
-                capture.capture_id
-            ),
-            ActionCommand::W30SilenceCut => format!(
-                "silence-cut {} on W-30 pad {bank_id}/{pad_id} after four beats",
                 capture.capture_id
             ),
             _ => unreachable!("W-30 hook articulation helper received another command"),

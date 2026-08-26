@@ -252,7 +252,6 @@ fn w30_hook_articulation_profile_to_u32(profile: Option<W30HookArticulationProfi
         Some(W30HookArticulationProfile::TurnaroundV1) => 1,
         Some(W30HookArticulationProfile::PitchDiveV1) => 2,
         Some(W30HookArticulationProfile::FilterSlamV1) => 3,
-        Some(W30HookArticulationProfile::SilenceCutV1) => 4,
         None => 0,
     }
 }
@@ -262,7 +261,6 @@ fn w30_hook_articulation_profile_from_u32(value: u32) -> Option<W30HookArticulat
         1 => Some(W30HookArticulationProfile::TurnaroundV1),
         2 => Some(W30HookArticulationProfile::PitchDiveV1),
         3 => Some(W30HookArticulationProfile::FilterSlamV1),
-        4 => Some(W30HookArticulationProfile::SilenceCutV1),
         _ => None,
     }
 }

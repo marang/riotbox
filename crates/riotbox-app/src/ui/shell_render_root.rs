@@ -209,10 +209,6 @@ impl JamShellState {
                 self.status_message = queued_status_message(GESTURE_FILTER_SLAM, "next bar");
                 ShellKeyOutcome::QueueW30FilterSlam
             }
-            KeyCode::Char('X') => {
-                self.status_message = queued_status_message(GESTURE_SILENCE_CUT, "next bar");
-                ShellKeyOutcome::QueueW30SilenceCut
-            }
             KeyCode::Char('z') => {
                 self.status_message = queued_status_message(GESTURE_FREEZE, "next phrase");
                 ShellKeyOutcome::QueueW30LoopFreeze

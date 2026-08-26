@@ -264,8 +264,7 @@ pub(super) fn apply_w30_cue(
             .unwrap_or(W30PreviewModeState::LiveRecall),
         ActionCommand::W30HookTurnaround
         | ActionCommand::W30PitchDive
-        | ActionCommand::W30FilterSlam
-        | ActionCommand::W30SilenceCut => session
+        | ActionCommand::W30FilterSlam => session
             .runtime_state
             .lane_state
             .w30
@@ -314,7 +313,6 @@ pub(super) fn apply_w30_cue(
             ActionCommand::W30HookTurnaround
                 | ActionCommand::W30PitchDive
                 | ActionCommand::W30FilterSlam
-                | ActionCommand::W30SilenceCut
         ) {
             session.runtime_state.lane_state.w30.hook_articulation =
                 Some(W30HookArticulationState {
@@ -325,9 +323,6 @@ pub(super) fn apply_w30_cue(
                         ActionCommand::W30PitchDive => W30HookArticulationProfileState::PitchDiveV1,
                         ActionCommand::W30FilterSlam => {
                             W30HookArticulationProfileState::FilterSlamV1
-                        }
-                        ActionCommand::W30SilenceCut => {
-                            W30HookArticulationProfileState::SilenceCutV1
                         }
                         _ => unreachable!("checked above"),
                     },

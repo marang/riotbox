@@ -11,7 +11,7 @@ fn source_monitor_mode_cycles_through_all_reachable_modes() {
 
 #[test]
 fn action_command_lexicon_labels_are_unique_and_complete() {
-    assert_eq!(ActionCommand::all().len(), 65);
+    assert_eq!(ActionCommand::all().len(), 64);
 
     let labels = ActionCommand::all()
         .iter()
@@ -30,7 +30,7 @@ fn action_command_replay_coverage_is_declared_for_every_command() {
         .count();
     let unsupported = ActionCommand::all().len() - supported;
 
-    assert_eq!(supported, 47);
+    assert_eq!(supported, 46);
     assert_eq!(unsupported, 18);
 }
 
@@ -59,7 +59,6 @@ fn ordinary_w30_playback_intents_are_the_only_articulation_superseders() {
         ActionCommand::W30HookTurnaround,
         ActionCommand::W30PitchDive,
         ActionCommand::W30FilterSlam,
-        ActionCommand::W30SilenceCut,
     ] {
         assert!(!navigation_or_gesture.supersedes_w30_hook_articulation());
     }

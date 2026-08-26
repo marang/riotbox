@@ -455,22 +455,6 @@ fn apply_probe_key(
                 }
             }
         }
-        ShellKeyOutcome::QueueW30SilenceCut => {
-            match shell.app.queue_w30_silence_cut(timestamp_ms) {
-                Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
-                    shell.set_error_status("queued W-30 silence cut for next bar");
-                }
-                Some(riotbox_app::jam_app::QueueControlResult::AlreadyPending) => {
-                    shell.set_error_status("W-30 silence cut already queued");
-                }
-                Some(riotbox_app::jam_app::QueueControlResult::AlreadyInState) => {
-                    shell.set_error_status("W-30 silence cut already active");
-                }
-                None => {
-                    shell.set_error_status("no committed W-30 pad available to silence-cut");
-                }
-            }
-        }
         ShellKeyOutcome::RaiseMc202Touch => {
             let touch = shell.app.adjust_mc202_touch(0.08);
             shell.set_error_status(format!("MC-202 touch {touch:.2}"));

@@ -119,7 +119,6 @@ pub(super) fn last_committed_w30_action(shell: &JamShellState) -> Option<&Action
                         | ActionCommand::W30HookTurnaround
                         | ActionCommand::W30PitchDive
                         | ActionCommand::W30FilterSlam
-                        | ActionCommand::W30SilenceCut
                         | ActionCommand::W30LoopFreeze
                         | ActionCommand::W30LiveRecall
                         | ActionCommand::W30AuditionRawCapture
@@ -139,7 +138,6 @@ pub(super) fn short_w30_action_label(command: &ActionCommand) -> &'static str {
         ActionCommand::W30HookTurnaround => "turnaround",
         ActionCommand::W30PitchDive => "pitch dive",
         ActionCommand::W30FilterSlam => "filter slam",
-        ActionCommand::W30SilenceCut => "silence cut",
         ActionCommand::W30LoopFreeze => "freeze",
         ActionCommand::W30LiveRecall => "recall",
         ActionCommand::W30AuditionRawCapture => "audition raw",
