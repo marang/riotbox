@@ -1,0 +1,156 @@
+{
+  "schema": "riotbox.w30_stereo_pad_playback_development.v1",
+  "schema_version": 1,
+  "ticket": "RIOTBOX-1469",
+  "status": "frozen_source_blind_before_first_development_access",
+  "work_class": "development_exploration",
+  "musical_question": "does_preserving_registered_left_and_right_capture_channels_through_the_existing_w30_pad_grammar_improve_dense_foundation_clarity_identity_and_spatial_stability_without_weakening_center_impact",
+  "mechanism": {
+    "owner": "w30_pad_channel_topology",
+    "control": {
+      "id": "mono_folded_v1",
+      "projection": "for_each_selected_source_frame_sum_all_input_channels_in_source_order_then_divide_by_input_channel_count",
+      "character_state": "one_existing_w30_source_backed_character_state",
+      "output": "duplicate_the_existing_mono_control_sample_to_each_output_channel"
+    },
+    "candidate": {
+      "id": "stereo_preserved_v1",
+      "eligible_source_channel_count": 2,
+      "projection": "retain_the_exact_existing_mono_control_window_and_store_side_as_left_minus_right_divided_by_two_at_the_same_projection_indices_then_reconstruct_left_as_mono_plus_side_and_right_as_mono_minus_side_before_character_processing",
+      "storage_boundary": "heap_owned_development_side_window_passed_by_reference_outside_the_unchanged_product_render_snapshot",
+      "cursor": "one_shared_existing_pad_cursor_advanced_once_per_output_frame",
+      "transport_and_shape": "shared_existing_retrigger_slice_direction_rate_gate_loop_crossfade_edge_envelope_envelope_tremolo_and_render_gain",
+      "character": "apply_the_unchanged_w30_source_backed_character_formula_independently_to_left_and_right_with_independent_history_state",
+      "stereo_output": "left_to_output_channel_zero_and_right_to_output_channel_one",
+      "mono_output": "arithmetic_mean_of_characterized_left_and_right",
+      "additional_processing": false
+    },
+    "unchanged": {
+      "chop_slice_selection": "existing_source_derived_transient_chop_plan_from_the_existing_mono_control_window",
+      "transport_retriggers": "existing",
+      "playback_rate": "existing",
+      "pitch": "unchanged",
+      "direction": "existing",
+      "gate": "existing",
+      "loop_crossfade": "existing",
+      "w30_grit": "existing",
+      "music_bus_level": "existing",
+      "other_lanes_and_effects": "unchanged",
+      "hook_articulation": "none_for_this_exploration"
+    },
+    "forbidden": [
+      "widening",
+      "haas_delay",
+      "panning_automation",
+      "mid_side_enhancement",
+      "eq_or_gain_repair",
+      "dry_source_blend",
+      "additional_lane",
+      "new_gesture",
+      "arrangement_change",
+      "fallback_music"
+    ]
+  },
+  "source_blind_proof": {
+    "mono_input_candidate_equals_control_max_abs_delta": 0.0,
+    "anti_phase_stereo_candidate_side_rms_min": 0.001,
+    "anti_phase_stereo_control_max_abs_sample": 0.0,
+    "independent_character_state_required": true,
+    "shared_cursor_and_transport_required": true,
+    "callback_frame_counts": [
+      128,
+      257
+    ],
+    "callback_outputs_must_be_sample_exact": true,
+    "restart_outputs_must_be_sample_exact": true,
+    "missing_source_output_max_abs_sample": 0.0,
+    "existing_mono_control_must_remain_sample_exact": true,
+    "allocation_or_blocking_in_callback_allowed": false,
+    "maximum_fixed_sample_windows_per_pad_snapshot": 2
+  },
+  "development_access": {
+    "registry_path": "docs/benchmarks/sound_excellence_source_corpus_v1.json",
+    "registry_sha256": "67b5b8b2882575cf70fa61aacf25ae282c17714fe51ffcb13f905458e025d552",
+    "case_id": "dense_beat03_130",
+    "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+    "source_sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+    "declared_bpm_metadata_only": 130.0,
+    "partition": "development",
+    "source_format": {
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "sample_width_bits": 24,
+      "compression_type": "NONE",
+      "maximum_duration_seconds": 16
+    },
+    "maximum_unique_source_files": 1,
+    "fresh_exclusive_access_log_required_before_first_open": true,
+    "directory_discovery_forbidden": true,
+    "holdout_audio_access": false,
+    "commercial_reference_access": false
+  },
+  "technical_preflight": {
+    "analysis_order": "persist_source_control_candidate_identity_format_and_each_individual_metric_before_computing_the_aggregate_pass",
+    "all_samples_finite": true,
+    "maximum_true_peak_dbtp": -1.0,
+    "maximum_clipped_integer_samples": 0,
+    "center_attack_window_ms_after_each_retrigger": 20.0,
+    "center_attack_retrigger_subdivision_per_beat": 2,
+    "candidate_to_control_center_attack_rms_delta_db_range": [
+      -3.0,
+      3.0
+    ],
+    "candidate_to_control_full_mid_rms_delta_db_range": [
+      -3.0,
+      3.0
+    ],
+    "candidate_mid_control_waveform_correlation_min": 0.95,
+    "candidate_mid_control_waveform_correlation_formula": "zero_mean_pearson_over_the_complete_rendered_mid_signals",
+    "source_side_to_mid_rms_db_min": -36.0,
+    "candidate_side_to_mid_rms_db_min": -36.0,
+    "candidate_minus_source_side_to_mid_rms_db_range": [
+      -12.0,
+      12.0
+    ],
+    "stereo_candidate_control_delta_rms_min": 0.001,
+    "uniform_presentation_safety_gain_only": true,
+    "presentation_target_true_peak_dbtp": -1.2,
+    "presentation_bars_each": 4,
+    "pause_seconds": 1.0,
+    "candidate_variant_count": 1
+  },
+  "listening": {
+    "allowed_only_after_complete_technical_pass": true,
+    "order": [
+      "source",
+      "mono_control",
+      "stereo_candidate"
+    ],
+    "questions": [
+      "clarity",
+      "source_identity",
+      "center_impact",
+      "spatial_stability",
+      "musical_usefulness"
+    ],
+    "width_alone_is_not_success": true,
+    "maximum_human_reviews": 1
+  },
+  "stopping_rule": {
+    "maximum_candidate_variants": 1,
+    "reject_without_playback_on_any_technical_failure": true,
+    "reject_and_remove_temporary_seam_on_musician_rejection": true,
+    "post_access_algorithm_threshold_gain_or_mapping_change_requires_new_version_and_decision": true,
+    "no_retry_or_second_source_under_v1": true
+  },
+  "claim_boundary": {
+    "development_exploration_only": true,
+    "product_behavior": false,
+    "source_general": false,
+    "percussive_hard": false,
+    "holdout_authorized": false,
+    "demo_ready": false,
+    "release_ready": false,
+    "p023_complete": false
+  }
+}

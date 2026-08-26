@@ -376,6 +376,7 @@ where
                 &mut W30MixRenderState {
                     preview_render: &w30_preview_render_state,
                     preview_state: &mut w30_preview_state,
+                    stereo_side_samples: None,
                     resample_render: &w30_resample_render_state,
                     resample_state: &mut w30_resample_state,
                 },

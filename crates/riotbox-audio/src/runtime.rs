@@ -50,7 +50,8 @@ mod w30_tr909_signal_helpers;
 use fill_focus::{FillFocusRenderState, apply_fill_focus_to_non_tr909_bed};
 pub use public_api_shell::*;
 use render_tr909_w30_preview::{
-    render_tr909_buffer, render_w30_preview_buffer, render_w30_resample_tap_buffer,
+    render_tr909_buffer, render_w30_preview_buffer, render_w30_preview_buffer_with_stereo_side,
+    render_w30_resample_tap_buffer,
 };
 #[cfg(test)]
 use render_tr909_w30_preview::{

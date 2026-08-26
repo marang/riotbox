@@ -561,6 +561,8 @@ pub(super) struct W30PreviewCallbackState {
     pub(super) pad_playback_age_frames: u64,
     pub(super) last_character_input: f32,
     pub(super) character_edge_memory: f32,
+    pub(super) right_last_character_input: f32,
+    pub(super) right_character_edge_memory: f32,
     pub(super) last_source_window_signature: u64,
     pub(super) last_pad_playback_signature: u64,
     pub(super) envelope: f32,
@@ -595,6 +597,8 @@ impl W30PreviewCallbackState {
             pad_playback_age_frames: 0,
             last_character_input: 0.0,
             character_edge_memory: 0.0,
+            right_last_character_input: 0.0,
+            right_character_edge_memory: 0.0,
             last_source_window_signature: 0,
             last_pad_playback_signature: 0,
             envelope: 0.0,
@@ -613,6 +617,13 @@ impl W30PreviewCallbackState {
             pitch_dive: W30PitchDiveCallbackState::with_sample_rate(sample_rate),
             filter_slam: W30FilterSlamCallbackState::with_channel_count(channel_count),
         }
+    }
+
+    pub(super) fn reset_character(&mut self) {
+        self.last_character_input = 0.0;
+        self.character_edge_memory = 0.0;
+        self.right_last_character_input = 0.0;
+        self.right_character_edge_memory = 0.0;
     }
 }
 
@@ -639,6 +650,9 @@ pub(super) struct W30ResampleTapCallbackState {
 pub(super) struct W30MixRenderState<'a> {
     pub(super) preview_render: &'a RealtimeW30PreviewRenderState,
     pub(super) preview_state: &'a mut W30PreviewCallbackState,
+    /// RIOTBOX-1469 Development-only side information. Product callbacks pass
+    /// `None`, preserving the established mono W-30 path and snapshot size.
+    pub(super) stereo_side_samples: Option<&'a [f32; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN]>,
     pub(super) resample_render: &'a RealtimeW30ResampleTapState,
     pub(super) resample_state: &'a mut W30ResampleTapCallbackState,
 }
@@ -688,11 +702,12 @@ fn render_non_tr909_bed(
 ) {
     render_mc202_buffer(data, sample_rate, channel_count, &(*mc202_render).into());
     sync_w30_preview_state(w30.preview_render, w30.preview_state);
-    render_w30_preview_buffer(
+    render_w30_preview_buffer_with_stereo_side(
         data,
         sample_rate,
         channel_count,
         w30.preview_render,
+        w30.stereo_side_samples,
         w30.preview_state,
     );
     render_w30_resample_tap_buffer(

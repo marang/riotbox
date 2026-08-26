@@ -92,6 +92,24 @@ pub(super) fn render_w30_preview_buffer(
     render: &RealtimeW30PreviewRenderState,
     state: &mut W30PreviewCallbackState,
 ) {
+    render_w30_preview_buffer_with_stereo_side(
+        data,
+        sample_rate,
+        channel_count,
+        render,
+        None,
+        state,
+    );
+}
+
+pub(super) fn render_w30_preview_buffer_with_stereo_side(
+    data: &mut [f32],
+    sample_rate: u32,
+    channel_count: usize,
+    render: &RealtimeW30PreviewRenderState,
+    stereo_side_samples: Option<&[f32; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN]>,
+    state: &mut W30PreviewCallbackState,
+) {
     let active = !matches!(render.mode, W30PreviewRenderMode::Idle)
         && matches!(render.routing, W30PreviewRenderRouting::MusicBusPreview)
         && render.music_bus_level > 0.0;
@@ -102,8 +120,7 @@ pub(super) fn render_w30_preview_buffer(
         state.transport_stop_latched = false;
         state.transport_stop_fade_frames_remaining = 0;
         state.envelope = 0.0;
-        state.last_character_input = 0.0;
-        state.character_edge_memory = 0.0;
+        state.reset_character();
         state.beat_position = render.position_beats;
         state.last_trigger_revision = render.trigger_revision;
         state.pitch_dive.reset();
@@ -124,8 +141,7 @@ pub(super) fn render_w30_preview_buffer(
     if state.transport_stop_latched && state.transport_stop_fade_frames_remaining == 0 {
         state.was_active = false;
         state.envelope = 0.0;
-        state.last_character_input = 0.0;
-        state.character_edge_memory = 0.0;
+        state.reset_character();
         state.pitch_dive.reset();
         state.filter_slam.reset();
         return;
@@ -140,8 +156,7 @@ pub(super) fn render_w30_preview_buffer(
         state.source_sample_cursor = 0.0;
         state.pad_playback_cursor = w30_chop_slice_cursor(render, state.last_step);
         state.pad_playback_age_frames = 0;
-        state.last_character_input = 0.0;
-        state.character_edge_memory = 0.0;
+        state.reset_character();
         state.last_source_window_signature = w30_source_window_signature(render);
         state.last_pad_playback_signature = w30_pad_playback_signature(render);
         state.last_trigger_revision = render.trigger_revision;
@@ -154,16 +169,14 @@ pub(super) fn render_w30_preview_buffer(
     if source_window_signature != state.last_source_window_signature {
         state.last_source_window_signature = source_window_signature;
         state.source_sample_cursor = 0.0;
-        state.last_character_input = 0.0;
-        state.character_edge_memory = 0.0;
+        state.reset_character();
     }
     let pad_playback_signature = w30_pad_playback_signature(render);
     if pad_playback_signature != state.last_pad_playback_signature {
         state.last_pad_playback_signature = pad_playback_signature;
         state.pad_playback_cursor = w30_chop_slice_cursor(render, state.last_step);
         state.pad_playback_age_frames = 0;
-        state.last_character_input = 0.0;
-        state.character_edge_memory = 0.0;
+        state.reset_character();
     }
 
     if render.trigger_revision > state.last_trigger_revision {
@@ -196,8 +209,7 @@ pub(super) fn render_w30_preview_buffer(
                     if w30_pad_playback_active(render) {
                         state.pad_playback_cursor = w30_chop_slice_cursor(render, step);
                         state.pad_playback_age_frames = 0;
-                        state.last_character_input = 0.0;
-                        state.character_edge_memory = 0.0;
+                        state.reset_character();
                     }
                 }
             }
@@ -211,12 +223,47 @@ pub(super) fn render_w30_preview_buffer(
             state.lfo_phase = (state.lfo_phase + 1.8 / sample_rate.max(1) as f32).fract();
             0.45 + 0.55 * ((std::f32::consts::TAU * state.lfo_phase).sin() * 0.5 + 0.5)
         };
-        let waveform = w30_preview_waveform_for_frame(render, state, sample_rate);
         let stop_gain = transport_stop_gain(
             state.transport_stop_latched,
             &mut state.transport_stop_fade_frames_remaining,
             transport_stop_fade_frames,
         );
+        if let Some(stereo_side_samples) = w30_stereo_pad_playback_active(render)
+            .then_some(stereo_side_samples)
+            .flatten()
+        {
+            let waveform = w30_stereo_pad_playback_waveform_for_frame(
+                render,
+                stereo_side_samples,
+                state,
+                sample_rate,
+            );
+            let common_gain =
+                state.envelope * tremolo * w30_render_gain(render, transport_running) * stop_gain;
+            let rendered = W30StereoFrame {
+                left: waveform.left * common_gain,
+                right: waveform.right * common_gain,
+            };
+            state.pitch_dive.reset();
+            state.filter_slam.reset();
+
+            let base = frame_index * channel_count;
+            if channel_count == 1 {
+                data[base] += (rendered.left + rendered.right) / 2.0;
+            } else {
+                for channel in 0..channel_count {
+                    data[base + channel] += if channel % 2 == 0 {
+                        rendered.left
+                    } else {
+                        rendered.right
+                    };
+                }
+            }
+            state.beat_position += beats_per_sample;
+            continue;
+        }
+
+        let waveform = w30_preview_waveform_for_frame(render, state, sample_rate);
         let control_sample = waveform
             * state.envelope
             * tremolo
@@ -245,6 +292,46 @@ pub(super) fn render_w30_preview_buffer(
         }
 
         state.beat_position += beats_per_sample;
+    }
+}
+
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
+struct W30StereoFrame {
+    left: f32,
+    right: f32,
+}
+
+fn w30_stereo_pad_playback_waveform_for_frame(
+    render: &RealtimeW30PreviewRenderState,
+    stereo_side_samples: &[f32; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN],
+    state: &mut W30PreviewCallbackState,
+    sample_rate: u32,
+) -> W30StereoFrame {
+    let sample = w30_stereo_pad_playback_sample_with_reverse(
+        &render.pad_playback,
+        stereo_side_samples,
+        state,
+        sample_rate,
+        render.pad_playback.reverse,
+    );
+    let left = w30_source_backed_character_for_channel(
+        sample.left,
+        render.grit_level,
+        &mut state.last_character_input,
+        &mut state.character_edge_memory,
+    );
+    let right = w30_source_backed_character_for_channel(
+        sample.right,
+        render.grit_level,
+        &mut state.right_last_character_input,
+        &mut state.right_character_edge_memory,
+    );
+    let gate =
+        w30_pad_grid_gate_for_fraction(render, sample_rate, render.pad_playback.gate_step_fraction);
+    let gain = w30_pad_grid_gate_gain(gate, state);
+    W30StereoFrame {
+        left: left * gain,
+        right: right * gain,
     }
 }
 
@@ -351,10 +438,24 @@ fn w30_source_backed_character(
     grit_level: f32,
     state: &mut W30PreviewCallbackState,
 ) -> f32 {
+    w30_source_backed_character_for_channel(
+        sample,
+        grit_level,
+        &mut state.last_character_input,
+        &mut state.character_edge_memory,
+    )
+}
+
+fn w30_source_backed_character_for_channel(
+    sample: f32,
+    grit_level: f32,
+    last_character_input: &mut f32,
+    character_edge_memory: &mut f32,
+) -> f32 {
     let grit = grit_level.clamp(0.0, 1.0);
     if grit <= f32::EPSILON {
-        state.last_character_input = sample;
-        state.character_edge_memory = 0.0;
+        *last_character_input = sample;
+        *character_edge_memory = 0.0;
         return sample;
     }
 
@@ -372,12 +473,11 @@ fn w30_source_backed_character(
     const WET_RANGE: f32 = 0.84;
     const ASYMMETRY_RANGE: f32 = 0.12;
 
-    let raw_edge = sample - state.last_character_input;
-    state.last_character_input = sample;
-    state.character_edge_memory =
-        state.character_edge_memory * EDGE_MEMORY + raw_edge * (1.0 - EDGE_MEMORY);
+    let raw_edge = sample - *last_character_input;
+    *last_character_input = sample;
+    *character_edge_memory = *character_edge_memory * EDGE_MEMORY + raw_edge * (1.0 - EDGE_MEMORY);
 
-    let edge_emphasis = state.character_edge_memory * (grit * EDGE_RANGE);
+    let edge_emphasis = *character_edge_memory * (grit * EDGE_RANGE);
     let driven_input = sample + edge_emphasis;
     let drive = MIN_DRIVE + grit * DRIVE_RANGE;
     let asymmetry = grit * ASYMMETRY_RANGE;
@@ -404,6 +504,10 @@ fn w30_source_window_active(render: &RealtimeW30PreviewRenderState) -> bool {
 
 fn w30_pad_playback_active(render: &RealtimeW30PreviewRenderState) -> bool {
     !matches!(render.mode, W30PreviewRenderMode::Idle) && render.pad_playback.sample_count > 0
+}
+
+fn w30_stereo_pad_playback_active(render: &RealtimeW30PreviewRenderState) -> bool {
+    w30_pad_playback_active(render) && render.pad_playback.hook_articulation_profile.is_none()
 }
 
 #[cfg(test)]
@@ -455,6 +559,67 @@ fn w30_pad_playback_sample_with_reverse(
     sample
 }
 
+fn w30_stereo_pad_playback_sample_with_reverse(
+    window: &RealtimeW30PadPlaybackSampleWindow,
+    stereo_side_samples: &[f32; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN],
+    state: &mut W30PreviewCallbackState,
+    output_sample_rate: u32,
+    reverse: bool,
+) -> W30StereoFrame {
+    let sample_count = window.sample_count.min(W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN);
+    if sample_count == 0 {
+        return W30StereoFrame::default();
+    }
+
+    let source_sample_rate = window.source_sample_rate.max(1);
+    let playback_frame_count = window.playback_frame_count.max(1);
+    let output_frame_count = (playback_frame_count as f64 * f64::from(output_sample_rate.max(1))
+        / f64::from(source_sample_rate))
+    .max(1.0);
+    let cursor_increment = (sample_count as f64 / output_frame_count
+        * f64::from(window.playback_rate.clamp(0.25, 4.0))) as f32;
+    let logical_cursor = state.pad_playback_cursor;
+    if !window.loop_enabled && logical_cursor >= sample_count as f32 {
+        return W30StereoFrame::default();
+    }
+
+    let wrapped_cursor = if window.loop_enabled {
+        logical_cursor % sample_count as f32
+    } else {
+        logical_cursor.min(sample_count.saturating_sub(1) as f32)
+    };
+    let mid = interpolated_pad_channel(&window.samples, sample_count, wrapped_cursor, reverse);
+    let side = interpolated_pad_channel(stereo_side_samples, sample_count, wrapped_cursor, reverse);
+    let mid = apply_pad_loop_crossfade_to_channel(
+        &window.samples,
+        window,
+        sample_count,
+        wrapped_cursor,
+        mid,
+        reverse,
+    );
+    let side = apply_pad_loop_crossfade_to_channel(
+        stereo_side_samples,
+        window,
+        sample_count,
+        wrapped_cursor,
+        side,
+        reverse,
+    );
+    let edge_gain = pad_edge_envelope_gain(window, state, sample_count, wrapped_cursor);
+    let sample = W30StereoFrame {
+        left: (mid + side) * edge_gain,
+        right: (mid - side) * edge_gain,
+    };
+    state.pad_playback_cursor = if window.loop_enabled {
+        (logical_cursor + cursor_increment) % sample_count as f32
+    } else {
+        logical_cursor + cursor_increment
+    };
+    state.pad_playback_age_frames = state.pad_playback_age_frames.saturating_add(1);
+    sample
+}
+
 fn interpolated_pad_sample(
     window: &RealtimeW30PadPlaybackSampleWindow,
     sample_count: usize,
@@ -477,6 +642,28 @@ fn interpolated_pad_sample(
     window.samples[index] + (window.samples[next_index] - window.samples[index]) * fraction
 }
 
+fn interpolated_pad_channel(
+    samples: &[f32; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN],
+    sample_count: usize,
+    cursor: f32,
+    reverse: bool,
+) -> f32 {
+    let base = cursor.floor() as usize % sample_count;
+    let next = (base + 1).min(sample_count - 1);
+    let fraction = cursor.fract();
+    let index = if reverse {
+        sample_count - 1 - base
+    } else {
+        base
+    };
+    let next_index = if reverse {
+        sample_count - 1 - next
+    } else {
+        next
+    };
+    samples[index] + (samples[next_index] - samples[index]) * fraction
+}
+
 fn apply_pad_loop_crossfade(
     window: &RealtimeW30PadPlaybackSampleWindow,
     sample_count: usize,
@@ -492,6 +679,25 @@ fn apply_pad_loop_crossfade(
     let fade_position = cursor - (sample_count - crossfade) as f32;
     let mix = (fade_position / crossfade as f32).clamp(0.0, 1.0);
     let head = interpolated_pad_sample(window, sample_count, fade_position, reverse);
+    sample * (1.0 - mix) + head * mix
+}
+
+fn apply_pad_loop_crossfade_to_channel(
+    samples: &[f32; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN],
+    window: &RealtimeW30PadPlaybackSampleWindow,
+    sample_count: usize,
+    cursor: f32,
+    sample: f32,
+    reverse: bool,
+) -> f32 {
+    let crossfade = window.loop_crossfade_sample_count.min(sample_count / 2);
+    if !window.loop_enabled || crossfade == 0 || cursor < (sample_count - crossfade) as f32 {
+        return sample;
+    }
+
+    let fade_position = cursor - (sample_count - crossfade) as f32;
+    let mix = (fade_position / crossfade as f32).clamp(0.0, 1.0);
+    let head = interpolated_pad_channel(samples, sample_count, fade_position, reverse);
     sample * (1.0 - mix) + head * mix
 }
 
@@ -636,6 +842,15 @@ fn apply_pad_edge_envelope(
     cursor: f32,
     sample: f32,
 ) -> f32 {
+    sample * pad_edge_envelope_gain(window, state, sample_count, cursor)
+}
+
+fn pad_edge_envelope_gain(
+    window: &RealtimeW30PadPlaybackSampleWindow,
+    state: &W30PreviewCallbackState,
+    sample_count: usize,
+    cursor: f32,
+) -> f32 {
     const EDGE_FRAMES: f32 = 64.0;
     let attack = (state.pad_playback_age_frames as f32 / EDGE_FRAMES).clamp(0.0, 1.0);
     let release = if window.loop_enabled {
@@ -643,7 +858,7 @@ fn apply_pad_edge_envelope(
     } else {
         ((sample_count as f32 - cursor) / EDGE_FRAMES).clamp(0.0, 1.0)
     };
-    sample * attack.min(release)
+    attack.min(release)
 }
 
 fn w30_source_window_sample(

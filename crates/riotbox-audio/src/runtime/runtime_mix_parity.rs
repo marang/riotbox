@@ -1,7 +1,7 @@
 use crate::{
     mc202::Mc202RenderState,
     tr909::Tr909RenderState,
-    w30::{W30PreviewRenderState, W30ResampleTapState},
+    w30::{W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN, W30PreviewRenderState, W30ResampleTapState},
 };
 
 use super::{
@@ -58,6 +58,53 @@ pub struct RuntimeMixRenderSequenceStep<'a> {
 pub struct RuntimeMixRenderOutput {
     pub samples: Vec<f32>,
     pub limiter: MasterBusLimiterReport,
+}
+
+/// Heap-owned side information for the bounded RIOTBOX-1469 Development seam.
+///
+/// It is deliberately separate from `W30PreviewRenderState`: normal product
+/// snapshots keep their established mono size and never select this path.
+#[derive(Clone, Debug, PartialEq)]
+pub struct W30StereoPadDevelopmentWindow {
+    pub sample_count: usize,
+    side_samples: Box<[f32; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN]>,
+}
+
+/// Project a stereo source into the exact existing W-30 sample indices while
+/// retaining only the side component needed to reconstruct L/R around the
+/// unchanged mono control window. Decode and projection happen off callback.
+#[must_use]
+pub fn project_w30_stereo_pad_development_window(
+    interleaved_samples: &[f32],
+    channel_count: usize,
+) -> Option<W30StereoPadDevelopmentWindow> {
+    if channel_count != 2
+        || interleaved_samples.is_empty()
+        || !interleaved_samples.len().is_multiple_of(channel_count)
+        || interleaved_samples.iter().any(|sample| !sample.is_finite())
+    {
+        return None;
+    }
+    let frame_count = interleaved_samples.len() / channel_count;
+    let sample_count = frame_count.min(W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN);
+    let mut side_samples: Box<[f32; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN]> =
+        vec![0.0; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN]
+            .into_boxed_slice()
+            .try_into()
+            .ok()?;
+    for (index, side) in side_samples.iter_mut().take(sample_count).enumerate() {
+        let frame_index = if sample_count <= 1 {
+            0
+        } else {
+            index * (frame_count - 1) / (sample_count - 1)
+        };
+        let base = frame_index * channel_count;
+        *side = (interleaved_samples[base] - interleaved_samples[base + 1]) / 2.0;
+    }
+    Some(W30StereoPadDevelopmentWindow {
+        sample_count,
+        side_samples,
+    })
 }
 
 impl<'a> RuntimeMixRenderSequenceStep<'a> {
@@ -139,6 +186,53 @@ pub fn render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
     sample_rate: u32,
     channel_count: u16,
     callback_frame_count: usize,
+) -> Vec<RuntimeMixRenderOutput> {
+    render_runtime_mix_plan_sequence_with_w30_stereo_development(
+        steps,
+        sample_rate,
+        channel_count,
+        callback_frame_count,
+        None,
+    )
+}
+
+/// Render one exact RuntimeMix plan through the RIOTBOX-1469 stereo candidate.
+///
+/// This refuses mismatched windows and articulations rather than silently
+/// changing the candidate. It is an offline Development seam, not product
+/// behavior or a fallback path.
+#[must_use]
+pub fn render_runtime_mix_w30_stereo_development_offline_with_report(
+    plan: &RuntimeMixRenderPlan,
+    stereo: &W30StereoPadDevelopmentWindow,
+    sample_rate: u32,
+    channel_count: u16,
+    frame_count: usize,
+    callback_frame_count: usize,
+) -> Option<RuntimeMixRenderOutput> {
+    let pad = plan.w30_preview_render.pad_playback.as_ref()?;
+    if channel_count != 2
+        || pad.sample_count.min(W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN) != stereo.sample_count
+        || pad.hook_articulation.is_some()
+    {
+        return None;
+    }
+    render_runtime_mix_plan_sequence_with_w30_stereo_development(
+        &[RuntimeMixRenderSequenceStep::new(plan, frame_count)],
+        sample_rate,
+        channel_count,
+        callback_frame_count,
+        Some(stereo),
+    )
+    .pop()
+}
+
+fn render_runtime_mix_plan_sequence_with_w30_stereo_development(
+    steps: &[RuntimeMixRenderSequenceStep<'_>],
+    sample_rate: u32,
+    channel_count: u16,
+    callback_frame_count: usize,
+    stereo: Option<&W30StereoPadDevelopmentWindow>,
 ) -> Vec<RuntimeMixRenderOutput> {
     let Some(first_step) = steps.first() else {
         return Vec::new();
@@ -225,6 +319,7 @@ pub fn render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
                     &mut W30MixRenderState {
                         preview_render: &w30_preview_render,
                         preview_state: &mut w30_preview_state,
+                        stereo_side_samples: stereo.map(|window| window.side_samples.as_ref()),
                         resample_render: &w30_resample_render,
                         resample_state: &mut w30_resample_state,
                     },
@@ -253,4 +348,94 @@ pub fn render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
             }
         })
         .collect()
+}
+
+#[cfg(test)]
+mod stereo_pad_development_tests {
+    use super::*;
+    use crate::w30::{
+        W30_PAD_CHOP_SLICE_COUNT, W30PadPlaybackSampleWindow, W30PreviewRenderMode,
+        W30PreviewRenderRouting, W30PreviewSourceProfile,
+    };
+
+    fn public_test_plan(interleaved: &[f32]) -> RuntimeMixRenderPlan {
+        let frame_count = interleaved.len() / 2;
+        let mut mono = [0.0; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN];
+        for index in 0..frame_count {
+            mono[index] = (interleaved[index * 2] + interleaved[index * 2 + 1]) / 2.0;
+        }
+        RuntimeMixRenderPlan {
+            transport: AudioRuntimeTimingSnapshot {
+                is_transport_running: true,
+                tempo_bpm: 120.0,
+                position_beats: 0.0,
+            },
+            w30_preview_render: W30PreviewRenderState {
+                mode: W30PreviewRenderMode::LiveRecall,
+                routing: W30PreviewRenderRouting::MusicBusPreview,
+                source_profile: Some(W30PreviewSourceProfile::PromotedRecall),
+                active_bank_id: Some("bank-a".into()),
+                focused_pad_id: Some("pad-01".into()),
+                capture_id: Some("capture-stereo".into()),
+                trigger_revision: 1,
+                trigger_velocity: 0.8,
+                source_window_preview: None,
+                pad_playback: Some(W30PadPlaybackSampleWindow {
+                    source_start_frame: 0,
+                    source_end_frame: frame_count as u64,
+                    source_sample_rate: 48_000,
+                    playback_frame_count: frame_count as u64,
+                    sample_count: frame_count,
+                    loop_enabled: true,
+                    playback_rate: 1.0,
+                    reverse: false,
+                    gate_step_fraction: 0.0,
+                    loop_crossfade_sample_count: 0,
+                    chop_slice_count: 0,
+                    chop_slice_starts: [0; W30_PAD_CHOP_SLICE_COUNT],
+                    hook_articulation: None,
+                    samples: mono,
+                }),
+                music_bus_level: 0.58,
+                grit_level: 0.64,
+                is_transport_running: true,
+                tempo_bpm: 120.0,
+                position_beats: 0.0,
+            },
+            ..RuntimeMixRenderPlan::default()
+        }
+    }
+
+    #[test]
+    fn public_stereo_development_seam_is_partition_exact_and_distinct() {
+        let mut interleaved = Vec::with_capacity(2_048);
+        for index in 0..1_024 {
+            let phase = index as f32 / 1_024.0;
+            interleaved.push((phase * std::f32::consts::TAU * 7.0).sin() * 0.42);
+            interleaved.push((phase * std::f32::consts::TAU * 11.0).sin() * 0.31);
+        }
+        let stereo =
+            project_w30_stereo_pad_development_window(&interleaved, 2).expect("stereo projection");
+        let plan = public_test_plan(&interleaved);
+        let control = render_runtime_mix_realtime_simulation_offline(&plan, 48_000, 2, 4_096, 128);
+        let candidate_128 = render_runtime_mix_w30_stereo_development_offline_with_report(
+            &plan, &stereo, 48_000, 2, 4_096, 128,
+        )
+        .expect("128-frame stereo render");
+        let candidate_257 = render_runtime_mix_w30_stereo_development_offline_with_report(
+            &plan, &stereo, 48_000, 2, 4_096, 257,
+        )
+        .expect("257-frame stereo render");
+
+        assert_eq!(candidate_128.samples, candidate_257.samples);
+        assert_ne!(candidate_128.samples, control);
+        assert_eq!(candidate_128.limiter.limited_sample_count, 0);
+    }
+
+    #[test]
+    fn stereo_development_projection_refuses_non_stereo_or_nonfinite_input() {
+        assert!(project_w30_stereo_pad_development_window(&[0.1, 0.2], 1).is_none());
+        assert!(project_w30_stereo_pad_development_window(&[0.1, f32::NAN], 2).is_none());
+        assert!(project_w30_stereo_pad_development_window(&[0.1], 2).is_none());
+    }
 }
