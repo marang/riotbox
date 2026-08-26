@@ -88,11 +88,13 @@ environment rules are:
   quality.
 - Local `target/` and `artifacts/` trees are reusable state. Never clean either
   automatically; inspect exact targets and ask before material deletion.
-- Keep `just ci` as the final PR gate. RIOTBOX-1399 owns a measured scoped inner
-  loop when validation cost blocks audible delivery.
+- Use source-free `just ci` as the normal final PR gate. Reserve the guarded
+  `RIOTBOX_BROAD_AUDIO_QA_ACCESS=registered-development-only just ci-broad` for
+  an explicitly authorized phase/release regression; the acknowledgement never
+  authorizes Holdout audio, commercial references, or source discovery.
 
 For new audible work, follow the
 [P023 audible-delivery plan](./plans/p023_audible_delivery_course_correction.md):
 focused seam tests and one exact render/preflight during exploration, applicable
-product/source gates during qualification, and the broad workflow gate before
-merge.
+product/source gates during qualification, the source-free PR gate before
+merge, and the guarded broad gate only at an authorized phase/release boundary.

@@ -34,11 +34,22 @@ jobs:
       - name: cargo test
         run: cargo test
 
-      - name: audio QA smoke gate
+      - name: source-free workflow contracts
+        run: |
+          python3 -m unittest discover -s python/sidecar -p 'test_*.py'
+          scripts/validate_broad_audio_qa_access_guard.sh
+          python3 scripts/validate_ci_gate_contract.py --fixtures
+          git ls-files -z '*.json' | xargs -0 -r -n 64 jq empty
+          git diff --check
+
+      # Source-free equivalent of the local `just audio-qa-pr` recipe. Keep the
+      # explicit commands because the runner does not install `just`.
+      - name: source-free audio QA PR smoke gate
         run: |
           cargo test -p riotbox-audio --bin w30_preview_render --bin w30_preview_compare --bin lane_recipe_pack --bin feral_before_after_pack --bin feral_grid_pack
           cargo test -p riotbox-app --bin observer_audio_correlate
           scripts/validate_dense_break_live_path.sh
+          scripts/validate_first_playable_jam_probe.sh --exact-mix-dir artifacts/audio_qa/local-dense-break-live-path-smoke
           cargo run -p riotbox-app --bin observer_audio_correlate -- --observer crates/riotbox-app/tests/fixtures/observer_audio_correlation/events.ndjson --manifest crates/riotbox-app/tests/fixtures/observer_audio_correlation/manifest.json --require-evidence
           tmp="$(mktemp)"
           cargo run -p riotbox-app --bin observer_audio_correlate -- --observer crates/riotbox-app/tests/fixtures/observer_audio_correlation/events.ndjson --manifest crates/riotbox-app/tests/fixtures/observer_audio_correlation/manifest.json --output "$tmp" --json

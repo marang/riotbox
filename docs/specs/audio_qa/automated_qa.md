@@ -1282,7 +1282,7 @@ Initial operational slice:
 These current-profile rules were formerly hidden in the status inventory and
 are normative here.
 
-- a CI-safe generated W-30 source-vs-control smoke that uses deterministic synthetic source material, checks minimum source-vs-control deltas, validates the generated listening manifest, and runs under `just audio-qa-ci`; existing command names may still say `source-vs-fallback` for compatibility, but the baseline is diagnostic control only
+- a CI-safe generated W-30 source-vs-control smoke that uses deterministic synthetic source material, checks minimum source-vs-control deltas, validates the generated listening manifest, and runs under `just audio-qa-pr`; existing command names may still say `source-vs-fallback` for compatibility, but the baseline is diagnostic control only
 - a CI-safe first-playable Jam probe, `just first-playable-jam-probe`, that
   checks a generated app-level observer journey for
   `source -> capture -> audition -> promote -> preset/role preparation ->
@@ -1336,16 +1336,20 @@ are normative here.
 - a CI-safe Feral grid manifest smoke gate that renders from synthetic input and asserts manifest schema version, artifact roles and files, metrics files, thresholds, pass status, and non-collapsed output metrics without depending on ignored local example audio
 - a local observer/audio correlation notes template and `just observer-audio-correlation-notes <path>` helper for pairing `riotbox-app --observer <events.ndjson>` control-path evidence with generated audio QA `manifest.json` output evidence
 - a local observer/audio correlation summary helper, `just observer-audio-correlate <events.ndjson> <manifest.json> <summary.md>`, that extracts launch mode, audio-runtime status, key outcomes, first commit boundary, commit count, commit boundary coverage, pack result, artifact count, grid-BPM decision evidence, source/grid BPM agreement, and key output metrics into Markdown
-- an explicit CI-safe `just audio-qa-ci` smoke gate, mirrored as a named GitHub Actions step, that runs the stable W-30 preview, lane recipe, Feral before/after, Feral grid, and observer/audio-correlation helper tests without generating or committing local listening artifacts
+- an explicit source-free `just audio-qa-pr` smoke gate, mirrored as a named
+  GitHub Actions step, that runs synthetic dense-break exact-mix, W-30 source
+  difference, listening-manifest, and observer/audio-correlation checks without
+  committing local listening artifacts; `just audio-qa-ci` is the guarded
+  registered-Development phase/release layer
 - a committed synthetic observer/audio correlation fixture smoke that proves the summary helper reads both control-path observer events and output-path manifest metrics without depending on ignored local artifacts
 - an optional strict `observer_audio_correlate --require-evidence` mode that fails when committed control-path evidence or passing output-path manifest metrics are missing
-- a strict committed-fixture CLI smoke, `just observer-audio-correlate-fixture`, wired into `just audio-qa-ci` and the named GitHub Actions audio QA step without writing local artifacts
+- a strict committed-fixture CLI smoke, `just observer-audio-correlate-fixture`, wired into `just audio-qa-pr` and the named GitHub Actions audio QA step without writing local artifacts
 - strict observer/audio output evidence now rejects collapsed zero-level metrics even if a manifest incorrectly reports `result: pass`
 - strict observer/audio output failures report the missing or collapsed metric names and the active metric floor
 - observer/audio Markdown summaries surface the same output-evidence issue list for non-strict local QA review
 - observer/audio correlation can emit opt-in JSON summaries for machine-readable QA verdicts and metric inspection
 - a `just observer-audio-correlate-json <events.ndjson> <manifest.json> <summary.json>` helper exposes the machine-readable summary path
-- the committed-fixture JSON summary path is smoke-tested in `just audio-qa-ci` and the named GitHub Actions audio QA step
+- the committed-fixture JSON summary path is smoke-tested in `just audio-qa-pr` and the named GitHub Actions audio QA step
 - observer/audio JSON summaries include a top-level `schema` and `schema_version` marker plus control-path `commit_count`, `commit_boundaries`, and optional observer-side Source Timing Intelligence readiness fields so automation can reject unexpected summary shapes and assert boundary/timing coverage before making QA decisions
 - the committed-fixture JSON smoke requires both `control_path.present` and `output_path.present`, keeping the machine-readable path aligned with the control-plus-output proof rule
 - observer snapshots include P014 Scene evidence: active / restore / next scene,
@@ -1458,7 +1462,7 @@ are normative here.
   observer/manifest fixture pair for locked-grid Source Timing alignment and
   asserts locked observer grid use, locked manifest grid use, aligned
   grid-use compatibility, aligned anchor evidence, and aligned groove evidence
-  before `just audio-qa-ci` can pass
+  before `just audio-qa-pr` can pass
 - observer/audio strict JSON correlation also accepts W-30 preview source-diff
   manifests as output-path evidence for the narrower W-30 probes, using
   candidate RMS, active-sample ratio, and RMS delta to reject silent or
@@ -1467,7 +1471,9 @@ are normative here.
   evidence
 - the listening manifest v1 field-level JSON contract is documented in `docs/benchmarks/listening_manifest_v1_json_contract_2026-04-29.md`
 - a repo-local `scripts/validate_listening_manifest_json.py` helper and `just listening-manifest-validator-fixtures` fixture matrix validate the listening manifest v1 envelope without freezing pack-specific metrics
-- `just audio-qa-ci` validates freshly generated W-30 preview, lane recipe, Feral before/after, and Feral grid manifests against the listening manifest v1 envelope
+- `just audio-qa-pr` validates freshly generated W-30 preview, lane recipe,
+  Feral before/after, and Feral grid manifests against the listening manifest
+  v1 envelope
 - `just recipe2-observer-audio-gate` correlates a headless app-level documented Recipe 2 MC-202 observer path with a freshly generated lane recipe listening-pack manifest, and requires that the generated observer stream carries the same transport / queue / runtime / recovery snapshot envelope used by the live `riotbox-app --observer` path
 - observer/audio JSON summaries include the required `lane_recipe_cases` field
   and expose populated case evidence for lane recipe

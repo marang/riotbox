@@ -7,7 +7,9 @@ cd "$repo"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
-review="artifacts/audio_qa/local-professional-output-listening-pack/reviews/dense_beat03_130/review.json"
+professional_pack="${1:-artifacts/audio_qa/local-professional-output-listening-pack/professional-output-listening-pack.json}"
+real_source_pack="${2:-artifacts/audio_qa/local-mc202-real-source-listening-pack/mc202-real-source-listening-pack.json}"
+review="$(jq -er '.cases[] | select(.case_id == "dense_beat03_130") | .review' "$professional_pack")"
 test -s "$review"
 
 cp "$review" "$tmp/review.json"
@@ -28,6 +30,8 @@ python3 scripts/import_listening_review_label.py \
   "$tmp/review.json" >/dev/null
 
 python3 scripts/generate_mc202_producer_grade_closeout.py \
+  --professional-pack "$professional_pack" \
+  --real-source-pack "$real_source_pack" \
   --label-corpus "$tmp/imported-label-corpus.json" \
   --output "$tmp/closeout" \
   --date "local-mc202-closeout-label-corpus-fixture" >/dev/null

@@ -244,30 +244,52 @@ Rules:
   updates when there is no blocker
 - if a progress update is necessary, pair it with the next concrete action already being taken
 
-### Broad Audio-QA Lock
+### PR And Broad Audio-QA Gates
+
+Use this gate matrix; recipe count is not a quality claim:
+
+| Moment | Command | Audio boundary |
+| --- | --- | --- |
+| Implementation | focused tests and the exact validators named by the active contract | only the explicitly selected seam |
+| Normal PR | `just ci` | source-free Rust, sidecar, synthetic render, observer/audio, manifest, docs/JSON, and lint checks |
+| Audible qualification | `just ci` plus the exact frozen product/source/listening gates | only the source access authorized by that qualification |
+| Phase or release regression | `RIOTBOX_BROAD_AUDIO_QA_ACCESS=registered-development-only just ci-broad` | registered Development audio only; never Holdout or commercial references |
+
+`just ci` is the normal local PR gate. It must remain source-free and must not
+reach `audio-qa-ci` or any registered-source generator. The static
+`ci-gate-contract-fixtures` check rejects that wiring regression. An audible
+slice still runs every exact product-spine, callback, replay, render, source,
+and listening gate required by its frozen claim; `just ci` does not replace
+those slice-specific proofs.
+
+`just ci-broad` preserves the broad phase/release baseline. It first runs the
+normal PR gate and then the legacy phase checks. The broad audio layer generates
+the professional output suite once and reuses its child packs for downstream
+validation instead of rerendering equivalent professional packs independently.
+Synthetic exact-mix validation remains in the source-free audio PR gate beside
+the artifact it consumes; the later broad layer does not reread that mutable
+shared path.
 
 Do not run broad audio-QA gates concurrently when they write shared
-`artifacts/audio_qa/local-*` paths. `just audio-qa-ci` is the public broad gate
-and must acquire the repo-local `broad-audio-qa` lock through
-`scripts/with_audio_qa_lock.sh` before it starts deleting or regenerating local
-audio artifacts. `just ci` calls that public gate and therefore inherits the
-same protection.
+`artifacts/audio_qa/local-*` paths. `just audio-qa-ci` acquires the repo-local
+`broad-audio-qa` lock through `scripts/with_audio_qa_lock.sh` before it starts
+deleting or regenerating local audio artifacts. The source-free
+`just audio-qa-pr` uses the same lock helper with a separate lock name.
 
 If a second broad audio-QA run is already active, the next run must fail early
 with a clear lock message instead of racing on shared artifacts. For concurrent
 experiments, run narrower recipes with explicit unique `output=...` arguments
 or wait for the broad gate to finish.
 
-Before invoking `just ci` or `just audio-qa-ci`, compare the active ticket's
-frozen source-access contract with the recipes in the broad gate. A contract
-that forbids further Development or Holdout reads also forbids broad local
-audio QA when any included generator opens such audio, even if that generator
-belongs to an unrelated historical smoke. In that state, run source-free code
-gates (`cargo fmt --check`, `cargo test`, `cargo check --workspace`, and
-`cargo clippy --all-targets --all-features -- -D warnings`) plus the exact
-source-free validators for the touched contracts. Record the broad gate as
-intentionally not run locally because of the access boundary. Do not interpret
-the normal preference for `just ci` as authority to reopen a source.
+Before invoking `just ci-broad` or `just audio-qa-ci`, compare the active
+ticket's frozen source-access contract with the recipes in the broad gate. Both
+commands fail closed unless the caller supplies the exact
+`registered-development-only` acknowledgement. That acknowledgement prevents
+accidental access; it does not grant authority. A contract that forbids further
+Development reads still forbids the broad gate. Holdout audio, commercial
+references, and source-directory discovery remain forbidden regardless of the
+environment value. Use `just ci` plus exact source-free validators in that
+state, and record why the phase/release gate was not run locally.
 
 ### Audio-Producing Slice Check
 
@@ -300,12 +322,12 @@ Audio-QA selection should be specific before it is broad:
   long professional-output and demo-bank smokes rerender multiple real sources
   through `feral_grid_pack` and should be paid for when their surface is touched
   or when branch/merge risk justifies the broader gate
-- run `just ci` before PR or merge when the slice changes release gates,
-  promotion paths, source-derived quality claims, shared validators, core render
-  policy, or other cross-cutting behavior; otherwise document the narrower
-  command set that directly proves the slice
-- if a broad gate is skipped for a narrow slice, say why in the PR validation
-  notes instead of implying the full audio suite ran
+- run `just ci` before every normal PR; it is intentionally source-free and is
+  therefore not a substitute for the exact source/listening gates of an audible
+  slice
+- run `just ci-broad` only for an authorized phase/release regression or when
+  the affected cross-cutting risk specifically requires that baseline; say so
+  explicitly in the PR verification rather than implying it ran
 
 Do not close an audio-producing slice with only UI/log proof. If the feature is
 supposed to sound different, include a buffer regression, offline render

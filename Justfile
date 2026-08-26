@@ -17,6 +17,20 @@ ci:
     cargo fmt --check
     cargo test
     just sidecar-contract-fixtures
+    just audio-qa-pr
+    just audio-qa-access-guard-fixtures
+    just ci-gate-contract-fixtures
+    just decision-search-fixtures
+    just tracked-json-validate
+    git diff --check
+    cargo clippy --all-targets --all-features -- -D warnings
+
+ci-broad:
+    scripts/require_broad_audio_qa_access.sh
+    just ci
+    just _ci-broad-extra
+
+_ci-broad-extra:
     just source-timing-fixture-catalog-validator-fixtures
     just source-timing-analyzer-skeleton-fixtures
     just source-timing-fixture-evaluator
@@ -40,20 +54,39 @@ ci:
     just p011-exit-evidence-gate
     just audio-qa-lock-fixtures
     just audio-qa-ci
-    cargo clippy --all-targets --all-features -- -D warnings
 
 sidecar-contract-fixtures:
     python3 -m unittest discover -s python/sidecar -p 'test_*.py'
 
+tracked-json-validate:
+    git ls-files -z '*.json' | xargs -0 -r -n 64 jq empty
+
+audio-qa-pr:
+    scripts/with_audio_qa_lock.sh source-free-pr just _audio-qa-pr-unlocked
+
+_audio-qa-pr-unlocked:
+    just dense-break-live-path-smoke
+    scripts/validate_first_playable_jam_probe.sh --exact-mix-dir artifacts/audio_qa/local-dense-break-live-path-smoke
+    just observer-audio-correlate-fixture
+    just observer-audio-correlate-json-fixture
+    just observer-audio-correlate-locked-grid-json-fixture
+    just listening-manifest-validate-generated-packs
+    just w30-smoke-generated-source-diff
+    just observer-audio-correlate-generated-feral-grid
+
+audio-qa-access-guard-fixtures:
+    scripts/validate_broad_audio_qa_access_guard.sh
+
+ci-gate-contract-fixtures:
+    python3 scripts/validate_ci_gate_contract.py --fixtures
+
 audio-qa-ci:
+    scripts/require_broad_audio_qa_access.sh
     scripts/with_audio_qa_lock.sh broad-audio-qa just _audio-qa-ci-unlocked
 
 _audio-qa-ci-unlocked:
     cargo test -p riotbox-audio --bin w30_preview_render --bin w30_preview_compare --bin lane_recipe_pack --bin feral_before_after_pack --bin feral_grid_pack
     cargo test -p riotbox-app --bin observer_audio_correlate
-    just observer-audio-correlate-fixture
-    just observer-audio-correlate-json-fixture
-    just observer-audio-correlate-locked-grid-json-fixture
     just observer-audio-summary-validator-fixtures
     just user-session-observer-validator-fixtures
     just degraded-product-review-fixtures
@@ -79,21 +112,15 @@ _audio-qa-ci-unlocked:
     just representative-source-showcase-musical-quality-fixtures
     just automated-musical-fitness-fixtures
     just agent-musical-review-pack-smoke
-    just dense-break-live-path-smoke
     just dense-break-foundation-chop-exploration-fixtures
     just dense-break-foundation-event-context-v3-fixtures
-    just pro-pressure-source-matrix-smoke
-    just professional-source-wav-pack-smoke
-    just edge-source-professional-diagnostics-smoke
-    just non-dense-professional-proof-pack-smoke
-    just professional-output-listening-pack-smoke
+    just professional-output-suite-smoke
+    just _professional-output-suite-child-fixtures
     just mc202-real-source-listening-pack-smoke
-    just mc202-producer-grade-closeout-smoke
-    just professional-output-listening-verdict-import-fixtures
-    just destructive-variation-professional-smoke
+    just _mc202-producer-grade-closeout-from-existing
+    just professional-output-listening-verdict-import-fixtures artifacts/audio_qa/local-professional-output-suite/professional-output-listening-pack
     just rendered-weak-professional-output-fixtures
     just weak-output-fix-routing-fixtures
-    just professional-output-suite-smoke
     just source-family-release-demo-coverage-fixtures
     just dense-break-release-demo-qualification-fixtures
     just release-demo-human-review-queue-fixtures
@@ -111,11 +138,7 @@ _audio-qa-ci-unlocked:
     just release-demo-evidence-reconciliation-fixtures
     just demo-bank-promotion-fixtures
     just sound-product-2010-future-ideas-fixtures
-    just listening-manifest-validate-generated-packs
     just syncopated-source-showcase-smoke
-    just w30-smoke-generated-source-diff
-    just observer-audio-correlate-generated-feral-grid
-    scripts/validate_first_playable_jam_probe.sh --exact-mix-dir artifacts/audio_qa/local-dense-break-live-path-smoke
     just source-timing-confirmation-probe
     just source-transport-map-capture-probe
     just p014-scene-movement-observer-probe
@@ -428,6 +451,13 @@ mc202-producer-grade-closeout-smoke output="artifacts/audio_qa/local-mc202-produ
     grep -q "MC-202 Producer-Grade Closeout" "{{output}}/mc202-producer-grade-closeout.md"
     scripts/validate_mc202_closeout_label_corpus_fixture.sh
 
+_mc202-producer-grade-closeout-from-existing output="artifacts/audio_qa/local-mc202-producer-grade-closeout" professional_pack="artifacts/audio_qa/local-professional-output-suite/professional-output-listening-pack/professional-output-listening-pack.json" real_source_pack="artifacts/audio_qa/local-mc202-real-source-listening-pack/mc202-real-source-listening-pack.json":
+    python3 scripts/generate_mc202_producer_grade_closeout.py --professional-pack "{{professional_pack}}" --real-source-pack "{{real_source_pack}}" --output "{{output}}" --date "local-mc202-producer-grade-closeout" --mutation-fixtures
+    python3 scripts/generate_mc202_producer_grade_closeout.py --validate-report "{{output}}/mc202-producer-grade-closeout.json" --require-all-source-composed-candidates
+    test -s "{{output}}/mc202-producer-grade-closeout.md"
+    grep -q "MC-202 Producer-Grade Closeout" "{{output}}/mc202-producer-grade-closeout.md"
+    scripts/validate_mc202_closeout_label_corpus_fixture.sh "{{professional_pack}}" "{{real_source_pack}}"
+
 sound-excellence-source-corpus-fixtures manifest="docs/benchmarks/sound_excellence_source_corpus_v1.json":
     python3 scripts/validate_sound_excellence_source_corpus.py "{{manifest}}"
     tmp="$(mktemp)" && jq 'del(.entries[0].target_review_questions)' "{{manifest}}" > "$tmp" && if python3 scripts/validate_sound_excellence_source_corpus.py "$tmp"; then echo "expected missing review questions fixture to fail" >&2; rm "$tmp"; exit 1; fi; rm "$tmp"
@@ -493,6 +523,12 @@ weak-output-fix-routing-fixtures output="artifacts/audio_qa/local-weak-output-fi
 professional-output-suite-smoke output="artifacts/audio_qa/local-professional-output-suite":
     python3 scripts/generate_professional_output_suite.py --output "{{output}}" --date "local-professional-output-suite"
     python3 scripts/validate_professional_output_suite_contract.py "{{output}}/professional-output-suite.json" --output "{{output}}" --mutation-fixtures
+
+_professional-output-suite-child-fixtures output="artifacts/audio_qa/local-professional-output-suite":
+    python3 scripts/generate_professional_source_wav_pack.py --validate-report "{{output}}/professional-source-wav-pack/professional-source-wav-pack.json" --require-artifacts --mutation-fixtures
+    python3 scripts/generate_edge_source_professional_diagnostics.py --validate-report "{{output}}/edge-source-professional-diagnostics/edge-source-professional-diagnostics.json" --require-artifacts --mutation-fixtures
+    python3 scripts/generate_non_dense_professional_proof_pack.py --validate-report "{{output}}/non-dense-professional-proof-pack/non-dense-professional-proof-pack.json" --require-artifacts --mutation-fixtures
+    python3 scripts/validate_professional_output_listening_pack.py --require-review-files --mutation-fixtures "{{output}}/professional-output-listening-pack/professional-output-listening-pack.json"
 
 sound-quality-readiness-report-smoke output="artifacts/audio_qa/local-sound-quality-readiness-report":
     if ! python3 scripts/validate_professional_output_suite_contract.py "artifacts/audio_qa/local-professional-output-suite/professional-output-suite.json" --output "artifacts/audio_qa/local-professional-output-suite" >/tmp/riotbox-professional-suite-ready.out 2>&1; then just professional-output-suite-smoke; fi

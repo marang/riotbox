@@ -1704,6 +1704,18 @@ not claim universal source quality, Holdout evidence, percussive hardness,
 automatic arrangement, Riotbox 1.0 release, or that future product work is
 finished.
 
+RIOTBOX-1399 then removes a measured delivery hazard without changing the
+instrument. The normal `just ci` PR gate is source-free and cannot transitively
+reach the guarded broad audio-QA layer; audible slices still add every exact
+product/source/listening gate required by their frozen claim. The full
+phase/release baseline remains available as
+`RIOTBOX_BROAD_AUDIO_QA_ACCESS=registered-development-only just ci-broad`, but
+the acknowledgement never authorizes Holdout, commercial references, or source
+directory discovery. Its professional output suite is rendered once and its
+validated child packs are reused instead of independently regenerated. This is
+workflow acceleration and source-boundary protection, not a sound or release
+claim.
+
 RIOTBOX-1403 now makes `live_readiness` the default evidence mode for the
 source-family coverage, release-demo review queue, and sound-quality readiness
 generators. No implicit checked-in demo bank is loaded in that mode: missing

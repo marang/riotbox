@@ -698,6 +698,13 @@ After exit:
   expanded P023 release-demo scope. Universal source quality, Holdout,
   percussive hardness, automatic arrangement, and Riotbox 1.0 release remain
   outside this completion claim.
+- RIOTBOX-1399 separates the normal PR baseline from the phase/release
+  regression after repeated broad-closeout runs reopened registered Development
+  sources under closed ticket access boundaries. `just ci` is now source-free;
+  exact audible slices add their frozen source/listening gates, while guarded
+  `just ci-broad` retains the full baseline. The professional output suite is
+  generated once per broad run and its child packs are reused for validation.
+  This is delivery-safety and feedback-speed evidence, not musical quality.
 - RIOTBOX-1410 is the first bounded Foundation Completion closure: explicit
   control-only source-monitor refresh retains current PCM, explicit replacement
   atomically publishes PCM plus mode/gains and anchors, and exact callback /
