@@ -587,6 +587,17 @@ Current limiter policy:
   remain visible instead of being hidden by output-file clipping
 - the limiter may reduce hot transient peaks but must not boost weak, silent, or
   source-characterless output; those remain QA failures
+- the Feral-grid development product-stem seam attributes the already rendered
+  generated-support mix across typed TR-909 drums, W-30 music, and MC-202 bass
+  contributions after the shared nonlinear product bus. The symmetric
+  three-lane Shapley allocation changes no full-mix sample; the written PCM16
+  contribution stems must reproduce that written mix through direct sample
+  summation with maximum absolute error at most `3 / 32768` and RMS error at
+  most `1.5 / 32768`
+- product-stem attribution and WAV/proof validation are deterministic offline
+  work only. They do not run on the realtime callback, create a musician stem
+  action, remove the MC-202 primitive-renderer boundary, or claim isolated
+  pre-bus lane audio
 
 Offline and realtime-simulation renders should become comparable under the same
 state, with explicit tolerances where backend buffer boundaries or floating

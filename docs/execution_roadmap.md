@@ -2028,3 +2028,7 @@ The accepted P023 live musical alpha exit reopened P016 on 2026-08-26.
 RIOTBOX-1476 resumes it with the smallest existing-contract completion slice:
 the musician product-mix proof handoff must commit or fail closed before any
 wider stem, DAW, or live-recording surface is considered.
+RIOTBOX-1477 follows with the next bounded foundation slice: publish
+source-matched post-bus drum, music, and bass contribution stems that
+reconstruct the unchanged product mix, while keeping the path development-only
+until the reserved stem action, receipt, and musician workflow are implemented.

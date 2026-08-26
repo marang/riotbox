@@ -264,6 +264,26 @@ The Jam export control succeeds only when the proof source hash matches the
 active Source Graph. Missing or stale proof input fails visibly without a
 receipt or a stuck queued action.
 
+### Build The Development Product-Stem Handoff
+
+The next bounded export seam is available for developer verification without
+pretending that musician stem export is finished. It renders one explicit
+source twice, proves that the source-matched artifacts are hash-stable, and
+atomically publishes three contribution stems plus the unchanged full mix into
+a new destination directory:
+
+```bash
+just product-stem-handoff "path/to/source.wav" "artifacts/local/my-source-stems"
+```
+
+The published PCM16 drum, music, and bass contributions reconstruct the
+generated-support `full_grid_mix` by direct sample summation within the frozen
+tolerance. The proof binds the source hash, format/grid, artifact hashes,
+reconstruction rule, and current renderer limitations. This is development-only:
+it does not commit `export.stem_package`, create a Session receipt, claim a DAW
+package, or promote the current primitive MC-202 bass phrase to product-quality
+source intelligence.
+
 ## Start In 5 Steps
 
 1. Run Riotbox on your own WAV or one of the local test examples described in [`data/test_audio/README.md`](data/test_audio/README.md):

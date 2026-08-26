@@ -73,6 +73,7 @@ _audio-qa-pr-unlocked:
     just listening-manifest-validate-generated-packs
     just w30-smoke-generated-source-diff
     just observer-audio-correlate-generated-feral-grid
+    just product-stem-handoff-contract-fixtures
 
 audio-qa-access-guard-fixtures:
     scripts/validate_broad_audio_qa_access_guard.sh
@@ -1016,6 +1017,12 @@ product-export-reproducibility-smoke:
 
 product-export-handoff source destination:
     RIOTBOX_PRODUCT_EXPORT_SOURCE="{{source}}" RIOTBOX_PRODUCT_EXPORT_HANDOFF_DIR="{{destination}}" scripts/validate_full_grid_export_reproducibility.sh
+
+product-stem-handoff source destination:
+    RIOTBOX_PRODUCT_EXPORT_SOURCE="{{source}}" RIOTBOX_PRODUCT_STEM_HANDOFF_DIR="{{destination}}" scripts/validate_full_grid_export_reproducibility.sh
+
+product-stem-handoff-contract-fixtures:
+    python3 -m unittest scripts.test_validate_product_stem_handoff
 
 stem-package-local-ci-report-smoke:
     cargo test -p riotbox-app --test stem_package_report_smoke -- --nocapture

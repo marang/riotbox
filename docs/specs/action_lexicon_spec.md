@@ -407,6 +407,13 @@ Boundary:
   producer for the launch handoff. It renders the same explicit source twice,
   validates reproducibility, and atomically publishes a proof plus its relative
   `full_grid_mix` artifact into a new destination directory.
+- `just product-stem-handoff <source> <destination>` is a separate
+  development-only pre-admission seam. It publishes source-matched drums,
+  music, and bass contribution stems plus the unchanged `full_grid_mix` only
+  after two renders are hash-stable and the frozen PCM-sum reconstruction gate
+  passes. It does not queue or commit `export.stem_package`, create a Session
+  receipt, expose a TUI/Ghost action, or claim DAW/release readiness. The bass
+  contribution retains the explicit MC-202 primitive-renderer limitation.
 - Replay must not blindly rewrite files as a hidden side effect.
 - Stem package export and live recording export have typed reserved Core action
   contracts, but remain out of runnable TUI/Ghost/user scope until queue,

@@ -48,17 +48,23 @@ proof="$tmpdir/product-export-proof.json"
 
 source_override="${RIOTBOX_PRODUCT_EXPORT_SOURCE:-}"
 handoff_dir="${RIOTBOX_PRODUCT_EXPORT_HANDOFF_DIR:-}"
-if [[ -n "$source_override" || -n "$handoff_dir" ]]; then
-  if [[ -z "$source_override" || -z "$handoff_dir" ]]; then
-    echo "RIOTBOX_PRODUCT_EXPORT_SOURCE and RIOTBOX_PRODUCT_EXPORT_HANDOFF_DIR must be supplied together" >&2
+stem_handoff_dir="${RIOTBOX_PRODUCT_STEM_HANDOFF_DIR:-}"
+if [[ -n "$handoff_dir" && -n "$stem_handoff_dir" ]]; then
+  echo "product-mix and product-stem handoff destinations are mutually exclusive" >&2
+  exit 1
+fi
+requested_handoff_dir="${handoff_dir:-$stem_handoff_dir}"
+if [[ -n "$source_override" || -n "$requested_handoff_dir" ]]; then
+  if [[ -z "$source_override" || -z "$requested_handoff_dir" ]]; then
+    echo "RIOTBOX_PRODUCT_EXPORT_SOURCE and exactly one handoff destination must be supplied together" >&2
     exit 1
   fi
   if [[ ! -f "$source_override" ]]; then
     echo "product export source is not a file: $source_override" >&2
     exit 1
   fi
-  if [[ -e "$handoff_dir" ]]; then
-    echo "product export handoff destination already exists: $handoff_dir" >&2
+  if [[ -e "$requested_handoff_dir" ]]; then
+    echo "product export handoff destination already exists: $requested_handoff_dir" >&2
     exit 1
   fi
   source_a="$source_override"
@@ -134,7 +140,31 @@ python3 scripts/validate_product_export_reproducibility.py \
 
 publish_handoff_dir="$handoff_dir"
 report_handoff=false
-if [[ -z "$publish_handoff_dir" ]]; then
+if [[ -n "$stem_handoff_dir" ]]; then
+  stem_proof="$tmpdir/product-stem-handoff-proof.json"
+  python3 scripts/validate_product_stem_handoff.py build \
+    --write-proof "$stem_proof" \
+    "$run_a/manifest.json" \
+    "$run_b/manifest.json"
+
+  handoff_parent="$(dirname "$stem_handoff_dir")"
+  mkdir -p "$handoff_parent"
+  handoff_stage="$(mktemp -d "$handoff_parent/.riotbox-product-stem-handoff.XXXXXX")"
+  python3 scripts/validate_product_stem_handoff.py stage \
+    --proof "$stem_proof" \
+    --manifest "$run_a/manifest.json" \
+    --destination "$handoff_stage"
+  if ! mv -Tn -- "$handoff_stage" "$stem_handoff_dir" || [[ -e "$handoff_stage" ]]; then
+    echo "product stem handoff destination appeared before atomic publish: $stem_handoff_dir" >&2
+    exit 1
+  fi
+  handoff_stage=""
+  python3 scripts/validate_product_stem_handoff.py validate \
+    "$stem_handoff_dir/product_stem_handoff_proof.json"
+  echo "product stem handoff ready: $stem_handoff_dir"
+  echo "proof: $stem_handoff_dir/product_stem_handoff_proof.json"
+  exit 0
+elif [[ -z "$publish_handoff_dir" ]]; then
   publish_handoff_dir="$tmpdir/handoff-smoke"
 else
   report_handoff=true
@@ -166,7 +196,10 @@ handoff_stage="$(mktemp -d "$handoff_parent/.riotbox-product-export-handoff.XXXX
 mkdir -p "$handoff_stage/$(dirname "$artifact_rel")"
 cp "$artifact_source" "$handoff_stage/$artifact_rel"
 cp "$proof" "$handoff_stage/product_export_proof.json"
-mv -T -- "$handoff_stage" "$publish_handoff_dir"
+if ! mv -Tn -- "$handoff_stage" "$publish_handoff_dir" || [[ -e "$handoff_stage" ]]; then
+  echo "product export handoff destination appeared before atomic publish: $publish_handoff_dir" >&2
+  exit 1
+fi
 handoff_stage=""
 
 published_hash="$(sha256sum "$publish_handoff_dir/$artifact_rel" | awk '{print $1}')"

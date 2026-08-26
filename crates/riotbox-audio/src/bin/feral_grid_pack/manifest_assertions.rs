@@ -133,7 +133,7 @@ mod manifest_assertions {
         );
 
         let artifacts = manifest["artifacts"].as_array().expect("artifacts");
-        assert_eq!(artifacts.len(), 7);
+        assert_eq!(artifacts.len(), 10);
         assert_manifest_artifact(
             artifacts,
             "tr909_beat_fill",
@@ -154,6 +154,27 @@ mod manifest_assertions {
             "audio_wav",
             output_dir.join("stems/03_mc202_bass_pressure.wav"),
             Some(output_dir.join("stems/03_mc202_bass_pressure.metrics.md")),
+        );
+        assert_manifest_artifact(
+            artifacts,
+            "product_stem_drums",
+            "audio_wav",
+            output_dir.join("stems/product/01_stem_drums.wav"),
+            Some(output_dir.join("stems/product/01_stem_drums.metrics.md")),
+        );
+        assert_manifest_artifact(
+            artifacts,
+            "product_stem_music",
+            "audio_wav",
+            output_dir.join("stems/product/02_stem_music.wav"),
+            Some(output_dir.join("stems/product/02_stem_music.metrics.md")),
+        );
+        assert_manifest_artifact(
+            artifacts,
+            "product_stem_bass",
+            "audio_wav",
+            output_dir.join("stems/product/03_stem_bass.wav"),
+            Some(output_dir.join("stems/product/03_stem_bass.metrics.md")),
         );
         assert_manifest_artifact(
             artifacts,
@@ -210,6 +231,38 @@ mod manifest_assertions {
         );
         assert!(manifest["metrics"]["mc202_question_answer_delta"].is_null());
         assert!(manifest["metrics"]["mc202_question_answer"].is_null());
+        let reconstruction = &manifest["metrics"]["product_stem_reconstruction"];
+        assert_eq!(
+            reconstruction["schema"],
+            PRODUCT_STEM_RECONSTRUCTION_SCHEMA
+        );
+        assert_eq!(
+            reconstruction["rule"],
+            PRODUCT_STEM_RECONSTRUCTION_RULE
+        );
+        assert_eq!(reconstruction["passed"], true);
+        assert_eq!(reconstruction["sample_rate_hz"], SAMPLE_RATE);
+        assert_eq!(reconstruction["channel_count"], CHANNEL_COUNT);
+        assert_eq!(
+            reconstruction["frame_count"],
+            manifest["total_frames"].as_u64().expect("total frames")
+        );
+        assert!(
+            reconstruction["max_abs_error"]
+                .as_f64()
+                .expect("stem max abs error")
+                <= reconstruction["max_allowed_abs_error"]
+                    .as_f64()
+                    .expect("stem max abs tolerance")
+        );
+        assert!(
+            reconstruction["rms_error"]
+                .as_f64()
+                .expect("stem rms error")
+                <= reconstruction["max_allowed_rms_error"]
+                    .as_f64()
+                    .expect("stem rms tolerance")
+        );
         assert_eq!(
             manifest["metrics"]["tr909_source_profile"]["support_context"],
             "transport_bar"
