@@ -23,6 +23,7 @@ mod w30_live_path_render_modules;
 use w30_live_path_render_modules::{
     filter_slam_qualification::qualify_filter_slam_v1,
     pitch_dive_qualification::qualify_pitch_dive_v1,
+    restart_recall_qualification::qualify_gesture_vocabulary_restart_recall,
 };
 
 const SAMPLE_RATE: u32 = 48_000;
@@ -704,8 +705,10 @@ fn qualify_gesture_vocabulary_v1(
     )?;
     let filter_render = state.runtime.w30_preview.clone();
     let filter_reentry =
-        qualify_ordinary_w30_reentry(state, bpm, output_dir, scene_id, 41, "filter_slam")?;
+        qualify_ordinary_w30_reentry(state, bpm, output_dir, scene_id.clone(), 41, "filter_slam")?;
     let after_filter = state.runtime.w30_preview.clone();
+    let restart_recall =
+        qualify_gesture_vocabulary_restart_recall(state, &after_filter, bpm, output_dir, scene_id)?;
 
     let journey_plans = [
         isolated_w30_plan(hook_render, bpm, 8.0),
@@ -851,6 +854,7 @@ fn qualify_gesture_vocabulary_v1(
         },
         "session_round_trip_exact": true,
         "suffix_replay_equivalent": true,
+        "restart_recall": restart_recall,
         "capture_lineage_unchanged": true,
         "source_monitor_unchanged": true,
         "final_articulation_cleared": state.session.runtime_state.lane_state.w30.hook_articulation.is_none()

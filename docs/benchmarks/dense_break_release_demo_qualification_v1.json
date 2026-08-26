@@ -1,0 +1,242 @@
+{
+  "schema": "riotbox.dense_break_release_demo_qualification.v1",
+  "schema_version": 1,
+  "status": "frozen",
+  "owner_ticket": "RIOTBOX-1474",
+  "purpose": "qualify the unchanged current W-30-led Dense gesture journey for one formal dense_break release-demo family outcome",
+  "predecessor_evidence": {
+    "gesture_product_qualification": {
+      "ticket": "RIOTBOX-1447",
+      "decision": "RBX-307",
+      "contract_path": "docs/benchmarks/w30_gesture_vocabulary_golden_path_qualification_v1.json",
+      "contract_raw_sha256": "80b3433c20168e8b1cc42c399af017faa21a06e509b8240e569485a001d3a7fb",
+      "review_path": "docs/reviews/riotbox_1447_w30_gesture_reentry_qualification_2026-08-21.md",
+      "review_raw_sha256": "e4ad52cfd60101ec2b22fb7ff588377574acc1c55b41a4b6c647cc94e61ee6d2",
+      "result": "exact_product_transition_integrity_at_stale_analyzer_tempo"
+    },
+    "gesture_musical_review": {
+      "ticket": "RIOTBOX-1448",
+      "review_path": "docs/reviews/riotbox_1448_w30_gesture_sequence_musical_review_2026-08-21.md",
+      "review_raw_sha256": "72fc5e7b1088ed0dc4d348445021786417c09e890b21e0d7798a7481f91215e4",
+      "structured_review_path": "artifacts/audio_qa/local/listening-reviews/RIOTBOX-1448/review.json",
+      "structured_review_sha256": "75643587e6b42d885248ac1cfe61f28ff77849f6fe43d3dc82a157cd70754bc6",
+      "human_verdict": "keep",
+      "strongest_element": "none",
+      "source_recognition": "source_clear",
+      "hook_after_two_bars": "clear",
+      "review_artifact_sha256": "f47fd90327295afda645626fb1a929df1caaa87ede79ab1e9aace48a3199b5eb",
+      "continuous_product_journey_sha256": "875fff596fd235f093fcff326128a4c42536e7e389f57b29fc2bdeb9443a9bb5",
+      "product_tempo_bpm": 130.28494262695312,
+      "result": "bounded_exact_sequence_keep_not_current_release_demo_evidence"
+    },
+    "current_dense_foundation": {
+      "ticket": "RIOTBOX-1471",
+      "decision": "RBX-340",
+      "contract_path": "docs/benchmarks/dense_w30_current_artifact_review_v2.json",
+      "contract_raw_sha256": "18f531c5fdbf899058d173c8cd839cdf8533775f4f51e1c7259f0933a2293e5a",
+      "review_path": "docs/reviews/riotbox_1471_dense_w30_current_artifact_keep_2026-08-26.md",
+      "review_raw_sha256": "59bd7ad9058aee497aa51aec2a4372dc919400d95c3a80b8348208a888fa0ef3",
+      "confirmed_product_tempo_bpm": 130.0,
+      "result": "current_ordinary_w30_foundation_keep_not_complete_dense_journey"
+    }
+  },
+  "frozen_mechanisms": [
+    {
+      "role": "phrase_variation",
+      "action": "w30.hook_turnaround",
+      "mechanism": "w30_hook_turnaround_v1",
+      "contract_path": "docs/benchmarks/w30_hook_turnaround_development_v1.json",
+      "contract_raw_sha256": "078102ab7e1987904706873e53b2d98917e63d09d10676b41d156b9235e86d84",
+      "committed_start_beat": 8,
+      "retune_allowed": false
+    },
+    {
+      "role": "destructive_exit",
+      "action": "w30.pitch_dive",
+      "mechanism": "w30_pitch_dive_v1",
+      "contract_path": "docs/benchmarks/w30_pitch_dive_product_qualification_v1.json",
+      "contract_raw_sha256": "1fad3f6979f40e8a6fc4f4142dfa99290a5da35524fc55f7ab0bbaa8112230da",
+      "committed_start_beat": 16,
+      "retune_allowed": false
+    },
+    {
+      "role": "long_build_and_return",
+      "action": "w30.filter_slam",
+      "mechanism": "w30_filter_slam_v1",
+      "contract_path": "docs/benchmarks/w30_filter_slam_product_qualification_v1.json",
+      "contract_raw_sha256": "05181ea58ffa060d6f0626e5363dbf6f804e5ea9d3d656192b0d513715f67d6e",
+      "committed_start_beat": 32,
+      "retune_allowed": false
+    }
+  ],
+  "product_journey": {
+    "renderer": "riotbox-app/w30_live_path_render --qualify-gesture-vocabulary-v1",
+    "product_path": "JamAppState queue/commit -> Session/runtime projection -> exact callback-block RuntimeMix -> master limiter",
+    "character": "dense_break",
+    "lead": "w30_source_transform",
+    "tr909_intent": "stay_out",
+    "mc202_intent": "stay_out",
+    "source_monitor_intent": "stay_out",
+    "performer_triggered_only": true,
+    "automatic_gesture_selection_allowed": false,
+    "gesture_stacking_allowed": false,
+    "exact_action_order": [
+      "w30.hook_turnaround",
+      "w30.trigger_pad",
+      "w30.pitch_dive",
+      "w30.trigger_pad",
+      "w30.filter_slam",
+      "w30.trigger_pad"
+    ],
+    "segment_beats": [
+      5,
+      3,
+      13,
+      3,
+      9,
+      4
+    ],
+    "duration_beats": 37,
+    "ordinary_reentry_committed_beats": [
+      13,
+      29,
+      41
+    ],
+    "ordinary_reentry_clears_articulation": true,
+    "restart_recall_returns_ordinary_w30": true
+  },
+  "promotion_evidence": {
+    "gate_schema": "riotbox.exact_product_path_review_gate.v1",
+    "route": "exact_product_path_alternative_to_mc202_source_composed_evidence",
+    "required_product_path_kind": "exact_runtime_mix_live_journey",
+    "mutually_exclusive_with_mc202_gate": true,
+    "source_family": "dense_break",
+    "release_coverage_alias": "dense_break",
+    "scripted_performer_driver_allowed": true,
+    "hardcoded_musical_output_allowed": false,
+    "primitive_or_template_only_allowed": false,
+    "fallback_music_allowed": false,
+    "quality_proof_before_human_pass": false
+  },
+  "source": {
+    "case_id": "dense_beat03_130",
+    "source_family": "dense_break",
+    "path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+    "sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+    "confirmed_bpm": 130.0,
+    "downbeat_seconds": null,
+    "source_format": {
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "sample_width_bits": 24,
+      "compression_type": "NONE",
+      "maximum_duration_seconds": 16
+    },
+    "source_corpus": {
+      "path": "docs/benchmarks/sound_excellence_source_corpus_v1.json",
+      "raw_sha256": "67b5b8b2882575cf70fa61aacf25ae282c17714fe51ffcb13f905458e025d552"
+    },
+    "active_holdout_collision_registry": {
+      "path": "docs/benchmarks/source_holdout_rotation_v2.json",
+      "schema": "riotbox.source_holdout_rotation.v2",
+      "raw_sha256": "af98af67d5b0ef9f8478bf800438b268af2a4640bed29d8ec7c87fa585eb6812",
+      "metadata_exclusion_only": true,
+      "audio_access_allowed": false
+    }
+  },
+  "development_session": {
+    "session_limit": 1,
+    "maximum_unique_source_files": 1,
+    "fresh_exclusive_access_log_required_before_first_open": true,
+    "exact_registered_path_and_hash_only": true,
+    "directory_discovery": false,
+    "holdout_audio_access": false,
+    "commercial_reference_access": false,
+    "source_substitution": false,
+    "output_root": "artifacts/development/riotbox-1474"
+  },
+  "technical_gates": {
+    "source_content_hash_exact": true,
+    "product_tempo_bpm": 130.0,
+    "product_tempo_absolute_tolerance": 0.000001,
+    "journey_action_order_exact": true,
+    "each_frozen_gesture_case_passes_existing_gate": true,
+    "ordinary_reentry_active_and_articulation_cleared": true,
+    "session_round_trip_exact": true,
+    "suffix_replay_equivalent": true,
+    "callback_partitions_128_and_257_sample_exact": true,
+    "restart_recall_sample_exact_to_ordinary_w30": true,
+    "source_graph_capture_lineage_proven": true,
+    "isolated_contributors": [
+      "w30_preview"
+    ],
+    "other_lanes_active_sample_count": 0,
+    "missing_source_active_sample_count": 0,
+    "minimum_journey_rms": 0.001,
+    "pre_limiter_clip_count": 0,
+    "limited_sample_count": 0,
+    "post_limiter_clip_count": 0
+  },
+  "identity_gate": {
+    "schema": "riotbox.dense_break_release_demo_prior_identity_gate.v1",
+    "prior_product_tempo_bpm": 130.28494262695312,
+    "current_required_product_tempo_bpm": 130.0,
+    "prior_review_artifact_sha256": "f47fd90327295afda645626fb1a929df1caaa87ede79ab1e9aace48a3199b5eb",
+    "prior_continuous_journey_sha256": "875fff596fd235f093fcff326128a4c42536e7e389f57b29fc2bdeb9443a9bb5",
+    "reuse_requires_exact_review_artifact_and_journey_and_tempo_identity": true,
+    "additional_playback_if_all_identities_match": false,
+    "changed_artifact_requires_fresh_review": true,
+    "inferred_or_strengthened_verdict_allowed": false
+  },
+  "presentation": {
+    "artifact": "review/00_dense_release_demo_presentation.wav",
+    "audible_order": [
+      "eight_beats_registered_source_context",
+      "one_second_pause",
+      "complete_37_beat_exact_product_journey",
+      "one_second_terminal_silence"
+    ],
+    "true_peak_estimator": "riotbox.audio_presentation_true_peak_safety.v1",
+    "maximum_true_peak_dbtp": -1.0,
+    "uniform_presentation_gain_only": true,
+    "listening_question_if_changed": "Is this complete current Dense product journey strong, coherent, source-recognizable, and replay-worthy enough to serve as one formal dense_break demo-family example?"
+  },
+  "human_review": {
+    "changed_artifact_review_limit": 1,
+    "source_first_required": true,
+    "audio_judge_label_required": true,
+    "allowed_verdicts": [
+      "keep",
+      "technically_ok_but_musically_weak",
+      "reject"
+    ],
+    "pass_consequence": "promote the exact reviewed entry as dense_break demo_ready and satisfy dense_break release coverage only",
+    "weak_or_fail_consequence": "promote the reviewed non-demo outcome with one concrete fix category and stop without tuning"
+  },
+  "forbidden": {
+    "gesture_retune": true,
+    "gesture_reorder": true,
+    "tempo_retune": true,
+    "mix_retune": true,
+    "source_substitution": true,
+    "alternative_variant": true,
+    "inferred_or_strengthened_verdict": true,
+    "duplicate_playback": true,
+    "scripted_diagnostic_substitution": true,
+    "fallback_music": true,
+    "holdout_audio": true
+  },
+  "failure_policy": "stop_fail_closed_without_retuning_reordering_rerender_or_source_replacement",
+  "claim_boundary": {
+    "before_human_pass_or_exact_identity_reuse": "technical_exact_product_evidence_only",
+    "maximum_success": "one_dense_break_release_demo_family_success",
+    "new_mechanism": false,
+    "source_general": false,
+    "holdout": false,
+    "percussive_hardness": false,
+    "automatic_arrangement": false,
+    "universal_quality": false,
+    "release_ready": false,
+    "p023_complete": false
+  }
+}

@@ -674,6 +674,18 @@ After exit:
   sparse journeys, but this does not by itself establish a complete demo-ready
   Dense family. Broader source, Holdout, support-lane, release,
   universal-quality, and P023 completion remain outside this evidence.
+- RIOTBOX-1474 qualifies the unchanged current W-30-only Dense journey after
+  the separate phrase-aware silence-cut attempt in RIOTBOX-1472/1473 is
+  rejected and removed. One bounded Development session passes the exact
+  product-spine, callback, replay, restart, isolation, limiter, and no-fallback
+  gates. The fresh structured human `keep` applies to the coherent complete
+  arc and its ordinary re-entries, not to another requalification of its
+  established effects. `dense_break` is now demo-ready covered and all six
+  required source families satisfy their positive or reviewed-negative family
+  contract. Overall release and P023 completion remain blocked by the active
+  historical Dense `chop_policy` failure and diagnostic-only professional
+  suite; no Holdout, source-general, hardness, or universal-quality claim is
+  added.
 - RIOTBOX-1410 is the first bounded Foundation Completion closure: explicit
   control-only source-monitor refresh retains current PCM, explicit replacement
   atomically publishes PCM plus mode/gains and anchors, and exact callback /
