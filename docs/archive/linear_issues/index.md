@@ -1645,4 +1645,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Integrate and qualify W-30 Silence Cut v1
 - [RIOTBOX-1474.md](./RIOTBOX-1474.md)
   P023: Qualify the current W-30-led Dense journey for release-demo family success
+- [RIOTBOX-1475.md](./RIOTBOX-1475.md)
+  P023: Close aggregate readiness with current product evidence
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
