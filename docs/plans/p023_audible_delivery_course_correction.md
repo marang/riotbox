@@ -249,3 +249,14 @@ budget admits no replay on another monitor, and no provisional keep follows.
 The temporary seam is removed; the exact contract and feasibility evidence
 remain for a future Linear-first slice only if suitable stereo monitoring makes
 the musician-facing question observable.
+
+RIOTBOX-1470 next removes support-lane stacking from the Dense question and
+qualifies only the already useful ordinary promoted W-30 path. The sole exact
+Development session passes action, capture, isolation, callback, restart,
+missing-source, clipping, and limiter gates, but its current audio and product
+manifest differ from the pinned RIOTBOX-1444 control. The present path carries
+rounded `confirmed_bpm: 130.0` into Runtime instead of the earlier confirmed
+`130.28494262695312 BPM`. The frozen identity rule stops before playback; no
+prior verdict is reused and the temporary seam is removed. A Linear-first
+successor must resolve the single typed confirmed-tempo authority across the
+product spine before another source qualification. Dense remains non-demo-ready.

@@ -11,10 +11,6 @@ from typing import Any
 REUSE_FIELD = "human_verdict_provenance"
 REUSE_SCHEMA = "riotbox.hash_identical_human_verdict_reuse.v1"
 APPROVED_CONTRACTS = {
-    "docs/benchmarks/dense_w30_foundation_qualification_v1.json": (
-        "riotbox.dense_w30_foundation_qualification.v1",
-        "fa49cce7617d2445328a98e225e5756110907cdabe4828a151a25129b9d11715",
-    ),
     "docs/benchmarks/tonal_riff_release_demo_evidence_reuse_v2.json": (
         "riotbox.tonal_riff_release_demo_evidence_reuse.v2",
         "cfdab651ceae05a494ccee5637a5e4fc3fb47bef24901b4ca5e76531a402cfa0",
