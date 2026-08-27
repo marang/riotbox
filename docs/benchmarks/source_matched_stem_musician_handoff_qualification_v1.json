@@ -1,0 +1,153 @@
+{
+  "schema": "riotbox.source_matched_stem_musician_handoff_qualification.v1",
+  "schema_version": 1,
+  "ticket": "RIOTBOX-1480",
+  "decision": "RBX-352",
+  "phase": "P016",
+  "evidence_role": "development_only_musician_handoff_qualification",
+  "claim_boundary": {
+    "allowed": [
+      "one exact registered Development source produces a valid source-matched V2 handoff",
+      "the handoff commits through the existing Action, Session, receipt, and observer path",
+      "the exact full mix and isolated role stems may receive a bounded human musician-usability verdict"
+    ],
+    "forbidden": [
+      "source-general stem quality",
+      "release readiness",
+      "DAW placement readiness",
+      "TUI or Ghost musician-export readiness",
+      "live-recording readiness",
+      "Holdout evidence",
+      "commercial-reference evidence",
+      "hardness or universal sound-quality proof"
+    ]
+  },
+  "frozen_inputs": {
+    "source_corpus": {
+      "path": "docs/benchmarks/sound_excellence_source_corpus_v1.json",
+      "raw_sha256": "67b5b8b2882575cf70fa61aacf25ae282c17714fe51ffcb13f905458e025d552"
+    },
+    "active_holdout_collision_registry": {
+      "path": "docs/benchmarks/source_holdout_rotation_v2.json",
+      "schema": "riotbox.source_holdout_rotation.v2",
+      "raw_sha256": "af98af67d5b0ef9f8478bf800438b268af2a4640bed29d8ec7c87fa585eb6812"
+    },
+    "initial_case": {
+      "ordinal": 1,
+      "case_id": "dense_beat03_130",
+      "source_family": "dense_break",
+      "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+      "source_sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+      "confirmed_bpm": 130.0,
+      "source_format": {
+        "sample_rate_hz": 44100,
+        "channels": 2,
+        "sample_width_bits": 24,
+        "compression_type": "NONE",
+        "maximum_duration_seconds": 16
+      },
+      "lineage": {
+        "session_path": "artifacts/development/riotbox-1474/qualification-v1/session.json",
+        "session_raw_sha256": "9421ad275141478b5bd56a42ce0e3c18ea8538c706094fc0a75c7e8d2d58ee92",
+        "source_graph_path": "artifacts/development/riotbox-1474/qualification-v1/source-graph.json",
+        "source_graph_raw_sha256": "ad54e0d8908421bf65c6ef86403227f2307f35b9cbd84c779d59ca5756138679",
+        "source_id": "src-e752819f53f7",
+        "graph_version": "V1",
+        "canonical_graph_sha256": "b242f5c0e6ae86b7a569a10cb63b9301b00523d698725276603a4ef0030fc047"
+      }
+    },
+    "planned_transfer_order": [
+      {
+        "ordinal": 2,
+        "case_id": "tonal_rusharp_120",
+        "source_family": "tonal_riff",
+        "source_path": "data/test_audio/examples/DH_RushArp_120_A.wav",
+        "source_sha256": "ec2a0c930eb338bf81cd5cb4b5fef487e07c140ad40181e1d92b2a0990334e0e",
+        "requires_separate_frozen_format_and_lineage_binding_before_access": true
+      },
+      {
+        "ordinal": 3,
+        "case_id": "sparse_kicksnr_120",
+        "source_family": "sparse_drums",
+        "source_path": "data/test_audio/examples/DH_BeatC_KickSnr_120-01.wav",
+        "source_sha256": "8a970e5d7bd9b29771aba85f75e697c7510940d4404714bfb1e55e210c15f46c",
+        "requires_separate_frozen_format_and_lineage_binding_before_access": true
+      }
+    ]
+  },
+  "access_contract": {
+    "maximum_unique_development_files_in_initial_session": 1,
+    "maximum_original_source_open_count": 1,
+    "fresh_exclusive_access_log_required_before_first_source_open": true,
+    "verified_bytes_delivered_to_in_process_owner": true,
+    "renderer_may_only_read_a_private_hash_identical_owner_copy": true,
+    "exact_paths_only": true,
+    "directory_discovery": false,
+    "holdout_audio_access": false,
+    "commercial_reference_access": false,
+    "fail_closed_on_contract_or_identity_drift": true
+  },
+  "producer_contract": {
+    "command_boundary": "just product-stem-handoff <verified-owner-copy> <new-destination>",
+    "proof_schema": "riotbox.product_stem_handoff.v2",
+    "bars": 4,
+    "source_window_seconds": 1.0,
+    "algorithms_thresholds_and_reconstruction_tolerances": "unchanged_from_RBX-350_and_RBX-351",
+    "rerender_for_tuning_after_source_result": false
+  },
+  "session_ingress_contract": {
+    "boundary": "stem_package.source_matched_handoff_v1",
+    "pack_id": "stem-package-source-matched",
+    "claimed_stem_roles": [
+      "stem_drums",
+      "stem_music",
+      "stem_bass"
+    ],
+    "requires_exact_source_graph_and_session_lineage": true,
+    "requires_completed_action_receipt_and_observer_lifecycle": true,
+    "replay_recopies_files": false
+  },
+  "technical_preflight": {
+    "must_pass_before_human_playback": [
+      "published V2 proof revalidation",
+      "exact source SHA-256 binding",
+      "PCM format and grid identity",
+      "frozen pcm_sum_v1 reconstruction",
+      "hash identity from V2 handoff to committed package",
+      "completed Action, Session receipt, and observer evidence",
+      "non-silent exact source, full mix, drums, music, and bass artifacts",
+      "verified playback endpoint and silence"
+    ],
+    "automated_metrics_are_not_human_listening": true
+  },
+  "human_review": {
+    "artifact_order": [
+      "registered_source",
+      "full_grid_mix",
+      "stem_drums",
+      "stem_music",
+      "stem_bass"
+    ],
+    "pause_between_artifacts_seconds": 1.0,
+    "fresh_readiness_required_before_first_playback": true,
+    "unchanged_direct_replay_request_skips_repeated_brief": true,
+    "questions": [
+      "Does the full mix preserve recognizable source character while sounding deliberately transformed?",
+      "Is each isolated role immediately recognizable and musically reusable?",
+      "Does separation leave acceptable bleed without making a role weak, broken, or misleading?",
+      "Do the isolated roles plausibly explain the complete mix when heard together?"
+    ],
+    "verdicts": [
+      "keep",
+      "technically_ok_but_musically_weak",
+      "reject",
+      "inconclusive"
+    ]
+  },
+  "stopping_rule": {
+    "initial_case_failure": "stop_without_transfer_access_or_algorithm_changes",
+    "initial_case_keep": "same_frozen_protocol_may_expand_in_declared_order_to_at_most_two_separately_bound_development_sources",
+    "transfer_failure": "record_family_specific_limit_and_stop_without_tuning",
+    "protocol_change": "requires_new_version_and_decision_log_entry"
+  }
+}

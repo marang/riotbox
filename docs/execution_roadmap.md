@@ -2044,3 +2044,15 @@ replay, and observer truth commits only after success. The hardcoded local-CI
 fixture is not used as stem material. This completes the source-matched
 Foundation handoff, while TUI/Ghost musician export, DAW placement, structured
 listening, live recording, and release readiness remain separate blockers.
+RIOTBOX-1480 then exercises that path with one exact registered Dense
+Development source. The real producer-to-Session run exposes and fixes a
+cross-language JSON-float comparison defect without changing the frozen
+reconstruction limits, renderer, or audio thresholds; the resulting package is
+reproducible, reconstructs, carries exact lineage, and passes all five stem QA
+gates. Bounded listening finds the artifacts acceptable and not obviously
+broken, but musician reuse remains `inconclusive` because isolated stems alone
+provide no concrete multitrack task for the listener. The declared tonal and
+sparse transfer sources therefore remain unopened. The next P016 foundation
+slice must demonstrate what the unchanged exact roles enable in a bounded
+multitrack placement/mix context before broader source qualification, TUI/Ghost
+surface work, live recording, or release claims.

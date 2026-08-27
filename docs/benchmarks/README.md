@@ -192,3 +192,8 @@ Current benchmark artifacts:
   Frozen RIOTBOX-1474 exact current W-30 Dense journey qualification with one
   registered Development source, strict old/current tempo-identity separation,
   at most one changed-artifact review, and no retuning or Holdout access.
+- [source_matched_stem_musician_handoff_qualification_v1.json](./source_matched_stem_musician_handoff_qualification_v1.json)
+  Frozen RIOTBOX-1480 one-source musician-handoff qualification: exact safe
+  Development access, unchanged V2 producer and reconstruction contracts,
+  source-matched Action/Session ingress, five-artifact review order, and a
+  keep-before-transfer stopping rule with no Holdout authorization.

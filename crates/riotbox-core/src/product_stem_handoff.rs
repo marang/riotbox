@@ -12,6 +12,7 @@ pub const PRODUCT_STEM_RECONSTRUCTION_RULE: &str = "pcm_sum_v1";
 pub const MC202_SOURCE_EXPRESSION_SCHEMA: &str = "riotbox.mc202_source_expression_origin.v1";
 pub const PRODUCT_STEM_PCM_MAX_ABS_ERROR: f64 = 3.0 / 32_768.0;
 pub const PRODUCT_STEM_PCM_MAX_RMS_ERROR: f64 = 1.5 / 32_768.0;
+pub const PRODUCT_STEM_CONTRACT_FLOAT_TOLERANCE: f64 = 1.0e-12;
 pub const PRODUCT_STEM_DECLARED_METRIC_TOLERANCE: f64 = 1.0e-7;
 pub const MC202_MIN_SOURCE_GRID_HIT_RATIO: f64 = 0.5;
 
@@ -255,10 +256,12 @@ impl ProductStemReconstruction {
                 return Err(ProductStemHandoffError::Invalid("reconstruction metrics"));
             }
         }
-        if (self.max_allowed_abs_error - PRODUCT_STEM_PCM_MAX_ABS_ERROR).abs() > f64::EPSILON
-            || (self.max_allowed_rms_error - PRODUCT_STEM_PCM_MAX_RMS_ERROR).abs() > f64::EPSILON
-            || self.max_abs_error > self.max_allowed_abs_error
-            || self.rms_error > self.max_allowed_rms_error
+        if (self.max_allowed_abs_error - PRODUCT_STEM_PCM_MAX_ABS_ERROR).abs()
+            > PRODUCT_STEM_CONTRACT_FLOAT_TOLERANCE
+            || (self.max_allowed_rms_error - PRODUCT_STEM_PCM_MAX_RMS_ERROR).abs()
+                > PRODUCT_STEM_CONTRACT_FLOAT_TOLERANCE
+            || self.max_abs_error > PRODUCT_STEM_PCM_MAX_ABS_ERROR
+            || self.rms_error > PRODUCT_STEM_PCM_MAX_RMS_ERROR
         {
             return Err(ProductStemHandoffError::Invalid("reconstruction tolerance"));
         }
@@ -528,6 +531,44 @@ mod tests {
                 ExportArtifactRole::StemMusic,
                 ExportArtifactRole::StemBass,
             ]
+        );
+    }
+
+    #[test]
+    fn v2_handoff_accepts_frozen_tolerances_at_published_json_precision() {
+        let mut json = serde_json::to_value(valid_handoff()).expect("serialize valid handoff");
+        json["reconstruction"]["max_allowed_abs_error"] = serde_json::json!(0.000_091_552_734);
+        json["reconstruction"]["max_allowed_rms_error"] = serde_json::json!(0.000_045_776_367);
+        let handoff: ProductStemHandoff =
+            serde_json::from_value(json).expect("deserialize published V2 precision");
+
+        handoff
+            .validate()
+            .expect("published V2 JSON precision preserves the frozen tolerances");
+    }
+
+    #[test]
+    fn v2_handoff_rejects_material_reconstruction_tolerance_drift() {
+        let mut handoff = valid_handoff();
+        handoff.reconstruction.max_allowed_abs_error += 1.0e-9;
+
+        assert_eq!(
+            handoff.validate(),
+            Err(ProductStemHandoffError::Invalid("reconstruction tolerance"))
+        );
+    }
+
+    #[test]
+    fn v2_handoff_keeps_exact_metric_limits_when_declared_fields_round_up() {
+        let mut handoff = valid_handoff();
+        handoff.reconstruction.max_allowed_abs_error =
+            PRODUCT_STEM_PCM_MAX_ABS_ERROR + PRODUCT_STEM_CONTRACT_FLOAT_TOLERANCE / 2.0;
+        handoff.reconstruction.max_abs_error =
+            PRODUCT_STEM_PCM_MAX_ABS_ERROR + PRODUCT_STEM_CONTRACT_FLOAT_TOLERANCE / 4.0;
+
+        assert_eq!(
+            handoff.validate(),
+            Err(ProductStemHandoffError::Invalid("reconstruction tolerance"))
         );
     }
 
