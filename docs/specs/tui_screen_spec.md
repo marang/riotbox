@@ -189,8 +189,12 @@ It must expose:
   separately from receipt readiness. A ready local CI receipt may prove written
   package artifacts, but the surface stays `disabled` while the package is
   developer-proof-only, DAW placement is missing, or structured listening review
-  is not verified. Jam Perform must not show a stem-package trigger while that
-  gate is disabled.
+  is not verified. The current source-matched V2 post-bus contributions cannot
+  satisfy that listening condition: RIOTBOX-1481 rejects them as
+  musician-remixable material and retains them only as internal proof. Jam
+  Perform must not show a stem-package trigger while that gate is disabled; a
+  future musician surface must consume a separately versioned semantic-stem
+  contract rather than relabeling the V2 receipt.
 
 ### 5.2 Jam regions
 

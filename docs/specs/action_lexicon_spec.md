@@ -431,8 +431,13 @@ Boundary:
   the Development proof to DAW, listening, release, or source-general evidence.
 - Replay must not blindly rewrite files as a hidden side effect.
 - Stem package export now has this bounded operator commit path, while its
-  TUI/Ghost musician surface remains reserved until DAW placement and
-  structured listening are complete. Live recording remains out of runnable
+  TUI/Ghost musician surface remains disabled. RBX-355 keeps the current V2
+  post-bus contribution roles internal even after their technical and Session
+  gates pass; DAW placement and structured listening cannot promote those
+  rejected roles. A future musician export requires a separately versioned
+  musician-semantic role contract in this same Action/Session spine, followed
+  by its own DAW placement and positive structured listening evidence. Live
+  recording remains out of runnable
   TUI/Ghost/user scope until its capture writer and gates land. DAW session
   export has a typed developer-proof action contract with gated proof
   boundaries. Host-audio soak, automatic arranger export, and automatic Ghost
@@ -605,7 +610,10 @@ Contract for `export.stem_package`:
   TUI/observer/reserved-action feedback. It remains `disabled` even after a
   ready local CI receipt because that package is developer proof only and still
   lacks the final DAW placement workflow plus verified structured listening
-  review. Without a ready local CI receipt it also reports the missing CI writer
+  review. The current source-matched V2 contribution receipt also cannot clear
+  this gate: RIOTBOX-1481 rejects it as musician-remixable material while
+  preserving its internal reconstruction role. Without a ready local CI receipt
+  it also reports the missing CI writer
   proof; with a blocked or legacy-shaped receipt it reports receipt QA or
   identity blockers. The gate is explanatory only and must not create a second
   receipt/readiness truth.

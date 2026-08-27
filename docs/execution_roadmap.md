@@ -2056,3 +2056,19 @@ sparse transfer sources therefore remain unopened. The next P016 foundation
 slice must demonstrate what the unchanged exact roles enable in a bounded
 multitrack placement/mix context before broader source qualification, TUI/Ghost
 surface work, live recording, or release claims.
+RIOTBOX-1481 executes that exact bounded context without another source read or
+V2 producer/source-renderer run. Its eight-bar Music-only, Music-plus-Bass, and
+full-role presentation is deterministic, double-render identical, non-clipping, and
+RMS-matched to the unchanged control, but the human review rejects it: the
+result is not musically good enough to use as a loop and does not communicate a
+meaningful Riotbox musician action. This separates technical reconstruction
+from musician remix utility. No human verdict applies to a later musical
+mechanism that might consume these files internally because its purpose and
+final output were not presented. The current post-bus Shapley contribution
+package remains valid for reconstruction, lineage, and internal proof, but
+must not be promoted through TUI/Ghost or broader DAW surfaces as editable
+musical stems.
+The next bounded P016 foundation slice must define a versioned
+musician-semantic stem contract within the existing Action, Session, receipt,
+and observer spine, qualify its output before UI work, and avoid a shadow
+export or persistence system.

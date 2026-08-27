@@ -1,0 +1,184 @@
+{
+  "schema": "riotbox.source_matched_stem_multitrack_utility_qualification.v1",
+  "schema_version": 1,
+  "ticket": "RIOTBOX-1481",
+  "phase": "P016 / Pro Workflow / Export",
+  "classification": "audible_vertical_slice",
+  "status": "frozen_before_audio_input_open",
+  "claim_boundary": "one exact Dense Development stem package in one deterministic multitrack mute, balance, and arrangement task",
+  "input_binding": {
+    "case_id": "dense_beat03_130",
+    "qualification_result_path": "artifacts/development/riotbox-1480/dense-v1/qualification-result.json",
+    "qualification_result_sha256": "5b8a85672126cbf9fcf4d7978772eb9c8a44415fce9b67b6311eb71559477fc7",
+    "session_manifest_path": "artifacts/development/riotbox-1480/dense-v1/session-stem-package/stem_package/stem_package_manifest.json",
+    "session_manifest_sha256": "ab477d52452bcc486154a6812f102f5d052175ad14491b69c254a3de69c5a37a",
+    "session_proof_path": "artifacts/development/riotbox-1480/dense-v1/session-stem-package/stem_package/stem_package_proof.json",
+    "session_proof_sha256": "250d665506aace770d72bc6d2cf668b4d0e3d16636c0b6354036df69aae2da3b",
+    "format": {
+      "sample_rate_hz": 44100,
+      "channel_count": 2,
+      "sample_width_bits": 16,
+      "frame_count_per_four_bar_block": 324949
+    },
+    "artifacts": [
+      {
+        "role": "full_grid_mix_control",
+        "path": "artifacts/development/riotbox-1480/dense-v1/product-stem-handoff-v2/full_grid_mix.wav",
+        "sha256": "00b1b526039bedace90f012e07ceedb84973f1390a22f42fcd9df6ffcc2365ba"
+      },
+      {
+        "role": "stem_drums",
+        "path": "artifacts/development/riotbox-1480/dense-v1/session-stem-package/stem_package/stems/stem_drums.wav",
+        "sha256": "e8157bc17b587dad4f2877384216196caf86f612bf971b3106d20771db755925"
+      },
+      {
+        "role": "stem_music",
+        "path": "artifacts/development/riotbox-1480/dense-v1/session-stem-package/stem_package/stems/stem_music.wav",
+        "sha256": "d19b46a9626bd51ff7c8fb37f81cfb3781400059097d852d6555d471e45f8539"
+      },
+      {
+        "role": "stem_bass",
+        "path": "artifacts/development/riotbox-1480/dense-v1/session-stem-package/stem_package/stems/stem_bass.wav",
+        "sha256": "7b2b347848385366df67ea5ad00b5a040276fd90c9a1d59a2402cd1b6c7a3c30"
+      }
+    ]
+  },
+  "access_boundary": {
+    "permitted_audio_paths": [
+      "artifacts/development/riotbox-1480/dense-v1/product-stem-handoff-v2/full_grid_mix.wav",
+      "artifacts/development/riotbox-1480/dense-v1/session-stem-package/stem_package/stems/stem_drums.wav",
+      "artifacts/development/riotbox-1480/dense-v1/session-stem-package/stem_package/stems/stem_music.wav",
+      "artifacts/development/riotbox-1480/dense-v1/session-stem-package/stem_package/stems/stem_bass.wav"
+    ],
+    "require_exact_regular_file_no_symlink": true,
+    "forbid_original_source_audio": true,
+    "forbid_source_directory_discovery": true,
+    "forbid_new_registered_development_audio": true,
+    "forbid_holdout_audio": true,
+    "forbid_commercial_reference_audio": true,
+    "forbid_producer_or_renderer_rerun": true
+  },
+  "presentation": {
+    "output_directory": "artifacts/development/riotbox-1481/multitrack-v1",
+    "control": {
+      "artifact_id": "A_control",
+      "file_name": "a_control_full_mix_twice.wav",
+      "operation": "concatenate the exact full_grid_mix_control PCM frames twice",
+      "frame_count": 649898
+    },
+    "candidate": {
+      "artifact_id": "B_multitrack_arrangement",
+      "file_name": "b_multitrack_arrangement.wav",
+      "split_frame": 162475,
+      "frame_count": 649898,
+      "role_gain_db": {
+        "stem_drums": 6.0,
+        "stem_music": -3.0,
+        "stem_bass": 12.0
+      },
+      "timeline": [
+        {
+          "output_frames": [
+            0,
+            162475
+          ],
+          "input_frames": [
+            0,
+            162475
+          ],
+          "active_roles": [
+            "stem_music"
+          ],
+          "purpose": "two-bar music-only intro"
+        },
+        {
+          "output_frames": [
+            162475,
+            324949
+          ],
+          "input_frames": [
+            162475,
+            324949
+          ],
+          "active_roles": [
+            "stem_music",
+            "stem_bass"
+          ],
+          "purpose": "two-bar bass-entry build"
+        },
+        {
+          "output_frames": [
+            324949,
+            649898
+          ],
+          "input_frames": [
+            0,
+            324949
+          ],
+          "active_roles": [
+            "stem_drums",
+            "stem_music",
+            "stem_bass"
+          ],
+          "purpose": "four-bar full-role drop"
+        }
+      ],
+      "master_gain_rule": "min(control_rms / candidate_pre_master_rms, 31129 / candidate_pre_master_peak_pcm16_units)",
+      "master_gain_scope": "candidate only, one scalar over the complete eight-bar presentation",
+      "limiter": "forbidden",
+      "dither": "none",
+      "pcm16_quantization": "round_to_nearest_ties_away_from_zero_then_saturate"
+    },
+    "review_order": [
+      "A_control",
+      "one_second_silence",
+      "B_multitrack_arrangement"
+    ]
+  },
+  "technical_gates": {
+    "revalidate_all_input_hashes_before_decode": true,
+    "require_exact_input_format_and_frame_grid": true,
+    "require_control_payload_as_two_exact_input_payload_repetitions": true,
+    "require_two_independent_candidate_renders_hash_identical": true,
+    "require_only_declared_role_contributors": true,
+    "require_intended_active_segments_non_silent": true,
+    "require_peak_below_full_scale": true,
+    "candidate_peak_ceiling_target_normalized": 0.95,
+    "maximum_candidate_peak_pcm16_integer": 31129,
+    "require_no_clipped_samples": true,
+    "require_equal_control_candidate_frame_count": true
+  },
+  "human_review": {
+    "purpose": "determine whether the separated roles provide understandable and musically useful control in a concrete arrangement and balance task",
+    "questions": [
+      "Are the intro, bass-entry build, and full-role drop understandable as deliberate stem operations?",
+      "Does the candidate remain musically coherent rather than sounding broken or arbitrarily processed?",
+      "Does this concrete use make the stem handoff worth keeping for further musician workflow work?"
+    ],
+    "allowed_verdicts": [
+      "keep",
+      "reject",
+      "inconclusive"
+    ],
+    "fresh_readiness_before_first_changed_artifact_playback": true,
+    "unchanged_direct_replay_requires_no_repeated_brief": true,
+    "verify_silence_after_playback": true
+  },
+  "stopping_rule": {
+    "no_gain_timeline_algorithm_or_threshold_changes_after_input_decode": true,
+    "no_new_source_or_transfer_access": true,
+    "no_second_candidate_version_in_this_ticket": true,
+    "keep_clears_only_exact_dense_multitrack_utility_blocker": true,
+    "reject_or_inconclusive_stops_before_broader_surface_work": true
+  },
+  "forbidden_claims": [
+    "daw_import_ready",
+    "live_recording_ready",
+    "tui_or_ghost_ready",
+    "source_general",
+    "holdout_qualified",
+    "release_ready",
+    "universal_stem_quality",
+    "riotbox_complete"
+  ]
+}

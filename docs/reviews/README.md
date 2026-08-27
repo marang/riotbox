@@ -121,6 +121,10 @@ Current P023 algorithm-value refresh:
   cross-language tolerance parsing without threshold changes, complete
   technical stem evidence, and an honest inconclusive musician-usability
   verdict that stops before transfer-source access.
+- [riotbox_1481_source_matched_stem_multitrack_utility_2026-08-27.md](./riotbox_1481_source_matched_stem_multitrack_utility_2026-08-27.md):
+  technically exact, loudness-matched mute/balance/arrangement qualification
+  that rejects the current post-bus contribution stems as musician-remixable
+  material and keeps them bounded to reconstruction and lineage proof.
 - [p023_tonal_live_boundary_checkpoint_2026-08-22.md](./p023_tonal_live_boundary_checkpoint_2026-08-22.md):
   focused current-state architecture review of the typed character policy,
   live audio projection, tonal exact-mix proof, and restart/recall boundary.

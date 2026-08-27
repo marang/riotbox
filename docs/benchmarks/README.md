@@ -197,3 +197,9 @@ Current benchmark artifacts:
   Development access, unchanged V2 producer and reconstruction contracts,
   source-matched Action/Session ingress, five-artifact review order, and a
   keep-before-transfer stopping rule with no Holdout authorization.
+- [source_matched_stem_multitrack_utility_qualification_v1.json](./source_matched_stem_multitrack_utility_qualification_v1.json)
+  Frozen RIOTBOX-1481 one-package multitrack-utility qualification: exact
+  RIOTBOX-1480 full mix and stems only, one deterministic eight-bar mute,
+  balance, and arrangement task, objective loudness matching, and no new source
+  access, V2 producer/source-renderer rerun, tuning, limiter, or broader
+  workflow claim.

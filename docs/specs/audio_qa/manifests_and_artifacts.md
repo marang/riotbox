@@ -448,6 +448,14 @@ of Session/Core truth rather than second readiness engines.
     Normalized correlation is absent because a zero-variance silence reference
     has no meaningful correlation. V2's explicit `source_failure_fallback:
     false` remains independently required.
+  - RBX-355 fixes the musician boundary for that exact V2 package. Its post-bus
+    Shapley contributions remain valid for reconstruction, lineage, committed
+    Session receipt, observer projection, and internal proof, but the exact
+    RIOTBOX-1481 structured review is `reject` for musician-facing loop/remix
+    use. Neither that receipt nor additional DAW placement may reinterpret the
+    same V2 roles as musician-semantic stems. A future musician package requires
+    a separately versioned semantic role and output-QA contract in the existing
+    export spine, followed by its own positive structured review.
   - current CLI operator report exposes the written proof summary through
     `riotbox-app --stem-package-local-ci-report --session <session.json>`. It is
     read-only: it reports the latest stem-package Session receipt, stem roles,
