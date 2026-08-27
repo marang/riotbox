@@ -9,7 +9,7 @@ use riotbox_core::{
     },
     export_readiness::{
         ExportScope, ProductExportBoundary, ProductExportDestinationKind, ProductExportRole,
-        STEM_PACKAGE_LOCAL_CI_PACK_ID,
+        STEM_PACKAGE_LOCAL_CI_PACK_ID, STEM_PACKAGE_SOURCE_MATCHED_PACK_ID,
     },
     ids::ActionId,
     queue::QueueEnqueueResult,
@@ -37,7 +37,7 @@ pub use live_recording_export_queue::{
     LIVE_RECORDING_EXPORT_RESERVED_REASON, LiveRecordingExportQueueResult,
 };
 
-pub const STEM_PACKAGE_EXPORT_RESERVED_REASON: &str = "stem package export is disabled for musicians; local CI packages are developer proof only until DAW placement and listening review are ready";
+pub const STEM_PACKAGE_EXPORT_RESERVED_REASON: &str = "stem package export is disabled for musicians; current packages are operator proof only until DAW placement and listening review are ready";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StemPackageExportSurfaceGate {
@@ -123,12 +123,12 @@ impl StemPackageExportSurfaceBlocker {
     #[must_use]
     pub const fn musician_label(self) -> &'static str {
         match self {
-            Self::CiWriterProofMissing => "CI writer proof is missing",
+            Self::CiWriterProofMissing => "stem writer proof is missing",
             Self::StemPackageReceiptReadinessBlocked => "stem receipt QA is still blocked",
             Self::StemPackageReceiptIdentityMissing => {
-                "stem receipt identity is not the local CI package boundary"
+                "stem receipt identity is not an accepted operator package boundary"
             }
-            Self::DeveloperProofOnly => "local CI package is developer proof only",
+            Self::DeveloperProofOnly => "current stem package is operator proof only",
             Self::DawPlacementWorkflowMissing => "DAW placement workflow is not ready",
             Self::StructuredListeningReviewMissing => "structured listening review is not verified",
         }
@@ -224,6 +224,7 @@ impl JamAppState {
             include_manifest: true,
             destination_kind: ProductExportDestinationKind::LocalArtifactDirectory,
             destination_path,
+            handoff_proof_path: None,
             claimed_stem_roles,
             lineage_policy: StemPackageLineagePolicy::RequireAnyCoreLineage,
             fallback_comparison_policy: StemPackageFallbackComparisonPolicy::Required,
@@ -264,10 +265,17 @@ impl JamAppState {
         if !receipt.stem_package_readiness_report().ready() {
             blockers.push(StemPackageExportSurfaceBlocker::StemPackageReceiptReadinessBlocked);
         }
-        if receipt.pack_id != STEM_PACKAGE_LOCAL_CI_PACK_ID
-            || receipt.export_role != ProductExportRole::PackageManifest
-            || receipt.export_boundary != ProductExportBoundary::StemPackageLocalCiPackageV1
-        {
+        let accepted_identity = matches!(
+            (receipt.pack_id.as_str(), receipt.export_boundary),
+            (
+                STEM_PACKAGE_LOCAL_CI_PACK_ID,
+                ProductExportBoundary::StemPackageLocalCiPackageV1
+            ) | (
+                STEM_PACKAGE_SOURCE_MATCHED_PACK_ID,
+                ProductExportBoundary::StemPackageSourceMatchedHandoffV1
+            )
+        ) && receipt.export_role == ProductExportRole::PackageManifest;
+        if !accepted_identity {
             blockers.push(StemPackageExportSurfaceBlocker::StemPackageReceiptIdentityMissing);
         }
 

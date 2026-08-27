@@ -29,6 +29,7 @@ fn parse_args_builds_stem_package_local_ci_dry_run_mode() {
         LaunchMode::Load { .. }
         | LaunchMode::Ingest { .. }
         | LaunchMode::StemPackageLocalCiExecute { .. }
+        | LaunchMode::StemPackageSourceMatchedExecute { .. }
         | LaunchMode::StemPackageLocalCiReport { .. }
         | LaunchMode::LiveRecordingReadinessReport { .. }
         | LaunchMode::DawExportReadinessReport { .. }
@@ -85,6 +86,7 @@ fn parse_args_builds_stem_package_local_ci_execute_mode() {
         LaunchMode::Load { .. }
         | LaunchMode::Ingest { .. }
         | LaunchMode::StemPackageLocalCiDryRun { .. }
+        | LaunchMode::StemPackageSourceMatchedExecute { .. }
         | LaunchMode::StemPackageLocalCiReport { .. }
         | LaunchMode::LiveRecordingReadinessReport { .. }
         | LaunchMode::DawExportReadinessReport { .. }
@@ -100,6 +102,170 @@ fn parse_args_builds_stem_package_local_ci_execute_mode() {
             panic!("expected stem package execute mode")
         }
     }
+}
+
+#[test]
+fn parse_args_builds_source_matched_stem_package_execute_mode() {
+    let launch = parse_args([
+        "--stem-package-source-matched-execute".into(),
+        "--session".into(),
+        "session.json".into(),
+        "--graph".into(),
+        "graph.json".into(),
+        "--product-stem-handoff-proof".into(),
+        "handoff/product_stem_handoff_proof.json".into(),
+        "--stem-package-destination".into(),
+        "exports/source-matched-stems".into(),
+        "--observer".into(),
+        "observer.ndjson".into(),
+    ])
+    .expect("parse source-matched stem package execute mode");
+
+    assert_eq!(launch.observer_path, Some(PathBuf::from("observer.ndjson")));
+    match launch.mode {
+        LaunchMode::StemPackageSourceMatchedExecute {
+            session_path,
+            source_graph_path,
+            handoff_proof_path,
+            destination_path,
+        } => {
+            assert_eq!(session_path, PathBuf::from("session.json"));
+            assert_eq!(source_graph_path, Some(PathBuf::from("graph.json")));
+            assert_eq!(
+                handoff_proof_path,
+                PathBuf::from("handoff/product_stem_handoff_proof.json")
+            );
+            assert_eq!(
+                destination_path,
+                PathBuf::from("exports/source-matched-stems")
+            );
+        }
+        _ => panic!("expected source-matched stem package execute mode"),
+    }
+}
+
+#[test]
+fn parse_args_rejects_incomplete_or_role_overridden_source_matched_execute() {
+    let missing_proof = parse_args([
+        "--stem-package-source-matched-execute".into(),
+        "--session".into(),
+        "session.json".into(),
+        "--stem-package-destination".into(),
+        "exports/source-matched-stems".into(),
+    ])
+    .expect_err("source-matched handoff proof is required");
+    assert!(missing_proof.contains("--product-stem-handoff-proof"));
+
+    let role_override = parse_args([
+        "--stem-package-source-matched-execute".into(),
+        "--session".into(),
+        "session.json".into(),
+        "--product-stem-handoff-proof".into(),
+        "handoff/product_stem_handoff_proof.json".into(),
+        "--stem-package-destination".into(),
+        "exports/source-matched-stems".into(),
+        "--stem-role".into(),
+        "stem_drums".into(),
+    ])
+    .expect_err("source-matched roles are fixed by the contract");
+    assert!(role_override.contains("stem-role"));
+}
+
+#[test]
+fn source_matched_stem_package_runner_commits_session_and_observer_lifecycle() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let source_hash = "e".repeat(64);
+    let handoff_proof_path =
+        crate::jam_app::tests::write_source_matched_handoff_fixture(temp.path(), &source_hash);
+    let destination_path = temp.path().join("source-matched-export");
+    let session_path = temp.path().join("session.json");
+    let observer_path = temp.path().join("observer.ndjson");
+    let mut graph = crate::jam_app::tests::sample_graph();
+    graph.source.content_hash = source_hash.clone();
+    graph.provenance.source_hash = source_hash.clone();
+    let mut session = crate::jam_app::tests::sample_session(&graph);
+    session.source_refs[0].content_hash = source_hash;
+    save_session_json(&session_path, &session).expect("save source-matched session");
+    let launch = AppLaunch {
+        mode: LaunchMode::StemPackageSourceMatchedExecute {
+            session_path: session_path.clone(),
+            source_graph_path: None,
+            handoff_proof_path: handoff_proof_path.clone(),
+            destination_path: destination_path.clone(),
+        },
+        observer_path: Some(observer_path.clone()),
+    };
+
+    let mut output = Vec::new();
+    write_stem_package_source_matched_execute_output(
+        &launch,
+        &[
+            "riotbox-app".into(),
+            "--stem-package-source-matched-execute".into(),
+            "--session".into(),
+            session_path.to_string_lossy().into_owned(),
+            "--product-stem-handoff-proof".into(),
+            handoff_proof_path.to_string_lossy().into_owned(),
+            "--stem-package-destination".into(),
+            destination_path.to_string_lossy().into_owned(),
+        ],
+        &mut output,
+    )
+    .expect("run source-matched stem package ingress");
+
+    let summary: serde_json::Value =
+        serde_json::from_slice(&output).expect("parse source-matched summary");
+    assert_eq!(summary["status"], "ready");
+    assert_eq!(summary["ready"], true);
+    assert_eq!(summary["receipt"]["artifact_count"], 5);
+    assert_eq!(
+        summary["receipt"]["pack_id"],
+        riotbox_core::export_readiness::STEM_PACKAGE_SOURCE_MATCHED_PACK_ID
+    );
+    assert!(destination_path.join("stem_package/stems/stem_drums.wav").is_file());
+    assert!(destination_path.join("stem_package/stems/stem_music.wav").is_file());
+    assert!(destination_path.join("stem_package/stems/stem_bass.wav").is_file());
+
+    let persisted =
+        riotbox_core::persistence::load_session_json(&session_path).expect("reload session");
+    let receipt = persisted.export_receipts.last().expect("source-matched receipt");
+    assert_eq!(
+        receipt.export_boundary,
+        riotbox_core::export_readiness::ProductExportBoundary::StemPackageSourceMatchedHandoffV1
+    );
+    assert!(receipt.stem_package_readiness_report().ready());
+    let action = persisted
+        .action_log
+        .actions
+        .iter()
+        .find(|action| action.command == ActionCommand::ExportStemPackage)
+        .expect("source-matched action");
+    assert_eq!(action.status, riotbox_core::action::ActionStatus::Committed);
+
+    let observer_body = fs::read_to_string(observer_path).expect("read observer");
+    let observer_event: serde_json::Value = serde_json::from_str(
+        observer_body.lines().last().expect("source-matched observer event"),
+    )
+    .expect("parse source-matched observer event");
+    assert_eq!(observer_event["event"], "stem_package_source_matched_execute");
+    let lifecycle = observer_event["snapshot"]["export"]["lifecycle"]
+        .as_array()
+        .expect("export lifecycle");
+    let completed = lifecycle.last().expect("completed export lifecycle");
+    assert_eq!(completed["stage"], "completed");
+    assert_eq!(completed["receipt"]["pack_id"], "stem-package-source-matched");
+    assert_eq!(
+        completed["receipt"]["stem_package_readiness"]["blockers"],
+        json!([])
+    );
+    assert_eq!(
+        observer_event["snapshot"]["export"]["stem_package_surface_gate"]["blockers"],
+        json!([
+            "developer_proof_only",
+            "daw_placement_workflow_missing",
+            "structured_listening_review_missing"
+        ])
+    );
 }
 
 #[test]

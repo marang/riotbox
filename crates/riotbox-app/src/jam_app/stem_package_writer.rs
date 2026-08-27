@@ -1,9 +1,10 @@
-// The CI writer is intentionally internal until UI/Ghost/CLI export controls
-// get their own musician-facing surface.
-#![allow(dead_code)]
+// Package writing stays on the operator/control path; the musician-facing
+// UI/Ghost surface has separate DAW-placement and listening gates.
 
 use std::{
     fs,
+    fs::OpenOptions,
+    io::{self, Write},
     path::{Path, PathBuf},
 };
 
@@ -18,20 +19,21 @@ use riotbox_core::{
     export_readiness::{
         EXPORT_READINESS_CONTRACT_SCHEMA, ExportReadinessContract, ExportReadinessStatus,
         ExportScope, ProductExportBoundary, ProductExportDestinationKind, ProductExportRole,
-        STEM_PACKAGE_LOCAL_CI_PACK_ID,
+        STEM_PACKAGE_LOCAL_CI_PACK_ID, STEM_PACKAGE_SOURCE_MATCHED_PACK_ID,
     },
     ids::ActionId,
     session::{
         ExportArtifactLocation, ExportArtifactMediaType, ExportArtifactRole,
-        ExportArtifactSetEntry, ExportArtifactSourceGraphRef, ExportReceiptQaGateResult,
-        ExportReceiptQaGateStatus, ExportReceiptState, STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID,
-        STEM_PACKAGE_HASH_STABILITY_QA_GATE_ID,
+        ExportArtifactSetEntry, ExportArtifactSourceGraphRef, ExportArtifactTimingGridRef,
+        ExportReceiptQaGateResult, ExportReceiptQaGateStatus, ExportReceiptState,
+        STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID, STEM_PACKAGE_HASH_STABILITY_QA_GATE_ID,
     },
     stem_package_manifest::StemPackageManifest,
     stem_package_proof::{STEM_PACKAGE_PROOF_SCHEMA_ID, StemPackageProof},
     stem_package_writer::{
         STEM_PACKAGE_PACKAGE_DIR, StemPackageLocalWriterBoundary, StemPackageLocalWriterPlan,
         StemPackageLocalWriterRequest, plan_stem_package_local_ci_package,
+        plan_stem_package_source_matched_handoff,
     },
 };
 
@@ -62,6 +64,27 @@ pub(crate) struct StemPackageFixtureWriterInput {
 }
 
 #[derive(Clone, Debug)]
+pub(crate) struct StemPackageSourceStem {
+    pub(crate) role: ExportArtifactRole,
+    pub(crate) source_path: PathBuf,
+    pub(crate) expected_sha256: String,
+    pub(crate) normalized_manifest_sha256: String,
+    pub(crate) source_graph_ref: ExportArtifactSourceGraphRef,
+    pub(crate) timing_grid_ref: Option<ExportArtifactTimingGridRef>,
+    pub(crate) fallback_reference_identity: String,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct StemPackageSourceWriterInput {
+    pub(crate) created_by_action: ActionId,
+    pub(crate) created_at: TimestampMs,
+    pub(crate) destination_root: PathBuf,
+    pub(crate) source_sha256: String,
+    pub(crate) stems: Vec<StemPackageSourceStem>,
+}
+
+#[derive(Clone, Debug)]
+#[allow(dead_code)]
 pub(crate) struct WrittenStemPackageFixture {
     pub(crate) package_dir: PathBuf,
     pub(crate) receipt: ExportReceiptState,
@@ -73,15 +96,76 @@ pub(crate) fn write_ci_safe_stem_package_fixture(
     input: StemPackageFixtureWriterInput,
 ) -> Result<WrittenStemPackageFixture, JamAppError> {
     let claimed_roles = input.stems.iter().map(|stem| stem.role).collect::<Vec<_>>();
-    let final_plan = local_ci_plan(
+    let identity = StemPackageWriterIdentity {
+        writer_boundary: StemPackageLocalWriterBoundary::LocalCiPackageV1,
+        receipt_boundary: ProductExportBoundary::StemPackageLocalCiPackageV1,
+        pack_id: STEM_PACKAGE_LOCAL_CI_PACK_ID,
+        source_sha256: "ci-safe-stem-package-fixture".into(),
+        hash_stability_summary: "written stem package per-stem hash stability accepted by repeated CI fixture proof",
+    };
+    write_stem_package(
         input.created_by_action,
-        &input.destination_root,
+        input.created_at,
+        input.destination_root,
+        claimed_roles,
+        identity,
+        |plan| write_staged_fixture_stems(&input.stems, plan),
+    )
+}
+
+pub(crate) fn write_source_matched_stem_package(
+    input: StemPackageSourceWriterInput,
+) -> Result<WrittenStemPackageFixture, JamAppError> {
+    let claimed_roles = input.stems.iter().map(|stem| stem.role).collect::<Vec<_>>();
+    let identity = StemPackageWriterIdentity {
+        writer_boundary: StemPackageLocalWriterBoundary::SourceMatchedHandoffV1,
+        receipt_boundary: ProductExportBoundary::StemPackageSourceMatchedHandoffV1,
+        pack_id: STEM_PACKAGE_SOURCE_MATCHED_PACK_ID,
+        source_sha256: input.source_sha256,
+        hash_stability_summary: "per-stem hash stability accepted from the validated v2 double-render handoff",
+    };
+    write_stem_package(
+        input.created_by_action,
+        input.created_at,
+        input.destination_root,
+        claimed_roles,
+        identity,
+        |plan| write_staged_source_stems(&input.stems, plan),
+    )
+}
+
+#[derive(Clone, Debug)]
+struct StemPackageWriterIdentity {
+    writer_boundary: StemPackageLocalWriterBoundary,
+    receipt_boundary: ProductExportBoundary,
+    pack_id: &'static str,
+    source_sha256: String,
+    hash_stability_summary: &'static str,
+}
+
+fn write_stem_package(
+    created_by_action: ActionId,
+    created_at: TimestampMs,
+    destination_root: PathBuf,
+    claimed_roles: Vec<ExportArtifactRole>,
+    identity: StemPackageWriterIdentity,
+    write_stems: impl FnOnce(
+        &StemPackageLocalWriterPlan,
+    ) -> Result<Vec<ExportArtifactSetEntry>, JamAppError>,
+) -> Result<WrittenStemPackageFixture, JamAppError> {
+    let final_plan = writer_plan(
+        created_by_action,
+        &destination_root,
         claimed_roles.clone(),
+        identity.writer_boundary,
     )?;
-    let staging_root = input
-        .destination_root
-        .join(format!(".stem_package_staging_{}", input.created_by_action));
-    let staging_plan = local_ci_plan(input.created_by_action, &staging_root, claimed_roles)?;
+    let staging_root = destination_root.join(format!(".stem_package_staging_{created_by_action}"));
+    let staging_plan = writer_plan(
+        created_by_action,
+        &staging_root,
+        claimed_roles,
+        identity.writer_boundary,
+    )?;
 
     if staging_root.exists() {
         return Err(JamAppError::InvalidSession(format!(
@@ -89,7 +173,7 @@ pub(crate) fn write_ci_safe_stem_package_fixture(
             staging_root.display()
         )));
     }
-    let final_package_dir = input.destination_root.join(STEM_PACKAGE_PACKAGE_DIR);
+    let final_package_dir = destination_root.join(STEM_PACKAGE_PACKAGE_DIR);
     if final_package_dir.exists() {
         return Err(JamAppError::InvalidSession(format!(
             "stem package destination already exists: {}",
@@ -97,89 +181,84 @@ pub(crate) fn write_ci_safe_stem_package_fixture(
         )));
     }
     fs::create_dir_all(&staging_root)?;
+    let staged_result = (|| {
+        let staged_stems = write_stems(&staging_plan)?;
+        let mut receipt = build_receipt(
+            created_by_action,
+            created_at,
+            &final_plan,
+            staged_stems,
+            PENDING_JSON_SHA,
+            PENDING_JSON_SHA,
+            &identity,
+        )?;
+        let (manifest_artifact_path, proof_artifact_path) = json_artifact_paths(&staging_plan)?;
+        let manifest = StemPackageManifest::from_receipt(&receipt)
+            .map_err(|error| JamAppError::InvalidSession(format!("{error:?}")))?;
+        fs::write(&manifest_artifact_path, manifest.normalized_json_bytes()?)?;
+        let proof = StemPackageProof::from_manifest(&manifest)
+            .map_err(|error| JamAppError::InvalidSession(format!("{error:?}")))?;
+        fs::write(&proof_artifact_path, serde_json::to_vec_pretty(&proof)?)?;
 
-    let staged_stems = write_staged_stems(&input.stems, &staging_plan)?;
-    let mut receipt = build_receipt(
-        input.created_by_action,
-        input.created_at,
-        &final_plan,
-        staged_stems,
-        PENDING_JSON_SHA,
-        PENDING_JSON_SHA,
-    )?;
-    let (manifest_artifact_path, proof_artifact_path) = json_artifact_paths(&staging_plan)?;
-    let manifest = StemPackageManifest::from_receipt(&receipt)
-        .map_err(|error| JamAppError::InvalidSession(format!("{error:?}")))?;
-    fs::write(&manifest_artifact_path, manifest.normalized_json_bytes()?)?;
-    let proof = StemPackageProof::from_manifest(&manifest)
-        .map_err(|error| JamAppError::InvalidSession(format!("{error:?}")))?;
-    fs::write(&proof_artifact_path, serde_json::to_vec_pretty(&proof)?)?;
-
-    let manifest_sha = sha256_file(&manifest_artifact_path)?;
-    let proof_sha = sha256_file(&proof_artifact_path)?;
-    update_json_artifact_hashes(&mut receipt, &manifest_sha, &proof_sha);
-    let final_manifest = StemPackageManifest::from_receipt(&receipt)
-        .map_err(|error| JamAppError::InvalidSession(format!("{error:?}")))?;
-    let final_proof = StemPackageProof::from_manifest(&final_manifest)
-        .map_err(|error| JamAppError::InvalidSession(format!("{error:?}")))?;
-    fs::write(
-        &manifest_artifact_path,
-        final_manifest.normalized_json_bytes()?,
-    )?;
-    fs::write(
-        &proof_artifact_path,
-        serde_json::to_vec_pretty(&final_proof)?,
-    )?;
+        let manifest_sha = sha256_file(&manifest_artifact_path)?;
+        let proof_sha = sha256_file(&proof_artifact_path)?;
+        update_json_artifact_hashes(&mut receipt, &manifest_sha, &proof_sha);
+        if !receipt.stem_package_readiness_report().ready() {
+            return Err(JamAppError::InvalidSession(format!(
+                "written stem package receipt is not ready: {:?}",
+                receipt.stem_package_readiness_report().blockers
+            )));
+        }
+        Ok((receipt, manifest, proof))
+    })();
+    let (receipt, manifest, proof) = match staged_result {
+        Ok(value) => value,
+        Err(error) => {
+            let _ = fs::remove_dir_all(&staging_root);
+            return Err(error);
+        }
+    };
 
     let staged_package_dir = staging_root.join(STEM_PACKAGE_PACKAGE_DIR);
-    fs::rename(&staged_package_dir, &final_package_dir)?;
-    fs::remove_dir_all(&staging_root)?;
-
-    rewrite_artifacts_to_final_paths(&mut receipt, &staging_root, &input.destination_root);
-    refresh_final_hashes(&mut receipt)?;
-    let final_manifest = StemPackageManifest::from_receipt(&receipt)
-        .map_err(|error| JamAppError::InvalidSession(format!("{error:?}")))?;
-    let final_proof = StemPackageProof::from_manifest(&final_manifest)
-        .map_err(|error| JamAppError::InvalidSession(format!("{error:?}")))?;
-    let (final_manifest_path, final_proof_path) = json_artifact_paths(&final_plan)?;
-    fs::write(
-        &final_manifest_path,
-        final_manifest.normalized_json_bytes()?,
-    )?;
-    fs::write(&final_proof_path, serde_json::to_vec_pretty(&final_proof)?)?;
-    refresh_final_hashes(&mut receipt)?;
-
-    if !receipt.stem_package_readiness_report().ready() {
-        return Err(JamAppError::InvalidSession(format!(
-            "written stem package receipt is not ready: {:?}",
-            receipt.stem_package_readiness_report().blockers
-        )));
+    if let Err(error) = fs::rename(&staged_package_dir, &final_package_dir) {
+        let _ = fs::remove_dir_all(&staging_root);
+        return Err(error.into());
     }
+    let _ = fs::remove_dir(&staging_root);
 
     Ok(WrittenStemPackageFixture {
         package_dir: final_package_dir,
         receipt,
-        manifest: final_manifest,
-        proof: final_proof,
+        manifest,
+        proof,
     })
 }
 
-fn local_ci_plan(
+fn writer_plan(
     created_by_action: ActionId,
     destination_root: &Path,
     claimed_stem_roles: Vec<ExportArtifactRole>,
+    boundary: StemPackageLocalWriterBoundary,
 ) -> Result<StemPackageLocalWriterPlan, JamAppError> {
-    plan_stem_package_local_ci_package(StemPackageLocalWriterRequest {
+    let request = StemPackageLocalWriterRequest {
         created_by_action,
-        boundary: StemPackageLocalWriterBoundary::LocalCiPackageV1,
+        boundary,
         destination_kind: ProductExportDestinationKind::LocalArtifactDirectory,
         destination_root: destination_root.to_string_lossy().into_owned(),
         claimed_stem_roles,
-    })
+    };
+    match boundary {
+        StemPackageLocalWriterBoundary::LocalCiPackageV1 => {
+            plan_stem_package_local_ci_package(request)
+        }
+        StemPackageLocalWriterBoundary::SourceMatchedHandoffV1 => {
+            plan_stem_package_source_matched_handoff(request)
+        }
+    }
     .map_err(|error| JamAppError::InvalidSession(format!("{error:?}")))
 }
 
-fn write_staged_stems(
+fn write_staged_fixture_stems(
     stems: &[StemPackageFixtureStem],
     plan: &StemPackageLocalWriterPlan,
 ) -> Result<Vec<ExportArtifactSetEntry>, JamAppError> {
@@ -199,6 +278,62 @@ fn write_staged_stems(
         let mut entry = stem_artifact_from_written_path(stem, &path, evidence)?;
         entry.sha256 = sha256_file(&path)?;
         entries.push(entry);
+    }
+    Ok(entries)
+}
+
+fn write_staged_source_stems(
+    stems: &[StemPackageSourceStem],
+    plan: &StemPackageLocalWriterPlan,
+) -> Result<Vec<ExportArtifactSetEntry>, JamAppError> {
+    let mut entries = Vec::new();
+    for stem in stems {
+        if !stem.role.is_stem_role() {
+            return Err(JamAppError::InvalidSession(format!(
+                "non-stem role claimed for source-matched package: {:?}",
+                stem.role
+            )));
+        }
+        let path = path_for_role(plan, stem.role)?;
+        copy_file_new(&stem.source_path, &path)?;
+        let actual_sha256 = sha256_file(&path)?;
+        if actual_sha256 != stem.expected_sha256 {
+            return Err(JamAppError::InvalidSession(format!(
+                "source-matched stem hash drift for {:?}: expected {} actual {}",
+                stem.role, stem.expected_sha256, actual_sha256
+            )));
+        }
+        let evidence = local_wav_audio_evidence(&path).ok_or_else(|| {
+            JamAppError::InvalidSession(format!(
+                "could not decode written source-matched stem {}",
+                path.display()
+            ))
+        })?;
+        let fallback_comparison = riotbox_core::session::ExportArtifactFallbackComparisonEvidence {
+            comparison_kind:
+                riotbox_core::session::ExportArtifactFallbackComparisonKind::SourceVsFallback,
+            reference_identity: stem.fallback_reference_identity.clone(),
+            rms_difference_micros: evidence.audio_metrics.rms_amplitude_micros,
+            normalized_correlation_micros: None,
+        };
+        entries.push(ExportArtifactSetEntry {
+            role: stem.role,
+            location: ExportArtifactLocation::LocalPath {
+                path: path.to_string_lossy().into_owned(),
+            },
+            media_type: ExportArtifactMediaType::AudioWav,
+            sha256: actual_sha256,
+            normalized_manifest_hash: Some(stem.normalized_manifest_sha256.clone()),
+            source_graph_ref: Some(stem.source_graph_ref.clone()),
+            timing_grid_ref: stem.timing_grid_ref.clone(),
+            source_capture_refs: Vec::new(),
+            lineage_capture_refs: Vec::new(),
+            fallback_comparison: Some(fallback_comparison),
+            audio_metrics: Some(evidence.audio_metrics),
+            sample_rate_hz: Some(evidence.sample_rate_hz),
+            channel_count: Some(evidence.channel_count),
+            duration_ms: Some(evidence.duration_ms),
+        });
     }
     Ok(entries)
 }
@@ -242,6 +377,7 @@ fn build_receipt(
     mut stem_artifacts: Vec<ExportArtifactSetEntry>,
     manifest_sha: &str,
     proof_sha: &str,
+    identity: &StemPackageWriterIdentity,
 ) -> Result<ExportReceiptState, JamAppError> {
     rewrite_artifacts_to_final_plan(&mut stem_artifacts, final_plan)?;
     let manifest_path = path_for_role(final_plan, ExportArtifactRole::ExportManifest)?;
@@ -268,11 +404,11 @@ fn build_receipt(
         status: ExportReadinessStatus::Reproducible,
         proof_schema: STEM_PACKAGE_PROOF_SCHEMA_ID.into(),
         export_scope: ExportScope::StemPackage,
-        boundary: ProductExportBoundary::StemPackageLocalCiPackageV1,
-        pack_id: STEM_PACKAGE_LOCAL_CI_PACK_ID.into(),
+        boundary: identity.receipt_boundary,
+        pack_id: identity.pack_id.into(),
         export_role: ProductExportRole::PackageManifest,
         export_artifact: manifest_artifact_path.clone(),
-        source_sha256: "ci-safe-stem-package-fixture".into(),
+        source_sha256: identity.source_sha256.clone(),
         export_sha256: manifest_sha.to_owned(),
         normalized_manifest_sha256: manifest_sha.to_owned(),
         unsupported_scopes: Vec::new(),
@@ -286,13 +422,18 @@ fn build_receipt(
         Some(manifest_path.to_string_lossy().into_owned()),
     );
     receipt.artifact_set = stem_artifacts;
-    receipt.qa_gates = stem_package_qa_gates(&receipt, &final_plan.claimed_stem_roles)?;
+    receipt.qa_gates = stem_package_qa_gates(
+        &receipt,
+        &final_plan.claimed_stem_roles,
+        identity.hash_stability_summary,
+    )?;
     Ok(receipt)
 }
 
 fn stem_package_qa_gates(
     receipt: &ExportReceiptState,
     claimed_roles: &[ExportArtifactRole],
+    hash_stability_summary: &str,
 ) -> Result<Vec<ExportReceiptQaGateResult>, JamAppError> {
     let artifact_set_report = validate_stem_package_artifact_set_evidence_with_policy(
         &receipt.artifact_set,
@@ -324,12 +465,32 @@ fn stem_package_qa_gates(
         passed_stem_package_gate(
             STEM_PACKAGE_HASH_STABILITY_QA_GATE_ID,
             claimed_roles,
-            "written stem package per-stem hash stability accepted by repeated CI fixture proof",
+            hash_stability_summary,
         ),
         ExportReceiptQaGateResult::stem_package_non_silence(&non_silence_report),
         ExportReceiptQaGateResult::stem_package_lineage(&lineage_report),
         ExportReceiptQaGateResult::stem_package_fallback_comparison(&fallback_report),
     ])
+}
+
+fn copy_file_new(from: &Path, to: &Path) -> Result<(), JamAppError> {
+    let parent = to.parent().ok_or_else(|| {
+        JamAppError::InvalidSession(format!(
+            "source-matched stem destination has no parent: {}",
+            to.display()
+        ))
+    })?;
+    fs::create_dir_all(parent)?;
+    let mut source = fs::File::open(from)?;
+    let mut destination = OpenOptions::new().write(true).create_new(true).open(to)?;
+    let result = io::copy(&mut source, &mut destination)
+        .and_then(|_| destination.flush())
+        .map(|_| ());
+    if result.is_err() {
+        drop(destination);
+        let _ = fs::remove_file(to);
+    }
+    result.map_err(Into::into)
 }
 
 fn passed_stem_package_gate(
@@ -387,30 +548,6 @@ fn rewrite_artifacts_to_final_plan(
     Ok(())
 }
 
-fn rewrite_artifacts_to_final_paths(
-    receipt: &mut ExportReceiptState,
-    staging_root: &Path,
-    destination_root: &Path,
-) {
-    let staging_prefix = staging_root.to_string_lossy();
-    let destination_prefix = destination_root.to_string_lossy();
-    for artifact in &mut receipt.artifact_set {
-        if let ExportArtifactLocation::LocalPath { path } = &mut artifact.location
-            && let Some(relative) = path.strip_prefix(staging_prefix.as_ref())
-        {
-            *path = format!("{destination_prefix}{relative}");
-        }
-    }
-    if let Some(relative) = receipt.proof_path.strip_prefix(staging_prefix.as_ref()) {
-        receipt.proof_path = format!("{destination_prefix}{relative}");
-    }
-    if let Some(manifest_path) = &mut receipt.manifest_path
-        && let Some(relative) = manifest_path.strip_prefix(staging_prefix.as_ref())
-    {
-        *manifest_path = format!("{destination_prefix}{relative}");
-    }
-}
-
 fn update_json_artifact_hashes(
     receipt: &mut ExportReceiptState,
     manifest_sha: &str,
@@ -431,29 +568,4 @@ fn update_json_artifact_hashes(
     {
         receipt.export_hash = manifest_sha.to_owned();
     }
-}
-
-fn refresh_final_hashes(receipt: &mut ExportReceiptState) -> Result<(), JamAppError> {
-    let mut manifest_sha = None;
-    let mut primary_artifact_sha = None;
-    for artifact in &mut receipt.artifact_set {
-        let ExportArtifactLocation::LocalPath { path } = &artifact.location else {
-            continue;
-        };
-        let sha = sha256_file(Path::new(path))?;
-        artifact.sha256 = sha.clone();
-        if path == &receipt.artifact_path {
-            primary_artifact_sha = Some(sha.clone());
-        }
-        if artifact.role == ExportArtifactRole::ExportManifest {
-            manifest_sha = Some(sha);
-        }
-    }
-    if let Some(sha) = manifest_sha {
-        receipt.normalized_manifest_hash = sha;
-    }
-    if let Some(sha) = primary_artifact_sha {
-        receipt.export_hash = sha;
-    }
-    Ok(())
 }

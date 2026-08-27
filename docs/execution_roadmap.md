@@ -2035,6 +2035,12 @@ until the reserved stem action, receipt, and musician workflow are implemented.
 RIOTBOX-1478 removes the remaining MC-202 origin blocker without changing the
 sound: the existing applied source-expression plan may reach the versioned
 Development stem proof only when source-contour, bass-pressure, lane-grid, and
-no-fallback evidence all pass. The next slice may wire the reserved stem action
-and Session receipt, but must validate the handoff source against active Session
-lineage and must not reuse the hardcoded local-CI fixture as musician material.
+no-fallback evidence all pass. RIOTBOX-1479 then consumes only that exact V2
+handoff through a bounded non-interactive operator path: the proof source must
+match active Source Graph and Session lineage before any write; the frozen three
+stem roles, hashes, PCM16/grid contract, and reconstruction are revalidated;
+the declared bytes are copied atomically; and the existing action, receipt,
+replay, and observer truth commits only after success. The hardcoded local-CI
+fixture is not used as stem material. This completes the source-matched
+Foundation handoff, while TUI/Ghost musician export, DAW placement, structured
+listening, live recording, and release readiness remain separate blockers.

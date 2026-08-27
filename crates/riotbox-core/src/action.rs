@@ -293,6 +293,8 @@ pub enum ActionParams {
         include_manifest: bool,
         destination_kind: ProductExportDestinationKind,
         destination_path: Option<String>,
+        #[serde(default)]
+        handoff_proof_path: Option<String>,
         claimed_stem_roles: Vec<ExportArtifactRole>,
         lineage_policy: StemPackageLineagePolicy,
         fallback_comparison_policy: StemPackageFallbackComparisonPolicy,
@@ -344,6 +346,7 @@ pub enum StemPackageExportRole {
 pub enum StemPackageExportBoundary {
     ReservedContractOnly,
     LocalCiPackageV1,
+    SourceMatchedHandoffV1,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

@@ -8,6 +8,7 @@ pub mod ghost;
 pub mod ids;
 pub mod live_performance_policy;
 pub mod persistence;
+pub mod product_stem_handoff;
 pub mod queue;
 pub mod replay;
 pub mod session;

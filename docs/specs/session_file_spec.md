@@ -486,12 +486,24 @@ Rules:
   it must not reuse the `feral-grid-demo` product-mix identity
 - the separate `riotbox.product_stem_handoff.v2` developer handoff may publish
   three source-matched Feral-grid contribution stems plus the unchanged full
-  mix and prove their reconstruction, but it creates no action, receipt, or
-  Session/replay mutation. V2 requires explicit applied MC-202 source-expression
-  plan, source-contour, bass-pressure, source-grid, and no-fallback evidence and
-  does not reinterpret V1. Its `feral-grid-demo` identity belongs to the existing
-  render recipe and must not be mistaken for the reserved
-  `stem_package.local_ci_package_v1` receipt boundary
+  mix and prove their reconstruction. Its producer creates no action, receipt,
+  or Session/replay mutation. V2 requires explicit applied MC-202
+  source-expression plan, source-contour, bass-pressure, source-grid, and
+  no-fallback evidence and does not reinterpret V1. Its `feral-grid-demo`
+  identity belongs to the render recipe and must not be mistaken for a receipt
+  boundary
+- the bounded operator consumer records a distinct ready receipt identity:
+  `export_scope: stem_package`, `pack_id: stem-package-source-matched`,
+  `export_role: package_manifest`, and boundary
+  `stem_package.source_matched_handoff_v1`. Before any write it requires exact
+  V2 source identity to equal the active Source Graph content hash and requires
+  a Session ref with that graph's source id, version, and canonical hash. Each
+  copied stem receives
+  that graph ref, any matching confirmed timing-grid ref, its V2 normalized
+  manifest hash, measured WAV/audio evidence, and a typed source-vs-missing-
+  source-silence comparison keyed by the exact V2 proof SHA-256 and role. The
+  operator action also persists the explicit handoff proof path. Replay may
+  restore this receipt and action truth but never recopies package files
 - the first reserved live-recording receipt boundary is
   `live_recording.receipt_contract_v1` with
   `export_scope: live_recording`, `export_role: live_recording_capture`,

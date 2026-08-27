@@ -1,4 +1,4 @@
-fn sample_graph() -> SourceGraph {
+pub(crate) fn sample_graph() -> SourceGraph {
     let mut graph = SourceGraph::new(
         SourceDescriptor {
             source_id: SourceId::from("src-1"),
@@ -132,7 +132,7 @@ fn seed_scene_fixture_state(state: &mut JamAppState, fixture: &SceneRegressionFi
     state.refresh_view();
 }
 
-fn sample_session(graph: &SourceGraph) -> SessionFile {
+pub(crate) fn sample_session(graph: &SourceGraph) -> SessionFile {
     let mut session = SessionFile::new("session-1", "0.1.0", "2026-04-12T18:00:00Z");
     session.source_refs.push(SourceRef {
         source_id: SourceId::from("src-1"),

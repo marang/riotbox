@@ -149,6 +149,7 @@ fn stem_package_export_action_contract_roundtrips_as_reserved_scope() {
             include_manifest: true,
             destination_kind: ProductExportDestinationKind::LocalArtifactDirectory,
             destination_path: Some("exports/stem-package".into()),
+            handoff_proof_path: None,
             claimed_stem_roles: vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass],
             lineage_policy: StemPackageLineagePolicy::RequireAnyCoreLineage,
             fallback_comparison_policy: StemPackageFallbackComparisonPolicy::Required,
@@ -202,6 +203,33 @@ fn stem_package_export_action_contract_roundtrips_as_reserved_scope() {
         local_ci_boundary,
         StemPackageExportBoundary::LocalCiPackageV1
     );
+    let source_matched_json =
+        serde_json::to_value(StemPackageExportBoundary::SourceMatchedHandoffV1)
+            .expect("serialize source-matched boundary");
+    assert_eq!(source_matched_json, "source_matched_handoff_v1");
+
+    let mut source_matched_action = action;
+    source_matched_action.params = ActionParams::StemPackageExport {
+        export_scope: ExportScope::StemPackage,
+        export_role: StemPackageExportRole::PackageManifest,
+        boundary: StemPackageExportBoundary::SourceMatchedHandoffV1,
+        include_manifest: true,
+        destination_kind: ProductExportDestinationKind::LocalArtifactDirectory,
+        destination_path: Some("exports/source-matched-stems".into()),
+        handoff_proof_path: Some("handoff/product_stem_handoff_proof.json".into()),
+        claimed_stem_roles: vec![
+            ExportArtifactRole::StemDrums,
+            ExportArtifactRole::StemMusic,
+            ExportArtifactRole::StemBass,
+        ],
+        lineage_policy: StemPackageLineagePolicy::RequireAnyCoreLineage,
+        fallback_comparison_policy: StemPackageFallbackComparisonPolicy::Required,
+    };
+    let source_matched_roundtrip: Action = serde_json::from_value(
+        serde_json::to_value(&source_matched_action).expect("serialize source-matched action"),
+    )
+    .expect("deserialize source-matched action");
+    assert_eq!(source_matched_roundtrip, source_matched_action);
 }
 
 #[test]

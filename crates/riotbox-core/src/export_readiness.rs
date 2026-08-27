@@ -5,6 +5,7 @@ pub const PRODUCT_EXPORT_PROOF_SCHEMA: &str = "riotbox.product_export_reproducib
 pub const EXPORT_READINESS_CONTRACT_SCHEMA: &str = "riotbox.export_readiness_contract.v1";
 pub const PRODUCT_EXPORT_PACK_ID: &str = "feral-grid-demo";
 pub const STEM_PACKAGE_LOCAL_CI_PACK_ID: &str = "stem-package-local-ci";
+pub const STEM_PACKAGE_SOURCE_MATCHED_PACK_ID: &str = "stem-package-source-matched";
 pub const ARRANGEMENT_DAW_PLACEMENT_PACK_ID: &str = "arrangement-daw-placement-contract";
 pub const LIVE_RECORDING_RECEIPT_PACK_ID: &str = "live-recording-receipt-contract";
 
@@ -38,6 +39,7 @@ pub enum ExportReadinessStatus {
 pub enum ProductExportBoundary {
     FeralGridGeneratedSupport,
     StemPackageLocalCiPackageV1,
+    StemPackageSourceMatchedHandoffV1,
     ArrangementDawPlacementContractV1,
     LiveRecordingReceiptContractV1,
 }
@@ -48,6 +50,7 @@ impl ProductExportBoundary {
         match self {
             Self::FeralGridGeneratedSupport => "feral-grid generated-support export",
             Self::StemPackageLocalCiPackageV1 => "stem_package.local_ci_package_v1",
+            Self::StemPackageSourceMatchedHandoffV1 => "stem_package.source_matched_handoff_v1",
             Self::ArrangementDawPlacementContractV1 => "arrangement.daw_placement_contract_v1",
             Self::LiveRecordingReceiptContractV1 => "live_recording.receipt_contract_v1",
         }
@@ -57,6 +60,7 @@ impl ProductExportBoundary {
         match value {
             "feral-grid generated-support export" => Ok(Self::FeralGridGeneratedSupport),
             "stem_package.local_ci_package_v1" => Ok(Self::StemPackageLocalCiPackageV1),
+            "stem_package.source_matched_handoff_v1" => Ok(Self::StemPackageSourceMatchedHandoffV1),
             "arrangement.daw_placement_contract_v1" => Ok(Self::ArrangementDawPlacementContractV1),
             "live_recording.receipt_contract_v1" => Ok(Self::LiveRecordingReceiptContractV1),
             other => Err(ExportReadinessError::UnsupportedBoundary(other.to_owned())),

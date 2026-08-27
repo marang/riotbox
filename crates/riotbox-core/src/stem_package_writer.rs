@@ -5,6 +5,8 @@ use crate::{
 };
 
 pub const STEM_PACKAGE_LOCAL_CI_PACKAGE_BOUNDARY_ID: &str = "stem_package.local_ci_package_v1";
+pub const STEM_PACKAGE_SOURCE_MATCHED_HANDOFF_BOUNDARY_ID: &str =
+    "stem_package.source_matched_handoff_v1";
 pub const STEM_PACKAGE_PACKAGE_DIR: &str = "stem_package";
 pub const STEM_PACKAGE_STEMS_DIR: &str = "stems";
 pub const STEM_PACKAGE_MANIFEST_FILE: &str = "stem_package_manifest.json";
@@ -12,10 +14,16 @@ pub const STEM_PACKAGE_PROOF_FILE: &str = "stem_package_proof.json";
 
 pub const SUPPORTED_LOCAL_CI_PACKAGE_STEM_ROLES: &[ExportArtifactRole] =
     &[ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass];
+pub const SOURCE_MATCHED_HANDOFF_STEM_ROLES: &[ExportArtifactRole] = &[
+    ExportArtifactRole::StemDrums,
+    ExportArtifactRole::StemMusic,
+    ExportArtifactRole::StemBass,
+];
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum StemPackageLocalWriterBoundary {
     LocalCiPackageV1,
+    SourceMatchedHandoffV1,
 }
 
 impl StemPackageLocalWriterBoundary {
@@ -23,6 +31,7 @@ impl StemPackageLocalWriterBoundary {
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::LocalCiPackageV1 => STEM_PACKAGE_LOCAL_CI_PACKAGE_BOUNDARY_ID,
+            Self::SourceMatchedHandoffV1 => STEM_PACKAGE_SOURCE_MATCHED_HANDOFF_BOUNDARY_ID,
         }
     }
 }
@@ -87,11 +96,16 @@ impl StemPackagePlannedArtifactIdentity {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum StemPackageLocalWriterPlanError {
+    BoundaryMismatch {
+        expected: StemPackageLocalWriterBoundary,
+        actual: StemPackageLocalWriterBoundary,
+    },
     UnsupportedDestinationKind {
         destination_kind: ProductExportDestinationKind,
     },
     BlankDestinationRoot,
     NoClaimedStemRoles,
+    IncompleteRequiredStemSet,
     NonStemRoleClaimed {
         role: ExportArtifactRole,
     },
@@ -106,8 +120,34 @@ pub enum StemPackageLocalWriterPlanError {
 pub fn plan_stem_package_local_ci_package(
     request: StemPackageLocalWriterRequest,
 ) -> Result<StemPackageLocalWriterPlan, StemPackageLocalWriterPlanError> {
-    validate_request(&request)?;
+    if request.boundary != StemPackageLocalWriterBoundary::LocalCiPackageV1 {
+        return Err(StemPackageLocalWriterPlanError::BoundaryMismatch {
+            expected: StemPackageLocalWriterBoundary::LocalCiPackageV1,
+            actual: request.boundary,
+        });
+    }
+    validate_request(&request, SUPPORTED_LOCAL_CI_PACKAGE_STEM_ROLES, false)?;
 
+    build_plan(request)
+}
+
+pub fn plan_stem_package_source_matched_handoff(
+    request: StemPackageLocalWriterRequest,
+) -> Result<StemPackageLocalWriterPlan, StemPackageLocalWriterPlanError> {
+    if request.boundary != StemPackageLocalWriterBoundary::SourceMatchedHandoffV1 {
+        return Err(StemPackageLocalWriterPlanError::BoundaryMismatch {
+            expected: StemPackageLocalWriterBoundary::SourceMatchedHandoffV1,
+            actual: request.boundary,
+        });
+    }
+    validate_request(&request, SOURCE_MATCHED_HANDOFF_STEM_ROLES, true)?;
+
+    build_plan(request)
+}
+
+fn build_plan(
+    request: StemPackageLocalWriterRequest,
+) -> Result<StemPackageLocalWriterPlan, StemPackageLocalWriterPlanError> {
     let destination_root = normalize_destination_root(&request.destination_root);
     let mut artifacts = request
         .claimed_stem_roles
@@ -136,6 +176,8 @@ pub fn plan_stem_package_local_ci_package(
 
 fn validate_request(
     request: &StemPackageLocalWriterRequest,
+    supported_roles: &[ExportArtifactRole],
+    require_all_supported_roles: bool,
 ) -> Result<(), StemPackageLocalWriterPlanError> {
     if request.destination_kind != ProductExportDestinationKind::LocalArtifactDirectory {
         return Err(
@@ -159,10 +201,18 @@ fn validate_request(
         if seen.contains(role) {
             return Err(StemPackageLocalWriterPlanError::DuplicateStemRole { role: *role });
         }
-        if !SUPPORTED_LOCAL_CI_PACKAGE_STEM_ROLES.contains(role) {
+        if !supported_roles.contains(role) {
             return Err(StemPackageLocalWriterPlanError::UnsupportedStemRole { role: *role });
         }
         seen.push(*role);
+    }
+    if require_all_supported_roles
+        && (request.claimed_stem_roles.len() != supported_roles.len()
+            || supported_roles
+                .iter()
+                .any(|role| !request.claimed_stem_roles.contains(role)))
+    {
+        return Err(StemPackageLocalWriterPlanError::IncompleteRequiredStemSet);
     }
 
     Ok(())
@@ -351,5 +401,57 @@ mod tests {
         })
         .expect_err("blank destination should be rejected");
         assert_eq!(err, StemPackageLocalWriterPlanError::BlankDestinationRoot);
+    }
+
+    #[test]
+    fn source_matched_plan_requires_all_three_product_stems() {
+        let roles = SOURCE_MATCHED_HANDOFF_STEM_ROLES.to_vec();
+        let plan = plan_stem_package_source_matched_handoff(StemPackageLocalWriterRequest {
+            created_by_action: ActionId(9),
+            boundary: StemPackageLocalWriterBoundary::SourceMatchedHandoffV1,
+            destination_kind: ProductExportDestinationKind::LocalArtifactDirectory,
+            destination_root: "/tmp/riotbox-source-matched-stems".into(),
+            claimed_stem_roles: roles.clone(),
+        })
+        .expect("plan exact source-matched stem set");
+
+        assert_eq!(plan.claimed_stem_roles, roles);
+        assert_eq!(plan.stem_artifacts().count(), 3);
+        assert_eq!(
+            plan.boundary_id,
+            STEM_PACKAGE_SOURCE_MATCHED_HANDOFF_BOUNDARY_ID
+        );
+
+        let error = plan_stem_package_source_matched_handoff(StemPackageLocalWriterRequest {
+            created_by_action: ActionId(9),
+            boundary: StemPackageLocalWriterBoundary::SourceMatchedHandoffV1,
+            destination_kind: ProductExportDestinationKind::LocalArtifactDirectory,
+            destination_root: "/tmp/riotbox-source-matched-stems".into(),
+            claimed_stem_roles: vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass],
+        })
+        .expect_err("partial source-matched stem set must reject");
+        assert_eq!(
+            error,
+            StemPackageLocalWriterPlanError::IncompleteRequiredStemSet
+        );
+    }
+
+    #[test]
+    fn writer_planners_reject_crossed_boundaries() {
+        let request = StemPackageLocalWriterRequest {
+            created_by_action: ActionId(10),
+            boundary: StemPackageLocalWriterBoundary::SourceMatchedHandoffV1,
+            destination_kind: ProductExportDestinationKind::LocalArtifactDirectory,
+            destination_root: "/tmp/riotbox-crossed-stem-boundary".into(),
+            claimed_stem_roles: SOURCE_MATCHED_HANDOFF_STEM_ROLES.to_vec(),
+        };
+
+        assert_eq!(
+            plan_stem_package_local_ci_package(request).expect_err("boundary must reject"),
+            StemPackageLocalWriterPlanError::BoundaryMismatch {
+                expected: StemPackageLocalWriterBoundary::LocalCiPackageV1,
+                actual: StemPackageLocalWriterBoundary::SourceMatchedHandoffV1,
+            }
+        );
     }
 }

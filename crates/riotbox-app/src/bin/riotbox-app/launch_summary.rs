@@ -68,6 +68,20 @@ fn launch_summary(launch: &AppLaunch) -> Value {
                 .collect::<Vec<_>>(),
             "observer_path": launch.observer_path,
         }),
+        LaunchMode::StemPackageSourceMatchedExecute {
+            session_path,
+            source_graph_path,
+            handoff_proof_path,
+            destination_path,
+        } => json!({
+            "mode": "stem_package_source_matched_execute",
+            "session_path": session_path,
+            "source_graph_path": source_graph_path,
+            "handoff_proof_path": handoff_proof_path,
+            "destination_path": destination_path,
+            "claimed_stem_roles": ["stem_drums", "stem_music", "stem_bass"],
+            "observer_path": launch.observer_path,
+        }),
         LaunchMode::StemPackageLocalCiReport { session_path } => json!({
             "mode": "stem_package_local_ci_report",
             "session_path": session_path,

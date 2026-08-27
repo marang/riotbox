@@ -41,7 +41,9 @@ pub(super) fn attach_product_export_artifact_audio_metrics(receipt: &mut ExportR
     }
 }
 
-fn export_artifact_source_graph_ref(session: &SessionFile) -> Option<ExportArtifactSourceGraphRef> {
+pub(super) fn export_artifact_source_graph_ref(
+    session: &SessionFile,
+) -> Option<ExportArtifactSourceGraphRef> {
     session
         .source_graph_refs
         .first()
@@ -52,7 +54,9 @@ fn export_artifact_source_graph_ref(session: &SessionFile) -> Option<ExportArtif
         })
 }
 
-fn export_artifact_timing_grid_ref(session: &SessionFile) -> Option<ExportArtifactTimingGridRef> {
+pub(super) fn export_artifact_timing_grid_ref(
+    session: &SessionFile,
+) -> Option<ExportArtifactTimingGridRef> {
     session
         .runtime_state
         .source_timing

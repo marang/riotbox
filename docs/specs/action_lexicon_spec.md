@@ -416,15 +416,28 @@ Boundary:
   contribution is source-derived only when the versioned proof binds an applied
   non-empty MC-202 source-expression plan, applied source contour, passing
   source-grid alignment, passing bass pressure, and no source-failure fallback.
-  This origin proof does not itself make the reserved action runnable.
+  This producer does not itself queue or commit an action.
+- The non-interactive
+  `riotbox-app --stem-package-source-matched-execute` operator ingress consumes
+  only that exact V2 proof. It queues `export.stem_package` with boundary
+  `source_matched_handoff_v1`, requires the proof source SHA-256 to match the
+  active Source Graph plus exact Session graph id/version/hash before writing,
+  validates the fixed drums/music/bass set and frozen reconstruction contract,
+  copies the declared WAV bytes through atomic staging, and commits the action
+  and receipt only after all writer gates pass. Any validation or write failure
+  rejects and consumes the pending action without a receipt or final package.
+  A different already-pending stem action prevents enqueue and is not displaced.
+  This operator path is not a TUI/Ghost musician control and does not promote
+  the Development proof to DAW, listening, release, or source-general evidence.
 - Replay must not blindly rewrite files as a hidden side effect.
-- Stem package export and live recording export have typed reserved Core action
-  contracts, but remain out of runnable TUI/Ghost/user scope until queue,
-  writer/capture, Session/replay, observer, and audio-QA implementation tickets
-  land. DAW session export has a typed developer-proof action contract with
-  gated proof boundaries. Host-audio soak, automatic arranger export, and
-  automatic Ghost export remain out of scope until separate ActionCommand,
-  Session/replay, observer, and audio-QA contracts exist.
+- Stem package export now has this bounded operator commit path, while its
+  TUI/Ghost musician surface remains reserved until DAW placement and
+  structured listening are complete. Live recording remains out of runnable
+  TUI/Ghost/user scope until its capture writer and gates land. DAW session
+  export has a typed developer-proof action contract with gated proof
+  boundaries. Host-audio soak, automatic arranger export, and automatic Ghost
+  export remain out of scope until separate ActionCommand, Session/replay,
+  observer, and audio-QA contracts exist.
 
 Required params for the first bounded action:
 

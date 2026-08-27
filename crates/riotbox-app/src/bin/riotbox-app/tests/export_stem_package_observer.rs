@@ -254,6 +254,7 @@ fn stem_package_action_params() -> ActionParams {
         include_manifest: true,
         destination_kind: ProductExportDestinationKind::LocalArtifactDirectory,
         destination_path: Some("exports/stem-package".into()),
+        handoff_proof_path: None,
         claimed_stem_roles: vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass],
         lineage_policy: StemPackageLineagePolicy::RequireAnyCoreLineage,
         fallback_comparison_policy: StemPackageFallbackComparisonPolicy::Required,

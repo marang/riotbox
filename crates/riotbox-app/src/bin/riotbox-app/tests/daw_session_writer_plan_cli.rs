@@ -34,6 +34,7 @@ fn parse_args_builds_daw_session_writer_plan_mode() {
         | LaunchMode::Ingest { .. }
         | LaunchMode::StemPackageLocalCiDryRun { .. }
         | LaunchMode::StemPackageLocalCiExecute { .. }
+        | LaunchMode::StemPackageSourceMatchedExecute { .. }
         | LaunchMode::StemPackageLocalCiReport { .. }
         | LaunchMode::LiveRecordingReadinessReport { .. }
         | LaunchMode::DawExportReadinessReport { .. }
