@@ -1659,4 +1659,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Commit source-matched stem handoff through the Session export action
 - [RIOTBOX-1480.md](./RIOTBOX-1480.md)
   Qualify the source-matched stem package as a musician-usable handoff
+- [RIOTBOX-1481.md](./RIOTBOX-1481.md)
+  Demonstrate source-matched stem utility in a concrete multitrack context
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
