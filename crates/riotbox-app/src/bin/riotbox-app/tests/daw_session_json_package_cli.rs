@@ -22,6 +22,7 @@ fn parse_args_builds_daw_session_json_package_execute_mode() {
         | LaunchMode::Ingest { .. }
         | LaunchMode::StemPackageLocalCiDryRun { .. }
         | LaunchMode::StemPackageLocalCiExecute { .. }
+        | LaunchMode::StemPackageSourceMatchedExecute { .. }
         | LaunchMode::StemPackageLocalCiReport { .. }
         | LaunchMode::LiveRecordingReadinessReport { .. }
         | LaunchMode::DawExportReadinessReport { .. }
@@ -62,6 +63,7 @@ fn parse_args_builds_daw_session_json_package_evidence_apply_mode() {
         | LaunchMode::Ingest { .. }
         | LaunchMode::StemPackageLocalCiDryRun { .. }
         | LaunchMode::StemPackageLocalCiExecute { .. }
+        | LaunchMode::StemPackageSourceMatchedExecute { .. }
         | LaunchMode::StemPackageLocalCiReport { .. }
         | LaunchMode::LiveRecordingReadinessReport { .. }
         | LaunchMode::DawExportReadinessReport { .. }
@@ -105,6 +107,7 @@ fn parse_args_builds_daw_session_host_import_proof_apply_mode() {
         | LaunchMode::Ingest { .. }
         | LaunchMode::StemPackageLocalCiDryRun { .. }
         | LaunchMode::StemPackageLocalCiExecute { .. }
+        | LaunchMode::StemPackageSourceMatchedExecute { .. }
         | LaunchMode::StemPackageLocalCiReport { .. }
         | LaunchMode::LiveRecordingReadinessReport { .. }
         | LaunchMode::DawExportReadinessReport { .. }
@@ -177,6 +180,7 @@ fn parse_args_builds_daw_session_audible_output_proof_apply_mode() {
         | LaunchMode::Ingest { .. }
         | LaunchMode::StemPackageLocalCiDryRun { .. }
         | LaunchMode::StemPackageLocalCiExecute { .. }
+        | LaunchMode::StemPackageSourceMatchedExecute { .. }
         | LaunchMode::StemPackageLocalCiReport { .. }
         | LaunchMode::LiveRecordingReadinessReport { .. }
         | LaunchMode::DawExportReadinessReport { .. }

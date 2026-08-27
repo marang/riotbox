@@ -15,6 +15,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     let mut product_export_destination_path = None;
     let mut stem_package_local_ci_dry_run = false;
     let mut stem_package_local_ci_execute = false;
+    let mut stem_package_source_matched_execute = false;
     let mut stem_package_local_ci_report = false;
     let mut live_recording_readiness_report = false;
     let mut daw_export_readiness_report = false;
@@ -28,6 +29,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     let mut daw_session_writer_export_execute = false;
     let mut daw_session_writer_plan = false;
     let mut stem_package_destination_path = None;
+    let mut product_stem_handoff_proof_path = None;
     let mut daw_session_destination_path = None;
     let mut daw_session_host_import_proof_path = None;
     let mut daw_session_audible_output_proof_path = None;
@@ -37,6 +39,9 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
         match arg.as_str() {
             "--stem-package-local-ci-dry-run" => stem_package_local_ci_dry_run = true,
             "--stem-package-local-ci-execute" => stem_package_local_ci_execute = true,
+            "--stem-package-source-matched-execute" => {
+                stem_package_source_matched_execute = true;
+            }
             "--stem-package-local-ci-report" => stem_package_local_ci_report = true,
             "--live-recording-readiness-report" => live_recording_readiness_report = true,
             "--daw-export-readiness-report" => daw_export_readiness_report = true,
@@ -66,6 +71,10 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             "--stem-package-destination" => {
                 stem_package_destination_path =
                     Some(next_path(&mut args, "--stem-package-destination")?);
+            }
+            "--product-stem-handoff-proof" => {
+                product_stem_handoff_proof_path =
+                    Some(next_path(&mut args, "--product-stem-handoff-proof")?);
             }
             "--daw-session-destination" => {
                 daw_session_destination_path =
@@ -188,6 +197,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     let stem_package_mode_count = [
         stem_package_local_ci_dry_run,
         stem_package_local_ci_execute,
+        stem_package_source_matched_execute,
         stem_package_local_ci_report,
     ]
     .into_iter()
@@ -195,7 +205,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     .count();
     if stem_package_mode_count > 1 {
         return Err(
-            "stem package local CI dry-run, execute, and report modes cannot be combined".into(),
+            "stem package local CI dry-run/execute/report and source-matched execute modes cannot be combined".into(),
         );
     }
     let read_only_report_mode_count =
@@ -250,6 +260,50 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             "product mix export proof handoff is available only for interactive source/session launches"
                 .into(),
         );
+    }
+
+    if product_stem_handoff_proof_path.is_some() && !stem_package_source_matched_execute {
+        return Err(
+            "--product-stem-handoff-proof requires --stem-package-source-matched-execute"
+                .into(),
+        );
+    }
+
+    if stem_package_source_matched_execute {
+        if source_path.is_some()
+            || saw_sidecar_flag
+            || saw_seed_flag
+            || daw_session_destination_path.is_some()
+            || daw_session_host_import_proof_path.is_some()
+            || daw_session_audible_output_proof_path.is_some()
+            || !claimed_stem_roles.is_empty()
+        {
+            return Err(
+                "source-matched stem package execute cannot be combined with source/sidecar/seed/DAW destination/stem-role launch arguments"
+                    .into(),
+            );
+        }
+        let session_path = session_path.filter(|_| saw_session_flag).ok_or_else(|| {
+            "source-matched stem package execute requires --session <session.json>".to_string()
+        })?;
+        let handoff_proof_path = product_stem_handoff_proof_path.ok_or_else(|| {
+            "source-matched stem package execute requires --product-stem-handoff-proof <proof.json>"
+                .to_string()
+        })?;
+        let destination_path = stem_package_destination_path.ok_or_else(|| {
+            "source-matched stem package execute requires --stem-package-destination <dir>"
+                .to_string()
+        })?;
+
+        return Ok(AppLaunch {
+            mode: LaunchMode::StemPackageSourceMatchedExecute {
+                session_path,
+                source_graph_path,
+                handoff_proof_path,
+                destination_path,
+            },
+            observer_path,
+        });
     }
 
     if stem_package_local_ci_dry_run {

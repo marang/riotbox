@@ -267,12 +267,12 @@ of Session/Core truth rather than second readiness engines.
   the current Core/Session readiness contract.
 - `just live-recording-readiness-report-smoke` exercises that report through
   the built `riotbox-app` binary for ready and blocked receipt evidence.
-- `export.stem_package` remains reserved until an implementation can provide a
-  package receipt whose `artifact_set[]` contains every claimed stem role, the
-  package manifest/proof entries, per-stem hashes, per-stem WAV format/audio
-  metrics, and the policy-required source/capture lineage and fallback
-  comparison evidence. A UI, Ghost, or CLI path must not show it as ready while
-  those gates are absent.
+- The musician-facing `export.stem_package` TUI/Ghost surface remains reserved
+  until its package receipt contains every claimed stem role, manifest/proof
+  entries, per-stem hashes, WAV format/audio metrics, policy-required lineage
+  and fallback evidence, and the separate DAW-placement and
+  structured-listening gates pass. An operator proof may report receipt
+  readiness without making the musician surface runnable.
 - `ExportScope::StemPackage` is no longer only a future receipt label: the
   current app has an internal `stem_package.local_ci_package_v1` commit proof for
   deterministic drums/bass CI stems. That proof may remove the stem-package
@@ -427,6 +427,27 @@ of Session/Core truth rather than second readiness engines.
     the internal local CI writer proof for drums/bass only; it is still not a
     structured listening-review pack, DAW export workflow, or general
     musician-facing `export.stem_package` control.
+  - the source-matched operator ingress is
+    `riotbox-app --stem-package-source-matched-execute`. It accepts no role
+    override and consumes only `riotbox.product_stem_handoff.v2`; requires the
+    V2 source hash to match active Source Graph and exact Session graph
+    id/version/hash lineage;
+    rechecks exact relative artifacts, hashes, PCM16/grid identity, and frozen
+    stem-sum reconstruction; then copies the declared drums/music/bass bytes
+    through staging and commits boundary
+    `stem_package.source_matched_handoff_v1` with pack id
+    `stem-package-source-matched`. Any stale source, contract/hash/format/
+    reconstruction failure, existing destination, or write failure leaves no
+    final package or receipt and consumes the pending action as rejected.
+    A different already-pending stem action blocks the request without being
+    replaced or consumed.
+  - per-stem fallback evidence for this boundary compares the written real stem
+    to Riotbox's established missing-source fail-closed silence, never to
+    generated fallback music. The comparison reference binds the exact V2 proof
+    SHA-256 plus stem role; the measured output RMS is the signal difference.
+    Normalized correlation is absent because a zero-variance silence reference
+    has no meaningful correlation. V2's explicit `source_failure_fallback:
+    false` remains independently required.
   - current CLI operator report exposes the written proof summary through
     `riotbox-app --stem-package-local-ci-report --session <session.json>`. It is
     read-only: it reports the latest stem-package Session receipt, stem roles,
@@ -445,12 +466,12 @@ of Session/Core truth rather than second readiness engines.
     inputs. No structured listening-review pack exists for this proof; it is
     CI-safe written-artifact evidence with `human_verdict: unverified`.
   - current musician-facing surface gate is separate from receipt readiness:
-    a ready local CI stem-package receipt can satisfy the internal writer proof,
-    per-stem QA gates, observer projection, operator report, and package
-    identity, but the TUI/Ghost/user export surface remains disabled while the
-    package is developer-proof-only, DAW placement is missing, or structured
-    listening review is not verified. Reserved UI/Ghost-style attempts must
-    reject with those blockers and must not write files or commit a receipt.
+    a ready local-CI or source-matched operator receipt can satisfy its writer
+    proof, per-stem QA gates, observer projection, and package identity, but the
+    TUI/Ghost/user export surface remains disabled while the package is
+    operator-proof-only, DAW placement is missing, or structured listening
+    review is not verified. Reserved UI/Ghost-style attempts must reject with
+    those blockers and must not write files or commit a receipt.
   - current arrangement / DAW placement contract skeleton reserves
     `daw_session` receipt identity and `arrangement_placement_refs[]` so future
     DAW export QA can prove scene/bar/beat placement separately from local file

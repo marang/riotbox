@@ -57,6 +57,7 @@ impl JamAppState {
             include_manifest: true,
             destination_kind: ProductExportDestinationKind::LocalArtifactDirectory,
             destination_path,
+            handoff_proof_path: None,
             claimed_stem_roles,
             lineage_policy: StemPackageLineagePolicy::RequireAnyCoreLineage,
             fallback_comparison_policy: StemPackageFallbackComparisonPolicy::Required,
@@ -85,17 +86,23 @@ impl JamAppState {
         claimed_stem_roles: Vec<ExportArtifactRole>,
     ) -> Result<ExportReceiptState, JamAppError> {
         let destination_dir = destination_dir.as_ref();
-        let action_id = self
-            .pending_stem_package_export_action_id()
-            .unwrap_or_else(|| {
+        let action_id = match self.pending_stem_package_export_action_id() {
+            Some(action_id) => action_id,
+            None => {
                 self.queue_stem_package_export_local_ci_package(
                     requested_at,
                     Some(destination_dir.to_string_lossy().into_owned()),
                     claimed_stem_roles,
                 );
                 self.pending_stem_package_export_action_id()
-                    .expect("queued stem package export action should be pending")
-            });
+                    .ok_or_else(|| {
+                        JamAppError::InvalidSession(
+                            "cannot queue local CI stem package while another stem-package export is pending"
+                                .into(),
+                        )
+                    })?
+            }
+        };
         let params = match self.local_ci_stem_package_action_params(action_id) {
             Ok(params) => params,
             Err(error) => {
@@ -144,7 +151,16 @@ impl JamAppState {
         self.queue
             .pending_actions()
             .into_iter()
-            .find(|action| action.command == ActionCommand::ExportStemPackage)
+            .find(|action| {
+                action.command == ActionCommand::ExportStemPackage
+                    && matches!(
+                        action.params,
+                        ActionParams::StemPackageExport {
+                            boundary: StemPackageExportBoundary::LocalCiPackageV1,
+                            ..
+                        }
+                    )
+            })
             .map(|action| action.id)
     }
 
@@ -169,6 +185,7 @@ impl JamAppState {
             include_manifest,
             destination_kind,
             destination_path,
+            handoff_proof_path,
             claimed_stem_roles,
             lineage_policy,
             fallback_comparison_policy,
@@ -214,6 +231,11 @@ impl JamAppState {
                 "stem package action {action_id} has unsupported fallback policy {fallback_comparison_policy:?}"
             )));
         }
+        if handoff_proof_path.is_some() {
+            return Err(JamAppError::InvalidSession(format!(
+                "local CI stem package action {action_id} cannot carry a product-stem handoff"
+            )));
+        }
         let destination_root = destination_path
             .as_ref()
             .filter(|path| !path.trim().is_empty())
@@ -230,7 +252,7 @@ impl JamAppState {
         })
     }
 
-    fn commit_export_receipt_after_side_effect(
+    pub(super) fn commit_export_receipt_after_side_effect(
         &mut self,
         action_id: ActionId,
         requested_at: TimestampMs,

@@ -151,6 +151,15 @@ behavior lands in the live product path. Broader positive source-family
 coverage and source-backed W-30 resampling now follow from the accepted
 dense-break baseline and honest negative-source handling.
 
+The bounded P016 Foundation continuation now has an explicit source-matched
+stem path. RIOTBOX-1477/1478 publish the frozen reconstructable V2 Development
+handoff without changing the approved mix; RIOTBOX-1479 validates that exact
+proof against active Source Graph and Session lineage, copies its declared
+drums/music/bass bytes, and commits the existing Action/receipt/observer truth.
+The non-interactive ingress remains operator proof only: TUI/Ghost musician
+export, DAW placement, structured listening, live recording, and release
+readiness are not promoted.
+
 `RIOTBOX-1439` owns the accepted delivery-order correction: a new audible
 mechanism first receives at most three bounded Development variants and an
 early usefulness check, then only a provisional human keep permits a frozen
@@ -610,6 +619,8 @@ docs/
   exit review captured
 - `reviews/p016_export_action_boundary_2026-05-31.md`: P016 export action
   boundary before file-writing workflow captured
+- `reviews/riotbox_1479_source_matched_stem_session_handoff_2026-08-27.md`:
+  P016 source-matched V2 stem Action/Session/observer handoff captured
 - `reviews/riotbox_1398_human_listening_review_2026-07-11.md`: RIOTBOX-1398 real human verdicts and the selected bass-pressure follow-up captured
 - `benchmarks/product_export_reproducibility_boundary_2026-05-07.md`: normalized product-export reproducibility boundary captured
 - `benchmarks/stage_style_stability_proof_2026-05-07.md`: normalized stage-style repeated-run stability proof captured

@@ -595,11 +595,16 @@ Current limiter policy:
   summation with maximum absolute error at most `3 / 32768` and RMS error at
   most `1.5 / 32768`
 - product-stem attribution and WAV/proof validation are deterministic offline
-  work only. They do not run on the realtime callback, create a musician stem
-  action, or claim isolated pre-bus lane audio. The MC-202 contribution may use
-  `source_derived` origin only after the already rendered source-expression
-  plan, source-contour delta, bass-pressure proof, source-grid alignment, and
-  no-fallback evidence all pass; otherwise publication stops fail-closed
+  work only. They do not run on the realtime callback or claim isolated pre-bus
+  lane audio. The MC-202 contribution may use `source_derived` origin only after
+  the already rendered source-expression plan, source-contour delta,
+  bass-pressure proof, source-grid alignment, and no-fallback evidence all pass;
+  otherwise publication stops fail-closed
+- the bounded source-matched stem-package consumer performs proof parsing,
+  hashing, PCM16/grid decoding, reconstruction measurement, copying, output
+  measurement, JSON writing, and observer emission on the app/control path. It
+  copies the already-proven contribution bytes and adds no DSP, mixing,
+  fallback music, or realtime callback work
 
 Offline and realtime-simulation renders should become comparable under the same
 state, with explicit tolerances where backend buffer boundaries or floating

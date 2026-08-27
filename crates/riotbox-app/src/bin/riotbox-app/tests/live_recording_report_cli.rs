@@ -28,6 +28,7 @@ fn parse_args_builds_live_recording_readiness_report_mode() {
         | LaunchMode::Ingest { .. }
         | LaunchMode::StemPackageLocalCiDryRun { .. }
         | LaunchMode::StemPackageLocalCiExecute { .. }
+        | LaunchMode::StemPackageSourceMatchedExecute { .. }
         | LaunchMode::StemPackageLocalCiReport { .. }
         | LaunchMode::DawExportReadinessReport { .. }
         | LaunchMode::DawSessionJsonPackageExecute { .. }

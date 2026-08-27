@@ -285,6 +285,32 @@ plan, source-contour delta, source-grid alignment, and no-fallback gates all
 pass. This is still development-only: it does not commit
 `export.stem_package`, create a Session receipt, or claim a DAW/release package.
 
+### Commit A Source-Matched Stem Handoff To A Session
+
+The non-interactive operator ingress can validate that exact V2 handoff against
+an active Session and Source Graph, copy its three declared stem WAVs, and
+commit the existing `export.stem_package` action and receipt:
+
+```bash
+cargo run -p riotbox-app --bin riotbox-app -- \
+  --stem-package-source-matched-execute \
+  --session "path/to/session.json" \
+  --graph "path/to/source-graph.json" \
+  --product-stem-handoff-proof \
+    "artifacts/local/my-source-stems/product_stem_handoff_proof.json" \
+  --stem-package-destination "exports/my-source-stems" \
+  --observer "artifacts/local/stem-export-observer.ndjson"
+```
+
+`--graph` is optional when the Session already embeds its active graph. The
+proof source hash must match that graph before destination writes begin. The
+ingress accepts only the frozen drums/music/bass role set, rechecks artifact
+hashes, PCM16/grid identity, and stem-sum reconstruction, writes through a
+staging directory without overwriting a package, then saves the receipt only
+after success. This is operator/Foundation proof, not a TUI or Ghost control;
+the V2 input remains Development-only and musician stem export stays disabled
+until DAW-placement and structured-listening gates are complete.
+
 ## Start In 5 Steps
 
 1. Run Riotbox on your own WAV or one of the local test examples described in [`data/test_audio/README.md`](data/test_audio/README.md):

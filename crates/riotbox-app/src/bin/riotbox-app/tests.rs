@@ -174,6 +174,7 @@ mod tests {
             LaunchMode::Load { .. } => panic!("expected ingest mode"),
             LaunchMode::StemPackageLocalCiDryRun { .. }
             | LaunchMode::StemPackageLocalCiExecute { .. }
+            | LaunchMode::StemPackageSourceMatchedExecute { .. }
             | LaunchMode::StemPackageLocalCiReport { .. }
             | LaunchMode::LiveRecordingReadinessReport { .. }
             | LaunchMode::DawExportReadinessReport { .. }
@@ -289,6 +290,7 @@ mod tests {
             LaunchMode::Load { .. } => panic!("expected ingest mode"),
             LaunchMode::StemPackageLocalCiDryRun { .. }
             | LaunchMode::StemPackageLocalCiExecute { .. }
+            | LaunchMode::StemPackageSourceMatchedExecute { .. }
             | LaunchMode::StemPackageLocalCiReport { .. }
             | LaunchMode::LiveRecordingReadinessReport { .. }
             | LaunchMode::DawExportReadinessReport { .. }
@@ -326,6 +328,7 @@ mod tests {
             LaunchMode::Ingest { .. } => panic!("expected load mode"),
             LaunchMode::StemPackageLocalCiDryRun { .. }
             | LaunchMode::StemPackageLocalCiExecute { .. }
+            | LaunchMode::StemPackageSourceMatchedExecute { .. }
             | LaunchMode::StemPackageLocalCiReport { .. }
             | LaunchMode::LiveRecordingReadinessReport { .. }
             | LaunchMode::DawExportReadinessReport { .. }
@@ -358,6 +361,7 @@ mod tests {
             LaunchMode::Ingest { .. } => panic!("expected load mode"),
             LaunchMode::StemPackageLocalCiDryRun { .. }
             | LaunchMode::StemPackageLocalCiExecute { .. }
+            | LaunchMode::StemPackageSourceMatchedExecute { .. }
             | LaunchMode::StemPackageLocalCiReport { .. }
             | LaunchMode::LiveRecordingReadinessReport { .. }
             | LaunchMode::DawExportReadinessReport { .. }

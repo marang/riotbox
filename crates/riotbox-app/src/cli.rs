@@ -3,6 +3,7 @@
 // semantic CLI child modules should be split in follow-up slices.
 include!("bin/riotbox-app/launch.rs");
 include!("bin/riotbox-app/stem_package_export_cli.rs");
+include!("bin/riotbox-app/stem_package_handoff_cli.rs");
 include!("bin/riotbox-app/stem_package_report_cli.rs");
 include!("bin/riotbox-app/live_recording_report_cli.rs");
 include!("bin/riotbox-app/daw_export_report_cli.rs");

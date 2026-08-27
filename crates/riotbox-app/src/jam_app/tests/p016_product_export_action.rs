@@ -280,7 +280,7 @@ fn reserved_stem_package_export_queue_attempt_is_rejected_without_receipt() {
     };
     assert!(reason.contains("stem package export is disabled for musicians"));
     assert!(reason.starts_with(STEM_PACKAGE_EXPORT_RESERVED_REASON));
-    assert!(reason.contains("CI writer proof is missing"));
+    assert!(reason.contains("stem writer proof is missing"));
     assert!(reason.contains("DAW placement workflow is not ready"));
     assert!(state.queue.pending_actions().is_empty());
     assert!(state.session.export_receipts.is_empty());
@@ -507,6 +507,481 @@ fn local_ci_stem_package_export_rejects_unsupported_role_without_receipt() {
             .summary
             .contains("unsupported local CI stem package role")
     );
+}
+
+#[test]
+fn source_matched_stem_handoff_commits_three_real_stems_and_session_receipt() {
+    let temp = tempdir().expect("tempdir");
+    let source_hash = "a".repeat(64);
+    let proof_path = write_source_matched_handoff_fixture(temp.path(), &source_hash);
+    let destination = temp.path().join("export");
+    let mut graph = sample_graph();
+    graph.source.content_hash = source_hash.clone();
+    let mut session = sample_session(&graph);
+    session.runtime_state.source_timing.confirmed_grid = Some(SourceTimingGridConfirmationState {
+        source_id: graph.source.source_id.clone(),
+        hypothesis_id: Some("source-matched-grid".into()),
+        confirmed_by_action: ActionId(1),
+        confirmed_at: 1_200,
+    });
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    let receipt = state
+        .commit_stem_package_export_from_product_handoff(&proof_path, &destination, 1_210)
+        .expect("commit source-matched stem package");
+
+    assert_eq!(
+        receipt.export_boundary,
+        ProductExportBoundary::StemPackageSourceMatchedHandoffV1
+    );
+    assert_eq!(
+        receipt.pack_id,
+        riotbox_core::export_readiness::STEM_PACKAGE_SOURCE_MATCHED_PACK_ID
+    );
+    assert!(receipt.stem_package_readiness_report().ready());
+    assert_eq!(receipt.artifact_set.len(), 5);
+    for role in [
+        ExportArtifactRole::StemDrums,
+        ExportArtifactRole::StemMusic,
+        ExportArtifactRole::StemBass,
+    ] {
+        let artifact = receipt
+            .artifact_set
+            .iter()
+            .find(|artifact| artifact.role == role)
+            .expect("source-matched stem artifact");
+        assert_eq!(
+            artifact.source_graph_ref.as_ref().map(|value| &value.source_id),
+            Some(&SourceId::from("src-1"))
+        );
+        assert!(artifact.timing_grid_ref.is_some());
+        let fallback = artifact
+            .fallback_comparison
+            .as_ref()
+            .expect("fail-closed silence comparison");
+        assert!(
+            fallback
+                .reference_identity
+                .contains("#fail-closed-silence-v1/")
+        );
+        assert!(fallback.rms_difference_micros.is_some_and(|value| value > 0));
+        let output_path = destination
+            .join("stem_package/stems")
+            .join(format!("{}.wav", source_matched_role_file_stem(role)));
+        let input_path = proof_path
+            .parent()
+            .expect("proof parent")
+            .join("stems")
+            .join(format!("{}.wav", source_matched_role_file_stem(role)));
+        assert_eq!(
+            fs::read(output_path).expect("read output stem"),
+            fs::read(input_path).expect("read input stem")
+        );
+    }
+    let manifest_path = destination.join("stem_package/stem_package_manifest.json");
+    let on_disk_manifest: riotbox_core::stem_package_manifest::StemPackageManifest =
+        serde_json::from_slice(&fs::read(&manifest_path).expect("read package manifest"))
+            .expect("parse package manifest");
+    assert_eq!(
+        on_disk_manifest.package_id,
+        riotbox_core::export_readiness::STEM_PACKAGE_SOURCE_MATCHED_PACK_ID
+    );
+    assert_eq!(
+        on_disk_manifest.export_boundary,
+        ProductExportBoundary::StemPackageSourceMatchedHandoffV1
+    );
+    let package_proof_path = destination.join("stem_package/stem_package_proof.json");
+    let on_disk_proof: riotbox_core::stem_package_proof::StemPackageProof =
+        serde_json::from_slice(&fs::read(&package_proof_path).expect("read package proof"))
+            .expect("parse package proof");
+    assert_eq!(
+        on_disk_proof.package_id,
+        riotbox_core::export_readiness::STEM_PACKAGE_SOURCE_MATCHED_PACK_ID
+    );
+    assert_eq!(
+        on_disk_proof.export_boundary,
+        ProductExportBoundary::StemPackageSourceMatchedHandoffV1
+    );
+    assert_eq!(
+        on_disk_proof.manifest_sha256,
+        on_disk_manifest
+            .normalized_json_sha256()
+            .expect("hash package manifest")
+    );
+    assert!(state.queue.pending_actions().is_empty());
+    let musician_gate = state.stem_package_export_surface_gate();
+    assert_eq!(musician_gate.status, StemPackageExportSurfaceStatus::Disabled);
+    assert_eq!(
+        musician_gate.blockers,
+        vec![
+            StemPackageExportSurfaceBlocker::DeveloperProofOnly,
+            StemPackageExportSurfaceBlocker::DawPlacementWorkflowMissing,
+            StemPackageExportSurfaceBlocker::StructuredListeningReviewMissing,
+        ]
+    );
+    assert_eq!(state.session.export_receipts, vec![receipt]);
+    let action = state
+        .session
+        .action_log
+        .actions
+        .iter()
+        .find(|action| action.command == ActionCommand::ExportStemPackage)
+        .expect("committed source-matched action");
+    assert_eq!(action.status, ActionStatus::Committed);
+    match &action.params {
+        ActionParams::StemPackageExport {
+            boundary,
+            handoff_proof_path,
+            claimed_stem_roles,
+            ..
+        } => {
+            assert_eq!(
+                *boundary,
+                riotbox_core::action::StemPackageExportBoundary::SourceMatchedHandoffV1
+            );
+            assert_eq!(
+                handoff_proof_path.as_deref(),
+                Some(proof_path.to_string_lossy().as_ref())
+            );
+            assert_eq!(
+                claimed_stem_roles,
+                &vec![
+                    ExportArtifactRole::StemDrums,
+                    ExportArtifactRole::StemMusic,
+                    ExportArtifactRole::StemBass,
+                ]
+            );
+        }
+        other => panic!("expected source-matched stem package params, got {other:?}"),
+    }
+}
+
+#[test]
+fn source_matched_stem_handoff_rejects_stale_source_before_destination_write() {
+    let temp = tempdir().expect("tempdir");
+    let proof_path = write_source_matched_handoff_fixture(temp.path(), &"b".repeat(64));
+    let destination = temp.path().join("export");
+    let mut graph = sample_graph();
+    graph.source.content_hash = "a".repeat(64);
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    let error = state
+        .commit_stem_package_export_from_product_handoff(&proof_path, &destination, 1_220)
+        .expect_err("stale source identity must reject");
+
+    assert!(error.to_string().contains("source mismatch"));
+    assert!(!destination.join("stem_package").exists());
+    assert!(state.session.export_receipts.is_empty());
+    assert!(state.queue.pending_actions().is_empty());
+    assert!(state.queue.history().iter().any(|action| {
+        action.command == ActionCommand::ExportStemPackage
+            && action.status == ActionStatus::Rejected
+    }));
+}
+
+#[test]
+fn source_matched_stem_handoff_requires_session_graph_lineage_before_write() {
+    let temp = tempdir().expect("tempdir");
+    let source_hash = "a".repeat(64);
+    let proof_path = write_source_matched_handoff_fixture(temp.path(), &source_hash);
+    let destination = temp.path().join("export");
+    let mut graph = sample_graph();
+    graph.source.content_hash = source_hash;
+    let mut session = sample_session(&graph);
+    session.source_graph_refs.clear();
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    let error = state
+        .commit_stem_package_export_from_product_handoff(&proof_path, &destination, 1_220)
+        .expect_err("missing Session graph lineage must reject");
+
+    assert!(error.to_string().contains("Session Source Graph lineage"));
+    assert!(!destination.exists());
+    assert!(state.session.export_receipts.is_empty());
+    assert!(state.queue.pending_actions().is_empty());
+}
+
+#[test]
+fn source_matched_stem_handoff_rejects_stale_session_graph_ref_before_write() {
+    let temp = tempdir().expect("tempdir");
+    let source_hash = "a".repeat(64);
+    let proof_path = write_source_matched_handoff_fixture(temp.path(), &source_hash);
+    let destination = temp.path().join("export");
+    let mut graph = sample_graph();
+    graph.source.content_hash = source_hash;
+    let mut session = sample_session(&graph);
+    session.source_graph_refs[0].graph_hash = format!("sha256:{}", "f".repeat(64));
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    let error = state
+        .commit_stem_package_export_from_product_handoff(&proof_path, &destination, 1_220)
+        .expect_err("stale Session graph ref must reject");
+
+    assert!(error.to_string().contains("exact active Session Source Graph lineage"));
+    assert!(!destination.exists());
+    assert!(state.session.export_receipts.is_empty());
+    assert!(state.queue.pending_actions().is_empty());
+}
+
+#[cfg(unix)]
+#[test]
+fn source_matched_stem_handoff_rejects_symlinked_artifact_before_write() {
+    use std::os::unix::fs::symlink;
+
+    let temp = tempdir().expect("tempdir");
+    let source_hash = "a".repeat(64);
+    let proof_path = write_source_matched_handoff_fixture(temp.path(), &source_hash);
+    let drums_path = proof_path
+        .parent()
+        .expect("proof parent")
+        .join("stems/stem_drums.wav");
+    let drums_target = proof_path
+        .parent()
+        .expect("proof parent")
+        .join("stem_drums_target.wav");
+    fs::rename(&drums_path, &drums_target).expect("move drums target");
+    symlink(&drums_target, &drums_path).expect("symlink drums artifact");
+    let destination = temp.path().join("export");
+    let mut graph = sample_graph();
+    graph.source.content_hash = source_hash;
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    let error = state
+        .commit_stem_package_export_from_product_handoff(&proof_path, &destination, 1_225)
+        .expect_err("symlinked handoff artifact must reject");
+
+    assert!(error.to_string().contains("regular file"));
+    assert!(!destination.exists());
+    assert!(state.session.export_receipts.is_empty());
+    assert!(state.queue.pending_actions().is_empty());
+}
+
+#[test]
+fn source_matched_stem_handoff_does_not_displace_another_pending_stem_export() {
+    let temp = tempdir().expect("tempdir");
+    let source_hash = "d".repeat(64);
+    let proof_path = write_source_matched_handoff_fixture(temp.path(), &source_hash);
+    let destination = temp.path().join("export");
+    let mut graph = sample_graph();
+    graph.source.content_hash = source_hash;
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    assert_eq!(
+        state.queue_stem_package_export_local_ci_package(
+            1_205,
+            Some(temp.path().join("local-ci").to_string_lossy().into_owned()),
+            vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass],
+        ),
+        QueueControlResult::Enqueued
+    );
+
+    let error = state
+        .commit_stem_package_export_from_product_handoff(&proof_path, &destination, 1_210)
+        .expect_err("a different pending stem export must block source-matched ingress");
+
+    assert!(error.to_string().contains("another stem-package export is pending"));
+    assert!(!destination.exists());
+    assert!(state.session.export_receipts.is_empty());
+    let pending = state.queue.pending_actions();
+    assert_eq!(pending.len(), 1);
+    assert!(matches!(
+        pending[0].params,
+        ActionParams::StemPackageExport {
+            boundary: riotbox_core::action::StemPackageExportBoundary::LocalCiPackageV1,
+            ..
+        }
+    ));
+}
+
+#[test]
+fn source_matched_stem_handoff_rejects_hash_and_reconstruction_mutations_fail_closed() {
+    for mutation in ["hash", "reconstruction"] {
+        let temp = tempdir().expect("tempdir");
+        let source_hash = "a".repeat(64);
+        let proof_path = write_source_matched_handoff_fixture(temp.path(), &source_hash);
+        let mut proof: serde_json::Value = serde_json::from_slice(
+            &fs::read(&proof_path).expect("read source-matched proof"),
+        )
+        .expect("parse source-matched proof");
+        match mutation {
+            "hash" => proof["artifacts"][0]["sha256"] = serde_json::json!("f".repeat(64)),
+            "reconstruction" => {
+                proof["reconstruction"]["max_abs_error"] = serde_json::json!(0.00008)
+            }
+            _ => unreachable!(),
+        }
+        fs::write(
+            &proof_path,
+            serde_json::to_vec_pretty(&proof).expect("serialize mutated proof"),
+        )
+        .expect("write mutated proof");
+        let destination = temp.path().join("export");
+        let mut graph = sample_graph();
+        graph.source.content_hash = source_hash;
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert!(
+            state
+                .commit_stem_package_export_from_product_handoff(
+                    &proof_path,
+                    &destination,
+                    1_230,
+                )
+                .is_err(),
+            "{mutation} mutation must reject"
+        );
+        assert!(!destination.join("stem_package").exists());
+        assert!(state.session.export_receipts.is_empty());
+        assert!(state.queue.pending_actions().is_empty());
+    }
+}
+
+pub(crate) fn write_source_matched_handoff_fixture(
+    root: &Path,
+    source_sha256: &str,
+) -> PathBuf {
+    let bundle = root.join("handoff");
+    let stems = bundle.join("stems");
+    fs::create_dir_all(&stems).expect("create handoff stems");
+    let sample_rate = 1_000_u32;
+    let channel_count = 2_u16;
+    let frame_count = 2_000_usize;
+    let mut drums = Vec::with_capacity(frame_count * usize::from(channel_count));
+    let mut music = Vec::with_capacity(drums.capacity());
+    let mut bass = Vec::with_capacity(drums.capacity());
+    let mut full_mix = Vec::with_capacity(drums.capacity());
+    for frame in 0..frame_count {
+        let seconds = frame as f32 / sample_rate as f32;
+        let drum = (seconds * 220.0 * std::f32::consts::TAU).sin() * 0.08;
+        let musical = (seconds * 110.0 * std::f32::consts::TAU).sin() * 0.06;
+        let low = (seconds * 55.0 * std::f32::consts::TAU).sin() * 0.07;
+        for _ in 0..channel_count {
+            drums.push(drum);
+            music.push(musical);
+            bass.push(low);
+            full_mix.push(drum + musical + low);
+        }
+    }
+    let paths = [
+        ("stems/stem_drums.wav", &drums),
+        ("stems/stem_music.wav", &music),
+        ("stems/stem_bass.wav", &bass),
+        ("full_grid_mix.wav", &full_mix),
+    ];
+    for (relative, samples) in paths {
+        riotbox_audio::source_audio::write_interleaved_pcm16_wav(
+            bundle.join(relative),
+            sample_rate,
+            channel_count,
+            samples,
+        )
+        .expect("write source-matched fixture stem");
+    }
+    let drums_audio = SourceAudioCache::load_pcm_wav(stems.join("stem_drums.wav"))
+        .expect("decode drums");
+    let music_audio = SourceAudioCache::load_pcm_wav(stems.join("stem_music.wav"))
+        .expect("decode music");
+    let bass_audio = SourceAudioCache::load_pcm_wav(stems.join("stem_bass.wav"))
+        .expect("decode bass");
+    let full_audio = SourceAudioCache::load_pcm_wav(bundle.join("full_grid_mix.wav"))
+        .expect("decode full mix");
+    let mut max_abs_error = 0.0_f64;
+    let mut squared_error_sum = 0.0_f64;
+    for index in 0..full_audio.interleaved_samples().len() {
+        let error = f64::from(drums_audio.interleaved_samples()[index])
+            + f64::from(music_audio.interleaved_samples()[index])
+            + f64::from(bass_audio.interleaved_samples()[index])
+            - f64::from(full_audio.interleaved_samples()[index]);
+        max_abs_error = max_abs_error.max(error.abs());
+        squared_error_sum += error * error;
+    }
+    let rms_error = (squared_error_sum / full_audio.interleaved_samples().len() as f64).sqrt();
+    let artifact = |role: &str, source_role: &str, path: &str, origin: &str| {
+        serde_json::json!({
+            "role": role,
+            "source_role": source_role,
+            "path": path,
+            "media_type": "audio/wav",
+            "sha256": sha256_bytes(&fs::read(bundle.join(path)).expect("read handoff artifact")),
+            "origin": origin,
+        })
+    };
+    let proof = serde_json::json!({
+        "schema": "riotbox.product_stem_handoff.v2",
+        "schema_version": 2,
+        "boundary": "feral-grid generated-support product stems",
+        "pack_id": "feral-grid-demo",
+        "material_status": "development_only",
+        "release_ready": false,
+        "musician_export_action_ready": false,
+        "source_sha256": source_sha256,
+        "normalized_manifest_sha256": "c".repeat(64),
+        "grid": {
+            "sample_rate_hz": sample_rate,
+            "channel_count": channel_count,
+            "bpm": 120.0,
+            "beats_per_bar": 4,
+            "bars": 1,
+            "total_beats": 4,
+            "frame_count": frame_count,
+            "duration_seconds": 2.0,
+        },
+        "artifacts": [
+            artifact("stem_drums", "product_stem_drums", "stems/stem_drums.wav", "source_derived"),
+            artifact("stem_music", "product_stem_music", "stems/stem_music.wav", "source_derived"),
+            artifact("stem_bass", "product_stem_bass", "stems/stem_bass.wav", "source_derived"),
+            artifact("full_grid_mix", "full_grid_mix", "full_grid_mix.wav", "composite"),
+        ],
+        "reconstruction": {
+            "schema": "riotbox.product_stem_reconstruction.v1",
+            "rule": "pcm_sum_v1",
+            "passed": true,
+            "sample_rate_hz": sample_rate,
+            "channel_count": channel_count,
+            "frame_count": frame_count,
+            "max_abs_error": max_abs_error,
+            "rms_error": rms_error,
+            "max_allowed_abs_error": 3.0 / 32768.0,
+            "max_allowed_rms_error": 1.5 / 32768.0,
+        },
+        "renderer_status": {
+            "mc202_source_expression": {
+                "schema": "riotbox.mc202_source_expression_origin.v1",
+                "pattern_origin": "source_derived",
+                "bass_pressure_applied": true,
+                "bass_pressure_reason": "mc202_source_grid_proof_renderer",
+                "source_expression_render_plan_applied": true,
+                "source_expression_role": "bass_pressure",
+                "source_failure_fallback": false,
+                "source_contour_origin": "source_derived_contour",
+                "source_contour_applied": true,
+                "source_contour_delta_rms": 0.01,
+                "source_contour_min_required_delta_rms": 0.00025,
+                "source_grid_hit_ratio": 1.0,
+                "source_grid_min_required_hit_ratio": 0.5,
+            },
+            "limitations": [],
+        },
+    });
+    let proof_path = bundle.join("product_stem_handoff_proof.json");
+    fs::write(
+        &proof_path,
+        serde_json::to_vec_pretty(&proof).expect("serialize source-matched proof"),
+    )
+    .expect("write source-matched proof");
+    proof_path
+}
+
+fn source_matched_role_file_stem(role: ExportArtifactRole) -> &'static str {
+    match role {
+        ExportArtifactRole::StemDrums => "stem_drums",
+        ExportArtifactRole::StemMusic => "stem_music",
+        ExportArtifactRole::StemBass => "stem_bass",
+        _ => panic!("unexpected source-matched stem role"),
+    }
 }
 
 fn write_product_export_proof(path: &Path, export_artifact: &str, export_hash: &str) {
