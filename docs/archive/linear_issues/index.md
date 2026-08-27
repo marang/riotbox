@@ -1655,4 +1655,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Publish source-matched reconstructable product stems
 - [RIOTBOX-1478.md](./RIOTBOX-1478.md)
   Migrate proven MC-202 source-expression origin into product stems
+- [RIOTBOX-1479.md](./RIOTBOX-1479.md)
+  Commit source-matched stem handoff through the Session export action
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
