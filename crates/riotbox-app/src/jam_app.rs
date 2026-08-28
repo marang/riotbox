@@ -70,6 +70,7 @@ mod stem_package_writer_tests;
 mod tr909_queue;
 mod transport;
 mod transport_helpers;
+mod w30_hook_dawproject;
 mod w30_queue;
 mod w30_targets;
 
@@ -77,7 +78,7 @@ use capture_helpers::{
     apply_capture_promotion_side_effects, capture_promotion_summary, capture_ref_from_action,
     capture_targets_specific_w30_pad, capture_targets_w30_pad,
 };
-pub(crate) use daw_export_operator_report::daw_export_proof_stack_summary;
+pub(crate) use daw_export_operator_report::daw_export_proof_stack_summary_for_receipt;
 pub use daw_export_operator_report::{
     DawExportOperatorReadinessReport, daw_export_operator_readiness_report,
 };
@@ -151,6 +152,9 @@ pub use state::{
 };
 pub use transport::TransportToggleCommit;
 use transport_helpers::{normalize_scene_candidates, transport_clock_from_state};
+pub use w30_hook_dawproject::{
+    W30_HOOK_DAWPROJECT_ACTION_BOUNDARY_ID, W30_HOOK_DAWPROJECT_PROOF_SCHEMA,
+};
 
 #[cfg(test)]
 use riotbox_core::TimestampMs;

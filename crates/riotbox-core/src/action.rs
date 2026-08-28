@@ -372,6 +372,7 @@ pub enum DawSessionExportBoundary {
     LocalProjectWriterV1,
     HostImportProofV1,
     AudibleOutputProofV1,
+    W30HookDawprojectV1,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

@@ -40,6 +40,7 @@ fn parse_args_builds_live_recording_readiness_report_mode() {
         | LaunchMode::DawSessionWriterProofExecute { .. }
         | LaunchMode::DawSessionWriterProofApply { .. }
         | LaunchMode::DawSessionWriterExportExecute { .. }
+        | LaunchMode::W30HookDawprojectExecute { .. }
         | LaunchMode::DawSessionWriterPlan { .. } => {
             panic!("expected live recording readiness report mode")
         }

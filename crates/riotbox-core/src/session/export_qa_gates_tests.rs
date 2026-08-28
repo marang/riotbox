@@ -135,6 +135,23 @@ fn daw_session_writer_gate_records_ready_and_blocked_proof() {
 }
 
 #[test]
+fn dawproject_archive_gate_records_exact_container_members() {
+    let gate = ExportReceiptQaGateResult::dawproject_archive_readback();
+
+    assert_eq!(gate.gate_id, DAWPROJECT_ARCHIVE_QA_GATE_ID);
+    assert_eq!(gate.status, ExportReceiptQaGateStatus::Passed);
+    assert_eq!(
+        gate.artifact_roles,
+        vec![
+            ExportArtifactRole::DawProjectFile,
+            ExportArtifactRole::W30HookLoop,
+            ExportArtifactRole::ExportManifest,
+            ExportArtifactRole::DawProjectProof,
+        ]
+    );
+}
+
+#[test]
 fn daw_session_host_import_gate_records_ready_and_blocked_proof() {
     let ready_gate = ExportReceiptQaGateResult::daw_session_host_import_proof(true, &[]);
     assert_eq!(ready_gate.gate_id, DAW_SESSION_HOST_IMPORT_QA_GATE_ID);

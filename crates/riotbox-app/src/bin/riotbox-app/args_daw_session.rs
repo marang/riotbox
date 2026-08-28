@@ -7,6 +7,7 @@ struct DawSessionModeArgs<'a> {
     writer_proof_execute: bool,
     writer_proof_apply: bool,
     writer_export_execute: bool,
+    w30_hook_dawproject_execute: bool,
     writer_plan: bool,
     source_path_present: bool,
     source_graph_path_present: bool,
@@ -167,6 +168,27 @@ fn parse_daw_session_mode_args(args: DawSessionModeArgs<'_>) -> Result<Option<Ap
         }));
     }
 
+    if args.w30_hook_dawproject_execute {
+        reject_daw_session_action_mode_conflicts(
+            &args,
+            "W-30 DAWproject execute reads only an explicit session and destination file and cannot be combined with source/graph/sidecar/seed/stem/proof arguments",
+        )?;
+        return Ok(Some(AppLaunch {
+            mode: LaunchMode::W30HookDawprojectExecute {
+                session_path: required_daw_session(
+                    args.session_path,
+                    args.saw_session_flag,
+                    "W-30 DAWproject execute requires --session <session.json>",
+                )?,
+                destination_path: required_daw_destination(
+                    args.destination_path,
+                    "W-30 DAWproject execute requires --daw-session-destination <file.dawproject>",
+                )?,
+            },
+            observer_path: args.observer_path.cloned(),
+        }));
+    }
+
     if args.writer_plan {
         reject_daw_session_destination_mode_conflicts(
             &args,
@@ -292,7 +314,7 @@ fn reject_daw_session_action_mode_conflicts(
 fn reject_standalone_daw_session_args(args: &DawSessionModeArgs<'_>) -> Result<(), String> {
     if args.destination_path.is_some() {
         return Err(
-            "--daw-session-destination requires --daw-session-writer-plan, --daw-session-json-package-execute, --daw-session-json-package-evidence-apply, --daw-session-writer-proof-execute, --daw-session-writer-proof-apply, or --daw-session-writer-export-execute"
+            "--daw-session-destination requires --daw-session-writer-plan, --daw-session-json-package-execute, --daw-session-json-package-evidence-apply, --daw-session-writer-proof-execute, --daw-session-writer-proof-apply, --daw-session-writer-export-execute, or --w30-hook-dawproject-execute"
                 .into(),
         );
     }

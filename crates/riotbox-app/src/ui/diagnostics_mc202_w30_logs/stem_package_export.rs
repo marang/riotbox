@@ -190,7 +190,9 @@ fn stem_artifact_role_short_label(role: ExportArtifactRole) -> Option<&'static s
         | ExportArtifactRole::ExportManifest
         | ExportArtifactRole::LiveRecordingCapture
         | ExportArtifactRole::DawSessionTempoMap
-        | ExportArtifactRole::DawSessionWriterProof => None,
+        | ExportArtifactRole::DawSessionWriterProof
+        | ExportArtifactRole::DawProjectFile
+        | ExportArtifactRole::DawProjectProof => None,
     }
 }
 
@@ -212,6 +214,7 @@ fn export_boundary_short_label(boundary: ProductExportBoundary) -> &'static str 
         | ProductExportBoundary::StemPackageW30HookLoopV3
         | ProductExportBoundary::StemPackageW30HookLoopV4 => "w30-hook",
         ProductExportBoundary::ArrangementDawPlacementContractV1 => "arrange-daw",
+        ProductExportBoundary::DawSessionW30HookDawprojectV1 => "w30-daw",
         ProductExportBoundary::LiveRecordingReceiptContractV1 => "live-rec",
     }
 }

@@ -13,6 +13,7 @@ pub const DAW_SESSION_JSON_PACKAGE_QA_GATE_ID: &str = "daw_session_json_package_
 pub const DAW_SESSION_WRITER_QA_GATE_ID: &str = "daw_session_writer_proof";
 pub const DAW_SESSION_HOST_IMPORT_QA_GATE_ID: &str = "daw_session_host_import_proof";
 pub const DAW_SESSION_AUDIBLE_OUTPUT_QA_GATE_ID: &str = "daw_session_audible_output_proof";
+pub const DAWPROJECT_ARCHIVE_QA_GATE_ID: &str = "dawproject_archive_readback";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExportReceiptQaGateResult {
@@ -201,6 +202,24 @@ impl ExportReceiptQaGateResult {
             },
             artifact_roles: Vec::new(),
             summary: Some(daw_session_audible_output_summary(passed, blockers)),
+        }
+    }
+
+    #[must_use]
+    pub fn dawproject_archive_readback() -> Self {
+        Self {
+            gate_id: DAWPROJECT_ARCHIVE_QA_GATE_ID.into(),
+            status: ExportReceiptQaGateStatus::Passed,
+            artifact_roles: vec![
+                ExportArtifactRole::DawProjectFile,
+                ExportArtifactRole::W30HookLoop,
+                ExportArtifactRole::ExportManifest,
+                ExportArtifactRole::DawProjectProof,
+            ],
+            summary: Some(
+                "DAWproject model, tempo, placement, embedded proof, and byte-identical W-30 audio passed exact read-back"
+                    .into(),
+            ),
         }
     }
 }

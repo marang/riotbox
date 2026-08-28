@@ -160,6 +160,15 @@ The non-interactive ingress remains operator proof only: TUI/Ghost musician
 export, DAW placement, structured listening, live recording, and release
 readiness are not promoted.
 
+The later RIOTBOX-1482/1483 semantic-hook path replaces that rejected
+contribution-stem musician story with one qualified, source-recognizable
+`w30_hook_loop` and a direct two-bar handoff. RIOTBOX-1484 carries that exact
+accepted WAV into one real DAWproject session at confirmed Session tempo
+through the existing Action/Session/receipt/replay/observer spine. The archive
+is a bounded musician file; generic stem roles, DAW-host import/playback,
+TUI/Ghost export, live recording, Holdout, and release readiness remain
+unclaimed.
+
 `RIOTBOX-1439` owns the accepted delivery-order correction: a new audible
 mechanism first receives at most three bounded Development variants and an
 early usefulness check, then only a provisional human keep permits a frozen

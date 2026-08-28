@@ -113,6 +113,10 @@ enum LaunchMode {
         session_path: PathBuf,
         destination_path: PathBuf,
     },
+    W30HookDawprojectExecute {
+        session_path: PathBuf,
+        destination_path: PathBuf,
+    },
     DawSessionWriterPlan {
         session_path: PathBuf,
         destination_path: PathBuf,
@@ -214,6 +218,10 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     }
     if matches!(launch.mode, LaunchMode::DawSessionWriterExportExecute { .. }) {
         run_daw_session_writer_export_execute(&launch, &raw_args)?;
+        return Ok(());
+    }
+    if matches!(launch.mode, LaunchMode::W30HookDawprojectExecute { .. }) {
+        run_w30_hook_dawproject_execute(&launch, &raw_args)?;
         return Ok(());
     }
     if matches!(launch.mode, LaunchMode::DawSessionWriterPlan { .. }) {
@@ -335,6 +343,9 @@ fn load_state(mode: LaunchMode) -> Result<JamAppState, JamAppError> {
         )),
         LaunchMode::DawSessionWriterExportExecute { .. } => Err(JamAppError::InvalidSession(
             "DAW session writer export execute uses a non-interactive proof path".into(),
+        )),
+        LaunchMode::W30HookDawprojectExecute { .. } => Err(JamAppError::InvalidSession(
+            "W-30 DAWproject execute uses a non-interactive export path".into(),
         )),
         LaunchMode::DawSessionWriterPlan { .. } => Err(JamAppError::InvalidSession(
             "DAW session writer plan uses a non-interactive proof path".into(),
