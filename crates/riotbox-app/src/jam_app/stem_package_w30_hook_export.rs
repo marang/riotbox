@@ -23,7 +23,10 @@ use riotbox_core::{
         CaptureTarget, ExportArtifactRole, ExportArtifactSourceGraphRef,
         ExportArtifactTimingGridRef,
     },
-    stem_package_writer::W30_HOOK_LOOP_STEM_ROLES,
+    stem_package_writer::{
+        W30_HOOK_LOOP_DURATION_BEATS, W30_HOOK_LOOP_SOURCE_TRANSPORT_START_BEAT,
+        W30_HOOK_LOOP_STEM_ROLES,
+    },
     style::PerformancePresetId,
     w30_damage_policy::latest_committed_w30_damage_intensity,
 };
@@ -38,8 +41,8 @@ use super::{
 
 const SAMPLE_RATE_HZ: u32 = 48_000;
 const CHANNEL_COUNT: u16 = 2;
-const TRANSPORT_START_BEAT: f64 = 8.0;
-const DURATION_BEATS: f64 = 8.0;
+const TRANSPORT_START_BEAT: f64 = W30_HOOK_LOOP_SOURCE_TRANSPORT_START_BEAT as f64;
+const DURATION_BEATS: f64 = W30_HOOK_LOOP_DURATION_BEATS as f64;
 const PRIMARY_CALLBACK_FRAMES: usize = 128;
 const PARITY_CALLBACK_FRAMES: usize = 257;
 

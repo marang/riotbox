@@ -177,6 +177,36 @@ fn parse_args_builds_w30_hook_stem_package_execute_mode() {
 }
 
 #[test]
+fn w30_hook_stem_package_blocked_summary_has_no_musician_handoff_or_files() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let session_path = temp.path().join("session.json");
+    let destination_path = temp.path().join("w30-hook");
+    save_session_json(
+        &session_path,
+        &SessionFile::new("w30-hook-blocked", "riotbox-test", "2026-08-28T00:00:00Z"),
+    )
+    .expect("save blocked W-30 hook Session");
+    let launch = AppLaunch {
+        mode: LaunchMode::StemPackageW30HookExecute {
+            session_path,
+            source_graph_path: None,
+            destination_path: destination_path.clone(),
+        },
+        observer_path: None,
+    };
+
+    let (summary, _) =
+        stem_package_w30_hook_execute_summary(&launch).expect("blocked W-30 hook summary");
+
+    assert_eq!(summary["status"], "blocked");
+    assert_eq!(summary["ready"], false);
+    assert_eq!(summary["writes_files"], false);
+    assert_eq!(summary["musician_handoff"], serde_json::Value::Null);
+    assert_eq!(summary["receipt"], serde_json::Value::Null);
+    assert!(!destination_path.join("stem_package").exists());
+}
+
+#[test]
 fn parse_args_rejects_incomplete_or_role_overridden_source_matched_execute() {
     let missing_proof = parse_args([
         "--stem-package-source-matched-execute".into(),

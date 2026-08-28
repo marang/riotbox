@@ -16,6 +16,16 @@ pub const STEM_PACKAGE_STEMS_DIR: &str = "stems";
 pub const STEM_PACKAGE_MANIFEST_FILE: &str = "stem_package_manifest.json";
 pub const STEM_PACKAGE_PROOF_FILE: &str = "stem_package_proof.json";
 
+// Immutable musician-facing geometry of the accepted V4 W-30 hook export.
+// These values centralize existing product truth; changing them requires a new
+// versioned boundary rather than mutating V4 in place.
+pub const W30_HOOK_LOOP_LOOP_START_BEAT: u32 = 0;
+pub const W30_HOOK_LOOP_SOURCE_TRANSPORT_START_BEAT: u32 = 8;
+pub const W30_HOOK_LOOP_DURATION_BEATS: u32 = 8;
+pub const W30_HOOK_LOOP_BEATS_PER_BAR: u32 = 4;
+pub const W30_HOOK_LOOP_DURATION_BARS: u32 =
+    W30_HOOK_LOOP_DURATION_BEATS / W30_HOOK_LOOP_BEATS_PER_BAR;
+
 pub const SUPPORTED_LOCAL_CI_PACKAGE_STEM_ROLES: &[ExportArtifactRole] =
     &[ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass];
 pub const SOURCE_MATCHED_HANDOFF_STEM_ROLES: &[ExportArtifactRole] = &[

@@ -868,11 +868,69 @@ fn w30_hook_loop_export_commits_one_semantic_stem_through_the_existing_spine() {
     assert!(stem.source_graph_ref.is_some());
     assert!(stem.timing_grid_ref.is_some());
     assert!(stem.fallback_comparison.is_some());
+
+    let musician_handoff = serde_json::to_value(
+        crate::cli::w30_hook_musician_handoff_summary(&state, &receipt),
+    )
+    .expect("serialize musician handoff");
+    assert_eq!(
+        musician_handoff["schema"],
+        "riotbox.w30_hook_musician_handoff.v1"
+    );
+    assert_eq!(musician_handoff["purpose"], serde_json::json!(["loop", "arrange", "process"]));
+    assert_eq!(musician_handoff["confirmed_bpm"], 120.0);
+    assert_eq!(musician_handoff["loop_start_beat"], 0);
+    assert_eq!(musician_handoff["source_transport_start_beat"], 8);
+    assert_eq!(musician_handoff["duration_beats"], 8);
+    assert_eq!(musician_handoff["beats_per_bar"], 4);
+    assert_eq!(musician_handoff["duration_bars"], 2);
+    assert_eq!(
+        musician_handoff["wav_path"],
+        destination
+            .join("stem_package/stems/w30_hook_loop.wav")
+            .to_string_lossy()
+            .as_ref()
+    );
+    assert_eq!(
+        musician_handoff["manifest_path"],
+        destination
+            .join("stem_package/stem_package_manifest.json")
+            .to_string_lossy()
+            .as_ref()
+    );
+    assert_eq!(
+        musician_handoff["proof_path"],
+        destination
+            .join("stem_package/stem_package_proof.json")
+            .to_string_lossy()
+            .as_ref()
+    );
+    assert_eq!(musician_handoff["sample_rate_hz"], 48_000);
+    assert_eq!(musician_handoff["channel_count"], 2);
+    assert_eq!(musician_handoff["duration_ms"], 4_000);
+    assert!(musician_handoff["source_graph_ref"].is_object());
+    assert!(musician_handoff["timing_grid_ref"].is_object());
+    assert_eq!(musician_handoff["source_capture_refs"], serde_json::json!(["cap-01"]));
+    assert_eq!(
+        musician_handoff["boundary"],
+        "stem_package.w30_hook_loop_v4"
+    );
+    assert_eq!(
+        musician_handoff["canonical_truth"],
+        "session_export_receipt_and_stem_package_manifest"
+    );
     assert!(
         destination
             .join("stem_package/stems/w30_hook_loop.wav")
             .is_file()
     );
+    let manifest: serde_json::Value = serde_json::from_slice(
+        &fs::read(destination.join("stem_package/stem_package_manifest.json"))
+            .expect("read unchanged V4 manifest"),
+    )
+    .expect("parse unchanged V4 manifest");
+    assert_eq!(manifest["schema_version"], 1);
+    assert!(manifest.get("musician_handoff").is_none());
     assert_eq!(state.session.export_receipts, vec![receipt.clone()]);
     let action = state
         .session
