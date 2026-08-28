@@ -1665,4 +1665,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Qualify one source-recognizable W-30 hook stem for musician reuse
 - [RIOTBOX-1483.md](./RIOTBOX-1483.md)
   Deliver the qualified W-30 hook as a musician-ready export handoff
+- [RIOTBOX-1484.md](./RIOTBOX-1484.md)
+  Export the qualified W-30 hook as a real DAWproject arrangement
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
