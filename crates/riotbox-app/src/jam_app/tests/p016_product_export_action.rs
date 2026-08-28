@@ -1069,7 +1069,7 @@ fn w30_hook_loop_export_fails_closed_from_stale_exact_owner_state() {
     assert!(state.queue.pending_actions().is_empty());
 }
 
-fn w30_hook_export_state() -> JamAppState {
+pub(crate) fn w30_hook_export_state() -> JamAppState {
     let mut graph = sample_graph();
     graph.source.content_hash = "a".repeat(64);
     graph.provenance.source_hash = graph.source.content_hash.clone();

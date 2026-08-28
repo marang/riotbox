@@ -10,6 +10,7 @@ include!("bin/riotbox-app/daw_export_report_cli.rs");
 include!("bin/riotbox-app/daw_session_json_package_cli.rs");
 include!("bin/riotbox-app/daw_session_writer_proof_cli.rs");
 include!("bin/riotbox-app/daw_session_export_cli.rs");
+include!("bin/riotbox-app/w30_hook_dawproject_cli.rs");
 include!("bin/riotbox-app/daw_session_writer_plan_cli.rs");
 include!("bin/riotbox-app/launch_summary.rs");
 include!("bin/riotbox-app/event_loop.rs");

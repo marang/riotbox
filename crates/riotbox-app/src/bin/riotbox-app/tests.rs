@@ -27,6 +27,8 @@ mod tests {
         },
     };
 
+    include!("tests/w30_hook_dawproject_cli.rs");
+
     #[test]
     fn audio_start_failure_becomes_persistent_faulted_runtime_health() {
         let error = AudioRuntimeError::BuildStream {
@@ -187,6 +189,7 @@ mod tests {
             | LaunchMode::DawSessionWriterProofExecute { .. }
             | LaunchMode::DawSessionWriterProofApply { .. }
             | LaunchMode::DawSessionWriterExportExecute { .. }
+            | LaunchMode::W30HookDawprojectExecute { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected ingest mode"),
         }
     }
@@ -304,6 +307,7 @@ mod tests {
             | LaunchMode::DawSessionWriterProofExecute { .. }
             | LaunchMode::DawSessionWriterProofApply { .. }
             | LaunchMode::DawSessionWriterExportExecute { .. }
+            | LaunchMode::W30HookDawprojectExecute { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected ingest mode"),
         }
     }
@@ -343,6 +347,7 @@ mod tests {
             | LaunchMode::DawSessionWriterProofExecute { .. }
             | LaunchMode::DawSessionWriterProofApply { .. }
             | LaunchMode::DawSessionWriterExportExecute { .. }
+            | LaunchMode::W30HookDawprojectExecute { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected load mode"),
         }
     }
@@ -377,6 +382,7 @@ mod tests {
             | LaunchMode::DawSessionWriterProofExecute { .. }
             | LaunchMode::DawSessionWriterProofApply { .. }
             | LaunchMode::DawSessionWriterExportExecute { .. }
+            | LaunchMode::W30HookDawprojectExecute { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected load mode"),
         }
     }

@@ -1032,6 +1032,13 @@ w30-hook-handoff session destination graph="" observer="":
     if [[ -n {{quote(observer)}} ]]; then args+=(--observer {{quote(observer)}}); fi
     cargo run --quiet -p riotbox-app --bin riotbox-app -- "${args[@]}"
 
+w30-hook-dawproject session destination observer="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    args=(--w30-hook-dawproject-execute --session {{quote(session)}} --daw-session-destination {{quote(destination)}})
+    if [[ -n {{quote(observer)}} ]]; then args+=(--observer {{quote(observer)}}); fi
+    cargo run --quiet -p riotbox-app --bin riotbox-app -- "${args[@]}"
+
 stem-package-local-ci-report-smoke:
     cargo test -p riotbox-app --test stem_package_report_smoke -- --nocapture
 

@@ -515,6 +515,18 @@ Rules:
   format, and capture/source lineage already owned by Session/Core. It is
   deterministic and reconstructable after restore; blocked export has no
   handoff summary and no final package
+- the W-30 DAWproject consumer records a distinct Session-owned receipt with
+  `export_scope: daw_session`, boundary
+  `daw_session.w30_hook_dawproject_v1`, pack id `w30-hook-dawproject`, and role
+  `arrangement_manifest`. Its four artifact-set entries name the complete
+  `.dawproject` archive, embedded `project.xml`, byte-identical embedded
+  `audio/w30_hook_loop.wav`, and embedded `riotbox-proof.json`. The proof binds
+  the V4 source receipt and hash, confirmed tempo, eight-beat placement, audio
+  format, Source Graph/timing refs, and capture lineage; the
+  `dawproject_archive_readback` gate proves exact archive members, typed model
+  readback, and embedded bytes. Replay restores these identities only and never
+  regenerates the external file. This receipt does not claim host import,
+  audible DAW playback, a generic DAW writer, or TUI/Ghost availability
 - the first reserved live-recording receipt boundary is
   `live_recording.receipt_contract_v1` with
   `export_scope: live_recording`, `export_role: live_recording_capture`,
@@ -1054,6 +1066,13 @@ Additional receipt fields required before wider export scopes:
   --session <session.json> --daw-session-destination <dir>` reads that proof,
   attaches the `daw_session_writer_proof` QA gate and artifact entry to the
   latest DAW-session receipt, and writes only the Session file.
+- the separately versioned `w30_hook_dawproject_v1` action is a real bounded
+  musician file rather than another layer in that developer proof stack. Its
+  Session receipt boundary is `daw_session.w30_hook_dawproject_v1`; it can be
+  committed only from the accepted semantic V4 hook receipt and after exact
+  final-archive readback. It preserves one clip at beat zero for eight beats in
+  4/4 at confirmed Session BPM and embeds the accepted WAV byte-for-byte. Its
+  archive readback gate is not host-import or audible-output evidence.
 - current DAW-session writer commits keep the Session receipt as the only
   product truth. The command revalidates the DAW-session receipt identity,
   placement refs, tempo-map refs, local artifact availability, and

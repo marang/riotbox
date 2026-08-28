@@ -297,6 +297,8 @@ fn export_artifact_role_label(role: ExportArtifactRole) -> &'static str {
         ExportArtifactRole::LiveRecordingCapture => "live_recording_capture",
         ExportArtifactRole::DawSessionTempoMap => "daw_session_tempo_map",
         ExportArtifactRole::DawSessionWriterProof => "daw_session_writer_proof",
+        ExportArtifactRole::DawProjectFile => "dawproject_file",
+        ExportArtifactRole::DawProjectProof => "dawproject_proof",
     }
 }
 
@@ -304,5 +306,7 @@ fn export_artifact_media_type_label(media_type: ExportArtifactMediaType) -> &'st
     match media_type {
         ExportArtifactMediaType::AudioWav => "audio_wav",
         ExportArtifactMediaType::Json => "json",
+        ExportArtifactMediaType::Xml => "xml",
+        ExportArtifactMediaType::DawProjectZip => "dawproject_zip",
     }
 }

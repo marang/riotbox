@@ -432,4 +432,13 @@ fn daw_session_export_action_contract_roundtrips_as_reserved_scope() {
         audible_output_boundary,
         DawSessionExportBoundary::AudibleOutputProofV1
     );
+    let dawproject_json = serde_json::to_value(DawSessionExportBoundary::W30HookDawprojectV1)
+        .expect("serialize W-30 DAWproject boundary");
+    assert_eq!(dawproject_json, "w30_hook_dawproject_v1");
+    let dawproject_boundary: DawSessionExportBoundary =
+        serde_json::from_value(dawproject_json).expect("deserialize W-30 DAWproject boundary");
+    assert_eq!(
+        dawproject_boundary,
+        DawSessionExportBoundary::W30HookDawprojectV1
+    );
 }

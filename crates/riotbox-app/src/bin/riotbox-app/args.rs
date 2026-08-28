@@ -28,6 +28,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     let mut daw_session_writer_proof_execute = false;
     let mut daw_session_writer_proof_apply = false;
     let mut daw_session_writer_export_execute = false;
+    let mut w30_hook_dawproject_execute = false;
     let mut daw_session_writer_plan = false;
     let mut stem_package_destination_path = None;
     let mut product_stem_handoff_proof_path = None;
@@ -69,6 +70,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             "--daw-session-writer-export-execute" => {
                 daw_session_writer_export_execute = true;
             }
+            "--w30-hook-dawproject-execute" => w30_hook_dawproject_execute = true,
             "--daw-session-writer-plan" => daw_session_writer_plan = true,
             "--stem-package-destination" => {
                 stem_package_destination_path =
@@ -493,6 +495,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
         writer_proof_execute: daw_session_writer_proof_execute,
         writer_proof_apply: daw_session_writer_proof_apply,
         writer_export_execute: daw_session_writer_export_execute,
+        w30_hook_dawproject_execute,
         writer_plan: daw_session_writer_plan,
         source_path_present: source_path.is_some(),
         source_graph_path_present: source_graph_path.is_some(),

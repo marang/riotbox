@@ -135,6 +135,17 @@ Why:
 - explicit typed errors at subsystem boundaries
 - no panic-driven control flow in the runtime path
 
+### 3.10 DAW interchange direction
+
+- DAWproject 1.0 is the first vendor-neutral DAW handoff format for the bounded
+  W-30 semantic-hook workflow
+- the Rust `dawproject` crate owns schema-aware project/metadata serialization,
+  ZIP archive writing, and typed readback in the non-realtime app path
+- Riotbox still owns the action, Session receipt, lineage, artifact identities,
+  exact embedded-audio check, atomic no-replace publication, and QA decision
+- format serialization must never enter the realtime audio callback and does
+  not itself prove import or audible playback in a DAW host
+
 ---
 
 ## 4. Explicit Non-Choices

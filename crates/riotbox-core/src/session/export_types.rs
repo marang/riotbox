@@ -432,6 +432,8 @@ pub enum ExportArtifactRole {
     LiveRecordingCapture,
     DawSessionTempoMap,
     DawSessionWriterProof,
+    DawProjectFile,
+    DawProjectProof,
 }
 
 impl ExportArtifactRole {
@@ -460,6 +462,8 @@ pub enum ExportArtifactLocation {
 pub enum ExportArtifactMediaType {
     AudioWav,
     Json,
+    Xml,
+    DawProjectZip,
 }
 
 #[cfg(test)]

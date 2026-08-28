@@ -2093,8 +2093,18 @@ concrete loop/arrange/process handoff while leaving TUI/Ghost controls,
 DAW-project creation, live recording, Holdout, release, and overall-product
 qualification out of scope.
 
-The next P016 slice should build on this musician-ready semantic file rather
+RIOTBOX-1484 then closes the named DAW-placement gap for that same accepted
+semantic file. One `export.daw_session` action writes a real DAWproject 1.0
+archive containing the byte-identical V4 WAV, one audio clip at beat zero for
+eight beats, 4/4, and the confirmed Session tempo. Exact typed project,
+embedded-file, proof, lineage, deterministic-hash, no-replace, Session/replay,
+and observer gates must pass before commit. The bounded command is usable as a
+musician handoff, while host import, audible host playback, multi-track roles,
+live recording, TUI/Ghost export, Holdout, and release claims remain separate.
+
+The next P016 slice should build on the musician-ready semantic DAW file rather
 than reopening the rejected post-bus contribution roles or requalifying the
 same sound. It must name one still-missing end-to-end workflow from the
-RIOTBOX-1036 anchor and preserve the existing action, Session, replay, and
-writer truth.
+RIOTBOX-1036 anchor, such as exact host-import evidence or the first honest live
+recording path, and preserve the existing action, Session, replay, and writer
+truth.

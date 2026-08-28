@@ -457,6 +457,16 @@ Boundary:
   audio format, and capture/source lineage. The accepted V4 WAV, manifest,
   proof, receipt, and action contracts remain byte-compatible. A blocked export
   emits no handoff projection and leaves no final package.
+- RBX-364 adds the separate musician-facing `export.daw_session` boundary
+  `w30_hook_dawproject_v1`. `just w30-hook-dawproject <session>
+  <destination.dawproject> [observer]` consumes only a successful Session-owned
+  `stem_package.w30_hook_loop_v4` receipt, embeds its exact
+  `w30_hook_loop.wav` bytes, and places one eight-beat clip at beat zero in 4/4
+  at the confirmed Session tempo. The command writes through create-new
+  staging and no-replace publication, parses the final typed project and proof
+  back, and commits action, receipt, replay, and observer truth only after all
+  gates pass. It does not rerender audio, launch a DAW, prove host import or
+  audible host playback, or enable TUI/Ghost export.
 - Live recording remains out of runnable
   TUI/Ghost/user scope until its capture writer and gates land. DAW session
   export has a typed developer-proof action contract with gated proof
@@ -874,7 +884,23 @@ Contract for `export.stem_package`:
   evidence. Observer lifecycle projection now reports rejected reserved
   attempts and committed local-writer proof actions from queue/history, Session
   action log, and matching receipt evidence. No host runner, audio capture,
-  final DAW export completion, or musician-runnable DAW export exists yet.
+  final DAW export completion for that older proof stack, or generic
+  musician-runnable DAW export exists yet. The separately versioned W-30
+  DAWproject boundary below does not reinterpret this skeleton.
+- Current W-30 DAWproject action boundary:
+  `export.daw_session` with boundary `w30_hook_dawproject_v1` targets Session,
+  requires an explicit non-existing `.dawproject` destination and the latest
+  ready `stem_package.w30_hook_loop_v4` receipt, and uses `NotUndoable` because
+  it writes an external musician file. Its side effect is one validated archive
+  containing only `project.xml`, `metadata.xml`,
+  `audio/w30_hook_loop.wav`, and `riotbox-proof.json`. Success records receipt
+  boundary `daw_session.w30_hook_dawproject_v1`, pack id
+  `w30-hook-dawproject`, one committed action and commit record, and observer
+  lifecycle from Session truth. Replay validates recorded identity but never
+  rewrites the file. Failure rejects the queued attempt and leaves no receipt
+  or owned final artifact. The binary ingress is
+  `riotbox-app --w30-hook-dawproject-execute --session <session.json>
+  --daw-session-destination <file.dawproject> [--observer <events.ndjson>]`.
 - Current DAW writer proof skeleton:
   `riotbox-app --daw-session-writer-proof-execute --session <session.json>
   --daw-session-destination <dir>` requires a ready DAW-session receipt plus a
@@ -1005,10 +1031,10 @@ Contract for `export.stem_package`:
   `daw_tempo_map_readiness`, `daw_tempo_map_ref`, `artifact_set[]`, and
   `qa_gates[]` including `daw_session_json_package_integrity` from the Session
   receipt. They may also include the derived `proof_gates` and `proof_stack`
-  summaries for that receipt. Because `export.daw_session` is still not
-  runnable, observer snapshots also expose the latest DAW-session receipt as a
-  read-only top-level `daw_session_receipt` summary without inventing requested,
-  started, or completed lifecycle records.
+  summaries for that receipt. A DAW-session receipt without a corresponding
+  action remains a read-only top-level `daw_session_receipt` summary and must
+  not invent requested, started, or completed lifecycle records. The W-30
+  DAWproject boundary projects lifecycle only from its real committed action.
   Observer state must not become a second package, timing, or arrangement
   truth.
   Current app observer implementation includes both `export.product_mix` and
