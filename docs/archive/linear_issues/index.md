@@ -1661,4 +1661,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Qualify the source-matched stem package as a musician-usable handoff
 - [RIOTBOX-1481.md](./RIOTBOX-1481.md)
   Demonstrate source-matched stem utility in a concrete multitrack context
+- [RIOTBOX-1482.md](./RIOTBOX-1482.md)
+  Qualify one source-recognizable W-30 hook stem for musician reuse
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.

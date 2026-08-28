@@ -2068,7 +2068,22 @@ final output were not presented. The current post-bus Shapley contribution
 package remains valid for reconstruction, lineage, and internal proof, but
 must not be promoted through TUI/Ghost or broader DAW surfaces as editable
 musical stems.
-The next bounded P016 foundation slice must define a versioned
-musician-semantic stem contract within the existing Action, Session, receipt,
-and observer spine, qualify its output before UI work, and avoid a shadow
-export or persistence system.
+RIOTBOX-1482 closes that exact foundation gap with one versioned semantic role,
+`w30_hook_loop`, and the accepted `stem_package.w30_hook_loop_v4` operator
+boundary. The final path begins at the established six committed W-30 actions,
+renders only the admitted W-30 preview, and commits the resulting reusable hook
+through the existing Action, Session, receipt, replay, observer, RuntimeMix, and
+atomic writer spine. All four frozen Development cases pass, including a
+distinct tonal family whose exact source-to-product presentation received a
+structured human keep. V1-V3 remain immutable fail-closed evidence. This proves
+one source-recognizable hook file that a musician can loop, arrange, or process;
+it does not qualify the rejected post-bus contribution roles, a TUI/Ghost
+surface, DAW placement, live recording, Holdout, release readiness, or Riotbox
+as a whole.
+
+The next bounded P016 slice must start from that accepted file-producing product
+path and demonstrate one concrete musician workflow for the exact qualified
+role. It must not rerun RIOTBOX-1482 sound qualification, broaden the role by
+relabeling internal contribution stems, or create another action, persistence,
+or export truth. Shape that slice from the existing RIOTBOX-1036 anchor before
+starting implementation.
