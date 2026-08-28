@@ -430,14 +430,24 @@ Boundary:
   This operator path is not a TUI/Ghost musician control and does not promote
   the Development proof to DAW, listening, release, or source-general evidence.
 - Replay must not blindly rewrite files as a hidden side effect.
-- Stem package export now has this bounded operator commit path, while its
-  TUI/Ghost musician surface remains disabled. RBX-355 keeps the current V2
-  post-bus contribution roles internal even after their technical and Session
-  gates pass; DAW placement and structured listening cannot promote those
-  rejected roles. A future musician export requires a separately versioned
-  musician-semantic role contract in this same Action/Session spine, followed
-  by its own DAW placement and positive structured listening evidence. Live
-  recording remains out of runnable
+- Stem package export now has bounded operator commit paths, while its TUI/Ghost
+  musician surface remains disabled. RBX-355 keeps the current V2 post-bus
+  contribution roles internal even after their technical and Session gates
+  pass; DAW placement and structured listening cannot promote those rejected
+  roles.
+- RBX-361 qualifies exactly one musician-semantic operator boundary,
+  `stem_package.w30_hook_loop_v4`, with artifact role `w30_hook_loop` and pack
+  id `stem-package-w30-hook-loop`. It may run only from the established
+  `w30_live_path_render` owner after exactly six committed actions: timing
+  confirmation, preset activation, capture-length selection, bar-group
+  capture, pad promotion, and W-30 trigger. The action renders the admitted W-30
+  preview alone from transport beat eight for eight committed-tempo beats and
+  commits through the existing Session, receipt, replay, observer, and atomic
+  writer path. V1-V3 remain immutable failed boundaries. The four-case frozen
+  Development matrix and structured tonal-source keep qualify only this role
+  and operator path; they do not enable TUI/Ghost, DAW placement, live
+  recording, Holdout, release, or overall-product claims.
+- Live recording remains out of runnable
   TUI/Ghost/user scope until its capture writer and gates land. DAW session
   export has a typed developer-proof action contract with gated proof
   boundaries. Host-audio soak, automatic arranger export, and automatic Ghost
