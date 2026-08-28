@@ -311,6 +311,33 @@ after success. This is operator/Foundation proof, not a TUI or Ghost control;
 the V2 input remains Development-only and musician stem export stays disabled
 until DAW-placement and structured-listening gates are complete.
 
+### Export The Qualified W-30 Hook
+
+An existing Session that has completed the accepted six-action W-30 path can
+hand its qualified hook directly to a musician workflow:
+
+```bash
+just w30-hook-handoff \
+  "path/to/session.json" \
+  "exports/my-w30-hook" \
+  "path/to/source-graph.json" \
+  "artifacts/local/w30-hook-observer.ndjson"
+```
+
+The Source Graph and observer arguments are optional when the Session already
+embeds its active graph and no observer log is needed. On success, the command
+prints a `riotbox.w30_hook_musician_handoff.v1` summary with the exact WAV,
+manifest, and proof paths; confirmed Session tempo; the immutable two-bar,
+eight-beat loop geometry; audio format; and capture/source lineage. The WAV is
+ready to loop, arrange, or process at that tempo.
+
+This is a direct recipe over the existing
+`stem_package.w30_hook_loop_v4` action and writer. It does not rerender a new
+sound design, add a second export truth, or change the accepted V4 package
+bytes. An ineligible Session fails closed without a final package or musician
+handoff summary. TUI/Ghost controls, DAW-project creation, live recording,
+Holdout, and release qualification remain separate work.
+
 ## Start In 5 Steps
 
 1. Run Riotbox on your own WAV or one of the local test examples described in [`data/test_audio/README.md`](data/test_audio/README.md):

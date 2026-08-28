@@ -504,6 +504,17 @@ Rules:
   source-silence comparison keyed by the exact V2 proof SHA-256 and role. The
   operator action also persists the explicit handoff proof path. Replay may
   restore this receipt and action truth but never recopies package files
+- the accepted W-30 hook consumer records boundary
+  `stem_package.w30_hook_loop_v4`, pack id
+  `stem-package-w30-hook-loop`, and the single semantic artifact role
+  `w30_hook_loop` through the same Session receipt and replay truth. RBX-363
+  does not add stored Session state or mutate that V4 receipt, manifest, proof,
+  or WAV contract. Its non-persisted
+  `riotbox.w30_hook_musician_handoff.v1` summary projects the exact package
+  paths, confirmed Session BPM, immutable two-bar/eight-beat geometry, audio
+  format, and capture/source lineage already owned by Session/Core. It is
+  deterministic and reconstructable after restore; blocked export has no
+  handoff summary and no final package
 - the first reserved live-recording receipt boundary is
   `live_recording.receipt_contract_v1` with
   `export_scope: live_recording`, `export_role: live_recording_capture`,

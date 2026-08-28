@@ -1024,6 +1024,14 @@ product-stem-handoff source destination:
 product-stem-handoff-contract-fixtures:
     python3 -m unittest scripts.test_validate_product_stem_handoff
 
+w30-hook-handoff session destination graph="" observer="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    args=(--stem-package-w30-hook-execute --session {{quote(session)}} --stem-package-destination {{quote(destination)}})
+    if [[ -n {{quote(graph)}} ]]; then args+=(--graph {{quote(graph)}}); fi
+    if [[ -n {{quote(observer)}} ]]; then args+=(--observer {{quote(observer)}}); fi
+    cargo run --quiet -p riotbox-app --bin riotbox-app -- "${args[@]}"
+
 stem-package-local-ci-report-smoke:
     cargo test -p riotbox-app --test stem_package_report_smoke -- --nocapture
 

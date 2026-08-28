@@ -2081,9 +2081,20 @@ it does not qualify the rejected post-bus contribution roles, a TUI/Ghost
 surface, DAW placement, live recording, Holdout, release readiness, or Riotbox
 as a whole.
 
-The next bounded P016 slice must start from that accepted file-producing product
-path and demonstrate one concrete musician workflow for the exact qualified
-role. It must not rerun RIOTBOX-1482 sound qualification, broaden the role by
-relabeling internal contribution stems, or create another action, persistence,
-or export truth. Shape that slice from the existing RIOTBOX-1036 anchor before
-starting implementation.
+RIOTBOX-1483 completes the next bounded P016 slice without rerunning sound
+qualification. One documented `just w30-hook-handoff` recipe delegates to the
+accepted V4 action and writer, then reports the exact WAV, manifest, proof,
+confirmed Session tempo, immutable two-bar/eight-beat geometry, audio format,
+and capture/source lineage as a deterministic musician-facing projection. The
+projection is not persisted because every field is reconstructable from
+Session/Core truth. The accepted V4 package and receipt stay byte-compatible;
+an ineligible Session fails closed without a final package. This supplies a
+concrete loop/arrange/process handoff while leaving TUI/Ghost controls,
+DAW-project creation, live recording, Holdout, release, and overall-product
+qualification out of scope.
+
+The next P016 slice should build on this musician-ready semantic file rather
+than reopening the rejected post-bus contribution roles or requalifying the
+same sound. It must name one still-missing end-to-end workflow from the
+RIOTBOX-1036 anchor and preserve the existing action, Session, replay, and
+writer truth.

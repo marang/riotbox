@@ -447,6 +447,16 @@ Boundary:
   Development matrix and structured tonal-source keep qualify only this role
   and operator path; they do not enable TUI/Ghost, DAW placement, live
   recording, Holdout, release, or overall-product claims.
+- RBX-363 adds one documented musician handoff recipe for that unchanged V4
+  boundary: `just w30-hook-handoff <session> <destination> [graph] [observer]`.
+  The recipe delegates to the existing `export.stem_package` queue, commit,
+  Session receipt, replay, observer, and writer path; it creates no new action
+  or side-effect truth. On success its user-visible, non-persisted
+  `riotbox.w30_hook_musician_handoff.v1` projection identifies the exact WAV,
+  manifest, proof, confirmed Session BPM, immutable two-bar/eight-beat geometry,
+  audio format, and capture/source lineage. The accepted V4 WAV, manifest,
+  proof, receipt, and action contracts remain byte-compatible. A blocked export
+  emits no handoff projection and leaves no final package.
 - Live recording remains out of runnable
   TUI/Ghost/user scope until its capture writer and gates land. DAW session
   export has a typed developer-proof action contract with gated proof
