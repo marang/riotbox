@@ -16,6 +16,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     let mut stem_package_local_ci_dry_run = false;
     let mut stem_package_local_ci_execute = false;
     let mut stem_package_source_matched_execute = false;
+    let mut stem_package_w30_hook_execute = false;
     let mut stem_package_local_ci_report = false;
     let mut live_recording_readiness_report = false;
     let mut daw_export_readiness_report = false;
@@ -42,6 +43,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             "--stem-package-source-matched-execute" => {
                 stem_package_source_matched_execute = true;
             }
+            "--stem-package-w30-hook-execute" => stem_package_w30_hook_execute = true,
             "--stem-package-local-ci-report" => stem_package_local_ci_report = true,
             "--live-recording-readiness-report" => live_recording_readiness_report = true,
             "--daw-export-readiness-report" => daw_export_readiness_report = true,
@@ -198,6 +200,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
         stem_package_local_ci_dry_run,
         stem_package_local_ci_execute,
         stem_package_source_matched_execute,
+        stem_package_w30_hook_execute,
         stem_package_local_ci_report,
     ]
     .into_iter()
@@ -205,7 +208,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     .count();
     if stem_package_mode_count > 1 {
         return Err(
-            "stem package local CI dry-run/execute/report and source-matched execute modes cannot be combined".into(),
+            "stem package local CI dry-run/execute/report, source-matched execute, and W-30 hook execute modes cannot be combined".into(),
         );
     }
     let read_only_report_mode_count =
@@ -267,6 +270,39 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             "--product-stem-handoff-proof requires --stem-package-source-matched-execute"
                 .into(),
         );
+    }
+
+    if stem_package_w30_hook_execute {
+        if source_path.is_some()
+            || saw_sidecar_flag
+            || saw_seed_flag
+            || product_stem_handoff_proof_path.is_some()
+            || daw_session_destination_path.is_some()
+            || daw_session_host_import_proof_path.is_some()
+            || daw_session_audible_output_proof_path.is_some()
+            || !claimed_stem_roles.is_empty()
+        {
+            return Err(
+                "W-30 hook stem package execute cannot be combined with source/sidecar/seed/handoff-proof/DAW destination/stem-role launch arguments"
+                    .into(),
+            );
+        }
+        let session_path = session_path.filter(|_| saw_session_flag).ok_or_else(|| {
+            "W-30 hook stem package execute requires --session <session.json>".to_string()
+        })?;
+        let destination_path = stem_package_destination_path.ok_or_else(|| {
+            "W-30 hook stem package execute requires --stem-package-destination <dir>"
+                .to_string()
+        })?;
+
+        return Ok(AppLaunch {
+            mode: LaunchMode::StemPackageW30HookExecute {
+                session_path,
+                source_graph_path,
+                destination_path,
+            },
+            observer_path,
+        });
     }
 
     if stem_package_source_matched_execute {

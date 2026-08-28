@@ -10,6 +10,7 @@ use riotbox_core::{
     export_readiness::{
         ExportScope, ProductExportBoundary, ProductExportDestinationKind, ProductExportRole,
         STEM_PACKAGE_LOCAL_CI_PACK_ID, STEM_PACKAGE_SOURCE_MATCHED_PACK_ID,
+        STEM_PACKAGE_W30_HOOK_LOOP_PACK_ID,
     },
     ids::ActionId,
     queue::QueueEnqueueResult,
@@ -273,6 +274,18 @@ impl JamAppState {
             ) | (
                 STEM_PACKAGE_SOURCE_MATCHED_PACK_ID,
                 ProductExportBoundary::StemPackageSourceMatchedHandoffV1
+            ) | (
+                STEM_PACKAGE_W30_HOOK_LOOP_PACK_ID,
+                ProductExportBoundary::StemPackageW30HookLoopV1
+            ) | (
+                STEM_PACKAGE_W30_HOOK_LOOP_PACK_ID,
+                ProductExportBoundary::StemPackageW30HookLoopV2
+            ) | (
+                STEM_PACKAGE_W30_HOOK_LOOP_PACK_ID,
+                ProductExportBoundary::StemPackageW30HookLoopV3
+            ) | (
+                STEM_PACKAGE_W30_HOOK_LOOP_PACK_ID,
+                ProductExportBoundary::StemPackageW30HookLoopV4
             )
         ) && receipt.export_role == ProductExportRole::PackageManifest;
         if !accepted_identity {

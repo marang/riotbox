@@ -291,6 +291,7 @@ fn export_artifact_role_label(role: ExportArtifactRole) -> &'static str {
         ExportArtifactRole::StemBass => "stem_bass",
         ExportArtifactRole::StemMusic => "stem_music",
         ExportArtifactRole::StemVocals => "stem_vocals",
+        ExportArtifactRole::W30HookLoop => "w30_hook_loop",
         ExportArtifactRole::ProductExportProof => "product_export_proof",
         ExportArtifactRole::ExportManifest => "export_manifest",
         ExportArtifactRole::LiveRecordingCapture => "live_recording_capture",

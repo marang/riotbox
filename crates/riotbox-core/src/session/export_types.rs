@@ -426,6 +426,7 @@ pub enum ExportArtifactRole {
     StemBass,
     StemMusic,
     StemVocals,
+    W30HookLoop,
     ProductExportProof,
     ExportManifest,
     LiveRecordingCapture,
@@ -438,7 +439,11 @@ impl ExportArtifactRole {
     pub const fn is_stem_role(self) -> bool {
         matches!(
             self,
-            Self::StemDrums | Self::StemBass | Self::StemMusic | Self::StemVocals
+            Self::StemDrums
+                | Self::StemBass
+                | Self::StemMusic
+                | Self::StemVocals
+                | Self::W30HookLoop
         )
     }
 }

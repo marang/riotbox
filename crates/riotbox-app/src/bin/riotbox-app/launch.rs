@@ -67,6 +67,11 @@ enum LaunchMode {
         handoff_proof_path: PathBuf,
         destination_path: PathBuf,
     },
+    StemPackageW30HookExecute {
+        session_path: PathBuf,
+        source_graph_path: Option<PathBuf>,
+        destination_path: PathBuf,
+    },
     StemPackageLocalCiReport {
         session_path: PathBuf,
     },
@@ -152,6 +157,10 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
         LaunchMode::StemPackageSourceMatchedExecute { .. }
     ) {
         run_stem_package_source_matched_execute(&launch, &raw_args)?;
+        return Ok(());
+    }
+    if matches!(launch.mode, LaunchMode::StemPackageW30HookExecute { .. }) {
+        run_stem_package_w30_hook_execute(&launch, &raw_args)?;
         return Ok(());
     }
     if matches!(launch.mode, LaunchMode::StemPackageLocalCiReport { .. }) {
@@ -283,6 +292,9 @@ fn load_state(mode: LaunchMode) -> Result<JamAppState, JamAppError> {
         )),
         LaunchMode::StemPackageSourceMatchedExecute { .. } => Err(JamAppError::InvalidSession(
             "source-matched stem package execute uses a non-interactive proof path".into(),
+        )),
+        LaunchMode::StemPackageW30HookExecute { .. } => Err(JamAppError::InvalidSession(
+            "W-30 hook stem package execute uses a non-interactive proof path".into(),
         )),
         LaunchMode::StemPackageLocalCiReport { .. } => Err(JamAppError::InvalidSession(
             "stem package local CI report uses a non-interactive proof path".into(),

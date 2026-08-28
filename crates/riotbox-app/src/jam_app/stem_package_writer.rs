@@ -20,6 +20,7 @@ use riotbox_core::{
         EXPORT_READINESS_CONTRACT_SCHEMA, ExportReadinessContract, ExportReadinessStatus,
         ExportScope, ProductExportBoundary, ProductExportDestinationKind, ProductExportRole,
         STEM_PACKAGE_LOCAL_CI_PACK_ID, STEM_PACKAGE_SOURCE_MATCHED_PACK_ID,
+        STEM_PACKAGE_W30_HOOK_LOOP_PACK_ID,
     },
     ids::ActionId,
     session::{
@@ -33,7 +34,7 @@ use riotbox_core::{
     stem_package_writer::{
         STEM_PACKAGE_PACKAGE_DIR, StemPackageLocalWriterBoundary, StemPackageLocalWriterPlan,
         StemPackageLocalWriterRequest, plan_stem_package_local_ci_package,
-        plan_stem_package_source_matched_handoff,
+        plan_stem_package_source_matched_handoff, plan_stem_package_w30_hook_loop,
     },
 };
 
@@ -84,6 +85,28 @@ pub(crate) struct StemPackageSourceWriterInput {
 }
 
 #[derive(Clone, Debug)]
+pub(crate) struct StemPackageRenderedStem {
+    pub(crate) role: ExportArtifactRole,
+    pub(crate) samples: Vec<f32>,
+    pub(crate) sample_rate_hz: u32,
+    pub(crate) channel_count: u16,
+    pub(crate) source_graph_ref: ExportArtifactSourceGraphRef,
+    pub(crate) timing_grid_ref: ExportArtifactTimingGridRef,
+    pub(crate) source_capture_refs: Vec<riotbox_core::ids::CaptureId>,
+    pub(crate) lineage_capture_refs: Vec<riotbox_core::ids::CaptureId>,
+    pub(crate) fallback_reference_identity: String,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct StemPackageW30HookWriterInput {
+    pub(crate) created_by_action: ActionId,
+    pub(crate) created_at: TimestampMs,
+    pub(crate) destination_root: PathBuf,
+    pub(crate) source_sha256: String,
+    pub(crate) stem: StemPackageRenderedStem,
+}
+
+#[derive(Clone, Debug)]
 #[allow(dead_code)]
 pub(crate) struct WrittenStemPackageFixture {
     pub(crate) package_dir: PathBuf,
@@ -131,6 +154,27 @@ pub(crate) fn write_source_matched_stem_package(
         claimed_roles,
         identity,
         |plan| write_staged_source_stems(&input.stems, plan),
+    )
+}
+
+pub(crate) fn write_w30_hook_stem_package(
+    input: StemPackageW30HookWriterInput,
+) -> Result<WrittenStemPackageFixture, JamAppError> {
+    let claimed_roles = vec![input.stem.role];
+    let identity = StemPackageWriterIdentity {
+        writer_boundary: StemPackageLocalWriterBoundary::W30HookLoopV4,
+        receipt_boundary: ProductExportBoundary::StemPackageW30HookLoopV4,
+        pack_id: STEM_PACKAGE_W30_HOOK_LOOP_PACK_ID,
+        source_sha256: input.source_sha256,
+        hash_stability_summary: "W-30 hook render is sample-exact across independent 128/257-frame callback runs",
+    };
+    write_stem_package(
+        input.created_by_action,
+        input.created_at,
+        input.destination_root,
+        claimed_roles,
+        identity,
+        |plan| write_staged_rendered_stems(std::slice::from_ref(&input.stem), plan),
     )
 }
 
@@ -240,6 +284,17 @@ fn writer_plan(
     claimed_stem_roles: Vec<ExportArtifactRole>,
     boundary: StemPackageLocalWriterBoundary,
 ) -> Result<StemPackageLocalWriterPlan, JamAppError> {
+    if matches!(
+        boundary,
+        StemPackageLocalWriterBoundary::W30HookLoopV1
+            | StemPackageLocalWriterBoundary::W30HookLoopV2
+            | StemPackageLocalWriterBoundary::W30HookLoopV3
+    ) {
+        return Err(JamAppError::InvalidSession(
+            "superseded W-30 hook writer boundary is retained for replay but cannot create new packages"
+                .into(),
+        ));
+    }
     let request = StemPackageLocalWriterRequest {
         created_by_action,
         boundary,
@@ -254,6 +309,10 @@ fn writer_plan(
         StemPackageLocalWriterBoundary::SourceMatchedHandoffV1 => {
             plan_stem_package_source_matched_handoff(request)
         }
+        StemPackageLocalWriterBoundary::W30HookLoopV1 => unreachable!("handled above"),
+        StemPackageLocalWriterBoundary::W30HookLoopV2 => unreachable!("handled above"),
+        StemPackageLocalWriterBoundary::W30HookLoopV3 => unreachable!("handled above"),
+        StemPackageLocalWriterBoundary::W30HookLoopV4 => plan_stem_package_w30_hook_loop(request),
     }
     .map_err(|error| JamAppError::InvalidSession(format!("{error:?}")))
 }
@@ -328,6 +387,61 @@ fn write_staged_source_stems(
             timing_grid_ref: stem.timing_grid_ref.clone(),
             source_capture_refs: Vec::new(),
             lineage_capture_refs: Vec::new(),
+            fallback_comparison: Some(fallback_comparison),
+            audio_metrics: Some(evidence.audio_metrics),
+            sample_rate_hz: Some(evidence.sample_rate_hz),
+            channel_count: Some(evidence.channel_count),
+            duration_ms: Some(evidence.duration_ms),
+        });
+    }
+    Ok(entries)
+}
+
+fn write_staged_rendered_stems(
+    stems: &[StemPackageRenderedStem],
+    plan: &StemPackageLocalWriterPlan,
+) -> Result<Vec<ExportArtifactSetEntry>, JamAppError> {
+    let mut entries = Vec::new();
+    for stem in stems {
+        if !stem.role.is_stem_role() {
+            return Err(JamAppError::InvalidSession(format!(
+                "non-stem role claimed for rendered package: {:?}",
+                stem.role
+            )));
+        }
+        let path = path_for_role(plan, stem.role)?;
+        write_interleaved_pcm16_wav(
+            &path,
+            stem.sample_rate_hz,
+            stem.channel_count,
+            &stem.samples,
+        )
+        .map_err(|error| JamAppError::InvalidSession(format!("{error}")))?;
+        let evidence = local_wav_audio_evidence(&path).ok_or_else(|| {
+            JamAppError::InvalidSession(format!(
+                "could not decode written rendered stem {}",
+                path.display()
+            ))
+        })?;
+        let fallback_comparison = riotbox_core::session::ExportArtifactFallbackComparisonEvidence {
+            comparison_kind:
+                riotbox_core::session::ExportArtifactFallbackComparisonKind::SourceVsFallback,
+            reference_identity: stem.fallback_reference_identity.clone(),
+            rms_difference_micros: evidence.audio_metrics.rms_amplitude_micros,
+            normalized_correlation_micros: None,
+        };
+        entries.push(ExportArtifactSetEntry {
+            role: stem.role,
+            location: ExportArtifactLocation::LocalPath {
+                path: path.to_string_lossy().into_owned(),
+            },
+            media_type: ExportArtifactMediaType::AudioWav,
+            sha256: sha256_file(&path)?,
+            normalized_manifest_hash: None,
+            source_graph_ref: Some(stem.source_graph_ref.clone()),
+            timing_grid_ref: Some(stem.timing_grid_ref.clone()),
+            source_capture_refs: stem.source_capture_refs.clone(),
+            lineage_capture_refs: stem.lineage_capture_refs.clone(),
             fallback_comparison: Some(fallback_comparison),
             audio_metrics: Some(evidence.audio_metrics),
             sample_rate_hz: Some(evidence.sample_rate_hz),

@@ -24,6 +24,7 @@ use w30_live_path_render_modules::{
     filter_slam_qualification::qualify_filter_slam_v1,
     pitch_dive_qualification::qualify_pitch_dive_v1,
     restart_recall_qualification::qualify_gesture_vocabulary_restart_recall,
+    semantic_hook_product_qualification::qualify_semantic_hook_product_v4,
 };
 
 const SAMPLE_RATE: u32 = 48_000;
@@ -48,6 +49,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let qualify_gesture_vocabulary = args
         .iter()
         .any(|arg| arg == "--qualify-gesture-vocabulary-v1");
+    let qualify_semantic_hook_product = args
+        .iter()
+        .any(|arg| arg == "--qualify-semantic-hook-product-v4");
     let prepare_hook_turnaround_review = args
         .iter()
         .any(|arg| arg == "--prepare-hook-turnaround-review");
@@ -58,6 +62,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         qualify_pitch_dive,
         qualify_filter_slam,
         qualify_gesture_vocabulary,
+        qualify_semantic_hook_product,
     ]
     .into_iter()
     .filter(|selected| *selected)
@@ -159,6 +164,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     print_w30_render_summary("normal", &state.runtime.w30_preview);
     let normal_render = state.runtime.w30_preview.clone();
+    if qualify_semantic_hook_product {
+        qualify_semantic_hook_product_v4(state, &normal_render, &output_dir)?;
+        return Ok(());
+    }
     if qualify_gesture_vocabulary {
         let exact_product_bpm = normal_render.tempo_bpm;
         if !exact_product_bpm.is_finite() || exact_product_bpm <= 0.0 {

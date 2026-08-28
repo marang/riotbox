@@ -347,6 +347,10 @@ pub enum StemPackageExportBoundary {
     ReservedContractOnly,
     LocalCiPackageV1,
     SourceMatchedHandoffV1,
+    W30HookLoopV1,
+    W30HookLoopV2,
+    W30HookLoopV3,
+    W30HookLoopV4,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

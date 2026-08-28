@@ -29,6 +29,7 @@ fn parse_args_builds_daw_export_readiness_report_mode() {
         | LaunchMode::StemPackageLocalCiDryRun { .. }
         | LaunchMode::StemPackageLocalCiExecute { .. }
         | LaunchMode::StemPackageSourceMatchedExecute { .. }
+        | LaunchMode::StemPackageW30HookExecute { .. }
         | LaunchMode::StemPackageLocalCiReport { .. }
         | LaunchMode::LiveRecordingReadinessReport { .. }
         | LaunchMode::DawSessionJsonPackageExecute { .. }
