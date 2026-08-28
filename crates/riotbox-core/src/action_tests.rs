@@ -230,6 +230,43 @@ fn stem_package_export_action_contract_roundtrips_as_reserved_scope() {
     )
     .expect("deserialize source-matched action");
     assert_eq!(source_matched_roundtrip, source_matched_action);
+
+    let w30_hook_json = serde_json::to_value(StemPackageExportBoundary::W30HookLoopV1)
+        .expect("serialize W-30 hook boundary");
+    assert_eq!(w30_hook_json, "w30_hook_loop_v1");
+    let w30_hook_boundary: StemPackageExportBoundary =
+        serde_json::from_value(w30_hook_json).expect("deserialize W-30 hook boundary");
+    assert_eq!(w30_hook_boundary, StemPackageExportBoundary::W30HookLoopV1);
+
+    let w30_hook_v2_json = serde_json::to_value(StemPackageExportBoundary::W30HookLoopV2)
+        .expect("serialize W-30 hook V2 boundary");
+    assert_eq!(w30_hook_v2_json, "w30_hook_loop_v2");
+    let w30_hook_v2_boundary: StemPackageExportBoundary =
+        serde_json::from_value(w30_hook_v2_json).expect("deserialize W-30 hook V2 boundary");
+    assert_eq!(
+        w30_hook_v2_boundary,
+        StemPackageExportBoundary::W30HookLoopV2
+    );
+
+    let w30_hook_v3_json = serde_json::to_value(StemPackageExportBoundary::W30HookLoopV3)
+        .expect("serialize W-30 hook V3 boundary");
+    assert_eq!(w30_hook_v3_json, "w30_hook_loop_v3");
+    let w30_hook_v3_boundary: StemPackageExportBoundary =
+        serde_json::from_value(w30_hook_v3_json).expect("deserialize W-30 hook V3 boundary");
+    assert_eq!(
+        w30_hook_v3_boundary,
+        StemPackageExportBoundary::W30HookLoopV3
+    );
+
+    let w30_hook_v4_json = serde_json::to_value(StemPackageExportBoundary::W30HookLoopV4)
+        .expect("serialize W-30 hook V4 boundary");
+    assert_eq!(w30_hook_v4_json, "w30_hook_loop_v4");
+    let w30_hook_v4_boundary: StemPackageExportBoundary =
+        serde_json::from_value(w30_hook_v4_json).expect("deserialize W-30 hook V4 boundary");
+    assert_eq!(
+        w30_hook_v4_boundary,
+        StemPackageExportBoundary::W30HookLoopV4
+    );
 }
 
 #[test]

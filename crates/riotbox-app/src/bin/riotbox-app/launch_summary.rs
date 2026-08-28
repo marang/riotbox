@@ -82,6 +82,18 @@ fn launch_summary(launch: &AppLaunch) -> Value {
             "claimed_stem_roles": ["stem_drums", "stem_music", "stem_bass"],
             "observer_path": launch.observer_path,
         }),
+        LaunchMode::StemPackageW30HookExecute {
+            session_path,
+            source_graph_path,
+            destination_path,
+        } => json!({
+            "mode": "stem_package_w30_hook_execute",
+            "session_path": session_path,
+            "source_graph_path": source_graph_path,
+            "destination_path": destination_path,
+            "claimed_stem_roles": ["w30_hook_loop"],
+            "observer_path": launch.observer_path,
+        }),
         LaunchMode::StemPackageLocalCiReport { session_path } => json!({
             "mode": "stem_package_local_ci_report",
             "session_path": session_path,

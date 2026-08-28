@@ -203,3 +203,33 @@ Current benchmark artifacts:
   balance, and arrangement task, objective loudness matching, and no new source
   access, V2 producer/source-renderer rerun, tuning, limiter, or broader
   workflow claim.
+- [w30_semantic_hook_stem_development_v1.json](./w30_semantic_hook_stem_development_v1.json)
+  Superseded RIOTBOX-1482 Development-only semantic-role contract: its exact
+  two-bar `w30_hook_loop` passed technically, but its source-context read budget
+  was exhausted by preflight before first playback.
+- [w30_semantic_hook_stem_development_v2.json](./w30_semantic_hook_stem_development_v2.json)
+  Frozen source-blind RIOTBOX-1482 access recovery for the byte-identical V1
+  source context and hook-loop review; no audio, role, processing, threshold,
+  assignment, duration, or review-purpose change is allowed.
+- [w30_semantic_hook_stem_product_qualification_v1.json](./w30_semantic_hook_stem_product_qualification_v1.json)
+  Frozen failed RIOTBOX-1482 product-spine qualification: the first exact
+  Development case stopped before further access or playback because its
+  beat-zero render did not equal the kept beat-eight product material.
+- [w30_semantic_hook_stem_product_qualification_v2.json](./w30_semantic_hook_stem_product_qualification_v2.json)
+  Frozen failed RIOTBOX-1482 correction: its first case proved that moving
+  transport inside the late changed-return damage state did not recover the
+  ordinary kept loop; no further source or playback followed.
+- [w30_semantic_hook_stem_product_qualification_v3.json](./w30_semantic_hook_stem_product_qualification_v3.json)
+  Frozen failed RIOTBOX-1482 ordinary-state correction: damage rejection passed,
+  but the Dense journey Session remained a different state owner from the kept
+  six-action W-30 product path; V3 is closed without further access or playback.
+- [w30_semantic_hook_stem_product_qualification_v4.json](./w30_semantic_hook_stem_product_qualification_v4.json)
+  Frozen final RIOTBOX-1482 attempt: execute the V4 semantic hook boundary
+  directly after the exact six-action `w30_live_path_render` owner, render its
+  ordinary W-30 state from beat eight, and require an independent byte-exact
+  owner/product match before bounded Development access.
+- [w30_semantic_hook_stem_product_v4_reconciliation_v1.json](./w30_semantic_hook_stem_product_v4_reconciliation_v1.json)
+  Frozen RIOTBOX-1482 reconciliation of the unchanged V4 output matrix after
+  its wrapper applied an uncontracted analyzer-hypothesis assertion to the
+  registered manual-downbeat case. It permits no source reopen, rerender,
+  audio change, threshold change, or rewrite of the original fail-closed log.

@@ -1,0 +1,149 @@
+{
+  "schema": "riotbox.w30_semantic_hook_stem_development.v1",
+  "schema_version": 1,
+  "status": "frozen",
+  "owner_ticket": "RIOTBOX-1482",
+  "purpose": "test exactly one musician-semantic W-30 hook loop from the already-qualified current product output before any export UI or broader source qualification",
+  "semantic_role": {
+    "role_id": "w30_hook_loop",
+    "role_version": 1,
+    "owner": "w30",
+    "musician_use": "loop, arrange, or process the source-recognizable Riotbox hook independently",
+    "not_claimed_as": [
+      "complete_track",
+      "full_mix",
+      "drums_stem",
+      "bass_stem",
+      "post_bus_contribution",
+      "automatic_arrangement",
+      "source_intelligence_fallback"
+    ],
+    "required_human_meaning": "the layer must stand on its own as useful aggressive sample-based hook material, not merely expose an internal engine contribution"
+  },
+  "frozen_input": {
+    "ticket": "RIOTBOX-1471",
+    "product_path": "ordinary_promoted_w30_control_v1",
+    "audio_path": "artifacts/development/riotbox-1471/review-v2/01_current_w30_foundation.wav",
+    "audio_sha256": "baccaa2dcff86e2965571ed3ba4dd4443904fa7c8f3e6b3bb9fd02725637627c",
+    "audio_format": {
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "sample_width_bits": 16,
+      "frame_count": 288000
+    },
+    "product_manifest_path": "artifacts/development/riotbox-1470/qualification-v1/dense-w30-foundation-product-manifest.json",
+    "product_manifest_sha256": "3906af09b1bce218baf973cdd2bd3e054eefc12ece7b637f7f95e364e64dca1f",
+    "source_case_id": "dense_beat03_130",
+    "source_sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+    "product_bpm": 130.0,
+    "start_beat": 8.0,
+    "input_beat_count": 13.0,
+    "isolated_contributors": [
+      "w30_preview"
+    ],
+    "silent_contributors": [
+      "tr909",
+      "mc202",
+      "w30_resample_tap",
+      "source_monitor"
+    ],
+    "pre_limiter_clip_count": 0,
+    "limited_sample_count": 0,
+    "post_limiter_clip_count": 0,
+    "rerender_allowed": false
+  },
+  "loop_extraction": {
+    "source_frame_start_inclusive": 0,
+    "duration_beats": 8.0,
+    "duration_bars": 2,
+    "meter_beats_per_bar": 4,
+    "frame_boundary_algorithm": "first frame whose f64 transport position reaches or lies within 1e-9 beat of start_plus_8_beats using bpm_130_sample_rate_48000 per-frame increments",
+    "expected_frame_count": 177231,
+    "sample_operation": "copy exact interleaved PCM16 frames [0, 177231) from the frozen input",
+    "existing_loop_behavior": "inherit existing_w30_pad_loop_crossfade_v1 already present in the product output",
+    "gain": 1.0,
+    "normalization": false,
+    "fade_or_new_crossfade": false,
+    "eq_filter_saturation_limiter_or_dither": false,
+    "resample": false,
+    "channel_change": false
+  },
+  "development_access": {
+    "original_source_open": false,
+    "source_directory_discovery": false,
+    "source_context_path": "artifacts/development/riotbox-1471/review-v2/00_verified_source.wav",
+    "source_context_sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+    "source_context_is_prior_byte_identical_development_copy": true,
+    "fresh_exclusive_access_log_before_first_audio_open": true,
+    "maximum_source_context_opens": 2,
+    "maximum_frozen_input_opens": 2,
+    "holdout_audio_access": false,
+    "commercial_reference_access": false
+  },
+  "technical_gates": {
+    "input_audio_sha256_exact": true,
+    "product_manifest_sha256_exact": true,
+    "product_manifest_source_and_product_path_match": true,
+    "output_format": {
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "sample_width_bits": 16,
+      "frame_count": 177231
+    },
+    "output_pcm_is_exact_input_prefix": true,
+    "independent_output_writes_byte_identical": true,
+    "minimum_output_rms": 0.001,
+    "maximum_output_peak_abs": 0.99,
+    "maximum_clipped_sample_count": 0,
+    "loop_seam": {
+      "maximum_absolute_sample_jump_per_channel": 0.1,
+      "maximum_jump_ratio_to_loudest_adjacent_sample_delta_within_10ms_of_internal_bar_boundary": 1.25,
+      "internal_bar_boundary_frame": 88616
+    },
+    "source_lineage_bound": true,
+    "isolated_contributors_exact": true
+  },
+  "human_review": {
+    "maximum_reviews": 1,
+    "playback_order": [
+      "exact prior source-context copy",
+      "one second silence",
+      "exact w30_hook_loop repeated three times without a gap"
+    ],
+    "question": "Would this isolated source-transformed W-30 layer be musically useful to loop, arrange, or process as a Riotbox hook?",
+    "explanation_before_readiness": "This is one reusable hook layer, not a complete track or an internal contribution proof.",
+    "judge": [
+      "independent loopability",
+      "source transformed but recognizable",
+      "clear memorable hook",
+      "aggressive sample-based rave-punk usefulness",
+      "absence of clicks or broken boundaries"
+    ],
+    "verdicts": [
+      "keep",
+      "reject",
+      "inconclusive"
+    ],
+    "prior_human_verdict_transfer": false,
+    "repeat_only_on_explicit_direct_request": true
+  },
+  "stopping_rule": {
+    "maximum_variants": 1,
+    "fail_closed_on_any_identity_format_lineage_isolation_determinism_safety_or_loop_seam_violation": true,
+    "reject_or_inconclusive_stops_without_second_crop_fade_gain_or_source": true,
+    "provisional_keep_required_before_product_spine_or_source_diversity_work": true,
+    "any_changed_role_input_crop_timing_processing_threshold_or_review_purpose_requires_new_version_and_decision": true
+  },
+  "claim_boundary": {
+    "maximum_success": "one provisional Development keep for the exact w30_hook_loop role and candidate",
+    "musician_export_action_ready": false,
+    "tui_or_ghost_ready": false,
+    "daw_session_ready": false,
+    "source_general": false,
+    "holdout": false,
+    "percussive_hardness": false,
+    "release_ready": false,
+    "universal_quality": false,
+    "riotbox_complete": false
+  }
+}

@@ -619,7 +619,7 @@ fn source_matched_stem_handoff_commits_three_real_stems_and_session_receipt() {
             StemPackageExportSurfaceBlocker::StructuredListeningReviewMissing,
         ]
     );
-    assert_eq!(state.session.export_receipts, vec![receipt]);
+    assert_eq!(state.session.export_receipts, vec![receipt.clone()]);
     let action = state
         .session
         .action_log
@@ -837,6 +837,327 @@ fn source_matched_stem_handoff_rejects_hash_and_reconstruction_mutations_fail_cl
         assert!(state.session.export_receipts.is_empty());
         assert!(state.queue.pending_actions().is_empty());
     }
+}
+
+#[test]
+fn w30_hook_loop_export_commits_one_semantic_stem_through_the_existing_spine() {
+    let temp = tempdir().expect("tempdir");
+    let destination = temp.path().join("w30-hook-export");
+    let mut state = w30_hook_export_state();
+
+    let receipt = state
+        .commit_stem_package_export_w30_hook_loop(&destination, 1_300)
+        .expect("commit semantic W-30 hook export");
+
+    assert_eq!(receipt.export_scope, ExportScope::StemPackage);
+    assert_eq!(receipt.pack_id, "stem-package-w30-hook-loop");
+    assert_eq!(
+        receipt.export_boundary,
+        ProductExportBoundary::StemPackageW30HookLoopV4
+    );
+    assert!(receipt.stem_package_readiness_report().ready());
+    let stem = receipt
+        .artifact_set
+        .iter()
+        .find(|artifact| artifact.role == ExportArtifactRole::W30HookLoop)
+        .expect("semantic hook artifact");
+    assert_eq!(stem.sample_rate_hz, Some(48_000));
+    assert_eq!(stem.channel_count, Some(2));
+    assert_eq!(stem.duration_ms, Some(4_000));
+    assert_eq!(stem.source_capture_refs, vec![CaptureId::from("cap-01")]);
+    assert!(stem.source_graph_ref.is_some());
+    assert!(stem.timing_grid_ref.is_some());
+    assert!(stem.fallback_comparison.is_some());
+    assert!(
+        destination
+            .join("stem_package/stems/w30_hook_loop.wav")
+            .is_file()
+    );
+    assert_eq!(state.session.export_receipts, vec![receipt.clone()]);
+    let action = state
+        .session
+        .action_log
+        .actions
+        .iter()
+        .find(|action| {
+            action.command == ActionCommand::ExportStemPackage
+                && matches!(
+                    action.params,
+                    ActionParams::StemPackageExport {
+                        boundary: riotbox_core::action::StemPackageExportBoundary::W30HookLoopV4,
+                        ..
+                    }
+                )
+        })
+        .expect("committed semantic hook action");
+    assert_eq!(action.status, ActionStatus::Committed);
+    let restored: riotbox_core::session::SessionFile = serde_json::from_value(
+        serde_json::to_value(&state.session).expect("serialize semantic hook Session"),
+    )
+    .expect("restore semantic hook Session");
+    assert_eq!(restored.export_receipts, vec![receipt]);
+    assert!(restored.action_log.actions.iter().any(|action| {
+        matches!(
+            action.params,
+            ActionParams::StemPackageExport {
+                boundary: riotbox_core::action::StemPackageExportBoundary::W30HookLoopV4,
+                ..
+            }
+        )
+    }));
+}
+
+#[test]
+fn w30_hook_loop_export_fails_closed_without_an_ordinary_focused_capture() {
+    let temp = tempdir().expect("tempdir");
+    let destination = temp.path().join("w30-hook-export");
+    let mut state = w30_hook_export_state();
+    state.session.runtime_state.lane_state.w30.last_capture = None;
+    state.session.runtime_state.lane_state.w30.focused_pad = None;
+    state.refresh_view();
+
+    let error = state
+        .commit_stem_package_export_w30_hook_loop(&destination, 1_310)
+        .expect_err("missing focused capture must fail closed");
+
+    assert!(error.to_string().contains("focused W-30 capture"));
+    assert!(!destination.join("stem_package").exists());
+    assert!(state.session.export_receipts.is_empty());
+    assert!(state.queue.pending_actions().is_empty());
+}
+
+#[test]
+fn w30_hook_loop_export_fails_closed_from_capture_scoped_damage_state() {
+    let temp = tempdir().expect("tempdir");
+    let destination = temp.path().join("w30-hook-export");
+    let mut state = w30_hook_export_state();
+    assert_eq!(
+        state.queue_w30_apply_damage_profile(1_305),
+        Some(QueueControlResult::Enqueued)
+    );
+    let committed = state.commit_ready_actions(
+        riotbox_core::transport::CommitBoundaryState {
+            kind: riotbox_core::action::CommitBoundary::Bar,
+            beat_index: 8,
+            bar_index: 3,
+            phrase_index: 1,
+            scene_id: Some(riotbox_core::ids::SceneId::from("scene-1")),
+        },
+        1_306,
+    );
+    assert_eq!(committed.len(), 1);
+
+    let error = state
+        .commit_stem_package_export_w30_hook_loop(&destination, 1_310)
+        .expect_err("damaged focused capture must fail closed");
+
+    assert!(error.to_string().contains("ordinary promoted or pinned"));
+    assert!(!destination.join("stem_package").exists());
+    assert!(state.session.export_receipts.is_empty());
+    assert!(state.queue.pending_actions().is_empty());
+}
+
+#[test]
+fn w30_hook_loop_export_fails_closed_from_another_ordinary_state_owner() {
+    let temp = tempdir().expect("tempdir");
+    let destination = temp.path().join("w30-hook-export");
+    let mut state = w30_hook_export_state();
+    state.session.action_log.actions.pop();
+
+    let error = state
+        .commit_stem_package_export_w30_hook_loop(&destination, 1_310)
+        .expect_err("non-owner action history must fail closed");
+
+    assert!(error.to_string().contains("exact six-action"));
+    assert!(!destination.join("stem_package").exists());
+    assert!(state.session.export_receipts.is_empty());
+    assert!(state.queue.pending_actions().is_empty());
+}
+
+#[test]
+fn w30_hook_loop_export_fails_closed_from_wrong_six_action_params() {
+    let temp = tempdir().expect("tempdir");
+    let destination = temp.path().join("w30-hook-export");
+    let mut state = w30_hook_export_state();
+    state.session.action_log.actions[5].params = ActionParams::Mutation {
+        intensity: 0.40,
+        target_id: Some("cap-01".into()),
+    };
+
+    let error = state
+        .commit_stem_package_export_w30_hook_loop(&destination, 1_310)
+        .expect_err("wrong exact-owner params must fail closed");
+
+    assert!(error.to_string().contains("parameters, targets"));
+    assert!(!destination.join("stem_package").exists());
+    assert!(state.session.export_receipts.is_empty());
+    assert!(state.queue.pending_actions().is_empty());
+}
+
+#[test]
+fn w30_hook_loop_export_fails_closed_from_stale_exact_owner_state() {
+    let temp = tempdir().expect("tempdir");
+    let destination = temp.path().join("w30-hook-export");
+    let mut state = w30_hook_export_state();
+    state.session.captures[0].created_from_action = Some(ActionId(99));
+
+    let error = state
+        .commit_stem_package_export_w30_hook_loop(&destination, 1_310)
+        .expect_err("stale exact-owner state must fail closed");
+
+    assert!(error.to_string().contains("state lineage"));
+    assert!(!destination.join("stem_package").exists());
+    assert!(state.session.export_receipts.is_empty());
+    assert!(state.queue.pending_actions().is_empty());
+}
+
+fn w30_hook_export_state() -> JamAppState {
+    let mut graph = sample_graph();
+    graph.source.content_hash = "a".repeat(64);
+    graph.provenance.source_hash = graph.source.content_hash.clone();
+    let mut session = sample_session(&graph);
+    session.source_refs[0].content_hash = graph.source.content_hash.clone();
+    session.runtime_state.style.active_preset =
+        Some(riotbox_core::style::PerformancePresetId::FeralBreakAlphaV2);
+    session.runtime_state.capture.length_intent =
+        riotbox_core::action::CaptureLengthIntent::OneBar;
+    session.runtime_state.source_timing.confirmed_bpm = Some(120.0);
+    session.runtime_state.source_timing.confirmed_grid = Some(SourceTimingGridConfirmationState {
+        source_id: graph.source.source_id.clone(),
+        hypothesis_id: Some("w30-hook-grid".into()),
+        confirmed_by_action: ActionId(1),
+        confirmed_at: 1_250,
+    });
+    session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+        bank_id: BankId::from("bank-a"),
+        pad_id: PadId::from("pad-01"),
+    });
+    session.captures[0].created_from_action = Some(ActionId(4));
+    session.captures[0].source_window = Some(CaptureSourceWindow {
+        source_id: graph.source.source_id.clone(),
+        start_seconds: 0.0,
+        end_seconds: 1.0,
+        start_frame: 0,
+        end_frame: 48_000,
+        hook_selection: None,
+    });
+    let seed_action = session.action_log.actions[0].clone();
+    let source_id = graph.source.source_id.clone();
+    let capture_id = session.captures[0].capture_id.clone();
+    let bank_id = BankId::from("bank-a");
+    let pad_id = PadId::from("pad-01");
+    session.action_log.actions = [
+        (
+            ActionCommand::SourceTimingConfirmGrid,
+            ActionParams::SourceTimingGrid {
+                source_id: Some(source_id),
+                hypothesis_id: Some("w30-hook-grid".into()),
+                confirmed_bpm: Some(120.0),
+            },
+            riotbox_core::action::ActionTarget {
+                scope: Some(riotbox_core::action::TargetScope::Session),
+                object_id: Some("w30-hook-grid".into()),
+                ..Default::default()
+            },
+            riotbox_core::action::Quantization::Immediate,
+        ),
+        (
+            ActionCommand::PresetActivate,
+            ActionParams::Preset {
+                preset_id: riotbox_core::style::PerformancePresetId::FeralBreakAlphaV2,
+            },
+            riotbox_core::action::ActionTarget {
+                scope: Some(riotbox_core::action::TargetScope::Session),
+                object_id: Some("feral_break_alpha_v2".into()),
+                ..Default::default()
+            },
+            riotbox_core::action::Quantization::Immediate,
+        ),
+        (
+            ActionCommand::CaptureSetLength,
+            ActionParams::CaptureLength {
+                intent: Some(riotbox_core::action::CaptureLengthIntent::OneBar),
+            },
+            riotbox_core::action::ActionTarget {
+                scope: Some(riotbox_core::action::TargetScope::Session),
+                object_id: Some("capture-length".into()),
+                ..Default::default()
+            },
+            riotbox_core::action::Quantization::Immediate,
+        ),
+        (
+            ActionCommand::CaptureBarGroup,
+            ActionParams::Capture { bars: None },
+            riotbox_core::action::ActionTarget {
+                scope: Some(riotbox_core::action::TargetScope::LaneW30),
+                ..Default::default()
+            },
+            riotbox_core::action::Quantization::NextBar,
+        ),
+        (
+            ActionCommand::PromoteCaptureToPad,
+            ActionParams::Promotion {
+                capture_id: Some(capture_id.clone()),
+                destination: Some("w30:bank-a/pad-01".into()),
+            },
+            riotbox_core::action::ActionTarget {
+                scope: Some(riotbox_core::action::TargetScope::LaneW30),
+                bank_id: Some(bank_id.clone()),
+                pad_id: Some(pad_id.clone()),
+                ..Default::default()
+            },
+            riotbox_core::action::Quantization::NextBar,
+        ),
+        (
+            ActionCommand::W30TriggerPad,
+            ActionParams::Mutation {
+                intensity: 0.84,
+                target_id: Some(capture_id.to_string()),
+            },
+            riotbox_core::action::ActionTarget {
+                scope: Some(riotbox_core::action::TargetScope::LaneW30),
+                bank_id: Some(bank_id),
+                pad_id: Some(pad_id),
+                ..Default::default()
+            },
+            riotbox_core::action::Quantization::NextBeat,
+        ),
+    ]
+    .into_iter()
+    .enumerate()
+    .map(
+        |(index, (command, params, target, quantization))| riotbox_core::action::Action {
+            id: ActionId((index + 1) as u64),
+            actor: riotbox_core::action::ActorType::User,
+            command,
+            params,
+            target,
+            quantization,
+            status: ActionStatus::Committed,
+            ..seed_action.clone()
+        },
+    )
+    .collect();
+
+    let frame_count = 48_000_usize;
+    let mut samples = Vec::with_capacity(frame_count * 2);
+    for frame in 0..frame_count {
+        let sample = ((frame as f32 / 48_000.0) * 110.0 * std::f32::consts::TAU).sin() * 0.2;
+        samples.extend([sample, sample]);
+    }
+    let capture_audio = SourceAudioCache::from_interleaved_samples(
+        "capture-cap-01.wav",
+        48_000,
+        2,
+        samples,
+    )
+    .expect("capture audio");
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    state
+        .capture_audio_cache
+        .insert(CaptureId::from("cap-01"), capture_audio);
+    state.refresh_view();
+    state
 }
 
 pub(crate) fn write_source_matched_handoff_fixture(

@@ -1,0 +1,77 @@
+{
+  "schema": "riotbox.w30_semantic_hook_stem_product_v4_reconciliation.v1",
+  "schema_version": 1,
+  "status": "frozen",
+  "owner_ticket": "RIOTBOX-1482",
+  "decision": "RBX-362",
+  "purpose": "reconcile the unchanged four V4 outputs after the wrapper imposed an uncontracted analyzer hypothesis id on the registered manual-downbeat tonal case",
+  "product_qualification": {
+    "contract_path": "docs/benchmarks/w30_semantic_hook_stem_product_qualification_v4.json",
+    "contract_raw_sha256": "459567e3990707f19d58f3cf551c4099e5ebbdfb814909517377e56739ccf996",
+    "session": "2026-08-28-final-a",
+    "failed_access_log_path": "artifacts/development/riotbox-1482/access-log-product-v4-final.json",
+    "failed_access_log_sha256": "9c9ed2f6bda02b645bab98306b85fab7e6737b8e72daf549f1e6bb609daba52c",
+    "recorded_failure": "timing confirmation params changed",
+    "all_four_original_source_open_counts": 1,
+    "additional_source_open_allowed": false,
+    "rerender_allowed": false
+  },
+  "sole_validator_correction": {
+    "unchanged_action_command": "SourceTimingConfirmGrid",
+    "unchanged_source_id_and_confirmed_bpm_required": true,
+    "hypothesis_id_must_equal_action_target_and_session_confirmed_grid": true,
+    "analyzer_grid_cases_require": "probe-bpm-primary",
+    "manual_downbeat_case": "tonal_rusharp_120",
+    "manual_downbeat_seconds": 0.0,
+    "manual_grid_hypothesis_id": "manual-source-grid-v1-42f00000-00000000",
+    "reason": "the frozen V4 source entry explicitly requests a manual downbeat, so requiring the analyzer hypothesis id contradicts the source contract"
+  },
+  "exact_existing_outputs": [
+    {
+      "case_id": "dense_beat03_130",
+      "summary_sha256": "d595d9e9836a3f893795f09c87648a6d34bbbc6a4594a9beb6aea5aa1af46ed7",
+      "required_w30_hook_loop_sha256": "ab3534e4ad2d17f9b73e2c93417660f61f943bddd2ecba36eed30af08e772faa"
+    },
+    {
+      "case_id": "freesound_alastair_pursloe_183441",
+      "summary_sha256": "bed0b13cf78f157251b286f9c1a73e838fa137f4a8cfccde6285f6aef702558f"
+    },
+    {
+      "case_id": "freesound_dr_skitz_353853",
+      "summary_sha256": "c8de0b4fa0830f70b60e55775de30b416c41f4951d7ae5451c8d8569786e29e7"
+    },
+    {
+      "case_id": "tonal_rusharp_120",
+      "summary_sha256": "e2c51e4745e2d0437df42c3352a02088b0bea5ce68561bb6da3049a5916edab0",
+      "session_sha256": "cd16ff4c77ad00da3171e3c3db4d9852b70c6608e7003f92f6cb988ee3aacff8",
+      "required_w30_hook_loop_sha256": "9ff3ef7e21ebaa769f2b2e85cf9cbc65c7894c49ab25530b6dc40885a6810542"
+    }
+  ],
+  "unchanged_gates": {
+    "source_set": true,
+    "source_hashes": true,
+    "render_algorithm_and_constants": true,
+    "action_boundary_and_six_action_order": true,
+    "state_admission": true,
+    "audio_identity_and_dense_keep_hash": true,
+    "callback_partition_and_owner_product_identity": true,
+    "lineage_writer_receipt_replay_observer_and_qa": true,
+    "human_review_purpose_and_limit": true,
+    "claim_boundary": true
+  },
+  "access": {
+    "allowed_inputs": "the four already-generated V4 case directories and the failed access-log JSON only",
+    "original_source_audio_open": false,
+    "source_directory_discovery": false,
+    "holdout_audio_open": false,
+    "commercial_reference_audio_open": false,
+    "new_audio_generation": false,
+    "playback": false
+  },
+  "result": {
+    "report_path": "artifacts/development/riotbox-1482/product-v4-reconciliation-final.json",
+    "all_four_unchanged_cases_must_pass": true,
+    "success": "permits only the already-authorized single tonal product review preparation",
+    "failure": "end RIOTBOX-1482 without another validator correction rerender source open or playback"
+  }
+}

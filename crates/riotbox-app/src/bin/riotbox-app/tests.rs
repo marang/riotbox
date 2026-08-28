@@ -175,6 +175,7 @@ mod tests {
             LaunchMode::StemPackageLocalCiDryRun { .. }
             | LaunchMode::StemPackageLocalCiExecute { .. }
             | LaunchMode::StemPackageSourceMatchedExecute { .. }
+            | LaunchMode::StemPackageW30HookExecute { .. }
             | LaunchMode::StemPackageLocalCiReport { .. }
             | LaunchMode::LiveRecordingReadinessReport { .. }
             | LaunchMode::DawExportReadinessReport { .. }
@@ -291,6 +292,7 @@ mod tests {
             LaunchMode::StemPackageLocalCiDryRun { .. }
             | LaunchMode::StemPackageLocalCiExecute { .. }
             | LaunchMode::StemPackageSourceMatchedExecute { .. }
+            | LaunchMode::StemPackageW30HookExecute { .. }
             | LaunchMode::StemPackageLocalCiReport { .. }
             | LaunchMode::LiveRecordingReadinessReport { .. }
             | LaunchMode::DawExportReadinessReport { .. }
@@ -329,6 +331,7 @@ mod tests {
             LaunchMode::StemPackageLocalCiDryRun { .. }
             | LaunchMode::StemPackageLocalCiExecute { .. }
             | LaunchMode::StemPackageSourceMatchedExecute { .. }
+            | LaunchMode::StemPackageW30HookExecute { .. }
             | LaunchMode::StemPackageLocalCiReport { .. }
             | LaunchMode::LiveRecordingReadinessReport { .. }
             | LaunchMode::DawExportReadinessReport { .. }
@@ -362,6 +365,7 @@ mod tests {
             LaunchMode::StemPackageLocalCiDryRun { .. }
             | LaunchMode::StemPackageLocalCiExecute { .. }
             | LaunchMode::StemPackageSourceMatchedExecute { .. }
+            | LaunchMode::StemPackageW30HookExecute { .. }
             | LaunchMode::StemPackageLocalCiReport { .. }
             | LaunchMode::LiveRecordingReadinessReport { .. }
             | LaunchMode::DawExportReadinessReport { .. }

@@ -1,0 +1,69 @@
+{
+  "schema": "riotbox.w30_semantic_hook_stem_development.v2",
+  "schema_version": 2,
+  "status": "frozen",
+  "owner_ticket": "RIOTBOX-1482",
+  "purpose": "correct only the exhausted source-context read budget before first playback while preserving the exact V1 role, audio, assignment, duration, processing, technical gates, review question, and stopping rule",
+  "supersedes": {
+    "path": "docs/benchmarks/w30_semantic_hook_stem_development_v1.json",
+    "sha256": "8e8e96b75ae525148fb94a99248cf98427ff882cb7e06c1bb1500abef2f22da7",
+    "technical_result": "pass",
+    "human_playback_occurred": false,
+    "human_verdict_created": false,
+    "failure": "the V1 source-context open budget was consumed by preparation and subsequent exact hash and format preflight before playback"
+  },
+  "unchanged": {
+    "semantic_role": "w30_hook_loop_v1",
+    "source_context_path": "artifacts/development/riotbox-1471/review-v2/00_verified_source.wav",
+    "source_context_sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+    "loop_path": "artifacts/development/riotbox-1482/semantic-hook-v1/01_w30_hook_loop_v1.wav",
+    "loop_sha256": "ab3534e4ad2d17f9b73e2c93417660f61f943bddd2ecba36eed30af08e772faa",
+    "review_path": "artifacts/development/riotbox-1482/semantic-hook-v1/02_w30_hook_loop_v1_review.wav",
+    "review_sha256": "becb671f6f13c66ded706748a3757db4129cb6cbc0a55fff4650c0c2246ef124",
+    "review_duration_seconds": 11.0769375,
+    "playback_order": [
+      "exact prior source-context copy",
+      "one second silence",
+      "exact w30_hook_loop repeated three times without a gap"
+    ],
+    "question": "Would this isolated source-transformed W-30 layer be musically useful to loop, arrange, or process as a Riotbox hook?",
+    "audible_contributors": [
+      "w30_preview"
+    ],
+    "silent_contributors": [
+      "tr909",
+      "mc202",
+      "w30_resample_tap",
+      "source_monitor"
+    ],
+    "audio_or_processing_change": false,
+    "technical_threshold_change": false,
+    "assignment_or_review_purpose_change": false
+  },
+  "recovery_access": {
+    "original_source_open": false,
+    "source_directory_discovery": false,
+    "holdout_audio_access": false,
+    "commercial_reference_access": false,
+    "additional_technical_audio_analysis": false,
+    "maximum_initial_playbacks": 1,
+    "unchanged_replay": "only_on_explicit_direct_listener_request",
+    "readiness_may_continue": "the listener readiness is bound to unchanged bytes, assignment, contributors, duration, route, and question"
+  },
+  "stopping_rule": {
+    "fail_closed_on_any_path_hash_assignment_contributor_duration_route_or_playback_order_change": true,
+    "no_second_candidate_source_rerender_processing_or_retune": true,
+    "provisional_keep_required_before_product_spine_or_source_diversity_work": true,
+    "any_audio_role_processing_threshold_or_review_purpose_change_requires_new_version_and_decision": true
+  },
+  "claim_boundary": {
+    "maximum_success": "one provisional Development keep for the unchanged exact w30_hook_loop role and candidate",
+    "musician_export_action_ready": false,
+    "tui_or_ghost_ready": false,
+    "daw_session_ready": false,
+    "source_general": false,
+    "holdout": false,
+    "release_ready": false,
+    "riotbox_complete": false
+  }
+}

@@ -7,6 +7,10 @@ use crate::{
 pub const STEM_PACKAGE_LOCAL_CI_PACKAGE_BOUNDARY_ID: &str = "stem_package.local_ci_package_v1";
 pub const STEM_PACKAGE_SOURCE_MATCHED_HANDOFF_BOUNDARY_ID: &str =
     "stem_package.source_matched_handoff_v1";
+pub const STEM_PACKAGE_W30_HOOK_LOOP_V1_BOUNDARY_ID: &str = "stem_package.w30_hook_loop_v1";
+pub const STEM_PACKAGE_W30_HOOK_LOOP_V2_BOUNDARY_ID: &str = "stem_package.w30_hook_loop_v2";
+pub const STEM_PACKAGE_W30_HOOK_LOOP_V3_BOUNDARY_ID: &str = "stem_package.w30_hook_loop_v3";
+pub const STEM_PACKAGE_W30_HOOK_LOOP_BOUNDARY_ID: &str = "stem_package.w30_hook_loop_v4";
 pub const STEM_PACKAGE_PACKAGE_DIR: &str = "stem_package";
 pub const STEM_PACKAGE_STEMS_DIR: &str = "stems";
 pub const STEM_PACKAGE_MANIFEST_FILE: &str = "stem_package_manifest.json";
@@ -19,11 +23,16 @@ pub const SOURCE_MATCHED_HANDOFF_STEM_ROLES: &[ExportArtifactRole] = &[
     ExportArtifactRole::StemMusic,
     ExportArtifactRole::StemBass,
 ];
+pub const W30_HOOK_LOOP_STEM_ROLES: &[ExportArtifactRole] = &[ExportArtifactRole::W30HookLoop];
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum StemPackageLocalWriterBoundary {
     LocalCiPackageV1,
     SourceMatchedHandoffV1,
+    W30HookLoopV1,
+    W30HookLoopV2,
+    W30HookLoopV3,
+    W30HookLoopV4,
 }
 
 impl StemPackageLocalWriterBoundary {
@@ -32,6 +41,10 @@ impl StemPackageLocalWriterBoundary {
         match self {
             Self::LocalCiPackageV1 => STEM_PACKAGE_LOCAL_CI_PACKAGE_BOUNDARY_ID,
             Self::SourceMatchedHandoffV1 => STEM_PACKAGE_SOURCE_MATCHED_HANDOFF_BOUNDARY_ID,
+            Self::W30HookLoopV1 => STEM_PACKAGE_W30_HOOK_LOOP_V1_BOUNDARY_ID,
+            Self::W30HookLoopV2 => STEM_PACKAGE_W30_HOOK_LOOP_V2_BOUNDARY_ID,
+            Self::W30HookLoopV3 => STEM_PACKAGE_W30_HOOK_LOOP_V3_BOUNDARY_ID,
+            Self::W30HookLoopV4 => STEM_PACKAGE_W30_HOOK_LOOP_BOUNDARY_ID,
         }
     }
 }
@@ -141,6 +154,20 @@ pub fn plan_stem_package_source_matched_handoff(
         });
     }
     validate_request(&request, SOURCE_MATCHED_HANDOFF_STEM_ROLES, true)?;
+
+    build_plan(request)
+}
+
+pub fn plan_stem_package_w30_hook_loop(
+    request: StemPackageLocalWriterRequest,
+) -> Result<StemPackageLocalWriterPlan, StemPackageLocalWriterPlanError> {
+    if request.boundary != StemPackageLocalWriterBoundary::W30HookLoopV4 {
+        return Err(StemPackageLocalWriterPlanError::BoundaryMismatch {
+            expected: StemPackageLocalWriterBoundary::W30HookLoopV4,
+            actual: request.boundary,
+        });
+    }
+    validate_request(&request, W30_HOOK_LOOP_STEM_ROLES, true)?;
 
     build_plan(request)
 }
@@ -265,6 +292,7 @@ fn stem_role_file_stem(role: ExportArtifactRole) -> &'static str {
         ExportArtifactRole::StemBass => "stem_bass",
         ExportArtifactRole::StemMusic => "stem_music",
         ExportArtifactRole::StemVocals => "stem_vocals",
+        ExportArtifactRole::W30HookLoop => "w30_hook_loop",
         _ => "non_stem",
     }
 }
@@ -433,6 +461,30 @@ mod tests {
         assert_eq!(
             error,
             StemPackageLocalWriterPlanError::IncompleteRequiredStemSet
+        );
+    }
+
+    #[test]
+    fn w30_hook_boundary_plans_exactly_one_semantic_role() {
+        let plan = plan_stem_package_w30_hook_loop(StemPackageLocalWriterRequest {
+            created_by_action: ActionId(23),
+            boundary: StemPackageLocalWriterBoundary::W30HookLoopV4,
+            destination_kind: ProductExportDestinationKind::LocalArtifactDirectory,
+            destination_root: "exports/w30-hook".into(),
+            claimed_stem_roles: vec![ExportArtifactRole::W30HookLoop],
+        })
+        .expect("plan semantic W-30 hook package");
+
+        assert_eq!(
+            plan.claimed_stem_roles,
+            vec![ExportArtifactRole::W30HookLoop]
+        );
+        assert_eq!(
+            plan.stem_artifacts()
+                .next()
+                .expect("W-30 hook artifact")
+                .location_identity(),
+            "exports/w30-hook/stem_package/stems/w30_hook_loop.wav"
         );
     }
 

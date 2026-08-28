@@ -6,6 +6,7 @@ pub const EXPORT_READINESS_CONTRACT_SCHEMA: &str = "riotbox.export_readiness_con
 pub const PRODUCT_EXPORT_PACK_ID: &str = "feral-grid-demo";
 pub const STEM_PACKAGE_LOCAL_CI_PACK_ID: &str = "stem-package-local-ci";
 pub const STEM_PACKAGE_SOURCE_MATCHED_PACK_ID: &str = "stem-package-source-matched";
+pub const STEM_PACKAGE_W30_HOOK_LOOP_PACK_ID: &str = "stem-package-w30-hook-loop";
 pub const ARRANGEMENT_DAW_PLACEMENT_PACK_ID: &str = "arrangement-daw-placement-contract";
 pub const LIVE_RECORDING_RECEIPT_PACK_ID: &str = "live-recording-receipt-contract";
 
@@ -40,6 +41,10 @@ pub enum ProductExportBoundary {
     FeralGridGeneratedSupport,
     StemPackageLocalCiPackageV1,
     StemPackageSourceMatchedHandoffV1,
+    StemPackageW30HookLoopV1,
+    StemPackageW30HookLoopV2,
+    StemPackageW30HookLoopV3,
+    StemPackageW30HookLoopV4,
     ArrangementDawPlacementContractV1,
     LiveRecordingReceiptContractV1,
 }
@@ -51,6 +56,10 @@ impl ProductExportBoundary {
             Self::FeralGridGeneratedSupport => "feral-grid generated-support export",
             Self::StemPackageLocalCiPackageV1 => "stem_package.local_ci_package_v1",
             Self::StemPackageSourceMatchedHandoffV1 => "stem_package.source_matched_handoff_v1",
+            Self::StemPackageW30HookLoopV1 => "stem_package.w30_hook_loop_v1",
+            Self::StemPackageW30HookLoopV2 => "stem_package.w30_hook_loop_v2",
+            Self::StemPackageW30HookLoopV3 => "stem_package.w30_hook_loop_v3",
+            Self::StemPackageW30HookLoopV4 => "stem_package.w30_hook_loop_v4",
             Self::ArrangementDawPlacementContractV1 => "arrangement.daw_placement_contract_v1",
             Self::LiveRecordingReceiptContractV1 => "live_recording.receipt_contract_v1",
         }
@@ -61,6 +70,10 @@ impl ProductExportBoundary {
             "feral-grid generated-support export" => Ok(Self::FeralGridGeneratedSupport),
             "stem_package.local_ci_package_v1" => Ok(Self::StemPackageLocalCiPackageV1),
             "stem_package.source_matched_handoff_v1" => Ok(Self::StemPackageSourceMatchedHandoffV1),
+            "stem_package.w30_hook_loop_v1" => Ok(Self::StemPackageW30HookLoopV1),
+            "stem_package.w30_hook_loop_v2" => Ok(Self::StemPackageW30HookLoopV2),
+            "stem_package.w30_hook_loop_v3" => Ok(Self::StemPackageW30HookLoopV3),
+            "stem_package.w30_hook_loop_v4" => Ok(Self::StemPackageW30HookLoopV4),
             "arrangement.daw_placement_contract_v1" => Ok(Self::ArrangementDawPlacementContractV1),
             "live_recording.receipt_contract_v1" => Ok(Self::LiveRecordingReceiptContractV1),
             other => Err(ExportReadinessError::UnsupportedBoundary(other.to_owned())),

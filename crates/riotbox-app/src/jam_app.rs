@@ -63,6 +63,7 @@ mod source_timing_queue;
 mod state;
 mod stem_package_export;
 mod stem_package_handoff_export;
+mod stem_package_w30_hook_export;
 mod stem_package_writer;
 #[cfg(test)]
 mod stem_package_writer_tests;

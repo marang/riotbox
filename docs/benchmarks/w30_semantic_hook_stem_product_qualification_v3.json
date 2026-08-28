@@ -1,0 +1,184 @@
+{
+  "schema": "riotbox.w30_semantic_hook_stem_product_qualification.v3",
+  "ticket": "RIOTBOX-1482",
+  "decision": "RBX-360",
+  "partition": "development",
+  "mutable_after_source_access": false,
+  "purpose": "correct V2's late damaged-state admission and qualify the kept ordinary w30_hook_loop through the existing stem-package product spine across the unchanged frozen Development set",
+  "supersedes": {
+    "path": "docs/benchmarks/w30_semantic_hook_stem_product_qualification_v2.json",
+    "raw_sha256": "e37d911ba678b39149a29d8f69811e942c5bd501b2eb618e3067a048130644a8",
+    "result": "technical_fail_closed_before_second_source_or_human_playback",
+    "failure_record_path": "docs/reviews/riotbox_1482_w30_semantic_hook_product_v2_state_failure_2026-08-28.md",
+    "failure_record_sha256": "4cf76a8a284058cacb98e8a0ebcb878abe31b8973f08278d2daa5030fc763a9a",
+    "failed_access_log_sha256": "76e680ddd072a019cc40eef64c268777c7cf6f279ee25fd4f9bf097e36c5c0a8",
+    "failure": "qualification_invoked_export_from_late_capture_scoped_damage_state_instead_of_the_established_ordinary_post_trigger_state"
+  },
+  "development_keep": {
+    "contract_path": "docs/benchmarks/w30_semantic_hook_stem_development_v2.json",
+    "contract_sha256": "4f6d5347cd7c2c5ea1751b9c8e113820030872a4481796c50e283eae7bb7a1a9",
+    "structured_review_sha256": "54a7e9bc2cd2bf06b16ca4a1dd68b9ab9c6f4adfc7c52a7c75d48b501e080eeb",
+    "verdict": "keep",
+    "role": "w30_hook_loop"
+  },
+  "development_registry": {
+    "path": "docs/benchmarks/sound_excellence_source_corpus_v1.json",
+    "raw_sha256": "67b5b8b2882575cf70fa61aacf25ae282c17714fe51ffcb13f905458e025d552",
+    "required_partition": "development"
+  },
+  "product_contract": {
+    "action": "export.stem_package",
+    "target_scope": "session",
+    "boundary": "stem_package.w30_hook_loop_v3",
+    "pack_id": "stem-package-w30-hook-loop",
+    "claimed_roles": ["w30_hook_loop"],
+    "destination_kind": "local_artifact_directory",
+    "queue_policy": "at_most_one_pending_stem_package_export",
+    "commit_policy": "commit_action_and_session_receipt_only_after_atomic_writer_and_all_existing_stem_package_qa_gates_pass",
+    "replay_policy": "restore_committed_action_and_receipt_without_rewriting_files",
+    "observer_policy": "derive_requested_started_completed_or_failed_lifecycle_from_action_queue_history_and_session_receipt",
+    "tui_or_ghost_surface_enabled": false
+  },
+  "state_admission": {
+    "qualification_action_point": "immediately_after_committed_w30_trigger_before_slam_fill_scene_or_changed_return",
+    "focused_capture_required": true,
+    "source_profile": ["promoted_recall", "pinned_recall"],
+    "preview_mode": "live_recall",
+    "routing": "music_bus_preview",
+    "latest_capture_scoped_damage_intensity": [null, 0.0],
+    "hook_articulation": null,
+    "pad_playback_rate": 1.0,
+    "pad_reverse": false,
+    "pad_gate_step_fraction": 0.0
+  },
+  "render_contract": {
+    "source_owner": "current_focused_promoted_or_pinned_ordinary_w30_capture",
+    "source_profile": ["promoted_recall", "pinned_recall"],
+    "articulation_profile": null,
+    "transport_start_beat": 0.0,
+    "duration_beats": 8,
+    "sample_rate_hz": 48000,
+    "channel_count": 2,
+    "sample_format": "pcm_s16le",
+    "frame_count_rule": "round(duration_beats * 60 * sample_rate_hz / exact_committed_product_bpm)",
+    "audible_path": "queue_commit_session_projection_exact_runtime_mix_w30_only",
+    "callback_frame_count_primary": 128,
+    "callback_frame_count_parity": 257,
+    "contributors": {
+      "w30_preview": "source_transform_foundation",
+      "tr909": "silent",
+      "mc202": "silent",
+      "w30_resample_tap": "silent",
+      "source_monitor": "silent"
+    },
+    "processing_added_by_export": [],
+    "missing_source_behavior": "fail_closed_before_write_with_no_package_or_receipt"
+  },
+  "source_set": [
+    {
+      "case_id": "dense_beat03_130",
+      "family": "dense_break",
+      "path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+      "sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+      "confirmation_bpm": 130.0,
+      "expected_product_bpm": 130.0,
+      "downbeat_seconds": null
+    },
+    {
+      "case_id": "freesound_alastair_pursloe_183441",
+      "family": "dense_break",
+      "path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/01_dense_183441.wav",
+      "sha256": "b342ee4a9412de14f460c2c295634c53801f2549c71bfc486644a1b02030abc9",
+      "confirmation_bpm": 135.0,
+      "expected_product_bpm": 135.11032,
+      "downbeat_seconds": null
+    },
+    {
+      "case_id": "freesound_dr_skitz_353853",
+      "family": "sparse_drums",
+      "path": "data/test_audio/external/RIOTBOX-1430/freesound-v3-pool/09_sparse_353853.wav",
+      "sha256": "e75e1e6248d07b63ad58b8ee74a35c8cac066db808ef3e5daf256f20a5ba858d",
+      "confirmation_bpm": 120.0,
+      "expected_product_bpm": 119.68088,
+      "downbeat_seconds": null
+    },
+    {
+      "case_id": "tonal_rusharp_120",
+      "family": "tonal_riff",
+      "path": "data/test_audio/examples/DH_RushArp_120_A.wav",
+      "sha256": "ec2a0c930eb338bf81cd5cb4b5fef487e07c140ad40181e1d92b2a0990334e0e",
+      "confirmation_bpm": 120.0,
+      "expected_product_bpm": 120.0,
+      "downbeat_seconds": 0.0
+    }
+  ],
+  "access": {
+    "fresh_exclusive_access_log_required_before_first_file_read": true,
+    "maximum_unique_development_files": 4,
+    "maximum_opens_per_development_file": 1,
+    "exact_registered_paths_only": true,
+    "hash_required_before_decode_or_render": true,
+    "directory_discovery_allowed": false,
+    "holdout_audio_allowed": false,
+    "commercial_reference_audio_allowed": false,
+    "source_replacement_allowed": false
+  },
+  "technical_gates": {
+    "all_four_cases_must_pass_before_human_playback": true,
+    "source_sha256_exact": true,
+    "maximum_absolute_product_bpm_delta": 1.0,
+    "exact_action_params_and_boundary": true,
+    "ordinary_state_admission_exact": true,
+    "focused_capture_and_source_graph_lineage_required": true,
+    "session_timing_grid_lineage_required": true,
+    "callback_partition_samples_exact": true,
+    "independent_render_samples_exact": true,
+    "dense_case_pcm_must_equal_development_loop": true,
+    "dense_case_expected_sha256": "ab3534e4ad2d17f9b73e2c93417660f61f943bddd2ecba36eed30af08e772faa",
+    "written_package_wav_must_equal_product_render": true,
+    "pre_limiter_clip_count": 0,
+    "limited_sample_count": 0,
+    "post_limiter_clip_count": 0,
+    "non_silence_required": true,
+    "missing_source_active_samples": 0,
+    "all_existing_stem_package_receipt_qa_gates_pass": true,
+    "action_session_receipt_replay_and_observer_lifecycle_exact": true,
+    "failed_write_or_validation_leaves_no_final_package_or_receipt": true
+  },
+  "human_review": {
+    "count": 1,
+    "only_after_complete_technical_matrix": true,
+    "representative_case": "tonal_rusharp_120",
+    "reason": "the Development keep already reviewed the dense case; a different registered family makes product-path transfer the new musician question",
+    "order": [
+      "exact_source_context_first_eight_beats_repeated_twice",
+      "one_second_silence",
+      "exact_written_w30_hook_loop_repeated_three_times"
+    ],
+    "questions": [
+      "does_the_product_export_preserve_a_recognizable_source_transformed_w30_hook",
+      "is_the_exported_hook_independently_useful_to_loop_arrange_or_process",
+      "does_the_role_remain_honest_on_a_distinct_registered_source_family"
+    ],
+    "repeat_other_source_reviews": false
+  },
+  "claims_excluded": [
+    "new_audio_mechanism",
+    "post_bus_contributions_as_musician_stems",
+    "complete_track",
+    "automatic_arrangement",
+    "daw_placement",
+    "tui_or_ghost_readiness",
+    "percussive_hardness",
+    "holdout",
+    "release_readiness",
+    "universal_source_quality",
+    "riotbox_completion"
+  ],
+  "stopping_rule": {
+    "role_renderer_action_writer_threshold_or_source_changes_allowed": false,
+    "technical_failure": "stop_fail_closed_without_human_playback_or_retuning",
+    "human_reject_or_inconclusive": "retain_development_keep_only_and_do_not_enable_musician_surface",
+    "required_change": "new_versioned_contract_and_decision_log_entry"
+  }
+}

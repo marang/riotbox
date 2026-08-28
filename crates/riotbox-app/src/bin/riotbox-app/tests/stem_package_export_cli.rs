@@ -30,6 +30,7 @@ fn parse_args_builds_stem_package_local_ci_dry_run_mode() {
         | LaunchMode::Ingest { .. }
         | LaunchMode::StemPackageLocalCiExecute { .. }
         | LaunchMode::StemPackageSourceMatchedExecute { .. }
+        | LaunchMode::StemPackageW30HookExecute { .. }
         | LaunchMode::StemPackageLocalCiReport { .. }
         | LaunchMode::LiveRecordingReadinessReport { .. }
         | LaunchMode::DawExportReadinessReport { .. }
@@ -87,6 +88,7 @@ fn parse_args_builds_stem_package_local_ci_execute_mode() {
         | LaunchMode::Ingest { .. }
         | LaunchMode::StemPackageLocalCiDryRun { .. }
         | LaunchMode::StemPackageSourceMatchedExecute { .. }
+        | LaunchMode::StemPackageW30HookExecute { .. }
         | LaunchMode::StemPackageLocalCiReport { .. }
         | LaunchMode::LiveRecordingReadinessReport { .. }
         | LaunchMode::DawExportReadinessReport { .. }
@@ -141,6 +143,36 @@ fn parse_args_builds_source_matched_stem_package_execute_mode() {
             );
         }
         _ => panic!("expected source-matched stem package execute mode"),
+    }
+}
+
+#[test]
+fn parse_args_builds_w30_hook_stem_package_execute_mode() {
+    let launch = parse_args([
+        "--stem-package-w30-hook-execute".into(),
+        "--session".into(),
+        "session.json".into(),
+        "--graph".into(),
+        "graph.json".into(),
+        "--stem-package-destination".into(),
+        "exports/w30-hook".into(),
+        "--observer".into(),
+        "observer.ndjson".into(),
+    ])
+    .expect("parse W-30 hook stem package execute mode");
+
+    assert_eq!(launch.observer_path, Some(PathBuf::from("observer.ndjson")));
+    match launch.mode {
+        LaunchMode::StemPackageW30HookExecute {
+            session_path,
+            source_graph_path,
+            destination_path,
+        } => {
+            assert_eq!(session_path, PathBuf::from("session.json"));
+            assert_eq!(source_graph_path, Some(PathBuf::from("graph.json")));
+            assert_eq!(destination_path, PathBuf::from("exports/w30-hook"));
+        }
+        _ => panic!("expected W-30 hook stem package execute mode"),
     }
 }
 
