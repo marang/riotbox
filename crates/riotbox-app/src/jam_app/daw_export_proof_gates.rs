@@ -1,7 +1,8 @@
 use riotbox_core::session::{
     DAW_SESSION_AUDIBLE_OUTPUT_QA_GATE_ID, DAW_SESSION_HOST_IMPORT_QA_GATE_ID,
-    DAW_SESSION_JSON_PACKAGE_QA_GATE_ID, DAW_SESSION_WRITER_QA_GATE_ID, ExportArtifactMediaType,
-    ExportArtifactRole, ExportReceiptQaGateResult, ExportReceiptQaGateStatus, ExportReceiptState,
+    DAW_SESSION_JSON_PACKAGE_QA_GATE_ID, DAW_SESSION_WRITER_QA_GATE_ID,
+    DAWPROJECT_ARCHIVE_QA_GATE_ID, ExportArtifactMediaType, ExportArtifactRole,
+    ExportReceiptQaGateResult, ExportReceiptQaGateStatus, ExportReceiptState,
 };
 use serde::Serialize;
 
@@ -55,11 +56,24 @@ impl DawExportProofGateSummary {
             artifacts: Vec::new(),
         }
     }
+
+    #[must_use]
+    pub fn not_applicable(gate_id: &'static str) -> Self {
+        Self {
+            gate_id,
+            status: DawExportProofGateStatus::NotApplicable,
+            summary: Some("not required by this DAW-session boundary".into()),
+            artifact_roles: Vec::new(),
+            artifact_available: false,
+            artifacts: Vec::new(),
+        }
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum DawExportProofGateStatus {
+    NotApplicable,
     Missing,
     Passed,
     Failed,
@@ -85,7 +99,12 @@ pub fn default_daw_export_release_blockers() -> Vec<DawExportReleaseBlocker> {
 
 pub fn release_blockers_for_receipt(receipt: &ExportReceiptState) -> Vec<DawExportReleaseBlocker> {
     let mut blockers = vec![DawExportReleaseBlocker::DeveloperProofOnly];
-    if !gate_passed(receipt, DAW_SESSION_WRITER_QA_GATE_ID) {
+    let writer_passed = if receipt.is_w30_hook_dawproject_v1() {
+        gate_passed(receipt, DAWPROJECT_ARCHIVE_QA_GATE_ID)
+    } else {
+        gate_passed(receipt, DAW_SESSION_WRITER_QA_GATE_ID)
+    };
+    if !writer_passed {
         blockers.push(DawExportReleaseBlocker::DawWriterMissing);
     }
     if !gate_passed(receipt, DAW_SESSION_HOST_IMPORT_QA_GATE_ID) {
@@ -98,21 +117,38 @@ pub fn release_blockers_for_receipt(receipt: &ExportReceiptState) -> Vec<DawExpo
 }
 
 pub fn proof_gates_summary(receipt: &ExportReceiptState) -> DawExportProofGatesSummary {
-    DawExportProofGatesSummary {
-        json_package_integrity: proof_gate_summary(
+    let w30_dawproject = receipt.is_w30_hook_dawproject_v1();
+    let writer_proof = if w30_dawproject {
+        proof_gate_summary(
             receipt,
-            DAW_SESSION_JSON_PACKAGE_QA_GATE_ID,
+            DAWPROJECT_ARCHIVE_QA_GATE_ID,
             &[
-                ExportArtifactRole::ExportManifest,
-                ExportArtifactRole::DawSessionTempoMap,
-                ExportArtifactRole::ProductExportProof,
+                ExportArtifactRole::DawProjectFile,
+                ExportArtifactRole::DawProjectProof,
             ],
-        ),
-        writer_proof: proof_gate_summary(
+        )
+    } else {
+        proof_gate_summary(
             receipt,
             DAW_SESSION_WRITER_QA_GATE_ID,
             &[ExportArtifactRole::DawSessionWriterProof],
-        ),
+        )
+    };
+    DawExportProofGatesSummary {
+        json_package_integrity: if w30_dawproject {
+            DawExportProofGateSummary::not_applicable(DAW_SESSION_JSON_PACKAGE_QA_GATE_ID)
+        } else {
+            proof_gate_summary(
+                receipt,
+                DAW_SESSION_JSON_PACKAGE_QA_GATE_ID,
+                &[
+                    ExportArtifactRole::ExportManifest,
+                    ExportArtifactRole::DawSessionTempoMap,
+                    ExportArtifactRole::ProductExportProof,
+                ],
+            )
+        },
+        writer_proof,
         host_import_proof: proof_gate_summary(receipt, DAW_SESSION_HOST_IMPORT_QA_GATE_ID, &[]),
         audible_output_proof: proof_gate_summary(
             receipt,

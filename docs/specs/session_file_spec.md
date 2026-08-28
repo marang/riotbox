@@ -896,14 +896,21 @@ Additional receipt fields required before wider export scopes:
   is not host-import proof or audible-output proof. `ready_for_writer` means the
   receipt evidence is ready for the next implementation gate only; it still
   writes no DAW files and must not be presented as musician-facing export
-  completion.
+  completion. The separate `daw_session.w30_hook_dawproject_v1` receipt instead
+  reports `dawproject_ready`: its passed `dawproject_archive_readback` gate is
+  the writer proof and its real archive replaces, rather than supplements, the
+  older JSON-package layer. That proof gate reports `not_applicable`, and the
+  proof stack therefore omits
+  `json_package_integrity` and clears `writer_proof`, while host-import and
+  audible-output remain missing.
 - the DAW session musician surface gate is separate from `ready_for_writer`:
   `daw_session_surface_gate` stays `disabled` until the receipt identity,
-  placement/tempo readiness, JSON package integrity gate, DAW writer, DAW host
-  import proof, and audible output proof are all satisfied. A ready JSON
-  package removes only `json_package_evidence_missing` or
-  `json_package_integrity_blocked`; it does not remove `developer_proof_only`,
-  `daw_writer_missing`, `daw_host_import_proof_missing`, or
+  placement/tempo readiness, boundary-specific writer evidence, DAW host import
+  proof, and audible output proof are all satisfied. The older local-skeleton
+  path still requires JSON package integrity plus `daw_session_writer_proof`.
+  The W-30 DAWproject path instead requires its exact archive-readback gate and
+  does not invent JSON-package or writer blockers once that gate passes. Neither
+  path removes `developer_proof_only`, `daw_host_import_proof_missing`, or
   `audible_output_proof_missing`.
 - observer snapshots project DAW-session `proof_gates` and `proof_stack` from
   the latest `export_scope: daw_session` receipt alongside placement,

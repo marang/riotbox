@@ -65,6 +65,7 @@ impl DawExportOperatorReadinessReport {
 pub enum DawExportOperatorReadinessStatus {
     Blocked,
     ReadyForWriter,
+    DawprojectReady,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize)]
@@ -73,6 +74,7 @@ pub enum DawExportDeveloperProofStatus {
     NoDawSessionReceipt,
     ReceiptBlocked,
     ReadyForWriter,
+    DawprojectReady,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
@@ -282,21 +284,32 @@ fn report_for_receipt(
 
     let ready_for_next_gate = readiness_blockers.is_empty();
     let proof_gates = proof_gates_summary(receipt);
-    let proof_stack = daw_export_proof_stack_summary(&proof_gates);
+    let proof_stack = daw_export_proof_stack_summary_for_receipt(receipt, &proof_gates);
+    let dawproject_ready = ready_for_next_gate
+        && receipt.is_w30_hook_dawproject_v1()
+        && proof_gates.writer_proof.status == DawExportProofGateStatus::Passed;
     DawExportOperatorReadinessReport {
-        status: if ready_for_next_gate {
+        status: if dawproject_ready {
+            DawExportOperatorReadinessStatus::DawprojectReady
+        } else if ready_for_next_gate {
             DawExportOperatorReadinessStatus::ReadyForWriter
         } else {
             DawExportOperatorReadinessStatus::Blocked
         },
         ready_for_next_gate,
         writes_files: false,
-        developer_proof_status: if ready_for_next_gate {
+        developer_proof_status: if dawproject_ready {
+            DawExportDeveloperProofStatus::DawprojectReady
+        } else if ready_for_next_gate {
             DawExportDeveloperProofStatus::ReadyForWriter
         } else {
             DawExportDeveloperProofStatus::ReceiptBlocked
         },
-        musician_export_readiness: "not_final_daw_export_workflow",
+        musician_export_readiness: if dawproject_ready {
+            "bounded_w30_dawproject_ready"
+        } else {
+            "not_final_daw_export_workflow"
+        },
         release_blockers: release_blockers_for_receipt(receipt),
         proof_gates,
         proof_stack,
@@ -309,11 +322,24 @@ fn report_for_receipt(
     }
 }
 
-pub(crate) fn daw_export_proof_stack_summary(
+pub(crate) fn daw_export_proof_stack_summary_for_receipt(
+    receipt: &ExportReceiptState,
     proof_gates: &DawExportProofGatesSummary,
 ) -> DawExportProofStackSummary {
+    daw_export_proof_stack_summary_with_json_requirement(
+        proof_gates,
+        !receipt.is_w30_hook_dawproject_v1(),
+    )
+}
+
+fn daw_export_proof_stack_summary_with_json_requirement(
+    proof_gates: &DawExportProofGatesSummary,
+    json_package_required: bool,
+) -> DawExportProofStackSummary {
     let mut missing_layers = Vec::new();
-    if proof_gates.json_package_integrity.status != DawExportProofGateStatus::Passed {
+    if json_package_required
+        && proof_gates.json_package_integrity.status != DawExportProofGateStatus::Passed
+    {
         missing_layers.push(DawExportProofLayer::JsonPackageIntegrity);
     }
     if proof_gates.writer_proof.status != DawExportProofGateStatus::Passed {

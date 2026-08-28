@@ -109,4 +109,24 @@ fn w30_hook_dawproject_cli_commits_session_and_observer_without_audio_rerender()
         true
     );
     assert_eq!(completed_receipt["daw_tempo_map_readiness"]["ready"], true);
+    assert_eq!(
+        completed_receipt["proof_gates"]["writer_proof"]["gate_id"],
+        "dawproject_archive_readback"
+    );
+    assert_eq!(
+        completed_receipt["proof_gates"]["json_package_integrity"]["status"],
+        "not_applicable"
+    );
+    assert_eq!(
+        completed_receipt["proof_stack"]["missing_layers"],
+        serde_json::json!(["host_import_proof", "audible_output_proof"])
+    );
+    assert_eq!(
+        event["snapshot"]["export"]["daw_session_surface_gate"]["blockers"],
+        serde_json::json!([
+            "developer_proof_only",
+            "daw_host_import_proof_missing",
+            "audible_output_proof_missing"
+        ])
+    );
 }

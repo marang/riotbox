@@ -901,6 +901,12 @@ Contract for `export.stem_package`:
   or owned final artifact. The binary ingress is
   `riotbox-app --w30-hook-dawproject-execute --session <session.json>
   --daw-session-destination <file.dawproject> [--observer <events.ndjson>]`.
+  For this distinct boundary, the passed `dawproject_archive_readback` gate and
+  its `daw_project_file` / `daw_project_proof` artifacts are the writer layer;
+  the older JSON-package and local-skeleton writer gates do not apply. Generic
+  DAW readiness and observer projections recognize that identity without
+  clearing the still-missing host-import, audible-output, or release-policy
+  blockers.
 - Current DAW writer proof skeleton:
   `riotbox-app --daw-session-writer-proof-execute --session <session.json>
   --daw-session-destination <dir>` requires a ready DAW-session receipt plus a
@@ -982,9 +988,10 @@ Contract for `export.stem_package`:
   observer lifecycle records are derived from the action queue, commit result,
   Session action log, and receipt evidence. Current records cover rejected
   reserved attempts, completed `daw_session.local_project_writer_v1` proof
-  commits, completed `host_import_proof_v1` proof commits, and completed
-  `audible_output_proof_v1` proof commits only. Musician-facing TUI/Ghost
-  affordances stay disabled until
+  commits, completed `host_import_proof_v1` proof commits, completed
+  `audible_output_proof_v1` proof commits, and the separately versioned
+  completed `w30_hook_dawproject_v1` musician-file commit. Musician-facing
+  TUI/Ghost affordances stay disabled until
   writer proof, host-import proof, audible-output proof, and final release
   policy all pass. Writer proof alone is never host-import proof or
   audible-output proof; a PR that widens the command must include control-path

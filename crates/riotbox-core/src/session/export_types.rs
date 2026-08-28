@@ -63,6 +63,14 @@ pub struct ExportReceiptState {
 
 impl ExportReceiptState {
     #[must_use]
+    pub fn is_w30_hook_dawproject_v1(&self) -> bool {
+        self.export_scope == ExportScope::DawSession
+            && self.pack_id == crate::export_readiness::W30_HOOK_DAWPROJECT_PACK_ID
+            && self.export_role == ProductExportRole::ArrangementManifest
+            && self.export_boundary == ProductExportBoundary::DawSessionW30HookDawprojectV1
+    }
+
+    #[must_use]
     pub fn from_readiness_contract(
         created_by_action: ActionId,
         created_at: TimestampMs,

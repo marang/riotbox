@@ -5,7 +5,7 @@ use riotbox_core::{
     session::{
         DAW_SESSION_AUDIBLE_OUTPUT_QA_GATE_ID, DAW_SESSION_HOST_IMPORT_QA_GATE_ID,
         DAW_SESSION_JSON_PACKAGE_QA_GATE_ID, DAW_SESSION_WRITER_QA_GATE_ID,
-        ExportReceiptQaGateStatus, SessionFile,
+        DAWPROJECT_ARCHIVE_QA_GATE_ID, ExportReceiptQaGateStatus, SessionFile,
     },
 };
 
@@ -134,24 +134,30 @@ pub fn daw_session_export_surface_gate_for_session(
     {
         blockers.push(DawSessionExportSurfaceBlocker::DawReceiptReadinessBlocked);
     }
-    if receipt.pack_id != ARRANGEMENT_DAW_PLACEMENT_PACK_ID
-        || receipt.export_role != ProductExportRole::ArrangementManifest
-        || receipt.export_boundary != ProductExportBoundary::ArrangementDawPlacementContractV1
-    {
+    let w30_dawproject = receipt.is_w30_hook_dawproject_v1();
+    let legacy_arrangement_contract = receipt.pack_id == ARRANGEMENT_DAW_PLACEMENT_PACK_ID
+        && receipt.export_role == ProductExportRole::ArrangementManifest
+        && receipt.export_boundary == ProductExportBoundary::ArrangementDawPlacementContractV1;
+    if !legacy_arrangement_contract && !w30_dawproject {
         blockers.push(DawSessionExportSurfaceBlocker::DawReceiptIdentityMissing);
     }
 
-    match receipt
-        .qa_gates
-        .iter()
-        .find(|gate| gate.gate_id == DAW_SESSION_JSON_PACKAGE_QA_GATE_ID)
-    {
-        Some(gate) if gate.status == ExportReceiptQaGateStatus::Passed => {}
-        Some(_) => blockers.push(DawSessionExportSurfaceBlocker::JsonPackageIntegrityBlocked),
-        None => blockers.push(DawSessionExportSurfaceBlocker::JsonPackageEvidenceMissing),
-    }
+    let writer_missing = if w30_dawproject {
+        !daw_session_qa_gate_passed(receipt, DAWPROJECT_ARCHIVE_QA_GATE_ID)
+    } else {
+        match receipt
+            .qa_gates
+            .iter()
+            .find(|gate| gate.gate_id == DAW_SESSION_JSON_PACKAGE_QA_GATE_ID)
+        {
+            Some(gate) if gate.status == ExportReceiptQaGateStatus::Passed => {}
+            Some(_) => blockers.push(DawSessionExportSurfaceBlocker::JsonPackageIntegrityBlocked),
+            None => blockers.push(DawSessionExportSurfaceBlocker::JsonPackageEvidenceMissing),
+        }
+        !daw_session_qa_gate_passed(receipt, DAW_SESSION_WRITER_QA_GATE_ID)
+    };
     blockers.push(DawSessionExportSurfaceBlocker::DeveloperProofOnly);
-    if !daw_session_qa_gate_passed(receipt, DAW_SESSION_WRITER_QA_GATE_ID) {
+    if writer_missing {
         blockers.push(DawSessionExportSurfaceBlocker::DawWriterMissing);
     }
     if !daw_session_qa_gate_passed(receipt, DAW_SESSION_HOST_IMPORT_QA_GATE_ID) {

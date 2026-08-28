@@ -52,6 +52,59 @@ fn w30_hook_dawproject_exports_byte_identical_audio_through_action_session_and_r
     assert!(receipt.daw_tempo_map_report().ready());
     super::product_export::preflight_export_receipt_artifacts(&receipt, None)
         .expect("DAWproject receipt hydration preflight");
+    let readiness = daw_export_operator_readiness_report(&state.session, None);
+    assert_eq!(
+        readiness.status,
+        super::daw_export_operator_report::DawExportOperatorReadinessStatus::DawprojectReady
+    );
+    assert_eq!(
+        readiness.developer_proof_status,
+        super::daw_export_operator_report::DawExportDeveloperProofStatus::DawprojectReady
+    );
+    assert_eq!(
+        readiness.musician_export_readiness,
+        "bounded_w30_dawproject_ready"
+    );
+    assert_eq!(
+        readiness.proof_gates.writer_proof.gate_id,
+        riotbox_core::session::DAWPROJECT_ARCHIVE_QA_GATE_ID
+    );
+    assert_eq!(
+        readiness.proof_gates.json_package_integrity.status,
+        super::daw_export_proof_gates::DawExportProofGateStatus::NotApplicable
+    );
+    assert!(!readiness.release_blockers.contains(
+        &super::daw_export_operator_report::DawExportReleaseBlocker::DawWriterMissing
+    ));
+    assert!(!readiness.proof_stack.missing_layers.contains(
+        &super::daw_export_operator_report::DawExportProofLayer::JsonPackageIntegrity
+    ));
+    assert!(!readiness.proof_stack.missing_layers.contains(
+        &super::daw_export_operator_report::DawExportProofLayer::WriterProof
+    ));
+    assert_eq!(
+        readiness.proof_stack.missing_layers,
+        vec![
+            super::daw_export_operator_report::DawExportProofLayer::HostImportProof,
+            super::daw_export_operator_report::DawExportProofLayer::AudibleOutputProof,
+        ]
+    );
+    let surface = state.daw_session_export_surface_gate();
+    assert!(!surface.blockers.contains(
+        &super::product_export::DawSessionExportSurfaceBlocker::DawReceiptIdentityMissing
+    ));
+    assert!(!surface.blockers.contains(
+        &super::product_export::DawSessionExportSurfaceBlocker::JsonPackageEvidenceMissing
+    ));
+    assert!(!surface.blockers.contains(
+        &super::product_export::DawSessionExportSurfaceBlocker::DawWriterMissing
+    ));
+    assert!(surface.blockers.contains(
+        &super::product_export::DawSessionExportSurfaceBlocker::DawHostImportProofMissing
+    ));
+    assert!(surface.blockers.contains(
+        &super::product_export::DawSessionExportSurfaceBlocker::AudibleOutputProofMissing
+    ));
 
     let mut reader = DawprojectReader::open(&destination).expect("open DAWproject");
     reader.read_dawproject().expect("parse DAWproject XML");

@@ -78,7 +78,7 @@ use capture_helpers::{
     apply_capture_promotion_side_effects, capture_promotion_summary, capture_ref_from_action,
     capture_targets_specific_w30_pad, capture_targets_w30_pad,
 };
-pub(crate) use daw_export_operator_report::daw_export_proof_stack_summary;
+pub(crate) use daw_export_operator_report::daw_export_proof_stack_summary_for_receipt;
 pub use daw_export_operator_report::{
     DawExportOperatorReadinessReport, daw_export_operator_readiness_report,
 };
