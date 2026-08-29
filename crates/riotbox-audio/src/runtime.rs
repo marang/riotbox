@@ -34,6 +34,7 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use crate::w30::W30ResampleTapAvailability;
 
 mod fill_focus;
+mod live_master_capture;
 mod public_api_shell;
 mod render_tr909_w30_preview;
 mod runtime_mix_parity;
@@ -48,6 +49,12 @@ mod w30_filter_slam;
 mod w30_tr909_signal_helpers;
 
 use fill_focus::{FillFocusRenderState, apply_fill_focus_to_non_tr909_bed};
+use live_master_capture::SharedLiveMasterCapture;
+pub use live_master_capture::{
+    LIVE_MASTER_CALLBACK_GAP_THRESHOLD_MICROS, LIVE_MASTER_MAX_INTERLEAVED_SAMPLE_COUNT,
+    LiveMasterCaptureError, LiveMasterCaptureOutcome, LiveMasterCaptureProgress,
+    LiveMasterCaptureRequest,
+};
 pub use public_api_shell::*;
 use render_tr909_w30_preview::{
     render_tr909_buffer, render_w30_preview_buffer, render_w30_resample_tap_buffer,

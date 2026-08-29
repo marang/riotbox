@@ -335,8 +335,49 @@ This is a direct recipe over the existing
 `stem_package.w30_hook_loop_v4` action and writer. It does not rerender a new
 sound design, add a second export truth, or change the accepted V4 package
 bytes. An ineligible Session fails closed without a final package or musician
-handoff summary. TUI/Ghost controls, DAW-project creation, live recording,
-Holdout, and release qualification remain separate work.
+handoff summary. TUI/Ghost controls, DAW host import/playback, Holdout, and
+release qualification remain separate work.
+
+### Place The Qualified Hook In A DAW
+
+Create one real DAWproject 1.0 arrangement containing the accepted W-30 hook
+at Session tempo for exactly two bars:
+
+```bash
+just w30-hook-dawproject \
+  "path/to/session.json" \
+  "exports/riotbox-hook.dawproject" \
+  "artifacts/local/dawproject-observer.ndjson"
+```
+
+The archive embeds the accepted hook byte-for-byte and carries its tempo,
+placement, proof, and lineage. Riotbox validates the complete archive before a
+no-replace publish and Session commit. This proves the DAWproject file itself;
+it does not claim that a particular DAW has imported or played it.
+
+### Record The Real Live Master
+
+Record exactly eight beats from Riotbox's running post-limiter audio callback:
+
+```bash
+just live-master-recording \
+  "path/to/session.json" \
+  "exports/riotbox-live-master.wav" \
+  "path/to/source-graph.json" \
+  "artifacts/local/live-master-observer.ndjson"
+```
+
+The graph and observer arguments are optional when the Session embeds its
+graph and no observer log is wanted. This command starts the real output
+device, confirms the Session transport and BPM, captures the actual interleaved
+master into an IEEE-float 32-bit WAV, and writes a versioned proof sidecar. It
+fails closed on callback gaps, stream or scratch faults, transport/tempo drift,
+silence, clipping, wrong format or frame count, read-back mismatch, and existing
+destinations. The optional observer must be a fresh path distinct from the
+Session, graph, WAV, and proof. Riotbox stops the output runtime before it
+encodes or publishes files. Only after all gates pass does it commit
+`export.live_recording` and its Session receipt. It records no microphone/input
+audio, uses no offline render as a substitute, and adds no new sound processing.
 
 ## Start In 5 Steps
 

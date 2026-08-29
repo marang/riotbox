@@ -71,6 +71,12 @@ fn live_recording_readiness_report_summary(
     } else {
         "live_recording_host_audio_blocked"
     };
+    let runtime_master_recording_ready = receipt.live_recording_runtime_master_ready();
+    let musician_export_readiness = if runtime_master_recording_ready {
+        "runtime_master_recording_ready"
+    } else {
+        "not_runnable_live_recording_export"
+    };
 
     Ok(json!({
         "mode": "live_recording_readiness_report",
@@ -79,7 +85,8 @@ fn live_recording_readiness_report_summary(
         "writes_files": false,
         "session_path": session_path,
         "developer_proof_status": developer_proof_status,
-        "musician_export_readiness": "not_runnable_live_recording_export",
+        "musician_export_readiness": musician_export_readiness,
+        "runtime_master_recording_ready": runtime_master_recording_ready,
         "readiness_blockers": readiness_blockers,
         "readiness_report": readiness,
         "product_mix_receipt_count": product_mix_receipt_count,

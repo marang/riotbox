@@ -26,6 +26,7 @@ fn parse_args_builds_daw_session_json_package_execute_mode() {
         | LaunchMode::StemPackageW30HookExecute { .. }
         | LaunchMode::StemPackageLocalCiReport { .. }
         | LaunchMode::LiveRecordingReadinessReport { .. }
+        | LaunchMode::LiveMasterRecordingExecute { .. }
         | LaunchMode::DawExportReadinessReport { .. }
         | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
         | LaunchMode::DawSessionHostImportProofApply { .. }
@@ -69,6 +70,7 @@ fn parse_args_builds_daw_session_json_package_evidence_apply_mode() {
         | LaunchMode::StemPackageW30HookExecute { .. }
         | LaunchMode::StemPackageLocalCiReport { .. }
         | LaunchMode::LiveRecordingReadinessReport { .. }
+        | LaunchMode::LiveMasterRecordingExecute { .. }
         | LaunchMode::DawExportReadinessReport { .. }
         | LaunchMode::DawSessionJsonPackageExecute { .. }
         | LaunchMode::DawSessionHostImportProofApply { .. }
@@ -115,6 +117,7 @@ fn parse_args_builds_daw_session_host_import_proof_apply_mode() {
         | LaunchMode::StemPackageW30HookExecute { .. }
         | LaunchMode::StemPackageLocalCiReport { .. }
         | LaunchMode::LiveRecordingReadinessReport { .. }
+        | LaunchMode::LiveMasterRecordingExecute { .. }
         | LaunchMode::DawExportReadinessReport { .. }
         | LaunchMode::DawSessionJsonPackageExecute { .. }
         | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
@@ -190,6 +193,7 @@ fn parse_args_builds_daw_session_audible_output_proof_apply_mode() {
         | LaunchMode::StemPackageW30HookExecute { .. }
         | LaunchMode::StemPackageLocalCiReport { .. }
         | LaunchMode::LiveRecordingReadinessReport { .. }
+        | LaunchMode::LiveMasterRecordingExecute { .. }
         | LaunchMode::DawExportReadinessReport { .. }
         | LaunchMode::DawSessionJsonPackageExecute { .. }
         | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }

@@ -78,6 +78,11 @@ enum LaunchMode {
     LiveRecordingReadinessReport {
         session_path: PathBuf,
     },
+    LiveMasterRecordingExecute {
+        session_path: PathBuf,
+        source_graph_path: Option<PathBuf>,
+        destination_path: PathBuf,
+    },
     DawExportReadinessReport {
         session_path: PathBuf,
     },
@@ -173,6 +178,10 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     }
     if matches!(launch.mode, LaunchMode::LiveRecordingReadinessReport { .. }) {
         run_live_recording_readiness_report(&launch)?;
+        return Ok(());
+    }
+    if matches!(launch.mode, LaunchMode::LiveMasterRecordingExecute { .. }) {
+        run_live_master_recording_execute(&launch, &raw_args)?;
         return Ok(());
     }
     if matches!(launch.mode, LaunchMode::DawExportReadinessReport { .. }) {
@@ -309,6 +318,9 @@ fn load_state(mode: LaunchMode) -> Result<JamAppState, JamAppError> {
         )),
         LaunchMode::LiveRecordingReadinessReport { .. } => Err(JamAppError::InvalidSession(
             "live recording readiness report uses a non-interactive proof path".into(),
+        )),
+        LaunchMode::LiveMasterRecordingExecute { .. } => Err(JamAppError::InvalidSession(
+            "live master recording execute uses a non-interactive real-audio path".into(),
         )),
         LaunchMode::DawExportReadinessReport { .. } => Err(JamAppError::InvalidSession(
             "DAW export readiness report uses a non-interactive proof path".into(),

@@ -43,6 +43,7 @@ mod ghost_candidates;
 mod ghost_queue;
 mod helpers;
 mod lifecycle;
+mod live_master_recording;
 mod live_source_timing;
 mod mc202_queue;
 mod persistence;
@@ -122,6 +123,11 @@ pub use ghost_queue::{GhostSuggestionQueueResult, NO_CURRENT_GHOST_SUGGESTION_RE
 use helpers::{
     is_mc202_phrase_action, max_action_id, normalize_missing_typed_undo_policies,
     update_logged_action_result,
+};
+pub use live_master_recording::{
+    LIVE_MASTER_RECORDING_DURATION_BEATS, LIVE_MASTER_RECORDING_PROOF_SCHEMA,
+    LiveMasterRecordingPlan, LiveMasterRecordingProof, LiveMasterRecordingQueueResult,
+    live_master_recording_proof_path,
 };
 use live_source_timing::{
     attach_w30_hook_candidate_evidence, confirm_explicit_source_bpm,

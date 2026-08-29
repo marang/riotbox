@@ -71,6 +71,77 @@ impl ExportReceiptState {
     }
 
     #[must_use]
+    pub fn is_live_recording_runtime_master_v1(&self) -> bool {
+        self.export_scope == ExportScope::LiveRecording
+            && self.pack_id == crate::export_readiness::LIVE_RECORDING_RUNTIME_MASTER_PACK_ID
+            && self.export_role == ProductExportRole::LiveRecordingCapture
+            && self.export_boundary == ProductExportBoundary::LiveRecordingRuntimeMasterCaptureV1
+    }
+
+    #[must_use]
+    pub fn live_recording_runtime_master_ready(&self) -> bool {
+        if !self.is_live_recording_runtime_master_v1()
+            || !self.live_recording_host_audio_readiness_report().ready()
+        {
+            return false;
+        }
+        let live_artifacts = self
+            .artifact_set
+            .iter()
+            .filter(|artifact| artifact.role == ExportArtifactRole::LiveRecordingCapture)
+            .collect::<Vec<_>>();
+        let proof_artifacts = self
+            .artifact_set
+            .iter()
+            .filter(|artifact| artifact.role == ExportArtifactRole::ProductExportProof)
+            .collect::<Vec<_>>();
+        if live_artifacts.len() != 1 || proof_artifacts.len() != 1 {
+            return false;
+        }
+        let live = live_artifacts[0];
+        let proof = proof_artifacts[0];
+        let live_metrics_ready = live.audio_metrics.as_ref().is_some_and(|metrics| {
+            metrics
+                .peak_amplitude_micros
+                .is_some_and(|peak| peak > 0 && peak < 1_000_000)
+                && metrics.total_frame_count.is_some_and(|frames| frames > 0)
+        });
+        let artifacts_ready = live.media_type == ExportArtifactMediaType::AudioWav
+            && live.sample_rate_hz.is_some_and(|rate| rate > 0)
+            && live.channel_count.is_some_and(|channels| channels > 0)
+            && live.duration_ms.is_some_and(|duration| duration > 0)
+            && live_metrics_ready
+            && artifact_identity_ready(live)
+            && proof.media_type == ExportArtifactMediaType::Json
+            && artifact_identity_ready(proof);
+        let top_level_identity_ready = live.location_identity() == self.artifact_path
+            && live.sha256 == self.export_hash
+            && proof.location_identity() == self.proof_path
+            && proof.sha256 == self.normalized_manifest_hash
+            && self.manifest_path.as_deref() == Some(self.proof_path.as_str());
+        let duration_identity_ready = self.live_recording_host_audio_refs.len() == 1
+            && live.duration_ms
+                == Some(self.live_recording_host_audio_refs[0].recording_duration_ms);
+        let required_gates_ready = [
+            super::export_qa_gates::LIVE_RECORDING_RUNTIME_CAPTURE_QA_GATE_ID,
+            super::export_qa_gates::LIVE_RECORDING_WAV_READBACK_QA_GATE_ID,
+        ]
+        .into_iter()
+        .all(|gate_id| {
+            let matching = self
+                .qa_gates
+                .iter()
+                .filter(|gate| gate.gate_id == gate_id)
+                .collect::<Vec<_>>();
+            matching.len() == 1 && matching[0].status == ExportReceiptQaGateStatus::Passed
+        });
+        artifacts_ready
+            && top_level_identity_ready
+            && duration_identity_ready
+            && required_gates_ready
+    }
+
+    #[must_use]
     pub fn from_readiness_contract(
         created_by_action: ActionId,
         created_at: TimestampMs,
@@ -207,6 +278,12 @@ pub enum StemPackageReceiptReadinessBlocker {
     MissingFallbackComparisonQaGate,
     DeferredFallbackComparisonQaGate,
     FailedFallbackComparisonQaGate,
+}
+
+fn artifact_identity_ready(artifact: &ExportArtifactSetEntry) -> bool {
+    !artifact.location_identity().trim().is_empty()
+        && artifact.sha256.len() == 64
+        && artifact.sha256.bytes().all(|byte| byte.is_ascii_hexdigit())
 }
 
 #[must_use]

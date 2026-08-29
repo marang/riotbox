@@ -1039,6 +1039,14 @@ w30-hook-dawproject session destination observer="":
     if [[ -n {{quote(observer)}} ]]; then args+=(--observer {{quote(observer)}}); fi
     cargo run --quiet -p riotbox-app --bin riotbox-app -- "${args[@]}"
 
+live-master-recording session destination graph="" observer="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    args=(--live-master-recording-execute --session {{quote(session)}} --live-recording-destination {{quote(destination)}})
+    if [[ -n {{quote(graph)}} ]]; then args+=(--graph {{quote(graph)}}); fi
+    if [[ -n {{quote(observer)}} ]]; then args+=(--observer {{quote(observer)}}); fi
+    cargo run --quiet -p riotbox-app --bin riotbox-app -- "${args[@]}"
+
 stem-package-local-ci-report-smoke:
     cargo test -p riotbox-app --test stem_package_report_smoke -- --nocapture
 
@@ -1047,6 +1055,11 @@ live-recording-readiness-report-smoke:
 
 live-recording-reserved-action-lifecycle-smoke:
     cargo test -p riotbox-app --bin riotbox-app observer_snapshot_reports_rejected_reserved_live_recording_lifecycle_without_receipt -- --nocapture
+
+live-master-recording-contract-smoke:
+    cargo test -p riotbox-audio runtime::live_master_capture --no-fail-fast
+    cargo test -p riotbox-app real_runtime_master_take_commits_wav_proof_action_session_and_receipt --no-fail-fast
+    cargo test -p riotbox-app live_master_ --no-fail-fast
 
 daw-export-readiness-report-smoke:
     cargo test -p riotbox-app --test daw_export_report_smoke -- --nocapture

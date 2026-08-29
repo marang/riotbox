@@ -28,6 +28,7 @@ mod tests {
     };
 
     include!("tests/w30_hook_dawproject_cli.rs");
+    mod live_master_recording_cli;
 
     #[test]
     fn audio_start_failure_becomes_persistent_faulted_runtime_health() {
@@ -180,6 +181,7 @@ mod tests {
             | LaunchMode::StemPackageW30HookExecute { .. }
             | LaunchMode::StemPackageLocalCiReport { .. }
             | LaunchMode::LiveRecordingReadinessReport { .. }
+            | LaunchMode::LiveMasterRecordingExecute { .. }
             | LaunchMode::DawExportReadinessReport { .. }
             | LaunchMode::DawSessionJsonPackageExecute { .. }
             | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
@@ -298,6 +300,7 @@ mod tests {
             | LaunchMode::StemPackageW30HookExecute { .. }
             | LaunchMode::StemPackageLocalCiReport { .. }
             | LaunchMode::LiveRecordingReadinessReport { .. }
+            | LaunchMode::LiveMasterRecordingExecute { .. }
             | LaunchMode::DawExportReadinessReport { .. }
             | LaunchMode::DawSessionJsonPackageExecute { .. }
             | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
@@ -338,6 +341,7 @@ mod tests {
             | LaunchMode::StemPackageW30HookExecute { .. }
             | LaunchMode::StemPackageLocalCiReport { .. }
             | LaunchMode::LiveRecordingReadinessReport { .. }
+            | LaunchMode::LiveMasterRecordingExecute { .. }
             | LaunchMode::DawExportReadinessReport { .. }
             | LaunchMode::DawSessionJsonPackageExecute { .. }
             | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
@@ -373,6 +377,7 @@ mod tests {
             | LaunchMode::StemPackageW30HookExecute { .. }
             | LaunchMode::StemPackageLocalCiReport { .. }
             | LaunchMode::LiveRecordingReadinessReport { .. }
+            | LaunchMode::LiveMasterRecordingExecute { .. }
             | LaunchMode::DawExportReadinessReport { .. }
             | LaunchMode::DawSessionJsonPackageExecute { .. }
             | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }

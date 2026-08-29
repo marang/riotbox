@@ -14,6 +14,8 @@ pub const DAW_SESSION_WRITER_QA_GATE_ID: &str = "daw_session_writer_proof";
 pub const DAW_SESSION_HOST_IMPORT_QA_GATE_ID: &str = "daw_session_host_import_proof";
 pub const DAW_SESSION_AUDIBLE_OUTPUT_QA_GATE_ID: &str = "daw_session_audible_output_proof";
 pub const DAWPROJECT_ARCHIVE_QA_GATE_ID: &str = "dawproject_archive_readback";
+pub const LIVE_RECORDING_RUNTIME_CAPTURE_QA_GATE_ID: &str = "live_recording_runtime_master_capture";
+pub const LIVE_RECORDING_WAV_READBACK_QA_GATE_ID: &str = "live_recording_wav_readback";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExportReceiptQaGateResult {
@@ -218,6 +220,35 @@ impl ExportReceiptQaGateResult {
             ],
             summary: Some(
                 "DAWproject model, tempo, placement, embedded proof, and byte-identical W-30 audio passed exact read-back"
+                    .into(),
+            ),
+        }
+    }
+
+    #[must_use]
+    pub fn live_recording_runtime_master_capture() -> Self {
+        Self {
+            gate_id: LIVE_RECORDING_RUNTIME_CAPTURE_QA_GATE_ID.into(),
+            status: ExportReceiptQaGateStatus::Passed,
+            artifact_roles: vec![ExportArtifactRole::LiveRecordingCapture],
+            summary: Some(
+                "real post-limiter callback completed the exact Session-bound capture window without realtime faults"
+                    .into(),
+            ),
+        }
+    }
+
+    #[must_use]
+    pub fn live_recording_wav_readback() -> Self {
+        Self {
+            gate_id: LIVE_RECORDING_WAV_READBACK_QA_GATE_ID.into(),
+            status: ExportReceiptQaGateStatus::Passed,
+            artifact_roles: vec![
+                ExportArtifactRole::LiveRecordingCapture,
+                ExportArtifactRole::ProductExportProof,
+            ],
+            summary: Some(
+                "float32 WAV format, exact frames, sample bytes, non-silence, peak, proof, and hashes passed read-back"
                     .into(),
             ),
         }

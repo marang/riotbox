@@ -2108,3 +2108,17 @@ same sound. It must name one still-missing end-to-end workflow from the
 RIOTBOX-1036 anchor, such as exact host-import evidence or the first honest live
 recording path, and preserve the existing action, Session, replay, and writer
 truth.
+
+RIOTBOX-1485 takes the first honest live-recording path because no supported
+DAWproject host is available for an exact local import run. It records exactly
+eight beats from the real post-limiter CPAL callback into one Session-owned
+float32 WAV and proof, then commits through the existing Action, receipt,
+replay, observer, and host-audio-readiness spine only after realtime and
+read-back gates pass. Offline RuntimeMix remains test evidence and cannot
+substitute for the real host/device callback. This slice adds no DSP, input
+capture, arbitrary recorder, TUI/Ghost surface, Holdout access, or release
+claim. Branch review additionally hardens V1 so only active runtime capture
+owners enter lineage, pathological payload sizes fail before allocation,
+callback retirement cannot spin indefinitely, the output stream stops before
+artifact I/O, and a fresh optional observer cannot alias or overwrite product
+artifacts.

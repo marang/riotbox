@@ -19,6 +19,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     let mut stem_package_w30_hook_execute = false;
     let mut stem_package_local_ci_report = false;
     let mut live_recording_readiness_report = false;
+    let mut live_master_recording_execute = false;
     let mut daw_export_readiness_report = false;
     let mut daw_session_json_package_execute = false;
     let mut daw_session_json_package_evidence_apply = false;
@@ -35,6 +36,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     let mut daw_session_destination_path = None;
     let mut daw_session_host_import_proof_path = None;
     let mut daw_session_audible_output_proof_path = None;
+    let mut live_recording_destination_path = None;
     let mut claimed_stem_roles = Vec::new();
 
     while let Some(arg) = args.next() {
@@ -47,6 +49,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             "--stem-package-w30-hook-execute" => stem_package_w30_hook_execute = true,
             "--stem-package-local-ci-report" => stem_package_local_ci_report = true,
             "--live-recording-readiness-report" => live_recording_readiness_report = true,
+            "--live-master-recording-execute" => live_master_recording_execute = true,
             "--daw-export-readiness-report" => daw_export_readiness_report = true,
             "--daw-session-json-package-execute" => daw_session_json_package_execute = true,
             "--daw-session-json-package-evidence-apply" => {
@@ -93,6 +96,10 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
                     &mut args,
                     "--daw-session-audible-output-proof",
                 )?);
+            }
+            "--live-recording-destination" => {
+                live_recording_destination_path =
+                    Some(next_path(&mut args, "--live-recording-destination")?);
             }
             "--stem-role" => {
                 let value = args
@@ -197,6 +204,57 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
         }
         (None, None) => None,
     };
+
+    if live_master_recording_execute {
+        if source_path.is_some()
+            || saw_sidecar_flag
+            || saw_seed_flag
+            || product_mix_export_handoff.is_some()
+            || stem_package_local_ci_dry_run
+            || stem_package_local_ci_execute
+            || stem_package_source_matched_execute
+            || stem_package_w30_hook_execute
+            || stem_package_local_ci_report
+            || live_recording_readiness_report
+            || daw_export_readiness_report
+            || daw_session_json_package_execute
+            || daw_session_json_package_evidence_apply
+            || daw_session_host_import_proof_apply
+            || daw_session_host_import_proof_export_execute
+            || daw_session_audible_output_proof_apply
+            || daw_session_writer_proof_execute
+            || daw_session_writer_proof_apply
+            || daw_session_writer_export_execute
+            || w30_hook_dawproject_execute
+            || daw_session_writer_plan
+            || stem_package_destination_path.is_some()
+            || product_stem_handoff_proof_path.is_some()
+            || daw_session_destination_path.is_some()
+            || daw_session_host_import_proof_path.is_some()
+            || daw_session_audible_output_proof_path.is_some()
+            || !claimed_stem_roles.is_empty()
+        {
+            return Err(
+                "live master recording execute cannot be combined with source/sidecar/seed or another export/report mode"
+                    .into(),
+            );
+        }
+        let session_path = session_path.filter(|_| saw_session_flag).ok_or_else(|| {
+            "live master recording execute requires --session <session.json>".to_string()
+        })?;
+        let destination_path = live_recording_destination_path.ok_or_else(|| {
+            "live master recording execute requires --live-recording-destination <file.wav>"
+                .to_string()
+        })?;
+        return Ok(AppLaunch {
+            mode: LaunchMode::LiveMasterRecordingExecute {
+                session_path,
+                source_graph_path,
+                destination_path,
+            },
+            observer_path,
+        });
+    }
 
     let stem_package_mode_count = [
         stem_package_local_ci_dry_run,
@@ -519,6 +577,11 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
                 .into(),
         );
     }
+    if live_recording_destination_path.is_some() {
+        return Err(
+            "--live-recording-destination requires --live-master-recording-execute".into(),
+        );
+    }
 
     let session_path = session_path.unwrap_or_else(|| PathBuf::from(DEFAULT_SESSION_PATH));
     let mode = match source_path {
@@ -569,6 +632,22 @@ impl UserSessionObserver {
                 .create(true)
                 .write(true)
                 .truncate(true)
+                .open(path)?,
+        );
+        Ok(Self { writer })
+    }
+
+    fn open_new(path: &Path) -> io::Result<Self> {
+        if let Some(parent) = path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            fs::create_dir_all(parent)?;
+        }
+
+        let writer = BufWriter::new(
+            OpenOptions::new()
+                .create_new(true)
+                .write(true)
                 .open(path)?,
         );
         Ok(Self { writer })

@@ -6,6 +6,8 @@ include!("bin/riotbox-app/stem_package_export_cli.rs");
 include!("bin/riotbox-app/stem_package_handoff_cli.rs");
 include!("bin/riotbox-app/stem_package_report_cli.rs");
 include!("bin/riotbox-app/live_recording_report_cli.rs");
+mod live_master_recording;
+use live_master_recording::run_live_master_recording_execute;
 include!("bin/riotbox-app/daw_export_report_cli.rs");
 include!("bin/riotbox-app/daw_session_json_package_cli.rs");
 include!("bin/riotbox-app/daw_session_writer_proof_cli.rs");
