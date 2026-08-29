@@ -1667,4 +1667,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Deliver the qualified W-30 hook as a musician-ready export handoff
 - [RIOTBOX-1484.md](./RIOTBOX-1484.md)
   Export the qualified W-30 hook as a real DAWproject arrangement
+- [RIOTBOX-1485.md](./RIOTBOX-1485.md)
+  Record the real live Riotbox master callback as a Session-owned WAV
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
