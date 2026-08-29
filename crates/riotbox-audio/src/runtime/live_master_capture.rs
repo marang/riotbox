@@ -8,7 +8,7 @@ use arc_swap::ArcSwapOption;
 use super::CallbackTimingSnapshot;
 
 pub const LIVE_MASTER_CALLBACK_GAP_THRESHOLD_MICROS: u64 = 100_000;
-/// Maximum V1 capture payload admitted before allocating the atomic callback buffer.
+/// Maximum capture payload admitted before allocating the atomic callback buffer.
 ///
 /// Each slot is one four-byte `f32` bit pattern, so this bounds the callback-owned
 /// allocation to 64 MiB. Finalization may create one equally sized ordinary `f32`
@@ -20,6 +20,9 @@ pub struct LiveMasterCaptureRequest {
     pub target_frame_count: usize,
     pub channel_count: u16,
     pub expected_tempo_bpm: f32,
+    /// `None` preserves the V1 immediate-capture contract. V2 arms the
+    /// preallocated buffer until this absolute Session transport position.
+    pub start_position_beats: Option<f64>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -33,6 +36,9 @@ pub struct LiveMasterCaptureProgress {
     pub stream_error_count: u64,
     pub transport_mismatch_count: u64,
     pub tempo_mismatch_count: u64,
+    pub timing_window_mismatch_count: u64,
+    pub armed_callback_count: u64,
+    pub capture_started: bool,
     pub complete: bool,
 }
 
@@ -44,6 +50,7 @@ impl LiveMasterCaptureProgress {
             .saturating_add(self.stream_error_count)
             .saturating_add(self.transport_mismatch_count)
             .saturating_add(self.tempo_mismatch_count)
+            .saturating_add(self.timing_window_mismatch_count)
     }
 }
 
@@ -51,6 +58,8 @@ impl LiveMasterCaptureProgress {
 pub struct LiveMasterCaptureOutcome {
     pub samples: Vec<f32>,
     pub progress: LiveMasterCaptureProgress,
+    pub captured_start_position_beats: Option<f64>,
+    pub captured_end_position_beats: Option<f64>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -84,9 +93,15 @@ impl SharedLiveMasterCapture {
         }
     }
 
-    pub(super) fn begin(
+    #[cfg(test)]
+    fn begin(&self, request: LiveMasterCaptureRequest) -> Result<(), LiveMasterCaptureError> {
+        self.begin_after_callback(request, None)
+    }
+
+    pub(super) fn begin_after_callback(
         &self,
         request: LiveMasterCaptureRequest,
+        last_callback_micros: Option<u64>,
     ) -> Result<(), LiveMasterCaptureError> {
         let mut control = self
             .control
@@ -101,14 +116,20 @@ impl SharedLiveMasterCapture {
         if request.channel_count == 0
             || !request.expected_tempo_bpm.is_finite()
             || request.expected_tempo_bpm <= 0.0
+            || request
+                .start_position_beats
+                .is_some_and(|position| !position.is_finite() || position < 0.0)
         {
             return Err(LiveMasterCaptureError::InvalidTarget);
         }
         if self.active.load().is_some() {
             return Err(LiveMasterCaptureError::AlreadyActive);
         }
-        let capture =
-            LiveMasterCaptureBuffer::try_new(target_sample_count, request.expected_tempo_bpm)?;
+        let capture = LiveMasterCaptureBuffer::try_new(
+            target_sample_count,
+            &request,
+            last_callback_micros.filter(|_| request.start_position_beats.is_some()),
+        )?;
         self.active.store(Some(Arc::new(capture)));
         Ok(())
     }
@@ -174,7 +195,7 @@ impl SharedLiveMasterCapture {
 
     pub(super) fn record_scratch_overflow(&self, timing: &CallbackTimingSnapshot, now_micros: u64) {
         if let Some(capture) = self.active.load_full() {
-            capture.record_callback_timing(timing, now_micros);
+            capture.record_captured_callback_timing(timing, now_micros);
             capture
                 .callback_scratch_overflow_count
                 .fetch_add(1, Ordering::Relaxed);
@@ -197,8 +218,13 @@ impl SharedLiveMasterCapture {
 struct LiveMasterCaptureBuffer {
     samples: Box<[AtomicU32]>,
     written_sample_count: AtomicUsize,
+    channel_count: usize,
     expected_tempo_bpm_bits: u32,
+    requested_start_position_beats_bits: u64,
+    captured_start_position_beats_bits: AtomicU64,
+    captured_end_position_beats_bits: AtomicU64,
     callback_count: AtomicU64,
+    armed_callback_count: AtomicU64,
     last_callback_micros: AtomicU64,
     max_callback_gap_micros: AtomicU64,
     callback_gap_over_threshold_count: AtomicU64,
@@ -206,13 +232,18 @@ struct LiveMasterCaptureBuffer {
     stream_error_count: AtomicU64,
     transport_mismatch_count: AtomicU64,
     tempo_mismatch_count: AtomicU64,
+    timing_window_mismatch_count: AtomicU64,
+    capture_started: AtomicBool,
     complete: AtomicBool,
 }
+
+const UNSET_POSITION_BITS: u64 = u64::MAX;
 
 impl LiveMasterCaptureBuffer {
     fn try_new(
         target_sample_count: usize,
-        expected_tempo_bpm: f32,
+        request: &LiveMasterCaptureRequest,
+        last_callback_micros: Option<u64>,
     ) -> Result<Self, LiveMasterCaptureError> {
         let mut samples = Vec::new();
         samples
@@ -222,15 +253,24 @@ impl LiveMasterCaptureBuffer {
         Ok(Self {
             samples: samples.into_boxed_slice(),
             written_sample_count: AtomicUsize::new(0),
-            expected_tempo_bpm_bits: expected_tempo_bpm.to_bits(),
+            channel_count: usize::from(request.channel_count),
+            expected_tempo_bpm_bits: request.expected_tempo_bpm.to_bits(),
+            requested_start_position_beats_bits: request
+                .start_position_beats
+                .map_or(UNSET_POSITION_BITS, f64::to_bits),
+            captured_start_position_beats_bits: AtomicU64::new(UNSET_POSITION_BITS),
+            captured_end_position_beats_bits: AtomicU64::new(UNSET_POSITION_BITS),
             callback_count: AtomicU64::new(0),
-            last_callback_micros: AtomicU64::new(u64::MAX),
+            armed_callback_count: AtomicU64::new(0),
+            last_callback_micros: AtomicU64::new(last_callback_micros.unwrap_or(u64::MAX)),
             max_callback_gap_micros: AtomicU64::new(0),
             callback_gap_over_threshold_count: AtomicU64::new(0),
             callback_scratch_overflow_count: AtomicU64::new(0),
             stream_error_count: AtomicU64::new(0),
             transport_mismatch_count: AtomicU64::new(0),
             tempo_mismatch_count: AtomicU64::new(0),
+            timing_window_mismatch_count: AtomicU64::new(0),
+            capture_started: AtomicBool::new(request.start_position_beats.is_none()),
             complete: AtomicBool::new(false),
         })
     }
@@ -239,25 +279,145 @@ impl LiveMasterCaptureBuffer {
         if self.complete.load(Ordering::Acquire) {
             return;
         }
-        self.record_callback_timing(timing, now_micros);
+        let is_bar_window = self.requested_start_position_beats_bits != UNSET_POSITION_BITS;
+        if is_bar_window {
+            self.record_callback_gap(now_micros);
+        }
+        if is_bar_window && self.record_transport_and_tempo_faults(timing) {
+            if !self.capture_started.load(Ordering::Acquire) {
+                self.armed_callback_count.fetch_add(1, Ordering::Relaxed);
+            }
+            return;
+        }
+        let Some(source_start) = self.capture_source_start(samples, timing) else {
+            return;
+        };
+        if is_bar_window {
+            self.callback_count.fetch_add(1, Ordering::Relaxed);
+        } else {
+            self.record_captured_callback_timing(timing, now_micros);
+        }
 
         let start = self.written_sample_count.load(Ordering::Relaxed);
         let remaining = self.samples.len().saturating_sub(start);
-        let copy_count = remaining.min(samples.len());
+        let available = samples.len().saturating_sub(source_start);
+        let copy_count = remaining.min(available);
         for (slot, sample) in self.samples[start..start + copy_count]
             .iter()
-            .zip(&samples[..copy_count])
+            .zip(&samples[source_start..source_start + copy_count])
         {
             slot.store(sample.to_bits(), Ordering::Relaxed);
         }
         let written = start.saturating_add(copy_count);
         self.written_sample_count.store(written, Ordering::Release);
+        self.record_captured_end_position(timing, samples.len(), source_start, copy_count);
         if written == self.samples.len() {
             self.complete.store(true, Ordering::Release);
         }
     }
 
-    fn record_callback_timing(&self, timing: &CallbackTimingSnapshot, now_micros: u64) {
+    fn capture_source_start(
+        &self,
+        samples: &[f32],
+        timing: &CallbackTimingSnapshot,
+    ) -> Option<usize> {
+        if self.channel_count == 0
+            || samples.is_empty()
+            || !samples.len().is_multiple_of(self.channel_count)
+            || !timing.render_position_beats.is_finite()
+            || !timing.completed_position_beats.is_finite()
+            || timing.completed_position_beats < timing.render_position_beats
+        {
+            self.timing_window_mismatch_count
+                .fetch_add(1, Ordering::Relaxed);
+            return None;
+        }
+        let frame_count = samples.len() / self.channel_count;
+        if frame_count == 0 {
+            self.timing_window_mismatch_count
+                .fetch_add(1, Ordering::Relaxed);
+            return None;
+        }
+        let callback_beat_span = timing.completed_position_beats - timing.render_position_beats;
+        if callback_beat_span <= 0.0 {
+            if self.requested_start_position_beats_bits != UNSET_POSITION_BITS {
+                self.timing_window_mismatch_count
+                    .fetch_add(1, Ordering::Relaxed);
+            }
+            return None;
+        }
+        let beats_per_frame = callback_beat_span / frame_count as f64;
+        let tolerance = beats_per_frame * 1.0e-6;
+        if self.capture_started.load(Ordering::Acquire) {
+            if let Some(expected_start) = position_from_bits(
+                self.captured_end_position_beats_bits
+                    .load(Ordering::Acquire),
+            ) && (timing.render_position_beats - expected_start).abs() > tolerance
+            {
+                self.timing_window_mismatch_count
+                    .fetch_add(1, Ordering::Relaxed);
+                return None;
+            }
+            return Some(0);
+        }
+        self.armed_callback_count.fetch_add(1, Ordering::Relaxed);
+        let requested = f64::from_bits(self.requested_start_position_beats_bits);
+        if timing.completed_position_beats <= requested + tolerance {
+            return None;
+        }
+        if timing.render_position_beats > requested + beats_per_frame + tolerance {
+            self.timing_window_mismatch_count
+                .fetch_add(1, Ordering::Relaxed);
+            return None;
+        }
+
+        let relative_frame =
+            ((requested - timing.render_position_beats) / beats_per_frame).max(0.0);
+        let frame_offset = (relative_frame - 1.0e-9).ceil().max(0.0) as usize;
+        if frame_offset >= frame_count {
+            return None;
+        }
+        let actual_start = timing.render_position_beats + beats_per_frame * frame_offset as f64;
+        if actual_start + tolerance < requested
+            || actual_start - requested > beats_per_frame + tolerance
+        {
+            self.timing_window_mismatch_count
+                .fetch_add(1, Ordering::Relaxed);
+            return None;
+        }
+        self.captured_start_position_beats_bits
+            .store(actual_start.to_bits(), Ordering::Release);
+        self.capture_started.store(true, Ordering::Release);
+        Some(frame_offset * self.channel_count)
+    }
+
+    fn record_captured_end_position(
+        &self,
+        timing: &CallbackTimingSnapshot,
+        supplied_sample_count: usize,
+        source_start: usize,
+        copy_count: usize,
+    ) {
+        if self.requested_start_position_beats_bits == UNSET_POSITION_BITS
+            || self.channel_count == 0
+            || copy_count == 0
+        {
+            return;
+        }
+        let supplied_frame_count = supplied_sample_count / self.channel_count;
+        let copied_end_frame = source_start.saturating_add(copy_count) / self.channel_count;
+        let callback_beat_span = timing.completed_position_beats - timing.render_position_beats;
+        if supplied_frame_count == 0 || !callback_beat_span.is_finite() || callback_beat_span <= 0.0
+        {
+            return;
+        }
+        let beats_per_frame = callback_beat_span / supplied_frame_count as f64;
+        let end_position = timing.render_position_beats + beats_per_frame * copied_end_frame as f64;
+        self.captured_end_position_beats_bits
+            .store(end_position.to_bits(), Ordering::Release);
+    }
+
+    fn record_callback_gap(&self, now_micros: u64) {
         let previous = self
             .last_callback_micros
             .swap(now_micros, Ordering::Relaxed);
@@ -270,14 +430,25 @@ impl LiveMasterCaptureBuffer {
                     .fetch_add(1, Ordering::Relaxed);
             }
         }
+    }
+
+    fn record_captured_callback_timing(&self, timing: &CallbackTimingSnapshot, now_micros: u64) {
+        self.record_callback_gap(now_micros);
         self.callback_count.fetch_add(1, Ordering::Relaxed);
-        if !timing.is_transport_running {
+        self.record_transport_and_tempo_faults(timing);
+    }
+
+    fn record_transport_and_tempo_faults(&self, timing: &CallbackTimingSnapshot) -> bool {
+        let transport_mismatch = !timing.is_transport_running;
+        let tempo_mismatch = timing.tempo_bpm.to_bits() != self.expected_tempo_bpm_bits;
+        if transport_mismatch {
             self.transport_mismatch_count
                 .fetch_add(1, Ordering::Relaxed);
         }
-        if timing.tempo_bpm.to_bits() != self.expected_tempo_bpm_bits {
+        if tempo_mismatch {
             self.tempo_mismatch_count.fetch_add(1, Ordering::Relaxed);
         }
+        transport_mismatch || tempo_mismatch
     }
 
     fn progress(&self) -> LiveMasterCaptureProgress {
@@ -299,6 +470,9 @@ impl LiveMasterCaptureBuffer {
             stream_error_count: self.stream_error_count.load(Ordering::Relaxed),
             transport_mismatch_count: self.transport_mismatch_count.load(Ordering::Relaxed),
             tempo_mismatch_count: self.tempo_mismatch_count.load(Ordering::Relaxed),
+            timing_window_mismatch_count: self.timing_window_mismatch_count.load(Ordering::Relaxed),
+            armed_callback_count: self.armed_callback_count.load(Ordering::Relaxed),
+            capture_started: self.capture_started.load(Ordering::Acquire),
             complete,
         }
     }
@@ -309,8 +483,25 @@ impl LiveMasterCaptureBuffer {
             .iter()
             .map(|sample| f32::from_bits(sample.load(Ordering::Relaxed)))
             .collect();
-        LiveMasterCaptureOutcome { samples, progress }
+        let captured_start_position_beats = position_from_bits(
+            self.captured_start_position_beats_bits
+                .load(Ordering::Acquire),
+        );
+        let captured_end_position_beats = position_from_bits(
+            self.captured_end_position_beats_bits
+                .load(Ordering::Acquire),
+        );
+        LiveMasterCaptureOutcome {
+            samples,
+            progress,
+            captured_start_position_beats,
+            captured_end_position_beats,
+        }
     }
+}
+
+fn position_from_bits(bits: u64) -> Option<f64> {
+    (bits != UNSET_POSITION_BITS).then(|| f64::from_bits(bits))
 }
 
 #[cfg(test)]
@@ -326,6 +517,15 @@ mod tests {
         }
     }
 
+    fn timing_range(start: f64, end: f64) -> CallbackTimingSnapshot {
+        CallbackTimingSnapshot {
+            is_transport_running: true,
+            tempo_bpm: 120.0,
+            render_position_beats: start,
+            completed_position_beats: end,
+        }
+    }
+
     #[test]
     fn bounded_capture_keeps_exact_post_limiter_samples_across_callbacks() {
         let shared = SharedLiveMasterCapture::new();
@@ -334,6 +534,7 @@ mod tests {
                 target_frame_count: 3,
                 channel_count: 2,
                 expected_tempo_bpm: 128.0,
+                start_position_beats: None,
             })
             .expect("begin capture");
 
@@ -355,6 +556,7 @@ mod tests {
                 target_frame_count: 2,
                 channel_count: 1,
                 expected_tempo_bpm: 128.0,
+                start_position_beats: None,
             })
             .expect("begin capture");
 
@@ -375,6 +577,237 @@ mod tests {
     }
 
     #[test]
+    fn v1_immediate_capture_preserves_its_legacy_fault_observation_boundary() {
+        let shared = SharedLiveMasterCapture::new();
+        shared
+            .begin(LiveMasterCaptureRequest {
+                target_frame_count: 1,
+                channel_count: 1,
+                expected_tempo_bpm: 128.0,
+                start_position_beats: None,
+            })
+            .expect("begin V1 capture");
+
+        shared.record_callback(
+            &[0.1],
+            &CallbackTimingSnapshot {
+                is_transport_running: false,
+                tempo_bpm: 128.0,
+                render_position_beats: 1.0,
+                completed_position_beats: 1.0,
+            },
+            1_000,
+        );
+        let skipped = shared.progress().expect("V1 skipped callback progress");
+        assert_eq!(skipped.written_sample_count, 0);
+        assert_eq!(skipped.callback_count, 0);
+        assert_eq!(skipped.fault_count(), 0);
+
+        shared.record_callback(&[0.2], &timing(true, 128.0), 2_000);
+        let outcome = shared.finish().expect("complete V1 capture");
+        assert_eq!(outcome.samples, vec![0.2]);
+        assert_eq!(outcome.progress.callback_count, 1);
+        assert_eq!(outcome.progress.fault_count(), 0);
+    }
+
+    #[test]
+    fn bar_window_waits_and_copies_only_post_boundary_frames() {
+        let shared = SharedLiveMasterCapture::new();
+        shared
+            .begin(LiveMasterCaptureRequest {
+                target_frame_count: 4,
+                channel_count: 1,
+                expected_tempo_bpm: 120.0,
+                start_position_beats: Some(4.0),
+            })
+            .expect("begin aligned capture");
+
+        shared.record_callback(&[0.0, 1.0, 2.0, 3.0], &timing_range(3.5, 3.9), 1_000);
+        let waiting = shared.progress().expect("armed progress");
+        assert_eq!(waiting.written_sample_count, 0);
+        assert!(!waiting.capture_started);
+
+        shared.record_callback(&[10.0, 11.0, 12.0, 13.0], &timing_range(3.9, 4.3), 2_000);
+        shared.record_callback(&[20.0, 21.0], &timing_range(4.3, 4.5), 3_000);
+
+        let outcome = shared.finish().expect("complete aligned capture");
+        assert_eq!(outcome.samples, vec![11.0, 12.0, 13.0, 20.0]);
+        assert_eq!(outcome.captured_start_position_beats, Some(4.0));
+        assert_eq!(outcome.captured_end_position_beats, Some(4.4));
+        assert_eq!(outcome.progress.armed_callback_count, 2);
+        assert_eq!(outcome.progress.callback_count, 2);
+        assert_eq!(outcome.progress.fault_count(), 0);
+    }
+
+    #[test]
+    fn bar_window_counts_callback_gaps_while_armed_before_the_boundary() {
+        let shared = SharedLiveMasterCapture::new();
+        shared
+            .begin(LiveMasterCaptureRequest {
+                target_frame_count: 2,
+                channel_count: 1,
+                expected_tempo_bpm: 120.0,
+                start_position_beats: Some(4.0),
+            })
+            .expect("begin armed capture");
+
+        shared.record_callback(&[1.0, 2.0], &timing_range(3.0, 3.2), 1_000);
+        shared.record_callback(
+            &[3.0, 4.0],
+            &timing_range(3.2, 3.4),
+            1_000 + LIVE_MASTER_CALLBACK_GAP_THRESHOLD_MICROS + 1,
+        );
+
+        let progress = shared.progress().expect("armed gap progress");
+        assert_eq!(progress.written_sample_count, 0);
+        assert_eq!(progress.callback_count, 0);
+        assert_eq!(progress.armed_callback_count, 2);
+        assert_eq!(progress.callback_gap_over_threshold_count, 1);
+        assert_eq!(progress.fault_count(), 1);
+    }
+
+    #[test]
+    fn bar_window_counts_the_gap_from_the_last_runtime_callback_into_arming() {
+        let shared = SharedLiveMasterCapture::new();
+        shared
+            .begin_after_callback(
+                LiveMasterCaptureRequest {
+                    target_frame_count: 2,
+                    channel_count: 1,
+                    expected_tempo_bpm: 120.0,
+                    start_position_beats: Some(4.0),
+                },
+                Some(1_000),
+            )
+            .expect("begin armed capture after runtime callback");
+
+        shared.record_callback(
+            &[1.0, 2.0],
+            &timing_range(3.0, 3.2),
+            1_000 + LIVE_MASTER_CALLBACK_GAP_THRESHOLD_MICROS + 1,
+        );
+
+        let progress = shared.progress().expect("initial armed gap progress");
+        assert_eq!(progress.callback_gap_over_threshold_count, 1);
+        assert_eq!(progress.fault_count(), 1);
+    }
+
+    #[test]
+    fn bar_window_output_is_identical_across_callback_partitions() {
+        fn capture(parts: &[(&[f32], f64, f64)]) -> LiveMasterCaptureOutcome {
+            let shared = SharedLiveMasterCapture::new();
+            shared
+                .begin(LiveMasterCaptureRequest {
+                    target_frame_count: 4,
+                    channel_count: 1,
+                    expected_tempo_bpm: 120.0,
+                    start_position_beats: Some(4.0),
+                })
+                .expect("begin partition capture");
+            for (index, (samples, start, end)) in parts.iter().enumerate() {
+                shared.record_callback(
+                    samples,
+                    &timing_range(*start, *end),
+                    1_000 + index as u64 * 1_000,
+                );
+            }
+            shared.finish().expect("complete partition capture")
+        }
+
+        let whole = capture(&[(&[1.0, 2.0, 3.0, 4.0], 4.0, 4.4)]);
+        let partitioned = capture(&[(&[1.0, 2.0], 4.0, 4.2), (&[3.0, 4.0], 4.2, 4.4)]);
+
+        assert_eq!(whole.samples, partitioned.samples);
+        assert_eq!(whole.captured_start_position_beats, Some(4.0));
+        assert_eq!(partitioned.captured_start_position_beats, Some(4.0));
+        assert!((whole.captured_end_position_beats.unwrap() - 4.4).abs() < 1.0e-12);
+        assert!((partitioned.captured_end_position_beats.unwrap() - 4.4).abs() < 1.0e-12);
+    }
+
+    #[test]
+    fn bar_window_fails_closed_when_transport_skips_the_requested_start() {
+        let shared = SharedLiveMasterCapture::new();
+        shared
+            .begin(LiveMasterCaptureRequest {
+                target_frame_count: 2,
+                channel_count: 1,
+                expected_tempo_bpm: 120.0,
+                start_position_beats: Some(4.0),
+            })
+            .expect("begin skipped-window capture");
+
+        shared.record_callback(&[1.0, 2.0], &timing_range(4.2, 4.4), 1_000);
+
+        let progress = shared.progress().expect("faulted armed progress");
+        assert_eq!(progress.written_sample_count, 0);
+        assert_eq!(progress.timing_window_mismatch_count, 1);
+        assert_eq!(progress.fault_count(), 1);
+        assert!(!progress.capture_started);
+        assert!(matches!(
+            shared.finish(),
+            Err(LiveMasterCaptureError::NotComplete(_))
+        ));
+    }
+
+    #[test]
+    fn bar_window_fails_closed_when_callback_timing_jumps_after_capture_starts() {
+        let shared = SharedLiveMasterCapture::new();
+        shared
+            .begin(LiveMasterCaptureRequest {
+                target_frame_count: 4,
+                channel_count: 1,
+                expected_tempo_bpm: 120.0,
+                start_position_beats: Some(4.0),
+            })
+            .expect("begin discontinuous capture");
+
+        shared.record_callback(&[1.0, 2.0], &timing_range(4.0, 4.2), 1_000);
+        shared.record_callback(&[3.0, 4.0], &timing_range(4.4, 4.6), 2_000);
+
+        let progress = shared.progress().expect("faulted capture progress");
+        assert_eq!(progress.written_sample_count, 2);
+        assert_eq!(progress.timing_window_mismatch_count, 1);
+        assert_eq!(progress.fault_count(), 1);
+        assert!(progress.capture_started);
+        assert!(!progress.complete);
+        assert!(matches!(
+            shared.finish(),
+            Err(LiveMasterCaptureError::NotComplete(_))
+        ));
+    }
+
+    #[test]
+    fn bar_window_fails_closed_immediately_when_transport_stops_after_capture_starts() {
+        let shared = SharedLiveMasterCapture::new();
+        shared
+            .begin(LiveMasterCaptureRequest {
+                target_frame_count: 4,
+                channel_count: 1,
+                expected_tempo_bpm: 120.0,
+                start_position_beats: Some(4.0),
+            })
+            .expect("begin interrupted capture");
+
+        shared.record_callback(&[1.0, 2.0], &timing_range(4.0, 4.2), 1_000);
+        shared.record_callback(
+            &[3.0, 4.0],
+            &CallbackTimingSnapshot {
+                is_transport_running: false,
+                tempo_bpm: 120.0,
+                render_position_beats: 4.2,
+                completed_position_beats: 4.2,
+            },
+            2_000,
+        );
+
+        let progress = shared.progress().expect("interrupted progress");
+        assert_eq!(progress.written_sample_count, 2);
+        assert_eq!(progress.transport_mismatch_count, 1);
+        assert_eq!(progress.fault_count(), 1);
+        assert!(!progress.complete);
+    }
+
+    #[test]
     fn incomplete_capture_cannot_be_finalized_and_can_be_aborted() {
         let shared = SharedLiveMasterCapture::new();
         shared
@@ -382,6 +815,7 @@ mod tests {
                 target_frame_count: 2,
                 channel_count: 2,
                 expected_tempo_bpm: 128.0,
+                start_position_beats: None,
             })
             .expect("begin capture");
         shared.record_callback(&[0.1, -0.1], &timing(true, 128.0), 1_000);
@@ -403,6 +837,7 @@ mod tests {
                 target_frame_count: LIVE_MASTER_MAX_INTERLEAVED_SAMPLE_COUNT + 1,
                 channel_count: 1,
                 expected_tempo_bpm: 128.0,
+                start_position_beats: None,
             })
             .expect_err("oversized capture rejected");
 
@@ -418,6 +853,7 @@ mod tests {
                 target_frame_count: 1,
                 channel_count: 1,
                 expected_tempo_bpm: 128.0,
+                start_position_beats: None,
             })
             .expect("begin completed capture");
         let held_completed = shared.active.load_full().expect("held callback Arc");
@@ -438,6 +874,7 @@ mod tests {
                 target_frame_count: 2,
                 channel_count: 1,
                 expected_tempo_bpm: 128.0,
+                start_position_beats: None,
             })
             .expect("next begin reaps retired completed capture");
         assert!(shared.control.lock().unwrap().retired.is_empty());

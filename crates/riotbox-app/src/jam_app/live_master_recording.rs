@@ -29,7 +29,8 @@ use artifact::{
 use session_identity::prepare_recording_plan_input;
 
 pub const LIVE_MASTER_RECORDING_DURATION_BEATS: u32 = 8;
-pub const LIVE_MASTER_RECORDING_PROOF_SCHEMA: &str = "riotbox.live_recording_runtime_master.v1";
+pub const LIVE_MASTER_RECORDING_PROOF_SCHEMA: &str =
+    "riotbox.live_recording_runtime_master_bar_window.v2";
 
 pub fn live_master_recording_proof_path(
     destination_path: impl AsRef<Path>,
@@ -44,6 +45,9 @@ pub struct LiveMasterRecordingPlan {
     pub destination_path: PathBuf,
     pub proof_path: PathBuf,
     pub confirmed_bpm: f32,
+    pub beats_per_bar: u8,
+    pub bar_grid_anchor_beat_cursor: u64,
+    pub requested_start_position_beats: f64,
     pub scene_id: SceneId,
     pub output: AudioOutputInfo,
     pub session_id: String,
@@ -71,6 +75,14 @@ pub struct LiveMasterRecordingProof {
     pub scene_id: SceneId,
     pub confirmed_bpm_micros: u64,
     pub duration_beats: u32,
+    pub beats_per_bar: u8,
+    pub bar_grid_anchor_position_microbeats: u64,
+    pub beat_span_per_frame_nanobeats: u64,
+    pub requested_start_position_microbeats: u64,
+    pub captured_start_position_microbeats: u64,
+    pub captured_end_position_microbeats: u64,
+    pub start_alignment_error_frame_micros: u64,
+    pub duration_error_frame_micros: u64,
     pub host: String,
     pub device: String,
     pub device_sample_format: String,
@@ -83,6 +95,10 @@ pub struct LiveMasterRecordingProof {
     pub callback_gap_over_threshold_count: u64,
     pub callback_scratch_overflow_count: u64,
     pub stream_error_count: u64,
+    pub transport_mismatch_count: u64,
+    pub tempo_mismatch_count: u64,
+    pub timing_window_mismatch_count: u64,
+    pub armed_callback_count: u64,
     pub active_sample_count: u64,
     pub peak_amplitude_micros: u32,
     pub rms_amplitude_micros: u32,
@@ -118,7 +134,7 @@ impl JamAppState {
         draft.params = ActionParams::LiveRecordingExport {
             export_scope: ExportScope::LiveRecording,
             export_role: LiveRecordingExportRole::LiveRecordingCapture,
-            boundary: LiveRecordingExportBoundary::RuntimeMasterCaptureV1,
+            boundary: LiveRecordingExportBoundary::RuntimeMasterBarWindowV2,
             include_manifest: true,
             destination_kind: ProductExportDestinationKind::LocalFilePath,
             destination_path: Some(destination_path.to_string_lossy().into_owned()),
@@ -127,8 +143,10 @@ impl JamAppState {
         draft.undo_policy = UndoPolicy::NotUndoable {
             reason: "live master recording writes host-audio files outside musical undo".into(),
         };
-        draft.explanation =
-            Some("record eight beats from the real post-limiter runtime master callback".into());
+        draft.explanation = Some(
+            "record the next exact two-bar 4/4 window from the real post-limiter runtime master callback"
+                .into(),
+        );
 
         match self
             .queue
@@ -139,23 +157,28 @@ impl JamAppState {
             }
             QueueEnqueueResult::Enqueued(action_id) => {
                 match prepare_recording_plan_input(self, output, destination_path) {
-                    Ok((identity, target_frame_count, proof_path, session_sha256)) => {
+                    Ok(prepared) => {
+                        let identity = prepared.identity;
                         self.refresh_view();
                         LiveMasterRecordingQueueResult::Enqueued(Box::new(
                             LiveMasterRecordingPlan {
                                 action_id,
                                 request: LiveMasterCaptureRequest {
-                                    target_frame_count,
+                                    target_frame_count: prepared.target_frame_count,
                                     channel_count: output.channel_count,
                                     expected_tempo_bpm: identity.confirmed_bpm,
+                                    start_position_beats: Some(prepared.start_position_beats),
                                 },
                                 destination_path: destination_path.to_owned(),
-                                proof_path,
+                                proof_path: prepared.proof_path,
                                 confirmed_bpm: identity.confirmed_bpm,
+                                beats_per_bar: identity.beats_per_bar,
+                                bar_grid_anchor_beat_cursor: identity.bar_grid_anchor_beat_cursor,
+                                requested_start_position_beats: prepared.start_position_beats,
                                 scene_id: identity.scene_id,
                                 output: output.clone(),
                                 session_id: self.session.session_id.clone(),
-                                session_pre_capture_sha256: session_sha256,
+                                session_pre_capture_sha256: prepared.session_sha256,
                                 source_graph_ref: identity.source_graph_ref,
                                 timing_grid_ref: identity.timing_grid_ref,
                                 source_capture_refs: identity.source_capture_refs,
@@ -215,7 +238,7 @@ impl JamAppState {
             return Err(error);
         }
         let result_summary = format!(
-            "recorded eight-beat live runtime master receipt {} sha256 {}",
+            "recorded bar-aligned two-bar live runtime master receipt {} sha256 {}",
             receipt.receipt_id, receipt.export_hash
         );
         if let Err(error) = self.commit_export_receipt_after_side_effect(

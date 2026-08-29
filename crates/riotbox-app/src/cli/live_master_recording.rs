@@ -273,8 +273,12 @@ fn live_master_recording_execute_summary(
 
     let expected_duration_seconds =
         plan.request.target_frame_count as f64 / f64::from(output.sample_rate);
-    let deadline =
-        std::time::Instant::now() + Duration::from_secs_f64(expected_duration_seconds + 2.0);
+    let expected_arm_seconds =
+        (plan.requested_start_position_beats - state.runtime.transport.position_beats).max(0.0)
+            * 60.0
+            / f64::from(plan.confirmed_bpm);
+    let deadline = std::time::Instant::now()
+        + Duration::from_secs_f64(expected_arm_seconds + expected_duration_seconds + 2.0);
     loop {
         sync_live_master_runtime(&mut state, &runtime);
         let health = runtime.health_snapshot();
@@ -297,11 +301,27 @@ fn live_master_recording_execute_summary(
                 reason,
             ));
         }
-        if runtime
-            .live_master_capture_progress()
-            .is_some_and(|progress| progress.complete)
-        {
-            break;
+        if let Some(progress) = runtime.live_master_capture_progress() {
+            if progress.fault_count() > 0 {
+                stop_live_master_runtime(&mut state, &mut runtime, started_transport);
+                let progress = runtime.abort_live_master_capture().unwrap_or(progress);
+                let reason = format!(
+                    "live master callback capture faulted while waiting for or recording the bar window: {progress:?}"
+                );
+                state.reject_live_master_recording(plan.action_id, reason.clone());
+                return Ok(blocked_live_master_recording_result(
+                    launch,
+                    state,
+                    runtime,
+                    false,
+                    Some(&plan),
+                    &output,
+                    reason,
+                ));
+            }
+            if progress.complete {
+                break;
+            }
         }
         if std::time::Instant::now() >= deadline {
             stop_live_master_runtime(&mut state, &mut runtime, started_transport);
@@ -387,12 +407,17 @@ fn live_master_recording_execute_summary(
         "mutates_session": true,
         "runtime_stopped": true,
         "observer_events": launch.observer_path.is_some(),
-        "boundary": "runtime_master_capture_v1",
+        "boundary": "runtime_master_bar_window_v2",
         "receipt_boundary": receipt.export_boundary.as_proof_str(),
         "session_path": session_path,
         "destination_path": destination_path,
         "proof_path": plan.proof_path,
         "duration_beats": crate::jam_app::LIVE_MASTER_RECORDING_DURATION_BEATS,
+        "beats_per_bar": plan.beats_per_bar,
+        "bar_grid_anchor_beat_cursor": plan.bar_grid_anchor_beat_cursor,
+        "requested_start_position_beats": plan.requested_start_position_beats,
+        "captured_start_position_beats": outcome.captured_start_position_beats,
+        "captured_end_position_beats": outcome.captured_end_position_beats,
         "sample_rate_hz": output.sample_rate,
         "channel_count": output.channel_count,
         "frame_count": plan.request.target_frame_count,
@@ -409,7 +434,7 @@ fn live_master_recording_execute_summary(
             "qa_gates": receipt.qa_gates,
             "host_audio_readiness": receipt.live_recording_host_audio_readiness_report(),
         },
-        "scope_note": "captured the real post-limiter callback master; no input recording, offline substitute, new DSP, or release claim",
+        "scope_note": "captured the next exact two-bar 4/4 window from the real post-limiter callback master; no input recording, offline substitute, new DSP, or release claim",
     });
     let shell = JamShellState::new(state, ShellLaunchMode::Load);
     Ok((summary, shell))
@@ -450,7 +475,7 @@ fn blocked_live_master_recording_result(
         "mutates_session": false,
         "runtime_stopped": true,
         "observer_events": launch.observer_path.is_some(),
-        "boundary": "runtime_master_capture_v1",
+        "boundary": "runtime_master_bar_window_v2",
         "destination_path": plan.map(|plan| &plan.destination_path),
         "proof_path": plan.map(|plan| &plan.proof_path),
         "action_id": plan.map(|plan| plan.action_id.0),

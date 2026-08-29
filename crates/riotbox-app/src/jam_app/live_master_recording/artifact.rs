@@ -8,14 +8,14 @@ use riotbox_core::{
     action::{ActionParams, LiveRecordingExportBoundary},
     export_readiness::{
         EXPORT_READINESS_CONTRACT_SCHEMA, ExportReadinessContract, ExportReadinessStatus,
-        ExportScope, LIVE_RECORDING_RUNTIME_MASTER_PACK_ID, ProductExportBoundary,
+        ExportScope, LIVE_RECORDING_RUNTIME_MASTER_BAR_WINDOW_PACK_ID, ProductExportBoundary,
         ProductExportDestinationKind, ProductExportRole,
     },
     ids::ExportReceiptId,
     session::{
         ExportArtifactAudioMetrics, ExportLiveRecordingCallbackGapSummary,
         ExportLiveRecordingHostAudioRef, ExportLiveRecordingStreamErrorSummary,
-        ExportReceiptQaGateResult, ExportReceiptState,
+        ExportLiveRecordingTimingWindow, ExportReceiptQaGateResult, ExportReceiptState,
     },
 };
 use sha2::{Digest, Sha256};
@@ -53,16 +53,28 @@ pub(super) fn prepare_validated_recording(
     let identity = live_master_session_identity(state)?;
     let expected_frame_count =
         live_master_target_frame_count(plan.output.sample_rate, plan.confirmed_bpm)?;
+    let requested_start_beat_cursor = plan.requested_start_position_beats as u64;
     if identity.confirmed_bpm.to_bits() != plan.confirmed_bpm.to_bits()
         || identity.scene_id != plan.scene_id
         || state.session.session_id != plan.session_id
         || identity.source_graph_ref != plan.source_graph_ref
         || identity.timing_grid_ref != plan.timing_grid_ref
+        || identity.beats_per_bar != plan.beats_per_bar
+        || identity.bar_grid_anchor_beat_cursor != plan.bar_grid_anchor_beat_cursor
         || identity.source_capture_refs != plan.source_capture_refs
         || identity.lineage_capture_refs != plan.lineage_capture_refs
         || plan.request.target_frame_count != expected_frame_count
         || plan.request.channel_count != plan.output.channel_count
         || plan.request.expected_tempo_bpm.to_bits() != plan.confirmed_bpm.to_bits()
+        || plan.request.start_position_beats.map(f64::to_bits)
+            != Some(plan.requested_start_position_beats.to_bits())
+        || plan.beats_per_bar != 4
+        || !plan.requested_start_position_beats.is_finite()
+        || plan.requested_start_position_beats < 0.0
+        || plan.requested_start_position_beats != requested_start_beat_cursor as f64
+        || requested_start_beat_cursor < plan.bar_grid_anchor_beat_cursor
+        || !(requested_start_beat_cursor - plan.bar_grid_anchor_beat_cursor)
+            .is_multiple_of(u64::from(plan.beats_per_bar))
         || plan.proof_path != proof_path_for(&plan.destination_path)?
     {
         return Err(JamAppError::InvalidSession(
@@ -82,7 +94,7 @@ pub(super) fn prepare_validated_recording(
         || !matches!(
             &pending.params,
             ActionParams::LiveRecordingExport {
-                boundary: LiveRecordingExportBoundary::RuntimeMasterCaptureV1,
+                boundary: LiveRecordingExportBoundary::RuntimeMasterBarWindowV2,
                 destination_kind: ProductExportDestinationKind::LocalFilePath,
                 destination_path: Some(destination),
                 ..
@@ -113,11 +125,47 @@ pub(super) fn prepare_validated_recording(
         || outcome.progress.target_sample_count != expected_sample_count
         || outcome.progress.written_sample_count != expected_sample_count
         || outcome.progress.fault_count() > 0
+        || !outcome.progress.capture_started
+        || outcome.progress.armed_callback_count == 0
     {
         return Err(JamAppError::InvalidSession(format!(
             "live master recording callback capture is incomplete or faulted: {:?}",
             outcome.progress
         )));
+    }
+    let captured_start = outcome.captured_start_position_beats.ok_or_else(|| {
+        JamAppError::InvalidSession(
+            "bar-aligned live master recording has no captured start position".into(),
+        )
+    })?;
+    let captured_end = outcome.captured_end_position_beats.ok_or_else(|| {
+        JamAppError::InvalidSession(
+            "bar-aligned live master recording has no captured end position".into(),
+        )
+    })?;
+    let beats_per_frame = f64::from(plan.confirmed_bpm) / 60.0 / f64::from(plan.output.sample_rate);
+    let beat_span_per_frame_nanobeats = (beats_per_frame * 1_000_000_000.0).round() as u64;
+    let start_error_frames =
+        (captured_start - plan.requested_start_position_beats) / beats_per_frame;
+    let captured_duration_beats = captured_end - captured_start;
+    let duration_error_frames =
+        (captured_duration_beats - f64::from(LIVE_MASTER_RECORDING_DURATION_BEATS)).abs()
+            / beats_per_frame;
+    let expected_end = captured_start + beats_per_frame * plan.request.target_frame_count as f64;
+    let position_tolerance = beats_per_frame * 1.0e-6;
+    if !captured_start.is_finite()
+        || !captured_end.is_finite()
+        || !start_error_frames.is_finite()
+        || !duration_error_frames.is_finite()
+        || beat_span_per_frame_nanobeats == 0
+        || start_error_frames < -1.0e-6
+        || start_error_frames > 1.0 + 1.0e-6
+        || duration_error_frames > 0.500_001
+        || (captured_end - expected_end).abs() > position_tolerance
+    {
+        return Err(JamAppError::InvalidSession(
+            "bar-aligned live master recording timing window is not exact".into(),
+        ));
     }
     if outcome.samples.len() != expected_sample_count
         || outcome.samples.iter().any(|sample| !sample.is_finite())
@@ -162,6 +210,19 @@ pub(super) fn prepare_validated_recording(
         scene_id: plan.scene_id.clone(),
         confirmed_bpm_micros: (f64::from(plan.confirmed_bpm) * 1_000_000.0).round() as u64,
         duration_beats: LIVE_MASTER_RECORDING_DURATION_BEATS,
+        beats_per_bar: plan.beats_per_bar,
+        bar_grid_anchor_position_microbeats: beat_cursor_microbeats(
+            plan.bar_grid_anchor_beat_cursor,
+        )?,
+        beat_span_per_frame_nanobeats,
+        requested_start_position_microbeats: beat_position_microbeats(
+            plan.requested_start_position_beats,
+        )?,
+        captured_start_position_microbeats: beat_position_microbeats(captured_start)?,
+        captured_end_position_microbeats: beat_position_microbeats(captured_end)?,
+        start_alignment_error_frame_micros: (start_error_frames.max(0.0) * 1_000_000.0).round()
+            as u64,
+        duration_error_frame_micros: (duration_error_frames * 1_000_000.0).round() as u64,
         host: plan.output.host_name.clone(),
         device: plan.output.device_name.clone(),
         device_sample_format: plan.output.sample_format.clone(),
@@ -174,6 +235,10 @@ pub(super) fn prepare_validated_recording(
         callback_gap_over_threshold_count: outcome.progress.callback_gap_over_threshold_count,
         callback_scratch_overflow_count: outcome.progress.callback_scratch_overflow_count,
         stream_error_count: outcome.progress.stream_error_count,
+        transport_mismatch_count: outcome.progress.transport_mismatch_count,
+        tempo_mismatch_count: outcome.progress.tempo_mismatch_count,
+        timing_window_mismatch_count: outcome.progress.timing_window_mismatch_count,
+        armed_callback_count: outcome.progress.armed_callback_count,
         active_sample_count: metrics.active_samples as u64,
         peak_amplitude_micros: amplitude_micros(metrics.peak_abs),
         rms_amplitude_micros: amplitude_micros(metrics.rms),
@@ -278,8 +343,8 @@ pub(super) fn build_recording_receipt(
         status: ExportReadinessStatus::Reproducible,
         proof_schema: LIVE_MASTER_RECORDING_PROOF_SCHEMA.into(),
         export_scope: ExportScope::LiveRecording,
-        boundary: ProductExportBoundary::LiveRecordingRuntimeMasterCaptureV1,
-        pack_id: LIVE_RECORDING_RUNTIME_MASTER_PACK_ID.into(),
+        boundary: ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV2,
+        pack_id: LIVE_RECORDING_RUNTIME_MASTER_BAR_WINDOW_PACK_ID.into(),
         export_role: ProductExportRole::LiveRecordingCapture,
         export_artifact: wav_path.clone(),
         source_sha256: written.proof.session_pre_capture_sha256.clone(),
@@ -325,6 +390,7 @@ pub(super) fn build_recording_receipt(
     receipt.qa_gates = vec![
         ExportReceiptQaGateResult::live_recording_runtime_master_capture(),
         ExportReceiptQaGateResult::live_recording_wav_readback(),
+        ExportReceiptQaGateResult::live_recording_bar_window_alignment(),
     ];
     receipt.live_recording_host_audio_refs = vec![ExportLiveRecordingHostAudioRef {
         host: plan.output.host_name.clone(),
@@ -346,8 +412,38 @@ pub(super) fn build_recording_receipt(
                 .as_ref()
                 .and_then(|health| health.last_stream_error.clone()),
         },
+        timing_window: Some(ExportLiveRecordingTimingWindow {
+            confirmed_bpm_micros: written.proof.confirmed_bpm_micros,
+            bar_grid_anchor_position_microbeats: written.proof.bar_grid_anchor_position_microbeats,
+            beat_span_per_frame_nanobeats: written.proof.beat_span_per_frame_nanobeats,
+            requested_start_position_microbeats: written.proof.requested_start_position_microbeats,
+            captured_start_position_microbeats: written.proof.captured_start_position_microbeats,
+            captured_end_position_microbeats: written.proof.captured_end_position_microbeats,
+            start_alignment_error_frame_micros: written.proof.start_alignment_error_frame_micros,
+            duration_error_frame_micros: written.proof.duration_error_frame_micros,
+            beats_per_bar: written.proof.beats_per_bar,
+            duration_beats: written.proof.duration_beats,
+        }),
     }];
     Ok(receipt)
+}
+
+fn beat_cursor_microbeats(beat_cursor: u64) -> Result<u64, JamAppError> {
+    beat_cursor.checked_mul(1_000_000).ok_or_else(|| {
+        JamAppError::InvalidSession(
+            "live recording bar-grid anchor cannot be represented in proof evidence".into(),
+        )
+    })
+}
+
+fn beat_position_microbeats(position_beats: f64) -> Result<u64, JamAppError> {
+    let microbeats = (position_beats * 1_000_000.0).round();
+    if !microbeats.is_finite() || microbeats < 0.0 || microbeats > u64::MAX as f64 {
+        return Err(JamAppError::InvalidSession(
+            "live recording beat position cannot be represented in proof evidence".into(),
+        ));
+    }
+    Ok(microbeats as u64)
 }
 
 fn encode_float32_wav(

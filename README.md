@@ -357,7 +357,8 @@ it does not claim that a particular DAW has imported or played it.
 
 ### Record The Real Live Master
 
-Record exactly eight beats from Riotbox's running post-limiter audio callback:
+Record the next exact two-bar 4/4 window from Riotbox's running post-limiter
+audio callback:
 
 ```bash
 just live-master-recording \
@@ -370,12 +371,17 @@ just live-master-recording \
 The graph and observer arguments are optional when the Session embeds its
 graph and no observer log is wanted. This command starts the real output
 device, confirms the Session transport and BPM, captures the actual interleaved
-master into an IEEE-float 32-bit WAV, and writes a versioned proof sidecar. It
-fails closed on callback gaps, stream or scratch faults, transport/tempo drift,
-silence, clipping, wrong format or frame count, read-back mismatch, and existing
-destinations. The optional observer must be a fresh path distinct from the
-Session, graph, WAV, and proof. Riotbox stops the output runtime before it
-encodes or publishes files. Only after all gates pass does it commit
+master beginning at the strictly next confirmed Session bar into an IEEE-float
+32-bit WAV, and writes a versioned proof sidecar. The bar retains the confirmed
+Source Graph's downbeat phase; it is not assumed to be a zero-based multiple of
+four. A callback that crosses the bar is trimmed to complete post-boundary
+frames. The command fails closed on a
+missing/non-4/4 meter, skipped boundary, discontinuous callback timing, callback
+gaps, stream or scratch faults, transport/tempo drift, silence, clipping, wrong
+format or frame count, read-back mismatch, and existing destinations. The
+optional observer must be a fresh path distinct from the Session, graph, WAV,
+and proof. Riotbox stops the output runtime before it encodes or publishes
+files. Only after all gates pass does it commit
 `export.live_recording` and its Session receipt. It records no microphone/input
 audio, uses no offline render as a substitute, and adds no new sound processing.
 

@@ -219,6 +219,7 @@ fn ready_live_recording_receipt(created_by_action: ActionId) -> ExportReceiptSta
             error_count: 0,
             last_error: None,
         },
+        timing_window: None,
     }];
     receipt
 }

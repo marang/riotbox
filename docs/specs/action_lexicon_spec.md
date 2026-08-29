@@ -533,10 +533,10 @@ Current `export.live_recording` boundary:
 - expected artifact role: `live_recording_capture`
 - undo policy: `NotUndoable`, because live-recording export will write files
   outside musical undo once implemented
-- current side effects: a musician attempt can create a rejected queue-history
-  action with a readable failure reason; no live input capture, WAV writer,
-  filesystem mutation, observer completion, Session receipt mutation, TUI
-  affordance, Ghost affordance, or replay write-back exists yet
+- reserved-boundary side effects: a reserved-contract attempt creates only a
+  rejected queue-history action with a readable failure reason. The separately
+  versioned runtime-master boundaries below own the runnable callback/WAV path;
+  no microphone/input recorder, TUI affordance, or Ghost affordance exists
 - observer/replay consequence: the command label is export-observer eligible
   when a real action appears in action log, queue history, or pending queue.
   The reserved app guard emits requested, started, and failed lifecycle records
@@ -585,6 +585,35 @@ Runnable `runtime_master_capture_v1` boundary:
   Its optional observer must be a fresh non-aliasing file opened before audio
   starts; an observer write failure after a successful commit is reported
   separately and never reclassifies or overwrites the committed take
+
+Runnable `runtime_master_bar_window_v2` boundary:
+
+- preserves V1's post-limiter tap, eight-beat duration, float32 WAV, allocation
+  limit, writer, collision policy, and product-spine commit behavior
+- derives the strictly next exact bar from Session transport and the exact
+  confirmed 4/4 timing hypothesis, including its nonzero bar-grid phase. A
+  graphless Session uses the existing Core transport default of zero-phase 4/4
+  rather than inventing a second grid
+- if a callback straddles the boundary, copies only complete interleaved frames
+  at or after it; the captured first frame must be no earlier than the requested
+  boundary and no later than one output frame after it
+- requires an exact two-bar frame window. Rounding the requested eight-beat
+  duration to whole output frames may introduce at most one-half-frame duration
+  error
+- fails closed if transport callbacks skip the requested boundary, become
+  discontinuous after capture starts, or violate any inherited V1 health gate
+- action boundary: `runtime_master_bar_window_v2`
+- receipt boundary: `live_recording.runtime_master_bar_window_v2`
+- pack id: `live-recording-runtime-master-bar-window`
+- proof schema: `riotbox.live_recording_runtime_master_bar_window.v2`; the proof
+  and typed Session host-audio timing window bind requested/captured start and
+  end positions, the bar-grid anchor, output-frame beat span, 4/4 geometry,
+  start-alignment error, duration error, arming callbacks, and timing/transport/
+  tempo fault counts. Receipt readiness cross-checks these values rather than
+  trusting independent pass flags
+- V1 actions, receipts, proofs, and readiness remain readable and unchanged;
+  V2 is the sole boundary created by the current `just live-master-recording`
+  ingress
 
 Contract for `export.stem_package`:
 

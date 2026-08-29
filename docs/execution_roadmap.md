@@ -2122,3 +2122,16 @@ owners enter lineage, pathological payload sizes fail before allocation,
 callback retirement cannot spin indefinitely, the output stream stops before
 artifact I/O, and a fresh optional observer cannot alias or overwrite product
 artifacts.
+
+RIOTBOX-1486 closes the timing-identity gap left by that first path. The current
+live-master command now targets the strictly next confirmed 4/4 Session bar and
+captures exactly the following two-bar/eight-beat callback window. The boundary
+retains the confirmed timing hypothesis's bar-grid phase instead of assuming
+that every source downbeat is transport beat zero. A callback
+that straddles the boundary contributes only complete post-boundary frames;
+armed-window callback gaps, skipped boundaries, or discontinuous transport
+timing fail closed. The new V2 Action,
+receipt, proof, alignment gate, and typed Session timing evidence preserve V1
+readability and every existing tap/writer/host-health rule. This is a recording
+correctness slice only: it adds no DSP, sound qualification, input capture,
+TUI/Ghost surface, Holdout access, or release claim.
