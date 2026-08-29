@@ -363,6 +363,7 @@ pub enum LiveRecordingExportRole {
 #[serde(rename_all = "snake_case")]
 pub enum LiveRecordingExportBoundary {
     ReservedContractOnly,
+    RuntimeMasterCaptureV1,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -546,6 +547,24 @@ impl ActionCommand {
     #[must_use]
     pub const fn all() -> &'static [Self] {
         Self::ALL
+    }
+
+    /// Whether this action owns a file-producing side effect whose success
+    /// must be proven before the queue records a commit.
+    ///
+    /// Transport-boundary drains must leave these actions pending. Their
+    /// app-side writer commits them explicitly through
+    /// `ActionQueue::commit_pending_after_side_effect` only after the artifact
+    /// and receipt have passed their contract gates.
+    #[must_use]
+    pub const fn commits_only_after_side_effect(self) -> bool {
+        matches!(
+            self,
+            Self::ExportProductMix
+                | Self::ExportStemPackage
+                | Self::ExportLiveRecording
+                | Self::ExportDawSession
+        )
     }
 
     /// Whether this committed performer intent restarts ordinary W-30 playback

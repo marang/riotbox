@@ -10,6 +10,7 @@ pub const STEM_PACKAGE_W30_HOOK_LOOP_PACK_ID: &str = "stem-package-w30-hook-loop
 pub const ARRANGEMENT_DAW_PLACEMENT_PACK_ID: &str = "arrangement-daw-placement-contract";
 pub const W30_HOOK_DAWPROJECT_PACK_ID: &str = "w30-hook-dawproject";
 pub const LIVE_RECORDING_RECEIPT_PACK_ID: &str = "live-recording-receipt-contract";
+pub const LIVE_RECORDING_RUNTIME_MASTER_PACK_ID: &str = "live-recording-runtime-master";
 
 #[must_use]
 pub fn default_product_export_pack_id() -> String {
@@ -49,6 +50,7 @@ pub enum ProductExportBoundary {
     ArrangementDawPlacementContractV1,
     DawSessionW30HookDawprojectV1,
     LiveRecordingReceiptContractV1,
+    LiveRecordingRuntimeMasterCaptureV1,
 }
 
 impl ProductExportBoundary {
@@ -65,6 +67,7 @@ impl ProductExportBoundary {
             Self::ArrangementDawPlacementContractV1 => "arrangement.daw_placement_contract_v1",
             Self::DawSessionW30HookDawprojectV1 => "daw_session.w30_hook_dawproject_v1",
             Self::LiveRecordingReceiptContractV1 => "live_recording.receipt_contract_v1",
+            Self::LiveRecordingRuntimeMasterCaptureV1 => "live_recording.runtime_master_capture_v1",
         }
     }
 
@@ -80,6 +83,9 @@ impl ProductExportBoundary {
             "arrangement.daw_placement_contract_v1" => Ok(Self::ArrangementDawPlacementContractV1),
             "daw_session.w30_hook_dawproject_v1" => Ok(Self::DawSessionW30HookDawprojectV1),
             "live_recording.receipt_contract_v1" => Ok(Self::LiveRecordingReceiptContractV1),
+            "live_recording.runtime_master_capture_v1" => {
+                Ok(Self::LiveRecordingRuntimeMasterCaptureV1)
+            }
             other => Err(ExportReadinessError::UnsupportedBoundary(other.to_owned())),
         }
     }

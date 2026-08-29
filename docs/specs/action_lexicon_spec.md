@@ -383,6 +383,9 @@ Boundary:
 - The first export action targets the current `full_grid_mix` product
   export role from the deterministic Feral-grid generated-support proof.
 - It is a session-scope, immediate, user-triggered side-effect action.
+- File-producing export actions remain pending across ordinary transport
+  boundaries. Only the owning writer may commit one after its artifact and
+  receipt gates succeed; a failed writer rejects it instead.
 - It writes a product mix artifact plus proof receipt only after the
   export path succeeds.
 - It is not undoable; the action result and export receipt describe a
@@ -551,6 +554,37 @@ Current `export.live_recording` boundary:
   with no missing-evidence, unsupported-scope, blank host/device, zero-duration,
   callback-gap, or stream-error blockers, and explicit listening-review status
   when the recorded audio is musician-facing
+
+Runnable `runtime_master_capture_v1` boundary:
+
+- captures exactly eight beats of the real post-limiter, pre-device-conversion
+  CPAL callback master at the positive confirmed Session BPM and active scene
+- preallocates all sample storage outside the callback; the callback may only
+  perform bounded atomic sample/counter updates. V1 refuses more than
+  `16,777,216` interleaved samples before allocation (64 MiB of atomic sample
+  slots)
+- removes the completed/aborted capture from callback visibility without an
+  unbounded wait; finalization fails closed if a callback still owns the buffer,
+  and any callback-owned retired buffer remains control-owned until it can be
+  reaped safely
+- stops and verifies the output runtime immediately after the capture window,
+  before WAV/proof encoding, publication, hashing, or Session persistence
+- writes IEEE-float 32-bit WAV with the required non-PCM `fact` frame-count
+  chunk plus a versioned JSON proof outside the callback, then reads both back
+  before Action/Session commit
+- fails closed on invalid Session timing/scene identity, transport or tempo
+  drift, a callback gap over 100 ms, scratch/capture overflow, stream error,
+  early stop, incomplete frames, silence, clipping, destination collision, or
+  read-back/hash mismatch
+- receipt boundary: `live_recording.runtime_master_capture_v1`
+- pack id: `live-recording-runtime-master`
+- offline RuntimeMix output is test/control evidence only and cannot satisfy the
+  live host/device gate
+- the single operator ingress is `just live-master-recording`; it records no
+  microphone/input audio and is not a background or arbitrary-duration recorder.
+  Its optional observer must be a fresh non-aliasing file opened before audio
+  starts; an observer write failure after a successful commit is reported
+  separately and never reclassifies or overwrites the committed take
 
 Contract for `export.stem_package`:
 

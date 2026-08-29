@@ -587,6 +587,11 @@ Current limiter policy:
   remain visible instead of being hidden by output-file clipping
 - the limiter may reduce hot transient peaks but must not boost weak, silent, or
   source-characterless output; those remain QA failures
+- runtime-master capture observes the post-limiter samples immediately before
+  device conversion. V1 preallocates at most `16,777,216` interleaved atomic
+  sample slots on the control thread, never spins while retiring callback-owned
+  buffers, and stops the output stream before control-thread WAV/proof/Session
+  I/O begins
 - the Feral-grid development product-stem seam attributes the already rendered
   generated-support mix across typed TR-909 drums, W-30 music, and MC-202 bass
   contributions after the shared nonlinear product bus. The symmetric

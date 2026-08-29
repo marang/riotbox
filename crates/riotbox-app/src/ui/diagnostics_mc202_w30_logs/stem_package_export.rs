@@ -216,5 +216,6 @@ fn export_boundary_short_label(boundary: ProductExportBoundary) -> &'static str 
         ProductExportBoundary::ArrangementDawPlacementContractV1 => "arrange-daw",
         ProductExportBoundary::DawSessionW30HookDawprojectV1 => "w30-daw",
         ProductExportBoundary::LiveRecordingReceiptContractV1 => "live-rec",
+        ProductExportBoundary::LiveRecordingRuntimeMasterCaptureV1 => "live-master",
     }
 }

@@ -32,6 +32,7 @@ fn parse_args_builds_daw_export_readiness_report_mode() {
         | LaunchMode::StemPackageW30HookExecute { .. }
         | LaunchMode::StemPackageLocalCiReport { .. }
         | LaunchMode::LiveRecordingReadinessReport { .. }
+        | LaunchMode::LiveMasterRecordingExecute { .. }
         | LaunchMode::DawSessionJsonPackageExecute { .. }
         | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
         | LaunchMode::DawSessionHostImportProofApply { .. }

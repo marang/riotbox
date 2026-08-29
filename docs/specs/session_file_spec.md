@@ -1144,11 +1144,36 @@ Additional receipt fields required before wider export scopes:
   future observer/report surfaces can explain missing evidence, bad host/device
   identity, zero duration, callback-gap overruns, or stream errors without
   enabling a capture writer.
+- `live_recording.runtime_master_capture_v1` is the first runnable receipt
+  boundary, with pack id `live-recording-runtime-master`. Its artifact set owns
+  the exact float32 WAV and JSON proof identities; its host-audio ref records
+  actual output host/device, exact duration, capture-window callback-gap summary,
+  and capture-window stream-error summary. The receipt commits only after exact
+  eight-beat frame count, Session scene/timing identity, read-back hash/format,
+  non-silence, no clipping, and every realtime fault gate passes.
+  `riotbox.live_recording_runtime_master.v1` binds the receipt/action/Session,
+  pre-capture Session hash, scene and BPM, host/device and device sample format,
+  float32 WAV format/rate/channels/frames, callback and fault counters, active/
+  peak/RMS/clip metrics, exact sample-payload and WAV hashes, and Source Graph,
+  timing-grid, source-capture, and lineage refs. The proof path is derived as
+  `<destination.wav>.riotbox.json`; both its path/hash and the WAV path/hash must
+  exactly match the receipt artifact set, and each required QA gate occurs once.
+  `source_capture_refs[]` contains only capture owners that are active
+  contributors in the recorded runtime state; unrelated historical Session
+  captures are excluded. Their declared lineage is included only after every
+  active owner and lineage target resolves in the Session.
 - the live-recording readiness operator report is a read-only Session report:
   `riotbox-app --live-recording-readiness-report --session <session.json>`
   inspects the latest live-recording receipt and projects the same host-audio
   readiness blockers without mutating the Session, writing observer events,
   launching a host, or capturing audio.
+- `just live-master-recording <session> <destination.wav> [graph] [observer]`
+  is the sole V1 real user-session ingress. It starts the existing CPAL output,
+  confirms transport and Session BPM, performs the bounded callback capture,
+  stops and verifies the runtime before any WAV/proof or Session file I/O, and
+  persists the Action/receipt only after WAV/proof read-back. Its observer
+  snapshot projects requested/started/completed or failed lifecycle from the
+  same Action and receipt truth.
 - `just live-recording-readiness-report-smoke` is the bounded repo proof for
   that read-only report. It runs the real CLI in a temp directory and verifies
   ready and blocked receipt evidence without writing files or mutating the

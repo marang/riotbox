@@ -2,8 +2,8 @@ use super::*;
 
 use crate::{
     export_readiness::{
-        EXPORT_READINESS_CONTRACT_SCHEMA, LIVE_RECORDING_RECEIPT_PACK_ID, PRODUCT_EXPORT_PACK_ID,
-        PRODUCT_EXPORT_PROOF_SCHEMA,
+        EXPORT_READINESS_CONTRACT_SCHEMA, LIVE_RECORDING_RECEIPT_PACK_ID,
+        LIVE_RECORDING_RUNTIME_MASTER_PACK_ID, PRODUCT_EXPORT_PACK_ID, PRODUCT_EXPORT_PROOF_SCHEMA,
     },
     ids::ActionId,
     session::{
@@ -292,8 +292,100 @@ fn live_recording_export_contract_names_are_stable_but_not_product_mix_defaults(
         LIVE_RECORDING_RECEIPT_PACK_ID,
         "live-recording-receipt-contract"
     );
+    assert_eq!(
+        ProductExportBoundary::LiveRecordingRuntimeMasterCaptureV1.as_proof_str(),
+        "live_recording.runtime_master_capture_v1"
+    );
+    assert_eq!(
+        LIVE_RECORDING_RUNTIME_MASTER_PACK_ID,
+        "live-recording-runtime-master"
+    );
     assert_eq!(PRODUCT_EXPORT_PACK_ID, "feral-grid-demo");
     assert_eq!(default_export_scope(), ExportScope::ProductMix);
+}
+
+#[test]
+fn runtime_master_readiness_requires_exact_receipt_artifact_and_gate_identity() {
+    let receipt = runtime_master_fixture_receipt();
+    assert!(receipt.live_recording_runtime_master_ready());
+
+    let mut mismatched_hash = receipt.clone();
+    mismatched_hash.export_hash =
+        "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff".into();
+    assert!(!mismatched_hash.live_recording_runtime_master_ready());
+
+    let mut duplicate_gate = receipt.clone();
+    duplicate_gate
+        .qa_gates
+        .push(ExportReceiptQaGateResult::live_recording_wav_readback());
+    assert!(!duplicate_gate.live_recording_runtime_master_ready());
+
+    let mut mismatched_duration = receipt;
+    mismatched_duration.live_recording_host_audio_refs[0].recording_duration_ms += 1;
+    assert!(!mismatched_duration.live_recording_runtime_master_ready());
+}
+
+fn runtime_master_fixture_receipt() -> ExportReceiptState {
+    let wav_sha = "abababababababababababababababababababababababababababababababab";
+    let proof_sha = "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd";
+    let contract = ExportReadinessContract {
+        schema: EXPORT_READINESS_CONTRACT_SCHEMA.into(),
+        status: ExportReadinessStatus::Reproducible,
+        proof_schema: "riotbox.live_recording_runtime_master.v1".into(),
+        export_scope: ExportScope::LiveRecording,
+        boundary: ProductExportBoundary::LiveRecordingRuntimeMasterCaptureV1,
+        pack_id: LIVE_RECORDING_RUNTIME_MASTER_PACK_ID.into(),
+        export_role: ProductExportRole::LiveRecordingCapture,
+        export_artifact: "exports/live/runtime-master.wav".into(),
+        source_sha256: "efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef".into(),
+        export_sha256: wav_sha.into(),
+        normalized_manifest_sha256: proof_sha.into(),
+        unsupported_scopes: Vec::new(),
+    };
+    let proof_path = "exports/live/runtime-master.wav.riotbox.json";
+    let mut receipt = ExportReceiptState::from_readiness_contract(
+        ActionId(1485),
+        1_485,
+        &contract,
+        "exports/live/runtime-master.wav",
+        proof_path,
+        Some(proof_path.into()),
+    );
+    let mut audio =
+        ExportArtifactSetEntry::live_recording_capture("exports/live/runtime-master.wav", wav_sha);
+    audio.sample_rate_hz = Some(48_000);
+    audio.channel_count = Some(2);
+    audio.duration_ms = Some(3_692);
+    audio.audio_metrics = Some(ExportArtifactAudioMetrics {
+        peak_milli_dbfs: None,
+        rms_milli_dbfs: None,
+        peak_amplitude_micros: Some(900_000),
+        rms_amplitude_micros: Some(200_000),
+        silent_frame_count: None,
+        total_frame_count: Some(177_231),
+    });
+    receipt.artifact_set = vec![
+        audio,
+        ExportArtifactSetEntry::product_export_proof(proof_path, proof_sha),
+    ];
+    receipt.qa_gates = vec![
+        ExportReceiptQaGateResult::live_recording_runtime_master_capture(),
+        ExportReceiptQaGateResult::live_recording_wav_readback(),
+    ];
+    receipt.live_recording_host_audio_refs = vec![ExportLiveRecordingHostAudioRef {
+        host: "Alsa".into(),
+        device: "pipewire-default".into(),
+        recording_duration_ms: 3_692,
+        callback_gap_summary: ExportLiveRecordingCallbackGapSummary {
+            max_gap_ms: Some(12),
+            over_threshold_count: 0,
+        },
+        stream_error_summary: ExportLiveRecordingStreamErrorSummary {
+            error_count: 0,
+            last_error: None,
+        },
+    }];
+    receipt
 }
 
 fn ready_live_recording_host_audio_ref() -> ExportLiveRecordingHostAudioRef {

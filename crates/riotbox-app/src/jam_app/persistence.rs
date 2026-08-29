@@ -143,13 +143,7 @@ impl JamAppState {
 
     pub fn save(&self) -> Result<(), JamAppError> {
         if let Some(files) = &self.files {
-            let mut session_to_save = self.session.clone();
-            sync_latest_snapshot_payloads(&mut session_to_save);
-            sync_graph_refs_with_state(
-                &mut session_to_save,
-                self.source_graph.as_ref(),
-                files.source_graph_path.as_deref(),
-            )?;
+            let session_to_save = self.session_prepared_for_save()?;
             save_session_json(&files.session_path, &session_to_save)?;
 
             if let Some(source_graph) = &self.source_graph
@@ -164,6 +158,26 @@ impl JamAppState {
         }
 
         Ok(())
+    }
+
+    pub(super) fn save_session_without_source_graph_write(&self) -> Result<(), JamAppError> {
+        if let Some(files) = &self.files {
+            save_session_json(&files.session_path, &self.session_prepared_for_save()?)?;
+        }
+        Ok(())
+    }
+
+    fn session_prepared_for_save(&self) -> Result<SessionFile, JamAppError> {
+        let mut session_to_save = self.session.clone();
+        sync_latest_snapshot_payloads(&mut session_to_save);
+        sync_graph_refs_with_state(
+            &mut session_to_save,
+            self.source_graph.as_ref(),
+            self.files
+                .as_ref()
+                .and_then(|files| files.source_graph_path.as_deref()),
+        )?;
+        Ok(session_to_save)
     }
 }
 

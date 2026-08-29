@@ -33,6 +33,7 @@ fn parse_args_builds_stem_package_local_ci_dry_run_mode() {
         | LaunchMode::StemPackageW30HookExecute { .. }
         | LaunchMode::StemPackageLocalCiReport { .. }
         | LaunchMode::LiveRecordingReadinessReport { .. }
+        | LaunchMode::LiveMasterRecordingExecute { .. }
         | LaunchMode::DawExportReadinessReport { .. }
         | LaunchMode::DawSessionJsonPackageExecute { .. }
         | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
@@ -92,6 +93,7 @@ fn parse_args_builds_stem_package_local_ci_execute_mode() {
         | LaunchMode::StemPackageW30HookExecute { .. }
         | LaunchMode::StemPackageLocalCiReport { .. }
         | LaunchMode::LiveRecordingReadinessReport { .. }
+        | LaunchMode::LiveMasterRecordingExecute { .. }
         | LaunchMode::DawExportReadinessReport { .. }
         | LaunchMode::DawSessionJsonPackageExecute { .. }
         | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }

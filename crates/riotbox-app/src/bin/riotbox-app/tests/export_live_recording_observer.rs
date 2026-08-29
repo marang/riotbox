@@ -5,9 +5,9 @@ use riotbox_core::{
     },
     export_readiness::{
         EXPORT_READINESS_CONTRACT_SCHEMA, ExportReadinessContract, ExportReadinessStatus,
-        ExportScope, LIVE_RECORDING_RECEIPT_PACK_ID, PRODUCT_EXPORT_PROOF_SCHEMA,
-        ProductExportBoundary, ProductExportDestinationKind, ProductExportRole,
-        UnsupportedExportScope,
+        ExportScope, LIVE_RECORDING_RECEIPT_PACK_ID, LIVE_RECORDING_RUNTIME_MASTER_PACK_ID,
+        PRODUCT_EXPORT_PROOF_SCHEMA, ProductExportBoundary, ProductExportDestinationKind,
+        ProductExportRole, UnsupportedExportScope,
     },
     session::{
         ExportLiveRecordingCallbackGapSummary, ExportLiveRecordingHostAudioRef,
@@ -30,11 +30,11 @@ fn observer_snapshot_projects_live_recording_host_audio_refs_from_real_action_re
         params: ActionParams::LiveRecordingExport {
             export_scope: ExportScope::LiveRecording,
             export_role: LiveRecordingExportRole::LiveRecordingCapture,
-            boundary: LiveRecordingExportBoundary::ReservedContractOnly,
+            boundary: LiveRecordingExportBoundary::RuntimeMasterCaptureV1,
             include_manifest: true,
-            destination_kind: ProductExportDestinationKind::LocalArtifactDirectory,
-            destination_path: Some("exports/live".into()),
-            receipt_id: Some("export-receipt-1174".into()),
+            destination_kind: ProductExportDestinationKind::LocalFilePath,
+            destination_path: Some("exports/live/recording.wav".into()),
+            receipt_id: None,
         },
         target: ActionTarget {
             scope: Some(TargetScope::Session),
@@ -59,8 +59,8 @@ fn observer_snapshot_projects_live_recording_host_audio_refs_from_real_action_re
         status: ExportReadinessStatus::Reproducible,
         proof_schema: PRODUCT_EXPORT_PROOF_SCHEMA.into(),
         export_scope: ExportScope::LiveRecording,
-        boundary: ProductExportBoundary::LiveRecordingReceiptContractV1,
-        pack_id: LIVE_RECORDING_RECEIPT_PACK_ID.into(),
+        boundary: ProductExportBoundary::LiveRecordingRuntimeMasterCaptureV1,
+        pack_id: LIVE_RECORDING_RUNTIME_MASTER_PACK_ID.into(),
         export_role: ProductExportRole::LiveRecordingCapture,
         export_artifact: "exports/live/recording.wav".into(),
         source_sha256: "source-sha".into(),
@@ -103,6 +103,10 @@ fn observer_snapshot_projects_live_recording_host_audio_refs_from_real_action_re
     assert_eq!(lifecycle.len(), 3);
     assert_eq!(lifecycle[2]["stage"], "completed");
     assert_eq!(lifecycle[2]["command"], "export.live_recording");
+    assert_eq!(
+        lifecycle[2]["receipt"]["export_boundary"],
+        "live_recording_runtime_master_capture_v1"
+    );
     assert_eq!(
         lifecycle[2]["receipt"]["live_recording_host_audio_refs"][0]["host"],
         "Alsa"

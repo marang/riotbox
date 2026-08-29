@@ -1,6 +1,6 @@
 # Riotbox Workflow Conventions
 
-Version: 0.3
+Version: 0.4
 Status: Active
 Audience: contributors, reviewers, coding agents
 
@@ -176,6 +176,14 @@ For a normal implementation or docs slice:
 18. after syncing `main`, delete the merged remote and local feature branches
     unless the branch is intentionally long-lived
 19. delete the completed Linear issue only after the archive entry exists
+
+The review handoff must be visible and evidence-backed. Before PR or closeout,
+report the reviewed diff/scope, every finding with severity and concrete code or
+contract evidence, and each finding's disposition (`fixed`, `deferred`, or
+`rejected` with rationale). For a fixed finding, name the correction and the
+test or inspection that verifies it. Then report the follow-up self-review
+result, including an explicit zero-findings result when applicable. Do not
+collapse this evidence into only “review passed” or “CI green.”
 
 A prompt such as "weiter" continues the current requested scope. Starting
 another ticket requires an explicit cross-ticket/phase instruction or a newly

@@ -138,7 +138,9 @@ impl ActionQueue {
         let mut commit_sequence = 0;
 
         while let Some(mut action) = self.pending.pop_front() {
-            if action.quantization.is_ready_for(boundary.kind) {
+            if !action.command.commits_only_after_side_effect()
+                && action.quantization.is_ready_for(boundary.kind)
+            {
                 action.status = ActionStatus::Committed;
                 action.committed_at = Some(committed_at);
                 action.result = Some(ActionResult {
@@ -463,6 +465,73 @@ mod tests {
                 .as_ref()
                 .map(|result| result.summary.as_str()),
             Some("export wrote full_grid_mix")
+        );
+    }
+
+    #[test]
+    fn transport_boundaries_leave_file_side_effect_actions_pending() {
+        let mut queue = ActionQueue::new();
+        let export_commands = [
+            ActionCommand::ExportProductMix,
+            ActionCommand::ExportStemPackage,
+            ActionCommand::ExportLiveRecording,
+            ActionCommand::ExportDawSession,
+        ];
+        let export_ids = export_commands
+            .into_iter()
+            .map(|command| {
+                queue.enqueue(
+                    ActionDraft::new(
+                        ActorType::User,
+                        command,
+                        Quantization::Immediate,
+                        crate::action::ActionTarget {
+                            scope: Some(TargetScope::Session),
+                            ..Default::default()
+                        },
+                    ),
+                    100,
+                )
+            })
+            .collect::<Vec<_>>();
+        let scene_id = queue.enqueue(
+            ActionDraft::new(
+                ActorType::User,
+                ActionCommand::SceneLaunch,
+                Quantization::Immediate,
+                crate::action::ActionTarget {
+                    scope: Some(TargetScope::Scene),
+                    ..Default::default()
+                },
+            ),
+            101,
+        );
+
+        let committed = queue.commit_ready_for_transport(
+            CommitBoundaryState {
+                kind: CommitBoundary::Beat,
+                beat_index: 1,
+                bar_index: 1,
+                phrase_index: 1,
+                scene_id: None,
+            },
+            200,
+        );
+
+        assert_eq!(
+            committed
+                .iter()
+                .map(|action| action.action_id)
+                .collect::<Vec<_>>(),
+            vec![scene_id]
+        );
+        assert_eq!(
+            queue
+                .pending_actions()
+                .iter()
+                .map(|action| action.id)
+                .collect::<Vec<_>>(),
+            export_ids
         );
     }
 

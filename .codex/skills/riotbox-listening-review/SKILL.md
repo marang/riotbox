@@ -34,6 +34,10 @@ just listening-review-fixtures
 
 - Preflight the exact artifact; invalid, unresolved, or misleading evidence must
   not be played for a verdict.
+- Before requesting readiness for each new exact artifact, complete the audio-QA
+  contract's independent agent pre-listen assessment. Keep technical validity,
+  predicted musical usefulness, and the still-unverified human verdict
+  separate; never revise the prior assessment to match later listener feedback.
 - Give a factual, non-priming brief and inventory every audible contributor.
 - Require fresh readiness for the first playback of an exact artifact. An
   explicit listener request for `again`, `nochmal`, or an equivalent direct
@@ -50,6 +54,8 @@ just listening-review-fixtures
 Record the artifact-bound verdict, strongest element, source/hook result, main
 failure, direction, avoid-list, and one concrete follow-up. Every audible PR
 states whether this verdict exists or why it remains `human_verdict: unverified`.
+An agent assessment is supporting evidence only and never fills, confirms, or
+replaces a human verdict for an artifact the listener has not yet judged.
 
 Translate informal listener comments into concise, professional evidence
 language in durable documentation and structured summaries. Preserve the

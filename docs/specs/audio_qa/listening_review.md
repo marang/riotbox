@@ -194,13 +194,28 @@ absolute and relative deltas, waveform correlation, and frequency-domain deltas
 for the expected owner or function. Whole-render aggregates alone do not prove
 that a short gesture is audible.
 
-Interpret that evidence before involving the listener: state what changed,
-what stayed unchanged, whether the intended role survives the full mix, and
-whether the artifact is correctly assigned. Invalid or misassigned artifacts
-must be fixed; artifacts demonstrably too similar for their claimed effect must
-be regenerated or labeled weak before requesting a taste verdict. This
-technical gate screens and explains the sample but does not replace human
-listening.
+Before requesting readiness for each new exact artifact, complete an
+independent agent pre-listen assessment from that evidence. It must distinguish
+technical validity from predicted musical usefulness and cover the strongest
+element, source/hook identity, groove, clarity, dynamics or impact as relevant,
+the intended role in the full mix, and the most likely failure mechanism. State
+what changed, what stayed unchanged, whether the intended role survives, and
+whether the artifact is correctly assigned. Bind the assessment to the exact
+artifact identity in working evidence when a durable review is being prepared.
+Do not revise it after hearing the listener's response merely to agree with the
+listener. A changed artifact requires a new assessment; an immediate unchanged
+replay does not.
+
+Invalid or misassigned artifacts must be fixed; artifacts demonstrably too
+similar for their claimed effect must be regenerated or labeled weak before
+requesting a taste verdict. The independent assessment screens and explains the
+sample but remains agent evidence: it cannot fill, confirm, or replace
+`human_verdict`, and earlier listener feedback cannot be transferred to a new
+artifact. To avoid priming, expose only the factual playback brief before the
+listener responds by default, then compare the independent assessments. Reveal
+the agent's musical conclusion before playback only when the listener
+explicitly asks for it. Never say an agent assessment confirms a human verdict
+unless that listener actually judged the same hash-bound artifact.
 
 Only then give the listener a compact factual brief:
 the playback context (isolated stem, full mix, source, baseline, or comparison),

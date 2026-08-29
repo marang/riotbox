@@ -91,6 +91,7 @@ impl AudioRuntimeShell {
         let w30_preview = Arc::new(SharedW30PreviewRenderState::new(&w30_preview_render_state));
         let w30_resample_tap = Arc::new(SharedW30ResampleTapState::new(&w30_resample_tap_state));
         let source_monitor = Arc::new(SharedSourceMonitorRenderState::new(&source_monitor_state));
+        let live_master_capture = Arc::new(SharedLiveMasterCapture::new());
         let stream_config = default_config.config();
         let start = Instant::now();
 
@@ -106,6 +107,7 @@ impl AudioRuntimeShell {
                     w30_preview: Arc::clone(&w30_preview),
                     w30_resample_tap: Arc::clone(&w30_resample_tap),
                     source_monitor: Arc::clone(&source_monitor),
+                    live_master_capture: Arc::clone(&live_master_capture),
                 },
                 start,
             ),
@@ -120,6 +122,7 @@ impl AudioRuntimeShell {
                     w30_preview: Arc::clone(&w30_preview),
                     w30_resample_tap: Arc::clone(&w30_resample_tap),
                     source_monitor: Arc::clone(&source_monitor),
+                    live_master_capture: Arc::clone(&live_master_capture),
                 },
                 start,
             ),
@@ -134,6 +137,7 @@ impl AudioRuntimeShell {
                     w30_preview: Arc::clone(&w30_preview),
                     w30_resample_tap: Arc::clone(&w30_resample_tap),
                     source_monitor: Arc::clone(&source_monitor),
+                    live_master_capture: Arc::clone(&live_master_capture),
                 },
                 start,
             ),
@@ -169,6 +173,7 @@ impl AudioRuntimeShell {
             w30_preview,
             w30_resample_tap,
             source_monitor,
+            live_master_capture,
             stream: Some(stream),
         })
     }
@@ -237,6 +242,28 @@ impl AudioRuntimeShell {
         self.source_monitor.update_controls(render_state);
     }
 
+    pub fn begin_live_master_capture(
+        &self,
+        request: LiveMasterCaptureRequest,
+    ) -> Result<(), LiveMasterCaptureError> {
+        self.live_master_capture.begin(request)
+    }
+
+    #[must_use]
+    pub fn live_master_capture_progress(&self) -> Option<LiveMasterCaptureProgress> {
+        self.live_master_capture.progress()
+    }
+
+    pub fn finish_live_master_capture(
+        &self,
+    ) -> Result<LiveMasterCaptureOutcome, LiveMasterCaptureError> {
+        self.live_master_capture.finish()
+    }
+
+    pub fn abort_live_master_capture(&self) -> Option<LiveMasterCaptureProgress> {
+        self.live_master_capture.abort()
+    }
+
     /// Atomically replaces prepared source PCM together with monitor mode and anchors.
     pub fn replace_source_monitor_render_state(&self, render_state: &SourceMonitorRenderState) {
         self.source_monitor
@@ -260,6 +287,7 @@ impl AudioRuntimeShell {
             w30_preview: parts.w30_preview,
             w30_resample_tap: parts.w30_resample_tap,
             source_monitor: parts.source_monitor,
+            live_master_capture: Arc::new(SharedLiveMasterCapture::new()),
             stream: None,
         }
     }
@@ -295,6 +323,7 @@ where
 {
     let callback_telemetry = Arc::clone(&shared.telemetry);
     let error_telemetry = Arc::clone(&shared.telemetry);
+    let error_live_master_capture = Arc::clone(&shared.live_master_capture);
     let callback_transport = Arc::clone(&shared.transport);
     let mut render_state = Tr909CallbackState::default();
     let mut transport_state = TransportTimingCallbackState::default();
@@ -329,6 +358,9 @@ where
                     *output = T::from_sample(0.0);
                 }
                 let now = start.elapsed().as_micros() as u64;
+                shared
+                    .live_master_capture
+                    .record_scratch_overflow(&callback_timing, now);
                 callback_telemetry.record_callback_scratch_overflow_at(now, &callback_timing);
                 return;
             };
@@ -389,14 +421,18 @@ where
                 &mut source_monitor_callback_state,
             );
             apply_master_bus_soft_limiter(mix_buffer);
+            let now = start.elapsed().as_micros() as u64;
+            shared
+                .live_master_capture
+                .record_callback(mix_buffer, &callback_timing, now);
             for (output, sample) in data.iter_mut().zip(mix_buffer.iter().copied()) {
                 *output = T::from_sample(sample);
             }
 
-            let now = start.elapsed().as_micros() as u64;
             callback_telemetry.record_callback_at(now, &callback_timing);
         },
         move |error| {
+            error_live_master_capture.record_stream_error();
             error_telemetry.record_stream_error(error.to_string());
         },
         None,
@@ -423,6 +459,7 @@ pub(super) struct AudioRuntimeSharedState {
     w30_preview: Arc<SharedW30PreviewRenderState>,
     w30_resample_tap: Arc<SharedW30ResampleTapState>,
     source_monitor: Arc<SharedSourceMonitorRenderState>,
+    live_master_capture: Arc<SharedLiveMasterCapture>,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
