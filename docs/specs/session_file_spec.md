@@ -1162,14 +1162,27 @@ Additional receipt fields required before wider export scopes:
   contributors in the recorded runtime state; unrelated historical Session
   captures are excluded. Their declared lineage is included only after every
   active owner and lineage target resolves in the Session.
+- `live_recording.runtime_master_bar_window_v2`, pack id
+  `live-recording-runtime-master-bar-window`, is the current runnable receipt
+  boundary. It preserves every V1 audio tap, writer, artifact, lineage, and
+  host-health requirement while adding exactly one
+  `live_recording_bar_window_alignment` gate and a typed
+  `live_recording_host_audio_refs[].timing_window`. That window binds requested,
+  captured-start, and captured-end microbeats, the confirmed bar-grid anchor,
+  output-frame beat span, four beats per bar, eight beats, at-most-one-frame
+  start alignment error, and at-most-one-half-frame duration error. Readiness
+  verifies anchor congruence and recomputes position bounds from frame geometry;
+  missing, contradictory, or duplicate V2 evidence fails. The versioned proof
+  schema is `riotbox.live_recording_runtime_master_bar_window.v2`.
 - the live-recording readiness operator report is a read-only Session report:
   `riotbox-app --live-recording-readiness-report --session <session.json>`
   inspects the latest live-recording receipt and projects the same host-audio
   readiness blockers without mutating the Session, writing observer events,
   launching a host, or capturing audio.
 - `just live-master-recording <session> <destination.wav> [graph] [observer]`
-  is the sole V1 real user-session ingress. It starts the existing CPAL output,
-  confirms transport and Session BPM, performs the bounded callback capture,
+  is the sole V2 real user-session ingress. It starts the existing CPAL output,
+  confirms transport, Session BPM, and 4/4 meter, arms for the strictly next
+  phase-aligned bar, performs the bounded two-bar callback capture,
   stops and verifies the runtime before any WAV/proof or Session file I/O, and
   persists the Action/receipt only after WAV/proof read-back. Its observer
   snapshot projects requested/started/completed or failed lifecycle from the

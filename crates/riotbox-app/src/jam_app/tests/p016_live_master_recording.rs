@@ -82,6 +82,7 @@ fn live_master_test_outcome(
     let samples = (0..sample_count)
         .map(|index| if index.is_multiple_of(2) { 0.25 } else { -0.25 })
         .collect::<Vec<_>>();
+    let beats_per_frame = f64::from(plan.confirmed_bpm) / 60.0 / f64::from(plan.output.sample_rate);
     riotbox_audio::runtime::LiveMasterCaptureOutcome {
         samples,
         progress: riotbox_audio::runtime::LiveMasterCaptureProgress {
@@ -94,8 +95,16 @@ fn live_master_test_outcome(
             stream_error_count: 0,
             transport_mismatch_count: 0,
             tempo_mismatch_count: 0,
+            timing_window_mismatch_count: 0,
+            armed_callback_count: 1,
+            capture_started: true,
             complete: true,
         },
+        captured_start_position_beats: Some(plan.requested_start_position_beats),
+        captured_end_position_beats: Some(
+            plan.requested_start_position_beats
+                + beats_per_frame * plan.request.target_frame_count as f64,
+        ),
     }
 }
 
@@ -111,6 +120,8 @@ fn real_runtime_master_take_commits_wav_proof_action_session_and_receipt() {
     };
     assert_eq!(plan.request.target_frame_count, 4_000);
     assert_eq!(plan.request.expected_tempo_bpm, 120.0);
+    assert_eq!(plan.request.start_position_beats, Some(4.0));
+    assert_eq!(plan.bar_grid_anchor_beat_cursor, 0);
     let outcome = live_master_test_outcome(&plan);
     let health = live_master_test_health(&output);
     state.set_audio_health(health.clone());
@@ -121,7 +132,7 @@ fn real_runtime_master_take_commits_wav_proof_action_session_and_receipt() {
 
     assert!(destination.is_file());
     assert!(plan.proof_path.is_file());
-    assert!(receipt.is_live_recording_runtime_master_v1());
+    assert!(receipt.is_live_recording_runtime_master_bar_window_v2());
     assert!(receipt.live_recording_runtime_master_ready());
     assert!(receipt.live_recording_host_audio_readiness_report().ready());
     assert_eq!(receipt.export_hash, sha256_file(&destination).unwrap());
@@ -150,6 +161,7 @@ fn real_runtime_master_take_commits_wav_proof_action_session_and_receipt() {
         vec![
             riotbox_core::session::LIVE_RECORDING_RUNTIME_CAPTURE_QA_GATE_ID,
             riotbox_core::session::LIVE_RECORDING_WAV_READBACK_QA_GATE_ID,
+            riotbox_core::session::LIVE_RECORDING_BAR_WINDOW_ALIGNMENT_QA_GATE_ID,
         ]
     );
     let proof: LiveMasterRecordingProof =
@@ -159,6 +171,14 @@ fn real_runtime_master_take_commits_wav_proof_action_session_and_receipt() {
     assert_eq!(proof.frame_count, 4_000);
     assert_eq!(proof.scene_id, SceneId::from("scene-live"));
     assert_eq!(proof.duration_beats, LIVE_MASTER_RECORDING_DURATION_BEATS);
+    assert_eq!(proof.beats_per_bar, 4);
+    assert_eq!(proof.bar_grid_anchor_position_microbeats, 0);
+    assert_eq!(proof.beat_span_per_frame_nanobeats, 2_000_000);
+    assert_eq!(proof.requested_start_position_microbeats, 4_000_000);
+    assert_eq!(proof.captured_start_position_microbeats, 4_000_000);
+    assert_eq!(proof.captured_end_position_microbeats, 12_000_000);
+    assert_eq!(proof.start_alignment_error_frame_micros, 0);
+    assert_eq!(proof.duration_error_frame_micros, 0);
     assert_eq!(proof.wav_sha256, receipt.export_hash);
     assert_eq!(proof.clip_count, 0);
     assert_eq!(state.session.export_receipts, vec![receipt.clone()]);
@@ -174,7 +194,7 @@ fn real_runtime_master_take_commits_wav_proof_action_session_and_receipt() {
     assert!(matches!(
         committed.params,
         ActionParams::LiveRecordingExport {
-            boundary: riotbox_core::action::LiveRecordingExportBoundary::RuntimeMasterCaptureV1,
+            boundary: riotbox_core::action::LiveRecordingExportBoundary::RuntimeMasterBarWindowV2,
             ..
         }
     ));
@@ -301,6 +321,37 @@ fn live_master_recording_rederives_and_enforces_the_frozen_eight_beat_window() {
             .status,
         ActionStatus::Rejected
     );
+}
+
+#[test]
+fn live_master_recording_rejects_a_capture_start_later_than_one_output_frame() {
+    let temp = tempdir().expect("tempdir");
+    let destination = temp.path().join("misaligned-live-master.wav");
+    let output = live_master_test_output();
+    let mut state = live_master_recording_state();
+    let plan = match state.queue_live_master_recording(1_000, &output, &destination) {
+        LiveMasterRecordingQueueResult::Enqueued(plan) => plan,
+        other => panic!("expected queued live master recording, got {other:?}"),
+    };
+    let mut outcome = live_master_test_outcome(&plan);
+    let beats_per_frame = f64::from(plan.confirmed_bpm) / 60.0 / f64::from(output.sample_rate);
+    outcome.captured_start_position_beats =
+        Some(plan.requested_start_position_beats + beats_per_frame * 2.0);
+    outcome.captured_end_position_beats = Some(
+        outcome
+            .captured_start_position_beats
+            .expect("captured start")
+            + beats_per_frame * plan.request.target_frame_count as f64,
+    );
+
+    let error = state
+        .commit_live_master_recording(&plan, &outcome, &live_master_test_health(&output), 5_000)
+        .expect_err("late capture start must fail closed");
+
+    assert!(error.to_string().contains("timing window is not exact"));
+    assert!(!destination.exists());
+    assert!(!plan.proof_path.exists());
+    assert!(state.session.export_receipts.is_empty());
 }
 
 #[test]

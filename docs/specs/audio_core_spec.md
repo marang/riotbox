@@ -592,6 +592,13 @@ Current limiter policy:
   sample slots on the control thread, never spins while retiring callback-owned
   buffers, and stops the output stream before control-thread WAV/proof/Session
   I/O begins
+- V2 reuses that allocation and tap but arms until an absolute Session beat.
+  Pre-boundary callbacks write no payload; a straddling callback begins at the
+  first complete frame at or after the requested beat. The callback publishes
+  actual start/end positions and fails closed on a missed boundary or any
+  discontinuity between captured callback windows. Callback-gap telemetry runs
+  across both the armed wait and copied window. It still allocates nothing,
+  takes no lock, and performs no I/O, analysis, or Session mutation
 - the Feral-grid development product-stem seam attributes the already rendered
   generated-support mix across typed TR-909 drums, W-30 music, and MC-202 bass
   contributions after the shared nonlinear product bus. The symmetric

@@ -364,6 +364,7 @@ pub enum LiveRecordingExportRole {
 pub enum LiveRecordingExportBoundary {
     ReservedContractOnly,
     RuntimeMasterCaptureV1,
+    RuntimeMasterBarWindowV2,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

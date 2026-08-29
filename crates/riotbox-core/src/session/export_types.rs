@@ -79,10 +79,19 @@ impl ExportReceiptState {
     }
 
     #[must_use]
+    pub fn is_live_recording_runtime_master_bar_window_v2(&self) -> bool {
+        self.export_scope == ExportScope::LiveRecording
+            && self.pack_id
+                == crate::export_readiness::LIVE_RECORDING_RUNTIME_MASTER_BAR_WINDOW_PACK_ID
+            && self.export_role == ProductExportRole::LiveRecordingCapture
+            && self.export_boundary == ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV2
+    }
+
+    #[must_use]
     pub fn live_recording_runtime_master_ready(&self) -> bool {
-        if !self.is_live_recording_runtime_master_v1()
-            || !self.live_recording_host_audio_readiness_report().ready()
-        {
+        let is_v1 = self.is_live_recording_runtime_master_v1();
+        let is_v2 = self.is_live_recording_runtime_master_bar_window_v2();
+        if !(is_v1 || is_v2) || !self.live_recording_host_audio_readiness_report().ready() {
             return false;
         }
         let live_artifacts = self
@@ -122,12 +131,15 @@ impl ExportReceiptState {
         let duration_identity_ready = self.live_recording_host_audio_refs.len() == 1
             && live.duration_ms
                 == Some(self.live_recording_host_audio_refs[0].recording_duration_ms);
-        let required_gates_ready = [
+        let mut required_gate_ids = vec![
             super::export_qa_gates::LIVE_RECORDING_RUNTIME_CAPTURE_QA_GATE_ID,
             super::export_qa_gates::LIVE_RECORDING_WAV_READBACK_QA_GATE_ID,
-        ]
-        .into_iter()
-        .all(|gate_id| {
+        ];
+        if is_v2 {
+            required_gate_ids
+                .push(super::export_qa_gates::LIVE_RECORDING_BAR_WINDOW_ALIGNMENT_QA_GATE_ID);
+        }
+        let required_gates_ready = required_gate_ids.into_iter().all(|gate_id| {
             let matching = self
                 .qa_gates
                 .iter()
@@ -135,10 +147,25 @@ impl ExportReceiptState {
                 .collect::<Vec<_>>();
             matching.len() == 1 && matching[0].status == ExportReceiptQaGateStatus::Passed
         });
+        let timing_window_ready = is_v1
+            || self
+                .live_recording_host_audio_refs
+                .first()
+                .and_then(|evidence| evidence.timing_window.as_ref())
+                .is_some_and(|window| {
+                    window.bar_aligned_two_bar_window_ready(
+                        live.sample_rate_hz.unwrap_or_default(),
+                        live.audio_metrics
+                            .as_ref()
+                            .and_then(|metrics| metrics.total_frame_count)
+                            .unwrap_or_default(),
+                    )
+                });
         artifacts_ready
             && top_level_identity_ready
             && duration_identity_ready
             && required_gates_ready
+            && timing_window_ready
     }
 
     #[must_use]

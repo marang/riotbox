@@ -16,6 +16,8 @@ pub const DAW_SESSION_AUDIBLE_OUTPUT_QA_GATE_ID: &str = "daw_session_audible_out
 pub const DAWPROJECT_ARCHIVE_QA_GATE_ID: &str = "dawproject_archive_readback";
 pub const LIVE_RECORDING_RUNTIME_CAPTURE_QA_GATE_ID: &str = "live_recording_runtime_master_capture";
 pub const LIVE_RECORDING_WAV_READBACK_QA_GATE_ID: &str = "live_recording_wav_readback";
+pub const LIVE_RECORDING_BAR_WINDOW_ALIGNMENT_QA_GATE_ID: &str =
+    "live_recording_bar_window_alignment";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExportReceiptQaGateResult {
@@ -249,6 +251,19 @@ impl ExportReceiptQaGateResult {
             ],
             summary: Some(
                 "float32 WAV format, exact frames, sample bytes, non-silence, peak, proof, and hashes passed read-back"
+                    .into(),
+            ),
+        }
+    }
+
+    #[must_use]
+    pub fn live_recording_bar_window_alignment() -> Self {
+        Self {
+            gate_id: LIVE_RECORDING_BAR_WINDOW_ALIGNMENT_QA_GATE_ID.into(),
+            status: ExportReceiptQaGateStatus::Passed,
+            artifact_roles: vec![ExportArtifactRole::LiveRecordingCapture],
+            summary: Some(
+                "real callback capture began on the requested 4/4 bar boundary within one output frame and completed the exact two-bar window"
                     .into(),
             ),
         }

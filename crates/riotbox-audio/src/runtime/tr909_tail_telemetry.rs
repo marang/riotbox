@@ -274,6 +274,11 @@ impl RuntimeTelemetry {
             .store(timing.completed_position_beats.to_bits(), Ordering::Relaxed);
     }
 
+    pub(super) fn last_callback_micros(&self) -> Option<u64> {
+        (self.callback_count.load(Ordering::Acquire) > 0)
+            .then(|| self.last_callback_micros.load(Ordering::Acquire))
+    }
+
     pub(super) fn record_callback_scratch_overflow_at(
         &self,
         now_micros: u64,

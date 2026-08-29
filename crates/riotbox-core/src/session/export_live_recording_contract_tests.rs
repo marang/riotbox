@@ -3,13 +3,15 @@ use super::*;
 use crate::{
     export_readiness::{
         EXPORT_READINESS_CONTRACT_SCHEMA, LIVE_RECORDING_RECEIPT_PACK_ID,
-        LIVE_RECORDING_RUNTIME_MASTER_PACK_ID, PRODUCT_EXPORT_PACK_ID, PRODUCT_EXPORT_PROOF_SCHEMA,
+        LIVE_RECORDING_RUNTIME_MASTER_BAR_WINDOW_PACK_ID, LIVE_RECORDING_RUNTIME_MASTER_PACK_ID,
+        PRODUCT_EXPORT_PACK_ID, PRODUCT_EXPORT_PROOF_SCHEMA,
     },
     ids::ActionId,
     session::{
         ExportLiveRecordingCallbackGapSummary, ExportLiveRecordingHostAudioRef,
-        ExportLiveRecordingStreamErrorSummary, LiveRecordingHostAudioReadinessBlocker,
-        LiveRecordingHostAudioReadinessStatus, validate_live_recording_host_audio_readiness,
+        ExportLiveRecordingStreamErrorSummary, ExportLiveRecordingTimingWindow,
+        LiveRecordingHostAudioReadinessBlocker, LiveRecordingHostAudioReadinessStatus,
+        validate_live_recording_host_audio_readiness,
     },
 };
 
@@ -128,6 +130,7 @@ fn live_recording_host_audio_refs_roundtrip_as_receipt_evidence_only() {
                 error_count: 0,
                 last_error: None,
             },
+            timing_window: None,
         });
 
     let json = serde_json::to_value(&receipt).expect("serialize live receipt");
@@ -165,6 +168,7 @@ fn live_recording_host_audio_refs_roundtrip_as_receipt_evidence_only() {
                 error_count: 0,
                 last_error: None,
             },
+            timing_window: None,
         }
     );
     assert!(roundtrip.qa_gates.is_empty());
@@ -221,6 +225,7 @@ fn live_recording_host_audio_readiness_blocks_bad_evidence() {
                 error_count: 1,
                 last_error: Some("xrun".into()),
             },
+            timing_window: None,
         });
 
     let report = validate_live_recording_host_audio_readiness(&receipt);
@@ -300,6 +305,14 @@ fn live_recording_export_contract_names_are_stable_but_not_product_mix_defaults(
         LIVE_RECORDING_RUNTIME_MASTER_PACK_ID,
         "live-recording-runtime-master"
     );
+    assert_eq!(
+        ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV2.as_proof_str(),
+        "live_recording.runtime_master_bar_window_v2"
+    );
+    assert_eq!(
+        LIVE_RECORDING_RUNTIME_MASTER_BAR_WINDOW_PACK_ID,
+        "live-recording-runtime-master-bar-window"
+    );
     assert_eq!(PRODUCT_EXPORT_PACK_ID, "feral-grid-demo");
     assert_eq!(default_export_scope(), ExportScope::ProductMix);
 }
@@ -323,6 +336,90 @@ fn runtime_master_readiness_requires_exact_receipt_artifact_and_gate_identity() 
     let mut mismatched_duration = receipt;
     mismatched_duration.live_recording_host_audio_refs[0].recording_duration_ms += 1;
     assert!(!mismatched_duration.live_recording_runtime_master_ready());
+}
+
+#[test]
+fn bar_window_v2_readiness_requires_typed_alignment_evidence_and_preserves_v1() {
+    let v1 = runtime_master_fixture_receipt();
+    assert!(v1.is_live_recording_runtime_master_v1());
+    assert!(v1.live_recording_runtime_master_ready());
+
+    let mut v2 = v1.clone();
+    v2.pack_id = LIVE_RECORDING_RUNTIME_MASTER_BAR_WINDOW_PACK_ID.into();
+    v2.export_boundary = ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV2;
+    v2.qa_gates
+        .push(ExportReceiptQaGateResult::live_recording_bar_window_alignment());
+    v2.live_recording_host_audio_refs[0].timing_window = Some(ExportLiveRecordingTimingWindow {
+        confirmed_bpm_micros: 130_000_000,
+        bar_grid_anchor_position_microbeats: 3_000_000,
+        beat_span_per_frame_nanobeats: 45_139,
+        requested_start_position_microbeats: 7_000_000,
+        captured_start_position_microbeats: 7_000_040,
+        captured_end_position_microbeats: 15_000_040,
+        start_alignment_error_frame_micros: 800_000,
+        duration_error_frame_micros: 400_000,
+        beats_per_bar: 4,
+        duration_beats: 8,
+    });
+    assert!(v2.is_live_recording_runtime_master_bar_window_v2());
+    assert!(v2.live_recording_runtime_master_ready());
+
+    let roundtrip: ExportReceiptState =
+        serde_json::from_value(serde_json::to_value(&v2).expect("serialize V2 receipt"))
+            .expect("deserialize V2 receipt");
+    assert_eq!(roundtrip, v2);
+
+    let mut missing_window = v2.clone();
+    missing_window.live_recording_host_audio_refs[0].timing_window = None;
+    assert!(!missing_window.live_recording_runtime_master_ready());
+
+    let mut inexact_duration = v2.clone();
+    inexact_duration.live_recording_host_audio_refs[0]
+        .timing_window
+        .as_mut()
+        .expect("V2 timing window")
+        .duration_error_frame_micros = 500_002;
+    assert!(!inexact_duration.live_recording_runtime_master_ready());
+
+    let mut wrong_bar_phase = v2.clone();
+    wrong_bar_phase.live_recording_host_audio_refs[0]
+        .timing_window
+        .as_mut()
+        .expect("V2 timing window")
+        .requested_start_position_microbeats = 8_000_000;
+    wrong_bar_phase.live_recording_host_audio_refs[0]
+        .timing_window
+        .as_mut()
+        .expect("V2 timing window")
+        .captured_start_position_microbeats = 8_000_040;
+    wrong_bar_phase.live_recording_host_audio_refs[0]
+        .timing_window
+        .as_mut()
+        .expect("V2 timing window")
+        .captured_end_position_microbeats = 16_000_040;
+    assert!(!wrong_bar_phase.live_recording_runtime_master_ready());
+
+    let mut contradictory_start_error = v2.clone();
+    contradictory_start_error.live_recording_host_audio_refs[0]
+        .timing_window
+        .as_mut()
+        .expect("V2 timing window")
+        .captured_start_position_microbeats = 7_001_000;
+    assert!(!contradictory_start_error.live_recording_runtime_master_ready());
+
+    let mut contradictory_frame_geometry = v2.clone();
+    contradictory_frame_geometry.live_recording_host_audio_refs[0]
+        .timing_window
+        .as_mut()
+        .expect("V2 timing window")
+        .beat_span_per_frame_nanobeats += 1;
+    assert!(!contradictory_frame_geometry.live_recording_runtime_master_ready());
+
+    let mut duplicate_alignment_gate = v2;
+    duplicate_alignment_gate
+        .qa_gates
+        .push(ExportReceiptQaGateResult::live_recording_bar_window_alignment());
+    assert!(!duplicate_alignment_gate.live_recording_runtime_master_ready());
 }
 
 fn runtime_master_fixture_receipt() -> ExportReceiptState {
@@ -384,6 +481,7 @@ fn runtime_master_fixture_receipt() -> ExportReceiptState {
             error_count: 0,
             last_error: None,
         },
+        timing_window: None,
     }];
     receipt
 }
@@ -401,5 +499,6 @@ fn ready_live_recording_host_audio_ref() -> ExportLiveRecordingHostAudioRef {
             error_count: 0,
             last_error: None,
         },
+        timing_window: None,
     }
 }
