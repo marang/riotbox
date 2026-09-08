@@ -1679,4 +1679,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   [P2] Normalize external Graph references relative to the Session directory
 - [RIOTBOX-1489.md](./RIOTBOX-1489.md)
   [P2] Verify source WAV content identity before marking restored audio Loaded
+- [RIOTBOX-1492.md](./RIOTBOX-1492.md)
+  P016: Review the exact two-bar live master recording as a reusable musical loop
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
