@@ -1681,4 +1681,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   [P2] Verify source WAV content identity before marking restored audio Loaded
 - [RIOTBOX-1492.md](./RIOTBOX-1492.md)
   P016: Review the exact two-bar live master recording as a reusable musical loop
+- [RIOTBOX-1493.md](./RIOTBOX-1493.md)
+  P016: Extract verified DAWproject archive writer before live-master handoff
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
