@@ -28,7 +28,27 @@ fn w30_hook_dawproject_exports_byte_identical_audio_through_action_session_and_r
         .commit_w30_hook_dawproject_export(None, &destination, 1_400)
         .expect("commit W-30 DAWproject");
 
-    assert_eq!(fs::read(&destination).expect("exported archive"), legacy_archive);
+    dawproject_xml_schema::assert_dawproject_xml_documents_conform(&destination);
+
+    // RBX-373 deliberately corrects the old serializer's XML root names.
+    // The old model and embedded musical/proof payloads must remain unchanged.
+    let current_bytes = fs::read(&destination).expect("exported archive");
+    assert_ne!(current_bytes, legacy_archive);
+    let mut old_reader = DawprojectReader::new(std::io::Cursor::new(&legacy_archive)).unwrap();
+    let mut current_reader = DawprojectReader::new(std::io::Cursor::new(&current_bytes)).unwrap();
+    old_reader.read_dawproject().unwrap();
+    current_reader.read_dawproject().unwrap();
+    let old_model = old_reader.build_dawproject().unwrap();
+    let current_model = current_reader.build_dawproject().unwrap();
+    assert_eq!(old_model.project, current_model.project);
+    assert_eq!(old_model.metadata, current_model.metadata);
+    for member in ["audio/w30_hook_loop.wav", "riotbox-proof.json"] {
+        let mut old = Vec::new();
+        let mut current = Vec::new();
+        old_reader.by_name(member).unwrap().read_to_end(&mut old).unwrap();
+        current_reader.by_name(member).unwrap().read_to_end(&mut current).unwrap();
+        assert_eq!(old, current, "unchanged {member}");
+    }
 
     assert_eq!(receipt.export_scope, ExportScope::DawSession);
     assert_eq!(receipt.pack_id, "w30-hook-dawproject");
@@ -60,6 +80,15 @@ fn w30_hook_dawproject_exports_byte_identical_audio_through_action_session_and_r
     super::product_export::preflight_export_receipt_artifacts(&receipt, None)
         .expect("DAWproject receipt hydration preflight");
     let readiness = daw_export_operator_readiness_report(&state.session, None);
+    let mut historical_session = state.session.clone();
+    historical_session.export_receipts.last_mut().unwrap().qa_gates.retain(|gate| {
+        gate.gate_id != riotbox_core::session::DAWPROJECT_XML_DOCUMENT_QA_GATE_ID
+    });
+    assert_eq!(
+        daw_export_operator_readiness_report(&historical_session, None).status,
+        super::daw_export_operator_report::DawExportOperatorReadinessStatus::Blocked,
+        "historical archive-only receipt cannot certify canonical XML documents"
+    );
     assert_eq!(
         readiness.status,
         super::daw_export_operator_report::DawExportOperatorReadinessStatus::DawprojectReady

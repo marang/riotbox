@@ -687,7 +687,7 @@ of Session/Core truth rather than second readiness engines.
     timing-grid receipt evidence, safe post-write WAV metric extraction,
     recovery preflight for local artifact paths, and observer export lifecycle
     projection from queue/history plus Session receipts
-  - current live-recording export is a reserved contract only:
+  - the historical reserved live-recording boundary remains non-runnable:
     `export.live_recording`, `export_scope: live_recording`,
     `live_recording.receipt_contract_v1`, `live_recording_capture`, and
     `live-recording-receipt-contract` are stable typed identities, but no live
@@ -700,6 +700,30 @@ of Session/Core truth rather than second readiness engines.
     lifecycle path stays distinct from read-only live-recording receipt
     projection: it creates no receipt, writes no destination, and reports the
     explicit future-capture-writer reason.
+  - runnable live recording now uses the separately versioned RuntimeMaster
+    V1/V2 contracts in the Action Lexicon and Session spec. V2 owns the exact
+    real post-limiter two-bar callback recording, timing window, float32 WAV,
+    proof, receipt and host-health gates; it does not change the reserved
+    boundary above. RIOTBOX-1492's exact composite has a bounded human keep,
+    not a blanket pass for recordings or separate stems.
+  - RBX-373 corrects the shared writer's generated-type XML roots. New W-30
+    and live-master archives require `dawproject_xml_document_v1` as well as
+    archive readback. Typed serializer/reader agreement is not external schema
+    proof: synthetic XML also passes mandatory offline `xmllint` checks against
+    pinned official Project/MetaData schemas. Historical archive-only receipts
+    and failed handoff-01 are not currently qualified; their files are retained.
+    This changes container XML/hashes, not embedded audio or listening verdicts.
+  - RIOTBOX-1494's `live_master_dawproject_v1` consumes only an existing ready
+    V2 receipt and exact WAV/proof, following RBX-372 and the owning Action /
+    Session contracts. It reuses the shared archive writer, verifies recorded
+    identity and timing, and embeds byte-identical audio without a runtime or
+    source/capture hydration. The `dawproject_archive_readback` writer gate
+    applies to this distinct archive; historical JSON-skeleton gates do not.
+    Archive readiness does not clear host-import, audible-output or release
+    blockers, and it cannot inherit an isolated-lane or hardness verdict.
+    A technical-only handoff of unchanged reviewed audio requires byte/lineage
+    evidence, not repeated taste listening. Actual DAW playback remains
+    unverified until separately demonstrated in a host.
   - new evidence required before readiness: one written WAV per claimed stem
     role, per-stem format metrics, per-stem non-silence, per-stem hash
     stability across repeated writer/render output, per-stem source/capture or

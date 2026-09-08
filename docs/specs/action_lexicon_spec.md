@@ -965,11 +965,36 @@ Contract for `export.stem_package`:
   `riotbox-app --w30-hook-dawproject-execute --session <session.json>
   --daw-session-destination <file.dawproject> [--observer <events.ndjson>]`.
   For this distinct boundary, the passed `dawproject_archive_readback` gate and
+  exactly one passed `dawproject_xml_document_v1` gate (RBX-373) are required;
+  historical archive-only receipts remain unqualified for current readiness
+  and their files are not rewritten. The archive gate and
   its `daw_project_file` / `daw_project_proof` artifacts are the writer layer;
   the older JSON-package and local-skeleton writer gates do not apply. Generic
   DAW readiness and observer projections recognize that identity without
   clearing the still-missing host-import, audible-output, or release-policy
   blockers.
+- Current live-master DAWproject action boundary (RIOTBOX-1494):
+  `export.daw_session` with `live_master_dawproject_v1` selects the latest
+  `live_recording.runtime_master_bar_window_v2` receipt and requires it to be
+  ready; an invalid newer take never falls back to an older one. Its receipt
+  ID is pinned when queued. Its destination is one fresh `.dawproject` file;
+  target is Session and undo is `NotUndoable`. The source is the complete
+  recorded master, never a W-30 hook or editable stem. Only the exact local
+  WAV and proof declared by that receipt may be read. Hashes, typed proof,
+  format, recorded tempo/window and lineage must agree before publication.
+  The archive contains `project.xml`, `metadata.xml`,
+  `audio/live_master.wav` and `riotbox-proof.json`, with one eight-beat clip
+  at beat zero, 4/4, using the recording's tempo (not a later live tempo).
+  Action/receipt commit follows archive readback and the versioned
+  `dawproject_xml_document_v1` check (RBX-373). Both unique passed gates are
+  required for current DAWproject readiness; Session-save failure rolls
+  back the new in-memory commit and removes only the newly owned archive.
+  Replay restores identity without rewriting or rendering files. The sole
+  ingress is `just live-master-dawproject <session> <destination> [observer]`,
+  using metadata-only Session hydration. No audio runtime, source/capture
+  hydration, host launch, TUI/Ghost affordance, host-import pass or new human
+  verdict is implied. An optional observer must be fresh/non-aliasing;
+  observer failure after saved success is reported separately.
 - Current DAW writer proof skeleton:
   `riotbox-app --daw-session-writer-proof-execute --session <session.json>
   --daw-session-destination <dir>` requires a ready DAW-session receipt plus a

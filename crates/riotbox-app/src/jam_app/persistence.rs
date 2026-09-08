@@ -11,19 +11,50 @@ impl JamAppState {
         session_path: impl AsRef<Path>,
         source_graph_path: Option<impl AsRef<Path>>,
     ) -> Result<Self, JamAppError> {
+        Self::from_json_files_with_hydration_policy(
+            session_path,
+            source_graph_path,
+            SessionHydrationPolicy::RuntimeFull,
+        )
+    }
+
+    /// Restores only Session metadata for an export that consumes an already
+    /// recorded artifact. It never resolves graph references or hydrates source
+    /// or capture audio.
+    pub fn from_json_files_for_export_metadata(
+        session_path: impl AsRef<Path>,
+    ) -> Result<Self, JamAppError> {
+        Self::from_json_files_with_hydration_policy(
+            session_path,
+            None::<&Path>,
+            SessionHydrationPolicy::ExportMetadataOnly,
+        )
+    }
+
+    fn from_json_files_with_hydration_policy(
+        session_path: impl AsRef<Path>,
+        source_graph_path: Option<impl AsRef<Path>>,
+        hydration_policy: SessionHydrationPolicy,
+    ) -> Result<Self, JamAppError> {
         let session_path = graph_paths::anchored_file_path(session_path.as_ref())?;
         let mut session = load_session_json(&session_path)?;
         normalize_w30_preview_mode(&mut session);
         normalize_missing_typed_undo_policies(&mut session);
         validate_mvp_session_restore_contracts(&session)?;
-        let explicit_source_graph_path = source_graph_path
-            .map(|path| graph_paths::anchored_file_path(path.as_ref()))
-            .transpose()?;
-        let source_graph = resolve_source_graph(
-            &session,
-            &session_path,
-            explicit_source_graph_path.as_deref(),
-        )?;
+        let (explicit_source_graph_path, source_graph) = match hydration_policy {
+            SessionHydrationPolicy::RuntimeFull => {
+                let explicit_source_graph_path = source_graph_path
+                    .map(|path| graph_paths::anchored_file_path(path.as_ref()))
+                    .transpose()?;
+                let source_graph = resolve_source_graph(
+                    &session,
+                    &session_path,
+                    explicit_source_graph_path.as_deref(),
+                )?;
+                (explicit_source_graph_path, source_graph)
+            }
+            SessionHydrationPolicy::ExportMetadataOnly => (None, None),
+        };
         normalize_scene_candidates(&mut session, source_graph.as_ref());
         let mut queue = ActionQueue::new();
         queue.reserve_action_ids_after(max_action_id(&session));
@@ -32,13 +63,18 @@ impl JamAppState {
         let jam_view = JamViewModel::build(&session, &queue, source_graph.as_ref());
         let runtime_view =
             JamRuntimeView::build(&AppRuntimeState::default(), &session, source_graph.as_ref());
-        let (source_audio_cache, source_audio_status) =
-            load_source_audio_cache_for_graph(&session, source_graph.as_ref());
+        let (source_audio_cache, source_audio_status) = match hydration_policy {
+            SessionHydrationPolicy::RuntimeFull => {
+                load_source_audio_cache_for_graph(&session, source_graph.as_ref())
+            }
+            SessionHydrationPolicy::ExportMetadataOnly => (None, SourceAudioStatus::NotRequested),
+        };
         let mut state = Self {
             files: Some(JamFileSet {
                 session_path,
                 source_graph_path: explicit_source_graph_path,
             }),
+            session_hydration_policy: hydration_policy,
             session,
             source_graph,
             source_audio_cache,
@@ -55,7 +91,9 @@ impl JamAppState {
             jam_view,
             runtime_view,
         };
-        state.refresh_capture_audio_cache();
+        if hydration_policy == SessionHydrationPolicy::RuntimeFull {
+            state.refresh_capture_audio_cache();
+        }
         state.refresh_view();
         Ok(state)
     }
@@ -162,6 +200,11 @@ impl JamAppState {
     pub fn save(&self) -> Result<(), JamAppError> {
         if let Some(files) = &self.files {
             let session_to_save = self.session_prepared_for_save()?;
+            if self.session_hydration_policy == SessionHydrationPolicy::ExportMetadataOnly {
+                graph_transaction::validate_mutable_destination(&files.session_path)?;
+                save_session_json(&files.session_path, &session_to_save)?;
+                return Ok(());
+            }
             let graph_path = resolve_external_graph_path(
                 &session_to_save,
                 &files.session_path,
@@ -184,11 +227,13 @@ impl JamAppState {
             let session_to_save = self.session_prepared_for_save()?;
             // Recording rollback relies on failure occurring before Session
             // publication, including when an unsaved graph has changed its hash.
-            resolve_source_graph(
-                &session_to_save,
-                &files.session_path,
-                files.source_graph_path.as_deref(),
-            )?;
+            if self.session_hydration_policy == SessionHydrationPolicy::RuntimeFull {
+                resolve_source_graph(
+                    &session_to_save,
+                    &files.session_path,
+                    files.source_graph_path.as_deref(),
+                )?;
+            }
             save_session_json(&files.session_path, &session_to_save)?;
         }
         Ok(())
@@ -197,16 +242,18 @@ impl JamAppState {
     fn session_prepared_for_save(&self) -> Result<SessionFile, JamAppError> {
         let mut session_to_save = self.session.clone();
         sync_latest_snapshot_payloads(&mut session_to_save);
-        sync_graph_refs_with_state(
-            &mut session_to_save,
-            self.source_graph.as_ref(),
-            self.files
-                .as_ref()
-                .map(|files| files.session_path.as_path()),
-            self.files
-                .as_ref()
-                .and_then(|files| files.source_graph_path.as_deref()),
-        )?;
+        if self.session_hydration_policy == SessionHydrationPolicy::RuntimeFull {
+            sync_graph_refs_with_state(
+                &mut session_to_save,
+                self.source_graph.as_ref(),
+                self.files
+                    .as_ref()
+                    .map(|files| files.session_path.as_path()),
+                self.files
+                    .as_ref()
+                    .and_then(|files| files.source_graph_path.as_deref()),
+            )?;
+        }
         Ok(session_to_save)
     }
 }

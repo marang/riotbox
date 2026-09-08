@@ -201,6 +201,15 @@ fn launch_summary(launch: &AppLaunch) -> Value {
             "destination_path": destination_path,
             "observer_path": launch.observer_path,
         }),
+        LaunchMode::LiveMasterDawprojectExecute {
+            session_path,
+            destination_path,
+        } => json!({
+            "mode": "live_master_dawproject_execute",
+            "session_path": session_path,
+            "destination_path": destination_path,
+            "observer_path": launch.observer_path,
+        }),
         LaunchMode::DawSessionWriterPlan {
             session_path,
             destination_path,

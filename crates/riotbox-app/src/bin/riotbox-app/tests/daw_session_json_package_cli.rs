@@ -36,6 +36,7 @@ fn parse_args_builds_daw_session_json_package_execute_mode() {
         | LaunchMode::DawSessionWriterProofApply { .. }
         | LaunchMode::DawSessionWriterExportExecute { .. }
         | LaunchMode::W30HookDawprojectExecute { .. }
+        | LaunchMode::LiveMasterDawprojectExecute { .. }
         | LaunchMode::DawSessionWriterPlan { .. } => {
             panic!("expected DAW session JSON package execute mode")
         }
@@ -80,6 +81,7 @@ fn parse_args_builds_daw_session_json_package_evidence_apply_mode() {
         | LaunchMode::DawSessionWriterProofApply { .. }
         | LaunchMode::DawSessionWriterExportExecute { .. }
         | LaunchMode::W30HookDawprojectExecute { .. }
+        | LaunchMode::LiveMasterDawprojectExecute { .. }
         | LaunchMode::DawSessionWriterPlan { .. } => {
             panic!("expected DAW session JSON package evidence apply mode")
         }
@@ -127,6 +129,7 @@ fn parse_args_builds_daw_session_host_import_proof_apply_mode() {
         | LaunchMode::DawSessionWriterProofApply { .. }
         | LaunchMode::DawSessionWriterExportExecute { .. }
         | LaunchMode::W30HookDawprojectExecute { .. }
+        | LaunchMode::LiveMasterDawprojectExecute { .. }
         | LaunchMode::DawSessionWriterPlan { .. } => {
             panic!("expected DAW session host import proof apply mode")
         }
@@ -203,6 +206,7 @@ fn parse_args_builds_daw_session_audible_output_proof_apply_mode() {
         | LaunchMode::DawSessionWriterProofApply { .. }
         | LaunchMode::DawSessionWriterExportExecute { .. }
         | LaunchMode::W30HookDawprojectExecute { .. }
+        | LaunchMode::LiveMasterDawprojectExecute { .. }
         | LaunchMode::DawSessionWriterPlan { .. } => {
             panic!("expected DAW session audible output proof apply mode")
         }

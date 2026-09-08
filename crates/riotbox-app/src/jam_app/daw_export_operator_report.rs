@@ -240,6 +240,14 @@ fn report_for_receipt(
     let artifact_preflight = artifact_preflight_summary(receipt, base_dir);
     let mut readiness_blockers = Vec::new();
 
+    if receipt.is_dawproject_archive_receipt() && !receipt.dawproject_xml_document_ready() {
+        readiness_blockers.push(DawExportReadinessBlocker::MissingArtifactIdentity);
+    }
+
+    if receipt.is_live_master_dawproject_v1() && !receipt.live_master_dawproject_archive_ready() {
+        readiness_blockers.push(DawExportReadinessBlocker::MissingArtifactIdentity);
+    }
+
     if receipt
         .unsupported_scopes
         .contains(&riotbox_core::export_readiness::UnsupportedExportScope::DawExport)
@@ -286,7 +294,7 @@ fn report_for_receipt(
     let proof_gates = proof_gates_summary(receipt);
     let proof_stack = daw_export_proof_stack_summary_for_receipt(receipt, &proof_gates);
     let dawproject_ready = ready_for_next_gate
-        && receipt.is_w30_hook_dawproject_v1()
+        && receipt.is_dawproject_archive_receipt()
         && proof_gates.writer_proof.status == DawExportProofGateStatus::Passed;
     DawExportOperatorReadinessReport {
         status: if dawproject_ready {
@@ -306,7 +314,11 @@ fn report_for_receipt(
             DawExportDeveloperProofStatus::ReceiptBlocked
         },
         musician_export_readiness: if dawproject_ready {
-            "bounded_w30_dawproject_ready"
+            if receipt.is_w30_hook_dawproject_v1() {
+                "bounded_w30_dawproject_ready"
+            } else {
+                "bounded_live_master_dawproject_ready"
+            }
         } else {
             "not_final_daw_export_workflow"
         },
@@ -328,7 +340,7 @@ pub(crate) fn daw_export_proof_stack_summary_for_receipt(
 ) -> DawExportProofStackSummary {
     daw_export_proof_stack_summary_with_json_requirement(
         proof_gates,
-        !receipt.is_w30_hook_dawproject_v1(),
+        !receipt.is_dawproject_archive_receipt(),
     )
 }
 

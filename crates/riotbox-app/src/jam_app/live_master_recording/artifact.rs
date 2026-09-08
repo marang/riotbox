@@ -567,6 +567,29 @@ fn decode_float32_wav(
         .collect())
 }
 
+/// Validates the frozen live-master IEEE-float32 WAV representation without
+/// re-encoding or otherwise transforming its payload.  Consumers which hand
+/// the exact recorded buffer to another container use this narrow seam rather
+/// than introducing another RIFF parser.
+pub(in crate::jam_app) fn decode_recorded_float32_wav(
+    bytes: &[u8],
+    sample_rate: u32,
+    channel_count: u16,
+    frame_count: usize,
+) -> Result<Vec<f32>, JamAppError> {
+    let samples = decode_float32_wav(bytes, sample_rate, channel_count, frame_count)?;
+    if samples.iter().any(|sample| !sample.is_finite()) {
+        return Err(JamAppError::InvalidSession(
+            "live float32 WAV contains a non-finite recorded sample".into(),
+        ));
+    }
+    Ok(samples)
+}
+
+pub(in crate::jam_app) fn recorded_float32_sample_payload_sha256(samples: &[f32]) -> String {
+    sha256_float_samples(samples)
+}
+
 fn read_u16(bytes: &[u8], offset: usize) -> Result<u16, JamAppError> {
     let value = bytes
         .get(offset..offset + 2)

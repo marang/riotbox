@@ -14,6 +14,7 @@ pub const DAW_SESSION_WRITER_QA_GATE_ID: &str = "daw_session_writer_proof";
 pub const DAW_SESSION_HOST_IMPORT_QA_GATE_ID: &str = "daw_session_host_import_proof";
 pub const DAW_SESSION_AUDIBLE_OUTPUT_QA_GATE_ID: &str = "daw_session_audible_output_proof";
 pub const DAWPROJECT_ARCHIVE_QA_GATE_ID: &str = "dawproject_archive_readback";
+pub const DAWPROJECT_XML_DOCUMENT_QA_GATE_ID: &str = "dawproject_xml_document_v1";
 pub const LIVE_RECORDING_RUNTIME_CAPTURE_QA_GATE_ID: &str = "live_recording_runtime_master_capture";
 pub const LIVE_RECORDING_WAV_READBACK_QA_GATE_ID: &str = "live_recording_wav_readback";
 pub const LIVE_RECORDING_BAR_WINDOW_ALIGNMENT_QA_GATE_ID: &str =
@@ -222,6 +223,34 @@ impl ExportReceiptQaGateResult {
             ],
             summary: Some(
                 "DAWproject model, tempo, placement, embedded proof, and byte-identical W-30 audio passed exact read-back"
+                    .into(),
+            ),
+        }
+    }
+
+    #[must_use]
+    pub fn dawproject_xml_document() -> Self {
+        Self {
+            gate_id: DAWPROJECT_XML_DOCUMENT_QA_GATE_ID.into(),
+            status: ExportReceiptQaGateStatus::Passed,
+            artifact_roles: vec![ExportArtifactRole::DawProjectFile, ExportArtifactRole::ExportManifest],
+            summary: Some("Canonical Project/MetaData XML document roots and typed model readback passed; host import remains unproven".into()),
+        }
+    }
+
+    #[must_use]
+    pub fn live_master_dawproject_archive_readback() -> Self {
+        Self {
+            gate_id: DAWPROJECT_ARCHIVE_QA_GATE_ID.into(),
+            status: ExportReceiptQaGateStatus::Passed,
+            artifact_roles: vec![
+                ExportArtifactRole::DawProjectFile,
+                ExportArtifactRole::LiveRecordingCapture,
+                ExportArtifactRole::ExportManifest,
+                ExportArtifactRole::DawProjectProof,
+            ],
+            summary: Some(
+                "DAWproject model, tempo, placement, embedded proof, and byte-identical live master audio passed exact read-back"
                     .into(),
             ),
         }

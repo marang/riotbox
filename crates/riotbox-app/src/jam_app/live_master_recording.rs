@@ -26,6 +26,9 @@ use artifact::{
     build_recording_receipt, prepare_validated_recording, publish_recording, remove_file_if_hash,
     remove_owned_recording,
 };
+pub(in crate::jam_app) use artifact::{
+    decode_recorded_float32_wav, recorded_float32_sample_payload_sha256,
+};
 use session_identity::prepare_recording_plan_input;
 
 pub const LIVE_MASTER_RECORDING_DURATION_BEATS: u32 = 8;

@@ -192,6 +192,7 @@ mod tests {
             | LaunchMode::DawSessionWriterProofApply { .. }
             | LaunchMode::DawSessionWriterExportExecute { .. }
             | LaunchMode::W30HookDawprojectExecute { .. }
+            | LaunchMode::LiveMasterDawprojectExecute { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected ingest mode"),
         }
     }
@@ -311,6 +312,7 @@ mod tests {
             | LaunchMode::DawSessionWriterProofApply { .. }
             | LaunchMode::DawSessionWriterExportExecute { .. }
             | LaunchMode::W30HookDawprojectExecute { .. }
+            | LaunchMode::LiveMasterDawprojectExecute { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected ingest mode"),
         }
     }
@@ -352,6 +354,7 @@ mod tests {
             | LaunchMode::DawSessionWriterProofApply { .. }
             | LaunchMode::DawSessionWriterExportExecute { .. }
             | LaunchMode::W30HookDawprojectExecute { .. }
+            | LaunchMode::LiveMasterDawprojectExecute { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected load mode"),
         }
     }
@@ -388,6 +391,7 @@ mod tests {
             | LaunchMode::DawSessionWriterProofApply { .. }
             | LaunchMode::DawSessionWriterExportExecute { .. }
             | LaunchMode::W30HookDawprojectExecute { .. }
+            | LaunchMode::LiveMasterDawprojectExecute { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected load mode"),
         }
     }

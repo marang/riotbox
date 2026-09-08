@@ -42,6 +42,7 @@ mod ghost_candidates;
 mod ghost_queue;
 mod helpers;
 mod lifecycle;
+mod live_master_dawproject;
 mod live_master_recording;
 mod live_source_timing;
 mod mc202_queue;
@@ -123,6 +124,10 @@ use helpers::{
     is_mc202_phrase_action, max_action_id, normalize_missing_typed_undo_policies,
     update_logged_action_result,
 };
+pub use live_master_dawproject::{
+    LIVE_MASTER_DAWPROJECT_ACTION_BOUNDARY_ID, LIVE_MASTER_DAWPROJECT_PROOF_SCHEMA,
+    LiveMasterDawprojectProof,
+};
 pub use live_master_recording::{
     LIVE_MASTER_RECORDING_DURATION_BEATS, LIVE_MASTER_RECORDING_PROOF_SCHEMA,
     LiveMasterRecordingPlan, LiveMasterRecordingProof, LiveMasterRecordingQueueResult,
@@ -152,8 +157,9 @@ use side_effects::{
 };
 pub use source_map_navigation::{SourceMapNavigationIntent, SourceMapNavigationResult};
 pub use state::{
-    AppRuntimeState, JamAppError, JamAppState, JamFileSet, QueueControlResult, SidecarState,
-    SourceAudioRuntimeState, SourceAudioStatus, TransportDriverState,
+    AppRuntimeState, JamAppError, JamAppState, JamFileSet, QueueControlResult,
+    SessionHydrationPolicy, SidecarState, SourceAudioRuntimeState, SourceAudioStatus,
+    TransportDriverState,
 };
 pub use transport::TransportToggleCommit;
 use transport_helpers::{normalize_scene_candidates, transport_clock_from_state};

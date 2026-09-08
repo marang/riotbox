@@ -2157,3 +2157,11 @@ It is not a new musician-facing capability or musical qualification. The
 following slice must reuse that mechanism for the existing committed V2
 recording, retain its full-master identity and recorded timing, and must not
 rerender or relabel it as an isolated hook or editable stems.
+
+RIOTBOX-1494 implements that exact handoff under RBX-372: one committed V2
+live-master receipt becomes a byte-identical eight-beat DAWproject clip at the
+recorded tempo. A typed metadata-only mode reuses the existing restore/save
+pipeline without loading Source Graph files or source/capture audio, preserving
+stored references rather than constructing a second persistence model. The
+existing recording and human review remain immutable; archive readiness and
+existing listening evidence do not claim host import or audible DAW playback.

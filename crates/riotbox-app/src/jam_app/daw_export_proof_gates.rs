@@ -99,8 +99,11 @@ pub fn default_daw_export_release_blockers() -> Vec<DawExportReleaseBlocker> {
 
 pub fn release_blockers_for_receipt(receipt: &ExportReceiptState) -> Vec<DawExportReleaseBlocker> {
     let mut blockers = vec![DawExportReleaseBlocker::DeveloperProofOnly];
-    let writer_passed = if receipt.is_w30_hook_dawproject_v1() {
+    let writer_passed = if receipt.is_live_master_dawproject_v1() {
+        receipt.live_master_dawproject_archive_ready()
+    } else if receipt.is_dawproject_archive_receipt() {
         gate_passed(receipt, DAWPROJECT_ARCHIVE_QA_GATE_ID)
+            && receipt.dawproject_xml_document_ready()
     } else {
         gate_passed(receipt, DAW_SESSION_WRITER_QA_GATE_ID)
     };
@@ -117,8 +120,8 @@ pub fn release_blockers_for_receipt(receipt: &ExportReceiptState) -> Vec<DawExpo
 }
 
 pub fn proof_gates_summary(receipt: &ExportReceiptState) -> DawExportProofGatesSummary {
-    let w30_dawproject = receipt.is_w30_hook_dawproject_v1();
-    let writer_proof = if w30_dawproject {
+    let dawproject_archive = receipt.is_dawproject_archive_receipt();
+    let writer_proof = if dawproject_archive {
         proof_gate_summary(
             receipt,
             DAWPROJECT_ARCHIVE_QA_GATE_ID,
@@ -135,7 +138,7 @@ pub fn proof_gates_summary(receipt: &ExportReceiptState) -> DawExportProofGatesS
         )
     };
     DawExportProofGatesSummary {
-        json_package_integrity: if w30_dawproject {
+        json_package_integrity: if dawproject_archive {
             DawExportProofGateSummary::not_applicable(DAW_SESSION_JSON_PACKAGE_QA_GATE_ID)
         } else {
             proof_gate_summary(
@@ -186,7 +189,19 @@ fn proof_gate_summary(
         };
     };
 
-    gate_summary(gate_id, gate, artifact_roles, artifacts)
+    let mut summary = gate_summary(gate_id, gate, artifact_roles, artifacts);
+    if gate_id == DAWPROJECT_ARCHIVE_QA_GATE_ID
+        && receipt.is_dawproject_archive_receipt()
+        && (!receipt.dawproject_xml_document_ready()
+            || (receipt.is_live_master_dawproject_v1()
+                && !receipt.live_master_dawproject_archive_ready()))
+    {
+        summary.status = DawExportProofGateStatus::Failed;
+        summary.summary = Some(
+            "DAWproject archive receipt document or artifact identity is incomplete or contradictory".into(),
+        );
+    }
+    summary
 }
 
 fn gate_summary(

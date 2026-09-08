@@ -50,6 +50,7 @@ impl LaunchMode {
             | Self::DawSessionWriterProofApply { .. }
             | Self::DawSessionWriterExportExecute { .. }
             | Self::W30HookDawprojectExecute { .. }
+            | Self::LiveMasterDawprojectExecute { .. }
             | Self::DawSessionWriterPlan { .. } => ShellLaunchMode::Load,
         }
     }

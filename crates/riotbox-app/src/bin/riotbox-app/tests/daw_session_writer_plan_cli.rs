@@ -48,7 +48,8 @@ fn parse_args_builds_daw_session_writer_plan_mode() {
         | LaunchMode::DawSessionWriterProofExecute { .. }
         | LaunchMode::DawSessionWriterProofApply { .. }
         | LaunchMode::DawSessionWriterExportExecute { .. }
-        | LaunchMode::W30HookDawprojectExecute { .. } => {
+        | LaunchMode::W30HookDawprojectExecute { .. }
+        | LaunchMode::LiveMasterDawprojectExecute { .. } => {
             panic!("expected DAW session writer plan mode")
         }
     }

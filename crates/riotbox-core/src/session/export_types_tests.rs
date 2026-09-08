@@ -3,7 +3,7 @@ use super::*;
 use crate::{
     export_readiness::{
         ARRANGEMENT_DAW_PLACEMENT_PACK_ID, EXPORT_READINESS_CONTRACT_SCHEMA,
-        PRODUCT_EXPORT_PACK_ID, PRODUCT_EXPORT_PROOF_SCHEMA,
+        LIVE_MASTER_DAWPROJECT_PACK_ID, PRODUCT_EXPORT_PACK_ID, PRODUCT_EXPORT_PROOF_SCHEMA,
     },
     ids::{ActionId, SourceId},
     session::{
@@ -260,6 +260,31 @@ fn daw_session_export_contract_names_are_stable_but_not_product_mix_defaults() {
         "arrangement-daw-placement-contract"
     );
     assert_eq!(default_export_scope(), ExportScope::ProductMix);
+}
+
+#[test]
+fn live_master_dawproject_receipt_has_distinct_typed_identity() {
+    let mut receipt = fixture_receipt();
+    receipt.export_scope = ExportScope::DawSession;
+    receipt.pack_id = LIVE_MASTER_DAWPROJECT_PACK_ID.into();
+    receipt.export_role = ProductExportRole::ArrangementManifest;
+    receipt.export_boundary = ProductExportBoundary::DawSessionLiveMasterDawprojectV1;
+
+    assert!(receipt.is_live_master_dawproject_v1());
+    assert!(receipt.is_dawproject_archive_receipt());
+    assert_eq!(
+        serde_json::to_value(&receipt).expect("serialize receipt")["export_boundary"],
+        "daw_session_live_master_dawproject_v1"
+    );
+    assert_eq!(
+        ProductExportBoundary::DawSessionLiveMasterDawprojectV1.as_proof_str(),
+        "daw_session.live_master_dawproject_v1"
+    );
+
+    receipt.export_boundary = ProductExportBoundary::DawSessionW30HookDawprojectV1;
+    receipt.pack_id = crate::export_readiness::W30_HOOK_DAWPROJECT_PACK_ID.into();
+    assert!(receipt.is_w30_hook_dawproject_v1());
+    assert!(receipt.is_dawproject_archive_receipt());
 }
 
 #[test]

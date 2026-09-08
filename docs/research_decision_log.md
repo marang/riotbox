@@ -5021,3 +5021,31 @@ Why: the upcoming live-master consumer has different float32 format, timing, and
 Evidence: RIOTBOX-1493 owns synthetic byte-compatibility and archive failure tests plus independent Rust branch review. RIOTBOX-1494 is the directly following committed-V2-live-recording handoff, not a capability delivered by the extraction itself.
 Consequences: no new ActionCommand, serialized Session state, audio generation, source access, or listening verdict. No generic plugin/export framework or additional textual includes. The live-master action/receipt/proof contract must be frozen separately before its implementation.
 Status: accepted
+
+---
+
+### RBX-372
+
+Date: 2026-09-08
+Topic: export an existing bar-aligned live master without rehydrating its sources
+Phase: P016 / bounded recording-to-DAW handoff
+Question: how can a kept recording become a DAW clip while retaining its actual master identity and timing, without rerendering or reopening source audio?
+Decision: add the separately typed `export.daw_session` action boundary `live_master_dawproject_v1`, receipt boundary `daw_session.live_master_dawproject_v1`, pack `live-master-dawproject`, and proof `riotbox.live_master_dawproject.v1`. Consume only a ready Session-owned RuntimeMasterBarWindowV2 receipt pinned at queue time and its exact hash-matched local WAV/proof. Cross-check the existing capture proof against Session/receipt identity, format, recorded tempo/window, scene and lineage. Use RBX-371's shared archive mechanism to embed unchanged float32 audio as `audio/live_master.wav`; place one clip at beat zero for eight beats in 4/4 at the recorded tempo while preserving original transport positions in proof. Do not use current transport tempo to reinterpret an older take.
+Why: a full master is neither an isolated semantic W-30 hook nor rejected post-bus contribution stems. A recording-to-DAW handoff needs no live renderer, source graph loading or source/capture audio cache. A typed metadata-only policy in the existing restore/save pipeline can preserve Session graph refs verbatim without inventing separate persistence truth.
+Evidence: RIOTBOX-1494 must prove same-buffer hash/proof identity, exact embedded bytes and typed XML placement, queue/receipt/commit/replay, no-clobber and Session-save rollback, metadata-only no-access, ordinary restore regression, CLI/observer, and unchanged W-30 export. Existing RIOTBOX-1492 take-02 is the only authorized non-synthetic handoff input: its Session JSON, runtime-master.wav (SHA-256 8d598b852a2811c7614de8755d7a9da870339b75582a922510e6c82b1d77f4c0), and runtime-master.wav.riotbox.json (SHA-256 2ae77d457959cc31093c604ddeddc6a2b23665d2e0d300a2de67bd01f995a622). Work on a fresh copied Session, not the hash-bound review Session; use a bounded access log. No source graph file, capture WAV, source directory, Holdout or commercial reference is authorized by this slice.
+Consequences: no new ActionCommand, DSP, recording, TUI/Ghost or source-intelligence path. Archive readiness is not host-import, audible-DAW, release, hardness or a new human verdict. No repeated listening for unchanged audio. Fail closed on missing or contradictory evidence; do not repair it by opening other files. The original capture and review evidence remain immutable.
+Status: accepted
+
+---
+
+### RBX-373
+
+Date: 2026-09-08
+Topic: independently validate DAWproject document names instead of trusting a self-consistent serializer roundtrip
+Phase: P016 / RIOTBOX-1494 required export correction
+Question: what must happen when the shared dependency writes ProjectType/MetaDataType and accepts those same non-standard roots on readback?
+Decision: correct the shared writer's document serialization using explicitly named Project and MetaData roots from the official DAWproject 1.0 schemas, retaining the typed models and ZIP/publication owner. Add the versioned receipt gate dawproject_xml_document_v1; new W-30 and live-master exports require it in addition to archive readback before claiming DAWproject readiness. The gate proves canonical XML document roots with typed readback, not host import or a general XSD validator. Independently validate synthetic export XML against pinned upstream schemas. Old receipts missing this gate remain historical/unqualified for current DAWproject readiness; do not rewrite their artifacts. This is serialization revision 2 of the shared writer, not an audio, detector, threshold, source-analysis or musical-boundary change.
+Why: RIOTBOX-1494 handoff-01 embedded the exact authorized WAV and passed typed readback, but independent XML inspection rejected ProjectType. Official Project.xsd declares Project and MetaData.xsd declares MetaData. The pinned dawproject 0.11.0 writer serializes generated Rust type names, so comparing its reader to its writer cannot establish external format conformance. RBX-371's earlier byte-compatibility extraction correctly preserved existing behavior but could not certify that behavior against the external schema.
+Evidence: retain failed handoff-01 and its bounded access log; no additional original-source/capture/holdout access or listening is authorized. Reproduce with synthetic models first, add root-negative and schema tests, preserve audio/proof member bytes and semantic model identity, then use a fresh handoff directory and access log for the unchanged approved recording. Upstream references: https://github.com/bitwig/dawproject/blob/main/Project.xsd and https://github.com/bitwig/dawproject/blob/main/MetaData.xsd.
+Consequences: archive/XML hashes intentionally change for newly generated corrected containers; historic W-30/current failed artifacts are not migrated silently. Update the prior byte-differential test to prove only the intended XML serialization delta and unchanged audio/proof content. The production claim remains archive/document readiness, never DAW-host/audio/release qualification. Required refactoring and this directly blocking format correction remain in RIOTBOX-1494 rather than being postponed.
+Status: accepted

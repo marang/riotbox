@@ -71,6 +71,19 @@ impl ExportReceiptState {
     }
 
     #[must_use]
+    pub fn is_live_master_dawproject_v1(&self) -> bool {
+        self.export_scope == ExportScope::DawSession
+            && self.pack_id == crate::export_readiness::LIVE_MASTER_DAWPROJECT_PACK_ID
+            && self.export_role == ProductExportRole::ArrangementManifest
+            && self.export_boundary == ProductExportBoundary::DawSessionLiveMasterDawprojectV1
+    }
+
+    #[must_use]
+    pub fn is_dawproject_archive_receipt(&self) -> bool {
+        self.is_w30_hook_dawproject_v1() || self.is_live_master_dawproject_v1()
+    }
+
+    #[must_use]
     pub fn is_live_recording_runtime_master_v1(&self) -> bool {
         self.export_scope == ExportScope::LiveRecording
             && self.pack_id == crate::export_readiness::LIVE_RECORDING_RUNTIME_MASTER_PACK_ID
