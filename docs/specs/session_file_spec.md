@@ -144,6 +144,15 @@ MVP note:
 
 - Riotbox MVP currently supports exactly one active source graph reference per session
 - that graph reference must match the single active `source_ref`
+- Relative `external_path` values always resolve from the Session directory.
+  CLI Session/Graph paths are interpreted against the current working directory
+  once and anchored for the lifetime of the loaded app. Ingest and saves with
+  an explicit Graph override store a Session-relative reference when possible;
+  existing absolute references remain supported.
+- Legacy references accidentally stored relative to the original working
+  directory are not guessed or searched. Supply the intended explicit Graph
+  path, which must pass the existing hash check, then save to normalize the
+  reference. Ordinary loading never rewrites the Session as a repair side effect.
 - plural shape is retained for forward compatibility, not to imply current multi-source support in the app/runtime
 
 ---
