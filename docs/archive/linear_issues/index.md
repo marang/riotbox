@@ -1675,4 +1675,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   [P1] Preserve the last loadable Session/Source Graph pair after a failed save
 - [RIOTBOX-1490.md](./RIOTBOX-1490.md)
   [P2] Reject overflowing WAV block alignment without panics in decoder and writer
+- [RIOTBOX-1488.md](./RIOTBOX-1488.md)
+  [P2] Normalize external Graph references relative to the Session directory
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
