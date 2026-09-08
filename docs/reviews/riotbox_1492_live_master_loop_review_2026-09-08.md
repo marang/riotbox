@@ -1,6 +1,6 @@
 # RIOTBOX-1492 — Exact live master loop review
 
-Status: take-02 technical preflight and independent assessment complete; awaiting human readiness
+Status: exact take-02 composite loop accepted by human review
 
 ## Bounded purpose
 
@@ -190,3 +190,32 @@ It confirms the composite assignment and separates technical validity from
 predicted musical usefulness. Its prediction is retained unchanged for later
 comparison with the listener, not used as a human verdict. Focused
 `just live-master-recording-contract-smoke` passes. No human playback yet.
+
+## Human verdict and scope
+
+After fresh explicit readiness, the exact eight-second presentation played once
+through the physical default output. Playback exited normally; subsequent
+PipeWire inspection found no remaining review stream. Other desktop audio was
+not modified or claimed silent. The listener asked whether the beat inside the
+hook was the target. The review scope was clarified as the entire recorded
+hook-plus-beat loop, not isolated drums or hardness; no redundant replay followed.
+
+The listener accepted it: the sound was good and hook/beat were well matched.
+Record `human_verdict: keep` for this exact composite loop and its bounded reuse
+question. No strongest element, separate hook-strength/source-recognition score,
+or explicit click/seam rating was supplied. Those dimensions are not invented;
+the raw seam measurements remain technical evidence only. The prior agent
+prediction stays unchanged rather than being rewritten to agree with feedback.
+
+- Structured review: `artifacts/audio_qa/local/listening-reviews/RIOTBOX-1492/review.json`
+- Structured review SHA-256:
+  `ae8bd981061625ab24fc3f3101718d451d4a121c5bc22f78b41f83138a22a18d`
+- Summary SHA-256:
+  `7a015525f0cf6f8f0091b56f4edfbb2d522585b69e70f2f7e10922699278f42c`
+
+This completes one exact V2 live-recording loop review. It changes no product
+code, sound recipe, thresholds, Session schema, TUI, or export behavior. It does
+not prove isolated W-30 quality, source-composed TR-909 intelligence, hardness,
+bass pressure, source generality, physical capture-device endurance, DAW import,
+demo-bank promotion, or overall release readiness. RIOTBOX-1036 remains the
+broader recording/export anchor; RIOTBOX-1491 and TUI remain deferred.
