@@ -2,7 +2,10 @@ use std::{f32::consts::PI, fs, path::Path};
 
 use tempfile::tempdir;
 
-use super::{SourceAudioCache, SourceAudioError, SourceAudioWindow, cache::decode_pcm_wav};
+use super::{
+    SourceAudioCache, SourceAudioError, SourceAudioWindow, cache::decode_pcm_wav,
+    write_interleaved_pcm16_wav,
+};
 
 #[test]
 fn loads_pcm16_wav_into_interleaved_float_cache() {
@@ -185,6 +188,88 @@ fn rejects_non_wave_bytes() {
     );
 }
 
+#[test]
+fn loads_normal_mono_and_stereo_pcm16_and_pcm24_wavs() {
+    for (bits_per_sample, channel_count) in [(16, 1), (16, 2), (24, 1), (24, 2)] {
+        let bytes = pcm_wave_fixture(
+            44_100,
+            channel_count,
+            bits_per_sample,
+            channel_count * (bits_per_sample / 8),
+        );
+
+        assert!(
+            decode_pcm_wav(&bytes).is_ok(),
+            "normal PCM format should load"
+        );
+    }
+}
+
+#[test]
+fn rejects_pcm16_block_align_overflow_without_panicking() {
+    let zero_block_align = decode_pcm_wav(&pcm_wave_fixture(44_100, 32_768, 16, 0))
+        .expect_err("zero PCM16 block align must fail before frame modulo");
+    assert_eq!(
+        zero_block_align,
+        SourceAudioError::InvalidWave("block align is zero".into())
+    );
+
+    let overflowing_block_align = decode_pcm_wav(&pcm_wave_fixture(44_100, 32_769, 16, 2))
+        .expect_err("unrepresentable PCM16 block align must fail");
+    assert_eq!(
+        overflowing_block_align,
+        SourceAudioError::InvalidWave("block align cannot be represented by WAV".into())
+    );
+}
+
+#[test]
+fn rejects_pcm24_block_align_overflow_without_panicking() {
+    let bytes = pcm_wave_fixture(44_100, 21_846, 24, 2);
+    let error = decode_pcm_wav(&bytes).expect_err("unrepresentable PCM24 block align must fail");
+
+    assert_eq!(
+        error,
+        SourceAudioError::InvalidWave("block align cannot be represented by WAV".into())
+    );
+}
+
+#[test]
+fn pcm16_writer_roundtrips_normal_mono_and_stereo_audio() {
+    let tempdir = tempdir().expect("create tempdir");
+
+    for (channel_count, samples) in [(1, vec![-1.0, 0.0, 1.0]), (2, vec![-1.0, 1.0, 0.0, 0.5])] {
+        let path = tempdir.path().join(format!("{channel_count}-channel.wav"));
+        write_interleaved_pcm16_wav(&path, 44_100, channel_count, &samples)
+            .expect("write normal PCM16 WAV");
+
+        let cache = SourceAudioCache::load_pcm_wav(&path).expect("reload written PCM16 WAV");
+        assert_eq!(cache.sample_rate, 44_100);
+        assert_eq!(cache.channel_count, channel_count);
+        assert_eq!(cache.interleaved_samples().len(), samples.len());
+    }
+}
+
+#[test]
+fn invalid_cache_and_writer_inputs_return_errors_without_panicking() {
+    assert!(SourceAudioCache::from_interleaved_samples("bad.wav", 0, 1, vec![]).is_err());
+
+    let tempdir = tempdir().expect("create tempdir");
+    assert!(write_interleaved_pcm16_wav(tempdir.path().join("zero-rate.wav"), 0, 1, &[]).is_err());
+    assert!(
+        write_interleaved_pcm16_wav(
+            tempdir.path().join("too-many-channels.wav"),
+            44_100,
+            32_768,
+            &[]
+        )
+        .is_err()
+    );
+    assert!(
+        write_interleaved_pcm16_wav(tempdir.path().join("misaligned.wav"), 44_100, 2, &[0.0])
+            .is_err()
+    );
+}
+
 fn write_pcm16_wave(path: &Path, sample_rate: u32, channel_count: u16, duration_seconds: f32) {
     let frame_count = (sample_rate as f32 * duration_seconds) as u32;
     let bytes = pcm16_wave_bytes(sample_rate, channel_count, frame_count);
@@ -255,5 +340,31 @@ fn pcm24_wave_bytes(sample_rate: u32, channel_count: u16, samples: &[i32]) -> Ve
         bytes.extend_from_slice(&encoded[..3]);
     }
 
+    bytes
+}
+
+fn pcm_wave_fixture(
+    sample_rate: u32,
+    channel_count: u16,
+    bits_per_sample: u16,
+    block_align: u16,
+) -> Vec<u8> {
+    let byte_rate = sample_rate * u32::from(block_align);
+    let data_len = u32::from(block_align);
+    let mut bytes = Vec::with_capacity(44 + data_len as usize);
+    bytes.extend_from_slice(b"RIFF");
+    bytes.extend_from_slice(&(36 + data_len).to_le_bytes());
+    bytes.extend_from_slice(b"WAVE");
+    bytes.extend_from_slice(b"fmt ");
+    bytes.extend_from_slice(&16_u32.to_le_bytes());
+    bytes.extend_from_slice(&1_u16.to_le_bytes());
+    bytes.extend_from_slice(&channel_count.to_le_bytes());
+    bytes.extend_from_slice(&sample_rate.to_le_bytes());
+    bytes.extend_from_slice(&byte_rate.to_le_bytes());
+    bytes.extend_from_slice(&block_align.to_le_bytes());
+    bytes.extend_from_slice(&bits_per_sample.to_le_bytes());
+    bytes.extend_from_slice(b"data");
+    bytes.extend_from_slice(&data_len.to_le_bytes());
+    bytes.resize(44 + data_len as usize, 0);
     bytes
 }
