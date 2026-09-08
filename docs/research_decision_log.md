@@ -4979,3 +4979,17 @@ Why: two independent renames cannot protect a pair when the second write fails. 
 Evidence: RIOTBOX-1487 code inspection confirms graph-before-Session ingest, Session-before-graph save, strict explicit-path reads, and a recording Session-only write path. Existing tests require the explicit alias to contain the latest successfully saved Graph. This decision uses tracked code and synthetic test design only.
 Consequences: the guarantee covers ordinary I/O failures and process interruption between completed filesystem operations for Riotbox's generation-aware loader, under a single writer. It is not a power-loss/fsync or concurrent-writer transaction guarantee, and external tools reading only the mutable alias do not receive pair consistency. Preserve graph-hash checks and fail closed if the exact generation is absent or invalid. RIOTBOX-1488 owns relative-path normalization; this change preserves existing path interpretation. No audio, source access, ActionCommand, or musical behavior changes.
 Status: accepted
+
+---
+
+### RBX-369
+
+Date: 2026-09-08
+Topic: give external Graph references one Session-directory path contract
+Phase: P000 / maintenance and regression
+Question: how can relative CLI output paths be saved and reopened without repeating the original working directory or explicit Graph override?
+Decision: interpret CLI Session and Graph paths once against the working directory and anchor the app's runtime file destinations. Canonicalize existing parent directories in filesystem order, preserving the final filename/alias so atomic replacement still owns that directory entry. Ingest and explicit-override saves store a relative Graph reference from the Session parent when both paths share a filesystem root, otherwise an absolute reference. Existing absolute references remain readable. Ordinary Session-relative references retain their meaning. An ambiguous legacy cwd-relative reference requires an explicit hash-checked Graph override and a save to normalize it; never search another directory or silently rewrite a Session during loading.
+Why: the previous writer stored cwd-relative CLI paths verbatim while the loader resolved them from the Session parent. This could duplicate a directory prefix and make successful ingests unopenable without an override. Anchoring also prevents a later working-directory change from moving a loaded app's save destinations.
+Evidence: RIOTBOX-1488 synthetic tests cover public sidecar ingest with relative output paths, same/different Graph directories, restore and save in a child process with another working directory, absolute overrides, symlink parents with dot-dot, and explicit legacy repair while preserving hash mismatch rejection. Combined tests retain RBX-368 graph generations and failure behavior.
+Consequences: no new schema, action, audio processing, source corpus, or hidden migration. The existing alias/generation protocol owns Graph identity; path normalization only establishes its location. No automatic fallback from an ambiguous legacy Session path.
+Status: accepted
