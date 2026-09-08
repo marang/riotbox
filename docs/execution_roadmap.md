@@ -2148,3 +2148,12 @@ corrects stream identification without changing product code or sound.
 See [the exact review](./reviews/riotbox_1492_live_master_loop_review_2026-09-08.md).
 Broader recording/export, physical-device endurance, TUI/Ghost, DAW import,
 source-general and release claims remain outside this slice.
+
+The immediate continuation is RIOTBOX-1493's necessary archive-writer
+extraction, followed by RIOTBOX-1494's unchanged live-master DAW handoff.
+The maintenance step separates exact archive integrity/publication from W-30
+musical eligibility, preserving the existing W-30 file and Session contracts.
+It is not a new musician-facing capability or musical qualification. The
+following slice must reuse that mechanism for the existing committed V2
+recording, retain its full-master identity and recorded timing, and must not
+rerender or relabel it as an isolated hook or editable stems.

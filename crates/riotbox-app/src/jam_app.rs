@@ -34,6 +34,7 @@ mod daw_session_payload_preview;
 mod daw_session_writer_plan;
 mod daw_session_writer_proof;
 mod daw_session_writer_proof_types;
+mod dawproject_archive;
 #[cfg(test)]
 #[path = "jam_app/tests/feral_break_alpha_runtime_projection.rs"]
 mod feral_break_alpha_runtime_projection_tests;

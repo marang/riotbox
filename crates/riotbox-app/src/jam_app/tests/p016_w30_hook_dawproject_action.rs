@@ -23,6 +23,11 @@ fn w30_hook_dawproject_exports_byte_identical_audio_through_action_session_and_r
         .commit_w30_hook_dawproject_export(None, &destination, 1_400)
         .expect("commit W-30 DAWproject");
 
+    assert_eq!(
+        receipt.export_hash,
+        "86602ee9e94a6f2bdda7a0e192b1b29a2eff3ffd752a48437afee6c8ca152b1b"
+    );
+
     assert_eq!(receipt.export_scope, ExportScope::DawSession);
     assert_eq!(receipt.pack_id, "w30-hook-dawproject");
     assert_eq!(
