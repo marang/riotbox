@@ -18,10 +18,17 @@ fn w30_hook_dawproject_exports_byte_identical_audio_through_action_session_and_r
         .expect("source hook artifact");
     let source_path = PathBuf::from(source_hook.location_identity());
     let source_bytes = fs::read(&source_path).expect("read source hook");
+    let legacy_archive = super::w30_hook_dawproject::legacy_archive_bytes_for_test(
+        &state.session,
+        None,
+    )
+    .expect("legacy W-30 archive reference");
 
     let receipt = state
         .commit_w30_hook_dawproject_export(None, &destination, 1_400)
         .expect("commit W-30 DAWproject");
+
+    assert_eq!(fs::read(&destination).expect("exported archive"), legacy_archive);
 
     assert_eq!(receipt.export_scope, ExportScope::DawSession);
     assert_eq!(receipt.pack_id, "w30-hook-dawproject");

@@ -5007,3 +5007,17 @@ Why: graph JSON integrity cannot prove the identity of external audio. One read 
 Evidence: RIOTBOX-1489 synthetic restore tests mutate only WAV sample bytes or the Session source hash and require unavailable cache, silent/unavailable Source Monitor routing, and rejected source-dependent activation. Unchanged PCM24 and normal generated-fixture restore remain supported. Full source-free local CI and independent review pass before integration with the preceding persistence fixes.
 Consequences: this enforces the Session source-identity contract without changing audio processing or granting a quality verdict. Hashing and decoding remain outside realtime audio. The original source path may still change after the read, but the admitted in-memory PCM and its verified identity come from the same bytes. No real-source, Holdout, or commercial-reference access is required for this regression.
 Status: accepted
+
+---
+
+### RBX-371
+
+Date: 2026-09-08
+Topic: separate DAWproject archive integrity from musical export policy
+Phase: P016 / maintenance and regression
+Question: how can the kept live-master recording gain a DAW handoff without copying the W-30 export's archive mechanism or misrepresenting the master as a semantic hook?
+Decision: extract one app-local archive module owning encoding, exact member/model/payload verification, and no-clobber publication/readback for a typed DAWproject with one embedded audio member and one JSON proof. The consuming musical export retains eligibility, project construction, proof semantics, Action ownership, and Session receipt creation. Preserve the existing W-30 archive bytes and contracts. Hash and decode its input from the same read buffer used for embedding, extending RBX-370's identity principle without changing the file format.
+Why: the upcoming live-master consumer has different float32 format, timing, and full-mix ownership rules but needs the same container integrity and publication behavior. Copying those mechanisms would split their failure handling; generalizing musical eligibility would erase their distinct contracts.
+Evidence: RIOTBOX-1493 owns synthetic byte-compatibility and archive failure tests plus independent Rust branch review. RIOTBOX-1494 is the directly following committed-V2-live-recording handoff, not a capability delivered by the extraction itself.
+Consequences: no new ActionCommand, serialized Session state, audio generation, source access, or listening verdict. No generic plugin/export framework or additional textual includes. The live-master action/receipt/proof contract must be frozen separately before its implementation.
+Status: accepted

@@ -1,9 +1,14 @@
-use std::{
-    fs,
-    io::{Cursor, Read, Write},
-    path::Path,
-};
+use std::{fs, path::Path};
 
+use crate::jam_app::{
+    JamAppError, JamAppState,
+    dawproject_archive::{
+        DAWPROJECT_PROOF_PATH, DawprojectArchiveAudio, DawprojectArchivePayload,
+        PublishedDawprojectArchive, remove_owned_destination, validate_destination,
+        write_dawproject_archive,
+    },
+    product_export::DawSessionExportQueueResult,
+};
 use dawproject::prelude::project::{
     ApplicationType, ArrangementType, AudioType, ChannelType, ClipType, ClipTypeContent, ClipsType,
     ContentType, ContentTypeList, FileReferenceType, LanesType, LanesTypeContent, MixerRoleType,
@@ -11,7 +16,9 @@ use dawproject::prelude::project::{
     RealParameterType, TimeSignatureParameterType, TimeUnitType, TrackType, TransportType,
     UnitType,
 };
-use dawproject::{Dawproject, DawprojectReader, DawprojectWriter, MetaData, Project};
+#[cfg(test)]
+use dawproject::{Dawproject, DawprojectWriter};
+use dawproject::{MetaData, Project};
 use riotbox_audio::source_audio::SourceAudioCache;
 use riotbox_core::{
     TimestampMs,
@@ -37,23 +44,14 @@ use riotbox_core::{
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-
-use crate::jam_app::{JamAppError, JamAppState, product_export::DawSessionExportQueueResult};
+#[cfg(test)]
+use std::io::Cursor;
 
 pub const W30_HOOK_DAWPROJECT_ACTION_BOUNDARY_ID: &str = "w30_hook_dawproject_v1";
 pub const W30_HOOK_DAWPROJECT_PROOF_SCHEMA: &str = "riotbox.w30_hook_dawproject.v1";
 const DAWPROJECT_FORMAT_VERSION: &str = "1.0";
 const EMBEDDED_AUDIO_PATH: &str = "audio/w30_hook_loop.wav";
-const EMBEDDED_PROOF_PATH: &str = "riotbox-proof.json";
-const PROJECT_XML_PATH: &str = "project.xml";
-const METADATA_XML_PATH: &str = "metadata.xml";
 const DAWPROJECT_BEATS_PER_BAR: i32 = W30_HOOK_LOOP_BEATS_PER_BAR as i32;
-const EXPECTED_ARCHIVE_PATHS: [&str; 4] = [
-    EMBEDDED_AUDIO_PATH,
-    METADATA_XML_PATH,
-    PROJECT_XML_PATH,
-    EMBEDDED_PROOF_PATH,
-];
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct W30HookDawprojectProof {
@@ -88,13 +86,6 @@ struct W30HookDawprojectInput {
     timing_grid_ref: riotbox_core::session::ExportArtifactTimingGridRef,
     scene_id: riotbox_core::ids::SceneId,
     source_artifact: ExportArtifactSetEntry,
-}
-
-struct ValidatedArchive {
-    bytes: Vec<u8>,
-    archive_sha256: String,
-    project_xml_sha256: String,
-    proof_sha256: String,
 }
 
 impl JamAppState {
@@ -255,16 +246,22 @@ fn write_w30_hook_dawproject(
     validate_destination(destination)?;
     let input = prepare_input(session, session_base_dir)?;
     let proof = build_proof(&input);
+    let proof_bytes = serde_json::to_vec_pretty(&proof)?;
     let metadata = build_metadata();
     let project = build_project(&input);
-    let archive = build_and_validate_archive(&input, &proof, &metadata, &project)?;
-    publish_archive(destination, &archive)?;
-    let validation =
-        validate_published_archive(destination, &archive, &input, &proof, &metadata, &project);
-    if let Err(error) = validation {
-        remove_owned_destination(destination, &archive.archive_sha256);
-        return Err(error);
-    }
+    let archive = write_dawproject_archive(
+        destination,
+        DawprojectArchivePayload {
+            metadata: &metadata,
+            project: &project,
+            audio: DawprojectArchiveAudio {
+                path: EMBEDDED_AUDIO_PATH,
+                bytes: &input.source_wav_bytes,
+                sha256: &input.source_wav_sha256,
+            },
+            proof_json: &proof_bytes,
+        },
+    )?;
     match build_receipt(destination, action_id, created_at, &input, &archive) {
         Ok(receipt) => Ok(receipt),
         Err(error) => {
@@ -333,15 +330,15 @@ fn prepare_input(
             "V4 hook artifact must be a regular non-symlink file".into(),
         ));
     }
-    let source_wav_sha256 = super::product_export::sha256_file(&source_wav_path)?;
+    let source_wav_bytes = fs::read(&source_wav_path)?;
+    let source_wav_sha256 = sha256_bytes(&source_wav_bytes);
     if source_wav_sha256 != hook.sha256 {
         return Err(JamAppError::InvalidSession(format!(
             "V4 hook artifact hash drift: expected {} actual {}",
             hook.sha256, source_wav_sha256
         )));
     }
-    let source_wav_bytes = fs::read(&source_wav_path)?;
-    let audio = SourceAudioCache::load_pcm_wav(&source_wav_path)
+    let audio = SourceAudioCache::from_pcm_wav_bytes(&source_wav_path, &source_wav_bytes)
         .map_err(|error| JamAppError::InvalidSession(format!("invalid V4 hook WAV: {error}")))?;
     let bpm = session
         .runtime_state
@@ -661,167 +658,32 @@ fn build_project(input: &W30HookDawprojectInput) -> Project {
     }
 }
 
-fn build_and_validate_archive(
-    input: &W30HookDawprojectInput,
-    proof: &W30HookDawprojectProof,
-    metadata: &MetaData,
-    project: &Project,
-) -> Result<ValidatedArchive, JamAppError> {
-    let proof_bytes = serde_json::to_vec_pretty(proof)?;
+#[cfg(test)]
+pub(super) fn legacy_archive_bytes_for_test(
+    session: &SessionFile,
+    session_base_dir: Option<&Path>,
+) -> Result<Vec<u8>, JamAppError> {
+    let input = prepare_input(session, session_base_dir)?;
+    let proof = build_proof(&input);
+    let proof_bytes = serde_json::to_vec_pretty(&proof)?;
+    let metadata = build_metadata();
+    let project = build_project(&input);
     let cursor = Cursor::new(Vec::new());
     let mut writer = DawprojectWriter::new(cursor)
         .map_err(|error| invalid_dawproject("could not create archive writer", error))?;
     writer
-        .write_dawproject(&Dawproject::new(metadata.clone(), project.clone()))
+        .write_dawproject(&Dawproject::new(metadata, project))
         .map_err(|error| invalid_dawproject("could not serialize DAWproject model", error))?;
     writer
         .write_file(EMBEDDED_AUDIO_PATH, &input.source_wav_bytes)
-        .map_err(|error| invalid_dawproject("could not embed W-30 hook audio", error))?;
+        .map_err(|error| invalid_dawproject("could not embed archive audio", error))?;
     writer
-        .write_file(EMBEDDED_PROOF_PATH, &proof_bytes)
-        .map_err(|error| invalid_dawproject("could not embed Riotbox proof", error))?;
-    let bytes = writer
+        .write_file(DAWPROJECT_PROOF_PATH, &proof_bytes)
+        .map_err(|error| invalid_dawproject("could not embed proof", error))?;
+    writer
         .finish()
-        .map_err(|error| invalid_dawproject("could not finish DAWproject archive", error))?
-        .into_inner();
-    let (project_xml_sha256, proof_sha256) =
-        validate_archive_bytes(&bytes, input, proof, metadata, project)?;
-    Ok(ValidatedArchive {
-        archive_sha256: sha256_bytes(&bytes),
-        bytes,
-        project_xml_sha256,
-        proof_sha256,
-    })
-}
-
-fn validate_archive_bytes(
-    bytes: &[u8],
-    input: &W30HookDawprojectInput,
-    proof: &W30HookDawprojectProof,
-    expected_metadata: &MetaData,
-    expected_project: &Project,
-) -> Result<(String, String), JamAppError> {
-    let mut reader = DawprojectReader::new(Cursor::new(bytes))
-        .map_err(|error| invalid_dawproject("archive is not readable", error))?;
-    let paths = reader.file_names().map(str::to_owned).collect::<Vec<_>>();
-    if paths != EXPECTED_ARCHIVE_PATHS {
-        return Err(JamAppError::InvalidSession(format!(
-            "DAWproject archive paths differ from the frozen set: {paths:?}"
-        )));
-    }
-    reader
-        .read_dawproject()
-        .map_err(|error| invalid_dawproject("project or metadata XML did not parse", error))?;
-    let parsed = reader.build_dawproject().ok_or_else(|| {
-        JamAppError::InvalidSession("DAWproject reader produced no typed model".into())
-    })?;
-    if &parsed.metadata != expected_metadata || &parsed.project != expected_project {
-        return Err(JamAppError::InvalidSession(
-            "DAWproject typed read-back differs from the frozen model".into(),
-        ));
-    }
-    let embedded_audio = read_archive_file(&mut reader, EMBEDDED_AUDIO_PATH)?;
-    if embedded_audio != input.source_wav_bytes
-        || sha256_bytes(&embedded_audio) != input.source_wav_sha256
-    {
-        return Err(JamAppError::InvalidSession(
-            "DAWproject embedded audio is not byte-identical to the V4 hook".into(),
-        ));
-    }
-    let proof_bytes = read_archive_file(&mut reader, EMBEDDED_PROOF_PATH)?;
-    let parsed_proof: W30HookDawprojectProof = serde_json::from_slice(&proof_bytes)?;
-    if &parsed_proof != proof {
-        return Err(JamAppError::InvalidSession(
-            "DAWproject embedded Riotbox proof differs from its source contract".into(),
-        ));
-    }
-    let project_xml = read_archive_file(&mut reader, PROJECT_XML_PATH)?;
-    Ok((sha256_bytes(&project_xml), sha256_bytes(&proof_bytes)))
-}
-
-fn read_archive_file<R: Read + std::io::Seek>(
-    reader: &mut DawprojectReader<R>,
-    path: &str,
-) -> Result<Vec<u8>, JamAppError> {
-    let mut file = reader
-        .by_name(path)
-        .map_err(|error| invalid_dawproject("required archive member is missing", error))?;
-    let mut bytes = Vec::new();
-    file.read_to_end(&mut bytes)?;
-    Ok(bytes)
-}
-
-fn validate_destination(destination: &Path) -> Result<(), JamAppError> {
-    if destination
-        .extension()
-        .and_then(|extension| extension.to_str())
-        != Some("dawproject")
-    {
-        return Err(JamAppError::InvalidSession(
-            "W-30 DAWproject destination must end in .dawproject".into(),
-        ));
-    }
-    let parent = destination
-        .parent()
-        .filter(|parent| !parent.as_os_str().is_empty())
-        .ok_or_else(|| {
-            JamAppError::InvalidSession(
-                "DAWproject destination requires an explicit parent directory".into(),
-            )
-        })?;
-    if !parent.is_dir() {
-        return Err(JamAppError::InvalidSession(format!(
-            "DAWproject destination parent does not exist: {}",
-            parent.display()
-        )));
-    }
-    if destination.exists() || fs::symlink_metadata(destination).is_ok() {
-        return Err(JamAppError::InvalidSession(format!(
-            "DAWproject destination already exists: {}",
-            destination.display()
-        )));
-    }
-    Ok(())
-}
-
-fn publish_archive(destination: &Path, archive: &ValidatedArchive) -> Result<(), JamAppError> {
-    let parent = destination.parent().ok_or_else(|| {
-        JamAppError::InvalidSession("DAWproject destination has no parent".into())
-    })?;
-    let mut staging = tempfile::Builder::new()
-        .prefix(".riotbox-dawproject-staging-")
-        .tempfile_in(parent)?;
-    staging.write_all(&archive.bytes)?;
-    staging.as_file().sync_all()?;
-    staging
-        .persist_noclobber(destination)
-        .map_err(|error| error.error)?;
-    Ok(())
-}
-
-fn remove_owned_destination(destination: &Path, expected_sha256: &str) {
-    if super::product_export::sha256_file(destination).is_ok_and(|sha256| sha256 == expected_sha256)
-    {
-        let _ = fs::remove_file(destination);
-    }
-}
-
-fn validate_published_archive(
-    destination: &Path,
-    expected_archive: &ValidatedArchive,
-    input: &W30HookDawprojectInput,
-    proof: &W30HookDawprojectProof,
-    metadata: &MetaData,
-    project: &Project,
-) -> Result<(), JamAppError> {
-    let bytes = fs::read(destination)?;
-    if bytes != expected_archive.bytes || sha256_bytes(&bytes) != expected_archive.archive_sha256 {
-        return Err(JamAppError::InvalidSession(
-            "published DAWproject bytes differ from the validated staging archive".into(),
-        ));
-    }
-    validate_archive_bytes(&bytes, input, proof, metadata, project)?;
-    Ok(())
+        .map_err(|error| invalid_dawproject("could not finish DAWproject archive", error))
+        .map(|cursor| cursor.into_inner())
 }
 
 fn build_receipt(
@@ -829,11 +691,11 @@ fn build_receipt(
     action_id: ActionId,
     created_at: TimestampMs,
     input: &W30HookDawprojectInput,
-    archive: &ValidatedArchive,
+    archive: &PublishedDawprojectArchive,
 ) -> Result<ExportReceiptState, JamAppError> {
     let destination_string = destination.to_string_lossy().into_owned();
-    let proof_uri = format!("{destination_string}#{EMBEDDED_PROOF_PATH}");
-    let project_uri = format!("{destination_string}#{PROJECT_XML_PATH}");
+    let proof_uri = format!("{destination_string}#{DAWPROJECT_PROOF_PATH}");
+    let project_uri = format!("{destination_string}#project.xml");
     let audio_uri = format!("{destination_string}#{EMBEDDED_AUDIO_PATH}");
     let contract = ExportReadinessContract {
         schema: EXPORT_READINESS_CONTRACT_SCHEMA.into(),
@@ -961,24 +823,7 @@ fn sha256_bytes(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
 
+#[cfg(test)]
 fn invalid_dawproject(context: &str, error: impl std::fmt::Display) -> JamAppError {
     JamAppError::InvalidSession(format!("{context}: {error}"))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn frozen_archive_paths_are_sorted_for_exact_reader_comparison() {
-        assert_eq!(
-            EXPECTED_ARCHIVE_PATHS,
-            [
-                "audio/w30_hook_loop.wav",
-                "metadata.xml",
-                "project.xml",
-                "riotbox-proof.json",
-            ]
-        );
-    }
 }

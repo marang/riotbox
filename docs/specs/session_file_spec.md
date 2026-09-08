@@ -541,6 +541,13 @@ Rules:
   readback, and embedded bytes. Replay restores these identities only and never
   regenerates the external file. This receipt does not claim host import,
   audible DAW playback, a generic DAW writer, or TUI/Ghost availability
+- archive encoding, exact-member/model/payload readback, and no-clobber
+  publication are owned by the app-local `dawproject_archive` module. Musical
+  eligibility, project/proof semantics, and Action/Session receipts remain
+  owned by the consuming export policy. W-30 input hashing and decoding use
+  the same read buffer that is embedded; checking a path and reopening it for
+  format inspection is not artifact identity proof. This internal extraction
+  does not change the frozen W-30 archive or receipt contract
 - the first reserved live-recording receipt boundary is
   `live_recording.receipt_contract_v1` with
   `export_scope: live_recording`, `export_role: live_recording_capture`,
