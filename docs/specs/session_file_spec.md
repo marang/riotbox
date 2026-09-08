@@ -108,6 +108,11 @@ SourceRef {
 
 Rules:
 
+- when the current source WAV is available, session restore must hash the exact
+  byte buffer it decodes and require that SHA-256 to equal both the active
+  Source Graph `source.content_hash` and the matching `SourceRef.content_hash`
+  for that `source_id`; a mismatch leaves source audio unavailable rather than
+  routing unverified PCM
 - session restore should prefer `content_hash` verification over path trust
 - `path_hint` may help the UI, but path alone must not be the authority
 
@@ -144,6 +149,15 @@ MVP note:
 
 - Riotbox MVP currently supports exactly one active source graph reference per session
 - that graph reference must match the single active `source_ref`
+- Relative `external_path` values always resolve from the Session directory.
+  CLI Session/Graph paths are interpreted against the current working directory
+  once and anchored for the lifetime of the loaded app. Ingest and saves with
+  an explicit Graph override store a Session-relative reference when possible;
+  existing absolute references remain supported.
+- Legacy references accidentally stored relative to the original working
+  directory are not guessed or searched. Supply the intended explicit Graph
+  path, which must pass the existing hash check, then save to normalize the
+  reference. Ordinary loading never rewrites the Session as a repair side effect.
 - plural shape is retained for forward compatibility, not to imply current multi-source support in the app/runtime
 
 ---
@@ -1444,7 +1458,8 @@ MVP expectation:
 Load must validate:
 
 - schema version
-- source hash compatibility when possible
+- source hash compatibility when the current source WAV is available, using the
+  same byte buffer used for PCM decode
 - source graph compatibility
 - action log readability
 - referenced capture existence where required

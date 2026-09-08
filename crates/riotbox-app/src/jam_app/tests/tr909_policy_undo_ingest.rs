@@ -535,7 +535,7 @@ fn ingests_source_file_through_sidecar_and_persists_state() {
     );
     assert_eq!(
         state.session.source_graph_refs[0].external_path.as_deref(),
-        Some(graph_path.to_string_lossy().as_ref())
+        Some("../graphs/source-graph.json")
     );
     assert!(session_path.exists());
     assert!(graph_path.exists());
