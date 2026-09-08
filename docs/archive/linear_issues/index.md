@@ -1671,4 +1671,12 @@ This index tracks archived Linear ticket history that has been removed from the 
   Record the real live Riotbox master callback as a Session-owned WAV
 - [RIOTBOX-1486.md](./RIOTBOX-1486.md)
   Quantize the real live master capture to an exact two-bar Session window
+- [RIOTBOX-1487.md](./RIOTBOX-1487.md)
+  [P1] Preserve the last loadable Session/Source Graph pair after a failed save
+- [RIOTBOX-1490.md](./RIOTBOX-1490.md)
+  [P2] Reject overflowing WAV block alignment without panics in decoder and writer
+- [RIOTBOX-1488.md](./RIOTBOX-1488.md)
+  [P2] Normalize external Graph references relative to the Session directory
+- [RIOTBOX-1489.md](./RIOTBOX-1489.md)
+  [P2] Verify source WAV content identity before marking restored audio Loaded
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
