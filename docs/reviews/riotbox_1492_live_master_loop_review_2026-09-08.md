@@ -1,6 +1,6 @@
 # RIOTBOX-1492 — Exact live master loop review
 
-Status: take-01 stopped fail-closed at external route-evidence gate; human verdict unverified
+Status: take-02 technical preflight and independent assessment complete; awaiting human readiness
 
 ## Bounded purpose
 
@@ -114,3 +114,79 @@ streams contradicts the observed zero-only aplay probe, which did expose the
 custom node name and all three requested safety properties. Do not present that
 explanation as a diagnosed cause. Before any renewed take, use a source-free
 CPAL silence probe to validate stream identification and retained route evidence.
+
+## Source-free correction and take-02 admission
+
+On resumed work, the existing `cpal_spike` produced 25 silent callbacks.
+Retained snapshots show `alsa_playback.cpal_spike` instead of the requested
+custom node name; null-sink target and all three safety properties remain
+present. This reproduces the old selector's false negative.
+
+The corrected operator selector binds Client PID to the launched process,
+follows Node client ID, requires the exact null-sink serial, two active stereo
+links and all three safety properties, and rejects outgoing null-sink links.
+Seven snapshots pass; wrong PID and four unsafe routing mutations are rejected.
+No product code, audio algorithm or threshold changed.
+
+The resumed request continues with one replacement take under
+`artifacts/development/riotbox-1492/take-02`, from the same original qualified
+Session and permitted audio inputs. A fresh bounded access log precedes reads.
+Preserve all source, capture, timing and listening boundaries above. Persist
+actual-route snapshots throughout the invocation, including unmatched objects.
+Take-01 remains immutable failed evidence. This corrects operator evidence,
+not the musical candidate or a product gate.
+
+## Take-02 technical result
+
+The unchanged V2 recorder captured beat 4 through beat 12 at 120 BPM, exactly
+192,000 stereo float32 frames at 48 kHz. Product proof, WAV payload/file hashes,
+receipt gates, Session identity and stopped runtime agree. The external observer
+now retains the process-owned CPAL stream and active links to the isolated null
+sink. File-open tracing shows one registered source-owner read and one copied
+capture read, no original-source or Holdout access. The temporary sink was
+removed after capture; the physical default route was unchanged. This is real
+callback evidence through a virtual endpoint, not a hardware/acoustic test.
+
+- WAV SHA-256: `8d598b852a2811c7614de8755d7a9da870339b75582a922510e6c82b1d77f4c0`
+- Proof SHA-256: `2ae77d457959cc31093c604ddeddc6a2b23665d2e0d300a2de67bd01f995a622`
+- Exact two-repeat presentation SHA-256:
+  `61832723eaa24abc79c645e4c6a978f1428e056ed359964e5fc1904c4038a4fa`
+- Presentation: `artifacts/development/riotbox-1492/take-02/loop-review-2x.wav`,
+  384,000 frames / 8.000 seconds, no gain/fade/resampling or recipe change.
+- Original and presentation: FFmpeg integrated loudness -17.1 LUFS, estimated
+  true peak -6.2 dBTP; sample peak -8.431 dBFS, RMS -19.612 dBFS, zero clips.
+- Stereo channels are sample-identical. DC per channel is -0.002569.
+- Raw end/start sample step is 0.007979 per channel, below internal adjacent
+  difference p99 0.053636 and maximum 0.446067. This descriptive comparison does
+  not establish an inaudible seam or award loopability.
+
+Take-02 WAV bytes happen to match take-01. Neither has been heard, and the
+failed take-01 route record is not promoted by that identity. Only take-02 owns
+the new completed route proof. The review pack under
+`artifacts/audio_qa/local/listening-reviews/RIOTBOX-1492` remains explicitly
+`human_verdict: unverified` until fresh readiness, bounded playback and feedback.
+
+Contributor assignment: this is a **composite runtime master**, not the
+isolated V4 semantic W-30 export. The restored Session activates W-30 live recall
+and TR-909 `break_reinforce` support. TR-909 does not require a non-null pattern
+reference to sound: `render_tr909_buffer` gates transport/mode/tempo, and
+`should_trigger_step` enables `BreakReinforce` steps without pattern adoption.
+Its existing fixed renderer support is not source-composed drum intelligence.
+MC-202 is idle/silent, Source Monitor is `riotbox_only` (raw source excluded),
+and the resample tap is idle. The recorder adds no sound processing beyond the
+existing master path. The earlier isolated W-30 keep cannot be transferred to
+this composite. Review loop reuse and transition, not new hardness or bass
+ownership.
+
+Preflight report SHA-256:
+`87cb3f0800821583bc1d51314fecaceb1ab5e2a337a337d6ee5f7bef1aca5c86`.
+Actual-route snapshots SHA-256:
+`d566e300ab22aec2900992639257085a1381cfb58924401381842aa25b33b082`.
+
+Independent artifact-bound agent assessment completed before listener readiness;
+local `agent-prelisten.md` SHA-256:
+`49586109f89fedacd6a3f2f8e6a912fb9db0fb04a44e534cfab6e9d42d6536bf`.
+It confirms the composite assignment and separates technical validity from
+predicted musical usefulness. Its prediction is retained unchanged for later
+comparison with the listener, not used as a human verdict. Focused
+`just live-master-recording-contract-smoke` passes. No human playback yet.
