@@ -2135,3 +2135,16 @@ receipt, proof, alignment gate, and typed Session timing evidence preserve V1
 readability and every existing tap/writer/host-health rule. This is a recording
 correctness slice only: it adds no DSP, sound qualification, input capture,
 TUI/Ghost surface, Holdout access, or release claim.
+
+RIOTBOX-1492 follows with a bounded human review of one exact V2 recording,
+using the existing qualified tonal Session rather than another musical recipe.
+The real CPAL callback records two bars through a verified silent virtual
+endpoint; exact WAV/proof/receipt, timing, level and route checks pass. The
+eight-second sample-exact two-repeat presentation earns a human `keep`: the
+hook-plus-beat composite sounds good and well matched as a loop. This is not
+isolated W-30 or a separate hardness/seam/source-recognition
+verdict. The first take remains failed operator-routing evidence; its replacement
+corrects stream identification without changing product code or sound.
+See [the exact review](./reviews/riotbox_1492_live_master_loop_review_2026-09-08.md).
+Broader recording/export, physical-device endurance, TUI/Ghost, DAW import,
+source-general and release claims remain outside this slice.
