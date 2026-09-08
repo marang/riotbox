@@ -468,6 +468,7 @@ fallback audio.
 Current limitation:
 
 - the initial cache supports PCM 16-bit and PCM 24-bit WAV fixture input
+- input headers must have a nonzero frame block alignment representable by the WAV `u16` field; malformed headers fail during non-realtime ingest
 - committed source-backed capture artifacts are PCM16 WAV files for the first app path
 - raw audition without a committed artifact still uses a bounded preview excerpt
 - focused committed pad playback is duration-aware and source-backed, but remains one mono pad seam rather than a full multi-pad streaming sampler engine
