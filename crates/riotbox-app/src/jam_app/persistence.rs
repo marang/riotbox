@@ -33,7 +33,7 @@ impl JamAppState {
         let runtime_view =
             JamRuntimeView::build(&AppRuntimeState::default(), &session, source_graph.as_ref());
         let (source_audio_cache, source_audio_status) =
-            load_source_audio_cache_for_graph(source_graph.as_ref());
+            load_source_audio_cache_for_graph(&session, source_graph.as_ref());
         let mut state = Self {
             files: Some(JamFileSet {
                 session_path,
@@ -212,14 +212,36 @@ impl JamAppState {
 }
 
 fn load_source_audio_cache_for_graph(
+    session: &SessionFile,
     source_graph: Option<&SourceGraph>,
 ) -> (Option<SourceAudioCache>, SourceAudioStatus) {
     let Some(graph) = source_graph else {
         return (None, SourceAudioStatus::NotRequested);
     };
 
-    match SourceAudioCache::load_pcm_wav(&graph.source.path) {
+    let bytes = match std::fs::read(&graph.source.path) {
+        Ok(bytes) => bytes,
+        Err(error) => {
+            return (
+                None,
+                SourceAudioStatus::unavailable(
+                    graph.source.path.clone(),
+                    format!("source audio I/O failed: {error}"),
+                ),
+            );
+        }
+    };
+
+    match SourceAudioCache::from_pcm_wav_bytes(&graph.source.path, &bytes) {
         Ok(cache) => {
+            let actual_hash = format!("sha256:{:x}", Sha256::digest(&bytes));
+            if let Err(reason) = validate_source_audio_cache_identity(session, graph, &actual_hash)
+            {
+                return (
+                    None,
+                    SourceAudioStatus::unavailable(graph.source.path.clone(), reason),
+                );
+            }
             let status = SourceAudioStatus::loaded(&cache);
             (Some(cache), status)
         }
@@ -228,6 +250,39 @@ fn load_source_audio_cache_for_graph(
             SourceAudioStatus::unavailable(graph.source.path.clone(), error.to_string()),
         ),
     }
+}
+
+fn validate_source_audio_cache_identity(
+    session: &SessionFile,
+    graph: &SourceGraph,
+    actual_hash: &str,
+) -> Result<(), String> {
+    if graph.source.content_hash != actual_hash {
+        return Err(format!(
+            "source audio hash mismatch: graph has {}, loaded WAV has {actual_hash}",
+            graph.source.content_hash
+        ));
+    }
+
+    let Some(source_ref) = session
+        .source_refs
+        .iter()
+        .find(|source_ref| source_ref.source_id == graph.source.source_id)
+    else {
+        return Err(format!(
+            "source audio identity unavailable: session has no source ref for {}",
+            graph.source.source_id
+        ));
+    };
+
+    if source_ref.content_hash != actual_hash {
+        return Err(format!(
+            "source audio hash mismatch: session source ref {} has {}, loaded WAV has {actual_hash}",
+            source_ref.source_id, source_ref.content_hash
+        ));
+    }
+
+    Ok(())
 }
 
 fn resolve_source_graph(

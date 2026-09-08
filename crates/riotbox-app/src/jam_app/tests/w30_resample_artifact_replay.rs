@@ -11,6 +11,7 @@ fn w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_outpu
     graph.source.duration_seconds = 8.0;
     graph.source.sample_rate = 48_000;
     graph.source.channel_count = 2;
+    bind_synthetic_wav_identity(&mut graph, &source_path);
     let mut session = sample_session(&graph);
     session.captures.clear();
     session.runtime_state.lane_state.w30.last_capture = None;

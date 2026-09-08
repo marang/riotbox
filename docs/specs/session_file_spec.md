@@ -108,6 +108,11 @@ SourceRef {
 
 Rules:
 
+- when the current source WAV is available, session restore must hash the exact
+  byte buffer it decodes and require that SHA-256 to equal both the active
+  Source Graph `source.content_hash` and the matching `SourceRef.content_hash`
+  for that `source_id`; a mismatch leaves source audio unavailable rather than
+  routing unverified PCM
 - session restore should prefer `content_hash` verification over path trust
 - `path_hint` may help the UI, but path alone must not be the authority
 
@@ -1453,7 +1458,8 @@ MVP expectation:
 Load must validate:
 
 - schema version
-- source hash compatibility when possible
+- source hash compatibility when the current source WAV is available, using the
+  same byte buffer used for PCM decode
 - source graph compatibility
 - action log readability
 - referenced capture existence where required

@@ -60,7 +60,15 @@ impl SourceAudioCache {
     pub fn load_pcm_wav(path: impl AsRef<Path>) -> Result<Self, SourceAudioError> {
         let path = path.as_ref();
         let bytes = fs::read(path).map_err(|error| SourceAudioError::Io(error.to_string()))?;
-        let decoded = decode_pcm_wav(&bytes)?;
+        Self::from_pcm_wav_bytes(path, &bytes)
+    }
+
+    pub fn from_pcm_wav_bytes(
+        path: impl AsRef<Path>,
+        bytes: &[u8],
+    ) -> Result<Self, SourceAudioError> {
+        let path = path.as_ref();
+        let decoded = decode_pcm_wav(bytes)?;
 
         Ok(Self {
             path: path.to_path_buf(),

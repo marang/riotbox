@@ -11,6 +11,7 @@ fn committed_source_backed_capture_writes_wav_artifact() {
     graph.source.duration_seconds = 8.0;
     graph.source.sample_rate = 48_000;
     graph.source.channel_count = 2;
+    bind_synthetic_wav_identity(&mut graph, &source_path);
     let mut session = sample_session(&graph);
     session.captures.clear();
     session.runtime_state.lane_state.w30.last_capture = None;
@@ -86,6 +87,7 @@ fn focused_w30_pad_trigger_uses_capture_artifact_preview_when_source_cache_unava
     graph.source.duration_seconds = 8.0;
     graph.source.sample_rate = 48_000;
     graph.source.channel_count = 2;
+    bind_synthetic_wav_identity(&mut graph, &source_path);
     let mut session = sample_session(&graph);
     session.captures.clear();
     session.runtime_state.lane_state.w30.last_capture = None;
@@ -261,6 +263,7 @@ fn reloaded_session_uses_capture_artifact_cache_without_source_audio() {
     graph.source.duration_seconds = 8.0;
     graph.source.sample_rate = 48_000;
     graph.source.channel_count = 2;
+    bind_synthetic_wav_identity(&mut graph, &source_path);
     let mut session = sample_session(&graph);
     session.captures.clear();
     session.runtime_state.lane_state.w30.last_capture = None;
