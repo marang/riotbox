@@ -30,11 +30,7 @@ Baseline `cargo test -p riotbox-app w30_hook_dawproject` passed before extractio
 (`/tmp/riotbox-1493-baseline.log`). After extraction, the three archive tests
 and five W-30 tests pass, as do formatting and whitespace checks. The archive
 test compares bytes against the original writer call sequence retained as a
-test reference. The W-30 integration test additionally pins SHA-256
-`86602ee9e94a6f2bdda7a0e192b1b29a2eff3ffd752a48437afee6c8ca152b1b`:
-that hash was first measured after extraction and is a forward regression pin,
-not a claimed pre-refactor measurement. The W-30 model/proof construction is
-unchanged in the diff.
+test reference. The W-30 model/proof construction is unchanged in the diff.
 
 Full source-free `just ci` passed (`/tmp/riotbox-1493-ci.log`), including Rust
 tests, synthetic audio/observer and manifest checks, sidecar contracts, tracked
@@ -43,12 +39,12 @@ passes all eight relevant tests (`/tmp/riotbox-1493-final-focus.log`).
 
 ## Review
 
-Independent Rust branch review compared the diff and new files against
+Initial independent Rust branch review compared the diff and new files against
 `4e88e1cf`: zero P0–P3 findings. It checked the narrow app-local interface,
 exact four-member/model/audio/proof readback, no-clobber publication,
 hash-owned cleanup, unchanged W-30 policy/Action/receipt ownership, and
-single-buffer input identity. The forward-hash limitation above remains
-explicit; no historical artifact measurement is claimed.
+single-buffer input identity. GitHub CI subsequently found the test-portability
+issue below; the initial zero-findings review did not catch it.
 
 The implementation review corrected an initial draft that retained the W-30
 audio filename inside the shared module: the final module accepts one safe
@@ -60,3 +56,27 @@ fields, no new textual includes, and no product-quality claim. The existing
 W-30 policy file remains larger than the soft budget because its cohesive
 eligibility/model/proof/receipt policy is retained; no mechanical split is
 introduced. RIOTBOX-1494 remains the actual musician-facing follow-up.
+
+## CI correction
+
+GitHub run `34255676291` passed 718 app tests but rejected the added fixed W-30
+archive hash: local `86602ee9...` versus runner `c42f04b3...`. The hash had been
+measured after extraction and was not a historical compatibility baseline.
+Pinning it also asserted cross-host byte identity of an unpinned render
+fixture. That is not the contract under test.
+
+The fixture uses `f32::sin()` (`p016_product_export_action.rs`) and the resulting
+samples pass through RuntimeMix and PCM quantization before archive embedding.
+[Rust documents platform-dependent precision](https://doc.rust-lang.org/std/primitive.f32.html#method.sin)
+for this operation. Platform-dependent sample generation is the leading
+hypothesis, not a proven identification of the differing archive member.
+
+The correction compares the actual W-30 export with the previous writer
+sequence using the same exact input on each host. It does not change a product
+threshold, accept a list of machine-specific hashes, or alter DSP/archive bytes.
+Repeat-export determinism, exact embedded audio, model/proof readback and receipt
+hash checks remain required. The eight focused tests pass after correction.
+Independent delta review against `b4cff4c0` found zero P0–P3 findings and
+confirmed that only test code and review documentation changed. Self-review
+also found no outstanding issue. The corrected full local and GitHub CI runs
+remain merge gates.

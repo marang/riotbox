@@ -16,6 +16,8 @@ use dawproject::prelude::project::{
     RealParameterType, TimeSignatureParameterType, TimeUnitType, TrackType, TransportType,
     UnitType,
 };
+#[cfg(test)]
+use dawproject::{Dawproject, DawprojectWriter};
 use dawproject::{MetaData, Project};
 use riotbox_audio::source_audio::SourceAudioCache;
 use riotbox_core::{
@@ -42,6 +44,8 @@ use riotbox_core::{
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+#[cfg(test)]
+use std::io::Cursor;
 
 pub const W30_HOOK_DAWPROJECT_ACTION_BOUNDARY_ID: &str = "w30_hook_dawproject_v1";
 pub const W30_HOOK_DAWPROJECT_PROOF_SCHEMA: &str = "riotbox.w30_hook_dawproject.v1";
@@ -654,6 +658,34 @@ fn build_project(input: &W30HookDawprojectInput) -> Project {
     }
 }
 
+#[cfg(test)]
+pub(super) fn legacy_archive_bytes_for_test(
+    session: &SessionFile,
+    session_base_dir: Option<&Path>,
+) -> Result<Vec<u8>, JamAppError> {
+    let input = prepare_input(session, session_base_dir)?;
+    let proof = build_proof(&input);
+    let proof_bytes = serde_json::to_vec_pretty(&proof)?;
+    let metadata = build_metadata();
+    let project = build_project(&input);
+    let cursor = Cursor::new(Vec::new());
+    let mut writer = DawprojectWriter::new(cursor)
+        .map_err(|error| invalid_dawproject("could not create archive writer", error))?;
+    writer
+        .write_dawproject(&Dawproject::new(metadata, project))
+        .map_err(|error| invalid_dawproject("could not serialize DAWproject model", error))?;
+    writer
+        .write_file(EMBEDDED_AUDIO_PATH, &input.source_wav_bytes)
+        .map_err(|error| invalid_dawproject("could not embed archive audio", error))?;
+    writer
+        .write_file(DAWPROJECT_PROOF_PATH, &proof_bytes)
+        .map_err(|error| invalid_dawproject("could not embed proof", error))?;
+    writer
+        .finish()
+        .map_err(|error| invalid_dawproject("could not finish DAWproject archive", error))
+        .map(|cursor| cursor.into_inner())
+}
+
 fn build_receipt(
     destination: &Path,
     action_id: ActionId,
@@ -789,4 +821,9 @@ fn format_bpm(bpm: f32) -> String {
 
 fn sha256_bytes(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
+}
+
+#[cfg(test)]
+fn invalid_dawproject(context: &str, error: impl std::fmt::Display) -> JamAppError {
+    JamAppError::InvalidSession(format!("{context}: {error}"))
 }
