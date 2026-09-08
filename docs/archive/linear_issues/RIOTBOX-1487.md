@@ -17,7 +17,7 @@
 - Merge commit: `c7f98f361d8bf28555d10850a3836d929d9f0698`
 - Deleted from Linear: `2026-09-08`
 - Verification: `All local CI stages passed across staged runs; independent review and GitHub rust-ci passed.`
-- Docs touched: `None`
+- Docs touched: `docs/specs/session_file_spec.md`, `docs/specs/source_graph_spec.md`, `docs/research_decision_log.md` (RBX-368)
 - Follow-ups: `RIOTBOX-1488, RIOTBOX-1489, RIOTBOX-1490 complete the requested stability round; RIOTBOX-1491 remains deferred.`
 
 ## Why This Ticket Existed

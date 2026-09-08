@@ -17,7 +17,7 @@
 - Merge commit: `da9e994bffcd6fcfe5264299fda0ebecaa6d1276`
 - Deleted from Linear: `2026-09-08`
 - Verification: `14 source-audio tests passed in debug and release; full just ci, independent Rust review and GitHub rust-ci passed.`
-- Docs touched: `None`
+- Docs touched: `docs/specs/audio_core_spec.md`
 - Follow-ups: `RIOTBOX-1491 remains deferred; no TUI work.`
 
 ## Why This Ticket Existed

@@ -1677,4 +1677,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   [P2] Reject overflowing WAV block alignment without panics in decoder and writer
 - [RIOTBOX-1488.md](./RIOTBOX-1488.md)
   [P2] Normalize external Graph references relative to the Session directory
+- [RIOTBOX-1489.md](./RIOTBOX-1489.md)
+  [P2] Verify source WAV content identity before marking restored audio Loaded
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.

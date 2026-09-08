@@ -17,7 +17,7 @@
 - Merge commit: `d0c84e57fe5bef755b76db5bdc26d651ca0236bf`
 - Deleted from Linear: `2026-09-08`
 - Verification: `31 combined Graph/persistence tests, full combined just ci, independent review and GitHub rust-ci passed.`
-- Docs touched: `None`
+- Docs touched: `docs/specs/session_file_spec.md`, `docs/research_decision_log.md` (RBX-369)
 - Follow-ups: `RIOTBOX-1489 completes source integrity; RIOTBOX-1491 remains deferred.`
 
 ## Why This Ticket Existed
