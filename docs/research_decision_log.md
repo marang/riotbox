@@ -4993,3 +4993,17 @@ Why: the previous writer stored cwd-relative CLI paths verbatim while the loader
 Evidence: RIOTBOX-1488 synthetic tests cover public sidecar ingest with relative output paths, same/different Graph directories, restore and save in a child process with another working directory, absolute overrides, symlink parents with dot-dot, and explicit legacy repair while preserving hash mismatch rejection. Combined tests retain RBX-368 graph generations and failure behavior.
 Consequences: no new schema, action, audio processing, source corpus, or hidden migration. The existing alias/generation protocol owns Graph identity; path normalization only establishes its location. No automatic fallback from an ambiguous legacy Session path.
 Status: accepted
+
+---
+
+### RBX-370
+
+Date: 2026-09-08
+Topic: admit restored source PCM only after matching its persisted identity
+Phase: P000 / maintenance and regression
+Question: how can restore avoid using changed WAV bytes with analysis and lineage belonging to a previous file at the same path?
+Decision: read the source WAV once on the control thread, decode that caller-owned byte buffer, and compute the existing ingest-compatible `sha256:` hash over the exact complete-file buffer. Admit the resulting cache only when this digest exactly matches both the active Source Graph's source content hash and the matching Session SourceRef's content hash/source ID. Missing or mismatched identity leaves SourceAudioStatus unavailable and installs no source cache; malformed or missing WAVs retain their ordinary explicit unavailable diagnostics. Preserve capture-artifact ownership and the existing ingest hash format. No source identity is inferred from filenames, decode format, or the canonical JSON Graph hash.
+Why: graph JSON integrity cannot prove the identity of external audio. One read buffer removes the check/reopen race and the existing unavailable state prevents untrusted source monitoring without a new persistence or action model.
+Evidence: RIOTBOX-1489 synthetic restore tests mutate only WAV sample bytes or the Session source hash and require unavailable cache, silent/unavailable Source Monitor routing, and rejected source-dependent activation. Unchanged PCM24 and normal generated-fixture restore remain supported. Full source-free local CI and independent review pass before integration with the preceding persistence fixes.
+Consequences: this enforces the Session source-identity contract without changing audio processing or granting a quality verdict. Hashing and decoding remain outside realtime audio. The original source path may still change after the read, but the admitted in-memory PCM and its verified identity come from the same bytes. No real-source, Holdout, or commercial-reference access is required for this regression.
+Status: accepted
