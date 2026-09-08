@@ -279,7 +279,15 @@ fn validate_format(format: PcmFormatChunk) -> Result<(), SourceAudioError> {
             format.bits_per_sample
         )));
     }
-    let expected_block_align = format.channel_count * (format.bits_per_sample / 8);
+    if format.block_align == 0 {
+        return Err(SourceAudioError::InvalidWave("block align is zero".into()));
+    }
+    let expected_block_align = format
+        .channel_count
+        .checked_mul(format.bits_per_sample / 8)
+        .ok_or_else(|| {
+            SourceAudioError::InvalidWave("block align cannot be represented by WAV".into())
+        })?;
     if format.block_align != expected_block_align {
         return Err(SourceAudioError::InvalidWave(format!(
             "block align {} does not match expected {}",
@@ -312,6 +320,9 @@ fn pcm16_wave_bytes(
     channel_count: u16,
     samples: &[f32],
 ) -> Result<Vec<u8>, SourceAudioError> {
+    if sample_rate == 0 {
+        return Err(SourceAudioError::InvalidWave("sample rate is zero".into()));
+    }
     if channel_count == 0 {
         return Err(SourceAudioError::InvalidWave(
             "channel count is zero".into(),
@@ -336,7 +347,11 @@ fn pcm16_wave_bytes(
         .checked_mul(u32::from(channel_count))
         .and_then(|value| value.checked_mul(bytes_per_sample))
         .ok_or_else(|| SourceAudioError::InvalidWave("byte rate overflow".into()))?;
-    let block_align = channel_count * (bits_per_sample / 8);
+    let block_align = channel_count
+        .checked_mul(bits_per_sample / 8)
+        .ok_or_else(|| {
+            SourceAudioError::InvalidWave("block align cannot be represented by WAV".into())
+        })?;
 
     let data_len_usize = usize::try_from(data_len)
         .map_err(|_| SourceAudioError::InvalidWave("PCM data too large".into()))?;
