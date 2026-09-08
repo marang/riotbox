@@ -135,10 +135,10 @@ fn seed_scene_fixture_state(state: &mut JamAppState, fixture: &SceneRegressionFi
 pub(crate) fn sample_session(graph: &SourceGraph) -> SessionFile {
     let mut session = SessionFile::new("session-1", "0.1.0", "2026-04-12T18:00:00Z");
     session.source_refs.push(SourceRef {
-        source_id: SourceId::from("src-1"),
-        path_hint: "input.wav".into(),
-        content_hash: "hash-1".into(),
-        duration_seconds: 120.0,
+        source_id: graph.source.source_id.clone(),
+        path_hint: graph.source.path.clone(),
+        content_hash: graph.source.content_hash.clone(),
+        duration_seconds: graph.source.duration_seconds,
         decode_profile: "normalized_stereo".into(),
     });
     session.source_graph_refs.push(SourceGraphRef {
@@ -225,6 +225,15 @@ pub(crate) fn sample_session(graph: &SourceGraph) -> SessionFile {
     };
     session.notes = Some("keeper session".into());
     session
+}
+
+fn bind_synthetic_wav_identity(graph: &mut SourceGraph, source_path: &Path) {
+    use sha2::{Digest, Sha256};
+
+    let bytes = fs::read(source_path).expect("read synthetic source WAV");
+    let content_hash = format!("sha256:{:x}", Sha256::digest(bytes));
+    graph.source.content_hash = content_hash.clone();
+    graph.provenance.source_hash = content_hash;
 }
 
 fn w30_slice_pool_state_with_source_windows(

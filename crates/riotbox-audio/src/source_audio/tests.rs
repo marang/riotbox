@@ -26,6 +26,19 @@ fn loads_pcm16_wav_into_interleaved_float_cache() {
 }
 
 #[test]
+fn builds_pcm_cache_from_the_callers_wav_bytes() {
+    let bytes = pcm16_wave_bytes(1_000, 1, 2);
+
+    let cache = SourceAudioCache::from_pcm_wav_bytes("synthetic.wav", &bytes)
+        .expect("decode caller-owned PCM WAV bytes");
+
+    assert_eq!(cache.path, Path::new("synthetic.wav"));
+    assert_eq!(cache.sample_rate, 1_000);
+    assert_eq!(cache.channel_count, 1);
+    assert_eq!(cache.frame_count(), 2);
+}
+
+#[test]
 fn loads_pcm24_wav_into_interleaved_float_cache() {
     let tempdir = tempdir().expect("create tempdir");
     let path = tempdir.path().join("source24.wav");

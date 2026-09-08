@@ -39,6 +39,7 @@ fn loads_pcm24_source_audio_cache_from_app_files() {
     graph.source.sample_rate = 48_000;
     graph.source.channel_count = 2;
     graph.source.duration_seconds = 2.0 / 48_000.0;
+    bind_synthetic_wav_identity(&mut graph, &source_path);
     let session = sample_session(&graph);
     save_session_json(&session_path, &session).expect("save session fixture");
     save_source_graph_json(&graph_path, &graph).expect("save graph fixture");
@@ -63,6 +64,78 @@ fn loads_pcm24_source_audio_cache_from_app_files() {
             .iter()
             .all(|warning| !warning.contains("source audio"))
     );
+}
+
+#[test]
+fn changed_source_pcm_fails_closed_before_source_monitor_activation() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("sessions").join("session.json");
+    let graph_path = dir.path().join("graphs").join("source-graph.json");
+    let source_path = dir.path().join("source.wav");
+
+    write_pcm24_wave(&source_path, 48_000, 2);
+    let mut graph = sample_graph();
+    graph.source.path = source_path.to_string_lossy().into_owned();
+    graph.source.sample_rate = 48_000;
+    graph.source.channel_count = 2;
+    graph.source.duration_seconds = 2.0 / 48_000.0;
+    bind_synthetic_wav_identity(&mut graph, &source_path);
+    let session = sample_session(&graph);
+    save_session_json(&session_path, &session).expect("save session fixture");
+    save_source_graph_json(&graph_path, &graph).expect("save graph fixture");
+
+    let mut changed = fs::read(&source_path).expect("read synthetic source WAV");
+    let last = changed.len() - 1;
+    changed[last] ^= 0x01;
+    fs::write(&source_path, changed).expect("change synthetic source PCM");
+
+    let state =
+        JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("restore app state");
+
+    assert!(state.source_audio_cache.is_none());
+    assert_eq!(
+        state.runtime.source_monitor_audio_route,
+        SourceMonitorAudioRoute::SourceUnavailable
+    );
+    assert!(state.source_monitor_render_state().source.is_none());
+    assert!(state.runtime_view.runtime_warnings.iter().any(|warning| {
+        warning.contains("source audio unavailable for source monitor")
+            && warning.contains("source audio hash mismatch")
+    }));
+}
+
+#[test]
+fn session_source_ref_hash_mismatch_fails_closed_before_source_monitor_activation() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("sessions").join("session.json");
+    let graph_path = dir.path().join("graphs").join("source-graph.json");
+    let source_path = dir.path().join("source.wav");
+
+    write_pcm24_wave(&source_path, 48_000, 2);
+    let mut graph = sample_graph();
+    graph.source.path = source_path.to_string_lossy().into_owned();
+    graph.source.sample_rate = 48_000;
+    graph.source.channel_count = 2;
+    graph.source.duration_seconds = 2.0 / 48_000.0;
+    bind_synthetic_wav_identity(&mut graph, &source_path);
+    let mut session = sample_session(&graph);
+    session.source_refs[0].content_hash = "sha256:wrong".into();
+    save_session_json(&session_path, &session).expect("save session fixture");
+    save_source_graph_json(&graph_path, &graph).expect("save graph fixture");
+
+    let state =
+        JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("restore app state");
+
+    assert!(state.source_audio_cache.is_none());
+    assert_eq!(
+        state.runtime.source_monitor_audio_route,
+        SourceMonitorAudioRoute::SourceUnavailable
+    );
+    assert!(state.source_monitor_render_state().source.is_none());
+    assert!(state.runtime_view.runtime_warnings.iter().any(|warning| {
+        warning.contains("source audio unavailable for source monitor")
+            && warning.contains("session source ref src-1")
+    }));
 }
 
 #[test]
