@@ -3,6 +3,14 @@
 Classification: maintenance/regression. Direct follow-up: RIOTBOX-1494,
 unchanged committed V2 live-master recording to DAWproject.
 
+Later correction (RIOTBOX-1494 / RBX-373): the byte-compatible extraction
+preserved the dependency's non-standard `ProjectType`/`MetaDataType` XML roots.
+Its internal roundtrip evidence did not establish external schema conformance.
+New shared-writer output requires canonical roots and a versioned XML-document
+gate; historical artifacts are retained but not qualified for current
+DAWproject readiness. This does not invalidate unchanged audio-payload identity
+or claim that the maintenance extraction introduced the serialization defect.
+
 ## Scope
 
 The existing W-30 exporter mixed musical eligibility, project/proof semantics,

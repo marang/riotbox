@@ -547,7 +547,40 @@ Rules:
   owned by the consuming export policy. W-30 input hashing and decoding use
   the same read buffer that is embedded; checking a path and reopening it for
   format inspection is not artifact identity proof. This internal extraction
-  does not change the frozen W-30 archive or receipt contract
+  does not change the frozen W-30 archive or receipt contract. The later
+  RBX-373 serialization correction is distinct from that extraction: new
+  containers use canonical `Project`/`MetaData` XML roots, with a required
+  `dawproject_xml_document_v1` gate in addition to archive readback. Historical
+  receipts without the new gate cannot grant current DAWproject readiness;
+  their files and audio are not rewritten. The new gate proves canonical XML
+  document names and typed readback, not DAW-host import or general XSD validity.
+- the live-master DAWproject consumer (RIOTBOX-1494) records
+  `daw_session.live_master_dawproject_v1`, pack id `live-master-dawproject`,
+  scope `daw_session`, role `arrangement_manifest`. It has exactly four
+  artifact entries: archive (`daw_project_file`), embedded `project.xml`
+  (`export_manifest`), embedded `audio/live_master.wav`
+  (`live_recording_capture`), and embedded `riotbox-proof.json`
+  (`daw_project_proof`). Existing `dawproject_archive_readback` is the writer
+  gate, together with `dawproject_xml_document_v1` (RBX-373);
+  host-import/audible-output/release blockers remain separate.
+  Its versioned `riotbox.live_master_dawproject.v1` proof binds the source
+  receipt/boundary, source proof SHA, exact source/embedded WAV SHA, format,
+  recorded tempo, eight-beat placement, original capture timing window, scene,
+  Source Graph/timing refs, and capture lineage. It does not copy a human
+  verdict or relabel the recorded composite.
+  Admission requires the exact ready V2 receipt and exactly one local regular
+  non-symlink WAV/proof pair, read once each. Parsed
+  `LiveMasterRecordingProof` must agree with receipt/action/Session identity,
+  artifact hashes/format/metrics, recorded host/window and lineage. Required
+  Source Graph/timing and capture references must resolve in stored Session
+  metadata; no external graph or audio is loaded to repair missing evidence.
+  Later transport tempo changes do not reinterpret the recording's tempo.
+  The metadata-only mode is a typed runtime-local policy in the existing
+  restore/save pipeline, not persisted Session state or a second loader.
+  It preserves stored graph refs verbatim and skips graph/source/capture
+  hydration and graph writes. Normal runtime loading/saving remains unchanged.
+  The saved export action, commit record and receipt remain the only export
+  truth; a failed Session save leaves the prior Session and source take intact.
 - the first reserved live-recording receipt boundary is
   `live_recording.receipt_contract_v1` with
   `export_scope: live_recording`, `export_role: live_recording_capture`,
@@ -918,7 +951,8 @@ Additional receipt fields required before wider export scopes:
   receipt evidence is ready for the next implementation gate only; it still
   writes no DAW files and must not be presented as musician-facing export
   completion. The separate `daw_session.w30_hook_dawproject_v1` receipt instead
-  reports `dawproject_ready`: its passed `dawproject_archive_readback` gate is
+  reports `dawproject_ready` only with passed `dawproject_archive_readback` and
+  `dawproject_xml_document_v1` gates (RBX-373). The archive gate is
   the writer proof and its real archive replaces, rather than supplements, the
   older JSON-package layer. That proof gate reports `not_applicable`, and the
   proof stack therefore omits
@@ -929,7 +963,8 @@ Additional receipt fields required before wider export scopes:
   placement/tempo readiness, boundary-specific writer evidence, DAW host import
   proof, and audible output proof are all satisfied. The older local-skeleton
   path still requires JSON package integrity plus `daw_session_writer_proof`.
-  The W-30 DAWproject path instead requires its exact archive-readback gate and
+  The W-30 DAWproject path instead requires its exact archive-readback and
+  versioned XML-document gates and
   does not invent JSON-package or writer blockers once that gate passes. Neither
   path removes `developer_proof_only`, `daw_host_import_proof_missing`, or
   `audible_output_proof_missing`.

@@ -1039,6 +1039,13 @@ w30-hook-dawproject session destination observer="":
     if [[ -n {{quote(observer)}} ]]; then args+=(--observer {{quote(observer)}}); fi
     cargo run --quiet -p riotbox-app --bin riotbox-app -- "${args[@]}"
 
+live-master-dawproject session destination observer="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    args=(--live-master-dawproject-execute --session {{quote(session)}} --daw-session-destination {{quote(destination)}})
+    if [[ -n {{quote(observer)}} ]]; then args+=(--observer {{quote(observer)}}); fi
+    cargo run --quiet -p riotbox-app --bin riotbox-app -- "${args[@]}"
+
 live-master-recording session destination graph="" observer="":
     #!/usr/bin/env bash
     set -euo pipefail

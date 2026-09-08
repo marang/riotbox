@@ -19,7 +19,7 @@ use super::super::{
     LiveMasterRecordingQueueResult, product_export::sha256_file,
 };
 
-fn live_master_recording_state() -> JamAppState {
+pub(super) fn live_master_recording_state() -> JamAppState {
     let mut session = SessionFile::new(
         "live-master-session",
         "riotbox-test",
@@ -51,7 +51,7 @@ fn live_master_capture_ref(capture_id: &str, lineage_capture_refs: &[&str]) -> C
     }
 }
 
-fn live_master_test_output() -> AudioOutputInfo {
+pub(super) fn live_master_test_output() -> AudioOutputInfo {
     AudioOutputInfo {
         host_name: "Alsa".into(),
         device_name: "pipewire-default".into(),
@@ -63,7 +63,7 @@ fn live_master_test_output() -> AudioOutputInfo {
     }
 }
 
-fn live_master_test_health(output: &AudioOutputInfo) -> AudioRuntimeHealth {
+pub(super) fn live_master_test_health(output: &AudioOutputInfo) -> AudioRuntimeHealth {
     AudioRuntimeHealth {
         lifecycle: AudioRuntimeLifecycle::Running,
         output: Some(output.clone()),
@@ -75,7 +75,7 @@ fn live_master_test_health(output: &AudioOutputInfo) -> AudioRuntimeHealth {
     }
 }
 
-fn live_master_test_outcome(
+pub(super) fn live_master_test_outcome(
     plan: &LiveMasterRecordingPlan,
 ) -> riotbox_audio::runtime::LiveMasterCaptureOutcome {
     let sample_count = plan.request.target_frame_count * usize::from(plan.output.channel_count);

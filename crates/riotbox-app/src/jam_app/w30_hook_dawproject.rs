@@ -787,7 +787,10 @@ fn build_receipt(
             duration_ms: None,
         },
     ];
-    receipt.qa_gates = vec![ExportReceiptQaGateResult::dawproject_archive_readback()];
+    receipt.qa_gates = vec![
+        ExportReceiptQaGateResult::dawproject_archive_readback(),
+        ExportReceiptQaGateResult::dawproject_xml_document(),
+    ];
     receipt.arrangement_placement_refs = vec![ExportArrangementPlacementRef::scene_range(
         input.scene_id.clone(),
         Some(input.source_graph_ref.source_id.clone()),

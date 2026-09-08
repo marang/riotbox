@@ -235,6 +235,7 @@ fn export_boundary_short_label(boundary: ProductExportBoundary) -> &'static str 
         | ProductExportBoundary::StemPackageW30HookLoopV4 => "w30-hook",
         ProductExportBoundary::ArrangementDawPlacementContractV1 => "arrange-daw",
         ProductExportBoundary::DawSessionW30HookDawprojectV1 => "w30-daw",
+        ProductExportBoundary::DawSessionLiveMasterDawprojectV1 => "live-master-daw",
         ProductExportBoundary::LiveRecordingReceiptContractV1 => "live-rec",
         ProductExportBoundary::LiveRecordingRuntimeMasterCaptureV1 => "live-master",
         ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV2 => "live-bar",

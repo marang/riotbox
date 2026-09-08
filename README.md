@@ -385,6 +385,27 @@ files. Only after all gates pass does it commit
 `export.live_recording` and its Session receipt. It records no microphone/input
 audio, uses no offline render as a substitute, and adds no new sound processing.
 
+### Hand Off The Recorded Live Master
+
+Package a committed two-bar live-master recording without starting audio or
+rendering again:
+
+```bash
+just live-master-dawproject \
+  "path/to/session.json" \
+  "exports/riotbox-live-master.dawproject" \
+  "artifacts/local/live-master-dawproject-observer.ndjson"
+```
+
+The observer argument is optional. The latest V2 recording receipt must pass
+identity, timing, health, and lineage checks. The archive embeds its exact WAV
+as one eight-beat clip at the **recorded tempo**, even if the current transport
+tempo has changed. This is the complete master, not an isolated hook or editable
+stems. Loading and saving use Session metadata without hydrating the source
+graph, original source, or lineage capture audio. Only the receipt-declared
+master WAV and proof are opened for the export. Existing output files are not replaced.
+Successful archive validation does not yet prove import or playback in a DAW.
+
 ## Start In 5 Steps
 
 1. Run Riotbox on your own WAV or one of the local test examples described in [`data/test_audio/README.md`](data/test_audio/README.md):

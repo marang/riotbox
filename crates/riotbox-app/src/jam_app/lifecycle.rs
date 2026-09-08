@@ -19,7 +19,9 @@ use super::{
         build_w30_resample_tap_state, normalize_w30_preview_mode,
     },
     runtime_view::JamRuntimeView,
-    state::{AppRuntimeState, JamAppState, SidecarState, SourceAudioStatus},
+    state::{
+        AppRuntimeState, JamAppState, SessionHydrationPolicy, SidecarState, SourceAudioStatus,
+    },
     transport_helpers::{normalize_scene_candidates, transport_clock_from_state},
 };
 
@@ -41,6 +43,7 @@ impl JamAppState {
             JamRuntimeView::build(&AppRuntimeState::default(), &session, source_graph.as_ref());
         let mut state = Self {
             files: None,
+            session_hydration_policy: SessionHydrationPolicy::RuntimeFull,
             session,
             source_graph,
             source_audio_cache: None,

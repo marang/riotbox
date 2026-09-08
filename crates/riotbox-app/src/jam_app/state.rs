@@ -90,6 +90,17 @@ pub struct JamFileSet {
     pub source_graph_path: Option<PathBuf>,
 }
 
+/// Runtime-only restore behavior for a Session file.
+///
+/// This is deliberately not Session state: a metadata-only consumer must not
+/// rewrite the file's graph references while avoiding source-derived I/O.
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum SessionHydrationPolicy {
+    #[default]
+    RuntimeFull,
+    ExportMetadataOnly,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct AppRuntimeState {
     pub audio: Option<AudioRuntimeHealth>,
@@ -195,6 +206,7 @@ pub enum SidecarState {
 #[derive(Clone, Debug)]
 pub struct JamAppState {
     pub files: Option<JamFileSet>,
+    pub session_hydration_policy: SessionHydrationPolicy,
     pub session: SessionFile,
     pub source_graph: Option<SourceGraph>,
     pub source_audio_cache: Option<SourceAudioCache>,

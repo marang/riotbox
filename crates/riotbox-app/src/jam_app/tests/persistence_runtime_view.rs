@@ -26,6 +26,107 @@ fn loads_and_saves_jam_app_state_from_files() {
 }
 
 #[test]
+fn export_metadata_hydration_skips_missing_source_graph_and_capture_io_and_preserves_refs() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("sessions").join("session.json");
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session.source_refs[0].path_hint = "forbidden-source.wav".into();
+    let graph_ref = &mut session.source_graph_refs[0];
+    graph_ref.storage_mode = GraphStorageMode::External;
+    graph_ref.embedded_graph = None;
+    graph_ref.external_path = Some("missing-relative-graph.json".into());
+    session.captures.push(CaptureRef {
+        capture_id: CaptureId::from("metadata-only-missing-capture"),
+        capture_type: CaptureType::Pad,
+        source_origin_refs: vec!["forbidden-source".into()],
+        source_window: None,
+        lineage_capture_refs: Vec::new(),
+        resample_generation_depth: 0,
+        created_from_action: None,
+        storage_path: "forbidden-relative-capture.wav".into(),
+        assigned_target: None,
+        is_pinned: false,
+        notes: None,
+    });
+    let graph_refs_before = session.source_graph_refs.clone();
+    let captures_before = session.captures.clone();
+    save_session_json(&session_path, &session).expect("save metadata fixture");
+
+    assert!(
+        JamAppState::from_json_files(&session_path, None::<&Path>).is_err(),
+        "ordinary runtime hydration must still resolve the stored graph reference"
+    );
+    let mut state = JamAppState::from_json_files_for_export_metadata(&session_path)
+        .expect("metadata-only hydration must not resolve relative graph or capture paths");
+
+    assert_eq!(state.session_hydration_policy, SessionHydrationPolicy::ExportMetadataOnly);
+    assert!(state.source_graph.is_none());
+    assert!(state.source_audio_cache.is_none());
+    assert_eq!(state.runtime.source_audio.status, SourceAudioStatus::NotRequested);
+    assert!(state.capture_audio_cache.is_empty());
+    assert_eq!(state.session.source_graph_refs, graph_refs_before);
+    assert_eq!(state.session.captures, captures_before);
+
+    state.session.notes = Some("saved without cwd-relative graph resolution".into());
+    state.save().expect("metadata-only normal save");
+    let after_normal_save = load_session_json(&session_path).expect("reload normal save");
+    assert_eq!(after_normal_save.source_graph_refs, graph_refs_before);
+    assert_eq!(after_normal_save.captures, captures_before);
+
+    state.session.notes = Some("saved without source graph write".into());
+    state
+        .save_session_without_source_graph_write()
+        .expect("metadata-only session-only save");
+    let after_session_only_save = load_session_json(&session_path).expect("reload session-only save");
+    assert_eq!(after_session_only_save.source_graph_refs, graph_refs_before);
+    assert_eq!(after_session_only_save.captures, captures_before);
+}
+
+#[test]
+fn export_metadata_hydration_preserves_embedded_graph_refs_on_both_save_paths() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("sessions").join("session.json");
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let graph_refs_before = session.source_graph_refs.clone();
+    assert_eq!(graph_refs_before[0].storage_mode, GraphStorageMode::Embedded);
+    assert_eq!(graph_refs_before[0].embedded_graph.as_ref(), Some(&graph));
+    save_session_json(&session_path, &session).expect("save embedded metadata fixture");
+
+    let state = JamAppState::from_json_files_for_export_metadata(&session_path)
+        .expect("metadata-only hydration skips an embedded graph too");
+    assert!(state.source_graph.is_none());
+    assert_eq!(state.session.source_graph_refs, graph_refs_before);
+
+    state.save().expect("metadata-only normal save");
+    assert_eq!(
+        load_session_json(&session_path)
+            .expect("reload normal save")
+            .source_graph_refs,
+        graph_refs_before
+    );
+
+    state
+        .save_session_without_source_graph_write()
+        .expect("metadata-only session-only save");
+    assert_eq!(
+        load_session_json(&session_path)
+            .expect("reload session-only save")
+            .source_graph_refs,
+        graph_refs_before
+    );
+}
+
+#[test]
+fn from_parts_keeps_the_runtime_hydration_default() {
+    let graph = sample_graph();
+    let state = JamAppState::from_parts(sample_session(&graph), Some(graph), ActionQueue::new());
+
+    assert_eq!(state.session_hydration_policy, SessionHydrationPolicy::RuntimeFull);
+}
+
+#[test]
 fn loads_pcm24_source_audio_cache_from_app_files() {
     let dir = tempdir().expect("create temp dir");
     let session_path = dir.path().join("sessions").join("session.json");

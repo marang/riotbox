@@ -48,6 +48,11 @@ Preferred solution:
 
 ## Arch Host Requirements
 
+Source-free DAWproject schema tests require `xmllint` (`libxml2` on Arch,
+`libxml2-utils` on Ubuntu CI). They validate synthetic XML against repository-
+pinned upstream schemas using `--nonet`; they never fetch schemas at test time.
+This is a development/CI requirement, not an audio-runtime dependency.
+
 Audio build requirements:
 
 - `pkg-config` available in the sandbox.

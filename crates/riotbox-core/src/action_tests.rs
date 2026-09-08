@@ -473,4 +473,13 @@ fn daw_session_export_action_contract_roundtrips_as_reserved_scope() {
         dawproject_boundary,
         DawSessionExportBoundary::W30HookDawprojectV1
     );
+    let live_master_json = serde_json::to_value(DawSessionExportBoundary::LiveMasterDawprojectV1)
+        .expect("serialize live-master DAWproject boundary");
+    assert_eq!(live_master_json, "live_master_dawproject_v1");
+    let live_master_boundary: DawSessionExportBoundary = serde_json::from_value(live_master_json)
+        .expect("deserialize live-master DAWproject boundary");
+    assert_eq!(
+        live_master_boundary,
+        DawSessionExportBoundary::LiveMasterDawprojectV1
+    );
 }

@@ -134,16 +134,19 @@ pub fn daw_session_export_surface_gate_for_session(
     {
         blockers.push(DawSessionExportSurfaceBlocker::DawReceiptReadinessBlocked);
     }
-    let w30_dawproject = receipt.is_w30_hook_dawproject_v1();
+    let dawproject_archive = receipt.is_dawproject_archive_receipt();
     let legacy_arrangement_contract = receipt.pack_id == ARRANGEMENT_DAW_PLACEMENT_PACK_ID
         && receipt.export_role == ProductExportRole::ArrangementManifest
         && receipt.export_boundary == ProductExportBoundary::ArrangementDawPlacementContractV1;
-    if !legacy_arrangement_contract && !w30_dawproject {
+    if !legacy_arrangement_contract && !dawproject_archive {
         blockers.push(DawSessionExportSurfaceBlocker::DawReceiptIdentityMissing);
     }
 
-    let writer_missing = if w30_dawproject {
+    let writer_missing = if receipt.is_live_master_dawproject_v1() {
+        !receipt.live_master_dawproject_archive_ready()
+    } else if dawproject_archive {
         !daw_session_qa_gate_passed(receipt, DAWPROJECT_ARCHIVE_QA_GATE_ID)
+            || !receipt.dawproject_xml_document_ready()
     } else {
         match receipt
             .qa_gates

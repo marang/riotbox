@@ -8,6 +8,8 @@ include!("tests/persistence_runtime_view.rs");
 mod graph_transaction;
 include!("tests/p016_product_export_action.rs");
 include!("tests/p016_live_recording_export_action.rs");
+mod dawproject_xml_schema;
+mod p016_live_master_dawproject;
 mod p016_live_master_recording;
 include!("tests/p016_daw_session_export_action.rs");
 include!("tests/p016_daw_session_host_import_action.rs");

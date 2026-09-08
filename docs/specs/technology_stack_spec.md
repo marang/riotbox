@@ -139,8 +139,11 @@ Why:
 
 - DAWproject 1.0 is the first vendor-neutral DAW handoff format for the bounded
   W-30 semantic-hook workflow
-- the Rust `dawproject` crate owns schema-aware project/metadata serialization,
-  ZIP archive writing, and typed readback in the non-realtime app path
+- the Rust `dawproject` crate supplies typed models, ZIP writing and typed
+  readback in the non-realtime app path; Riotbox's shared archive owner applies
+  and validates canonical `Project`/`MetaData` document names against the pinned
+  DAWproject 1.0 contract (RBX-373). A serializer/reader roundtrip alone is not
+  external XML-schema conformance
 - Riotbox still owns the action, Session receipt, lineage, artifact identities,
   exact embedded-audio check, atomic no-replace publication, and QA decision
 - format serialization must never enter the realtime audio callback and does

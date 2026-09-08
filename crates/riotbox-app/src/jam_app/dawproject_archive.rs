@@ -9,6 +9,8 @@ use sha2::{Digest, Sha256};
 
 use super::JamAppError;
 
+mod xml_documents;
+
 pub(in crate::jam_app) const DAWPROJECT_PROOF_PATH: &str = "riotbox-proof.json";
 const PROJECT_XML_PATH: &str = "project.xml";
 const METADATA_XML_PATH: &str = "metadata.xml";
@@ -117,6 +119,20 @@ fn build_and_validate_archive(
             payload.project.clone(),
         ))
         .map_err(|error| invalid_dawproject("could not serialize DAWproject model", error))?;
+    let library_documents = writer
+        .finish()
+        .map_err(|error| invalid_dawproject("could not finish DAWproject archive", error))?
+        .into_inner();
+    let (project_xml, metadata_xml) = canonicalize_library_documents(&library_documents)?;
+    let cursor = Cursor::new(Vec::new());
+    let mut writer = DawprojectWriter::new(cursor)
+        .map_err(|error| invalid_dawproject("could not create canonical archive writer", error))?;
+    writer
+        .write_file(PROJECT_XML_PATH, &project_xml)
+        .map_err(|error| invalid_dawproject("could not write canonical project XML", error))?;
+    writer
+        .write_file(METADATA_XML_PATH, &metadata_xml)
+        .map_err(|error| invalid_dawproject("could not write canonical metadata XML", error))?;
     writer
         .write_file(payload.audio.path, payload.audio.bytes)
         .map_err(|error| invalid_dawproject("could not embed archive audio", error))?;
@@ -125,7 +141,9 @@ fn build_and_validate_archive(
         .map_err(|error| invalid_dawproject("could not embed proof", error))?;
     let bytes = writer
         .finish()
-        .map_err(|error| invalid_dawproject("could not finish DAWproject archive", error))?
+        .map_err(|error| {
+            invalid_dawproject("could not finish canonical DAWproject archive", error)
+        })?
         .into_inner();
     let (project_xml_sha256, proof_sha256) = validate_archive_bytes(&bytes, payload)?;
     Ok(ValidatedArchive {
@@ -136,6 +154,24 @@ fn build_and_validate_archive(
         },
         bytes,
     })
+}
+
+/// Keeps dawproject's typed serialization (including its crate-specific
+/// attribute spelling) and changes only the parsed outer XML element names.
+fn canonicalize_library_documents(
+    library_documents: &[u8],
+) -> Result<(Vec<u8>, Vec<u8>), JamAppError> {
+    let mut reader = DawprojectReader::new(Cursor::new(library_documents)).map_err(|error| {
+        invalid_dawproject("library DAWproject documents are unreadable", error)
+    })?;
+    let project = read_archive_file(&mut reader, PROJECT_XML_PATH)?;
+    let metadata = read_archive_file(&mut reader, METADATA_XML_PATH)?;
+    let project = xml_documents::canonicalize_root(&project, "Project")?;
+    let metadata = xml_documents::canonicalize_root(&metadata, "MetaData")?;
+    xml_documents::validate_canonical_root(&project, "Project")?;
+    xml_documents::validate_canonical_root(&metadata, "MetaData")?;
+
+    Ok((project, metadata))
 }
 
 fn validate_archive_bytes(
@@ -176,6 +212,9 @@ fn validate_archive_bytes(
         ));
     }
     let project_xml = read_archive_file(&mut reader, PROJECT_XML_PATH)?;
+    let metadata_xml = read_archive_file(&mut reader, METADATA_XML_PATH)?;
+    xml_documents::validate_canonical_root(&project_xml, "Project")?;
+    xml_documents::validate_canonical_root(&metadata_xml, "MetaData")?;
     Ok((sha256_bytes(&project_xml), sha256_bytes(&proof_bytes)))
 }
 
@@ -271,6 +310,22 @@ mod tests {
     };
 
     use super::*;
+    use quick_xml::{Reader, events::Event};
+
+    fn root_name(xml: &[u8]) -> String {
+        let mut reader = Reader::from_reader(xml);
+        let mut buffer = Vec::new();
+        loop {
+            match reader.read_event_into(&mut buffer).expect("XML event") {
+                Event::Start(start) => {
+                    return String::from_utf8(start.name().as_ref().to_vec()).expect("root UTF-8");
+                }
+                Event::Decl(_) | Event::DocType(_) | Event::Comment(_) | Event::Text(_) => {}
+                other => panic!("expected XML root start, got {other:?}"),
+            }
+            buffer.clear();
+        }
+    }
 
     fn synthetic_metadata() -> MetaData {
         MetaData {
@@ -323,7 +378,7 @@ mod tests {
     }
 
     #[test]
-    fn archive_bytes_match_the_legacy_writer_reference() {
+    fn canonical_archive_changes_only_xml_roots_and_preserves_payload_members() {
         let metadata = synthetic_metadata();
         let project = synthetic_project();
         let audio = [0_u8, 1, 2, 3, 4, 5];
@@ -340,8 +395,79 @@ mod tests {
             proof_json: proof,
         };
 
+        let legacy = legacy_writer_bytes(&payload);
         let archive = build_and_validate_archive(&payload).expect("validated archive");
-        assert_eq!(archive.bytes, legacy_writer_bytes(&payload));
+        let mut reader = DawprojectReader::new(Cursor::new(archive.bytes)).expect("archive reader");
+        assert_eq!(
+            root_name(&read_archive_file(&mut reader, PROJECT_XML_PATH).expect("project XML")),
+            "Project"
+        );
+        assert_eq!(
+            root_name(&read_archive_file(&mut reader, METADATA_XML_PATH).expect("metadata XML")),
+            "MetaData"
+        );
+        let mut legacy_reader = DawprojectReader::new(Cursor::new(legacy)).expect("legacy reader");
+        let legacy_project =
+            read_archive_file(&mut legacy_reader, PROJECT_XML_PATH).expect("legacy project");
+        let legacy_metadata =
+            read_archive_file(&mut legacy_reader, METADATA_XML_PATH).expect("legacy metadata");
+        assert_eq!(
+            xml_documents::canonicalize_root(&legacy_project, "Project")
+                .expect("canonical project"),
+            read_archive_file(&mut reader, PROJECT_XML_PATH).expect("canonical project member")
+        );
+        assert_eq!(
+            xml_documents::canonicalize_root(&legacy_metadata, "MetaData")
+                .expect("canonical metadata"),
+            read_archive_file(&mut reader, METADATA_XML_PATH).expect("canonical metadata member")
+        );
+        assert_eq!(
+            read_archive_file(&mut legacy_reader, "audio/synthetic.wav").expect("legacy audio"),
+            audio
+        );
+        assert_eq!(
+            read_archive_file(&mut legacy_reader, DAWPROJECT_PROOF_PATH).expect("legacy proof"),
+            proof
+        );
+    }
+
+    #[test]
+    fn canonical_root_gate_rejects_dependency_type_names_and_preserves_root_attributes() {
+        assert!(
+            xml_documents::validate_canonical_root(
+                b"<ProjectType contentTypes=\"audio\"></ProjectType>",
+                "Project"
+            )
+            .is_err()
+        );
+        assert!(
+            xml_documents::validate_canonical_root(b"<MetaDataType></MetaDataType>", "MetaData")
+                .is_err()
+        );
+        let canonical = xml_documents::canonicalize_root(b"<?xml version=\"1.0\"?><ProjectType contentTypes=\"audio\"><contentType/></ProjectType>", "Project").expect("rewrite root");
+        assert_eq!(
+            canonical,
+            b"<?xml version=\"1.0\"?><Project contentTypes=\"audio\"><contentType/></Project>"
+        );
+        xml_documents::validate_canonical_root(&canonical, "Project").expect("canonical root");
+    }
+
+    #[test]
+    fn canonical_root_gate_accepts_empty_metadata_and_rejects_unknown_or_outside_content() {
+        let metadata = xml_documents::canonicalize_root(b"<MetaDataType/>", "MetaData")
+            .expect("rewrite empty metadata");
+        assert_eq!(metadata, b"<MetaData/>");
+        xml_documents::validate_canonical_root(&metadata, "MetaData")
+            .expect("empty canonical metadata");
+        assert!(xml_documents::canonicalize_root(b"<Unexpected/>", "Project").is_err());
+        assert!(
+            xml_documents::canonicalize_root(b"outside<ProjectType></ProjectType>", "Project")
+                .is_err()
+        );
+        assert!(
+            xml_documents::validate_canonical_root(b"<Project></Project>outside", "Project")
+                .is_err()
+        );
     }
 
     #[test]

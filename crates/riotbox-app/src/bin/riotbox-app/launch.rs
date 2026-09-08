@@ -122,6 +122,10 @@ enum LaunchMode {
         session_path: PathBuf,
         destination_path: PathBuf,
     },
+    LiveMasterDawprojectExecute {
+        session_path: PathBuf,
+        destination_path: PathBuf,
+    },
     DawSessionWriterPlan {
         session_path: PathBuf,
         destination_path: PathBuf,
@@ -231,6 +235,10 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     }
     if matches!(launch.mode, LaunchMode::W30HookDawprojectExecute { .. }) {
         run_w30_hook_dawproject_execute(&launch, &raw_args)?;
+        return Ok(());
+    }
+    if matches!(launch.mode, LaunchMode::LiveMasterDawprojectExecute { .. }) {
+        run_live_master_dawproject_execute(&launch, &raw_args)?;
         return Ok(());
     }
     if matches!(launch.mode, LaunchMode::DawSessionWriterPlan { .. }) {
@@ -358,6 +366,9 @@ fn load_state(mode: LaunchMode) -> Result<JamAppState, JamAppError> {
         )),
         LaunchMode::W30HookDawprojectExecute { .. } => Err(JamAppError::InvalidSession(
             "W-30 DAWproject execute uses a non-interactive export path".into(),
+        )),
+        LaunchMode::LiveMasterDawprojectExecute { .. } => Err(JamAppError::InvalidSession(
+            "live-master DAWproject execute uses a non-interactive metadata-only export path".into(),
         )),
         LaunchMode::DawSessionWriterPlan { .. } => Err(JamAppError::InvalidSession(
             "DAW session writer plan uses a non-interactive proof path".into(),

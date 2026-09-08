@@ -8,6 +8,7 @@ struct DawSessionModeArgs<'a> {
     writer_proof_apply: bool,
     writer_export_execute: bool,
     w30_hook_dawproject_execute: bool,
+    live_master_dawproject_execute: bool,
     writer_plan: bool,
     source_path_present: bool,
     source_graph_path_present: bool,
@@ -184,6 +185,20 @@ fn parse_daw_session_mode_args(args: DawSessionModeArgs<'_>) -> Result<Option<Ap
                     args.destination_path,
                     "W-30 DAWproject execute requires --daw-session-destination <file.dawproject>",
                 )?,
+            },
+            observer_path: args.observer_path.cloned(),
+        }));
+    }
+
+    if args.live_master_dawproject_execute {
+        reject_daw_session_action_mode_conflicts(
+            &args,
+            "live-master DAWproject execute reads only an explicit Session and destination file and cannot be combined with source/graph/sidecar/seed/stem/proof arguments",
+        )?;
+        return Ok(Some(AppLaunch {
+            mode: LaunchMode::LiveMasterDawprojectExecute {
+                session_path: required_daw_session(args.session_path, args.saw_session_flag, "live-master DAWproject execute requires --session <session.json>")?,
+                destination_path: required_daw_destination(args.destination_path, "live-master DAWproject execute requires --daw-session-destination <file.dawproject>")?,
             },
             observer_path: args.observer_path.cloned(),
         }));
