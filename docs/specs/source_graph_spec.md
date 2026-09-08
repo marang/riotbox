@@ -16,6 +16,10 @@ It exists so that:
 - the realtime core consumes analysis without depending on provider-specific details
 - TUI, Scene Brain, capture, and Ghost refer to the same source objects
 - session save / load can persist analysis results safely
+- External Session-owned Graph publication uses the immutable canonical
+  generation and compatibility-alias protocol in the Session spec's Save/Load
+  Rules (RBX-368). Generation identity uses the existing canonical serialized
+  Graph SHA-256, not the source WAV content hash.
 
 ---
 
