@@ -189,7 +189,8 @@ local `agent-prelisten.md` SHA-256:
 It confirms the composite assignment and separates technical validity from
 predicted musical usefulness. Its prediction is retained unchanged for later
 comparison with the listener, not used as a human verdict. Focused
-`just live-master-recording-contract-smoke` passes. No human playback yet.
+`just live-master-recording-contract-smoke` passes. At that point, no human
+playback had occurred.
 
 ## Human verdict and scope
 
@@ -202,8 +203,10 @@ hook-plus-beat loop, not isolated drums or hardness; no redundant replay followe
 
 The listener accepted it: the sound was good and hook/beat were well matched.
 Record `human_verdict: keep` for this exact composite loop and its bounded reuse
-question. No strongest element, separate hook-strength/source-recognition score,
-or explicit click/seam rating was supplied. Those dimensions are not invented;
+question. `strongest_element: none` means no strongest element was specified;
+`hook_after_two_bars: inconclusive` means hook strength was not separately rated;
+`source_recognition: not_applicable` reflects the absence of a source A/B.
+No explicit click/seam rating was supplied. Those dimensions are not invented;
 the raw seam measurements remain technical evidence only. The prior agent
 prediction stays unchanged rather than being rewritten to agree with feedback.
 
