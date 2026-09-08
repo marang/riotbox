@@ -1420,6 +1420,21 @@ MVP expectation:
 - one clear artifact layout
 - no hidden autosave complexity before the format is stable
 - current JSON saves serialize first, write beside the target, then rename into place; this is the MVP crash-safety seam, not a full multi-file transaction
+- External Graph saves retain immutable canonical generations in
+  `<graph filename>.riotbox-graphs/<sha256 hex>.json` beside the external alias.
+  Preserve the old alias generation, publish the new generation without
+  replacement, replace the alias, then publish the Session last (RBX-368).
+  Existing generations must verify against their exact canonical hash. Keep
+  all generations; automatic garbage collection is not part of this boundary.
+  Reject Session/alias/generation path collisions before writing.
+  The `.riotbox-graphs` directory namespace is reserved for immutable
+  generations; Session and mutable Graph output targets must not live there.
+- A Session-only save must verify that its prepared external graph reference
+  already resolves; it must not publish a newly computed dangling graph hash.
+- This protects the last loadable pair against ordinary I/O failure and process
+  interruption between completed operations under a single writer. Power-loss
+  durability, concurrent writers, and external tools reading only the mutable
+  alias are outside this guarantee.
 - an intentional interactive-shell exit through `q` or `Esc` runs that
   canonical save path before the quit observer event and process exit; a save
   error must fail the clean exit instead of claiming persisted state
@@ -1449,6 +1464,12 @@ Current MVP crash-recovery boundary:
 
 - truncated or partial session JSON must fail with an explicit parse error
 - load must not silently repair or replace the requested file with guessed state
+- An external Graph alias that cannot supply the Session's graph hash may
+  resolve to the exact hash-named generation in that alias's sibling
+  `.riotbox-graphs` directory. This is deterministic reference resolution,
+  never a directory scan, most-recent-file selection, or Session repair.
+  Explicit graph overrides retain precedence and use only their own alias
+  namespace. Missing or hash-invalid generations fail closed.
 - adjacent valid session files can still be loaded manually, but automatic fallback selection is not part of MVP yet
 
 ### 16.1 MVP crash recovery policy

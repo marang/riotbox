@@ -4,6 +4,7 @@ mod graph_paths;
 
 #[cfg(test)]
 mod graph_path_tests;
+pub(super) mod graph_transaction;
 
 impl JamAppState {
     pub fn from_json_files(
@@ -139,10 +140,12 @@ impl JamAppState {
             &session_path,
             source_graph_path.as_deref(),
         )?;
-        if let Some(source_graph_path) = source_graph_path.as_deref() {
-            save_source_graph_json(source_graph_path, &graph)?;
-        }
-        save_session_json(&session_path, &session)?;
+        graph_transaction::save_graph_and_session(
+            &session_path,
+            &session,
+            Some(&graph),
+            source_graph_path.as_deref(),
+        )?;
 
         let mut state = Self::from_json_files(&session_path, source_graph_path.as_deref())?;
         if let Some(explicit_source_bpm) = explicit_source_bpm {
@@ -159,17 +162,17 @@ impl JamAppState {
     pub fn save(&self) -> Result<(), JamAppError> {
         if let Some(files) = &self.files {
             let session_to_save = self.session_prepared_for_save()?;
-            save_session_json(&files.session_path, &session_to_save)?;
-
-            if let Some(source_graph) = &self.source_graph
-                && let Some(source_graph_path) = resolve_external_graph_path(
-                    &session_to_save,
-                    &files.session_path,
-                    files.source_graph_path.as_deref(),
-                )
-            {
-                save_source_graph_json(source_graph_path, source_graph)?;
-            }
+            let graph_path = resolve_external_graph_path(
+                &session_to_save,
+                &files.session_path,
+                files.source_graph_path.as_deref(),
+            );
+            graph_transaction::save_graph_and_session(
+                &files.session_path,
+                &session_to_save,
+                self.source_graph.as_ref(),
+                graph_path.as_deref(),
+            )?;
         }
 
         Ok(())
@@ -177,7 +180,16 @@ impl JamAppState {
 
     pub(super) fn save_session_without_source_graph_write(&self) -> Result<(), JamAppError> {
         if let Some(files) = &self.files {
-            save_session_json(&files.session_path, &self.session_prepared_for_save()?)?;
+            graph_transaction::validate_mutable_destination(&files.session_path)?;
+            let session_to_save = self.session_prepared_for_save()?;
+            // Recording rollback relies on failure occurring before Session
+            // publication, including when an unsaved graph has changed its hash.
+            resolve_source_graph(
+                &session_to_save,
+                &files.session_path,
+                files.source_graph_path.as_deref(),
+            )?;
+            save_session_json(&files.session_path, &session_to_save)?;
         }
         Ok(())
     }
@@ -224,10 +236,10 @@ fn resolve_source_graph(
     explicit_source_graph_path: Option<&Path>,
 ) -> Result<Option<SourceGraph>, JamAppError> {
     if let Some(path) = explicit_source_graph_path {
-        let graph = load_source_graph_json(path)?;
-        if let Some(graph_ref) = session.source_graph_refs.first() {
-            validate_source_graph_hash(graph_ref, &graph)?;
-        }
+        let graph = match session.source_graph_refs.first() {
+            Some(graph_ref) => graph_transaction::load_graph_for_ref(path, graph_ref)?,
+            None => load_source_graph_json(path)?,
+        };
         return Ok(Some(graph));
     }
 
@@ -242,10 +254,10 @@ fn resolve_source_graph(
             )
         }),
         GraphStorageMode::External => match graph_ref.external_path.as_deref() {
-            Some(path) => Ok(load_source_graph_json(resolve_session_relative_path(
-                session_path,
-                path,
-            ))?),
+            Some(path) => graph_transaction::load_graph_for_ref(
+                &resolve_session_relative_path(session_path, path),
+                graph_ref,
+            ),
             None => Err(JamAppError::InvalidSession(
                 "source graph ref is external but external_path is missing".into(),
             )),
