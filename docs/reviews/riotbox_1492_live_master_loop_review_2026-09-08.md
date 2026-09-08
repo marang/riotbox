@@ -105,3 +105,12 @@ Frozen local failure evidence SHA-256:
 - access log: `a5505a41c5596c5101b226063543db65dce96cd0c392490e05087b662eac6823`
 - capture summary: `31f0b71d1dc97b8e92b8f6b101a088d7248dea2cb5ba3fe9b6b642f69b55e6b7`
 - file-open trace: `8ef7ebf95a930cc636e09178895d53d2f0fe15a96e4d8fc702d6930d4b9cc357`
+
+Independent metadata review confirmed that success of the recorder cannot
+replace the missing routing observation. The selector depended on an exact
+node name and did not retain unmatched snapshots. The specific cause remains
+unresolved: a proposed explanation that `PIPEWIRE_PROPS` cannot affect ALSA
+streams contradicts the observed zero-only aplay probe, which did expose the
+custom node name and all three requested safety properties. Do not present that
+explanation as a diagnosed cause. Before any renewed take, use a source-free
+CPAL silence probe to validate stream identification and retained route evidence.
