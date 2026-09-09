@@ -1685,4 +1685,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Extract verified DAWproject archive writer before live-master handoff
 - [RIOTBOX-1494.md](./RIOTBOX-1494.md)
   P016: Hand off a committed V2 live-master loop as a byte-identical DAWproject
+- [RIOTBOX-1496.md](./RIOTBOX-1496.md)
+  Workflow: require completion challenge before ending an active assignment
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
