@@ -2149,8 +2149,9 @@ See [the exact review](./reviews/riotbox_1492_live_master_loop_review_2026-09-08
 Broader recording/export, physical-device endurance, TUI/Ghost, DAW import,
 source-general and release claims remain outside this slice.
 
-The immediate continuation is RIOTBOX-1493's necessary archive-writer
-extraction, followed by RIOTBOX-1494's unchanged live-master DAW handoff.
+The immediate continuation was RIOTBOX-1493's necessary archive-writer
+extraction, followed by RIOTBOX-1494's unchanged live-master DAW handoff,
+which is now verified through merged PR/remote CI and corrected handoff-02.
 The maintenance step separates exact archive integrity/publication from W-30
 musical eligibility, preserving the existing W-30 file and Session contracts.
 It is not a new musician-facing capability or musical qualification. The
