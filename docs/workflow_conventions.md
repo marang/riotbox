@@ -1,6 +1,6 @@
 # Riotbox Workflow Conventions
 
-Version: 0.4
+Version: 0.5
 Status: Active
 Audience: contributors, reviewers, coding agents
 
@@ -123,28 +123,44 @@ without sending a final status report unless an allowed stop condition applies.
 
 ### 2.1 Final Response Gate
 
-Before sending a final response, the agent must ask:
+Treat "work complete" as a provisional conclusion. Every time it would end
+work, and before every final response, perform this completion challenge:
 
-`Is the requested bounded scope complete, or did the user explicitly request
-phase-level or cross-ticket continuation?`
+1. Reconstruct the active assignment and its completion criteria from the
+   user's instructions and current workflow state, including unfinished work
+   carried through a context handoff. Distinguish a bounded task from explicitly
+   authorized phase-level or cross-ticket continuation.
+2. Classify intervening messages: a status question, acknowledgment, priority
+   correction, or additional request normally supplements the active assignment.
+   Answer it, then resume that assignment. Stop, pause, or replace the assignment
+   when the user's meaning calls for it; recency
+   alone is not evidence of cancellation. A standalone explanation/status
+   request remains answer-only and does not authorize implementation.
+3. Challenge completion against evidence: check remaining acceptance criteria,
+   verification, review/CI, merge, synchronization, and applicable ticket/archive/
+   branch closeout obligations. A successful tool call, answered question, green
+   test, or merged PR establishes only that step, not the whole assignment.
+4. Test the proposed stop against the next authorized steps. Name the exact
+   blocker, which steps it prevents, and the safe alternatives already checked.
+   A downstream DAW choice or listening-readiness gate blocks that dependent
+   activity, not independent authorized closeout or verification. Continue those
+   steps without bypassing the blocked activity's gate.
+5. If safe, relevant work remains within the active authorization, take the next
+   concrete step and use commentary for progress. Otherwise finish with either
+   verified completion of the requested scope, the user's explicit stop/pause/task
+   replacement, or a concrete allowed blocker after reasonable investigation.
+   For a blocker, state what remains and the exact input or access needed.
 
-If the bounded scope is complete and no cross-ticket continuation was requested,
-a concise final handoff is correct. If continuation was requested and no
-allowed stop condition applies, continue the workflow state machine above.
+Apply the challenge again at the next completion boundary; it is not satisfied
+once for the entire conversation. Keep the check concise rather than repeating
+the full checklist in every update. Record unresolved obligations in the working
+handoff so a context transition cannot silently discard them.
 
-A final response is allowed only when one of these is true:
-
-- the user explicitly says `stop`, `pause`, or asks only for status,
-  explanation, or discussion
-- the requested bounded ticket/task is verified complete and the user did not
-  request continuation into another ticket
-- an allowed stop condition from this document applies
-- the agent is blocked after reasonable investigation and can name the concrete
-  blocker
-- the user changes the task away from implementation work
-
-This gate prevents both premature stopping inside an explicitly continued phase
-and unrequested expansion from one completed ticket into another.
+Verified completion of a bounded task permits a final handoff. Explicit
+cross-ticket continuation instead returns to the workflow loop in section 2.
+Neither persistence nor this challenge authorizes a new unrelated ticket,
+destructive action, source access, or human playback. Preserve their existing
+scope, permission, and safety gates.
 
 ---
 
