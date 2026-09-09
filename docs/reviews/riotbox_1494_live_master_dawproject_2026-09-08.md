@@ -1,7 +1,7 @@
 # RIOTBOX-1494 — Committed live master to DAWproject
 
-Status: implementation, independent review and corrected handoff-02 verified;
-PR/remote-CI closeout pending. Handoff-01 remains failed external XML evidence.
+Status: merged; PR/remote-CI success, independent review and corrected
+handoff-02 verified. Handoff-01 remains failed external XML evidence.
 Contracts: RBX-372 and required serialization correction RBX-373.
 
 ## Intended musician path
