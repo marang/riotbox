@@ -129,6 +129,9 @@ exact `rg`, or a targeted range; do not load it wholesale.
 
 ## Workflow Pins
 
+- Before accepting "work complete" or ending a turn, apply the mandatory
+  [completion challenge](docs/workflow_conventions.md#21-final-response-gate),
+  including after an intervening user question or context handoff.
 - Normal implementation follows Linear issue -> branch -> PR -> CI/review ->
   merge -> sync `main` -> closeout.
 - Linear is first: select exactly one issue and move it to `In Progress` before
