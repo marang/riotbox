@@ -1,7 +1,8 @@
 # RIOTBOX-1495 — recovery/save and external Graph storage
 
-Status: implementation, independent review and source-free local CI verified;
-PR/remote-CI closeout pending.
+Status: merged in PR #1521 at `b0d8571afeb1070e5604fb1d71623ef276eaa438`.
+Local source-free CI and remote Rust CI `35462169360` passed; independent review
+and self-review have no remaining blocking findings.
 
 ## Scope
 
