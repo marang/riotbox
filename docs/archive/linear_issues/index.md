@@ -1687,4 +1687,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Hand off a committed V2 live-master loop as a byte-identical DAWproject
 - [RIOTBOX-1496.md](./RIOTBOX-1496.md)
   Workflow: require completion challenge before ending an active assignment
+- [RIOTBOX-1495.md](./RIOTBOX-1495.md)
+  Review follow-up: fix Graph recovery → save and define storage/integrity boundaries
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
