@@ -20,6 +20,245 @@ fn external_session(graph: &SourceGraph, alias: &Path) -> SessionFile {
 }
 
 #[test]
+fn corrupt_alias_recovery_can_be_edited_saved_and_reloaded() {
+    for corrupt in [b"{".as_slice(), b"\xff".as_slice()] {
+        let dir = tempdir().unwrap();
+        let session_path = dir.path().join("session.json");
+        let alias = dir.path().join("graph.json");
+        let graph = sample_graph();
+        save_graph_and_session(
+            &session_path,
+            &external_session(&graph, &alias),
+            Some(&graph),
+            Some(&alias),
+        )
+        .unwrap();
+        fs::write(&alias, corrupt).unwrap();
+        let mut recovered = JamAppState::from_json_files(&session_path, None::<&Path>).unwrap();
+        recovered.session.notes = Some("edited after recovery".into());
+        recovered
+            .source_graph
+            .as_mut()
+            .unwrap()
+            .source
+            .duration_seconds = 121.0;
+        recovered.save().unwrap();
+        let restored = JamAppState::from_json_files(&session_path, None::<&Path>).unwrap();
+        assert_eq!(
+            restored.session.notes.as_deref(),
+            Some("edited after recovery")
+        );
+        assert_eq!(
+            restored.source_graph.unwrap().source.duration_seconds,
+            121.0
+        );
+    }
+}
+
+#[test]
+fn recovery_save_requires_the_persisted_generation_not_the_edited_graph() {
+    for damage in ["missing", "invalid_json", "wrong_hash"] {
+        let dir = tempdir().unwrap();
+        let session_path = dir.path().join("session.json");
+        let alias = dir.path().join("graph.json");
+        let graph = sample_graph();
+        save_graph_and_session(
+            &session_path,
+            &external_session(&graph, &alias),
+            Some(&graph),
+            Some(&alias),
+        )
+        .unwrap();
+        fs::write(&alias, b"{").unwrap();
+        let mut recovered = JamAppState::from_json_files(&session_path, None::<&Path>).unwrap();
+        let old_bytes = fs::read(&session_path).unwrap();
+        let edited = recovered.source_graph.as_mut().unwrap();
+        edited.source.duration_seconds = 121.0;
+        let edited_path = generation_path(&alias, &source_graph_hash(edited).unwrap()).unwrap();
+        save_source_graph_json(&edited_path, edited).unwrap();
+        let previous_path = generation_path(&alias, &source_graph_hash(&graph).unwrap()).unwrap();
+        match damage {
+            "missing" => fs::remove_file(&previous_path).unwrap(),
+            "invalid_json" => fs::write(&previous_path, b"{").unwrap(),
+            _ => save_source_graph_json(&previous_path, edited).unwrap(),
+        }
+        assert!(recovered.save().is_err(), "{damage}");
+        assert_eq!(fs::read(&session_path).unwrap(), old_bytes);
+        assert_eq!(fs::read(&alias).unwrap(), b"{");
+    }
+}
+
+#[test]
+fn interrupted_recovery_save_preserves_the_previous_session_and_graph() {
+    for failure in [
+        SaveCheckpoint::PreviousGenerationReady,
+        SaveCheckpoint::CurrentGenerationReady,
+        SaveCheckpoint::AliasPublished,
+    ] {
+        let dir = tempdir().unwrap();
+        let session_path = dir.path().join("session.json");
+        let alias = dir.path().join("graph.json");
+        let graph = sample_graph();
+        save_graph_and_session(
+            &session_path,
+            &external_session(&graph, &alias),
+            Some(&graph),
+            Some(&alias),
+        )
+        .unwrap();
+        let old_bytes = fs::read(&session_path).unwrap();
+        fs::write(&alias, b"{").unwrap();
+        let mut edited = graph.clone();
+        edited.source.duration_seconds = 121.0;
+        assert!(
+            save_with_checkpoint(
+                &session_path,
+                &external_session(&edited, &alias),
+                Some(&edited),
+                Some(&alias),
+                |at| {
+                    if at == failure {
+                        Err(io::Error::other("injected interruption").into())
+                    } else {
+                        Ok(())
+                    }
+                }
+            )
+            .is_err()
+        );
+        assert_eq!(fs::read(&session_path).unwrap(), old_bytes);
+        assert_eq!(
+            JamAppState::from_json_files(&session_path, None::<&Path>)
+                .unwrap()
+                .source_graph,
+            Some(graph)
+        );
+    }
+}
+
+#[test]
+fn missing_alias_recovery_can_be_saved_but_other_alias_io_errors_remain_errors() {
+    let dir = tempdir().unwrap();
+    let session_path = dir.path().join("session.json");
+    let alias = dir.path().join("graph.json");
+    let graph = sample_graph();
+    save_graph_and_session(
+        &session_path,
+        &external_session(&graph, &alias),
+        Some(&graph),
+        Some(&alias),
+    )
+    .unwrap();
+    fs::remove_file(&alias).unwrap();
+    let mut recovered = JamAppState::from_json_files(&session_path, None::<&Path>).unwrap();
+    recovered.session.notes = Some("missing alias repaired".into());
+    recovered.save().unwrap();
+    assert_eq!(
+        JamAppState::from_json_files(&session_path, None::<&Path>)
+            .unwrap()
+            .session
+            .notes,
+        recovered.session.notes
+    );
+    let old_bytes = fs::read(&session_path).unwrap();
+    fs::remove_file(&alias).unwrap();
+    fs::create_dir(&alias).unwrap();
+    assert!(recovered.save().is_err());
+    assert_eq!(fs::read(&session_path).unwrap(), old_bytes);
+    assert!(alias.is_dir());
+}
+
+#[test]
+fn unsupported_publication_error_preserves_session_and_alias() {
+    let dir = tempdir().unwrap();
+    let session_path = dir.path().join("session.json");
+    let alias = dir.path().join("graph.json");
+    let graph = sample_graph();
+    save_graph_and_session(
+        &session_path,
+        &external_session(&graph, &alias),
+        Some(&graph),
+        Some(&alias),
+    )
+    .unwrap();
+    let old_session = fs::read(&session_path).unwrap();
+    let old_alias = fs::read(&alias).unwrap();
+    let mut edited = graph.clone();
+    edited.source.duration_seconds = 121.0;
+    let destination = generation_path(&alias, &source_graph_hash(&edited).unwrap()).unwrap();
+    // Core separately injects failure at the filesystem hard-link call. Here
+    // the existing transaction seam verifies propagation before mutable writes.
+    let error = save_with_checkpoint(
+        &session_path,
+        &external_session(&edited, &alias),
+        Some(&edited),
+        Some(&alias),
+        |at| {
+            if at == SaveCheckpoint::PreviousGenerationReady {
+                Err(
+                    riotbox_core::persistence::PersistenceError::ImmutablePublicationUnsupported {
+                        path: destination.clone(),
+                        source: io::Error::new(
+                            io::ErrorKind::Unsupported,
+                            "injected filesystem limitation",
+                        ),
+                    }
+                    .into(),
+                )
+            } else {
+                Ok(())
+            }
+        },
+    )
+    .unwrap_err();
+    assert!(error.to_string().contains("hard-link"));
+    assert_eq!(fs::read(&session_path).unwrap(), old_session);
+    assert_eq!(fs::read(&alias).unwrap(), old_alias);
+    assert!(!destination.exists());
+    assert_eq!(
+        JamAppState::from_json_files(&session_path, None::<&Path>)
+            .unwrap()
+            .source_graph,
+        Some(graph)
+    );
+}
+
+#[test]
+fn missing_new_alias_allows_replacing_a_session_with_different_graph_storage() {
+    for embedded in [false, true] {
+        let dir = tempdir().unwrap();
+        let session_path = dir.path().join("session.json");
+        let old_alias = dir.path().join("old.json");
+        let new_alias = dir.path().join("new.json");
+        let graph = sample_graph();
+        if embedded {
+            save_session_json(&session_path, &sample_session(&graph)).unwrap();
+        } else {
+            save_graph_and_session(
+                &session_path,
+                &external_session(&graph, &old_alias),
+                Some(&graph),
+                Some(&old_alias),
+            )
+            .unwrap();
+        }
+        save_graph_and_session(
+            &session_path,
+            &external_session(&graph, &new_alias),
+            Some(&graph),
+            Some(&new_alias),
+        )
+        .unwrap();
+        assert_eq!(
+            JamAppState::from_json_files(&session_path, None::<&Path>)
+                .unwrap()
+                .source_graph,
+            Some(graph)
+        );
+    }
+}
+
+#[test]
 fn each_transaction_interruption_preserves_legacy_session_and_exact_graph() {
     for failure in [
         SaveCheckpoint::PreviousGenerationReady,

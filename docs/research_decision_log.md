@@ -5049,3 +5049,17 @@ Why: RIOTBOX-1494 handoff-01 embedded the exact authorized WAV and passed typed 
 Evidence: retain failed handoff-01 and its bounded access log; no additional original-source/capture/holdout access or listening is authorized. Reproduce with synthetic models first, add root-negative and schema tests, preserve audio/proof member bytes and semantic model identity, then use a fresh handoff directory and access log for the unchanged approved recording. Upstream references: https://github.com/bitwig/dawproject/blob/main/Project.xsd and https://github.com/bitwig/dawproject/blob/main/MetaData.xsd.
 Consequences: archive/XML hashes intentionally change for newly generated corrected containers; historic W-30/current failed artifacts are not migrated silently. Update the prior byte-differential test to prove only the intended XML serialization delta and unchanged audio/proof content. The production claim remains archive/document readiness, never DAW-host/audio/release qualification. Required refactoring and this directly blocking format correction remain in RIOTBOX-1494 rather than being postponed.
 Status: accepted
+
+---
+
+### RBX-374
+
+Date: 2026-09-19
+Topic: resume saving after exact-generation recovery and declare external Graph storage requirements
+Phase: P000 / RIOTBOX-1495 maintenance and regression
+Question: how can a recovered Session be saved without trusting its corrupt alias or weakening immutable publication?
+Decision: when the referenced alias is missing or corrupt (invalid JSON or UTF-8), validate the persisted Session's exact external alias and hash-bound immutable generation before any replacement. A missing destination not named by the persisted Session is fresh output: first save, embedded-to-external conversion and graph relocation retain graph-first/Session-last ordering. The edited in-memory graph is not recovery authority. Retain legacy readable-alias preservation and refuse other I/O errors. External Graph publication continues to require hard-link support; give unsupported publication a typed contextual error before publishing mutable state. Do not add a copying fallback. Embedded-Graph persistence is unchanged.
+Why: recovery previously loaded the correct generation but ordinary save reparsed and rejected the same broken alias. Ignoring errors wholesale would hide loss of the last committed graph; changing the publication mechanism without equivalent complete/no-replace guarantees would reintroduce partial storage visibility.
+Evidence: the synthetic public restore/edit/save/reload regression fails on the prior code with a JSON parse error. RIOTBOX-1495 tests exact old-generation authority, interrupted recovery saves, malformed/missing/hash-mismatched generation rejection, invalid UTF-8, fresh-destination relocation/conversion, unrelated I/O errors and unsupported hard-link publication. Real filesystem-matrix behavior is not claimed.
+Consequences: no new persistence model, runtime-local recovery flag, Source Graph schema, DSP, source access or human listening. Existing generation retention and single-writer/process-interruption limits remain. Capture content identity is separately scoped in RIOTBOX-1497 and is not delivered here.
+Status: accepted

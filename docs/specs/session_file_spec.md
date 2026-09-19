@@ -1476,6 +1476,21 @@ MVP expectation:
   Reject Session/alias/generation path collisions before writing.
   The `.riotbox-graphs` directory namespace is reserved for immutable
   generations; Session and mutable Graph output targets must not live there.
+- After missing/corrupt-alias recovery (including invalid UTF-8), normal save
+  may replace that alias only
+  after validating the exact immutable generation named by the on-disk Session,
+  including its external alias path. The edited in-memory graph is not recovery
+  authority. Missing, malformed, mismatched or redirected generations fail
+  closed; unrelated alias I/O failures remain errors. A missing destination not
+  named by the persisted Session is fresh output, not recovery: first save,
+  embedded-to-external conversion and graph relocation remain permitted under
+  graph-first/Session-last publication (RBX-374).
+- External generation publication requires hard-link support in the target
+  directory. Unsupported publication produces a specific error before mutable
+  alias or Session publication; no copy fallback exposes partial generations.
+  Other I/O errors retain their original meaning. Filesystems without hard-link
+  support are not supported for external Graph saves; embedded Graph saves do
+  not acquire this requirement (RBX-374).
 - A Session-only save must verify that its prepared external graph reference
   already resolves; it must not publish a newly computed dangling graph hash.
 - This protects the last loadable pair against ordinary I/O failure and process

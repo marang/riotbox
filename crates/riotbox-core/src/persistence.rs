@@ -8,6 +8,7 @@ use std::{
 
 use crate::{session::SessionFile, source_graph::SourceGraph};
 
+mod graph_generation;
 mod recovery;
 
 pub use recovery::{
@@ -19,6 +20,7 @@ pub use recovery::{
 pub enum PersistenceError {
     Io(io::Error),
     Json(serde_json::Error),
+    ImmutablePublicationUnsupported { path: PathBuf, source: io::Error },
 }
 
 impl Display for PersistenceError {
@@ -26,6 +28,11 @@ impl Display for PersistenceError {
         match self {
             Self::Io(error) => write!(f, "I/O error: {error}"),
             Self::Json(error) => write!(f, "JSON error: {error}"),
+            Self::ImmutablePublicationUnsupported { path, source } => write!(
+                f,
+                "cannot publish immutable generation at {}: hard-link publication is unsupported: {source}",
+                path.display()
+            ),
         }
     }
 }
@@ -35,6 +42,7 @@ impl Error for PersistenceError {
         match self {
             Self::Io(error) => Some(error),
             Self::Json(error) => Some(error),
+            Self::ImmutablePublicationUnsupported { source, .. } => Some(source),
         }
     }
 }
@@ -65,24 +73,7 @@ pub fn publish_source_graph_json_generation(
     path: impl AsRef<Path>,
     graph: &SourceGraph,
 ) -> Result<(), PersistenceError> {
-    use std::io::Write;
-
-    let path = path.as_ref();
-    let json = serde_json::to_vec_pretty(graph)?;
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    let temp_path = atomic_save_temp_path(path);
-    let mut file = fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(&temp_path)?;
-    let result = file.write_all(&json).and_then(|()| {
-        drop(file);
-        fs::hard_link(&temp_path, path)
-    });
-    let _ = fs::remove_file(&temp_path);
-    result.map_err(Into::into)
+    graph_generation::publish(path.as_ref(), graph)
 }
 
 pub fn load_source_graph_json(path: impl AsRef<Path>) -> Result<SourceGraph, PersistenceError> {
@@ -178,23 +169,6 @@ mod tests {
     };
 
     use super::*;
-
-    #[test]
-    fn immutable_graph_publication_never_replaces_an_existing_file() {
-        let dir = tempdir().unwrap();
-        let path = dir.path().join("generation.json");
-        let graph = sample_graph();
-        publish_source_graph_json_generation(&path, &graph).unwrap();
-        let original = fs::read(&path).unwrap();
-        let mut changed = graph.clone();
-        changed.source.duration_seconds += 1.0;
-        let error = publish_source_graph_json_generation(&path, &changed).unwrap_err();
-        assert!(
-            matches!(error, PersistenceError::Io(error) if error.kind() == io::ErrorKind::AlreadyExists)
-        );
-        assert_eq!(fs::read(&path).unwrap(), original);
-        assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 1);
-    }
 
     fn sample_graph() -> SourceGraph {
         let mut graph = SourceGraph::new(
