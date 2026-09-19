@@ -6,6 +6,16 @@ Audience: contributors and coding agents
 This document holds environment and sandbox details that are useful when needed
 but too operational for the always-loaded `AGENTS.md` brief.
 
+## Session Storage
+
+External Session/Source Graph saves require a target filesystem that supports
+hard links for immutable generation publication (RBX-374). Unsupported
+publication fails explicitly before replacing the alias or Session; use a
+supported local filesystem or the existing embedded-Graph mode. There is no
+copy fallback. This is a storage requirement, not a claim of power-loss
+durability or concurrent-writer support. Synthetic failure injection covers the
+error path; a real filesystem matrix has not been qualified.
+
 ## Memory And Search
 
 - Riotbox currently has no active semantic-memory tool in the development

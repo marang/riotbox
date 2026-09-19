@@ -8,10 +8,10 @@ use std::{
 
 use riotbox_core::{
     persistence::{
-        load_source_graph_json, publish_source_graph_json_generation, save_session_json,
-        save_source_graph_json,
+        load_session_json, load_source_graph_json, publish_source_graph_json_generation,
+        save_session_json, save_source_graph_json,
     },
-    session::{SessionFile, SourceGraphRef},
+    session::{GraphStorageMode, SessionFile, SourceGraphRef},
     source_graph::SourceGraph,
 };
 
@@ -86,7 +86,19 @@ pub(in crate::jam_app) fn save_with_checkpoint(
                 publish_generation(&previous_path, &previous)?;
             }
             Err(riotbox_core::persistence::PersistenceError::Io(error))
-                if error.kind() == io::ErrorKind::NotFound => {}
+                if error.kind() == io::ErrorKind::NotFound =>
+            {
+                verify_recovery_authority(session_path, alias, true)?;
+            }
+            Err(riotbox_core::persistence::PersistenceError::Json(_)) => {
+                verify_recovery_authority(session_path, alias, false)?;
+            }
+            Err(riotbox_core::persistence::PersistenceError::Io(error))
+                if error.kind() == io::ErrorKind::InvalidData =>
+            {
+                // The JSON reader reports invalid UTF-8 as InvalidData, not Json.
+                verify_recovery_authority(session_path, alias, false)?;
+            }
             Err(error) => return Err(error.into()),
         }
         checkpoint(SaveCheckpoint::PreviousGenerationReady)?;
@@ -96,6 +108,67 @@ pub(in crate::jam_app) fn save_with_checkpoint(
         checkpoint(SaveCheckpoint::AliasPublished)?;
     }
     save_session_json(session_path, session)?;
+    Ok(())
+}
+
+// A damaged alias is replaceable only when the on-disk Session still has its
+// exact immutable graph. Never derive this authority from the edited Session.
+fn verify_recovery_authority(
+    session_path: &Path,
+    alias: &Path,
+    alias_missing: bool,
+) -> Result<(), JamAppError> {
+    let persisted = match load_session_json(session_path) {
+        Ok(session) => session,
+        Err(riotbox_core::persistence::PersistenceError::Io(error))
+            if alias_missing && error.kind() == io::ErrorKind::NotFound =>
+        {
+            return Ok(());
+        }
+        Err(error) => return Err(error.into()),
+    };
+    if alias_missing {
+        let destination = resolved_destination(alias)?;
+        let mut references_destination = false;
+        for graph_ref in &persisted.source_graph_refs {
+            if graph_ref.storage_mode == GraphStorageMode::External
+                && let Some(path) = graph_ref.external_path.as_deref()
+                && resolved_destination(&super::resolve_session_relative_path(session_path, path))?
+                    == destination
+            {
+                references_destination = true;
+            }
+        }
+        // A fresh output path cannot overwrite the previous Session's graph.
+        // This preserves embedded -> external conversion and graph relocation.
+        if !references_destination {
+            return Ok(());
+        }
+    }
+    let [graph_ref] = persisted.source_graph_refs.as_slice() else {
+        return Err(JamAppError::InvalidSession(
+            "recovery save requires one persisted external graph reference".into(),
+        ));
+    };
+    let stored_alias = graph_ref
+        .external_path
+        .as_deref()
+        .filter(|_| graph_ref.storage_mode == GraphStorageMode::External)
+        .ok_or_else(|| {
+            JamAppError::InvalidSession(
+                "recovery save requires a persisted external graph path".into(),
+            )
+        })?;
+    let stored_alias = super::resolve_session_relative_path(session_path, stored_alias);
+    if resolved_destination(&stored_alias)? != resolved_destination(alias)? {
+        return Err(JamAppError::InvalidSession(
+            "recovery save alias differs from the persisted Session graph path".into(),
+        ));
+    }
+    let generation = generation_path(alias, &graph_ref.graph_hash)?;
+    validate_distinct_paths(session_path, alias, &generation)?;
+    let previous = load_source_graph_json(&generation)?;
+    validate_source_graph_hash(graph_ref, &previous)?;
     Ok(())
 }
 
