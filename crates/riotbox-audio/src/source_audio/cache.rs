@@ -323,7 +323,7 @@ fn decode_pcm_sample(bytes: &[u8], bits_per_sample: u16) -> f32 {
     }
 }
 
-fn pcm16_wave_bytes(
+pub fn pcm16_wave_bytes(
     sample_rate: u32,
     channel_count: u16,
     samples: &[f32],

@@ -1,4 +1,6 @@
 mod arrangement_export_placement;
+mod capture_identity;
+pub use capture_identity::{CaptureAudioIdentity, CaptureAudioIdentityProvenance};
 mod daw_tempo_map;
 mod dawproject_receipt;
 mod defaults;

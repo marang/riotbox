@@ -11,6 +11,7 @@ fn snapshot_payload_restore_hydrates_capture_loop_artifact_preview_output() {
     let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-30T12:44:00Z");
     session.runtime_state.mixer_state.music_level = 1.0;
     session.captures.push(CaptureRef {
+        audio_identity: None,
         capture_id: capture_id.clone(),
         capture_type: CaptureType::Loop,
         source_origin_refs: vec!["source-1".into()],
@@ -75,6 +76,7 @@ fn snapshot_payload_restore_hydrates_capture_loop_artifact_preview_output() {
         )),
     }];
     save_session_json(&session_path, &session).expect("save capture loop replay session");
+    super::migrate_legacy_capture_identities(&session_path, std::slice::from_ref(&capture_id), true).expect("explicitly adopt legacy fixture");
 
     let mut committed_state = JamAppState::from_json_files(&session_path, None::<&Path>)
         .expect("load committed comparison state");

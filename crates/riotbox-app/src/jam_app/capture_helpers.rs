@@ -100,6 +100,7 @@ pub(in crate::jam_app) fn capture_ref_from_action(
     let notes = Some(capture_note(action, source_window.as_ref()));
 
     Some(CaptureRef {
+        audio_identity: None,
         storage_path: format!("captures/{capture_id}.wav"),
         capture_id,
         capture_type,

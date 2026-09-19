@@ -530,6 +530,7 @@ fn queue_w30_live_recall_targets_committed_lane_focus_before_latest_pinned_captu
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     state.session.captures.push(CaptureRef {
+        audio_identity: None,
         capture_id: CaptureId::from("cap-02"),
         capture_type: CaptureType::Pad,
         source_origin_refs: vec!["asset-b".into()],
@@ -546,6 +547,7 @@ fn queue_w30_live_recall_targets_committed_lane_focus_before_latest_pinned_captu
         notes: Some("secondary".into()),
     });
     state.session.captures.push(CaptureRef {
+        audio_identity: None,
         capture_id: CaptureId::from("cap-03"),
         capture_type: CaptureType::Pad,
         source_origin_refs: vec!["asset-c".into()],
@@ -601,6 +603,7 @@ fn queue_w30_promoted_audition_targets_committed_lane_focus() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     state.session.captures.push(CaptureRef {
+        audio_identity: None,
         capture_id: CaptureId::from("cap-02"),
         capture_type: CaptureType::Pad,
         source_origin_refs: vec!["asset-b".into()],

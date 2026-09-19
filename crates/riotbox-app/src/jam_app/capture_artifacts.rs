@@ -5,7 +5,7 @@ use std::{
 
 use riotbox_audio::{
     runtime::render_w30_resample_tap_offline,
-    source_audio::{SourceAudioCache, SourceAudioWindow, write_interleaved_pcm16_wav},
+    source_audio::{SourceAudioCache, SourceAudioWindow},
     w30::{
         W30ResampleTapAvailability, W30ResampleTapMode, W30ResampleTapRouting,
         W30ResampleTapSourceProfile, W30ResampleTapState,
@@ -56,11 +56,8 @@ impl JamAppState {
 
     pub(in crate::jam_app) fn persist_capture_audio_artifact(&mut self, capture: &mut CaptureRef) {
         match self.write_capture_audio_artifact(capture) {
-            Ok(Some(path)) => {
-                if let Ok(cache) = SourceAudioCache::load_pcm_wav(&path) {
-                    self.capture_audio_cache
-                        .insert(capture.capture_id.clone(), cache);
-                }
+            Ok(Some((path, bytes))) => {
+                self.install_written_capture(capture, &path, &bytes);
                 append_capture_note(
                     capture,
                     &format!("audio artifact written {}", capture.storage_path),
@@ -75,11 +72,8 @@ impl JamAppState {
 
     pub(in crate::jam_app) fn persist_w30_bus_print_artifact(&mut self, capture: &mut CaptureRef) {
         match self.write_w30_bus_print_artifact(capture) {
-            Ok(Some(path)) => {
-                if let Ok(cache) = SourceAudioCache::load_pcm_wav(&path) {
-                    self.capture_audio_cache
-                        .insert(capture.capture_id.clone(), cache);
-                }
+            Ok(Some((path, bytes))) => {
+                self.install_written_capture(capture, &path, &bytes);
                 append_capture_note(
                     capture,
                     &format!("bus print artifact written {}", capture.storage_path),
@@ -90,10 +84,36 @@ impl JamAppState {
         }
     }
 
+    fn install_written_capture(&mut self, capture: &mut CaptureRef, path: &Path, bytes: &[u8]) {
+        use riotbox_core::session::CaptureAudioIdentityProvenance;
+        capture.audio_identity = Some(super::capture_identity::identity(
+            bytes,
+            CaptureAudioIdentityProvenance::CreatedFromEncodedBytesV1,
+        ));
+        match SourceAudioCache::from_pcm_wav_bytes(path, bytes) {
+            Ok(cache) => {
+                self.capture_audio_cache
+                    .insert(capture.capture_id.clone(), cache);
+                self.runtime.capture_audio_status.insert(
+                    capture.capture_id.clone(),
+                    super::CaptureAudioStatus::Loaded,
+                );
+            }
+            Err(error) => {
+                self.runtime.capture_audio_status.insert(
+                    capture.capture_id.clone(),
+                    super::CaptureAudioStatus::Unavailable {
+                        reason: error.to_string(),
+                    },
+                );
+            }
+        }
+    }
+
     fn write_w30_bus_print_artifact(
         &self,
         capture: &CaptureRef,
-    ) -> Result<Option<PathBuf>, String> {
+    ) -> Result<Option<(PathBuf, Vec<u8>)>, String> {
         if capture.capture_type != riotbox_core::session::CaptureType::Resample {
             return Ok(None);
         }
@@ -137,9 +157,13 @@ impl JamAppState {
             .map(|(dry, wet)| (dry * 0.68 + wet * 1.45).clamp(-1.0, 1.0))
             .collect();
 
-        write_interleaved_pcm16_wav(&path, input.sample_rate, input.channel_count, &printed)
-            .map_err(|error| error.to_string())?;
-        Ok(Some(path))
+        let bytes = super::capture_identity::write_wav(
+            &path,
+            input.sample_rate,
+            input.channel_count,
+            &printed,
+        )?;
+        Ok(Some((path, bytes)))
     }
 
     fn w30_bus_print_input(
@@ -152,6 +176,13 @@ impl JamAppState {
                 channel_count: cache.channel_count,
                 samples: cache.interleaved_samples().to_vec(),
             }));
+        }
+
+        if self.files.is_some() || capture.audio_identity.is_some() {
+            return Err(
+                "capture artifact unavailable or unverified; source-window substitution refused"
+                    .into(),
+            );
         }
 
         let Some(source_window) = capture.source_window.as_ref() else {
@@ -247,22 +278,50 @@ impl JamAppState {
 
     pub(in crate::jam_app) fn refresh_capture_audio_cache(&mut self) {
         self.capture_audio_cache.clear();
+        self.runtime.capture_audio_status.clear();
+        let mut seen = std::collections::BTreeSet::new();
+        let mut duplicates = std::collections::BTreeSet::new();
         for capture in &self.session.captures {
-            let Ok(path) = self.require_capture_artifact_for_hydration(capture) else {
+            if !seen.insert(capture.capture_id.clone()) {
+                duplicates.insert(capture.capture_id.clone());
+            }
+        }
+        for capture in &self.session.captures {
+            if duplicates.contains(&capture.capture_id) {
+                self.runtime.capture_audio_status.insert(
+                    capture.capture_id.clone(),
+                    super::CaptureAudioStatus::InvalidIdentity,
+                );
                 continue;
-            };
-            let Ok(cache) = SourceAudioCache::load_pcm_wav(path) else {
-                continue;
-            };
-            self.capture_audio_cache
-                .insert(capture.capture_id.clone(), cache);
+            }
+            let result = self
+                .require_capture_artifact_for_hydration(capture)
+                .map_err(|error| super::CaptureAudioStatus::Unavailable {
+                    reason: format!("{error:?}"),
+                })
+                .and_then(|path| super::capture_identity::load_verified(capture, &path));
+            match result {
+                Ok(cache) => {
+                    self.capture_audio_cache
+                        .insert(capture.capture_id.clone(), cache);
+                    self.runtime.capture_audio_status.insert(
+                        capture.capture_id.clone(),
+                        super::CaptureAudioStatus::Loaded,
+                    );
+                }
+                Err(status) => {
+                    self.runtime
+                        .capture_audio_status
+                        .insert(capture.capture_id.clone(), status);
+                }
+            }
         }
     }
 
     fn write_capture_audio_artifact(
         &self,
         capture: &CaptureRef,
-    ) -> Result<Option<PathBuf>, String> {
+    ) -> Result<Option<(PathBuf, Vec<u8>)>, String> {
         let Some(source_window) = capture.source_window.as_ref() else {
             return Ok(None);
         };
@@ -300,19 +359,19 @@ impl JamAppState {
             return Err("source window is empty".into());
         }
 
-        source_audio_cache
-            .write_window_pcm16_wav(
-                &path,
-                SourceAudioWindow {
-                    start_frame: usize::try_from(source_window.start_frame)
-                        .map_err(|_| "source window start frame exceeds usize".to_string())?,
-                    frame_count: usize::try_from(frame_count)
-                        .map_err(|_| "source window frame count exceeds usize".to_string())?,
-                },
-            )
-            .map_err(|error| error.to_string())?;
-
-        Ok(Some(path))
+        let samples = source_audio_cache.window_samples(SourceAudioWindow {
+            start_frame: usize::try_from(source_window.start_frame)
+                .map_err(|_| "source window start frame exceeds usize".to_string())?,
+            frame_count: usize::try_from(frame_count)
+                .map_err(|_| "source window frame count exceeds usize".to_string())?,
+        });
+        let bytes = super::capture_identity::write_wav(
+            &path,
+            source_audio_cache.sample_rate,
+            source_audio_cache.channel_count,
+            samples,
+        )?;
+        Ok(Some((path, bytes)))
     }
 
     fn capture_audio_artifact_path(&self, capture: &CaptureRef) -> Option<PathBuf> {

@@ -329,6 +329,7 @@ fn w30_committed_shell_state(fixture: &W30RegressionFixture) -> JamShellState {
     });
     for extra in &fixture.extra_captures {
         session.captures.push(riotbox_core::session::CaptureRef {
+            audio_identity: None,
             capture_id: extra.capture_id.clone().into(),
             capture_type: riotbox_core::session::CaptureType::Pad,
             source_origin_refs: vec!["fixture-extra".into()],

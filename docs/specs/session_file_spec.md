@@ -1363,6 +1363,7 @@ CaptureRef {
   resample_generation_depth
   created_from_action
   storage_path
+  audio_identity?
   assigned_target
   notes
 }
@@ -1390,6 +1391,38 @@ For committed source-backed captures loaded from a session file, `storage_path` 
 For internally printed W-30 resample captures, `storage_path` should point to the printed bus artifact rather than the source-window input artifact. Such captures should preserve input ownership through `lineage_capture_refs` and `resample_generation_depth`; `source_window` should be omitted unless the printed result is intentionally still a literal source-window copy. This keeps reload and later pad playback pointed at the exact printed audio instead of reconstructing it from source metadata.
 
 Artifact-hydration identity boundary:
+
+- `audio_identity` binds the complete encoded capture WAV with canonical
+  `sha256:<lowercase hex>` and typed provenance: `created_from_encoded_bytes_v1`
+  or `adopted_legacy_v1` with `adopted_at`. Newly written source-window and bus
+  print captures hash the same encoded bytes used for writing/cache decoding.
+- A legacy missing identity is unverified, not implicitly trusted. Explicit
+  offline migration of selected capture IDs may validate/decode and adopt the
+  current bytes as today's baseline; it never proves historical authenticity.
+  Preview is read-only; acceptance is all-or-nothing for the selected set and
+  never replaces an existing identity. No Source Graph/source audio is needed.
+- Runtime hydration hashes and decodes a single read buffer. Changed, malformed,
+  missing or unverified artifacts have no trusted cache entry and visible runtime
+  warnings. A file-backed Session cannot silently substitute a source-window
+  preview or resample input for a blocked artifact. Expected identity remains
+  Core/Session truth; observed hydration status is runtime-local (RBX-375).
+- Recovery inventory checks paths only and explicitly reports capture content
+  identity as unchecked. Only actual hydration can mark the content loaded.
+
+Legacy migration (close other writers of this Session first; keep a backup):
+
+```sh
+just capture-identity-migrate path/to/session.json --capture cap-01
+just capture-identity-migrate path/to/session.json --capture cap-01 --accept-current-content
+```
+
+Repeat `--capture ID` to select more entries. The first command previews without
+writing; the second explicitly adopts the bytes present during that invocation.
+It does not bless the earlier preview if the file changed between commands.
+Missing/invalid inputs abort the whole selected migration. Existing matching
+identities are unchanged; mismatches are never re-baselined. No directories are
+scanned and no original source or external Graph is opened. Apply source-access
+contracts to the exact selected files before invoking this tool.
 
 - `capture_id` is the stable session identity for the captured material
 - `storage_path` is the durable audio artifact locator and must point at the exact WAV to hydrate

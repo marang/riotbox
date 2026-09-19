@@ -232,6 +232,7 @@ fn session_with_committed_jam_state(graph: &SourceGraph) -> SessionFile {
         undo_state: session.runtime_state.undo_state.clone(),
     };
     session.captures.push(crate::session::CaptureRef {
+        audio_identity: None,
         capture_id: "cap-01".into(),
         capture_type: crate::session::CaptureType::Pad,
         source_origin_refs: vec!["asset-a".into(), "src-1".into()],

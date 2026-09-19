@@ -126,9 +126,13 @@ pub(super) fn recovery_artifact_availability_label(candidate: &SessionRecoveryCa
 fn artifact_ready_label(capture_count: usize, export_receipt_count: usize) -> String {
     match (capture_count, export_receipt_count) {
         (0, receipts) => format!("artifacts ready: {receipts} export receipt(s)"),
-        (captures, 0) => format!("artifacts ready: {captures} capture(s)"),
+        (captures, 0) => {
+            format!("artifact paths ready: {captures} capture(s) | content identity unchecked")
+        }
         (captures, receipts) => {
-            format!("artifacts ready: {captures} capture(s), {receipts} export receipt(s)")
+            format!(
+                "artifact paths ready: {captures} capture(s), {receipts} export receipt(s) | content identity unchecked"
+            )
         }
     }
 }

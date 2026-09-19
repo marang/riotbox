@@ -524,6 +524,7 @@ pub(super) fn build_w30_preview_render_state(
     source_graph: Option<&SourceGraph>,
     source_audio_cache: Option<&SourceAudioCache>,
     capture_audio_cache: Option<&BTreeMap<CaptureId, SourceAudioCache>>,
+    require_capture_artifact: bool,
 ) -> W30PreviewRenderState {
     let w30 = &session.runtime_state.lane_state.w30;
     let has_lane_focus =
@@ -564,7 +565,11 @@ pub(super) fn build_w30_preview_render_state(
     let source_window_preview = if !matches!(mode, W30PreviewRenderMode::Idle) {
         capture.and_then(|capture| {
             build_w30_capture_artifact_preview(capture, capture_audio_cache).or_else(|| {
-                build_w30_source_window_preview(capture, source_graph, source_audio_cache)
+                if require_capture_artifact || capture.audio_identity.is_some() {
+                    None
+                } else {
+                    build_w30_source_window_preview(capture, source_graph, source_audio_cache)
+                }
             })
         })
     } else {

@@ -50,6 +50,7 @@ fn recovery_surface_reports_supported_artifact_hydration_blocker_guidance() {
         .commit_records
         .push(loop_freeze_commit_record(89));
     blocked_session.captures.push(CaptureRef {
+        audio_identity: None,
         capture_id: CaptureId::from("cap-02"),
         capture_type: CaptureType::Loop,
         source_origin_refs: vec!["src-1".into()],
@@ -187,6 +188,7 @@ fn recovery_surface_reports_capture_now_artifact_hydration_blocker_guidance() {
                 mc202_source_phrase_plan: None,
         });
     blocked_session.captures.push(CaptureRef {
+        audio_identity: None,
         capture_id: capture_id.clone(),
         capture_type: CaptureType::Loop,
         source_origin_refs: vec!["src-1".into()],

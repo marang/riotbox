@@ -5063,3 +5063,17 @@ Why: recovery previously loaded the correct generation but ordinary save reparse
 Evidence: the synthetic public restore/edit/save/reload regression fails on the prior code with a JSON parse error. RIOTBOX-1495 tests exact old-generation authority, interrupted recovery saves, malformed/missing/hash-mismatched generation rejection, invalid UTF-8, fresh-destination relocation/conversion, unrelated I/O errors and unsupported hard-link publication. Real filesystem-matrix behavior is not claimed.
 Consequences: no new persistence model, runtime-local recovery flag, Source Graph schema, DSP, source access or human listening. Existing generation retention and single-writer/process-interruption limits remain. Capture content identity is separately scoped in RIOTBOX-1497 and is not delivered here.
 Status: accepted
+
+---
+
+### RBX-375
+
+Date: 2026-09-19
+Topic: capture WAV identity and explicit legacy adoption
+Phase: P000 / RIOTBOX-1497 integrity maintenance
+Question: how can capture hydration detect replaced WAV content while allowing old Sessions to adopt their existing audio honestly?
+Decision: add optional typed audio identity to Core CaptureRef: canonical full-WAV SHA-256 and versioned provenance for creation from encoded bytes or explicit legacy adoption with timestamp. Writers hash/write/decode the same encoded buffer; hydration hashes/decodes one read buffer. Missing legacy identity is unverified. An explicit offline command previews or accepts selected capture IDs, reads only their exact regular WAVs and Session metadata, stages every accepted identity, and uses the existing atomic Session save only after all selected inputs pass. Existing identities cannot be replaced by migration. No ordinary load or save silently adopts a hash.
+Why: a path and successful decoding cannot establish immutable capture content. Markus explicitly accepted migration as protection from today onward, without claiming that current legacy files are historically unchanged. Permanent exclusion was rejected; silent trust-on-load would obscure the same uncertainty.
+Evidence: synthetic restore/adoption/replacement, all-or-nothing migration, repeat adoption, created source-window/resample capture roundtrips and fail-closed preview/replay paths must be tested. No real source/holdout access or human playback is authorized by this slice.
+Consequences: expected identity is Session truth; load status/warnings are runtime-local. File-backed Sessions must not substitute original-source audio for blocked capture artifacts. Metadata-only export stays no-audio-access. This offline metadata migration is not a performer ActionCommand: queue/commit and replay execution are inapplicable; persisted provenance, command output and tests provide its visible record. Existing single-writer save limits remain; historical audio claims and hash-bound review evidence are not retroactively rewritten.
+Status: accepted

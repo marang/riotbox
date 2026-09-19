@@ -34,6 +34,7 @@ pub(super) fn live_master_recording_state() -> JamAppState {
 
 fn live_master_capture_ref(capture_id: &str, lineage_capture_refs: &[&str]) -> CaptureRef {
     CaptureRef {
+        audio_identity: None,
         capture_id: CaptureId::from(capture_id),
         capture_type: CaptureType::Pad,
         source_origin_refs: vec![format!("source-{capture_id}")],

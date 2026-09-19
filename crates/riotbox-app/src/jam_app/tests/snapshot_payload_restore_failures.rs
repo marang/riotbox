@@ -291,6 +291,7 @@ fn unsupported_loop_freeze_promotion_action(id: u64) -> Action {
 
 fn loop_freeze_capture_for_action(action_id: u64) -> CaptureRef {
     CaptureRef {
+        audio_identity: None,
         capture_id: CaptureId::from("cap-02"),
         capture_type: CaptureType::Pad,
         source_origin_refs: vec!["source-1".into()],

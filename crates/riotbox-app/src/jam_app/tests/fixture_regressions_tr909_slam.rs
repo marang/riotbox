@@ -171,6 +171,7 @@ fn w30_fixture_backed_committed_state_regressions_hold() {
                 });
         for extra in &fixture.extra_captures {
             session.captures.push(CaptureRef {
+                audio_identity: None,
                 capture_id: CaptureId::from(extra.capture_id.clone()),
                 capture_type: CaptureType::Pad,
                 source_origin_refs: vec!["fixture-extra".into()],

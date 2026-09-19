@@ -103,6 +103,7 @@ pub enum SessionHydrationPolicy {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct AppRuntimeState {
+    pub capture_audio_status: BTreeMap<CaptureId, super::CaptureAudioStatus>,
     pub audio: Option<AudioRuntimeHealth>,
     pub sidecar: SidecarState,
     pub transport: TransportClockState,
@@ -120,6 +121,7 @@ pub struct AppRuntimeState {
 impl Default for AppRuntimeState {
     fn default() -> Self {
         Self {
+            capture_audio_status: BTreeMap::new(),
             audio: None,
             sidecar: SidecarState::Unknown,
             transport: TransportClockState::default(),

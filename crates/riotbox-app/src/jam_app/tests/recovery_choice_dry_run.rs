@@ -39,7 +39,7 @@ fn recovery_surface_dry_runs_manual_choice_without_selecting_or_mutating_files()
     );
     assert_eq!(
         dry_run.artifact_availability_label,
-        "artifacts ready: 1 capture(s)"
+        "artifact paths ready: 1 capture(s) | content identity unchecked"
     );
     assert_eq!(
         dry_run.payload_readiness_label,

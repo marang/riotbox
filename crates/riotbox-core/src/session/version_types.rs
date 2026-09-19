@@ -587,6 +587,8 @@ pub struct Snapshot {
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CaptureRef {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub audio_identity: Option<super::CaptureAudioIdentity>,
     pub capture_id: CaptureId,
     pub capture_type: CaptureType,
     pub source_origin_refs: Vec<String>,

@@ -37,6 +37,7 @@ fn export_metadata_hydration_skips_missing_source_graph_and_capture_io_and_prese
     graph_ref.embedded_graph = None;
     graph_ref.external_path = Some("missing-relative-graph.json".into());
     session.captures.push(CaptureRef {
+        audio_identity: None,
         capture_id: CaptureId::from("metadata-only-missing-capture"),
         capture_type: CaptureType::Pad,
         source_origin_refs: vec!["forbidden-source".into()],
