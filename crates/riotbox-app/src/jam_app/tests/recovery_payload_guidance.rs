@@ -28,7 +28,7 @@ fn recovery_surface_reports_missing_snapshot_payload_guidance_without_mutating_c
         .find(|candidate| matches!(candidate.trust, RecoveryCandidateTrust::RecoverableClue))
         .expect("missing-payload autosave candidate");
 
-    assert_eq!(candidate.artifact_availability_label, "artifacts ready: 1 capture(s)");
+    assert_eq!(candidate.artifact_availability_label, "artifact paths ready: 1 capture(s) | content identity unchecked");
     assert_eq!(
         candidate.payload_readiness_label,
         "payload missing | snapshot restore blocked"

@@ -177,7 +177,7 @@ fn recovery_surface_drills_interrupted_save_without_selecting_or_mutating_files(
                 "autosave file",
                 "parseable session JSON",
                 "decision: reviewable | full replay required",
-                "artifacts ready: 1 capture(s)",
+                "artifact paths ready: 1 capture(s) | content identity unchecked",
                 "review before manual recovery",
             ),
         ]
@@ -238,7 +238,7 @@ fn recovery_surface_reports_capture_artifact_availability_for_parseable_candidat
         vec![
             "artifacts blocked: 1 of 1 | 1 missing identity",
             "artifacts blocked: 1 of 1 | 1 missing",
-            "artifacts ready: 1 capture(s)",
+            "artifact paths ready: 1 capture(s) | content identity unchecked",
         ]
     );
     assert_eq!(surface.selected_candidate, None);
@@ -575,7 +575,7 @@ fn recovery_surface_projects_artifact_ready_replay_blocker_guidance() {
 
     assert_eq!(
         blocked_candidate.artifact_availability_label,
-        "artifacts ready: 1 capture(s)"
+        "artifact paths ready: 1 capture(s) | content identity unchecked"
     );
     assert_eq!(
         blocked_candidate.replay_unsupported_label,

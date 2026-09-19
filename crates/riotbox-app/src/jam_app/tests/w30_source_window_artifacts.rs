@@ -113,6 +113,18 @@ fn focused_w30_pad_trigger_uses_capture_artifact_preview_when_source_cache_unava
     let capture_path = tempdir.path().join("captures/cap-01.wav");
     let artifact = SourceAudioCache::load_pcm_wav(&capture_path).expect("load capture artifact");
     assert!(state.capture_audio_cache.contains_key(&capture_id));
+    let persisted_identity = state.session.captures.iter()
+        .find(|capture| capture.capture_id == capture_id)
+        .unwrap()
+        .audio_identity.as_ref()
+        .expect("created capture identity");
+    assert_eq!(
+        persisted_identity,
+        &super::capture_identity::identity(
+            &fs::read(&capture_path).unwrap(),
+            riotbox_core::session::CaptureAudioIdentityProvenance::CreatedFromEncodedBytesV1,
+        ),
+    );
 
     state.source_audio_cache = None;
     fs::remove_file(&source_path).expect("remove source to prove artifact-backed preview");

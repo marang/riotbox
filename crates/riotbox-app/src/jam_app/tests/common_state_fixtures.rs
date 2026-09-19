@@ -196,6 +196,7 @@ pub(crate) fn sample_session(graph: &SourceGraph) -> SessionFile {
         payload: None,
     });
     session.captures.push(CaptureRef {
+        audio_identity: None,
         capture_id: CaptureId::from("cap-01"),
         capture_type: CaptureType::Pad,
         source_origin_refs: vec!["asset-a".into()],
@@ -254,6 +255,7 @@ fn w30_slice_pool_state_with_source_windows(
         hook_selection: None,
     });
     session.captures.push(CaptureRef {
+        audio_identity: None,
         capture_id: CaptureId::from("cap-02"),
         capture_type: CaptureType::Pad,
         source_origin_refs: vec!["asset-c".into()],
@@ -277,6 +279,7 @@ fn w30_slice_pool_state_with_source_windows(
         notes: Some("cyclic slice".into()),
     });
     session.captures.push(CaptureRef {
+        audio_identity: None,
         capture_id: CaptureId::from("cap-03"),
         capture_type: CaptureType::Pad,
         source_origin_refs: vec!["asset-b".into()],

@@ -85,6 +85,7 @@ impl JamAppState {
             self.source_graph.as_ref(),
             self.source_audio_cache.as_ref(),
             Some(&self.capture_audio_cache),
+            self.files.is_some(),
         );
         self.runtime.w30_resample_tap = build_w30_resample_tap_state(
             &self.session,

@@ -310,6 +310,13 @@ fn committed_w30_internal_resample_prints_reusable_bus_artifact() {
         .expect("reloaded resample capture")
         .clone();
     assert_eq!(reloaded_capture.capture_type, CaptureType::Resample);
+    assert_eq!(
+        reloaded_capture.audio_identity.as_ref().unwrap(),
+        &super::capture_identity::identity(
+            &fs::read(&printed_path).unwrap(),
+            riotbox_core::session::CaptureAudioIdentityProvenance::CreatedFromEncodedBytesV1,
+        ),
+    );
     assert_eq!(reloaded_capture.source_window, None);
     assert_eq!(
         reloaded_capture.lineage_capture_refs,

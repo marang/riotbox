@@ -49,7 +49,7 @@ fn observer_snapshot_records_recovery_startup_probe_without_selecting_candidate(
         "Dry-run only: candidate inspected, not selected for restore."
     );
     assert_eq!(dry_run["decision"], "decision: blocked | replay unsupported");
-    assert_eq!(dry_run["artifact_availability"], "artifacts ready: 1 capture(s)");
+    assert_eq!(dry_run["artifact_availability"], "artifact paths ready: 1 capture(s) | content identity unchecked");
     assert_eq!(
         dry_run["payload_readiness"],
         "payload ready | snapshot restore ok"
@@ -69,7 +69,7 @@ fn observer_snapshot_records_recovery_startup_probe_without_selecting_candidate(
         })
         .expect("autosave recovery candidate");
     assert_eq!(autosave["trust"], "RecoverableClue");
-    assert_eq!(autosave["artifact_availability"], "artifacts ready: 1 capture(s)");
+    assert_eq!(autosave["artifact_availability"], "artifact paths ready: 1 capture(s) | content identity unchecked");
     assert_eq!(autosave["payload_readiness"], "payload ready | snapshot restore ok");
     assert_eq!(
         autosave["replay_unsupported"],
@@ -163,6 +163,7 @@ fn artifact_ready_blocked_autosave_session() -> SessionFile {
         )),
     });
     session.captures.push(CaptureRef {
+        audio_identity: None,
         capture_id: CaptureId::from("cap-01"),
         capture_type: CaptureType::Pad,
         source_origin_refs: vec!["source-1".into()],

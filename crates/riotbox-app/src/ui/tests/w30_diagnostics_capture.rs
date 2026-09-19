@@ -11,6 +11,7 @@ fn renders_log_shell_snapshot_with_committed_w30_slice_pool_browse_diagnostics()
         .session
         .captures
         .push(riotbox_core::session::CaptureRef {
+            audio_identity: None,
             capture_id: "cap-02".into(),
             capture_type: riotbox_core::session::CaptureType::Pad,
             source_origin_refs: vec!["asset-b".into()],
@@ -92,6 +93,7 @@ fn renders_w30_bank_manager_and_damage_profile_diagnostics_across_shell_surfaces
         .session
         .captures
         .push(riotbox_core::session::CaptureRef {
+            audio_identity: None,
             capture_id: "cap-02".into(),
             capture_type: riotbox_core::session::CaptureType::Pad,
             source_origin_refs: vec!["asset-b".into()],
@@ -187,6 +189,7 @@ fn w30_operation_diagnostics_follow_current_lane_target() {
         .session
         .captures
         .push(riotbox_core::session::CaptureRef {
+            audio_identity: None,
             capture_id: "cap-02".into(),
             capture_type: riotbox_core::session::CaptureType::Pad,
             source_origin_refs: vec!["asset-b".into()],

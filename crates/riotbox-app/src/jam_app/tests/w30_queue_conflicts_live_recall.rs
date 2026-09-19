@@ -59,6 +59,7 @@ fn queue_w30_live_recall_falls_back_to_latest_pinned_capture_without_explicit_fo
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     state.session.captures.push(CaptureRef {
+        audio_identity: None,
         capture_id: CaptureId::from("cap-02"),
         capture_type: CaptureType::Pad,
         source_origin_refs: vec!["asset-b".into()],

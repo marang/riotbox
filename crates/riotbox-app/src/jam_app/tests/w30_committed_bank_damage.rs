@@ -9,6 +9,7 @@ fn committed_w30_bank_swap_updates_lane_focus_and_log_result() {
         pad_id: PadId::from("pad-01"),
     });
     state.session.captures.push(CaptureRef {
+        audio_identity: None,
         capture_id: CaptureId::from("cap-02"),
         capture_type: CaptureType::Pad,
         source_origin_refs: vec!["asset-b".into()],
@@ -103,6 +104,7 @@ fn committed_w30_slice_pool_browse_updates_last_capture_and_log_result() {
         pad_id: PadId::from("pad-01"),
     });
     state.session.captures.push(CaptureRef {
+        audio_identity: None,
         capture_id: CaptureId::from("cap-02"),
         capture_type: CaptureType::Pad,
         source_origin_refs: vec!["asset-b".into()],
@@ -793,6 +795,7 @@ fn committed_w30_step_focus_updates_lane_focus_and_preview() {
         pad_id: PadId::from("pad-01"),
     });
     state.session.captures.push(CaptureRef {
+        audio_identity: None,
         capture_id: CaptureId::from("cap-02"),
         capture_type: CaptureType::Pad,
         source_origin_refs: vec!["asset-b".into()],

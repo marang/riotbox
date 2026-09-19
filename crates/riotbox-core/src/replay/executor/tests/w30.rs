@@ -47,6 +47,7 @@ fn w30_promotion_params(capture_id: &str, destination: &str) -> ActionParams {
 
 fn source_capture(capture_id: &str) -> CaptureRef {
     CaptureRef {
+        audio_identity: None,
         capture_id: CaptureId::from(capture_id),
         capture_type: CaptureType::Pad,
         source_origin_refs: vec!["source-1".into()],
@@ -63,6 +64,7 @@ fn source_capture(capture_id: &str) -> CaptureRef {
 
 fn resample_capture_for_action(action_id: u64) -> CaptureRef {
     CaptureRef {
+        audio_identity: None,
         capture_id: CaptureId::from("cap-02"),
         capture_type: CaptureType::Resample,
         source_origin_refs: vec!["source-1".into()],
@@ -79,6 +81,7 @@ fn resample_capture_for_action(action_id: u64) -> CaptureRef {
 
 fn w30_capture_to_pad_capture_for_action(action_id: u64) -> CaptureRef {
     CaptureRef {
+        audio_identity: None,
         capture_id: CaptureId::from("cap-02"),
         capture_type: CaptureType::Pad,
         source_origin_refs: vec!["source-1".into()],
@@ -120,6 +123,7 @@ fn loop_capture_for_action(action_id: u64) -> CaptureRef {
 
 fn loop_freeze_capture_for_action(action_id: u64, capture_id: &str) -> CaptureRef {
     CaptureRef {
+        audio_identity: None,
         capture_id: CaptureId::from(capture_id),
         capture_type: CaptureType::Pad,
         source_origin_refs: vec!["source-1".into()],

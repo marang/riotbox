@@ -18,6 +18,11 @@ pub(super) fn derive_runtime_warnings(
     session: &SessionFile,
 ) -> Vec<String> {
     let mut warnings = Vec::new();
+    for (id, status) in &runtime.capture_audio_status {
+        if *status != crate::jam_app::CaptureAudioStatus::Loaded {
+            warnings.push(format!("capture {id} unavailable: {status:?}"));
+        }
+    }
 
     if matches!(
         runtime.audio.as_ref().map(|health| health.lifecycle),

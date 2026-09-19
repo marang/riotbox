@@ -344,6 +344,7 @@ mod tests {
             payload: None,
         });
         session.captures.push(CaptureRef {
+            audio_identity: None,
             capture_id: CaptureId::from("cap-01"),
             capture_type: CaptureType::Pad,
             source_origin_refs: vec!["asset-a".into()],

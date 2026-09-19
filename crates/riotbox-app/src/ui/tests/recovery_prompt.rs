@@ -277,7 +277,7 @@ fn renders_artifact_ready_replay_blocker_hint_without_selecting_candidate() {
         "{rendered}"
     );
     assert!(
-        rendered.contains("artifacts ready: 1"),
+        rendered.contains("artifact paths ready: 1"),
         "{rendered}"
     );
     assert!(rendered.contains("payload ready"), "{rendered}");

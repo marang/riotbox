@@ -20,6 +20,12 @@ use sha2::{Digest, Sha256};
 use riotbox_audio::runtime::AudioRuntimeTimingSnapshot;
 
 mod capture_artifacts;
+mod capture_identity;
+mod capture_identity_migration;
+pub use capture_identity::CaptureAudioStatus;
+pub use capture_identity_migration::{
+    CaptureIdentityMigrationEntry, migrate_legacy_capture_identities,
+};
 mod capture_helpers;
 mod capture_queue;
 mod commit;

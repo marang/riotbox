@@ -9,6 +9,7 @@ fn queue_w30_trigger_pad_targets_focused_lane_capture_on_next_beat() {
         pad_id: PadId::from("pad-01"),
     });
     state.session.captures.push(CaptureRef {
+        audio_identity: None,
         capture_id: CaptureId::from("cap-02"),
         capture_type: CaptureType::Pad,
         source_origin_refs: vec!["asset-b".into()],
@@ -284,6 +285,7 @@ fn queue_w30_step_focus_targets_next_promoted_pad_on_next_beat() {
         pad_id: PadId::from("pad-01"),
     });
     state.session.captures.push(CaptureRef {
+        audio_identity: None,
         capture_id: CaptureId::from("cap-02"),
         capture_type: CaptureType::Pad,
         source_origin_refs: vec!["asset-b".into()],
@@ -347,6 +349,7 @@ fn queue_w30_internal_resample_targets_focused_lane_capture_on_next_phrase() {
         pad_id: PadId::from("pad-01"),
     });
     state.session.captures.push(CaptureRef {
+        audio_identity: None,
         capture_id: CaptureId::from("cap-02"),
         capture_type: CaptureType::Resample,
         source_origin_refs: vec!["asset-b".into()],
@@ -401,6 +404,7 @@ fn queue_w30_swap_bank_targets_next_bank_on_next_bar() {
         pad_id: PadId::from("pad-01"),
     });
     state.session.captures.push(CaptureRef {
+        audio_identity: None,
         capture_id: CaptureId::from("cap-02"),
         capture_type: CaptureType::Pad,
         source_origin_refs: vec!["asset-b".into()],
@@ -465,6 +469,7 @@ fn queue_w30_browse_slice_pool_targets_next_capture_on_current_pad() {
         pad_id: PadId::from("pad-01"),
     });
     state.session.captures.push(CaptureRef {
+        audio_identity: None,
         capture_id: CaptureId::from("cap-02"),
         capture_type: CaptureType::Pad,
         source_origin_refs: vec!["asset-b".into()],

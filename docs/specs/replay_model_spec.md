@@ -509,6 +509,11 @@ Decision:
 
 - captures are durable replay artifacts, not recomputed intentions
 - replay should reference the capture artifact and its provenance, not attempt to recreate it from scratch unless explicitly designed to do so later
+- Capture audio identity travels with the existing Session `CaptureRef` through
+  replay; planning metadata does not attest WAV bytes. App hydration must verify
+  the persisted hash before supplying cached audio. Legacy adoption is an
+  explicit offline Session migration with typed provenance, not a replay action
+  or a reason to regenerate missing audio (RBX-375).
 - W-30 artifact hydration may only use an artifact when the session identity is explicit: `capture_id`, `storage_path`, `created_from_action`, direct `source_window` for source-backed captures, and lineage/depth fields for internally derived captures
 - if that identity is missing, ambiguous, or points at an unavailable artifact, replay/recovery should reject with a clear unsupported or missing-artifact diagnostic rather than synthesize a replacement silently
 

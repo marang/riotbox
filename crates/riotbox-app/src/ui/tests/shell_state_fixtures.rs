@@ -312,6 +312,7 @@ fn sample_shell_state() -> JamShellState {
 
     session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
     session.captures.push(riotbox_core::session::CaptureRef {
+        audio_identity: None,
         capture_id: "cap-01".into(),
         capture_type: riotbox_core::session::CaptureType::Pad,
         source_origin_refs: vec!["asset-a".into(), "src-1".into()],
@@ -352,6 +353,7 @@ fn first_run_captured_shell_state(source_ready: bool) -> JamShellState {
         .session
         .captures
         .push(riotbox_core::session::CaptureRef {
+            audio_identity: None,
             capture_id: "cap-first".into(),
             capture_type: riotbox_core::session::CaptureType::Pad,
             source_origin_refs: vec!["src-1".into(), "asset-a".into()],

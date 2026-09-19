@@ -355,6 +355,7 @@ mod tests {
             payload: None,
         });
         session.captures.push(CaptureRef {
+            audio_identity: None,
             capture_id: CaptureId::from("cap-01"),
             capture_type: CaptureType::Pad,
             source_origin_refs: vec!["asset-a".into()],
@@ -605,6 +606,7 @@ mod tests {
     fn legacy_capture_refs_without_source_window_still_load() {
         let mut session = SessionFile::new("session-1", "0.1.0", "2026-04-12T18:00:00Z");
         session.captures.push(CaptureRef {
+            audio_identity: None,
             capture_id: CaptureId::from("cap-01"),
             capture_type: CaptureType::Pad,
             source_origin_refs: vec!["asset-a".into()],

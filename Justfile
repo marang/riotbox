@@ -10,6 +10,10 @@ test:
 check:
     cargo check
 
+# Preview selected legacy captures; add --accept-current-content to persist their current identity.
+capture-identity-migrate session +args:
+    cargo run -q -p riotbox-app --bin capture_identity_migrate -- {{quote(session)}} {{args}}
+
 clippy:
     cargo clippy --all-targets --all-features -- -D warnings
 

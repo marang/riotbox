@@ -164,6 +164,7 @@ fn renders_capture_shell_snapshot_with_w30_step_cue() {
         .session
         .captures
         .push(riotbox_core::session::CaptureRef {
+            audio_identity: None,
             capture_id: "cap-02".into(),
             capture_type: riotbox_core::session::CaptureType::Pad,
             source_origin_refs: vec!["asset-b".into()],
@@ -208,6 +209,7 @@ fn renders_capture_shell_snapshot_with_w30_bank_swap_cue() {
         .session
         .captures
         .push(riotbox_core::session::CaptureRef {
+            audio_identity: None,
             capture_id: "cap-02".into(),
             capture_type: riotbox_core::session::CaptureType::Pad,
             source_origin_refs: vec!["asset-b".into()],
@@ -254,6 +256,7 @@ fn renders_capture_shell_snapshot_with_w30_slice_pool_browse_cue() {
         .session
         .captures
         .push(riotbox_core::session::CaptureRef {
+            audio_identity: None,
             capture_id: "cap-02".into(),
             capture_type: riotbox_core::session::CaptureType::Pad,
             source_origin_refs: vec!["asset-b".into()],
@@ -301,6 +304,7 @@ fn renders_capture_shell_snapshot_with_feral_w30_slice_pool_browse_cue() {
         .session
         .captures
         .push(riotbox_core::session::CaptureRef {
+            audio_identity: None,
             capture_id: "cap-02".into(),
             capture_type: riotbox_core::session::CaptureType::Pad,
             source_origin_refs: vec!["asset-hook".into()],
