@@ -1689,4 +1689,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Workflow: require completion challenge before ending an active assignment
 - [RIOTBOX-1495.md](./RIOTBOX-1495.md)
   Review follow-up: fix Graph recovery → save and define storage/integrity boundaries
+- [RIOTBOX-1497.md](./RIOTBOX-1497.md)
+  Define and enforce persisted capture-WAV content identity on restore
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
