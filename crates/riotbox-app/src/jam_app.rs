@@ -9,7 +9,7 @@ use riotbox_core::{
     persistence::{load_session_json, load_source_graph_json, save_session_json},
     queue::ActionQueue,
     session::{GraphStorageMode, SessionFile, SourceGraphRef, SourceRef},
-    source_graph::{DecodeProfile, SourceGraph},
+    source_graph::SourceGraph,
     view::jam::JamViewModel,
 };
 use riotbox_sidecar::client::StdioSidecarClient;

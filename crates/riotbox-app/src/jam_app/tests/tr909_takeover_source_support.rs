@@ -447,6 +447,7 @@ fn source_support_render_profile_tracks_current_source_section() {
 fn feral_break_support_bias_changes_tr909_source_support_output() {
     let mut control_graph = sample_graph();
     control_graph.sections.clear();
+    control_graph.relationships.clear();
     control_graph.sections.push(Section {
         section_id: SectionId::from("section-steady"),
         label_hint: SectionLabelHint::Verse,
@@ -485,8 +486,8 @@ fn feral_break_support_bias_changes_tr909_source_support_output() {
     });
     feral_graph.relationships.push(Relationship {
         relation_type: RelationshipType::SupportsBreakRebuild,
-        from_id: "asset-feral-hook".into(),
-        to_id: "section-steady".into(),
+        from_id: riotbox_core::source_graph::GraphNodeRef::Asset("asset-feral-hook".into()),
+        to_id: riotbox_core::source_graph::GraphNodeRef::Section("section-steady".into()),
         weight: 0.85,
         notes: Some("feral hook supports rebuild".into()),
     });

@@ -391,6 +391,23 @@ Useful relationship types:
 
 These relationships let Scene Brain and feral policy work on graph structure instead of rediscovering it ad hoc.
 
+V1 endpoint identity is `GraphNodeRef`: `Source(SourceId)`,
+`Section(SectionId)`, `Asset(AssetId)`, or `Candidate(CandidateId)` (RBX-378).
+The persisted `from_id` / `to_id` values remain the original strings, including
+field order; endpoint typing does not change canonical hashes for supported
+graphs. At deserialization the actual graph catalog, not an ID prefix, resolves
+each endpoint to exactly one node. Empty/whitespace-only/control-character IDs,
+unknown nodes and duplicate/ambiguous IDs are errors. Serialization also checks
+typed in-memory endpoints against that catalog, so wrong-kind or dangling edits
+cannot be saved as apparently valid V1 strings.
+
+The deserialization DTO is private to this boundary, not another graph model.
+There is no standalone string-to-endpoint decoder without graph context. Current
+V1 has no graph-owned Capture or independently identified Bar node; relation
+type vocabulary alone does not authorize arbitrary capture/bar IDs or an external
+namespace. This change does not invent new relation-specific pair semantics.
+An invalid legacy graph must be corrected deliberately, not silently rebound.
+
 ---
 
 ## 12. Analysis Summary
@@ -572,7 +589,8 @@ If graph generation is partial:
 - sections may exist while hook mining is absent
 - loop candidates may be sparse
 
-The graph must still be serializable as long as minimum source identity and timing objects exist.
+The graph remains serializable with partial analysis when its present references
+are valid. Partial analysis does not permit dangling or ambiguous relationships.
 
 Warnings should be attached rather than hidden.
 

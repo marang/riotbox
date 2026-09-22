@@ -9,7 +9,7 @@ fn rejects_session_with_multiple_source_refs_in_mvp_mode() {
         path_hint: "other.wav".into(),
         content_hash: "hash-2".into(),
         duration_seconds: 64.0,
-        decode_profile: "normalized_stereo".into(),
+        decode_profile: DecodeProfile::NormalizedStereo,
     });
     save_session_json(&session_path, &session).expect("save multi-source session fixture");
 

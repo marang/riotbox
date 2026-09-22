@@ -9,6 +9,8 @@ mod capture_artifact_storage;
 mod capture_identity;
 mod graph_transaction;
 mod restore_history;
+mod scene_source_identity;
+mod source_ref_profile;
 include!("tests/p016_product_export_action.rs");
 include!("tests/p016_live_recording_export_action.rs");
 mod dawproject_xml_schema;

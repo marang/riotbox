@@ -263,6 +263,7 @@ fn renders_help_overlay_with_restore_readiness_cue() {
 fn renders_jam_shell_with_restore_ready_cue() {
     let graph = scene_regression_graph(&["drop".into(), "break".into()]);
     let mut session = sample_shell_state().app.session.clone();
+    session.runtime_state.scene_state.source_bindings = None;
     session.runtime_state.scene_state.scenes = vec![
         SceneId::from("scene-01-drop"),
         SceneId::from("scene-02-break"),

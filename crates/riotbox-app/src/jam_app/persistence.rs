@@ -58,6 +58,13 @@ impl JamAppState {
             SessionHydrationPolicy::ExportMetadataOnly => (None, None),
         };
         normalize_scene_candidates(&mut session, source_graph.as_ref());
+        if let Some(graph) = &source_graph {
+            session
+                .runtime_state
+                .scene_state
+                .validate_source_bindings(graph)
+                .map_err(|error| JamAppError::InvalidSession(error.to_string()))?;
+        }
         let mut queue = ActionQueue::new();
         queue.reserve_action_ids_after(max_action_id(&session));
         let transport = transport_clock_from_state(&session, source_graph.as_ref());
@@ -243,6 +250,16 @@ impl JamAppState {
 
     fn session_prepared_for_save(&self) -> Result<SessionFile, JamAppError> {
         let mut session_to_save = self.session.clone();
+        if self.session_hydration_policy == SessionHydrationPolicy::RuntimeFull
+            && let Some(graph) = &self.source_graph
+        {
+            session_to_save.migrate_scene_source_bindings(graph);
+            session_to_save
+                .runtime_state
+                .scene_state
+                .validate_source_bindings(graph)
+                .map_err(|error| JamAppError::InvalidSession(error.to_string()))?;
+        }
         sync_latest_snapshot_payloads(&mut session_to_save);
         if self.session_hydration_policy == SessionHydrationPolicy::RuntimeFull {
             sync_graph_refs_with_state(
@@ -268,6 +285,16 @@ fn load_source_audio_cache_for_graph(
         return (None, SourceAudioStatus::NotRequested);
     };
 
+    let source_ref = match source_audio_identity_ref(session, graph) {
+        Ok(source_ref) => source_ref,
+        Err(reason) => {
+            return (
+                None,
+                SourceAudioStatus::unavailable(graph.source.path.clone(), reason),
+            );
+        }
+    };
+
     let bytes = match std::fs::read(&graph.source.path) {
         Ok(bytes) => bytes,
         Err(error) => {
@@ -284,7 +311,8 @@ fn load_source_audio_cache_for_graph(
     match SourceAudioCache::from_pcm_wav_bytes(&graph.source.path, &bytes) {
         Ok(cache) => {
             let actual_hash = format!("sha256:{:x}", Sha256::digest(&bytes));
-            if let Err(reason) = validate_source_audio_cache_identity(session, graph, &actual_hash)
+            if let Err(reason) =
+                validate_source_audio_cache_identity(source_ref, graph, &actual_hash)
             {
                 return (
                     None,
@@ -301,18 +329,10 @@ fn load_source_audio_cache_for_graph(
     }
 }
 
-fn validate_source_audio_cache_identity(
-    session: &SessionFile,
+fn source_audio_identity_ref<'a>(
+    session: &'a SessionFile,
     graph: &SourceGraph,
-    actual_hash: &str,
-) -> Result<(), String> {
-    if graph.source.content_hash != actual_hash {
-        return Err(format!(
-            "source audio hash mismatch: graph has {}, loaded WAV has {actual_hash}",
-            graph.source.content_hash
-        ));
-    }
-
+) -> Result<&'a SourceRef, String> {
     let Some(source_ref) = session
         .source_refs
         .iter()
@@ -323,6 +343,27 @@ fn validate_source_audio_cache_identity(
             graph.source.source_id
         ));
     };
+
+    if source_ref.decode_profile != graph.source.decode_profile {
+        return Err(format!(
+            "source decode profile mismatch: session has {:?}, graph has {:?}; source audio unavailable",
+            source_ref.decode_profile, graph.source.decode_profile
+        ));
+    }
+    Ok(source_ref)
+}
+
+fn validate_source_audio_cache_identity(
+    source_ref: &SourceRef,
+    graph: &SourceGraph,
+    actual_hash: &str,
+) -> Result<(), String> {
+    if graph.source.content_hash != actual_hash {
+        return Err(format!(
+            "source audio hash mismatch: graph has {}, loaded WAV has {actual_hash}",
+            graph.source.content_hash
+        ));
+    }
 
     if source_ref.content_hash != actual_hash {
         return Err(format!(
@@ -482,7 +523,7 @@ fn session_from_ingested_graph(
         path_hint: source_path.to_string_lossy().into_owned(),
         content_hash: graph.source.content_hash.clone(),
         duration_seconds: graph.source.duration_seconds,
-        decode_profile: decode_profile_label(&graph.source.decode_profile),
+        decode_profile: graph.source.decode_profile.clone(),
     });
     session.source_graph_refs.push(SourceGraphRef {
         source_id,
@@ -512,15 +553,6 @@ fn session_from_ingested_graph(
 pub(in crate::jam_app) fn source_graph_hash(graph: &SourceGraph) -> Result<String, JamAppError> {
     let encoded = serde_json::to_vec(graph)?;
     Ok(format!("sha256:{:x}", Sha256::digest(encoded)))
-}
-
-fn decode_profile_label(profile: &DecodeProfile) -> String {
-    match profile {
-        DecodeProfile::Native => "native".into(),
-        DecodeProfile::NormalizedStereo => "normalized_stereo".into(),
-        DecodeProfile::NormalizedMono => "normalized_mono".into(),
-        DecodeProfile::Custom(value) => value.clone(),
-    }
 }
 
 fn timestamp_now() -> String {

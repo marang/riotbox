@@ -563,8 +563,8 @@ fn queue_w30_browse_slice_pool_prefers_feral_capture_and_changes_preview_window(
     });
     feral_graph.relationships.push(Relationship {
         relation_type: RelationshipType::SupportsBreakRebuild,
-        from_id: "asset-b".into(),
-        to_id: "section-a".into(),
+        from_id: riotbox_core::source_graph::GraphNodeRef::Asset("asset-b".into()),
+        to_id: riotbox_core::source_graph::GraphNodeRef::Section("section-a".into()),
         weight: 0.81,
         notes: Some("feral hook supports rebuild".into()),
     });

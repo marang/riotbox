@@ -1,7 +1,7 @@
 use riotbox_core::{
     session::{
         Mc202RoleState, Mc202SourcePhraseExpressionState, Mc202SourcePhraseNoteBudgetState,
-        Mc202SourcePhrasePlanState, Mc202SourcePhraseSlotState, SessionFile,
+        Mc202SourcePhrasePlanState, Mc202SourcePhraseSlotState, SceneState, SessionFile,
     },
     source_graph::{
         AssetType, CandidateType, EnergyClass, Mc202SourcePhraseFeatureVector, PhraseSpan, Section,
@@ -46,11 +46,13 @@ pub(super) fn derive_mc202_source_phrase_plan(
         return Ok(None);
     }
 
-    let Some(phrase_slot) = source_phrase_slot_for_boundary(graph, boundary) else {
+    let Some(phrase_slot) =
+        source_phrase_slot_for_boundary(graph, boundary, &session.runtime_state.scene_state)
+    else {
         return Ok(None);
     };
 
-    let section = source_section_for_boundary(graph, boundary);
+    let section = source_section_for_boundary(graph, boundary, &session.runtime_state.scene_state);
     let features = mc202_source_phrase_feature_vector(graph, &phrase_slot);
     if let Some(feature_section_id) = features.source_section_id.as_ref() {
         match section {
@@ -122,10 +124,11 @@ pub(super) fn derive_mc202_source_phrase_plan(
 fn source_phrase_slot_for_boundary(
     graph: &SourceGraph,
     boundary: &CommitBoundaryState,
+    scene_state: &SceneState,
 ) -> Option<PhraseSpan> {
     let bar_index = boundary.bar_index as u32;
     let primary = graph.timing.primary_hypothesis();
-    source_phrase_slot_for_projected_scene(graph, boundary)
+    source_phrase_slot_for_projected_scene(graph, boundary, scene_state)
         .or_else(|| {
             primary.and_then(|hypothesis| {
                 hypothesis
@@ -160,11 +163,12 @@ fn source_phrase_slot_for_boundary(
 fn source_phrase_slot_for_projected_scene(
     graph: &SourceGraph,
     boundary: &CommitBoundaryState,
+    scene_state: &SceneState,
 ) -> Option<PhraseSpan> {
     let section = boundary
         .scene_id
         .as_ref()
-        .and_then(|scene_id| section_for_projected_scene(graph, scene_id))?;
+        .and_then(|scene_id| section_for_projected_scene(graph, scene_state, scene_id))?;
     let primary = graph.timing.primary_hypothesis()?;
 
     if let Some(phrase) = primary
@@ -196,11 +200,12 @@ fn source_phrase_slot_for_projected_scene(
 fn source_section_for_boundary<'a>(
     graph: &'a SourceGraph,
     boundary: &CommitBoundaryState,
+    scene_state: &SceneState,
 ) -> Option<&'a Section> {
     boundary
         .scene_id
         .as_ref()
-        .and_then(|scene_id| section_for_projected_scene(graph, scene_id))
+        .and_then(|scene_id| section_for_projected_scene(graph, scene_state, scene_id))
         .or_else(|| section_for_transport_bar(graph, &transport_clock_from_boundary(boundary)))
 }
 
@@ -661,7 +666,12 @@ mod tests {
             scene_id: None,
         };
 
-        let slot = source_phrase_slot_for_boundary(&graph, &boundary).expect("primary phrase slot");
+        let slot = source_phrase_slot_for_boundary(
+            &graph,
+            &boundary,
+            &riotbox_core::session::SceneState::default(),
+        )
+        .expect("primary phrase slot");
 
         assert_eq!(slot.phrase_index, 9);
         assert_eq!((slot.start_bar, slot.end_bar), (5, 8));
@@ -673,10 +683,18 @@ mod tests {
         graph.timing.hypotheses[0].phrase_grid.clear();
         let boundary = projected_boundary("scene-01-intro");
 
-        let section =
-            source_section_for_boundary(&graph, &boundary).expect("projected source section");
-        let slot =
-            source_phrase_slot_for_boundary(&graph, &boundary).expect("projected phrase slot");
+        let section = source_section_for_boundary(
+            &graph,
+            &boundary,
+            &riotbox_core::session::SceneState::default(),
+        )
+        .expect("projected source section");
+        let slot = source_phrase_slot_for_boundary(
+            &graph,
+            &boundary,
+            &riotbox_core::session::SceneState::default(),
+        )
+        .expect("projected phrase slot");
 
         assert_eq!(section.section_id, SectionId::from("section-intro"));
         assert_eq!(slot.phrase_index, 2);
@@ -689,8 +707,12 @@ mod tests {
         let graph = short_source_graph();
         let boundary = projected_boundary("scene-01-intro");
 
-        let slot =
-            source_phrase_slot_for_boundary(&graph, &boundary).expect("source phrase grid slot");
+        let slot = source_phrase_slot_for_boundary(
+            &graph,
+            &boundary,
+            &riotbox_core::session::SceneState::default(),
+        )
+        .expect("source phrase grid slot");
 
         assert_eq!(slot.phrase_index, 7);
         assert_eq!((slot.start_bar, slot.end_bar), (1, 1));
@@ -702,10 +724,18 @@ mod tests {
         let graph = short_source_graph();
         let boundary = projected_boundary("scene-02-drop");
 
-        let section =
-            source_section_for_boundary(&graph, &boundary).expect("projected drop section");
-        let slot =
-            source_phrase_slot_for_boundary(&graph, &boundary).expect("projected drop phrase");
+        let section = source_section_for_boundary(
+            &graph,
+            &boundary,
+            &riotbox_core::session::SceneState::default(),
+        )
+        .expect("projected drop section");
+        let slot = source_phrase_slot_for_boundary(
+            &graph,
+            &boundary,
+            &riotbox_core::session::SceneState::default(),
+        )
+        .expect("projected drop phrase");
 
         assert_eq!(section.section_id, SectionId::from("section-drop"));
         assert_eq!(slot.phrase_index, 7);
@@ -719,7 +749,12 @@ mod tests {
         let mut boundary = projected_boundary("scene-01-intro");
         boundary.bar_index = 2;
 
-        let slot = source_phrase_slot_for_boundary(&graph, &boundary).expect("scene-owned phrase");
+        let slot = source_phrase_slot_for_boundary(
+            &graph,
+            &boundary,
+            &riotbox_core::session::SceneState::default(),
+        )
+        .expect("scene-owned phrase");
 
         assert_eq!((slot.start_bar, slot.end_bar), (1, 1));
     }
@@ -729,8 +764,22 @@ mod tests {
         let graph = short_source_graph();
         let boundary = projected_boundary("scene-03-unknown");
 
-        assert!(source_section_for_boundary(&graph, &boundary).is_none());
-        assert!(source_phrase_slot_for_boundary(&graph, &boundary).is_none());
+        assert!(
+            source_section_for_boundary(
+                &graph,
+                &boundary,
+                &riotbox_core::session::SceneState::default()
+            )
+            .is_none()
+        );
+        assert!(
+            source_phrase_slot_for_boundary(
+                &graph,
+                &boundary,
+                &riotbox_core::session::SceneState::default()
+            )
+            .is_none()
+        );
     }
 
     fn short_source_graph() -> SourceGraph {

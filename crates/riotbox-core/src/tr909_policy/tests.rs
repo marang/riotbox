@@ -123,8 +123,8 @@ mod tests {
         });
         graph.relationships.push(Relationship {
             relation_type: RelationshipType::SupportsBreakRebuild,
-            from_id: "asset-feral-hook".into(),
-            to_id: "section-steady".into(),
+            from_id: crate::source_graph::GraphNodeRef::Asset("asset-feral-hook".into()),
+            to_id: crate::source_graph::GraphNodeRef::Section("section-steady".into()),
             weight: 0.85,
             notes: Some("feral hook supports rebuild".into()),
         });
@@ -172,6 +172,7 @@ mod tests {
                 &transport,
                 Some(&graph),
                 scene_context.as_ref(),
+                &crate::session::SceneState::default(),
             );
 
             assert_eq!(
@@ -265,6 +266,7 @@ mod tests {
             &transport,
             Some(&graph),
             Some(&SceneId::from("scene-02-break")),
+            &crate::session::SceneState::default(),
         );
 
         assert_eq!(transport.bar_index, 1);
@@ -299,6 +301,7 @@ mod tests {
             &transport,
             Some(&graph),
             Some(&SceneId::from("scene-1")),
+            &crate::session::SceneState::default(),
         );
 
         assert_eq!(
@@ -330,8 +333,8 @@ mod tests {
         });
         hook_only_graph.relationships.push(Relationship {
             relation_type: RelationshipType::SupportsBreakRebuild,
-            from_id: "asset-feral-hook-only".into(),
-            to_id: "section-steady".into(),
+            from_id: crate::source_graph::GraphNodeRef::Asset("asset-feral-hook-only".into()),
+            to_id: crate::source_graph::GraphNodeRef::Section("section-steady".into()),
             weight: 0.85,
             notes: Some("feral hook supports rebuild".into()),
         });
@@ -353,24 +356,27 @@ mod tests {
             &transport,
             Some(&control_graph),
             None,
+            &crate::session::SceneState::default(),
         );
         let feral_policy = derive_tr909_render_policy_with_scene_context(
             &tr909,
             &transport,
             Some(&feral_graph),
             None,
+            &crate::session::SceneState::default(),
         );
         let hook_only_policy = derive_tr909_render_policy_with_scene_context(
             &tr909,
             &transport,
             Some(&hook_only_graph),
             None,
+            &crate::session::SceneState::default(),
         );
         let control_reason =
-            derive_tr909_source_support_reason(Some(&control_graph), &transport, None);
-        let feral_reason = derive_tr909_source_support_reason(Some(&feral_graph), &transport, None);
+            derive_tr909_source_support_reason(Some(&control_graph), &transport, None, &crate::session::SceneState::default());
+        let feral_reason = derive_tr909_source_support_reason(Some(&feral_graph), &transport, None, &crate::session::SceneState::default());
         let hook_only_reason =
-            derive_tr909_source_support_reason(Some(&hook_only_graph), &transport, None);
+            derive_tr909_source_support_reason(Some(&hook_only_graph), &transport, None, &crate::session::SceneState::default());
 
         assert_eq!(
             control_policy.source_support_profile,

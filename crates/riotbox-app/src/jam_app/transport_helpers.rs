@@ -1,8 +1,8 @@
 use riotbox_core::view::jam::source_timing_consumer_readiness;
 use riotbox_core::{
     ids::SceneId,
-    session::SessionFile,
-    source_graph::{SectionLabelHint, SourceGraph},
+    session::{SessionFile, projected_scene_bindings},
+    source_graph::SourceGraph,
     transport::{
         CommitBoundaryState, DEFAULT_BARS_PER_PHRASE, DEFAULT_BEATS_PER_BAR, TransportClockState,
         TransportGridPosition,
@@ -40,7 +40,10 @@ pub(in crate::jam_app) fn normalize_scene_candidates(
     if session.runtime_state.scene_state.scenes.is_empty()
         && let Some(graph) = source_graph
     {
-        session.runtime_state.scene_state.scenes = derive_scene_candidates(graph);
+        session.runtime_state.scene_state.scenes = projected_scene_bindings(graph)
+            .into_iter()
+            .map(|binding| binding.scene_id)
+            .collect();
     }
 
     if session.runtime_state.scene_state.active_scene.is_none() {
@@ -59,41 +62,8 @@ pub(in crate::jam_app) fn normalize_scene_candidates(
         session.runtime_state.scene_state.active_scene = Some(first_scene.clone());
         session.runtime_state.transport.current_scene = Some(first_scene);
     }
-}
-
-fn derive_scene_candidates(graph: &SourceGraph) -> Vec<SceneId> {
-    let mut sections = graph.sections.iter().collect::<Vec<_>>();
-    sections.sort_by(|left, right| {
-        left.bar_start
-            .cmp(&right.bar_start)
-            .then(left.bar_end.cmp(&right.bar_end))
-            .then(left.section_id.as_str().cmp(right.section_id.as_str()))
-    });
-
-    sections
-        .into_iter()
-        .enumerate()
-        .map(|(index, section)| {
-            SceneId::from(format!(
-                "scene-{:02}-{}",
-                index + 1,
-                section_label_slug(section.label_hint)
-            ))
-        })
-        .collect()
-}
-
-const fn section_label_slug(label: SectionLabelHint) -> &'static str {
-    match label {
-        SectionLabelHint::Intro => "intro",
-        SectionLabelHint::Build => "build",
-        SectionLabelHint::Drop => "drop",
-        SectionLabelHint::Break => "break",
-        SectionLabelHint::Verse => "verse",
-        SectionLabelHint::Chorus => "chorus",
-        SectionLabelHint::Bridge => "bridge",
-        SectionLabelHint::Outro => "outro",
-        SectionLabelHint::Unknown => "unknown",
+    if let Some(graph) = source_graph {
+        session.migrate_scene_source_bindings(graph);
     }
 }
 

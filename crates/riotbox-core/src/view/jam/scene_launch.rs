@@ -69,7 +69,7 @@ pub fn next_scene_launch_candidate_with_reason<'a>(
         });
     };
     let Some(current_energy) =
-        current_scene.and_then(|scene_id| known_scene_energy_label(scene_id.as_str(), graph))
+        current_scene.and_then(|scene_id| known_scene_energy_label(scene_id, session, graph))
     else {
         return Some(SceneLaunchCandidateView {
             scene_id: candidate,
@@ -78,7 +78,7 @@ pub fn next_scene_launch_candidate_with_reason<'a>(
     };
 
     if let Some(contrast_candidate) = candidates.iter().copied().find(|candidate| {
-        known_scene_energy_label(candidate.as_str(), graph)
+        known_scene_energy_label(candidate, session, graph)
             .is_some_and(|candidate_energy| candidate_energy != current_energy)
     }) {
         return Some(SceneLaunchCandidateView {
@@ -110,8 +110,13 @@ fn ordered_next_scene_candidates<'a>(
         .collect()
 }
 
-fn known_scene_energy_label(scene_id: &str, graph: &SourceGraph) -> Option<String> {
-    projected_scene_energy_label(Some(scene_id), false, graph).filter(|energy| energy != "unknown")
+fn known_scene_energy_label(
+    scene_id: &crate::ids::SceneId,
+    session: &SessionFile,
+    graph: &SourceGraph,
+) -> Option<String> {
+    projected_scene_energy_label(Some(scene_id), false, session, graph)
+        .filter(|energy| energy != "unknown")
 }
 
 fn scene_movement_view(session: &SessionFile) -> Option<SceneMovementView> {
@@ -205,9 +210,9 @@ fn current_scene_energy_label(session: &SessionFile, graph: &SourceGraph) -> Opt
             .scene_state
             .active_scene
             .as_ref()
-            .or(session.runtime_state.transport.current_scene.as_ref())
-            .map(|scene_id| scene_id.as_str()),
+            .or(session.runtime_state.transport.current_scene.as_ref()),
         true,
+        session,
         graph,
     )
 }
@@ -218,47 +223,28 @@ fn restore_scene_energy_label(session: &SessionFile, graph: &SourceGraph) -> Opt
             .runtime_state
             .scene_state
             .restore_scene
-            .as_ref()
-            .map(|scene_id| scene_id.as_str()),
+            .as_ref(),
         false,
+        session,
         graph,
     )
 }
 
 fn projected_scene_energy_label(
-    scene_id: Option<&str>,
+    scene_id: Option<&crate::ids::SceneId>,
     fallback_to_first_section: bool,
+    session: &SessionFile,
     graph: &SourceGraph,
 ) -> Option<String> {
-    let sections = sorted_sections(graph);
+    let sections = crate::source_graph::sorted_sections(graph);
     let section = scene_id
-        .and_then(parse_projected_scene_index)
-        .and_then(|scene_index| sections.get(scene_index).copied())
+        .and_then(|scene_id| session.runtime_state.scene_state.source_section(graph, scene_id))
         .or_else(|| {
             fallback_to_first_section
                 .then(|| sections.first().copied())
                 .flatten()
         })?;
     Some(section_energy_label(section).to_string())
-}
-
-fn parse_projected_scene_index(scene_id: &str) -> Option<usize> {
-    let mut parts = scene_id.splitn(3, '-');
-    match (parts.next(), parts.next()) {
-        (Some("scene"), Some(index)) => index.parse::<usize>().ok()?.checked_sub(1),
-        _ => None,
-    }
-}
-
-fn sorted_sections(graph: &SourceGraph) -> Vec<&Section> {
-    let mut sections = graph.sections.iter().collect::<Vec<_>>();
-    sections.sort_by(|left, right| {
-        left.bar_start
-            .cmp(&right.bar_start)
-            .then(left.bar_end.cmp(&right.bar_end))
-            .then(left.section_id.as_str().cmp(right.section_id.as_str()))
-    });
-    sections
 }
 
 const fn section_energy_label(section: &Section) -> &'static str {

@@ -117,15 +117,15 @@
         });
         graph.relationships.push(Relationship {
             relation_type: RelationshipType::SupportsBreakRebuild,
-            from_id: "asset-hook".into(),
-            to_id: "section-break".into(),
+            from_id: crate::source_graph::GraphNodeRef::Asset("asset-hook".into()),
+            to_id: crate::source_graph::GraphNodeRef::Section("section-break".into()),
             weight: 0.85,
             notes: None,
         });
         graph.relationships.push(Relationship {
             relation_type: RelationshipType::HighQuoteRiskWith,
-            from_id: "asset-hook".into(),
-            to_id: "src-feral".into(),
+            from_id: crate::source_graph::GraphNodeRef::Asset("asset-hook".into()),
+            to_id: crate::source_graph::GraphNodeRef::Source("src-feral".into()),
             weight: 0.7,
             notes: None,
         });
@@ -208,8 +208,8 @@
 
         graph.relationships.push(Relationship {
             relation_type: RelationshipType::SupportsBreakRebuild,
-            from_id: "asset-hook".into(),
-            to_id: "section-break".into(),
+            from_id: crate::source_graph::GraphNodeRef::Asset("asset-hook".into()),
+            to_id: crate::source_graph::GraphNodeRef::Section("section-break".into()),
             weight: 0.85,
             notes: None,
         });

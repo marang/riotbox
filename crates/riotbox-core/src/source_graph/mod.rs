@@ -1,5 +1,6 @@
 pub mod mc202_phrase_features;
 pub mod model_and_helpers;
+mod relationship_identity;
 pub mod timing;
 pub mod timing_analysis;
 pub mod timing_evaluation;
@@ -9,6 +10,7 @@ pub mod timing_probe_diagnostics;
 
 pub use mc202_phrase_features::*;
 pub use model_and_helpers::*;
+pub use relationship_identity::{GraphNodeRef, GraphNodeRefError};
 pub use timing::*;
 pub use timing_analysis::*;
 pub use timing_evaluation::*;

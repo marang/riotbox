@@ -142,6 +142,7 @@ pub(super) fn build_tr909_render_state(
         transport,
         source_graph,
         scene_context,
+        &session.runtime_state.scene_state,
     );
     let live_policy = source_graph.and_then(|graph| derive_live_performance_policy(session, graph));
     let explicit_held_state_override = matches!(
@@ -312,7 +313,7 @@ pub(super) fn build_mc202_render_state(
     let (mode, base_phrase_shape) = mc202_render_mode_and_shape(role);
     let phrase_intent = Mc202PhraseIntentState::from_phrase_variant(mc202.phrase_variant);
     let phrase_shape = mc202_phrase_shape_for_intent(phrase_intent).unwrap_or(base_phrase_shape);
-    let current_section = mc202_current_section(source_graph, transport, scene_context(session));
+    let current_section = mc202_current_section(source_graph, transport, scene_context(session), &session.runtime_state.scene_state);
     if mc202_source_plan_has_explicit_section_mismatch(
         mc202.source_phrase_plan.as_ref(),
         source_graph,
@@ -438,10 +439,11 @@ fn mc202_current_section<'a>(
     source_graph: Option<&'a SourceGraph>,
     transport: &TransportClockState,
     scene_context: Option<&SceneId>,
+    scene_state: &riotbox_core::session::SceneState,
 ) -> Option<&'a Section> {
     let graph = source_graph?;
     scene_context
-        .and_then(|scene_id| section_for_projected_scene(graph, scene_id))
+        .and_then(|scene_id| section_for_projected_scene(graph, scene_state, scene_id))
         .or_else(|| section_for_transport_bar(graph, transport))
 }
 

@@ -70,6 +70,7 @@ const REPLAY_SUPPORTED_ACTION_COMMANDS: &[ActionCommand] = &[
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ReplayExecutionError {
+    InvalidSceneSourceBinding(crate::session::SceneSourceBindingError),
     UnsupportedAction {
         action_id: ActionId,
         command: ActionCommand,

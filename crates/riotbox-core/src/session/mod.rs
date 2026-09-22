@@ -10,9 +10,15 @@ mod export_types;
 mod live_recording_host_audio;
 mod live_recording_readiness;
 mod mc202_types;
+mod scene_source_binding;
+pub(crate) use scene_source_binding::action_scene_refs;
+mod source_decode_profile;
 mod source_timing;
 mod version_types;
 
+pub use scene_source_binding::{
+    SceneSourceBinding, SceneSourceBindingError, projected_scene_bindings,
+};
 pub use source_timing::{
     SourceTimingGridConfirmationState, SourceTimingRuntimeState,
     source_timing_confirmation_matches_graph,

@@ -511,7 +511,13 @@ pub fn prepare(
     let launched_source_section = state
         .source_graph
         .as_ref()
-        .and_then(|graph| section_for_projected_scene(graph, &after_y_scene))
+        .and_then(|graph| {
+            section_for_projected_scene(
+                graph,
+                &state.session.runtime_state.scene_state,
+                &after_y_scene,
+            )
+        })
         .map(|section| section.section_id.clone());
     let launch_has_explicit_mc202_section_mismatch = matches!(
         (&mc202_plan_source_section, &launched_source_section),
@@ -1084,10 +1090,13 @@ fn require_committed_scene_target(
 }
 
 fn scene_source_anchor_seconds(state: &JamAppState, scene: &SceneId) -> Option<f64> {
-    state
-        .source_graph
-        .as_ref()
-        .and_then(|graph| primary_grid_anchor_seconds_for_projected_scene(graph, scene))
+    state.source_graph.as_ref().and_then(|graph| {
+        primary_grid_anchor_seconds_for_projected_scene(
+            graph,
+            &state.session.runtime_state.scene_state,
+            scene,
+        )
+    })
 }
 
 fn require_same_anchor(
