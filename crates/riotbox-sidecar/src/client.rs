@@ -653,8 +653,12 @@ mod tests {
         };
         let mut client =
             StdioSidecarClient::spawn_python(protocol_fixture_path("slow_analysis_error.py"))
-                .expect("spawn slow analysis sidecar")
-                .with_timeout_policy(timeout_policy);
+                .expect("spawn slow analysis sidecar");
+        // This test compares operation budgets, not interpreter startup speed.
+        // The fixture deliberately starts slowly; use the ordinary bounded
+        // control timeout for readiness before installing the short test policy.
+        client.ping().expect("complete slow fixture startup");
+        let mut client = client.with_timeout_policy(timeout_policy);
         let error = client
             .build_source_graph_stub(sample_source(), 17)
             .expect_err("fixture returns an error after its slow response");
