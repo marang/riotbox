@@ -18,7 +18,7 @@
 - Deleted from Linear: `2026-09-22`
 - Verification: `Full normal-parallel local just ci and GitHub Rust CI passed; synthetic public capture/save/restore probe reproduced the P1 finding.`
 - Docs touched: `docs/reviews/riotbox_1499_architecture_review_2026-09-22.md`
-- Follow-ups: `None`
+- Follow-ups: `RIOTBOX-1500 (capture artifact isolation)`
 
 ## Why This Ticket Existed
 
