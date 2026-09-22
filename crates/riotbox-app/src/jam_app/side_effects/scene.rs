@@ -53,6 +53,7 @@ pub(in crate::jam_app) fn apply_scene_side_effects(
                 previous_scene.as_ref(),
                 &scene_id,
                 source_graph,
+                &session.runtime_state.scene_state,
             )
         })
     });

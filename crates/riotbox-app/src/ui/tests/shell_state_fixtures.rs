@@ -241,15 +241,15 @@ fn sample_shell_state() -> JamShellState {
     });
     graph.relationships.push(Relationship {
         relation_type: RelationshipType::SupportsBreakRebuild,
-        from_id: "asset-hook".into(),
-        to_id: "asset-a".into(),
+        from_id: riotbox_core::source_graph::GraphNodeRef::Asset("asset-hook".into()),
+        to_id: riotbox_core::source_graph::GraphNodeRef::Asset("asset-a".into()),
         weight: 0.78,
         notes: Some("hook supports loop rebuild".into()),
     });
     graph.relationships.push(Relationship {
         relation_type: RelationshipType::HighQuoteRiskWith,
-        from_id: "asset-hook".into(),
-        to_id: "src-1".into(),
+        from_id: riotbox_core::source_graph::GraphNodeRef::Asset("asset-hook".into()),
+        to_id: riotbox_core::source_graph::GraphNodeRef::Source("src-1".into()),
         weight: 0.64,
         notes: Some("recognizable hook".into()),
     });
@@ -515,6 +515,8 @@ fn scene_post_commit_shell_state(
 ) -> JamShellState {
     let sample_shell = sample_shell_state();
     let mut session = sample_shell.app.session.clone();
+    // This legacy fixture changes the scene IDs after cloning the sample.
+    session.runtime_state.scene_state.source_bindings = None;
     session.action_log.actions.clear();
     session.runtime_state.transport.current_scene = Some(SceneId::from(active_scene));
     session.runtime_state.scene_state.active_scene = Some(SceneId::from(active_scene));

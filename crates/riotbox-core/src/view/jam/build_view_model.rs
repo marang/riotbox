@@ -290,6 +290,11 @@ impl JamViewModel {
         };
 
         let mut warnings = graph.map_or_else(Vec::new, SourceGraph::warnings);
+        if let Some(graph) = graph
+            && let Err(error) = session.runtime_state.scene_state.validate_source_bindings(graph)
+        {
+            warnings.push(error.to_string());
+        }
         if pending_actions.is_empty() && !session.transport().is_playing {
             warnings.push("transport idle".into());
         }
@@ -297,8 +302,8 @@ impl JamViewModel {
         let next_scene = next_scene_launch_candidate(session, graph).map(ToString::to_string);
         let scene_jump_availability =
             scene_jump_availability(session, next_scene.as_deref().is_some());
-        let next_scene_energy = graph
-            .and_then(|graph| projected_scene_energy_label(next_scene.as_deref(), false, graph));
+        let next_scene_energy = graph.and_then(|graph| projected_scene_energy_label(
+            next_scene_launch_candidate(session, Some(graph)), false, session, graph));
         let active_scene_energy =
             graph.and_then(|graph| current_scene_energy_label(session, graph));
         let restore_scene_energy =

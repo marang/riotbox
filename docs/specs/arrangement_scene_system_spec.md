@@ -145,6 +145,12 @@ still commits but Source Monitor exposes no reposition anchor; it must not guess
 or fall back to the raw section timestamp. Live commit and graph-aware replay use
 the same canonical core helper.
 
+Scene-to-Section identity is the typed Session `scene_state.source_bindings`
+contract described in [Session source identity](session_file_spec.md#scene-source-identity).
+The shared Core resolver supplies Source Monitor, lane policies, Scene Brain and
+replay; display labels and scene array positions do not retarget explicit
+bindings. Legacy interpretation is confined to the compatibility adapter.
+
 P016 may define receipt-only arrangement / DAW placement contracts for future
 export packages without changing the P014 runtime arrangement contract. The
 current bounded skeleton is `export_scope: daw_session`, `pack_id:

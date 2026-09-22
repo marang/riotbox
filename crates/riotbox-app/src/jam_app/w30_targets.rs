@@ -365,19 +365,21 @@ impl JamAppState {
             .filter(|candidate| candidate.candidate_type == CandidateType::CaptureCandidate)
             .map(|candidate| candidate.asset_ref.to_string())
             .collect::<BTreeSet<_>>();
-        let break_support_ids = graph
-            .relationships
-            .iter()
-            .filter(|relationship| {
-                relationship.relation_type == RelationshipType::SupportsBreakRebuild
-            })
-            .map(|relationship| relationship.from_id.as_str())
-            .collect::<BTreeSet<_>>();
+        let mut has_break_support_relationship = false;
+        let mut break_support_asset_ids = BTreeSet::new();
+        for relationship in graph.relationships.iter().filter(|relationship| {
+            relationship.relation_type == RelationshipType::SupportsBreakRebuild
+        }) {
+            has_break_support_relationship = true;
+            if let riotbox_core::source_graph::GraphNodeRef::Asset(id) = &relationship.from_id {
+                break_support_asset_ids.insert(id);
+            }
+        }
 
         for asset in &graph.assets {
             if asset.asset_type == AssetType::HookFragment
-                && (break_support_ids.is_empty()
-                    || break_support_ids.contains(asset.asset_id.as_str()))
+                && (!has_break_support_relationship
+                    || break_support_asset_ids.contains(&asset.asset_id))
             {
                 preferred_asset_ids.insert(asset.asset_id.to_string());
             }

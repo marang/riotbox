@@ -282,6 +282,7 @@ fn source_family_case(
 fn neutralize_source_phrase_features(graph: &mut SourceGraph) {
     graph.sections.clear();
     graph.assets.clear();
+    graph.relationships.clear();
     graph.candidates.clear();
     graph.phrase_audio_features.clear();
     graph.analysis_summary = AnalysisSummary::default();

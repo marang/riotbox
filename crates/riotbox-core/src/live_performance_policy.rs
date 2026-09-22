@@ -445,7 +445,9 @@ fn current_source_section<'a>(
         .active_scene
         .as_ref()
         .or(session.runtime_state.transport.current_scene.as_ref());
-    if let Some(section) = scene.and_then(|scene| section_for_projected_scene(graph, scene)) {
+    if let Some(section) = scene.and_then(|scene| {
+        section_for_projected_scene(graph, &session.runtime_state.scene_state, scene)
+    }) {
         return Some(section);
     }
 

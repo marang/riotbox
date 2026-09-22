@@ -194,6 +194,7 @@ fn source_monitor_scene_anchor(
     Some(SourceMonitorSceneAnchor {
         source_start_seconds: primary_grid_anchor_seconds_for_projected_scene(
             graph,
+            &session.runtime_state.scene_state,
             &movement.to_scene,
         )?,
         // Session V1 commit boundaries persist this as the zero-based cursor.

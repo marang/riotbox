@@ -282,7 +282,7 @@ mod tests {
             path_hint: "input.wav".into(),
             content_hash: "hash-1".into(),
             duration_seconds: 120.0,
-            decode_profile: "normalized_stereo".into(),
+            decode_profile: DecodeProfile::NormalizedStereo,
         });
         session.source_graph_refs.push(SourceGraphRef {
             source_id: SourceId::from("src-1"),

@@ -115,6 +115,16 @@ Rules:
   routing unverified PCM
 - session restore should prefer `content_hash` verification over path trust
 - `path_hint` may help the UI, but path alone must not be the authority
+- `decode_profile` uses the same typed `DecodeProfile` as the Source Graph.
+  Legacy standard strings (`native`, `normalized_stereo`, `normalized_mono`)
+  retain their wire spelling; other valid legacy names retain the existing
+  `Custom` meaning. New custom names colliding with those standard labels use
+  explicit `{"Custom": "native"}`-style encoding to preserve their kind.
+  Empty/control-character names and unsupported JSON values are errors.
+  Before source-audio I/O, restore requires the Session's typed profile to match
+  the active Graph. An unknown or historically ambiguous profile is unavailable
+  unless that Graph confirms the same typed interpretation; it is never guessed
+  into a standard profile. Graph serialization/hashes remain unchanged (RBX-377).
 
 ---
 
@@ -182,6 +192,35 @@ RuntimeState {
   undo_state
 }
 ```
+
+### Scene source identity
+
+`runtime_state.scene_state.source_bindings` optionally stores typed
+`SceneSourceBinding { scene_id, source_id, section_id }` entries (RBX-378).
+Consumers use the referenced Section ID, never a label-derived array position.
+Existing generated Scene IDs keep their spelling at creation; opaque/custom
+Scene IDs are equally valid with an explicit binding. Renaming section labels or
+changing section ordering does not retarget an existing binding.
+
+Missing/null means an unmigrated V1 Session, whereas an explicit empty list means
+unbound. Only the centralized legacy adapter accepts historical
+`scene-{1-based-index}-{label}` IDs and resolves their old sorted-section position;
+it does not interpret the label. App construction/restore/save and graph-aware
+Core replay (including snapshot suffix hydration) materialize those bindings.
+Migration includes scene targets/parameters and boundary refs from the stored
+action history and supplied replay suffix, not only the current scene list.
+Read-only Core consumers may use the same adapter for an unmigrated Session.
+Ordinary load never writes the migration to disk. An explicit list is never
+repaired or supplemented by parsing names. Unrecognized legacy IDs stay unbound;
+missing scene anchors retain the existing transport-based consumer behavior.
+
+Duplicate Scene bindings, malformed IDs, a different Source ID, and missing or
+ambiguous Section targets are invalid: file restore/save and graph-aware replay
+reject them; read-only/in-memory views report invalid bindings and expose no
+source-section identity for them. Existing display-only first-section energy
+summary fallback is not a source binding or permission to reposition audio.
+Snapshots retain bindings as part of their existing RuntimeState, with no
+second scene graph, replay history or app-local mapping.
 
 ### 8.0.1 Style identity
 

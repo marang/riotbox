@@ -123,8 +123,13 @@ pub(super) fn tr909_render_support_reason_label(
         .as_ref()
         .or(session.runtime_state.transport.current_scene.as_ref());
 
-    derive_tr909_source_support_reason(source_graph, transport, scene_context)
-        .map_or_else(|| "section".into(), |reason| reason.cue_label().into())
+    derive_tr909_source_support_reason(
+        source_graph,
+        transport,
+        scene_context,
+        &session.runtime_state.scene_state,
+    )
+    .map_or_else(|| "section".into(), |reason| reason.cue_label().into())
 }
 
 pub(super) fn tr909_render_alignment_label(render: &Tr909RenderState) -> &'static str {

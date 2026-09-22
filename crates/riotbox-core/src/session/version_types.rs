@@ -4,7 +4,7 @@ use crate::{
     TimestampMs,
     action::{Action, CaptureLengthIntent, GhostMode, SourceMonitorMode},
     ids::{ActionId, BankId, CaptureId, PadId, SceneId, SnapshotId, SourceId},
-    source_graph::{GraphProvenance, SourceGraph, SourceGraphVersion},
+    source_graph::{DecodeProfile, GraphProvenance, SourceGraph, SourceGraphVersion},
     style::{PerformancePresetId, StyleProfileId},
     transport::CommitBoundaryState,
 };
@@ -72,7 +72,8 @@ pub struct SourceRef {
     pub path_hint: String,
     pub content_hash: String,
     pub duration_seconds: f32,
-    pub decode_profile: String,
+    #[serde(with = "super::source_decode_profile")]
+    pub decode_profile: DecodeProfile,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -377,6 +378,9 @@ pub struct SceneState {
     pub active_scene: Option<SceneId>,
     pub scenes: Vec<SceneId>,
     pub restore_scene: Option<SceneId>,
+    /// None is an unmigrated V1 session. Some(empty) is explicitly unbound.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_bindings: Option<Vec<super::SceneSourceBinding>>,
     #[serde(default)]
     pub last_movement: Option<SceneMovementState>,
     /// The source-backed movement profile currently projected into the audio lanes.

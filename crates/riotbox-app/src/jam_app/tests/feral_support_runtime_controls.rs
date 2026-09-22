@@ -43,8 +43,8 @@ fn feral_break_support_no_longer_injects_mc202_hook_response_output() {
     });
     feral_graph.relationships.push(Relationship {
         relation_type: RelationshipType::SupportsBreakRebuild,
-        from_id: "asset-feral-hook".into(),
-        to_id: "section-steady".into(),
+        from_id: riotbox_core::source_graph::GraphNodeRef::Asset("asset-feral-hook".into()),
+        to_id: riotbox_core::source_graph::GraphNodeRef::Section("section-steady".into()),
         weight: 0.85,
         notes: Some("feral hook supports rebuild".into()),
     });
@@ -164,8 +164,8 @@ fn feral_break_support_evidence_drives_current_lane_consumers_consistently() {
     let mut feral_graph = near_miss_graph.clone();
     feral_graph.relationships.push(Relationship {
         relation_type: RelationshipType::SupportsBreakRebuild,
-        from_id: "asset-b".into(),
-        to_id: "section-steady".into(),
+        from_id: riotbox_core::source_graph::GraphNodeRef::Asset("asset-b".into()),
+        to_id: riotbox_core::source_graph::GraphNodeRef::Section("section-steady".into()),
         weight: 0.85,
         notes: Some("feral hook supports rebuild".into()),
     });

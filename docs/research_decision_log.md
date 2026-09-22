@@ -5091,3 +5091,31 @@ Why: cap-01 is a Session-local identity, not a filesystem-wide name. Normal capt
 Evidence: the synthetic public capture/save/restore regression fails before the correction with 'other Session overwrote capture'. RIOTBOX-1500 verifies cross-Session raw captures and bus prints, existing legacy destinations, failed artifact writes and failed Session saves, retained replay/identity behavior and source-free CI.
 Consequences: filenames are opaque locators, not reproducibility identities; Core capture IDs, lineage and complete-file hashes remain authoritative. An unreferenced file can remain after process interruption or Session-save failure. The entry exists during writing but no Session reference is installed until completion. There is no directory-scan recovery, automatic garbage collection, atomic directory-visibility, power-loss guarantee or multiwriter Session transaction. Ordinary write errors clean up the newly allocated file when possible and retain visible pending/unavailable status. No DSP, source access, new action or human verdict.
 Status: accepted
+
+---
+
+### RBX-377
+
+Date: 2026-09-22
+Topic: share typed decode profiles without rewriting canonical Graph identity
+Phase: P000 / RIOTBOX-1409 typed source identity maintenance
+Question: how can Session SourceRef share the Graph's DecodeProfile while retaining legacy Session strings and refusing unconfirmed interpretation?
+Decision: use the existing DecodeProfile enum in SourceRef with a Session-only compatibility codec. Native, NormalizedStereo and NormalizedMono retain their legacy lower-case Session strings; ordinary legacy custom names map to the existing Custom variant and retain their bytes on serialization. New Custom names colliding with a standard spelling use the explicit existing {"Custom": name} representation so their kind is not lost. Empty/whitespace-only/control-character custom names and unsupported JSON shapes are errors. Graph serialization is unchanged. Before opening source audio on restore, require the Session and active Graph's typed profiles to agree; unknown legacy custom names are unavailable when that Graph does not confirm the same Custom profile. Continue hashing/decoding one read buffer for admitted profiles.
+Why: the old writer intentionally supported arbitrary Custom names, so treating every non-standard legacy string as a typo would break valid Sessions. Treating it as a standard profile would silently invent normalization assumptions. The Graph supplies the existing typed authority; disagreement is explicit unavailable state, not a fallback. A historical Custom("native") flattened to "native" is inherently ambiguous and must not be guessed back into a Custom profile.
+Evidence: the synthetic public restore regression admits an unknown Session profile on the old implementation; the correction must reject admission visibly, retain supported legacy/custom roundtrips, preserve Graph serialization and avoid source access for mismatched metadata.
+Consequences: no new profile vocabulary, audio normalization, action, source-result tuning or Source Graph schema/hash change. Metadata-only loading remains no-audio-access. An ambiguous legacy custom/standard collision can remain unavailable and requires deliberate metadata correction, never silent adoption. This records the decode-profile part of RIOTBOX-1409; typed relationship endpoints and explicit scene bindings remain separate unfinished acceptance work.
+Status: accepted
+
+---
+
+### RBX-378
+
+Date: 2026-09-22
+Topic: type Graph relationship endpoints and persist Scene-to-Section identity
+Phase: P000 / RIOTBOX-1409 identity maintenance
+Question: how can legacy Graph hashes and supported Scene behavior survive removal of string-driven identity?
+Decision: resolve V1 raw relationship strings through the actual Graph catalog into GraphNodeRef variants Source, Section, Asset and Candidate. Reject malformed, unknown and ambiguous endpoints on decode and validate typed endpoint membership/kind on serialization. Retain original Graph JSON field order, values and defaults. Keep the wire DTO private; do not infer kinds from prefixes or invent Capture/Bar graph nodes. Add optional typed SceneSourceBinding entries to existing Core Session SceneState. Explicit bindings follow SourceId/SectionId, not scene name, label or ordering. Only missing bindings enable a centralized legacy index adapter. App load/construction/save and graph-aware replay materialize migration, including old snapshot hydration; read-only Core consumers can adapt missing legacy data without mutation. An explicit list, including empty, never falls back to legacy parsing.
+Why: tags alone cannot establish a relationship's node kind, and projected Scene array indices are presentation-derived identity. Session owns durable scene/replay meaning; modifying Graph JSON to carry app projections would change existing canonical Graph hashes. One validated catalog boundary plus a Session binding avoids both another graph model and hidden app state.
+Evidence: synthetic roundtrips cover legacy Graph bytes, prefix-independent node kind, dangling/ambiguous/wrong-kind rejection, legacy decode profiles, opaque Scene IDs, label/order changes, explicit-invalid restore/save/replay rejection and graph-aware snapshot convergence. Four prior synthetic fixture builders removed nodes while retaining obsolete relationships; those builders now remove their obsolete links too. No source audio, holdout or commercial material is used to set this contract.
+Consequences: no relation-specific pair restrictions, source-result thresholds, new ActionCommand, DSP, scheduler or source-general claim. Unknown legacy Scene IDs remain unbound with existing transport-based behavior; malformed explicit identities fail closed rather than guessing. Existing display-only first-section energy summary fallback is not playback identity. Supported Graph canonical hashes stay unchanged; newly saved Sessions/snapshots can carry explicit bindings. Metadata-only export does not resolve an external Graph or open audio. Invalid legacy Graphs require deliberate metadata correction.
+Status: accepted

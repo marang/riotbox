@@ -114,6 +114,7 @@ fn renders_jam_shell_with_pending_scene_restore_summary() {
         .clone()
         .expect("sample shell source graph");
     let mut session = sample_shell_state().app.session.clone();
+    session.runtime_state.scene_state.source_bindings = None;
     session.runtime_state.scene_state.scenes = vec![
         SceneId::from("scene-01-drop"),
         SceneId::from("scene-02-intro"),

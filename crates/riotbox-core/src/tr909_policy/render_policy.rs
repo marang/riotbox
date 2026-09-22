@@ -1,6 +1,6 @@
 use crate::{
     ids::SceneId,
-    session::{Tr909LaneState, Tr909ReinforcementModeState, Tr909TakeoverProfileState},
+    session::{SceneState, Tr909LaneState, Tr909ReinforcementModeState, Tr909TakeoverProfileState},
     source_graph::{
         EnergyClass, Section, SectionLabelHint, SourceGraph, section_for_projected_scene,
         section_for_transport_bar,
@@ -174,7 +174,7 @@ pub fn derive_tr909_render_policy(
     transport: &TransportClockState,
     source_graph: Option<&SourceGraph>,
 ) -> Tr909RenderPolicyProjection {
-    derive_tr909_render_policy_with_scene_context(tr909, transport, source_graph, None)
+    derive_tr909_render_policy_with_scene_context(tr909, transport, source_graph, None, &SceneState::default())
 }
 
 #[must_use]
@@ -183,6 +183,7 @@ pub fn derive_tr909_render_policy_with_scene_context(
     transport: &TransportClockState,
     source_graph: Option<&SourceGraph>,
     scene_context: Option<&SceneId>,
+    scene_state: &SceneState,
 ) -> Tr909RenderPolicyProjection {
     let fill_is_active = tr909.last_fill_bar == Some(transport.bar_index);
     let mode = if tr909.takeover_enabled {
@@ -218,7 +219,7 @@ pub fn derive_tr909_render_policy_with_scene_context(
     };
 
     let source_support = matches!(mode, Tr909RenderModePolicy::SourceSupport)
-        .then(|| derive_tr909_source_support(source_graph, transport, scene_context))
+        .then(|| derive_tr909_source_support(source_graph, transport, scene_context, scene_state))
         .flatten();
     let source_support_profile = source_support.map(|support| support.profile);
     let source_support_context = source_support.map(|support| support.context);
@@ -253,9 +254,10 @@ pub fn derive_tr909_source_support_reason(
     source_graph: Option<&SourceGraph>,
     transport: &TransportClockState,
     scene_context: Option<&SceneId>,
+    scene_state: &SceneState,
 ) -> Option<Tr909SourceSupportReasonPolicy> {
     let graph = source_graph?;
-    let (current_section, _) = tr909_source_support_section(graph, transport, scene_context)?;
+    let (current_section, _) = tr909_source_support_section(graph, transport, scene_context, scene_state)?;
     let profile = source_support_profile_for_section(current_section);
     should_lift_feral_break_support(graph, profile)
         .then_some(Tr909SourceSupportReasonPolicy::FeralBreakLift)
@@ -271,9 +273,10 @@ fn derive_tr909_source_support(
     source_graph: Option<&SourceGraph>,
     transport: &TransportClockState,
     scene_context: Option<&SceneId>,
+    scene_state: &SceneState,
 ) -> Option<Tr909SourceSupportPolicy> {
     let graph = source_graph?;
-    let (current_section, context) = tr909_source_support_section(graph, transport, scene_context)?;
+    let (current_section, context) = tr909_source_support_section(graph, transport, scene_context, scene_state)?;
 
     Some(Tr909SourceSupportPolicy {
         profile: source_support_profile_for_graph_section(graph, current_section),
@@ -285,10 +288,11 @@ fn tr909_source_support_section<'a>(
     graph: &'a SourceGraph,
     transport: &TransportClockState,
     scene_context: Option<&SceneId>,
+    scene_state: &SceneState,
 ) -> Option<(&'a Section, Tr909SourceSupportContextPolicy)> {
     scene_context
         .and_then(|scene_id| {
-            section_for_projected_scene(graph, scene_id)
+            section_for_projected_scene(graph, scene_state, scene_id)
                 .map(|section| (section, Tr909SourceSupportContextPolicy::SceneTarget))
         })
         .or_else(|| {

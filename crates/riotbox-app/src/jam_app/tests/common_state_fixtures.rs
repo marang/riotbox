@@ -52,8 +52,8 @@ pub(crate) fn sample_graph() -> SourceGraph {
     });
     graph.relationships.push(Relationship {
         relation_type: RelationshipType::BelongsToSection,
-        from_id: "asset-a".into(),
-        to_id: "section-a".into(),
+        from_id: riotbox_core::source_graph::GraphNodeRef::Asset("asset-a".into()),
+        to_id: riotbox_core::source_graph::GraphNodeRef::Section("section-a".into()),
         weight: 1.0,
         notes: Some("primary loop".into()),
     });
@@ -77,6 +77,9 @@ pub(crate) fn sample_graph() -> SourceGraph {
 fn scene_regression_graph(section_labels: &[String]) -> SourceGraph {
     let mut graph = sample_graph();
     graph.sections.clear();
+    // This fixture replaces the section catalog, not just its presentation.
+    // The sample graph's asset -> section-a relation no longer has a target.
+    graph.relationships.clear();
 
     for (index, label) in section_labels.iter().enumerate() {
         let bar_start = (index as u32 * 8) + 1;
@@ -139,7 +142,7 @@ pub(crate) fn sample_session(graph: &SourceGraph) -> SessionFile {
         path_hint: graph.source.path.clone(),
         content_hash: graph.source.content_hash.clone(),
         duration_seconds: graph.source.duration_seconds,
-        decode_profile: "normalized_stereo".into(),
+        decode_profile: graph.source.decode_profile.clone(),
     });
     session.source_graph_refs.push(SourceGraphRef {
         source_id: SourceId::from("src-1"),

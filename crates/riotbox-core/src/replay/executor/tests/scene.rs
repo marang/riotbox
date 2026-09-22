@@ -276,3 +276,113 @@ fn scene_energy_graph() -> SourceGraph {
     };
     graph
 }
+
+#[test]
+fn explicit_scene_bindings_drive_replay_without_display_names_and_survive_roundtrip() {
+    use crate::session::SceneSourceBinding;
+    let graph = scene_energy_graph();
+    let action_log = action_log(vec![scene_action(
+        1,
+        ActionCommand::SceneLaunch,
+        "performer-b",
+        100,
+    )]);
+    let plan = build_replay_target_plan(&action_log, &[], 1).unwrap();
+    let mut session = scene_session("typed-scenes", "performer-a");
+    session.runtime_state.scene_state.source_bindings = Some(vec![
+        SceneSourceBinding {
+            scene_id: "performer-a".into(),
+            source_id: "src-1".into(),
+            section_id: "section-01".into(),
+        },
+        SceneSourceBinding {
+            scene_id: "performer-b".into(),
+            source_id: "src-1".into(),
+            section_id: "section-02".into(),
+        },
+    ]);
+    let before = session.runtime_state.scene_state.source_bindings.clone();
+    apply_graph_aware_replay_plan_to_session(&mut session, &plan.suffix, &graph).unwrap();
+    assert_eq!(
+        session
+            .runtime_state
+            .scene_state
+            .last_movement
+            .as_ref()
+            .unwrap()
+            .direction,
+        SceneMovementDirectionState::Rise
+    );
+    assert_eq!(session.runtime_state.scene_state.source_bindings, before);
+    let restored: SessionFile =
+        serde_json::from_slice(&serde_json::to_vec(&session).unwrap()).unwrap();
+    assert_eq!(
+        restored.runtime_state.scene_state,
+        session.runtime_state.scene_state
+    );
+}
+
+#[test]
+fn graph_aware_replay_rejects_invalid_binding_without_mutating_any_session_state() {
+    use crate::session::SceneSourceBinding;
+    let graph = scene_energy_graph();
+    let mut session = scene_session("invalid-binding", "scene-01-intro");
+    session.runtime_state.scene_state.source_bindings = Some(vec![SceneSourceBinding {
+        scene_id: "scene-01-intro".into(),
+        source_id: "other-source".into(),
+        section_id: "section-01".into(),
+    }]);
+    let before = session.clone();
+    assert!(matches!(
+        apply_graph_aware_replay_plan_to_session(&mut session, &[], &graph),
+        Err(ReplayExecutionError::InvalidSceneSourceBinding(_))
+    ));
+    assert_eq!(session, before);
+}
+
+#[test]
+fn legacy_replay_migrates_action_only_scene_alias_before_explicit_binding_gate() {
+    let graph = scene_energy_graph();
+    let action_log = action_log(vec![scene_action(
+        1,
+        ActionCommand::SceneLaunch,
+        "scene-02-historical-label",
+        100,
+    )]);
+    let plan = build_replay_target_plan(&action_log, &[], 1).unwrap();
+    let mut from_disk_history = scene_session("old-session", "scene-01-intro");
+    from_disk_history.action_log = action_log.clone();
+    from_disk_history.migrate_scene_source_bindings(&graph);
+    assert!(
+        from_disk_history
+            .runtime_state
+            .scene_state
+            .source_section(&graph, &"scene-02-historical-label".into())
+            .is_some()
+    );
+    let mut session = scene_session("old-snapshot", "scene-01-intro");
+    // The old snapshot has neither the alias in its scene list nor a copy of
+    // the replay plan. Its target still had defined V1 semantics.
+    assert!(session.action_log.actions.is_empty());
+    apply_graph_aware_replay_plan_to_session(&mut session, &plan.suffix, &graph).unwrap();
+    assert_eq!(
+        session
+            .runtime_state
+            .scene_state
+            .last_movement
+            .as_ref()
+            .unwrap()
+            .direction,
+        SceneMovementDirectionState::Rise
+    );
+    assert_eq!(
+        session
+            .runtime_state
+            .scene_state
+            .source_section(&graph, &"scene-02-historical-label".into())
+            .unwrap()
+            .section_id
+            .as_str(),
+        "section-02"
+    );
+}

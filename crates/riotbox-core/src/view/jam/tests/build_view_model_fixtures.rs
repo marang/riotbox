@@ -108,15 +108,15 @@ fn source_graph_with_feral_capture_evidence() -> SourceGraph {
     });
     graph.relationships.push(Relationship {
         relation_type: RelationshipType::SupportsBreakRebuild,
-        from_id: "asset-hook".into(),
-        to_id: "asset-a".into(),
+        from_id: crate::source_graph::GraphNodeRef::Asset("asset-hook".into()),
+        to_id: crate::source_graph::GraphNodeRef::Asset("asset-a".into()),
         weight: 0.8,
         notes: Some("hook supports loop rebuild".into()),
     });
     graph.relationships.push(Relationship {
         relation_type: RelationshipType::HighQuoteRiskWith,
-        from_id: "asset-hook".into(),
-        to_id: "src-1".into(),
+        from_id: crate::source_graph::GraphNodeRef::Asset("asset-hook".into()),
+        to_id: crate::source_graph::GraphNodeRef::Source("src-1".into()),
         weight: 0.6,
         notes: Some("recognizable hook".into()),
     });

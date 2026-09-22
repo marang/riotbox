@@ -22,8 +22,8 @@ fn add_feral_ready_evidence(graph: &mut SourceGraph) {
     });
     graph.relationships.push(Relationship {
         relation_type: RelationshipType::SupportsBreakRebuild,
-        from_id: "asset-hook".into(),
-        to_id: "section-a".into(),
+        from_id: riotbox_core::source_graph::GraphNodeRef::Asset("asset-hook".into()),
+        to_id: riotbox_core::source_graph::GraphNodeRef::Section("section-a".into()),
         weight: 0.82,
         notes: Some("feral support".into()),
     });
@@ -32,8 +32,8 @@ fn add_feral_ready_evidence(graph: &mut SourceGraph) {
 fn add_quote_risk_evidence(graph: &mut SourceGraph) {
     graph.relationships.push(Relationship {
         relation_type: RelationshipType::HighQuoteRiskWith,
-        from_id: "asset-hook".into(),
-        to_id: "src-1".into(),
+        from_id: riotbox_core::source_graph::GraphNodeRef::Asset("asset-hook".into()),
+        to_id: riotbox_core::source_graph::GraphNodeRef::Source("src-1".into()),
         weight: 0.7,
         notes: Some("quote-risk guard".into()),
     });

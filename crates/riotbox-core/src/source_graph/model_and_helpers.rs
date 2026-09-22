@@ -19,11 +19,10 @@ pub fn section_for_transport_bar<'a>(
 #[must_use]
 pub fn section_for_projected_scene<'a>(
     graph: &'a SourceGraph,
+    scene_state: &crate::session::SceneState,
     scene_id: &SceneId,
 ) -> Option<&'a Section> {
-    let scene_index = parse_projected_scene_index(scene_id.as_str())?;
-    let sections = sorted_sections(graph);
-    sections.get(scene_index).copied()
+    scene_state.source_section(graph, scene_id)
 }
 
 /// Returns the canonical source-time downbeat for a projected Scene.
@@ -35,23 +34,16 @@ pub fn section_for_projected_scene<'a>(
 #[must_use]
 pub fn primary_grid_anchor_seconds_for_projected_scene(
     graph: &SourceGraph,
+    scene_state: &crate::session::SceneState,
     scene_id: &SceneId,
 ) -> Option<f64> {
-    let section = section_for_projected_scene(graph, scene_id)?;
+    let section = section_for_projected_scene(graph, scene_state, scene_id)?;
     let primary = graph.timing.primary_hypothesis()?;
     primary
         .bar_grid
         .iter()
         .find(|bar| bar.bar_index == section.bar_start)
         .map(|bar| f64::from(bar.start_seconds))
-}
-
-fn parse_projected_scene_index(scene_id: &str) -> Option<usize> {
-    let mut parts = scene_id.splitn(3, '-');
-    match (parts.next(), parts.next(), parts.next()) {
-        (Some("scene"), Some(index), Some(_label)) => index.parse::<usize>().ok()?.checked_sub(1),
-        _ => None,
-    }
 }
 
 #[must_use]
@@ -71,16 +63,13 @@ pub enum SourceGraphVersion {
     V1,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct SourceGraph {
     pub graph_version: SourceGraphVersion,
     pub source: SourceDescriptor,
     pub timing: TimingModel,
-    #[serde(default)]
     pub source_map: SourceMapEvidence,
-    #[serde(default)]
     pub phrase_audio_features: Vec<PhraseAudioFeatures>,
-    #[serde(default)]
     pub w30_hook_candidates: Vec<W30HookCandidateEvidence>,
     pub sections: Vec<Section>,
     pub assets: Vec<Asset>,
@@ -351,11 +340,11 @@ pub enum CandidateType {
     CaptureCandidate,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct Relationship {
     pub relation_type: RelationshipType,
-    pub from_id: String,
-    pub to_id: String,
+    pub from_id: super::GraphNodeRef,
+    pub to_id: super::GraphNodeRef,
     pub weight: f32,
     pub notes: Option<String>,
 }

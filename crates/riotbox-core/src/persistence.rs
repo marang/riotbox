@@ -224,8 +224,8 @@ mod tests {
         });
         graph.relationships.push(Relationship {
             relation_type: RelationshipType::BelongsToSection,
-            from_id: "asset-a".into(),
-            to_id: "section-a".into(),
+            from_id: crate::source_graph::GraphNodeRef::Asset("asset-a".into()),
+            to_id: crate::source_graph::GraphNodeRef::Section("section-a".into()),
             weight: 1.0,
             notes: Some("primary loop".into()),
         });
@@ -251,7 +251,7 @@ mod tests {
             path_hint: "input.wav".into(),
             content_hash: "hash-1".into(),
             duration_seconds: 120.0,
-            decode_profile: "normalized_stereo".into(),
+            decode_profile: DecodeProfile::NormalizedStereo,
         });
         session.source_graph_refs.push(SourceGraphRef {
             source_id: SourceId::from("src-1"),

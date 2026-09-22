@@ -16,6 +16,18 @@ pub fn apply_graph_aware_replay_plan_to_session(
     source_graph: &SourceGraph,
 ) -> Result<ReplayExecutionReport, ReplayExecutionError> {
     let mut working = session.clone();
+    working.migrate_scene_source_bindings_with_refs(
+        source_graph,
+        entries.iter().flat_map(|entry| {
+            crate::session::action_scene_refs(entry.action)
+                .chain(entry.commit_record.boundary.scene_id.iter())
+        }),
+    );
+    working
+        .runtime_state
+        .scene_state
+        .validate_source_bindings(source_graph)
+        .map_err(ReplayExecutionError::InvalidSceneSourceBinding)?;
     let mut applied_action_ids = Vec::with_capacity(entries.len());
 
     for entry in entries {
@@ -94,6 +106,7 @@ pub fn derive_scene_movement_for_replay_entry(
         previous_scene,
         scene_id,
         source_graph,
+        &session.runtime_state.scene_state,
     )
 }
 
@@ -103,13 +116,14 @@ pub fn derive_scene_movement_state(
     from_scene: Option<&SceneId>,
     to_scene: &SceneId,
     source_graph: &SourceGraph,
+    scene_state: &SceneState,
 ) -> Option<SceneMovementState> {
     let kind = match action.command {
         ActionCommand::SceneLaunch => SceneMovementKindState::Launch,
         ActionCommand::SceneRestore => SceneMovementKindState::Restore,
         _ => return None,
     };
-    let direction = scene_movement_direction(from_scene, to_scene, source_graph)?;
+    let direction = scene_movement_direction(from_scene, to_scene, source_graph, scene_state)?;
 
     Some(SceneMovementState {
         action_id: action.id,
@@ -139,11 +153,12 @@ fn scene_movement_direction(
     from_scene: Option<&SceneId>,
     to_scene: &SceneId,
     source_graph: &SourceGraph,
+    scene_state: &SceneState,
 ) -> Option<SceneMovementDirectionState> {
     let from = from_scene
-        .and_then(|scene_id| section_for_projected_scene(source_graph, scene_id))
+        .and_then(|scene_id| section_for_projected_scene(source_graph, scene_state, scene_id))
         .map(|section| energy_rank(section.energy_class))?;
-    let to = section_for_projected_scene(source_graph, to_scene)
+    let to = section_for_projected_scene(source_graph, scene_state, to_scene)
         .map(|section| energy_rank(section.energy_class))?;
 
     Some(match to.cmp(&from) {

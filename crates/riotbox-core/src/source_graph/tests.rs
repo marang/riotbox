@@ -56,8 +56,8 @@ mod tests {
         graph.analysis_summary.break_rebuild_potential = QualityClass::High;
         graph.relationships.push(Relationship {
             relation_type: RelationshipType::SupportsBreakRebuild,
-            from_id: "asset-hook".into(),
-            to_id: "section-break".into(),
+            from_id: crate::source_graph::GraphNodeRef::Asset("asset-hook".into()),
+            to_id: crate::source_graph::GraphNodeRef::Section("section-break".into()),
             weight: 0.85,
             notes: Some("break can be rebuilt from hook".into()),
         });
@@ -98,8 +98,8 @@ mod tests {
 
         graph.relationships.push(Relationship {
             relation_type: RelationshipType::SupportsBreakRebuild,
-            from_id: "asset-hook".into(),
-            to_id: "section-break".into(),
+            from_id: crate::source_graph::GraphNodeRef::Asset("asset-hook".into()),
+            to_id: crate::source_graph::GraphNodeRef::Section("section-break".into()),
             weight: 0.49,
             notes: Some("weak relationship stays below Feral threshold".into()),
         });
@@ -195,8 +195,8 @@ mod tests {
         });
         graph.relationships.push(Relationship {
             relation_type: RelationshipType::BelongsToSection,
-            from_id: "asset-a".into(),
-            to_id: "section-a".into(),
+            from_id: crate::source_graph::GraphNodeRef::Asset("asset-a".into()),
+            to_id: crate::source_graph::GraphNodeRef::Section("section-a".into()),
             weight: 1.0,
             notes: Some("primary loop".into()),
         });

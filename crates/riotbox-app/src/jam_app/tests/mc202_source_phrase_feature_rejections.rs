@@ -3,6 +3,7 @@ fn committed_mc202_answer_rejects_feature_empty_source_phrase_as_fallback() {
     let mut graph = sample_graph();
     graph.sections.clear();
     graph.assets.clear();
+    graph.relationships.clear();
     graph.candidates.clear();
     graph.timing.bpm_confidence = 0.12;
     graph.timing.primary_hypothesis_id = None;
