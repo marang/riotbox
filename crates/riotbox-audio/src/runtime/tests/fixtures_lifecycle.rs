@@ -293,8 +293,9 @@ fn telemetry_tracks_callback_count_and_max_gap() {
 
     assert_eq!(snapshot.callback_count, 3);
     assert_eq!(snapshot.max_callback_gap_micros, Some(425));
-    assert!(snapshot.timing.is_transport_running);
-    assert_eq!(snapshot.timing.position_beats, 17.0);
+    let timing = telemetry.timing_snapshot();
+    assert!(timing.is_transport_running);
+    assert_eq!(timing.position_beats, 17.0);
 }
 
 #[test]

@@ -64,6 +64,12 @@ These rules matter even before the audio callback exists, because early model ch
 - Do not add convenience crates just to save a few lines during early model stabilization.
 - New dependencies should have a clear owner and reason.
 
+Shared external dependencies have one version/features owner in root
+`[workspace.dependencies]`; member manifests inherit with `workspace = true`.
+Keep crate-local dependencies local and preserve normal versus dev dependency
+placement. Ownership-only edits must pass `cargo metadata --locked` and leave
+resolved versions in `Cargo.lock` unchanged; upgrades are separate work.
+
 Current expected direction:
 
 - `serde` / `serde_json` for persistence

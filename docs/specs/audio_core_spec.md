@@ -675,6 +675,18 @@ Minimum telemetry:
 
 These metrics must be visible to benchmarks and, where useful, the TUI.
 
+Runtime stream-error diagnostics are owned by `runtime/telemetry.rs` (RBX-380).
+The render callback writes only the existing atomic counters/timing. Device
+stream-error reporting and full health snapshots may lock the diagnostic message
+slot; they are not the normal render callback. A poisoned slot is recovered for
+reading/replacement without clearing poison or fabricating a device-error count.
+Public health keeps a degraded diagnostic reason (including the last reported
+message when present); a running runtime is reported as `Faulted`. Stopped
+lifecycle remains stopped. Creating a new runtime creates fresh telemetry.
+This is bounded poison recovery, not a claim that full health snapshots are
+lock-free or that an arbitrary runtime panic is recoverable. Timing-only
+snapshots read atomics directly and do not lock or clone diagnostic messages.
+
 ---
 
 ## 13. Failure Handling

@@ -41,6 +41,7 @@ mod shared_mc202;
 mod shared_transport_tr909;
 mod shared_w30_resample_callback;
 mod source_monitor;
+mod telemetry;
 mod tr909_fill_recipe;
 mod tr909_fill_voice;
 mod tr909_tail_telemetry;
@@ -90,11 +91,12 @@ pub use source_monitor::{
     render_source_monitor_mix_offline, source_monitor_route_for_cache,
     source_monitor_route_for_output,
 };
+use telemetry::RuntimeTelemetry;
 use tr909_fill_voice::{Tr909FillVoiceState, render_tr909_fill_buffer};
 use tr909_tail_telemetry::{
-    RuntimeTelemetry, envelope_decay, mode_from_u32, mode_to_u32, pattern_adoption_from_u32,
-    pattern_adoption_to_u32, phrase_variation_from_u32, phrase_variation_to_u32, routing_from_u32,
-    routing_to_u32, support_context_from_u32, support_context_to_u32, support_profile_from_u32,
+    envelope_decay, mode_from_u32, mode_to_u32, pattern_adoption_from_u32, pattern_adoption_to_u32,
+    phrase_variation_from_u32, phrase_variation_to_u32, routing_from_u32, routing_to_u32,
+    support_context_from_u32, support_context_to_u32, support_profile_from_u32,
     support_profile_to_u32, takeover_profile_from_u32, takeover_profile_to_u32, w30_mode_from_u32,
     w30_mode_to_u32, w30_routing_from_u32, w30_routing_to_u32, w30_source_profile_from_u32,
     w30_source_profile_to_u32,

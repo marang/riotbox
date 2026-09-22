@@ -8,9 +8,9 @@ license-file.workspace = true
 arc-swap = "1.7"
 cpal = "0.17.3"
 riotbox-core = { path = "../riotbox-core" }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-sha2 = "0.10"
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
 
 [dev-dependencies]
-tempfile = "3"
+tempfile.workspace = true

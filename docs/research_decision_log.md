@@ -5133,3 +5133,17 @@ Why: numerical equality is not semantic ownership. Limiter protection, waveform 
 Evidence: bounded repo-only audit in docs/engineering/audio_numeric_inventory_2026-09-22.md; source-free boundary tests, historical-value preservation checks and exact generated RuntimeMix QA. No real source, holdout, commercial reference, human listening or device calibration was performed for this decision.
 Consequences: no DSP, recipe, frozen Stage-A JSON or access boundary changes. Existing source-modulation formula oracles and metric-definition assertions remain independent regression checks, not duplicate runtime ownership. Manifest validation is not authenticity or musical approval. The suite's one-reverse gate versus the written two-reverse requirement is explicitly unresolved under RIOTBOX-1502; do not claim the stricter proof. New audible calibration must follow a separately frozen authorized protocol and structured listening rather than changing policy after observing sources.
 Status: accepted
+
+---
+
+### RBX-380
+
+Date: 2026-09-22
+Topic: recover runtime diagnostic lock poison without hiding degradation
+Phase: P000 / RIOTBOX-1415 maintenance/regression
+Question: how can stream-error reporting and health snapshots survive a poisoned diagnostic buffer without claiming the audio runtime is healthy?
+Decision: give RuntimeTelemetry its own semantic module. On message-lock poison, recover the simple Option<String> guard for reads/replacement, retain the poison latch, and carry a typed internal poison flag into public health. Report a running runtime as Faulted with a degraded diagnostic reason and the last actual device message when present; preserve stopped lifecycle and actual stream-error counts. Timing-only snapshots use existing atomic progress directly, not the diagnostic mutex or String clone. Shared serde, serde_json, sha2 and tempfile versions/features are owned by workspace.dependencies with unchanged crate dependency kinds and resolved versions.
+Why: lock().expect() turned secondary diagnostic poisoning into repeated panics. Clearing poison or incrementing stream-error counts for a metadata fault would obscure what happened. Telemetry is runtime-local health, not TR-909 synthesis or durable Session state. A timing reader needs no device-error message at all.
+Evidence: two injected-poison regressions fail on the original implementation; recovered read/write, public lifecycle/reason/count and timing-under-held-lock tests constrain the fix. Cargo metadata --locked and unchanged Cargo.lock constrain dependency ownership. No real source/audio-device or musical claim.
+Consequences: normal callback rendering and diagnostic atomics are unchanged. Full health and error callbacks may still take the existing message mutex; this is no wait-free claim and does not catch arbitrary runtime panics. No automatic stream restart, new action, Session/replay state, or source access is introduced. Fresh runtime construction clears the diagnostic lifetime.
+Status: accepted
