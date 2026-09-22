@@ -17,6 +17,10 @@ capture-identity-migrate session +args:
 clippy:
     cargo clippy --all-targets --all-features -- -D warnings
 
+# Source-free callback snapshot cost; informational medians, no timing assertion.
+w30-snapshot-benchmark:
+    cargo test --release -p riotbox-audio --lib benchmark_w30_snapshot_cost -- --ignored --nocapture --test-threads=1
+
 ci:
     cargo fmt --check
     cargo test
