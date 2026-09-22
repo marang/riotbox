@@ -27,6 +27,11 @@ Original code measured before optimization: unchanged **13.858 µs**, changed
 | Unchanged publication | 13.671 µs | approximately 0.001 µs |
 | New publication every read | 13.984 µs | 12.938 µs |
 
+The final module layout, integrated with `main` at `a361864f`, was measured
+again: original unchanged/changed **12.731 / 13.307 µs**, cached **0.002 /
+11.628 µs**. This confirms the same structural benefit; the earlier comparison
+and its budget percentages are retained above/below rather than cherry-picked.
+
 Environment: Intel i7-8750H, x86_64 Linux, rustc 1.98.1, default Cargo release
 profile, no concurrent local build during the measured run. The tiny hot-loop
 fast-path value is descriptive, not a portable nanosecond guarantee. Structural
@@ -87,6 +92,9 @@ The initial Audio suite passes (268 tests plus an ignored benchmark). The final
 Rust suite, including the extra mid-read-writer regression (269 Audio tests) and
 final module ownership move, passes. Full `RUST_TEST_THREADS=1 just ci` passes:
 Rust/Python, synthetic audio/observer gates, format and strict Clippy.
+After integration with current `main`, the full Library suite passes again:
+App 754, Audio 269, Core 454, Sidecar 14, plus two ignored manual benchmarks.
+Format and strict all-target/all-feature Clippy also pass on the integrated tree.
 
 Normal parallel CI reproduced the unchanged Sidecar test's 50 ms initial Python
 handshake timeout; serial execution passes. RIOTBOX-1498 separately owns removing
