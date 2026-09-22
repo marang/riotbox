@@ -6,7 +6,7 @@ use crate::tr909::{
     Tr909TakeoverRenderProfile,
 };
 use crate::w30::{
-    W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN, W30PreviewRenderMode, W30PreviewRenderRouting,
+    W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN, W30PadPlaybackSampleWindow, W30PreviewRenderMode, W30PreviewRenderRouting,
     W30PreviewRenderState, W30PreviewSampleWindow, W30PreviewSourceProfile, W30ResampleTapMode,
     W30ResampleTapRouting, W30ResampleTapSourceProfile, W30ResampleTapState,
 };

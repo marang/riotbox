@@ -544,6 +544,12 @@ Current implementation:
   a mixed old/new state
 - the callback must not spin without bound, block on locks, allocate, or call
   the control plane while waiting for coherence
+- W-30 preview retains its complete snapshot and publication revision in one
+  callback-local cache. An unchanged even revision borrows that payload without
+  rereading or copying sample arrays. Changed revisions use the same bounded
+  stable-read check; rejected reads must not advance the cached revision.
+  Before the first complete read the fallback is silent. Callback-owned timing
+  is refreshed separately on every invocation, even when payload data is reused.
 
 Tests should cover partial-update and revision-mismatch cases before this
 becomes a broad lane-control surface.

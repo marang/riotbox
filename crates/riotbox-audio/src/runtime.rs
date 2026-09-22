@@ -20,10 +20,9 @@ use crate::{
     w30::{
         W30_PAD_CHOP_SLICE_COUNT, W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN,
         W30_PREVIEW_SAMPLE_WINDOW_LEN, W30_RESAMPLE_SOURCE_WINDOW_LEN, W30HookArticulationProfile,
-        W30PadPlaybackSampleWindow, W30PreviewRenderMode, W30PreviewRenderRouting,
-        W30PreviewRenderState, W30PreviewSampleWindow, W30PreviewSourceProfile,
-        W30ResampleSourceWindow, W30ResampleTapMode, W30ResampleTapRouting,
-        W30ResampleTapSourceProfile, W30ResampleTapState,
+        W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewRenderState,
+        W30PreviewSourceProfile, W30ResampleSourceWindow, W30ResampleTapMode,
+        W30ResampleTapRouting, W30ResampleTapSourceProfile, W30ResampleTapState,
     },
 };
 
@@ -38,7 +37,7 @@ mod live_master_capture;
 mod public_api_shell;
 mod render_tr909_w30_preview;
 mod runtime_mix_parity;
-mod shared_mc202_w30_preview;
+mod shared_mc202;
 mod shared_transport_tr909;
 mod shared_w30_resample_callback;
 mod source_monitor;
@@ -46,6 +45,7 @@ mod tr909_fill_recipe;
 mod tr909_fill_voice;
 mod tr909_tail_telemetry;
 mod w30_filter_slam;
+mod w30_preview_snapshot;
 mod w30_tr909_signal_helpers;
 
 use fill_focus::{FillFocusRenderState, apply_fill_focus_to_non_tr909_bed};
@@ -65,10 +65,7 @@ use render_tr909_w30_preview::{
     w30_pad_playback_sample, w30_pad_playback_signature,
 };
 pub use runtime_mix_parity::*;
-use shared_mc202_w30_preview::{
-    RealtimeMc202RenderState, RealtimeW30PadPlaybackSampleWindow, RealtimeW30PreviewRenderState,
-    RealtimeW30PreviewSampleWindow, SharedMc202RenderState, SharedW30PreviewRenderState,
-};
+use shared_mc202::{RealtimeMc202RenderState, SharedMc202RenderState};
 #[cfg(test)]
 use shared_transport_tr909::AudioRuntimeShellTestParts;
 use shared_transport_tr909::{
@@ -103,6 +100,10 @@ use tr909_tail_telemetry::{
     w30_source_profile_to_u32,
 };
 use w30_filter_slam::{W30FilterSlamCallbackState, w30_filter_slam_frame, w30_filter_slam_sample};
+use w30_preview_snapshot::{
+    RealtimeW30PadPlaybackSampleWindow, RealtimeW30PreviewRenderState,
+    RealtimeW30PreviewSampleWindow, SharedW30PreviewRenderState, W30PreviewSnapshotCache,
+};
 use w30_tr909_signal_helpers::{
     break_performance_slam, fill_performance_slam, render_gain, render_subdivision,
     should_trigger_step, tr909_step_waveform, trigger_envelope, trigger_frequency,

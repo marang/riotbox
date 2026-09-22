@@ -343,7 +343,7 @@ where
     let mut last_transport_snapshot = callback_transport.snapshot();
     let mut last_tr909_render_snapshot = shared.tr909_render.snapshot();
     let mut last_mc202_render_snapshot = shared.mc202_render.snapshot();
-    let mut last_w30_preview_snapshot = shared.w30_preview.snapshot();
+    let mut w30_preview_snapshot = W30PreviewSnapshotCache::new(&shared.w30_preview);
     let mut last_w30_resample_snapshot = shared.w30_resample_tap.snapshot();
 
     device.build_output_stream(
@@ -384,10 +384,7 @@ where
             mc202_render_state.is_transport_running = callback_timing.is_transport_running;
             mc202_render_state.tempo_bpm = callback_timing.tempo_bpm;
             mc202_render_state.position_beats = callback_timing.render_position_beats;
-            let mut w30_preview_render_state = shared
-                .w30_preview
-                .snapshot_or_previous(&last_w30_preview_snapshot);
-            last_w30_preview_snapshot = w30_preview_render_state;
+            let w30_preview_render_state = w30_preview_snapshot.refresh(&shared.w30_preview);
             w30_preview_render_state.is_transport_running = callback_timing.is_transport_running;
             w30_preview_render_state.tempo_bpm = callback_timing.tempo_bpm;
             w30_preview_render_state.position_beats = callback_timing.render_position_beats;
@@ -412,7 +409,7 @@ where
                 &mc202_render_state,
                 &mut render_state,
                 &mut W30MixRenderState {
-                    preview_render: &w30_preview_render_state,
+                    preview_render: w30_preview_render_state,
                     preview_state: &mut w30_preview_state,
                     resample_render: &w30_resample_render_state,
                     resample_state: &mut w30_resample_state,
