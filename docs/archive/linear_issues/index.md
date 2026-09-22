@@ -1705,4 +1705,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Tighten app/core layering and committed side-effect dispatch
 - [RIOTBOX-1409.md](./RIOTBOX-1409.md)
   Replace stringly Source Graph and Session source identities with typed contracts
+- [RIOTBOX-1420.md](./RIOTBOX-1420.md)
+  Complete the project-wide audio numeric-value and magic-number audit
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
