@@ -18,7 +18,7 @@
 - Deleted from Linear: `2026-09-22`
 - Verification: `Normal parallel just ci and GitHub rust-ci passed; ten numeric tests, nineteen dense-render tests, synthetic RuntimeMix/revalidation; sequential solo review.`
 - Docs touched: `audio_numeric_values and bounded inventory; audio core/automated QA specs; RBX-379; branch review.`
-- Follow-ups: `None`
+- Follow-ups: `RIOTBOX-1501` (limiter calibration), `RIOTBOX-1502` (reverse-count contract reconciliation)
 
 ## Why This Ticket Existed
 
