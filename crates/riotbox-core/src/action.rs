@@ -81,7 +81,7 @@ impl Display for Quantization {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum CommitBoundary {
     Immediate,
     Beat,

@@ -91,7 +91,7 @@ pub fn build_committed_replay_plan(
 ) -> Result<Vec<ReplayPlanEntry<'_>>, ReplayPlanError> {
     let mut entries = Vec::with_capacity(action_log.commit_records.len());
     let action_by_id = action_index_by_id(&action_log.actions)?;
-    validate_typed_undo_relations(action_log)?;
+    validate_typed_undo_relations(action_log, &action_by_id)?;
     let mut seen_action_ids = BTreeSet::new();
     let mut seen_boundary_sequences = BTreeSet::new();
 
@@ -365,9 +365,20 @@ fn undo_marker_resolves_target_before_cursor(
         })
 }
 
-fn validate_typed_undo_relations(action_log: &ActionLog) -> Result<(), ReplayPlanError> {
+fn validate_typed_undo_relations(
+    action_log: &ActionLog,
+    action_by_id: &BTreeMap<ActionId, &Action>,
+) -> Result<(), ReplayPlanError> {
     let mut active_typed_actions = Vec::new();
     let mut resolved_targets = BTreeSet::new();
+    let mut first_record_by_action = BTreeMap::new();
+    for record in &action_log.commit_records {
+        // Match the historical .find() behavior even for an invalid duplicate
+        // history. Duplicate validation still runs at its original later gate.
+        first_record_by_action
+            .entry(record.action_id)
+            .or_insert(record);
+    }
 
     for action in &action_log.actions {
         if action.command != ActionCommand::UndoLast {
@@ -394,11 +405,7 @@ fn validate_typed_undo_relations(action_log: &ActionLog) -> Result<(), ReplayPla
         // materialized Session state. A marker that claims the new typed shape
         // must satisfy the complete RBX-142 relation below.
         let Some(target_action_id) = target_action_id else {
-            if action_log
-                .commit_records
-                .iter()
-                .any(|record| record.action_id == action.id)
-            {
+            if first_record_by_action.contains_key(&action.id) {
                 return Err(ReplayPlanError::InvalidUndoTargetRelation {
                     undo_action_id: action.id,
                     target_action_id: None,
@@ -406,27 +413,18 @@ fn validate_typed_undo_relations(action_log: &ActionLog) -> Result<(), ReplayPla
             }
             if action.status == ActionStatus::Committed
                 && let Some(target_id) = active_typed_actions.last().copied()
-                && action_log.actions.iter().any(|candidate| {
-                    candidate.id == target_id && candidate.status == ActionStatus::Undone
-                })
+                && action_by_id
+                    .get(&target_id)
+                    .is_some_and(|candidate| candidate.status == ActionStatus::Undone)
             {
                 active_typed_actions.pop();
             }
             continue;
         };
 
-        let marker_record = action_log
-            .commit_records
-            .iter()
-            .find(|record| record.action_id == action.id);
-        let target = action_log
-            .actions
-            .iter()
-            .find(|candidate| candidate.id == target_action_id);
-        let target_record = action_log
-            .commit_records
-            .iter()
-            .find(|record| record.action_id == target_action_id);
+        let marker_record = first_record_by_action.get(&action.id);
+        let target = action_by_id.get(&target_action_id);
+        let target_record = first_record_by_action.get(&target_action_id);
         let latest_active_target = active_typed_actions.last().copied();
         let valid = marker_record.zip(target).zip(target_record).is_some_and(
             |((marker_record, target), _target_record)| {
