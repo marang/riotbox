@@ -1695,4 +1695,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   [P3] Measure and remove quadratic Session restore history validation scans
 - [RIOTBOX-1412.md](./RIOTBOX-1412.md)
   Benchmark W-30 preview snapshot cost and add a revision fast path if justified
+- [RIOTBOX-1498.md](./RIOTBOX-1498.md)
+  Make Sidecar timeout regression independent of Python startup scheduling
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
