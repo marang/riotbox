@@ -53,17 +53,17 @@ pub enum Quantization {
 impl Quantization {
     #[must_use]
     pub fn is_ready_for(self, boundary: CommitBoundary) -> bool {
-        self.rank() <= boundary.rank()
+        self.required_boundary().rank() <= boundary.rank()
     }
 
-    const fn rank(self) -> u8 {
+    const fn required_boundary(self) -> CommitBoundary {
         match self {
-            Self::Immediate => 0,
-            Self::NextBeat => 1,
-            Self::NextHalfBar => 2,
-            Self::NextBar => 3,
-            Self::NextPhrase => 4,
-            Self::NextScene => 5,
+            Self::Immediate => CommitBoundary::Immediate,
+            Self::NextBeat => CommitBoundary::Beat,
+            Self::NextHalfBar => CommitBoundary::HalfBar,
+            Self::NextBar => CommitBoundary::Bar,
+            Self::NextPhrase => CommitBoundary::Phrase,
+            Self::NextScene => CommitBoundary::Scene,
         }
     }
 }
@@ -92,7 +92,8 @@ pub enum CommitBoundary {
 }
 
 impl CommitBoundary {
-    const fn rank(self) -> u8 {
+    /// Canonical musical boundary order for queue readiness and replay ordering.
+    pub(crate) const fn rank(self) -> u8 {
         match self {
             Self::Immediate => 0,
             Self::Beat => 1,

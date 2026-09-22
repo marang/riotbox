@@ -30,6 +30,35 @@ fn action(id: u64, committed_at: TimestampMs) -> Action {
     }
 }
 
+#[test]
+fn all_boundary_kinds_sort_in_musical_order_at_the_same_transport_position() {
+    let boundaries = [
+        CommitBoundary::Scene,
+        CommitBoundary::Phrase,
+        CommitBoundary::Bar,
+        CommitBoundary::HalfBar,
+        CommitBoundary::Beat,
+        CommitBoundary::Immediate,
+    ];
+    let mut records = boundaries.map(|kind| {
+        let mut record = commit_record(1, 32, 9, 1, 200);
+        record.boundary.kind = kind;
+        record
+    });
+    records.sort_by(compare_commit_records);
+    assert_eq!(
+        records.map(|record| record.boundary.kind),
+        [
+            CommitBoundary::Immediate,
+            CommitBoundary::Beat,
+            CommitBoundary::HalfBar,
+            CommitBoundary::Bar,
+            CommitBoundary::Phrase,
+            CommitBoundary::Scene,
+        ]
+    );
+}
+
 fn undone_source_monitor_action(id: u64, committed_at: TimestampMs) -> Action {
     let mut action = action(id, committed_at);
     action.command = ActionCommand::SourceMonitorSetMode;

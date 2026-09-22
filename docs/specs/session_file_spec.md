@@ -244,6 +244,12 @@ consumers prefer the persisted `confirmed_bpm` while the matching grid remains
 trusted, so restore does not substitute a nearby analyzer estimate for an
 explicitly accepted BPM. Reverting the grid clears both values.
 
+The Session domain owns the source-ID/optional-hypothesis comparison used by
+both musical policy and the Jam view. Presentation consumes this shared rule;
+Core policy must not import it from a view module. The original view-facing
+function remains a compatibility re-export, not another implementation
+(RIOTBOX-1414).
+
 For a typed Source Graph `Manual` hypothesis, the same confirmation state and
 action/replay contract applies. Its hypothesis provenance owns the declared BPM
 and downbeat phase; Session owns only the musician's committed trust decision.

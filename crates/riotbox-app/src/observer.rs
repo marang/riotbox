@@ -5,11 +5,9 @@ use riotbox_audio::{
     w30::W30PreviewRenderRouting,
 };
 use riotbox_core::{
-    action::Action,
-    live_performance_policy::derive_live_performance_policy,
-    persistence::SessionRecoveryCandidateKind,
-    queue::CommittedActionRef,
-    view::jam::{source_timing_confirmation_matches_graph, source_timing_consumer_readiness},
+    action::Action, live_performance_policy::derive_live_performance_policy,
+    persistence::SessionRecoveryCandidateKind, queue::CommittedActionRef,
+    session::source_timing_confirmation_matches_graph, view::jam::source_timing_consumer_readiness,
 };
 use serde_json::{Value, json};
 

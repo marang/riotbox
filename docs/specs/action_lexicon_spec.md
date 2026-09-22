@@ -27,6 +27,14 @@ all refer to the same action model.
 
 No subsystem invents its own action semantics.
 
+The App's post-materialization side-effect dispatcher exhaustively matches the
+existing `ActionCommand` enum. Every new command must select its lane/control
+owner or explicitly state why this stage does not own an effect; there is no
+wildcard or second action registry. Capture materialization/promotion remains
+before this dispatch, with undo snapshots before mutation and replay-artifact
+recording/transport mirroring afterward. Existing handler validation, action
+results and unsupported-command coverage remain unchanged (RIOTBOX-1414).
+
 Every action that changes session state must eventually map to:
 
 - one command name
@@ -106,6 +114,11 @@ Rules:
 - hard musical changes default to `next_bar` or stricter
 - destructive rebuild actions should default to `next_phrase`
 - `immediate` is reserved for safe state changes that do not destabilize playback
+
+`CommitBoundary` owns the canonical order Immediate, Beat, HalfBar, Bar, Phrase,
+Scene. Quantization maps to its required boundary and uses that order for
+readiness; replay uses the same order when transport positions tie. Consumer
+modules must not maintain their own numeric boundary-ranking table.
 
 ---
 
