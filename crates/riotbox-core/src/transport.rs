@@ -161,7 +161,7 @@ impl TransportClockState {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct CommitBoundaryState {
     pub kind: CommitBoundary,
     /// Session V1 compatibility field: zero-based integral transport beat cursor.

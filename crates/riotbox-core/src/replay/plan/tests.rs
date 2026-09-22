@@ -153,6 +153,28 @@ fn replay_plan_orders_actions_by_boundary_and_sequence() {
 }
 
 #[test]
+fn duplicate_undo_records_keep_first_record_relation_validation() {
+    let mut log = valid_typed_undo_action_log();
+    let mut wrong_boundary = log.commit_records[1].clone();
+    wrong_boundary.boundary.kind = CommitBoundary::Bar;
+    log.commit_records.push(wrong_boundary);
+    assert_eq!(
+        build_committed_replay_plan(&log).unwrap_err(),
+        ReplayPlanError::DuplicateActionRecord {
+            action_id: ActionId(2)
+        },
+    );
+    log.commit_records.swap(1, 2);
+    assert_eq!(
+        build_committed_replay_plan(&log).unwrap_err(),
+        ReplayPlanError::InvalidUndoTargetRelation {
+            undo_action_id: ActionId(2),
+            target_action_id: Some(ActionId(1)),
+        },
+    );
+}
+
+#[test]
 fn replay_plan_rejects_missing_action() {
     let action_log = ActionLog {
         actions: vec![action(1, 200)],
