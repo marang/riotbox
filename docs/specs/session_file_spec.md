@@ -1388,6 +1388,25 @@ Minimum provenance:
 
 For committed source-backed captures loaded from a session file, `storage_path` should be backed by a real PCM WAV artifact relative to the session file directory unless it is absolute. Artifact writing belongs to the non-realtime app commit path; the audio callback must never write capture files.
 
+Capture publication (RBX-376): `capture_id` is Session-local, never a shared
+filesystem filename authority. Every newly materialized capture/print allocates
+a fresh, exclusive `captures/capture-<opaque>.wav` file. Write the encoded buffer
+completely before retaining the file and installing its actual locator and
+identity in `CaptureRef`. Existing files are never opened for replacement or
+reused, even for matching content. No hardlink support or directory scanning is
+required. Failed writes discard the newly allocated file when possible; they
+do not install a trusted identity/cache entry. Ordinary commit diagnostics
+retain the explicit pending/unavailable result.
+
+The Session save publishes references to completed artifacts; it does not
+rewrite their audio. A process interruption or failed Session save may leave an
+unreferenced file, but cannot clobber an earlier capture. Such files are not
+recovered by filename scanning and are not automatically garbage-collected.
+The filesystem entry exists while being written but is not Session-referenced
+or loadable as a committed capture until writing succeeds. This is not atomic
+directory visibility or power-loss durability. Existing locators, including
+`captures/cap-01.wav`, retain their meaning on restore without migration.
+
 For internally printed W-30 resample captures, `storage_path` should point to the printed bus artifact rather than the source-window input artifact. Such captures should preserve input ownership through `lineage_capture_refs` and `resample_generation_depth`; `source_window` should be omitted unless the printed result is intentionally still a literal source-window copy. This keeps reload and later pad playback pointed at the exact printed audio instead of reconstructing it from source metadata.
 
 Artifact-hydration identity boundary:

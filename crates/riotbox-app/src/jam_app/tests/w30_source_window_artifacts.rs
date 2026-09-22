@@ -35,7 +35,10 @@ fn committed_source_backed_capture_writes_wav_artifact() {
     assert_eq!(committed.len(), 1);
     assert_eq!(state.session.captures.len(), 1);
     let capture = &state.session.captures[0];
-    assert_eq!(capture.storage_path, "captures/cap-01.wav");
+    assert_eq!(
+        Path::new(&capture.storage_path).parent(),
+        Some(Path::new("captures"))
+    );
     let source_window = capture.source_window.as_ref().expect("source window");
     let capture_path = tempdir.path().join(&capture.storage_path);
     assert!(capture_path.exists());
@@ -110,7 +113,7 @@ fn focused_w30_pad_trigger_uses_capture_artifact_preview_when_source_cache_unava
     assert_eq!(committed_capture.len(), 1);
 
     let capture_id = CaptureId::from("cap-01");
-    let capture_path = tempdir.path().join("captures/cap-01.wav");
+    let capture_path = tempdir.path().join(&state.session.captures[0].storage_path);
     let artifact = SourceAudioCache::load_pcm_wav(&capture_path).expect("load capture artifact");
     assert!(state.capture_audio_cache.contains_key(&capture_id));
     let persisted_identity = state.session.captures.iter()
@@ -310,7 +313,7 @@ fn reloaded_session_uses_capture_artifact_cache_without_source_audio() {
     assert_eq!(committed_promotion.len(), 1);
 
     let capture_id = CaptureId::from("cap-01");
-    let capture_path = tempdir.path().join("captures/cap-01.wav");
+    let capture_path = tempdir.path().join(&state.session.captures[0].storage_path);
     assert!(capture_path.is_file());
     state.save().expect("save artifact-backed session");
     fs::remove_file(&source_path).expect("remove source to prove reload uses artifact");

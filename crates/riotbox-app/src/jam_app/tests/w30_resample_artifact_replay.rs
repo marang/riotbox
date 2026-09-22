@@ -45,7 +45,10 @@ fn w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_outpu
         .find(|capture| capture.capture_id == produced_capture_id)
         .expect("resample produced capture metadata");
     assert_eq!(produced_capture.capture_type, CaptureType::Resample);
-    assert_eq!(produced_capture.storage_path, "captures/cap-02.wav");
+    assert_eq!(
+        Path::new(&produced_capture.storage_path).parent(),
+        Some(Path::new("captures"))
+    );
     assert!(
         committed_state
             .capture_audio_cache

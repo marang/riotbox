@@ -5,6 +5,7 @@ include!("tests/common_state_fixtures.rs");
 include!("tests/restore_parity_helpers.rs");
 include!("tests/restore_contracts.rs");
 include!("tests/persistence_runtime_view.rs");
+mod capture_artifact_storage;
 mod capture_identity;
 mod graph_transaction;
 mod restore_history;

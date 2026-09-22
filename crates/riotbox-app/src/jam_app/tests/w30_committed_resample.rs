@@ -136,7 +136,7 @@ fn committed_w30_internal_resample_prints_reusable_bus_artifact() {
         400,
     );
     assert_eq!(committed_capture.len(), 1);
-    let raw_capture_path = tempdir.path().join("captures/cap-01.wav");
+    let raw_capture_path = tempdir.path().join(&state.session.captures[0].storage_path);
     let raw_artifact =
         SourceAudioCache::load_pcm_wav(&raw_capture_path).expect("load raw capture artifact");
 
@@ -180,7 +180,10 @@ fn committed_w30_internal_resample_prints_reusable_bus_artifact() {
         capture.created_from_action,
         Some(committed_resample[0].action_id)
     );
-    assert_eq!(capture.storage_path, "captures/cap-02.wav");
+    assert_eq!(
+        Path::new(&capture.storage_path).parent(),
+        Some(Path::new("captures"))
+    );
     assert_eq!(capture.source_window, None);
     assert_eq!(
         capture.lineage_capture_refs,
@@ -208,7 +211,7 @@ fn committed_w30_internal_resample_prints_reusable_bus_artifact() {
     );
     assert!(state.runtime.w30_resample_tap.source_audio.is_some());
 
-    let printed_path = tempdir.path().join("captures/cap-02.wav");
+    let printed_path = tempdir.path().join(&capture.storage_path);
     assert!(printed_path.exists());
     let printed =
         SourceAudioCache::load_pcm_wav(&printed_path).expect("load printed resample artifact");
