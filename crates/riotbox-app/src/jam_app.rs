@@ -5,7 +5,6 @@ use std::{
 
 use riotbox_audio::source_audio::SourceAudioCache;
 use riotbox_core::{
-    action::ActionStatus,
     ids::{BankId, PadId, SourceId},
     persistence::{load_session_json, load_source_graph_json, save_session_json},
     queue::ActionQueue,
