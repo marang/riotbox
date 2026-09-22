@@ -187,7 +187,8 @@ impl AudioRuntimeShell {
     pub fn health_snapshot(&self) -> AudioRuntimeHealth {
         let telemetry = self.telemetry.snapshot();
 
-        let lifecycle = if telemetry.stream_error_count > 0
+        let lifecycle = if (telemetry.stream_error_count > 0
+            || telemetry.stream_error_buffer_poisoned)
             && matches!(self.lifecycle, AudioRuntimeLifecycle::Running)
         {
             AudioRuntimeLifecycle::Faulted
@@ -202,7 +203,16 @@ impl AudioRuntimeShell {
             max_callback_gap_micros: telemetry.max_callback_gap_micros,
             callback_scratch_overflow_count: telemetry.callback_scratch_overflow_count,
             stream_error_count: telemetry.stream_error_count,
-            last_stream_error: telemetry.last_stream_error,
+            last_stream_error: if telemetry.stream_error_buffer_poisoned {
+                Some(match telemetry.last_stream_error {
+                    Some(message) => format!(
+                        "stream-error telemetry degraded (poisoned buffer); last stream error: {message}"
+                    ),
+                    None => "stream-error telemetry degraded (poisoned buffer); no stream error message available".into(),
+                })
+            } else {
+                telemetry.last_stream_error
+            },
         }
     }
 
