@@ -12,3 +12,4 @@ include!("tests/fixture_regressions_variations.rs");
 include!("tests/signal_metrics.rs");
 include!("tests/source_monitor.rs");
 include!("tests/render_parity.rs");
+mod w30_snapshot_cache;
