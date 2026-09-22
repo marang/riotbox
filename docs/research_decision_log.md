@@ -5077,3 +5077,17 @@ Why: a path and successful decoding cannot establish immutable capture content. 
 Evidence: synthetic restore/adoption/replacement, all-or-nothing migration, repeat adoption, created source-window/resample capture roundtrips and fail-closed preview/replay paths must be tested. No real source/holdout access or human playback is authorized by this slice.
 Consequences: expected identity is Session truth; load status/warnings are runtime-local. File-backed Sessions must not substitute original-source audio for blocked capture artifacts. Metadata-only export stays no-audio-access. This offline metadata migration is not a performer ActionCommand: queue/commit and replay execution are inapplicable; persisted provenance, command output and tests provide its visible record. Existing single-writer save limits remain; historical audio claims and hash-bound review evidence are not retroactively rewritten.
 Status: accepted
+
+---
+
+### RBX-376
+
+Date: 2026-09-22
+Topic: isolate capture artifact publication from Session-local capture IDs
+Phase: P000 / RIOTBOX-1500 data-integrity maintenance
+Question: how can two Sessions sharing a directory capture and print audio without replacing each other's WAVs?
+Decision: allocate each newly materialized capture WAV with exclusive create-new semantics in the existing captures directory, retain that opaque filename after complete writing, then install its actual locator and existing encoded-byte identity in Core CaptureRef. The Session save publishes the reference, never rewrites the audio. Both source-window and bus-print paths use the same writer. Never reuse or truncate an existing file; unchanged-byte deduplication is not needed. Restore preserves legacy relative/absolute locators without scanning or renaming.
+Why: cap-01 is a Session-local identity, not a filesystem-wide name. Normal captures from a second Session replaced the first file before any Session save. Hash validation detects that loss only afterward. Fresh exclusive filenames need neither a new durable Session namespace nor hash-name/hardlink publication, which would impose a new filesystem requirement on embedded Sessions.
+Evidence: the synthetic public capture/save/restore regression fails before the correction with 'other Session overwrote capture'. RIOTBOX-1500 verifies cross-Session raw captures and bus prints, existing legacy destinations, failed artifact writes and failed Session saves, retained replay/identity behavior and source-free CI.
+Consequences: filenames are opaque locators, not reproducibility identities; Core capture IDs, lineage and complete-file hashes remain authoritative. An unreferenced file can remain after process interruption or Session-save failure. The entry exists during writing but no Session reference is installed until completion. There is no directory-scan recovery, automatic garbage collection, atomic directory-visibility, power-loss guarantee or multiwriter Session transaction. Ordinary write errors clean up the newly allocated file when possible and retain visible pending/unavailable status. No DSP, source access, new action or human verdict.
+Status: accepted

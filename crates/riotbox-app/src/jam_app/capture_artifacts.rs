@@ -86,6 +86,15 @@ impl JamAppState {
 
     fn install_written_capture(&mut self, capture: &mut CaptureRef, path: &Path, bytes: &[u8]) {
         use riotbox_core::session::CaptureAudioIdentityProvenance;
+        // Keep relative/absolute locator semantics; the writer exclusively
+        // allocated a new filename in the same directory (RBX-376).
+        capture.storage_path = Path::new(&capture.storage_path)
+            .with_file_name(
+                path.file_name()
+                    .expect("new capture artifact has a filename"),
+            )
+            .to_string_lossy()
+            .into_owned();
         capture.audio_identity = Some(super::capture_identity::identity(
             bytes,
             CaptureAudioIdentityProvenance::CreatedFromEncodedBytesV1,
@@ -157,13 +166,13 @@ impl JamAppState {
             .map(|(dry, wet)| (dry * 0.68 + wet * 1.45).clamp(-1.0, 1.0))
             .collect();
 
-        let bytes = super::capture_identity::write_wav(
+        let artifact = super::capture_identity::write_new_wav(
             &path,
             input.sample_rate,
             input.channel_count,
             &printed,
         )?;
-        Ok(Some((path, bytes)))
+        Ok(Some(artifact))
     }
 
     fn w30_bus_print_input(
@@ -365,13 +374,13 @@ impl JamAppState {
             frame_count: usize::try_from(frame_count)
                 .map_err(|_| "source window frame count exceeds usize".to_string())?,
         });
-        let bytes = super::capture_identity::write_wav(
+        let artifact = super::capture_identity::write_new_wav(
             &path,
             source_audio_cache.sample_rate,
             source_audio_cache.channel_count,
             samples,
         )?;
-        Ok(Some((path, bytes)))
+        Ok(Some(artifact))
     }
 
     fn capture_audio_artifact_path(&self, capture: &CaptureRef) -> Option<PathBuf> {
