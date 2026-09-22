@@ -27,6 +27,8 @@ const TR909_STEPS_PER_BEAT: usize = 8;
 const MAX_DESTRUCTIVE_NEGATIVE_SPACE_RMS: f32 = 0.001;
 const MIN_DESTRUCTIVE_NEGATIVE_SPACE_SILENCE_RATIO: f32 = 0.95;
 const MIN_DESTRUCTIVE_HARD_RETURN_RMS: f32 = 0.05;
+// QA shape contrast, not the unrelated runtime limiter ceiling of the same value.
+const MAX_HOOK_TO_CHANGED_RETURN_CORRELATION: f32 = 0.985;
 
 pub(super) struct AlphaManifestEvidence {
     pub arc: Value,
@@ -259,7 +261,10 @@ pub(super) fn write_and_validate(
         ));
     }
     if alpha_hook_return_delta.rms <= MIN_MONITOR_DELTA_RMS
-        || waveform_is_too_similar(alpha_hook_return_correlation, 0.985)
+        || waveform_is_too_similar(
+            alpha_hook_return_correlation,
+            MAX_HOOK_TO_CHANGED_RETURN_CORRELATION,
+        )
     {
         failures.push(format!(
             "Feral Break Alpha return did not materially change: delta rms {:.6}, correlation {:.6}",
@@ -289,6 +294,7 @@ pub(super) fn write_and_validate(
             "hook_to_pressure_delta": metrics_json(alpha_hook_pressure_delta),
             "hook_to_changed_return_delta": metrics_json(alpha_hook_return_delta),
             "hook_to_changed_return_correlation": alpha_hook_return_correlation,
+            "max_hook_to_changed_return_correlation": MAX_HOOK_TO_CHANGED_RETURN_CORRELATION,
             "destructive_negative_space": {
                 "window": {
                     "start_step": DESTRUCTIVE_NEGATIVE_SPACE_START_STEP,

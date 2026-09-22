@@ -581,6 +581,12 @@ Current metric contract:
 
 Current limiter policy:
 
+- the shared sample-peak knee `0.92` and ceiling `0.985` remain explicitly
+  provisional engineering choices (RBX-379, calibration follow-up RIOTBOX-1501).
+  Magnitudes at or below the knee pass unchanged; strictly greater magnitudes
+  enter the existing tanh knee capped at the ceiling. Retaining these values is
+  not a claim of true-peak, device or hearing-safety calibration. Exact clean-
+  path QA still requires zero limiter-modified samples and zero pre/post clips
 - product runtime mixes and Feral-grid product mixes pass through the shared
   master-bus soft-limiter seam after source-monitor / lane mix policy and
   before device or WAV output

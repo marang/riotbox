@@ -1370,6 +1370,19 @@ mod tests {
     }
 
     #[test]
+    fn waveform_correlation_maximum_is_inclusive_for_both_polarities() {
+        let maximum = 0.985_f32;
+        for sign in [-1.0, 1.0] {
+            assert!(!waveform_is_too_similar(sign * maximum, maximum));
+            assert!(!waveform_is_too_similar(
+                sign * maximum.next_down(),
+                maximum
+            ));
+            assert!(waveform_is_too_similar(sign * maximum.next_up(), maximum));
+        }
+    }
+
+    #[test]
     fn sequence_boundary_metrics_compare_the_join_with_local_waveform_steps() {
         let before = (0..100)
             .map(|frame| frame as f32 * 0.01)

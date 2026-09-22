@@ -77,6 +77,7 @@ audio-qa-pr:
     scripts/with_audio_qa_lock.sh source-free-pr just _audio-qa-pr-unlocked
 
 _audio-qa-pr-unlocked:
+    just exact-mix-numeric-contract-fixtures
     just dense-break-live-path-smoke
     scripts/validate_first_playable_jam_probe.sh --exact-mix-dir artifacts/audio_qa/local-dense-break-live-path-smoke
     just observer-audio-correlate-fixture
@@ -86,6 +87,9 @@ _audio-qa-pr-unlocked:
     just w30-smoke-generated-source-diff
     just observer-audio-correlate-generated-feral-grid
     just product-stem-handoff-contract-fixtures
+
+exact-mix-numeric-contract-fixtures:
+    python3 -m unittest discover -s scripts -p 'test_*numeric*.py'
 
 audio-qa-access-guard-fixtures:
     scripts/validate_broad_audio_qa_access_guard.sh
