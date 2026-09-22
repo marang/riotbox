@@ -1701,4 +1701,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Periodic architecture review after persistence, identity and callback maintenance
 - [RIOTBOX-1500.md](./RIOTBOX-1500.md)
   [P1] Prevent capture WAV clobbering across Sessions sharing a directory
+- [RIOTBOX-1414.md](./RIOTBOX-1414.md)
+  Tighten app/core layering and committed side-effect dispatch
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
