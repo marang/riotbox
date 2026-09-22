@@ -1699,4 +1699,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Make Sidecar timeout regression independent of Python startup scheduling
 - [RIOTBOX-1499.md](./RIOTBOX-1499.md)
   Periodic architecture review after persistence, identity and callback maintenance
+- [RIOTBOX-1500.md](./RIOTBOX-1500.md)
+  [P1] Prevent capture WAV clobbering across Sessions sharing a directory
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
