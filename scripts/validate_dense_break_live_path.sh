@@ -67,18 +67,12 @@ python3 scripts/validate_listening_manifest_json.py \
   --require-existing-artifacts \
   "$output/gesture-manifest.json"
 
-jq -e \
+jq -L scripts -e \
   --argjson cli_bpm_hint "$bpm" \
   --slurpfile source_graph "$output/source-graph.json" \
   --slurpfile session "$output/session.json" \
   '
-  def exact_limiter_ok($max_limited):
-    .threshold > 0
-    and .ceiling > .threshold
-    and .limited_sample_count <= $max_limited
-    and .pre.clip_count == 0
-    and .post.clip_count == 0
-    and (.applied == (.limited_sample_count > 0));
+  include "exact_mix_numeric";
   . as $manifest
   | ($source_graph[0]) as $graph
   | ($session[0]) as $session_file
@@ -172,8 +166,7 @@ jq -e \
     and (.limiter | exact_limiter_ok($manifest.thresholds.max_exact_mix_limited_sample_count)))
   and .feral_break_alpha_arc.hook_to_pressure_delta.rms > .thresholds.min_monitor_delta_rms
   and .feral_break_alpha_arc.hook_to_changed_return_delta.rms > .thresholds.min_monitor_delta_rms
-  and (.feral_break_alpha_arc.hook_to_changed_return_correlation | type == "number")
-  and ((.feral_break_alpha_arc.hook_to_changed_return_correlation | abs) < 0.985)
+  and (.feral_break_alpha_arc | alpha_return_correlation_ok)
   and .feral_break_alpha_arc.scenes.original != .feral_break_alpha_arc.scenes.contrast
   and .feral_break_alpha_arc.scenes.returned == .feral_break_alpha_arc.scenes.original
   and .feral_break_alpha_arc.raw_level_ab.candidate_artifact == "alpha/05_feral_break_alpha_eight_bar.wav"
@@ -269,14 +262,7 @@ jq -e \
   and .fill_exit_boundary_proof.to_case_id == "after-y-scene-jump"
   and .fill_exit_boundary_proof.expected_role == "fill_release_to_scene_contrast_downbeat"
   and .fill_exit_boundary_proof.exact_runtime_mix_sequence == true
-  and .fill_exit_boundary_proof.window_ms == 10
-  and .fill_exit_boundary_proof.window_frames == 480
-  and .fill_exit_boundary_proof.thresholds.max_boundary_step >= 0.199
-  and .fill_exit_boundary_proof.thresholds.max_boundary_step <= 0.201
-  and .fill_exit_boundary_proof.thresholds.max_boundary_to_local_p99_ratio == 4.0
-  and .fill_exit_boundary_proof.boundary_step <= .fill_exit_boundary_proof.thresholds.max_boundary_step
-  and .fill_exit_boundary_proof.boundary_to_local_p99_ratio <= .fill_exit_boundary_proof.thresholds.max_boundary_to_local_p99_ratio
-  and .fill_exit_boundary_proof.local_adjacent_step_p99 > 0
+  and (.fill_exit_boundary_proof | fill_exit_boundary_ok($manifest.sample_rate))
   and .exact_mixer_proof.kind == "runtime_mix_callback_block_realtime_simulation"
   and .exact_mixer_proof.stateful_sequence == true
   and .exact_mixer_proof.source_monitor_included == true
@@ -287,8 +273,7 @@ jq -e \
   and .correlation_scope.shared_source_fixture == false
   and .correlation_scope.shared_transport_timeline == false
   and .correlation_scope.sample_exact_observer_correlation == false
-  and .sample_rate == 48000
-  and .source.sample_rate == 44100
+  and exact_source_format_ok($graph)
   and .timing_identity.cli_bpm_hint == $cli_bpm_hint
   and .timing_identity.confirmed_source_id == $graph.source.source_id
   and .timing_identity.confirmed_source_id == $session_file.runtime_state.source_timing.confirmed_grid.source_id
@@ -320,9 +305,7 @@ jq -e \
   and .timing_identity.frame_count_bpm == .timing_identity.confirmed_hypothesis_bpm
   and .timing_identity.metrics_grid_bpm == .timing_identity.confirmed_hypothesis_bpm
   and .timing_identity.all_render_plans_match_confirmed_bpm == true
-  and .thresholds.max_exact_mix_limited_sample_count == 0
-  and .thresholds.min_isolated_tr909_regression_rms >= 0.004999
-  and .thresholds.max_source_monitor_silence_ratio <= 0.05
+  and (.thresholds | exact_pack_thresholds_ok)
   and .monitor_cycle.review_duration_bars == 4
   and (.monitor_cycle.modes | map(.mode)) == ["source", "blend", "riotbox"]
   and (.monitor_cycle.modes | map(.route)) == ["source_only", "blend", "riotbox_only"]

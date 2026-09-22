@@ -128,14 +128,10 @@ else
 fi
 exact_mix_manifest="$exact_mix_dir/gesture-manifest.json"
 
-jq -n -e \
+jq -L scripts -n -e \
   --slurpfile observer "$observer_fixture" \
   --slurpfile manifest "$exact_mix_manifest" \
-  'def exact_limiter_ok($max_limited):
-      .limited_sample_count <= $max_limited
-      and .pre.clip_count == 0
-      and .post.clip_count == 0
-      and (.applied == (.limited_sample_count > 0));
+  'include "exact_mix_numeric";
     $manifest[0] as $mix
     | [$observer[] | select(.event == "key_outcome") | .key] as $keys
     | [$observer[]
@@ -164,8 +160,6 @@ jq -n -e \
       and $mix.correlation_scope.shared_source_fixture == false
       and $mix.correlation_scope.shared_transport_timeline == false
       and $mix.correlation_scope.sample_exact_observer_correlation == false
-      and $mix.source.sample_rate == 44100
-      and $mix.sample_rate == 48000
       and all(["F", "P", "w", "s", "f", "y", "Y", "D"][]; . as $key | $keys | index($key) != null)
       and all($mix.gesture_transitions[]; . as $gesture
         | $keys | index($gesture.key) != null

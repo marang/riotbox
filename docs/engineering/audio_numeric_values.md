@@ -22,6 +22,11 @@ It is an index and interpretation guide, not a second source of truth. The
 named Rust/Python owner, versioned manifest, and relevant specification remain
 canonical.
 
+The [RIOTBOX-1420 inventory](audio_numeric_inventory_2026-09-22.md) records the
+bounded cross-layer audit, numeric passports, fixed producer/validator drift,
+and open calibration/contract questions. It does not claim every coefficient
+has been calibrated or authorize source access.
+
 ## The RIOTBOX-1402 Example: `0.9161` Versus `0.92`
 
 The final exact-path TR-909 Fill in the RIOTBOX-1402 four-source matrix reported:
@@ -138,8 +143,10 @@ used as a shortcut to make a single candidate pass.
 The current repository has a named and tested owner for these values, but no
 decision-log entry was found that calibrates why the limiter knee is exactly
 `0.92` rather than a nearby value. Treat that choice as an inherited,
-provisional engineering contract until a dedicated calibration decision records
-reference material, devices, source matrix, and intended headroom.
+provisional engineering contract. RBX-379 explicitly accepts retaining both
+values unchanged; RIOTBOX-1501 owns the dedicated calibration decision,
+authorized source protocol, device limitations and intended headroom. This is
+sample-peak protection, not a true-peak or hearing-safety guarantee.
 
 ### 3. QA acceptance thresholds
 
@@ -270,11 +277,16 @@ role, or the threshold lacks calibration.
 | master-bus limiter knee, ceiling, clip and near-clip thresholds | `crates/riotbox-audio/src/runtime/public_api_shell.rs` |
 | exact dense-break pack-wide QA thresholds | `crates/riotbox-app/src/bin/dense_break_live_path_render/model.rs` |
 | exact gesture-specific QA policies and boundary checks | `crates/riotbox-app/src/bin/dense_break_live_path_render/manifest.rs` |
+| Alpha changed-return absolute correlation maximum | `crates/riotbox-app/src/bin/dense_break_live_path_render/alpha_manifest.rs` |
+| shared exact-mix validation predicates (recorded thresholds, no policy retuning) | `scripts/exact_mix_numeric.jq` |
 | typed TR-909 Fill step and output parameters | `crates/riotbox-audio/src/runtime/tr909_fill_recipe.rs` |
 | cross-source W-30 envelope-correlation gate | `scripts/validate_dense_break_live_source_matrix.py` |
 | live source-character contrast margin and lane balance | `crates/riotbox-core/src/live_performance_policy.rs` |
 | controlled dense/tonal/sparse exact-path gates | `crates/riotbox-app/src/bin/dense_break_live_path_render/controlled_source_manifest.rs` |
 | controlled source stability/diversity gates | `scripts/validate_controlled_source_live_matrix.py` |
+| shared professional-suite production/validation numeric policy | `scripts/professional_output_numeric_policy.py` |
+| family-specific Hook/Chop, bass and destructive diagnostic gates | `scripts/validate_professional_output_suite_contract.py` |
+| provisional reject-only automated fitness | `scripts/validate_automated_musical_fitness.py`; judge calibration remains RIOTBOX-1208 |
 | percussive-force Stage-A detector, event anatomy, mechanism, control, matching, and reject-only values | the exact versioned `docs/benchmarks/percussive_force_stage_a_protocol_v*.json` and matrix bound by its Decision-Log decision; v1 and v2 are immutable rejected snapshots, not defaults for a later retry |
 | general audio QA meaning and human-verdict boundary | `docs/specs/audio_qa_workflow_spec.md` |
 | audio runtime behavior | `docs/specs/audio_core_spec.md` |

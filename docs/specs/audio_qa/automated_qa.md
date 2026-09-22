@@ -1020,6 +1020,32 @@ Large cross-report contracts stay in named repo-local validators. The manifest
 and artifact boundary is specified in
 [`manifests_and_artifacts.md`](./manifests_and_artifacts.md).
 
+Exact dense RuntimeMix numeric checks use `scripts/exact_mix_numeric.jq` in
+both the dense validator and first-playable correlation wrapper (RBX-379).
+Thresholds are read from producer evidence after domain validation; zero
+limiter-modified samples is a categorical clean-path requirement. Stored source
+format must match the Graph rather than the generated 44.1-kHz fixture, and the
+Fill-exit window frame count derives from recorded milliseconds and output rate.
+A click-like Fill boundary requires **all three** strict maxima to be exceeded:
+absolute step, step/local-p99 ratio and step/attack-RMS ratio. Equality passes;
+missing, malformed or nonfinite evidence does not. This preserves the renderer's
+existing supported-downbeat discriminator without changing its thresholds.
+
+The Alpha changed-return absolute-correlation maximum is now reported as
+`feral_break_alpha_arc.max_hook_to_changed_return_correlation`, with inclusive
+`<=` acceptance matching Rust. Historical V1 manifests missing only this field
+use the exact prior Rust `0.985_f32` value; a present invalid/null field is an
+error, never an invitation to fall back. This is additive metadata, not a new
+audio recipe or a rewrite of historical evidence. A validator checks recorded
+evidence, not the authenticity or musical quality of arbitrary manifests.
+
+Twelve identical professional-suite producer/validator thresholds are owned by
+`scripts/professional_output_numeric_policy.py`; values and comparison semantics
+are unchanged. See the [numeric inventory](../../engineering/audio_numeric_inventory_2026-09-22.md)
+for scope/provenance and the open RIOTBOX-1502 discrepancy: the current suite's
+one-reverse floor does not prove the two-reverse requirement stated above. Do
+not infer the stricter proof or silently relabel past verdicts until reconciled.
+
 
 Run:
 
