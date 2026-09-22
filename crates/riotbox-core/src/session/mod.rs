@@ -10,7 +10,13 @@ mod export_types;
 mod live_recording_host_audio;
 mod live_recording_readiness;
 mod mc202_types;
+mod source_timing;
 mod version_types;
+
+pub use source_timing::{
+    SourceTimingGridConfirmationState, SourceTimingRuntimeState,
+    source_timing_confirmation_matches_graph,
+};
 
 pub use arrangement_export_placement::{
     ArrangementExportPlacementReadinessBlocker, ArrangementExportPlacementReadinessReport,
@@ -63,9 +69,8 @@ pub use version_types::{
     SceneMovementDirectionState, SceneMovementKindState, SceneMovementLaneIntentState,
     SceneMovementState, SceneMovementW30IntentState, SceneState, SessionFile, SessionVersion,
     Snapshot, SnapshotPayload, SnapshotPayloadVersion, SourceGraphRef, SourceMonitorRuntimeState,
-    SourceMonitorUndoSnapshotState, SourceRef, SourceTimingGridConfirmationState,
-    SourceTimingRuntimeState, StyleRuntimeState, Tr909FillUndoSnapshotState, Tr909LaneState,
-    Tr909ReinforcementModeState, Tr909TakeoverProfileState, TransportRuntimeState,
+    SourceMonitorUndoSnapshotState, SourceRef, StyleRuntimeState, Tr909FillUndoSnapshotState,
+    Tr909LaneState, Tr909ReinforcementModeState, Tr909TakeoverProfileState, TransportRuntimeState,
     UndoRuntimeState, W30HookArticulationProfileState, W30HookArticulationState,
     W30HookSelectionDecision, W30HookSelectionPolicy, W30HookSelectionReason, W30LaneState,
     W30PreviewModeState,

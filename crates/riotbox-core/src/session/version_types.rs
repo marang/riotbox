@@ -11,7 +11,7 @@ use crate::{
 
 use super::{
     ExportReceiptState, GhostBudgetState, GhostSuggestionRecord, Mc202LaneState,
-    Mc202PhraseVariantState, Mc202RoleState, Mc202SourcePhrasePlanState,
+    Mc202PhraseVariantState, Mc202RoleState, Mc202SourcePhrasePlanState, SourceTimingRuntimeState,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -127,22 +127,6 @@ pub struct StyleRuntimeState {
 pub struct SourceMonitorRuntimeState {
     #[serde(default)]
     pub mode: SourceMonitorMode,
-}
-
-#[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
-pub struct SourceTimingRuntimeState {
-    #[serde(default)]
-    pub confirmed_grid: Option<SourceTimingGridConfirmationState>,
-    #[serde(default)]
-    pub confirmed_bpm: Option<f32>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct SourceTimingGridConfirmationState {
-    pub source_id: SourceId,
-    pub hypothesis_id: Option<String>,
-    pub confirmed_by_action: ActionId,
-    pub confirmed_at: TimestampMs,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Default, Serialize, Deserialize)]

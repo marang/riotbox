@@ -485,7 +485,7 @@ fn boundary_sequence_key(
         commit_record.boundary.beat_index,
         commit_record.boundary.bar_index,
         commit_record.boundary.phrase_index,
-        boundary_rank(commit_record.boundary.kind),
+        commit_record.boundary.kind.rank(),
         commit_record.boundary.scene_id.clone(),
         commit_record.commit_sequence,
     )
@@ -502,21 +502,10 @@ fn compare_commit_records(left: &ActionCommitRecord, right: &ActionCommitRecord)
         .cmp(&right.boundary.beat_index)
         .then_with(|| left.boundary.bar_index.cmp(&right.boundary.bar_index))
         .then_with(|| left.boundary.phrase_index.cmp(&right.boundary.phrase_index))
-        .then_with(|| boundary_rank(left.boundary.kind).cmp(&boundary_rank(right.boundary.kind)))
+        .then_with(|| left.boundary.kind.rank().cmp(&right.boundary.kind.rank()))
         .then_with(|| left.boundary.scene_id.cmp(&right.boundary.scene_id))
         .then_with(|| left.commit_sequence.cmp(&right.commit_sequence))
         .then_with(|| left.action_id.cmp(&right.action_id))
-}
-
-const fn boundary_rank(kind: CommitBoundary) -> u8 {
-    match kind {
-        CommitBoundary::Immediate => 0,
-        CommitBoundary::Beat => 1,
-        CommitBoundary::HalfBar => 2,
-        CommitBoundary::Bar => 3,
-        CommitBoundary::Phrase => 4,
-        CommitBoundary::Scene => 5,
-    }
 }
 
 #[cfg(test)]

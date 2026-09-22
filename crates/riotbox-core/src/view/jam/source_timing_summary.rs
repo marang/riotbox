@@ -107,23 +107,6 @@ pub fn source_timing_consumer_readiness(
     }
 }
 
-#[must_use]
-pub fn source_timing_confirmation_matches_graph(
-    graph: &SourceGraph,
-    session: &SessionFile,
-) -> bool {
-    session
-        .runtime_state
-        .source_timing
-        .confirmed_grid
-        .as_ref()
-        .is_some_and(|confirmed| {
-            confirmed.source_id == graph.source.source_id
-                && confirmed.hypothesis_id.as_deref()
-                    == graph.timing.primary_hypothesis_id.as_deref()
-        })
-}
-
 impl Default for SourceTimingSummaryView {
     fn default() -> Self {
         Self {

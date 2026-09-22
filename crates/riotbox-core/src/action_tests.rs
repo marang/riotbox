@@ -3,6 +3,34 @@ use std::collections::BTreeSet;
 use super::*;
 
 #[test]
+fn quantization_readiness_uses_the_complete_musical_boundary_order() {
+    let boundaries = [
+        CommitBoundary::Immediate,
+        CommitBoundary::Beat,
+        CommitBoundary::HalfBar,
+        CommitBoundary::Bar,
+        CommitBoundary::Phrase,
+        CommitBoundary::Scene,
+    ];
+    let requests = [
+        Quantization::Immediate,
+        Quantization::NextBeat,
+        Quantization::NextHalfBar,
+        Quantization::NextBar,
+        Quantization::NextPhrase,
+        Quantization::NextScene,
+    ];
+    for (request_index, request) in requests.into_iter().enumerate() {
+        for (boundary_index, boundary) in boundaries.into_iter().enumerate() {
+            assert_eq!(
+                request.is_ready_for(boundary),
+                request_index <= boundary_index
+            );
+        }
+    }
+}
+
+#[test]
 fn source_monitor_mode_cycles_through_all_reachable_modes() {
     assert_eq!(SourceMonitorMode::Source.next(), SourceMonitorMode::Blend);
     assert_eq!(SourceMonitorMode::Blend.next(), SourceMonitorMode::Riotbox);

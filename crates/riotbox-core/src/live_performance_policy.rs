@@ -1,6 +1,9 @@
 use crate::{
     ids::SourceId,
-    session::{Mc202SourcePhraseCandidateFamilyState, SessionFile},
+    session::{
+        Mc202SourcePhraseCandidateFamilyState, SessionFile,
+        source_timing_confirmation_matches_graph,
+    },
     source_graph::{
         EnergyClass, PhraseAudioFeatures, QualityClass, SourceGraph, section_for_projected_scene,
         section_for_transport_bar,
@@ -9,7 +12,6 @@ use crate::{
     transport::{
         DEFAULT_BARS_PER_PHRASE, DEFAULT_BEATS_PER_BAR, TransportClockState, TransportGridPosition,
     },
-    view::jam::source_timing_confirmation_matches_graph,
 };
 
 /// Minimum normalized contrast required before phrase-audio evidence may move a source out of
