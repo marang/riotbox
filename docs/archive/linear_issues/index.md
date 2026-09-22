@@ -1691,4 +1691,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Review follow-up: fix Graph recovery → save and define storage/integrity boundaries
 - [RIOTBOX-1497.md](./RIOTBOX-1497.md)
   Define and enforce persisted capture-WAV content identity on restore
+- [RIOTBOX-1491.md](./RIOTBOX-1491.md)
+  [P3] Measure and remove quadratic Session restore history validation scans
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
