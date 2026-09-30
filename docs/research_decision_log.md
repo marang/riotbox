@@ -5189,3 +5189,17 @@ Why: original scaffold commit 5aab284051a4d1b9946f7b16b84d7e04be9afe2c used one 
 Evidence: source-free 0/1/2 tests reproduce the loophole on all three suite surfaces and the tonal child. Metadata tests constrain malformed/nonfinite/fractional/missing/impossible counts, all-case minimum propagation, relevant-family scope, dense validation and tonal classification. Repo history and the existing generator establish provenance; no real source, holdout, commercial reference, render or listening result sets this correction.
 Consequences: existing V1 field names, valid legacy integral-float evidence and generated sound remain compatible. Historical one-reverse passes remain weaker historical diagnostic evidence and are not retroactively relabeled; hash-bound manifests/human verdicts and frozen Stage-A contracts remain untouched. No product action, Core/Session/replay truth, audible tuning, musical-pass/hardness criterion or automatic fallback is introduced. A metadata validator checks internal consistency, not authenticity or human approval.
 Status: accepted
+
+---
+
+### RBX-384
+
+Date: 2026-09-30
+Topic: semantic library CLI ownership without a second product model
+Phase: P000 / RIOTBOX-1337 mechanical module migration
+Question: how can the relocated CLI include shell become real modules while retaining its launch, observer, controls and offline-mode contracts?
+Decision: keep cli::run as the only public entrypoint and the application binary thin. Private CLI modules own launch configuration, argument validation, launch orchestration, terminal lifetime, event routing, performer controls, observer serialization and semantic offline export/report families. The argument owner has private DAW/support children; regression families are real test modules with one test-only synthetic fixture owner. Retain the existing crate-internal W-30 handoff-summary path through a narrow compatibility re-export. Product truth, queue/commit semantics, replay and persistence remain with their existing Core/Session/App owners; CLI launch configuration is not a second persistent model.
+Why: 22 production and 23 test includes shared one lexical namespace, hiding dependencies and combining configuration with observer I/O and terminal lifetime. Moving those includes again would preserve the ownership problem. Explicit imports and CLI-scoped visibility make actual dependencies inspectable without exposing a new external API or bundling behavior changes into the first migration.
+Evidence: all 144 pre-migration CLI tests pass after the move; all 349 named functions/types/constants are accounted for, with inspected differences limited to visibility, module paths and formatting. Executable help bytes, stdout/stderr placement and exit status match the pre-migration implementation. The include guard removes 45 sites and two owners instead of increasing another owner's allowance. Full source-free tests, synthetic smokes and strict Clippy validate the migrated scope.
+Consequences: no new ActionCommand, Core/Session fields, dependencies, flags, observer schema, keys, defaults, DSP, realtime operations or audio fallback. Module-path-qualified internal test names change naturally; scenarios and the crate-internal handoff path remain available. The cohesive stem-package test family may exceed the usual file-size guidance; splitting it solely for line count would weaken ownership. No source, holdout, commercial reference or human playback is needed or claimed for this structural slice.
+Status: accepted
