@@ -10,6 +10,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from hook_chop_diagnostic_contract import passes_reverse_count
+
 from professional_output_numeric_policy import (
     MAX_FERAL_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO,
     MAX_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
@@ -61,7 +63,6 @@ MIN_TONAL_MIX_BUS_MC202_TO_W30_RMS_RATIO = 0.20
 MIN_HOOK_CHOP_RIFF_SOURCE_OFFSETS = 6.0
 MIN_HOOK_CHOP_RIFF_HIT_COUNT = 10.0
 MIN_HOOK_CHOP_RIFF_VELOCITY_SPAN = 0.25
-MIN_HOOK_CHOP_RIFF_REVERSE_COUNT = 1.0
 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR = 0.64
 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN = 0.10
 MIN_HOOK_CHOP_RESPONSE_DELTA_RATIO = 0.35
@@ -673,8 +674,8 @@ def validate_hook_chop_metrics(
         failures,
     )
     require(
-        number(dense.get("hook_chop_riff_reverse_count"))
-        >= MIN_HOOK_CHOP_RIFF_REVERSE_COUNT,
+        passes_reverse_count(dense.get("hook_chop_riff_reverse_count"),
+                             dense.get("hook_chop_riff_hit_count")),
         "dense_hook_chop_riff_reverse_missing",
         failures,
     )
@@ -755,8 +756,8 @@ def validate_hook_chop_metrics(
         failures,
     )
     require(
-        number(matrix.get("min_dense_hook_chop_riff_reverse_count"))
-        >= MIN_HOOK_CHOP_RIFF_REVERSE_COUNT,
+        passes_reverse_count(matrix.get("min_dense_hook_chop_riff_reverse_count"),
+                             matrix.get("min_dense_hook_chop_riff_hit_count")),
         "matrix_dense_hook_chop_riff_reverse_missing",
         failures,
     )
@@ -849,8 +850,8 @@ def validate_hook_chop_metrics(
         failures,
     )
     require(
-        number(source_wav.get("tonal_hook_chop_riff_reverse_count"))
-        >= MIN_HOOK_CHOP_RIFF_REVERSE_COUNT,
+        passes_reverse_count(source_wav.get("tonal_hook_chop_riff_reverse_count"),
+                             source_wav.get("tonal_hook_chop_riff_hit_count")),
         "source_wav_tonal_hook_chop_riff_reverse_missing",
         failures,
     )

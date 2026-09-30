@@ -1715,4 +1715,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Reject non-regular source WAVs without blocking Session restore
 - [RIOTBOX-1504.md](./RIOTBOX-1504.md)
   Bound Sidecar request writes by the operation deadline
+- [RIOTBOX-1506.md](./RIOTBOX-1506.md)
+  Warm Sidecar readiness before the short analysis-timeout regression
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.

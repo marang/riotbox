@@ -37,6 +37,7 @@ jobs:
       - name: source-free workflow contracts
         run: |
           python3 -m unittest discover -s python/sidecar -p 'test_*.py'
+          python3 -m unittest discover -s scripts -p 'test_hook_chop_diagnostic_contract.py'
           scripts/validate_broad_audio_qa_access_guard.sh
           python3 scripts/validate_ci_gate_contract.py --fixtures
           git ls-files -z '*.json' | xargs -0 -r -n 64 jq empty

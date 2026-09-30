@@ -909,7 +909,16 @@ professional diagnostics, and tonal-hook fixture reports require
 Dense-break and tonal-hook reports must prove that selected source offsets
 drive a non-static hit pattern with enough hit density, velocity contrast, at
 least two reverse gestures, and enough W-30 headroom above the hook-presence
-floor. Current dense/tonal generated diagnostics require at least six source
+floor. `scripts/hook_chop_diagnostic_contract.py` owns this count contract for
+the dense producer, tonal child classification/validation and all three suite
+surfaces (dense, dense matrix minimum, tonal source-WAV minimum). Counts must be
+nonnegative integer JSON numbers or legacy integral floats, finite, and reverse
+count must not exceed total riff hits. Missing/null, boolean, string, fractional
+or impossible counts fail closed. Aggregation validates every relevant case;
+missing case proof or an empty relevant family emits null count evidence, not
+an invented zero or a minimum over only the remaining cases. This is recorded
+diagnostic consistency, not authentication of a manifest or proof of playback.
+Current dense/tonal generated diagnostics require at least six source
 offsets, ten riff hits, and `hook_chop_riff_velocity_span >= 0.25` before the
 hook/chop path may pass. The rendered W-30 riff layer must not buy that
 diversity by masking dense-break drum pressure; dense-break diagnostics still
@@ -1042,9 +1051,12 @@ evidence, not the authenticity or musical quality of arbitrary manifests.
 Twelve identical professional-suite producer/validator thresholds are owned by
 `scripts/professional_output_numeric_policy.py`; values and comparison semantics
 are unchanged. See the [numeric inventory](../../engineering/audio_numeric_inventory_2026-09-22.md)
-for scope/provenance and the open RIOTBOX-1502 discrepancy: the current suite's
-one-reverse floor does not prove the two-reverse requirement stated above. Do
-not infer the stricter proof or silently relabel past verdicts until reconciled.
+for scope/provenance. RIOTBOX-1502 / RBX-383 corrects the suite/tonal child's
+under-enforced one-reverse floor to the existing two-reverse requirement above;
+the dense renderer's existing two-reverse policy and audio are unchanged.
+Historical one-reverse suite passes remain historical weaker diagnostic
+evidence, not retroactive proof of the stricter contract. No hash-bound reports,
+human verdicts or frozen Stage-A contracts are rewritten by this correction.
 
 
 Run:

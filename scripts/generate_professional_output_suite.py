@@ -12,6 +12,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from hook_chop_diagnostic_contract import minimum_reverse_count, proof_reverse_count
+
 from audio_qa_evidence_boundary import (
     apply_evidence_boundary,
     evidence_boundary_failure_codes,
@@ -520,9 +522,7 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             "hook_chop_riff_velocity_span": number(
                 proof.get("hook_chop_riff_velocity_span")
             ),
-            "hook_chop_riff_reverse_count": number(
-                proof.get("hook_chop_riff_reverse_count")
-            ),
+            "hook_chop_riff_reverse_count": proof_reverse_count(proof),
             "hook_chop_source_character_score_floor": number(
                 proof.get("hook_chop_source_character_score_floor")
             ),
@@ -722,14 +722,13 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                 ),
                 default=0.0,
             ),
-            "min_dense_hook_chop_riff_reverse_count": min(
+            "min_dense_hook_chop_riff_reverse_count": minimum_reverse_count(
                 (
-                    number(object_or_empty(case.get("proof")).get("hook_chop_riff_reverse_count"))
+                    object_or_empty(case.get("proof"))
                     for case in cases
                     if object_or_empty(case.get("pressure_lift_policy")).get("source_family")
                     == "dense_break"
                 ),
-                default=0.0,
             ),
             "min_dense_hook_chop_source_character_score_floor": min(
                 (
@@ -1076,13 +1075,12 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                 ),
                 default=0.0,
             ),
-            "tonal_hook_chop_riff_reverse_count": min(
+            "tonal_hook_chop_riff_reverse_count": minimum_reverse_count(
                 (
-                    number(object_or_empty(case.get("proof")).get("hook_chop_riff_reverse_count"))
+                    object_or_empty(case.get("proof"))
                     for case in cases
                     if case.get("source_family") == "tonal_hook"
                 ),
-                default=0.0,
             ),
             "tonal_hook_chop_source_character_score_floor": min(
                 (
