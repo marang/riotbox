@@ -1,3 +1,15 @@
+use crate::action::GhostMode;
+use crate::queue::ActionQueue;
+use crate::session::GhostSuggestionRecord;
+use crate::session::SessionFile;
+use crate::session::Tr909ReinforcementModeState;
+use crate::session::Tr909TakeoverProfileState;
+use crate::view::jam::capture_actions::CaptureHandoffReadinessView;
+use crate::view::jam::capture_actions::CaptureTargetKindView;
+use crate::view::jam::model::JamViewModel;
+use crate::view::jam::scene_launch::SceneJumpAvailabilityView;
+use crate::view::jam::tests::fixtures::jam_view_fixture;
+
 #[test]
 fn projects_transport_source_and_scene_summary() {
     let fixture = jam_view_fixture();
@@ -13,7 +25,10 @@ fn projects_transport_source_and_scene_summary() {
     assert_eq!(vm.source.timing.primary_kick_anchor_count, 1);
     assert_eq!(vm.source.timing.primary_backbeat_anchor_count, 1);
     assert_eq!(vm.source.timing.primary_transient_anchor_count, 0);
-    assert_eq!(vm.source.timing.primary_anchor_cue, "anchors 2 | kick+backbeat");
+    assert_eq!(
+        vm.source.timing.primary_anchor_cue,
+        "anchors 2 | kick+backbeat"
+    );
     assert_eq!(vm.source.feral_scorecard.readiness, "ready");
     assert_eq!(vm.source.feral_scorecard.break_rebuild_potential, "high");
     assert_eq!(vm.source.feral_scorecard.hook_fragment_count, 1);
@@ -171,10 +186,7 @@ fn projects_pending_actions_and_assist_ghost_summary() {
     assert_eq!(vm.ghost.latest_proposal_id.as_deref(), Some("gp-1"));
     assert_eq!(vm.ghost.latest_summary.as_deref(), Some("capture next bar"));
     assert_eq!(vm.ghost.latest_status.as_deref(), Some("suggested"));
-    assert_eq!(
-        vm.ghost.decision_hint.as_deref(),
-        Some("accept/reject")
-    );
+    assert_eq!(vm.ghost.decision_hint.as_deref(), Some("accept/reject"));
     assert_eq!(vm.ghost.safety, "clear");
     assert_eq!(vm.ghost.active_blocker, None);
 }

@@ -1,3 +1,9 @@
+use crate::session::SessionFile;
+use crate::source_graph::EnergyClass;
+use crate::source_graph::Section;
+use crate::source_graph::SourceGraph;
+use crate::view::jam::arrangement_contract::ArrangementSceneContractView;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SceneJumpAvailabilityView {
     Ready,
@@ -17,7 +23,7 @@ pub struct SceneLaunchCandidateView<'a> {
     pub reason: SceneLaunchTargetReason,
 }
 
-fn scene_jump_availability(
+pub(super) fn scene_jump_availability(
     session: &SessionFile,
     has_next_scene: bool,
 ) -> SceneJumpAvailabilityView {
@@ -119,7 +125,7 @@ fn known_scene_energy_label(
         .filter(|energy| energy != "unknown")
 }
 
-fn scene_movement_view(session: &SessionFile) -> Option<SceneMovementView> {
+pub(super) fn scene_movement_view(session: &SessionFile) -> Option<SceneMovementView> {
     let movement = session.runtime_state.scene_state.last_movement.as_ref()?;
     Some(SceneMovementView {
         kind: movement.kind.label().into(),
@@ -135,7 +141,7 @@ fn scene_movement_view(session: &SessionFile) -> Option<SceneMovementView> {
     })
 }
 
-fn scene_transition_policy(
+pub(super) fn scene_transition_policy(
     kind: SceneTransitionKindView,
     from_energy: Option<&str>,
     to_energy: Option<&str>,
@@ -203,7 +209,10 @@ fn energy_rank(label: &str) -> Option<u8> {
     }
 }
 
-fn current_scene_energy_label(session: &SessionFile, graph: &SourceGraph) -> Option<String> {
+pub(super) fn current_scene_energy_label(
+    session: &SessionFile,
+    graph: &SourceGraph,
+) -> Option<String> {
     projected_scene_energy_label(
         session
             .runtime_state
@@ -217,20 +226,19 @@ fn current_scene_energy_label(session: &SessionFile, graph: &SourceGraph) -> Opt
     )
 }
 
-fn restore_scene_energy_label(session: &SessionFile, graph: &SourceGraph) -> Option<String> {
+pub(super) fn restore_scene_energy_label(
+    session: &SessionFile,
+    graph: &SourceGraph,
+) -> Option<String> {
     projected_scene_energy_label(
-        session
-            .runtime_state
-            .scene_state
-            .restore_scene
-            .as_ref(),
+        session.runtime_state.scene_state.restore_scene.as_ref(),
         false,
         session,
         graph,
     )
 }
 
-fn projected_scene_energy_label(
+pub(super) fn projected_scene_energy_label(
     scene_id: Option<&crate::ids::SceneId>,
     fallback_to_first_section: bool,
     session: &SessionFile,
@@ -238,7 +246,12 @@ fn projected_scene_energy_label(
 ) -> Option<String> {
     let sections = crate::source_graph::sorted_sections(graph);
     let section = scene_id
-        .and_then(|scene_id| session.runtime_state.scene_state.source_section(graph, scene_id))
+        .and_then(|scene_id| {
+            session
+                .runtime_state
+                .scene_state
+                .source_section(graph, scene_id)
+        })
         .or_else(|| {
             fallback_to_first_section
                 .then(|| sections.first().copied())
@@ -257,189 +270,110 @@ const fn section_energy_label(section: &Section) -> &'static str {
     }
 }
 
-fn w30_pending_audition_view(
-    action: &crate::action::Action,
-    kind: W30PendingAuditionKind,
-) -> Option<W30PendingAuditionView> {
-    action
-        .target
-        .bank_id
-        .as_ref()
-        .zip(action.target.pad_id.as_ref())
-        .map(|(bank_id, pad_id)| W30PendingAuditionView {
-            kind,
-            target: format!("{bank_id}/{pad_id}"),
-            quantization: action.quantization.to_string(),
-        })
+#[derive(Clone, Debug, PartialEq)]
+pub struct SceneSummaryView {
+    pub active_scene: Option<String>,
+    pub restore_scene: Option<String>,
+    pub next_scene: Option<String>,
+    pub scene_jump_availability: SceneJumpAvailabilityView,
+    pub active_scene_energy: Option<String>,
+    pub restore_scene_energy: Option<String>,
+    pub next_scene_energy: Option<String>,
+    pub next_scene_policy: Option<SceneTransitionPolicyView>,
+    pub restore_scene_policy: Option<SceneTransitionPolicyView>,
+    pub last_movement: Option<SceneMovementView>,
+    pub arrangement_contract: ArrangementSceneContractView,
+    pub scene_count: usize,
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct MacroStripView {
-    pub source_retain: f32,
-    pub chaos: f32,
-    pub mc202_touch: f32,
-    pub w30_grit: f32,
-    pub tr909_slam: f32,
+pub struct SceneMovementView {
+    pub kind: String,
+    pub direction: String,
+    pub tr909_intent: String,
+    pub mc202_intent: String,
+    pub w30_intent: String,
+    pub intensity: f32,
+    pub from_scene: Option<String>,
+    pub to_scene: String,
+    pub committed_bar_index: u64,
+    pub committed_phrase_index: u64,
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct LaneSummaryView {
-    pub mc202_role: Option<String>,
-    pub mc202_pending_role: Option<String>,
-    pub mc202_pending_follower_generation: bool,
-    pub mc202_pending_answer_generation: bool,
-    pub mc202_pending_pressure_generation: bool,
-    pub mc202_pending_instigator_generation: bool,
-    pub mc202_pending_phrase_mutation: bool,
-    pub mc202_phrase_ref: Option<String>,
-    pub mc202_phrase_variant: Option<String>,
-    pub w30_active_bank: Option<String>,
-    pub w30_focused_pad: Option<String>,
-    pub w30_pending_trigger_target: Option<String>,
-    pub w30_pending_recall_target: Option<String>,
-    pub w30_pending_audition: Option<W30PendingAuditionView>,
-    pub w30_pending_audition_target: Option<String>,
-    pub w30_pending_bank_swap_target: Option<String>,
-    pub w30_pending_slice_pool_target: Option<String>,
-    pub w30_pending_slice_pool_capture_id: Option<String>,
-    pub w30_pending_slice_pool_reason: Option<String>,
-    pub w30_pending_damage_profile_target: Option<String>,
-    pub w30_pending_loop_freeze_target: Option<String>,
-    pub w30_pending_focus_step_target: Option<String>,
-    pub w30_pending_resample_capture_id: Option<String>,
-    pub tr909_slam_enabled: bool,
-    pub tr909_takeover_enabled: bool,
-    pub tr909_takeover_pending_target: Option<bool>,
-    pub tr909_takeover_pending_profile: Option<Tr909TakeoverProfileState>,
-    pub tr909_takeover_profile: Option<Tr909TakeoverProfileState>,
-    pub tr909_fill_armed_next_bar: bool,
-    pub tr909_last_fill_bar: Option<u64>,
-    pub tr909_reinforcement_mode: Option<Tr909ReinforcementModeState>,
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SceneTransitionKindView {
+    Launch,
+    Restore,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct W30PendingAuditionView {
-    pub kind: W30PendingAuditionKind,
-    pub target: String,
-    pub quantization: String,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum W30PendingAuditionKind {
-    RawCapture,
-    Promoted,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct CaptureSummaryView {
-    pub capture_count: usize,
-    pub pinned_capture_count: usize,
-    pub promoted_capture_count: usize,
-    pub unassigned_capture_count: usize,
-    pub pending_capture_count: usize,
-    pub pending_capture_items: Vec<PendingCaptureActionView>,
-    pub last_capture_id: Option<String>,
-    pub last_capture_target: Option<String>,
-    pub last_capture_target_kind: Option<CaptureTargetKindView>,
-    pub last_capture_handoff_readiness: Option<CaptureHandoffReadinessView>,
-    pub last_capture_origin_count: usize,
-    pub last_capture_notes: Option<String>,
-    pub last_promotion_result: Option<String>,
-    pub latest_w30_promoted_capture_label: Option<String>,
-    pub recent_capture_rows: Vec<String>,
-    pub latest_capture_provenance_lines: Vec<String>,
-    pub pinned_capture_ids: Vec<String>,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum CaptureTargetKindView {
-    W30Pad,
-    Scene,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum CaptureHandoffReadinessView {
-    Source,
-    Unavailable,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct PendingActionView {
-    pub id: String,
-    pub actor: String,
-    pub command: String,
-    pub quantization: String,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct PendingCaptureActionView {
-    pub id: String,
-    pub actor: String,
-    pub command: String,
-    pub quantization: String,
-    pub target: String,
-    pub explanation: Option<String>,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct RecentActionView {
-    pub id: String,
-    pub actor: String,
-    pub command: String,
-    pub status: String,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct GhostStatusView {
-    pub mode: String,
-    pub suggestion_count: usize,
-    pub is_blocked: bool,
-    pub is_read_only: bool,
-    pub latest_proposal_id: Option<String>,
-    pub latest_summary: Option<String>,
-    pub latest_status: Option<String>,
-    pub decision_hint: Option<String>,
-    pub safety: String,
-    pub active_blocker: Option<String>,
-}
-
-fn ghost_status_view(session: &SessionFile) -> GhostStatusView {
-    let latest = session.ghost_state.suggestion_history.last();
-    let active_blocker = session
-        .runtime_state
-        .lock_state
-        .locked_object_ids
-        .iter()
-        .find(|lock| lock.contains("ghost"))
-        .cloned();
-    let is_blocked = active_blocker.is_some();
-
-    GhostStatusView {
-        mode: session.ghost_state.mode.to_string(),
-        suggestion_count: session.ghost_state.suggestion_history.len(),
-        is_blocked,
-        is_read_only: matches!(session.ghost_state.mode, crate::action::GhostMode::Watch),
-        latest_proposal_id: latest.map(|suggestion| suggestion.proposal_id.clone()),
-        latest_summary: latest.map(|suggestion| suggestion.summary.clone()),
-        latest_status: latest.map(|suggestion| suggestion.status().label().into()),
-        decision_hint: latest.map(|suggestion| {
-            if is_blocked {
-                "blocked".into()
-            } else if suggestion.rejected {
-                "rejected".into()
-            } else if suggestion.accepted {
-                "queued intent".into()
-            } else if matches!(session.ghost_state.mode, crate::action::GhostMode::Assist) {
-                "accept/reject".into()
-            } else {
-                "assist required".into()
-            }
-        }),
-        safety: if is_blocked {
-            "blocked".into()
-        } else {
-            "clear".into()
-        },
-        active_blocker,
+impl SceneTransitionKindView {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Launch => "launch",
+            Self::Restore => "restore",
+        }
     }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SceneTransitionDirectionView {
+    Rise,
+    Drop,
+    Hold,
+}
+
+impl SceneTransitionDirectionView {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Rise => "rise",
+            Self::Drop => "drop",
+            Self::Hold => "hold",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SceneTransitionLaneIntentView {
+    Drive,
+    Lift,
+    Release,
+    Anchor,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SceneTransitionW30IntentView {
+    Pin,
+}
+
+impl SceneTransitionW30IntentView {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Pin => "pin",
+        }
+    }
+}
+
+impl SceneTransitionLaneIntentView {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Drive => "drive",
+            Self::Lift => "lift",
+            Self::Release => "release",
+            Self::Anchor => "anchor",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SceneTransitionPolicyView {
+    pub kind: SceneTransitionKindView,
+    pub direction: SceneTransitionDirectionView,
+    pub tr909_intent: SceneTransitionLaneIntentView,
+    pub mc202_intent: SceneTransitionLaneIntentView,
+    pub w30_intent: SceneTransitionW30IntentView,
+    pub intensity: f32,
 }

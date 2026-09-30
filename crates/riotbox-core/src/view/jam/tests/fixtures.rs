@@ -1,16 +1,50 @@
-struct JamViewFixture {
+use crate::action::ActionCommand;
+use crate::action::ActionDraft;
+use crate::action::ActionParams;
+use crate::action::ActionTarget;
+use crate::action::ActorType;
+use crate::action::GhostMode;
+use crate::action::Quantization;
+use crate::action::TargetScope;
+use crate::action::UndoPolicy;
+use crate::ids::BankId;
+use crate::ids::SceneId;
+use crate::ids::SourceId;
+use crate::queue::ActionQueue;
+use crate::session::ActionLog;
+use crate::session::GhostSuggestionRecord;
+use crate::session::RuntimeState;
+use crate::session::SessionFile;
+use crate::session::SourceGraphRef;
+use crate::session::Tr909ReinforcementModeState;
+use crate::session::Tr909TakeoverProfileState;
+use crate::source_graph::AnalysisSummary;
+use crate::source_graph::Asset;
+use crate::source_graph::AssetType;
+use crate::source_graph::Candidate;
+use crate::source_graph::CandidateType;
+use crate::source_graph::DecodeProfile;
+use crate::source_graph::GraphProvenance;
+use crate::source_graph::QualityClass;
+use crate::source_graph::Relationship;
+use crate::source_graph::RelationshipType;
+use crate::source_graph::SourceDescriptor;
+use crate::source_graph::SourceGraph;
+use crate::view::jam::model::JamViewModel;
+
+pub(super) struct JamViewFixture {
     graph: SourceGraph,
     session: SessionFile,
     queue: ActionQueue,
 }
 
 impl JamViewFixture {
-    fn build_view_model(&self) -> JamViewModel {
+    pub(super) fn build_view_model(&self) -> JamViewModel {
         JamViewModel::build(&self.session, &self.queue, Some(&self.graph))
     }
 }
 
-fn jam_view_fixture() -> JamViewFixture {
+pub(super) fn jam_view_fixture() -> JamViewFixture {
     let graph = source_graph_with_feral_capture_evidence();
     let session = session_with_committed_jam_state(&graph);
     let queue = queue_with_lane_pending_actions();
@@ -134,47 +168,50 @@ fn source_graph_with_feral_capture_evidence() -> SourceGraph {
     graph.timing.quality = crate::source_graph::TimingQuality::High;
     graph.timing.degraded_policy = crate::source_graph::TimingDegradedPolicy::Locked;
     graph.timing.primary_hypothesis_id = Some("timing-primary".into());
-    graph.timing.hypotheses.push(crate::source_graph::TimingHypothesis {
-        hypothesis_id: "timing-primary".into(),
-        kind: crate::source_graph::TimingHypothesisKind::Primary,
-        bpm: 128.0,
-        meter: crate::source_graph::MeterHint {
-            beats_per_bar: 4,
-            beat_unit: 4,
-        },
-        confidence: 0.88,
-        score: 0.82,
-        beat_grid: Vec::new(),
-        bar_grid: Vec::new(),
-        phrase_grid: Vec::new(),
-        anchors: vec![
-            crate::source_graph::SourceTimingAnchor {
-                anchor_id: "kick-1".into(),
-                anchor_type: crate::source_graph::SourceTimingAnchorType::Kick,
-                time_seconds: 0.0,
-                bar_index: Some(1),
-                beat_index: Some(1),
-                confidence: 0.92,
-                strength: 0.9,
-                tags: vec!["kick_anchor".into()],
+    graph
+        .timing
+        .hypotheses
+        .push(crate::source_graph::TimingHypothesis {
+            hypothesis_id: "timing-primary".into(),
+            kind: crate::source_graph::TimingHypothesisKind::Primary,
+            bpm: 128.0,
+            meter: crate::source_graph::MeterHint {
+                beats_per_bar: 4,
+                beat_unit: 4,
             },
-            crate::source_graph::SourceTimingAnchor {
-                anchor_id: "backbeat-1".into(),
-                anchor_type: crate::source_graph::SourceTimingAnchorType::Backbeat,
-                time_seconds: 1.0,
-                bar_index: Some(1),
-                beat_index: Some(3),
-                confidence: 0.84,
-                strength: 0.8,
-                tags: vec!["backbeat_anchor".into()],
-            },
-        ],
-        drift: Vec::new(),
-        groove: Vec::new(),
-        quality: crate::source_graph::TimingQuality::High,
-        warnings: Vec::new(),
-        provenance: vec!["fixture.source_timing".into()],
-    });
+            confidence: 0.88,
+            score: 0.82,
+            beat_grid: Vec::new(),
+            bar_grid: Vec::new(),
+            phrase_grid: Vec::new(),
+            anchors: vec![
+                crate::source_graph::SourceTimingAnchor {
+                    anchor_id: "kick-1".into(),
+                    anchor_type: crate::source_graph::SourceTimingAnchorType::Kick,
+                    time_seconds: 0.0,
+                    bar_index: Some(1),
+                    beat_index: Some(1),
+                    confidence: 0.92,
+                    strength: 0.9,
+                    tags: vec!["kick_anchor".into()],
+                },
+                crate::source_graph::SourceTimingAnchor {
+                    anchor_id: "backbeat-1".into(),
+                    anchor_type: crate::source_graph::SourceTimingAnchorType::Backbeat,
+                    time_seconds: 1.0,
+                    bar_index: Some(1),
+                    beat_index: Some(3),
+                    confidence: 0.84,
+                    strength: 0.8,
+                    tags: vec!["backbeat_anchor".into()],
+                },
+            ],
+            drift: Vec::new(),
+            groove: Vec::new(),
+            quality: crate::source_graph::TimingQuality::High,
+            warnings: Vec::new(),
+            provenance: vec!["fixture.source_timing".into()],
+        });
 
     graph
 }
@@ -417,4 +454,62 @@ fn w30_target_draft(
     draft.target.bank_id = Some(bank_id.into());
     draft.target.pad_id = Some(pad_id.into());
     draft
+}
+
+pub(super) fn sample_graph_with_sections(section_labels: &[String]) -> SourceGraph {
+    let mut graph = SourceGraph::new(
+        SourceDescriptor {
+            source_id: "src-1".into(),
+            path: "input.wav".into(),
+            content_hash: "hash-1".into(),
+            duration_seconds: 120.0,
+            sample_rate: 48_000,
+            channel_count: 2,
+            decode_profile: DecodeProfile::NormalizedStereo,
+        },
+        GraphProvenance {
+            sidecar_version: "0.1.0".into(),
+            provider_set: vec!["beat".into(), "section".into()],
+            generated_at: "2026-04-12T18:00:00Z".into(),
+            source_hash: "hash-1".into(),
+            analysis_seed: 7,
+            run_notes: Some("scene-energy-projection-fixture".into()),
+        },
+    );
+
+    for (index, label) in section_labels.iter().enumerate() {
+        let bar_start = (index as u32 * 8) + 1;
+        graph.sections.push(crate::source_graph::Section {
+            section_id: format!("section-{index}").into(),
+            label_hint: match label.as_str() {
+                "intro" => crate::source_graph::SectionLabelHint::Intro,
+                "break" => crate::source_graph::SectionLabelHint::Break,
+                "build" => crate::source_graph::SectionLabelHint::Build,
+                "drop" => crate::source_graph::SectionLabelHint::Drop,
+                "verse" => crate::source_graph::SectionLabelHint::Verse,
+                "chorus" => crate::source_graph::SectionLabelHint::Chorus,
+                "bridge" => crate::source_graph::SectionLabelHint::Bridge,
+                "outro" => crate::source_graph::SectionLabelHint::Outro,
+                _ => crate::source_graph::SectionLabelHint::Unknown,
+            },
+            start_seconds: index as f32 * 16.0,
+            end_seconds: (index + 1) as f32 * 16.0,
+            bar_start,
+            bar_end: bar_start + 7,
+            energy_class: fixture_energy_for_label(label),
+            confidence: 0.9,
+            tags: vec![label.clone()],
+        });
+    }
+
+    graph
+}
+
+fn fixture_energy_for_label(label: &str) -> crate::source_graph::EnergyClass {
+    match label {
+        "drop" | "chorus" => crate::source_graph::EnergyClass::High,
+        "break" | "outro" => crate::source_graph::EnergyClass::Low,
+        "intro" | "build" | "verse" | "bridge" => crate::source_graph::EnergyClass::Medium,
+        _ => crate::source_graph::EnergyClass::Unknown,
+    }
 }
