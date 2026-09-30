@@ -1725,4 +1725,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Split remaining riotbox-app UI and Jam test include shells into semantic modules
 - [RIOTBOX-1507.md](./RIOTBOX-1507.md)
   Architecture checkpoint after source/Sidecar hardening and semantic app modules
+- [RIOTBOX-1340.md](./RIOTBOX-1340.md)
+  P023: Replace runtime glob imports with explicit audio ownership imports
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
