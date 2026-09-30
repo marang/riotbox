@@ -1,6 +1,6 @@
 """Hook-forward diagnostic count evidence, never a musical approval.
 
-RIOTBOX-1502 / RBX-383 reconciles the original two-reverse contract. Integer
+RIOTBOX-1502 / RBX-383 reconciles the existing two-reverse contract. Integer
 JSON numbers and legacy integral floats are supported; absent, coerced or
 impossible evidence is not manufactured into a count.
 """
