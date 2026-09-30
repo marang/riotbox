@@ -1717,4 +1717,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Bound Sidecar request writes by the operation deadline
 - [RIOTBOX-1506.md](./RIOTBOX-1506.md)
   Warm Sidecar readiness before the short analysis-timeout regression
+- [RIOTBOX-1502.md](./RIOTBOX-1502.md)
+  Reconcile the professional Hook/Chop reverse-count gate with its QA contract
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
