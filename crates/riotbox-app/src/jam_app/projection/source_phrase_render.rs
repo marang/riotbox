@@ -41,7 +41,7 @@ fn mc202_source_phrase_render_pressure(source_plan: &Mc202SourcePhrasePlanState)
             + score.destructive_usefulness * 0.18
             + source_plan.touch.clamp(0.0, 1.0) * 0.20
             + role_pressure_bias(source_plan, score.low_end_impact))
-            .clamp(0.0, 1.0)
+        .clamp(0.0, 1.0)
     })
 }
 
@@ -56,7 +56,7 @@ fn mc202_source_phrase_render_contrast(source_plan: &Mc202SourcePhrasePlanState)
             + score.destructive_usefulness * 0.25
             + score.phrase_memory * 0.15
             + role_contrast_bias(source_plan, score.destructive_usefulness))
-            .clamp(0.0, 1.0)
+        .clamp(0.0, 1.0)
     })
 }
 
@@ -71,15 +71,17 @@ fn mc202_source_phrase_bass_weight(source_plan: &Mc202SourcePhrasePlanState) -> 
                 + source_plan.touch.clamp(0.0, 1.0) * 0.08)
                 .clamp(0.0, 1.0)
         }),
-        Some(Family::SparseOffbeatAnswer | Family::HookRestraintGhostAnswer) => selected
-            .map_or(0.28, |score| {
-                (score.low_end_impact * 0.30 + score.answer_contrast * 0.12 + 0.16)
+        Some(Family::SparseOffbeatAnswer | Family::HookRestraintGhostAnswer) => {
+            selected.map_or(0.28, |score| {
+                (score.low_end_impact * 0.30 + score.answer_contrast * 0.12 + 0.16).clamp(0.0, 1.0)
+            })
+        }
+        Some(Family::CallBackStab | Family::FillPickupInstigator) => {
+            selected.map_or(0.22, |score| {
+                (score.low_end_impact * 0.24 + score.destructive_usefulness * 0.10 + 0.12)
                     .clamp(0.0, 1.0)
-            }),
-        Some(Family::CallBackStab | Family::FillPickupInstigator) => selected.map_or(0.22, |score| {
-            (score.low_end_impact * 0.24 + score.destructive_usefulness * 0.10 + 0.12)
-                .clamp(0.0, 1.0)
-        }),
+            })
+        }
         Some(Family::StayOut | Family::FallbackControl) | None => 0.0,
     };
 
@@ -90,13 +92,13 @@ fn source_expression_bass_body(
     source_plan: &Mc202SourcePhrasePlanState,
     fallback_low_end_impact: f32,
 ) -> f32 {
-    source_plan
-        .source_expression
-        .as_ref()
-        .map_or(fallback_low_end_impact.clamp(0.0, 1.0), |expression| {
+    source_plan.source_expression.as_ref().map_or(
+        fallback_low_end_impact.clamp(0.0, 1.0),
+        |expression| {
             (expression.bass_pressure * 0.72 + expression.low_pressure_contour * 0.28)
                 .clamp(0.0, 1.0)
-        })
+        },
+    )
 }
 
 fn mc202_source_phrase_stab_bite(source_plan: &Mc202SourcePhrasePlanState) -> f32 {
@@ -106,21 +108,24 @@ fn mc202_source_phrase_stab_bite(source_plan: &Mc202SourcePhrasePlanState) -> f3
             (score.answer_contrast * 0.12 + score.destructive_usefulness * 0.10 + 0.12)
                 .clamp(0.0, 1.0)
         }),
-        Some(Family::SparseOffbeatAnswer | Family::HookRestraintGhostAnswer) => selected
-            .map_or(0.58, |score| {
+        Some(Family::SparseOffbeatAnswer | Family::HookRestraintGhostAnswer) => {
+            selected.map_or(0.58, |score| {
                 (score.answer_contrast * 0.50
                     + score.hook_avoidance * 0.12
                     + score.phrase_memory * 0.10
                     + 0.20)
                     .clamp(0.0, 1.0)
-            }),
-        Some(Family::CallBackStab | Family::FillPickupInstigator) => selected.map_or(0.76, |score| {
-            (score.destructive_usefulness * 0.42
-                + score.answer_contrast * 0.24
-                + score.source_grid_lock * 0.08
-                + 0.26)
-                .clamp(0.0, 1.0)
-        }),
+            })
+        }
+        Some(Family::CallBackStab | Family::FillPickupInstigator) => {
+            selected.map_or(0.76, |score| {
+                (score.destructive_usefulness * 0.42
+                    + score.answer_contrast * 0.24
+                    + score.source_grid_lock * 0.08
+                    + 0.26)
+                    .clamp(0.0, 1.0)
+            })
+        }
         Some(Family::StayOut | Family::FallbackControl) | None => 0.0,
     };
 
@@ -138,7 +143,10 @@ fn mc202_source_phrase_gate_snap(source_plan: &Mc202SourcePhrasePlanState) -> f3
     role_shaped_gate_snap(source_plan, gate_snap)
 }
 
-fn mc202_source_phrase_accent_mask(source_plan: &Mc202SourcePhrasePlanState, active_mask: u16) -> u16 {
+fn mc202_source_phrase_accent_mask(
+    source_plan: &Mc202SourcePhrasePlanState,
+    active_mask: u16,
+) -> u16 {
     let mut mask = 0_u16;
     for (index, cell) in source_plan.rhythm_cells.iter().enumerate() {
         let bit = 1_u16 << index;
@@ -188,7 +196,9 @@ fn role_pressure_bias(
     fallback_low_end_impact: f32,
 ) -> f32 {
     match source_plan.role {
-        Role::Pressure => 0.12 + source_expression_bass_body(source_plan, fallback_low_end_impact) * 0.10,
+        Role::Pressure => {
+            0.12 + source_expression_bass_body(source_plan, fallback_low_end_impact) * 0.10
+        }
         Role::Instigator => 0.06,
         Role::Follower | Role::Leader => 0.03,
         Role::Answer => 0.0,
@@ -236,16 +246,14 @@ fn role_shaped_stab_bite(source_plan: &Mc202SourcePhrasePlanState, stab_bite: f3
         Role::Pressure => (stab_bite * 0.72 + 0.06).clamp(0.0, 1.0),
         Role::Answer => {
             let answer_bite = expression.map_or(0.62, |expression| {
-                0.54
-                    + expression.offbeat_answer_space.clamp(0.0, 1.0) * 0.18
+                0.54 + expression.offbeat_answer_space.clamp(0.0, 1.0) * 0.18
                     + expression.stab_bite.clamp(0.0, 1.0) * 0.10
             });
             stab_bite.max(answer_bite).clamp(0.0, 1.0)
         }
         Role::Instigator => {
             let transient_bite = expression.map_or(0.74, |expression| {
-                0.64
-                    + expression.transient_backbeat.clamp(0.0, 1.0) * 0.18
+                0.64 + expression.transient_backbeat.clamp(0.0, 1.0) * 0.18
                     + expression.stab_bite.clamp(0.0, 1.0) * 0.12
             });
             stab_bite.max(transient_bite).clamp(0.0, 1.0)
@@ -276,15 +284,17 @@ fn role_shaped_gate_snap(source_plan: &Mc202SourcePhrasePlanState, gate_snap: f3
 
 fn role_accent_mask(source_plan: &Mc202SourcePhrasePlanState, active_mask: u16) -> u16 {
     match source_plan.role {
-        Role::Pressure => active_mask
-            & source_plan
-                .rhythm_cells
-                .iter()
-                .enumerate()
-                .filter_map(|(index, cell)| {
-                    matches!(cell, Some(semitone) if *semitone <= -7).then_some(1_u16 << index)
-                })
-                .fold(0_u16, |mask, bit| mask | bit),
+        Role::Pressure => {
+            active_mask
+                & source_plan
+                    .rhythm_cells
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(index, cell)| {
+                        matches!(cell, Some(semitone) if *semitone <= -7).then_some(1_u16 << index)
+                    })
+                    .fold(0_u16, |mask, bit| mask | bit)
+        }
         Role::Answer => active_mask & 0b1010_1010_1010_1010,
         Role::Instigator => highest_active_bit(active_mask),
         Role::Follower | Role::Leader => 0,
@@ -293,15 +303,17 @@ fn role_accent_mask(source_plan: &Mc202SourcePhrasePlanState, active_mask: u16) 
 
 fn role_destructive_mask(source_plan: &Mc202SourcePhrasePlanState, active_mask: u16) -> u16 {
     match source_plan.role {
-        Role::Pressure => active_mask
-            & source_plan
-                .rhythm_cells
-                .iter()
-                .enumerate()
-                .filter_map(|(index, cell)| {
-                    matches!(cell, Some(semitone) if *semitone <= -16).then_some(1_u16 << index)
-                })
-                .fold(0_u16, |mask, bit| mask | bit),
+        Role::Pressure => {
+            active_mask
+                & source_plan
+                    .rhythm_cells
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(index, cell)| {
+                        matches!(cell, Some(semitone) if *semitone <= -16).then_some(1_u16 << index)
+                    })
+                    .fold(0_u16, |mask, bit| mask | bit)
+        }
         Role::Instigator => highest_active_bit(active_mask),
         Role::Answer | Role::Follower | Role::Leader => 0,
     }
