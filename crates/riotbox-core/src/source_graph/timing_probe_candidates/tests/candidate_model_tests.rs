@@ -1,77 +1,12 @@
-use super::*;
-
-#[path = "probe_candidate_tests/anchor_tests.rs"]
-mod anchor_tests;
-#[path = "probe_candidate_tests/confidence_report_tests.rs"]
-mod confidence_report_tests;
-#[path = "probe_candidate_tests/evidence_report_tests.rs"]
-mod evidence_report_tests;
-#[path = "probe_candidate_tests/groove_tests.rs"]
-mod groove_tests;
-#[path = "probe_candidate_tests/loop_boundary_tests.rs"]
-mod loop_boundary_tests;
-#[path = "probe_candidate_tests/readiness_report_tests.rs"]
-mod readiness_report_tests;
-
-#[test]
-fn source_timing_probe_period_score_order_is_total_for_close_scores() {
-    let weak_close = BeatPeriodScore {
-        bpm: 120.0,
-        period_seconds: 0.50,
-        score: 0.0,
-        matched_onset_ratio: 0.90,
-        median_distance_ratio: 0.10,
-    };
-    let middle_close = BeatPeriodScore {
-        bpm: 121.0,
-        period_seconds: 0.496,
-        score: 0.0005,
-        matched_onset_ratio: 0.80,
-        median_distance_ratio: 0.20,
-    };
-    let strong_close = BeatPeriodScore {
-        bpm: 122.0,
-        period_seconds: 0.492,
-        score: 0.0015,
-        matched_onset_ratio: 0.70,
-        median_distance_ratio: 0.30,
-    };
-    let mut scores = [weak_close, middle_close, strong_close];
-
-    scores.sort_by(|left, right| {
-        period_score_order(left, right).then_with(|| left.bpm.total_cmp(&right.bpm))
-    });
-
-    assert_eq!(
-        scores.iter().map(|score| score.bpm).collect::<Vec<_>>(),
-        vec![122.0, 121.0, 120.0]
-    );
-}
-
-#[test]
-fn source_timing_probe_period_score_order_keeps_near_tie_period_preference() {
-    let source_period = BeatPeriodScore {
-        bpm: 120.0,
-        period_seconds: 0.50,
-        score: 0.9996,
-        matched_onset_ratio: 1.0,
-        median_distance_ratio: 0.0,
-    };
-    let double_time_period = BeatPeriodScore {
-        bpm: 240.0,
-        period_seconds: 0.25,
-        score: 1.0,
-        matched_onset_ratio: 1.0,
-        median_distance_ratio: 0.50,
-    };
-    let mut scores = [double_time_period, source_period];
-
-    scores.sort_by(|left, right| {
-        period_score_order(left, right).then_with(|| left.bpm.total_cmp(&right.bpm))
-    });
-
-    assert_eq!(scores[0].bpm, 120.0);
-}
+use crate::source_graph::timing_probe_candidates::model::timing_model_from_probe_bpm_candidates;
+use crate::source_graph::timing_probe_candidates::tests::fixtures::{
+    assert_bpm_close, candidate_input, downbeat_strengths, even_onsets, has_warning,
+    weighted_candidate_input,
+};
+use crate::source_graph::timing_probe_candidates::types::SourceTimingProbeBpmCandidatePolicy;
+use crate::source_graph::{
+    TimingDegradedPolicy, TimingHypothesisKind, TimingQuality, TimingWarningCode,
+};
 
 #[test]
 fn source_timing_probe_bpm_candidates_estimate_clean_synthetic_spacing() {
@@ -427,73 +362,4 @@ fn source_timing_probe_bpm_candidates_degrade_insufficient_onsets() {
         TimingDegradedPolicy::Disabled
     );
     assert!(has_warning(&timing, TimingWarningCode::LowTimingConfidence));
-}
-
-fn candidate_input(
-    source_id: &str,
-    duration_seconds: f32,
-    onset_times_seconds: &[f32],
-) -> SourceTimingProbeBpmCandidateInput {
-    weighted_candidate_input(
-        source_id,
-        duration_seconds,
-        onset_times_seconds,
-        &vec![1.0; onset_times_seconds.len()],
-    )
-}
-
-fn weighted_candidate_input(
-    source_id: &str,
-    duration_seconds: f32,
-    onset_times_seconds: &[f32],
-    onset_strengths: &[f32],
-) -> SourceTimingProbeBpmCandidateInput {
-    SourceTimingProbeBpmCandidateInput {
-        source_id: source_id.into(),
-        duration_seconds,
-        onset_times_seconds: onset_times_seconds.to_vec(),
-        onset_strengths: onset_strengths.to_vec(),
-        meter: MeterHint {
-            beats_per_bar: 4,
-            beat_unit: 4,
-        },
-    }
-}
-
-fn even_onsets(start_seconds: f32, period_seconds: f32, count: usize) -> Vec<f32> {
-    (0..count)
-        .map(|index| start_seconds + period_seconds * index as f32)
-        .collect()
-}
-
-fn downbeat_strengths(count: usize, beats_per_bar: usize) -> Vec<f32> {
-    (0..count)
-        .map(|index| if index % beats_per_bar == 0 { 2.0 } else { 0.5 })
-        .collect()
-}
-
-fn moderate_downbeat_strengths(count: usize, beats_per_bar: usize) -> Vec<f32> {
-    (0..count)
-        .map(|index| if index % beats_per_bar == 0 { 0.8 } else { 0.5 })
-        .collect()
-}
-
-fn focused_120_bpm_policy() -> SourceTimingProbeBpmCandidatePolicy {
-    SourceTimingProbeBpmCandidatePolicy {
-        min_bpm: 80.0,
-        max_bpm: 180.0,
-        ..SourceTimingProbeBpmCandidatePolicy::default()
-    }
-}
-
-fn assert_bpm_close(actual: Option<f32>, expected: f32) {
-    let actual = actual.expect("bpm estimate");
-    assert!((actual - expected).abs() <= 0.01, "{actual} != {expected}");
-}
-
-fn has_warning(timing: &TimingModel, expected: TimingWarningCode) -> bool {
-    timing
-        .warnings
-        .iter()
-        .any(|warning| warning.code == expected)
 }

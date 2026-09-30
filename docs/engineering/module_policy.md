@@ -71,6 +71,21 @@ paths stable with explicit re-exports and limit sibling helper visibility to
 the Jam subtree. Source-map rows and projection tests are ordinary children;
 shared synthetic graph/session/queue fixtures belong only to the test tree.
 
+### Source Graph Timing Candidate Ownership
+
+`source_graph::timing_probe_candidates` preserves its public interface through
+explicit compatibility exports (RBX-387 / RIOTBOX-1510). Private modules own
+onset normalization, period scoring, downbeat selection, hypothesis construction,
+beat/bar/phrase grids, drift/groove, final model assembly, evidence reports and
+grid-use policy. Shared normalized onset evidence has its own owner instead of
+making scoring depend on hypothesis construction. Warning messages stay with
+model assembly; phrase construction stays with grid construction. Keep helpers
+private or bounded to the candidate subtree. Ordinary test children own the
+existing synthetic regression families; comparator tests belong to period
+scoring so its ordering helper and report-only score fields remain private.
+This migration changes no algorithm, threshold, readiness/trust policy or
+Source Graph/Session schema and grants no fresh source qualification.
+
 ## Target Shape
 
 Prefer this:

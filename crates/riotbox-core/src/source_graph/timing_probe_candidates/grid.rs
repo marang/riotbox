@@ -1,4 +1,36 @@
-fn probe_candidate_beat_grid(
+use crate::source_graph::timing_probe_candidates::MIN_STABLE_DOWNBEAT_PHASE_SCORE;
+use crate::source_graph::timing_probe_candidates::drift::has_high_drift;
+use crate::source_graph::{
+    BarSpan, BeatPoint, Confidence, MeterHint, PhraseSpan, TimingDriftReport,
+};
+
+pub(super) fn probe_candidate_phrase_grid(
+    bar_grid: &[BarSpan],
+    downbeat_score: f32,
+    drift: &[TimingDriftReport],
+) -> Vec<PhraseSpan> {
+    const PHRASE_BARS: u32 = 4;
+    const MIN_PHRASE_COUNT: u32 = 2;
+
+    if downbeat_score < MIN_STABLE_DOWNBEAT_PHASE_SCORE || has_high_drift(drift) {
+        return Vec::new();
+    }
+    let bar_count = u32::try_from(bar_grid.len()).unwrap_or(u32::MAX);
+    if bar_count < PHRASE_BARS * MIN_PHRASE_COUNT {
+        return Vec::new();
+    }
+
+    (0..(bar_count / PHRASE_BARS))
+        .map(|phrase_index| PhraseSpan {
+            phrase_index: phrase_index + 1,
+            start_bar: phrase_index * PHRASE_BARS + 1,
+            end_bar: (phrase_index + 1) * PHRASE_BARS,
+            confidence: downbeat_score.clamp(0.0, 1.0),
+        })
+        .collect()
+}
+
+pub(super) fn probe_candidate_beat_grid(
     duration_seconds: f32,
     bpm: f32,
     confidence: Confidence,
@@ -17,7 +49,7 @@ fn probe_candidate_beat_grid(
     beat_grid
 }
 
-fn probe_candidate_bar_grid(
+pub(super) fn probe_candidate_bar_grid(
     duration_seconds: f32,
     bpm: f32,
     confidence: Confidence,

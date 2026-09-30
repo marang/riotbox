@@ -1,3 +1,24 @@
+use crate::source_graph::timing_probe_candidates::MIN_STABLE_DOWNBEAT_PHASE_SCORE;
+use crate::source_graph::timing_probe_candidates::downbeat_phase::{
+    DownbeatPhaseSelection, ambiguous_downbeat_phases, best_downbeat_phase_selection,
+    downbeat_phase_scores, select_downbeat_phase,
+};
+use crate::source_graph::timing_probe_candidates::drift::has_high_drift;
+use crate::source_graph::timing_probe_candidates::hypothesis::{
+    ProbeBpmHypothesisScoring, probe_bpm_hypothesis,
+};
+use crate::source_graph::timing_probe_candidates::period_scoring::{
+    BeatPeriodScore, ambiguous_beat_period_scores, beat_period_scores,
+};
+use crate::source_graph::timing_probe_candidates::types::{
+    SourceTimingProbeBpmCandidateInput, SourceTimingProbeBpmCandidatePolicy,
+};
+use crate::source_graph::{
+    SourceTimingProbeDiagnosticInput, SourceTimingProbeDiagnosticPolicy, TimingDegradedPolicy,
+    TimingHypothesis, TimingHypothesisKind, TimingModel, TimingQuality, TimingWarning,
+    TimingWarningCode, timing_model_from_probe_diagnostics,
+};
+
 #[must_use]
 pub fn timing_model_from_probe_bpm_candidates(
     input: &SourceTimingProbeBpmCandidateInput,
@@ -30,10 +51,13 @@ pub fn timing_model_from_probe_bpm_candidates(
                 .iter()
                 .any(|warning| warning.code == TimingWarningCode::SparseOnsets)
         {
-            timing.warnings.insert(1, TimingWarning {
-                code: TimingWarningCode::SparseOnsets,
-                message: "BPM candidate has too few timing onsets".into(),
-            });
+            timing.warnings.insert(
+                1,
+                TimingWarning {
+                    code: TimingWarningCode::SparseOnsets,
+                    message: "BPM candidate has too few timing onsets".into(),
+                },
+            );
         }
         return timing;
     };
@@ -253,8 +277,7 @@ fn has_strict_stable_timing_evidence(
     }
 
     primary.drift.iter().all(|drift| {
-        drift.max_drift_ms <= MAX_LOCKED_DRIFT_MS
-            && drift.end_drift_ms.abs() <= MAX_LOCKED_DRIFT_MS
+        drift.max_drift_ms <= MAX_LOCKED_DRIFT_MS && drift.end_drift_ms.abs() <= MAX_LOCKED_DRIFT_MS
     })
 }
 
@@ -283,4 +306,30 @@ fn onset_density(onset_count: usize, duration_seconds: f32) -> f32 {
         return 0.0;
     }
     onset_count as f32 / duration_seconds
+}
+
+fn probe_bpm_warning_message(
+    code: TimingWarningCode,
+    input: &SourceTimingProbeBpmCandidateInput,
+    used_loop_boundary_prior: bool,
+) -> &'static str {
+    match code {
+        TimingWarningCode::AmbiguousDownbeat if used_loop_boundary_prior => {
+            "repeated full-bar loop suggests the file boundary, but alternate bar starts require confirmation"
+        }
+        TimingWarningCode::AmbiguousDownbeat => {
+            "BPM candidate has only preliminary downbeat scoring"
+        }
+        TimingWarningCode::PhraseUncertain => "BPM candidate has uncertain phrase boundary scoring",
+        TimingWarningCode::HalfTimePossible => "half-time BPM candidate preserved",
+        TimingWarningCode::DoubleTimePossible => "double-time BPM candidate preserved",
+        TimingWarningCode::LowTimingConfidence => "BPM candidate confidence is low",
+        TimingWarningCode::SparseOnsets => "BPM candidate has too few timing onsets",
+        TimingWarningCode::WeakKickAnchor => "BPM candidate has no trusted kick anchor yet",
+        TimingWarningCode::WeakBackbeatAnchor => "BPM candidate has no trusted backbeat anchor yet",
+        TimingWarningCode::DriftHigh => {
+            let _ = input;
+            "BPM candidate drift is high"
+        }
+    }
 }

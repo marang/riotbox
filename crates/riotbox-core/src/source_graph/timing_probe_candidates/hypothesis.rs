@@ -1,11 +1,26 @@
+use crate::source_graph::timing_probe_candidates::MIN_STABLE_DOWNBEAT_PHASE_SCORE;
+use crate::source_graph::timing_probe_candidates::drift::probe_candidate_drift_reports;
+use crate::source_graph::timing_probe_candidates::grid::{
+    probe_candidate_bar_grid, probe_candidate_beat_grid, probe_candidate_phrase_grid,
+};
+use crate::source_graph::timing_probe_candidates::groove::probe_candidate_groove_residuals;
+use crate::source_graph::timing_probe_candidates::onset_evidence::{
+    NormalizedOnsetEvidence, normalized_onset_evidence,
+};
+use crate::source_graph::timing_probe_candidates::types::SourceTimingProbeBpmCandidateInput;
+use crate::source_graph::{
+    BarSpan, BeatPoint, Confidence, MeterHint, SourceTimingAnchor, SourceTimingAnchorType,
+    TimingHypothesis, TimingHypothesisKind, TimingQuality,
+};
+
 #[derive(Clone, Copy, Debug, PartialEq)]
-struct ProbeBpmHypothesisScoring {
-    confidence: Confidence,
-    beat_period_score: f32,
-    downbeat_score: f32,
+pub(super) struct ProbeBpmHypothesisScoring {
+    pub(super) confidence: Confidence,
+    pub(super) beat_period_score: f32,
+    pub(super) downbeat_score: f32,
 }
 
-fn probe_bpm_hypothesis(
+pub(super) fn probe_bpm_hypothesis(
     hypothesis_id: String,
     kind: TimingHypothesisKind,
     bpm: f32,
@@ -134,8 +149,8 @@ impl ProbeAnchorPlacement {
         let grid_tolerance_seconds = (seconds_per_beat * 0.18).clamp(0.035, 0.09);
         let beat = nearest_beat(onset.time_seconds, beat_grid, grid_tolerance_seconds);
         let bar = containing_bar(onset.time_seconds, bar_grid, grid_tolerance_seconds);
-        let beat_in_bar = bar
-            .and_then(|bar| beat_in_bar(onset.time_seconds, bar, seconds_per_beat, meter));
+        let beat_in_bar =
+            bar.and_then(|bar| beat_in_bar(onset.time_seconds, bar, seconds_per_beat, meter));
         Self {
             bar_index: bar.map(|bar| bar.bar_index),
             beat_index: beat.map(|beat| beat.beat_index),
@@ -265,85 +280,5 @@ fn beat_in_bar(
         u8::try_from(beat_in_bar).ok()
     } else {
         None
-    }
-}
-
-fn normalized_onset_times(input: &SourceTimingProbeBpmCandidateInput) -> Vec<f32> {
-    normalized_onset_evidence(input)
-        .into_iter()
-        .map(|onset| onset.time_seconds)
-        .collect()
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-struct NormalizedOnsetEvidence {
-    time_seconds: f32,
-    strength: f32,
-}
-
-fn normalized_onset_evidence(
-    input: &SourceTimingProbeBpmCandidateInput,
-) -> Vec<NormalizedOnsetEvidence> {
-    let max_time = input.duration_seconds.max(0.0);
-    let mut onsets = input
-        .onset_times_seconds
-        .iter()
-        .enumerate()
-        .filter_map(|(index, time_seconds)| {
-            if !time_seconds.is_finite() || *time_seconds < 0.0 || *time_seconds > max_time {
-                return None;
-            }
-            let strength = input
-                .onset_strengths
-                .get(index)
-                .copied()
-                .filter(|strength| strength.is_finite() && *strength > 0.0)
-                .unwrap_or(1.0);
-            Some(NormalizedOnsetEvidence {
-                time_seconds: *time_seconds,
-                strength,
-            })
-        })
-        .collect::<Vec<_>>();
-    onsets.sort_by(|left, right| {
-        left.time_seconds
-            .total_cmp(&right.time_seconds)
-            .then_with(|| right.strength.total_cmp(&left.strength))
-    });
-    onsets
-}
-
-fn normalized_onset_times_and_strengths(
-    input: &SourceTimingProbeBpmCandidateInput,
-) -> Vec<(f32, f32)> {
-    normalized_onset_evidence(input)
-        .into_iter()
-        .map(|onset| (onset.time_seconds, onset.strength))
-        .collect()
-}
-
-fn probe_bpm_warning_message(
-    code: TimingWarningCode,
-    input: &SourceTimingProbeBpmCandidateInput,
-    used_loop_boundary_prior: bool,
-) -> &'static str {
-    match code {
-        TimingWarningCode::AmbiguousDownbeat if used_loop_boundary_prior => {
-            "repeated full-bar loop suggests the file boundary, but alternate bar starts require confirmation"
-        }
-        TimingWarningCode::AmbiguousDownbeat => {
-            "BPM candidate has only preliminary downbeat scoring"
-        }
-        TimingWarningCode::PhraseUncertain => "BPM candidate has uncertain phrase boundary scoring",
-        TimingWarningCode::HalfTimePossible => "half-time BPM candidate preserved",
-        TimingWarningCode::DoubleTimePossible => "double-time BPM candidate preserved",
-        TimingWarningCode::LowTimingConfidence => "BPM candidate confidence is low",
-        TimingWarningCode::SparseOnsets => "BPM candidate has too few timing onsets",
-        TimingWarningCode::WeakKickAnchor => "BPM candidate has no trusted kick anchor yet",
-        TimingWarningCode::WeakBackbeatAnchor => "BPM candidate has no trusted backbeat anchor yet",
-        TimingWarningCode::DriftHigh => {
-            let _ = input;
-            "BPM candidate drift is high"
-        }
     }
 }
