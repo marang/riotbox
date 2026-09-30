@@ -100,6 +100,21 @@ Preserve complete regression bodies, fixture identities and existing ignored
 status. This ownership change does not alter callbacks, DSP, runtime state,
 public APIs or any audio/source policy.
 
+### JamApp Audio Projection Ownership
+
+`jam_app::projection` is a JamApp-only compatibility facade, not another
+runtime or persistent state model (RBX-389 / RIOTBOX-1512). Private TR-909 and
+MC-202 owners map existing Core/Session policy into Audio render state; shared
+scene context is independent of either lane. The existing source-phrase child
+retains its mapping contract. W-30 preview/action state, cached material/sample
+preparation and capture resample state have separate owners. Keep transform
+data with material preparation to avoid a dependency back from material into
+preview state. Re-export only the six existing entrypoints at their existing
+JamApp visibility; sibling helpers remain projection-scoped and all others
+private. Preserve timing trust, source/section/capture identity, availability,
+sample-selection/chop logic and committed-action semantics. This boundary
+neither loads audio nor changes sound policy.
+
 ## Target Shape
 
 Prefer this:

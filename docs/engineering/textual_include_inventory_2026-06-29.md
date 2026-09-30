@@ -28,6 +28,8 @@ Result:
   all 12 Source Graph timing-candidate includes replaced by real semantic modules
 - RIOTBOX-1511 migration, 2026-10-01: 58 remaining sites in 9 owners;
   all 12 Audio runtime-test includes replaced by ordinary regression modules
+- RIOTBOX-1512 migration, 2026-10-01: 56 remaining sites in 8 owners;
+  both JamApp lane-projection includes replaced by semantic render owners
 - no generated-code include site identified in this inventory
 - every current include is treated as legacy/mechanical until proven otherwise
 
@@ -69,7 +71,6 @@ legacy inventory; it does not approve new textual include sites.
 | `crates/riotbox-audio/src/bin/w30_preview_compare.rs` | 4 | compare CLI, metrics, manifest, tests | W-30 preview comparison CLI | mechanical QA-bin split | low/medium | future W-30 QA-bin slice |
 | `crates/riotbox-audio/src/bin/w30_preview_render.rs` | 2 | render CLI, tests | W-30 preview render CLI | mechanical QA-bin split | low | future W-30 QA-bin slice |
 | `crates/riotbox-app/src/bin/observer_audio_correlate.rs` | 10 | args, source timing evidence, summary build/render/evidence | Observer/audio correlation CLI | mechanical QA-bin split | medium: QA contract | future observer QA-bin slice |
-| `crates/riotbox-app/src/jam_app/projection.rs` | 2 | TR-909 and W-30 projections | Jam app projection helpers | mechanical app split | medium: app facade boundary | future JamApp projection slice |
 
 ## Migration Order
 
@@ -104,3 +105,4 @@ of mixing them into the module move.
 | `crates/riotbox-core/src/view/jam/tests.rs` | 4 | RIOTBOX-1508 | Real projection regression families with one shared synthetic fixture owner; source-map rows/tests and timing tests are ordinary child modules. No test scenario removed. |
 | `crates/riotbox-core/src/source_graph/timing_probe_candidates.rs` | 12 | RIOTBOX-1510 | Explicit public compatibility exports over private onset-evidence, period-scoring, downbeat, hypothesis, grid, drift/groove, model, report and grid-use-policy owners. Hybrid candidate tests become ordinary regression-family children with separate synthetic fixtures; comparator tests live under period scoring. Algorithms and thresholds unchanged. Historical RIOTBOX-1330 covered live-ingest/confirmation wiring, not this include migration. |
 | `crates/riotbox-audio/src/runtime/tests.rs` | 12 | RIOTBOX-1511 | Ordinary lifecycle, shared-state, mixer/lane, transport-stop, Source Monitor, fill, gesture and metrics regressions with explicit imports. Shared fixture models, synthetic PCM, signal helpers, mix plans, fill recipes and gesture fixtures are test-only owners. The existing telemetry test imports its actual runtime owners; production runtime and DSP are unchanged. |
+| `crates/riotbox-app/src/jam_app/projection.rs` | 2 | RIOTBOX-1512 | Explicit JamApp-only compatibility exports over private TR-909, MC-202, scene-context and W-30 preview/material/resample owners, retaining the existing source-phrase child. All render policy, preparation, timing/identity and fail-closed behavior unchanged. |

@@ -1,5 +1,4 @@
 10 crates/riotbox-app/src/bin/observer_audio_correlate.rs
-2 crates/riotbox-app/src/jam_app/projection.rs
 2 crates/riotbox-audio/src/bin/feral_before_after_pack.rs
 29 crates/riotbox-audio/src/bin/feral_grid_pack.rs
 1 crates/riotbox-audio/src/bin/feral_grid_pack/tests.rs
