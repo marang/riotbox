@@ -2,6 +2,9 @@ import json
 import sys
 import time
 
+# Deliberately exceed the short test control policy: interpreter readiness must
+# complete under the ordinary budget before testing the analysis deadline.
+time.sleep(1.1)
 ping = json.loads(sys.stdin.readline())
 print(
     json.dumps(
