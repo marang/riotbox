@@ -15,7 +15,7 @@
 - Labels: `Improvement`, `Infra`, `review-followup`
 - PR: `#1541 (https://github.com/marang/riotbox/pull/1541)`
 - Merge commit: `db91297b4d1368215edd176aaebae2f2bd465921`
-- Deleted from Linear: `2026-09-22`
+- Deleted from Linear: `2026-09-30`
 - Verification: `Original two poison panics reproduced; four focused tests including empty messages and public health; two normal parallel just ci passes; GitHub rust-ci green; unchanged Cargo.lock and locked metadata.`
 - Docs touched: `RBX-380; audio core and Rust engineering specs; docs/reviews/riotbox_1415_runtime_telemetry_2026-09-22.md.`
 - Follow-ups: `None`
