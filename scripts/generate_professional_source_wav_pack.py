@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from audio_qa_evidence_boundary import apply_evidence_boundary, evidence_boundary_failure_codes
+from hook_chop_diagnostic_contract import passes_reverse_count
 
 
 SCHEMA = "riotbox.professional_source_wav_pack.v1"
@@ -24,7 +25,6 @@ MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES = 512.0
 MIN_HOOK_CHOP_RIFF_UNIQUE_SOURCE_OFFSET_COUNT = 6.0
 MIN_HOOK_CHOP_RIFF_HIT_COUNT = 10.0
 MIN_HOOK_CHOP_RIFF_VELOCITY_SPAN = 0.25
-MIN_HOOK_CHOP_RIFF_REVERSE_COUNT = 1.0
 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR = 0.64
 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN = 0.10
 MIN_HOOK_CHOP_RESPONSE_DELTA_RATIO = 0.35
@@ -639,7 +639,8 @@ def validate_tonal_case(prefix: str, proof: dict[str, Any], failures: list[str])
         failures.append(f"{prefix}:hook_chop_riff_pattern_too_sparse")
     if number(proof.get("hook_chop_riff_velocity_span")) < MIN_HOOK_CHOP_RIFF_VELOCITY_SPAN:
         failures.append(f"{prefix}:hook_chop_riff_velocity_too_flat")
-    if number(proof.get("hook_chop_riff_reverse_count")) < MIN_HOOK_CHOP_RIFF_REVERSE_COUNT:
+    if not passes_reverse_count(proof.get("hook_chop_riff_reverse_count"),
+                                proof.get("hook_chop_riff_hit_count")):
         failures.append(f"{prefix}:hook_chop_riff_reverse_missing")
     if number(proof.get("hook_chop_source_character_score_floor")) < MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR:
         failures.append(f"{prefix}:hook_chop_source_character_too_weak")
@@ -693,7 +694,8 @@ def is_tonal_professional_case(case: dict[str, Any]) -> bool:
         and number(proof.get("hook_chop_riff_hit_pattern_source_derived")) >= 1.0
         and number(proof.get("hook_chop_riff_hit_count")) >= MIN_HOOK_CHOP_RIFF_HIT_COUNT
         and number(proof.get("hook_chop_riff_velocity_span")) >= MIN_HOOK_CHOP_RIFF_VELOCITY_SPAN
-        and number(proof.get("hook_chop_riff_reverse_count")) >= MIN_HOOK_CHOP_RIFF_REVERSE_COUNT
+        and passes_reverse_count(proof.get("hook_chop_riff_reverse_count"),
+                                 proof.get("hook_chop_riff_hit_count"))
         and number(proof.get("hook_chop_source_character_score_floor")) >= MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR
         and number(proof.get("hook_chop_source_character_score_span")) >= MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN
         and number(proof.get("destructive_gesture_source_derived")) >= 1.0
