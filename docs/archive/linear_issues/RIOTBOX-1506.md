@@ -14,7 +14,7 @@
 - Assignee: `Markus`
 - Labels: `Bug`, `review-followup`
 - PR: `#1550 (https://github.com/marang/riotbox/pull/1550)`
-- Merge commit: `800f1dfe`
+- Merge commit: `800f1dfee708d980990af1b3cec26217193f64a0`
 - Deleted from Linear: `2026-09-30`
 - Verification: `One exact regression fails before correction with Control instead of Analysis. Sidecar 24 tests, CWD integration, strict Clippy and full local just ci pass. GitHub run 36763992585 Ubuntu and native Windows checks pass for 134bd813ffaca5295b37d004933826e9558536a3; PR #1550 merged.`
 - Docs touched: `technology_stack_spec.md; riotbox_1506_sidecar_test_readiness_2026-09-30.md`
