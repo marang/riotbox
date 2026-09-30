@@ -1,0 +1,618 @@
+use crate::cli::controls::AudioRuntimeRefreshAction;
+use crate::cli::controls::accept_current_ghost_suggestion;
+use crate::cli::controls::commit_capture_length_change;
+use crate::cli::controls::commit_transport_toggle;
+use crate::cli::controls::confirm_source_timing_grid;
+use crate::cli::controls::execute_product_mix_export;
+use crate::cli::controls::navigate_source_map;
+use crate::cli::controls::persist_and_record_quit;
+use crate::cli::controls::queue_and_commit_performance_preset;
+use crate::cli::controls::queue_and_commit_source_monitor_mode;
+use crate::cli::controls::record_key_outcome_then_immediate_commit;
+use crate::cli::controls::reject_current_ghost_suggestion;
+use crate::cli::controls::replace_app_state_after_refresh;
+use crate::cli::controls::revert_source_timing_grid;
+use crate::cli::controls::scene_select_unavailable_status;
+use crate::cli::controls::source_monitor_commit_status;
+use crate::cli::launch::load_state;
+use crate::cli::launch::refresh_recovery_surface_for_launch;
+use crate::cli::model::AppLaunch;
+use crate::cli::observer::UserSessionObserver;
+use crate::cli::observer::timestamp_now;
+use crate::cli::terminal::start_audio_runtime_for_shell;
+use crate::observer::key_code_label;
+use crate::ui::JamShellState;
+use crate::ui::ShellKeyOutcome;
+use crate::ui::render_jam_shell;
+use crossterm::event;
+use crossterm::event::Event;
+use ratatui::Terminal;
+use ratatui::backend::CrosstermBackend;
+use riotbox_audio::runtime::AudioRuntimeShell;
+use std::io;
+use std::time::Duration;
+
+const INPUT_POLL: Duration = Duration::from_millis(50);
+
+pub(in crate::cli) fn run_event_loop(
+    terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
+    mut shell: JamShellState,
+    launch: AppLaunch,
+    audio_runtime: &mut Option<AudioRuntimeShell>,
+    mut observer: Option<&mut UserSessionObserver>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    loop {
+        if let Some(audio_runtime) = audio_runtime.as_mut() {
+            let now = timestamp_now();
+            let committed = shell
+                .app
+                .apply_audio_timing_snapshot(audio_runtime.timing_snapshot(), now);
+            if !committed.is_empty() {
+                shell.set_error_status(
+                    source_monitor_commit_status(&shell, &committed)
+                        .unwrap_or_else(|| "committed queued actions on transport boundary".into()),
+                );
+                if let Some(observer) = observer.as_deref_mut() {
+                    observer.record_transport_commit(now, &committed, &shell)?;
+                }
+            }
+
+            audio_runtime.update_transport_state(
+                shell.app.runtime.transport.is_playing,
+                shell.app.runtime.tr909_render.tempo_bpm,
+                shell.app.runtime.transport.position_beats,
+            );
+            audio_runtime.update_tr909_render_state(&shell.app.runtime.tr909_render);
+            audio_runtime.update_mc202_render_state(&shell.app.runtime.mc202_render);
+            audio_runtime.update_w30_preview_render_state(&shell.app.runtime.w30_preview);
+            audio_runtime.update_w30_resample_tap_state(&shell.app.runtime.w30_resample_tap);
+            audio_runtime
+                .update_source_monitor_control_state(&shell.app.source_monitor_control_state());
+            shell.app.set_audio_health(audio_runtime.health_snapshot());
+        }
+
+        terminal.draw(|frame| render_jam_shell(frame, &shell))?;
+
+        if event::poll(INPUT_POLL)?
+            && let Event::Key(key) = event::read()?
+        {
+            let key_label = key_code_label(key.code);
+            let outcome = shell.handle_key_code(key.code);
+            let mut immediate_observer_commit = None;
+            match outcome {
+                ShellKeyOutcome::Quit => {
+                    persist_and_record_quit(
+                        &shell,
+                        observer.as_deref_mut(),
+                        timestamp_now(),
+                        &key_label,
+                    )?;
+                    return Ok(());
+                }
+                ShellKeyOutcome::Continue => {}
+                ShellKeyOutcome::ToggleTransport => {
+                    let requested_at = timestamp_now();
+                    let committed = commit_transport_toggle(&mut shell, requested_at);
+                    immediate_observer_commit = Some((requested_at, committed));
+                }
+                ShellKeyOutcome::QueuePerformancePreset(preset_id) => {
+                    let requested_at = timestamp_now();
+                    let committed =
+                        queue_and_commit_performance_preset(&mut shell, preset_id, requested_at);
+                    if !committed.is_empty() {
+                        immediate_observer_commit = Some((requested_at, committed));
+                    }
+                }
+                ShellKeyOutcome::QueueSourceMonitorMode(mode) => {
+                    let requested_at = timestamp_now();
+                    let committed =
+                        queue_and_commit_source_monitor_mode(&mut shell, mode, requested_at);
+                    if !committed.is_empty() {
+                        immediate_observer_commit = Some((requested_at, committed));
+                    }
+                }
+                ShellKeyOutcome::QueueSceneMutation => {
+                    shell.app.queue_scene_mutation(timestamp_now());
+                    shell.set_error_status("queued scene mutation for next bar");
+                }
+                ShellKeyOutcome::QueueSceneSelect => {
+                    match shell.app.queue_scene_select(timestamp_now()) {
+                        crate::jam_app::QueueControlResult::Enqueued => {
+                            shell.set_error_status("queued scene select for next bar");
+                        }
+                        crate::jam_app::QueueControlResult::AlreadyPending => {
+                            shell.set_error_status("scene transition already queued");
+                        }
+                        crate::jam_app::QueueControlResult::AlreadyInState => {
+                            shell.set_error_status(scene_select_unavailable_status(&shell));
+                        }
+                    }
+                }
+                ShellKeyOutcome::QueueSceneRestore => {
+                    match shell.app.queue_scene_restore(timestamp_now()) {
+                        crate::jam_app::QueueControlResult::Enqueued => {
+                            shell.set_error_status("queued scene restore for next bar");
+                        }
+                        crate::jam_app::QueueControlResult::AlreadyPending => {
+                            shell.set_error_status("scene transition already queued");
+                        }
+                        crate::jam_app::QueueControlResult::AlreadyInState => {
+                            shell.set_error_status("no restore scene available");
+                        }
+                    }
+                }
+                ShellKeyOutcome::QueueMc202RoleToggle => {
+                    match shell.app.queue_mc202_role_toggle(timestamp_now()) {
+                        crate::jam_app::QueueControlResult::Enqueued => {
+                            shell.set_error_status("queued MC-202 role change for next phrase");
+                        }
+                        crate::jam_app::QueueControlResult::AlreadyPending => {
+                            shell.set_error_status("MC-202 role change already queued");
+                        }
+                        crate::jam_app::QueueControlResult::AlreadyInState => {
+                            shell.set_error_status("MC-202 role already set");
+                        }
+                    }
+                }
+                ShellKeyOutcome::QueueMc202GenerateFollower => {
+                    match shell.app.queue_mc202_generate_follower(timestamp_now()) {
+                        crate::jam_app::QueueControlResult::Enqueued => {
+                            shell.set_error_status(
+                                "queued MC-202 follower generation for next phrase",
+                            );
+                        }
+                        crate::jam_app::QueueControlResult::AlreadyPending => {
+                            shell.set_error_status("MC-202 follower generation already queued");
+                        }
+                        crate::jam_app::QueueControlResult::AlreadyInState => {
+                            shell.set_error_status("MC-202 follower already in state");
+                        }
+                    }
+                }
+                ShellKeyOutcome::QueueMc202GenerateAnswer => {
+                    match shell.app.queue_mc202_generate_answer(timestamp_now()) {
+                        crate::jam_app::QueueControlResult::Enqueued => {
+                            shell.set_error_status(
+                                "queued MC-202 answer generation for next phrase",
+                            );
+                        }
+                        crate::jam_app::QueueControlResult::AlreadyPending => {
+                            shell.set_error_status("MC-202 answer generation already queued");
+                        }
+                        crate::jam_app::QueueControlResult::AlreadyInState => {
+                            shell.set_error_status("MC-202 answer already in state");
+                        }
+                    }
+                }
+                ShellKeyOutcome::QueueMc202GeneratePressure => {
+                    match shell.app.queue_mc202_generate_pressure(timestamp_now()) {
+                        crate::jam_app::QueueControlResult::Enqueued => {
+                            shell.set_error_status(
+                                "queued MC-202 pressure generation for next phrase",
+                            );
+                        }
+                        crate::jam_app::QueueControlResult::AlreadyPending => {
+                            shell.set_error_status("MC-202 pressure generation already queued");
+                        }
+                        crate::jam_app::QueueControlResult::AlreadyInState => {
+                            shell.set_error_status("MC-202 pressure already in state");
+                        }
+                    }
+                }
+                ShellKeyOutcome::QueueMc202GenerateInstigator => {
+                    match shell.app.queue_mc202_generate_instigator(timestamp_now()) {
+                        crate::jam_app::QueueControlResult::Enqueued => {
+                            shell.set_error_status(
+                                "queued MC-202 instigator generation for next phrase",
+                            );
+                        }
+                        crate::jam_app::QueueControlResult::AlreadyPending => {
+                            shell.set_error_status("MC-202 phrase control already queued");
+                        }
+                        crate::jam_app::QueueControlResult::AlreadyInState => {
+                            shell.set_error_status("MC-202 instigator already in state");
+                        }
+                    }
+                }
+                ShellKeyOutcome::QueueMc202MutatePhrase => {
+                    match shell.app.queue_mc202_mutate_phrase(timestamp_now()) {
+                        crate::jam_app::QueueControlResult::Enqueued => {
+                            shell.set_error_status("queued MC-202 phrase mutation for next phrase");
+                        }
+                        crate::jam_app::QueueControlResult::AlreadyPending => {
+                            shell.set_error_status("MC-202 phrase control already queued");
+                        }
+                        crate::jam_app::QueueControlResult::AlreadyInState => {
+                            shell.set_error_status("set an MC-202 voice before mutating phrase");
+                        }
+                    }
+                }
+                ShellKeyOutcome::QueueTr909Fill => {
+                    shell.app.queue_tr909_fill(timestamp_now());
+                    shell.set_error_status("queued TR-909 fill for next bar");
+                }
+                ShellKeyOutcome::QueueTr909Reinforce => {
+                    shell.app.queue_tr909_reinforce(timestamp_now());
+                    shell.set_error_status("queued TR-909 reinforcement for next phrase");
+                }
+                ShellKeyOutcome::QueueTr909Slam => {
+                    if shell.app.queue_tr909_slam_toggle(timestamp_now()) {
+                        shell.set_error_status("queued TR-909 slam change for next beat");
+                    } else {
+                        shell.set_error_status("TR-909 slam change already queued");
+                    }
+                }
+                ShellKeyOutcome::QueueTr909Takeover => {
+                    match shell.app.queue_tr909_takeover(timestamp_now()) {
+                        crate::jam_app::QueueControlResult::Enqueued => {
+                            shell.set_error_status("queued TR-909 takeover for next phrase");
+                        }
+                        crate::jam_app::QueueControlResult::AlreadyPending => {
+                            shell.set_error_status("TR-909 takeover change already queued");
+                        }
+                        crate::jam_app::QueueControlResult::AlreadyInState => {
+                            shell.set_error_status("TR-909 takeover already active");
+                        }
+                    }
+                }
+                ShellKeyOutcome::QueueTr909SceneLock => {
+                    match shell.app.queue_tr909_scene_lock(timestamp_now()) {
+                        crate::jam_app::QueueControlResult::Enqueued => {
+                            shell.set_error_status(
+                                "queued TR-909 scene-lock variation for next phrase",
+                            );
+                        }
+                        crate::jam_app::QueueControlResult::AlreadyPending => {
+                            shell.set_error_status("TR-909 takeover change already queued");
+                        }
+                        crate::jam_app::QueueControlResult::AlreadyInState => {
+                            shell.set_error_status("TR-909 scene-lock variation already active");
+                        }
+                    }
+                }
+                ShellKeyOutcome::QueueTr909Release => {
+                    match shell.app.queue_tr909_release(timestamp_now()) {
+                        crate::jam_app::QueueControlResult::Enqueued => {
+                            shell.set_error_status("queued TR-909 release for next phrase");
+                        }
+                        crate::jam_app::QueueControlResult::AlreadyPending => {
+                            shell.set_error_status("TR-909 takeover change already queued");
+                        }
+                        crate::jam_app::QueueControlResult::AlreadyInState => {
+                            shell.set_error_status("TR-909 takeover already released");
+                        }
+                    }
+                }
+                ShellKeyOutcome::QueueCaptureBar => {
+                    shell.app.queue_capture_bar(timestamp_now());
+                    shell.set_error_status("queued capture for next phrase");
+                }
+                ShellKeyOutcome::PromoteLastCapture => {
+                    if shell.app.queue_promote_last_capture(timestamp_now()) {
+                        shell.set_error_status("queued promotion for latest capture");
+                    } else {
+                        shell.set_error_status("no promotable capture or W-30 target available");
+                    }
+                }
+                ShellKeyOutcome::QueueW30TriggerPad => {
+                    match shell.app.queue_w30_trigger_pad(timestamp_now()) {
+                        Some(crate::jam_app::QueueControlResult::Enqueued) => {
+                            shell.set_error_status("queued W-30 pad trigger for next beat");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyPending) => {
+                            shell.set_error_status("W-30 pad cue already queued");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyInState) => {
+                            shell.set_error_status("W-30 pad trigger already in state");
+                        }
+                        None => {
+                            shell.set_error_status("no committed W-30 pad available to trigger")
+                        }
+                    }
+                }
+                ShellKeyOutcome::QueueW30StepFocus => {
+                    match shell.app.queue_w30_step_focus(timestamp_now()) {
+                        Some(crate::jam_app::QueueControlResult::Enqueued) => {
+                            shell.set_error_status("queued W-30 focus step for next beat");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyPending) => {
+                            shell.set_error_status("W-30 pad cue already queued");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyInState) => {
+                            shell.set_error_status("W-30 focus already on the next stepped pad");
+                        }
+                        None => shell
+                            .set_error_status("no promoted W-30 pads available to step through"),
+                    }
+                }
+                ShellKeyOutcome::QueueW30SwapBank => {
+                    match shell.app.queue_w30_swap_bank(timestamp_now()) {
+                        Some(crate::jam_app::QueueControlResult::Enqueued) => {
+                            shell.set_error_status("queued W-30 bank swap for next bar");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyPending) => {
+                            shell.set_error_status("W-30 pad cue already queued");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyInState) => {
+                            shell.set_error_status("W-30 bank swap already on the next bank");
+                        }
+                        None => {
+                            shell.set_error_status("no alternate W-30 bank available to swap to")
+                        }
+                    }
+                }
+                ShellKeyOutcome::QueueW30BrowseSlicePool => {
+                    match shell.app.queue_w30_browse_slice_pool(timestamp_now()) {
+                        Some(crate::jam_app::QueueControlResult::Enqueued) => {
+                            shell.set_error_status("queued W-30 slice-pool browse for next beat");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyPending) => {
+                            shell.set_error_status("W-30 pad cue already queued");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyInState) => {
+                            shell
+                                .set_error_status("W-30 slice pool already on the current capture");
+                        }
+                        None => shell.set_error_status(
+                            "no alternate capture in the current W-30 slice pool",
+                        ),
+                    }
+                }
+                ShellKeyOutcome::QueueW30ApplyDamageProfile => {
+                    match shell.app.queue_w30_apply_damage_profile(timestamp_now()) {
+                        Some(crate::jam_app::QueueControlResult::Enqueued) => {
+                            shell.set_error_status("queued W-30 damage profile for next bar");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyPending) => {
+                            shell.set_error_status("W-30 pad cue already queued");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyInState) => {
+                            shell.set_error_status("W-30 damage profile already active");
+                        }
+                        None => shell.set_error_status("no W-30 pad available for damage profile"),
+                    }
+                }
+                ShellKeyOutcome::QueueW30HookTurnaround => {
+                    match shell.app.queue_w30_hook_turnaround(timestamp_now()) {
+                        Some(crate::jam_app::QueueControlResult::Enqueued) => {
+                            shell.set_error_status("queued W-30 hook turnaround for next bar");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyPending) => {
+                            shell.set_error_status("W-30 pad cue already queued");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyInState) => {
+                            shell.set_error_status("W-30 hook turnaround already active");
+                        }
+                        None => {
+                            shell.set_error_status("no committed W-30 pad available to turn around")
+                        }
+                    }
+                }
+                ShellKeyOutcome::QueueW30PitchDive => {
+                    match shell.app.queue_w30_pitch_dive(timestamp_now()) {
+                        Some(crate::jam_app::QueueControlResult::Enqueued) => {
+                            shell.set_error_status("queued W-30 pitch dive for next bar");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyPending) => {
+                            shell.set_error_status("W-30 pad cue already queued");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyInState) => {
+                            shell.set_error_status("W-30 pitch dive already active");
+                        }
+                        None => {
+                            shell.set_error_status("no committed W-30 pad available to pitch-dive")
+                        }
+                    }
+                }
+                ShellKeyOutcome::QueueW30FilterSlam => {
+                    match shell.app.queue_w30_filter_slam(timestamp_now()) {
+                        Some(crate::jam_app::QueueControlResult::Enqueued) => {
+                            shell.set_error_status("queued W-30 filter slam for next bar");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyPending) => {
+                            shell.set_error_status("W-30 pad cue already queued");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyInState) => {
+                            shell.set_error_status("W-30 filter slam already active");
+                        }
+                        None => {
+                            shell.set_error_status("no committed W-30 pad available to filter-slam")
+                        }
+                    }
+                }
+                ShellKeyOutcome::QueueW30LoopFreeze => {
+                    match shell.app.queue_w30_loop_freeze(timestamp_now()) {
+                        Some(crate::jam_app::QueueControlResult::Enqueued) => {
+                            shell.set_error_status("queued W-30 loop freeze for next phrase");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyPending) => {
+                            shell.set_error_status("W-30 pad cue already queued");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyInState) => {
+                            shell.set_error_status("W-30 loop freeze already in state");
+                        }
+                        None => shell.set_error_status("no committed W-30 pad available to freeze"),
+                    }
+                }
+                ShellKeyOutcome::QueueW30LiveRecall => {
+                    match shell.app.queue_w30_live_recall(timestamp_now()) {
+                        Some(crate::jam_app::QueueControlResult::Enqueued) => {
+                            shell.set_error_status("queued W-30 live recall for next bar");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyPending) => {
+                            shell.set_error_status("W-30 live recall already queued");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyInState) => {
+                            shell.set_error_status("W-30 live recall already in state");
+                        }
+                        None => shell.set_error_status(
+                            "no pinned or promoted W-30 capture available to recall",
+                        ),
+                    }
+                }
+                ShellKeyOutcome::QueueW30Audition => {
+                    match shell.app.queue_w30_audition(timestamp_now()) {
+                        Some(crate::jam_app::QueueControlResult::Enqueued) => {
+                            shell.set_error_status("queued W-30 audition for next bar");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyPending) => {
+                            shell.set_error_status("W-30 pad cue already queued");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyInState) => {
+                            shell.set_error_status("W-30 audition already in state");
+                        }
+                        None => {
+                            shell.set_error_status("no W-30 or raw capture available to audition")
+                        }
+                    }
+                }
+                ShellKeyOutcome::QueueW30Resample => {
+                    match shell.app.queue_w30_internal_resample(timestamp_now()) {
+                        Some(crate::jam_app::QueueControlResult::Enqueued) => {
+                            shell.set_error_status("queued W-30 internal resample for next phrase");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyPending) => {
+                            shell.set_error_status("W-30 internal resample already queued");
+                        }
+                        Some(crate::jam_app::QueueControlResult::AlreadyInState) => {
+                            shell.set_error_status("W-30 internal resample already in state");
+                        }
+                        None => shell
+                            .set_error_status("no committed W-30 capture available to resample"),
+                    }
+                }
+                ShellKeyOutcome::QueueProductMixExport => {
+                    execute_product_mix_export(
+                        &mut shell,
+                        launch.mode.product_mix_export_handoff(),
+                        timestamp_now(),
+                    );
+                }
+                ShellKeyOutcome::ConfirmSourceTimingGrid => {
+                    confirm_source_timing_grid(&mut shell, timestamp_now());
+                }
+                ShellKeyOutcome::RevertSourceTimingGrid => {
+                    revert_source_timing_grid(&mut shell, timestamp_now());
+                }
+                ShellKeyOutcome::NavigateSourceMapPreviousBar => {
+                    navigate_source_map(
+                        &mut shell,
+                        crate::jam_app::SourceMapNavigationIntent::PreviousBar,
+                        timestamp_now(),
+                    );
+                }
+                ShellKeyOutcome::NavigateSourceMapNextBar => {
+                    navigate_source_map(
+                        &mut shell,
+                        crate::jam_app::SourceMapNavigationIntent::NextBar,
+                        timestamp_now(),
+                    );
+                }
+                ShellKeyOutcome::NavigateSourceMapPreviousPhrase => {
+                    navigate_source_map(
+                        &mut shell,
+                        crate::jam_app::SourceMapNavigationIntent::PreviousPhrase,
+                        timestamp_now(),
+                    );
+                }
+                ShellKeyOutcome::NavigateSourceMapNextPhrase => {
+                    navigate_source_map(
+                        &mut shell,
+                        crate::jam_app::SourceMapNavigationIntent::NextPhrase,
+                        timestamp_now(),
+                    );
+                }
+                ShellKeyOutcome::PreviousCaptureLength => {
+                    commit_capture_length_change(&mut shell, timestamp_now(), false);
+                }
+                ShellKeyOutcome::NextCaptureLength => {
+                    commit_capture_length_change(&mut shell, timestamp_now(), true);
+                }
+                ShellKeyOutcome::TogglePinLatestCapture => {
+                    match shell.app.toggle_pin_latest_capture() {
+                        Some(true) => shell.set_error_status("pinned latest capture"),
+                        Some(false) => shell.set_error_status("unpinned latest capture"),
+                        None => shell.set_error_status("no capture available to pin"),
+                    }
+                }
+                ShellKeyOutcome::LowerDrumBusLevel => {
+                    let level = shell.app.adjust_drum_bus_level(-0.1);
+                    shell.set_error_status(format!("drum bus level {:.2}", level));
+                }
+                ShellKeyOutcome::RaiseDrumBusLevel => {
+                    let level = shell.app.adjust_drum_bus_level(0.1);
+                    shell.set_error_status(format!("drum bus level {:.2}", level));
+                }
+                ShellKeyOutcome::LowerMc202Touch => {
+                    let touch = shell.app.adjust_mc202_touch(-0.08);
+                    shell.set_error_status(format!("MC-202 touch {:.2}", touch));
+                }
+                ShellKeyOutcome::RaiseMc202Touch => {
+                    let touch = shell.app.adjust_mc202_touch(0.08);
+                    shell.set_error_status(format!("MC-202 touch {:.2}", touch));
+                }
+                ShellKeyOutcome::AcceptCurrentGhostSuggestion => {
+                    accept_current_ghost_suggestion(&mut shell, timestamp_now());
+                }
+                ShellKeyOutcome::RejectCurrentGhostSuggestion => {
+                    reject_current_ghost_suggestion(&mut shell);
+                }
+                ShellKeyOutcome::UndoLast => {
+                    if shell.app.undo_last_action(timestamp_now()).is_some() {
+                        shell.set_error_status("undid most recent action");
+                    } else {
+                        shell.set_error_status("no undoable action available");
+                    }
+                }
+                ShellKeyOutcome::RequestRefresh => match load_state(launch.mode.clone()) {
+                    Ok(state) => {
+                        let audio_refresh = replace_app_state_after_refresh(
+                            &mut shell,
+                            state,
+                            audio_runtime.is_some(),
+                        );
+                        drop(audio_runtime.take());
+                        let success_state = match audio_refresh {
+                            AudioRuntimeRefreshAction::Restart => "restarted",
+                            AudioRuntimeRefreshAction::RetryUnavailable => "started",
+                        };
+                        *audio_runtime = start_audio_runtime_for_shell(
+                            &mut shell,
+                            observer.as_deref_mut(),
+                            success_state,
+                        )?;
+                        if audio_runtime.is_some() {
+                            shell.set_error_status(match audio_refresh {
+                                AudioRuntimeRefreshAction::Restart => {
+                                    "refresh loaded; audio runtime restarted"
+                                }
+                                AudioRuntimeRefreshAction::RetryUnavailable => {
+                                    "refresh loaded; audio runtime recovered"
+                                }
+                            });
+                        }
+                        refresh_recovery_surface_for_launch(&mut shell, &launch.mode);
+                    }
+                    Err(error) => shell.set_error_status(format!("refresh failed: {error}")),
+                },
+            }
+
+            if let Some(observer) = observer.as_deref_mut() {
+                let timestamp_ms = immediate_observer_commit
+                    .as_ref()
+                    .map_or_else(timestamp_now, |(requested_at, _)| *requested_at);
+                let immediate_committed = immediate_observer_commit
+                    .as_ref()
+                    .map_or(&[][..], |(_, committed)| committed.as_slice());
+                record_key_outcome_then_immediate_commit(
+                    observer,
+                    timestamp_ms,
+                    &key_label,
+                    outcome,
+                    &shell,
+                    immediate_committed,
+                )?;
+            }
+        }
+    }
+}

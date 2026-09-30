@@ -1,19 +1,21 @@
-use std::{
-    fs, io,
-    path::{Path, PathBuf},
-    time::Duration,
-};
-
-use riotbox_audio::runtime::{AudioRuntimeLifecycle, AudioRuntimeShell};
-use serde_json::{Value, json};
-
-use crate::{
-    jam_app::JamAppState,
-    observer::observer_snapshot,
-    ui::{JamShellState, ShellLaunchMode},
-};
-
-use super::{AppLaunch, LaunchMode, UserSessionObserver, launch_summary, timestamp_now};
+use crate::cli::model::AppLaunch;
+use crate::cli::model::LaunchMode;
+use crate::cli::observer::UserSessionObserver;
+use crate::cli::observer::launch_summary;
+use crate::cli::observer::timestamp_now;
+use crate::jam_app::JamAppState;
+use crate::observer::observer_snapshot;
+use crate::ui::JamShellState;
+use crate::ui::ShellLaunchMode;
+use riotbox_audio::runtime::AudioRuntimeLifecycle;
+use riotbox_audio::runtime::AudioRuntimeShell;
+use serde_json::Value;
+use serde_json::json;
+use std::fs;
+use std::io;
+use std::path::Path;
+use std::path::PathBuf;
+use std::time::Duration;
 
 pub(super) fn run_live_master_recording_execute(
     launch: &AppLaunch,
