@@ -5147,3 +5147,17 @@ Why: lock().expect() turned secondary diagnostic poisoning into repeated panics.
 Evidence: two injected-poison regressions fail on the original implementation; recovered read/write, public lifecycle/reason/count and timing-under-held-lock tests constrain the fix. Cargo metadata --locked and unchanged Cargo.lock constrain dependency ownership. No real source/audio-device or musical claim.
 Consequences: normal callback rendering and diagnostic atomics are unchanged. Full health and error callbacks may still take the existing message mutex; this is no wait-free claim and does not catch arbitrary runtime panics. No automatic stream restart, new action, Session/replay state, or source access is introduced. Fresh runtime construction clears the diagnostic lifetime.
 Status: accepted
+
+---
+
+### RBX-381
+
+Date: 2026-09-30
+Topic: original-source regular-file admission without losing symlink compatibility
+Phase: P000 / RIOTBOX-1505 maintenance/regression
+Question: how can source restore reject FIFOs before blocking while preserving the existing same-buffer WAV identity contract?
+Decision: Audio owns one read_source_wav_bytes interface shared by SourceAudioCache loading and App original-source restore. Open once, use O_NONBLOCK on Unix, admit metadata from the opened descriptor only when it is a regular file, then return one byte buffer for decoding and original-content hashing. Preserve original-source symlinks to regular files; capture/export artifacts retain their separate no-follow requirements. Keep failures in SourceAudioError::Io and visible SourceAudioStatus::Unavailable, without new durable or app-local identity state. Share the unchanged libc requirement through workspace.dependencies; Audio uses it only on Unix.
+Why: a path check followed by a blocking reopen permits substitution and does not safely admit FIFOs. Reusing capture's O_NOFOLLOW would break valid original-source locators without need. A semantic shared reader prevents the direct Audio loader and App restore from drifting into different admission rules.
+Evidence: public restore probe waits 750 ms for a delayed synthetic FIFO producer. New no-producer child-process regressions time out on both original loaders, and pass after admission is fixed. Regular-WAV/symlink, directory, same-buffer, descriptor-substitution and hash-drift tests constrain compatibility and integrity. No real source, holdout, device or human listening evidence.
+Consequences: no decoder algorithm, DSP, musical threshold, frozen Stage-A contract, ActionCommand or Session schema changes. The descriptor prevents path re-resolution, not modification of an already-open regular file; decode/hash still use the same resulting bytes. Nonblocking FIFO admission is a Unix guarantee, not a whole-operation deadline, regular-file size cap, filesystem latency guarantee or cross-platform qualification. libc's resolved version is unchanged; Cargo.lock records only Audio's new dependency edge.
+Status: accepted

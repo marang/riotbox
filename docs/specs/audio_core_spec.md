@@ -457,6 +457,13 @@ The bounded early seam is a non-realtime source-audio cache:
   Each moving segment uses `p²(3-2p)`. The action does not alter source PCM,
   playback rate, gate/reverse, grit, bus level, Source Monitor, or other lanes
 - keep cache loading and source-window projection outside the realtime callback
+- original-source file reads share `source_audio::read_source_wav_bytes` in Audio:
+  admit a regular opened descriptor before reading; on Unix use nonblocking open
+  so FIFO inputs fail without waiting for a producer. Original-source symlinks
+  to regular files remain supported, unlike the stricter capture/export
+  no-follow policies. App restore hashes the same returned bytes it decodes;
+  admission failures stay visibly unavailable with no source cache. This is
+  file-type admission, not a deadline or size limit for regular-file I/O
 
 The existing transport-selected source window remains the default. Only a
 committed `feral_break_alpha_v2` preset with a non-baseline typed hook policy may

@@ -5,6 +5,8 @@ use std::{
     sync::Arc,
 };
 
+use super::file_io::read_source_wav_bytes;
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct SourceAudioCache {
     pub path: PathBuf,
@@ -59,7 +61,7 @@ impl SourceAudioCache {
 
     pub fn load_pcm_wav(path: impl AsRef<Path>) -> Result<Self, SourceAudioError> {
         let path = path.as_ref();
-        let bytes = fs::read(path).map_err(|error| SourceAudioError::Io(error.to_string()))?;
+        let bytes = read_source_wav_bytes(path)?;
         Self::from_pcm_wav_bytes(path, &bytes)
     }
 

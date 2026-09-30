@@ -10,6 +10,8 @@ mod capture_identity;
 mod graph_transaction;
 mod restore_history;
 mod scene_source_identity;
+#[cfg(unix)]
+mod source_file_admission;
 mod source_ref_profile;
 include!("tests/p016_product_export_action.rs");
 include!("tests/p016_live_recording_export_action.rs");

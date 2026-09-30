@@ -1,4 +1,5 @@
 use super::{lifecycle::latest_commit_boundary_from_log, *};
+use riotbox_audio::source_audio::read_source_wav_bytes;
 
 mod graph_paths;
 mod history_validation;
@@ -295,15 +296,12 @@ fn load_source_audio_cache_for_graph(
         }
     };
 
-    let bytes = match std::fs::read(&graph.source.path) {
+    let bytes = match read_source_wav_bytes(&graph.source.path) {
         Ok(bytes) => bytes,
         Err(error) => {
             return (
                 None,
-                SourceAudioStatus::unavailable(
-                    graph.source.path.clone(),
-                    format!("source audio I/O failed: {error}"),
-                ),
+                SourceAudioStatus::unavailable(graph.source.path.clone(), error.to_string()),
             );
         }
     };
