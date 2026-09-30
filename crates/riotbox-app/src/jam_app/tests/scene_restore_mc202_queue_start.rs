@@ -1,3 +1,44 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::mc202_recipe::assert_recipe_buffers_differ;
+use crate::jam_app::tests::fixtures::mc202_recipe::assert_recipe_buffers_match;
+use crate::jam_app::tests::fixtures::mc202_recipe::render_scene_recipe_mix_buffer;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::fixtures::session_source::scene_regression_graph;
+use riotbox_audio::mc202::Mc202ContourHint;
+use riotbox_audio::mc202::Mc202RenderMode;
+use riotbox_audio::mc202::Mc202RenderRouting;
+use riotbox_audio::tr909::Tr909PatternAdoption;
+use riotbox_audio::tr909::Tr909PhraseVariation;
+use riotbox_audio::tr909::Tr909SourceSupportContext;
+use riotbox_audio::tr909::Tr909SourceSupportProfile;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::ActionParams;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::action::Quantization;
+use riotbox_core::ids::SceneId;
+use riotbox_core::ids::SectionId;
+use riotbox_core::ids::SourceId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::Mc202RoleState;
+use riotbox_core::session::Mc202SourcePhraseCandidateFamilyState;
+use riotbox_core::session::Mc202SourcePhraseNoteBudgetState;
+use riotbox_core::session::Mc202SourcePhrasePlanState;
+use riotbox_core::session::Mc202SourcePhraseSlotState;
+use riotbox_core::session::SceneMovementDirectionState;
+use riotbox_core::session::SceneMovementLaneIntentState;
+use riotbox_core::session::Tr909ReinforcementModeState;
+use riotbox_core::source_graph::EnergyClass;
+use riotbox_core::source_graph::Section;
+use riotbox_core::source_graph::SectionLabelHint;
+use riotbox_core::transport::CommitBoundaryState;
+use riotbox_core::view::jam::SceneTransitionDirectionView;
+use riotbox_core::view::jam::SceneTransitionKindView;
+use riotbox_core::view::jam::SceneTransitionLaneIntentView;
+use riotbox_core::view::jam::SceneTransitionPolicyView;
+use riotbox_core::view::jam::SceneTransitionW30IntentView;
+
 #[test]
 fn committed_scene_select_projects_target_scene_into_tr909_source_support() {
     let mut graph = sample_graph();
@@ -467,8 +508,9 @@ fn scene_jump_silences_mc202_plan_from_another_source_section_and_restore_recove
         SceneId::from("scene-02-drop"),
     ];
     session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Follower);
-    session.runtime_state.lane_state.mc202.source_phrase_plan =
-        Some(section_one_mc202_source_plan(graph.source.source_id.clone()));
+    session.runtime_state.lane_state.mc202.source_phrase_plan = Some(
+        section_one_mc202_source_plan(graph.source.source_id.clone()),
+    );
 
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
     let before_jump = state.runtime.mc202_render;
@@ -520,7 +562,10 @@ fn mc202_plan_from_another_source_stays_silent_without_a_current_section() {
 
     let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    assert_eq!(state.runtime.mc202_render.routing, Mc202RenderRouting::Silent);
+    assert_eq!(
+        state.runtime.mc202_render.routing,
+        Mc202RenderRouting::Silent
+    );
     assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Idle);
 }
 
@@ -536,11 +581,16 @@ fn typed_mc202_section_plan_fails_closed_when_current_section_is_unknown() {
 
     let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    assert_eq!(state.runtime.mc202_render.routing, Mc202RenderRouting::Silent);
+    assert_eq!(
+        state.runtime.mc202_render.routing,
+        Mc202RenderRouting::Silent
+    );
     assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Idle);
 }
 
-fn section_one_mc202_source_plan(source_id: SourceId) -> Mc202SourcePhrasePlanState {
+pub(in crate::jam_app::tests) fn section_one_mc202_source_plan(
+    source_id: SourceId,
+) -> Mc202SourcePhrasePlanState {
     Mc202SourcePhrasePlanState {
         source_id,
         source_section_id: Some(SectionId::from("section-0")),
@@ -551,7 +601,24 @@ fn section_one_mc202_source_plan(source_id: SourceId) -> Mc202SourcePhrasePlanSt
         },
         source_expression: None,
         role: Mc202RoleState::Follower,
-        rhythm_cells: [Some(0), None, None, None, Some(3), None, None, None, Some(0), None, None, None, Some(-2), None, None, None],
+        rhythm_cells: [
+            Some(0),
+            None,
+            None,
+            None,
+            Some(3),
+            None,
+            None,
+            None,
+            Some(0),
+            None,
+            None,
+            None,
+            Some(-2),
+            None,
+            None,
+            None,
+        ],
         note_budget: Mc202SourcePhraseNoteBudgetState::Balanced,
         touch: 0.72,
         confidence: 0.8,

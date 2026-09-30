@@ -1,28 +1,24 @@
-// Textual includes preserve the existing ui::tests::* names while keeping each
-// behavior-area test file small enough to review directly.
-include!("tests/shared_imports.rs");
-include!("tests/footer_style_tokens.rs");
-include!("tests/suggested_gesture_cues.rs");
-include!("tests/regression_fixture_types.rs");
-include!("tests/w30_fixture_helpers.rs");
-include!("tests/shell_state_fixtures.rs");
-include!("tests/shell_state_keys.rs");
+//! Semantic regression families and explicit shared synthetic fixtures.
+
+mod capture_w30_cues;
+mod fixtures;
+mod footer_style_tokens;
+mod help_restore_cues;
+mod jam_scene_pending_onramp;
+mod p015_jam_taste_recipe;
+mod p016_export_readiness;
 mod p023_first_playable_ui;
-include!("tests/shell_state_jam_snapshot.rs");
-include!("tests/shell_state_ghost_controls.rs");
-include!("tests/shell_state_inspect_snapshot.rs");
-include!("tests/p015_jam_taste_recipe.rs");
-include!("tests/p016_export_readiness.rs");
-include!("tests/jam_scene_pending_onramp.rs");
-include!("tests/post_commit_cues.rs");
-include!("tests/help_restore_cues.rs");
-include!("tests/recovery_prompt.rs");
-include!("tests/restore_replay_readiness.rs");
-include!("tests/regression_fixture_shells.rs");
-include!("tests/shell_state_log.rs");
-include!("tests/shell_state_source.rs");
-include!("tests/shell_state_capture.rs");
-include!("tests/w30_preview_source_readiness.rs");
-include!("tests/capture_w30_cues.rs");
-include!("tests/w30_diagnostics_capture.rs");
-include!("tests/w30_resample_diagnostics.rs");
+mod post_commit_cues;
+mod recovery_prompt;
+mod restore_replay_readiness;
+mod shell_state_capture;
+mod shell_state_ghost_controls;
+mod shell_state_inspect_snapshot;
+mod shell_state_jam_snapshot;
+mod shell_state_keys;
+mod shell_state_log;
+mod shell_state_source;
+mod suggested_gesture_cues;
+mod w30_diagnostics_capture;
+mod w30_preview_source_readiness;
+mod w30_resample_diagnostics;

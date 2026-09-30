@@ -1,3 +1,31 @@
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::mc202_recipe::commit_source_derived_answer;
+use crate::jam_app::tests::fixtures::mc202_recipe::confirmed_source_phrase_state;
+use crate::jam_app::tests::fixtures::mc202_recipe::source_phrase_test_graph;
+use crate::jam_app::tests::mc202_source_phrase_pressure_contours::commit_source_derived_pressure;
+use crate::jam_app::tests::mc202_source_phrase_quality_gates::commit_source_answer_without_render;
+use riotbox_audio::mc202::Mc202RenderRouting;
+use riotbox_audio::runtime::signal_delta_metrics;
+use riotbox_audio::runtime::signal_metrics;
+use riotbox_core::action::ActionStatus;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::ids::SceneId;
+use riotbox_core::ids::SectionId;
+use riotbox_core::ids::SourceId;
+use riotbox_core::session::Mc202SourcePhraseCandidateFamilyState;
+use riotbox_core::source_graph::BeatPoint;
+use riotbox_core::source_graph::EnergyClass;
+use riotbox_core::source_graph::MeterHint;
+use riotbox_core::source_graph::PhraseAudioFeatures;
+use riotbox_core::source_graph::Section;
+use riotbox_core::source_graph::SectionLabelHint;
+use riotbox_core::source_graph::SourceGraph;
+use riotbox_core::source_graph::SourceTimingAnchorType;
+use riotbox_core::source_graph::TimingHypothesis;
+use riotbox_core::source_graph::TimingHypothesisKind;
+use riotbox_core::source_graph::TimingQuality;
+use riotbox_core::transport::CommitBoundaryState;
+
 #[test]
 fn committed_mc202_answer_records_source_backed_candidate_family_metadata() {
     let mut graph = source_phrase_test_graph("src-candidate", "hash-candidate", 132.0, 19, 2);
@@ -77,8 +105,7 @@ fn committed_mc202_answer_records_source_backed_candidate_family_metadata() {
     assert!(
         plan.candidate_scorecards.iter().any(|score| {
             score.family == Mc202SourcePhraseCandidateFamilyState::FallbackControl
-                && score.rejection_reason.as_deref()
-                    == Some("control_template_not_source_derived")
+                && score.rejection_reason.as_deref() == Some("control_template_not_source_derived")
         }),
         "{plan:?}"
     );
@@ -94,12 +121,16 @@ fn committed_mc202_answer_records_source_backed_candidate_family_metadata() {
     assert_ne!(render_plan.destructive_mask, 0, "{render_plan:?}");
 
     let metrics = signal_metrics(&rendered);
-    assert!(metrics.rms > 0.001, "candidate-backed answer rendered silent");
+    assert!(
+        metrics.rms > 0.001,
+        "candidate-backed answer rendered silent"
+    );
 }
 
 #[test]
 fn cross_section_phrase_at_second_section_boundary_is_explicitly_unavailable() {
-    let mut graph = source_phrase_test_graph("src-cross-section", "hash-cross-section", 132.0, 83, 2);
+    let mut graph =
+        source_phrase_test_graph("src-cross-section", "hash-cross-section", 132.0, 83, 2);
     graph.sections.push(Section {
         section_id: SectionId::from("section-b"),
         label_hint: SectionLabelHint::Drop,
@@ -138,7 +169,10 @@ fn cross_section_phrase_at_second_section_boundary_is_explicitly_unavailable() {
             .source_phrase_plan
             .is_none()
     );
-    assert_eq!(state.runtime.mc202_render.routing, Mc202RenderRouting::Silent);
+    assert_eq!(
+        state.runtime.mc202_render.routing,
+        Mc202RenderRouting::Silent
+    );
     let result = state
         .session
         .action_log
@@ -186,7 +220,10 @@ fn section_owned_phrase_at_uncovered_boundary_is_explicitly_unavailable() {
             .source_phrase_plan
             .is_none()
     );
-    assert_eq!(state.runtime.mc202_render.routing, Mc202RenderRouting::Silent);
+    assert_eq!(
+        state.runtime.mc202_render.routing,
+        Mc202RenderRouting::Silent
+    );
     let result = state
         .session
         .action_log
@@ -200,13 +237,8 @@ fn section_owned_phrase_at_uncovered_boundary_is_explicitly_unavailable() {
 
 #[test]
 fn rejected_cross_section_phrase_is_atomic_and_replay_is_a_noop() {
-    let mut graph = source_phrase_test_graph(
-        "src-atomic-reject",
-        "hash-atomic-reject",
-        132.0,
-        97,
-        2,
-    );
+    let mut graph =
+        source_phrase_test_graph("src-atomic-reject", "hash-atomic-reject", 132.0, 97, 2);
     graph.sections.push(Section {
         section_id: SectionId::from("section-b"),
         label_hint: SectionLabelHint::Drop,
@@ -375,8 +407,7 @@ fn committed_mc202_answer_scorecards_record_phrase_memory_after_previous_plan() 
         second_plan.candidate_scorecards.iter().any(|score| {
             matches!(
                 score.rejection_reason.as_deref(),
-                Some("phrase_memory_static_repeat")
-                    | Some("phrase_memory_too_close_to_previous")
+                Some("phrase_memory_static_repeat") | Some("phrase_memory_too_close_to_previous")
             )
         }),
         "{second_plan:?}"
@@ -654,7 +685,7 @@ fn committed_mc202_answer_changes_or_rejects_candidates_when_measured_audio_is_r
 }
 
 #[allow(clippy::too_many_arguments)]
-fn add_phrase_audio_features(
+pub(in crate::jam_app::tests) fn add_phrase_audio_features(
     graph: &mut SourceGraph,
     phrase_index: u32,
     low_band_rms: f32,
@@ -685,7 +716,7 @@ fn add_phrase_audio_features(
     }];
 }
 
-fn set_source_phrase_anchors(
+pub(in crate::jam_app::tests) fn set_source_phrase_anchors(
     graph: &mut SourceGraph,
     anchors: &[(SourceTimingAnchorType, u32, u32, f32)],
 ) {
@@ -698,7 +729,7 @@ fn set_source_phrase_anchors(
     set_source_phrase_anchors_with_subbeat_offsets(graph, &anchors_with_offsets);
 }
 
-fn set_source_phrase_anchors_with_subbeat_offsets(
+pub(in crate::jam_app::tests) fn set_source_phrase_anchors_with_subbeat_offsets(
     graph: &mut SourceGraph,
     anchors: &[(SourceTimingAnchorType, u32, u32, f32, f32)],
 ) {
@@ -730,18 +761,20 @@ fn set_source_phrase_anchors_with_subbeat_offsets(
         anchors: anchors
             .iter()
             .enumerate()
-            .map(|(index, (anchor_type, bar_index, beat_index, beat_offset, strength))| {
-                riotbox_core::source_graph::SourceTimingAnchor {
-                    anchor_id: format!("mc202-groove-anchor-{index}"),
-                    anchor_type: *anchor_type,
-                    time_seconds: (*beat_index as f32 + *beat_offset) * seconds_per_beat,
-                    bar_index: Some(*bar_index),
-                    beat_index: Some(*beat_index),
-                    confidence: 0.94,
-                    strength: *strength,
-                    tags: vec!["mc202_groove_test".into()],
-                }
-            })
+            .map(
+                |(index, (anchor_type, bar_index, beat_index, beat_offset, strength))| {
+                    riotbox_core::source_graph::SourceTimingAnchor {
+                        anchor_id: format!("mc202-groove-anchor-{index}"),
+                        anchor_type: *anchor_type,
+                        time_seconds: (*beat_index as f32 + *beat_offset) * seconds_per_beat,
+                        bar_index: Some(*bar_index),
+                        beat_index: Some(*beat_index),
+                        confidence: 0.94,
+                        strength: *strength,
+                        tags: vec!["mc202_groove_test".into()],
+                    }
+                },
+            )
             .collect(),
         drift: Vec::new(),
         groove: Vec::new(),
@@ -751,7 +784,7 @@ fn set_source_phrase_anchors_with_subbeat_offsets(
     }];
 }
 
-fn provenance_step(
+pub(in crate::jam_app::tests) fn provenance_step(
     plan: &riotbox_core::session::Mc202SourcePhrasePlanState,
     prefix: &str,
 ) -> usize {
@@ -766,7 +799,11 @@ fn provenance_step(
         .unwrap_or_else(|| panic!("missing {prefix} provenance in {plan:?}"))
 }
 
-fn source_phrase_low_band_rms(buffer: &[f32], sample_rate: u32, channel_count: usize) -> f32 {
+pub(in crate::jam_app::tests) fn source_phrase_low_band_rms(
+    buffer: &[f32],
+    sample_rate: u32,
+    channel_count: usize,
+) -> f32 {
     if buffer.is_empty() || sample_rate == 0 || channel_count == 0 {
         return 0.0;
     }

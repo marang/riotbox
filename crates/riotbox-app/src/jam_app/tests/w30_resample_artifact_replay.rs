@@ -1,3 +1,27 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::JamFileSet;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::mc202_recipe::assert_recipe_buffers_match;
+use crate::jam_app::tests::fixtures::restore_parity::SnapshotPayloadRestoreSpec;
+use crate::jam_app::tests::fixtures::restore_parity::run_snapshot_payload_restore_probe_from_anchor_runtime;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::fixtures::source_io::bind_synthetic_wav_identity;
+use crate::jam_app::tests::fixtures::source_io::write_pcm16_wave;
+use crate::jam_app::tests::fixtures::w30_replay::assert_w30_replay_buffers_differ;
+use crate::jam_app::tests::fixtures::w30_replay::commit_w30_replay_step;
+use riotbox_audio::runtime::render_w30_preview_offline;
+use riotbox_audio::runtime::render_w30_resample_tap_offline;
+use riotbox_audio::w30::W30_RESAMPLE_SOURCE_WINDOW_LEN;
+use riotbox_audio::w30::W30ResampleTapAvailability;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::ids::CaptureId;
+use riotbox_core::persistence::save_session_json;
+use riotbox_core::persistence::save_source_graph_json;
+use riotbox_core::session::CaptureType;
+use std::path::Path;
+use tempfile::tempdir;
+
 #[test]
 fn w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_output() {
     let tempdir = tempdir().expect("create resample replay tempdir");
@@ -28,7 +52,12 @@ fn w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_outpu
     let pre_resample_action_cursor = committed_state.session.action_log.actions.len();
     let pre_resample_runtime = committed_state.session.runtime_state.clone();
     assert_eq!(
-        committed_state.session.runtime_state.lane_state.w30.last_capture,
+        committed_state
+            .session
+            .runtime_state
+            .lane_state
+            .w30
+            .last_capture,
         Some(CaptureId::from("cap-01"))
     );
 
@@ -56,7 +85,12 @@ fn w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_outpu
         "resample commit should write and cache the produced artifact"
     );
     assert_eq!(
-        committed_state.session.runtime_state.lane_state.w30.last_capture,
+        committed_state
+            .session
+            .runtime_state
+            .lane_state
+            .w30
+            .last_capture,
         Some(produced_capture_id.clone())
     );
     let produced_artifact_path = tempdir.path().join(&produced_capture.storage_path);
@@ -148,8 +182,7 @@ fn w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_outpu
         W30ResampleTapAvailability::SourceAudioReady
     );
     assert_eq!(
-        replayed_pad_playback.chop_slice_starts,
-        committed_pad_playback.chop_slice_starts,
+        replayed_pad_playback.chop_slice_starts, committed_pad_playback.chop_slice_starts,
         "resample restore must preserve the source-derived chop decision"
     );
     assert_recipe_buffers_match(

@@ -1,22 +1,22 @@
-use ratatui::{
-    style::Style,
-    text::{Line, Span},
-};
-use riotbox_core::{
-    source_graph::{CandidateType, EnergyClass, QualityClass, Section},
-    view::jam::{
-        SourceTimingConsumerReadiness, SourceTimingSummaryView, source_timing_consumer_readiness,
-    },
-};
-
-use super::{
-    JamShellState,
-    perform_risk_cue_contract::{
-        PERFORM_RISK_BAR_LIVE_CUE, PERFORM_RISK_DEGRADED_LABEL, PERFORM_RISK_UNAVAILABLE_LABEL,
-    },
-    scene_countdown_cue, style_confirmation_strong, style_low_emphasis, style_pending_cue,
-    style_pending_detail,
-};
+use crate::ui::perform_risk_cue_contract::PERFORM_RISK_BAR_LIVE_CUE;
+use crate::ui::perform_risk_cue_contract::PERFORM_RISK_DEGRADED_LABEL;
+use crate::ui::perform_risk_cue_contract::PERFORM_RISK_UNAVAILABLE_LABEL;
+use crate::ui::scene_timing::scene_countdown_cue;
+use crate::ui::shell_state::JamShellState;
+use crate::ui::styles::style_confirmation_strong;
+use crate::ui::styles::style_low_emphasis;
+use crate::ui::styles::style_pending_cue;
+use crate::ui::styles::style_pending_detail;
+use ratatui::style::Style;
+use ratatui::text::Line;
+use ratatui::text::Span;
+use riotbox_core::source_graph::CandidateType;
+use riotbox_core::source_graph::EnergyClass;
+use riotbox_core::source_graph::QualityClass;
+use riotbox_core::source_graph::Section;
+use riotbox_core::view::jam::SourceTimingConsumerReadiness;
+use riotbox_core::view::jam::SourceTimingSummaryView;
+use riotbox_core::view::jam::source_timing_consumer_readiness;
 
 mod arrangement;
 

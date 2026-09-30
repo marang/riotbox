@@ -1,3 +1,21 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::mc202_recipe::assert_recipe_buffers_differ;
+use crate::jam_app::tests::fixtures::mc202_recipe::assert_recipe_buffers_match;
+use crate::jam_app::tests::fixtures::mc202_recipe::render_scene_recipe_mix_buffer;
+use crate::jam_app::tests::fixtures::restore_parity::SnapshotPayloadRestoreSpec;
+use crate::jam_app::tests::fixtures::restore_parity::run_graph_aware_snapshot_payload_restore_probe;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::fixtures::session_source::scene_regression_graph;
+use riotbox_audio::tr909::Tr909SourceSupportContext;
+use riotbox_audio::tr909::Tr909SourceSupportProfile;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::ids::SceneId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::Mc202RoleState;
+use riotbox_core::session::Tr909ReinforcementModeState;
+use riotbox_core::transport::CommitBoundaryState;
+
 #[test]
 fn graph_aware_scene_replay_matches_committed_movement_projection() {
     let graph = scene_regression_graph(&["drop".into(), "break".into()]);
@@ -42,10 +60,9 @@ fn graph_aware_scene_replay_matches_committed_movement_projection() {
     assert_eq!(committed.len(), 1);
     let committed_scene = render_scene_recipe_mix_buffer(&committed_state);
 
-    let plan = riotbox_core::replay::build_committed_replay_plan(
-        &committed_state.session.action_log,
-    )
-    .expect("committed scene action log builds replay plan");
+    let plan =
+        riotbox_core::replay::build_committed_replay_plan(&committed_state.session.action_log)
+            .expect("committed scene action log builds replay plan");
     let mut replayed_session = base_session;
     replayed_session.action_log = committed_state.session.action_log.clone();
     let report = riotbox_core::replay::apply_graph_aware_replay_plan_to_session(
@@ -59,19 +76,43 @@ fn graph_aware_scene_replay_matches_committed_movement_projection() {
 
     assert_eq!(report.applied_action_ids.len(), 1);
     assert_eq!(
-        replayed_state.session.runtime_state.scene_state.active_scene,
-        committed_state.session.runtime_state.scene_state.active_scene
+        replayed_state
+            .session
+            .runtime_state
+            .scene_state
+            .active_scene,
+        committed_state
+            .session
+            .runtime_state
+            .scene_state
+            .active_scene
     );
     assert_eq!(
         replayed_state.session.runtime_state.transport.current_scene,
-        committed_state.session.runtime_state.transport.current_scene
+        committed_state
+            .session
+            .runtime_state
+            .transport
+            .current_scene
     );
     assert_eq!(
-        replayed_state.session.runtime_state.scene_state.restore_scene,
-        committed_state.session.runtime_state.scene_state.restore_scene
+        replayed_state
+            .session
+            .runtime_state
+            .scene_state
+            .restore_scene,
+        committed_state
+            .session
+            .runtime_state
+            .scene_state
+            .restore_scene
     );
     assert_eq!(
-        replayed_state.runtime.tr909_render.current_scene_id.as_deref(),
+        replayed_state
+            .runtime
+            .tr909_render
+            .current_scene_id
+            .as_deref(),
         Some("scene-02-break")
     );
     assert_eq!(
@@ -83,8 +124,16 @@ fn graph_aware_scene_replay_matches_committed_movement_projection() {
         Some(Tr909SourceSupportContext::SceneTarget)
     );
     assert_eq!(
-        replayed_state.session.runtime_state.scene_state.last_movement,
-        committed_state.session.runtime_state.scene_state.last_movement
+        replayed_state
+            .session
+            .runtime_state
+            .scene_state
+            .last_movement,
+        committed_state
+            .session
+            .runtime_state
+            .scene_state
+            .last_movement
     );
     assert_eq!(
         replayed_state.runtime.tr909_render,
@@ -189,20 +238,48 @@ fn scene_restore_snapshot_payload_restore_matches_committed_movement_projection(
     let replayed_restore = render_scene_recipe_mix_buffer(&replayed_state);
 
     assert_eq!(
-        replayed_state.session.runtime_state.scene_state.active_scene,
-        committed_state.session.runtime_state.scene_state.active_scene
+        replayed_state
+            .session
+            .runtime_state
+            .scene_state
+            .active_scene,
+        committed_state
+            .session
+            .runtime_state
+            .scene_state
+            .active_scene
     );
     assert_eq!(
-        replayed_state.session.runtime_state.scene_state.restore_scene,
-        committed_state.session.runtime_state.scene_state.restore_scene
+        replayed_state
+            .session
+            .runtime_state
+            .scene_state
+            .restore_scene,
+        committed_state
+            .session
+            .runtime_state
+            .scene_state
+            .restore_scene
     );
     assert_eq!(
-        replayed_state.session.runtime_state.scene_state.last_movement,
-        committed_state.session.runtime_state.scene_state.last_movement
+        replayed_state
+            .session
+            .runtime_state
+            .scene_state
+            .last_movement,
+        committed_state
+            .session
+            .runtime_state
+            .scene_state
+            .last_movement
     );
     assert_eq!(
         replayed_state.session.runtime_state.transport.current_scene,
-        committed_state.session.runtime_state.transport.current_scene
+        committed_state
+            .session
+            .runtime_state
+            .transport
+            .current_scene
     );
     assert_eq!(
         replayed_state.jam_view.scene.active_scene,

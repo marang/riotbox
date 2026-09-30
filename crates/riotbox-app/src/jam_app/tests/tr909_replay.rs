@@ -1,12 +1,37 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::mc202_recipe::assert_recipe_buffers_differ;
+use crate::jam_app::tests::fixtures::mc202_recipe::assert_recipe_buffers_match;
+use crate::jam_app::tests::fixtures::restore_parity::SnapshotPayloadRestoreSpec;
+use crate::jam_app::tests::fixtures::restore_parity::run_snapshot_payload_restore_probe;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use riotbox_audio::runtime::render_tr909_offline;
+use riotbox_audio::runtime::signal_metrics;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::ids::SceneId;
+use riotbox_core::ids::SnapshotId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::Snapshot;
+use riotbox_core::session::Tr909ReinforcementModeState;
+use riotbox_core::session::Tr909TakeoverProfileState;
+use riotbox_core::transport::CommitBoundaryState;
+
 #[test]
 fn tr909_replay_executor_matches_committed_app_state_and_audio_path() {
     let graph = sample_graph();
     let mut base_session = sample_session(&graph);
-    base_session.runtime_state.lane_state.tr909.reinforcement_mode =
-        Some(Tr909ReinforcementModeState::BreakReinforce);
+    base_session
+        .runtime_state
+        .lane_state
+        .tr909
+        .reinforcement_mode = Some(Tr909ReinforcementModeState::BreakReinforce);
     base_session.runtime_state.lane_state.tr909.pattern_ref = Some("reinforce-scene-1".into());
-    let mut committed_state =
-        JamAppState::from_parts(base_session.clone(), Some(graph.clone()), ActionQueue::new());
+    let mut committed_state = JamAppState::from_parts(
+        base_session.clone(),
+        Some(graph.clone()),
+        ActionQueue::new(),
+    );
 
     committed_state.queue_tr909_fill(300);
     commit_tr909_replay_step(&mut committed_state, CommitBoundary::Bar, 8, 2, 0, 400);
@@ -37,10 +62,9 @@ fn tr909_replay_executor_matches_committed_app_state_and_audio_path() {
     );
     let committed_release = render_tr909_replay_buffer(&committed_state);
 
-    let plan = riotbox_core::replay::build_committed_replay_plan(
-        &committed_state.session.action_log,
-    )
-    .expect("committed TR-909 action log builds replay plan");
+    let plan =
+        riotbox_core::replay::build_committed_replay_plan(&committed_state.session.action_log)
+            .expect("committed TR-909 action log builds replay plan");
     let mut replayed_session = base_session;
     let report = riotbox_core::replay::apply_replay_plan_to_session(&mut replayed_session, &plan)
         .expect("TR-909 replay executor applies support family");
@@ -56,7 +80,10 @@ fn tr909_replay_executor_matches_committed_app_state_and_audio_path() {
         replayed_state.session.runtime_state.macro_state.tr909_slam,
         committed_state.session.runtime_state.macro_state.tr909_slam
     );
-    assert_eq!(replayed_state.runtime.tr909_render, committed_state.runtime.tr909_render);
+    assert_eq!(
+        replayed_state.runtime.tr909_render,
+        committed_state.runtime.tr909_render
+    );
     assert_recipe_buffers_match(
         "replayed TR-909 release -> committed TR-909 release",
         &replayed_release,
@@ -77,11 +104,17 @@ fn tr909_replay_executor_matches_committed_app_state_and_audio_path() {
 fn tr909_target_suffix_replay_helper_matches_committed_app_projection() {
     let graph = sample_graph();
     let mut base_session = sample_session(&graph);
-    base_session.runtime_state.lane_state.tr909.reinforcement_mode =
-        Some(Tr909ReinforcementModeState::BreakReinforce);
+    base_session
+        .runtime_state
+        .lane_state
+        .tr909
+        .reinforcement_mode = Some(Tr909ReinforcementModeState::BreakReinforce);
     base_session.runtime_state.lane_state.tr909.pattern_ref = Some("reinforce-scene-1".into());
-    let mut committed_state =
-        JamAppState::from_parts(base_session.clone(), Some(graph.clone()), ActionQueue::new());
+    let mut committed_state = JamAppState::from_parts(
+        base_session.clone(),
+        Some(graph.clone()),
+        ActionQueue::new(),
+    );
 
     committed_state.queue_tr909_fill(300);
     commit_tr909_replay_step(&mut committed_state, CommitBoundary::Bar, 8, 2, 0, 400);
@@ -143,7 +176,10 @@ fn tr909_target_suffix_replay_helper_matches_committed_app_projection() {
         replayed_state.session.runtime_state.lane_state.tr909,
         committed_state.session.runtime_state.lane_state.tr909
     );
-    assert_eq!(replayed_state.runtime.tr909_render, committed_state.runtime.tr909_render);
+    assert_eq!(
+        replayed_state.runtime.tr909_render,
+        committed_state.runtime.tr909_render
+    );
     assert_recipe_buffers_match(
         "target suffix replay TR-909 slam -> committed slam",
         &replayed_slam,
@@ -162,11 +198,17 @@ fn tr909_target_suffix_replay_helper_matches_committed_app_projection() {
 fn tr909_snapshot_payload_restore_runner_matches_committed_app_projection() {
     let graph = sample_graph();
     let mut base_session = sample_session(&graph);
-    base_session.runtime_state.lane_state.tr909.reinforcement_mode =
-        Some(Tr909ReinforcementModeState::BreakReinforce);
+    base_session
+        .runtime_state
+        .lane_state
+        .tr909
+        .reinforcement_mode = Some(Tr909ReinforcementModeState::BreakReinforce);
     base_session.runtime_state.lane_state.tr909.pattern_ref = Some("reinforce-scene-1".into());
-    let mut committed_state =
-        JamAppState::from_parts(base_session.clone(), Some(graph.clone()), ActionQueue::new());
+    let mut committed_state = JamAppState::from_parts(
+        base_session.clone(),
+        Some(graph.clone()),
+        ActionQueue::new(),
+    );
 
     committed_state.queue_tr909_fill(300);
     commit_tr909_replay_step(&mut committed_state, CommitBoundary::Bar, 8, 2, 0, 400);
@@ -198,7 +240,10 @@ fn tr909_snapshot_payload_restore_runner_matches_committed_app_projection() {
         replayed_state.session.runtime_state,
         committed_state.session.runtime_state
     );
-    assert_eq!(replayed_state.runtime.tr909_render, committed_state.runtime.tr909_render);
+    assert_eq!(
+        replayed_state.runtime.tr909_render,
+        committed_state.runtime.tr909_render
+    );
     assert_recipe_buffers_match(
         "snapshot payload restore TR-909 slam -> committed slam",
         &replayed_slam,
@@ -211,8 +256,11 @@ fn tr909_snapshot_payload_restore_runner_matches_committed_app_projection() {
 fn tr909_snapshot_payload_restore_hydrates_takeover_release_projection() {
     let graph = sample_graph();
     let base_session = sample_session(&graph);
-    let mut committed_state =
-        JamAppState::from_parts(base_session.clone(), Some(graph.clone()), ActionQueue::new());
+    let mut committed_state = JamAppState::from_parts(
+        base_session.clone(),
+        Some(graph.clone()),
+        ActionQueue::new(),
+    );
 
     committed_state.queue_tr909_fill(300);
     commit_tr909_replay_step(&mut committed_state, CommitBoundary::Bar, 8, 2, 0, 400);
@@ -254,7 +302,10 @@ fn tr909_snapshot_payload_restore_hydrates_takeover_release_projection() {
         replayed_state.session.runtime_state,
         committed_state.session.runtime_state
     );
-    assert_eq!(replayed_state.runtime.tr909_render, committed_state.runtime.tr909_render);
+    assert_eq!(
+        replayed_state.runtime.tr909_render,
+        committed_state.runtime.tr909_render
+    );
     assert_recipe_buffers_match(
         "snapshot payload restore TR-909 release -> committed release",
         &replayed_release,
@@ -273,8 +324,11 @@ fn tr909_snapshot_payload_restore_hydrates_takeover_release_projection() {
 fn tr909_snapshot_payload_restore_hydrates_reinforce_scene_lock_projection() {
     let graph = sample_graph();
     let base_session = sample_session(&graph);
-    let mut committed_state =
-        JamAppState::from_parts(base_session.clone(), Some(graph.clone()), ActionQueue::new());
+    let mut committed_state = JamAppState::from_parts(
+        base_session.clone(),
+        Some(graph.clone()),
+        ActionQueue::new(),
+    );
 
     committed_state.queue_tr909_reinforce(300);
     commit_tr909_replay_step(&mut committed_state, CommitBoundary::Phrase, 16, 4, 1, 400);
@@ -310,7 +364,10 @@ fn tr909_snapshot_payload_restore_hydrates_reinforce_scene_lock_projection() {
         replayed_state.session.runtime_state,
         committed_state.session.runtime_state
     );
-    assert_eq!(replayed_state.runtime.tr909_render, committed_state.runtime.tr909_render);
+    assert_eq!(
+        replayed_state.runtime.tr909_render,
+        committed_state.runtime.tr909_render
+    );
     assert_eq!(
         replayed_state
             .session
@@ -343,7 +400,7 @@ fn tr909_snapshot_payload_restore_hydrates_reinforce_scene_lock_projection() {
     );
 }
 
-fn commit_tr909_replay_step(
+pub(in crate::jam_app::tests) fn commit_tr909_replay_step(
     state: &mut JamAppState,
     kind: CommitBoundary,
     beat_index: u64,
@@ -364,7 +421,7 @@ fn commit_tr909_replay_step(
     assert_eq!(committed.len(), 1);
 }
 
-fn render_tr909_replay_buffer(state: &JamAppState) -> Vec<f32> {
+pub(in crate::jam_app::tests) fn render_tr909_replay_buffer(state: &JamAppState) -> Vec<f32> {
     let buffer = render_tr909_offline(&state.runtime.tr909_render, 44_100, 2, 44_100);
     let metrics = signal_metrics(&buffer);
     assert!(

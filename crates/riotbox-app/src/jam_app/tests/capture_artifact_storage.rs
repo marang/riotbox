@@ -1,13 +1,15 @@
-use std::{fs, path::Path};
-
+use crate::jam_app::CaptureAudioStatus;
+use crate::jam_app::QueueControlResult;
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::fixtures::source_io::bind_synthetic_wav_identity;
+use crate::jam_app::tests::fixtures::w30_replay::commit_w30_replay_step;
 use riotbox_audio::source_audio::write_interleaved_pcm16_wav;
 use riotbox_core::action::CommitBoundary;
-
-use super::{
-    JamAppState, bind_synthetic_wav_identity, commit_w30_replay_step, sample_graph, sample_session,
-    save_session_json,
-};
-use crate::jam_app::{CaptureAudioStatus, QueueControlResult};
+use riotbox_core::persistence::save_session_json;
+use std::fs;
+use std::path::Path;
 
 fn session_in(dir: &Path, name: &str, level: f32) -> JamAppState {
     let source = dir.join(format!("{name}-synthetic.wav"));

@@ -1,3 +1,16 @@
+use crate::jam_app::product_export::DawSessionExportQueueResult;
+use crate::jam_app::tests::p016_daw_session_export_action::daw_session_writer_export_state;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::ActionParams;
+use riotbox_core::action::ActionStatus;
+use riotbox_core::export_readiness::ProductExportDestinationKind;
+use riotbox_core::ids::ActionId;
+use riotbox_core::ids::ExportReceiptId;
+use riotbox_core::session::ExportReceiptQaGateStatus;
+use std::fs;
+use std::path::Path;
+use tempfile::tempdir;
+
 #[test]
 fn daw_session_host_import_proof_commits_through_export_action_without_enabling_surface() {
     let temp = tempdir().expect("tempdir");
@@ -61,11 +74,9 @@ fn daw_session_host_import_proof_commits_through_export_action_without_enabling_
         .expect("host-import proof gate");
     assert_eq!(host_gate.status, ExportReceiptQaGateStatus::Passed);
     assert!(
-        saved_receipt
-            .qa_gates
-            .iter()
-            .all(|gate| gate.gate_id
-                != riotbox_core::session::DAW_SESSION_AUDIBLE_OUTPUT_QA_GATE_ID)
+        saved_receipt.qa_gates.iter().all(
+            |gate| gate.gate_id != riotbox_core::session::DAW_SESSION_AUDIBLE_OUTPUT_QA_GATE_ID
+        )
     );
 
     let action = state
@@ -86,7 +97,10 @@ fn daw_session_host_import_proof_commits_through_export_action_without_enabling_
             .contains("committed DAW session host-import proof")
     );
     assert_eq!(state.session.action_log.commit_records.len(), 2);
-    assert_eq!(state.session.action_log.commit_records[1].action_id, action_id);
+    assert_eq!(
+        state.session.action_log.commit_records[1].action_id,
+        action_id
+    );
 
     let surface_gate = state.daw_session_export_surface_gate();
     assert_eq!(
@@ -128,21 +142,24 @@ fn daw_session_host_import_proof_commits_to_queued_receipt_not_latest_receipt() 
         .commit_daw_session_host_import_proof_export(&proof_path, 1_000)
         .expect("commit DAW session host-import proof action");
 
-    assert_eq!(committed_receipt.receipt_id.as_str(), "export-receipt-a-0042");
+    assert_eq!(
+        committed_receipt.receipt_id.as_str(),
+        "export-receipt-a-0042"
+    );
     assert!(
         state.session.export_receipts[0]
             .qa_gates
             .iter()
-            .any(|gate| gate.gate_id
-                == riotbox_core::session::DAW_SESSION_HOST_IMPORT_QA_GATE_ID
-                && gate.status == ExportReceiptQaGateStatus::Passed)
+            .any(
+                |gate| gate.gate_id == riotbox_core::session::DAW_SESSION_HOST_IMPORT_QA_GATE_ID
+                    && gate.status == ExportReceiptQaGateStatus::Passed
+            )
     );
     assert!(
         state.session.export_receipts[1]
             .qa_gates
             .iter()
-            .all(|gate| gate.gate_id
-                != riotbox_core::session::DAW_SESSION_HOST_IMPORT_QA_GATE_ID)
+            .all(|gate| gate.gate_id != riotbox_core::session::DAW_SESSION_HOST_IMPORT_QA_GATE_ID)
     );
 }
 
@@ -209,8 +226,7 @@ fn daw_session_host_import_proof_rejects_without_writer_proof_before_mutation() 
         state.session.export_receipts[0]
             .qa_gates
             .iter()
-            .all(|gate| gate.gate_id
-                != riotbox_core::session::DAW_SESSION_HOST_IMPORT_QA_GATE_ID)
+            .all(|gate| gate.gate_id != riotbox_core::session::DAW_SESSION_HOST_IMPORT_QA_GATE_ID)
     );
     let rejected = state
         .queue
@@ -228,7 +244,11 @@ fn daw_session_host_import_proof_rejects_without_writer_proof_before_mutation() 
     }
 }
 
-fn write_host_import_proof(path: &Path, imported: bool, blockers: &[&str]) {
+pub(in crate::jam_app::tests) fn write_host_import_proof(
+    path: &Path,
+    imported: bool,
+    blockers: &[&str],
+) {
     fs::write(
         path,
         serde_json::json!({

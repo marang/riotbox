@@ -1,3 +1,36 @@
+use crate::jam_app::state::JamAppError;
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use riotbox_core::TimestampMs;
+use riotbox_core::action::Action;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::ActionParams;
+use riotbox_core::action::ActionResult;
+use riotbox_core::action::ActionStatus;
+use riotbox_core::action::ActionTarget;
+use riotbox_core::action::ActorType;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::action::Quantization;
+use riotbox_core::action::SourceMonitorMode;
+use riotbox_core::action::TargetScope;
+use riotbox_core::action::UndoPolicy;
+use riotbox_core::ids::ActionId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::ids::SnapshotId;
+use riotbox_core::ids::SourceId;
+use riotbox_core::persistence::load_session_json;
+use riotbox_core::persistence::load_source_graph_json;
+use riotbox_core::persistence::save_session_json;
+use riotbox_core::persistence::save_source_graph_json;
+use riotbox_core::session::ActionCommitRecord;
+use riotbox_core::session::GraphStorageMode;
+use riotbox_core::session::SourceRef;
+use riotbox_core::source_graph::DecodeProfile;
+use riotbox_core::transport::CommitBoundaryState;
+use std::path::Path;
+use tempfile::tempdir;
+
 #[test]
 fn rejects_session_with_multiple_source_refs_in_mvp_mode() {
     let dir = tempdir().expect("create temp dir");
@@ -122,7 +155,9 @@ fn loads_and_saves_external_source_graph_path_relative_to_session_file() {
     let persisted_session = load_session_json(&session_path).expect("reload session");
     let persisted_graph = load_source_graph_json(&graph_path).expect("reload graph");
     assert_eq!(
-        persisted_session.source_graph_refs[0].external_path.as_deref(),
+        persisted_session.source_graph_refs[0]
+            .external_path
+            .as_deref(),
         Some("../graphs/source-graph.json")
     );
     assert_eq!(persisted_graph.source.duration_seconds, 121.0);
@@ -228,7 +263,10 @@ fn rejects_session_with_snapshot_payload_cursor_mismatch() {
     }
 }
 
-fn sample_commit_record(action_id: ActionId, commit_sequence: u32) -> ActionCommitRecord {
+pub(in crate::jam_app::tests) fn sample_commit_record(
+    action_id: ActionId,
+    commit_sequence: u32,
+) -> ActionCommitRecord {
     ActionCommitRecord {
         action_id,
         boundary: CommitBoundaryState {
@@ -240,11 +278,11 @@ fn sample_commit_record(action_id: ActionId, commit_sequence: u32) -> ActionComm
         },
         commit_sequence,
         committed_at: 200,
-                mc202_source_phrase_plan: None,
+        mc202_source_phrase_plan: None,
     }
 }
 
-fn sample_immediate_commit_record(
+pub(in crate::jam_app::tests) fn sample_immediate_commit_record(
     action_id: ActionId,
     commit_sequence: u32,
     committed_at: TimestampMs,
@@ -264,7 +302,7 @@ fn sample_immediate_commit_record(
     }
 }
 
-fn persisted_source_monitor_action(
+pub(in crate::jam_app::tests) fn persisted_source_monitor_action(
     id: u64,
     status: ActionStatus,
     committed_at: TimestampMs,
@@ -293,7 +331,7 @@ fn persisted_source_monitor_action(
     }
 }
 
-fn persisted_undo_marker(
+pub(in crate::jam_app::tests) fn persisted_undo_marker(
     id: u64,
     params: ActionParams,
     committed_at: TimestampMs,
@@ -331,7 +369,11 @@ fn legacy_monitor_commit_without_snapshot_is_loaded_as_not_undoable_and_roundtri
     session
         .action_log
         .actions
-        .push(persisted_source_monitor_action(2, ActionStatus::Committed, 210));
+        .push(persisted_source_monitor_action(
+            2,
+            ActionStatus::Committed,
+            210,
+        ));
     session
         .action_log
         .commit_records
@@ -357,7 +399,10 @@ fn legacy_monitor_commit_without_snapshot_is_loaded_as_not_undoable_and_roundtri
         .iter()
         .find(|action| action.id == ActionId(2))
         .expect("legacy monitor action");
-    assert!(matches!(monitor.undo_policy, UndoPolicy::NotUndoable { .. }));
+    assert!(matches!(
+        monitor.undo_policy,
+        UndoPolicy::NotUndoable { .. }
+    ));
 
     state.save().expect("roundtrip normalized legacy session");
     let persisted = load_session_json(&session_path).expect("reload normalized session");
@@ -390,7 +435,11 @@ fn rejects_legacy_undone_monitor_without_trusted_typed_marker() {
     session
         .action_log
         .actions
-        .push(persisted_source_monitor_action(2, ActionStatus::Undone, 210));
+        .push(persisted_source_monitor_action(
+            2,
+            ActionStatus::Undone,
+            210,
+        ));
     session
         .action_log
         .actions
@@ -422,7 +471,11 @@ fn rejects_typed_undo_marker_with_undoable_policy_during_json_restore() {
     session
         .action_log
         .actions
-        .push(persisted_source_monitor_action(2, ActionStatus::Undone, 210));
+        .push(persisted_source_monitor_action(
+            2,
+            ActionStatus::Undone,
+            210,
+        ));
     let mut marker = persisted_undo_marker(
         3,
         ActionParams::Undo {
@@ -515,8 +568,7 @@ fn rejects_session_with_commit_record_for_uncommitted_action() {
         .action_log
         .commit_records
         .push(sample_commit_record(ActionId(1), 1));
-    save_session_json(&session_path, &session)
-        .expect("save non-committed commit-record session");
+    save_session_json(&session_path, &session).expect("save non-committed commit-record session");
 
     let error =
         JamAppState::from_json_files(&session_path, None::<&Path>).expect_err("load should fail");

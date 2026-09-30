@@ -1,3 +1,12 @@
+use crate::ui::render::render_jam_shell_snapshot;
+use crate::ui::shell_state::ShellScreen;
+use crate::ui::tests::fixtures::shells::sample_shell_state;
+use crate::ui::tests::fixtures::shells::sample_shell_without_pending_queue;
+use crate::ui::w30_operations::format_source_window_log_compact;
+use crate::ui::w30_operations::format_source_window_span;
+use riotbox_core::action::CaptureLengthIntent;
+use riotbox_core::ids::SourceId;
+
 #[test]
 fn renders_capture_shell_snapshot_with_capture_context() {
     let mut shell = sample_shell_state();
@@ -50,8 +59,14 @@ fn capture_screen_shows_selected_length_before_first_capture() {
 
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-    assert!(rendered.contains("target 1 bar @ listen first"), "{rendered}");
-    assert!(rendered.contains("1 [c] 1 bar @ listen first"), "{rendered}");
+    assert!(
+        rendered.contains("target 1 bar @ listen first"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("1 [c] 1 bar @ listen first"),
+        "{rendered}"
+    );
 }
 
 #[test]

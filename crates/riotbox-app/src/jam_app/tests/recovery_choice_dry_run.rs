@@ -1,3 +1,12 @@
+use crate::jam_app::recovery::RecoveryCandidateTrust;
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use riotbox_core::persistence::save_session_json;
+use riotbox_core::session::SessionFile;
+use std::fs;
+use tempfile::tempdir;
+
 #[test]
 fn recovery_surface_dry_runs_manual_choice_without_selecting_or_mutating_files() {
     let dir = tempdir().expect("create temp dir");

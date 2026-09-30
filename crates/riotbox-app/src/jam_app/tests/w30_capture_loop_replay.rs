@@ -1,3 +1,35 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::tests::fixtures::mc202_recipe::assert_recipe_buffers_match;
+use crate::jam_app::tests::fixtures::w30_replay::assert_w30_replay_buffers_differ;
+use crate::jam_app::tests::w30_capture_to_pad_replay::write_w30_capture_to_pad_artifact_wave;
+use riotbox_audio::runtime::render_w30_preview_offline;
+use riotbox_core::action::Action;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::ActionParams;
+use riotbox_core::action::ActionResult;
+use riotbox_core::action::ActionStatus;
+use riotbox_core::action::ActionTarget;
+use riotbox_core::action::ActorType;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::action::Quantization;
+use riotbox_core::action::TargetScope;
+use riotbox_core::action::UndoPolicy;
+use riotbox_core::ids::ActionId;
+use riotbox_core::ids::CaptureId;
+use riotbox_core::ids::SnapshotId;
+use riotbox_core::persistence::save_session_json;
+use riotbox_core::session::ActionCommitRecord;
+use riotbox_core::session::CaptureRef;
+use riotbox_core::session::CaptureSourceWindow;
+use riotbox_core::session::CaptureType;
+use riotbox_core::session::SessionFile;
+use riotbox_core::session::Snapshot;
+use riotbox_core::session::W30PreviewModeState;
+use riotbox_core::transport::CommitBoundaryState;
+use std::fs;
+use std::path::Path;
+use tempfile::tempdir;
+
 #[test]
 fn snapshot_payload_restore_hydrates_capture_loop_artifact_preview_output() {
     let tempdir = tempdir().expect("create capture loop replay tempdir");
@@ -62,7 +94,7 @@ fn snapshot_payload_restore_hydrates_capture_loop_artifact_preview_output() {
         },
         commit_sequence: 1,
         committed_at: 500,
-                mc202_source_phrase_plan: None,
+        mc202_source_phrase_plan: None,
     });
     session.snapshots = vec![Snapshot {
         snapshot_id: SnapshotId::from("before-capture-loop"),
@@ -76,13 +108,27 @@ fn snapshot_payload_restore_hydrates_capture_loop_artifact_preview_output() {
         )),
     }];
     save_session_json(&session_path, &session).expect("save capture loop replay session");
-    super::migrate_legacy_capture_identities(&session_path, std::slice::from_ref(&capture_id), true).expect("explicitly adopt legacy fixture");
+    crate::jam_app::migrate_legacy_capture_identities(
+        &session_path,
+        std::slice::from_ref(&capture_id),
+        true,
+    )
+    .expect("explicitly adopt legacy fixture");
 
     let mut committed_state = JamAppState::from_json_files(&session_path, None::<&Path>)
         .expect("load committed comparison state");
-    committed_state.session.runtime_state.lane_state.w30.last_capture = Some(capture_id.clone());
-    committed_state.session.runtime_state.lane_state.w30.preview_mode =
-        Some(W30PreviewModeState::LiveRecall);
+    committed_state
+        .session
+        .runtime_state
+        .lane_state
+        .w30
+        .last_capture = Some(capture_id.clone());
+    committed_state
+        .session
+        .runtime_state
+        .lane_state
+        .w30
+        .preview_mode = Some(W30PreviewModeState::LiveRecall);
     committed_state.refresh_view();
     let committed_pad_playback = committed_state
         .runtime
@@ -117,7 +163,12 @@ fn snapshot_payload_restore_hydrates_capture_loop_artifact_preview_output() {
 
     assert_eq!(report.applied_action_ids, vec![action_id]);
     assert_eq!(
-        replayed_state.session.runtime_state.lane_state.w30.last_capture,
+        replayed_state
+            .session
+            .runtime_state
+            .lane_state
+            .w30
+            .last_capture,
         Some(capture_id)
     );
     assert_recipe_buffers_match(

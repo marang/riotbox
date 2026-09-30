@@ -1,3 +1,24 @@
+use crate::jam_app::JamAppState;
+use crate::ui::performer_cues::latest_landed_line;
+use crate::ui::performer_cues::latest_landed_text;
+use crate::ui::render::render_jam_shell_snapshot;
+use crate::ui::scene_commit_cues::scene_post_commit_cue_line;
+use crate::ui::shell_state::JamShellState;
+use crate::ui::shell_state::ShellLaunchMode;
+use crate::ui::tests::fixtures::shells::first_result_shell_state;
+use crate::ui::tests::fixtures::shells::sample_shell_state;
+use crate::ui::tests::fixtures::shells::scene_post_commit_shell_state;
+use ratatui::style::Color;
+use ratatui::style::Modifier;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::ids::ActionId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::SceneMovementDirectionState;
+use riotbox_core::session::SceneMovementKindState;
+use riotbox_core::session::SceneMovementLaneIntentState;
+use riotbox_core::session::SceneMovementState;
+
 #[test]
 fn renders_jam_shell_with_post_commit_next_step_cue() {
     let first_result_shell = first_result_shell_state();

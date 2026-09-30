@@ -1,3 +1,17 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use riotbox_audio::mc202::Mc202RenderRouting;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::ids::ActionId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::Mc202SourcePhraseCandidateFamilyState;
+use riotbox_core::session::SourceTimingGridConfirmationState;
+use riotbox_core::source_graph::AnalysisSummary;
+use riotbox_core::transport::CommitBoundaryState;
+
 #[test]
 fn committed_mc202_answer_rejects_feature_empty_source_phrase_as_fallback() {
     let mut graph = sample_graph();
@@ -69,12 +83,14 @@ fn committed_mc202_answer_rejects_feature_empty_source_phrase_as_fallback() {
     assert!(
         plan.candidate_scorecards.iter().any(|score| {
             score.family == Mc202SourcePhraseCandidateFamilyState::FallbackControl
-                && score.rejection_reason.as_deref()
-                    == Some("control_template_not_source_derived")
+                && score.rejection_reason.as_deref() == Some("control_template_not_source_derived")
         }),
         "{plan:?}"
     );
     assert!(plan.rhythm_cells.iter().all(Option::is_none));
-    assert_eq!(state.runtime.mc202_render.routing, Mc202RenderRouting::Silent);
+    assert_eq!(
+        state.runtime.mc202_render.routing,
+        Mc202RenderRouting::Silent
+    );
     assert!(state.runtime.mc202_render.source_phrase_plan.is_none());
 }

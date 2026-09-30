@@ -1,3 +1,13 @@
+use crate::ui::render::render_jam_shell_snapshot;
+use crate::ui::shell_state::ShellScreen;
+use crate::ui::tests::fixtures::shells::sample_shell_state;
+use riotbox_core::ids::ActionId;
+use riotbox_core::ids::SourceId;
+use riotbox_core::session::SourceTimingGridConfirmationState;
+use riotbox_core::source_graph::RelationshipType;
+use riotbox_core::source_graph::TimingDegradedPolicy;
+use riotbox_core::source_graph::TimingQuality;
+
 #[test]
 fn renders_source_shell_snapshot_with_feral_scorecard() {
     let mut shell = sample_shell_state();
@@ -15,14 +25,20 @@ fn renders_source_shell_snapshot_with_feral_scorecard() {
     assert!(rendered.contains("ready needs confirm"), "{rendered}");
     assert!(rendered.contains("126.0 BPM"), "{rendered}");
     assert!(rendered.contains("c0.76"), "{rendered}");
-    assert!(rendered.contains("beat tempo | bars 1 | phase p0 amb"), "{rendered}");
+    assert!(
+        rendered.contains("beat tempo | bars 1 | phase p0 amb"),
+        "{rendered}"
+    );
     assert!(rendered.contains("phr u0"), "{rendered}");
     assert!(rendered.contains("meter 4/4 | hyp 1 | anchors kick+bb"));
     assert!(rendered.contains("mode manual | grid manual"));
     assert!(rendered.contains("trust low"));
     assert!(rendered.contains("act confirm grid"));
     assert!(rendered.contains("warn ambiguous"));
-    assert!(rendered.contains("mode time fallback | needs confirm"), "{rendered}");
+    assert!(
+        rendered.contains("mode time fallback | needs confirm"),
+        "{rendered}"
+    );
     assert!(rendered.contains("now bar -"), "{rendered}");
     assert!(rendered.contains("nav -"), "{rendered}");
     assert!(rendered.contains("c ........"), "{rendered}");
@@ -59,7 +75,10 @@ fn renders_source_shell_snapshot_with_grid_locked_timing_summary() {
         rendered.contains("mode locked | grid locked | trust high"),
         "{rendered}"
     );
-    assert!(rendered.contains("mode bar grid | grid locked"), "{rendered}");
+    assert!(
+        rendered.contains("mode bar grid | grid locked"),
+        "{rendered}"
+    );
     assert!(rendered.contains("now bar -"), "{rendered}");
     assert!(rendered.contains("nav bar"), "{rendered}");
     assert!(rendered.contains("c .......*"), "{rendered}");
@@ -110,11 +129,20 @@ fn renders_source_shell_snapshot_with_missing_source_timing_summary() {
         rendered.contains("readiness not available | trust unknown"),
         "{rendered}"
     );
-    assert!(rendered.contains("mode disabled | grid unavailable"), "{rendered}");
+    assert!(
+        rendered.contains("mode disabled | grid unavailable"),
+        "{rendered}"
+    );
     assert!(rendered.contains("warning none"), "{rendered}");
     assert!(rendered.contains("action timing unavailable"), "{rendered}");
-    assert!(rendered.contains("no timing information available"), "{rendered}");
-    assert!(rendered.contains("mode missing | not available"), "{rendered}");
+    assert!(
+        rendered.contains("no timing information available"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("mode missing | not available"),
+        "{rendered}"
+    );
     assert!(rendered.contains("now unavailable"), "{rendered}");
     assert!(rendered.contains("nav -"), "{rendered}");
     assert!(rendered.contains("c ........"), "{rendered}");

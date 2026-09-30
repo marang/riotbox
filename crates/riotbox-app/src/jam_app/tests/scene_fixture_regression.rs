@@ -1,8 +1,21 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::regression_models::SceneRegressionAction;
+use crate::jam_app::tests::fixtures::regression_models::SceneRegressionFixture;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::fixtures::session_source::scene_regression_graph;
+use crate::jam_app::tests::fixtures::session_source::seed_scene_fixture_state;
+use riotbox_core::persistence::load_session_json;
+use riotbox_core::persistence::save_session_json;
+use riotbox_core::queue::ActionQueue;
+use tempfile::tempdir;
+
 #[test]
 fn scene_fixture_backed_committed_state_regressions_hold() {
-    let fixtures: Vec<SceneRegressionFixture> =
-        serde_json::from_str(include_str!("../../../tests/fixtures/scene_regression.json"))
-            .expect("parse Scene Brain regression fixtures");
+    let fixtures: Vec<SceneRegressionFixture> = serde_json::from_str(include_str!(
+        "../../../tests/fixtures/scene_regression.json"
+    ))
+    .expect("parse Scene Brain regression fixtures");
 
     for fixture in fixtures {
         let graph = scene_regression_graph(&fixture.section_labels);

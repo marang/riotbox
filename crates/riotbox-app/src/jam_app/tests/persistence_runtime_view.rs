@@ -1,3 +1,42 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::state::SessionHydrationPolicy;
+use crate::jam_app::state::SidecarState;
+use crate::jam_app::state::SourceAudioStatus;
+use crate::jam_app::tests::fixtures::regression_models::sample_audio_health;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::fixtures::source_io::bind_synthetic_wav_identity;
+use crate::jam_app::tests::fixtures::source_io::write_pcm24_wave;
+use riotbox_audio::mc202::Mc202ContourHint;
+use riotbox_audio::mc202::Mc202HookResponse;
+use riotbox_audio::mc202::Mc202PhraseShape;
+use riotbox_audio::mc202::Mc202RenderMode;
+use riotbox_audio::mc202::Mc202RenderRouting;
+use riotbox_audio::runtime::AudioRuntimeLifecycle;
+use riotbox_audio::runtime::SourceMonitorAudioRoute;
+use riotbox_audio::source_audio::SourceAudioCache;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::action::SourceMonitorMode;
+use riotbox_core::ids::ActionId;
+use riotbox_core::ids::CaptureId;
+use riotbox_core::persistence::load_session_json;
+use riotbox_core::persistence::load_source_graph_json;
+use riotbox_core::persistence::save_session_json;
+use riotbox_core::persistence::save_source_graph_json;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::CaptureRef;
+use riotbox_core::session::CaptureType;
+use riotbox_core::session::GraphStorageMode;
+use riotbox_core::session::Mc202RoleState;
+use riotbox_core::session::Tr909TakeoverProfileState;
+use riotbox_core::source_graph::EnergyClass;
+use riotbox_core::source_graph::SectionLabelHint;
+use riotbox_core::transport::CommitBoundaryState;
+use std::fs;
+use std::path::Path;
+use tempfile::tempdir;
+
 #[test]
 fn loads_and_saves_jam_app_state_from_files() {
     let dir = tempdir().expect("create temp dir");
@@ -61,10 +100,16 @@ fn export_metadata_hydration_skips_missing_source_graph_and_capture_io_and_prese
     let mut state = JamAppState::from_json_files_for_export_metadata(&session_path)
         .expect("metadata-only hydration must not resolve relative graph or capture paths");
 
-    assert_eq!(state.session_hydration_policy, SessionHydrationPolicy::ExportMetadataOnly);
+    assert_eq!(
+        state.session_hydration_policy,
+        SessionHydrationPolicy::ExportMetadataOnly
+    );
     assert!(state.source_graph.is_none());
     assert!(state.source_audio_cache.is_none());
-    assert_eq!(state.runtime.source_audio.status, SourceAudioStatus::NotRequested);
+    assert_eq!(
+        state.runtime.source_audio.status,
+        SourceAudioStatus::NotRequested
+    );
     assert!(state.capture_audio_cache.is_empty());
     assert_eq!(state.session.source_graph_refs, graph_refs_before);
     assert_eq!(state.session.captures, captures_before);
@@ -79,7 +124,8 @@ fn export_metadata_hydration_skips_missing_source_graph_and_capture_io_and_prese
     state
         .save_session_without_source_graph_write()
         .expect("metadata-only session-only save");
-    let after_session_only_save = load_session_json(&session_path).expect("reload session-only save");
+    let after_session_only_save =
+        load_session_json(&session_path).expect("reload session-only save");
     assert_eq!(after_session_only_save.source_graph_refs, graph_refs_before);
     assert_eq!(after_session_only_save.captures, captures_before);
 }
@@ -91,7 +137,10 @@ fn export_metadata_hydration_preserves_embedded_graph_refs_on_both_save_paths() 
     let graph = sample_graph();
     let session = sample_session(&graph);
     let graph_refs_before = session.source_graph_refs.clone();
-    assert_eq!(graph_refs_before[0].storage_mode, GraphStorageMode::Embedded);
+    assert_eq!(
+        graph_refs_before[0].storage_mode,
+        GraphStorageMode::Embedded
+    );
     assert_eq!(graph_refs_before[0].embedded_graph.as_ref(), Some(&graph));
     save_session_json(&session_path, &session).expect("save embedded metadata fixture");
 
@@ -124,7 +173,10 @@ fn from_parts_keeps_the_runtime_hydration_default() {
     let graph = sample_graph();
     let state = JamAppState::from_parts(sample_session(&graph), Some(graph), ActionQueue::new());
 
-    assert_eq!(state.session_hydration_policy, SessionHydrationPolicy::RuntimeFull);
+    assert_eq!(
+        state.session_hydration_policy,
+        SessionHydrationPolicy::RuntimeFull
+    );
 }
 
 #[test]
@@ -261,15 +313,11 @@ fn source_audio_load_failure_surfaces_runtime_warning() {
         state.runtime_view.source_monitor_audio_route,
         "source_unavailable"
     );
-    assert!(
-        state
-            .runtime_view
-            .runtime_warnings
-            .iter()
-            .any(|warning| warning.contains("source audio unavailable for source monitor")
-                && warning.contains("missing-source.wav")
-                && warning.contains("source audio I/O failed"))
-    );
+    assert!(state.runtime_view.runtime_warnings.iter().any(|warning| {
+        warning.contains("source audio unavailable for source monitor")
+            && warning.contains("missing-source.wav")
+            && warning.contains("source audio I/O failed")
+    }));
 }
 
 #[test]
@@ -291,14 +339,10 @@ fn invalid_source_audio_surfaces_decode_warning() {
         JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("load app state");
 
     assert!(state.source_audio_cache.is_none());
-    assert!(
-        state
-            .runtime_view
-            .runtime_warnings
-            .iter()
-            .any(|warning| warning.contains("source audio unavailable for source monitor")
-                && warning.contains("invalid WAV source audio"))
-    );
+    assert!(state.runtime_view.runtime_warnings.iter().any(|warning| {
+        warning.contains("source audio unavailable for source monitor")
+            && warning.contains("invalid WAV source audio")
+    }));
 }
 
 #[test]
@@ -365,8 +409,7 @@ fn save_materializes_payload_for_latest_explicit_snapshot_and_restore_uses_it() 
     let session = sample_session(&graph);
     save_session_json(&session_path, &session).expect("save embedded session fixture");
 
-    let state =
-        JamAppState::from_json_files(&session_path, None::<&Path>).expect("load app state");
+    let state = JamAppState::from_json_files(&session_path, None::<&Path>).expect("load app state");
     assert!(state.session.snapshots[0].payload.is_none());
 
     state.save().expect("save app state");
@@ -376,8 +419,14 @@ fn save_materializes_payload_for_latest_explicit_snapshot_and_restore_uses_it() 
         .payload
         .as_ref()
         .expect("latest explicit snapshot gets payload");
-    assert_eq!(payload.snapshot_id, persisted_session.snapshots[0].snapshot_id);
-    assert_eq!(payload.action_cursor, persisted_session.snapshots[0].action_cursor);
+    assert_eq!(
+        payload.snapshot_id,
+        persisted_session.snapshots[0].snapshot_id
+    );
+    assert_eq!(
+        payload.action_cursor,
+        persisted_session.snapshots[0].action_cursor
+    );
     assert_eq!(payload.runtime_state, state.session.runtime_state);
 
     let mut restored =
@@ -436,7 +485,10 @@ fn source_monitor_audio_route_accepts_resampleable_source_and_output_formats() {
         state.runtime.source_monitor_audio_route,
         SourceMonitorAudioRoute::SourceUnavailable
     );
-    assert_eq!(state.runtime_view.source_monitor_audio_route, "source_unavailable");
+    assert_eq!(
+        state.runtime_view.source_monitor_audio_route,
+        "source_unavailable"
+    );
 
     state.source_audio_cache = Some(
         SourceAudioCache::from_interleaved_samples(
@@ -466,11 +518,13 @@ fn source_monitor_audio_route_accepts_resampleable_source_and_output_formats() {
     state.refresh_view();
 
     assert_eq!(state.runtime_view.source_monitor_audio_route, "source_only");
-    assert!(!state
-        .runtime_view
-        .runtime_warnings
-        .iter()
-        .any(|warning| warning.contains("source monitor unavailable")));
+    assert!(
+        !state
+            .runtime_view
+            .runtime_warnings
+            .iter()
+            .any(|warning| warning.contains("source monitor unavailable"))
+    );
 }
 
 #[test]
@@ -550,9 +604,13 @@ fn runtime_view_surfaces_faulted_and_degraded_states() {
             .iter()
             .any(|warning| warning.contains("sidecar degraded"))
     );
-    assert!(state.runtime_view.runtime_warnings.iter().any(
-        |warning| warning == "audio callback scratch overflow: 3 buffers silenced"
-    ));
+    assert!(
+        state
+            .runtime_view
+            .runtime_warnings
+            .iter()
+            .any(|warning| warning == "audio callback scratch overflow: 3 buffers silenced")
+    );
 }
 
 #[test]

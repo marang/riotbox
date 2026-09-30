@@ -1,3 +1,10 @@
+use crate::ui::shell_state::JamViewMode;
+use crate::ui::shell_state::ShellKeyOutcome;
+use crate::ui::shell_state::ShellScreen;
+use crate::ui::tests::fixtures::shells::first_run_shell_state;
+use crate::ui::tests::fixtures::shells::sample_shell_state;
+use crossterm::event::KeyCode;
+
 #[test]
 fn shell_state_handles_help_refresh_and_action_keys() {
     let mut shell = sample_shell_state();
@@ -8,7 +15,10 @@ fn shell_state_handles_help_refresh_and_action_keys() {
     );
     assert!(shell.show_help);
     assert_eq!(shell.status_message, "help overlay opened");
-    assert_eq!(shell.handle_key_code(KeyCode::Esc), ShellKeyOutcome::Continue);
+    assert_eq!(
+        shell.handle_key_code(KeyCode::Esc),
+        ShellKeyOutcome::Continue
+    );
     assert!(!shell.show_help);
     assert_eq!(shell.status_message, "help overlay closed");
 

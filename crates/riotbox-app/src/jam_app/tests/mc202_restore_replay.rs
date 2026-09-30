@@ -1,9 +1,26 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::mc202_recipe::assert_mc202_replay_matches_committed_source_plan;
+use crate::jam_app::tests::fixtures::mc202_recipe::assert_recipe_buffers_differ;
+use crate::jam_app::tests::fixtures::mc202_recipe::assert_recipe_buffers_match;
+use crate::jam_app::tests::fixtures::mc202_recipe::commit_mc202_recipe_step;
+use crate::jam_app::tests::fixtures::mc202_recipe::render_mc202_recipe_buffer;
+use crate::jam_app::tests::fixtures::mc202_recipe::replay_base_with_committed_source_timing;
+use crate::jam_app::tests::fixtures::restore_parity::SnapshotPayloadRestoreSpec;
+use crate::jam_app::tests::fixtures::restore_parity::run_snapshot_payload_restore_probe;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use riotbox_core::queue::ActionQueue;
+
 #[test]
 fn mc202_snapshot_payload_restore_hydrates_answer_projection() {
     let graph = sample_graph();
     let base_session = sample_session(&graph);
-    let mut committed_state =
-        JamAppState::from_parts(base_session.clone(), Some(graph.clone()), ActionQueue::new());
+    let mut committed_state = JamAppState::from_parts(
+        base_session.clone(),
+        Some(graph.clone()),
+        ActionQueue::new(),
+    );
 
     assert_eq!(
         committed_state.queue_mc202_generate_follower(300),
@@ -49,7 +66,11 @@ fn mc202_snapshot_payload_restore_hydrates_answer_projection() {
     );
     assert_eq!(
         replayed_state.session.runtime_state.macro_state.mc202_touch,
-        committed_state.session.runtime_state.macro_state.mc202_touch
+        committed_state
+            .session
+            .runtime_state
+            .macro_state
+            .mc202_touch
     );
     assert_recipe_buffers_match(
         "snapshot payload answer restore source plan -> committed answer",
@@ -69,8 +90,11 @@ fn mc202_snapshot_payload_restore_hydrates_answer_projection() {
 fn mc202_snapshot_payload_restore_hydrates_pressure_projection() {
     let graph = sample_graph();
     let base_session = sample_session(&graph);
-    let mut committed_state =
-        JamAppState::from_parts(base_session.clone(), Some(graph.clone()), ActionQueue::new());
+    let mut committed_state = JamAppState::from_parts(
+        base_session.clone(),
+        Some(graph.clone()),
+        ActionQueue::new(),
+    );
 
     assert_eq!(
         committed_state.queue_mc202_generate_follower(300),
@@ -122,7 +146,11 @@ fn mc202_snapshot_payload_restore_hydrates_pressure_projection() {
     );
     assert_eq!(
         replayed_state.session.runtime_state.macro_state.mc202_touch,
-        committed_state.session.runtime_state.macro_state.mc202_touch
+        committed_state
+            .session
+            .runtime_state
+            .macro_state
+            .mc202_touch
     );
     assert_recipe_buffers_match(
         "snapshot payload pressure restore source plan -> committed pressure",
@@ -142,8 +170,11 @@ fn mc202_snapshot_payload_restore_hydrates_pressure_projection() {
 fn mc202_snapshot_payload_restore_hydrates_instigator_projection() {
     let graph = sample_graph();
     let base_session = sample_session(&graph);
-    let mut committed_state =
-        JamAppState::from_parts(base_session.clone(), Some(graph.clone()), ActionQueue::new());
+    let mut committed_state = JamAppState::from_parts(
+        base_session.clone(),
+        Some(graph.clone()),
+        ActionQueue::new(),
+    );
 
     assert_eq!(
         committed_state.queue_mc202_generate_follower(300),
@@ -201,7 +232,11 @@ fn mc202_snapshot_payload_restore_hydrates_instigator_projection() {
     );
     assert_eq!(
         replayed_state.session.runtime_state.macro_state.mc202_touch,
-        committed_state.session.runtime_state.macro_state.mc202_touch
+        committed_state
+            .session
+            .runtime_state
+            .macro_state
+            .mc202_touch
     );
     assert_recipe_buffers_match(
         "snapshot payload instigator restore source plan -> committed instigator",
@@ -221,8 +256,11 @@ fn mc202_snapshot_payload_restore_hydrates_instigator_projection() {
 fn mc202_snapshot_payload_restore_hydrates_phrase_mutation_projection() {
     let graph = sample_graph();
     let base_session = sample_session(&graph);
-    let mut committed_state =
-        JamAppState::from_parts(base_session.clone(), Some(graph.clone()), ActionQueue::new());
+    let mut committed_state = JamAppState::from_parts(
+        base_session.clone(),
+        Some(graph.clone()),
+        ActionQueue::new(),
+    );
 
     assert_eq!(
         committed_state.queue_mc202_generate_follower(300),
@@ -286,7 +324,11 @@ fn mc202_snapshot_payload_restore_hydrates_phrase_mutation_projection() {
     );
     assert_eq!(
         replayed_state.session.runtime_state.macro_state.mc202_touch,
-        committed_state.session.runtime_state.macro_state.mc202_touch
+        committed_state
+            .session
+            .runtime_state
+            .macro_state
+            .mc202_touch
     );
     assert_recipe_buffers_match(
         "snapshot payload mutation restore source plan -> committed mutation",

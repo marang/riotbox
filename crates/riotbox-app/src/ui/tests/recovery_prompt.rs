@@ -1,4 +1,24 @@
+use crate::jam_app::JamAppState;
+use crate::ui::render::render_jam_shell_snapshot;
+use crate::ui::tests::fixtures::shells::sample_shell_state;
+use riotbox_core::action::Action;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::ActionParams;
+use riotbox_core::action::ActionResult;
+use riotbox_core::action::ActionStatus;
+use riotbox_core::action::ActionTarget;
+use riotbox_core::action::ActorType;
+use riotbox_core::action::Quantization;
+use riotbox_core::action::TargetScope;
+use riotbox_core::action::UndoPolicy;
+use riotbox_core::ids::ActionId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::ids::SnapshotId;
 use riotbox_core::persistence::save_session_json;
+use riotbox_core::session::ActionCommitRecord;
+use riotbox_core::session::SessionFile;
+use riotbox_core::session::Snapshot;
+use riotbox_core::transport::CommitBoundaryState;
 use tempfile::tempdir;
 
 #[test]
@@ -20,8 +40,7 @@ fn renders_manual_recovery_prompt_in_warnings_and_help() {
 
     let mut shell = sample_shell_state();
     shell.set_recovery_surface(
-        JamAppState::scan_session_recovery_surface(&target_path)
-            .expect("scan recovery surface"),
+        JamAppState::scan_session_recovery_surface(&target_path).expect("scan recovery surface"),
     );
 
     let rendered = render_jam_shell_snapshot(&shell, 120, 38);
@@ -74,7 +93,10 @@ fn renders_manual_recovery_prompt_in_warnings_and_help() {
         rendered.contains("Dry-run result: Dry-run only: candidate inspected"),
         "{rendered}"
     );
-    assert!(rendered.contains("Next: inspect that file outside Riotbox"), "{rendered}");
+    assert!(
+        rendered.contains("Next: inspect that file outside Riotbox"),
+        "{rendered}"
+    );
     assert!(
         shell
             .recovery_surface
@@ -159,13 +181,12 @@ fn renders_manual_recovery_prompt_with_blocked_restore_replay_state() {
             },
             commit_sequence: 1,
             committed_at: 900,
-                mc202_source_phrase_plan: None,
+            mc202_source_phrase_plan: None,
         });
     shell.app.refresh_view();
     save_session_json(&autosave_path, &shell.app.session).expect("save blocked autosave session");
     shell.set_recovery_surface(
-        JamAppState::scan_session_recovery_surface(&target_path)
-            .expect("scan recovery surface"),
+        JamAppState::scan_session_recovery_surface(&target_path).expect("scan recovery surface"),
     );
     shell.show_help = true;
 
@@ -253,7 +274,7 @@ fn renders_artifact_ready_replay_blocker_hint_without_selecting_candidate() {
             },
             commit_sequence: 1,
             committed_at: 900,
-                mc202_source_phrase_plan: None,
+            mc202_source_phrase_plan: None,
         });
     shell.app.refresh_view();
     save_session_json(&autosave_path, &shell.app.session).expect("save blocked autosave session");
@@ -263,8 +284,7 @@ fn renders_artifact_ready_replay_blocker_hint_without_selecting_candidate() {
         .expect("write ready capture artifact");
 
     shell.set_recovery_surface(
-        JamAppState::scan_session_recovery_surface(&target_path)
-            .expect("scan recovery surface"),
+        JamAppState::scan_session_recovery_surface(&target_path).expect("scan recovery surface"),
     );
     shell.show_help = true;
 
@@ -276,10 +296,7 @@ fn renders_artifact_ready_replay_blocker_hint_without_selecting_candidate() {
         rendered.contains("families Mutation | suffix 1"),
         "{rendered}"
     );
-    assert!(
-        rendered.contains("artifact paths ready: 1"),
-        "{rendered}"
-    );
+    assert!(rendered.contains("artifact paths ready: 1"), "{rendered}");
     assert!(rendered.contains("payload ready"), "{rendered}");
     assert!(
         !rendered.contains("Artifact note: audio present"),

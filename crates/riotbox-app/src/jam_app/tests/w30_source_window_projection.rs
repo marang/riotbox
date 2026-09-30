@@ -1,3 +1,24 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::fixtures::source_io::write_pcm16_wave;
+use riotbox_audio::source_audio::SourceAudioCache;
+use riotbox_audio::w30::W30_PREVIEW_SAMPLE_WINDOW_LEN;
+use riotbox_audio::w30::W30_RESAMPLE_SOURCE_WINDOW_LEN;
+use riotbox_audio::w30::W30PreviewRenderMode;
+use riotbox_audio::w30::W30PreviewSourceProfile;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::ids::BankId;
+use riotbox_core::ids::PadId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::CaptureSourceWindow;
+use riotbox_core::session::CaptureTarget;
+use riotbox_core::session::W30PreviewModeState;
+use riotbox_core::transport::CommitBoundaryState;
+use tempfile::tempdir;
+
 #[test]
 fn resample_source_projection_keeps_a_transient_original_pcm_window() {
     let frame_count = W30_RESAMPLE_SOURCE_WINDOW_LEN * 3;
@@ -10,8 +31,9 @@ fn resample_source_projection_keeps_a_transient_original_pcm_window() {
         samples[frame * 2 + 1] = sample;
     }
 
-    let projected = super::projection::resample_source_from_interleaved(&samples, 2, 48_000)
-        .expect("transient source projection");
+    let projected =
+        crate::jam_app::projection::resample_source_from_interleaved(&samples, 2, 48_000)
+            .expect("transient source projection");
 
     assert_eq!(projected.source_start_frame, transient_start as u64);
     assert_eq!(
@@ -26,15 +48,19 @@ fn resample_source_projection_keeps_a_transient_original_pcm_window() {
 fn resample_source_projection_rejects_invalid_audio_metadata() {
     let samples = [0.25_f32; 32];
 
-    assert!(super::projection::resample_source_from_interleaved(&samples, 0, 48_000).is_none());
-    assert!(super::projection::resample_source_from_interleaved(&samples, 2, 0).is_none());
-    assert!(super::projection::resample_source_from_interleaved(&[], 2, 48_000).is_none());
     assert!(
-        super::projection::resample_source_from_interleaved(&samples[..31], 2, 48_000).is_none()
+        crate::jam_app::projection::resample_source_from_interleaved(&samples, 0, 48_000).is_none()
+    );
+    assert!(crate::jam_app::projection::resample_source_from_interleaved(&samples, 2, 0).is_none());
+    assert!(crate::jam_app::projection::resample_source_from_interleaved(&[], 2, 48_000).is_none());
+    assert!(
+        crate::jam_app::projection::resample_source_from_interleaved(&samples[..31], 2, 48_000)
+            .is_none()
     );
     let non_finite = [0.0_f32, f32::NAN];
     assert!(
-        super::projection::resample_source_from_interleaved(&non_finite, 2, 48_000).is_none()
+        crate::jam_app::projection::resample_source_from_interleaved(&non_finite, 2, 48_000)
+            .is_none()
     );
 }
 

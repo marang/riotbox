@@ -1,3 +1,48 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::mc202_recipe::assert_recipe_buffers_match;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::fixtures::source_io::write_pcm16_wave;
+use crate::jam_app::tests::fixtures::w30_slice_pool::w30_slice_pool_state_with_source_windows;
+use riotbox_audio::mc202::Mc202HookResponse;
+use riotbox_audio::mc202::Mc202PhraseShape;
+use riotbox_audio::mc202::Mc202RenderMode;
+use riotbox_audio::mc202::Mc202RenderRouting;
+use riotbox_audio::runtime::render_mc202_offline;
+use riotbox_audio::runtime::signal_metrics;
+use riotbox_audio::source_audio::SourceAudioCache;
+use riotbox_audio::tr909::Tr909SourceSupportProfile;
+use riotbox_audio::w30::W30ResampleTapAvailability;
+use riotbox_audio::w30::W30ResampleTapMode;
+use riotbox_audio::w30::W30ResampleTapRouting;
+use riotbox_audio::w30::W30ResampleTapSourceProfile;
+use riotbox_core::action::ActionParams;
+use riotbox_core::ids::AssetId;
+use riotbox_core::ids::BankId;
+use riotbox_core::ids::CaptureId;
+use riotbox_core::ids::PadId;
+use riotbox_core::ids::SectionId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::CaptureTarget;
+use riotbox_core::session::CaptureType;
+use riotbox_core::session::Mc202RoleState;
+use riotbox_core::session::SessionFile;
+use riotbox_core::session::Tr909ReinforcementModeState;
+use riotbox_core::session::Tr909TakeoverProfileState;
+use riotbox_core::source_graph::Asset;
+use riotbox_core::source_graph::AssetType;
+use riotbox_core::source_graph::Candidate;
+use riotbox_core::source_graph::CandidateType;
+use riotbox_core::source_graph::EnergyClass;
+use riotbox_core::source_graph::QualityClass;
+use riotbox_core::source_graph::Relationship;
+use riotbox_core::source_graph::RelationshipType;
+use riotbox_core::source_graph::Section;
+use riotbox_core::source_graph::SectionLabelHint;
+use riotbox_core::source_graph::SourceGraph;
+use tempfile::tempdir;
+
 #[test]
 fn feral_break_support_no_longer_injects_mc202_hook_response_output() {
     let mut control_graph = sample_graph();
@@ -323,10 +368,7 @@ fn runtime_view_surfaces_w30_resample_tap_diagnostics() {
         state.runtime_view.w30_resample_tap_mode,
         "capture_lineage_ready"
     );
-    assert_eq!(
-        state.runtime_view.w30_resample_tap_routing,
-        "silent"
-    );
+    assert_eq!(state.runtime_view.w30_resample_tap_routing, "silent");
     assert_eq!(
         state.runtime_view.w30_resample_tap_availability,
         "source_audio_unavailable"

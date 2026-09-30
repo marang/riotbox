@@ -1,4 +1,25 @@
-fn add_feral_ready_evidence(graph: &mut SourceGraph) {
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::ids::AssetId;
+use riotbox_core::ids::BankId;
+use riotbox_core::ids::CaptureId;
+use riotbox_core::ids::PadId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::CaptureTarget;
+use riotbox_core::source_graph::Asset;
+use riotbox_core::source_graph::AssetType;
+use riotbox_core::source_graph::Candidate;
+use riotbox_core::source_graph::CandidateType;
+use riotbox_core::source_graph::Relationship;
+use riotbox_core::source_graph::RelationshipType;
+use riotbox_core::source_graph::SourceGraph;
+use riotbox_core::transport::CommitBoundaryState;
+
+pub(in crate::jam_app::tests) fn add_feral_ready_evidence(graph: &mut SourceGraph) {
     graph.assets.push(Asset {
         asset_id: AssetId::from("asset-hook"),
         asset_type: AssetType::HookFragment,
@@ -29,7 +50,7 @@ fn add_feral_ready_evidence(graph: &mut SourceGraph) {
     });
 }
 
-fn add_quote_risk_evidence(graph: &mut SourceGraph) {
+pub(in crate::jam_app::tests) fn add_quote_risk_evidence(graph: &mut SourceGraph) {
     graph.relationships.push(Relationship {
         relation_type: RelationshipType::HighQuoteRiskWith,
         from_id: riotbox_core::source_graph::GraphNodeRef::Asset("asset-hook".into()),
@@ -39,7 +60,7 @@ fn add_quote_risk_evidence(graph: &mut SourceGraph) {
     });
 }
 
-fn lineage_ready_resample_state(graph: SourceGraph) -> JamAppState {
+pub(in crate::jam_app::tests) fn lineage_ready_resample_state(graph: SourceGraph) -> JamAppState {
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
@@ -57,7 +78,7 @@ fn lineage_ready_resample_state(graph: SourceGraph) -> JamAppState {
     state
 }
 
-fn commit_lineage_ready_resample(state: &mut JamAppState) {
+pub(in crate::jam_app::tests) fn commit_lineage_ready_resample(state: &mut JamAppState) {
     assert_eq!(
         state.queue_w30_internal_resample(650),
         Some(QueueControlResult::Enqueued)

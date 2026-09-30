@@ -1,3 +1,14 @@
+use crate::ui::first_run_capture::pending_capture_lines;
+use crate::ui::render::render_jam_shell_snapshot;
+use crate::ui::shell_state::JamShellState;
+use crate::ui::shell_state::ShellLaunchMode;
+use crate::ui::shell_state::ShellScreen;
+use crate::ui::tests::fixtures::shells::first_run_shell_state;
+use crate::ui::tests::fixtures::shells::sample_shell_state;
+use riotbox_core::action::CaptureLengthIntent;
+use riotbox_core::source_graph::TimingDegradedPolicy;
+use riotbox_core::source_graph::TimingQuality;
+
 #[test]
 fn renders_capture_do_next_with_pending_capture_state() {
     let first_run_shell = first_run_shell_state();
@@ -53,7 +64,10 @@ fn renders_capture_target_boundary_when_grid_needs_listening() {
 
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-    assert!(rendered.contains("target 4 bars @ listen first"), "{rendered}");
+    assert!(
+        rendered.contains("target 4 bars @ listen first"),
+        "{rendered}"
+    );
     assert!(
         rendered.contains("1 [c] 4 bars @ listen first"),
         "{rendered}"
@@ -69,10 +83,7 @@ fn renders_capture_target_boundary_when_grid_is_locked() {
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
     assert!(rendered.contains("target 4 bars @ next bar"), "{rendered}");
-    assert!(
-        rendered.contains("1 [c] 4 bars @ next bar"),
-        "{rendered}"
-    );
+    assert!(rendered.contains("1 [c] 4 bars @ next bar"), "{rendered}");
 }
 
 #[test]
@@ -95,7 +106,7 @@ fn renders_capture_phrase_fallback_target_boundary() {
     );
 }
 
-fn lock_capture_source_map(shell: &mut JamShellState) {
+pub(in crate::ui::tests) fn lock_capture_source_map(shell: &mut JamShellState) {
     let graph = shell
         .app
         .source_graph

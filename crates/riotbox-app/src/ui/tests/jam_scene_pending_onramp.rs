@@ -1,3 +1,29 @@
+use crate::jam_app::JamAppState;
+use crate::ui::jam_layout::next_panel_lines;
+use crate::ui::render::render_jam_shell_snapshot;
+use crate::ui::scene_timing::quantization_countdown_cue;
+use crate::ui::scene_timing::queued_timing_rail_line;
+use crate::ui::scene_timing::scene_pending_line;
+use crate::ui::shell_state::JamShellState;
+use crate::ui::shell_state::ShellLaunchMode;
+use crate::ui::shell_state::ShellScreen;
+use crate::ui::tests::fixtures::regression_models::scene_regression_graph;
+use crate::ui::tests::fixtures::shells::first_result_shell_state;
+use crate::ui::tests::fixtures::shells::first_run_captured_shell_state;
+use crate::ui::tests::fixtures::shells::first_run_promoted_shell_state;
+use crate::ui::tests::fixtures::shells::first_run_shell_state;
+use crate::ui::tests::fixtures::shells::sample_shell_state;
+use crate::ui::tests::fixtures::shells::set_first_run_audio_runtime;
+use ratatui::style::Color;
+use ratatui::style::Modifier;
+use riotbox_audio::runtime::AudioRuntimeLifecycle;
+use riotbox_audio::runtime::SourceMonitorAudioRoute;
+use riotbox_core::action::Quantization;
+use riotbox_core::ids::SceneId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::source_graph::TimingDegradedPolicy;
+use riotbox_core::source_graph::TimingQuality;
+
 #[test]
 fn renders_jam_shell_with_scene_brain_summary() {
     let sample_shell = sample_shell_state();
@@ -447,7 +473,10 @@ fn promoted_keeper_offers_blend_only_when_source_monitor_is_ready() {
         rendered.contains("[M] choose Blend: source + Riotbox"),
         "{rendered}"
     );
-    assert!(rendered.contains("Then [w] [f] [s] [y] perform"), "{rendered}");
+    assert!(
+        rendered.contains("Then [w] [f] [s] [y] perform"),
+        "{rendered}"
+    );
 }
 
 #[test]

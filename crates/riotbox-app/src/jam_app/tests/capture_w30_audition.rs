@@ -1,3 +1,33 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::source_map_navigation::source_map_navigation_graph;
+use riotbox_audio::runtime::AudioRuntimeTimingSnapshot;
+use riotbox_audio::w30::W30PreviewRenderMode;
+use riotbox_audio::w30::W30PreviewSourceProfile;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::CaptureLengthIntent;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::ids::BankId;
+use riotbox_core::ids::CaptureId;
+use riotbox_core::ids::PadId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::ids::SourceId;
+use riotbox_core::persistence::load_session_json;
+use riotbox_core::persistence::save_session_json;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::CaptureRef;
+use riotbox_core::session::CaptureTarget;
+use riotbox_core::session::CaptureType;
+use riotbox_core::session::W30PreviewModeState;
+use riotbox_core::source_graph::BeatPoint;
+use riotbox_core::transport::CommitBoundaryState;
+use riotbox_core::transport::TransportClockState;
+use riotbox_core::view::jam::CaptureTargetKindView;
+use riotbox_core::view::jam::W30PendingAuditionKind;
+use tempfile::tempdir;
+
 #[test]
 fn stale_stopped_audio_timing_snapshot_does_not_cancel_transport_start() {
     let graph = sample_graph();

@@ -1,3 +1,39 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::mc202_recipe::assert_recipe_buffers_differ;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use riotbox_audio::runtime::render_tr909_offline;
+use riotbox_audio::runtime::signal_metrics;
+use riotbox_audio::tr909::Tr909PatternAdoption;
+use riotbox_audio::tr909::Tr909PhraseVariation;
+use riotbox_audio::tr909::Tr909RenderMode;
+use riotbox_audio::tr909::Tr909RenderRouting;
+use riotbox_audio::tr909::Tr909SourceSupportContext;
+use riotbox_audio::tr909::Tr909SourceSupportProfile;
+use riotbox_audio::tr909::Tr909TakeoverRenderProfile;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::ids::AssetId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::ids::SectionId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::SessionFile;
+use riotbox_core::session::Tr909ReinforcementModeState;
+use riotbox_core::session::Tr909TakeoverProfileState;
+use riotbox_core::source_graph::Asset;
+use riotbox_core::source_graph::AssetType;
+use riotbox_core::source_graph::Candidate;
+use riotbox_core::source_graph::CandidateType;
+use riotbox_core::source_graph::EnergyClass;
+use riotbox_core::source_graph::QualityClass;
+use riotbox_core::source_graph::Relationship;
+use riotbox_core::source_graph::RelationshipType;
+use riotbox_core::source_graph::Section;
+use riotbox_core::source_graph::SectionLabelHint;
+use riotbox_core::source_graph::SourceGraph;
+use riotbox_core::transport::CommitBoundaryState;
+use riotbox_core::transport::TransportClockState;
+
 #[test]
 fn committed_tr909_fill_and_reinforce_write_log_results() {
     let graph = sample_graph();
@@ -74,7 +110,12 @@ fn fill_owns_only_its_commit_bar_then_slam_articulates_break_reinforcement() {
     assert_eq!(fill.len(), 1);
     assert_eq!(state.runtime.tr909_render.mode, Tr909RenderMode::Fill);
     assert_eq!(
-        state.session.runtime_state.lane_state.tr909.reinforcement_mode,
+        state
+            .session
+            .runtime_state
+            .lane_state
+            .tr909
+            .reinforcement_mode,
         Some(Tr909ReinforcementModeState::BreakReinforce)
     );
 
@@ -358,7 +399,7 @@ fn committed_tr909_takeover_and_release_update_lane_state() {
     );
 }
 
-fn last_action_result_summary(state: &JamAppState) -> Option<&str> {
+pub(in crate::jam_app::tests) fn last_action_result_summary(state: &JamAppState) -> Option<&str> {
     state
         .session
         .action_log

@@ -1,19 +1,34 @@
-use ratatui::{
-    Frame,
-    layout::Rect,
-    style::{Modifier, Style},
-    text::{Line, Span},
-    widgets::{Block, Borders, Paragraph},
-};
+use crate::ui::first_run_capture::source_monitor_route_compact_label;
+use crate::ui::footer_cues::footer_ok_line;
+use crate::ui::footer_cues::footer_scene_affordance_cue;
+use crate::ui::footer_cues::footer_status_line;
+use crate::ui::footer_cues::footer_warning_line;
+use crate::ui::footer_cues::spans_with_primary_gesture_keys;
+use crate::ui::footer_cues::spans_with_primary_legend_keys;
+use crate::ui::gestures::ADVANCED_GESTURES;
+use crate::ui::gestures::GESTURE_CAPTURE;
+use crate::ui::gestures::GESTURE_FILL;
+use crate::ui::gestures::GESTURE_HIT;
+use crate::ui::gestures::GESTURE_SCENE_JUMP;
+use crate::ui::gestures::GESTURE_UNDO;
+use crate::ui::gestures::LANE_GESTURES;
+use crate::ui::gestures::render_gesture_items;
+use crate::ui::recovery_prompt::recovery_warning_line;
+use crate::ui::shell_state::JamShellState;
+use crate::ui::shell_state::JamViewMode;
+use crate::ui::shell_state::ShellScreen;
+use crate::ui::styles::style_pending_cue;
+use crate::ui::styles::style_primary_control;
+use ratatui::Frame;
+use ratatui::layout::Rect;
+use ratatui::style::Modifier;
+use ratatui::style::Style;
+use ratatui::text::Line;
+use ratatui::text::Span;
+use ratatui::widgets::Block;
+use ratatui::widgets::Borders;
+use ratatui::widgets::Paragraph;
 use riotbox_core::view::jam::SceneJumpAvailabilityView;
-
-use super::{
-    ADVANCED_GESTURES, GESTURE_CAPTURE, GESTURE_FILL, GESTURE_HIT, GESTURE_SCENE_JUMP,
-    GESTURE_UNDO, JamShellState, JamViewMode, LANE_GESTURES, ShellScreen, footer_ok_line,
-    footer_scene_affordance_cue, footer_status_line, footer_warning_line, recovery_warning_line,
-    render_gesture_items, source_monitor_route_compact_label, spans_with_primary_gesture_keys,
-    spans_with_primary_legend_keys, style_pending_cue, style_primary_control,
-};
 
 pub(super) fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     let content_rows = usize::from(area.height.saturating_sub(2));

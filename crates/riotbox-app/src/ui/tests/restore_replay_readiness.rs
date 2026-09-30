@@ -1,3 +1,23 @@
+use crate::ui::render::render_jam_shell_snapshot;
+use crate::ui::shell_state::ShellScreen;
+use crate::ui::tests::fixtures::shells::sample_shell_state;
+use riotbox_core::action::Action;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::ActionParams;
+use riotbox_core::action::ActionResult;
+use riotbox_core::action::ActionStatus;
+use riotbox_core::action::ActionTarget;
+use riotbox_core::action::ActorType;
+use riotbox_core::action::Quantization;
+use riotbox_core::action::TargetScope;
+use riotbox_core::action::UndoPolicy;
+use riotbox_core::ids::ActionId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::ids::SnapshotId;
+use riotbox_core::session::ActionCommitRecord;
+use riotbox_core::session::Snapshot;
+use riotbox_core::transport::CommitBoundaryState;
+
 #[test]
 fn renders_log_shell_with_restore_replay_readiness_cues() {
     let mut shell = sample_shell_state();
@@ -46,7 +66,7 @@ fn renders_log_shell_with_restore_replay_readiness_cues() {
             },
             commit_sequence: 1,
             committed_at: 900,
-                mc202_source_phrase_plan: None,
+            mc202_source_phrase_plan: None,
         });
     shell.app.refresh_view();
     shell.active_screen = ShellScreen::Log;
@@ -57,8 +77,5 @@ fn renders_log_shell_with_restore_replay_readiness_cues() {
     assert!(rendered.contains("replay 1 suffix"), "{rendered}");
     assert!(rendered.contains("anchor before-fill@0"), "{rendered}");
     assert!(rendered.contains("payload missing"), "{rendered}");
-    assert!(
-        rendered.contains("suffix tr909.fill_next"),
-        "{rendered}"
-    );
+    assert!(rendered.contains("suffix tr909.fill_next"), "{rendered}");
 }

@@ -1,13 +1,13 @@
-use ratatui::{
-    style::Style,
-    text::{Line, Span},
-};
-use riotbox_core::view::jam::{
-    ArrangementSceneActionSurfaceView, ArrangementSceneContractReadinessView,
-    ArrangementSceneTruthSourceView,
-};
-
-use super::{JamShellState, style_confirmation_strong, style_low_emphasis, style_pending_cue};
+use crate::ui::shell_state::JamShellState;
+use crate::ui::styles::style_confirmation_strong;
+use crate::ui::styles::style_low_emphasis;
+use crate::ui::styles::style_pending_cue;
+use ratatui::style::Style;
+use ratatui::text::Line;
+use ratatui::text::Span;
+use riotbox_core::view::jam::ArrangementSceneActionSurfaceView;
+use riotbox_core::view::jam::ArrangementSceneContractReadinessView;
+use riotbox_core::view::jam::ArrangementSceneTruthSourceView;
 
 pub(crate) fn arrangement_taste_line(shell: &JamShellState) -> Line<'static> {
     let (cue, detail, cue_style) = arrangement_taste_parts(shell);

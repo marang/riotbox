@@ -1,3 +1,11 @@
+use crate::jam_app::ghost_queue::GhostSuggestionQueueResult;
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::ghost_assist_queue::fixtures::ghost_fill_suggestion;
+use riotbox_core::action::GhostMode;
+use riotbox_core::queue::ActionQueue;
+
 #[test]
 fn current_ghost_suggestion_slot_archives_and_clears_without_queueing() {
     let graph = sample_graph();

@@ -1,9 +1,11 @@
-use std::{fs, path::Path};
-
-use super::{
-    JamAppState, SourceAudioStatus, bind_synthetic_wav_identity, sample_graph, sample_session,
-    write_pcm16_wave,
-};
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::SourceAudioStatus;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::fixtures::source_io::bind_synthetic_wav_identity;
+use crate::jam_app::tests::fixtures::source_io::write_pcm16_wave;
+use std::fs;
+use std::path::Path;
 
 #[test]
 fn unknown_legacy_decode_profile_cannot_admit_source_audio_with_a_standard_graph_profile() {

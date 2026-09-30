@@ -1,14 +1,22 @@
+use crate::ui::capture_cues::capture_or_recall_cue_label;
+use crate::ui::first_run_capture::capture_handoff_readiness_label;
+use crate::ui::lane_diagnostics::w30_target_compact;
+use crate::ui::shell_state::JamShellState;
+use crate::ui::w30_cue_labels::w30_pending_cue_label;
+use crate::ui::w30_operations::w30_bank_manager_compact;
+use crate::ui::w30_operations::w30_damage_profile_compact;
+use crate::ui::w30_operations::w30_loop_freeze_compact;
+use crate::ui::w30_preview_labels::w30_preview_source_readiness;
+use crate::ui::w30_resample_labels::w30_capture_lineage_compact;
+use crate::ui::w30_resample_labels::w30_resample_lineage_active;
+use crate::ui::w30_resample_labels::w30_resample_mix_log_compact;
+use crate::ui::w30_resample_labels::w30_resample_route_compact;
+use crate::ui::w30_resample_labels::w30_resample_source_compact;
+use crate::ui::w30_resample_labels::w30_resample_tap_compact;
+use crate::ui::w30_slice_pool::w30_slice_pool_compact;
+use crate::ui::w30_slice_pool::w30_slice_pool_relevant;
 use ratatui::text::Line;
 use riotbox_core::view::jam::CaptureTargetKindView;
-
-use super::capture_handoff_readiness_label;
-use crate::ui::{
-    JamShellState, capture_or_recall_cue_label, w30_bank_manager_compact,
-    w30_capture_lineage_compact, w30_damage_profile_compact, w30_loop_freeze_compact,
-    w30_pending_cue_label, w30_preview_source_readiness, w30_resample_lineage_active,
-    w30_resample_mix_log_compact, w30_resample_route_compact, w30_resample_source_compact,
-    w30_resample_tap_compact, w30_slice_pool_compact, w30_slice_pool_relevant, w30_target_compact,
-};
 
 pub(in crate::ui) fn capture_routing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let latest_promoted = shell

@@ -1,3 +1,19 @@
+use crate::ui::first_run_capture::capture_pending_detail_line;
+use crate::ui::first_run_capture::capture_pending_intent_line;
+use crate::ui::footer_cues::footer_ok_line;
+use crate::ui::footer_cues::footer_status_line;
+use crate::ui::footer_cues::footer_warning_line;
+use crate::ui::footer_renderer::footer_advanced_line;
+use crate::ui::footer_renderer::footer_keys_line;
+use crate::ui::footer_renderer::footer_lane_ops_line;
+use crate::ui::footer_renderer::footer_primary_line;
+use crate::ui::footer_renderer::footer_scene_line;
+use crate::ui::footer_renderer::render_help_primary_gesture_items;
+use crate::ui::styles::line_with_primary_key_prefixes;
+use crate::ui::tests::fixtures::shells::sample_shell_state;
+use ratatui::style::Color;
+use ratatui::style::Modifier;
+
 #[test]
 fn footer_keys_line_styles_top_legend_key_tokens() {
     let line = footer_keys_line("i jam inspect", "re-ingest source");

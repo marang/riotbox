@@ -1,7 +1,13 @@
-use super::{JamAppState, fs, sample_graph, sample_session, save_session_json, tempdir};
-use crate::jam_app::{CaptureAudioStatus, migrate_legacy_capture_identities};
+use crate::jam_app::CaptureAudioStatus;
+use crate::jam_app::migrate_legacy_capture_identities;
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
 use riotbox_audio::source_audio::write_interleaved_pcm16_wav;
+use riotbox_core::persistence::save_session_json;
 use riotbox_core::session::CaptureAudioIdentityProvenance;
+use std::fs;
+use tempfile::tempdir;
 
 fn legacy_fixture() -> (
     tempfile::TempDir,

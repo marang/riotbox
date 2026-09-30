@@ -1,3 +1,30 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::fixtures::session_source::scene_regression_graph;
+use riotbox_audio::runtime::AudioRuntimeTimingSnapshot;
+use riotbox_audio::tr909::Tr909RenderMode;
+use riotbox_audio::tr909::Tr909RenderRouting;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::ActionDraft;
+use riotbox_core::action::ActionParams;
+use riotbox_core::action::ActionTarget;
+use riotbox_core::action::ActorType;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::action::Quantization;
+use riotbox_core::action::TargetScope;
+use riotbox_core::ids::ActionId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::ids::SectionId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::source_graph::EnergyClass;
+use riotbox_core::source_graph::Section;
+use riotbox_core::source_graph::SectionLabelHint;
+use riotbox_core::transport::CommitBoundaryState;
+use riotbox_core::transport::TransportClockState;
+use riotbox_core::view::jam::SceneJumpAvailabilityView;
+
 #[test]
 fn updates_transport_clock_and_refreshes_jam_state() {
     let graph = sample_graph();
@@ -350,19 +377,15 @@ fn committed_scene_mutation_updates_scene_aggression_and_log_result() {
     );
 
     assert_eq!(committed.len(), 1);
-    assert!(
-        (state.session.runtime_state.macro_state.scene_aggression - 0.6).abs() < f32::EPSILON
-    );
+    assert!((state.session.runtime_state.macro_state.scene_aggression - 0.6).abs() < f32::EPSILON);
     let result = state.session.action_log.actions.last().and_then(|action| {
         (action.command == ActionCommand::MutateScene)
             .then_some(action.result.as_ref())
             .flatten()
     });
-    assert!(
-        result.is_some_and(|result| result.accepted
-            && result.summary.contains("mutated scene scene-1")
-            && result.summary.contains("0.40 -> 0.60"))
-    );
+    assert!(result.is_some_and(|result| result.accepted
+        && result.summary.contains("mutated scene scene-1")
+        && result.summary.contains("0.40 -> 0.60")));
 }
 
 #[test]

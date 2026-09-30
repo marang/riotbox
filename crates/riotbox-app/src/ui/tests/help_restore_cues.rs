@@ -1,3 +1,16 @@
+use crate::jam_app::JamAppState;
+use crate::ui::render::render_jam_shell_snapshot;
+use crate::ui::shell_state::JamShellState;
+use crate::ui::shell_state::ShellLaunchMode;
+use crate::ui::shell_state::ShellScreen;
+use crate::ui::tests::fixtures::regression_models::scene_regression_graph;
+use crate::ui::tests::fixtures::shells::first_run_shell_state;
+use crate::ui::tests::fixtures::shells::sample_shell_state;
+use riotbox_core::ids::SceneId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::source_graph::TimingDegradedPolicy;
+use riotbox_core::source_graph::TimingQuality;
+
 #[test]
 fn renders_help_overlay_with_first_run_guidance() {
     let mut shell = first_run_shell_state();
@@ -56,7 +69,10 @@ fn renders_help_overlay_with_locked_source_timing_guidance() {
         rendered.contains("Timing: grid locked | grid locked_grid | phase 0 | high | kick+bb"),
         "{rendered}"
     );
-    assert!(rendered.contains("bar8 p- | grid can steer moves"), "{rendered}");
+    assert!(
+        rendered.contains("bar8 p- | grid can steer moves"),
+        "{rendered}"
+    );
     assert!(rendered.contains("steer moves"), "{rendered}");
 }
 

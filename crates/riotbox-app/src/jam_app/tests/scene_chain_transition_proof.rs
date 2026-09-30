@@ -1,3 +1,29 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::mc202_recipe::assert_recipe_buffers_differ;
+use crate::jam_app::tests::fixtures::mc202_recipe::assert_recipe_buffers_match;
+use crate::jam_app::tests::fixtures::mc202_recipe::render_scene_recipe_mix_buffer;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::fixtures::session_source::scene_regression_graph;
+use riotbox_audio::mc202::Mc202ContourHint;
+use riotbox_audio::source_audio::SourceAudioCache;
+use riotbox_audio::tr909::Tr909PhraseVariation;
+use riotbox_audio::tr909::Tr909SourceSupportContext;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::ids::BankId;
+use riotbox_core::ids::CaptureId;
+use riotbox_core::ids::PadId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::CaptureTarget;
+use riotbox_core::session::Mc202RoleState;
+use riotbox_core::session::SceneMovementDirectionState;
+use riotbox_core::session::SceneMovementLaneIntentState;
+use riotbox_core::session::SceneMovementW30IntentState;
+use riotbox_core::session::Tr909ReinforcementModeState;
+use riotbox_core::transport::CommitBoundaryState;
+
 #[test]
 fn p014_scene_chain_launch_restore_replay_proves_transition_state_and_mix() {
     let graph = scene_regression_graph(&["break".into(), "drop".into(), "intro".into()]);
@@ -80,11 +106,19 @@ fn p014_scene_chain_launch_restore_replay_proves_transition_state_and_mix() {
         },
     );
     assert_eq!(
-        committed_state.session.runtime_state.scene_state.restore_scene,
+        committed_state
+            .session
+            .runtime_state
+            .scene_state
+            .restore_scene,
         Some(SceneId::from("scene-01-break"))
     );
     assert_eq!(
-        committed_state.runtime.tr909_render.current_scene_id.as_deref(),
+        committed_state
+            .runtime
+            .tr909_render
+            .current_scene_id
+            .as_deref(),
         Some("scene-02-drop")
     );
     assert_eq!(
@@ -122,11 +156,19 @@ fn p014_scene_chain_launch_restore_replay_proves_transition_state_and_mix() {
         },
     );
     assert_eq!(
-        committed_state.session.runtime_state.scene_state.restore_scene,
+        committed_state
+            .session
+            .runtime_state
+            .scene_state
+            .restore_scene,
         Some(SceneId::from("scene-02-drop"))
     );
     assert_eq!(
-        committed_state.runtime.tr909_render.current_scene_id.as_deref(),
+        committed_state
+            .runtime
+            .tr909_render
+            .current_scene_id
+            .as_deref(),
         Some("scene-03-intro")
     );
     assert_eq!(
@@ -160,11 +202,19 @@ fn p014_scene_chain_launch_restore_replay_proves_transition_state_and_mix() {
         },
     );
     assert_eq!(
-        committed_state.session.runtime_state.scene_state.restore_scene,
+        committed_state
+            .session
+            .runtime_state
+            .scene_state
+            .restore_scene,
         Some(SceneId::from("scene-03-intro"))
     );
     assert_eq!(
-        committed_state.runtime.tr909_render.current_scene_id.as_deref(),
+        committed_state
+            .runtime
+            .tr909_render
+            .current_scene_id
+            .as_deref(),
         Some("scene-02-drop")
     );
     assert_eq!(
@@ -201,10 +251,9 @@ fn p014_scene_chain_launch_restore_replay_proves_transition_state_and_mix() {
     );
     assert_eq!(committed_state.session.action_log.commit_records.len(), 3);
 
-    let plan = riotbox_core::replay::build_committed_replay_plan(
-        &committed_state.session.action_log,
-    )
-    .expect("P014 scene-chain action log builds replay plan");
+    let plan =
+        riotbox_core::replay::build_committed_replay_plan(&committed_state.session.action_log)
+            .expect("P014 scene-chain action log builds replay plan");
     assert_eq!(plan.len(), 3);
     let mut replayed_session = base_session;
     replayed_session.action_log = committed_state.session.action_log.clone();
@@ -227,7 +276,11 @@ fn p014_scene_chain_launch_restore_replay_proves_transition_state_and_mix() {
     );
     assert_eq!(
         replayed_state.session.runtime_state.transport.current_scene,
-        committed_state.session.runtime_state.transport.current_scene
+        committed_state
+            .session
+            .runtime_state
+            .transport
+            .current_scene
     );
     assert_eq!(
         replayed_state.jam_view.scene.last_movement,
@@ -278,7 +331,7 @@ fn p014_scene_chain_launch_restore_replay_proves_transition_state_and_mix() {
     );
 }
 
-fn commit_scene_chain_step(
+pub(in crate::jam_app::tests) fn commit_scene_chain_step(
     state: &mut JamAppState,
     beat_index: u64,
     bar_index: u64,
@@ -299,19 +352,19 @@ fn commit_scene_chain_step(
     assert_eq!(committed.len(), 1);
 }
 
-struct SceneChainMovementExpectation<'a> {
-    kind: &'a str,
-    from_scene: Option<&'a str>,
-    to_scene: &'a str,
-    direction: SceneMovementDirectionState,
-    tr909_intent: SceneMovementLaneIntentState,
-    mc202_intent: SceneMovementLaneIntentState,
-    w30_intent: SceneMovementW30IntentState,
-    committed_bar_index: u64,
-    committed_phrase_index: u64,
+pub(in crate::jam_app::tests) struct SceneChainMovementExpectation<'a> {
+    pub(in crate::jam_app::tests) kind: &'a str,
+    pub(in crate::jam_app::tests) from_scene: Option<&'a str>,
+    pub(in crate::jam_app::tests) to_scene: &'a str,
+    pub(in crate::jam_app::tests) direction: SceneMovementDirectionState,
+    pub(in crate::jam_app::tests) tr909_intent: SceneMovementLaneIntentState,
+    pub(in crate::jam_app::tests) mc202_intent: SceneMovementLaneIntentState,
+    pub(in crate::jam_app::tests) w30_intent: SceneMovementW30IntentState,
+    pub(in crate::jam_app::tests) committed_bar_index: u64,
+    pub(in crate::jam_app::tests) committed_phrase_index: u64,
 }
 
-fn assert_scene_chain_movement(
+pub(in crate::jam_app::tests) fn assert_scene_chain_movement(
     state: &JamAppState,
     expected: SceneChainMovementExpectation<'_>,
 ) {
@@ -324,7 +377,11 @@ fn assert_scene_chain_movement(
         .expect("scene-chain transition records landed movement");
     assert_eq!(movement.kind.label(), expected.kind);
     assert_eq!(
-        movement.from_scene.as_ref().map(ToString::to_string).as_deref(),
+        movement
+            .from_scene
+            .as_ref()
+            .map(ToString::to_string)
+            .as_deref(),
         expected.from_scene
     );
     assert_eq!(movement.to_scene, SceneId::from(expected.to_scene));
@@ -351,5 +408,11 @@ fn assert_scene_chain_movement(
     assert_eq!(view_movement.tr909_intent, movement.tr909_intent.label());
     assert_eq!(view_movement.mc202_intent, movement.mc202_intent.label());
     assert_eq!(view_movement.w30_intent, movement.w30_intent.label());
-    assert!(state.jam_view.scene.arrangement_contract.has_landed_movement);
+    assert!(
+        state
+            .jam_view
+            .scene
+            .arrangement_contract
+            .has_landed_movement
+    );
 }

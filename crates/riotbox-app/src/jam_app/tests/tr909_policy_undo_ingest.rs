@@ -1,3 +1,40 @@
+use crate::jam_app::state::JamAppError;
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::regression_models::RenderProjectionFixture;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::fixtures::source_io::sidecar_script_path;
+use crate::jam_app::tests::fixtures::source_io::write_pcm16_wave;
+use riotbox_audio::tr909::Tr909PatternAdoption;
+use riotbox_audio::tr909::Tr909PhraseVariation;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::ActionParams;
+use riotbox_core::action::ActionStatus;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::action::SourceMonitorMode;
+use riotbox_core::action::UndoPolicy;
+use riotbox_core::ids::SceneId;
+use riotbox_core::ids::SectionId;
+use riotbox_core::ids::SnapshotId;
+use riotbox_core::persistence::load_session_json;
+use riotbox_core::persistence::load_source_graph_json;
+use riotbox_core::persistence::save_session_json;
+use riotbox_core::persistence::save_source_graph_json;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::GraphStorageMode;
+use riotbox_core::session::Snapshot;
+use riotbox_core::session::Tr909ReinforcementModeState;
+use riotbox_core::session::Tr909TakeoverProfileState;
+use riotbox_core::source_graph::EnergyClass;
+use riotbox_core::source_graph::Section;
+use riotbox_core::source_graph::SectionLabelHint;
+use riotbox_core::transport::CommitBoundaryState;
+use riotbox_sidecar::client::ClientError as SidecarClientError;
+use std::io;
+use std::path::Path;
+use tempfile::tempdir;
+
 #[test]
 fn pattern_adoption_can_be_derived_without_pattern_ref() {
     let graph = sample_graph();
@@ -286,8 +323,11 @@ fn pending_fill_undo_and_later_commit_keep_unique_ids_through_reload_and_replay(
     let session_path = dir.path().join("jam-session.json");
     let graph = sample_graph();
     let base_session = sample_session(&graph);
-    let mut state =
-        JamAppState::from_parts(base_session.clone(), Some(graph.clone()), ActionQueue::new());
+    let mut state = JamAppState::from_parts(
+        base_session.clone(),
+        Some(graph.clone()),
+        ActionQueue::new(),
+    );
     let immediate_boundary = CommitBoundaryState {
         kind: CommitBoundary::Immediate,
         beat_index: state.runtime.transport.beat_index,
@@ -338,9 +378,11 @@ fn pending_fill_undo_and_later_commit_keep_unique_ids_through_reload_and_replay(
         .copied()
         .collect::<std::collections::BTreeSet<_>>();
     assert_eq!(action_ids.len(), unique_ids.len());
-    assert!(state.session.action_log.actions.iter().any(|action| {
-        action.id == fill_id && action.command == ActionCommand::Tr909FillNext
-    }));
+    assert!(
+        state.session.action_log.actions.iter().any(|action| {
+            action.id == fill_id && action.command == ActionCommand::Tr909FillNext
+        })
+    );
 
     save_session_json(&session_path, &state.session).expect("persist unique undo history");
     let reloaded = JamAppState::from_json_files(&session_path, None::<&Path>)
@@ -359,7 +401,11 @@ fn pending_fill_undo_and_later_commit_keep_unique_ids_through_reload_and_replay(
     riotbox_core::replay::apply_replay_plan_to_session(&mut replayed_session, &plan)
         .expect("Fill tail replays after undo marker");
     assert_eq!(
-        replayed_session.runtime_state.lane_state.tr909.last_fill_bar,
+        replayed_session
+            .runtime_state
+            .lane_state
+            .tr909
+            .last_fill_bar,
         state.session.runtime_state.lane_state.tr909.last_fill_bar
     );
     assert_eq!(
@@ -407,10 +453,7 @@ fn newer_non_undoable_tr909_action_does_not_block_typed_monitor_undo() {
         .iter()
         .find(|action| action.command == ActionCommand::Tr909SetSlam)
         .expect("slam committed");
-    assert!(matches!(
-        &slam.undo_policy,
-        UndoPolicy::NotUndoable { .. }
-    ));
+    assert!(matches!(&slam.undo_policy, UndoPolicy::NotUndoable { .. }));
 
     let undo = state
         .undo_last_action(140)
@@ -543,10 +586,7 @@ fn ingests_source_file_through_sidecar_and_persists_state() {
     let persisted_graph = load_source_graph_json(&graph_path).expect("reload graph");
     assert_eq!(
         persisted_graph.provenance.provider_set,
-        vec![
-            "decoded.wav_baseline",
-            "riotbox-rust-source-timing-probe"
-        ]
+        vec!["decoded.wav_baseline", "riotbox-rust-source-timing-probe"]
     );
     assert_eq!(persisted_graph.provenance.analysis_seed, 29);
     assert_eq!(persisted_graph.source.sample_rate, 44_100);

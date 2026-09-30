@@ -1,6 +1,6 @@
+use crate::ui::shell_state::JamShellState;
+use crate::ui::source_trust_summary::source_timing_grid_confirmed;
 use ratatui::text::Line;
-
-use super::{JamShellState, source_timing_grid_confirmed};
 
 pub(super) fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let timing = &shell.app.jam_view.source.timing;

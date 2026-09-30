@@ -1,6 +1,9 @@
-use riotbox_core::action::{Action, ActionCommand, ActionParams, ActionStatus, SourceMonitorMode};
-
-use super::JamShellState;
+use crate::ui::shell_state::JamShellState;
+use riotbox_core::action::Action;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::ActionParams;
+use riotbox_core::action::ActionStatus;
+use riotbox_core::action::SourceMonitorMode;
 
 pub(super) fn has_completed_first_run_onramp(shell: &JamShellState) -> bool {
     let actions = &shell.app.session.action_log.actions;

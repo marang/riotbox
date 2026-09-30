@@ -1,3 +1,20 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::mc202_recipe::assert_recipe_buffers_differ;
+use crate::jam_app::tests::fixtures::mc202_recipe::assert_recipe_buffers_match;
+use crate::jam_app::tests::fixtures::mc202_recipe::render_scene_recipe_mix_buffer;
+use crate::jam_app::tests::fixtures::restore_parity::SnapshotPayloadRestoreSpec;
+use crate::jam_app::tests::fixtures::restore_parity::run_graph_aware_snapshot_payload_restore_probe;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::fixtures::session_source::scene_regression_graph;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::ids::SceneId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::Mc202RoleState;
+use riotbox_core::session::Tr909ReinforcementModeState;
+use riotbox_core::transport::CommitBoundaryState;
+
 #[test]
 fn stage_style_snapshot_payload_restore_converges_supported_multi_lane_suffix() {
     let graph = scene_regression_graph(&["drop".into(), "break".into()]);
@@ -157,7 +174,11 @@ fn stage_style_snapshot_payload_restore_converges_supported_multi_lane_suffix() 
     );
     assert_eq!(
         replayed_state.session.runtime_state.transport.current_scene,
-        committed_state.session.runtime_state.transport.current_scene
+        committed_state
+            .session
+            .runtime_state
+            .transport
+            .current_scene
     );
     assert_eq!(
         replayed_state.runtime.mc202_render,
@@ -187,7 +208,7 @@ fn stage_style_snapshot_payload_restore_converges_supported_multi_lane_suffix() 
     );
 }
 
-fn commit_stage_style_step(
+pub(in crate::jam_app::tests) fn commit_stage_style_step(
     state: &mut JamAppState,
     kind: CommitBoundary,
     beat_index: u64,

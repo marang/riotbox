@@ -1,3 +1,23 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::mc202_recipe::assert_recipe_buffers_match;
+use crate::jam_app::tests::fixtures::restore_parity::SnapshotPayloadRestoreSpec;
+use crate::jam_app::tests::fixtures::restore_parity::action_cursor_for;
+use crate::jam_app::tests::fixtures::restore_parity::assert_restore_report_identity;
+use crate::jam_app::tests::fixtures::restore_parity::materialize_replay_anchor_session;
+use crate::jam_app::tests::fixtures::restore_parity::run_snapshot_payload_restore_probe;
+use crate::jam_app::tests::fixtures::restore_parity::snapshot_payload_for_anchor;
+use crate::jam_app::tests::fixtures::w30_replay::assert_w30_replay_buffers_differ;
+use crate::jam_app::tests::fixtures::w30_replay::commit_w30_replay_step;
+use crate::jam_app::tests::fixtures::w30_replay::render_w30_preview_buffer;
+use crate::jam_app::tests::fixtures::w30_replay::render_w30_replay_buffer;
+use crate::jam_app::tests::fixtures::w30_replay::w30_source_backed_replay_state;
+use riotbox_audio::runtime::signal_metrics;
+use riotbox_audio::w30::W30PreviewRenderMode;
+use riotbox_audio::w30::W30PreviewSourceProfile;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::queue::ActionQueue;
+
 #[test]
 fn w30_snapshot_payload_restore_hydrates_damage_profile_preview_output() {
     let (_tempdir, graph, source_audio_cache, mut committed_state) =
@@ -138,8 +158,20 @@ fn w30_snapshot_payload_restore_hydrates_promoted_audition_preview_output() {
         replayed_state.runtime.w30_preview.source_profile,
         Some(W30PreviewSourceProfile::PromotedAudition)
     );
-    assert!(replayed_state.runtime.w30_preview.source_window_preview.is_some());
-    assert!(committed_state.runtime.w30_preview.source_window_preview.is_some());
+    assert!(
+        replayed_state
+            .runtime
+            .w30_preview
+            .source_window_preview
+            .is_some()
+    );
+    assert!(
+        committed_state
+            .runtime
+            .w30_preview
+            .source_window_preview
+            .is_some()
+    );
     let replayed_audition = render_w30_preview_buffer(&replayed_state);
     let replayed_metrics = signal_metrics(&replayed_audition);
     assert!(

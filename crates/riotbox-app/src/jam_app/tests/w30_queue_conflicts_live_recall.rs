@@ -1,3 +1,24 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use riotbox_audio::w30::W30PreviewRenderMode;
+use riotbox_audio::w30::W30PreviewRenderRouting;
+use riotbox_audio::w30::W30PreviewSourceProfile;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::ActionParams;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::action::Quantization;
+use riotbox_core::ids::BankId;
+use riotbox_core::ids::CaptureId;
+use riotbox_core::ids::PadId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::CaptureRef;
+use riotbox_core::session::CaptureTarget;
+use riotbox_core::session::CaptureType;
+use riotbox_core::transport::CommitBoundaryState;
+
 #[test]
 fn queue_w30_apply_damage_profile_targets_focused_lane_capture_on_next_bar() {
     let graph = sample_graph();

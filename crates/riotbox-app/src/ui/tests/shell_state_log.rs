@@ -1,3 +1,10 @@
+use crate::ui::render::render_jam_shell_snapshot;
+use crate::ui::shell_state::ShellScreen;
+use crate::ui::tests::fixtures::shells::sample_shell_state;
+use riotbox_core::ids::SceneId;
+use riotbox_core::session::Tr909ReinforcementModeState;
+use riotbox_core::transport::TransportClockState;
+
 #[test]
 fn renders_log_shell_snapshot_with_action_trust_history() {
     let mut shell = sample_shell_state();

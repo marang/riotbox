@@ -1,3 +1,14 @@
+use crate::jam_app::recovery::RecoveryCandidateGuidance;
+use crate::jam_app::recovery::RecoveryCandidateTrust;
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use riotbox_core::ids::SnapshotId;
+use riotbox_core::persistence::save_session_json;
+use riotbox_core::session::SessionFile;
+use std::fs;
+use tempfile::tempdir;
+
 #[test]
 fn recovery_surface_reports_missing_snapshot_payload_guidance_without_mutating_candidate() {
     let dir = tempdir().expect("create temp dir");
@@ -28,7 +39,10 @@ fn recovery_surface_reports_missing_snapshot_payload_guidance_without_mutating_c
         .find(|candidate| matches!(candidate.trust, RecoveryCandidateTrust::RecoverableClue))
         .expect("missing-payload autosave candidate");
 
-    assert_eq!(candidate.artifact_availability_label, "artifact paths ready: 1 capture(s) | content identity unchecked");
+    assert_eq!(
+        candidate.artifact_availability_label,
+        "artifact paths ready: 1 capture(s) | content identity unchecked"
+    );
     assert_eq!(
         candidate.payload_readiness_label,
         "payload missing | snapshot restore blocked"

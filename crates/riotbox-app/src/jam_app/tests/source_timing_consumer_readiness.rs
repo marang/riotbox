@@ -1,3 +1,20 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::ids::ActionId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::ids::SourceId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::SourceTimingGridConfirmationState;
+use riotbox_core::source_graph::MeterHint;
+use riotbox_core::source_graph::SourceGraph;
+use riotbox_core::source_graph::TimingDegradedPolicy;
+use riotbox_core::source_graph::TimingHypothesis;
+use riotbox_core::source_graph::TimingHypothesisKind;
+use riotbox_core::source_graph::TimingQuality;
+use riotbox_core::transport::CommitBoundaryState;
+
 #[test]
 fn manual_confirm_capture_does_not_materialize_source_window_until_confirmed() {
     let graph = manual_confirm_source_window_graph();
@@ -34,13 +51,12 @@ fn manual_confirm_capture_does_not_materialize_source_window_until_confirmed() {
 fn user_confirmed_manual_grid_allows_capture_source_window() {
     let graph = manual_confirm_source_window_graph();
     let mut session = sample_session(&graph);
-    session.runtime_state.source_timing.confirmed_grid =
-        Some(SourceTimingGridConfirmationState {
-            source_id: graph.source.source_id.clone(),
-            hypothesis_id: graph.timing.primary_hypothesis_id.clone(),
-            confirmed_by_action: ActionId(42),
-            confirmed_at: 390,
-        });
+    session.runtime_state.source_timing.confirmed_grid = Some(SourceTimingGridConfirmationState {
+        source_id: graph.source.source_id.clone(),
+        hypothesis_id: graph.timing.primary_hypothesis_id.clone(),
+        confirmed_by_action: ActionId(42),
+        confirmed_at: 390,
+    });
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     state.queue_capture_bar(300);
@@ -72,7 +88,7 @@ fn user_confirmed_manual_grid_allows_capture_source_window() {
     );
 }
 
-fn manual_confirm_source_window_graph() -> SourceGraph {
+pub(in crate::jam_app::tests) fn manual_confirm_source_window_graph() -> SourceGraph {
     let mut graph = sample_graph();
     graph.timing.quality = TimingQuality::Low;
     graph.timing.degraded_policy = TimingDegradedPolicy::ManualConfirm;

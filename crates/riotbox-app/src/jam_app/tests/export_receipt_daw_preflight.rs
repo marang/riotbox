@@ -1,3 +1,16 @@
+use crate::jam_app::product_export::ExportReceiptArtifactPreflightError;
+use crate::jam_app::product_export::preflight_export_receipt_artifacts;
+use crate::jam_app::tests::export_receipt_hydration_preflight::arrangement_receipt;
+use riotbox_core::ids::ActionId;
+use riotbox_core::ids::ExportReceiptId;
+use riotbox_core::ids::SourceId;
+use riotbox_core::session::ArrangementExportPlacementReadinessBlocker;
+use riotbox_core::session::DawTempoMapReadinessBlocker;
+use riotbox_core::session::ExportArrangementPlacementRef;
+use riotbox_core::session::ExportDawTempoMapRef;
+use riotbox_core::session::ExportReceiptState;
+use tempfile::tempdir;
+
 #[test]
 fn export_receipt_hydration_preflight_reports_missing_arrangement_placement_before_files() {
     let dir = tempdir().expect("create temp dir");
@@ -61,7 +74,9 @@ fn export_receipt_hydration_preflight_reports_missing_arrangement_file_after_daw
     );
 }
 
-fn attach_ready_arrangement_placement(receipt: &mut ExportReceiptState) {
+pub(in crate::jam_app::tests) fn attach_ready_arrangement_placement(
+    receipt: &mut ExportReceiptState,
+) {
     receipt
         .arrangement_placement_refs
         .push(ExportArrangementPlacementRef::scene_range(
@@ -74,7 +89,7 @@ fn attach_ready_arrangement_placement(receipt: &mut ExportReceiptState) {
         ));
 }
 
-fn attach_ready_daw_tempo_map(receipt: &mut ExportReceiptState) {
+pub(in crate::jam_app::tests) fn attach_ready_daw_tempo_map(receipt: &mut ExportReceiptState) {
     receipt.daw_tempo_map_ref = Some(ExportDawTempoMapRef::confirmed_grid(
         "src-1",
         Some("primary-grid".into()),

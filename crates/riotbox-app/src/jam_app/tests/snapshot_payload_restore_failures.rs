@@ -1,4 +1,30 @@
-fn unsupported_mutate_lane_action(id: u64) -> Action {
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use riotbox_core::action::Action;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::ActionParams;
+use riotbox_core::action::ActionResult;
+use riotbox_core::action::ActionStatus;
+use riotbox_core::action::ActionTarget;
+use riotbox_core::action::ActorType;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::action::Quantization;
+use riotbox_core::action::TargetScope;
+use riotbox_core::action::UndoPolicy;
+use riotbox_core::ids::ActionId;
+use riotbox_core::ids::BankId;
+use riotbox_core::ids::CaptureId;
+use riotbox_core::ids::PadId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::ActionCommitRecord;
+use riotbox_core::session::CaptureRef;
+use riotbox_core::session::CaptureTarget;
+use riotbox_core::session::CaptureType;
+use riotbox_core::transport::CommitBoundaryState;
+
+pub(in crate::jam_app::tests) fn unsupported_mutate_lane_action(id: u64) -> Action {
     Action {
         id: ActionId(id),
         actor: ActorType::User,
@@ -24,7 +50,10 @@ fn unsupported_mutate_lane_action(id: u64) -> Action {
     }
 }
 
-fn promote_capture_to_scene_action(id: u64, scene_id: &str) -> Action {
+pub(in crate::jam_app::tests) fn promote_capture_to_scene_action(
+    id: u64,
+    scene_id: &str,
+) -> Action {
     Action {
         id: ActionId(id),
         actor: ActorType::User,
@@ -51,7 +80,7 @@ fn promote_capture_to_scene_action(id: u64, scene_id: &str) -> Action {
     }
 }
 
-fn loop_freeze_commit_record(action_id: u64) -> ActionCommitRecord {
+pub(in crate::jam_app::tests) fn loop_freeze_commit_record(action_id: u64) -> ActionCommitRecord {
     ActionCommitRecord {
         action_id: ActionId(action_id),
         boundary: CommitBoundaryState {
@@ -63,7 +92,7 @@ fn loop_freeze_commit_record(action_id: u64) -> ActionCommitRecord {
         },
         commit_sequence: 1,
         committed_at: 500,
-                mc202_source_phrase_plan: None,
+        mc202_source_phrase_plan: None,
     }
 }
 
@@ -101,11 +130,12 @@ fn app_snapshot_payload_restore_rejects_unsupported_suffix_without_mutating_stat
     let graph = sample_graph();
     let mut session = sample_session(&graph);
     let snapshot = session.snapshots[0].clone();
-    session.snapshots[0].payload = Some(riotbox_core::session::SnapshotPayload::from_runtime_state(
-        &snapshot.snapshot_id,
-        snapshot.action_cursor,
-        &session.runtime_state,
-    ));
+    session.snapshots[0].payload =
+        Some(riotbox_core::session::SnapshotPayload::from_runtime_state(
+            &snapshot.snapshot_id,
+            snapshot.action_cursor,
+            &session.runtime_state,
+        ));
     session
         .action_log
         .actions
@@ -159,11 +189,12 @@ fn app_snapshot_payload_restore_replays_promote_capture_to_scene() {
     let graph = sample_graph();
     let mut session = sample_session(&graph);
     let snapshot = session.snapshots[0].clone();
-    session.snapshots[0].payload = Some(riotbox_core::session::SnapshotPayload::from_runtime_state(
-        &snapshot.snapshot_id,
-        snapshot.action_cursor,
-        &session.runtime_state,
-    ));
+    session.snapshots[0].payload =
+        Some(riotbox_core::session::SnapshotPayload::from_runtime_state(
+            &snapshot.snapshot_id,
+            snapshot.action_cursor,
+            &session.runtime_state,
+        ));
     session
         .action_log
         .actions
@@ -203,7 +234,10 @@ fn app_snapshot_payload_restore_replays_promote_capture_to_scene() {
         state.runtime_view.replay_restore_status,
         "ready: replay 1 suffix action(s)"
     );
-    assert_eq!(state.runtime_view.replay_restore_unsupported, "unsupported none");
+    assert_eq!(
+        state.runtime_view.replay_restore_unsupported,
+        "unsupported none"
+    );
 }
 
 #[test]
@@ -211,11 +245,12 @@ fn app_snapshot_payload_restore_hydrates_plannable_w30_artifact_suffix() {
     let graph = sample_graph();
     let mut session = sample_session(&graph);
     let snapshot = session.snapshots[0].clone();
-    session.snapshots[0].payload = Some(riotbox_core::session::SnapshotPayload::from_runtime_state(
-        &snapshot.snapshot_id,
-        snapshot.action_cursor,
-        &session.runtime_state,
-    ));
+    session.snapshots[0].payload =
+        Some(riotbox_core::session::SnapshotPayload::from_runtime_state(
+            &snapshot.snapshot_id,
+            snapshot.action_cursor,
+            &session.runtime_state,
+        ));
     session
         .action_log
         .actions
@@ -241,7 +276,10 @@ fn app_snapshot_payload_restore_hydrates_plannable_w30_artifact_suffix() {
     let hydration_plan =
         riotbox_core::replay::plan_w30_artifact_replay_hydration(&state.session, suffix_entry)
             .expect("explicit W-30 artifact identity is plannable");
-    assert_eq!(hydration_plan.produced_capture_id, CaptureId::from("cap-02"));
+    assert_eq!(
+        hydration_plan.produced_capture_id,
+        CaptureId::from("cap-02")
+    );
     assert_eq!(hydration_plan.source_capture_id, CaptureId::from("cap-01"));
 
     let report = state
@@ -261,7 +299,7 @@ fn app_snapshot_payload_restore_hydrates_plannable_w30_artifact_suffix() {
     assert_eq!(state.runtime_view.w30_preview_profile, "pinned_recall");
 }
 
-fn unsupported_loop_freeze_promotion_action(id: u64) -> Action {
+pub(in crate::jam_app::tests) fn unsupported_loop_freeze_promotion_action(id: u64) -> Action {
     Action {
         id: ActionId(id),
         actor: ActorType::User,
@@ -289,7 +327,7 @@ fn unsupported_loop_freeze_promotion_action(id: u64) -> Action {
     }
 }
 
-fn loop_freeze_capture_for_action(action_id: u64) -> CaptureRef {
+pub(in crate::jam_app::tests) fn loop_freeze_capture_for_action(action_id: u64) -> CaptureRef {
     CaptureRef {
         audio_identity: None,
         capture_id: CaptureId::from("cap-02"),

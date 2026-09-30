@@ -1,7 +1,26 @@
+use crate::jam_app::daw_export_operator_report::daw_export_operator_readiness_report;
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::tests::dawproject_xml_schema;
+use crate::jam_app::tests::p016_product_export_action::w30_hook_export_state;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::ActionParams;
+use riotbox_core::action::ActionStatus;
+use riotbox_core::export_readiness::ExportScope;
+use riotbox_core::export_readiness::ProductExportBoundary;
+use riotbox_core::export_readiness::ProductExportDestinationKind;
+use riotbox_core::export_readiness::ProductExportRole;
+use riotbox_core::ids::SceneId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::ExportArtifactRole;
+use riotbox_core::session::SessionFile;
+use std::fs;
+use std::path::PathBuf;
+use tempfile::tempdir;
+
 #[test]
 fn w30_hook_dawproject_exports_byte_identical_audio_through_action_session_and_receipt() {
-    use dawproject::prelude::project::{ClipTypeContent, LanesTypeContent, TimeUnitType};
     use dawproject::DawprojectReader;
+    use dawproject::prelude::project::{ClipTypeContent, LanesTypeContent, TimeUnitType};
     use std::io::Read as _;
 
     let temp = tempdir().expect("tempdir");
@@ -18,11 +37,9 @@ fn w30_hook_dawproject_exports_byte_identical_audio_through_action_session_and_r
         .expect("source hook artifact");
     let source_path = PathBuf::from(source_hook.location_identity());
     let source_bytes = fs::read(&source_path).expect("read source hook");
-    let legacy_archive = super::w30_hook_dawproject::legacy_archive_bytes_for_test(
-        &state.session,
-        None,
-    )
-    .expect("legacy W-30 archive reference");
+    let legacy_archive =
+        crate::jam_app::w30_hook_dawproject::legacy_archive_bytes_for_test(&state.session, None)
+            .expect("legacy W-30 archive reference");
 
     let receipt = state
         .commit_w30_hook_dawproject_export(None, &destination, 1_400)
@@ -45,8 +62,16 @@ fn w30_hook_dawproject_exports_byte_identical_audio_through_action_session_and_r
     for member in ["audio/w30_hook_loop.wav", "riotbox-proof.json"] {
         let mut old = Vec::new();
         let mut current = Vec::new();
-        old_reader.by_name(member).unwrap().read_to_end(&mut old).unwrap();
-        current_reader.by_name(member).unwrap().read_to_end(&mut current).unwrap();
+        old_reader
+            .by_name(member)
+            .unwrap()
+            .read_to_end(&mut old)
+            .unwrap();
+        current_reader
+            .by_name(member)
+            .unwrap()
+            .read_to_end(&mut current)
+            .unwrap();
         assert_eq!(old, current, "unchanged {member}");
     }
 
@@ -64,7 +89,10 @@ fn w30_hook_dawproject_exports_byte_identical_audio_through_action_session_and_r
         .iter()
         .find(|artifact| artifact.role == ExportArtifactRole::DawProjectFile)
         .expect("DAWproject artifact");
-    assert_eq!(archive_artifact.location_identity(), destination.to_string_lossy());
+    assert_eq!(
+        archive_artifact.location_identity(),
+        destination.to_string_lossy()
+    );
     assert_eq!(
         receipt.qa_gates[0].gate_id,
         riotbox_core::session::DAWPROJECT_ARCHIVE_QA_GATE_ID
@@ -77,25 +105,28 @@ fn w30_hook_dawproject_exports_byte_identical_audio_through_action_session_and_r
     );
     assert!(receipt.arrangement_export_placement_report().ready());
     assert!(receipt.daw_tempo_map_report().ready());
-    super::product_export::preflight_export_receipt_artifacts(&receipt, None)
+    crate::jam_app::product_export::preflight_export_receipt_artifacts(&receipt, None)
         .expect("DAWproject receipt hydration preflight");
     let readiness = daw_export_operator_readiness_report(&state.session, None);
     let mut historical_session = state.session.clone();
-    historical_session.export_receipts.last_mut().unwrap().qa_gates.retain(|gate| {
-        gate.gate_id != riotbox_core::session::DAWPROJECT_XML_DOCUMENT_QA_GATE_ID
-    });
+    historical_session
+        .export_receipts
+        .last_mut()
+        .unwrap()
+        .qa_gates
+        .retain(|gate| gate.gate_id != riotbox_core::session::DAWPROJECT_XML_DOCUMENT_QA_GATE_ID);
     assert_eq!(
         daw_export_operator_readiness_report(&historical_session, None).status,
-        super::daw_export_operator_report::DawExportOperatorReadinessStatus::Blocked,
+        crate::jam_app::daw_export_operator_report::DawExportOperatorReadinessStatus::Blocked,
         "historical archive-only receipt cannot certify canonical XML documents"
     );
     assert_eq!(
         readiness.status,
-        super::daw_export_operator_report::DawExportOperatorReadinessStatus::DawprojectReady
+        crate::jam_app::daw_export_operator_report::DawExportOperatorReadinessStatus::DawprojectReady
     );
     assert_eq!(
         readiness.developer_proof_status,
-        super::daw_export_operator_report::DawExportDeveloperProofStatus::DawprojectReady
+        crate::jam_app::daw_export_operator_report::DawExportDeveloperProofStatus::DawprojectReady
     );
     assert_eq!(
         readiness.musician_export_readiness,
@@ -107,39 +138,41 @@ fn w30_hook_dawproject_exports_byte_identical_audio_through_action_session_and_r
     );
     assert_eq!(
         readiness.proof_gates.json_package_integrity.status,
-        super::daw_export_proof_gates::DawExportProofGateStatus::NotApplicable
+        crate::jam_app::daw_export_proof_gates::DawExportProofGateStatus::NotApplicable
     );
     assert!(!readiness.release_blockers.contains(
-        &super::daw_export_operator_report::DawExportReleaseBlocker::DawWriterMissing
+        &crate::jam_app::daw_export_operator_report::DawExportReleaseBlocker::DawWriterMissing
     ));
     assert!(!readiness.proof_stack.missing_layers.contains(
-        &super::daw_export_operator_report::DawExportProofLayer::JsonPackageIntegrity
+        &crate::jam_app::daw_export_operator_report::DawExportProofLayer::JsonPackageIntegrity
     ));
-    assert!(!readiness.proof_stack.missing_layers.contains(
-        &super::daw_export_operator_report::DawExportProofLayer::WriterProof
-    ));
+    assert!(
+        !readiness.proof_stack.missing_layers.contains(
+            &crate::jam_app::daw_export_operator_report::DawExportProofLayer::WriterProof
+        )
+    );
     assert_eq!(
         readiness.proof_stack.missing_layers,
         vec![
-            super::daw_export_operator_report::DawExportProofLayer::HostImportProof,
-            super::daw_export_operator_report::DawExportProofLayer::AudibleOutputProof,
+            crate::jam_app::daw_export_operator_report::DawExportProofLayer::HostImportProof,
+            crate::jam_app::daw_export_operator_report::DawExportProofLayer::AudibleOutputProof,
         ]
     );
     let surface = state.daw_session_export_surface_gate();
     assert!(!surface.blockers.contains(
-        &super::product_export::DawSessionExportSurfaceBlocker::DawReceiptIdentityMissing
+        &crate::jam_app::product_export::DawSessionExportSurfaceBlocker::DawReceiptIdentityMissing
     ));
     assert!(!surface.blockers.contains(
-        &super::product_export::DawSessionExportSurfaceBlocker::JsonPackageEvidenceMissing
+        &crate::jam_app::product_export::DawSessionExportSurfaceBlocker::JsonPackageEvidenceMissing
     ));
     assert!(!surface.blockers.contains(
-        &super::product_export::DawSessionExportSurfaceBlocker::DawWriterMissing
+        &crate::jam_app::product_export::DawSessionExportSurfaceBlocker::DawWriterMissing
     ));
     assert!(surface.blockers.contains(
-        &super::product_export::DawSessionExportSurfaceBlocker::DawHostImportProofMissing
+        &crate::jam_app::product_export::DawSessionExportSurfaceBlocker::DawHostImportProofMissing
     ));
     assert!(surface.blockers.contains(
-        &super::product_export::DawSessionExportSurfaceBlocker::AudibleOutputProofMissing
+        &crate::jam_app::product_export::DawSessionExportSurfaceBlocker::AudibleOutputProofMissing
     ));
 
     let mut reader = DawprojectReader::open(&destination).expect("open DAWproject");
@@ -202,16 +235,17 @@ fn w30_hook_dawproject_exports_byte_identical_audio_through_action_session_and_r
             ..
         } if receipt_id == source_receipt.receipt_id.as_str()
     ));
-    assert!(state
-        .session
-        .action_log
-        .commit_records
-        .iter()
-        .any(|record| record.action_id == action.id));
-    let roundtrip: SessionFile = serde_json::from_slice(
-        &serde_json::to_vec(&state.session).expect("serialize Session"),
-    )
-    .expect("restore Session");
+    assert!(
+        state
+            .session
+            .action_log
+            .commit_records
+            .iter()
+            .any(|record| record.action_id == action.id)
+    );
+    let roundtrip: SessionFile =
+        serde_json::from_slice(&serde_json::to_vec(&state.session).expect("serialize Session"))
+            .expect("restore Session");
     assert_eq!(roundtrip.export_receipts, state.session.export_receipts);
     assert_eq!(roundtrip.action_log, state.session.action_log);
 }

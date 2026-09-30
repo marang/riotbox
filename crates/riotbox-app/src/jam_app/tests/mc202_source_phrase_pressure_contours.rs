@@ -1,3 +1,15 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::mc202_recipe::confirmed_source_phrase_state;
+use crate::jam_app::tests::fixtures::mc202_recipe::render_mc202_recipe_buffer;
+use crate::jam_app::tests::fixtures::mc202_recipe::source_phrase_test_graph;
+use crate::jam_app::tests::mc202_source_phrase_candidate_families::add_phrase_audio_features;
+use riotbox_audio::runtime::signal_delta_metrics;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::ids::SceneId;
+use riotbox_core::session::Mc202SourcePhraseCandidateFamilyState;
+use riotbox_core::transport::CommitBoundaryState;
+
 #[test]
 fn committed_mc202_pressure_contour_tracks_source_low_band_movement() {
     let mut high_movement_graph =
@@ -88,7 +100,9 @@ fn committed_mc202_pressure_contour_tracks_source_low_band_movement() {
     );
 }
 
-fn commit_source_derived_pressure(state: &mut JamAppState) -> Vec<f32> {
+pub(in crate::jam_app::tests) fn commit_source_derived_pressure(
+    state: &mut JamAppState,
+) -> Vec<f32> {
     assert_eq!(
         state.queue_mc202_generate_pressure(300),
         QueueControlResult::Enqueued
@@ -108,7 +122,7 @@ fn commit_source_derived_pressure(state: &mut JamAppState) -> Vec<f32> {
     render_mc202_recipe_buffer(&state.runtime.mc202_render)
 }
 
-fn active_source_phrase_notes(
+pub(in crate::jam_app::tests) fn active_source_phrase_notes(
     plan: &riotbox_core::session::Mc202SourcePhrasePlanState,
 ) -> Vec<i8> {
     plan.rhythm_cells.iter().flatten().copied().collect()
