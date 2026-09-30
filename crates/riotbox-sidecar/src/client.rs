@@ -555,7 +555,12 @@ mod tests {
             .analyze_source_file(&source_path, 23)
             .expect("analyze source file");
 
-        assert_eq!(graph.source.path, source_path.to_string_lossy());
+        // Python resolves Windows short-name temp locators to their long name.
+        // Compare the same fresh fixture file, not platform-specific spelling.
+        assert_eq!(
+            fs::canonicalize(&graph.source.path).expect("resolve graph fixture path"),
+            fs::canonicalize(&source_path).expect("resolve input fixture path")
+        );
         assert_eq!(graph.source.sample_rate, 44_100);
         assert_eq!(graph.source.channel_count, 2);
         assert!(graph.source.duration_seconds >= 1.9);

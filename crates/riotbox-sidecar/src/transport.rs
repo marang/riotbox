@@ -144,7 +144,7 @@ mod tests {
     fn completed_large_frame_does_not_remain_allocated_in_the_client_buffer() {
         let dir = tempfile::tempdir().unwrap();
         let script = dir.path().join("synthetic_frame_peer.py");
-        fs::write(&script, "import sys\nsys.stdin.readline()\nsys.stdout.write('x' * (1024 * 1024) + '\\nnext\\n')\nsys.stdout.flush()\n").unwrap();
+        fs::write(&script, "import sys\nsys.stdin.readline()\nsys.stdout.buffer.write(b'x' * (1024 * 1024) + b'\\nnext\\n')\nsys.stdout.buffer.flush()\n").unwrap();
         let mut child = Command::new("python3")
             .arg(script)
             .stdin(Stdio::piped())

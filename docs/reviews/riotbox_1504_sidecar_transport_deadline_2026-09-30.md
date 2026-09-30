@@ -86,6 +86,13 @@ No retained P0–P3 finding after these corrections. A short self-review confirm
 one I/O owner, no hidden retry, no reader worker, no changed wire format and no
 source access.
 
+The first native Windows run (36759631479) passed all new deadline/lifecycle
+cases but exposed two fixture assumptions: text stdout translates LF to CRLF,
+and Python expands Windows short-name temporary paths. The frame-allocation
+fixture now emits explicit binary bytes; the synthetic WAV test compares
+canonical file identity rather than locator spelling. Production framing and
+path behavior are unchanged. A fresh native run must verify these corrections.
+
 `client.rs` exceeds the soft file-size guidance (739 lines) because its existing
 public policy/error/client lifecycle and legacy inline tests remain together.
 The new I/O algorithm and OS boundary have separate semantic modules, and the
