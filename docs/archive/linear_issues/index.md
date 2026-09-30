@@ -1709,4 +1709,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Complete the project-wide audio numeric-value and magic-number audit
 - [RIOTBOX-1415.md](./RIOTBOX-1415.md)
   Finish low-risk runtime and Rust workspace hygiene from the broad review
+- [RIOTBOX-1503.md](./RIOTBOX-1503.md)
+  Run the post-maintenance architecture checkpoint across source identity, capture and runtime boundaries
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
