@@ -1,4 +1,37 @@
-use super::*;
+use crate::runtime::shared_transport_tr909::RealtimeTr909RenderState;
+use crate::runtime::shared_w30_resample_callback::RealtimeW30ResampleTapState;
+use crate::runtime::shared_w30_resample_callback::Tr909CallbackState;
+use crate::runtime::shared_w30_resample_callback::W30PreviewCallbackState;
+use crate::runtime::shared_w30_resample_callback::W30ResampleTapCallbackState;
+use crate::runtime::tr909_fill_voice::render_tr909_fill_buffer;
+use crate::runtime::tr909_tail_telemetry::envelope_decay;
+use crate::runtime::w30_filter_slam::w30_filter_slam_frame;
+use crate::runtime::w30_filter_slam::w30_filter_slam_sample;
+use crate::runtime::w30_preview_snapshot::RealtimeW30PadPlaybackSampleWindow;
+use crate::runtime::w30_preview_snapshot::RealtimeW30PreviewRenderState;
+use crate::runtime::w30_preview_snapshot::RealtimeW30PreviewSampleWindow;
+use crate::runtime::w30_tr909_signal_helpers::break_performance_slam;
+use crate::runtime::w30_tr909_signal_helpers::render_gain;
+use crate::runtime::w30_tr909_signal_helpers::render_subdivision;
+use crate::runtime::w30_tr909_signal_helpers::should_trigger_step;
+use crate::runtime::w30_tr909_signal_helpers::tr909_step_waveform;
+use crate::runtime::w30_tr909_signal_helpers::trigger_envelope;
+use crate::runtime::w30_tr909_signal_helpers::trigger_frequency;
+use crate::runtime::w30_tr909_signal_helpers::w30_envelope_decay;
+use crate::runtime::w30_tr909_signal_helpers::w30_preview_idle_bpm;
+use crate::runtime::w30_tr909_signal_helpers::w30_render_gain;
+use crate::tr909::Tr909RenderMode;
+use crate::w30::W30_PAD_CHOP_SLICE_COUNT;
+use crate::w30::W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN;
+use crate::w30::W30_PREVIEW_SAMPLE_WINDOW_LEN;
+use crate::w30::W30_RESAMPLE_SOURCE_WINDOW_LEN;
+use crate::w30::W30HookArticulationProfile;
+use crate::w30::W30PreviewRenderMode;
+use crate::w30::W30PreviewRenderRouting;
+use crate::w30::W30PreviewSourceProfile;
+use crate::w30::W30ResampleTapMode;
+use crate::w30::W30ResampleTapRouting;
+use crate::w30::W30ResampleTapSourceProfile;
 
 pub(super) fn render_tr909_buffer(
     data: &mut [f32],

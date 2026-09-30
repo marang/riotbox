@@ -1,4 +1,16 @@
-use super::*;
+use crate::runtime::shared_transport_tr909::RealtimeTr909RenderState;
+use crate::runtime::w30_tr909_signal_helpers::break_performance_slam;
+use crate::runtime::w30_tr909_signal_helpers::fill_performance_slam;
+use crate::tr909::Tr909PatternAdoption;
+use crate::tr909::Tr909PhraseVariation;
+use crate::tr909::Tr909RenderMode;
+use crate::tr909::Tr909RenderRouting;
+use crate::tr909::Tr909SourceSupportContext;
+use crate::tr909::Tr909SourceSupportProfile;
+use crate::tr909::Tr909TakeoverRenderProfile;
+use crate::w30::W30PreviewRenderMode;
+use crate::w30::W30PreviewRenderRouting;
+use crate::w30::W30PreviewSourceProfile;
 
 pub(super) fn envelope_decay(render: &RealtimeTr909RenderState) -> f32 {
     let slam = render.slam_intensity.clamp(0.0, 1.0);

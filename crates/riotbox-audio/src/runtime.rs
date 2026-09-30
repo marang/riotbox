@@ -1,36 +1,57 @@
-use std::{
-    sync::{
-        Arc, Mutex,
-        atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering},
+use crate::runtime::{
+    fill_focus::FillFocusRenderState,
+    shared_w30_resample_callback::CallbackTimingSnapshot,
+    tr909_tail_telemetry::{
+        w30_mode_from_u32, w30_mode_to_u32, w30_routing_from_u32, w30_routing_to_u32,
+        w30_source_profile_from_u32, w30_source_profile_to_u32,
     },
-    time::Instant,
 };
+use std::sync::atomic::{AtomicU64, Ordering};
 
+// Existing runtime test fixtures retain their private parent paths only in tests.
+#[cfg(test)]
 use crate::{
-    mc202::{
-        Mc202ContourHint, Mc202HookResponse, Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode,
-        Mc202RenderRouting, Mc202RenderState, Mc202SourcePhraseRenderPlan, render_mc202_buffer,
+    mc202::{Mc202ContourHint, Mc202HookResponse, Mc202NoteBudget, Mc202SourcePhraseRenderPlan},
+    runtime::{
+        fill_focus::apply_fill_focus_to_non_tr909_bed,
+        render_tr909_w30_preview::{
+            render_tr909_buffer, render_w30_preview_buffer, render_w30_resample_tap_buffer,
+            should_trigger_w30_step, w30_chop_slice_cursor, w30_pad_grid_gate,
+            w30_pad_grid_gate_gain, w30_pad_playback_sample, w30_pad_playback_signature,
+        },
+        shared_mc202::{RealtimeMc202RenderState, SharedMc202RenderState},
+        shared_transport_tr909::{
+            AudioRuntimeShellTestParts, RealtimeTr909RenderState, SharedTr909RenderState,
+            SharedTransportTimingState,
+        },
+        shared_w30_resample_callback::{
+            RealtimeW30ResampleSourceWindow, RealtimeW30ResampleTapState,
+            SharedW30ResampleTapState, Tr909CallbackState, W30MixRenderState,
+            W30PreviewCallbackState, W30ResampleTapCallbackState, render_mix_buffer,
+        },
+        source_monitor::{
+            SharedSourceMonitorRenderState, SourceMonitorCallbackState,
+            apply_source_monitor_policy_with_state,
+        },
+        telemetry::RuntimeTelemetry,
+        tr909_tail_telemetry::{envelope_decay, mode_to_u32},
+        w30_preview_snapshot::{
+            RealtimeW30PadPlaybackSampleWindow, RealtimeW30PreviewRenderState,
+            RealtimeW30PreviewSampleWindow, SharedW30PreviewRenderState, W30PreviewSnapshotCache,
+        },
+        w30_tr909_signal_helpers::{
+            break_performance_slam, fill_performance_slam, render_gain, render_subdivision,
+            should_trigger_step, tr909_step_waveform, trigger_envelope, trigger_frequency,
+        },
     },
     source_audio::SourceAudioCache,
-    tr909::{
-        Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
-        Tr909RenderState, Tr909SourceSupportContext, Tr909SourceSupportProfile,
-        Tr909TakeoverRenderProfile,
-    },
     w30::{
-        W30_PAD_CHOP_SLICE_COUNT, W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN,
-        W30_PREVIEW_SAMPLE_WINDOW_LEN, W30_RESAMPLE_SOURCE_WINDOW_LEN, W30HookArticulationProfile,
-        W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewRenderState,
-        W30PreviewSourceProfile, W30ResampleSourceWindow, W30ResampleTapMode,
-        W30ResampleTapRouting, W30ResampleTapSourceProfile, W30ResampleTapState,
+        W30_PAD_CHOP_SLICE_COUNT, W30_PREVIEW_SAMPLE_WINDOW_LEN, W30_RESAMPLE_SOURCE_WINDOW_LEN,
+        W30HookArticulationProfile, W30ResampleSourceWindow, W30ResampleTapAvailability,
     },
 };
-
-use arc_swap::{ArcSwap, Guard};
-use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-
 #[cfg(test)]
-use crate::w30::W30ResampleTapAvailability;
+use std::sync::Arc;
 
 mod fill_focus;
 mod live_master_capture;
@@ -49,67 +70,19 @@ mod w30_filter_slam;
 mod w30_preview_snapshot;
 mod w30_tr909_signal_helpers;
 
-use fill_focus::{FillFocusRenderState, apply_fill_focus_to_non_tr909_bed};
-use live_master_capture::SharedLiveMasterCapture;
 pub use live_master_capture::{
     LIVE_MASTER_CALLBACK_GAP_THRESHOLD_MICROS, LIVE_MASTER_MAX_INTERLEAVED_SAMPLE_COUNT,
     LiveMasterCaptureError, LiveMasterCaptureOutcome, LiveMasterCaptureProgress,
     LiveMasterCaptureRequest,
 };
 pub use public_api_shell::*;
-use render_tr909_w30_preview::{
-    render_tr909_buffer, render_w30_preview_buffer, render_w30_resample_tap_buffer,
-};
-#[cfg(test)]
-use render_tr909_w30_preview::{
-    should_trigger_w30_step, w30_chop_slice_cursor, w30_pad_grid_gate, w30_pad_grid_gate_gain,
-    w30_pad_playback_sample, w30_pad_playback_signature,
-};
+
 pub use runtime_mix_parity::*;
-use shared_mc202::{RealtimeMc202RenderState, SharedMc202RenderState};
-#[cfg(test)]
-use shared_transport_tr909::AudioRuntimeShellTestParts;
-use shared_transport_tr909::{
-    RealtimeTr909RenderState, RealtimeTransportTimingState, SharedTr909RenderState,
-    SharedTransportTimingState,
-};
-#[cfg(test)]
-use shared_w30_resample_callback::RealtimeW30ResampleSourceWindow;
-use shared_w30_resample_callback::{
-    CallbackTimingSnapshot, RealtimeW30ResampleTapState, SharedW30ResampleTapState,
-    Tr909CallbackState, TransportTimingCallbackState, W30MixRenderState, W30PreviewCallbackState,
-    W30ResampleTapCallbackState, advance_transport_timing, render_mix_buffer,
-};
-#[cfg(test)]
-use source_monitor::apply_source_monitor_policy_with_state;
-use source_monitor::{
-    SharedSourceMonitorRenderState, SourceMonitorCallbackState,
-    apply_source_monitor_policy_with_state_and_fill_focus,
-};
+
 pub use source_monitor::{
     SourceMonitorAudioRoute, SourceMonitorAudioSource, SourceMonitorRenderState,
     render_source_monitor_mix_offline, source_monitor_route_for_cache,
     source_monitor_route_for_output,
-};
-use telemetry::RuntimeTelemetry;
-use tr909_fill_voice::{Tr909FillVoiceState, render_tr909_fill_buffer};
-use tr909_tail_telemetry::{
-    envelope_decay, mode_from_u32, mode_to_u32, pattern_adoption_from_u32, pattern_adoption_to_u32,
-    phrase_variation_from_u32, phrase_variation_to_u32, routing_from_u32, routing_to_u32,
-    support_context_from_u32, support_context_to_u32, support_profile_from_u32,
-    support_profile_to_u32, takeover_profile_from_u32, takeover_profile_to_u32, w30_mode_from_u32,
-    w30_mode_to_u32, w30_routing_from_u32, w30_routing_to_u32, w30_source_profile_from_u32,
-    w30_source_profile_to_u32,
-};
-use w30_filter_slam::{W30FilterSlamCallbackState, w30_filter_slam_frame, w30_filter_slam_sample};
-use w30_preview_snapshot::{
-    RealtimeW30PadPlaybackSampleWindow, RealtimeW30PreviewRenderState,
-    RealtimeW30PreviewSampleWindow, SharedW30PreviewRenderState, W30PreviewSnapshotCache,
-};
-use w30_tr909_signal_helpers::{
-    break_performance_slam, fill_performance_slam, render_gain, render_subdivision,
-    should_trigger_step, tr909_step_waveform, trigger_envelope, trigger_frequency,
-    w30_envelope_decay, w30_preview_idle_bpm, w30_render_gain,
 };
 
 const COHERENT_SNAPSHOT_READ_ATTEMPTS: usize = 3;
