@@ -673,8 +673,15 @@ mod tests {
         };
         let mut client =
             StdioSidecarClient::spawn_python(protocol_fixture_path("hung_analysis.py"))
-                .expect("spawn hung analysis sidecar")
-                .with_timeout_policy(timeout_policy);
+                .expect("spawn hung analysis sidecar");
+        // The fixture starts beyond the short control budget deliberately.
+        // Establish readiness first so this regression exercises analysis I/O,
+        // not cold interpreter startup on a contended CI runner.
+        client
+            .ping()
+            .expect("complete hung-analysis fixture startup");
+        assert!(client.protocol_compatible);
+        let mut client = client.with_timeout_policy(timeout_policy);
         let error = client
             .build_source_graph_stub(sample_source(), 17)
             .expect_err("hung analysis should time out");

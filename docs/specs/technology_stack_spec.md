@@ -107,6 +107,10 @@ Clarification:
   Protocol 0.1 and legacy final EOF frames without a newline stay compatible.
   This bounds pipe backpressure/response wait, not process spawn, local JSON CPU,
   host scheduling/kernel stalls, process-tree containment or maximum frame size
+- short-budget analysis transport regressions establish protocol readiness under
+  the ordinary bounded policy before installing their test policy. Synthetic
+  startup delays verify that the test reaches analysis rather than depending
+  on cold interpreter speed; production budgets remain unchanged
 - the repository-bundled sidecar path is derived from the compiled crate
   location, not process CWD; `--sidecar` remains the explicit override and an
   unavailable configured script fails before spawn with its exact path
