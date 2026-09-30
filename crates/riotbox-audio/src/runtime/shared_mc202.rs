@@ -1,4 +1,36 @@
-use super::*;
+use crate::mc202::Mc202ContourHint;
+use crate::mc202::Mc202HookResponse;
+use crate::mc202::Mc202NoteBudget;
+use crate::mc202::Mc202PhraseShape;
+use crate::mc202::Mc202RenderMode;
+use crate::mc202::Mc202RenderRouting;
+use crate::mc202::Mc202RenderState;
+use crate::mc202::Mc202SourcePhraseRenderPlan;
+use crate::runtime::begin_coherent_snapshot_update;
+use crate::runtime::coherent_snapshot;
+use crate::runtime::coherent_snapshot_or;
+use crate::runtime::finish_coherent_snapshot_update;
+use crate::runtime::shared_transport_tr909::RealtimeTr909RenderState;
+use crate::runtime::shared_transport_tr909::SharedTr909RenderState;
+use crate::runtime::tr909_tail_telemetry::mode_from_u32;
+use crate::runtime::tr909_tail_telemetry::mode_to_u32;
+use crate::runtime::tr909_tail_telemetry::pattern_adoption_from_u32;
+use crate::runtime::tr909_tail_telemetry::pattern_adoption_to_u32;
+use crate::runtime::tr909_tail_telemetry::phrase_variation_from_u32;
+use crate::runtime::tr909_tail_telemetry::phrase_variation_to_u32;
+use crate::runtime::tr909_tail_telemetry::routing_from_u32;
+use crate::runtime::tr909_tail_telemetry::routing_to_u32;
+use crate::runtime::tr909_tail_telemetry::support_context_from_u32;
+use crate::runtime::tr909_tail_telemetry::support_context_to_u32;
+use crate::runtime::tr909_tail_telemetry::support_profile_from_u32;
+use crate::runtime::tr909_tail_telemetry::support_profile_to_u32;
+use crate::runtime::tr909_tail_telemetry::takeover_profile_from_u32;
+use crate::runtime::tr909_tail_telemetry::takeover_profile_to_u32;
+use crate::tr909::Tr909RenderState;
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::AtomicU32;
+use std::sync::atomic::AtomicU64;
+use std::sync::atomic::Ordering;
 
 impl SharedTr909RenderState {
     pub(super) fn new(render_state: &Tr909RenderState) -> Self {
