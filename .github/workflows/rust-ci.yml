@@ -114,6 +114,6 @@ jobs:
       - name: Cache cargo artifacts
         uses: Swatinem/rust-cache@v2
       - name: Source-free Sidecar protocol and transport tests
-        run: cargo test --locked -p riotbox-sidecar
+        run: cargo test --locked -p riotbox-sidecar -- --test-threads=24
       - name: Sidecar lint
         run: cargo clippy --locked -p riotbox-sidecar --all-targets -- -D warnings
