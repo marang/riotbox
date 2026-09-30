@@ -86,6 +86,20 @@ scoring so its ordering helper and report-only score fields remain private.
 This migration changes no algorithm, threshold, readiness/trust policy or
 Source Graph/Session schema and grants no fresh source qualification.
 
+### Runtime Regression Ownership
+
+`runtime::tests` contains ordinary synthetic regression modules, not a shared
+lexical include namespace (RBX-388 / RIOTBOX-1511). Lifecycle, shared state,
+mix/lane behavior, transport stop, Source Monitor, fills, gestures and metrics
+have explicit dependencies on their existing production owners. Shared fixture
+models, synthetic PCM, signal measurements, mix plans, fill recipes and gesture
+fixtures stay in the test subtree; cross-family helper visibility is bounded to
+that subtree and one-family helpers remain private. Other runtime test children
+import actual production owners instead of depending on root test-only aliases.
+Preserve complete regression bodies, fixture identities and existing ignored
+status. This ownership change does not alter callbacks, DSP, runtime state,
+public APIs or any audio/source policy.
+
 ## Target Shape
 
 Prefer this:

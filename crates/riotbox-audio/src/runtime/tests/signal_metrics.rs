@@ -1,3 +1,8 @@
+use crate::runtime::{
+    apply_master_bus_soft_limiter_with_report, master_bus_limiter_ceiling,
+    master_bus_limiter_threshold, signal_delta_metrics, signal_metrics, signal_metrics_with_grid,
+};
+
 #[test]
 fn signal_metrics_reports_shape_metrics_beyond_level() {
     let metrics = signal_metrics(&[-0.5, 0.25, -0.25, 0.5]);
@@ -43,8 +48,7 @@ fn signal_metrics_reports_clip_counts_and_headroom() {
 #[test]
 fn signal_metrics_with_grid_reports_onsets_and_event_density_per_bar() {
     let samples = [
-        0.0, 0.0, 0.4, 0.4, 0.2, 0.2, 0.0, 0.0, 0.35, 0.35, 0.1, 0.1, 0.0, 0.0,
-        0.0, 0.0,
+        0.0, 0.0, 0.4, 0.4, 0.2, 0.2, 0.0, 0.0, 0.35, 0.35, 0.1, 0.1, 0.0, 0.0, 0.0, 0.0,
     ];
     let metrics = signal_metrics_with_grid(&samples, 8, 2, 120.0, 4);
 
@@ -54,7 +58,8 @@ fn signal_metrics_with_grid_reports_onsets_and_event_density_per_bar() {
 
 #[test]
 fn signal_metrics_with_grid_leaves_density_zero_without_valid_timing_context() {
-    let metrics = signal_metrics_with_grid(&[0.0, 0.0, 0.5, 0.5, 0.0, 0.0, 0.5, 0.5], 0, 2, 120.0, 4);
+    let metrics =
+        signal_metrics_with_grid(&[0.0, 0.0, 0.5, 0.5, 0.0, 0.0, 0.5, 0.5], 0, 2, 120.0, 4);
 
     assert_eq!(metrics.onset_count, 2);
     assert_eq!(metrics.event_density_per_bar, 0.0);

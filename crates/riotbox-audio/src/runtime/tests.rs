@@ -1,15 +1,33 @@
-// Textual includes preserve the existing runtime::tests::* names while keeping
-// audio regression groups small enough to inspect without loading every test.
-include!("tests/fixtures_lifecycle.rs");
-include!("tests/shared_w30_preview.rs");
-include!("tests/w30_resample_support.rs");
-include!("tests/w30_hook_turnaround.rs");
-include!("tests/w30_pitch_dive.rs");
-include!("tests/w30_filter_slam.rs");
-include!("tests/mix_offline_tr909.rs");
-include!("tests/tr909_profile_voice_balance.rs");
-include!("tests/fixture_regressions_variations.rs");
-include!("tests/signal_metrics.rs");
-include!("tests/source_monitor.rs");
-include!("tests/render_parity.rs");
+// Ordinary synthetic runtime regression owners; production state remains in runtime.
+mod fill_focus;
+mod fixture_models;
+mod fixture_regressions;
+mod mc202;
+mod mix_plan_fixtures;
+mod mix_safety;
+mod render_parity;
+mod runtime_lifecycle;
+mod shared_render_state;
+mod signal_metrics;
+mod signal_test_helpers;
+mod source_monitor_lifetime;
+mod source_monitor_motion;
+mod source_monitor_routing;
+mod synthetic_sources;
+mod tr909_fill_fixtures;
+mod tr909_fill_phrase;
+mod tr909_fill_state;
+mod tr909_fill_voices;
+mod tr909_modes;
+mod tr909_profile_voice_balance;
+mod tr909_slam;
+mod w30_audition;
+mod w30_filter_slam;
+mod w30_gesture_fixtures;
+mod w30_hook_turnaround;
+mod w30_pad_playback;
+mod w30_pitch_dive;
+mod w30_preview;
+mod w30_resample_tap;
 mod w30_snapshot_cache;
+mod w30_transport_stop;
