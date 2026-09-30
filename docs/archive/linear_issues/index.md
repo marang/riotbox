@@ -1713,4 +1713,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Run the post-maintenance architecture checkpoint across source identity, capture and runtime boundaries
 - [RIOTBOX-1505.md](./RIOTBOX-1505.md)
   Reject non-regular source WAVs without blocking Session restore
+- [RIOTBOX-1504.md](./RIOTBOX-1504.md)
+  Bound Sidecar request writes by the operation deadline
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
