@@ -18,6 +18,8 @@ Result:
 
 - original RIOTBOX-1325 baseline: 236 textual include sites in 17 owning Rust files
 - refreshed 2026-08-29 baseline: 248 textual include sites in 18 owning Rust files
+- RIOTBOX-1337 migration, 2026-09-30: 203 remaining sites in 16 owners;
+  all 45 library CLI and CLI-test includes replaced by real modules
 - no generated-code include site identified in this inventory
 - every current include is treated as legacy/mechanical until proven otherwise
 
@@ -62,8 +64,6 @@ legacy inventory; it does not approve new textual include sites.
 | `crates/riotbox-audio/src/bin/lane_recipe_pack.rs` | 6 | pack builder, lane cases, manifest, tests | Lane recipe QA CLI | mechanical QA-bin split | low/medium | future QA-bin module slice |
 | `crates/riotbox-audio/src/bin/w30_preview_compare.rs` | 4 | compare CLI, metrics, manifest, tests | W-30 preview comparison CLI | mechanical QA-bin split | low/medium | future W-30 QA-bin slice |
 | `crates/riotbox-audio/src/bin/w30_preview_render.rs` | 2 | render CLI, tests | W-30 preview render CLI | mechanical QA-bin split | low | future W-30 QA-bin slice |
-| `crates/riotbox-app/src/bin/riotbox-app/tests.rs` | 23 | CLI and observer test shards | Main app binary tests | mechanical test split | medium: CLI regression coverage | RIOTBOX-1325 |
-| `crates/riotbox-app/src/cli.rs` | 22 | launch, export/report modes, event loop, controls, args, tests | Library-owned CLI implementation | relocated mechanical app split | high: CLI compatibility and app launch | RIOTBOX-1337 |
 | `crates/riotbox-app/src/bin/observer_audio_correlate.rs` | 10 | args, source timing evidence, summary build/render/evidence | Observer/audio correlation CLI | mechanical QA-bin split | medium: QA contract | future observer QA-bin slice |
 | `crates/riotbox-app/src/ui.rs` | 10 | UI state, shell render, perform layout, footer/help, source/log/capture helpers | TUI surface | mechanical app split | medium/high: musician UI contract | future UI module slice |
 | `crates/riotbox-app/src/ui/tests.rs` | 25 | UI fixture and screen tests | TUI tests | mechanical test split | medium: broad fixture surface | future UI module slice |
@@ -94,3 +94,5 @@ of mixing them into the module move.
 | `crates/riotbox-audio/src/mc202.rs` | 5 | RIOTBOX-1324 | Replaced by `crates/riotbox-audio/src/mc202/mod.rs` with render-type exports, internal sound-design module, and real test modules. |
 | `crates/riotbox-audio/src/source_audio.rs` | 2 | RIOTBOX-1324 | Replaced by `crates/riotbox-audio/src/source_audio/mod.rs` with cache exports and real test module. |
 | `crates/riotbox-app/src/bin/riotbox-app.rs` | 20 | RIOTBOX-1325 | Replaced by a thin binary entrypoint that calls `riotbox_app::cli::run()`. The existing mechanical CLI include shell now lives at `crates/riotbox-app/src/cli.rs` pending a semantic module split. |
+| `crates/riotbox-app/src/cli.rs` | 22 | RIOTBOX-1337 | Private semantic modules own configuration, argument parsing, launch, terminal lifecycle, observer serialization, event routing, performer controls, and offline export/report modes. Only `run()` remains public. |
+| `crates/riotbox-app/src/bin/riotbox-app/tests.rs` | 23 | RIOTBOX-1337 | Real `cli::tests` children own regression families; shared synthetic fixtures have a separate test-only owner. No test scenario removed. |

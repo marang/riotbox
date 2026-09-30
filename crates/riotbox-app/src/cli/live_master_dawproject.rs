@@ -1,17 +1,18 @@
-use std::{
-    fs, io,
-    path::{Path, PathBuf},
-};
-
-use serde_json::{Value, json};
-
-use crate::{
-    jam_app::JamAppState,
-    observer::observer_snapshot,
-    ui::{JamShellState, ShellLaunchMode},
-};
-
-use super::{AppLaunch, LaunchMode, UserSessionObserver, launch_summary, timestamp_now};
+use crate::cli::model::AppLaunch;
+use crate::cli::model::LaunchMode;
+use crate::cli::observer::UserSessionObserver;
+use crate::cli::observer::launch_summary;
+use crate::cli::observer::timestamp_now;
+use crate::jam_app::JamAppState;
+use crate::observer::observer_snapshot;
+use crate::ui::JamShellState;
+use crate::ui::ShellLaunchMode;
+use serde_json::Value;
+use serde_json::json;
+use std::fs;
+use std::io;
+use std::path::Path;
+use std::path::PathBuf;
 
 pub(super) fn run_live_master_dawproject_execute(
     launch: &AppLaunch,
@@ -169,7 +170,7 @@ mod tests {
     #[test]
     fn cli_parses_metadata_only_live_master_dawproject_mode_and_fails_closed_without_a_v2_receipt()
     {
-        let launch = super::super::parse_args([
+        let launch = crate::cli::args::parse_args([
             "--live-master-dawproject-execute".into(),
             "--session".into(),
             "session.json".into(),

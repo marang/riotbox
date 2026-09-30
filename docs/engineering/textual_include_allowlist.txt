@@ -1,6 +1,4 @@
 10 crates/riotbox-app/src/bin/observer_audio_correlate.rs
-23 crates/riotbox-app/src/bin/riotbox-app/tests.rs
-22 crates/riotbox-app/src/cli.rs
 2 crates/riotbox-app/src/jam_app/projection.rs
 74 crates/riotbox-app/src/jam_app/tests.rs
 10 crates/riotbox-app/src/ui.rs
