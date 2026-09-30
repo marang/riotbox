@@ -1,13 +1,19 @@
+use crate::source_graph::timing_probe_candidates::onset_evidence::normalized_onset_times;
+use crate::source_graph::timing_probe_candidates::types::{
+    SourceTimingProbeBeatEvidenceReport, SourceTimingProbeBeatEvidenceStatus,
+    SourceTimingProbeBpmCandidateInput, SourceTimingProbeBpmCandidatePolicy,
+};
+
 #[derive(Clone, Copy, Debug, PartialEq)]
-struct BeatPeriodScore {
-    bpm: f32,
-    period_seconds: f32,
-    score: f32,
+pub(super) struct BeatPeriodScore {
+    pub(super) bpm: f32,
+    pub(super) period_seconds: f32,
+    pub(super) score: f32,
     matched_onset_ratio: f32,
     median_distance_ratio: f32,
 }
 
-fn beat_period_scores(
+pub(super) fn beat_period_scores(
     input: &SourceTimingProbeBpmCandidateInput,
     policy: SourceTimingProbeBpmCandidatePolicy,
 ) -> Vec<BeatPeriodScore> {
@@ -86,7 +92,11 @@ fn period_score_order(left: &BeatPeriodScore, right: &BeatPeriodScore) -> std::c
             left.median_distance_ratio
                 .total_cmp(&right.median_distance_ratio)
         })
-        .then_with(|| right.matched_onset_ratio.total_cmp(&left.matched_onset_ratio))
+        .then_with(|| {
+            right
+                .matched_onset_ratio
+                .total_cmp(&left.matched_onset_ratio)
+        })
         .then_with(|| right.score.total_cmp(&left.score))
 }
 
@@ -100,7 +110,7 @@ fn period_score_bucket(score: f32) -> i32 {
     (score / SCORE_TIE_BUCKET).round() as i32
 }
 
-fn ambiguous_beat_period_scores(
+pub(super) fn ambiguous_beat_period_scores(
     scores: &[BeatPeriodScore],
     policy: SourceTimingProbeBpmCandidatePolicy,
 ) -> impl Iterator<Item = BeatPeriodScore> + '_ {
@@ -111,10 +121,7 @@ fn ambiguous_beat_period_scores(
     })
 }
 
-fn candidate_periods(
-    onset_times: &[f32],
-    policy: SourceTimingProbeBpmCandidatePolicy,
-) -> Vec<f32> {
+fn candidate_periods(onset_times: &[f32], policy: SourceTimingProbeBpmCandidatePolicy) -> Vec<f32> {
     let bounded_onsets = onset_times.iter().copied().take(128).collect::<Vec<_>>();
     let mut periods = Vec::new();
     for (left_index, left) in bounded_onsets.iter().enumerate() {
@@ -236,11 +243,10 @@ fn beat_period_tolerance(period_seconds: f32) -> f32 {
     (period_seconds * 0.18).clamp(0.02, 0.08)
 }
 
-fn distance_to_repeating_beat(
-    time_seconds: f32,
-    phase_seconds: f32,
-    period_seconds: f32,
-) -> f32 {
+fn distance_to_repeating_beat(time_seconds: f32, phase_seconds: f32, period_seconds: f32) -> f32 {
     let position = (time_seconds - phase_seconds).rem_euclid(period_seconds);
     position.min(period_seconds - position)
 }
+
+#[cfg(test)]
+mod tests;

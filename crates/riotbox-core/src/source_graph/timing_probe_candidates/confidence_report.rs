@@ -1,8 +1,17 @@
+use crate::source_graph::timing_probe_candidates::types::{
+    SourceTimingCandidateConfidenceReport, SourceTimingCandidateConfidenceResult,
+    SourceTimingCandidateDriftStatus, SourceTimingCandidatePhraseStatus,
+};
+use crate::source_graph::{
+    Confidence, TimingDegradedPolicy, TimingHypothesisKind, TimingModel, TimingWarningCode,
+};
+
 #[must_use]
 pub fn source_timing_candidate_confidence_report(
     timing: &TimingModel,
 ) -> SourceTimingCandidateConfidenceReport {
-    let alternate_downbeat_count = count_hypotheses(timing, TimingHypothesisKind::AlternateDownbeat);
+    let alternate_downbeat_count =
+        count_hypotheses(timing, TimingHypothesisKind::AlternateDownbeat);
     let ambiguous_period_count = count_hypotheses(timing, TimingHypothesisKind::Ambiguous);
     let half_time_count = count_hypotheses(timing, TimingHypothesisKind::HalfTime);
     let double_time_count = count_hypotheses(timing, TimingHypothesisKind::DoubleTime);

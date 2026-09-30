@@ -1,9 +1,18 @@
+use crate::source_graph::timing_probe_candidates::onset_evidence::{
+    NormalizedOnsetEvidence, normalized_onset_evidence,
+};
+use crate::source_graph::timing_probe_candidates::types::SourceTimingProbeBpmCandidateInput;
+use crate::source_graph::{Confidence, GrooveResidual, GrooveSubdivision};
+
 const GROOVE_MIN_ONSET_COUNT: usize = 4;
+
 const GROOVE_MAX_RESIDUAL_MS: f32 = 80.0;
+
 const GROOVE_MIN_HIT_RATIO: f32 = 0.75;
+
 const GROOVE_MIN_WEIGHTED_OFFSET_MS: f32 = 1.0;
 
-fn probe_candidate_groove_residuals(
+pub(super) fn probe_candidate_groove_residuals(
     input: &SourceTimingProbeBpmCandidateInput,
     bpm: f32,
     confidence: Confidence,
@@ -20,7 +29,9 @@ fn probe_candidate_groove_residuals(
         GrooveSubdivision::ThirtySecond,
     ]
     .into_iter()
-    .filter_map(|subdivision| groove_residual_for_subdivision(&onsets, bpm, confidence, subdivision))
+    .filter_map(|subdivision| {
+        groove_residual_for_subdivision(&onsets, bpm, confidence, subdivision)
+    })
     .collect()
 }
 
@@ -37,7 +48,8 @@ fn groove_residual_for_subdivision(
     let mut weight_sum = 0.0_f32;
 
     for onset in onsets {
-        let residual_ms = nearest_grid_residual_seconds(onset.time_seconds, period_seconds) * 1000.0;
+        let residual_ms =
+            nearest_grid_residual_seconds(onset.time_seconds, period_seconds) * 1000.0;
         if residual_ms.abs() > max_residual_ms {
             continue;
         }
@@ -63,10 +75,7 @@ fn groove_residual_for_subdivision(
     })
 }
 
-fn groove_subdivision_period_seconds(
-    bpm: f32,
-    subdivision: GrooveSubdivision,
-) -> Option<f32> {
+fn groove_subdivision_period_seconds(bpm: f32, subdivision: GrooveSubdivision) -> Option<f32> {
     let beat_seconds = 60.0 / bpm.max(1.0);
     let division = match subdivision {
         GrooveSubdivision::Eighth => 2.0,
@@ -75,7 +84,10 @@ fn groove_subdivision_period_seconds(
         GrooveSubdivision::ThirtySecond => 8.0,
     };
     let period = beat_seconds / division;
-    period.is_finite().then_some(period).filter(|period| *period > 0.0)
+    period
+        .is_finite()
+        .then_some(period)
+        .filter(|period| *period > 0.0)
 }
 
 fn nearest_grid_residual_seconds(time_seconds: f32, period_seconds: f32) -> f32 {

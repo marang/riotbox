@@ -7,5 +7,4 @@
 4 crates/riotbox-audio/src/bin/w30_preview_compare.rs
 2 crates/riotbox-audio/src/bin/w30_preview_render.rs
 12 crates/riotbox-audio/src/runtime/tests.rs
-12 crates/riotbox-core/src/source_graph/timing_probe_candidates.rs
 2 crates/riotbox-core/src/tr909_policy.rs

@@ -1,3 +1,10 @@
+use crate::source_graph::timing_probe_candidates::types::{
+    SourceTimingCandidateConfidenceResult, SourceTimingCandidatePhraseStatus,
+    SourceTimingProbeBeatEvidenceStatus, SourceTimingProbeDownbeatEvidenceStatus,
+    SourceTimingProbeReadinessReport, SourceTimingProbeReadinessStatus,
+};
+use crate::source_graph::{TimingDegradedPolicy, TimingModel, TimingWarningCode};
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SourceTimingGridUse {
     LockedGrid,
@@ -137,9 +144,7 @@ pub fn source_timing_grid_use(report: &SourceTimingProbeReadinessReport) -> Sour
 }
 
 #[must_use]
-pub fn source_timing_can_use_cautious_grid_bpm(
-    report: &SourceTimingProbeReadinessReport,
-) -> bool {
+pub fn source_timing_can_use_cautious_grid_bpm(report: &SourceTimingProbeReadinessReport) -> bool {
     report.readiness == SourceTimingProbeReadinessStatus::NeedsReview
         && report.requires_manual_confirm
         && report.beat_status == SourceTimingProbeBeatEvidenceStatus::Stable

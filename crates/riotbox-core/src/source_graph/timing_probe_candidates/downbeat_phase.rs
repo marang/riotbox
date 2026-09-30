@@ -1,21 +1,33 @@
+use crate::source_graph::timing_probe_candidates::onset_evidence::normalized_onset_times_and_strengths;
+use crate::source_graph::timing_probe_candidates::types::{
+    SourceTimingProbeBpmCandidateInput, SourceTimingProbeBpmCandidatePolicy,
+    SourceTimingProbeDownbeatEvidenceReport, SourceTimingProbeDownbeatEvidenceStatus,
+};
+use crate::source_graph::timing_probe_candidates::{
+    MIN_AMBIGUOUS_DOWNBEAT_PHASE_SCORE, MIN_STABLE_DOWNBEAT_PHASE_SCORE,
+};
+
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-struct DownbeatPhaseScore {
-    offset_beats: u8,
-    score: f32,
+pub(super) struct DownbeatPhaseScore {
+    pub(super) offset_beats: u8,
+    pub(super) score: f32,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-struct DownbeatPhaseSelection {
-    phase: DownbeatPhaseScore,
-    used_loop_boundary_prior: bool,
+pub(super) struct DownbeatPhaseSelection {
+    pub(super) phase: DownbeatPhaseScore,
+    pub(super) used_loop_boundary_prior: bool,
 }
 
 const MAX_LOOP_BOUNDARY_BAR_COUNT: usize = 8;
+
 const MAX_LOOP_BOUNDARY_FIT_ERROR_BARS: f32 = 0.03;
+
 const MIN_LOOP_BOUNDARY_REPEAT_COVERAGE: f32 = 0.60;
+
 const MIN_LOOP_BOUNDARY_STRENGTH_SIMILARITY: f32 = 0.55;
 
-fn downbeat_phase_scores(
+pub(super) fn downbeat_phase_scores(
     input: &SourceTimingProbeBpmCandidateInput,
     bpm: f32,
 ) -> Vec<DownbeatPhaseScore> {
@@ -59,7 +71,7 @@ fn downbeat_phase_scores(
     scores
 }
 
-fn select_downbeat_phase(
+pub(super) fn select_downbeat_phase(
     input: &SourceTimingProbeBpmCandidateInput,
     bpm: f32,
     phases: &[DownbeatPhaseScore],
@@ -88,7 +100,7 @@ fn select_downbeat_phase(
     }
 }
 
-fn repeated_full_bar_loop_supports_file_boundary(
+pub(super) fn repeated_full_bar_loop_supports_file_boundary(
     input: &SourceTimingProbeBpmCandidateInput,
     bpm: f32,
 ) -> bool {
@@ -102,8 +114,8 @@ fn repeated_full_bar_loop_supports_file_boundary(
     if !(2.0..=MAX_LOOP_BOUNDARY_BAR_COUNT as f32).contains(&bar_count) {
         return false;
     }
-    let bar_fit_error = (input.duration_seconds - bar_count * seconds_per_bar).abs()
-        / seconds_per_bar;
+    let bar_fit_error =
+        (input.duration_seconds - bar_count * seconds_per_bar).abs() / seconds_per_bar;
     if bar_fit_error > MAX_LOOP_BOUNDARY_FIT_ERROR_BARS {
         return false;
     }
@@ -177,7 +189,9 @@ fn repeated_bar_pattern_matches(
         };
         used[candidate_index] = true;
         matched += 1;
-        let stronger = reference_strength.max(*candidate_strength).max(f32::EPSILON);
+        let stronger = reference_strength
+            .max(*candidate_strength)
+            .max(f32::EPSILON);
         strength_similarity += reference_strength.min(*candidate_strength).max(0.0) / stronger;
     }
 
@@ -199,17 +213,17 @@ pub fn source_timing_probe_downbeat_evidence_report(
     } else {
         downbeat_phase_scores(input, bpm)
     };
-    let selection = (!phases.is_empty()).then(|| select_downbeat_phase(input, bpm, &phases, policy));
+    let selection =
+        (!phases.is_empty()).then(|| select_downbeat_phase(input, bpm, &phases, policy));
     let primary = selection.map(|selection| selection.phase);
-    let primary_margin_to_next_phase = primary
-        .and_then(|primary| {
-            phases
-                .iter()
-                .copied()
-                .filter(|phase| phase.offset_beats != primary.offset_beats)
-                .max_by(|left, right| left.score.total_cmp(&right.score))
-                .map(|next| (primary.score - next.score).max(0.0))
-        });
+    let primary_margin_to_next_phase = primary.and_then(|primary| {
+        phases
+            .iter()
+            .copied()
+            .filter(|phase| phase.offset_beats != primary.offset_beats)
+            .max_by(|left, right| left.score.total_cmp(&right.score))
+            .map(|next| (primary.score - next.score).max(0.0))
+    });
     let alternate_phase_count = primary.map_or(0, |primary| {
         ambiguous_downbeat_phases(&phases, primary, policy).count()
     });
@@ -241,7 +255,7 @@ pub fn source_timing_probe_downbeat_evidence_report(
     }
 }
 
-fn best_downbeat_phase_selection(
+pub(super) fn best_downbeat_phase_selection(
     input: &SourceTimingProbeBpmCandidateInput,
     bpm: f32,
     policy: SourceTimingProbeBpmCandidatePolicy,
@@ -250,7 +264,7 @@ fn best_downbeat_phase_selection(
     select_downbeat_phase(input, bpm, &phases, policy)
 }
 
-fn ambiguous_downbeat_phases(
+pub(super) fn ambiguous_downbeat_phases(
     phases: &[DownbeatPhaseScore],
     primary: DownbeatPhaseScore,
     policy: SourceTimingProbeBpmCandidatePolicy,

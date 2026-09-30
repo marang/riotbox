@@ -1,4 +1,14 @@
-fn probe_candidate_drift_reports(
+use crate::source_graph::timing_probe_candidates::onset_evidence::normalized_onset_times;
+use crate::source_graph::timing_probe_candidates::types::SourceTimingProbeBpmCandidateInput;
+use crate::source_graph::{Confidence, TimingDriftReport};
+
+pub(super) fn has_high_drift(drift: &[TimingDriftReport]) -> bool {
+    drift
+        .iter()
+        .any(|drift| drift.max_drift_ms > 70.0 || drift.end_drift_ms.abs() > 70.0)
+}
+
+pub(super) fn probe_candidate_drift_reports(
     input: &SourceTimingProbeBpmCandidateInput,
     bpm: f32,
     confidence: Confidence,
@@ -16,7 +26,13 @@ fn probe_candidate_drift_reports(
             if input.duration_seconds + seconds_per_beat < window_seconds {
                 return None;
             }
-            drift_report_for_window(input, seconds_per_beat, window_bars, window_seconds, confidence)
+            drift_report_for_window(
+                input,
+                seconds_per_beat,
+                window_bars,
+                window_seconds,
+                confidence,
+            )
         })
         .collect()
 }
