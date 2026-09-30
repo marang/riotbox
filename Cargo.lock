@@ -1076,10 +1076,12 @@ dependencies = [
 name = "riotbox-sidecar"
 version = "0.1.0"
 dependencies = [
+ "libc",
  "riotbox-core",
  "serde",
  "serde_json",
  "tempfile",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

@@ -3,16 +3,15 @@ use crate::protocol::{
     PongPayload, SidecarErrorPayload, SidecarRequest, SidecarResponse, decode_json_line,
     encode_json_line,
 };
+use crate::transport::{StdioTransport, TransportError};
 use riotbox_core::source_graph::{SourceDescriptor, SourceGraph};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
-    io::{self, BufRead, BufReader, Write},
+    io,
     path::{Path, PathBuf},
-    process::{Child, ChildStdin, ChildStdout, Command, Stdio},
-    sync::mpsc::{self, Receiver, RecvTimeoutError},
-    thread,
-    time::Duration,
+    process::{Child, Command, Stdio},
+    time::{Duration, Instant},
 };
 
 const DEFAULT_CONTROL_TIMEOUT: Duration = Duration::from_secs(10);
@@ -60,6 +59,7 @@ pub enum ClientError {
     Io(io::Error),
     Protocol(crate::protocol::ProtocolError),
     UnexpectedEof,
+    TransportUnavailable,
     Sidecar(SidecarErrorPayload),
     UnexpectedResponse(&'static str),
     ResponseTimeout {
@@ -93,11 +93,15 @@ impl Display for ClientError {
             Self::Io(error) => write!(f, "stdio transport failed: {error}"),
             Self::Protocol(error) => write!(f, "{error}"),
             Self::UnexpectedEof => write!(f, "sidecar closed stdout before replying"),
+            Self::TransportUnavailable => write!(
+                f,
+                "sidecar transport is unavailable; spawn a fresh peer before retrying"
+            ),
             Self::Sidecar(error) => write!(f, "sidecar returned {}: {}", error.code, error.message),
             Self::UnexpectedResponse(kind) => write!(f, "unexpected sidecar response: {kind}"),
             Self::ResponseTimeout { operation, timeout } => write!(
                 f,
-                "sidecar {operation} operation did not reply within {:.1}s",
+                "sidecar {operation} transport did not complete within {:.1}s",
                 timeout.as_secs_f32()
             ),
             Self::RequestIdMismatch { expected, received } => write!(
@@ -132,6 +136,7 @@ impl Error for ClientError {
             Self::MissingStdin
             | Self::MissingStdout
             | Self::UnexpectedEof
+            | Self::TransportUnavailable
             | Self::Sidecar(_)
             | Self::UnexpectedResponse(_)
             | Self::ResponseTimeout { .. }
@@ -156,8 +161,7 @@ impl From<crate::protocol::ProtocolError> for ClientError {
 
 pub struct StdioSidecarClient {
     child: Child,
-    stdin: ChildStdin,
-    stdout_rx: Receiver<Result<String, io::Error>>,
+    transport: Option<StdioTransport>,
     next_request_id: u64,
     timeout_policy: SidecarTimeoutPolicy,
     protocol_compatible: bool,
@@ -186,13 +190,25 @@ impl StdioSidecarClient {
             .spawn()
             .map_err(ClientError::Spawn)?;
 
-        let stdin = child.stdin.take().ok_or(ClientError::MissingStdin)?;
-        let stdout = child.stdout.take().ok_or(ClientError::MissingStdout)?;
+        let Some(stdin) = child.stdin.take() else {
+            terminate_child(&mut child);
+            return Err(ClientError::MissingStdin);
+        };
+        let Some(stdout) = child.stdout.take() else {
+            terminate_child(&mut child);
+            return Err(ClientError::MissingStdout);
+        };
+        let transport = match StdioTransport::new(stdin, stdout) {
+            Ok(transport) => transport,
+            Err(error) => {
+                terminate_child(&mut child);
+                return Err(ClientError::Io(error));
+            }
+        };
 
         Ok(Self {
             child,
-            stdin,
-            stdout_rx: spawn_stdout_reader(stdout),
+            transport: Some(transport),
             next_request_id: 1,
             timeout_policy: SidecarTimeoutPolicy::default(),
             protocol_compatible: false,
@@ -222,12 +238,11 @@ impl StdioSidecarClient {
             request_id: request_id.clone(),
         });
 
-        self.write_request(&request)?;
-
-        match self.read_response(SidecarOperation::Control)? {
+        match self.exchange(&request, SidecarOperation::Control)? {
             SidecarResponse::Pong(pong) => {
-                validate_request_id(&request_id, Some(&pong.request_id))?;
+                self.verify_request_id(&request_id, Some(&pong.request_id))?;
                 if pong.protocol_version != PROTOCOL_VERSION {
+                    self.invalidate_transport();
                     return Err(ClientError::ProtocolVersionMismatch {
                         expected: PROTOCOL_VERSION.to_string(),
                         received: pong.protocol_version,
@@ -236,9 +251,9 @@ impl StdioSidecarClient {
                 self.protocol_compatible = true;
                 Ok(pong)
             }
-            SidecarResponse::Error(error) => Err(classify_sidecar_error(&request_id, error)),
+            SidecarResponse::Error(error) => Err(self.sidecar_error(&request_id, error)),
             SidecarResponse::SourceGraphBuilt(_) => {
-                Err(ClientError::UnexpectedResponse("source_graph_built"))
+                Err(self.unexpected_response("source_graph_built"))
             }
         }
     }
@@ -256,15 +271,13 @@ impl StdioSidecarClient {
             analysis_seed,
         });
 
-        self.write_request(&request)?;
-
-        match self.read_response(SidecarOperation::Analysis)? {
+        match self.exchange(&request, SidecarOperation::Analysis)? {
             SidecarResponse::SourceGraphBuilt(payload) => {
-                validate_request_id(&request_id, Some(&payload.request_id))?;
+                self.verify_request_id(&request_id, Some(&payload.request_id))?;
                 Ok(payload.graph)
             }
-            SidecarResponse::Error(error) => Err(classify_sidecar_error(&request_id, error)),
-            SidecarResponse::Pong(_) => Err(ClientError::UnexpectedResponse("pong")),
+            SidecarResponse::Error(error) => Err(self.sidecar_error(&request_id, error)),
+            SidecarResponse::Pong(_) => Err(self.unexpected_response("pong")),
         }
     }
 
@@ -281,16 +294,14 @@ impl StdioSidecarClient {
             analysis_seed,
         });
 
-        self.write_request(&request)?;
-
-        match self.read_response(SidecarOperation::Analysis)? {
+        match self.exchange(&request, SidecarOperation::Analysis)? {
             SidecarResponse::SourceGraphBuilt(payload) => {
-                validate_request_id(&request_id, Some(&payload.request_id))?;
+                self.verify_request_id(&request_id, Some(&payload.request_id))?;
                 validate_source_analysis_provider(&payload.graph)?;
                 Ok(payload.graph)
             }
-            SidecarResponse::Error(error) => Err(classify_sidecar_error(&request_id, error)),
-            SidecarResponse::Pong(_) => Err(ClientError::UnexpectedResponse("pong")),
+            SidecarResponse::Error(error) => Err(self.sidecar_error(&request_id, error)),
+            SidecarResponse::Pong(_) => Err(self.unexpected_response("pong")),
         }
     }
 
@@ -307,31 +318,75 @@ impl StdioSidecarClient {
         Ok(())
     }
 
-    fn write_request(&mut self, request: &SidecarRequest) -> Result<(), ClientError> {
-        let line = encode_json_line(request)?;
-        self.stdin.write_all(line.as_bytes())?;
-        self.stdin.flush()?;
-        Ok(())
-    }
-
-    fn read_response(
+    fn exchange(
         &mut self,
+        request: &SidecarRequest,
         operation: SidecarOperation,
     ) -> Result<SidecarResponse, ClientError> {
+        let Some(transport) = self.transport.as_mut() else {
+            return Err(ClientError::TransportUnavailable);
+        };
         let timeout = match operation {
             SidecarOperation::Control => self.timeout_policy.control,
             SidecarOperation::Analysis => self.timeout_policy.analysis,
         };
-        let line = match self.stdout_rx.recv_timeout(timeout) {
-            Ok(Ok(line)) => line,
-            Ok(Err(error)) => return Err(ClientError::Io(error)),
-            Err(RecvTimeoutError::Timeout) => {
-                return Err(ClientError::ResponseTimeout { operation, timeout });
+        let deadline = Instant::now().checked_add(timeout).ok_or_else(|| {
+            ClientError::Io(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "sidecar deadline is not representable",
+            ))
+        })?;
+        let line = encode_json_line(request)?;
+        let result = transport.exchange(&line, deadline);
+        let line = match result {
+            Ok(line) => line,
+            Err(error) => {
+                self.invalidate_transport();
+                return Err(match error {
+                    TransportError::Io(error) => ClientError::Io(error),
+                    TransportError::Deadline => ClientError::ResponseTimeout { operation, timeout },
+                    TransportError::Eof => ClientError::UnexpectedEof,
+                });
             }
-            Err(RecvTimeoutError::Disconnected) => return Err(ClientError::UnexpectedEof),
         };
+        match decode_json_line(&line) {
+            Ok(response) => Ok(response),
+            Err(error) => {
+                self.invalidate_transport();
+                Err(error.into())
+            }
+        }
+    }
 
-        Ok(decode_json_line(&line)?)
+    fn invalidate_transport(&mut self) {
+        self.protocol_compatible = false;
+        self.transport.take();
+        terminate_child(&mut self.child);
+    }
+
+    fn verify_request_id(
+        &mut self,
+        expected: &str,
+        received: Option<&str>,
+    ) -> Result<(), ClientError> {
+        let result = validate_request_id(expected, received);
+        if result.is_err() {
+            self.invalidate_transport();
+        }
+        result
+    }
+
+    fn sidecar_error(&mut self, expected: &str, error: SidecarErrorPayload) -> ClientError {
+        let error = classify_sidecar_error(expected, error);
+        if matches!(error, ClientError::RequestIdMismatch { .. }) {
+            self.invalidate_transport();
+        }
+        error
+    }
+
+    fn unexpected_response(&mut self, kind: &'static str) -> ClientError {
+        self.invalidate_transport();
+        ClientError::UnexpectedResponse(kind)
     }
 }
 
@@ -361,27 +416,9 @@ fn validate_source_analysis_provider(graph: &SourceGraph) -> Result<(), ClientEr
     Ok(())
 }
 
-fn spawn_stdout_reader(stdout: ChildStdout) -> Receiver<Result<String, io::Error>> {
-    let (tx, rx) = mpsc::channel();
-    thread::spawn(move || {
-        let mut stdout = BufReader::new(stdout);
-        loop {
-            let mut line = String::new();
-            match stdout.read_line(&mut line) {
-                Ok(0) => break,
-                Ok(_) => {
-                    if tx.send(Ok(line)).is_err() {
-                        break;
-                    }
-                }
-                Err(error) => {
-                    let _ = tx.send(Err(error));
-                    break;
-                }
-            }
-        }
-    });
-    rx
+fn terminate_child(child: &mut Child) {
+    let _ = child.kill();
+    let _ = child.wait();
 }
 
 fn validate_request_id(expected: &str, received: Option<&str>) -> Result<(), ClientError> {
@@ -397,10 +434,13 @@ fn validate_request_id(expected: &str, received: Option<&str>) -> Result<(), Cli
 
 impl Drop for StdioSidecarClient {
     fn drop(&mut self) {
-        let _ = self.child.kill();
-        let _ = self.child.wait();
+        self.transport.take();
+        terminate_child(&mut self.child);
     }
 }
+
+#[cfg(test)]
+mod transport_deadline_tests;
 
 #[cfg(test)]
 mod tests {
