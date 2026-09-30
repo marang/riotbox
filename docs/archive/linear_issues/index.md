@@ -1707,4 +1707,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Replace stringly Source Graph and Session source identities with typed contracts
 - [RIOTBOX-1420.md](./RIOTBOX-1420.md)
   Complete the project-wide audio numeric-value and magic-number audit
+- [RIOTBOX-1415.md](./RIOTBOX-1415.md)
+  Finish low-risk runtime and Rust workspace hygiene from the broad review
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
