@@ -1721,4 +1721,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Reconcile the professional Hook/Chop reverse-count gate with its QA contract
 - [RIOTBOX-1337.md](./RIOTBOX-1337.md)
   P023: Split library CLI include shell into semantic modules
+- [RIOTBOX-1411.md](./RIOTBOX-1411.md)
+  Split remaining riotbox-app UI and Jam test include shells into semantic modules
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
