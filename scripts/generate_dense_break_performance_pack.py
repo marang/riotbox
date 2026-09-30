@@ -18,6 +18,10 @@ from pathlib import Path
 from typing import Any
 
 from audio_qa_evidence_boundary import apply_evidence_boundary, evidence_boundary_failure_codes
+from hook_chop_diagnostic_contract import (
+    MIN_HOOK_CHOP_RIFF_REVERSE_COUNT,
+    passes_reverse_count,
+)
 
 
 SAMPLE_RATE = 44_100
@@ -85,7 +89,6 @@ MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES = 512.0
 MIN_HOOK_CHOP_RIFF_SOURCE_OFFSETS = 6
 MIN_HOOK_CHOP_RIFF_HIT_COUNT = 10
 MIN_HOOK_CHOP_RIFF_VELOCITY_SPAN = 0.25
-MIN_HOOK_CHOP_RIFF_REVERSE_COUNT = 2
 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR = 0.64
 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN = 0.10
 MIN_HOOK_CHOP_RESPONSE_DELTA_RATIO = 0.35
@@ -993,7 +996,10 @@ def source_derived_riff_hit_pattern(
         SOURCE_FAMILY_SPARSE_BASS_PRESSURE: 0.50,
     }.get(source_family, 0.25)
     max_hits = 12 if source_family in SOURCE_FAMILIES_HOOK_FORWARD else 8
-    min_reverse_count = 2 if source_family in SOURCE_FAMILIES_HOOK_FORWARD else 1
+    min_reverse_count = (
+        MIN_HOOK_CHOP_RIFF_REVERSE_COUNT
+        if source_family in SOURCE_FAMILIES_HOOK_FORWARD else 1
+    )
     hits: list[tuple[float, float, bool]] = []
     for index, start in enumerate(riff_starts):
         start = int(start)
@@ -4488,7 +4494,8 @@ def failure_codes_for(
             failures.append("hook_chop_riff_pattern_too_sparse")
         if proof.get("hook_chop_riff_velocity_span", 0.0) < MIN_HOOK_CHOP_RIFF_VELOCITY_SPAN:
             failures.append("hook_chop_riff_velocity_too_flat")
-        if proof.get("hook_chop_riff_reverse_count", 0.0) < MIN_HOOK_CHOP_RIFF_REVERSE_COUNT:
+        if not passes_reverse_count(proof.get("hook_chop_riff_reverse_count"),
+                                    proof.get("hook_chop_riff_hit_count")):
             failures.append("hook_chop_riff_reverse_missing")
         if (
             proof.get("hook_chop_source_character_score_floor", 0.0)

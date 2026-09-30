@@ -29,6 +29,7 @@ ci:
     cargo fmt --check
     cargo test
     just sidecar-contract-fixtures
+    just hook-chop-diagnostic-contract-fixtures
     just audio-qa-pr
     just audio-qa-access-guard-fixtures
     just ci-gate-contract-fixtures
@@ -90,6 +91,9 @@ _audio-qa-pr-unlocked:
 
 exact-mix-numeric-contract-fixtures:
     python3 -m unittest discover -s scripts -p 'test_*numeric*.py'
+
+hook-chop-diagnostic-contract-fixtures:
+    python3 -m unittest discover -s scripts -p 'test_hook_chop_diagnostic_contract.py'
 
 audio-qa-access-guard-fixtures:
     scripts/validate_broad_audio_qa_access_guard.sh

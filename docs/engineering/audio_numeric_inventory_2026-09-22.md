@@ -23,7 +23,7 @@ human listening was used. Historical evidence below is cited, not rerun.
 | Dense and first-playable wrappers duplicated different limiter checks | One `scripts/exact_mix_numeric.jq` predicate, preserving the categorical **zero limited samples** contract and rejecting malformed counts. |
 | Twelve identical suite producer/validator thresholds had two owners | Move unchanged to `scripts/professional_output_numeric_policy.py`; explicit imports, synthetic metadata regression at inclusive boundaries. |
 | Limiter knee/ceiling have no located calibration rationale | Explicit provisional acceptance in RBX-379 / audio core spec; **RIOTBOX-1501** owns bounded calibration. No retuning here. |
-| Hook/Chop spec says two reverse gestures; suite's named floor is one | **RIOTBOX-1502** owns contract reconciliation. Values and historical verdicts unchanged; a current suite pass does not prove the stricter textual claim. |
+| Hook/Chop spec says two reverse gestures; suite's named floor is one | Audit finding corrected on 2026-09-30 by **RIOTBOX-1502 / RBX-383**: one shared two-reverse count contract, unchanged renderer. Historical one-reverse passes retain their weaker meaning; no verdict is relabeled. |
 | Other repeated numbers (`0.92`, `0.985`, `0.10`, `1e-5`) | Keep separate when units/semantics differ. Do not couple waveform similarity, safety, silence, window activity, normalized controls or numerical tolerance. |
 
 ## Passports
@@ -183,7 +183,7 @@ Owners: `controlled_source_manifest.rs`,
 | Suite source-first/support balance | QA, generated/source RMS ratios | Source-first `<= .08` plus masking headroom `>= .04`; support in `[.145,.46]`. Twelve shared suite values now have one named owner. |
 | Rendered TR-909 contribution/body | QA, ratio / linear low-band RMS | Contribution `>= .050`; named default low-band floor `.0030` with profile-specific handling in producer. Evidence remains diagnostic. |
 | Dense/tonal Hook/Chop | QA, RMS ratio / normalized margin / correlation | W-30/source `>= .22`, headroom margin `>= .10`, response delta `>= .35`, correlation `<= .92`, transient retention `>= .58`. Not the runtime `.92`. |
-| Hook riff diversity | QA, counts / normalized velocity | Source offsets `>= 6`, hits `>= 10`, velocity span `>= .25`, reverse count currently `>= 1`; two-reverse textual discrepancy tracked by RIOTBOX-1502. |
+| Hook riff diversity | QA, counts / normalized velocity | Source offsets `>= 6`, hits `>= 10`, velocity span `>= .25`; audit baseline reverse count `>= 1` in suite versus `>= 2` in spec/producer. RIOTBOX-1502 / RBX-383 subsequently reconciles acceptance to `>= 2` without changing sound or historical evidence. |
 | Sparse bass pressure | QA, Hz / energy ratios / share | Static distance `>= 1.75 Hz`, span `>= 17 Hz`, low-band lift `>= 2.70`, share `>= .36`, low/mid `>= 2.45`, dominance margin `>= .20`. |
 | Destructive contrast | QA, RMS / transient ratios | Dropout/stutter `<= .0065`; stutter/hook `>= 1.55`, restore/hook `>= 1.60`, restore/pressure `>= 1.36`; documented source-relative alternative remains separate. |
 | Selection retention / search evidence | QA, RMS ratio / case counts | Retention `.98` for character-window search versus `.60` for separate policy selection; searched `>= 3`, promoted `>= 1`, policy candidates `>= 3`, score lift `>= 0`. Distinct denominators/scopes. |
