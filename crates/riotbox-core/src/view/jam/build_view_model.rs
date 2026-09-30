@@ -1,3 +1,42 @@
+use crate::queue::ActionQueue;
+use crate::session::Mc202PhraseVariantState;
+use crate::session::SessionFile;
+use crate::session::Tr909TakeoverProfileState;
+use crate::source_graph::SourceGraph;
+use crate::view::jam::arrangement_contract::arrangement_scene_contract_view;
+use crate::view::jam::capture_actions::CaptureSummaryView;
+use crate::view::jam::capture_actions::PendingCaptureActionView;
+use crate::view::jam::capture_actions::capture_action_target_label;
+use crate::view::jam::capture_actions::capture_handoff_readiness_view;
+use crate::view::jam::capture_actions::capture_target_kind_view;
+use crate::view::jam::capture_actions::is_capture_command;
+use crate::view::jam::capture_actions::latest_capture_provenance_lines;
+use crate::view::jam::capture_actions::latest_w30_promoted_capture_label;
+use crate::view::jam::capture_actions::recent_capture_rows;
+use crate::view::jam::model::JamTransportView;
+use crate::view::jam::model::JamViewModel;
+use crate::view::jam::model::SessionAccessors;
+use crate::view::jam::performer_state::LaneSummaryView;
+use crate::view::jam::performer_state::MacroStripView;
+use crate::view::jam::performer_state::PendingActionView;
+use crate::view::jam::performer_state::RecentActionView;
+use crate::view::jam::performer_state::W30PendingAuditionKind;
+use crate::view::jam::performer_state::ghost_status_view;
+use crate::view::jam::performer_state::w30_pending_audition_view;
+use crate::view::jam::scene_launch::SceneSummaryView;
+use crate::view::jam::scene_launch::SceneTransitionKindView;
+use crate::view::jam::scene_launch::current_scene_energy_label;
+use crate::view::jam::scene_launch::next_scene_launch_candidate;
+use crate::view::jam::scene_launch::projected_scene_energy_label;
+use crate::view::jam::scene_launch::restore_scene_energy_label;
+use crate::view::jam::scene_launch::scene_jump_availability;
+use crate::view::jam::scene_launch::scene_movement_view;
+use crate::view::jam::scene_launch::scene_transition_policy;
+use crate::view::jam::source_map::SourceMapView;
+use crate::view::jam::source_summary::FeralScorecardView;
+use crate::view::jam::source_summary::SourceSummaryView;
+use crate::view::jam::source_timing_summary::SourceTimingSummaryView;
+
 impl JamViewModel {
     #[must_use]
     pub fn build(session: &SessionFile, queue: &ActionQueue, graph: Option<&SourceGraph>) -> Self {
@@ -291,7 +330,10 @@ impl JamViewModel {
 
         let mut warnings = graph.map_or_else(Vec::new, SourceGraph::warnings);
         if let Some(graph) = graph
-            && let Err(error) = session.runtime_state.scene_state.validate_source_bindings(graph)
+            && let Err(error) = session
+                .runtime_state
+                .scene_state
+                .validate_source_bindings(graph)
         {
             warnings.push(error.to_string());
         }
@@ -302,8 +344,14 @@ impl JamViewModel {
         let next_scene = next_scene_launch_candidate(session, graph).map(ToString::to_string);
         let scene_jump_availability =
             scene_jump_availability(session, next_scene.as_deref().is_some());
-        let next_scene_energy = graph.and_then(|graph| projected_scene_energy_label(
-            next_scene_launch_candidate(session, Some(graph)), false, session, graph));
+        let next_scene_energy = graph.and_then(|graph| {
+            projected_scene_energy_label(
+                next_scene_launch_candidate(session, Some(graph)),
+                false,
+                session,
+                graph,
+            )
+        });
         let active_scene_energy =
             graph.and_then(|graph| current_scene_energy_label(session, graph));
         let restore_scene_energy =

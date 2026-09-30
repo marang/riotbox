@@ -1,11 +1,24 @@
+use crate::session::SessionFile;
+use crate::source_graph::EnergyClass;
+use crate::source_graph::SectionLabelHint;
+use crate::source_graph::SourceGraph;
+use crate::source_graph::sorted_sections;
+use crate::view::jam::model::SessionAccessors;
+use crate::view::jam::source_map::rows::source_map_energy_row;
+use crate::view::jam::source_map::rows::source_map_peak_row;
+use crate::view::jam::source_timing_summary::SourceTimingConsumerReadiness;
+use crate::view::jam::source_timing_summary::SourceTimingSummaryView;
+use crate::view::jam::source_timing_summary::source_timing_consumer_readiness;
+
+mod rows;
+#[cfg(test)]
+mod tests;
+
 const SOURCE_MAP_WIDTH: usize = 32;
+
 const SOURCE_MAP_BLOCKS: [char; 5] = ['▁', '▂', '▅', '▇', '█'];
+
 const SOURCE_MAP_CAPTURE_RANGE_FILL: char = '=';
-
-#[path = "source_map_rows.rs"]
-mod source_map_rows;
-
-use source_map_rows::{source_map_energy_row, source_map_peak_row};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum SourceMapModeView {
@@ -144,7 +157,8 @@ fn source_map_capture_range_row(
         return ".".repeat(SOURCE_MAP_WIDTH);
     }
 
-    let Some((start_seconds, end_seconds)) = source_map_capture_range_seconds(graph, session) else {
+    let Some((start_seconds, end_seconds)) = source_map_capture_range_seconds(graph, session)
+    else {
         return ".".repeat(SOURCE_MAP_WIDTH);
     };
     let start_column = source_map_column_for_time(graph, start_seconds);
@@ -184,18 +198,14 @@ fn source_map_capture_range_seconds(
 }
 
 fn source_map_next_bar_capture_start_beat(graph: &SourceGraph, session: &SessionFile) -> u64 {
-    if let Some(next_bar) = graph
-        .timing
-        .primary_hypothesis()
-        .and_then(|hypothesis| {
-            hypothesis.next_bar_beat_cursor_after(session.transport().position_beats)
-        })
-    {
+    if let Some(next_bar) = graph.timing.primary_hypothesis().and_then(|hypothesis| {
+        hypothesis.next_bar_beat_cursor_after(session.transport().position_beats)
+    }) {
         return next_bar;
     }
     let beats_per_bar = source_map_beats_per_bar(graph).max(1);
-    let next_beat_after_position = (session.transport().position_beats.floor().max(0.0) as u64)
-        .saturating_add(1);
+    let next_beat_after_position =
+        (session.transport().position_beats.floor().max(0.0) as u64).saturating_add(1);
     let remainder = next_beat_after_position % beats_per_bar;
     if remainder == 0 {
         next_beat_after_position
@@ -287,7 +297,9 @@ fn source_map_navigation_hint(graph: &SourceGraph, mode: SourceMapModeView) -> S
         .primary_hypothesis()
         .map(|hypothesis| hypothesis.phrase_grid.len())
         .filter(|count| *count > 0)
-        .or_else(|| (!graph.timing.phrase_grid.is_empty()).then_some(graph.timing.phrase_grid.len()))
+        .or_else(|| {
+            (!graph.timing.phrase_grid.is_empty()).then_some(graph.timing.phrase_grid.len())
+        })
         .unwrap_or_else(|| {
             source_map_bar_spans(graph)
                 .into_iter()
@@ -308,14 +320,16 @@ fn source_map_current_region_label(graph: &SourceGraph, session: &SessionFile) -
     };
     let bar = source_map_bar_at_time(graph, position_seconds)
         .map_or_else(|| "bar -".into(), |bar_index| format!("bar {bar_index}"));
-    let section = source_map_section_at_time(graph, position_seconds)
-        .map_or_else(|| "section -".into(), |(index, section)| {
+    let section = source_map_section_at_time(graph, position_seconds).map_or_else(
+        || "section -".into(),
+        |(index, section)| {
             if section.confidence >= 0.8 && section.label_hint != SectionLabelHint::Unknown {
                 source_map_section_label_hint(section.label_hint).into()
             } else {
                 format!("section {}", source_map_section_letter(index))
             }
-        });
+        },
+    );
     format!("now {bar} | {section}")
 }
 
@@ -325,12 +339,12 @@ fn source_map_section_labels(graph: &SourceGraph) -> Vec<String> {
         .take(4)
         .enumerate()
         .map(|(index, section)| {
-            let label = if section.confidence >= 0.8 && section.label_hint != SectionLabelHint::Unknown
-            {
-                source_map_section_label_hint(section.label_hint).into()
-            } else {
-                format!("section {}", source_map_section_letter(index))
-            };
+            let label =
+                if section.confidence >= 0.8 && section.label_hint != SectionLabelHint::Unknown {
+                    source_map_section_label_hint(section.label_hint).into()
+                } else {
+                    format!("section {}", source_map_section_letter(index))
+                };
             format!("{label} {}-{}", section.bar_start, section.bar_end)
         })
         .collect()
@@ -371,10 +385,7 @@ fn source_map_playhead_column(graph: &SourceGraph, session: &SessionFile) -> Opt
 
 fn source_map_position_seconds(graph: &SourceGraph, session: &SessionFile) -> Option<f32> {
     let position_beats = session.transport().position_beats;
-    if !position_beats.is_finite()
-        || position_beats < 0.0
-        || graph.source.duration_seconds <= 0.0
-    {
+    if !position_beats.is_finite() || position_beats < 0.0 || graph.source.duration_seconds <= 0.0 {
         return None;
     }
     let beat_cursor = position_beats.floor() as u64;
@@ -480,7 +491,3 @@ const fn source_map_section_label_hint(label_hint: SectionLabelHint) -> &'static
         SectionLabelHint::Unknown => "section",
     }
 }
-
-#[cfg(test)]
-#[path = "source_map_tests.rs"]
-mod source_map_tests;

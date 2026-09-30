@@ -1,16 +1,31 @@
-use crate::{
-    action::CaptureLengthIntent,
-    ids::{ActionId, SectionId, SourceId},
-    queue::ActionQueue,
-    session::{CaptureSourceWindow, SessionFile, SourceTimingGridConfirmationState},
-    source_graph::{
-        BarSpan, BeatPoint, DecodeProfile, EnergyClass, GraphProvenance, MeterHint, Section,
-        SectionLabelHint, SourceDescriptor, SourceGraph, SourceMapBucket, SourceMapPeakClass,
-        TimingDegradedPolicy, TimingHypothesis, TimingHypothesisKind, TimingQuality,
-    },
-};
-
-use super::*;
+use crate::action::CaptureLengthIntent;
+use crate::ids::ActionId;
+use crate::ids::SectionId;
+use crate::ids::SourceId;
+use crate::queue::ActionQueue;
+use crate::session::CaptureSourceWindow;
+use crate::session::SessionFile;
+use crate::session::SourceTimingGridConfirmationState;
+use crate::source_graph::BarSpan;
+use crate::source_graph::BeatPoint;
+use crate::source_graph::DecodeProfile;
+use crate::source_graph::EnergyClass;
+use crate::source_graph::GraphProvenance;
+use crate::source_graph::MeterHint;
+use crate::source_graph::Section;
+use crate::source_graph::SectionLabelHint;
+use crate::source_graph::SourceDescriptor;
+use crate::source_graph::SourceGraph;
+use crate::source_graph::SourceMapBucket;
+use crate::source_graph::SourceMapPeakClass;
+use crate::source_graph::TimingDegradedPolicy;
+use crate::source_graph::TimingHypothesis;
+use crate::source_graph::TimingHypothesisKind;
+use crate::source_graph::TimingQuality;
+use crate::view::jam::model::JamViewModel;
+use crate::view::jam::source_map::SourceMapModeView;
+use crate::view::jam::source_map::source_map_capture_range_seconds;
+use crate::view::jam::source_timing_summary::SourceTimingSummaryView;
 
 #[test]
 fn source_map_uses_bar_grid_when_locked_bar_spans_exist() {
@@ -76,17 +91,19 @@ fn source_map_falls_back_to_time_when_grid_needs_confirmation() {
 fn source_map_uses_confirmed_grid_without_mutating_analysis_cue() {
     let graph = source_map_test_graph(TimingDegradedPolicy::ManualConfirm, TimingQuality::Low);
     let mut session = SessionFile::new("session-1", "0.1.0", "2026-05-23T00:00:00Z");
-    session.runtime_state.source_timing.confirmed_grid =
-        Some(SourceTimingGridConfirmationState {
-            source_id: graph.source.source_id.clone(),
-            hypothesis_id: graph.timing.primary_hypothesis_id.clone(),
-            confirmed_by_action: ActionId(42),
-            confirmed_at: 123,
-        });
+    session.runtime_state.source_timing.confirmed_grid = Some(SourceTimingGridConfirmationState {
+        source_id: graph.source.source_id.clone(),
+        hypothesis_id: graph.timing.primary_hypothesis_id.clone(),
+        confirmed_by_action: ActionId(42),
+        confirmed_at: 123,
+    });
 
     let vm = JamViewModel::build(&session, &ActionQueue::new(), Some(&graph));
 
-    assert_eq!(SourceTimingSummaryView::from_graph(&graph).cue, "needs confirm");
+    assert_eq!(
+        SourceTimingSummaryView::from_graph(&graph).cue,
+        "needs confirm"
+    );
     assert_eq!(vm.source.source_map.mode, SourceMapModeView::BarGrid);
     assert_eq!(vm.source.source_map.trust_label, "grid confirmed");
     assert!(vm.source.source_map.grid_row.contains('|'));
@@ -105,13 +122,12 @@ fn source_map_uses_confirmed_grid_without_mutating_analysis_cue() {
 fn source_map_ignores_confirmation_for_different_hypothesis() {
     let graph = source_map_test_graph(TimingDegradedPolicy::ManualConfirm, TimingQuality::Low);
     let mut session = SessionFile::new("session-1", "0.1.0", "2026-05-23T00:00:00Z");
-    session.runtime_state.source_timing.confirmed_grid =
-        Some(SourceTimingGridConfirmationState {
-            source_id: graph.source.source_id.clone(),
-            hypothesis_id: Some("alternate".into()),
-            confirmed_by_action: ActionId(42),
-            confirmed_at: 123,
-        });
+    session.runtime_state.source_timing.confirmed_grid = Some(SourceTimingGridConfirmationState {
+        source_id: graph.source.source_id.clone(),
+        hypothesis_id: Some("alternate".into()),
+        confirmed_by_action: ActionId(42),
+        confirmed_at: 123,
+    });
 
     let vm = JamViewModel::build(&session, &ActionQueue::new(), Some(&graph));
 
@@ -193,7 +209,10 @@ fn source_map_capture_preview_rounds_to_selected_nonzero_downbeat_phase() {
     session.runtime_state.transport.position_beats = 4.0;
     session.runtime_state.capture.length_intent = CaptureLengthIntent::OneBar;
 
-    assert_eq!(source_map_capture_range_seconds(&graph, &session), Some((2.0, 4.0)));
+    assert_eq!(
+        source_map_capture_range_seconds(&graph, &session),
+        Some((2.0, 4.0))
+    );
 }
 
 #[test]
@@ -282,7 +301,10 @@ fn source_map_playhead_and_region_follow_selected_primary_timing() {
     let vm = JamViewModel::build(&session, &ActionQueue::new(), Some(&graph));
 
     assert_eq!(vm.source.source_map.playhead_column, Some(16));
-    assert_eq!(vm.source.source_map.current_region_label, "now bar 3 | drop");
+    assert_eq!(
+        vm.source.source_map.current_region_label,
+        "now bar 3 | drop"
+    );
 }
 
 #[test]
@@ -291,7 +313,12 @@ fn source_map_prefers_bucket_backed_energy_and_peak_rows() {
     graph.source_map.buckets = vec![
         source_map_bucket(0.0, 2.0, EnergyClass::Low, SourceMapPeakClass::None),
         source_map_bucket(2.0, 4.0, EnergyClass::High, SourceMapPeakClass::None),
-        source_map_bucket(4.0, 6.0, EnergyClass::Peak, SourceMapPeakClass::StrongTransient),
+        source_map_bucket(
+            4.0,
+            6.0,
+            EnergyClass::Peak,
+            SourceMapPeakClass::StrongTransient,
+        ),
         source_map_bucket(6.0, 8.0, EnergyClass::Medium, SourceMapPeakClass::None),
     ];
     graph.sections[0].energy_class = EnergyClass::Peak;

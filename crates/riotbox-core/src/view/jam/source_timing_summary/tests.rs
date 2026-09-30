@@ -1,14 +1,25 @@
-use super::*;
-use crate::{
-    ids::{ActionId, SourceId},
-    session::{SessionFile, SourceTimingGridConfirmationState},
-    source_graph::{
-        DecodeProfile, GraphProvenance, GrooveResidual, GrooveSubdivision, MeterHint,
-        SourceDescriptor, SourceGraph, SourceTimingAnchor, SourceTimingAnchorType,
-        TimingDegradedPolicy, TimingHypothesis, TimingHypothesisKind, TimingQuality,
-        TimingWarning, TimingWarningCode,
-    },
-};
+use crate::ids::ActionId;
+use crate::ids::SourceId;
+use crate::session::SessionFile;
+use crate::session::SourceTimingGridConfirmationState;
+use crate::source_graph::DecodeProfile;
+use crate::source_graph::GraphProvenance;
+use crate::source_graph::GrooveResidual;
+use crate::source_graph::GrooveSubdivision;
+use crate::source_graph::MeterHint;
+use crate::source_graph::SourceDescriptor;
+use crate::source_graph::SourceGraph;
+use crate::source_graph::SourceTimingAnchor;
+use crate::source_graph::SourceTimingAnchorType;
+use crate::source_graph::TimingDegradedPolicy;
+use crate::source_graph::TimingHypothesis;
+use crate::source_graph::TimingHypothesisKind;
+use crate::source_graph::TimingQuality;
+use crate::source_graph::TimingWarning;
+use crate::source_graph::TimingWarningCode;
+use crate::view::jam::source_timing_summary::SourceTimingConsumerReadiness;
+use crate::view::jam::source_timing_summary::SourceTimingSummaryView;
+use crate::view::jam::source_timing_summary::source_timing_consumer_readiness;
 
 #[test]
 fn default_summary_keeps_policy_and_cue_contract_aligned() {
@@ -38,9 +49,7 @@ fn consumer_readiness_distinguishes_analyzer_user_and_manual_trust() {
         source_timing_consumer_readiness(Some(&locked), &session),
         SourceTimingConsumerReadiness::AnalyzerLocked
     );
-    assert!(
-        source_timing_consumer_readiness(Some(&locked), &session).can_use_source_window_grid()
-    );
+    assert!(source_timing_consumer_readiness(Some(&locked), &session).can_use_source_window_grid());
     assert_eq!(
         source_timing_consumer_readiness(Some(&locked), &session).performance_state_label(),
         "trusted"
@@ -60,8 +69,7 @@ fn consumer_readiness_distinguishes_analyzer_user_and_manual_trust() {
         "degraded"
     );
 
-    let mut confirmed_session =
-        SessionFile::new("session-1", "0.1.0", "2026-05-23T00:00:00Z");
+    let mut confirmed_session = SessionFile::new("session-1", "0.1.0", "2026-05-23T00:00:00Z");
     confirmed_session.runtime_state.source_timing.confirmed_grid =
         Some(SourceTimingGridConfirmationState {
             source_id: manual.source.source_id.clone(),
@@ -145,7 +153,10 @@ fn manual_confirm_summary_preserves_musician_cue_warning_and_anchor_counts() {
     assert_eq!(timing.beat_status, "tempo_only");
     assert_eq!(timing.beat_count, 0);
     assert_eq!(timing.downbeat_status, "ambiguous");
-    assert_eq!(timing.primary_warning.as_deref(), Some("ambiguous_downbeat"));
+    assert_eq!(
+        timing.primary_warning.as_deref(),
+        Some("ambiguous_downbeat")
+    );
     assert_eq!(timing.primary_downbeat_offset_beats, None);
     assert_eq!(timing.primary_downbeat_score, None);
     assert_eq!(timing.primary_downbeat_score_gap, None);
@@ -253,12 +264,18 @@ fn summary_falls_back_to_primary_kind_when_primary_id_is_missing() {
     graph.timing.hypotheses.push(timing_hypothesis(
         "alternate",
         TimingHypothesisKind::AlternateDownbeat,
-        vec![source_anchor("alternate-kick", SourceTimingAnchorType::Kick)],
+        vec![source_anchor(
+            "alternate-kick",
+            SourceTimingAnchorType::Kick,
+        )],
     ));
     graph.timing.hypotheses.push(timing_hypothesis(
         "primary-by-kind",
         TimingHypothesisKind::Primary,
-        vec![source_anchor("primary-backbeat", SourceTimingAnchorType::Backbeat)],
+        vec![source_anchor(
+            "primary-backbeat",
+            SourceTimingAnchorType::Backbeat,
+        )],
     ));
 
     let timing = SourceTimingSummaryView::from_graph(&graph);
@@ -292,7 +309,10 @@ fn summary_picks_most_musically_urgent_primary_warning() {
 
     let timing = SourceTimingSummaryView::from_graph(&graph);
 
-    assert_eq!(timing.primary_warning.as_deref(), Some("ambiguous_downbeat"));
+    assert_eq!(
+        timing.primary_warning.as_deref(),
+        Some("ambiguous_downbeat")
+    );
 }
 
 #[test]
@@ -424,12 +444,17 @@ fn ambiguous_downbeat_summary_surfaces_alternates_and_score_gap() {
     assert_eq!(timing.primary_downbeat_offset_beats, Some(2));
     assert_eq!(timing.primary_downbeat_score, Some(0.273));
     assert!(
-        timing.primary_downbeat_score_gap.is_some_and(|gap| (gap - 0.005).abs() < 0.0001),
+        timing
+            .primary_downbeat_score_gap
+            .is_some_and(|gap| (gap - 0.005).abs() < 0.0001),
         "{:?}",
         timing.primary_downbeat_score_gap
     );
     assert_eq!(timing.alternate_downbeat_phase_count, 3);
-    assert_eq!(timing.primary_warning.as_deref(), Some("ambiguous_downbeat"));
+    assert_eq!(
+        timing.primary_warning.as_deref(),
+        Some("ambiguous_downbeat")
+    );
 }
 
 fn source_timing_graph(

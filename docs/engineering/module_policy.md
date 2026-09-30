@@ -59,6 +59,18 @@ existing crate-internal fixture entrypoints through narrow re-exports when other
 test families already consume them. A cohesive integration or lane-recipe fixture
 owner may remain long when splitting by line count would obscure its contract.
 
+### Core Jam Projection Ownership
+
+`view::jam` is a compatibility facade over private Core projection owners
+(RBX-386 / RIOTBOX-1508). The model and builder assemble existing Session,
+Source Graph and Action Queue truth. Source summary/timing/map, scene selection
+and arrangement readiness, capture summaries and performer-state projections
+own their existing derived types and helpers. They do not add a parallel
+Session, scheduler, replay state or UI-owned product model. Keep public view
+paths stable with explicit re-exports and limit sibling helper visibility to
+the Jam subtree. Source-map rows and projection tests are ordinary children;
+shared synthetic graph/session/queue fixtures belong only to the test tree.
+
 ## Target Shape
 
 Prefer this:

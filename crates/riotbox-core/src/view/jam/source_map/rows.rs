@@ -1,9 +1,12 @@
-use crate::source_graph::{EnergyClass, SourceGraph, SourceMapPeakClass};
-
-use super::{
-    SOURCE_MAP_BLOCKS, SOURCE_MAP_WIDTH, source_map_column_end_seconds,
-    source_map_column_midpoint_seconds, source_map_column_start_seconds, source_map_energy_block,
-};
+use crate::source_graph::EnergyClass;
+use crate::source_graph::SourceGraph;
+use crate::source_graph::SourceMapPeakClass;
+use crate::view::jam::source_map::SOURCE_MAP_BLOCKS;
+use crate::view::jam::source_map::SOURCE_MAP_WIDTH;
+use crate::view::jam::source_map::source_map_column_end_seconds;
+use crate::view::jam::source_map::source_map_column_midpoint_seconds;
+use crate::view::jam::source_map::source_map_column_start_seconds;
+use crate::view::jam::source_map::source_map_energy_block;
 
 pub(super) fn source_map_energy_row(graph: &SourceGraph) -> String {
     if !graph.source_map.buckets.is_empty() {

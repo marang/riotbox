@@ -1,3 +1,7 @@
+use crate::view::jam::scene_launch::SceneJumpAvailabilityView;
+use crate::view::jam::source_timing_summary::SourceTimingConsumerReadiness;
+use crate::view::jam::source_timing_summary::source_timing_consumer_readiness;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ArrangementSceneContractReadinessView {
     Ready,
@@ -128,7 +132,8 @@ pub fn arrangement_scene_contract_view(
         has_landed_movement: session.runtime_state.scene_state.last_movement.is_some(),
         can_use_source_locked_scene_movement: timing_readiness.can_use_source_window_grid(),
         bounded_extension: arrangement_scene_bounded_extension(readiness),
-        allows_manual_scene_chain_extension: readiness == ArrangementSceneContractReadinessView::Ready,
+        allows_manual_scene_chain_extension: readiness
+            == ArrangementSceneContractReadinessView::Ready,
         allows_automatic_scene_chain_scheduler: false,
         requires_p012_source_grid_gate: true,
         requires_p013_musical_quality_gate: true,

@@ -1,3 +1,10 @@
+use crate::session::SessionFile;
+use crate::session::source_timing_confirmation_matches_graph;
+use crate::source_graph::SourceGraph;
+
+#[cfg(test)]
+mod tests;
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct SourceTimingGrooveResidualView {
     pub subdivision: String,
@@ -87,7 +94,9 @@ pub fn source_timing_consumer_readiness(
         {
             SourceTimingConsumerReadiness::UserConfirmed
         }
-        crate::source_graph::SourceTimingGridUse::LockedGrid => SourceTimingConsumerReadiness::AnalyzerLocked,
+        crate::source_graph::SourceTimingGridUse::LockedGrid => {
+            SourceTimingConsumerReadiness::AnalyzerLocked
+        }
         crate::source_graph::SourceTimingGridUse::ShortLoopManualConfirm
         | crate::source_graph::SourceTimingGridUse::ManualConfirmOnly
             if source_timing_confirmation_matches_graph(graph, session) =>
@@ -97,7 +106,7 @@ pub fn source_timing_consumer_readiness(
         crate::source_graph::SourceTimingGridUse::ShortLoopManualConfirm
         | crate::source_graph::SourceTimingGridUse::ManualConfirmOnly => {
             SourceTimingConsumerReadiness::NeedsUserConfirmation
-        },
+        }
         crate::source_graph::SourceTimingGridUse::FallbackGrid => {
             SourceTimingConsumerReadiness::FallbackGrid
         }
@@ -146,12 +155,15 @@ impl SourceTimingSummaryView {
         let policy_labels =
             crate::source_graph::source_timing_policy_labels(effective_degraded_policy);
         let primary_hypothesis = primary_source_timing_hypothesis(&graph.timing);
-        let anchors = primary_hypothesis.map_or(&[][..], |hypothesis| hypothesis.anchors.as_slice());
+        let anchors =
+            primary_hypothesis.map_or(&[][..], |hypothesis| hypothesis.anchors.as_slice());
         let groove = primary_hypothesis.map_or(&[][..], |hypothesis| hypothesis.groove.as_slice());
 
         let primary_anchor_count = anchors.len();
-        let primary_kick_anchor_count =
-            count_source_timing_anchor_type(anchors, crate::source_graph::SourceTimingAnchorType::Kick);
+        let primary_kick_anchor_count = count_source_timing_anchor_type(
+            anchors,
+            crate::source_graph::SourceTimingAnchorType::Kick,
+        );
         let primary_backbeat_anchor_count = count_source_timing_anchor_type(
             anchors,
             crate::source_graph::SourceTimingAnchorType::Backbeat,
@@ -188,7 +200,9 @@ impl SourceTimingSummaryView {
             downbeat_status: source_timing_downbeat_status_label(&graph.timing, bar_count).into(),
             primary_warning: primary_source_timing_warning(&graph.timing.warnings)
                 .map(|warning| source_timing_warning_code_label(&warning.code).into()),
-            primary_downbeat_offset_beats: primary_source_timing_downbeat_offset_beats(primary_hypothesis),
+            primary_downbeat_offset_beats: primary_source_timing_downbeat_offset_beats(
+                primary_hypothesis,
+            ),
             primary_downbeat_score,
             primary_downbeat_score_gap,
             alternate_downbeat_phase_count,
@@ -267,10 +281,9 @@ fn primary_source_timing_hypothesis(
     timing: &crate::source_graph::TimingModel,
 ) -> Option<&crate::source_graph::TimingHypothesis> {
     timing.primary_hypothesis().or_else(|| {
-        timing
-            .hypotheses
-            .iter()
-            .find(|hypothesis| hypothesis.kind == crate::source_graph::TimingHypothesisKind::Primary)
+        timing.hypotheses.iter().find(|hypothesis| {
+            hypothesis.kind == crate::source_graph::TimingHypothesisKind::Primary
+        })
     })
 }
 
@@ -401,10 +414,6 @@ fn source_timing_warning_priority(code: &crate::source_graph::TimingWarningCode)
     }
 }
 
-#[cfg(test)]
-#[path = "source_timing_summary_tests.rs"]
-mod source_timing_summary_tests;
-
 fn count_source_timing_anchor_type(
     anchors: &[crate::source_graph::SourceTimingAnchor],
     anchor_type: crate::source_graph::SourceTimingAnchorType,
@@ -462,9 +471,7 @@ fn source_timing_degraded_policy_label(
     }
 }
 
-fn source_timing_warning_code_label(
-    code: &crate::source_graph::TimingWarningCode,
-) -> &'static str {
+fn source_timing_warning_code_label(code: &crate::source_graph::TimingWarningCode) -> &'static str {
     match code {
         crate::source_graph::TimingWarningCode::SparseOnsets => "sparse_onsets",
         crate::source_graph::TimingWarningCode::WeakKickAnchor => "weak_kick_anchor",

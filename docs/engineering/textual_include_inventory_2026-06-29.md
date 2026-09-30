@@ -22,6 +22,8 @@ Result:
   all 45 library CLI and CLI-test includes replaced by real modules
 - RIOTBOX-1411 migration, 2026-09-30: 94 remaining sites in 13 owners;
   all 109 UI production, UI-test, and JamApp-test includes replaced by real modules
+- RIOTBOX-1508 migration, 2026-09-30: 82 remaining sites in 11 owners;
+  all 12 Core Jam projection and projection-test includes replaced by real modules
 - no generated-code include site identified in this inventory
 - every current include is treated as legacy/mechanical until proven otherwise
 
@@ -57,8 +59,6 @@ legacy inventory; it does not approve new textual include sites.
 | --- | ---: | --- | --- | --- | --- | --- |
 | `crates/riotbox-core/src/source_graph/timing_probe_candidates.rs` | 12 | `timing_probe_candidates/types`, confidence, period scoring, drift, groove, phrase, model, hypothesis, downbeat, grid, readiness, policy | Source timing candidate internals | mechanical product split | medium/high: timing confidence contract | RIOTBOX-1330 or Source Graph follow-up |
 | `crates/riotbox-core/src/tr909_policy.rs` | 2 | `tr909_policy/render_policy`, tests | TR-909 policy and tests | mechanical product split | low/medium: policy API | RIOTBOX-1331 |
-| `crates/riotbox-core/src/view/jam.rs` | 8 | `jam/view_model_types`, source timing, source map, arrangement, builder, capture, scene, tests | Jam view model and projections | mechanical view split | medium: app/core UI contract | future UI/view module slice |
-| `crates/riotbox-core/src/view/jam/tests.rs` | 4 | jam test fixture and scenario shards | Jam view tests | mechanical test split | low/medium: test imports | future UI/view module slice |
 | `crates/riotbox-audio/src/runtime/tests.rs` | 12 | runtime fixture, W-30, mix, metrics, monitor test shards | Audio runtime tests | mechanical test split | low/medium: test-only but broad | future runtime test module slice |
 | `crates/riotbox-audio/src/bin/feral_grid_pack.rs` | 29 | pack builder, metrics, TR-909, MC-202, W-30, mix, timing, manifest, render, tests | Feral grid QA/pack CLI | mechanical QA-bin split | medium: large QA surface | future QA-bin module slice |
 | `crates/riotbox-audio/src/bin/feral_grid_pack/tests.rs` | 1 | shared test helpers | Feral grid QA tests | mechanical test compatibility split | low: test-only helper scope | future QA-bin module slice |
@@ -98,3 +98,5 @@ of mixing them into the module move.
 | `crates/riotbox-app/src/ui.rs` | 10 | RIOTBOX-1411 | Public shell/render compatibility exports over private semantic presentation, input-state, cue, and diagnostic owners. Existing public risk-cue contract stays in place. No keys, text, layout, or audio behavior changed. |
 | `crates/riotbox-app/src/ui/tests.rs` | 25 | RIOTBOX-1411 | Real regression-family children with explicit imports and separate synthetic fixture owners; no scenario removed. |
 | `crates/riotbox-app/src/jam_app/tests.rs` | 74 | RIOTBOX-1411 | Real integration-family children and explicit synthetic fixture owners. Four pre-existing crate-internal fixture entrypoints retain compatibility re-exports. |
+| `crates/riotbox-core/src/view/jam.rs` | 8 | RIOTBOX-1508 | Public projection compatibility facade over private model/builder, source summary/timing/map, scene/arrangement, capture and performer-state owners. No product state or projection behavior changed. |
+| `crates/riotbox-core/src/view/jam/tests.rs` | 4 | RIOTBOX-1508 | Real projection regression families with one shared synthetic fixture owner; source-map rows/tests and timing tests are ordinary child modules. No test scenario removed. |

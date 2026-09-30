@@ -9,5 +9,3 @@
 12 crates/riotbox-audio/src/runtime/tests.rs
 12 crates/riotbox-core/src/source_graph/timing_probe_candidates.rs
 2 crates/riotbox-core/src/tr909_policy.rs
-8 crates/riotbox-core/src/view/jam.rs
-4 crates/riotbox-core/src/view/jam/tests.rs
