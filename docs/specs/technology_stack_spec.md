@@ -96,6 +96,17 @@ Clarification:
 - control requests use a bounded 10-second default deadline; decoded-source
   analysis uses a separately configurable bounded 120-second default deadline
   so a real offline analysis is not governed by the handshake budget
+- each transport exchange uses one absolute deadline across pipe write/flush
+  and response framing, not a fresh response budget after blocking request I/O.
+  Unix pipes use nonblocking descriptors/readiness polling; Windows uses
+  nonblocking writes and sole-reader availability checks. No detached stdio
+  worker or unbounded response channel is retained. Timeout, transport failure
+  or protocol desynchronization closes the pipes and terminates/reaps the direct
+  peer; subsequent calls return `TransportUnavailable` until a fresh client is
+  spawned. Valid source-analysis errors do not invalidate a synchronized peer.
+  Protocol 0.1 and legacy final EOF frames without a newline stay compatible.
+  This bounds pipe backpressure/response wait, not process spawn, local JSON CPU,
+  host scheduling/kernel stalls, process-tree containment or maximum frame size
 - the repository-bundled sidecar path is derived from the compiled crate
   location, not process CWD; `--sidecar` remains the explicit override and an
   unavailable configured script fails before spawn with its exact path

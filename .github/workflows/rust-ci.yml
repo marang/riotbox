@@ -86,3 +86,33 @@ jobs:
 
       - name: cargo clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
+
+  sidecar-transport-windows:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - name: Install Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Ensure the existing python3 executable contract
+        shell: pwsh
+        run: |
+          $sidecarPythonExe = (Get-Command python).Source
+          $sidecarPythonAlias = Join-Path (Split-Path $sidecarPythonExe) 'python3.exe'
+          if (-not (Test-Path $sidecarPythonAlias)) {
+            New-Item -ItemType HardLink -Path $sidecarPythonAlias -Target $sidecarPythonExe
+          }
+          python3 --version
+      - name: Cache cargo artifacts
+        uses: Swatinem/rust-cache@v2
+      - name: Source-free Sidecar protocol and transport tests
+        run: cargo test --locked -p riotbox-sidecar
+      - name: Sidecar lint
+        run: cargo clippy --locked -p riotbox-sidecar --all-targets -- -D warnings

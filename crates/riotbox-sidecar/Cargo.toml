@@ -9,5 +9,11 @@ riotbox-core = { path = "../riotbox-core" }
 serde.workspace = true
 serde_json.workspace = true
 
+[target.'cfg(unix)'.dependencies]
+libc.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Pipes"] }
+
 [dev-dependencies]
 tempfile.workspace = true
