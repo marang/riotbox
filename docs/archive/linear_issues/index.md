@@ -1719,4 +1719,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Warm Sidecar readiness before the short analysis-timeout regression
 - [RIOTBOX-1502.md](./RIOTBOX-1502.md)
   Reconcile the professional Hook/Chop reverse-count gate with its QA contract
+- [RIOTBOX-1337.md](./RIOTBOX-1337.md)
+  P023: Split library CLI include shell into semantic modules
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
