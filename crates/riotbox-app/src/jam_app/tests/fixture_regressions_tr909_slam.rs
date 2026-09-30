@@ -1,15 +1,42 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::regression_models::Mc202RegressionAction;
+use crate::jam_app::tests::fixtures::regression_models::Mc202RegressionFixture;
+use crate::jam_app::tests::fixtures::regression_models::W30RegressionAction;
+use crate::jam_app::tests::fixtures::regression_models::W30RegressionFixture;
+use crate::jam_app::tests::fixtures::regression_models::expected_w30_command;
+use crate::jam_app::tests::fixtures::regression_models::w30_preview_mode_state;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::ids::BankId;
+use riotbox_core::ids::CaptureId;
+use riotbox_core::ids::PadId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::ids::SourceId;
+use riotbox_core::persistence::load_session_json;
+use riotbox_core::persistence::save_session_json;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::CaptureRef;
+use riotbox_core::session::CaptureSourceWindow;
+use riotbox_core::session::CaptureTarget;
+use riotbox_core::session::CaptureType;
+use riotbox_core::session::Mc202RoleState;
+use riotbox_core::transport::CommitBoundaryState;
+use tempfile::tempdir;
+
 #[test]
 fn mc202_fixture_backed_committed_state_regressions_hold() {
-    let fixtures: Vec<Mc202RegressionFixture> =
-        serde_json::from_str(include_str!("../../../tests/fixtures/mc202_regression.json"))
-            .expect("parse MC-202 regression fixtures");
+    let fixtures: Vec<Mc202RegressionFixture> = serde_json::from_str(include_str!(
+        "../../../tests/fixtures/mc202_regression.json"
+    ))
+    .expect("parse MC-202 regression fixtures");
 
     for fixture in fixtures {
         let graph = sample_graph();
         let mut session = sample_session(&graph);
-        session.runtime_state.lane_state.mc202.role = Some(
-            Mc202RoleState::from_label(&fixture.initial_role).expect("fixture role is known"),
-        );
+        session.runtime_state.lane_state.mc202.role =
+            Some(Mc202RoleState::from_label(&fixture.initial_role).expect("fixture role is known"));
         let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
         let queue_result = match fixture.action {

@@ -1,4 +1,24 @@
-use riotbox_core::source_graph::{BarSpan, PhraseSpan};
+use crate::jam_app::source_map_navigation::SourceMapNavigationIntent;
+use crate::jam_app::source_map_navigation::SourceMapNavigationResult;
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::source_timing_runtime_view::immediate_boundary;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::ids::SectionId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::source_graph::BarSpan;
+use riotbox_core::source_graph::BeatPoint;
+use riotbox_core::source_graph::EnergyClass;
+use riotbox_core::source_graph::MeterHint;
+use riotbox_core::source_graph::PhraseSpan;
+use riotbox_core::source_graph::Section;
+use riotbox_core::source_graph::SectionLabelHint;
+use riotbox_core::source_graph::SourceGraph;
+use riotbox_core::source_graph::TimingDegradedPolicy;
+use riotbox_core::source_graph::TimingHypothesis;
+use riotbox_core::source_graph::TimingHypothesisKind;
+use riotbox_core::source_graph::TimingQuality;
 
 #[test]
 fn source_map_navigation_queues_commits_and_restores_transport_position() {
@@ -32,7 +52,12 @@ fn source_map_navigation_queues_commits_and_restores_transport_position() {
         "now bar 5 | break"
     );
     assert_eq!(
-        state.session.action_log.actions.last().map(|action| action.command),
+        state
+            .session
+            .action_log
+            .actions
+            .last()
+            .map(|action| action.command),
         Some(ActionCommand::TransportSeek)
     );
 }
@@ -80,7 +105,7 @@ fn source_map_navigation_targets_selected_nonzero_downbeat_phase() {
     );
 }
 
-fn source_map_navigation_graph() -> SourceGraph {
+pub(in crate::jam_app::tests) fn source_map_navigation_graph() -> SourceGraph {
     let mut graph = sample_graph();
     graph.source.duration_seconds = 16.0;
     graph.sections.clear();

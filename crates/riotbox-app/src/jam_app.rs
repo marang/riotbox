@@ -15,9 +15,6 @@ use riotbox_core::{
 use riotbox_sidecar::client::StdioSidecarClient;
 use sha2::{Digest, Sha256};
 
-#[cfg(test)]
-use riotbox_audio::runtime::AudioRuntimeTimingSnapshot;
-
 mod capture_artifacts;
 mod capture_identity;
 mod capture_identity_migration;
@@ -165,9 +162,6 @@ use transport_helpers::{normalize_scene_candidates, transport_clock_from_state};
 pub use w30_hook_dawproject::{
     W30_HOOK_DAWPROJECT_ACTION_BOUNDARY_ID, W30_HOOK_DAWPROJECT_PROOF_SCHEMA,
 };
-
-#[cfg(test)]
-use riotbox_core::TimestampMs;
 
 impl JamAppState {
     pub(super) const W30_DAMAGE_PROFILE_LABEL: &str = "shred";

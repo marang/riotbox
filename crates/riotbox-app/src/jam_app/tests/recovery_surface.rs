@@ -1,3 +1,20 @@
+use crate::jam_app::recovery::RecoveryCandidateTrust;
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::tests::export_receipt_hydration_preflight::export_receipt;
+use crate::jam_app::tests::export_receipt_hydration_preflight::stem_package_receipt;
+use crate::jam_app::tests::export_receipt_hydration_preflight::write_ready_stem_package_files;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::snapshot_payload_restore_failures::loop_freeze_commit_record;
+use crate::jam_app::tests::snapshot_payload_restore_failures::unsupported_mutate_lane_action;
+use riotbox_core::export_readiness::ExportScope;
+use riotbox_core::persistence::save_session_json;
+use riotbox_core::session::ExportArtifactLocation;
+use riotbox_core::session::ExportArtifactRole;
+use riotbox_core::session::SessionFile;
+use std::fs;
+use tempfile::tempdir;
+
 #[test]
 fn recovery_surface_lists_candidates_without_selecting_or_mutating_files() {
     let dir = tempdir().expect("create temp dir");
@@ -187,7 +204,10 @@ fn recovery_surface_drills_interrupted_save_without_selecting_or_mutating_files(
         fs::read(&target_path).expect("read target after scan"),
         target_before
     );
-    assert_eq!(fs::read(&temp_path).expect("read temp after scan"), temp_before);
+    assert_eq!(
+        fs::read(&temp_path).expect("read temp after scan"),
+        temp_before
+    );
     assert_eq!(
         fs::read(&autosave_path).expect("read autosave after scan"),
         autosave_before
@@ -317,7 +337,9 @@ fn recovery_surface_reports_stem_package_artifact_availability_for_parseable_can
     let missing_manifest_path = dir
         .path()
         .join("session.autosave.stem-missing-manifest.json");
-    let identity_path = dir.path().join("session.autosave.stem-legacy-identity.json");
+    let identity_path = dir
+        .path()
+        .join("session.autosave.stem-legacy-identity.json");
     let export_dir = dir.path().join("exports-product");
 
     write_ready_stem_package_files(dir.path());
@@ -330,8 +352,7 @@ fn recovery_surface_reports_stem_package_artifact_availability_for_parseable_can
     )
     .expect("save canonical session");
 
-    let mut ready_session =
-        SessionFile::new("autosave", "riotbox-test", "2026-04-30T08:51:00Z");
+    let mut ready_session = SessionFile::new("autosave", "riotbox-test", "2026-04-30T08:51:00Z");
     ready_session.export_receipts.push(stem_package_receipt());
     save_session_json(&ready_path, &ready_session)
         .expect("save ready stem package autosave session");
@@ -360,8 +381,7 @@ fn recovery_surface_reports_stem_package_artifact_availability_for_parseable_can
     save_session_json(&missing_manifest_path, &missing_manifest_session)
         .expect("save missing manifest autosave session");
 
-    let mut identity_session =
-        SessionFile::new("autosave", "riotbox-test", "2026-04-30T08:52:00Z");
+    let mut identity_session = SessionFile::new("autosave", "riotbox-test", "2026-04-30T08:52:00Z");
     let mut legacy_receipt = export_receipt(
         "exports-product/full_grid_mix.wav",
         "exports-product/product_export_proof.json",
@@ -533,7 +553,9 @@ fn recovery_surface_reports_blocked_replay_status_for_parseable_candidates() {
 fn recovery_surface_projects_artifact_ready_replay_blocker_guidance() {
     let dir = tempdir().expect("create temp dir");
     let target_path = dir.path().join("session.json");
-    let blocked_autosave_path = dir.path().join("session.autosave.artifact-ready-blocked.json");
+    let blocked_autosave_path = dir
+        .path()
+        .join("session.autosave.artifact-ready-blocked.json");
 
     save_session_json(
         &target_path,
@@ -562,8 +584,7 @@ fn recovery_surface_projects_artifact_ready_replay_blocker_guidance() {
         .expect("save blocked autosave session");
     let captures_dir = dir.path().join("captures");
     fs::create_dir_all(&captures_dir).expect("create capture artifacts dir");
-    fs::write(captures_dir.join("cap-01.wav"), [0u8; 44])
-        .expect("write ready capture artifact");
+    fs::write(captures_dir.join("cap-01.wav"), [0u8; 44]).expect("write ready capture artifact");
 
     let surface =
         JamAppState::scan_session_recovery_surface(&target_path).expect("scan recovery surface");
@@ -581,10 +602,7 @@ fn recovery_surface_projects_artifact_ready_replay_blocker_guidance() {
         blocked_candidate.replay_unsupported_label,
         "unsupported suffix 1: mutate.lane"
     );
-    assert_eq!(
-        blocked_candidate.guidance,
-        None
-    );
+    assert_eq!(blocked_candidate.guidance, None);
     assert_eq!(
         blocked_candidate.decision_label,
         "decision: blocked | replay unsupported"

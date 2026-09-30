@@ -1,3 +1,11 @@
+use crate::ui::performer_cues::suggested_gesture_lines;
+use crate::ui::styles::line_with_primary_keys;
+use crate::ui::tests::fixtures::shells::sample_shell_state;
+use ratatui::style::Color;
+use ratatui::style::Modifier;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::source_graph::RelationshipType;
+
 #[test]
 fn suggested_gesture_key_tokens_use_primary_control_style() {
     let line = line_with_primary_keys("what next: [c] capture  [u] undo");

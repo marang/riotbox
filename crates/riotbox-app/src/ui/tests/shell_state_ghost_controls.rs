@@ -1,3 +1,19 @@
+use crate::ui::render::render_jam_shell_snapshot;
+use crate::ui::shell_state::JamShellState;
+use crate::ui::tests::fixtures::shells::first_run_shell_state;
+use crate::ui::tests::fixtures::shells::sample_shell_state;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::ActionTarget;
+use riotbox_core::action::GhostMode;
+use riotbox_core::action::Quantization;
+use riotbox_core::action::TargetScope;
+use riotbox_core::ghost::GhostSuggestedAction;
+use riotbox_core::ghost::GhostSuggestionConfidence;
+use riotbox_core::ghost::GhostSuggestionSafety;
+use riotbox_core::ghost::GhostWatchSuggestion;
+use riotbox_core::ghost::GhostWatchTool;
+use riotbox_core::session::GhostSuggestionRecord;
+
 #[test]
 fn renders_ghost_watch_summary_and_blocker_status() {
     let mut shell = sample_shell_state();
@@ -49,8 +65,14 @@ fn renders_current_ghost_suggestion_controls_in_jam() {
 
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-    assert!(rendered.contains("ghost: add a next-bar drum answer"), "{rendered}");
-    assert!(rendered.contains("[Enter] accept  [N] reject"), "{rendered}");
+    assert!(
+        rendered.contains("ghost: add a next-bar drum answer"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("[Enter] accept  [N] reject"),
+        "{rendered}"
+    );
 }
 
 #[test]
@@ -70,7 +92,10 @@ fn hides_ghost_assist_request_during_first_run() {
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
     assert!(rendered.contains("Start Here"), "{rendered}");
-    assert!(!rendered.contains("ghost assist: [Enter] ask"), "{rendered}");
+    assert!(
+        !rendered.contains("ghost assist: [Enter] ask"),
+        "{rendered}"
+    );
 }
 
 #[test]
@@ -109,14 +134,14 @@ fn help_explains_ghost_assist_request_when_useful() {
     assert!(rendered.contains("Enter again: queue it"), "{rendered}");
 }
 
-fn ghost_assist_ready_shell_state() -> JamShellState {
+pub(in crate::ui::tests) fn ghost_assist_ready_shell_state() -> JamShellState {
     let mut shell = first_run_shell_state();
     shell.first_run_onramp = false;
     shell.app.set_transport_playing(true);
     shell
 }
 
-fn sample_ghost_fill_suggestion(mode: GhostMode) -> GhostWatchSuggestion {
+pub(in crate::ui::tests) fn sample_ghost_fill_suggestion(mode: GhostMode) -> GhostWatchSuggestion {
     GhostWatchSuggestion {
         proposal_id: "ghost-fill-1".into(),
         mode,

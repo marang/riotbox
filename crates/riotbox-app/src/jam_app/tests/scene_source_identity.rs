@@ -1,10 +1,11 @@
-use std::{fs, path::Path};
-
-use super::{JamAppState, sample_graph, sample_session};
-use riotbox_core::{
-    persistence::{load_session_json, save_session_json},
-    session::SceneSourceBinding,
-};
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use riotbox_core::persistence::load_session_json;
+use riotbox_core::persistence::save_session_json;
+use riotbox_core::session::SceneSourceBinding;
+use std::fs;
+use std::path::Path;
 
 #[test]
 fn legacy_scene_restore_save_reload_materializes_identity_without_rewriting_graph_bytes() {

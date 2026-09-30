@@ -1,3 +1,14 @@
+use crate::ui::render::render_jam_shell_snapshot;
+use crate::ui::shell_state::ShellScreen;
+use crate::ui::tests::fixtures::shells::sample_shell_state;
+use crate::ui::tests::fixtures::shells::sample_shell_without_pending_queue;
+use riotbox_core::ids::SceneId;
+use riotbox_core::ids::SourceId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::transport::CommitBoundaryState;
+use riotbox_core::view::jam::CaptureHandoffReadinessView;
+use riotbox_core::view::jam::CaptureTargetKindView;
+
 #[test]
 fn renders_log_shell_snapshot_with_committed_w30_slice_pool_browse_diagnostics() {
     let mut shell = sample_shell_state();

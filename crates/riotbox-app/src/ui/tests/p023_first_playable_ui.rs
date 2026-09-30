@@ -1,4 +1,31 @@
-use super::*;
+use crate::ui::first_run_capture::FirstRunOnrampStage;
+use crate::ui::first_run_capture::first_run_onramp_compact_lines;
+use crate::ui::first_run_capture::first_run_onramp_lines;
+use crate::ui::first_run_capture::first_run_onramp_stage;
+use crate::ui::render::render_jam_shell_snapshot;
+use crate::ui::shell_state::JamShellState;
+use crate::ui::shell_state::ShellKeyOutcome;
+use crate::ui::tests::fixtures::shells::first_run_captured_shell_state;
+use crate::ui::tests::fixtures::shells::first_run_promoted_shell_state;
+use crate::ui::tests::fixtures::shells::first_run_shell_state;
+use crate::ui::tests::fixtures::shells::sample_shell_state;
+use crate::ui::tests::fixtures::shells::set_first_run_audio_runtime;
+use crossterm::event::KeyCode;
+use riotbox_audio::runtime::AudioRuntimeLifecycle;
+use riotbox_audio::runtime::SourceMonitorAudioRoute;
+use riotbox_core::action::Action;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::ActionParams;
+use riotbox_core::action::ActionResult;
+use riotbox_core::action::ActionStatus;
+use riotbox_core::action::ActionTarget;
+use riotbox_core::action::ActorType;
+use riotbox_core::action::Quantization;
+use riotbox_core::action::TargetScope;
+use riotbox_core::action::UndoPolicy;
+use riotbox_core::ids::ActionId;
+use riotbox_core::source_graph::TimingDegradedPolicy;
+use riotbox_core::source_graph::TimingQuality;
 
 #[test]
 fn first_run_onramp_tracks_capture_promotion_monitor_and_performance_readiness() {

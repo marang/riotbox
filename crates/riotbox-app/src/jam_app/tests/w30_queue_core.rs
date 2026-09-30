@@ -1,3 +1,35 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::mc202_recipe::recipe_signal_delta_rms;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::fixtures::source_io::write_pcm16_wave;
+use crate::jam_app::tests::fixtures::w30_slice_pool::w30_slice_pool_state_with_source_windows;
+use crate::jam_app::tests::w30_committed_bank_damage::source_cache_for_w30_diversity;
+use riotbox_audio::source_audio::SourceAudioCache;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::ActionParams;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::action::Quantization;
+use riotbox_core::action::TargetScope;
+use riotbox_core::ids::AssetId;
+use riotbox_core::ids::BankId;
+use riotbox_core::ids::CaptureId;
+use riotbox_core::ids::PadId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::CaptureRef;
+use riotbox_core::session::CaptureTarget;
+use riotbox_core::session::CaptureType;
+use riotbox_core::source_graph::Asset;
+use riotbox_core::source_graph::AssetType;
+use riotbox_core::source_graph::Candidate;
+use riotbox_core::source_graph::CandidateType;
+use riotbox_core::source_graph::Relationship;
+use riotbox_core::source_graph::RelationshipType;
+use riotbox_core::transport::CommitBoundaryState;
+use tempfile::tempdir;
+
 #[test]
 fn queue_w30_trigger_pad_targets_focused_lane_capture_on_next_beat() {
     let graph = sample_graph();

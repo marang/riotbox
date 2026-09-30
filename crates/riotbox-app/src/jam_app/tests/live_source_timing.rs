@@ -1,15 +1,34 @@
+use crate::jam_app::live_source_timing::confirm_explicit_source_bpm;
+use crate::jam_app::live_source_timing::enrich_graph_with_rust_source_timing;
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::fixtures::source_io::sidecar_script_path;
+use crate::jam_app::tests::source_timing_consumer_readiness::manual_confirm_source_window_graph;
+use riotbox_audio::mc202::Mc202RenderMode;
+use riotbox_audio::mc202::Mc202RenderRouting;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::ids::SourceId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::Mc202RoleState;
+use riotbox_core::session::Mc202SourcePhraseCandidateFamilyState;
+use riotbox_core::session::Mc202SourcePhraseNoteBudgetState;
+use riotbox_core::session::Mc202SourcePhrasePlanState;
+use riotbox_core::session::Mc202SourcePhraseSlotState;
+use riotbox_core::source_graph::BeatPoint;
+use riotbox_core::source_graph::MeterHint;
+use riotbox_core::source_graph::TimingHypothesis;
+use riotbox_core::source_graph::TimingHypothesisKind;
+use riotbox_core::source_graph::TimingQuality;
+use tempfile::tempdir;
+
 #[test]
 fn live_ingest_rust_timing_is_stable_and_carries_source_identity() {
     let temp = tempdir().expect("tempdir");
     let source_path = temp.path().join("stable-128.wav");
     let samples = accented_drum_grid_samples(15_360, 32);
-    riotbox_audio::source_audio::write_interleaved_pcm16_wav(
-        &source_path,
-        32_768,
-        1,
-        &samples,
-    )
-    .expect("write source");
+    riotbox_audio::source_audio::write_interleaved_pcm16_wav(&source_path, 32_768, 1, &samples)
+        .expect("write source");
     let mut first = sample_graph();
     let mut second = sample_graph();
 
@@ -120,7 +139,12 @@ fn jam_transport_uses_selected_primary_downbeat_phase_and_phrase_grid() {
         provenance: vec!["test:phase-three".into()],
     }];
 
-    let clock = super::transport_helpers::transport_clock_for_state(19.0, true, None, Some(&graph));
+    let clock = crate::jam_app::transport_helpers::transport_clock_for_state(
+        19.0,
+        true,
+        None,
+        Some(&graph),
+    );
 
     assert_eq!(clock.beat_index, 19);
     assert_eq!(clock.bar_index, 5);
@@ -145,14 +169,26 @@ fn manual_confirm_timing_stays_silent_until_explicit_bpm_confirmation_commits() 
     assert_eq!(state.runtime.w30_preview.tempo_bpm, 126.0);
     assert_eq!(state.source_monitor_render_state().tempo_bpm, 126.0);
     assert_eq!(
-        state.session.action_log.actions.last().map(|action| action.command),
+        state
+            .session
+            .action_log
+            .actions
+            .last()
+            .map(|action| action.command),
         Some(ActionCommand::SourceTimingConfirmGrid)
     );
     assert_eq!(
         state.session.runtime_state.source_timing.confirmed_bpm,
         Some(126.0)
     );
-    assert!(state.session.runtime_state.source_timing.confirmed_grid.is_some());
+    assert!(
+        state
+            .session
+            .runtime_state
+            .source_timing
+            .confirmed_grid
+            .is_some()
+    );
 }
 
 #[test]
@@ -161,34 +197,41 @@ fn committed_mc202_fallback_stays_silent_without_losing_trusted_transport_timing
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
     confirm_explicit_source_bpm(&mut state, 126.0).expect("confirm explicit BPM");
-    state.session.runtime_state.lane_state.mc202.source_phrase_plan =
-        Some(Mc202SourcePhrasePlanState {
-            source_id: SourceId::from("src-1"),
-            source_section_id: None,
-            phrase_slot: Mc202SourcePhraseSlotState {
-                phrase_index: 0,
-                start_bar: 1,
-                end_bar: 8,
-            },
-            source_expression: None,
-            role: Mc202RoleState::Follower,
-            rhythm_cells: [None; 16],
-            note_budget: Mc202SourcePhraseNoteBudgetState::Sparse,
-            touch: 0.0,
-            confidence: 0.0,
-            candidate_family: Some(Mc202SourcePhraseCandidateFamilyState::FallbackControl),
-            candidate_count: 0,
-            rejected_candidate_count: 0,
-            candidate_provenance_refs: Vec::new(),
-            candidate_scorecards: Vec::new(),
-            phrase_memory_distance: 0.0,
-            fallback_reason: Some("source_evidence_untrusted".into()),
-        });
+    state
+        .session
+        .runtime_state
+        .lane_state
+        .mc202
+        .source_phrase_plan = Some(Mc202SourcePhrasePlanState {
+        source_id: SourceId::from("src-1"),
+        source_section_id: None,
+        phrase_slot: Mc202SourcePhraseSlotState {
+            phrase_index: 0,
+            start_bar: 1,
+            end_bar: 8,
+        },
+        source_expression: None,
+        role: Mc202RoleState::Follower,
+        rhythm_cells: [None; 16],
+        note_budget: Mc202SourcePhraseNoteBudgetState::Sparse,
+        touch: 0.0,
+        confidence: 0.0,
+        candidate_family: Some(Mc202SourcePhraseCandidateFamilyState::FallbackControl),
+        candidate_count: 0,
+        rejected_candidate_count: 0,
+        candidate_provenance_refs: Vec::new(),
+        candidate_scorecards: Vec::new(),
+        phrase_memory_distance: 0.0,
+        fallback_reason: Some("source_evidence_untrusted".into()),
+    });
     state.refresh_view();
 
     assert_eq!(state.runtime.mc202_render.tempo_bpm, 126.0);
     assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Idle);
-    assert_eq!(state.runtime.mc202_render.routing, Mc202RenderRouting::Silent);
+    assert_eq!(
+        state.runtime.mc202_render.routing,
+        Mc202RenderRouting::Silent
+    );
 }
 
 #[test]
@@ -199,8 +242,19 @@ fn explicit_bpm_rejects_a_mismatched_probe_grid() {
 
     let error = confirm_explicit_source_bpm(&mut state, 140.0).expect_err("reject mismatch");
 
-    assert!(error.to_string().contains("does not match Rust timing candidate"));
-    assert!(state.session.runtime_state.source_timing.confirmed_grid.is_none());
+    assert!(
+        error
+            .to_string()
+            .contains("does not match Rust timing candidate")
+    );
+    assert!(
+        state
+            .session
+            .runtime_state
+            .source_timing
+            .confirmed_grid
+            .is_none()
+    );
     assert!(state.queue.pending_actions().is_empty());
 }
 
@@ -242,7 +296,12 @@ fn live_ingest_explicit_bpm_persists_graph_confirmation_and_restore_identity() {
             .and_then(|graph| graph.timing.primary_hypothesis_id.as_deref())
     );
     assert_eq!(
-        state.session.action_log.actions.last().map(|action| action.command),
+        state
+            .session
+            .action_log
+            .actions
+            .last()
+            .map(|action| action.command),
         Some(ActionCommand::SourceTimingConfirmGrid)
     );
     assert_eq!(
@@ -257,7 +316,7 @@ fn live_ingest_explicit_bpm_persists_graph_confirmation_and_restore_identity() {
         state.session.runtime_state.source_timing.confirmed_grid
     );
     assert_eq!(
-        super::transport_helpers::trusted_source_timing_bpm(
+        crate::jam_app::transport_helpers::trusted_source_timing_bpm(
             &restored.session,
             restored.source_graph.as_ref(),
         )
@@ -336,15 +395,22 @@ fn tonal_live_ingest_requires_and_persists_explicit_manual_grid_phase() {
     assert!(primary.hypothesis_id.starts_with("manual-source-grid-v1-"));
     assert_eq!(primary.bar_grid[0].start_seconds, 0.0);
     assert_eq!(graph.w30_hook_candidates.len(), primary.bar_grid.len());
-    assert!(primary
-        .provenance
-        .contains(&"musician-manual-source-grid.v1".into()));
+    assert!(
+        primary
+            .provenance
+            .contains(&"musician-manual-source-grid.v1".into())
+    );
     assert_eq!(
         riotbox_core::view::jam::source_timing_consumer_readiness(Some(graph), &state.session),
         riotbox_core::view::jam::SourceTimingConsumerReadiness::UserConfirmed
     );
     assert_eq!(
-        state.session.action_log.actions.last().map(|action| action.command),
+        state
+            .session
+            .action_log
+            .actions
+            .last()
+            .map(|action| action.command),
         Some(ActionCommand::SourceTimingConfirmGrid)
     );
 
@@ -366,7 +432,10 @@ fn tonal_live_ingest_requires_and_persists_explicit_manual_grid_phase() {
     );
 }
 
-fn accented_drum_grid_samples(beat_frames: usize, beats: usize) -> Vec<f32> {
+pub(in crate::jam_app::tests) fn accented_drum_grid_samples(
+    beat_frames: usize,
+    beats: usize,
+) -> Vec<f32> {
     let mut samples = vec![0.0_f32; beat_frames * beats];
     for beat in 0..beats {
         let start = beat * beat_frames;
@@ -377,7 +446,12 @@ fn accented_drum_grid_samples(beat_frames: usize, beats: usize) -> Vec<f32> {
     samples
 }
 
-fn add_timing_impulse(samples: &mut [f32], start: usize, frames: usize, amplitude: f32) {
+pub(in crate::jam_app::tests) fn add_timing_impulse(
+    samples: &mut [f32],
+    start: usize,
+    frames: usize,
+    amplitude: f32,
+) {
     let end = start.saturating_add(frames).min(samples.len());
     for sample in samples.iter_mut().take(end).skip(start) {
         *sample = amplitude;

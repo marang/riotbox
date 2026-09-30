@@ -1,3 +1,36 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use riotbox_audio::mc202::Mc202PhraseShape;
+use riotbox_audio::mc202::Mc202RenderMode;
+use riotbox_audio::mc202::Mc202RenderRouting;
+use riotbox_audio::tr909::Tr909RenderMode;
+use riotbox_audio::tr909::Tr909RenderRouting;
+use riotbox_audio::w30::W30PreviewRenderMode;
+use riotbox_core::action::Action;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::ActionDraft;
+use riotbox_core::action::ActionParams;
+use riotbox_core::action::ActionResult;
+use riotbox_core::action::ActionStatus;
+use riotbox_core::action::ActionTarget;
+use riotbox_core::action::ActorType;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::action::Quantization;
+use riotbox_core::action::TargetScope;
+use riotbox_core::action::UndoPolicy;
+use riotbox_core::ids::ActionId;
+use riotbox_core::ids::BankId;
+use riotbox_core::ids::CaptureId;
+use riotbox_core::ids::PadId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::CaptureTarget;
+use riotbox_core::session::Tr909ReinforcementModeState;
+use riotbox_core::session::W30PreviewModeState;
+use riotbox_core::transport::CommitBoundaryState;
+
 #[test]
 fn legacy_w30_preview_mode_is_backfilled_from_committed_preview_history() {
     let graph = sample_graph();

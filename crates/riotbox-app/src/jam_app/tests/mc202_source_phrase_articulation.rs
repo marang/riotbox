@@ -1,3 +1,24 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::mc202_recipe::commit_source_derived_answer;
+use crate::jam_app::tests::fixtures::mc202_recipe::confirmed_source_phrase_state;
+use crate::jam_app::tests::fixtures::mc202_recipe::render_mc202_recipe_buffer;
+use crate::jam_app::tests::fixtures::mc202_recipe::source_phrase_test_graph;
+use crate::jam_app::tests::mc202_source_phrase_candidate_families::add_phrase_audio_features;
+use crate::jam_app::tests::mc202_source_phrase_candidate_families::provenance_step;
+use crate::jam_app::tests::mc202_source_phrase_candidate_families::set_source_phrase_anchors;
+use crate::jam_app::tests::mc202_source_phrase_candidate_families::source_phrase_low_band_rms;
+use riotbox_audio::runtime::signal_delta_metrics;
+use riotbox_audio::runtime::signal_metrics;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::ids::SceneId;
+use riotbox_core::ids::SourceId;
+use riotbox_core::session::Mc202RoleState;
+use riotbox_core::session::Mc202SourcePhraseCandidateFamilyState;
+use riotbox_core::source_graph::SectionLabelHint;
+use riotbox_core::source_graph::SourceTimingAnchorType;
+use riotbox_core::transport::CommitBoundaryState;
+
 #[test]
 fn committed_mc202_answer_places_sparse_answer_from_source_answer_slot() {
     let mut early_answer_graph =
@@ -201,7 +222,10 @@ fn committed_mc202_source_phrase_roles_render_distinct_acid_bass_expression() {
     );
 }
 
-fn commit_source_derived_role(state: &mut JamAppState, role: Mc202RoleState) -> Vec<f32> {
+pub(in crate::jam_app::tests) fn commit_source_derived_role(
+    state: &mut JamAppState,
+    role: Mc202RoleState,
+) -> Vec<f32> {
     let result = match role {
         Mc202RoleState::Leader => panic!("leader source phrase role is not covered by this helper"),
         Mc202RoleState::Follower => state.queue_mc202_generate_follower(300),

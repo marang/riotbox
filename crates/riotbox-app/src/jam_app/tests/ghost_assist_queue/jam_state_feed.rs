@@ -1,3 +1,16 @@
+use crate::jam_app::ghost_queue::GhostSuggestionQueueResult;
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::ghost_assist_queue::fixtures::ghost_capture_candidate_graph;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::GhostMode;
+use riotbox_core::action::TargetScope;
+use riotbox_core::ghost::GhostSuggestionConfidence;
+use riotbox_core::ghost::GhostSuggestionSafety;
+use riotbox_core::ghost::GhostWatchTool;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::GhostSuggestionRecord;
+
 #[test]
 fn jam_state_feed_creates_source_backed_capture_suggestion_in_assist() {
     let graph = ghost_capture_candidate_graph();
@@ -20,7 +33,10 @@ fn jam_state_feed_creates_source_backed_capture_suggestion_in_assist() {
     assert_eq!(suggestion.mode, GhostMode::Assist);
     assert_eq!(suggestion.tool_name, GhostWatchTool::SuggestCapture);
     assert_eq!(suggestion.confidence, GhostSuggestionConfidence::High);
-    assert_eq!(suggestion.safety, GhostSuggestionSafety::NeedsAssistAcceptance);
+    assert_eq!(
+        suggestion.safety,
+        GhostSuggestionSafety::NeedsAssistAcceptance
+    );
     assert_eq!(
         suggestion
             .suggested_action
@@ -60,7 +76,13 @@ fn jam_state_feed_does_not_create_watch_or_decided_capture_candidate() {
 
     assert!(!watch_state.refresh_current_ghost_suggestion_from_jam_state());
     assert!(watch_state.runtime.current_ghost_suggestion.is_none());
-    assert!(watch_state.session.ghost_state.suggestion_history.is_empty());
+    assert!(
+        watch_state
+            .session
+            .ghost_state
+            .suggestion_history
+            .is_empty()
+    );
 
     let mut decided_session = sample_session(&graph);
     decided_session.ghost_state.mode = GhostMode::Assist;
@@ -73,12 +95,16 @@ fn jam_state_feed_does_not_create_watch_or_decided_capture_candidate() {
         rejected: true,
     }];
 
-    let mut decided_state = JamAppState::from_parts(decided_session, Some(graph), ActionQueue::new());
+    let mut decided_state =
+        JamAppState::from_parts(decided_session, Some(graph), ActionQueue::new());
 
     assert!(!decided_state.refresh_current_ghost_suggestion_from_jam_state());
 
     assert!(decided_state.runtime.current_ghost_suggestion.is_none());
-    assert_eq!(decided_state.session.ghost_state.suggestion_history.len(), 1);
+    assert_eq!(
+        decided_state.session.ghost_state.suggestion_history.len(),
+        1
+    );
     assert!(decided_state.session.ghost_state.suggestion_history[0].rejected);
 }
 

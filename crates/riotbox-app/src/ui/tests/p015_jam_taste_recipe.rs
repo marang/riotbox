@@ -1,3 +1,9 @@
+use crate::ui::render::render_jam_shell_snapshot;
+use crate::ui::shell_state::JamViewMode;
+use crate::ui::tests::fixtures::shells::sample_shell_state;
+use riotbox_core::source_graph::TimingDegradedPolicy;
+use riotbox_core::source_graph::TimingQuality;
+
 #[test]
 fn p015_recipe_keeps_taste_short_and_proof_details_inspectable() {
     let mut shell = sample_shell_state();
@@ -14,16 +20,16 @@ fn p015_recipe_keeps_taste_short_and_proof_details_inspectable() {
     );
     assert!(perform.contains("need output evidence"), "{perform}");
     assert!(!perform.contains("scene contract"), "{perform}");
-    assert!(!perform.contains("proof p012/p013/replay/output yes"), "{perform}");
+    assert!(
+        !perform.contains("proof p012/p013/replay/output yes"),
+        "{perform}"
+    );
 
     shell.jam_mode = JamViewMode::Inspect;
     let inspect = render_jam_shell_snapshot(&shell, 120, 34);
 
     assert!(inspect.contains("scene contract"), "{inspect}");
-    assert!(
-        inspect.contains("needs_timing_confirmation"),
-        "{inspect}"
-    );
+    assert!(inspect.contains("needs_timing_confirmation"), "{inspect}");
     assert!(inspect.contains("truth product spine"), "{inspect}");
     assert!(
         inspect.contains("proof p012/p013/replay/output yes"),
@@ -51,5 +57,8 @@ fn p015_recipe_names_scene_ready_taste_only_for_locked_timing() {
         "{rendered}"
     );
     assert!(rendered.contains("can steer scene moves"), "{rendered}");
-    assert!(!rendered.contains("confirm grid before scene moves"), "{rendered}");
+    assert!(
+        !rendered.contains("confirm grid before scene moves"),
+        "{rendered}"
+    );
 }

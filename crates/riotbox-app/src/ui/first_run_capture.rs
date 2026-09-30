@@ -1,28 +1,32 @@
+use crate::ui::first_run_capture::onramp_history::committed_monitor_handoff_index_after;
+use crate::ui::first_run_capture::onramp_history::has_completed_first_run_onramp;
+use crate::ui::first_run_capture::onramp_history::latest_source_backed_promotion_index;
+use crate::ui::first_run_capture::pending_capture::pending_capture_do_next_lines;
+use crate::ui::first_run_capture::pending_capture::pending_w30_audition_do_next_lines;
+use crate::ui::first_run_capture::routing::capture_heard_path_label;
+use crate::ui::shell_labels::transport_label;
+use crate::ui::shell_state::JamShellState;
+use crate::ui::source_trust_summary::source_timing_consumer_readiness_for_shell;
+use crate::ui::w30_preview_labels::w30_preview_source_readiness;
+use ratatui::text::Line;
+use ratatui::widgets::ListItem;
+use riotbox_audio::runtime::AudioRuntimeLifecycle;
+use riotbox_audio::runtime::SourceMonitorAudioRoute;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::CaptureLengthIntent;
+use riotbox_core::action::SourceMonitorMode;
+use riotbox_core::view::jam::CaptureHandoffReadinessView;
+use riotbox_core::view::jam::CaptureTargetKindView;
+use riotbox_core::view::jam::SceneJumpAvailabilityView;
+use riotbox_core::view::jam::SourceTimingConsumerReadiness;
+
 mod onramp_history;
 mod pending_capture;
 mod routing;
 
-use ratatui::{text::Line, widgets::ListItem};
-use riotbox_audio::runtime::{AudioRuntimeLifecycle, SourceMonitorAudioRoute};
-use riotbox_core::{
-    action::{ActionCommand, CaptureLengthIntent, SourceMonitorMode},
-    view::jam::{
-        CaptureHandoffReadinessView, CaptureTargetKindView, SceneJumpAvailabilityView,
-        SourceTimingConsumerReadiness,
-    },
-};
-
-use super::source_trust_summary::source_timing_consumer_readiness_for_shell;
-use super::{JamShellState, transport_label, w30_preview_source_readiness};
-
-use onramp_history::{
-    committed_monitor_handoff_index_after, has_completed_first_run_onramp,
-    latest_source_backed_promotion_index,
-};
 #[cfg(test)]
 pub(super) use pending_capture::{capture_pending_detail_line, capture_pending_intent_line};
-use pending_capture::{pending_capture_do_next_lines, pending_w30_audition_do_next_lines};
-use routing::capture_heard_path_label;
+
 pub(super) use routing::capture_routing_lines;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

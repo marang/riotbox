@@ -1,3 +1,18 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::source_map_navigation::source_map_navigation_graph;
+use riotbox_core::action::CaptureLengthIntent;
+use riotbox_core::action::SourceMonitorMode;
+use riotbox_core::ids::ActionId;
+use riotbox_core::persistence::save_session_json;
+use riotbox_core::persistence::save_source_graph_json;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::SourceTimingGridConfirmationState;
+use riotbox_core::source_graph::SourceGraph;
+use riotbox_core::source_graph::TimingDegradedPolicy;
+use riotbox_core::source_graph::TimingQuality;
+use tempfile::tempdir;
+
 #[test]
 fn source_transport_capture_projection_survives_save_restore_with_confirmed_grid() {
     let dir = tempdir().expect("create temp dir");
@@ -12,13 +27,12 @@ fn source_transport_capture_projection_survives_save_restore_with_confirmed_grid
     session.runtime_state.capture.length_intent = CaptureLengthIntent::OneBar;
     session.runtime_state.capture.length_set_by_action = Some(ActionId(77));
     session.runtime_state.capture.length_set_at = Some(777);
-    session.runtime_state.source_timing.confirmed_grid =
-        Some(SourceTimingGridConfirmationState {
-            source_id: graph.source.source_id.clone(),
-            hypothesis_id: graph.timing.primary_hypothesis_id.clone(),
-            confirmed_by_action: ActionId(78),
-            confirmed_at: 778,
-        });
+    session.runtime_state.source_timing.confirmed_grid = Some(SourceTimingGridConfirmationState {
+        source_id: graph.source.source_id.clone(),
+        hypothesis_id: graph.timing.primary_hypothesis_id.clone(),
+        confirmed_by_action: ActionId(78),
+        confirmed_at: 778,
+    });
     let state = JamAppState::from_parts(session, Some(graph.clone()), ActionQueue::new());
     let source_map_before_save = state.jam_view.source.source_map.clone();
 
@@ -38,7 +52,10 @@ fn source_transport_capture_projection_survives_save_restore_with_confirmed_grid
         JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("restore app state");
 
     assert!(restored.session.runtime_state.transport.is_playing);
-    assert_eq!(restored.session.runtime_state.transport.position_beats, 5.25);
+    assert_eq!(
+        restored.session.runtime_state.transport.position_beats,
+        5.25
+    );
     assert_eq!(
         restored.session.runtime_state.source_monitor.mode,
         SourceMonitorMode::Blend
@@ -48,11 +65,7 @@ fn source_transport_capture_projection_survives_save_restore_with_confirmed_grid
         CaptureLengthIntent::OneBar
     );
     assert_eq!(
-        restored
-            .session
-            .runtime_state
-            .source_timing
-            .confirmed_grid,
+        restored.session.runtime_state.source_timing.confirmed_grid,
         state.session.runtime_state.source_timing.confirmed_grid
     );
     assert_eq!(
@@ -92,11 +105,18 @@ fn unconfirmed_source_transport_capture_range_stays_unavailable_after_restore() 
     let restored =
         JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("restore app state");
 
-    assert!(restored.session.runtime_state.source_timing.confirmed_grid.is_none());
+    assert!(
+        restored
+            .session
+            .runtime_state
+            .source_timing
+            .confirmed_grid
+            .is_none()
+    );
     assert_eq!(restored.jam_view.source.source_map, source_map_before_save);
 }
 
-fn manual_confirm_source_map_graph() -> SourceGraph {
+pub(in crate::jam_app::tests) fn manual_confirm_source_map_graph() -> SourceGraph {
     let mut graph = source_map_navigation_graph();
     graph.timing.quality = TimingQuality::Low;
     graph.timing.degraded_policy = TimingDegradedPolicy::ManualConfirm;

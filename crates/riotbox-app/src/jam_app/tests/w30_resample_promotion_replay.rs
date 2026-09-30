@@ -1,3 +1,26 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::JamFileSet;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::mc202_recipe::assert_recipe_buffers_match;
+use crate::jam_app::tests::fixtures::restore_parity::SnapshotPayloadRestoreSpec;
+use crate::jam_app::tests::fixtures::restore_parity::run_snapshot_payload_restore_probe_from_anchor_runtime;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::fixtures::source_io::bind_synthetic_wav_identity;
+use crate::jam_app::tests::fixtures::source_io::write_pcm16_wave;
+use crate::jam_app::tests::fixtures::w30_replay::assert_w30_replay_buffers_differ;
+use crate::jam_app::tests::fixtures::w30_replay::commit_w30_replay_step;
+use riotbox_audio::runtime::render_w30_preview_offline;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::ids::BankId;
+use riotbox_core::ids::CaptureId;
+use riotbox_core::ids::PadId;
+use riotbox_core::persistence::save_session_json;
+use riotbox_core::persistence::save_source_graph_json;
+use riotbox_core::session::CaptureTarget;
+use riotbox_core::session::CaptureType;
+use tempfile::tempdir;
+
 #[test]
 fn w30_snapshot_payload_restore_replays_promote_capture_to_pad_for_resample_artifact() {
     let tempdir = tempdir().expect("create promoted resample replay tempdir");
@@ -40,7 +63,10 @@ fn w30_snapshot_payload_restore_replays_promote_capture_to_pad_for_resample_arti
     assert_eq!(produced_capture.capture_type, CaptureType::Resample);
     assert_eq!(produced_capture.assigned_target, None);
     assert!(
-        tempdir.path().join(&produced_capture.storage_path).is_file(),
+        tempdir
+            .path()
+            .join(&produced_capture.storage_path)
+            .is_file(),
         "resample artifact should exist before promotion replay"
     );
 

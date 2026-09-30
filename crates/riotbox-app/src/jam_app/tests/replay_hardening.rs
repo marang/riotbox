@@ -1,3 +1,34 @@
+use crate::jam_app::ghost_queue::GhostSuggestionQueueResult;
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::ghost_assist_queue::fixtures::ghost_fill_suggestion;
+use riotbox_core::action::Action;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::ActionDraft;
+use riotbox_core::action::ActionParams;
+use riotbox_core::action::ActionResult;
+use riotbox_core::action::ActionStatus;
+use riotbox_core::action::ActionTarget;
+use riotbox_core::action::ActorType;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::action::GhostMode;
+use riotbox_core::action::Quantization;
+use riotbox_core::action::TargetScope;
+use riotbox_core::action::UndoPolicy;
+use riotbox_core::ids::ActionId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::ids::SnapshotId;
+use riotbox_core::persistence::load_session_json;
+use riotbox_core::persistence::save_session_json;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::ActionCommitRecord;
+use riotbox_core::session::Snapshot;
+use riotbox_core::transport::CommitBoundaryState;
+use riotbox_core::transport::TransportClockState;
+use std::path::Path;
+use tempfile::tempdir;
+
 #[test]
 fn replay_from_zero_restore_rebuilds_commit_boundary_and_queue_cursor() {
     let graph = sample_graph();
@@ -58,8 +89,14 @@ fn replay_from_zero_restore_rebuilds_commit_boundary_and_queue_cursor() {
     assert_eq!(restored.runtime.last_commit_boundary, Some(boundary));
     assert_eq!(restored.queue.pending_actions().len(), 0);
     assert_eq!(restored.session.action_log.commit_records.len(), 2);
-    assert_eq!(restored.session.action_log.commit_records[0].action_id, first);
-    assert_eq!(restored.session.action_log.commit_records[1].action_id, second);
+    assert_eq!(
+        restored.session.action_log.commit_records[0].action_id,
+        first
+    );
+    assert_eq!(
+        restored.session.action_log.commit_records[1].action_id,
+        second
+    );
     assert_eq!(restored.jam_view.recent_actions[0].id, second.to_string());
     assert_eq!(restored.jam_view.recent_actions[1].id, first.to_string());
 
@@ -218,9 +255,11 @@ fn accepted_ghost_action_snapshot_replay_plan_uses_restored_commit_records() {
         before_snapshot,
     )
     .expect("before snapshot replay plan");
-    let after_comparison =
-        riotbox_core::replay::build_snapshot_replay_plan_comparison(&reloaded.action_log, after_snapshot)
-            .expect("after snapshot replay plan");
+    let after_comparison = riotbox_core::replay::build_snapshot_replay_plan_comparison(
+        &reloaded.action_log,
+        after_snapshot,
+    )
+    .expect("after snapshot replay plan");
 
     assert_eq!(before_comparison.origin.len(), 1);
     let ghost_entry = &before_comparison.origin[0];
@@ -253,7 +292,10 @@ fn accepted_ghost_action_snapshot_replay_plan_uses_restored_commit_records() {
         Some("before-ghost")
     );
     assert_eq!(target_plan_from_before.suffix.len(), 1);
-    assert_eq!(target_plan_from_before.suffix[0].action.actor, ActorType::Ghost);
+    assert_eq!(
+        target_plan_from_before.suffix[0].action.actor,
+        ActorType::Ghost
+    );
     let mut before_only_session = reloaded.clone();
     before_only_session.snapshots = vec![before_snapshot.clone()];
     let before_only_state = JamAppState::from_parts(before_only_session, None, ActionQueue::new());
@@ -268,7 +310,10 @@ fn accepted_ghost_action_snapshot_replay_plan_uses_restored_commit_records() {
     assert_eq!(dry_run_summary.origin_action_count, 1);
     assert_eq!(dry_run_summary.suffix_action_count, 1);
     assert!(dry_run_summary.needs_replay);
-    assert_eq!(dry_run_summary.anchor_snapshot_id.as_deref(), Some("before-ghost"));
+    assert_eq!(
+        dry_run_summary.anchor_snapshot_id.as_deref(),
+        Some("before-ghost")
+    );
     assert_eq!(dry_run_summary.anchor_action_cursor, Some(0));
     assert_eq!(
         dry_run_summary.suffix_action_ids,
@@ -322,7 +367,10 @@ fn accepted_ghost_action_snapshot_replay_plan_uses_restored_commit_records() {
     );
     assert_eq!(
         restored_state.runtime_view.replay_restore_anchor,
-        format!("anchor after-ghost @ cursor {}", reloaded.action_log.actions.len())
+        format!(
+            "anchor after-ghost @ cursor {}",
+            reloaded.action_log.actions.len()
+        )
     );
     assert_eq!(
         restored_state.runtime_view.replay_restore_payload,
@@ -450,6 +498,7 @@ fn runtime_view_surfaces_snapshot_payload_readiness() {
         "payload ready | snapshot restore ok"
     );
 }
+
 #[test]
 fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     let graph = sample_graph();
@@ -489,7 +538,7 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
         },
         commit_sequence: 1,
         committed_at: 500,
-                mc202_source_phrase_plan: None,
+        mc202_source_phrase_plan: None,
     });
     session.snapshots = vec![Snapshot {
         snapshot_id: SnapshotId::from("before-artifact"),
@@ -507,13 +556,12 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
         .expect("unsupported action exists in action log")
         + 1;
     let original_session = session.clone();
-    let error =
-        riotbox_core::replay::apply_replay_target_suffix_to_session(
-            &mut session,
-            unsupported_action_cursor,
-            None,
-        )
-        .expect_err("unsupported artifact suffix should reject");
+    let error = riotbox_core::replay::apply_replay_target_suffix_to_session(
+        &mut session,
+        unsupported_action_cursor,
+        None,
+    )
+    .expect_err("unsupported artifact suffix should reject");
     assert!(matches!(
         error,
         riotbox_core::replay::ReplayTargetExecutionError::Execution(
@@ -527,7 +575,8 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
         session, original_session,
         "unsupported target suffix must not partially mutate restored state"
     );
-    let diagnostic_state = JamAppState::from_parts(session.clone(), Some(graph), ActionQueue::new());
+    let diagnostic_state =
+        JamAppState::from_parts(session.clone(), Some(graph), ActionQueue::new());
     let dry_run_summary = diagnostic_state
         .restore_target_dry_run_summary(unsupported_action_cursor)
         .expect("unsupported replay dry-run summary");
@@ -561,7 +610,14 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     save_session_json(&session_path, &session).expect("save unsupported replay fixture");
     let restored =
         JamAppState::from_json_files(&session_path, None::<&Path>).expect("restore from session");
-    assert!(restored.runtime_view.runtime_warnings.iter().any(|warning| {
-        warning == "replay cannot cover 1 unsupported command(s) after snapshot: mutate.lane"
-    }));
+    assert!(
+        restored
+            .runtime_view
+            .runtime_warnings
+            .iter()
+            .any(|warning| {
+                warning
+                    == "replay cannot cover 1 unsupported command(s) after snapshot: mutate.lane"
+            })
+    );
 }

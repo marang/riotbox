@@ -1,8 +1,35 @@
-use super::product_export::{
-    ExportReceiptArtifactPreflightError, preflight_export_receipt_artifacts,
-};
+use crate::jam_app::product_export::ExportReceiptArtifactPreflightError;
+use crate::jam_app::product_export::preflight_export_receipt_artifacts;
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use riotbox_core::export_readiness::ExportReadinessStatus;
+use riotbox_core::export_readiness::ExportScope;
+use riotbox_core::export_readiness::ProductExportBoundary;
+use riotbox_core::export_readiness::ProductExportRole;
+use riotbox_core::export_readiness::UnsupportedExportScope;
+use riotbox_core::ids::ActionId;
+use riotbox_core::ids::ExportReceiptId;
+use riotbox_core::persistence::save_session_json;
+use riotbox_core::persistence::save_source_graph_json;
+use riotbox_core::session::ExportArtifactLocation;
+use riotbox_core::session::ExportArtifactMediaType;
+use riotbox_core::session::ExportArtifactRole;
+use riotbox_core::session::ExportArtifactSetEntry;
+use riotbox_core::session::ExportReceiptQaGateResult;
+use riotbox_core::session::ExportReceiptQaGateStatus;
+use riotbox_core::session::ExportReceiptState;
+use riotbox_core::session::STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID;
+use riotbox_core::session::STEM_PACKAGE_FALLBACK_COMPARISON_QA_GATE_ID;
+use riotbox_core::session::STEM_PACKAGE_HASH_STABILITY_QA_GATE_ID;
+use riotbox_core::session::STEM_PACKAGE_LINEAGE_QA_GATE_ID;
+use riotbox_core::session::STEM_PACKAGE_NON_SILENCE_QA_GATE_ID;
+use std::fs;
+use std::path::Path;
+use std::path::PathBuf;
+use tempfile::tempdir;
 
-fn state_with_export_receipt_path(
+pub(in crate::jam_app::tests) fn state_with_export_receipt_path(
     dir: &Path,
     artifact_path: &str,
     proof_path: &str,
@@ -13,7 +40,9 @@ fn state_with_export_receipt_path(
     graph.source.path = dir.join("source.wav").to_string_lossy().into_owned();
 
     let mut session = sample_session(&graph);
-    session.export_receipts.push(export_receipt(artifact_path, proof_path));
+    session
+        .export_receipts
+        .push(export_receipt(artifact_path, proof_path));
     let receipt = session.export_receipts[0].clone();
 
     save_source_graph_json(&graph_path, &graph).expect("save graph");
@@ -116,7 +145,7 @@ fn export_receipt_hydration_preflight_accepts_extra_local_artifact_set_entry() {
         sha256: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into(),
         normalized_manifest_hash: None,
         source_graph_ref: None,
-            timing_grid_ref: None,
+        timing_grid_ref: None,
         source_capture_refs: Vec::new(),
         lineage_capture_refs: Vec::new(),
         fallback_comparison: None,
@@ -151,7 +180,7 @@ fn export_receipt_hydration_preflight_reports_missing_artifact_set_entry() {
         sha256: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into(),
         normalized_manifest_hash: None,
         source_graph_ref: None,
-            timing_grid_ref: None,
+        timing_grid_ref: None,
         source_capture_refs: Vec::new(),
         lineage_capture_refs: Vec::new(),
         fallback_comparison: None,
@@ -195,7 +224,7 @@ fn export_receipt_hydration_preflight_treats_uri_artifact_set_entry_as_identity_
         sha256: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into(),
         normalized_manifest_hash: None,
         source_graph_ref: None,
-            timing_grid_ref: None,
+        timing_grid_ref: None,
         source_capture_refs: Vec::new(),
         lineage_capture_refs: Vec::new(),
         fallback_comparison: None,
@@ -209,7 +238,10 @@ fn export_receipt_hydration_preflight_treats_uri_artifact_set_entry_as_identity_
         .expect("URI artifact-set entry is identity-only until fetch contract exists");
 }
 
-fn export_receipt(artifact_path: &str, proof_path: &str) -> ExportReceiptState {
+pub(in crate::jam_app::tests) fn export_receipt(
+    artifact_path: &str,
+    proof_path: &str,
+) -> ExportReceiptState {
     ExportReceiptState {
         receipt_id: ExportReceiptId::from("export-receipt-a-0004"),
         created_by_action: ActionId(4),
@@ -222,8 +254,8 @@ fn export_receipt(artifact_path: &str, proof_path: &str) -> ExportReceiptState {
         proof_path: proof_path.into(),
         manifest_path: None,
         export_hash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
-        normalized_manifest_hash: "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
-            .into(),
+        normalized_manifest_hash:
+            "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd".into(),
         artifact_set: vec![ExportArtifactSetEntry::product_mix(
             artifact_path,
             "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -243,11 +275,8 @@ fn export_receipt(artifact_path: &str, proof_path: &str) -> ExportReceiptState {
     }
 }
 
-fn stem_package_receipt() -> ExportReceiptState {
-    let mut receipt = export_receipt(
-        "exports/stems/drums.wav",
-        "exports/stem_package_proof.json",
-    );
+pub(in crate::jam_app::tests) fn stem_package_receipt() -> ExportReceiptState {
+    let mut receipt = export_receipt("exports/stems/drums.wav", "exports/stem_package_proof.json");
     receipt.export_scope = ExportScope::StemPackage;
     receipt.unsupported_scopes.clear();
     receipt.artifact_set = vec![
@@ -275,11 +304,13 @@ fn stem_package_receipt() -> ExportReceiptState {
     receipt
 }
 
-fn arrangement_receipt(artifact_path: &str, proof_path: &str) -> ExportReceiptState {
+pub(in crate::jam_app::tests) fn arrangement_receipt(
+    artifact_path: &str,
+    proof_path: &str,
+) -> ExportReceiptState {
     let mut receipt = export_receipt(artifact_path, proof_path);
     receipt.export_scope = ExportScope::DawSession;
-    receipt.pack_id =
-        riotbox_core::export_readiness::ARRANGEMENT_DAW_PLACEMENT_PACK_ID.into();
+    receipt.pack_id = riotbox_core::export_readiness::ARRANGEMENT_DAW_PLACEMENT_PACK_ID.into();
     receipt.export_role = ProductExportRole::ArrangementManifest;
     receipt.export_boundary = ProductExportBoundary::ArrangementDawPlacementContractV1;
     receipt.unsupported_scopes.clear();
@@ -287,7 +318,7 @@ fn arrangement_receipt(artifact_path: &str, proof_path: &str) -> ExportReceiptSt
     receipt
 }
 
-fn write_ready_stem_package_files(dir: &Path) {
+pub(in crate::jam_app::tests) fn write_ready_stem_package_files(dir: &Path) {
     let stems_dir = dir.join("exports/stems");
     fs::create_dir_all(&stems_dir).expect("create stems dir");
     fs::write(stems_dir.join("drums.wav"), b"drums").expect("write drums stem");
@@ -296,7 +327,7 @@ fn write_ready_stem_package_files(dir: &Path) {
     fs::write(dir.join("exports/stem_package_proof.json"), b"{}").expect("write proof");
 }
 
-fn stem_audio_artifact(
+pub(in crate::jam_app::tests) fn stem_audio_artifact(
     role: ExportArtifactRole,
     path: impl Into<String>,
     sha256: impl Into<String>,
@@ -319,7 +350,7 @@ fn stem_audio_artifact(
     }
 }
 
-fn all_required_stem_package_gates(
+pub(in crate::jam_app::tests) fn all_required_stem_package_gates(
     claimed_roles: &[ExportArtifactRole],
 ) -> Vec<ExportReceiptQaGateResult> {
     [
@@ -339,18 +370,24 @@ fn all_required_stem_package_gates(
     .collect()
 }
 
-fn push_stem_package_json_entries(receipt: &mut ExportReceiptState) {
-    receipt.artifact_set.push(ExportArtifactSetEntry::export_manifest(
-        "exports/stem_package_manifest.json",
-        "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-    ));
-    receipt.artifact_set.push(ExportArtifactSetEntry::stem_package_proof(
-        "exports/stem_package_proof.json",
-        "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
-    ));
+pub(in crate::jam_app::tests) fn push_stem_package_json_entries(receipt: &mut ExportReceiptState) {
+    receipt
+        .artifact_set
+        .push(ExportArtifactSetEntry::export_manifest(
+            "exports/stem_package_manifest.json",
+            "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        ));
+    receipt
+        .artifact_set
+        .push(ExportArtifactSetEntry::stem_package_proof(
+            "exports/stem_package_proof.json",
+            "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        ));
 }
 
-fn push_stem_package_json_uri_entries(receipt: &mut ExportReceiptState) {
+pub(in crate::jam_app::tests) fn push_stem_package_json_uri_entries(
+    receipt: &mut ExportReceiptState,
+) {
     receipt.artifact_set.push(ExportArtifactSetEntry {
         role: ExportArtifactRole::ExportManifest,
         location: ExportArtifactLocation::Uri {
@@ -389,7 +426,7 @@ fn push_stem_package_json_uri_entries(receipt: &mut ExportReceiptState) {
     });
 }
 
-fn expected_receipt_path(dir: &Path, receipt_path: &str) -> PathBuf {
+pub(in crate::jam_app::tests) fn expected_receipt_path(dir: &Path, receipt_path: &str) -> PathBuf {
     let receipt_path = Path::new(receipt_path);
     if receipt_path.is_absolute() {
         receipt_path.to_path_buf()

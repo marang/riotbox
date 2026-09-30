@@ -1,3 +1,18 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::mc202_recipe::confirmed_source_phrase_state;
+use crate::jam_app::tests::fixtures::mc202_recipe::render_mc202_recipe_buffer;
+use crate::jam_app::tests::fixtures::mc202_recipe::source_phrase_test_graph;
+use crate::jam_app::tests::mc202_source_phrase_candidate_families::add_phrase_audio_features;
+use crate::jam_app::tests::mc202_source_phrase_pressure_contours::commit_source_derived_pressure;
+use riotbox_audio::mc202::Mc202RenderRouting;
+use riotbox_audio::runtime::signal_delta_metrics;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::ids::SceneId;
+use riotbox_core::session::Mc202RoleState;
+use riotbox_core::session::Mc202SourcePhraseCandidateFamilyState;
+use riotbox_core::transport::CommitBoundaryState;
+
 #[test]
 fn committed_mc202_selection_prefers_source_production_impact_dimensions() {
     let mut pressure_graph =
@@ -62,10 +77,7 @@ fn committed_mc202_selection_prefers_source_production_impact_dimensions() {
     let pressure_score = selected_source_phrase_scorecard(pressure_plan);
     let pickup_score = selected_source_phrase_scorecard(pickup_plan);
 
-    assert!(
-        pressure_score.low_end_impact >= 0.80,
-        "{pressure_score:?}"
-    );
+    assert!(pressure_score.low_end_impact >= 0.80, "{pressure_score:?}");
     assert!(
         pressure_score.low_end_impact > pressure_score.answer_contrast * 2.0,
         "{pressure_score:?}"
@@ -151,7 +163,10 @@ fn explicit_pressure_stays_silent_when_only_a_pickup_family_is_eligible() {
         score.family == Mc202SourcePhraseCandidateFamilyState::FillPickupInstigator
             && score.rejection_reason.as_deref() == Some("requested_role_family_mismatch")
     }));
-    assert_eq!(state.runtime.mc202_render.routing, Mc202RenderRouting::Silent);
+    assert_eq!(
+        state.runtime.mc202_render.routing,
+        Mc202RenderRouting::Silent
+    );
     assert!(state.runtime.mc202_render.source_phrase_plan.is_none());
 
     let result = state
@@ -163,9 +178,7 @@ fn explicit_pressure_stays_silent_when_only_a_pickup_family_is_eligible() {
         .expect("visible degraded result");
     assert!(result.accepted);
     assert!(
-        result
-            .summary
-            .contains("committed silent degraded state"),
+        result.summary.contains("committed silent degraded state"),
         "{result:?}"
     );
     let persisted_plan = state
@@ -200,7 +213,7 @@ fn explicit_pressure_stays_silent_when_only_a_pickup_family_is_eligible() {
     assert!(restored.runtime.mc202_render.source_phrase_plan.is_none());
 }
 
-fn selected_source_phrase_scorecard(
+pub(in crate::jam_app::tests) fn selected_source_phrase_scorecard(
     plan: &riotbox_core::session::Mc202SourcePhrasePlanState,
 ) -> &riotbox_core::session::Mc202SourcePhraseCandidateScoreState {
     plan.candidate_scorecards
@@ -209,7 +222,9 @@ fn selected_source_phrase_scorecard(
         .expect("selected MC-202 scorecard")
 }
 
-fn commit_source_derived_instigator(state: &mut JamAppState) -> Vec<f32> {
+pub(in crate::jam_app::tests) fn commit_source_derived_instigator(
+    state: &mut JamAppState,
+) -> Vec<f32> {
     assert_eq!(
         state.queue_mc202_generate_instigator(300),
         QueueControlResult::Enqueued

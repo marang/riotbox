@@ -1,3 +1,28 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use riotbox_audio::runtime::render_w30_preview_offline;
+use riotbox_audio::runtime::signal_delta_metrics;
+use riotbox_audio::runtime::signal_metrics;
+use riotbox_audio::source_audio::SourceAudioCache;
+use riotbox_audio::w30::W30PreviewRenderMode;
+use riotbox_audio::w30::W30PreviewRenderRouting;
+use riotbox_audio::w30::W30PreviewSourceProfile;
+use riotbox_core::action::ActionParams;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::ids::BankId;
+use riotbox_core::ids::CaptureId;
+use riotbox_core::ids::PadId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::CaptureRef;
+use riotbox_core::session::CaptureTarget;
+use riotbox_core::session::CaptureType;
+use riotbox_core::session::SessionFile;
+use riotbox_core::session::W30PreviewModeState;
+use riotbox_core::transport::CommitBoundaryState;
+
 #[test]
 fn committed_w30_bank_swap_updates_lane_focus_and_log_result() {
     let graph = sample_graph();
@@ -218,13 +243,15 @@ fn committed_w30_damage_profile_updates_grit_and_log_result() {
         .expect("damage profile capture audio"),
     );
     state.refresh_view();
-    assert!(!state
-        .runtime
-        .w30_preview
-        .pad_playback
-        .as_ref()
-        .expect("undamaged pad playback")
-        .reverse);
+    assert!(
+        !state
+            .runtime
+            .w30_preview
+            .pad_playback
+            .as_ref()
+            .expect("undamaged pad playback")
+            .reverse
+    );
 
     assert_eq!(
         state.queue_w30_apply_damage_profile(620),
@@ -660,9 +687,18 @@ fn committed_w30_filter_slam_persists_projects_and_replays_without_other_lane_ch
     assert_eq!(committed.len(), 1);
     assert_eq!(state.session.runtime_state.macro_state.w30_grit, 0.31);
     assert_eq!(state.session.runtime_state.mixer_state.music_level, 0.73);
-    assert_eq!(state.session.runtime_state.lane_state.mc202, unchanged_mc202);
-    assert_eq!(state.session.runtime_state.lane_state.tr909, unchanged_tr909);
-    assert_eq!(state.session.runtime_state.source_monitor, unchanged_source_monitor);
+    assert_eq!(
+        state.session.runtime_state.lane_state.mc202,
+        unchanged_mc202
+    );
+    assert_eq!(
+        state.session.runtime_state.lane_state.tr909,
+        unchanged_tr909
+    );
+    assert_eq!(
+        state.session.runtime_state.source_monitor,
+        unchanged_source_monitor
+    );
     let articulation = state
         .session
         .runtime_state
@@ -758,8 +794,14 @@ fn duration_aware_w30_pad_output_changes_with_capture_source() {
 
     let first_metrics = signal_metrics(&first);
     let second_metrics = signal_metrics(&second);
-    assert!(first_metrics.rms > 0.005, "first metrics: {first_metrics:?}");
-    assert!(second_metrics.rms > 0.005, "second metrics: {second_metrics:?}");
+    assert!(
+        first_metrics.rms > 0.005,
+        "first metrics: {first_metrics:?}"
+    );
+    assert!(
+        second_metrics.rms > 0.005,
+        "second metrics: {second_metrics:?}"
+    );
     assert!(
         delta.rms > 0.008 && delta.rms > first_metrics.rms * 0.8,
         "different captures collapsed: delta={}, first={}",
@@ -768,7 +810,9 @@ fn duration_aware_w30_pad_output_changes_with_capture_source() {
     );
 }
 
-fn source_cache_for_w30_diversity(frequency: f32) -> SourceAudioCache {
+pub(in crate::jam_app::tests) fn source_cache_for_w30_diversity(
+    frequency: f32,
+) -> SourceAudioCache {
     SourceAudioCache::from_interleaved_samples(
         format!("capture-{frequency}.wav"),
         48_000,

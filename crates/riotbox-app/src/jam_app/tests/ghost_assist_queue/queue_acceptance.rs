@@ -1,3 +1,23 @@
+use crate::jam_app::ghost_queue::GhostSuggestionQueueResult;
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::ghost_assist_queue::fixtures::ghost_destructive_takeover_suggestion;
+use crate::jam_app::tests::ghost_assist_queue::fixtures::ghost_fill_suggestion;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::ActorType;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::action::GhostMode;
+use riotbox_core::action::Quantization;
+use riotbox_core::action::TargetScope;
+use riotbox_core::ghost::GhostSuggestionBlocker;
+use riotbox_core::ghost::GhostSuggestionBlockerKind;
+use riotbox_core::ghost::GhostSuggestionSafety;
+use riotbox_core::ids::SceneId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::transport::CommitBoundaryState;
+use riotbox_core::transport::TransportClockState;
+
 #[test]
 fn queue_accepted_ghost_suggestion_uses_normal_action_queue() {
     let graph = sample_graph();
@@ -182,7 +202,9 @@ fn queue_accepted_ghost_suggestion_respects_phrase_budget() {
     assert_eq!(state.queue.pending_actions().len(), 0);
     assert_eq!(state.session.action_log.commit_records.len(), 1);
     assert_eq!(
-        state.session.action_log.commit_records[0].boundary.phrase_index,
+        state.session.action_log.commit_records[0]
+            .boundary
+            .phrase_index,
         3
     );
     assert!(

@@ -1,10 +1,10 @@
-use std::{
-    io::{Read, Seek, Write as _},
-    path::Path,
-    process::{Command, Stdio},
-};
-
 use dawproject::DawprojectReader;
+use std::io::Read;
+use std::io::Seek;
+use std::io::Write;
+use std::path::Path;
+use std::process::Command;
+use std::process::Stdio;
 
 const PROJECT_SCHEMA: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),

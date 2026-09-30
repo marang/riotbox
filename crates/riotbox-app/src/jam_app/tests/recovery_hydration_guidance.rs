@@ -1,3 +1,33 @@
+use crate::jam_app::recovery::RecoveryCandidateGuidance;
+use crate::jam_app::recovery::RecoveryCandidateTrust;
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::tests::snapshot_payload_restore_failures::loop_freeze_commit_record;
+use riotbox_core::action::Action;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::ActionParams;
+use riotbox_core::action::ActionResult;
+use riotbox_core::action::ActionStatus;
+use riotbox_core::action::ActionTarget;
+use riotbox_core::action::ActorType;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::action::Quantization;
+use riotbox_core::action::TargetScope;
+use riotbox_core::action::UndoPolicy;
+use riotbox_core::ids::ActionId;
+use riotbox_core::ids::CaptureId;
+use riotbox_core::ids::SnapshotId;
+use riotbox_core::ids::SourceId;
+use riotbox_core::persistence::save_session_json;
+use riotbox_core::session::ActionCommitRecord;
+use riotbox_core::session::CaptureRef;
+use riotbox_core::session::CaptureSourceWindow;
+use riotbox_core::session::CaptureType;
+use riotbox_core::session::SessionFile;
+use riotbox_core::session::Snapshot;
+use riotbox_core::transport::CommitBoundaryState;
+use std::fs;
+use tempfile::tempdir;
+
 #[test]
 fn recovery_surface_reports_supported_artifact_hydration_blocker_guidance() {
     let dir = tempdir().expect("create temp dir");
@@ -99,7 +129,10 @@ fn recovery_surface_reports_supported_artifact_hydration_blocker_guidance() {
         blocked_candidate.replay_suffix_label,
         "suffix 1 action(s): capture.loop"
     );
-    assert_eq!(blocked_candidate.replay_unsupported_label, "unsupported none");
+    assert_eq!(
+        blocked_candidate.replay_unsupported_label,
+        "unsupported none"
+    );
     assert_eq!(
         blocked_candidate.decision_label,
         "decision: blocked | replay hydration and artifacts"
@@ -185,7 +218,7 @@ fn recovery_surface_reports_capture_now_artifact_hydration_blocker_guidance() {
             },
             commit_sequence: 1,
             committed_at: 500,
-                mc202_source_phrase_plan: None,
+            mc202_source_phrase_plan: None,
         });
     blocked_session.captures.push(CaptureRef {
         audio_identity: None,
@@ -237,7 +270,10 @@ fn recovery_surface_reports_capture_now_artifact_hydration_blocker_guidance() {
         blocked_candidate.replay_suffix_label,
         "suffix 1 action(s): capture.now"
     );
-    assert_eq!(blocked_candidate.replay_unsupported_label, "unsupported none");
+    assert_eq!(
+        blocked_candidate.replay_unsupported_label,
+        "unsupported none"
+    );
     assert_eq!(
         blocked_candidate.decision_label,
         "decision: blocked | replay hydration and artifacts"

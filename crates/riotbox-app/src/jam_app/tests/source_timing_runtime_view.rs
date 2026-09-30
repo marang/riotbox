@@ -1,3 +1,23 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use riotbox_audio::mc202::Mc202RenderMode;
+use riotbox_audio::runtime::signal_metrics;
+use riotbox_audio::tr909::Tr909RenderMode;
+use riotbox_audio::w30::W30PreviewRenderRouting;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::action::SourceMonitorMode;
+use riotbox_core::action::UndoPolicy;
+use riotbox_core::ids::SourceId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::SessionFile;
+use riotbox_core::source_graph::TimingDegradedPolicy;
+use riotbox_core::source_graph::TimingQuality;
+use riotbox_core::transport::CommitBoundaryState;
+use riotbox_core::transport::TransportClockState;
+
 #[test]
 fn source_timing_grid_confirmation_queues_commits_and_persists_session_truth() {
     let mut graph = sample_graph();
@@ -5,7 +25,14 @@ fn source_timing_grid_confirmation_queues_commits_and_persists_session_truth() {
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    assert!(state.session.runtime_state.source_timing.confirmed_grid.is_none());
+    assert!(
+        state
+            .session
+            .runtime_state
+            .source_timing
+            .confirmed_grid
+            .is_none()
+    );
     assert_eq!(
         state.queue_source_timing_grid_confirmation(100),
         QueueControlResult::Enqueued
@@ -60,7 +87,14 @@ fn source_timing_grid_revert_queues_commits_and_clears_session_truth() {
     );
     let committed_confirm = state.commit_ready_actions(immediate_boundary(), 120);
     assert_eq!(committed_confirm.len(), 1);
-    assert!(state.session.runtime_state.source_timing.confirmed_grid.is_some());
+    assert!(
+        state
+            .session
+            .runtime_state
+            .source_timing
+            .confirmed_grid
+            .is_some()
+    );
 
     assert_eq!(
         state.queue_source_timing_grid_revert(121),
@@ -83,8 +117,22 @@ fn source_timing_grid_revert_queues_commits_and_clears_session_truth() {
             .command,
         ActionCommand::SourceTimingRevertGrid
     );
-    assert!(state.session.runtime_state.source_timing.confirmed_grid.is_none());
-    assert!(state.session.runtime_state.source_timing.confirmed_bpm.is_none());
+    assert!(
+        state
+            .session
+            .runtime_state
+            .source_timing
+            .confirmed_grid
+            .is_none()
+    );
+    assert!(
+        state
+            .session
+            .runtime_state
+            .source_timing
+            .confirmed_bpm
+            .is_none()
+    );
     assert_eq!(
         state.queue_source_timing_grid_revert(141),
         QueueControlResult::AlreadyInState
@@ -149,7 +197,7 @@ fn unconfirmed_source_timing_keeps_riotbox_only_exact_runtime_mix_silent() {
     assert_eq!(metrics.clip_count, 0);
 }
 
-fn immediate_boundary() -> CommitBoundaryState {
+pub(in crate::jam_app::tests) fn immediate_boundary() -> CommitBoundaryState {
     CommitBoundaryState {
         kind: CommitBoundary::Immediate,
         beat_index: 0,

@@ -1,3 +1,24 @@
+use crate::jam_app::state::JamAppState;
+use riotbox_core::action::Action;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::ActionParams;
+use riotbox_core::action::ActionResult;
+use riotbox_core::action::ActionStatus;
+use riotbox_core::action::ActionTarget;
+use riotbox_core::action::ActorType;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::action::Quantization;
+use riotbox_core::action::UndoPolicy;
+use riotbox_core::ids::ActionId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::ids::SnapshotId;
+use riotbox_core::persistence::save_session_json;
+use riotbox_core::session::ActionCommitRecord;
+use riotbox_core::session::SessionFile;
+use riotbox_core::session::Snapshot;
+use riotbox_core::transport::CommitBoundaryState;
+use tempfile::tempdir;
+
 #[test]
 fn recovery_surface_reports_replay_families_for_supported_mixed_suffix() {
     let dir = tempdir().expect("create temp dir");
@@ -106,7 +127,10 @@ fn recovery_surface_reports_replay_family_for_unsupported_suffix() {
         candidate.replay_readiness_label,
         "blocked: 1 unsupported suffix action(s)"
     );
-    assert_eq!(candidate.replay_family_label, "families Mutation | suffix 1");
+    assert_eq!(
+        candidate.replay_family_label,
+        "families Mutation | suffix 1"
+    );
     assert_eq!(
         candidate.replay_unsupported_label,
         "unsupported suffix 1: mutate.lane"
@@ -146,7 +170,7 @@ fn recovery_surface_reports_empty_replay_family_without_replay_entries() {
     assert_eq!(candidate.replay_family_label, "families none | no replay");
 }
 
-fn snapshot_payload_at_origin(
+pub(in crate::jam_app::tests) fn snapshot_payload_at_origin(
     snapshot_id: &str,
     runtime_state: &riotbox_core::session::RuntimeState,
 ) -> Snapshot {
@@ -163,7 +187,7 @@ fn snapshot_payload_at_origin(
     }
 }
 
-fn push_family_action(
+pub(in crate::jam_app::tests) fn push_family_action(
     session: &mut SessionFile,
     action_id: u64,
     commit_sequence: u32,
@@ -179,7 +203,7 @@ fn push_family_action(
         .push(family_commit_record(action_id, commit_sequence));
 }
 
-fn family_action(action_id: u64, command: ActionCommand) -> Action {
+pub(in crate::jam_app::tests) fn family_action(action_id: u64, command: ActionCommand) -> Action {
     Action {
         id: ActionId(action_id),
         actor: ActorType::User,
@@ -199,7 +223,10 @@ fn family_action(action_id: u64, command: ActionCommand) -> Action {
     }
 }
 
-fn family_commit_record(action_id: u64, commit_sequence: u32) -> ActionCommitRecord {
+pub(in crate::jam_app::tests) fn family_commit_record(
+    action_id: u64,
+    commit_sequence: u32,
+) -> ActionCommitRecord {
     ActionCommitRecord {
         action_id: ActionId(action_id),
         boundary: CommitBoundaryState {
@@ -211,6 +238,6 @@ fn family_commit_record(action_id: u64, commit_sequence: u32) -> ActionCommitRec
         },
         commit_sequence,
         committed_at: 1_000 + action_id,
-                mc202_source_phrase_plan: None,
+        mc202_source_phrase_plan: None,
     }
 }

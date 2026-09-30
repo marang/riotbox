@@ -20,6 +20,8 @@ Result:
 - refreshed 2026-08-29 baseline: 248 textual include sites in 18 owning Rust files
 - RIOTBOX-1337 migration, 2026-09-30: 203 remaining sites in 16 owners;
   all 45 library CLI and CLI-test includes replaced by real modules
+- RIOTBOX-1411 migration, 2026-09-30: 94 remaining sites in 13 owners;
+  all 109 UI production, UI-test, and JamApp-test includes replaced by real modules
 - no generated-code include site identified in this inventory
 - every current include is treated as legacy/mechanical until proven otherwise
 
@@ -65,10 +67,7 @@ legacy inventory; it does not approve new textual include sites.
 | `crates/riotbox-audio/src/bin/w30_preview_compare.rs` | 4 | compare CLI, metrics, manifest, tests | W-30 preview comparison CLI | mechanical QA-bin split | low/medium | future W-30 QA-bin slice |
 | `crates/riotbox-audio/src/bin/w30_preview_render.rs` | 2 | render CLI, tests | W-30 preview render CLI | mechanical QA-bin split | low | future W-30 QA-bin slice |
 | `crates/riotbox-app/src/bin/observer_audio_correlate.rs` | 10 | args, source timing evidence, summary build/render/evidence | Observer/audio correlation CLI | mechanical QA-bin split | medium: QA contract | future observer QA-bin slice |
-| `crates/riotbox-app/src/ui.rs` | 10 | UI state, shell render, perform layout, footer/help, source/log/capture helpers | TUI surface | mechanical app split | medium/high: musician UI contract | future UI module slice |
-| `crates/riotbox-app/src/ui/tests.rs` | 25 | UI fixture and screen tests | TUI tests | mechanical test split | medium: broad fixture surface | future UI module slice |
 | `crates/riotbox-app/src/jam_app/projection.rs` | 2 | TR-909 and W-30 projections | Jam app projection helpers | mechanical app split | medium: app facade boundary | future JamApp projection slice |
-| `crates/riotbox-app/src/jam_app/tests.rs` | 74 | JamApp fixtures, recovery, export, source timing, W-30, MC-202, TR-909, scene, replay test shards | JamApp integration tests | mechanical test split | high: very broad test root | future JamApp test module slice |
 
 ## Migration Order
 
@@ -96,3 +95,6 @@ of mixing them into the module move.
 | `crates/riotbox-app/src/bin/riotbox-app.rs` | 20 | RIOTBOX-1325 | Replaced by a thin binary entrypoint that calls `riotbox_app::cli::run()`. The existing mechanical CLI include shell now lives at `crates/riotbox-app/src/cli.rs` pending a semantic module split. |
 | `crates/riotbox-app/src/cli.rs` | 22 | RIOTBOX-1337 | Private semantic modules own configuration, argument parsing, launch, terminal lifecycle, observer serialization, event routing, performer controls, and offline export/report modes. Only `run()` remains public. |
 | `crates/riotbox-app/src/bin/riotbox-app/tests.rs` | 23 | RIOTBOX-1337 | Real `cli::tests` children own regression families; shared synthetic fixtures have a separate test-only owner. No test scenario removed. |
+| `crates/riotbox-app/src/ui.rs` | 10 | RIOTBOX-1411 | Public shell/render compatibility exports over private semantic presentation, input-state, cue, and diagnostic owners. Existing public risk-cue contract stays in place. No keys, text, layout, or audio behavior changed. |
+| `crates/riotbox-app/src/ui/tests.rs` | 25 | RIOTBOX-1411 | Real regression-family children with explicit imports and separate synthetic fixture owners; no scenario removed. |
+| `crates/riotbox-app/src/jam_app/tests.rs` | 74 | RIOTBOX-1411 | Real integration-family children and explicit synthetic fixture owners. Four pre-existing crate-internal fixture entrypoints retain compatibility re-exports. |

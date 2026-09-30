@@ -1,3 +1,26 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::mc202_recipe::assert_recipe_buffers_differ;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::fixtures::source_io::bind_synthetic_wav_identity;
+use crate::jam_app::tests::fixtures::source_io::write_pcm16_wave;
+use riotbox_audio::runtime::render_w30_preview_offline;
+use riotbox_audio::runtime::signal_metrics;
+use riotbox_audio::source_audio::SourceAudioCache;
+use riotbox_audio::w30::W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN;
+use riotbox_audio::w30::W30_PREVIEW_SAMPLE_WINDOW_LEN;
+use riotbox_audio::w30::W30PreviewRenderMode;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::ids::CaptureId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::persistence::save_session_json;
+use riotbox_core::persistence::save_source_graph_json;
+use riotbox_core::transport::CommitBoundaryState;
+use std::fs;
+use std::path::Path;
+use tempfile::tempdir;
+
 #[test]
 fn committed_source_backed_capture_writes_wav_artifact() {
     let tempdir = tempdir().expect("create capture artifact tempdir");
@@ -116,14 +139,18 @@ fn focused_w30_pad_trigger_uses_capture_artifact_preview_when_source_cache_unava
     let capture_path = tempdir.path().join(&state.session.captures[0].storage_path);
     let artifact = SourceAudioCache::load_pcm_wav(&capture_path).expect("load capture artifact");
     assert!(state.capture_audio_cache.contains_key(&capture_id));
-    let persisted_identity = state.session.captures.iter()
+    let persisted_identity = state
+        .session
+        .captures
+        .iter()
         .find(|capture| capture.capture_id == capture_id)
         .unwrap()
-        .audio_identity.as_ref()
+        .audio_identity
+        .as_ref()
         .expect("created capture identity");
     assert_eq!(
         persisted_identity,
-        &super::capture_identity::identity(
+        &crate::jam_app::capture_identity::identity(
             &fs::read(&capture_path).unwrap(),
             riotbox_core::session::CaptureAudioIdentityProvenance::CreatedFromEncodedBytesV1,
         ),

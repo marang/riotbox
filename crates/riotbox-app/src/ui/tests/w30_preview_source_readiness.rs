@@ -1,3 +1,16 @@
+use crate::ui::render::render_jam_shell_snapshot;
+use crate::ui::shell_state::ShellScreen;
+use crate::ui::tests::fixtures::shells::sample_shell_state;
+use crate::ui::tests::fixtures::shells::sample_shell_without_pending_queue;
+use crate::ui::w30_operations::w30_capture_log_compact;
+use crate::ui::w30_preview_labels::w30_preview_log_compact;
+use crate::ui::w30_preview_labels::w30_preview_mode_profile_compact;
+use crate::ui::w30_preview_labels::w30_preview_source_readiness;
+use riotbox_audio::w30::W30PreviewRenderMode;
+use riotbox_core::ids::SceneId;
+use riotbox_core::ids::SourceId;
+use riotbox_core::transport::CommitBoundaryState;
+
 #[test]
 fn renders_log_w30_source_window_when_available() {
     let mut shell = sample_shell_state();
@@ -102,7 +115,10 @@ fn source_backed_raw_capture_audition_compact_label_uses_src_cue() {
     shell.active_screen = ShellScreen::Jam;
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-    assert!(rendered.contains("current preview audition raw/src"), "{rendered}");
+    assert!(
+        rendered.contains("current preview audition raw/src"),
+        "{rendered}"
+    );
     assert!(
         rendered.contains("src: [o] raw source | 4 Capture"),
         "{rendered}"
@@ -134,7 +150,10 @@ fn source_backed_promoted_and_recall_compact_labels_use_src_cue() {
 
     shell.active_screen = ShellScreen::Jam;
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
-    assert!(rendered.contains("src: [o] source | 4 Capture"), "{rendered}");
+    assert!(
+        rendered.contains("src: [o] source | 4 Capture"),
+        "{rendered}"
+    );
     assert!(
         !rendered.contains("fallback: ["),
         "source-backed promoted audition should not show fallback action cue\n{rendered}"
@@ -153,7 +172,10 @@ fn source_backed_promoted_and_recall_compact_labels_use_src_cue() {
     assert_eq!(w30_preview_source_readiness(&shell), Some("source-backed"));
 
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
-    assert!(rendered.contains("src: [w] source | 4 Capture"), "{rendered}");
+    assert!(
+        rendered.contains("src: [w] source | 4 Capture"),
+        "{rendered}"
+    );
     assert!(
         !rendered.contains("fallback: ["),
         "source-backed live recall should not show fallback action cue\n{rendered}"

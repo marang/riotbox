@@ -48,6 +48,17 @@ When replacing textual includes, the first slice must be mechanical:
 
 After migration, follow-up slices may improve naming, visibility, and ownership.
 
+### App Shell And Regression Ownership
+
+The migrated App `cli` and `ui` roots are compatibility facades over private
+semantic owners, not new product models (RBX-384 / RBX-385). UI input state and
+presentation consume existing App/Core projections; they do not own persistent
+Session, replay, queue or audio truth. Regression families are real test modules
+with explicit imports and separately owned shared synthetic fixtures. Preserve
+existing crate-internal fixture entrypoints through narrow re-exports when other
+test families already consume them. A cohesive integration or lane-recipe fixture
+owner may remain long when splitting by line count would obscure its contract.
+
 ## Target Shape
 
 Prefer this:

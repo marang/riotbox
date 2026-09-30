@@ -1,4 +1,19 @@
-fn ghost_fill_suggestion() -> GhostWatchSuggestion {
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::ActionTarget;
+use riotbox_core::action::GhostMode;
+use riotbox_core::action::Quantization;
+use riotbox_core::action::TargetScope;
+use riotbox_core::ghost::GhostSuggestedAction;
+use riotbox_core::ghost::GhostSuggestionConfidence;
+use riotbox_core::ghost::GhostSuggestionSafety;
+use riotbox_core::ghost::GhostWatchSuggestion;
+use riotbox_core::ghost::GhostWatchTool;
+use riotbox_core::source_graph::Candidate;
+use riotbox_core::source_graph::CandidateType;
+use riotbox_core::source_graph::SourceGraph;
+
+pub(in crate::jam_app::tests) fn ghost_fill_suggestion() -> GhostWatchSuggestion {
     GhostWatchSuggestion {
         proposal_id: "ghost-fill-1".into(),
         mode: GhostMode::Watch,
@@ -21,7 +36,9 @@ fn ghost_fill_suggestion() -> GhostWatchSuggestion {
     }
 }
 
-fn ghost_destructive_takeover_suggestion(proposal_id: &str) -> GhostWatchSuggestion {
+pub(in crate::jam_app::tests) fn ghost_destructive_takeover_suggestion(
+    proposal_id: &str,
+) -> GhostWatchSuggestion {
     let mut suggestion = ghost_fill_suggestion();
     suggestion.proposal_id = proposal_id.into();
     suggestion.tool_name = GhostWatchTool::SuggestSceneMutation;
@@ -39,7 +56,7 @@ fn ghost_destructive_takeover_suggestion(proposal_id: &str) -> GhostWatchSuggest
     suggestion
 }
 
-fn ghost_capture_candidate_graph() -> SourceGraph {
+pub(in crate::jam_app::tests) fn ghost_capture_candidate_graph() -> SourceGraph {
     let mut graph = sample_graph();
     graph.candidates.push(Candidate {
         candidate_id: "capture-candidate-a".into(),

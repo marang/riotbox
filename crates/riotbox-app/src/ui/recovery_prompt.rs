@@ -1,10 +1,9 @@
-use std::path::Path;
-
+use crate::jam_app::RecoveryCandidateTrust;
+use crate::jam_app::SessionRecoverySurface;
+use crate::ui::shell_state::JamShellState;
+use crate::ui::warnings::compact_restore_replay_label;
 use ratatui::text::Line;
-
-use crate::jam_app::{RecoveryCandidateTrust, SessionRecoverySurface};
-
-use super::{JamShellState, compact_restore_replay_label};
+use std::path::Path;
 
 pub(super) fn recovery_warning_line(shell: &JamShellState) -> Option<String> {
     let surface = shell.recovery_surface.as_ref()?;

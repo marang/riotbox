@@ -1,10 +1,38 @@
+use crate::ui::render::render_jam_shell_snapshot;
+use crate::ui::shell_state::JamViewMode;
+use crate::ui::tests::fixtures::shells::sample_shell_state;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::export_readiness::ExportReadinessStatus;
+use riotbox_core::export_readiness::ExportScope;
+use riotbox_core::export_readiness::ProductExportBoundary;
+use riotbox_core::export_readiness::ProductExportRole;
+use riotbox_core::export_readiness::STEM_PACKAGE_LOCAL_CI_PACK_ID;
+use riotbox_core::export_readiness::UnsupportedExportScope;
+use riotbox_core::ids::ActionId;
+use riotbox_core::ids::ExportReceiptId;
+use riotbox_core::session::ExportArtifactLocation;
+use riotbox_core::session::ExportArtifactMediaType;
+use riotbox_core::session::ExportArtifactRole;
+use riotbox_core::session::ExportArtifactSetEntry;
+use riotbox_core::session::ExportReceiptQaGateResult;
+use riotbox_core::session::ExportReceiptQaGateStatus;
+use riotbox_core::session::ExportReceiptState;
+use riotbox_core::session::STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID;
+use riotbox_core::session::STEM_PACKAGE_FALLBACK_COMPARISON_QA_GATE_ID;
+use riotbox_core::session::STEM_PACKAGE_HASH_STABILITY_QA_GATE_ID;
+use riotbox_core::session::STEM_PACKAGE_LINEAGE_QA_GATE_ID;
+use riotbox_core::session::STEM_PACKAGE_NON_SILENCE_QA_GATE_ID;
+
 #[test]
 fn jam_inspect_surfaces_export_readiness_without_export_action() {
     let mut shell = sample_shell_state();
     shell.jam_mode = JamViewMode::Inspect;
 
     let inspect = render_jam_shell_snapshot(&shell, 120, 34);
-    assert!(inspect.contains("export full_grid_mix | feral-grid"), "{inspect}");
+    assert!(
+        inspect.contains("export full_grid_mix | feral-grid"),
+        "{inspect}"
+    );
     assert!(
         inspect.contains("reproducible | no stem/live/DAW/host"),
         "{inspect}"
@@ -35,8 +63,8 @@ fn jam_inspect_surfaces_latest_export_receipt_without_adding_perform_control() {
         proof_path: "exports/product_export_proof.json".into(),
         manifest_path: None,
         export_hash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
-        normalized_manifest_hash: "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
-            .into(),
+        normalized_manifest_hash:
+            "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd".into(),
         artifact_set: vec![ExportArtifactSetEntry::product_mix(
             "exports/full_grid_mix.wav",
             "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -57,7 +85,10 @@ fn jam_inspect_surfaces_latest_export_receipt_without_adding_perform_control() {
 
     let inspect = render_jam_shell_snapshot(&shell, 120, 34);
 
-    assert!(inspect.contains("export full_grid_mix | feral-grid"), "{inspect}");
+    assert!(
+        inspect.contains("export full_grid_mix | feral-grid"),
+        "{inspect}"
+    );
     assert!(
         inspect.contains("a-0004 ok | wav+proof | no stem/DAW"),
         "{inspect}"
@@ -70,34 +101,36 @@ fn jam_inspect_surfaces_latest_export_receipt_without_adding_perform_control() {
 
     shell.jam_mode = JamViewMode::Perform;
     let perform = render_jam_shell_snapshot(&shell, 120, 34);
-    assert!(!perform.contains("receipt export-receipt-a-0004"), "{perform}");
+    assert!(
+        !perform.contains("receipt export-receipt-a-0004"),
+        "{perform}"
+    );
     assert!(!perform.contains("queue export"), "{perform}");
 }
 
 #[test]
 fn jam_inspect_surfaces_ready_stem_package_receipt_without_adding_perform_control() {
     let mut shell = sample_shell_state();
-    shell
-        .app
-        .session
-        .export_receipts
-        .push(stem_package_receipt(
-            ActionId(1_132),
-            vec![
-                passed_stem_package_gate(STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID),
-                passed_stem_package_gate(STEM_PACKAGE_HASH_STABILITY_QA_GATE_ID),
-                passed_stem_package_gate(STEM_PACKAGE_NON_SILENCE_QA_GATE_ID),
-                passed_stem_package_gate(STEM_PACKAGE_LINEAGE_QA_GATE_ID),
-                passed_stem_package_gate(STEM_PACKAGE_FALLBACK_COMPARISON_QA_GATE_ID),
-            ],
-            Vec::new(),
-        ));
+    shell.app.session.export_receipts.push(stem_package_receipt(
+        ActionId(1_132),
+        vec![
+            passed_stem_package_gate(STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID),
+            passed_stem_package_gate(STEM_PACKAGE_HASH_STABILITY_QA_GATE_ID),
+            passed_stem_package_gate(STEM_PACKAGE_NON_SILENCE_QA_GATE_ID),
+            passed_stem_package_gate(STEM_PACKAGE_LINEAGE_QA_GATE_ID),
+            passed_stem_package_gate(STEM_PACKAGE_FALLBACK_COMPARISON_QA_GATE_ID),
+        ],
+        Vec::new(),
+    ));
     shell.app.refresh_view();
     shell.jam_mode = JamViewMode::Inspect;
 
     let inspect = render_jam_shell_snapshot(&shell, 120, 34);
 
-    assert!(inspect.contains("export stem_package | stem-pkg"), "{inspect}");
+    assert!(
+        inspect.contains("export stem_package | stem-pkg"),
+        "{inspect}"
+    );
     assert!(
         inspect.contains("1132 ready | bass/drums | art4"),
         "{inspect}"
@@ -126,23 +159,22 @@ fn jam_inspect_surfaces_ready_stem_package_receipt_without_adding_perform_contro
 #[test]
 fn jam_inspect_surfaces_blocked_stem_package_receipt() {
     let mut shell = sample_shell_state();
-    shell
-        .app
-        .session
-        .export_receipts
-        .push(stem_package_receipt(
-            ActionId(1_133),
-            vec![passed_stem_package_gate(
-                STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID,
-            )],
-            vec![UnsupportedExportScope::StemPackage],
-        ));
+    shell.app.session.export_receipts.push(stem_package_receipt(
+        ActionId(1_133),
+        vec![passed_stem_package_gate(
+            STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID,
+        )],
+        vec![UnsupportedExportScope::StemPackage],
+    ));
     shell.app.refresh_view();
     shell.jam_mode = JamViewMode::Inspect;
 
     let inspect = render_jam_shell_snapshot(&shell, 120, 34);
 
-    assert!(inspect.contains("export stem_package | stem-pkg"), "{inspect}");
+    assert!(
+        inspect.contains("export stem_package | stem-pkg"),
+        "{inspect}"
+    );
     assert!(
         inspect.contains("1133 blocked | bass/drums | art4"),
         "{inspect}"
@@ -183,7 +215,10 @@ fn jam_inspect_surfaces_export_failure_feedback() {
 
     let inspect = render_jam_shell_snapshot(&shell, 120, 34);
 
-    assert!(inspect.contains("export full_grid_mix | failed"), "{inspect}");
+    assert!(
+        inspect.contains("export full_grid_mix | failed"),
+        "{inspect}"
+    );
     assert!(
         inspect.contains("a-0004 | export artifact hash"),
         "{inspect}"
@@ -199,7 +234,7 @@ fn jam_perform_does_not_claim_export_readiness_as_a_play_control() {
     assert!(!perform.contains("queue export"), "{perform}");
 }
 
-fn stem_package_receipt(
+pub(in crate::ui::tests) fn stem_package_receipt(
     action_id: ActionId,
     qa_gates: Vec<ExportReceiptQaGateResult>,
     unsupported_scopes: Vec<UnsupportedExportScope>,
@@ -238,7 +273,7 @@ fn stem_package_receipt(
     }
 }
 
-fn stem_artifact(
+pub(in crate::ui::tests) fn stem_artifact(
     role: ExportArtifactRole,
     file_name: &str,
     sha256: &str,
@@ -263,7 +298,7 @@ fn stem_artifact(
     }
 }
 
-fn passed_stem_package_gate(gate_id: &str) -> ExportReceiptQaGateResult {
+pub(in crate::ui::tests) fn passed_stem_package_gate(gate_id: &str) -> ExportReceiptQaGateResult {
     ExportReceiptQaGateResult {
         gate_id: gate_id.into(),
         status: ExportReceiptQaGateStatus::Passed,

@@ -1,3 +1,25 @@
+use crate::ui::perform_risk_cue_contract;
+use crate::ui::render::render_jam_shell_snapshot;
+use crate::ui::source_trust_summary::SourceTimingPerformRisk;
+use crate::ui::source_trust_summary::source_timing_clock_compact;
+use crate::ui::source_trust_summary::source_timing_clock_line;
+use crate::ui::source_trust_summary::source_timing_help_line;
+use crate::ui::source_trust_summary::source_timing_perform_risk;
+use crate::ui::source_trust_summary::source_timing_performance_rail_line;
+use crate::ui::source_trust_summary::source_timing_readiness_line;
+use crate::ui::tests::fixtures::shells::sample_shell_state;
+use ratatui::style::Color;
+use ratatui::style::Modifier;
+use riotbox_core::ids::ActionId;
+use riotbox_core::ids::SourceId;
+use riotbox_core::session::SourceTimingGridConfirmationState;
+use riotbox_core::source_graph::BeatPoint;
+use riotbox_core::source_graph::PhraseSpan;
+use riotbox_core::source_graph::TimingDegradedPolicy;
+use riotbox_core::source_graph::TimingQuality;
+use riotbox_core::source_graph::TimingWarning;
+use riotbox_core::source_graph::TimingWarningCode;
+
 #[test]
 fn jam_perform_risk_cue_contract_matches_rendered_trust_surface() {
     let contract = perform_risk_cue_contract::perform_risk_cue_contract();
@@ -10,8 +32,18 @@ fn jam_perform_risk_cue_contract_matches_rendered_trust_surface() {
     assert_eq!(contract.degraded_action, "bar/live?");
     assert_eq!(contract.unavailable_state_label, "unavailable");
     assert_eq!(contract.unavailable_action, "bar/live?");
-    assert!(contract.required_player_cues.iter().any(|cue| cue.contains("bar-locked")));
-    assert!(contract.required_player_cues.iter().any(|cue| cue.contains("live-trigger")));
+    assert!(
+        contract
+            .required_player_cues
+            .iter()
+            .any(|cue| cue.contains("bar-locked"))
+    );
+    assert!(
+        contract
+            .required_player_cues
+            .iter()
+            .any(|cue| cue.contains("live-trigger"))
+    );
     assert!(!contract.quality_proof);
     assert!(!contract.automated_musical_approval);
 }
@@ -26,32 +58,23 @@ fn renders_more_musical_jam_shell_snapshot() {
         rendered.contains("taste cautious | confirm grid"),
         "{rendered}"
     );
-    assert!(
-        rendered.contains("before scene moves"),
-        "{rendered}"
-    );
+    assert!(rendered.contains("before scene moves"), "{rendered}");
     assert!(
         rendered.contains("proof none yet | audible moves"),
         "{rendered}"
     );
-    assert!(
-        rendered.contains("need output evidence"),
-        "{rendered}"
-    );
+    assert!(rendered.contains("need output evidence"), "{rendered}");
     assert!(rendered.contains("idle @ 31.0 | source b- bar8 p-"));
     assert!(
         rendered.contains("timing needs confirm [==>-] next bar"),
         "{rendered}"
     );
-    assert!(rendered.contains("timing needs confirm | confirm grid"), "{rendered}");
     assert!(
-        rendered.contains("risk bar/live?"),
+        rendered.contains("timing needs confirm | confirm grid"),
         "{rendered}"
     );
-    assert!(
-        rendered.contains("manual_confirm_only"),
-        "{rendered}"
-    );
+    assert!(rendered.contains("risk bar/live?"), "{rendered}");
+    assert!(rendered.contains("manual_confirm_only"), "{rendered}");
     assert!(rendered.contains("timing warning ambiguous_downbeat"));
     assert!(rendered.contains("scene scene-a | energy med"));
     assert!(rendered.contains("ghost"));
@@ -68,8 +91,9 @@ fn renders_more_musical_jam_shell_snapshot() {
         "{rendered}"
     );
     assert!(
-        rendered
-            .contains("Advanced: Y restore | g follow | a answer | b voice | P pressure | I instigate"),
+        rendered.contains(
+            "Advanced: Y restore | g follow | a answer | b voice | P pressure | I instigate"
+        ),
         "{rendered}"
     );
     assert!(!rendered.contains("Sections"), "{rendered}");
@@ -107,7 +131,10 @@ fn narrow_jam_trust_headline_prioritizes_performance_risk_over_source_score() {
     unavailable_shell.app.refresh_view();
 
     let unavailable = render_jam_shell_snapshot(&unavailable_shell, 80, 24);
-    assert!(unavailable.contains("unavailable | bar/live?"), "{unavailable}");
+    assert!(
+        unavailable.contains("unavailable | bar/live?"),
+        "{unavailable}"
+    );
     assert!(unavailable.contains("why sparse onsets"), "{unavailable}");
     assert!(unavailable.contains("bar/live?"), "{unavailable}");
     assert!(!unavailable.contains("│usable ("), "{unavailable}");
@@ -145,10 +172,7 @@ fn source_timing_performance_rail_styles_current_clock_and_next_bar() {
         .map(|span| span.content.as_ref())
         .collect::<String>();
 
-    assert_eq!(
-        rendered,
-        "timing needs confirm [==>-] next bar"
-    );
+    assert_eq!(rendered, "timing needs confirm [==>-] next bar");
     assert_eq!(line.spans[1].content.as_ref(), "needs confirm");
     assert_eq!(line.spans[1].style.fg, Some(Color::Yellow));
     assert_eq!(line.spans[3].content.as_ref(), "[==>-]");
@@ -174,27 +198,21 @@ fn renders_locked_source_timing_as_grid_locked_cue() {
 
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-    assert!(rendered.contains("timing grid locked | grid can steer"), "{rendered}");
     assert!(
-        rendered.contains("p0:b0/1/0"),
+        rendered.contains("timing grid locked | grid can steer"),
         "{rendered}"
     );
+    assert!(rendered.contains("p0:b0/1/0"), "{rendered}");
     assert!(
         rendered.contains("timing grid locked [==>-] next bar"),
         "{rendered}"
     );
-    assert!(
-        rendered.contains("risk play grid"),
-        "{rendered}"
-    );
+    assert!(rendered.contains("risk play grid"), "{rendered}");
     assert!(
         rendered.contains("taste scene-ready | trusted grid"),
         "{rendered}"
     );
-    assert!(
-        rendered.contains("can steer scene moves"),
-        "{rendered}"
-    );
+    assert!(rendered.contains("can steer scene moves"), "{rendered}");
     assert!(rendered.contains("timing warning none"), "{rendered}");
 }
 
@@ -224,7 +242,10 @@ fn jam_trust_warning_uses_shared_source_timing_priority() {
 
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-    assert!(rendered.contains("timing warning sparse_onsets"), "{rendered}");
+    assert!(
+        rendered.contains("timing warning sparse_onsets"),
+        "{rendered}"
+    );
     assert!(
         !rendered.contains("timing warning low_timing_confidence"),
         "{rendered}"
@@ -343,7 +364,10 @@ fn source_timing_clock_shows_full_position_when_grid_counts_exist() {
     shell.app.refresh_view();
 
     assert_eq!(source_timing_clock_compact(&shell), "source b31 bar8 p2");
-    assert_eq!(source_timing_clock_line(&shell), "source clock beat 31 | bar 8 | phrase 2");
+    assert_eq!(
+        source_timing_clock_line(&shell),
+        "source clock beat 31 | bar 8 | phrase 2"
+    );
 
     let help_line = source_timing_help_line(&shell);
     let rendered = help_line
@@ -392,9 +416,6 @@ fn renders_missing_source_timing_clock_as_unavailable() {
         rendered.contains("timing not available | no clock"),
         "{rendered}"
     );
-    assert!(
-        rendered.contains("risk bar/live?"),
-        "{rendered}"
-    );
+    assert!(rendered.contains("risk bar/live?"), "{rendered}");
     assert!(rendered.contains("load source"), "{rendered}");
 }

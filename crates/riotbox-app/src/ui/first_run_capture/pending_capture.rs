@@ -1,8 +1,10 @@
-use ratatui::text::{Line, Span};
-use riotbox_core::view::jam::{CaptureSummaryView, W30PendingAuditionKind};
-
-use super::JamShellState;
-use crate::ui::{style_pending_cue, style_pending_detail};
+use crate::ui::shell_state::JamShellState;
+use crate::ui::styles::style_pending_cue;
+use crate::ui::styles::style_pending_detail;
+use ratatui::text::Line;
+use ratatui::text::Span;
+use riotbox_core::view::jam::CaptureSummaryView;
+use riotbox_core::view::jam::W30PendingAuditionKind;
 
 pub(super) fn pending_w30_audition_do_next_lines(
     shell: &JamShellState,

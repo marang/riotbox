@@ -1,4 +1,37 @@
-use super::product_export::DawSessionExportQueueResult;
+use crate::jam_app::daw_session_json_writer::write_daw_session_json_package;
+use crate::jam_app::daw_session_package_report::attach_daw_session_json_package_evidence_to_receipt;
+use crate::jam_app::daw_session_package_report::daw_session_json_package_report;
+use crate::jam_app::product_export::DawSessionExportQueueResult;
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::ActionParams;
+use riotbox_core::action::ActionStatus;
+use riotbox_core::action::TargetScope;
+use riotbox_core::action::UndoPolicy;
+use riotbox_core::export_readiness::ARRANGEMENT_DAW_PLACEMENT_PACK_ID;
+use riotbox_core::export_readiness::EXPORT_READINESS_CONTRACT_SCHEMA;
+use riotbox_core::export_readiness::ExportReadinessContract;
+use riotbox_core::export_readiness::ExportReadinessStatus;
+use riotbox_core::export_readiness::ExportScope;
+use riotbox_core::export_readiness::PRODUCT_EXPORT_PROOF_SCHEMA;
+use riotbox_core::export_readiness::ProductExportBoundary;
+use riotbox_core::export_readiness::ProductExportDestinationKind;
+use riotbox_core::export_readiness::ProductExportRole;
+use riotbox_core::ids::ActionId;
+use riotbox_core::ids::SourceId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::ExportArrangementPlacementRef;
+use riotbox_core::session::ExportArtifactRole;
+use riotbox_core::session::ExportArtifactSetEntry;
+use riotbox_core::session::ExportDawTempoMapRef;
+use riotbox_core::session::ExportReceiptQaGateStatus;
+use riotbox_core::session::ExportReceiptState;
+use riotbox_core::session::SessionFile;
+use std::fs;
+use std::path::Path;
+use tempfile::tempdir;
 
 #[test]
 fn reserved_daw_session_export_queue_attempt_is_rejected_without_side_effects() {
@@ -32,10 +65,8 @@ fn reserved_daw_session_export_queue_attempt_is_rejected_without_side_effects() 
     session.export_receipts.push(receipt);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    let result = state.queue_daw_session_export_reserved(
-        960,
-        Some(destination.to_string_lossy().into_owned()),
-    );
+    let result = state
+        .queue_daw_session_export_reserved(960, Some(destination.to_string_lossy().into_owned()));
 
     let reason = match result {
         DawSessionExportQueueResult::Rejected { reason } => reason,
@@ -64,10 +95,16 @@ fn reserved_daw_session_export_queue_attempt_is_rejected_without_side_effects() 
         .expect("reserved DAW session action recorded in queue history");
     assert_eq!(rejected.status, ActionStatus::Rejected);
     assert_eq!(
-        rejected.result.as_ref().map(|result| result.summary.as_str()),
+        rejected
+            .result
+            .as_ref()
+            .map(|result| result.summary.as_str()),
         Some(reason.as_str())
     );
-    assert!(matches!(rejected.undo_policy, UndoPolicy::NotUndoable { .. }));
+    assert!(matches!(
+        rejected.undo_policy,
+        UndoPolicy::NotUndoable { .. }
+    ));
     assert_eq!(rejected.target.scope, Some(TargetScope::Session));
     match &rejected.params {
         ActionParams::DawSessionExport {
@@ -171,14 +208,9 @@ fn daw_session_writer_export_commits_local_proof_without_enabling_surface() {
         writer_gate.artifact_roles,
         vec![ExportArtifactRole::DawSessionWriterProof]
     );
-    assert!(
-        saved_receipt
-            .qa_gates
-            .iter()
-            .all(|gate| gate.gate_id != riotbox_core::session::DAW_SESSION_HOST_IMPORT_QA_GATE_ID
-                && gate.gate_id
-                    != riotbox_core::session::DAW_SESSION_AUDIBLE_OUTPUT_QA_GATE_ID)
-    );
+    assert!(saved_receipt.qa_gates.iter().all(|gate| gate.gate_id
+        != riotbox_core::session::DAW_SESSION_HOST_IMPORT_QA_GATE_ID
+        && gate.gate_id != riotbox_core::session::DAW_SESSION_AUDIBLE_OUTPUT_QA_GATE_ID));
 
     let action = state
         .session
@@ -198,7 +230,10 @@ fn daw_session_writer_export_commits_local_proof_without_enabling_surface() {
             .contains("wrote local DAW session writer proof")
     );
     assert_eq!(state.session.action_log.commit_records.len(), 1);
-    assert_eq!(state.session.action_log.commit_records[0].action_id, action_id);
+    assert_eq!(
+        state.session.action_log.commit_records[0].action_id,
+        action_id
+    );
 
     let surface_gate = state.daw_session_export_surface_gate();
     assert_eq!(
@@ -286,7 +321,7 @@ fn daw_session_writer_export_commit_rejects_pending_destination_mismatch() {
     assert!(state.session.action_log.commit_records.is_empty());
 }
 
-fn daw_session_writer_export_state(
+pub(in crate::jam_app::tests) fn daw_session_writer_export_state(
     base_dir: &Path,
     destination: &Path,
     attach_json_evidence: bool,
@@ -301,10 +336,8 @@ fn daw_session_writer_export_state(
         "riotbox-test",
         "2026-06-03T22:05:00Z",
     );
-    let mut receipt = daw_session_writer_receipt(
-        "exports/arrangement_manifest.json",
-        "exports/proof.json",
-    );
+    let mut receipt =
+        daw_session_writer_receipt("exports/arrangement_manifest.json", "exports/proof.json");
     attach_ready_daw_writer_refs(&mut receipt);
     session.export_receipts.push(receipt);
     if attach_json_evidence {
@@ -322,7 +355,10 @@ fn daw_session_writer_export_state(
     JamAppState::from_parts(session, None, ActionQueue::new())
 }
 
-fn daw_session_writer_receipt(artifact_path: &str, proof_path: &str) -> ExportReceiptState {
+pub(in crate::jam_app::tests) fn daw_session_writer_receipt(
+    artifact_path: &str,
+    proof_path: &str,
+) -> ExportReceiptState {
     let contract = ExportReadinessContract {
         schema: EXPORT_READINESS_CONTRACT_SCHEMA.into(),
         status: ExportReadinessStatus::Reproducible,
@@ -352,7 +388,7 @@ fn daw_session_writer_receipt(artifact_path: &str, proof_path: &str) -> ExportRe
     receipt
 }
 
-fn attach_ready_daw_writer_refs(receipt: &mut ExportReceiptState) {
+pub(in crate::jam_app::tests) fn attach_ready_daw_writer_refs(receipt: &mut ExportReceiptState) {
     receipt
         .arrangement_placement_refs
         .push(ExportArrangementPlacementRef::scene_range(

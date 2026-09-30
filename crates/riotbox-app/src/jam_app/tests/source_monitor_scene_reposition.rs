@@ -1,3 +1,24 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::mc202_recipe::assert_recipe_buffers_differ;
+use crate::jam_app::tests::fixtures::mc202_recipe::assert_recipe_buffers_match;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::fixtures::session_source::scene_regression_graph;
+use riotbox_audio::source_audio::SourceAudioCache;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::action::SourceMonitorMode;
+use riotbox_core::ids::ActionId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::SourceTimingGridConfirmationState;
+use riotbox_core::source_graph::MeterHint;
+use riotbox_core::source_graph::SourceGraph;
+use riotbox_core::source_graph::TimingDegradedPolicy;
+use riotbox_core::source_graph::TimingHypothesis;
+use riotbox_core::source_graph::TimingHypothesisKind;
+use riotbox_core::source_graph::TimingQuality;
+use riotbox_core::transport::CommitBoundaryState;
+
 #[test]
 fn scene_launch_repositions_source_monitor_to_target_section_and_replays() {
     let mut graph = scene_regression_graph(&["break".into(), "drop".into()]);
@@ -57,7 +78,11 @@ fn scene_launch_repositions_source_monitor_to_target_section_and_replays() {
     );
     assert_eq!(anchored_render.source_anchor_position_beats, 36.0);
     assert_eq!(
-        committed_state.session.runtime_state.scene_state.active_scene,
+        committed_state
+            .session
+            .runtime_state
+            .scene_state
+            .active_scene,
         Some(SceneId::from("scene-02-drop"))
     );
     assert_eq!(
@@ -88,10 +113,9 @@ fn scene_launch_repositions_source_monitor_to_target_section_and_replays() {
         0.05,
     );
 
-    let plan = riotbox_core::replay::build_committed_replay_plan(
-        &committed_state.session.action_log,
-    )
-    .expect("source monitor scene reposition action log builds replay plan");
+    let plan =
+        riotbox_core::replay::build_committed_replay_plan(&committed_state.session.action_log)
+            .expect("source monitor scene reposition action log builds replay plan");
     let mut replayed_session = base_session;
     replayed_session.action_log = committed_state.session.action_log.clone();
     riotbox_core::replay::apply_graph_aware_replay_plan_to_session(
@@ -256,12 +280,19 @@ fn source_monitor_scene_reposition_waits_for_trusted_source_timing() {
             case.name
         );
         if case.expected_anchor_seconds.is_some() {
-            assert_eq!(render.source_anchor_position_beats, 36.0, "{} anchor beat", case.name);
+            assert_eq!(
+                render.source_anchor_position_beats, 36.0,
+                "{} anchor beat",
+                case.name
+            );
         }
     }
 }
 
-fn set_source_monitor_reposition_primary_grid(graph: &mut SourceGraph, bpm: f32) {
+pub(in crate::jam_app::tests) fn set_source_monitor_reposition_primary_grid(
+    graph: &mut SourceGraph,
+    bpm: f32,
+) {
     graph.timing.primary_hypothesis_id = Some("scene-grid".into());
     graph.timing.hypotheses = vec![TimingHypothesis {
         hypothesis_id: "scene-grid".into(),
@@ -300,7 +331,7 @@ fn set_source_monitor_reposition_primary_grid(graph: &mut SourceGraph, bpm: f32)
     }];
 }
 
-fn source_monitor_reposition_source_cache() -> SourceAudioCache {
+pub(in crate::jam_app::tests) fn source_monitor_reposition_source_cache() -> SourceAudioCache {
     let sample_rate = source_monitor_reposition_sample_rate();
     let channel_count = source_monitor_reposition_channel_count();
     let frame_count = sample_rate as usize * 48;

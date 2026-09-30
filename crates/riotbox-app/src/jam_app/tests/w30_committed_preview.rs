@@ -1,3 +1,25 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::fixtures::source_io::write_pcm16_wave;
+use riotbox_audio::runtime::render_w30_preview_offline;
+use riotbox_audio::runtime::signal_metrics;
+use riotbox_audio::source_audio::SourceAudioCache;
+use riotbox_audio::w30::W30_PREVIEW_SAMPLE_WINDOW_LEN;
+use riotbox_audio::w30::W30PreviewRenderMode;
+use riotbox_audio::w30::W30PreviewRenderRouting;
+use riotbox_audio::w30::W30PreviewSourceProfile;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::ids::BankId;
+use riotbox_core::ids::PadId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::CaptureSourceWindow;
+use riotbox_core::session::CaptureTarget;
+use riotbox_core::transport::CommitBoundaryState;
+use tempfile::tempdir;
+
 #[test]
 fn committed_w30_promoted_audition_updates_lane_focus_grit_and_log_result() {
     let graph = sample_graph();

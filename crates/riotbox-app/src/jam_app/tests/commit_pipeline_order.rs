@@ -1,3 +1,20 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::ids::BankId;
+use riotbox_core::ids::CaptureId;
+use riotbox_core::ids::PadId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::ids::SectionId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::CaptureTarget;
+use riotbox_core::source_graph::EnergyClass;
+use riotbox_core::source_graph::Section;
+use riotbox_core::source_graph::SectionLabelHint;
+use riotbox_core::transport::CommitBoundaryState;
+
 #[test]
 fn commit_pipeline_logs_action_before_promotion_summary_side_effect() {
     let graph = sample_graph();
@@ -36,7 +53,10 @@ fn commit_pipeline_logs_action_before_promotion_summary_side_effect() {
     assert_eq!(commit_record.commit_sequence, committed[0].commit_sequence);
     assert_eq!(commit_record.committed_at, 360);
     assert_eq!(
-        logged_action.result.as_ref().map(|result| result.summary.as_str()),
+        logged_action
+            .result
+            .as_ref()
+            .map(|result| result.summary.as_str()),
         Some("keeper | promoted to pad bank-a/pad-01")
     );
     assert_eq!(
@@ -93,9 +113,16 @@ fn commit_pipeline_materializes_loop_freeze_capture_before_w30_side_effects() {
         .find(|capture| capture.capture_id == CaptureId::from("cap-02"))
         .expect("materialized frozen capture");
     assert!(frozen_capture.is_pinned);
-    assert_eq!(frozen_capture.lineage_capture_refs, vec![CaptureId::from("cap-01")]);
     assert_eq!(
-        frozen_capture.assigned_target.as_ref().map(capture_target_label).as_deref(),
+        frozen_capture.lineage_capture_refs,
+        vec![CaptureId::from("cap-01")]
+    );
+    assert_eq!(
+        frozen_capture
+            .assigned_target
+            .as_ref()
+            .map(capture_target_label)
+            .as_deref(),
         Some("bank-a/pad-01")
     );
     assert_eq!(
@@ -168,7 +195,7 @@ fn commit_pipeline_mirrors_scene_side_effects_after_scene_commit() {
     );
 }
 
-fn capture_target_label(target: &CaptureTarget) -> String {
+pub(in crate::jam_app::tests) fn capture_target_label(target: &CaptureTarget) -> String {
     match target {
         CaptureTarget::W30Pad { bank_id, pad_id } => format!("{bank_id}/{pad_id}"),
         CaptureTarget::Scene(scene_id) => scene_id.to_string(),

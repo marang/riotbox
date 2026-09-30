@@ -1,6 +1,23 @@
+use crate::jam_app::state::JamFileSet;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::mc202_recipe::assert_recipe_buffers_match;
+use crate::jam_app::tests::fixtures::restore_parity::SnapshotPayloadRestoreSpec;
+use crate::jam_app::tests::fixtures::restore_parity::run_snapshot_payload_restore_probe_from_anchor_runtime;
+use crate::jam_app::tests::fixtures::w30_replay::assert_w30_replay_buffers_differ;
+use crate::jam_app::tests::fixtures::w30_replay::commit_w30_replay_step;
+use crate::jam_app::tests::fixtures::w30_replay::w30_source_backed_replay_state;
+use riotbox_audio::runtime::render_w30_preview_offline;
+use riotbox_audio::w30::W30_PREVIEW_SAMPLE_WINDOW_LEN;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::ids::BankId;
+use riotbox_core::ids::CaptureId;
+use riotbox_core::ids::PadId;
+use riotbox_core::session::CaptureTarget;
+
 #[test]
 fn w30_snapshot_payload_restore_hydrates_loop_freeze_artifact_preview_output() {
-    let (tempdir, graph, _source_audio_cache, mut committed_state) = w30_source_backed_replay_state();
+    let (tempdir, graph, _source_audio_cache, mut committed_state) =
+        w30_source_backed_replay_state();
     let session_path = tempdir.path().join("session.json");
     committed_state.files = Some(JamFileSet {
         session_path: session_path.clone(),
@@ -43,14 +60,7 @@ fn w30_snapshot_payload_restore_hydrates_loop_freeze_artifact_preview_output() {
         committed_state.queue_w30_loop_freeze(700),
         Some(QueueControlResult::Enqueued)
     );
-    commit_w30_replay_step(
-        &mut committed_state,
-        CommitBoundary::Phrase,
-        48,
-        12,
-        3,
-        800,
-    );
+    commit_w30_replay_step(&mut committed_state, CommitBoundary::Phrase, 48, 12, 3, 800);
     let produced_capture_id = committed_state
         .session
         .captures
@@ -65,7 +75,12 @@ fn w30_snapshot_payload_restore_hydrates_loop_freeze_artifact_preview_output() {
         "loop freeze commit should write and cache the produced capture artifact"
     );
     assert_eq!(
-        committed_state.session.runtime_state.lane_state.w30.last_capture,
+        committed_state
+            .session
+            .runtime_state
+            .lane_state
+            .w30
+            .last_capture,
         Some(produced_capture_id.clone())
     );
     let produced_capture = committed_state
@@ -122,7 +137,12 @@ fn w30_snapshot_payload_restore_hydrates_loop_freeze_artifact_preview_output() {
         },
     );
     assert_eq!(
-        replayed_state.session.runtime_state.lane_state.w30.last_capture,
+        replayed_state
+            .session
+            .runtime_state
+            .lane_state
+            .w30
+            .last_capture,
         Some(produced_capture_id.clone())
     );
     assert!(
@@ -165,8 +185,7 @@ fn w30_snapshot_payload_restore_hydrates_loop_freeze_artifact_preview_output() {
         committed_state.runtime.w30_preview.capture_id
     );
     assert_eq!(
-        replayed_pad_playback.chop_slice_starts,
-        committed_pad_playback.chop_slice_starts,
+        replayed_pad_playback.chop_slice_starts, committed_pad_playback.chop_slice_starts,
         "loop-freeze restore must preserve the source-derived chop decision"
     );
     assert_eq!(

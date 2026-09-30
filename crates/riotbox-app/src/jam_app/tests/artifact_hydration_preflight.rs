@@ -1,6 +1,17 @@
-use super::capture_artifacts::CaptureArtifactHydrationPreflightError;
+use crate::jam_app::capture_artifacts::CaptureArtifactHydrationPreflightError;
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use riotbox_core::ids::CaptureId;
+use riotbox_core::persistence::save_session_json;
+use riotbox_core::persistence::save_source_graph_json;
+use riotbox_core::session::CaptureRef;
+use std::fs;
+use std::path::Path;
+use std::path::PathBuf;
+use tempfile::tempdir;
 
-fn state_with_capture_artifact_path(
+pub(in crate::jam_app::tests) fn state_with_capture_artifact_path(
     dir: &Path,
     storage_path: &str,
 ) -> (JamAppState, CaptureRef, PathBuf) {

@@ -1,3 +1,10 @@
+use crate::ui::render::render_jam_shell_snapshot;
+use crate::ui::shell_state::ShellScreen;
+use crate::ui::tests::fixtures::shells::sample_shell_state;
+use riotbox_core::ids::SceneId;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::transport::CommitBoundaryState;
+
 #[test]
 fn renders_capture_shell_snapshot_with_committed_w30_resample_lineage_diagnostics() {
     let mut shell = sample_shell_state();

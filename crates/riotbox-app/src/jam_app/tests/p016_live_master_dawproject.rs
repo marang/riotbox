@@ -1,34 +1,44 @@
-use std::{fs, io::Read as _, os::unix::fs::symlink, path::PathBuf};
-
-use dawproject::{DawprojectReader, prelude::project::LanesTypeContent};
-use riotbox_core::{
-    action::{ActionCommand, ActionParams, ActionStatus},
-    export_readiness::{ExportScope, ProductExportBoundary, ProductExportRole},
-    ids::{CaptureId, SourceId},
-    persistence::{load_session_json, save_session_json},
-    session::{
-        ExportArtifactRole, ExportArtifactSourceGraphRef, ExportArtifactTimingGridRef,
-        GraphStorageMode, SourceGraphRef, SourceTimingGridConfirmationState,
-    },
-    source_graph::{GraphProvenance, SourceGraphVersion},
-};
-use sha2::{Digest, Sha256};
+use crate::jam_app::daw_export_operator_readiness_report;
+use crate::jam_app::daw_export_operator_report::DawExportOperatorReadinessStatus;
+use crate::jam_app::daw_export_operator_report::DawExportReleaseBlocker;
+use crate::jam_app::daw_export_proof_gates::DawExportProofGateStatus;
+use crate::jam_app::live_master_dawproject::LiveMasterDawprojectProof;
+use crate::jam_app::live_master_recording::LiveMasterRecordingProof;
+use crate::jam_app::live_master_recording::LiveMasterRecordingQueueResult;
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::JamFileSet;
+use crate::jam_app::state::SessionHydrationPolicy;
+use crate::jam_app::tests::p016_live_master_recording::live_master_recording_state;
+use crate::jam_app::tests::p016_live_master_recording::live_master_test_health;
+use crate::jam_app::tests::p016_live_master_recording::live_master_test_outcome;
+use crate::jam_app::tests::p016_live_master_recording::live_master_test_output;
+use dawproject::DawprojectReader;
+use dawproject::prelude::project::LanesTypeContent;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::ActionParams;
+use riotbox_core::action::ActionStatus;
+use riotbox_core::export_readiness::ExportScope;
+use riotbox_core::export_readiness::ProductExportBoundary;
+use riotbox_core::export_readiness::ProductExportRole;
+use riotbox_core::ids::CaptureId;
+use riotbox_core::ids::SourceId;
+use riotbox_core::persistence::load_session_json;
+use riotbox_core::persistence::save_session_json;
+use riotbox_core::session::ExportArtifactRole;
+use riotbox_core::session::ExportArtifactSourceGraphRef;
+use riotbox_core::session::ExportArtifactTimingGridRef;
+use riotbox_core::session::GraphStorageMode;
+use riotbox_core::session::SourceGraphRef;
+use riotbox_core::session::SourceTimingGridConfirmationState;
+use riotbox_core::source_graph::GraphProvenance;
+use riotbox_core::source_graph::SourceGraphVersion;
+use sha2::Digest;
+use sha2::Sha256;
+use std::fs;
+use std::io::Read as _;
+use std::os::unix::fs::symlink;
+use std::path::PathBuf;
 use tempfile::tempdir;
-
-use super::{
-    JamAppState, JamFileSet, LiveMasterRecordingProof, LiveMasterRecordingQueueResult,
-    SessionHydrationPolicy,
-    p016_live_master_recording::{
-        live_master_recording_state, live_master_test_health, live_master_test_outcome,
-        live_master_test_output,
-    },
-};
-use crate::jam_app::{
-    daw_export_operator_readiness_report,
-    daw_export_operator_report::{DawExportOperatorReadinessStatus, DawExportReleaseBlocker},
-    daw_export_proof_gates::DawExportProofGateStatus,
-    live_master_dawproject::LiveMasterDawprojectProof,
-};
 
 fn prepared_live_master_state(root: &std::path::Path) -> (JamAppState, PathBuf) {
     let recording = root.join("recorded-live-master.wav");
@@ -118,7 +128,9 @@ fn live_master_dawproject_commits_typed_four_member_archive_and_preserves_record
         .commit_live_master_dawproject_export(&destination, 3_000)
         .expect("export synthetic live master");
 
-    super::dawproject_xml_schema::assert_dawproject_xml_documents_conform(&destination);
+    crate::jam_app::tests::dawproject_xml_schema::assert_dawproject_xml_documents_conform(
+        &destination,
+    );
 
     assert!(receipt.is_live_master_dawproject_v1());
     assert_eq!(receipt.export_scope, ExportScope::DawSession);
@@ -207,7 +219,7 @@ fn live_master_dawproject_rejects_ambiguous_receipt_ids_before_and_after_queue()
                     3_000,
                     Some(destination.to_string_lossy().into_owned())
                 ),
-                super::DawSessionExportQueueResult::Enqueued { .. }
+                crate::jam_app::product_export::DawSessionExportQueueResult::Enqueued { .. }
             ));
         }
         let mut duplicate = state.session.export_receipts[0].clone();
@@ -303,7 +315,7 @@ fn live_master_dawproject_pins_the_selected_receipt_and_never_falls_back_from_ne
     );
     assert!(matches!(
         queued,
-        super::DawSessionExportQueueResult::Enqueued { .. }
+        crate::jam_app::product_export::DawSessionExportQueueResult::Enqueued { .. }
     ));
     let pending = state.queue.pending_actions();
     let queued_action = pending.last().expect("queued action");
@@ -332,7 +344,7 @@ fn live_master_dawproject_pins_the_selected_receipt_and_never_falls_back_from_ne
         .queue_live_master_dawproject_export(3_200, Some(blocked.to_string_lossy().into_owned()));
     assert!(matches!(
         result,
-        super::DawSessionExportQueueResult::Rejected { .. }
+        crate::jam_app::product_export::DawSessionExportQueueResult::Rejected { .. }
     ));
     assert!(!blocked.exists());
 }
@@ -359,7 +371,7 @@ fn live_master_dawproject_never_skips_newer_v2_boundary_with_corrupt_scope_or_ro
                     3_300,
                     Some(destination.to_string_lossy().into_owned())
                 ),
-                super::DawSessionExportQueueResult::Rejected { .. }
+                crate::jam_app::product_export::DawSessionExportQueueResult::Rejected { .. }
             ),
             "{corruption}"
         );
@@ -624,7 +636,7 @@ fn live_master_dawproject_refuses_no_clobber_and_rolls_back_both_save_entry_poin
                     5_100,
                     Some(destination.to_string_lossy().into_owned())
                 ),
-                super::DawSessionExportQueueResult::Enqueued { .. }
+                crate::jam_app::product_export::DawSessionExportQueueResult::Enqueued { .. }
             ));
         }
         let invalid_session_destination = case.join("session-is-a-directory");

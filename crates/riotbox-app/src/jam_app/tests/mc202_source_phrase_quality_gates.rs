@@ -1,6 +1,26 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::mc202_recipe::commit_source_derived_answer;
+use crate::jam_app::tests::fixtures::mc202_recipe::confirmed_source_phrase_state;
+use crate::jam_app::tests::fixtures::mc202_recipe::render_mc202_recipe_buffer;
+use crate::jam_app::tests::fixtures::mc202_recipe::render_mc202_recipe_silent_buffer;
+use crate::jam_app::tests::fixtures::mc202_recipe::source_phrase_test_graph;
+use crate::jam_app::tests::mc202_source_phrase_articulation::commit_source_derived_role;
+use crate::jam_app::tests::mc202_source_phrase_candidate_families::add_phrase_audio_features;
+use riotbox_audio::runtime::signal_delta_metrics;
+use riotbox_audio::runtime::signal_metrics;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::ids::SceneId;
+use riotbox_core::session::Mc202RoleState;
+use riotbox_core::session::Mc202SourcePhraseCandidateFamilyState;
+use riotbox_core::source_graph::AnalysisSummary;
+use riotbox_core::source_graph::SourceGraph;
+use riotbox_core::transport::CommitBoundaryState;
+
 #[test]
 fn committed_mc202_answer_candidate_scoring_is_deterministic_for_same_source_seed() {
-    let mut graph = source_phrase_test_graph("src-deterministic", "hash-deterministic", 132.0, 37, 2);
+    let mut graph =
+        source_phrase_test_graph("src-deterministic", "hash-deterministic", 132.0, 37, 2);
     add_phrase_audio_features(
         &mut graph, 2, 0.12, 0.20, 0.18, 0.36, 0.78, 0.30, 0.18, 0.15,
     );
@@ -29,7 +49,10 @@ fn committed_mc202_answer_candidate_scoring_is_deterministic_for_same_source_see
     assert_eq!(first_plan.candidate_family, second_plan.candidate_family);
     assert_eq!(first_plan.rhythm_cells, second_plan.rhythm_cells);
     assert_eq!(first_plan.source_expression, second_plan.source_expression);
-    assert_eq!(first_plan.candidate_scorecards, second_plan.candidate_scorecards);
+    assert_eq!(
+        first_plan.candidate_scorecards,
+        second_plan.candidate_scorecards
+    );
     assert_eq!(
         first_state.runtime.mc202_render.source_phrase_plan,
         second_state.runtime.mc202_render.source_phrase_plan
@@ -219,7 +242,11 @@ fn committed_mc202_answer_rejects_template_collapse_when_source_features_are_neu
         "{neutral_plan:?}"
     );
     assert!(
-        neutral_state.runtime.mc202_render.source_phrase_plan.is_none(),
+        neutral_state
+            .runtime
+            .mc202_render
+            .source_phrase_plan
+            .is_none(),
         "neutralized source leaked a rendered source phrase plan"
     );
     let neutral_render = render_mc202_recipe_silent_buffer(&neutral_state.runtime.mc202_render);
@@ -239,13 +266,13 @@ fn committed_mc202_answer_rejects_template_collapse_when_source_features_are_neu
     );
 }
 
-struct SourceFamilyGateCase {
-    label: &'static str,
-    graph: SourceGraph,
-    expected_family: Mc202SourcePhraseCandidateFamilyState,
+pub(in crate::jam_app::tests) struct SourceFamilyGateCase {
+    pub(in crate::jam_app::tests) label: &'static str,
+    pub(in crate::jam_app::tests) graph: SourceGraph,
+    pub(in crate::jam_app::tests) expected_family: Mc202SourcePhraseCandidateFamilyState,
 }
 
-fn source_family_case(
+pub(in crate::jam_app::tests) fn source_family_case(
     label: &'static str,
     hash: &str,
     bpm: f32,
@@ -253,13 +280,8 @@ fn source_family_case(
     expected_family: Mc202SourcePhraseCandidateFamilyState,
     features: [f32; 8],
 ) -> SourceFamilyGateCase {
-    let mut graph = source_phrase_test_graph(
-        &format!("src-gate-{label}"),
-        hash,
-        bpm,
-        analysis_seed,
-        2,
-    );
+    let mut graph =
+        source_phrase_test_graph(&format!("src-gate-{label}"), hash, bpm, analysis_seed, 2);
     add_phrase_audio_features(
         &mut graph,
         2,
@@ -279,7 +301,7 @@ fn source_family_case(
     }
 }
 
-fn neutralize_source_phrase_features(graph: &mut SourceGraph) {
+pub(in crate::jam_app::tests) fn neutralize_source_phrase_features(graph: &mut SourceGraph) {
     graph.sections.clear();
     graph.assets.clear();
     graph.relationships.clear();
@@ -291,7 +313,7 @@ fn neutralize_source_phrase_features(graph: &mut SourceGraph) {
     graph.timing.hypotheses.clear();
 }
 
-fn commit_source_answer_without_render(state: &mut JamAppState) {
+pub(in crate::jam_app::tests) fn commit_source_answer_without_render(state: &mut JamAppState) {
     assert_eq!(
         state.queue_mc202_generate_answer(300),
         QueueControlResult::Enqueued
@@ -310,7 +332,7 @@ fn commit_source_answer_without_render(state: &mut JamAppState) {
     assert_eq!(committed.len(), 1);
 }
 
-fn source_phrase_plan_distance(
+pub(in crate::jam_app::tests) fn source_phrase_plan_distance(
     left: &riotbox_core::session::Mc202SourcePhrasePlanState,
     right: &riotbox_core::session::Mc202SourcePhrasePlanState,
 ) -> f32 {
@@ -342,7 +364,7 @@ fn source_phrase_plan_distance(
     (family_distance + cell_distance * 0.50 + active_distance * 0.15).clamp(0.0, 1.0)
 }
 
-fn source_expression_distance(
+pub(in crate::jam_app::tests) fn source_expression_distance(
     left: &riotbox_core::session::Mc202SourcePhrasePlanState,
     right: &riotbox_core::session::Mc202SourcePhrasePlanState,
 ) -> f32 {
@@ -372,7 +394,7 @@ fn source_expression_distance(
     (mean * 0.65 + strongest_axis * 0.35).clamp(0.0, 1.0)
 }
 
-fn render_signal_fingerprint(buffer: &[f32]) -> (u32, u32, u32) {
+pub(in crate::jam_app::tests) fn render_signal_fingerprint(buffer: &[f32]) -> (u32, u32, u32) {
     let metrics = signal_metrics(buffer);
     (
         metrics.active_samples as u32,

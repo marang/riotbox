@@ -1,3 +1,34 @@
+use crate::jam_app::state::JamAppState;
+use crate::jam_app::state::QueueControlResult;
+use crate::jam_app::tests::fixtures::mc202_recipe::assert_recipe_buffers_differ;
+use crate::jam_app::tests::fixtures::session_source::sample_graph;
+use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::fixtures::source_io::bind_synthetic_wav_identity;
+use crate::jam_app::tests::fixtures::source_io::write_pcm16_wave;
+use crate::jam_app::tests::w30_feral_rebake_policy::add_feral_ready_evidence;
+use riotbox_audio::runtime::render_w30_preview_offline;
+use riotbox_audio::runtime::render_w30_resample_tap_offline;
+use riotbox_audio::runtime::signal_metrics;
+use riotbox_audio::source_audio::SourceAudioCache;
+use riotbox_audio::w30::W30_PREVIEW_SAMPLE_WINDOW_LEN;
+use riotbox_audio::w30::W30ResampleTapAvailability;
+use riotbox_audio::w30::W30ResampleTapRouting;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::CommitBoundary;
+use riotbox_core::ids::BankId;
+use riotbox_core::ids::CaptureId;
+use riotbox_core::ids::PadId;
+use riotbox_core::ids::SceneId;
+use riotbox_core::persistence::save_session_json;
+use riotbox_core::persistence::save_source_graph_json;
+use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::CaptureTarget;
+use riotbox_core::session::CaptureType;
+use riotbox_core::transport::CommitBoundaryState;
+use std::fs;
+use std::path::Path;
+use tempfile::tempdir;
+
 #[test]
 fn ordinary_promoted_pad_does_not_route_the_internal_resample_tap() {
     let graph = sample_graph();
@@ -294,7 +325,9 @@ fn committed_w30_internal_resample_prints_reusable_bus_artifact() {
             .is_some_and(|notes| notes.contains("bus print artifact written")
                 && notes.contains("promoted to pad bank-a/pad-01"))
     );
-    state.save().expect("save printed resample artifact session");
+    state
+        .save()
+        .expect("save printed resample artifact session");
     fs::remove_file(&source_path).expect("remove source to prove resample artifact reload");
 
     let mut reloaded =
@@ -315,7 +348,7 @@ fn committed_w30_internal_resample_prints_reusable_bus_artifact() {
     assert_eq!(reloaded_capture.capture_type, CaptureType::Resample);
     assert_eq!(
         reloaded_capture.audio_identity.as_ref().unwrap(),
-        &super::capture_identity::identity(
+        &crate::jam_app::capture_identity::identity(
             &fs::read(&printed_path).unwrap(),
             riotbox_core::session::CaptureAudioIdentityProvenance::CreatedFromEncodedBytesV1,
         ),
