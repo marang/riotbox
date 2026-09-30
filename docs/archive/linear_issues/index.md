@@ -1727,4 +1727,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Architecture checkpoint after source/Sidecar hardening and semantic app modules
 - [RIOTBOX-1340.md](./RIOTBOX-1340.md)
   P023: Replace runtime glob imports with explicit audio ownership imports
+- [RIOTBOX-1508.md](./RIOTBOX-1508.md)
+  Replace Core Jam view and projection-test include shells with semantic modules
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
