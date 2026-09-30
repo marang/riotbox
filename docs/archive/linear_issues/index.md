@@ -1711,4 +1711,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Finish low-risk runtime and Rust workspace hygiene from the broad review
 - [RIOTBOX-1503.md](./RIOTBOX-1503.md)
   Run the post-maintenance architecture checkpoint across source identity, capture and runtime boundaries
+- [RIOTBOX-1505.md](./RIOTBOX-1505.md)
+  Reject non-regular source WAVs without blocking Session restore
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
