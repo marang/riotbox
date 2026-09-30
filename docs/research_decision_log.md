@@ -5245,3 +5245,17 @@ Why: twelve textual includes and hybrid path-attributed test children concealed 
 Evidence: all 470 Core library cases pass before and after with identical executed leaf-name multisets. All 168 selected definitions are accounted for: 166 match after visibility/trailing-comma normalization; two inspected Rustfmt closure-block changes preserve expressions. All 15 public type definitions and 12 public function signatures retain their attributes, fields/variants and visibility. Warning-free all-target Core/App checks pass. The include inventory decreases from 82 sites / 11 owners to 70 / 10 without an allowance increase.
 Consequences: helpers are private or bounded to the candidate subtree; shared fixtures remain test-only. Public paths and implementations, scoring/filter/sort behavior, literals, warning order, grids, drift/groove and readiness/degraded policies remain unchanged. No ActionCommand, Source Graph/Session/replay field, schema, dependency, DSP, detector, threshold, frozen Stage-A contract or source-access rule changes. No real source, holdout, commercial reference, device, DAW, playback or new musical/human verdict is used or claimed. Any later timing-policy improvement requires its own contract and evidence; this migration is not fresh source qualification.
 Status: accepted
+
+---
+
+### RBX-388
+
+Date: 2026-10-01
+Topic: explicit synthetic Runtime regression and fixture ownership
+Phase: P000 / RIOTBOX-1511 test-only module migration
+Question: how can the Runtime regression include namespace become reviewable modules without changing production code or weakening existing tests?
+Decision: use ordinary regression children for lifecycle, shared render state, mixer/lane behavior, transport stop, Source Monitor, fills, W-30 gestures and metrics. Shared fixture models, synthetic PCM, signal helpers, mix plans, fill recipes and gesture fixtures have separate test-only owners. Cross-family helpers are visible only to the Runtime test subtree; one-family helpers stay private. Tests import their actual production owners explicitly. Remove root test-only import aggregation, including the telemetry test's dependence on those aliases. Keep all production definitions and exports unchanged.
+Why: twelve textual includes mixed helpers and assertions in a shared lexical namespace, making dependencies and actual regression ownership difficult to review. Ordinary modules expose those boundaries without creating another audio state model, changing DSP or bundling test rewrites into the first migration.
+Evidence: all 174 selected definitions match after visibility/trailing-comma normalization and the two necessary fully qualified references in one callback-scratch test. All 129 selected tests retain bodies, attributes and assertions. Before/after Audio libraries execute the same 280 leaf-name/status entries: 279 pass and the same manual benchmark remains ignored. All-target Audio checks are warning-free; the include inventory decreases from 70 sites / 10 owners to 58 / 9 without an allowance increase.
+Consequences: no production runtime/DSP body, callback, public API, dependency, ActionCommand, Core/Session/replay field, schema, threshold, source-access policy or frozen Stage-A contract changes. Existing synthetic fixture paths remain identical. No real source, holdout, commercial reference, device, DAW, playback or musical/human verdict is accessed or claimed. This is test-only maintenance and does not advance the substantive production-architecture cadence counter.
+Status: accepted

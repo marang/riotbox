@@ -200,11 +200,14 @@ mod telemetry_poison_tests {
 
     #[test]
     fn public_health_keeps_poison_visible_without_fabricating_stream_errors() {
-        use crate::runtime::{
-            AudioRuntimeLifecycle, AudioRuntimeShell, AudioRuntimeShellTestParts,
-            SharedMc202RenderState, SharedSourceMonitorRenderState, SharedTr909RenderState,
-            SharedTransportTimingState, SharedW30PreviewRenderState, SharedW30ResampleTapState,
+        use crate::runtime::shared_mc202::SharedMc202RenderState;
+        use crate::runtime::shared_transport_tr909::{
+            AudioRuntimeShellTestParts, SharedTr909RenderState, SharedTransportTimingState,
         };
+        use crate::runtime::shared_w30_resample_callback::SharedW30ResampleTapState;
+        use crate::runtime::source_monitor::SharedSourceMonitorRenderState;
+        use crate::runtime::w30_preview_snapshot::SharedW30PreviewRenderState;
+        use crate::runtime::{AudioRuntimeLifecycle, AudioRuntimeShell};
         use std::sync::Arc;
 
         for (lifecycle, prior_message) in [

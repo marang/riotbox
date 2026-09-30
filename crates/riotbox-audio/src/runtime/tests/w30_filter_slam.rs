@@ -1,3 +1,10 @@
+use crate::runtime::render_tr909_w30_preview::render_w30_preview_buffer;
+use crate::runtime::shared_w30_resample_callback::W30PreviewCallbackState;
+use crate::runtime::tests::signal_test_helpers::region_delta_rms;
+use crate::runtime::tests::w30_gesture_fixtures::hook_turnaround_test_render;
+use crate::runtime::w30_preview_snapshot::SharedW30PreviewRenderState;
+use crate::w30::{W30HookArticulationProfile, W30PreviewRenderState};
+
 #[test]
 fn w30_filter_slam_uses_the_frozen_eight_beat_curve_and_twenty_ms_return() {
     let shared = SharedW30PreviewRenderState::new(&hook_turnaround_test_render(Some(
@@ -8,45 +15,33 @@ fn w30_filter_slam_uses_the_frozen_eight_beat_curve_and_twenty_ms_return() {
     )));
     let render = shared.snapshot();
 
-    let start = crate::runtime::w30_filter_slam::w30_filter_slam_frame(
-        &render, 4.0, 48_000,
-    )
-    .expect("filter-slam start frame");
+    let start = crate::runtime::w30_filter_slam::w30_filter_slam_frame(&render, 4.0, 48_000)
+        .expect("filter-slam start frame");
     assert!((start.cutoff_hz - 14_000.0).abs() < 1.0e-9);
     assert!((start.q - 0.707).abs() < 1.0e-9);
     assert_eq!(start.wet_gain, 1.0);
 
-    let first_midpoint = crate::runtime::w30_filter_slam::w30_filter_slam_frame(
-        &render, 6.0, 48_000,
-    )
-    .expect("filter-slam first midpoint frame");
+    let first_midpoint =
+        crate::runtime::w30_filter_slam::w30_filter_slam_frame(&render, 6.0, 48_000)
+            .expect("filter-slam first midpoint frame");
     assert!((first_midpoint.cutoff_hz - (14_000.0_f64 * 1_800.0).sqrt()).abs() < 1.0e-9);
     assert!((first_midpoint.q - 0.7785).abs() < 1.0e-9);
 
-    let deep_close = crate::runtime::w30_filter_slam::w30_filter_slam_frame(
-        &render, 10.0, 48_000,
-    )
-    .expect("filter-slam deep-close boundary");
+    let deep_close = crate::runtime::w30_filter_slam::w30_filter_slam_frame(&render, 10.0, 48_000)
+        .expect("filter-slam deep-close boundary");
     assert!((deep_close.cutoff_hz - 280.0).abs() < 1.0e-9);
     assert!((deep_close.q - 1.2).abs() < 1.0e-9);
 
-    let half_return = crate::runtime::w30_filter_slam::w30_filter_slam_frame(
-        &render, 11.02, 48_000,
-    )
-    .expect("filter-slam half-return frame");
+    let half_return =
+        crate::runtime::w30_filter_slam::w30_filter_slam_frame(&render, 11.02, 48_000)
+            .expect("filter-slam half-return frame");
     assert!((half_return.wet_gain - 0.5).abs() < 1.0e-6);
     assert!(
-        crate::runtime::w30_filter_slam::w30_filter_slam_frame(
-            &render, 11.04, 48_000,
-        )
-        .is_none(),
+        crate::runtime::w30_filter_slam::w30_filter_slam_frame(&render, 11.04, 48_000,).is_none(),
         "ordinary W-30 control must resume after exactly twenty milliseconds"
     );
     assert!(
-        crate::runtime::w30_filter_slam::w30_filter_slam_frame(
-            &render, 12.0, 48_000,
-        )
-        .is_none(),
+        crate::runtime::w30_filter_slam::w30_filter_slam_frame(&render, 12.0, 48_000,).is_none(),
         "the typed gesture must be complete at beat eight"
     );
 }
@@ -130,11 +125,13 @@ fn w30_filter_slam_processes_every_configured_output_channel() {
         CHANNEL_COUNT,
     );
 
-    assert!(candidate
-        .as_chunks::<CHANNEL_COUNT>()
-        .0
-        .iter()
-        .all(|frame| frame.iter().all(|sample| *sample == frame[0])));
+    assert!(
+        candidate
+            .as_chunks::<CHANNEL_COUNT>()
+            .0
+            .iter()
+            .all(|frame| frame.iter().all(|sample| *sample == frame[0]))
+    );
     assert!(region_delta_rms(&candidate, &control) > 0.001);
 }
 
@@ -146,8 +143,7 @@ fn render_filter_slam_in_chunks(
 ) -> Vec<f32> {
     let shared = SharedW30PreviewRenderState::new(render);
     let snapshot = shared.snapshot();
-    let mut state =
-        W30PreviewCallbackState::with_sample_rate_and_channels(48_000, channel_count);
+    let mut state = W30PreviewCallbackState::with_sample_rate_and_channels(48_000, channel_count);
     let mut output = vec![0.0; total_frames * channel_count];
 
     for chunk in output.chunks_mut(chunk_frames * channel_count) {

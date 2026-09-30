@@ -1,3 +1,11 @@
+use crate::runtime::tests::signal_test_helpers::{tr909_high_band_proxy_rms, tr909_low_band_rms};
+use crate::runtime::{render_tr909_offline, signal_delta_metrics, signal_metrics};
+use crate::tr909::{
+    Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
+    Tr909RenderState, Tr909SourceSupportContext, Tr909SourceSupportProfile,
+    Tr909TakeoverRenderProfile,
+};
+
 #[test]
 fn tr909_source_support_profiles_shape_distinct_drum_voice_balance() {
     let steady = render_tr909_offline(
@@ -131,52 +139,4 @@ fn tr909_source_support_state(
         position_beats: 32.0,
         ..Tr909RenderState::default()
     }
-}
-
-fn tr909_low_band_rms(samples: &[f32], sample_rate: u32, channel_count: usize) -> f32 {
-    signal_metrics(&tr909_one_pole_lowpass(
-        samples,
-        145.0,
-        sample_rate,
-        channel_count,
-    ))
-    .rms
-}
-
-fn tr909_high_band_proxy_rms(
-    samples: &[f32],
-    sample_rate: u32,
-    channel_count: usize,
-) -> f32 {
-    let low = tr909_one_pole_lowpass(samples, 1_800.0, sample_rate, channel_count);
-    let high = samples
-        .iter()
-        .zip(low.iter())
-        .map(|(sample, low)| sample - low)
-        .collect::<Vec<_>>();
-    signal_metrics(&high).rms
-}
-
-fn tr909_one_pole_lowpass(
-    samples: &[f32],
-    cutoff_hz: f32,
-    sample_rate: u32,
-    channel_count: usize,
-) -> Vec<f32> {
-    if sample_rate == 0 || channel_count == 0 {
-        return vec![0.0; samples.len()];
-    }
-    let rc = 1.0 / (std::f32::consts::TAU * cutoff_hz.max(1.0));
-    let dt = 1.0 / sample_rate as f32;
-    let alpha = dt / (rc + dt);
-    let mut previous = vec![0.0; channel_count];
-    samples
-        .iter()
-        .enumerate()
-        .map(|(index, sample)| {
-            let channel = index % channel_count;
-            previous[channel] += alpha * (sample - previous[channel]);
-            previous[channel]
-        })
-        .collect()
 }

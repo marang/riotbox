@@ -26,6 +26,8 @@ Result:
   all 12 Core Jam projection and projection-test includes replaced by real modules
 - RIOTBOX-1510 migration, 2026-09-30: 70 remaining sites in 10 owners;
   all 12 Source Graph timing-candidate includes replaced by real semantic modules
+- RIOTBOX-1511 migration, 2026-10-01: 58 remaining sites in 9 owners;
+  all 12 Audio runtime-test includes replaced by ordinary regression modules
 - no generated-code include site identified in this inventory
 - every current include is treated as legacy/mechanical until proven otherwise
 
@@ -60,7 +62,6 @@ legacy inventory; it does not approve new textual include sites.
 | Owner | Count | Included files / families | Purpose | Classification | Migration risk | Follow-up |
 | --- | ---: | --- | --- | --- | --- | --- |
 | `crates/riotbox-core/src/tr909_policy.rs` | 2 | `tr909_policy/render_policy`, tests | TR-909 policy and tests | mechanical product split | low/medium: policy API | RIOTBOX-1331 |
-| `crates/riotbox-audio/src/runtime/tests.rs` | 12 | runtime fixture, W-30, mix, metrics, monitor test shards | Audio runtime tests | mechanical test split | low/medium: test-only but broad | future runtime test module slice |
 | `crates/riotbox-audio/src/bin/feral_grid_pack.rs` | 29 | pack builder, metrics, TR-909, MC-202, W-30, mix, timing, manifest, render, tests | Feral grid QA/pack CLI | mechanical QA-bin split | medium: large QA surface | future QA-bin module slice |
 | `crates/riotbox-audio/src/bin/feral_grid_pack/tests.rs` | 1 | shared test helpers | Feral grid QA tests | mechanical test compatibility split | low: test-only helper scope | future QA-bin module slice |
 | `crates/riotbox-audio/src/bin/feral_before_after_pack.rs` | 2 | pack builder, metrics manifest | Feral before/after QA CLI | mechanical QA-bin split | low | future QA-bin module slice |
@@ -102,3 +103,4 @@ of mixing them into the module move.
 | `crates/riotbox-core/src/view/jam.rs` | 8 | RIOTBOX-1508 | Public projection compatibility facade over private model/builder, source summary/timing/map, scene/arrangement, capture and performer-state owners. No product state or projection behavior changed. |
 | `crates/riotbox-core/src/view/jam/tests.rs` | 4 | RIOTBOX-1508 | Real projection regression families with one shared synthetic fixture owner; source-map rows/tests and timing tests are ordinary child modules. No test scenario removed. |
 | `crates/riotbox-core/src/source_graph/timing_probe_candidates.rs` | 12 | RIOTBOX-1510 | Explicit public compatibility exports over private onset-evidence, period-scoring, downbeat, hypothesis, grid, drift/groove, model, report and grid-use-policy owners. Hybrid candidate tests become ordinary regression-family children with separate synthetic fixtures; comparator tests live under period scoring. Algorithms and thresholds unchanged. Historical RIOTBOX-1330 covered live-ingest/confirmation wiring, not this include migration. |
+| `crates/riotbox-audio/src/runtime/tests.rs` | 12 | RIOTBOX-1511 | Ordinary lifecycle, shared-state, mixer/lane, transport-stop, Source Monitor, fill, gesture and metrics regressions with explicit imports. Shared fixture models, synthetic PCM, signal helpers, mix plans, fill recipes and gesture fixtures are test-only owners. The existing telemetry test imports its actual runtime owners; production runtime and DSP are unchanged. |
