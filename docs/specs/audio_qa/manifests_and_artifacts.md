@@ -205,6 +205,19 @@ Directory creation retains its existing position. This extends source
 preservation, not musical eligibility, source qualification or atomic-pack
 publication; all DSP, thresholds and serialized contracts remain unchanged.
 
+`w30_preview_compare` preflights its report and fixed sibling `manifest.json`
+against both input metrics and their two convention-derived WAVs
+(RBX-408 / RIOTBOX-1538). The existing writer naming helpers remain authoritative;
+the same unchanged binary-only physical identity guard performs all checks.
+Both metrics are parsed first, preserving argument/help/metrics error precedence.
+All four referenced inputs must be regular, readable/identifiable files before
+either output is published. Identical report/manifest names and physical aliases
+between existing outputs also reject; a late collision or invalid destination
+cannot publish an early report. Shared baseline/candidate input and independent
+equal-content files remain supported. Comparison limits, report/manifest bytes,
+pass exit 0 and drift-fail exit 2 are unchanged. This protects input preservation,
+not WAV content integrity, atomic publication, live sound or a human verdict.
+
 Recommended shape:
 
 ```text

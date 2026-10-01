@@ -3,6 +3,9 @@ mod comparison;
 mod config;
 mod manifest;
 mod metrics_input;
+mod output_safety;
+#[path = "../qa_source_safety/mod.rs"]
+mod qa_source_safety;
 mod report_markdown;
 #[cfg(test)]
 mod tests;
@@ -23,6 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let baseline = SmokeMetrics::read_from_path(&args.baseline_metrics_path)?;
     let candidate = SmokeMetrics::read_from_path(&args.candidate_metrics_path)?;
+    output_safety::reject_input_aliases(&args)?;
     let report = compare_metrics(&baseline, &candidate, &args.limits);
     let rendered_report = render_report(
         &args.baseline_metrics_path,
