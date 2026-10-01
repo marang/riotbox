@@ -20,6 +20,7 @@ use super::{
     },
     output_paths::PackOutputPaths,
     pack_report::PackReport,
+    pack_text_outputs::{write_readme, write_report},
     product_stem_contributions::{
         ProductStemContributionRender, render_product_stem_contributions,
         validate_written_product_stem_reconstruction,
@@ -41,7 +42,7 @@ use super::{
 // Narrow bridges to still-counted legacy writer/stem owners in the parent.
 use super::{
     assert_grid_len, render_w30_source_chop_with_variation, validate_report,
-    write_audio_with_metrics, write_readme, write_report,
+    write_audio_with_metrics,
 };
 
 pub(super) fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {

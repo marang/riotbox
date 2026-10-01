@@ -430,9 +430,28 @@ ordering, algorithms/literals/thresholds, every test/fixture/ignored state and
 CLI/schema/artifact bytes unchanged in the mechanical migration. Narrow parent
 bridges serve only still-counted legacy writer/stem consumers; retain root
 aliases needed by those consumers or tests, removing only obsolete imports.
-Four textual include sites remain: three root owners and the test-helper site.
+RIOTBOX-1543 leaves four textual include sites: three root owners and the
+test-helper site; the subsequent publication migration below removes one.
 This is not a completed Feral root migration or new source/music/hardness/
 human/release/device qualification.
+
+### Feral Markdown Publication Ownership
+
+Feral report/README publication is an ordinary binary-private pack_text_outputs
+owner (RBX-413 / RIOTBOX-1544), separate from orchestration and the shared report
+value. The renderer imports its two unchanged publishers directly from the
+sibling module, not through root aliases. Nine formatting helpers stay private;
+actual CLI/grid/report/window/BPM/readiness/config dependencies are explicit.
+Formatting existing evidence is not a second analysis or product-truth layer.
+
+Keep all eleven complete function bodies, literals/precision, field and write
+ordering, existing tests/fixtures and CLI/schema/artifact bytes unchanged.
+Remove only obsolete root aliases; retain those serving untouched manifest,
+stem or test consumers. Three textual include sites remain: root stem rendering
+and tests, plus the test-helper site. No DSP, Core/Session/replay/runtime,
+threshold or frozen Stage-A change and no new qualification verdict. After
+this fifth material branch since the RIOTBOX-1539 architecture checkpoint,
+apply the existing broader review cadence before another family change.
 
 ## Include Inventory And Guardrail
 

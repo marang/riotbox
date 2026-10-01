@@ -3,8 +3,6 @@ use std::{env, fs, path::Path};
 #[cfg(test)]
 use std::path::PathBuf;
 
-use riotbox_core::source_graph::SourceTimingProbeReadinessReport;
-
 use riotbox_audio::{
     runtime::{MasterBusLimiterReport, render_w30_preview_offline},
     source_audio::{SourceAudioError, write_interleaved_pcm16_wav},
@@ -50,18 +48,11 @@ mod timing_readiness_manifest;
 mod bpm_decision_tests;
 
 use args::{Args, print_help};
-use grid_bpm_decision::{
-    GridBpmDecision, grid_bpm_decision_reason_label, grid_bpm_source_label,
-    source_timing_bpm_agrees,
-};
+use grid_bpm_decision::{GridBpmDecision, grid_bpm_decision_reason_label, grid_bpm_source_label};
 use output_paths::metrics_path_for;
 use source_timing_analysis::SourceTimingAnalysisForManifest;
 use source_timing_groove_policy::Tr909GrooveTimingPolicy;
-use timing_readiness_manifest::{
-    ManifestSourceTimingReadiness, confidence_result_label, downbeat_evidence_status_label,
-    drift_status_label, manifest_source_timing_readiness, phrase_status_label,
-    readiness_status_label,
-};
+use timing_readiness_manifest::{ManifestSourceTimingReadiness, manifest_source_timing_readiness};
 
 #[path = "feral_grid_pack/bar_variation_metrics.rs"]
 mod bar_variation_metrics;
@@ -266,7 +257,8 @@ mod tr909_rendered_drum_pressure;
 #[path = "feral_grid_pack/tr909_rendered_drum_pressure_tests.rs"]
 mod tr909_rendered_drum_pressure_tests;
 
-include!("feral_grid_pack/pack_text_outputs.rs");
+#[path = "feral_grid_pack/pack_text_outputs.rs"]
+mod pack_text_outputs;
 include!("feral_grid_pack/render_stems.rs");
 #[cfg(test)]
 #[path = "feral_grid_pack/manifest_assertions.rs"]
