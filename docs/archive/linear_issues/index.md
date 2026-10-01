@@ -1735,4 +1735,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Replace Audio runtime regression include namespace with semantic test modules
 - [RIOTBOX-1512.md](./RIOTBOX-1512.md)
   Replace JamApp lane-projection include namespace with semantic render owners
+- [RIOTBOX-1513.md](./RIOTBOX-1513.md)
+  Replace TR-909 Core policy includes with explicit semantic policy modules
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
