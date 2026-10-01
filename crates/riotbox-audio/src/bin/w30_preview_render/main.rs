@@ -1,6 +1,7 @@
 mod args;
 mod artifact_io;
 mod config;
+mod output_safety;
 #[path = "../qa_source_safety/mod.rs"]
 mod qa_source_safety;
 mod source_window;
@@ -30,6 +31,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             [args.output_path.clone(), metrics_path.clone()],
         )?;
     }
+    output_safety::reject_output_aliases(&args.output_path, &metrics_path)?;
     let samples = render_w30_preview_offline(
         &source_window_smoke_state(source_window_preview),
         SAMPLE_RATE,

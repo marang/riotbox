@@ -12,19 +12,8 @@ pub(super) fn reject_source_aliases(
 ) -> io::Result<()> {
     let source_handle = same_file::Handle::from_path(source)?;
     for path in artifacts {
-        // Only a genuinely absent directory entry is safe to skip. An
-        // existing dangling symlink or any metadata/open failure rejects.
-        match fs::symlink_metadata(&path) {
-            Err(error) if error.kind() == io::ErrorKind::NotFound => continue,
-            result => {
-                result?;
-            }
-        }
-        if !fs::metadata(&path)?.is_file() {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                format!("output is not a regular file: {}", path.display()),
-            ));
+        if !existing_output_is_regular(&path)? {
+            continue;
         }
         let output_handle = same_file::Handle::from_path(&path)?;
         if source_handle == output_handle {
@@ -35,4 +24,22 @@ pub(super) fn reject_source_aliases(
         }
     }
     Ok(())
+}
+
+/// Only a genuinely absent entry returns false. A dangling link or any
+/// metadata error rejects; this same admission also serves output-pair checks.
+pub(super) fn existing_output_is_regular(path: &Path) -> io::Result<bool> {
+    match fs::symlink_metadata(path) {
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(false),
+        result => {
+            result?;
+        }
+    }
+    if !fs::metadata(path)?.is_file() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!("output is not a regular file: {}", path.display()),
+        ));
+    }
+    Ok(true)
 }
