@@ -30,6 +30,7 @@ ci:
     cargo test
     just sidecar-contract-fixtures
     just hook-chop-diagnostic-contract-fixtures
+    just feral-grid-verification-contract-fixtures
     just audio-qa-pr
     just audio-qa-access-guard-fixtures
     just ci-gate-contract-fixtures
@@ -94,6 +95,9 @@ exact-mix-numeric-contract-fixtures:
 
 hook-chop-diagnostic-contract-fixtures:
     python3 -m unittest discover -s scripts -p 'test_hook_chop_diagnostic_contract.py'
+
+feral-grid-verification-contract-fixtures:
+    python3 -m unittest discover -s scripts -p 'test_feral_grid_verification_contract.py'
 
 audio-qa-access-guard-fixtures:
     scripts/validate_broad_audio_qa_access_guard.sh
@@ -373,10 +377,10 @@ diverse-test-source-wavs output="artifacts/audio_qa/local-diverse-test-sources" 
     for wav in "{{output}}"/*.wav; do test -s "$wav"; done
 
 feral-grid-pack source date="local" bpm="auto" bars="8" source_window="1.0" start="0.0":
-    if [ "{{bpm}}" = "auto" ]; then \
-        cargo run -p riotbox-audio --bin feral_grid_pack -- --source "{{source}}" --date "{{date}}" --bars "{{bars}}" --source-window-seconds "{{source_window}}" --source-start-seconds "{{start}}"; \
+    if [ {{quote(bpm)}} = "auto" ]; then \
+        cargo run -p riotbox-audio --bin feral_grid_pack -- --source {{quote(source)}} --date {{quote(date)}} --bars {{quote(bars)}} --source-window-seconds {{quote(source_window)}} --source-start-seconds {{quote(start)}}; \
     else \
-        cargo run -p riotbox-audio --bin feral_grid_pack -- --source "{{source}}" --date "{{date}}" --bpm "{{bpm}}" --bars "{{bars}}" --source-window-seconds "{{source_window}}" --source-start-seconds "{{start}}"; \
+        cargo run -p riotbox-audio --bin feral_grid_pack -- --source {{quote(source)}} --date {{quote(date)}} --bpm {{quote(bpm)}} --bars {{quote(bars)}} --source-window-seconds {{quote(source_window)}} --source-start-seconds {{quote(start)}}; \
     fi
 
 dense-break-performance-pack source="data/test_audio/examples/Beat03_130BPM(Full).wav" output="artifacts/audio_qa/local-dense-break-performance-pack" date="local-dense-break-performance-pack":

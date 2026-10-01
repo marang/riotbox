@@ -844,6 +844,19 @@ QA/listening tools to consume the timing estimate:
   manual-confirm case and a long stable `locked_grid` case, so fresh clones can
   prove the readiness boundary without relying on local example WAV files
 
+The manifest's `verification_command` is a POSIX/Bourne-shell command, not
+Windows cmd.exe or PowerShell syntax. Source and date must each survive both
+the generated command and the `feral-grid-pack` Just recipe as one literal
+UTF-8 argument, with no shell expansion. The command uses single-quote escaping;
+the recipe uses Just's `quote()` on every interpolated argument and the BPM
+condition. Auto/explicit BPM policy, numeric argument order and three-decimal
+format remain unchanged. This is a bounded QA recipe, not an exact product
+session replay; relative paths still require the original working directory.
+Rust argv tests require no Just or Python; native CI additionally checks the
+recipe's quoting contract statically. Actual dry-run recipe argv tests run only
+where Just and POSIX sh are present. See RBX-396 and
+`just feral-grid-verification-contract-fixtures`.
+
 Generated Feral grid listening packs may use this readiness report as their
 bounded BPM policy:
 
