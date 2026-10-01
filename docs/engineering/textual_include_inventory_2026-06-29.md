@@ -87,6 +87,10 @@ Result:
   Feral manifest and regression consumers import actual owners directly and the
   root owns only main/composition; a current-state checkpoint must assess the
   resulting dependencies, not infer architectural quality from the count
+- RIOTBOX-1549 checkpoint, 2026-10-01: bounded solo current-state review of
+  semantic QA owners and product-spine separation finds no new demonstrated
+  P0–P3 defect; [report](../reviews/riotbox_1549_semantic_qa_boundary_checkpoint_2026-10-01.md)
+  records exact evidence and limits, not a whole-architecture or musical verdict
 - no generated-code include site identified in this inventory
 - every current include is treated as legacy/mechanical until proven otherwise
 
@@ -120,7 +124,7 @@ legacy inventory; it does not approve new textual include sites.
 
 | Owner | Count | Included files / families | Purpose | Classification | Migration risk | Follow-up |
 | --- | ---: | --- | --- | --- | --- | --- |
-| None | 0 | None | All scanned Rust owners | Textual include inventory complete; Feral root dependency bridges removed by RIOTBOX-1548 | Current-state architecture checkpoint still required | Count alone is not a whole-architecture or audio-quality verdict |
+| None | 0 | None | All scanned Rust owners | Textual include inventory complete; Feral root dependency bridges removed by RIOTBOX-1548 | Bounded current-state checkpoint RIOTBOX-1549; limits remain explicit | Count alone is not a whole-architecture or audio-quality verdict |
 
 ## Migration Order
 
