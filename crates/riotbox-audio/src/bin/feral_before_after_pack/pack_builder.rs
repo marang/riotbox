@@ -39,6 +39,7 @@ pub(super) fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>>
     }
 
     paths.reject_source_aliases(&args.source_path)?;
+    paths.reject_output_aliases()?;
     let source_samples = source.window_samples(source_window).to_vec();
     write_interleaved_pcm16_wav(
         &paths.source_excerpt,

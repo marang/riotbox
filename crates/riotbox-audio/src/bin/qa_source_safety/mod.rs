@@ -26,6 +26,25 @@ pub(super) fn reject_source_aliases(
     Ok(())
 }
 
+/// Writer-derived names must be distinct. In a stable namespace only existing
+/// entries can physically alias; classify all before checking any pair.
+pub(super) fn reject_output_aliases(
+    artifacts: impl IntoIterator<Item = PathBuf>,
+) -> io::Result<()> {
+    let mut existing = Vec::new();
+    for path in artifacts {
+        if existing_output_is_regular(&path)? {
+            existing.push(path);
+        }
+    }
+    // No identity opening for an absent or singleton output set, matching
+    // W-30's explicit no-source diagnostic admission.
+    for index in 0..existing.len().saturating_sub(1) {
+        reject_source_aliases(&existing[index], existing[index + 1..].iter().cloned())?;
+    }
+    Ok(())
+}
+
 /// Only a genuinely absent entry returns false. A dangling link or any
 /// metadata error rejects; this same admission also serves output-pair checks.
 pub(super) fn existing_output_is_regular(path: &Path) -> io::Result<bool> {

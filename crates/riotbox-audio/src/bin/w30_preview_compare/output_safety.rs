@@ -4,7 +4,7 @@
 use super::{
     args::Args,
     manifest::{audio_path_for_metrics_path, manifest_path_for_report_path},
-    qa_source_safety::reject_source_aliases,
+    qa_source_safety::{reject_output_aliases, reject_source_aliases},
 };
 use std::{fs, io};
 
@@ -34,12 +34,5 @@ pub(super) fn reject_input_aliases(args: &Args) -> io::Result<()> {
         }
         reject_source_aliases(input, outputs.iter().cloned())?;
     }
-    // Input preflight already classified both existing destinations. If the
-    // report exists, use the same physical identity check between outputs too.
-    // Missing report + distinct names cannot alias in a stable namespace.
-    match fs::symlink_metadata(&outputs[0]) {
-        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
-        Err(error) => Err(error),
-        Ok(_) => reject_source_aliases(&outputs[0], [outputs[1].clone()]),
-    }
+    reject_output_aliases(outputs)
 }

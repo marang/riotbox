@@ -246,6 +246,27 @@ and introduces no second filesystem backend, product state or pack transaction.
 Stable-namespace/readability/fail-closed limits above apply. No inferred fix for
 other pack renderers, sound-quality/source/human/Windows Audio claim or fallback.
 
+`feral_before_after_pack` also requires physical distinctness among its fourteen
+actual destinations (RBX-411 / RIOTBOX-1542). Its private artifact iterator feeds
+both source and output preservation, including the six WAVs, five metrics files
+and three metadata files; the composite still has no metrics file. Preserve
+source-format and insufficient-window error precedence. The mutual-output gate
+follows source preservation and precedes even the early excerpt write. Late
+metadata coupling cannot replace input/prior artifacts or publish early audio.
+
+The four actual consumers now share `qa_source_safety::reject_output_aliases`:
+Feral nineteen outputs, Before/After fourteen, W-30 WAV/metrics, and the
+comparator's existing report/manifest pair. All actual path plans and naming
+helpers remain local; their names must be distinct before this physical check.
+The comparator retains its explicit lexical self-name rejection and all four
+input checks before delegating its existing pair protection. The shared helper
+admits every entry through the unchanged absent/regular helper, then checks
+existing pairs through the unchanged source-identity implementation. Zero or
+one existing output performs no pair identity opening, preserving explicit
+no-source W-30 behavior. No second catalog/backend, warning suppression, public
+library API, product state or pack framework is introduced. Independent
+equal-content files, all valid bytes and the stable-namespace limits remain.
+
 Recommended shape:
 
 ```text
