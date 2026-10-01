@@ -1805,4 +1805,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Replace mixed Feral stem include with explicit rendering validation and artifact owners
 - [RIOTBOX-1547.md](./RIOTBOX-1547.md)
   Replace final Feral test includes with explicit regression and synthetic fixture modules
+- [RIOTBOX-1548.md](./RIOTBOX-1548.md)
+  Remove final Feral root manifest and regression compatibility bridges
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
