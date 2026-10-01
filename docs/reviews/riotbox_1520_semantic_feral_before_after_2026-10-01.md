@@ -2,8 +2,10 @@
 
 Date: 2026-10-01. Classification: maintenance/regression. Code baseline:
 `fa93d2233fd49a8d734274bd4afab54455d5e482`. Independent implementation began
-while RIOTBOX-1519's W-30 PR #1582 awaited native CI; canonical inventory/decision
-updates will integrate that preceding ownership slice before this PR.
+while RIOTBOX-1519's W-30 PR #1582 awaited native CI; its merged predecessor
+`7f3b0cb4a8d978b2d080e5df93e1ebd584128e8e` is now integrated, with no changes
+to the original Feral baseline. RBX-394 and canonical inventory/policy retain
+RBX-393 and reduce includes from **32/three owners to 30/two**.
 
 ## Scope and authority
 
@@ -52,8 +54,10 @@ side effects and errors rather than bundling behavioral corrections.
   scanned warning/error-free: `/tmp/riotbox-1520-check.log`, baseline-tests,
   baseline-build, tests, release and build logs with the same `/tmp/riotbox-1520-`
   prefix. All imports explicit; no warning suppression.
-- Canonical inventory/decision integration, full source-free CI and native
-  exact-head PR checks remain required; not claimed complete here.
+- Full source-free `just ci` passes in `/tmp/riotbox-1520-ci.log`, explicitly
+  warning/error-free: Rust/Python/contracts, synthetic audio gates, formatting/
+  tracked JSON and strict all-target/all-feature Clippy. Native exact-head PR
+  checks and merge/archive/cleanup remain separate completion obligations.
 
 ## Review and limits
 
