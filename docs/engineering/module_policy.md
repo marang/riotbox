@@ -395,6 +395,25 @@ Stage-A change. This proof stays diagnostic, never hardness or musical/source-
 general/human/release authority. The RIOTBOX-1532 checkpoint is complete before
 this next ownership slice; no global numeric audit cadence is invented.
 
+### Feral Manifest Assertion Ownership
+
+The three Feral manifest assertion families are ordinary `cfg(test)` owners
+(RBX-404 / RIOTBOX-1534), not textual includes sharing root wildcard or constant
+aliases. They consume the actual config, Core timing, listening schema,
+TR-909/MC-202 and product-stem owners. Keep all nine assertion/helper bodies,
+visibility, sibling/consumer call paths, test identities and failure ordering.
+Small scalar/path/spectral/timing helpers stay private; the main complete
+manifest witness deliberately remains cohesive and long rather than being
+sharded by line count. Explicit dependencies and real namespaces reduce review
+cost without a replacement validator, new product model or runtime interface.
+
+Preserve every schema, threshold/literal, artifact-existence check, fixture,
+production/orchestration body and CLI/artifact byte. Remove only obsolete
+compatibility imports; retain root imports still used by untouched test families.
+These assertions constrain diagnostics, never award music/hardness/source-
+general/human/release or live-device authority. No source/DAW/device/playback,
+Core/Session/replay/library DSP/runtime or frozen Stage-A change.
+
 ## Include Inventory And Guardrail
 
 The initial RIOTBOX-1321 inventory lives in

@@ -1,653 +1,677 @@
-#[cfg(test)]
-mod manifest_assertions {
-    use std::path::{Path, PathBuf};
+use std::path::{Path, PathBuf};
 
-    use super::*;
+use riotbox_audio::listening_manifest::LISTENING_MANIFEST_SCHEMA_VERSION;
+use riotbox_core::source_graph::SourceTimingProbeBpmCandidatePolicy;
 
-    pub(super) fn assert_manifest_smoke_gate(manifest: &serde_json::Value, output_dir: &Path) {
-        assert_eq!(manifest["schema_version"], LISTENING_MANIFEST_SCHEMA_VERSION);
-        assert_eq!(manifest["pack_id"], PACK_ID);
-        assert_eq!(manifest["result"], "pass");
-        assert_eq!(manifest["bars"], 2);
-        assert_eq!(manifest["grid_bpm_source"], "user_override");
-        assert_eq!(manifest["grid_bpm_decision_reason"], "user_override");
-        assert!(manifest["source_timing_bpm_delta"].is_number());
-        assert_eq!(manifest["feral_scorecard"]["readiness"], "ready");
-        assert_eq!(
-            manifest["feral_scorecard"]["break_rebuild_potential"],
-            "high"
-        );
-        assert_eq!(manifest["feral_scorecard"]["source_backed"], true);
-        assert_eq!(manifest["feral_scorecard"]["fallback_like"], false);
-        assert_eq!(
-            manifest["feral_scorecard"]["top_reason"],
-            "grid-locked generated feral QA pack"
-        );
-        assert!(manifest.get("primitive_renderer_boundary").is_none());
-        assert_manifest_source_timing(&manifest["source_timing"]);
-        assert_eq!(
-            manifest["feral_scorecard"]["lane_gestures"]
-                .as_array()
-                .expect("lane gestures")
-                .len(),
-            3
-        );
-        assert_manifest_f32(
-            &manifest["thresholds"]["min_signal_rms"],
-            MIN_SIGNAL_RMS,
-            "min_signal_rms",
-        );
-        assert_manifest_f32(
-            &manifest["thresholds"]["min_low_band_rms"],
-            MIN_LOW_BAND_RMS,
-            "min_low_band_rms",
-        );
-        assert_manifest_f32(
-            &manifest["thresholds"]["max_source_first_generated_to_source_rms_ratio"],
-            MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO,
-            "max_source_first_generated_to_source_rms_ratio",
-        );
-        assert_manifest_f32(
-            &manifest["thresholds"]["min_support_generated_to_source_rms_ratio"],
-            MIN_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
-            "min_support_generated_to_source_rms_ratio",
-        );
-        assert_manifest_f32(
-            &manifest["thresholds"]["max_support_generated_to_source_rms_ratio"],
-            MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
-            "max_support_generated_to_source_rms_ratio",
-        );
-        let source_character_window_selection =
-            &manifest["metrics"]["source_character_window_selection"];
-        assert!(
-            source_character_window_selection["selected_frame_count"]
-                .as_u64()
-                .expect("source-character selected frame count")
-                > 0
-        );
-        assert!(
-            source_character_window_selection["selected_score"]
+use super::{
+    config::{
+        CHANNEL_COUNT, MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO,
+        MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO, MIN_LOW_BAND_RMS, MIN_SIGNAL_RMS,
+        MIN_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO, PACK_ID, PATTERN_ORIGIN_SOURCE_DERIVED,
+        SAMPLE_RATE,
+    },
+    product_stem_contributions::{
+        PRODUCT_STEM_RECONSTRUCTION_RULE, PRODUCT_STEM_RECONSTRUCTION_SCHEMA,
+    },
+    source_grid_output_drift::SOURCE_GRID_OUTPUT_MIN_HIT_RATIO,
+    tr909_kick_pressure::{
+        TR909_KICK_PRESSURE_MAX_PEAK_ABS, TR909_KICK_PRESSURE_MIN_LOW_BAND_RATIO,
+        TR909_SOURCE_EVIDENCE_ROLE_PROFILE_AND_ACCENT_DYNAMICS,
+    },
+    tr909_rendered_drum_pressure::TR909_RENDERED_DRUM_PRESSURE_SOURCE_EVIDENCE_ROLE,
+};
+
+pub(super) fn assert_manifest_smoke_gate(manifest: &serde_json::Value, output_dir: &Path) {
+    assert_eq!(
+        manifest["schema_version"],
+        LISTENING_MANIFEST_SCHEMA_VERSION
+    );
+    assert_eq!(manifest["pack_id"], PACK_ID);
+    assert_eq!(manifest["result"], "pass");
+    assert_eq!(manifest["bars"], 2);
+    assert_eq!(manifest["grid_bpm_source"], "user_override");
+    assert_eq!(manifest["grid_bpm_decision_reason"], "user_override");
+    assert!(manifest["source_timing_bpm_delta"].is_number());
+    assert_eq!(manifest["feral_scorecard"]["readiness"], "ready");
+    assert_eq!(
+        manifest["feral_scorecard"]["break_rebuild_potential"],
+        "high"
+    );
+    assert_eq!(manifest["feral_scorecard"]["source_backed"], true);
+    assert_eq!(manifest["feral_scorecard"]["fallback_like"], false);
+    assert_eq!(
+        manifest["feral_scorecard"]["top_reason"],
+        "grid-locked generated feral QA pack"
+    );
+    assert!(manifest.get("primitive_renderer_boundary").is_none());
+    assert_manifest_source_timing(&manifest["source_timing"]);
+    assert_eq!(
+        manifest["feral_scorecard"]["lane_gestures"]
+            .as_array()
+            .expect("lane gestures")
+            .len(),
+        3
+    );
+    assert_manifest_f32(
+        &manifest["thresholds"]["min_signal_rms"],
+        MIN_SIGNAL_RMS,
+        "min_signal_rms",
+    );
+    assert_manifest_f32(
+        &manifest["thresholds"]["min_low_band_rms"],
+        MIN_LOW_BAND_RMS,
+        "min_low_band_rms",
+    );
+    assert_manifest_f32(
+        &manifest["thresholds"]["max_source_first_generated_to_source_rms_ratio"],
+        MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO,
+        "max_source_first_generated_to_source_rms_ratio",
+    );
+    assert_manifest_f32(
+        &manifest["thresholds"]["min_support_generated_to_source_rms_ratio"],
+        MIN_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
+        "min_support_generated_to_source_rms_ratio",
+    );
+    assert_manifest_f32(
+        &manifest["thresholds"]["max_support_generated_to_source_rms_ratio"],
+        MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
+        "max_support_generated_to_source_rms_ratio",
+    );
+    let source_character_window_selection =
+        &manifest["metrics"]["source_character_window_selection"];
+    assert!(
+        source_character_window_selection["selected_frame_count"]
+            .as_u64()
+            .expect("source-character selected frame count")
+            > 0
+    );
+    assert!(
+        source_character_window_selection["selected_score"]
+            .as_f64()
+            .expect("source-character selected score")
+            >= source_character_window_selection["requested_head_score"]
                 .as_f64()
-                .expect("source-character selected score")
-                >= source_character_window_selection["requested_head_score"]
-                    .as_f64()
-                    .expect("source-character requested score")
-        );
-        if source_character_window_selection["reason"]
-            .as_str()
-            .expect("source-character selection reason")
-            == "source_character_window_promoted"
-        {
-            assert!(
-                source_character_window_selection["rms_retention_ratio"]
-                    .as_f64()
-                    .expect("source-character RMS retention")
-                    + 1e-6
-                    >= source_character_window_selection["min_rms_retention_ratio"]
-                        .as_f64()
-                        .expect("source-character min RMS retention"),
-                "{source_character_window_selection:?}"
-            );
-        }
+                .expect("source-character requested score")
+    );
+    if source_character_window_selection["reason"]
+        .as_str()
+        .expect("source-character selection reason")
+        == "source_character_window_promoted"
+    {
         assert!(
-            source_character_window_selection["scanned_candidate_count"]
-                .as_u64()
-                .expect("source-character scanned candidates")
-                >= 1
-        );
-        assert!(
-            matches!(
-                source_character_window_selection["reason"]
-                    .as_str()
-                    .expect("source-character selection reason"),
-                "requested_source_window_kept" | "source_character_window_promoted"
-            ),
+            source_character_window_selection["rms_retention_ratio"]
+                .as_f64()
+                .expect("source-character RMS retention")
+                + 1e-6
+                >= source_character_window_selection["min_rms_retention_ratio"]
+                    .as_f64()
+                    .expect("source-character min RMS retention"),
             "{source_character_window_selection:?}"
         );
-
-        let artifacts = manifest["artifacts"].as_array().expect("artifacts");
-        assert_eq!(artifacts.len(), 10);
-        assert_manifest_artifact(
-            artifacts,
-            "tr909_beat_fill",
-            "audio_wav",
-            output_dir.join("stems/01_tr909_beat_fill.wav"),
-            Some(output_dir.join("stems/01_tr909_beat_fill.metrics.md")),
-        );
-        assert_manifest_artifact(
-            artifacts,
-            "w30_feral_source_chop",
-            "audio_wav",
-            output_dir.join("stems/02_w30_feral_source_chop.wav"),
-            Some(output_dir.join("stems/02_w30_feral_source_chop.metrics.md")),
-        );
-        assert_manifest_artifact(
-            artifacts,
-            "mc202_bass_pressure_stem",
-            "audio_wav",
-            output_dir.join("stems/03_mc202_bass_pressure.wav"),
-            Some(output_dir.join("stems/03_mc202_bass_pressure.metrics.md")),
-        );
-        assert_manifest_artifact(
-            artifacts,
-            "product_stem_drums",
-            "audio_wav",
-            output_dir.join("stems/product/01_stem_drums.wav"),
-            Some(output_dir.join("stems/product/01_stem_drums.metrics.md")),
-        );
-        assert_manifest_artifact(
-            artifacts,
-            "product_stem_music",
-            "audio_wav",
-            output_dir.join("stems/product/02_stem_music.wav"),
-            Some(output_dir.join("stems/product/02_stem_music.metrics.md")),
-        );
-        assert_manifest_artifact(
-            artifacts,
-            "product_stem_bass",
-            "audio_wav",
-            output_dir.join("stems/product/03_stem_bass.wav"),
-            Some(output_dir.join("stems/product/03_stem_bass.metrics.md")),
-        );
-        assert_manifest_artifact(
-            artifacts,
-            "source_first_mix",
-            "audio_wav",
-            output_dir.join("04_riotbox_source_first_mix.wav"),
-            Some(output_dir.join("04_riotbox_source_first_mix.metrics.md")),
-        );
-        assert_manifest_artifact(
-            artifacts,
-            "full_grid_mix",
-            "audio_wav",
-            output_dir.join("05_riotbox_generated_support_mix.wav"),
-            Some(output_dir.join("05_riotbox_generated_support_mix.metrics.md")),
-        );
-        assert_manifest_artifact(
-            artifacts,
-            "grid_report",
-            "markdown_report",
-            output_dir.join("grid-report.md"),
-            None,
-        );
-        assert_manifest_artifact(
-            artifacts,
-            "readme",
-            "markdown_readme",
-            output_dir.join("README.md"),
-            None,
-        );
-
-        assert!(
-            manifest["metrics"]["source_first_mix"]["signal"]["rms"]
-                .as_f64()
-                .expect("source-first mix rms")
-                > f64::from(MIN_SIGNAL_RMS)
-        );
-        assert!(
-            manifest["metrics"]["full_grid_mix"]["signal"]["rms"]
-                .as_f64()
-                .expect("full mix rms")
-                > f64::from(MIN_SIGNAL_RMS)
-        );
-        assert!(
-            manifest["metrics"]["full_grid_mix"]["signal"]["event_density_per_bar"]
-                .as_f64()
-                .expect("full mix event density")
-                > 0.0
-        );
-        assert!(
-            manifest["metrics"]["full_grid_mix"]["low_band"]["rms"]
-                .as_f64()
-                .expect("low-band rms")
-                > f64::from(MIN_LOW_BAND_RMS)
-        );
-        assert!(manifest["metrics"]["mc202_question_answer_delta"].is_null());
-        assert!(manifest["metrics"]["mc202_question_answer"].is_null());
-        let reconstruction = &manifest["metrics"]["product_stem_reconstruction"];
-        assert_eq!(
-            reconstruction["schema"],
-            PRODUCT_STEM_RECONSTRUCTION_SCHEMA
-        );
-        assert_eq!(
-            reconstruction["rule"],
-            PRODUCT_STEM_RECONSTRUCTION_RULE
-        );
-        assert_eq!(reconstruction["passed"], true);
-        assert_eq!(reconstruction["sample_rate_hz"], SAMPLE_RATE);
-        assert_eq!(reconstruction["channel_count"], CHANNEL_COUNT);
-        assert_eq!(
-            reconstruction["frame_count"],
-            manifest["total_frames"].as_u64().expect("total frames")
-        );
-        assert!(
-            reconstruction["max_abs_error"]
-                .as_f64()
-                .expect("stem max abs error")
-                <= reconstruction["max_allowed_abs_error"]
-                    .as_f64()
-                    .expect("stem max abs tolerance")
-        );
-        assert!(
-            reconstruction["rms_error"]
-                .as_f64()
-                .expect("stem rms error")
-                <= reconstruction["max_allowed_rms_error"]
-                    .as_f64()
-                    .expect("stem rms tolerance")
-        );
-        assert_eq!(
-            manifest["metrics"]["tr909_source_profile"]["support_context"],
-            "transport_bar"
-        );
-        assert!(
-            manifest["metrics"]["tr909_source_profile"]["reason"]
+    }
+    assert!(
+        source_character_window_selection["scanned_candidate_count"]
+            .as_u64()
+            .expect("source-character scanned candidates")
+            >= 1
+    );
+    assert!(
+        matches!(
+            source_character_window_selection["reason"]
                 .as_str()
-                .expect("tr909 source reason")
-                .starts_with("source_")
-        );
-        assert!(
-            manifest["metrics"]["tr909_source_profile"]["signal_rms"]
+                .expect("source-character selection reason"),
+            "requested_source_window_kept" | "source_character_window_promoted"
+        ),
+        "{source_character_window_selection:?}"
+    );
+
+    let artifacts = manifest["artifacts"].as_array().expect("artifacts");
+    assert_eq!(artifacts.len(), 10);
+    assert_manifest_artifact(
+        artifacts,
+        "tr909_beat_fill",
+        "audio_wav",
+        output_dir.join("stems/01_tr909_beat_fill.wav"),
+        Some(output_dir.join("stems/01_tr909_beat_fill.metrics.md")),
+    );
+    assert_manifest_artifact(
+        artifacts,
+        "w30_feral_source_chop",
+        "audio_wav",
+        output_dir.join("stems/02_w30_feral_source_chop.wav"),
+        Some(output_dir.join("stems/02_w30_feral_source_chop.metrics.md")),
+    );
+    assert_manifest_artifact(
+        artifacts,
+        "mc202_bass_pressure_stem",
+        "audio_wav",
+        output_dir.join("stems/03_mc202_bass_pressure.wav"),
+        Some(output_dir.join("stems/03_mc202_bass_pressure.metrics.md")),
+    );
+    assert_manifest_artifact(
+        artifacts,
+        "product_stem_drums",
+        "audio_wav",
+        output_dir.join("stems/product/01_stem_drums.wav"),
+        Some(output_dir.join("stems/product/01_stem_drums.metrics.md")),
+    );
+    assert_manifest_artifact(
+        artifacts,
+        "product_stem_music",
+        "audio_wav",
+        output_dir.join("stems/product/02_stem_music.wav"),
+        Some(output_dir.join("stems/product/02_stem_music.metrics.md")),
+    );
+    assert_manifest_artifact(
+        artifacts,
+        "product_stem_bass",
+        "audio_wav",
+        output_dir.join("stems/product/03_stem_bass.wav"),
+        Some(output_dir.join("stems/product/03_stem_bass.metrics.md")),
+    );
+    assert_manifest_artifact(
+        artifacts,
+        "source_first_mix",
+        "audio_wav",
+        output_dir.join("04_riotbox_source_first_mix.wav"),
+        Some(output_dir.join("04_riotbox_source_first_mix.metrics.md")),
+    );
+    assert_manifest_artifact(
+        artifacts,
+        "full_grid_mix",
+        "audio_wav",
+        output_dir.join("05_riotbox_generated_support_mix.wav"),
+        Some(output_dir.join("05_riotbox_generated_support_mix.metrics.md")),
+    );
+    assert_manifest_artifact(
+        artifacts,
+        "grid_report",
+        "markdown_report",
+        output_dir.join("grid-report.md"),
+        None,
+    );
+    assert_manifest_artifact(
+        artifacts,
+        "readme",
+        "markdown_readme",
+        output_dir.join("README.md"),
+        None,
+    );
+
+    assert!(
+        manifest["metrics"]["source_first_mix"]["signal"]["rms"]
+            .as_f64()
+            .expect("source-first mix rms")
+            > f64::from(MIN_SIGNAL_RMS)
+    );
+    assert!(
+        manifest["metrics"]["full_grid_mix"]["signal"]["rms"]
+            .as_f64()
+            .expect("full mix rms")
+            > f64::from(MIN_SIGNAL_RMS)
+    );
+    assert!(
+        manifest["metrics"]["full_grid_mix"]["signal"]["event_density_per_bar"]
+            .as_f64()
+            .expect("full mix event density")
+            > 0.0
+    );
+    assert!(
+        manifest["metrics"]["full_grid_mix"]["low_band"]["rms"]
+            .as_f64()
+            .expect("low-band rms")
+            > f64::from(MIN_LOW_BAND_RMS)
+    );
+    assert!(manifest["metrics"]["mc202_question_answer_delta"].is_null());
+    assert!(manifest["metrics"]["mc202_question_answer"].is_null());
+    let reconstruction = &manifest["metrics"]["product_stem_reconstruction"];
+    assert_eq!(reconstruction["schema"], PRODUCT_STEM_RECONSTRUCTION_SCHEMA);
+    assert_eq!(reconstruction["rule"], PRODUCT_STEM_RECONSTRUCTION_RULE);
+    assert_eq!(reconstruction["passed"], true);
+    assert_eq!(reconstruction["sample_rate_hz"], SAMPLE_RATE);
+    assert_eq!(reconstruction["channel_count"], CHANNEL_COUNT);
+    assert_eq!(
+        reconstruction["frame_count"],
+        manifest["total_frames"].as_u64().expect("total frames")
+    );
+    assert!(
+        reconstruction["max_abs_error"]
+            .as_f64()
+            .expect("stem max abs error")
+            <= reconstruction["max_allowed_abs_error"]
                 .as_f64()
-                .expect("tr909 source signal rms")
-                > 0.0
-        );
-        assert!(manifest["metrics"]["tr909_groove_timing"]["applied"].is_boolean());
-        assert!(manifest["metrics"]["tr909_groove_timing"]["reason"]
+                .expect("stem max abs tolerance")
+    );
+    assert!(
+        reconstruction["rms_error"]
+            .as_f64()
+            .expect("stem rms error")
+            <= reconstruction["max_allowed_rms_error"]
+                .as_f64()
+                .expect("stem rms tolerance")
+    );
+    assert_eq!(
+        manifest["metrics"]["tr909_source_profile"]["support_context"],
+        "transport_bar"
+    );
+    assert!(
+        manifest["metrics"]["tr909_source_profile"]["reason"]
             .as_str()
-            .is_some_and(|reason| !reason.is_empty()));
-        assert!(manifest["metrics"]["tr909_groove_timing"]["offset_ms"].is_number());
-        let tr909_kick_pressure = &manifest["metrics"]["tr909_kick_pressure"];
-        assert_eq!(
-            tr909_kick_pressure["pattern_origin"],
-            PATTERN_ORIGIN_SOURCE_DERIVED
-        );
-        assert_eq!(
-            tr909_kick_pressure["source_evidence_role"],
-            TR909_SOURCE_EVIDENCE_ROLE_PROFILE_AND_ACCENT_DYNAMICS
-        );
-        assert!(
-            tr909_kick_pressure["source_profile_reason"]
-                .as_str()
-                .expect("tr909 pressure source profile reason")
-                .starts_with("source_")
-        );
-        assert_eq!(tr909_kick_pressure["applied"], true);
-        let tr909_pressure_anchors = tr909_kick_pressure["anchor_count"]
-            .as_u64()
-            .expect("tr909 kick pressure anchors");
-        assert!(tr909_pressure_anchors >= 2);
-        assert!(
-            tr909_kick_pressure["low_band_rms_ratio"]
-                .as_f64()
-                .expect("tr909 kick pressure low-band ratio")
-                >= f64::from(TR909_KICK_PRESSURE_MIN_LOW_BAND_RATIO)
-        );
-        assert!(
-            tr909_kick_pressure["post_peak_abs"]
-                .as_f64()
-                .expect("tr909 kick pressure peak")
-                <= f64::from(TR909_KICK_PRESSURE_MAX_PEAK_ABS)
-        );
-        let tr909_accent_dynamics = &manifest["metrics"]["tr909_source_accent_dynamics"];
-        assert_eq!(
-            tr909_accent_dynamics["pattern_origin"],
-            PATTERN_ORIGIN_SOURCE_DERIVED
-        );
-        assert_eq!(tr909_accent_dynamics["applied"], true);
-        let tr909_accent_count = tr909_accent_dynamics["distinct_accent_count"]
-            .as_u64()
-            .expect("tr909 source accent count");
-        assert!(tr909_accent_count >= 3);
-        let tr909_accent_span = tr909_accent_dynamics["accent_span"]
+            .expect("tr909 source reason")
+            .starts_with("source_")
+    );
+    assert!(
+        manifest["metrics"]["tr909_source_profile"]["signal_rms"]
             .as_f64()
-            .expect("tr909 source accent span");
-        let min_tr909_accent_span = tr909_accent_dynamics["min_required_accent_span"]
-            .as_f64()
-            .expect("tr909 source accent span budget");
-        assert!(tr909_accent_span >= min_tr909_accent_span);
-        let tr909_rendered_pressure = &manifest["metrics"]["tr909_rendered_drum_pressure"];
-        assert_eq!(tr909_rendered_pressure["applied"], true);
-        assert_eq!(
-            tr909_rendered_pressure["pattern_origin"],
-            PATTERN_ORIGIN_SOURCE_DERIVED
-        );
-        assert_eq!(
-            tr909_rendered_pressure["source_evidence_role"],
-            TR909_RENDERED_DRUM_PRESSURE_SOURCE_EVIDENCE_ROLE
-        );
-        assert!(
-            tr909_rendered_pressure["support_mix_tr909_contribution_ratio"]
-                .as_f64()
-                .expect("tr909 rendered support contribution")
-                >= tr909_rendered_pressure["min_required_support_mix_tr909_contribution_ratio"]
-                    .as_f64()
-                    .expect("tr909 rendered support contribution threshold")
-        );
-        assert!(
-            tr909_rendered_pressure["source_first_generated_to_source_rms_ratio"]
-                .as_f64()
-                .expect("tr909 rendered source-first ratio")
-                <= tr909_rendered_pressure["max_source_first_generated_to_source_rms_ratio"]
-                    .as_f64()
-                    .expect("tr909 rendered source-first threshold")
-        );
-        assert!(
-            tr909_rendered_pressure["tr909_source_grid_hit_ratio"]
-                .as_f64()
-                .expect("tr909 rendered grid hit ratio")
-                >= f64::from(SOURCE_GRID_OUTPUT_MIN_HIT_RATIO)
-        );
-        super::manifest_mc202_assertions::assert_mc202_manifest(manifest);
-        assert!(
-            manifest["metrics"]["w30_source_chop_profile"]["preview_rms"]
-                .as_f64()
-                .expect("w30 source chop preview rms")
-                > 0.0
-        );
-        assert!(
-            manifest["metrics"]["w30_source_chop_profile"]["tail_to_body_rms_ratio"]
-                .as_f64()
-                .expect("w30 source chop tail/body ratio")
-                >= 0.0
-        );
-        assert!(
-            manifest["metrics"]["w30_source_chop_profile"]["gain"]
-                .as_f64()
-                .expect("w30 source chop gain")
-                >= 0.85
-        );
-        let w30_trigger_variation = &manifest["metrics"]["w30_source_trigger_variation"];
-        assert_eq!(
-            w30_trigger_variation["pattern_origin"],
-            PATTERN_ORIGIN_SOURCE_DERIVED
-        );
-        assert_eq!(w30_trigger_variation["applied"], true);
-        assert_eq!(w30_trigger_variation["grid_subdivision"], 2);
-        assert_eq!(w30_trigger_variation["offbeat_trigger_count"], 0);
-        assert_eq!(
-            w30_trigger_variation["skipped_beat_anchor_count"],
-            0
-        );
-        assert!(
-            w30_trigger_variation["distinct_bar_pattern_count"]
-                .as_u64()
-                .expect("w30 trigger variation pattern count")
-                >= 2
-        );
-        assert!(
-            w30_trigger_variation["max_quantized_offset_ms"]
-                .as_f64()
-                .expect("w30 trigger quantized offset")
-                <= w30_trigger_variation["max_allowed_quantized_offset_ms"]
-                    .as_f64()
-                    .expect("w30 trigger quantized offset budget")
-        );
-        let w30_slice_choice = &manifest["metrics"]["w30_source_slice_choice"];
-        assert_eq!(w30_slice_choice["applied"], true);
-        assert!(
-            w30_slice_choice["unique_source_offset_count"]
-                .as_u64()
-                .expect("w30 slice choice unique offsets")
-                >= 4
-        );
-        assert!(
-            w30_slice_choice["selected_offset_span_samples"]
-                .as_u64()
-                .expect("w30 slice choice span")
-                > 0
-        );
-        let w30_accent_dynamics = &manifest["metrics"]["w30_source_accent_dynamics"];
-        assert_eq!(
-            w30_accent_dynamics["pattern_origin"],
-            PATTERN_ORIGIN_SOURCE_DERIVED
-        );
-        assert_eq!(w30_accent_dynamics["applied"], true);
-        assert!(
-            w30_accent_dynamics["distinct_velocity_count"]
-                .as_u64()
-                .expect("w30 accent distinct velocity count")
-                >= 3
-        );
-        assert!(
-            w30_accent_dynamics["velocity_span"]
-                .as_f64()
-                .expect("w30 accent velocity span")
-                >= w30_accent_dynamics["min_required_velocity_span"]
-                    .as_f64()
-                    .expect("w30 accent velocity span budget")
-        );
-        let w30_loop_closure = &manifest["metrics"]["w30_source_loop_closure"];
-        assert_eq!(w30_loop_closure["passed"], true);
-        assert!(
-            w30_loop_closure["preview_rms"]
-                .as_f64()
-                .expect("w30 loop closure preview rms")
-                > 0.0
-        );
-        assert!(
-            w30_loop_closure["edge_delta_abs"]
-                .as_f64()
-                .expect("w30 loop closure edge delta")
-                <= w30_loop_closure["max_allowed_edge_delta_abs"]
-                    .as_f64()
-                    .expect("w30 loop closure edge delta budget")
-        );
-        assert!(
-            w30_loop_closure["edge_abs_max"]
-                .as_f64()
-                .expect("w30 loop closure edge abs")
-                <= w30_loop_closure["max_allowed_edge_abs"]
-                    .as_f64()
-                    .expect("w30 loop closure edge abs budget")
-        );
-        assert!(
-            manifest["metrics"]["mix_balance"]["source_first_generated_to_source_rms_ratio"]
-                .as_f64()
-                .expect("source-first generated/source ratio")
-                < f64::from(MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO)
-        );
-        assert!(
-            manifest["metrics"]["mix_balance"]["support_generated_to_source_rms_ratio"]
-                .as_f64()
-                .expect("support generated/source ratio")
-                >= f64::from(MIN_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO)
-        );
-        assert!(
-            manifest["metrics"]["mix_balance"]["support_generated_to_source_rms_ratio"]
-                .as_f64()
-                .expect("support generated/source ratio")
-                < f64::from(MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO)
-        );
-        super::manifest_mix_assertions::assert_all_lane_mix_movement(manifest);
-        let output_drift = &manifest["metrics"]["source_grid_output_drift"];
-        let hit_ratio = output_drift["hit_ratio"].as_f64().expect("hit ratio");
-        assert!(hit_ratio >= f64::from(SOURCE_GRID_OUTPUT_MIN_HIT_RATIO));
-        let tr909_alignment = &manifest["metrics"]["tr909_source_grid_alignment"];
-        let tr909_hit_ratio = tr909_alignment["hit_ratio"]
-            .as_f64()
-            .expect("tr909 alignment hit ratio");
-        assert!(tr909_hit_ratio >= f64::from(SOURCE_GRID_OUTPUT_MIN_HIT_RATIO));
-        assert_eq!(
-            tr909_alignment["beat_count"],
-            manifest["metrics"]["source_grid_output_drift"]["beat_count"]
-        );
-        let mc202_alignment = &manifest["metrics"]["mc202_source_grid_alignment"];
-        let mc202_hit_ratio = mc202_alignment["hit_ratio"]
-            .as_f64()
-            .expect("mc202 alignment hit ratio");
-        assert!(mc202_hit_ratio >= f64::from(SOURCE_GRID_OUTPUT_MIN_HIT_RATIO));
-        assert_eq!(
-            mc202_alignment["beat_count"],
-            manifest["metrics"]["source_grid_output_drift"]["beat_count"]
-        );
-        let w30_alignment = &manifest["metrics"]["w30_source_grid_alignment"];
-        let w30_hit_ratio = w30_alignment["hit_ratio"]
-            .as_f64()
-            .expect("w30 alignment hit ratio");
-        assert!(w30_hit_ratio >= f64::from(SOURCE_GRID_OUTPUT_MIN_HIT_RATIO));
-        assert_eq!(
-            w30_alignment["beat_count"],
-            manifest["metrics"]["source_grid_output_drift"]["beat_count"]
-        );
-        assert!(
-            manifest["metrics"]["bar_variation"]["source_first_mix"]["bar_similarity"]
-                .as_f64()
-                .expect("source-first bar similarity")
-                <= 1.0
-        );
-        assert!(
-            manifest["metrics"]["bar_variation"]["mc202_bass_pressure_stem"]["bar_similarity"]
-                .as_f64()
-                .expect("mc202 bar similarity")
-                <= 1.0
-        );
-        assert!(
-            manifest["metrics"]["bar_variation"]["full_grid_mix"]["bar_similarity"]
-                .as_f64()
-                .expect("bar similarity")
-                <= 1.0
-        );
-        assert!(
-            manifest["metrics"]["bar_variation"]["full_grid_mix"]["identical_bar_run_length"]
-                .as_u64()
-                .expect("identical bar run")
-                >= 1
-        );
-        assert_spectral_sum(&manifest["metrics"]["spectral_energy"]["source_first_mix"]);
-        assert_spectral_sum(&manifest["metrics"]["spectral_energy"]["full_grid_mix"]);
-    }
-
-    fn assert_manifest_source_timing(source_timing: &serde_json::Value) {
-        assert_eq!(source_timing["schema"], "riotbox.source_timing_probe_readiness.v1");
-        assert_eq!(source_timing["schema_version"], 1);
-        assert!(source_timing["source_id"]
+            .expect("tr909 source signal rms")
+            > 0.0
+    );
+    assert!(manifest["metrics"]["tr909_groove_timing"]["applied"].is_boolean());
+    assert!(
+        manifest["metrics"]["tr909_groove_timing"]["reason"]
             .as_str()
-            .is_some_and(|value| value.ends_with("source.wav")));
-        assert_eq!(
-            source_timing["policy_profile"],
-            SourceTimingProbeBpmCandidatePolicy::DANCE_LOOP_AUTO_READINESS_PROFILE
-        );
-        assert_string_one_of(
-            &source_timing["readiness"],
-            &["unavailable", "weak", "needs_review", "ready"],
-        );
-        assert!(source_timing["requires_manual_confirm"].is_boolean());
-        assert_string_one_of(
-            &source_timing["grid_use"],
-            &[
-                "locked_grid",
-                "short_loop_manual_confirm",
-                "manual_confirm_only",
-                "fallback_grid",
-                "unavailable",
-            ],
-        );
-        assert!(source_timing["bpm_agrees_with_grid"].is_boolean());
-        assert!(
-            source_timing["primary_downbeat_offset_beats"].is_null()
-                || source_timing["primary_downbeat_offset_beats"]
-                    .as_u64()
-                    .is_some_and(|value| value < 4)
-        );
-        assert_optional_unit_float(&source_timing["primary_downbeat_score"]);
-        assert_optional_unit_float(&source_timing["primary_downbeat_margin"]);
-        assert!(source_timing["alternate_downbeat_phase_count"].is_u64());
-        let evidence_statuses = ["unavailable", "weak", "stable", "ambiguous"];
-        assert_string_one_of(&source_timing["beat_status"], &evidence_statuses);
-        assert_string_one_of(&source_timing["downbeat_status"], &evidence_statuses);
-        assert_string_one_of(
-            &source_timing["confidence_result"],
-            &["degraded", "candidate_cautious", "candidate_ambiguous"],
-        );
-        assert_string_one_of(
-            &source_timing["drift_status"],
-            &["unavailable", "not_enough_material", "stable", "high"],
-        );
-        assert_string_one_of(
-            &source_timing["phrase_status"],
-            &[
-                "unavailable",
-                "not_enough_material",
-                "ambiguous_downbeat",
-                "high_drift",
-                "stable",
-            ],
-        );
-        assert!(source_timing["primary_phrase_count"].is_u64());
-        assert!(source_timing["primary_phrase_bar_count"].is_u64());
-        let anchor_evidence = &source_timing["anchor_evidence"];
-        let primary_anchor_count = anchor_evidence["primary_anchor_count"]
-            .as_u64()
-            .expect("primary anchor count");
-        let typed_anchor_count = anchor_evidence["primary_kick_anchor_count"]
-            .as_u64()
-            .expect("primary kick anchor count")
-            + anchor_evidence["primary_backbeat_anchor_count"]
-                .as_u64()
-                .expect("primary backbeat anchor count")
-            + anchor_evidence["primary_transient_anchor_count"]
-                .as_u64()
-                .expect("primary transient anchor count");
-        assert!(primary_anchor_count > 0);
-        assert!(typed_anchor_count <= primary_anchor_count);
-        let groove_evidence = &source_timing["groove_evidence"];
-        assert!(groove_evidence["primary_groove_residual_count"].is_u64());
-        assert!(groove_evidence["primary_max_abs_offset_ms"].is_number());
-        assert!(groove_evidence["primary_groove_preview"].is_array());
-        assert!(source_timing["alternate_evidence_count"].is_u64());
-        assert!(source_timing["warning_codes"].is_array());
-    }
-    fn assert_spectral_sum(spectral: &serde_json::Value) {
-        let spectral_sum = spectral["low_band_energy_ratio"]
+            .is_some_and(|reason| !reason.is_empty())
+    );
+    assert!(manifest["metrics"]["tr909_groove_timing"]["offset_ms"].is_number());
+    let tr909_kick_pressure = &manifest["metrics"]["tr909_kick_pressure"];
+    assert_eq!(
+        tr909_kick_pressure["pattern_origin"],
+        PATTERN_ORIGIN_SOURCE_DERIVED
+    );
+    assert_eq!(
+        tr909_kick_pressure["source_evidence_role"],
+        TR909_SOURCE_EVIDENCE_ROLE_PROFILE_AND_ACCENT_DYNAMICS
+    );
+    assert!(
+        tr909_kick_pressure["source_profile_reason"]
+            .as_str()
+            .expect("tr909 pressure source profile reason")
+            .starts_with("source_")
+    );
+    assert_eq!(tr909_kick_pressure["applied"], true);
+    let tr909_pressure_anchors = tr909_kick_pressure["anchor_count"]
+        .as_u64()
+        .expect("tr909 kick pressure anchors");
+    assert!(tr909_pressure_anchors >= 2);
+    assert!(
+        tr909_kick_pressure["low_band_rms_ratio"]
             .as_f64()
-            .expect("low energy")
-            + spectral["mid_band_energy_ratio"].as_f64().expect("mid energy")
-            + spectral["high_band_energy_ratio"]
+            .expect("tr909 kick pressure low-band ratio")
+            >= f64::from(TR909_KICK_PRESSURE_MIN_LOW_BAND_RATIO)
+    );
+    assert!(
+        tr909_kick_pressure["post_peak_abs"]
+            .as_f64()
+            .expect("tr909 kick pressure peak")
+            <= f64::from(TR909_KICK_PRESSURE_MAX_PEAK_ABS)
+    );
+    let tr909_accent_dynamics = &manifest["metrics"]["tr909_source_accent_dynamics"];
+    assert_eq!(
+        tr909_accent_dynamics["pattern_origin"],
+        PATTERN_ORIGIN_SOURCE_DERIVED
+    );
+    assert_eq!(tr909_accent_dynamics["applied"], true);
+    let tr909_accent_count = tr909_accent_dynamics["distinct_accent_count"]
+        .as_u64()
+        .expect("tr909 source accent count");
+    assert!(tr909_accent_count >= 3);
+    let tr909_accent_span = tr909_accent_dynamics["accent_span"]
+        .as_f64()
+        .expect("tr909 source accent span");
+    let min_tr909_accent_span = tr909_accent_dynamics["min_required_accent_span"]
+        .as_f64()
+        .expect("tr909 source accent span budget");
+    assert!(tr909_accent_span >= min_tr909_accent_span);
+    let tr909_rendered_pressure = &manifest["metrics"]["tr909_rendered_drum_pressure"];
+    assert_eq!(tr909_rendered_pressure["applied"], true);
+    assert_eq!(
+        tr909_rendered_pressure["pattern_origin"],
+        PATTERN_ORIGIN_SOURCE_DERIVED
+    );
+    assert_eq!(
+        tr909_rendered_pressure["source_evidence_role"],
+        TR909_RENDERED_DRUM_PRESSURE_SOURCE_EVIDENCE_ROLE
+    );
+    assert!(
+        tr909_rendered_pressure["support_mix_tr909_contribution_ratio"]
+            .as_f64()
+            .expect("tr909 rendered support contribution")
+            >= tr909_rendered_pressure["min_required_support_mix_tr909_contribution_ratio"]
                 .as_f64()
-                .expect("high energy");
-        assert!((spectral_sum - 1.0).abs() < 0.000_001);
-    }
-    fn assert_string_one_of(value: &serde_json::Value, allowed: &[&str]) {
-        assert!(value.as_str().is_some_and(|value| allowed.contains(&value)));
-    }
-    fn assert_optional_unit_float(value: &serde_json::Value) {
-        assert!(value.is_null() || value.as_f64().is_some_and(|value| (0.0..=1.0).contains(&value)));
-    }
+                .expect("tr909 rendered support contribution threshold")
+    );
+    assert!(
+        tr909_rendered_pressure["source_first_generated_to_source_rms_ratio"]
+            .as_f64()
+            .expect("tr909 rendered source-first ratio")
+            <= tr909_rendered_pressure["max_source_first_generated_to_source_rms_ratio"]
+                .as_f64()
+                .expect("tr909 rendered source-first threshold")
+    );
+    assert!(
+        tr909_rendered_pressure["tr909_source_grid_hit_ratio"]
+            .as_f64()
+            .expect("tr909 rendered grid hit ratio")
+            >= f64::from(SOURCE_GRID_OUTPUT_MIN_HIT_RATIO)
+    );
+    super::manifest_mc202_assertions::assert_mc202_manifest(manifest);
+    assert!(
+        manifest["metrics"]["w30_source_chop_profile"]["preview_rms"]
+            .as_f64()
+            .expect("w30 source chop preview rms")
+            > 0.0
+    );
+    assert!(
+        manifest["metrics"]["w30_source_chop_profile"]["tail_to_body_rms_ratio"]
+            .as_f64()
+            .expect("w30 source chop tail/body ratio")
+            >= 0.0
+    );
+    assert!(
+        manifest["metrics"]["w30_source_chop_profile"]["gain"]
+            .as_f64()
+            .expect("w30 source chop gain")
+            >= 0.85
+    );
+    let w30_trigger_variation = &manifest["metrics"]["w30_source_trigger_variation"];
+    assert_eq!(
+        w30_trigger_variation["pattern_origin"],
+        PATTERN_ORIGIN_SOURCE_DERIVED
+    );
+    assert_eq!(w30_trigger_variation["applied"], true);
+    assert_eq!(w30_trigger_variation["grid_subdivision"], 2);
+    assert_eq!(w30_trigger_variation["offbeat_trigger_count"], 0);
+    assert_eq!(w30_trigger_variation["skipped_beat_anchor_count"], 0);
+    assert!(
+        w30_trigger_variation["distinct_bar_pattern_count"]
+            .as_u64()
+            .expect("w30 trigger variation pattern count")
+            >= 2
+    );
+    assert!(
+        w30_trigger_variation["max_quantized_offset_ms"]
+            .as_f64()
+            .expect("w30 trigger quantized offset")
+            <= w30_trigger_variation["max_allowed_quantized_offset_ms"]
+                .as_f64()
+                .expect("w30 trigger quantized offset budget")
+    );
+    let w30_slice_choice = &manifest["metrics"]["w30_source_slice_choice"];
+    assert_eq!(w30_slice_choice["applied"], true);
+    assert!(
+        w30_slice_choice["unique_source_offset_count"]
+            .as_u64()
+            .expect("w30 slice choice unique offsets")
+            >= 4
+    );
+    assert!(
+        w30_slice_choice["selected_offset_span_samples"]
+            .as_u64()
+            .expect("w30 slice choice span")
+            > 0
+    );
+    let w30_accent_dynamics = &manifest["metrics"]["w30_source_accent_dynamics"];
+    assert_eq!(
+        w30_accent_dynamics["pattern_origin"],
+        PATTERN_ORIGIN_SOURCE_DERIVED
+    );
+    assert_eq!(w30_accent_dynamics["applied"], true);
+    assert!(
+        w30_accent_dynamics["distinct_velocity_count"]
+            .as_u64()
+            .expect("w30 accent distinct velocity count")
+            >= 3
+    );
+    assert!(
+        w30_accent_dynamics["velocity_span"]
+            .as_f64()
+            .expect("w30 accent velocity span")
+            >= w30_accent_dynamics["min_required_velocity_span"]
+                .as_f64()
+                .expect("w30 accent velocity span budget")
+    );
+    let w30_loop_closure = &manifest["metrics"]["w30_source_loop_closure"];
+    assert_eq!(w30_loop_closure["passed"], true);
+    assert!(
+        w30_loop_closure["preview_rms"]
+            .as_f64()
+            .expect("w30 loop closure preview rms")
+            > 0.0
+    );
+    assert!(
+        w30_loop_closure["edge_delta_abs"]
+            .as_f64()
+            .expect("w30 loop closure edge delta")
+            <= w30_loop_closure["max_allowed_edge_delta_abs"]
+                .as_f64()
+                .expect("w30 loop closure edge delta budget")
+    );
+    assert!(
+        w30_loop_closure["edge_abs_max"]
+            .as_f64()
+            .expect("w30 loop closure edge abs")
+            <= w30_loop_closure["max_allowed_edge_abs"]
+                .as_f64()
+                .expect("w30 loop closure edge abs budget")
+    );
+    assert!(
+        manifest["metrics"]["mix_balance"]["source_first_generated_to_source_rms_ratio"]
+            .as_f64()
+            .expect("source-first generated/source ratio")
+            < f64::from(MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO)
+    );
+    assert!(
+        manifest["metrics"]["mix_balance"]["support_generated_to_source_rms_ratio"]
+            .as_f64()
+            .expect("support generated/source ratio")
+            >= f64::from(MIN_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO)
+    );
+    assert!(
+        manifest["metrics"]["mix_balance"]["support_generated_to_source_rms_ratio"]
+            .as_f64()
+            .expect("support generated/source ratio")
+            < f64::from(MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO)
+    );
+    super::manifest_mix_assertions::assert_all_lane_mix_movement(manifest);
+    let output_drift = &manifest["metrics"]["source_grid_output_drift"];
+    let hit_ratio = output_drift["hit_ratio"].as_f64().expect("hit ratio");
+    assert!(hit_ratio >= f64::from(SOURCE_GRID_OUTPUT_MIN_HIT_RATIO));
+    let tr909_alignment = &manifest["metrics"]["tr909_source_grid_alignment"];
+    let tr909_hit_ratio = tr909_alignment["hit_ratio"]
+        .as_f64()
+        .expect("tr909 alignment hit ratio");
+    assert!(tr909_hit_ratio >= f64::from(SOURCE_GRID_OUTPUT_MIN_HIT_RATIO));
+    assert_eq!(
+        tr909_alignment["beat_count"],
+        manifest["metrics"]["source_grid_output_drift"]["beat_count"]
+    );
+    let mc202_alignment = &manifest["metrics"]["mc202_source_grid_alignment"];
+    let mc202_hit_ratio = mc202_alignment["hit_ratio"]
+        .as_f64()
+        .expect("mc202 alignment hit ratio");
+    assert!(mc202_hit_ratio >= f64::from(SOURCE_GRID_OUTPUT_MIN_HIT_RATIO));
+    assert_eq!(
+        mc202_alignment["beat_count"],
+        manifest["metrics"]["source_grid_output_drift"]["beat_count"]
+    );
+    let w30_alignment = &manifest["metrics"]["w30_source_grid_alignment"];
+    let w30_hit_ratio = w30_alignment["hit_ratio"]
+        .as_f64()
+        .expect("w30 alignment hit ratio");
+    assert!(w30_hit_ratio >= f64::from(SOURCE_GRID_OUTPUT_MIN_HIT_RATIO));
+    assert_eq!(
+        w30_alignment["beat_count"],
+        manifest["metrics"]["source_grid_output_drift"]["beat_count"]
+    );
+    assert!(
+        manifest["metrics"]["bar_variation"]["source_first_mix"]["bar_similarity"]
+            .as_f64()
+            .expect("source-first bar similarity")
+            <= 1.0
+    );
+    assert!(
+        manifest["metrics"]["bar_variation"]["mc202_bass_pressure_stem"]["bar_similarity"]
+            .as_f64()
+            .expect("mc202 bar similarity")
+            <= 1.0
+    );
+    assert!(
+        manifest["metrics"]["bar_variation"]["full_grid_mix"]["bar_similarity"]
+            .as_f64()
+            .expect("bar similarity")
+            <= 1.0
+    );
+    assert!(
+        manifest["metrics"]["bar_variation"]["full_grid_mix"]["identical_bar_run_length"]
+            .as_u64()
+            .expect("identical bar run")
+            >= 1
+    );
+    assert_spectral_sum(&manifest["metrics"]["spectral_energy"]["source_first_mix"]);
+    assert_spectral_sum(&manifest["metrics"]["spectral_energy"]["full_grid_mix"]);
+}
 
-    fn assert_manifest_artifact(
-        artifacts: &[serde_json::Value],
-        role: &str,
-        kind: &str,
-        path: PathBuf,
-        metrics_path: Option<PathBuf>,
-    ) {
-        let artifact = artifacts
-            .iter()
-            .find(|artifact| artifact["role"] == role)
-            .unwrap_or_else(|| panic!("missing artifact role {role}"));
+fn assert_manifest_source_timing(source_timing: &serde_json::Value) {
+    assert_eq!(
+        source_timing["schema"],
+        "riotbox.source_timing_probe_readiness.v1"
+    );
+    assert_eq!(source_timing["schema_version"], 1);
+    assert!(
+        source_timing["source_id"]
+            .as_str()
+            .is_some_and(|value| value.ends_with("source.wav"))
+    );
+    assert_eq!(
+        source_timing["policy_profile"],
+        SourceTimingProbeBpmCandidatePolicy::DANCE_LOOP_AUTO_READINESS_PROFILE
+    );
+    assert_string_one_of(
+        &source_timing["readiness"],
+        &["unavailable", "weak", "needs_review", "ready"],
+    );
+    assert!(source_timing["requires_manual_confirm"].is_boolean());
+    assert_string_one_of(
+        &source_timing["grid_use"],
+        &[
+            "locked_grid",
+            "short_loop_manual_confirm",
+            "manual_confirm_only",
+            "fallback_grid",
+            "unavailable",
+        ],
+    );
+    assert!(source_timing["bpm_agrees_with_grid"].is_boolean());
+    assert!(
+        source_timing["primary_downbeat_offset_beats"].is_null()
+            || source_timing["primary_downbeat_offset_beats"]
+                .as_u64()
+                .is_some_and(|value| value < 4)
+    );
+    assert_optional_unit_float(&source_timing["primary_downbeat_score"]);
+    assert_optional_unit_float(&source_timing["primary_downbeat_margin"]);
+    assert!(source_timing["alternate_downbeat_phase_count"].is_u64());
+    let evidence_statuses = ["unavailable", "weak", "stable", "ambiguous"];
+    assert_string_one_of(&source_timing["beat_status"], &evidence_statuses);
+    assert_string_one_of(&source_timing["downbeat_status"], &evidence_statuses);
+    assert_string_one_of(
+        &source_timing["confidence_result"],
+        &["degraded", "candidate_cautious", "candidate_ambiguous"],
+    );
+    assert_string_one_of(
+        &source_timing["drift_status"],
+        &["unavailable", "not_enough_material", "stable", "high"],
+    );
+    assert_string_one_of(
+        &source_timing["phrase_status"],
+        &[
+            "unavailable",
+            "not_enough_material",
+            "ambiguous_downbeat",
+            "high_drift",
+            "stable",
+        ],
+    );
+    assert!(source_timing["primary_phrase_count"].is_u64());
+    assert!(source_timing["primary_phrase_bar_count"].is_u64());
+    let anchor_evidence = &source_timing["anchor_evidence"];
+    let primary_anchor_count = anchor_evidence["primary_anchor_count"]
+        .as_u64()
+        .expect("primary anchor count");
+    let typed_anchor_count = anchor_evidence["primary_kick_anchor_count"]
+        .as_u64()
+        .expect("primary kick anchor count")
+        + anchor_evidence["primary_backbeat_anchor_count"]
+            .as_u64()
+            .expect("primary backbeat anchor count")
+        + anchor_evidence["primary_transient_anchor_count"]
+            .as_u64()
+            .expect("primary transient anchor count");
+    assert!(primary_anchor_count > 0);
+    assert!(typed_anchor_count <= primary_anchor_count);
+    let groove_evidence = &source_timing["groove_evidence"];
+    assert!(groove_evidence["primary_groove_residual_count"].is_u64());
+    assert!(groove_evidence["primary_max_abs_offset_ms"].is_number());
+    assert!(groove_evidence["primary_groove_preview"].is_array());
+    assert!(source_timing["alternate_evidence_count"].is_u64());
+    assert!(source_timing["warning_codes"].is_array());
+}
+fn assert_spectral_sum(spectral: &serde_json::Value) {
+    let spectral_sum = spectral["low_band_energy_ratio"]
+        .as_f64()
+        .expect("low energy")
+        + spectral["mid_band_energy_ratio"]
+            .as_f64()
+            .expect("mid energy")
+        + spectral["high_band_energy_ratio"]
+            .as_f64()
+            .expect("high energy");
+    assert!((spectral_sum - 1.0).abs() < 0.000_001);
+}
+fn assert_string_one_of(value: &serde_json::Value, allowed: &[&str]) {
+    assert!(value.as_str().is_some_and(|value| allowed.contains(&value)));
+}
+fn assert_optional_unit_float(value: &serde_json::Value) {
+    assert!(
+        value.is_null()
+            || value
+                .as_f64()
+                .is_some_and(|value| (0.0..=1.0).contains(&value))
+    );
+}
 
-        assert_eq!(artifact["kind"], kind);
-        assert_eq!(artifact["path"], path.display().to_string());
-        assert!(path.is_file(), "manifest artifact should exist: {path:?}");
+fn assert_manifest_artifact(
+    artifacts: &[serde_json::Value],
+    role: &str,
+    kind: &str,
+    path: PathBuf,
+    metrics_path: Option<PathBuf>,
+) {
+    let artifact = artifacts
+        .iter()
+        .find(|artifact| artifact["role"] == role)
+        .unwrap_or_else(|| panic!("missing artifact role {role}"));
 
-        match metrics_path {
-            Some(metrics_path) => {
-                assert_eq!(artifact["metrics_path"], metrics_path.display().to_string());
-                assert!(
-                    metrics_path.is_file(),
-                    "manifest metrics artifact should exist: {metrics_path:?}"
-                );
-            }
-            None => assert!(artifact["metrics_path"].is_null()),
+    assert_eq!(artifact["kind"], kind);
+    assert_eq!(artifact["path"], path.display().to_string());
+    assert!(path.is_file(), "manifest artifact should exist: {path:?}");
+
+    match metrics_path {
+        Some(metrics_path) => {
+            assert_eq!(artifact["metrics_path"], metrics_path.display().to_string());
+            assert!(
+                metrics_path.is_file(),
+                "manifest metrics artifact should exist: {metrics_path:?}"
+            );
         }
+        None => assert!(artifact["metrics_path"].is_null()),
     }
+}
 
-    fn assert_manifest_f32(value: &serde_json::Value, expected: f32, name: &str) {
-        let actual = value.as_f64().unwrap_or_else(|| panic!("{name} missing"));
-        assert!(
-            (actual - f64::from(expected)).abs() < 0.000_001,
-            "{name} expected {expected}, got {actual}"
-        );
-    }
+fn assert_manifest_f32(value: &serde_json::Value, expected: f32, name: &str) {
+    let actual = value.as_f64().unwrap_or_else(|| panic!("{name} missing"));
+    assert!(
+        (actual - f64::from(expected)).abs() < 0.000_001,
+        "{name} expected {expected}, got {actual}"
+    );
 }

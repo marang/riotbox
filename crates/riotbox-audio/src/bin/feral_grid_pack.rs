@@ -52,8 +52,6 @@ mod verification_command_tests;
 use bar_variation_metrics::BarVariationMetrics;
 #[cfg(test)]
 use bar_variation_metrics::bar_variation_metrics;
-#[cfg(test)]
-use config::PATTERN_ORIGIN_SOURCE_DERIVED;
 use config::{
     CHANNEL_COUNT, DEFAULT_BEATS_PER_BAR, MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO,
     MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO, MIN_LOW_BAND_RMS, MIN_SIGNAL_RMS,
@@ -77,17 +75,10 @@ mod manifest;
 mod product_stem_contributions;
 
 use manifest::write_manifest;
-#[cfg(test)]
-use product_stem_contributions::{
-    PRODUCT_STEM_RECONSTRUCTION_RULE, PRODUCT_STEM_RECONSTRUCTION_SCHEMA,
-};
 use product_stem_contributions::{
     ProductStemContributionRender, ProductStemReconstructionReport,
     render_product_stem_contributions, validate_written_product_stem_reconstruction,
 };
-
-#[cfg(test)]
-use riotbox_audio::listening_manifest::LISTENING_MANIFEST_SCHEMA_VERSION;
 
 #[path = "feral_grid_pack/sample_measurements.rs"]
 mod sample_measurements;
@@ -144,9 +135,8 @@ mod tr909_source_grid_consumer_tests;
 use source_aware_tr909::{SourceAwareTr909Profile, derive_source_aware_tr909_profile};
 #[cfg(test)]
 use tr909_kick_pressure::{
-    TR909_KICK_PRESSURE_MAX_PEAK_ABS, TR909_KICK_PRESSURE_MIN_LOW_BAND_RATIO,
-    TR909_SOURCE_ACCENT_MIN_ACCENT_SPAN, TR909_SOURCE_ACCENT_MIN_DISTINCT_ACCENTS,
-    TR909_SOURCE_EVIDENCE_ROLE_PROFILE_AND_ACCENT_DYNAMICS, render_tr909_source_support,
+    TR909_KICK_PRESSURE_MIN_LOW_BAND_RATIO, TR909_SOURCE_ACCENT_MIN_ACCENT_SPAN,
+    TR909_SOURCE_ACCENT_MIN_DISTINCT_ACCENTS, render_tr909_source_support,
     render_tr909_source_support_legacy,
 };
 use tr909_kick_pressure::{
@@ -197,16 +187,13 @@ use mc202_source_contour::Mc202SourceContourProfile;
 use mc202_source_contour::{
     MC202_REASON_LOW_SECTION_DROP_CONTOUR, MC202_REASON_MID_SECTION_HOLD_CONTOUR,
 };
-#[cfg(test)]
-use mc202_source_manifest::MC202_PATTERN_ORIGIN_SOURCE_DERIVED_CONTOUR;
 use mc202_source_manifest::{
     ManifestMc202BassPressureProof, ManifestMc202SourceContourProof,
     manifest_mc202_bass_pressure_proof, manifest_mc202_source_contour_proof,
 };
 #[cfg(test)]
 use mc202_source_phrase::{
-    MC202_SOURCE_EXPRESSION_ROLE_ANSWER_LIFT, MC202_SOURCE_EXPRESSION_ROLE_BASS_PRESSURE,
-    MC202_SOURCE_EXPRESSION_ROLE_HOOK_RESTRAINT_HOLD,
+    MC202_SOURCE_EXPRESSION_ROLE_BASS_PRESSURE, MC202_SOURCE_EXPRESSION_ROLE_HOOK_RESTRAINT_HOLD,
 };
 use render_measurements::{RenderMetrics, render_metrics};
 #[cfg(test)]
@@ -249,15 +236,19 @@ mod tr909_rendered_drum_pressure;
 #[path = "feral_grid_pack/tr909_rendered_drum_pressure_tests.rs"]
 mod tr909_rendered_drum_pressure_tests;
 
-#[cfg(test)]
-use tr909_rendered_drum_pressure::TR909_RENDERED_DRUM_PRESSURE_SOURCE_EVIDENCE_ROLE;
 use tr909_rendered_drum_pressure::{
     Tr909RenderedDrumPressureInput, Tr909RenderedDrumPressureProof,
     tr909_rendered_drum_pressure_proof,
 };
 include!("feral_grid_pack/pack_text_outputs.rs");
 include!("feral_grid_pack/render_stems.rs");
-include!("feral_grid_pack/manifest_assertions.rs");
-include!("feral_grid_pack/manifest_mc202_assertions.rs");
-include!("feral_grid_pack/manifest_mix_assertions.rs");
+#[cfg(test)]
+#[path = "feral_grid_pack/manifest_assertions.rs"]
+mod manifest_assertions;
+#[cfg(test)]
+#[path = "feral_grid_pack/manifest_mc202_assertions.rs"]
+mod manifest_mc202_assertions;
+#[cfg(test)]
+#[path = "feral_grid_pack/manifest_mix_assertions.rs"]
+mod manifest_mix_assertions;
 include!("feral_grid_pack/tests.rs");

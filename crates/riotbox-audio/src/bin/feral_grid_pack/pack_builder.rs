@@ -4,8 +4,6 @@ use std::{
 };
 
 use riotbox_core::source_graph::SourceTimingProbeReadinessReport;
-#[cfg(test)]
-use riotbox_core::source_graph::SourceTimingProbeBpmCandidatePolicy;
 
 use riotbox_audio::{
     runtime::{
