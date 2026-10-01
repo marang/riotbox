@@ -1741,4 +1741,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Replace observer/audio QA correlation includes with semantic Rust owners
 - [RIOTBOX-1516.md](./RIOTBOX-1516.md)
   Architecture checkpoint after Core projection/timing/policy and Observer QA ownership
+- [RIOTBOX-1515.md](./RIOTBOX-1515.md)
+  Reject overflowing Observer/audio anchor totals without panic or wrapped acceptance
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
