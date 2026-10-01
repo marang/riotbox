@@ -1745,4 +1745,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Reject overflowing Observer/audio anchor totals without panic or wrapped acceptance
 - [RIOTBOX-1517.md](./RIOTBOX-1517.md)
   Replace lane recipe QA includes with semantic, source-free Rust owners
+- [RIOTBOX-1518.md](./RIOTBOX-1518.md)
+  Reject non-finite W-30 preview render durations before artifact writes
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
