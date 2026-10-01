@@ -1791,4 +1791,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Review cross-slice QA input integrity and product-spine boundaries
 - [RIOTBOX-1540.md](./RIOTBOX-1540.md)
   Reject physical aliases between W-30 WAV and metrics outputs
+- [RIOTBOX-1541.md](./RIOTBOX-1541.md)
+  Reject physically coupled Feral pack artifact destinations before rendering
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
