@@ -3,8 +3,6 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use serde::Serialize;
-
 use riotbox_core::source_graph::SourceTimingProbeReadinessReport;
 #[cfg(test)]
 use riotbox_core::source_graph::SourceTimingProbeBpmCandidatePolicy;
@@ -17,7 +15,6 @@ use riotbox_audio::{
     source_audio::{
         SourceAudioCache, SourceAudioError, write_interleaved_pcm16_wav,
     },
-    tr909::Tr909SourceSupportProfile,
     w30::{
         W30_PREVIEW_SAMPLE_WINDOW_LEN, W30PreviewRenderMode, W30PreviewRenderRouting,
         W30PreviewRenderState, W30PreviewSampleWindow, W30PreviewSourceProfile,
@@ -25,7 +22,9 @@ use riotbox_audio::{
 };
 
 #[cfg(test)]
-use riotbox_audio::tr909::{Tr909PatternAdoption, Tr909PhraseVariation, Tr909SourceSupportContext};
+use riotbox_audio::tr909::{
+    Tr909PatternAdoption, Tr909PhraseVariation, Tr909SourceSupportContext, Tr909SourceSupportProfile,
+};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse(env::args().skip(1))?;

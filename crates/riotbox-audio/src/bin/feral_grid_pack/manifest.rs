@@ -7,6 +7,8 @@ use riotbox_audio::listening_manifest::{
     ListeningPackRenderMetrics as ManifestRenderMetrics, write_manifest_json,
 };
 
+use super::tr909_rendered_drum_pressure::Tr909RenderedDrumPressureProof;
+
 use super::{
     AllLaneMixMovementProof, Args, BarVariationMetrics, CHANNEL_COUNT, Grid, GridBpmDecision,
     MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO, MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
@@ -18,8 +20,8 @@ use super::{
     ManifestW30SourceTriggerVariationProof, MasterBusLimiterReport, PACK_ID, PackReport,
     ProductStemReconstructionReport, RenderMetrics, SAMPLE_RATE, SourceCharacterWindowSelection,
     SourceGridOutputDriftMetrics, SourceTimingAnalysisForManifest, SpectralEnergyMetrics,
-    Tr909GrooveTimingPolicy, Tr909RenderedDrumPressureProof, grid_bpm_decision_reason_label,
-    grid_bpm_source_label, manifest_mc202_bass_pressure_proof, manifest_mc202_source_contour_proof,
+    Tr909GrooveTimingPolicy, grid_bpm_decision_reason_label, grid_bpm_source_label,
+    manifest_mc202_bass_pressure_proof, manifest_mc202_source_contour_proof,
     manifest_source_timing_readiness, manifest_tr909_kick_pressure_proof,
     manifest_tr909_source_accent_dynamics_proof, manifest_tr909_source_profile,
     manifest_w30_source_accent_dynamics_proof, manifest_w30_source_chop_profile,
