@@ -1811,4 +1811,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Review completed semantic QA module boundaries and product evidence separation
 - [RIOTBOX-1416.md](./RIOTBOX-1416.md)
   Record the verified 2026-07-19 broad codebase review in repo docs
+- [RIOTBOX-1550.md](./RIOTBOX-1550.md)
+  Freeze source-free limiter baseline protocol and exact RuntimeMix control proof
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
