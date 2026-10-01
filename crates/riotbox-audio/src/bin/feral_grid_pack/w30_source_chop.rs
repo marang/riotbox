@@ -1,102 +1,42 @@
-#[derive(Clone, Copy, Debug, PartialEq)]
-struct W30SourceChopProfile {
-    source_window_rms: f32,
-    selected_rms_before_gain: f32,
-    preview_rms: f32,
-    preview_peak_abs: f32,
-    body_rms: f32,
-    tail_rms: f32,
-    tail_to_body_rms_ratio: f32,
-    selected_start_frame: u64,
-    selected_frame_count: usize,
-    gain: f32,
-    reason: &'static str,
-}
+//! Bounded source-window preparation and loop-closure evidence, not JSON presentation.
+
+use super::config::MIN_SIGNAL_RMS;
+use super::sample_measurements::{mono_frames, peak_abs, positive_abs_delta, rms};
+use riotbox_audio::w30::{W30_PREVIEW_SAMPLE_WINDOW_LEN, W30PreviewSampleWindow};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-struct W30SourceLoopClosureProof {
-    passed: bool,
-    selected_frame_count: usize,
-    preview_rms: f32,
-    edge_delta_abs: f32,
-    max_allowed_edge_delta_abs: f32,
-    edge_abs_max: f32,
-    max_allowed_edge_abs: f32,
-    source_contains_selection: bool,
-    reason: &'static str,
+pub(super) struct W30SourceChopProfile {
+    pub(super) source_window_rms: f32,
+    pub(super) selected_rms_before_gain: f32,
+    pub(super) preview_rms: f32,
+    pub(super) preview_peak_abs: f32,
+    pub(super) body_rms: f32,
+    pub(super) tail_rms: f32,
+    pub(super) tail_to_body_rms_ratio: f32,
+    pub(super) selected_start_frame: u64,
+    pub(super) selected_frame_count: usize,
+    pub(super) gain: f32,
+    pub(super) reason: &'static str,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-struct W30SourceTriggerVariationProof {
-    applied: bool,
-    grid_subdivision: u32,
-    trigger_count: u32,
-    beat_anchor_trigger_count: u32,
-    offbeat_trigger_count: u32,
-    skipped_beat_anchor_count: u32,
-    distinct_bar_pattern_count: usize,
-    max_quantized_offset_ms: f32,
-    max_allowed_quantized_offset_ms: f32,
-    reason: &'static str,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-struct W30SourceTriggerEvent {
-    beat_position: f32,
-    velocity: f32,
-    source_energy_score: f32,
-    source_offset_samples: usize,
-}
-
-#[derive(Serialize)]
-struct ManifestW30SourceChopProfile {
-    source_window_rms: f32,
-    selected_rms_before_gain: f32,
-    preview_rms: f32,
-    preview_peak_abs: f32,
-    body_rms: f32,
-    tail_rms: f32,
-    tail_to_body_rms_ratio: f32,
-    selected_start_frame: u64,
-    selected_frame_count: usize,
-    gain: f32,
-    reason: &'static str,
-}
-
-#[derive(Serialize)]
-struct ManifestW30SourceLoopClosureProof {
-    passed: bool,
-    selected_frame_count: usize,
-    preview_rms: f32,
-    edge_delta_abs: f32,
-    max_allowed_edge_delta_abs: f32,
-    edge_abs_max: f32,
-    max_allowed_edge_abs: f32,
-    source_contains_selection: bool,
-    reason: &'static str,
-}
-
-#[derive(Serialize)]
-struct ManifestW30SourceTriggerVariationProof {
-    pattern_origin: &'static str,
-    applied: bool,
-    grid_subdivision: u32,
-    trigger_count: u32,
-    beat_anchor_trigger_count: u32,
-    offbeat_trigger_count: u32,
-    skipped_beat_anchor_count: u32,
-    distinct_bar_pattern_count: usize,
-    max_quantized_offset_ms: f32,
-    max_allowed_quantized_offset_ms: f32,
-    reason: &'static str,
+pub(super) struct W30SourceLoopClosureProof {
+    pub(super) passed: bool,
+    pub(super) selected_frame_count: usize,
+    pub(super) preview_rms: f32,
+    pub(super) edge_delta_abs: f32,
+    pub(super) max_allowed_edge_delta_abs: f32,
+    pub(super) edge_abs_max: f32,
+    pub(super) max_allowed_edge_abs: f32,
+    pub(super) source_contains_selection: bool,
+    pub(super) reason: &'static str,
 }
 
 const W30_SOURCE_LOOP_CLOSURE_MAX_EDGE_DELTA_ABS: f32 = 0.060;
-const W30_SOURCE_LOOP_CLOSURE_MAX_EDGE_ABS: f32 = 0.040;
-const W30_SOURCE_TRIGGER_GRID_SUBDIVISION: u32 = 2;
-const W30_SOURCE_TRIGGER_MAX_QUANTIZED_OFFSET_MS: f32 = 0.01;
 
-fn source_chop_preview_from_interleaved(
+const W30_SOURCE_LOOP_CLOSURE_MAX_EDGE_ABS: f32 = 0.040;
+
+pub(super) fn source_chop_preview_from_interleaved(
     samples: &[f32],
     channel_count: usize,
     source_start_frame: u64,
@@ -118,10 +58,14 @@ fn source_chop_preview_from_interleaved(
     for (index, sample) in selected.iter().enumerate() {
         let fade = edge_fade(index, selected_frame_count);
         let articulation = chop_articulation_envelope(index, selected_frame_count);
-        let previous = if index == 0 { *sample } else { selected[index - 1] };
+        let previous = if index == 0 {
+            *sample
+        } else {
+            selected[index - 1]
+        };
         let transient = (*sample - previous) * 0.28;
-        preview_samples[index] = ((*sample + transient) * gain * fade * articulation)
-            .clamp(-0.95, 0.95);
+        preview_samples[index] =
+            ((*sample + transient) * gain * fade * articulation).clamp(-0.95, 0.95);
     }
 
     let preview = W30PreviewSampleWindow {
@@ -158,12 +102,14 @@ fn source_chop_preview_from_interleaved(
     ))
 }
 
-fn w30_source_loop_closure_proof(
+pub(super) fn w30_source_loop_closure_proof(
     preview: &W30PreviewSampleWindow,
     profile: W30SourceChopProfile,
 ) -> W30SourceLoopClosureProof {
     let source_contains_selection = preview.source_end_frame >= preview.source_start_frame
-        && preview.source_end_frame.saturating_sub(preview.source_start_frame)
+        && preview
+            .source_end_frame
+            .saturating_sub(preview.source_start_frame)
             == preview.sample_count as u64
         && preview.sample_count == profile.selected_frame_count;
     let preview_samples = &preview.samples[..preview.sample_count];
@@ -189,137 +135,6 @@ fn w30_source_loop_closure_proof(
             "source_chop_loop_closure_out_of_budget"
         },
     }
-}
-
-fn manifest_w30_source_chop_profile(
-    profile: W30SourceChopProfile,
-) -> ManifestW30SourceChopProfile {
-    ManifestW30SourceChopProfile {
-        source_window_rms: profile.source_window_rms,
-        selected_rms_before_gain: profile.selected_rms_before_gain,
-        preview_rms: profile.preview_rms,
-        preview_peak_abs: profile.preview_peak_abs,
-        body_rms: profile.body_rms,
-        tail_rms: profile.tail_rms,
-        tail_to_body_rms_ratio: profile.tail_to_body_rms_ratio,
-        selected_start_frame: profile.selected_start_frame,
-        selected_frame_count: profile.selected_frame_count,
-        gain: profile.gain,
-        reason: profile.reason,
-    }
-}
-
-fn manifest_w30_source_loop_closure_proof(
-    proof: W30SourceLoopClosureProof,
-) -> ManifestW30SourceLoopClosureProof {
-    ManifestW30SourceLoopClosureProof {
-        passed: proof.passed,
-        selected_frame_count: proof.selected_frame_count,
-        preview_rms: proof.preview_rms,
-        edge_delta_abs: proof.edge_delta_abs,
-        max_allowed_edge_delta_abs: proof.max_allowed_edge_delta_abs,
-        edge_abs_max: proof.edge_abs_max,
-        max_allowed_edge_abs: proof.max_allowed_edge_abs,
-        source_contains_selection: proof.source_contains_selection,
-        reason: proof.reason,
-    }
-}
-
-fn manifest_w30_source_trigger_variation_proof(
-    proof: W30SourceTriggerVariationProof,
-) -> ManifestW30SourceTriggerVariationProof {
-    ManifestW30SourceTriggerVariationProof {
-        pattern_origin: PATTERN_ORIGIN_SOURCE_DERIVED,
-        applied: proof.applied,
-        grid_subdivision: proof.grid_subdivision,
-        trigger_count: proof.trigger_count,
-        beat_anchor_trigger_count: proof.beat_anchor_trigger_count,
-        offbeat_trigger_count: proof.offbeat_trigger_count,
-        skipped_beat_anchor_count: proof.skipped_beat_anchor_count,
-        distinct_bar_pattern_count: proof.distinct_bar_pattern_count,
-        max_quantized_offset_ms: proof.max_quantized_offset_ms,
-        max_allowed_quantized_offset_ms: proof.max_allowed_quantized_offset_ms,
-        reason: proof.reason,
-    }
-}
-
-fn w30_source_trigger_events_with_slice_plan(
-    grid: &Grid,
-    source_window_preview: &W30PreviewSampleWindow,
-    slice_plan: &W30SourceSliceChoicePlan,
-) -> Vec<W30SourceTriggerEvent> {
-    let mut events = Vec::with_capacity(grid.total_beats as usize + grid.bars as usize);
-
-    for bar in 0..grid.bars {
-        let bar_start = bar.saturating_mul(grid.beats_per_bar) as f32;
-        for beat_offset in 0..grid.beats_per_bar {
-            let source_stride = (bar as usize)
-                .saturating_mul(grid.beats_per_bar as usize)
-                .saturating_add(beat_offset as usize);
-            let source_offset_samples = slice_plan.offset_for_stride(source_stride);
-            let accent = w30_source_accent_features(source_window_preview, source_offset_samples);
-            events.push(W30SourceTriggerEvent {
-                beat_position: bar_start + beat_offset as f32,
-                velocity: accent.velocity,
-                source_energy_score: accent.source_energy_score,
-                source_offset_samples,
-            });
-        }
-    }
-
-    events
-}
-
-fn w30_source_trigger_variation_proof(
-    grid: &Grid,
-    events: &[W30SourceTriggerEvent],
-) -> W30SourceTriggerVariationProof {
-    let beat_anchor_trigger_count = events
-        .iter()
-        .filter(|event| is_beat_anchor(event.beat_position))
-        .count() as u32;
-    let offbeat_trigger_count = events.len() as u32 - beat_anchor_trigger_count;
-    let skipped_beat_anchor_count = grid
-        .total_beats
-        .saturating_sub(beat_anchor_trigger_count.min(grid.total_beats));
-    let distinct_bar_pattern_count = events
-        .iter()
-        .map(|event| event.source_offset_samples)
-        .collect::<std::collections::BTreeSet<_>>()
-        .len();
-    let max_quantized_offset_ms = events
-        .iter()
-        .map(|event| quantized_offset_ms(event.beat_position, grid.bpm))
-        .fold(0.0_f32, f32::max);
-    let applied = beat_anchor_trigger_count == grid.total_beats
-        && skipped_beat_anchor_count == 0
-        && distinct_bar_pattern_count > 1
-        && max_quantized_offset_ms <= W30_SOURCE_TRIGGER_MAX_QUANTIZED_OFFSET_MS;
-
-    W30SourceTriggerVariationProof {
-        applied,
-        grid_subdivision: W30_SOURCE_TRIGGER_GRID_SUBDIVISION,
-        trigger_count: events.len() as u32,
-        beat_anchor_trigger_count,
-        offbeat_trigger_count,
-        skipped_beat_anchor_count,
-        distinct_bar_pattern_count,
-        max_quantized_offset_ms,
-        max_allowed_quantized_offset_ms: W30_SOURCE_TRIGGER_MAX_QUANTIZED_OFFSET_MS,
-        reason: if applied {
-            "source_grid_locked_beat_anchor_triggers"
-        } else {
-            "source_trigger_variation_not_applied"
-        },
-    }
-}
-
-fn mono_frames(samples: &[f32], channel_count: usize) -> Vec<f32> {
-    let channel_count = channel_count.max(1);
-    samples
-        .chunks_exact(channel_count)
-        .map(|frame| frame.iter().sum::<f32>() / channel_count as f32)
-        .collect()
 }
 
 fn select_articulate_segment(mono: &[f32], window_len: usize) -> usize {
@@ -356,17 +171,6 @@ fn source_chop_gain(selected_rms: f32) -> f32 {
     (0.18 / selected_rms).clamp(0.85, 1.70)
 }
 
-fn positive_abs_delta(samples: &[f32]) -> f32 {
-    if samples.len() < 2 {
-        return 0.0;
-    }
-    let mut total = 0.0;
-    for pair in samples.windows(2) {
-        total += (pair[1].abs() - pair[0].abs()).max(0.0);
-    }
-    total / (samples.len() - 1) as f32
-}
-
 fn edge_closure_metrics(samples: &[f32]) -> (f32, f32) {
     let Some(first) = samples.first() else {
         return (0.0, 0.0);
@@ -401,39 +205,17 @@ fn chop_articulation_envelope(index: usize, sample_count: usize) -> f32 {
     attack * (0.22 + body * 0.78)
 }
 
-fn chop_articulation_metrics(samples: &[f32]) -> (f32, f32, f32) {
+pub(super) fn chop_articulation_metrics(samples: &[f32]) -> (f32, f32, f32) {
     if samples.len() < 8 {
         return (0.0, 0.0, 0.0);
     }
     let body_start = (samples.len() / 8).min(samples.len() - 1);
     let body_end = (samples.len() / 4).max(body_start + 1).min(samples.len());
     let tail_start = (samples.len() * 3 / 4).min(samples.len() - 1);
-    let tail_end = (samples.len() * 15 / 16).max(tail_start + 1).min(samples.len());
+    let tail_end = (samples.len() * 15 / 16)
+        .max(tail_start + 1)
+        .min(samples.len());
     let body_rms = rms(&samples[body_start..body_end]);
     let tail_rms = rms(&samples[tail_start..tail_end]);
     (body_rms, tail_rms, tail_rms / body_rms.max(f32::EPSILON))
-}
-
-fn rms(samples: &[f32]) -> f32 {
-    if samples.is_empty() {
-        return 0.0;
-    }
-    (samples.iter().map(|sample| sample * sample).sum::<f32>() / samples.len() as f32).sqrt()
-}
-
-fn peak_abs(samples: &[f32]) -> f32 {
-    samples
-        .iter()
-        .map(|sample| sample.abs())
-        .fold(0.0_f32, f32::max)
-}
-
-fn is_beat_anchor(beat_position: f32) -> bool {
-    (beat_position - beat_position.round()).abs() <= f32::EPSILON
-}
-
-fn quantized_offset_ms(beat_position: f32, bpm: f32) -> f32 {
-    let subdivision = W30_SOURCE_TRIGGER_GRID_SUBDIVISION as f32;
-    let quantized = (beat_position * subdivision).round() / subdivision;
-    (beat_position - quantized).abs() * 60_000.0 / bpm.max(f32::EPSILON)
 }

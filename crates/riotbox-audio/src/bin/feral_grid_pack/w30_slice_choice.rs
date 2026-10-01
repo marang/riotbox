@@ -1,49 +1,32 @@
+//! Existing slice-choice QA policy; selection offsets remain private to the plan.
+
+use super::sample_measurements::{peak_abs, positive_abs_delta, rms};
+use riotbox_audio::w30::{W30_PREVIEW_SAMPLE_WINDOW_LEN, W30PreviewSampleWindow};
+
 #[derive(Clone, Debug, PartialEq)]
-struct W30SourceSliceChoicePlan {
+pub(super) struct W30SourceSliceChoicePlan {
     offsets: Vec<usize>,
-    proof: W30SourceSliceChoiceProof,
+    pub(super) proof: W30SourceSliceChoiceProof,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-struct W30SourceSliceChoiceProof {
-    applied: bool,
-    candidate_count: usize,
-    unique_source_offset_count: usize,
-    selected_offset_span_samples: usize,
-    min_selected_offset_samples: usize,
-    max_selected_offset_samples: usize,
-    reason: &'static str,
+pub(super) struct W30SourceSliceChoiceProof {
+    pub(super) applied: bool,
+    pub(super) candidate_count: usize,
+    pub(super) unique_source_offset_count: usize,
+    pub(super) selected_offset_span_samples: usize,
+    pub(super) min_selected_offset_samples: usize,
+    pub(super) max_selected_offset_samples: usize,
+    pub(super) reason: &'static str,
 }
 
-#[derive(Serialize)]
-struct ManifestW30SourceSliceChoiceProof {
-    applied: bool,
-    candidate_count: usize,
-    unique_source_offset_count: usize,
-    selected_offset_span_samples: usize,
-    min_selected_offset_samples: usize,
-    max_selected_offset_samples: usize,
-    reason: &'static str,
-}
+pub(super) const W30_SOURCE_SLICE_CHOICE_CANDIDATE_COUNT: usize = 8;
 
-const W30_SOURCE_SLICE_CHOICE_CANDIDATE_COUNT: usize = 8;
 const W30_SOURCE_SLICE_CHOICE_MIN_UNIQUE_OFFSETS: usize = 4;
 
-fn manifest_w30_source_slice_choice_proof(
-    proof: W30SourceSliceChoiceProof,
-) -> ManifestW30SourceSliceChoiceProof {
-    ManifestW30SourceSliceChoiceProof {
-        applied: proof.applied,
-        candidate_count: proof.candidate_count,
-        unique_source_offset_count: proof.unique_source_offset_count,
-        selected_offset_span_samples: proof.selected_offset_span_samples,
-        min_selected_offset_samples: proof.min_selected_offset_samples,
-        max_selected_offset_samples: proof.max_selected_offset_samples,
-        reason: proof.reason,
-    }
-}
-
-fn w30_source_slice_choice_plan(preview: &W30PreviewSampleWindow) -> W30SourceSliceChoicePlan {
+pub(super) fn w30_source_slice_choice_plan(
+    preview: &W30PreviewSampleWindow,
+) -> W30SourceSliceChoicePlan {
     let sample_count = preview.sample_count.min(W30_PREVIEW_SAMPLE_WINDOW_LEN);
     if sample_count == 0 {
         return W30SourceSliceChoicePlan {
@@ -129,7 +112,7 @@ fn source_slice_choice_candidates(samples: &[f32]) -> Vec<W30SourceSliceChoiceCa
 }
 
 impl W30SourceSliceChoicePlan {
-    fn offset_for_stride(&self, stride: usize) -> usize {
+    pub(super) fn offset_for_stride(&self, stride: usize) -> usize {
         self.offsets[stride % self.offsets.len()]
     }
 }
