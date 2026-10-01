@@ -218,6 +218,19 @@ equal-content files remain supported. Comparison limits, report/manifest bytes,
 pass exit 0 and drift-fail exit 2 are unchanged. This protects input preservation,
 not WAV content integrity, atomic publication, live sound or a human verdict.
 
+`w30_preview_render` additionally requires its WAV and metrics outputs to be
+physically distinct (RBX-409 / RIOTBOX-1540), even in explicit no-source
+diagnostic mode. The domain-local gate uses the actual existing writer paths;
+both are admitted before rendering or either write. Only genuinely absent
+entries skip admission; dangling/nonregular/unknown destinations reject, including
+a late bad metrics destination with the WAV absent. When both regular entries
+exist, their read-only identities must differ. Shared classification stays in
+`qa_source_safety`; original source guard semantics and ordering are preserved.
+Equal-content independent files and absent output pairs remain supported, with
+unchanged valid WAV/metrics bytes. This is a stable-namespace two-output check,
+not a whole-pack transaction, content-integrity/quality claim or automatic
+missing-source fallback. Other renderers' mutual-output behavior is not covered.
+
 Recommended shape:
 
 ```text
