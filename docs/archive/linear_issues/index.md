@@ -1795,4 +1795,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Reject physically coupled Feral pack artifact destinations before rendering
 - [RIOTBOX-1542.md](./RIOTBOX-1542.md)
   Reject coupled Before/After pack output roles before the early excerpt write
+- [RIOTBOX-1543.md](./RIOTBOX-1543.md)
+  Replace Feral pack orchestration include with explicit renderer and report ownership
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
