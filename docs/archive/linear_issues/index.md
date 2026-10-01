@@ -1761,4 +1761,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Run post-QA-ownership architecture checkpoint after five semantic slices
 - [RIOTBOX-1525.md](./RIOTBOX-1525.md)
   Reject unrepresentable Feral grid frame/sample capacities before rendering
+- [RIOTBOX-1526.md](./RIOTBOX-1526.md)
+  Reject unrepresentable W-30 QA render and PCM16 capacities before hydration
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
