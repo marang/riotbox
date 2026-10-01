@@ -38,12 +38,12 @@ pub(super) fn write_comparison_markdown(
 }
 
 pub(super) fn write_readme(
-    output_dir: &Path,
+    path: &Path,
     args: &Args,
     source_excerpt_path: &Path,
 ) -> std::io::Result<()> {
     fs::write(
-        output_dir.join("README.md"),
+        path,
         format!(
             "# Feral Before / After Pack\n\n\
              - Pack: `{PACK_ID}`\n\

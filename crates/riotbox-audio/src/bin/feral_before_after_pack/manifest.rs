@@ -4,12 +4,12 @@ use super::config::{
     CHANNEL_COUNT, MIN_AFTER_RMS, MIN_DELTA_RMS, MIN_SOURCE_RMS, PACK_ID, SAMPLE_RATE,
     SILENCE_SECONDS,
 };
+use super::output_paths::PackOutputPaths;
 use riotbox_audio::listening_manifest::{
     LISTENING_MANIFEST_SCHEMA_VERSION, ListeningPackArtifact as ManifestArtifact,
     ListeningPackSignalMetrics as ManifestSignalMetrics, write_manifest_json,
 };
 use serde::Serialize;
-use std::path::Path;
 
 #[derive(Serialize)]
 struct ListeningPackManifest {
@@ -46,9 +46,8 @@ pub(super) struct ManifestMetrics {
 }
 
 pub(super) fn write_manifest(
-    path: &Path,
     args: &Args,
-    output_dir: &Path,
+    paths: &PackOutputPaths,
     metrics: ManifestMetrics,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let manifest = ListeningPackManifest {
@@ -61,7 +60,7 @@ pub(super) fn write_manifest(
         source_start_seconds: args.source_start_seconds,
         source_window_seconds: args.source_window_seconds.min(args.duration_seconds),
         silence_seconds: SILENCE_SECONDS,
-        artifacts: manifest_artifacts(output_dir),
+        artifacts: manifest_artifacts(paths),
         thresholds: ManifestThresholds {
             min_source_rms: MIN_SOURCE_RMS,
             min_after_rms: MIN_AFTER_RMS,
@@ -71,31 +70,29 @@ pub(super) fn write_manifest(
         result: "pass",
     };
 
-    write_manifest_json(path, &manifest)?;
+    write_manifest_json(&paths.manifest, &manifest)?;
     Ok(())
 }
 
-fn manifest_artifacts(output_dir: &Path) -> Vec<ManifestArtifact> {
-    let source_path = output_dir.join("01_source_excerpt.wav");
-    let source_metrics_path = output_dir.join("01_source_excerpt.metrics.md");
-    let after_path = output_dir.join("02_riotbox_feral_changed.wav");
-    let after_metrics_path = metrics_path_for(&after_path);
-    let before_after_path = output_dir.join("03_before_then_after.wav");
-    let w30_path = output_dir.join("stems/w30_source_chop.wav");
-    let w30_metrics_path = metrics_path_for(&w30_path);
-    let tr909_path = output_dir.join("stems/tr909_fill.wav");
-    let tr909_metrics_path = metrics_path_for(&tr909_path);
-    let mc202_path = output_dir.join("stems/mc202_instigator.wav");
-    let mc202_metrics_path = metrics_path_for(&mc202_path);
+fn manifest_artifacts(paths: &PackOutputPaths) -> Vec<ManifestArtifact> {
+    let source_metrics_path = metrics_path_for(&paths.source_excerpt);
+    let after_metrics_path = metrics_path_for(&paths.after);
+    let w30_metrics_path = metrics_path_for(&paths.w30);
+    let tr909_metrics_path = metrics_path_for(&paths.tr909);
+    let mc202_metrics_path = metrics_path_for(&paths.mc202);
 
     vec![
-        ManifestArtifact::audio_wav("source_excerpt", &source_path, Some(&source_metrics_path)),
-        ManifestArtifact::audio_wav("riotbox_after", &after_path, Some(&after_metrics_path)),
-        ManifestArtifact::audio_wav("before_then_after", &before_after_path, None),
-        ManifestArtifact::audio_wav("w30_source_chop", &w30_path, Some(&w30_metrics_path)),
-        ManifestArtifact::audio_wav("tr909_fill", &tr909_path, Some(&tr909_metrics_path)),
-        ManifestArtifact::audio_wav("mc202_instigator", &mc202_path, Some(&mc202_metrics_path)),
-        ManifestArtifact::markdown_report("comparison", &output_dir.join("comparison.md")),
-        ManifestArtifact::markdown_readme("readme", &output_dir.join("README.md")),
+        ManifestArtifact::audio_wav(
+            "source_excerpt",
+            &paths.source_excerpt,
+            Some(&source_metrics_path),
+        ),
+        ManifestArtifact::audio_wav("riotbox_after", &paths.after, Some(&after_metrics_path)),
+        ManifestArtifact::audio_wav("before_then_after", &paths.before_after, None),
+        ManifestArtifact::audio_wav("w30_source_chop", &paths.w30, Some(&w30_metrics_path)),
+        ManifestArtifact::audio_wav("tr909_fill", &paths.tr909, Some(&tr909_metrics_path)),
+        ManifestArtifact::audio_wav("mc202_instigator", &paths.mc202, Some(&mc202_metrics_path)),
+        ManifestArtifact::markdown_report("comparison", &paths.comparison),
+        ManifestArtifact::markdown_readme("readme", &paths.readme),
     ]
 }

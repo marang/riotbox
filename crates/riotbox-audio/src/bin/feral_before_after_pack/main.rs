@@ -3,7 +3,10 @@ mod artifact_io;
 mod config;
 mod manifest;
 mod mix;
+mod output_paths;
 mod pack_builder;
+#[path = "../qa_source_safety/mod.rs"]
+mod qa_source_safety;
 mod render_plan;
 mod report_markdown;
 mod source_window;

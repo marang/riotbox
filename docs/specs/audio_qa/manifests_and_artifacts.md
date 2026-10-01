@@ -192,6 +192,19 @@ musical/source intelligence. The shared ordinary binary-only
 by both renderers. Layouts remain with their respective renderer. No public
 library API, realtime use, product state or new executable target is added.
 
+`feral_before_after_pack` also reuses that unchanged shared preflight
+(RBX-407 / RIOTBOX-1537). Its renderer-local typed plan owns all fourteen
+destinations: six WAVs, five metrics files and three metadata files. The
+before/after composite deliberately has no metrics file. Preflight, all actual
+writes and manifest artifact projection consume this plan and the existing
+metrics naming helper. Existing source-format and insufficient-window errors
+remain first; collision checking precedes the early source-excerpt write as
+well as every subsequent output. Direct WAV/metrics/metadata input, physical
+aliases and late unknown destinations cannot replace input or earlier outputs.
+Directory creation retains its existing position. This extends source
+preservation, not musical eligibility, source qualification or atomic-pack
+publication; all DSP, thresholds and serialized contracts remain unchanged.
+
 Recommended shape:
 
 ```text

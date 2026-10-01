@@ -1,8 +1,11 @@
 use super::args::Args;
-use super::artifact_io::{write_metrics_markdown, write_named_audio_with_metrics};
+use super::artifact_io::{
+    metrics_path_for, write_metrics_markdown, write_named_audio_with_metrics,
+};
 use super::config::{CHANNEL_COUNT, MIN_AFTER_RMS, MIN_DELTA_RMS, MIN_SOURCE_RMS, SAMPLE_RATE};
 use super::manifest::{ManifestMetrics, write_manifest};
 use super::mix::{before_then_after, feral_after_mix, signal_delta_metrics};
+use super::output_paths::PackOutputPaths;
 use super::render_plan::{mc202_instigator_state, tr909_fill_state, w30_source_chop_state};
 use super::report_markdown::{write_comparison_markdown, write_readme};
 use super::source_window::{
@@ -18,6 +21,7 @@ use std::fs;
 
 pub(super) fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let output_dir = args.output_dir();
+    let paths = PackOutputPaths::new(&output_dir);
     let stems_dir = output_dir.join("stems");
     fs::create_dir_all(&stems_dir)?;
 
@@ -34,10 +38,10 @@ pub(super) fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>>
         .into());
     }
 
+    paths.reject_source_aliases(&args.source_path)?;
     let source_samples = source.window_samples(source_window).to_vec();
-    let source_excerpt_path = output_dir.join("01_source_excerpt.wav");
     write_interleaved_pcm16_wav(
-        &source_excerpt_path,
+        &paths.source_excerpt,
         SAMPLE_RATE,
         CHANNEL_COUNT,
         &source_samples,
@@ -73,12 +77,12 @@ pub(super) fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>>
     let after = feral_after_mix(&source_samples, &w30, &tr909, &mc202);
     let before_then_after = before_then_after(&source_samples, &after);
 
-    write_named_audio_with_metrics(&stems_dir.join("w30_source_chop.wav"), &w30)?;
-    write_named_audio_with_metrics(&stems_dir.join("tr909_fill.wav"), &tr909)?;
-    write_named_audio_with_metrics(&stems_dir.join("mc202_instigator.wav"), &mc202)?;
-    write_named_audio_with_metrics(&output_dir.join("02_riotbox_feral_changed.wav"), &after)?;
+    write_named_audio_with_metrics(&paths.w30, &w30)?;
+    write_named_audio_with_metrics(&paths.tr909, &tr909)?;
+    write_named_audio_with_metrics(&paths.mc202, &mc202)?;
+    write_named_audio_with_metrics(&paths.after, &after)?;
     write_interleaved_pcm16_wav(
-        output_dir.join("03_before_then_after.wav"),
+        &paths.before_after,
         SAMPLE_RATE,
         CHANNEL_COUNT,
         &before_then_after,
@@ -90,17 +94,14 @@ pub(super) fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>>
     let w30_metrics = signal_metrics(&w30);
     let tr909_metrics = signal_metrics(&tr909);
     let mc202_metrics = signal_metrics(&mc202);
-    write_metrics_markdown(
-        &output_dir.join("01_source_excerpt.metrics.md"),
-        source_metrics,
-    )?;
+    write_metrics_markdown(&metrics_path_for(&paths.source_excerpt), source_metrics)?;
     write_comparison_markdown(
-        &output_dir.join("comparison.md"),
+        &paths.comparison,
         source_metrics,
         after_metrics,
         delta_metrics,
     )?;
-    write_readme(&output_dir, args, &source_excerpt_path)?;
+    write_readme(&paths.readme, args, &paths.source_excerpt)?;
 
     if source_metrics.rms <= MIN_SOURCE_RMS {
         return Err("source excerpt rendered near silence".into());
@@ -117,9 +118,8 @@ pub(super) fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>>
     }
 
     write_manifest(
-        &output_dir.join("manifest.json"),
         args,
-        &output_dir,
+        &paths,
         ManifestMetrics {
             source_excerpt: source_metrics.into(),
             riotbox_after: after_metrics.into(),
