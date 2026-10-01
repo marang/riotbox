@@ -1,98 +1,17 @@
-use std::{
-    env, fs,
-    path::{Path, PathBuf},
-    process,
-};
-
-use serde::Serialize;
-
-use riotbox_audio::listening_manifest::{
-    LISTENING_MANIFEST_SCHEMA_VERSION, ListeningPackArtifact as ManifestArtifact,
-    write_manifest_json,
-};
-
-const DEFAULT_DATE: &str = "local";
-const PACK_ID: &str = "w30-preview-smoke";
-const CASE_ID: &str = "raw_capture_source_window_preview";
-const DEFAULT_MAX_ACTIVE_SAMPLES_DELTA: usize = 0;
-const DEFAULT_MAX_PEAK_DELTA: f64 = 0.000001;
-const DEFAULT_MAX_RMS_DELTA: f64 = 0.000001;
-const DEFAULT_MAX_SUM_DELTA: f64 = 0.000001;
-const DEFAULT_MIN_ACTIVE_SAMPLES_DELTA: usize = 0;
-const DEFAULT_MIN_PEAK_DELTA: f64 = 0.0;
-const DEFAULT_MIN_RMS_DELTA: f64 = 0.0;
-const DEFAULT_MIN_SUM_DELTA: f64 = 0.0;
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args = Args::parse(env::args().skip(1))?;
-    if args.show_help {
-        print_help();
-        return Ok(());
-    }
-
-    let baseline = SmokeMetrics::read_from_path(&args.baseline_metrics_path)?;
-    let candidate = SmokeMetrics::read_from_path(&args.candidate_metrics_path)?;
-    let report = compare_metrics(&baseline, &candidate, &args.limits);
-    let rendered_report = render_report(
-        &args.baseline_metrics_path,
-        &args.candidate_metrics_path,
-        &report,
-    );
-
-    println!("{rendered_report}");
-    write_report_markdown(&args.report_path, &rendered_report)?;
-    println!("wrote {}", args.report_path.display());
-    write_manifest(&args, baseline, candidate, &report)?;
-    println!(
-        "wrote {}",
-        manifest_path_for_report_path(&args.report_path).display()
-    );
-
-    if report.has_failures() {
-        process::exit(2);
-    }
-
-    Ok(())
-}
+use super::config::{CASE_ID, DEFAULT_DATE, DriftLimits, PACK_ID};
+use std::path::PathBuf;
 
 #[derive(Debug, PartialEq)]
-struct Args {
-    baseline_metrics_path: PathBuf,
-    candidate_metrics_path: PathBuf,
-    report_path: PathBuf,
-    limits: DriftLimits,
-    show_help: bool,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Serialize)]
-struct DriftLimits {
-    min_active_samples_delta: usize,
-    max_active_samples_delta: usize,
-    min_peak_delta: f64,
-    max_peak_delta: f64,
-    min_rms_delta: f64,
-    max_rms_delta: f64,
-    min_sum_delta: f64,
-    max_sum_delta: f64,
-}
-
-impl Default for DriftLimits {
-    fn default() -> Self {
-        Self {
-            min_active_samples_delta: DEFAULT_MIN_ACTIVE_SAMPLES_DELTA,
-            max_active_samples_delta: DEFAULT_MAX_ACTIVE_SAMPLES_DELTA,
-            min_peak_delta: DEFAULT_MIN_PEAK_DELTA,
-            max_peak_delta: DEFAULT_MAX_PEAK_DELTA,
-            min_rms_delta: DEFAULT_MIN_RMS_DELTA,
-            max_rms_delta: DEFAULT_MAX_RMS_DELTA,
-            min_sum_delta: DEFAULT_MIN_SUM_DELTA,
-            max_sum_delta: DEFAULT_MAX_SUM_DELTA,
-        }
-    }
+pub(super) struct Args {
+    pub(super) baseline_metrics_path: PathBuf,
+    pub(super) candidate_metrics_path: PathBuf,
+    pub(super) report_path: PathBuf,
+    pub(super) limits: DriftLimits,
+    pub(super) show_help: bool,
 }
 
 impl Args {
-    fn parse<I>(args: I) -> Result<Self, String>
+    pub(super) fn parse<I>(args: I) -> Result<Self, String>
     where
         I: IntoIterator<Item = String>,
     {
@@ -213,7 +132,7 @@ fn parse_non_negative_float(flag: &str, value: &str) -> Result<f64, String> {
     Ok(parsed)
 }
 
-fn print_help() {
+pub(super) fn print_help() {
     println!(
         "Usage: w30_preview_compare [--date YYYY-MM-DD|local] [--baseline PATH] [--candidate PATH] [--report PATH]\n\
          \n\
