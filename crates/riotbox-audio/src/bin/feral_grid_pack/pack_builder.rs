@@ -5,6 +5,7 @@ use riotbox_audio::source_audio::SourceAudioCache;
 
 use super::{
     args::Args,
+    artifact_io::write_audio_with_metrics,
     config::{CHANNEL_COUNT, DEFAULT_BEATS_PER_BAR, SAMPLE_RATE},
     grid::Grid,
     grid_bpm_decision::choose_grid_bpm,
@@ -21,6 +22,7 @@ use super::{
     output_paths::PackOutputPaths,
     pack_report::PackReport,
     pack_text_outputs::{write_readme, write_report},
+    pack_validation::{assert_grid_len, validate_report},
     product_stem_contributions::{
         ProductStemContributionRender, render_product_stem_contributions,
         validate_written_product_stem_reconstruction,
@@ -38,11 +40,7 @@ use super::{
         Tr909RenderedDrumPressureInput, tr909_rendered_drum_pressure_proof,
     },
     w30_source_chop::{source_chop_preview_from_interleaved, w30_source_loop_closure_proof},
-};
-// Narrow bridges to still-counted legacy writer/stem owners in the parent.
-use super::{
-    assert_grid_len, render_w30_source_chop_with_variation, validate_report,
-    write_audio_with_metrics,
+    w30_trigger_render::render_w30_source_chop_with_variation,
 };
 
 pub(super) fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {

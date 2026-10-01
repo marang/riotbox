@@ -1,16 +1,15 @@
-use std::{env, fs, path::Path};
+use std::env;
+
+#[cfg(test)]
+use std::fs;
 
 #[cfg(test)]
 use std::path::PathBuf;
 
-use riotbox_audio::{
-    runtime::{MasterBusLimiterReport, render_w30_preview_offline},
-    source_audio::{SourceAudioError, write_interleaved_pcm16_wav},
-    w30::{
-        W30_PREVIEW_SAMPLE_WINDOW_LEN, W30PreviewRenderMode, W30PreviewRenderRouting,
-        W30PreviewRenderState, W30PreviewSampleWindow, W30PreviewSourceProfile,
-    },
-};
+use riotbox_audio::runtime::MasterBusLimiterReport;
+
+#[cfg(test)]
+use riotbox_audio::source_audio::write_interleaved_pcm16_wav;
 
 #[cfg(test)]
 use riotbox_audio::source_audio::SourceAudioCache;
@@ -49,7 +48,6 @@ mod bpm_decision_tests;
 
 use args::{Args, print_help};
 use grid_bpm_decision::{GridBpmDecision, grid_bpm_decision_reason_label, grid_bpm_source_label};
-use output_paths::metrics_path_for;
 use source_timing_analysis::SourceTimingAnalysisForManifest;
 use source_timing_groove_policy::Tr909GrooveTimingPolicy;
 use timing_readiness_manifest::{ManifestSourceTimingReadiness, manifest_source_timing_readiness};
@@ -79,15 +77,19 @@ use config::{
     MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO, MIN_LOW_BAND_RMS, MIN_SIGNAL_RMS,
     MIN_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO, PACK_ID, SAMPLE_RATE,
 };
+use grid::Grid;
 #[cfg(test)]
 use grid::frames_for_beats;
-use grid::{Grid, frames_for_beat_position};
 #[cfg(test)]
 use signal_filter::one_pole_lowpass;
 #[cfg(test)]
+use source_grid_output_drift::SOURCE_GRID_OUTPUT_MIN_HIT_RATIO;
+use source_grid_output_drift::SourceGridOutputDriftMetrics;
+#[cfg(test)]
 use source_grid_output_drift::source_grid_output_drift_metrics;
-use source_grid_output_drift::{SOURCE_GRID_OUTPUT_MIN_HIT_RATIO, SourceGridOutputDriftMetrics};
-use spectral_energy_metrics::{SpectralEnergyMetrics, spectral_energy_metrics};
+use spectral_energy_metrics::SpectralEnergyMetrics;
+#[cfg(test)]
+use spectral_energy_metrics::spectral_energy_metrics;
 
 #[path = "feral_grid_pack/manifest.rs"]
 mod manifest;
@@ -117,21 +119,12 @@ mod w30_source_trigger_policy;
 #[path = "feral_grid_pack/w30_source_chop_tests.rs"]
 mod w30_source_chop_tests;
 
-use w30_slice_choice::{W30SourceSliceChoiceProof, w30_source_slice_choice_plan};
-use w30_source_accent_dynamics::{W30SourceAccentDynamicsProof, w30_source_accent_dynamics_proof};
-use w30_source_chop::chop_articulation_metrics;
-use w30_source_events::W30SourceTriggerEvent;
 use w30_source_manifest::{
     ManifestW30SourceAccentDynamicsProof, ManifestW30SourceChopProfile,
     ManifestW30SourceLoopClosureProof, ManifestW30SourceSliceChoiceProof,
     ManifestW30SourceTriggerVariationProof, manifest_w30_source_accent_dynamics_proof,
     manifest_w30_source_chop_profile, manifest_w30_source_loop_closure_proof,
     manifest_w30_source_slice_choice_proof, manifest_w30_source_trigger_variation_proof,
-};
-use w30_source_playback_profile::w30_source_playback_profile;
-use w30_source_trigger_policy::{
-    W30SourceTriggerVariationProof, is_beat_anchor, w30_source_trigger_events_with_slice_plan,
-    w30_source_trigger_variation_proof,
 };
 
 #[path = "feral_grid_pack/source_aware_tr909.rs"]
@@ -171,6 +164,8 @@ use source_character_window_selection::SourceCharacterWindowSelection;
 
 #[path = "feral_grid_pack/mc202_bass_pressure.rs"]
 mod mc202_bass_pressure;
+#[cfg(test)]
+use mc202_bass_pressure::Mc202PatternOrigin;
 #[path = "feral_grid_pack/mc202_low_body_policy.rs"]
 mod mc202_low_body_policy;
 #[path = "feral_grid_pack/mc202_source_contour.rs"]
@@ -182,7 +177,6 @@ mod mc202_source_phrase;
 #[path = "feral_grid_pack/render_measurements.rs"]
 mod render_measurements;
 
-use mc202_bass_pressure::Mc202PatternOrigin;
 #[cfg(test)]
 use mc202_bass_pressure::render_mc202_bass_pressure_with_source_contour;
 #[cfg(test)]
@@ -205,7 +199,7 @@ use mc202_source_manifest::{
 use mc202_source_phrase::{
     MC202_SOURCE_EXPRESSION_ROLE_BASS_PRESSURE, MC202_SOURCE_EXPRESSION_ROLE_HOOK_RESTRAINT_HOLD,
 };
-use render_measurements::{RenderMetrics, render_metrics};
+use render_measurements::RenderMetrics;
 #[cfg(test)]
 use riotbox_audio::mc202::{Mc202ContourHint, Mc202NoteBudget};
 
@@ -257,9 +251,22 @@ mod tr909_rendered_drum_pressure;
 #[path = "feral_grid_pack/tr909_rendered_drum_pressure_tests.rs"]
 mod tr909_rendered_drum_pressure_tests;
 
+#[path = "feral_grid_pack/artifact_io.rs"]
+mod artifact_io;
 #[path = "feral_grid_pack/pack_text_outputs.rs"]
 mod pack_text_outputs;
-include!("feral_grid_pack/render_stems.rs");
+#[path = "feral_grid_pack/pack_validation.rs"]
+mod pack_validation;
+#[path = "feral_grid_pack/verification_command.rs"]
+mod verification_command;
+#[path = "feral_grid_pack/w30_trigger_render.rs"]
+mod w30_trigger_render;
+#[cfg(test)]
+use verification_command::verification_command;
+#[cfg(test)]
+use w30_trigger_render::{
+    render_w30_source_chop, render_w30_source_chop_legacy, render_w30_source_chop_with_variation,
+};
 #[cfg(test)]
 #[path = "feral_grid_pack/manifest_assertions.rs"]
 mod manifest_assertions;

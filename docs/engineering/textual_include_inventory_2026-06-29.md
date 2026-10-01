@@ -76,6 +76,9 @@ Result:
 - RIOTBOX-1544 migration, 2026-10-01: 3 remaining sites in 2 owners;
   report/README publication has a real owner with direct renderer dependencies;
   all nine presentation helpers stay private and output bytes are preserved
+- RIOTBOX-1546 migration, 2026-10-01: 2 remaining sites in 2 owners;
+  mixed stem functions have actual W-30 trigger, validation, artifact-I/O and
+  reproduction-command owners; only root tests and their helper stay legacy
 - no generated-code include site identified in this inventory
 - every current include is treated as legacy/mechanical until proven otherwise
 
@@ -109,7 +112,7 @@ legacy inventory; it does not approve new textual include sites.
 
 | Owner | Count | Included files / families | Purpose | Classification | Migration risk | Follow-up |
 | --- | ---: | --- | --- | --- | --- | --- |
-| `crates/riotbox-audio/src/bin/feral_grid_pack.rs` | 2 | render/validation/artifact output, remaining tests | Feral grid QA/pack CLI | remaining mechanical QA-bin split; numerical evidence, timing, W-30/TR-909/MC-202, mix policy, rendered pressure, cache-window preparation, manifest assertions, pack orchestration/report value and Markdown publication are real owners (RIOTBOX-1521/1523/1527/1528/1529/1530/1531/1533/1534/1543/1544) | medium: two remaining lexical owners | RIOTBOX-1545 checkpoint finds no new demonstrated defect; bounded ownership work may continue after normal report gates, not a completed root migration |
+| `crates/riotbox-audio/src/bin/feral_grid_pack.rs` | 1 | remaining tests | Feral grid QA/pack CLI | remaining test compatibility assembly; production numerical/timing/policy/rendering/validation/publication/reproduction and shared report values have actual owners (RIOTBOX-1521/1523/1527/1528/1529/1530/1531/1533/1534/1543/1544/1546) | low: test-only lexical owner, root compatibility aliases still explicit | RIOTBOX-1545 checkpoint completed; bounded test/helper ownership may follow, not a thin-facade or completed root migration |
 | `crates/riotbox-audio/src/bin/feral_grid_pack/tests.rs` | 1 | shared test helpers | Feral grid QA tests | mechanical test compatibility split | low: test-only helper scope | future QA-bin module slice |
 
 ## Migration Order
