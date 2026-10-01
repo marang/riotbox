@@ -256,6 +256,28 @@ ordering and CLI/artifact bytes, including prior capacity and literal-command
 fixes. These policies are offline QA controls, not another product source,
 Session, arrangement/replay or human/musical/hardness authority.
 
+### Feral Grid TR-909 QA Profile And Pressure Ownership
+
+The bounded TR-909 source-profile and kick/accent-pressure family uses ordinary
+binary-private owners (RBX-399 / RIOTBOX-1528). Profile policy consumes Grid,
+config, filtering and spectral/runtime measurements. Pressure owns the existing
+primitive-support render seam, accent/policy helpers and evidence; it consumes
+the profile and existing library renderer, not root orchestration. The unchanged
+fractional beat-to-frame helper lives beside the existing QA Grid calculations;
+retain the complete Grid impl, mechanical capacity guard and all regressions.
+Separate JSON presentation consumes profile/pressure evidence, never the reverse.
+
+Private policy/metric helpers and serializer fields stay private. Cross-owner
+evidence/functions and constants needed by retained assertions are binary-bound;
+root test-only compatibility imports remain conditional. Ordinary grid-consumer
+regressions import their actual profile/pressure/timing/evidence/metric owners.
+Preserve all complete definitions, fixtures/test identities, frozen literals,
+thresholds, schemas, provenance and CLI/artifact bytes. Existing `allow(dead_code)`
+attributes on retained QA control wrappers are carried unchanged, not new
+warning suppressions. The rendered-mix-pressure and broader mix families remain
+explicitly legacy, outside this slice. No new renderer, fallback, Session/replay
+truth, public API or musical/source-general authority is introduced.
+
 ## Target Shape
 
 Prefer this:
