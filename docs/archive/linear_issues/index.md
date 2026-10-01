@@ -1767,4 +1767,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Separate Feral W-30 QA policy owners from manifest presentation
 - [RIOTBOX-1528.md](./RIOTBOX-1528.md)
   Separate Feral TR-909 QA profile/pressure policy from presentation and root rendering
+- [RIOTBOX-1529.md](./RIOTBOX-1529.md)
+  Isolate bounded source-window selection and search preparation from Feral QA orchestration
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
