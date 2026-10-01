@@ -1,24 +1,6 @@
 use std::env;
 
-#[cfg(test)]
-use std::fs;
-
-#[cfg(test)]
-use std::path::PathBuf;
-
 use riotbox_audio::runtime::MasterBusLimiterReport;
-
-#[cfg(test)]
-use riotbox_audio::source_audio::write_interleaved_pcm16_wav;
-
-#[cfg(test)]
-use riotbox_audio::source_audio::SourceAudioCache;
-
-#[cfg(test)]
-use riotbox_audio::tr909::{
-    Tr909PatternAdoption, Tr909PhraseVariation, Tr909SourceSupportContext,
-    Tr909SourceSupportProfile,
-};
 
 use pack_builder::render_pack;
 use pack_report::PackReport;
@@ -70,26 +52,14 @@ mod spectral_energy_metrics;
 mod verification_command_tests;
 
 use bar_variation_metrics::BarVariationMetrics;
-#[cfg(test)]
-use bar_variation_metrics::bar_variation_metrics;
 use config::{
     CHANNEL_COUNT, MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO,
     MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO, MIN_LOW_BAND_RMS, MIN_SIGNAL_RMS,
     MIN_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO, PACK_ID, SAMPLE_RATE,
 };
 use grid::Grid;
-#[cfg(test)]
-use grid::frames_for_beats;
-#[cfg(test)]
-use signal_filter::one_pole_lowpass;
-#[cfg(test)]
-use source_grid_output_drift::SOURCE_GRID_OUTPUT_MIN_HIT_RATIO;
 use source_grid_output_drift::SourceGridOutputDriftMetrics;
-#[cfg(test)]
-use source_grid_output_drift::source_grid_output_drift_metrics;
 use spectral_energy_metrics::SpectralEnergyMetrics;
-#[cfg(test)]
-use spectral_energy_metrics::spectral_energy_metrics;
 
 #[path = "feral_grid_pack/manifest.rs"]
 mod manifest;
@@ -138,16 +108,6 @@ mod tr909_source_manifest;
 #[path = "feral_grid_pack/tr909_source_grid_consumer_tests.rs"]
 mod tr909_source_grid_consumer_tests;
 
-#[cfg(test)]
-use source_aware_tr909::{SourceAwareTr909Profile, derive_source_aware_tr909_profile};
-#[cfg(test)]
-use tr909_kick_pressure::render_tr909_source_support_with_pressure_and_accents;
-#[cfg(test)]
-use tr909_kick_pressure::{
-    TR909_KICK_PRESSURE_MIN_LOW_BAND_RATIO, TR909_SOURCE_ACCENT_MIN_ACCENT_SPAN,
-    TR909_SOURCE_ACCENT_MIN_DISTINCT_ACCENTS, render_tr909_source_support,
-    render_tr909_source_support_legacy,
-};
 use tr909_source_manifest::{
     ManifestTr909KickPressureProof, ManifestTr909SourceAccentDynamicsProof,
     ManifestTr909SourceProfile, manifest_tr909_kick_pressure_proof,
@@ -164,8 +124,6 @@ use source_character_window_selection::SourceCharacterWindowSelection;
 
 #[path = "feral_grid_pack/mc202_bass_pressure.rs"]
 mod mc202_bass_pressure;
-#[cfg(test)]
-use mc202_bass_pressure::Mc202PatternOrigin;
 #[path = "feral_grid_pack/mc202_low_body_policy.rs"]
 mod mc202_low_body_policy;
 #[path = "feral_grid_pack/mc202_source_contour.rs"]
@@ -177,31 +135,11 @@ mod mc202_source_phrase;
 #[path = "feral_grid_pack/render_measurements.rs"]
 mod render_measurements;
 
-#[cfg(test)]
-use mc202_bass_pressure::render_mc202_bass_pressure_with_source_contour;
-#[cfg(test)]
-use mc202_bass_pressure::{
-    MC202_BASS_PRESSURE_MIN_LOW_BAND_RMS, MC202_BASS_PRESSURE_MIN_LOW_TO_MID_ENERGY_RATIO,
-    MC202_BASS_PRESSURE_MIN_SIGNAL_RMS, MC202_PRESSURE_ROLE_WITH_SOURCE_CONTOUR,
-    MC202_REASON_SOURCE_GRID_PROOF_RENDERER, MC202_SOURCE_CONTOUR_MIN_DELTA_RMS,
-};
-#[cfg(test)]
-use mc202_source_contour::Mc202SourceContourProfile;
-#[cfg(test)]
-use mc202_source_contour::{
-    MC202_REASON_LOW_SECTION_DROP_CONTOUR, MC202_REASON_MID_SECTION_HOLD_CONTOUR,
-};
 use mc202_source_manifest::{
     ManifestMc202BassPressureProof, ManifestMc202SourceContourProof,
     manifest_mc202_bass_pressure_proof, manifest_mc202_source_contour_proof,
 };
-#[cfg(test)]
-use mc202_source_phrase::{
-    MC202_SOURCE_EXPRESSION_ROLE_BASS_PRESSURE, MC202_SOURCE_EXPRESSION_ROLE_HOOK_RESTRAINT_HOLD,
-};
 use render_measurements::RenderMetrics;
-#[cfg(test)]
-use riotbox_audio::mc202::{Mc202ContourHint, Mc202NoteBudget};
 
 #[path = "feral_grid_pack/mix_components.rs"]
 mod mix_components;
@@ -211,22 +149,8 @@ mod mix_movement_evidence;
 mod mix_policy;
 
 #[cfg(test)]
-use mix_components::MixPolicy;
-#[cfg(test)]
-use mix_components::generated_to_source_rms_ratio;
-#[cfg(test)]
 use mix_components::render_mix_with_master_bus_report;
 use mix_movement_evidence::AllLaneMixMovementProof;
-#[cfg(test)]
-use mix_movement_evidence::{
-    ALL_LANE_MIX_MAX_CORRELATION, ALL_LANE_MIX_MIN_RMS_DELTA, all_lane_mix_movement_proof,
-};
-#[cfg(test)]
-use mix_policy::source_first_generated_to_source_rms_ratio;
-#[cfg(test)]
-use mix_policy::{
-    render_generated_support_mix, render_source_first_mix, support_generated_to_source_rms_ratio,
-};
 
 // Remaining legacy owners consume explicit compatibility imports from the real modules.
 #[path = "feral_grid_pack/pack_builder.rs"]
@@ -276,4 +200,9 @@ mod manifest_mc202_assertions;
 #[cfg(test)]
 #[path = "feral_grid_pack/manifest_mix_assertions.rs"]
 mod manifest_mix_assertions;
-include!("feral_grid_pack/tests.rs");
+#[cfg(test)]
+#[path = "feral_grid_pack/synthetic_test_fixtures.rs"]
+mod test_fixtures;
+#[cfg(test)]
+#[path = "feral_grid_pack/tests.rs"]
+mod tests;

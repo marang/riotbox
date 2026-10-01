@@ -1,4 +1,10 @@
-fn synthetic_break_source(frame_count: usize) -> Vec<f32> {
+//! Synthetic regression controls only, never missing-source product fallback.
+use super::{
+    config::{CHANNEL_COUNT, SAMPLE_RATE},
+    grid::{Grid, frames_for_beats},
+};
+
+pub(super) fn synthetic_break_source(frame_count: usize) -> Vec<f32> {
     let mut samples = Vec::with_capacity(frame_count * usize::from(CHANNEL_COUNT));
     for frame in 0..frame_count {
         let phase = frame as f32 / SAMPLE_RATE as f32;
@@ -17,7 +23,7 @@ fn synthetic_break_source(frame_count: usize) -> Vec<f32> {
     samples
 }
 
-fn bar_pattern_samples(
+pub(super) fn bar_pattern_samples(
     grid: &Grid,
     is_active_frame: impl Fn(u32, usize, usize) -> bool,
 ) -> Vec<f32> {
@@ -37,7 +43,7 @@ fn bar_pattern_samples(
     samples
 }
 
-fn tone_samples(frequency_hz: f32, frame_count: usize) -> Vec<f32> {
+pub(super) fn tone_samples(frequency_hz: f32, frame_count: usize) -> Vec<f32> {
     let mut samples = Vec::with_capacity(frame_count * usize::from(CHANNEL_COUNT));
     for frame in 0..frame_count {
         let phase = frame as f32 / SAMPLE_RATE as f32;
@@ -48,7 +54,7 @@ fn tone_samples(frequency_hz: f32, frame_count: usize) -> Vec<f32> {
     samples
 }
 
-fn high_click_source(grid: &Grid) -> Vec<f32> {
+pub(super) fn high_click_source(grid: &Grid) -> Vec<f32> {
     let mut samples = vec![0.0; grid.total_frames * usize::from(CHANNEL_COUNT)];
     let click_spacing = (grid.bar_frame_count(0) / 8).max(1);
     for frame in (0..grid.total_frames).step_by(click_spacing) {
