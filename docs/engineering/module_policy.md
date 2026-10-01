@@ -182,6 +182,20 @@ CLI/error/report bytes and existing side-effect order. Synthetic controls are
 QA inputs, never missing-source product fallback or fresh source intelligence.
 This migration changes no library API, runtime/DSP or product-state ownership.
 
+### Feral Before/After Diagnostic Ownership
+
+`feral_before_after_pack/main.rs` retains the same standalone Cargo binary
+(RBX-394 / RIOTBOX-1520), not a product fork. Config is a leaf; pack orchestration
+consumes argument/input metadata, pure source-window adaptation, existing fixed
+lane render-state plans, mix/sequence/delta measurements, WAV/metrics publication,
+Markdown and manifest serialization. No dependency points back to orchestration.
+One-owner serialization types/helpers and synthetic test PCM stay private;
+shared items are bounded to the binary and ordinary regressions import actual
+owners. Preserve complete algorithms/impls/literals, numeric gates, CLI/artifact
+bytes and side-effect/error ordering. Fixed plans and numerical distinctness
+are diagnostic controls, not source intelligence, human approval or live-mixer
+proof. This migration changes no library runtime/DSP/API or product-state model.
+
 ## Target Shape
 
 Prefer this:
