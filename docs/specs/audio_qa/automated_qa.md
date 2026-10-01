@@ -31,6 +31,22 @@ fail-closed record must therefore retain the exact failed gate values even when
 the runner aborts. A missing per-gate record is an evidence failure and cannot
 be repaired by guessing, replay, or an unregistered analysis retry.
 
+### 3.1.1 W-30 preview capacity preflight
+
+The standalone `w30_preview_render` helper keeps its existing `f32` duration
+rounding, but validates the resulting configured-channel render buffer and
+PCM16 RIFF sizes before optional source hydration, rendering or artifact I/O.
+Interleaved `f32` bytes must fit `usize` and not exceed `isize::MAX`; PCM16
+data bytes and the RIFF size including its fixed overhead must fit `u32`, as
+required by the existing writer. Preflight and writer share the same PCM16
+format constants. Rejection uses Result errors, not saturation as admission,
+panic catching, a duration clamp or an arbitrary memory budget.
+
+Help still exits before render preflight. Tiny positive durations that round
+to zero retain their existing header-only output behavior; large representable
+renders can still exhaust memory. This local QA admission guard changes no
+library renderer API or musical policy and grants no source or human verdict.
+
 ### 3.2 Musical contract gates
 
 These checks validate behavior against product intent rather than "beauty":

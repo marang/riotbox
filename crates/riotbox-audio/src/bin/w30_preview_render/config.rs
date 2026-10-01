@@ -8,6 +8,10 @@ pub(super) const SAMPLE_RATE: u32 = 44_100;
 
 pub(super) const CHANNEL_COUNT: u16 = 2;
 
+pub(super) const PCM16_BYTES_PER_SAMPLE: u16 = 2;
+
+pub(super) const PCM16_RIFF_SIZE_OVERHEAD: u32 = 36;
+
 pub(super) const DEFAULT_DURATION_SECONDS: f32 = 2.0;
 
 pub(super) const DEFAULT_SOURCE_START_SECONDS: f32 = 0.0;

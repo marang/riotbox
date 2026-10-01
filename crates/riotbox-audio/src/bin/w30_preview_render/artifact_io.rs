@@ -1,5 +1,7 @@
 use super::args::Args;
-use super::config::{CASE_ID, CHANNEL_COUNT, PACK_ID, SAMPLE_RATE};
+use super::config::{
+    CASE_ID, CHANNEL_COUNT, PACK_ID, PCM16_BYTES_PER_SAMPLE, PCM16_RIFF_SIZE_OVERHEAD, SAMPLE_RATE,
+};
 use std::{
     fs,
     io::{self, Write},
@@ -16,13 +18,13 @@ pub(super) fn write_pcm16_wav(
         fs::create_dir_all(parent)?;
     }
 
-    let bytes_per_sample = 2_u16;
+    let bytes_per_sample = PCM16_BYTES_PER_SAMPLE;
     let bits_per_sample = 16_u16;
     let byte_rate = sample_rate * u32::from(channel_count) * u32::from(bytes_per_sample);
     let block_align = channel_count * bytes_per_sample;
     let data_bytes = u32::try_from(samples.len().saturating_mul(usize::from(bytes_per_sample)))
         .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "WAV output too large"))?;
-    let riff_size = 36_u32
+    let riff_size = PCM16_RIFF_SIZE_OVERHEAD
         .checked_add(data_bytes)
         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "WAV output too large"))?;
 
