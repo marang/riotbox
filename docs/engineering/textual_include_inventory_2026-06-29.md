@@ -73,6 +73,9 @@ Result:
 - RIOTBOX-1543 migration, 2026-10-01: 4 remaining sites in 2 owners;
   pack orchestration and its shared offline report value have explicit real
   owners; root keeps CLI main and only compatibility imports still consumed
+- RIOTBOX-1544 migration, 2026-10-01: 3 remaining sites in 2 owners;
+  report/README publication has a real owner with direct renderer dependencies;
+  all nine presentation helpers stay private and output bytes are preserved
 - no generated-code include site identified in this inventory
 - every current include is treated as legacy/mechanical until proven otherwise
 
@@ -106,7 +109,7 @@ legacy inventory; it does not approve new textual include sites.
 
 | Owner | Count | Included files / families | Purpose | Classification | Migration risk | Follow-up |
 | --- | ---: | --- | --- | --- | --- | --- |
-| `crates/riotbox-audio/src/bin/feral_grid_pack.rs` | 3 | text publication, render/validation/artifact output, remaining tests | Feral grid QA/pack CLI | remaining mechanical QA-bin split; numerical evidence, timing, W-30/TR-909/MC-202, mix policy, rendered pressure, cache-window preparation, manifest assertions and pack orchestration/report value are real owners (RIOTBOX-1521/1523/1527/1528/1529/1530/1531/1533/1534/1543) | medium: three remaining lexical owners | RIOTBOX-1539 checkpoint completed; bounded ownership work may continue, not a completed root migration |
+| `crates/riotbox-audio/src/bin/feral_grid_pack.rs` | 2 | render/validation/artifact output, remaining tests | Feral grid QA/pack CLI | remaining mechanical QA-bin split; numerical evidence, timing, W-30/TR-909/MC-202, mix policy, rendered pressure, cache-window preparation, manifest assertions, pack orchestration/report value and Markdown publication are real owners (RIOTBOX-1521/1523/1527/1528/1529/1530/1531/1533/1534/1543/1544) | medium: two remaining lexical owners | next architecture checkpoint due under existing cadence; not a completed root migration |
 | `crates/riotbox-audio/src/bin/feral_grid_pack/tests.rs` | 1 | shared test helpers | Feral grid QA tests | mechanical test compatibility split | low: test-only helper scope | future QA-bin module slice |
 
 ## Migration Order

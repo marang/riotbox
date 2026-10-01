@@ -1,4 +1,28 @@
-fn write_report(
+use std::{fs, path::Path};
+
+use riotbox_core::source_graph::SourceTimingProbeReadinessReport;
+
+use super::{
+    args::Args,
+    config::{
+        MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO, MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
+        MIN_LOW_BAND_RMS, MIN_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO, PACK_ID,
+    },
+    grid::Grid,
+    grid_bpm_decision::{
+        GridBpmDecision, grid_bpm_decision_reason_label, grid_bpm_source_label,
+        source_timing_bpm_agrees,
+    },
+    pack_report::PackReport,
+    source_character_window_selection::SourceCharacterWindowSelection,
+    source_grid_output_drift::SOURCE_GRID_OUTPUT_MIN_HIT_RATIO,
+    timing_readiness_manifest::{
+        confidence_result_label, downbeat_evidence_status_label, drift_status_label,
+        phrase_status_label, readiness_status_label,
+    },
+};
+
+pub(super) fn write_report(
     path: &Path,
     args: &Args,
     grid: &Grid,
@@ -82,7 +106,10 @@ fn write_report(
             report.tr909_groove_timing.reason,
             report.tr909_groove_timing.applied,
             report.tr909_groove_timing.offset_ms,
-            report.tr909_groove_timing.source_subdivision.unwrap_or("none"),
+            report
+                .tr909_groove_timing
+                .source_subdivision
+                .unwrap_or("none"),
             report.tr909_source_profile.low_band_energy_ratio,
             report.tr909_source_profile.high_band_energy_ratio,
             report.tr909_kick_pressure.reason,
@@ -107,13 +134,17 @@ fn write_report(
             report
                 .tr909_rendered_drum_pressure
                 .source_first_generated_to_source_rms_ratio,
-            report.tr909_rendered_drum_pressure.source_first_masking_headroom,
+            report
+                .tr909_rendered_drum_pressure
+                .source_first_masking_headroom,
             report
                 .tr909_rendered_drum_pressure
                 .support_generated_to_source_rms_ratio,
             report.tr909_rendered_drum_pressure.tr909_low_band_rms,
             report.tr909_rendered_drum_pressure.full_mix_low_band_rms,
-            report.tr909_rendered_drum_pressure.tr909_source_grid_hit_ratio,
+            report
+                .tr909_rendered_drum_pressure
+                .tr909_source_grid_hit_ratio,
             report.mc202_bass_pressure.reason,
             report.mc202_bass_pressure.pressure_role,
             report.mc202_bass_pressure.source_expression_role,
@@ -157,10 +188,16 @@ fn write_report(
             report.w30_source_loop_closure.max_allowed_edge_abs,
             report.w30_source_trigger_variation.reason,
             report.w30_source_trigger_variation.trigger_count,
-            report.w30_source_trigger_variation.beat_anchor_trigger_count,
+            report
+                .w30_source_trigger_variation
+                .beat_anchor_trigger_count,
             report.w30_source_trigger_variation.offbeat_trigger_count,
-            report.w30_source_trigger_variation.skipped_beat_anchor_count,
-            report.w30_source_trigger_variation.distinct_bar_pattern_count,
+            report
+                .w30_source_trigger_variation
+                .skipped_beat_anchor_count,
+            report
+                .w30_source_trigger_variation
+                .distinct_bar_pattern_count,
             report.w30_source_trigger_variation.max_quantized_offset_ms,
             report.w30_source_slice_choice.reason,
             report.w30_source_slice_choice.unique_source_offset_count,
@@ -174,12 +211,18 @@ fn write_report(
             report.source_first_generated_to_source_rms_ratio,
             report.support_generated_to_source_rms_ratio,
             report.all_lane_mix_movement.reason,
-            report.all_lane_mix_movement.source_first_to_support_rms_delta,
-            report.all_lane_mix_movement.source_first_to_support_correlation,
+            report
+                .all_lane_mix_movement
+                .source_first_to_support_rms_delta,
+            report
+                .all_lane_mix_movement
+                .source_first_to_support_correlation,
             report.all_lane_mix_movement.tr909_contribution_ratio,
             report.all_lane_mix_movement.mc202_contribution_ratio,
             report.all_lane_mix_movement.w30_contribution_ratio,
-            report.all_lane_mix_movement.generated_to_w30_contribution_ratio,
+            report
+                .all_lane_mix_movement
+                .generated_to_w30_contribution_ratio,
             report.full_mix.low_band.rms,
             report.full_mix.signal.clip_count,
             report.full_mix.signal.near_clip_count,
@@ -225,10 +268,22 @@ fn write_report(
             report.source_first_mix.low_band.rms,
             report.source_first_mix.signal.active_samples,
             report.source_first_mix.bar_variation.bar_similarity,
-            report.source_first_mix.bar_variation.identical_bar_run_length,
-            report.source_first_mix.spectral_energy.low_band_energy_ratio,
-            report.source_first_mix.spectral_energy.mid_band_energy_ratio,
-            report.source_first_mix.spectral_energy.high_band_energy_ratio,
+            report
+                .source_first_mix
+                .bar_variation
+                .identical_bar_run_length,
+            report
+                .source_first_mix
+                .spectral_energy
+                .low_band_energy_ratio,
+            report
+                .source_first_mix
+                .spectral_energy
+                .mid_band_energy_ratio,
+            report
+                .source_first_mix
+                .spectral_energy
+                .high_band_energy_ratio,
             report.full_mix.signal.rms,
             report.full_mix.signal.peak_abs,
             report.full_mix.low_band.rms,
@@ -265,7 +320,7 @@ fn master_bus_limiter_report_lines(report: &PackReport) -> String {
     )
 }
 
-fn write_readme(
+pub(super) fn write_readme(
     path: &Path,
     args: &Args,
     grid: &Grid,
