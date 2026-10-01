@@ -1,9 +1,20 @@
 use riotbox_core::source_graph::{
-    GrooveResidual, GrooveSubdivision, SourceTimingAnchor, SourceTimingAnchorType, TimingModel,
+    SourceTimingCandidateConfidenceResult, SourceTimingCandidateDriftStatus,
+    SourceTimingCandidatePhraseStatus, SourceTimingProbeBeatEvidenceStatus,
+    SourceTimingProbeDownbeatEvidenceStatus, SourceTimingProbeReadinessReport,
+    SourceTimingProbeReadinessStatus, source_timing_grid_use,
+    source_timing_readiness_report_labels,
+};
+use serde::Serialize;
+
+use super::{
+    grid_bpm_decision::{GridBpmDecision, source_timing_bpm_agrees},
+    source_timing_policy_profile::SOURCE_TIMING_POLICY_PROFILE,
+    timing_evidence::{ManifestSourceTimingAnchorEvidence, ManifestSourceTimingGrooveEvidence},
 };
 
 #[derive(Serialize)]
-struct ManifestSourceTimingReadiness {
+pub(super) struct ManifestSourceTimingReadiness {
     schema: &'static str,
     schema_version: u32,
     source_id: String,
@@ -32,82 +43,7 @@ struct ManifestSourceTimingReadiness {
     warning_codes: Vec<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize)]
-struct ManifestSourceTimingAnchorEvidence {
-    primary_anchor_count: usize,
-    primary_kick_anchor_count: usize,
-    primary_backbeat_anchor_count: usize,
-    primary_transient_anchor_count: usize,
-}
-
-impl ManifestSourceTimingAnchorEvidence {
-    fn from_timing(timing: &TimingModel) -> Self {
-        let anchors = timing
-            .primary_hypothesis()
-            .map_or(&[][..], |hypothesis| hypothesis.anchors.as_slice());
-        Self {
-            primary_anchor_count: anchors.len(),
-            primary_kick_anchor_count: count_source_timing_anchor_type(
-                anchors,
-                SourceTimingAnchorType::Kick,
-            ),
-            primary_backbeat_anchor_count: count_source_timing_anchor_type(
-                anchors,
-                SourceTimingAnchorType::Backbeat,
-            ),
-            primary_transient_anchor_count: count_source_timing_anchor_type(
-                anchors,
-                SourceTimingAnchorType::TransientCluster,
-            ),
-        }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Serialize)]
-struct ManifestSourceTimingGrooveEvidence {
-    primary_groove_residual_count: usize,
-    primary_max_abs_offset_ms: f32,
-    primary_groove_preview: Vec<ManifestSourceTimingGrooveResidual>,
-}
-
-#[derive(Clone, Debug, PartialEq, Serialize)]
-struct ManifestSourceTimingGrooveResidual {
-    subdivision: &'static str,
-    offset_ms: f32,
-    confidence: f32,
-}
-
-impl ManifestSourceTimingGrooveEvidence {
-    fn from_timing(timing: &TimingModel) -> Self {
-        let groove = timing
-            .primary_hypothesis()
-            .map_or(&[][..], |hypothesis| hypothesis.groove.as_slice());
-        Self {
-            primary_groove_residual_count: groove.len(),
-            primary_max_abs_offset_ms: groove
-                .iter()
-                .map(|residual| residual.offset_ms.abs())
-                .fold(0.0_f32, f32::max),
-            primary_groove_preview: groove
-                .iter()
-                .take(4)
-                .map(ManifestSourceTimingGrooveResidual::from_residual)
-                .collect(),
-        }
-    }
-}
-
-impl ManifestSourceTimingGrooveResidual {
-    fn from_residual(residual: &GrooveResidual) -> Self {
-        Self {
-            subdivision: source_timing_groove_subdivision_label(residual.subdivision),
-            offset_ms: residual.offset_ms,
-            confidence: residual.confidence,
-        }
-    }
-}
-
-fn manifest_source_timing_readiness(
+pub(super) fn manifest_source_timing_readiness(
     report: &SourceTimingProbeReadinessReport,
     grid_bpm: GridBpmDecision,
     anchor_evidence: &ManifestSourceTimingAnchorEvidence,
@@ -148,26 +84,7 @@ fn manifest_source_timing_readiness(
     }
 }
 
-fn source_timing_groove_subdivision_label(subdivision: GrooveSubdivision) -> &'static str {
-    match subdivision {
-        GrooveSubdivision::Eighth => "eighth",
-        GrooveSubdivision::Triplet => "triplet",
-        GrooveSubdivision::Sixteenth => "sixteenth",
-        GrooveSubdivision::ThirtySecond => "thirty_second",
-    }
-}
-
-fn count_source_timing_anchor_type(
-    anchors: &[SourceTimingAnchor],
-    anchor_type: SourceTimingAnchorType,
-) -> usize {
-    anchors
-        .iter()
-        .filter(|anchor| anchor.anchor_type == anchor_type)
-        .count()
-}
-
-fn readiness_status_label(status: SourceTimingProbeReadinessStatus) -> &'static str {
+pub(super) fn readiness_status_label(status: SourceTimingProbeReadinessStatus) -> &'static str {
     match status {
         SourceTimingProbeReadinessStatus::Unavailable => "unavailable",
         SourceTimingProbeReadinessStatus::Weak => "weak",
@@ -185,7 +102,7 @@ fn beat_evidence_status_label(status: SourceTimingProbeBeatEvidenceStatus) -> &'
     }
 }
 
-fn downbeat_evidence_status_label(
+pub(super) fn downbeat_evidence_status_label(
     status: SourceTimingProbeDownbeatEvidenceStatus,
 ) -> &'static str {
     match status {
@@ -196,7 +113,9 @@ fn downbeat_evidence_status_label(
     }
 }
 
-fn confidence_result_label(result: SourceTimingCandidateConfidenceResult) -> &'static str {
+pub(super) fn confidence_result_label(
+    result: SourceTimingCandidateConfidenceResult,
+) -> &'static str {
     match result {
         SourceTimingCandidateConfidenceResult::Degraded => "degraded",
         SourceTimingCandidateConfidenceResult::CandidateCautious => "candidate_cautious",
@@ -204,7 +123,7 @@ fn confidence_result_label(result: SourceTimingCandidateConfidenceResult) -> &'s
     }
 }
 
-fn drift_status_label(status: SourceTimingCandidateDriftStatus) -> &'static str {
+pub(super) fn drift_status_label(status: SourceTimingCandidateDriftStatus) -> &'static str {
     match status {
         SourceTimingCandidateDriftStatus::Unavailable => "unavailable",
         SourceTimingCandidateDriftStatus::NotEnoughMaterial => "not_enough_material",
@@ -213,7 +132,7 @@ fn drift_status_label(status: SourceTimingCandidateDriftStatus) -> &'static str 
     }
 }
 
-fn phrase_status_label(status: SourceTimingCandidatePhraseStatus) -> &'static str {
+pub(super) fn phrase_status_label(status: SourceTimingCandidatePhraseStatus) -> &'static str {
     match status {
         SourceTimingCandidatePhraseStatus::Unavailable => "unavailable",
         SourceTimingCandidatePhraseStatus::NotEnoughMaterial => "not_enough_material",

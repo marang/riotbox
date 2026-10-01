@@ -211,6 +211,28 @@ counted legacy. Preserve complete algorithms/impls, thresholds, schemas,
 fixture bodies and CLI/artifact bytes. These ephemeral QA metrics/Grid are not
 Session, arrangement/replay truth or fresh source/human authority.
 
+### Feral Grid Timing Policy And Evidence Ownership
+
+The bounded timing family inside `feral_grid_pack` uses ordinary private
+owners (RBX-397 / RIOTBOX-1523). Existing complete CLI arguments/parsers are
+a config consumer; conservative BPM selection imports those arguments and the
+Core readiness interface. Pure existing anchor/groove evidence adapts Core
+timing data without depending on serialization presentation. Probe adaptation
+consumes those data, the unchanged policy profile and QA config. The bounded
+groove consumer imports BPM/evidence/config; readiness serialization and status
+labels consume the same evidence, BPM decision and profile. None depends back
+on pack orchestration, root compatibility imports or another product truth.
+
+Shared fields/functions remain binary-bound; single-owner parsers, helpers,
+constants and serialization internals remain private. Ordinary BPM regressions
+import actual owners and preserve their fixtures and test identities. Root
+explicit/cfg-test compatibility imports preserve untouched legacy consumers;
+remaining includes stay counted. Preserve complete algorithms/impls, trust
+conditions, thresholds, labels, schemas, source-access/error ordering and every
+CLI/artifact byte, including RIOTBOX-1522's literal verification command.
+Core owns timing truth; these are ephemeral QA consumers, not source-general,
+Session, arrangement/replay, human or live-device authority.
+
 ## Target Shape
 
 Prefer this:

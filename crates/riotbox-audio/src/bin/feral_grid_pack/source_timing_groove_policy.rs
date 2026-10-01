@@ -1,17 +1,26 @@
+use serde::Serialize;
+
+use super::{
+    config::{CHANNEL_COUNT, SAMPLE_RATE},
+    grid_bpm_decision::{GridBpmDecision, GridBpmDecisionReason, GridBpmSource},
+    timing_evidence::{ManifestSourceTimingGrooveEvidence, ManifestSourceTimingGrooveResidual},
+};
+
 const TR909_MAX_GROOVE_OFFSET_MS: f32 = 30.0;
+
 const TR909_MIN_GROOVE_OFFSET_MS: f32 = 1.0;
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize)]
-struct Tr909GrooveTimingPolicy {
-    applied: bool,
-    reason: &'static str,
-    offset_ms: f32,
-    source_residual_count: usize,
-    source_max_abs_offset_ms: f32,
-    source_subdivision: Option<&'static str>,
+pub(super) struct Tr909GrooveTimingPolicy {
+    pub(super) applied: bool,
+    pub(super) reason: &'static str,
+    pub(super) offset_ms: f32,
+    pub(super) source_residual_count: usize,
+    pub(super) source_max_abs_offset_ms: f32,
+    pub(super) source_subdivision: Option<&'static str>,
 }
 
-fn tr909_groove_timing_policy(
+pub(super) fn tr909_groove_timing_policy(
     grid_bpm: GridBpmDecision,
     groove: &ManifestSourceTimingGrooveEvidence,
 ) -> Tr909GrooveTimingPolicy {
@@ -80,13 +89,15 @@ fn strongest_groove_residual(
         .max_by(|left, right| left.confidence.total_cmp(&right.confidence))
 }
 
-fn apply_tr909_groove_timing(samples: &[f32], policy: Tr909GrooveTimingPolicy) -> Vec<f32> {
+pub(super) fn apply_tr909_groove_timing(
+    samples: &[f32],
+    policy: Tr909GrooveTimingPolicy,
+) -> Vec<f32> {
     if !policy.applied || policy.offset_ms.abs() < f32::EPSILON {
         return samples.to_vec();
     }
 
-    let frame_offset =
-        (policy.offset_ms * SAMPLE_RATE as f32 / 1000.0).round() as isize;
+    let frame_offset = (policy.offset_ms * SAMPLE_RATE as f32 / 1000.0).round() as isize;
     shift_interleaved_by_frames(samples, frame_offset)
 }
 

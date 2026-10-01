@@ -1,12 +1,19 @@
+use riotbox_core::source_graph::{
+    SourceTimingProbeReadinessReport, SourceTimingProbeReadinessStatus,
+    source_timing_can_use_cautious_grid_bpm,
+};
+
+use super::{args::Args, config::SOURCE_TIMING_BPM_MATCH_TOLERANCE};
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum GridBpmSource {
+pub(super) enum GridBpmSource {
     UserOverride,
     SourceTiming,
     StaticDefault,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum GridBpmDecisionReason {
+pub(super) enum GridBpmDecisionReason {
     UserOverride,
     SourceTimingReady,
     SourceTimingNeedsReviewManualConfirm,
@@ -17,15 +24,15 @@ enum GridBpmDecisionReason {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-struct GridBpmDecision {
-    bpm: f32,
-    source: GridBpmSource,
-    reason: GridBpmDecisionReason,
-    source_primary_bpm: Option<f32>,
-    source_delta_bpm: Option<f32>,
+pub(super) struct GridBpmDecision {
+    pub(super) bpm: f32,
+    pub(super) source: GridBpmSource,
+    pub(super) reason: GridBpmDecisionReason,
+    pub(super) source_primary_bpm: Option<f32>,
+    pub(super) source_delta_bpm: Option<f32>,
 }
 
-fn choose_grid_bpm(
+pub(super) fn choose_grid_bpm(
     args: &Args,
     timing_readiness: &SourceTimingProbeReadinessReport,
 ) -> GridBpmDecision {
@@ -91,7 +98,7 @@ fn static_default_reason(
     }
 }
 
-fn grid_bpm_source_label(source: GridBpmSource) -> &'static str {
+pub(super) fn grid_bpm_source_label(source: GridBpmSource) -> &'static str {
     match source {
         GridBpmSource::UserOverride => "user_override",
         GridBpmSource::SourceTiming => "source_timing",
@@ -99,7 +106,7 @@ fn grid_bpm_source_label(source: GridBpmSource) -> &'static str {
     }
 }
 
-fn grid_bpm_decision_reason_label(reason: GridBpmDecisionReason) -> &'static str {
+pub(super) fn grid_bpm_decision_reason_label(reason: GridBpmDecisionReason) -> &'static str {
     match reason {
         GridBpmDecisionReason::UserOverride => "user_override",
         GridBpmDecisionReason::SourceTimingReady => "source_timing_ready",
@@ -115,6 +122,6 @@ fn grid_bpm_decision_reason_label(reason: GridBpmDecisionReason) -> &'static str
     }
 }
 
-fn source_timing_bpm_agrees(delta_bpm: Option<f32>) -> Option<bool> {
+pub(super) fn source_timing_bpm_agrees(delta_bpm: Option<f32>) -> Option<bool> {
     delta_bpm.map(|delta| delta <= SOURCE_TIMING_BPM_MATCH_TOLERANCE)
 }

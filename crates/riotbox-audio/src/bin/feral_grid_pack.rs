@@ -1,3 +1,39 @@
+#[path = "feral_grid_pack/args.rs"]
+mod args;
+#[path = "feral_grid_pack/grid_bpm_decision.rs"]
+mod grid_bpm_decision;
+#[path = "feral_grid_pack/source_timing_analysis.rs"]
+mod source_timing_analysis;
+#[path = "feral_grid_pack/source_timing_groove_policy.rs"]
+mod source_timing_groove_policy;
+#[path = "feral_grid_pack/source_timing_policy_profile.rs"]
+mod source_timing_policy_profile;
+#[path = "feral_grid_pack/timing_evidence.rs"]
+mod timing_evidence;
+#[path = "feral_grid_pack/timing_readiness_manifest.rs"]
+mod timing_readiness_manifest;
+
+#[cfg(test)]
+#[path = "feral_grid_pack/bpm_decision_tests.rs"]
+mod bpm_decision_tests;
+
+use args::{Args, print_help};
+use grid_bpm_decision::{
+    GridBpmDecision, choose_grid_bpm, grid_bpm_decision_reason_label, grid_bpm_source_label,
+    source_timing_bpm_agrees,
+};
+use source_timing_analysis::{SourceTimingAnalysisForManifest, source_timing_analysis_for_source};
+use source_timing_groove_policy::{
+    Tr909GrooveTimingPolicy, apply_tr909_groove_timing, tr909_groove_timing_policy,
+};
+#[cfg(test)]
+use timing_evidence::ManifestSourceTimingGrooveEvidence;
+use timing_readiness_manifest::{
+    ManifestSourceTimingReadiness, confidence_result_label, downbeat_evidence_status_label,
+    drift_status_label, manifest_source_timing_readiness, phrase_status_label,
+    readiness_status_label,
+};
+
 #[path = "feral_grid_pack/bar_variation_metrics.rs"]
 mod bar_variation_metrics;
 #[path = "feral_grid_pack/config.rs"]
@@ -17,16 +53,16 @@ mod verification_command_tests;
 
 use bar_variation_metrics::{BarVariationMetrics, bar_variation_metrics};
 use config::{
-    CHANNEL_COUNT, DEFAULT_BARS, DEFAULT_BEATS_PER_BAR, DEFAULT_BPM, DEFAULT_DATE,
-    DEFAULT_SOURCE_START_SECONDS, DEFAULT_SOURCE_WINDOW_SECONDS,
-    MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO, MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
-    MIN_BARS, MIN_LOW_BAND_RMS, MIN_SIGNAL_RMS, MIN_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO, PACK_ID,
-    PATTERN_ORIGIN_PRIMITIVE_RENDERER, PATTERN_ORIGIN_SOURCE_DERIVED, SAMPLE_RATE,
-    SOURCE_TIMING_BPM_MATCH_TOLERANCE,
+    CHANNEL_COUNT, DEFAULT_BEATS_PER_BAR, MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO,
+    MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO, MIN_LOW_BAND_RMS, MIN_SIGNAL_RMS,
+    MIN_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO, PACK_ID, PATTERN_ORIGIN_PRIMITIVE_RENDERER,
+    PATTERN_ORIGIN_SOURCE_DERIVED, SAMPLE_RATE,
 };
 use grid::Grid;
 #[cfg(test)]
 use grid::frames_for_beats;
+#[cfg(test)]
+use grid_bpm_decision::{GridBpmDecisionReason, GridBpmSource};
 use signal_filter::one_pole_lowpass;
 #[cfg(test)]
 use source_grid_output_drift::{
@@ -36,6 +72,8 @@ use source_grid_output_drift::{
     SOURCE_GRID_OUTPUT_MIN_HIT_RATIO, SourceGridOutputDriftMetrics, source_grid_alignment_report,
 };
 use spectral_energy_metrics::{SpectralEnergyMetrics, spectral_energy_metrics};
+#[cfg(test)]
+use timing_evidence::ManifestSourceTimingGrooveResidual;
 
 #[path = "feral_grid_pack/manifest.rs"]
 mod manifest;
@@ -68,16 +106,11 @@ include!("feral_grid_pack/w30_slice_choice.rs");
 include!("feral_grid_pack/w30_source_accent_dynamics.rs");
 include!("feral_grid_pack/w30_source_playback_profile.rs");
 include!("feral_grid_pack/mix_policy.rs");
-include!("feral_grid_pack/grid_bpm_decision.rs");
-include!("feral_grid_pack/source_timing_policy_profile.rs");
-include!("feral_grid_pack/timing_readiness_manifest.rs");
-include!("feral_grid_pack/source_timing_groove_policy.rs");
 include!("feral_grid_pack/pack_text_outputs.rs");
 include!("feral_grid_pack/render_stems.rs");
 include!("feral_grid_pack/manifest_assertions.rs");
 include!("feral_grid_pack/manifest_mc202_assertions.rs");
 include!("feral_grid_pack/manifest_mix_assertions.rs");
 include!("feral_grid_pack/tests.rs");
-include!("feral_grid_pack/bpm_decision_tests.rs");
 include!("feral_grid_pack/w30_source_chop_tests.rs");
 include!("feral_grid_pack/tr909_source_grid_consumer_tests.rs");
