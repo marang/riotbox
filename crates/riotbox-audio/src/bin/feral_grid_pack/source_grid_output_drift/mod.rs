@@ -1,24 +1,34 @@
-const SOURCE_GRID_OUTPUT_MAX_PEAK_OFFSET_MS: f32 = 70.0;
-const SOURCE_GRID_OUTPUT_MIN_HIT_RATIO: f32 = 0.50;
+use super::config::{CHANNEL_COUNT, MIN_SIGNAL_RMS, SAMPLE_RATE};
+use super::grid::{Grid, frames_for_beats};
+use serde::Serialize;
+#[cfg(test)]
+mod tests;
+
+pub(super) const SOURCE_GRID_OUTPUT_MAX_PEAK_OFFSET_MS: f32 = 70.0;
+
+pub(super) const SOURCE_GRID_OUTPUT_MIN_HIT_RATIO: f32 = 0.50;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-struct SourceGridAlignmentReport {
-    tr909_source_grid_alignment: SourceGridOutputDriftMetrics,
-    mc202_source_grid_alignment: SourceGridOutputDriftMetrics,
-    w30_source_grid_alignment: SourceGridOutputDriftMetrics,
-    source_grid_output_drift: SourceGridOutputDriftMetrics,
+pub(super) struct SourceGridAlignmentReport {
+    pub(super) tr909_source_grid_alignment: SourceGridOutputDriftMetrics,
+    pub(super) mc202_source_grid_alignment: SourceGridOutputDriftMetrics,
+    pub(super) w30_source_grid_alignment: SourceGridOutputDriftMetrics,
+    pub(super) source_grid_output_drift: SourceGridOutputDriftMetrics,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize)]
-struct SourceGridOutputDriftMetrics {
-    beat_count: u32,
-    hit_count: u32,
-    hit_ratio: f32,
-    max_peak_offset_ms: f32,
-    max_allowed_peak_offset_ms: f32,
+pub(super) struct SourceGridOutputDriftMetrics {
+    pub(super) beat_count: u32,
+    pub(super) hit_count: u32,
+    pub(super) hit_ratio: f32,
+    pub(super) max_peak_offset_ms: f32,
+    pub(super) max_allowed_peak_offset_ms: f32,
 }
 
-fn source_grid_output_drift_metrics(samples: &[f32], grid: &Grid) -> SourceGridOutputDriftMetrics {
+pub(super) fn source_grid_output_drift_metrics(
+    samples: &[f32],
+    grid: &Grid,
+) -> SourceGridOutputDriftMetrics {
     if samples.is_empty() || grid.total_beats == 0 {
         return SourceGridOutputDriftMetrics {
             max_allowed_peak_offset_ms: SOURCE_GRID_OUTPUT_MAX_PEAK_OFFSET_MS,
@@ -48,7 +58,8 @@ fn source_grid_output_drift_metrics(samples: &[f32], grid: &Grid) -> SourceGridO
 
     for beat in 0..grid.total_beats {
         let beat_frame = frames_for_beats(grid.bpm, beat);
-        if let Some((offset_frames, peak)) = strongest_peak_near_frame(samples, beat_frame, window_frames)
+        if let Some((offset_frames, peak)) =
+            strongest_peak_near_frame(samples, beat_frame, window_frames)
             && peak >= hit_threshold
         {
             hit_count += 1;
@@ -66,7 +77,7 @@ fn source_grid_output_drift_metrics(samples: &[f32], grid: &Grid) -> SourceGridO
     }
 }
 
-fn source_grid_alignment_report(
+pub(super) fn source_grid_alignment_report(
     tr909: &[f32],
     mc202: &[f32],
     w30: &[f32],
@@ -117,5 +128,8 @@ fn strongest_peak_near_frame(
 }
 
 fn frame_peak_abs(frame: &[f32]) -> f32 {
-    frame.iter().map(|sample| sample.abs()).fold(0.0_f32, f32::max)
+    frame
+        .iter()
+        .map(|sample| sample.abs())
+        .fold(0.0_f32, f32::max)
 }

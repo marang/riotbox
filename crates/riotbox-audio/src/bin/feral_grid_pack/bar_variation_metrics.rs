@@ -1,10 +1,14 @@
+use super::config::CHANNEL_COUNT;
+use super::grid::Grid;
+use serde::Serialize;
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize)]
-struct BarVariationMetrics {
-    bar_similarity: f32,
-    identical_bar_run_length: usize,
+pub(super) struct BarVariationMetrics {
+    pub(super) bar_similarity: f32,
+    pub(super) identical_bar_run_length: usize,
 }
 
-fn bar_variation_metrics(samples: &[f32], grid: &Grid) -> BarVariationMetrics {
+pub(super) fn bar_variation_metrics(samples: &[f32], grid: &Grid) -> BarVariationMetrics {
     if grid.bars < 2 || samples.is_empty() {
         return BarVariationMetrics::default();
     }
