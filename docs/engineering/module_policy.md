@@ -278,6 +278,26 @@ warning suppressions. The rendered-mix-pressure and broader mix families remain
 explicitly legacy, outside this slice. No new renderer, fallback, Session/replay
 truth, public API or musical/source-general authority is introduced.
 
+### Feral Grid Source-Window QA Ownership
+
+The bounded source-character search/selection family is an ordinary binary-private
+owner (RBX-400 / RIOTBOX-1529). It consumes the existing Args/Grid, decoded
+in-memory SourceAudioCache/typed windows and actual scalar-measurement owner.
+Search preparation and selection belong together, not in pack orchestration.
+The root retains file hydration, format validation and publication ordering;
+the new policy owner opens no source file and depends on no root compatibility
+import or second source model. Existing directly serializable evidence retains
+its shape and labels, not new qualification authority.
+
+Keep ranking/RMS helpers private. Evidence/functions and constants used by
+retained ordinary regressions remain binary-bound. Tests import actual owners
+and retain both identities and full synthetic in-memory bodies. Remove obsolete
+root scalar/window aliases rather than suppress warnings. Preserve complete
+algorithms, frozen thresholds/labels/schema, error/access/publication order,
+CLI/artifact bytes and all prior guards. Remaining includes are still counted
+legacy; this is neither a completed root migration nor source-general,
+Core/Session/replay, human/music/hardness or live-device proof.
+
 ## Target Shape
 
 Prefer this:

@@ -20,7 +20,7 @@ use riotbox_audio::{
         render_w30_preview_offline, signal_metrics_with_grid,
     },
     source_audio::{
-        SourceAudioCache, SourceAudioError, SourceAudioWindow, write_interleaved_pcm16_wav,
+        SourceAudioCache, SourceAudioError, write_interleaved_pcm16_wav,
     },
     tr909::Tr909SourceSupportProfile,
     w30::{
@@ -294,19 +294,6 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     Ok(())
-}
-
-fn source_character_search_window(
-    source: &SourceAudioCache,
-    args: &Args,
-    grid: &Grid,
-) -> SourceAudioWindow {
-    let available_seconds =
-        (source.duration_seconds() - args.source_start_seconds).max(args.source_window_seconds);
-    source.window_by_seconds(
-        args.source_start_seconds,
-        available_seconds.max(grid.duration_seconds()),
-    )
 }
 
 fn validate_source_format(source: &SourceAudioCache) -> Result<(), Box<dyn std::error::Error>> {

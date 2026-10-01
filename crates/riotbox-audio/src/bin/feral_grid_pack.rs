@@ -108,7 +108,6 @@ mod w30_source_trigger_policy;
 #[path = "feral_grid_pack/w30_source_chop_tests.rs"]
 mod w30_source_chop_tests;
 
-use sample_measurements::{mono_frames, peak_abs, positive_abs_delta, rms};
 use w30_slice_choice::{W30SourceSliceChoiceProof, w30_source_slice_choice_plan};
 use w30_source_accent_dynamics::{W30SourceAccentDynamicsProof, w30_source_accent_dynamics_proof};
 use w30_source_chop::{
@@ -158,12 +157,21 @@ use tr909_source_manifest::{
     manifest_tr909_source_accent_dynamics_proof, manifest_tr909_source_profile,
 };
 
+#[path = "feral_grid_pack/source_character_window_selection.rs"]
+mod source_character_window_selection;
+#[cfg(test)]
+#[path = "feral_grid_pack/source_character_window_selection_tests.rs"]
+mod source_character_window_selection_tests;
+
+use source_character_window_selection::{
+    SourceCharacterWindowSelection, select_source_character_window, source_character_search_window,
+};
+
 // Remaining legacy owners consume explicit compatibility imports from the real modules.
 include!("feral_grid_pack/pack_builder.rs");
 include!("feral_grid_pack/tr909_rendered_drum_pressure.rs");
 include!("feral_grid_pack/mc202_bass_pressure.rs");
 include!("feral_grid_pack/mc202_low_body_policy.rs");
-include!("feral_grid_pack/source_character_window_selection.rs");
 include!("feral_grid_pack/mix_policy.rs");
 include!("feral_grid_pack/pack_text_outputs.rs");
 include!("feral_grid_pack/render_stems.rs");
