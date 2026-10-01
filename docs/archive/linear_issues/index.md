@@ -1765,4 +1765,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Reject unrepresentable W-30 QA render and PCM16 capacities before hydration
 - [RIOTBOX-1527.md](./RIOTBOX-1527.md)
   Separate Feral W-30 QA policy owners from manifest presentation
+- [RIOTBOX-1528.md](./RIOTBOX-1528.md)
+  Separate Feral TR-909 QA profile/pressure policy from presentation and root rendering
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
