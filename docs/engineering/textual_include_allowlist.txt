@@ -1,2 +1,2 @@
-8 crates/riotbox-audio/src/bin/feral_grid_pack.rs
+7 crates/riotbox-audio/src/bin/feral_grid_pack.rs
 1 crates/riotbox-audio/src/bin/feral_grid_pack/tests.rs

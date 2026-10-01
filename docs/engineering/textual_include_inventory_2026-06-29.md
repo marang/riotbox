@@ -64,6 +64,9 @@ Result:
 - RIOTBOX-1531 migration, 2026-10-01: 9 remaining sites in 2 owners;
   the mix include replaced by component math, source/contour balance policy and
   movement-evidence owners; product-stem production imports use actual owners
+- RIOTBOX-1533 migration, 2026-10-01: 8 remaining sites in 2 owners;
+  rendered TR-909 mix-pressure computation and its regressions have explicit
+  ordinary owners; presentation consumes the actual proof owner
 - no generated-code include site identified in this inventory
 - every current include is treated as legacy/mechanical until proven otherwise
 
@@ -97,7 +100,7 @@ legacy inventory; it does not approve new textual include sites.
 
 | Owner | Count | Included files / families | Purpose | Classification | Migration risk | Follow-up |
 | --- | ---: | --- | --- | --- | --- | --- |
-| `crates/riotbox-audio/src/bin/feral_grid_pack.rs` | 8 | pack builder, TR-909 rendered-mix pressure, manifest assertions, render, remaining tests | Feral grid QA/pack CLI | remaining mechanical QA-bin split; numerical evidence, timing, W-30/TR-909/MC-202, mix policy and cache-window preparation are real owners (RIOTBOX-1521/1523/1527/1528/1529/1530/1531) | medium: large QA surface | risk-directed checkpoint after these five ownership slices since RIOTBOX-1524; not a completed root migration |
+| `crates/riotbox-audio/src/bin/feral_grid_pack.rs` | 7 | pack builder, manifest assertions, render, remaining tests | Feral grid QA/pack CLI | remaining mechanical QA-bin split; numerical evidence, timing, W-30/TR-909/MC-202, mix policy, rendered TR-909 pressure and cache-window preparation are real owners (RIOTBOX-1521/1523/1527/1528/1529/1530/1531/1533) | medium: large QA surface | RIOTBOX-1532 checkpoint completed; bounded ownership work may continue, not a completed root migration |
 | `crates/riotbox-audio/src/bin/feral_grid_pack/tests.rs` | 1 | shared test helpers | Feral grid QA tests | mechanical test compatibility split | low: test-only helper scope | future QA-bin module slice |
 
 ## Migration Order

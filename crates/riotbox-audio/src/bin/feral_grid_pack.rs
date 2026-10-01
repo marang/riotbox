@@ -52,11 +52,12 @@ mod verification_command_tests;
 use bar_variation_metrics::BarVariationMetrics;
 #[cfg(test)]
 use bar_variation_metrics::bar_variation_metrics;
+#[cfg(test)]
+use config::PATTERN_ORIGIN_SOURCE_DERIVED;
 use config::{
     CHANNEL_COUNT, DEFAULT_BEATS_PER_BAR, MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO,
     MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO, MIN_LOW_BAND_RMS, MIN_SIGNAL_RMS,
-    MIN_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO, PACK_ID, PATTERN_ORIGIN_PRIMITIVE_RENDERER,
-    PATTERN_ORIGIN_SOURCE_DERIVED, SAMPLE_RATE,
+    MIN_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO, PACK_ID, SAMPLE_RATE,
 };
 #[cfg(test)]
 use grid::frames_for_beats;
@@ -64,9 +65,7 @@ use grid::{Grid, frames_for_beat_position};
 #[cfg(test)]
 use signal_filter::one_pole_lowpass;
 #[cfg(test)]
-use source_grid_output_drift::{
-    SOURCE_GRID_OUTPUT_MAX_PEAK_OFFSET_MS, source_grid_output_drift_metrics,
-};
+use source_grid_output_drift::source_grid_output_drift_metrics;
 use source_grid_output_drift::{
     SOURCE_GRID_OUTPUT_MIN_HIT_RATIO, SourceGridOutputDriftMetrics, source_grid_alignment_report,
 };
@@ -227,9 +226,7 @@ use mix_components::generated_to_source_rms_ratio;
 use mix_components::render_mix_with_master_bus_report;
 #[cfg(test)]
 use mix_movement_evidence::{
-    ALL_LANE_MIX_MAX_CORRELATION, ALL_LANE_MIX_MIN_GENERATED_TO_W30_RATIO,
-    ALL_LANE_MIX_MIN_LANE_CONTRIBUTION_RATIO, ALL_LANE_MIX_MIN_RMS_DELTA,
-    all_lane_mix_movement_proof,
+    ALL_LANE_MIX_MAX_CORRELATION, ALL_LANE_MIX_MIN_RMS_DELTA, all_lane_mix_movement_proof,
 };
 use mix_movement_evidence::{
     AllLaneMixMovementProof, all_lane_mix_movement_proof_for_source_contour,
@@ -246,7 +243,18 @@ use mix_policy::{
 
 // Remaining legacy owners consume explicit compatibility imports from the real modules.
 include!("feral_grid_pack/pack_builder.rs");
-include!("feral_grid_pack/tr909_rendered_drum_pressure.rs");
+#[path = "feral_grid_pack/tr909_rendered_drum_pressure.rs"]
+mod tr909_rendered_drum_pressure;
+#[cfg(test)]
+#[path = "feral_grid_pack/tr909_rendered_drum_pressure_tests.rs"]
+mod tr909_rendered_drum_pressure_tests;
+
+#[cfg(test)]
+use tr909_rendered_drum_pressure::TR909_RENDERED_DRUM_PRESSURE_SOURCE_EVIDENCE_ROLE;
+use tr909_rendered_drum_pressure::{
+    Tr909RenderedDrumPressureInput, Tr909RenderedDrumPressureProof,
+    tr909_rendered_drum_pressure_proof,
+};
 include!("feral_grid_pack/pack_text_outputs.rs");
 include!("feral_grid_pack/render_stems.rs");
 include!("feral_grid_pack/manifest_assertions.rs");

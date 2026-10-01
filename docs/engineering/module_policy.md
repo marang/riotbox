@@ -375,6 +375,26 @@ authority. After this fifth ownership slice since RIOTBOX-1524, perform a
 risk-directed architecture checkpoint before another family migration; this
 bounded checkpoint is not a new global numeric audit cadence.
 
+### Rendered TR-909 QA Pressure Ownership
+
+The rendered TR-909 mix-pressure proof is an ordinary binary-private pure
+computation owner (RBX-403 / RIOTBOX-1533), separate from root orchestration and
+JSON presentation. It consumes existing source profile, render measurements,
+kick/accent, mix movement and source-grid drift evidence through explicit
+actual-owner imports. Keep the scalar input and directly serializable proof;
+the three serializer-only fields and threshold-selector helpers stay private.
+Shared inputs/read fields and constants needed by existing callers/assertions
+remain binary-bound. Presentation imports the actual proof owner; ordinary
+explicitly imported regressions retain all four names and every test/fixture
+body. Root aliases serve only untouched legacy consumers.
+
+Preserve all algorithms, thresholds/literals/schemas, allocation and source
+access/error/publication order, test identities and CLI/artifact bytes. No new
+adapter, public/library DSP/runtime interface, Core/Session/replay or frozen
+Stage-A change. This proof stays diagnostic, never hardness or musical/source-
+general/human/release authority. The RIOTBOX-1532 checkpoint is complete before
+this next ownership slice; no global numeric audit cadence is invented.
+
 ## Include Inventory And Guardrail
 
 The initial RIOTBOX-1321 inventory lives in
