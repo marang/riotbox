@@ -1,7 +1,7 @@
 //! The actual fourteen-file layout, shared by preflight, writers and manifest.
 
 use super::artifact_io::metrics_path_for;
-use super::qa_source_safety::reject_source_aliases;
+use super::qa_source_safety::{reject_output_aliases, reject_source_aliases};
 use std::{
     io,
     path::{Path, PathBuf},
@@ -36,6 +36,14 @@ impl PackOutputPaths {
     }
 
     pub(super) fn reject_source_aliases(&self, source: &Path) -> io::Result<()> {
+        reject_source_aliases(source, self.artifacts())
+    }
+
+    pub(super) fn reject_output_aliases(&self) -> io::Result<()> {
+        reject_output_aliases(self.artifacts())
+    }
+
+    fn artifacts(&self) -> impl Iterator<Item = PathBuf> + '_ {
         let audio_with_metrics = [
             &self.source_excerpt,
             &self.after,
@@ -43,7 +51,7 @@ impl PackOutputPaths {
             &self.tr909,
             &self.mc202,
         ];
-        let artifacts = audio_with_metrics
+        audio_with_metrics
             .into_iter()
             .flat_map(|path| [path.clone(), metrics_path_for(path)])
             .chain([
@@ -51,7 +59,6 @@ impl PackOutputPaths {
                 self.comparison.clone(),
                 self.readme.clone(),
                 self.manifest.clone(),
-            ]);
-        reject_source_aliases(source, artifacts)
+            ])
     }
 }

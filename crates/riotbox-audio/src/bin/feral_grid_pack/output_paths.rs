@@ -6,7 +6,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use super::qa_source_safety::{existing_output_is_regular, reject_source_aliases};
+use super::qa_source_safety::{reject_output_aliases, reject_source_aliases};
 
 pub(super) struct PackOutputPaths {
     pub(super) tr909: PathBuf,
@@ -46,16 +46,7 @@ impl PackOutputPaths {
     }
 
     pub(super) fn reject_output_aliases(&self) -> io::Result<()> {
-        let mut existing = Vec::new();
-        for path in self.artifacts() {
-            if existing_output_is_regular(&path)? {
-                existing.push(path);
-            }
-        }
-        for (index, path) in existing.iter().enumerate() {
-            reject_source_aliases(path, existing[index + 1..].iter().cloned())?;
-        }
-        Ok(())
+        reject_output_aliases(self.artifacts())
     }
 
     fn artifacts(&self) -> impl Iterator<Item = PathBuf> + '_ {
