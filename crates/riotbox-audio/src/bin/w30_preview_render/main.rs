@@ -1,6 +1,8 @@
 mod args;
 mod artifact_io;
 mod config;
+#[path = "../qa_source_safety/mod.rs"]
+mod qa_source_safety;
 mod source_window;
 #[cfg(test)]
 mod tests;
@@ -21,6 +23,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let frame_count = args.render_frame_count()?;
     let source_window_preview = args.source_window_preview()?;
+    let metrics_path = metrics_path_for(&args.output_path);
+    if let Some(source) = &args.source_path {
+        qa_source_safety::reject_source_aliases(
+            source,
+            [args.output_path.clone(), metrics_path.clone()],
+        )?;
+    }
     let samples = render_w30_preview_offline(
         &source_window_smoke_state(source_window_preview),
         SAMPLE_RATE,
@@ -31,7 +40,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     write_pcm16_wav(&args.output_path, SAMPLE_RATE, CHANNEL_COUNT, &samples)?;
 
-    let metrics_path = metrics_path_for(&args.output_path);
     write_metrics_markdown(&metrics_path, &args, samples.len(), metrics)?;
 
     println!("wrote {}", args.output_path.display());

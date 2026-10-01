@@ -156,7 +156,7 @@ contract before playback or promotion.
 
 Local audio QA output should use a stable structure.
 
-### Feral grid source-preservation preflight
+### Offline QA source-preservation preflight
 
 `feral_grid_pack` owns one typed plan for its eight WAVs, eight associated
 metrics files and three metadata files (RBX-405 / RIOTBOX-1535). Before analysis,
@@ -179,6 +179,18 @@ preflight against a stable filesystem namespace, not concurrent namespace
 locking, atomic multi-file publication, a power-loss guarantee or a source
 identity/qualification gate. It changes no DSP, musical policy, frozen Stage-A
 contract or human verdict.
+
+`w30_preview_render` applies the same physical-identity preflight to its WAV
+and sibling metrics path whenever an explicit source is supplied
+(RBX-406 / RIOTBOX-1536). Duration/capacity validation and source loading retain
+their existing error precedence; collision checking precedes offline rendering
+and both output writes. The existing two path variables feed both the check and
+writes, including the unchanged W-30 metrics naming convention. Explicit
+no-source synthetic QA mode is unchanged; it is not missing-source fallback or
+musical/source intelligence. The shared ordinary binary-only
+`qa_source_safety` owner now holds the read-only filesystem/identity logic used
+by both renderers. Layouts remain with their respective renderer. No public
+library API, realtime use, product state or new executable target is added.
 
 Recommended shape:
 

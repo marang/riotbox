@@ -2,9 +2,11 @@
 //! This is not a concurrent namespace lock or an atomic pack transaction.
 
 use std::{
-    fs, io,
+    io,
     path::{Path, PathBuf},
 };
+
+use super::qa_source_safety::reject_source_aliases;
 
 pub(super) struct PackOutputPaths {
     pub(super) tr909: PathBuf,
@@ -40,7 +42,6 @@ impl PackOutputPaths {
     }
 
     pub(super) fn reject_source_aliases(&self, source: &Path) -> io::Result<()> {
-        let source_handle = same_file::Handle::from_path(source)?;
         let audio = [
             &self.tr909,
             &self.w30,
@@ -59,30 +60,7 @@ impl PackOutputPaths {
                 self.manifest.clone(),
                 self.readme.clone(),
             ]);
-        for path in artifacts {
-            // Only a genuinely absent directory entry is safe to skip. An
-            // existing dangling symlink or any metadata/open failure rejects.
-            match fs::symlink_metadata(&path) {
-                Err(error) if error.kind() == io::ErrorKind::NotFound => continue,
-                result => {
-                    result?;
-                }
-            }
-            if !fs::metadata(&path)?.is_file() {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    format!("output is not a regular file: {}", path.display()),
-                ));
-            }
-            let output_handle = same_file::Handle::from_path(&path)?;
-            if source_handle == output_handle {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    format!("output aliases input source: {}", path.display()),
-                ));
-            }
-        }
-        Ok(())
+        reject_source_aliases(source, artifacts)
     }
 }
 
