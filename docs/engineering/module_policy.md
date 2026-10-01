@@ -427,9 +427,10 @@ Core/Session/replay or musical-truth model.
 
 Keep report fields/types/derives, complete bodies, source/capacity/error/write
 ordering, algorithms/literals/thresholds, every test/fixture/ignored state and
-CLI/schema/artifact bytes unchanged in the mechanical migration. Narrow parent
-bridges serve only still-counted legacy writer/stem consumers; retain root
-aliases needed by those consumers or tests, removing only obsolete imports.
+CLI/schema/artifact bytes unchanged in the mechanical migration. Its initial
+narrow parent bridges serve only still-counted legacy writer/stem consumers;
+retain root aliases needed by those consumers or tests, removing only obsolete
+imports.
 RIOTBOX-1543 leaves four textual include sites: three root owners and the
 test-helper site; the subsequent publication migration below removes one.
 This is not a completed Feral root migration or new source/music/hardness/
@@ -447,11 +448,33 @@ Formatting existing evidence is not a second analysis or product-truth layer.
 Keep all eleven complete function bodies, literals/precision, field and write
 ordering, existing tests/fixtures and CLI/schema/artifact bytes unchanged.
 Remove only obsolete root aliases; retain those serving untouched manifest,
-stem or test consumers. Three textual include sites remain: root stem rendering
-and tests, plus the test-helper site. No DSP, Core/Session/replay/runtime,
+stem or test consumers. RIOTBOX-1544 leaves three textual include sites: root
+stem rendering and tests, plus the test-helper site; the next stem migration
+below removes one. No DSP, Core/Session/replay/runtime,
 threshold or frozen Stage-A change and no new qualification verdict. After
 this fifth material branch since the RIOTBOX-1539 architecture checkpoint,
 apply the existing broader review cadence before another family change.
+
+### Feral Stem, Validation, Artifact And Reproduction Ownership
+
+The former mixed render_stems include has four actual binary-private owners
+(RBX-414 / RIOTBOX-1546): seven W-30 trigger render/control functions remain
+together; grid/report gates share pack_validation; WAV/metrics publication and
+its formatter share artifact_io; literal POSIX reproduction/quoting share
+verification_command. This is responsibility separation, not numbered shards
+or one-file-per-function splitting. Direct actual-owner imports replace all
+remaining renderer parent bridges. Manifest imports its reproduction owner;
+only untouched regression consumers retain cfg(test) root compatibility aliases.
+
+Preserve all thirteen complete function/attribute bodies, algorithms, literals,
+thresholds, source/capacity/error/publication order, every test/fixture/ignored
+identity and CLI/schema/artifact byte. The two existing legacy allow attributes
+are retained; never suppress new warnings. Shared PackReport remains offline
+evidence, not product/replay truth. RIOTBOX-1545's cadence review is normally
+merged before this owning contract is pinned. Two textual include sites remain:
+root tests and their helper; root is not yet a thin facade or fully migrated.
+No library DSP/runtime/Core/Session/frozen Stage-A change or source/music/
+hardness/human/release/device verdict follows from namespace ownership.
 
 ## Include Inventory And Guardrail
 
