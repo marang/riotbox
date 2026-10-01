@@ -1757,4 +1757,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Quote Feral grid verification command arguments without shell expansion
 - [RIOTBOX-1523.md](./RIOTBOX-1523.md)
   Isolate Feral grid timing policy, evidence adaptation and CLI dependency leaves
+- [RIOTBOX-1524.md](./RIOTBOX-1524.md)
+  Run post-QA-ownership architecture checkpoint after five semantic slices
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
