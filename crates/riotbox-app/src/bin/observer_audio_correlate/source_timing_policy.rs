@@ -1,4 +1,6 @@
-fn source_timing_policy_failures(summary: &CorrelationSummary) -> Vec<String> {
+use super::report_model::CorrelationSummary;
+
+pub(super) fn source_timing_policy_failures(summary: &CorrelationSummary) -> Vec<String> {
     let mut failures = source_timing_grid_use_policy_failures(summary);
 
     let Some(observer) = summary.observer_source_timing.as_ref() else {
@@ -22,7 +24,8 @@ fn source_timing_policy_failures(summary: &CorrelationSummary) -> Vec<String> {
     }
     match summary.source_timing.as_ref() {
         Some(source_timing) if source_timing.requires_manual_confirm => {
-            failures.push("source_timing_policy.locked_observer_requires_manual_confirm=true".into());
+            failures
+                .push("source_timing_policy.locked_observer_requires_manual_confirm=true".into());
         }
         Some(source_timing) if source_timing.readiness != "ready" => {
             failures.push(format!(
@@ -31,7 +34,9 @@ fn source_timing_policy_failures(summary: &CorrelationSummary) -> Vec<String> {
             ));
         }
         Some(_) => {}
-        None => failures.push("source_timing_policy.locked_observer_missing_manifest_timing".into()),
+        None => {
+            failures.push("source_timing_policy.locked_observer_missing_manifest_timing".into())
+        }
     }
     failures
 }

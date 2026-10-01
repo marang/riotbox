@@ -129,6 +129,25 @@ Preserve complete enum labels/methods, public attributes/fields/signatures,
 source/scene/transport precedence, algorithm bodies and fixture identities.
 This migration creates no second policy or product model and changes no sound.
 
+### Observer / Audio Correlation Ownership
+
+`observer_audio_correlate/main.rs` is the Cargo-standard root of the same
+existing binary (RBX-391 / RIOTBOX-1514), not a new target or library API.
+Ordinary private owners separate metadata I/O, existing report types, observer
+commit/scene/timing parsing, manifest timing/metrics parsing, anchor/groove
+metadata, alignment and evidence policy from JSON and Markdown presentation.
+Report types remain ephemeral diagnostic views, never Session, replay, source
+identity or human-listening authority. Pure typed report data and scalar readers
+are dependency leaves; composition consumes parser/alignment outputs, evidence
+consumes the report, and presentation consumes report/evidence/labels. Keep
+cross-owner visibility bounded to this binary and imports explicit, including
+ordinary regressions. Preserve complete algorithms/literals, schemas, numeric
+floors/tolerances, fixture paths and CLI/report/error bytes. Metadata paths may
+be read; referenced source/artifact audio paths are not hydrated by this tool.
+Existing cohesive CLI/drift regression families remain together despite their
+roughly 500-line size; splitting their fixture contracts only for line count
+would obscure the first migration's behavior-preservation proof.
+
 ## Target Shape
 
 Prefer this:

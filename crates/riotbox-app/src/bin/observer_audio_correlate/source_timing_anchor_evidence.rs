@@ -1,12 +1,8 @@
-#[derive(Clone, Debug, PartialEq)]
-struct SourceTimingAnchorEvidence {
-    primary_anchor_count: u64,
-    primary_kick_anchor_count: u64,
-    primary_backbeat_anchor_count: u64,
-    primary_transient_anchor_count: u64,
-}
+use super::report_model::SourceTimingAnchorEvidence;
+use super::value_fields::u64_field;
+use serde_json::Value;
 
-fn collect_optional_source_timing_anchor_evidence(
+pub(super) fn collect_optional_source_timing_anchor_evidence(
     source_timing: &Value,
 ) -> Result<Option<SourceTimingAnchorEvidence>, ()> {
     let Some(value) = source_timing.get("anchor_evidence") else {
@@ -35,13 +31,6 @@ fn collect_optional_source_timing_anchor_evidence(
     Ok(Some(evidence))
 }
 
-fn u64_field(
-    object: &serde_json::Map<String, Value>,
-    field: &str,
-) -> Result<u64, ()> {
-    object.get(field).and_then(Value::as_u64).ok_or(())
-}
-
 impl SourceTimingAnchorEvidence {
     fn typed_anchor_count(&self) -> u64 {
         self.primary_kick_anchor_count
@@ -50,7 +39,7 @@ impl SourceTimingAnchorEvidence {
     }
 }
 
-fn source_timing_anchor_evidence_json(
+pub(super) fn source_timing_anchor_evidence_json(
     evidence: &SourceTimingAnchorEvidence,
 ) -> serde_json::Value {
     serde_json::json!({

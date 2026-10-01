@@ -1,34 +1,11 @@
-#[derive(Debug, PartialEq)]
-struct ObserverSourceTimingReadiness {
-    source_id: String,
-    cue: String,
-    actionability: String,
-    bpm_estimate: Option<f64>,
-    bpm_confidence: f64,
-    quality: String,
-    degraded_policy: String,
-    grid_use: String,
-    beat_status: String,
-    beat_count: u64,
-    downbeat_status: String,
-    primary_downbeat_offset_beats: Option<u64>,
-    primary_downbeat_score: Option<f64>,
-    primary_downbeat_score_gap: Option<f64>,
-    alternate_downbeat_phase_count: u64,
-    has_alternate_downbeat_phase_count: bool,
-    bar_count: u64,
-    phrase_status: String,
-    phrase_count: u64,
-    primary_hypothesis_id: Option<String>,
-    hypothesis_count: u64,
-    anchor_evidence: Option<SourceTimingAnchorEvidence>,
-    primary_anchor_cue: String,
-    groove_evidence: Option<SourceTimingGrooveEvidence>,
-    primary_warning_code: Option<String>,
-    warning_codes: Vec<String>,
-}
+use super::report_model::ObserverSourceTimingReadiness;
+use super::source_timing_anchor_evidence::collect_optional_source_timing_anchor_evidence;
+use super::source_timing_groove_evidence::collect_optional_source_timing_groove_evidence;
+use super::value_fields::non_empty_string;
+use super::value_fields::string_list;
+use serde_json::Value;
 
-fn collect_observer_source_timing(
+pub(super) fn collect_observer_source_timing(
     events: &[Value],
 ) -> (Option<ObserverSourceTimingReadiness>, bool) {
     let Some(source_timing) = events
@@ -155,9 +132,7 @@ fn collect_observer_source_timing(
             Ok(value) => value,
             Err(()) => return (None, true),
         },
-        alternate_downbeat_phase_count: match source_timing
-            .get("alternate_downbeat_phase_count")
-        {
+        alternate_downbeat_phase_count: match source_timing.get("alternate_downbeat_phase_count") {
             Some(value) => match value.as_u64() {
                 Some(value) => value,
                 None => return (None, true),
@@ -234,14 +209,18 @@ fn observer_source_timing_counts_contradict(timing: &ObserverSourceTimingReadine
     if timing.downbeat_status == "bar_locked" && timing.bar_count == 0 {
         return true;
     }
-    if timing.phrase_status == "phrase_locked" && (timing.bar_count == 0 || timing.phrase_count == 0)
+    if timing.phrase_status == "phrase_locked"
+        && (timing.bar_count == 0 || timing.phrase_count == 0)
     {
         return true;
     }
     timing.phrase_status != "phrase_locked" && timing.phrase_count != 0
 }
 
-fn observer_source_timing_expected_grid_use(source_timing: &Value, degraded_policy: &str) -> String {
+fn observer_source_timing_expected_grid_use(
+    source_timing: &Value,
+    degraded_policy: &str,
+) -> String {
     let bpm_available = source_timing
         .get("bpm_estimate")
         .is_some_and(|value| value.as_f64().is_some());
@@ -290,9 +269,7 @@ fn optional_source_timing_f64(source_timing: &Value, key: &str) -> Result<Option
 fn observer_source_timing_policy_cue(policy: &str) -> Option<&'static str> {
     match policy {
         "locked" | "manual_confirm" | "cautious" | "fallback_grid" | "disabled" | "unknown" => {
-            Some(riotbox_app::source_timing_cues::source_timing_policy_cue_label(
-                policy,
-            ))
+            Some(riotbox_app::source_timing_cues::source_timing_policy_cue_label(policy))
         }
         _ => None,
     }
@@ -301,9 +278,7 @@ fn observer_source_timing_policy_cue(policy: &str) -> Option<&'static str> {
 fn observer_source_timing_policy_actionability(policy: &str) -> Option<&'static str> {
     match policy {
         "locked" | "manual_confirm" | "cautious" | "fallback_grid" | "disabled" | "unknown" => {
-            Some(
-                riotbox_app::source_timing_cues::source_timing_policy_actionability_label(policy),
-            )
+            Some(riotbox_app::source_timing_cues::source_timing_policy_actionability_label(policy))
         }
         _ => None,
     }
