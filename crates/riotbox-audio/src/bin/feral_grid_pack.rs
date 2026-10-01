@@ -11,6 +11,10 @@ mod source_grid_output_drift;
 #[path = "feral_grid_pack/spectral_energy_metrics.rs"]
 mod spectral_energy_metrics;
 
+#[cfg(test)]
+#[path = "feral_grid_pack/verification_command_tests.rs"]
+mod verification_command_tests;
+
 use bar_variation_metrics::{BarVariationMetrics, bar_variation_metrics};
 use config::{
     CHANNEL_COUNT, DEFAULT_BARS, DEFAULT_BEATS_PER_BAR, DEFAULT_BPM, DEFAULT_DATE,
