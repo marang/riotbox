@@ -1803,4 +1803,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Review QA artifact integrity and product-spine boundaries after the five-branch checkpoint
 - [RIOTBOX-1546.md](./RIOTBOX-1546.md)
   Replace mixed Feral stem include with explicit rendering validation and artifact owners
+- [RIOTBOX-1547.md](./RIOTBOX-1547.md)
+  Replace final Feral test includes with explicit regression and synthetic fixture modules
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
