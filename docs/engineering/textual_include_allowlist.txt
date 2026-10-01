@@ -1,6 +1,5 @@
 2 crates/riotbox-audio/src/bin/feral_before_after_pack.rs
 29 crates/riotbox-audio/src/bin/feral_grid_pack.rs
 1 crates/riotbox-audio/src/bin/feral_grid_pack/tests.rs
-6 crates/riotbox-audio/src/bin/lane_recipe_pack.rs
 4 crates/riotbox-audio/src/bin/w30_preview_compare.rs
 2 crates/riotbox-audio/src/bin/w30_preview_render.rs
