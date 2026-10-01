@@ -61,6 +61,10 @@ pub(super) fn frames_for_beats(bpm: f32, beats: u32) -> usize {
     (beats as f64 * f64::from(SAMPLE_RATE) * 60.0 / f64::from(bpm)).round() as usize
 }
 
+pub(super) fn frames_for_beat_position(bpm: f32, beats: f32) -> usize {
+    (beats as f64 * f64::from(SAMPLE_RATE) * 60.0 / f64::from(bpm)).round() as usize
+}
+
 #[cfg(test)]
 mod tests {
     use super::{Grid, frames_for_beats};

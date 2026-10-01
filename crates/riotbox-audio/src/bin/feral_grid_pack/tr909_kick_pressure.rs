@@ -1,73 +1,64 @@
-#[derive(Clone, Copy, Debug, PartialEq)]
-struct Tr909KickPressureProof {
-    pattern_origin: &'static str,
-    source_evidence_role: &'static str,
-    source_profile_reason: &'static str,
-    applied: bool,
-    anchor_count: usize,
-    pressure_gain: f32,
-    pre_low_band_rms: f32,
-    post_low_band_rms: f32,
-    low_band_rms_delta: f32,
-    low_band_rms_ratio: f32,
-    post_peak_abs: f32,
-    reason: &'static str,
-}
+//! Existing primitive support render, kick-pressure policy and accent evidence for QA.
+
+use super::config::{
+    CHANNEL_COUNT, PATTERN_ORIGIN_PRIMITIVE_RENDERER, PATTERN_ORIGIN_SOURCE_DERIVED, SAMPLE_RATE,
+};
+use super::grid::{Grid, frames_for_beat_position};
+use super::signal_filter::one_pole_lowpass;
+use super::source_aware_tr909::SourceAwareTr909Profile;
+use riotbox_audio::runtime::{render_tr909_offline, signal_metrics_with_grid};
+use riotbox_audio::tr909::{
+    Tr909RenderMode, Tr909RenderRouting, Tr909RenderState, Tr909SourceSupportProfile,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-struct Tr909SourceAccentDynamicsProof {
-    pattern_origin: &'static str,
-    applied: bool,
-    anchor_count: usize,
-    distinct_accent_count: usize,
-    min_accent: f32,
-    max_accent: f32,
-    accent_span: f32,
-    min_required_accent_span: f32,
-    source_energy_span: f32,
-    reason: &'static str,
+pub(super) struct Tr909KickPressureProof {
+    pub(super) pattern_origin: &'static str,
+    pub(super) source_evidence_role: &'static str,
+    pub(super) source_profile_reason: &'static str,
+    pub(super) applied: bool,
+    pub(super) anchor_count: usize,
+    pub(super) pressure_gain: f32,
+    pub(super) pre_low_band_rms: f32,
+    pub(super) post_low_band_rms: f32,
+    pub(super) low_band_rms_delta: f32,
+    pub(super) low_band_rms_ratio: f32,
+    pub(super) post_peak_abs: f32,
+    pub(super) reason: &'static str,
 }
 
-#[derive(Serialize)]
-struct ManifestTr909KickPressureProof {
-    pattern_origin: &'static str,
-    source_evidence_role: &'static str,
-    source_profile_reason: &'static str,
-    applied: bool,
-    anchor_count: usize,
-    pressure_gain: f32,
-    pre_low_band_rms: f32,
-    post_low_band_rms: f32,
-    low_band_rms_delta: f32,
-    low_band_rms_ratio: f32,
-    post_peak_abs: f32,
-    reason: &'static str,
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(super) struct Tr909SourceAccentDynamicsProof {
+    pub(super) pattern_origin: &'static str,
+    pub(super) applied: bool,
+    pub(super) anchor_count: usize,
+    pub(super) distinct_accent_count: usize,
+    pub(super) min_accent: f32,
+    pub(super) max_accent: f32,
+    pub(super) accent_span: f32,
+    pub(super) min_required_accent_span: f32,
+    pub(super) source_energy_span: f32,
+    pub(super) reason: &'static str,
 }
 
-#[derive(Serialize)]
-struct ManifestTr909SourceAccentDynamicsProof {
-    pattern_origin: &'static str,
-    applied: bool,
-    anchor_count: usize,
-    distinct_accent_count: usize,
-    min_accent: f32,
-    max_accent: f32,
-    accent_span: f32,
-    min_required_accent_span: f32,
-    source_energy_span: f32,
-    reason: &'static str,
-}
+pub(super) const TR909_KICK_PRESSURE_MIN_LOW_BAND_RATIO: f32 = 1.06;
 
-const TR909_KICK_PRESSURE_MIN_LOW_BAND_RATIO: f32 = 1.06;
-const TR909_KICK_PRESSURE_MAX_PEAK_ABS: f32 = 0.95;
-const TR909_SOURCE_ACCENT_MIN_ACCENT_SPAN: f32 = 0.22;
-const TR909_SOURCE_ACCENT_MIN_DISTINCT_ACCENTS: usize = 3;
-const TR909_SOURCE_EVIDENCE_ROLE_PROFILE_AND_ACCENT_DYNAMICS: &str =
+pub(super) const TR909_KICK_PRESSURE_MAX_PEAK_ABS: f32 = 0.95;
+
+pub(super) const TR909_SOURCE_ACCENT_MIN_ACCENT_SPAN: f32 = 0.22;
+
+pub(super) const TR909_SOURCE_ACCENT_MIN_DISTINCT_ACCENTS: usize = 3;
+
+pub(super) const TR909_SOURCE_EVIDENCE_ROLE_PROFILE_AND_ACCENT_DYNAMICS: &str =
     "tr909_source_profile_and_accent_dynamics";
+
 const TR909_SOURCE_EVIDENCE_ROLE_PRIMITIVE_CONTROL_ONLY: &str = "tr909_primitive_control_only";
 
 #[allow(dead_code)]
-fn render_tr909_source_support(grid: &Grid, profile: SourceAwareTr909Profile) -> Vec<f32> {
+pub(super) fn render_tr909_source_support(
+    grid: &Grid,
+    profile: SourceAwareTr909Profile,
+) -> Vec<f32> {
     render_tr909_source_support_with_pressure(grid, profile).0
 }
 
@@ -75,11 +66,12 @@ fn render_tr909_source_support_with_pressure(
     grid: &Grid,
     profile: SourceAwareTr909Profile,
 ) -> (Vec<f32>, Tr909KickPressureProof) {
-    let (samples, kick_pressure, _) = render_tr909_source_support_with_pressure_and_accents(grid, profile);
+    let (samples, kick_pressure, _) =
+        render_tr909_source_support_with_pressure_and_accents(grid, profile);
     (samples, kick_pressure)
 }
 
-fn render_tr909_source_support_with_pressure_and_accents(
+pub(super) fn render_tr909_source_support_with_pressure_and_accents(
     grid: &Grid,
     profile: SourceAwareTr909Profile,
 ) -> (
@@ -90,42 +82,6 @@ fn render_tr909_source_support_with_pressure_and_accents(
     let mut samples = render_tr909_source_support_legacy(grid, profile);
     let (kick_pressure, accent_dynamics) = apply_tr909_kick_pressure(&mut samples, grid, profile);
     (samples, kick_pressure, accent_dynamics)
-}
-
-fn manifest_tr909_kick_pressure_proof(
-    proof: Tr909KickPressureProof,
-) -> ManifestTr909KickPressureProof {
-    ManifestTr909KickPressureProof {
-        pattern_origin: proof.pattern_origin,
-        source_evidence_role: proof.source_evidence_role,
-        source_profile_reason: proof.source_profile_reason,
-        applied: proof.applied,
-        anchor_count: proof.anchor_count,
-        pressure_gain: proof.pressure_gain,
-        pre_low_band_rms: proof.pre_low_band_rms,
-        post_low_band_rms: proof.post_low_band_rms,
-        low_band_rms_delta: proof.low_band_rms_delta,
-        low_band_rms_ratio: proof.low_band_rms_ratio,
-        post_peak_abs: proof.post_peak_abs,
-        reason: proof.reason,
-    }
-}
-
-fn manifest_tr909_source_accent_dynamics_proof(
-    proof: Tr909SourceAccentDynamicsProof,
-) -> ManifestTr909SourceAccentDynamicsProof {
-    ManifestTr909SourceAccentDynamicsProof {
-        pattern_origin: proof.pattern_origin,
-        applied: proof.applied,
-        anchor_count: proof.anchor_count,
-        distinct_accent_count: proof.distinct_accent_count,
-        min_accent: proof.min_accent,
-        max_accent: proof.max_accent,
-        accent_span: proof.accent_span,
-        min_required_accent_span: proof.min_required_accent_span,
-        source_energy_span: proof.source_energy_span,
-        reason: proof.reason,
-    }
 }
 
 fn apply_tr909_kick_pressure(
@@ -149,7 +105,10 @@ fn apply_tr909_kick_pressure(
     }
 
     for sample in &mut *samples {
-        *sample = sample.clamp(-TR909_KICK_PRESSURE_MAX_PEAK_ABS, TR909_KICK_PRESSURE_MAX_PEAK_ABS);
+        *sample = sample.clamp(
+            -TR909_KICK_PRESSURE_MAX_PEAK_ABS,
+            TR909_KICK_PRESSURE_MAX_PEAK_ABS,
+        );
     }
 
     let post = tr909_kick_pressure_metrics(samples, grid);
@@ -374,4 +333,30 @@ fn tr909_kick_pressure_metrics(samples: &[f32], grid: &Grid) -> Tr909KickPressur
         low_band_rms: low_band.rms,
         peak_abs: signal.peak_abs,
     }
+}
+
+#[allow(dead_code)]
+pub(super) fn render_tr909_source_support_legacy(
+    grid: &Grid,
+    profile: SourceAwareTr909Profile,
+) -> Vec<f32> {
+    render_tr909_offline(
+        &Tr909RenderState {
+            mode: Tr909RenderMode::SourceSupport,
+            routing: Tr909RenderRouting::DrumBusSupport,
+            source_support_profile: Some(profile.support_profile),
+            source_support_context: Some(profile.support_context),
+            pattern_adoption: Some(profile.pattern_adoption),
+            phrase_variation: Some(profile.phrase_variation),
+            drum_bus_level: profile.drum_bus_level,
+            slam_intensity: profile.slam_intensity,
+            is_transport_running: true,
+            tempo_bpm: grid.bpm,
+            position_beats: 0.0,
+            ..Tr909RenderState::default()
+        },
+        SAMPLE_RATE,
+        CHANNEL_COUNT,
+        grid.total_frames,
+    )
 }

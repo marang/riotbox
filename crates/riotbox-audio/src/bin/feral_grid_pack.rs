@@ -26,8 +26,6 @@ use source_timing_analysis::{SourceTimingAnalysisForManifest, source_timing_anal
 use source_timing_groove_policy::{
     Tr909GrooveTimingPolicy, apply_tr909_groove_timing, tr909_groove_timing_policy,
 };
-#[cfg(test)]
-use timing_evidence::ManifestSourceTimingGrooveEvidence;
 use timing_readiness_manifest::{
     ManifestSourceTimingReadiness, confidence_result_label, downbeat_evidence_status_label,
     drift_status_label, manifest_source_timing_readiness, phrase_status_label,
@@ -58,11 +56,9 @@ use config::{
     MIN_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO, PACK_ID, PATTERN_ORIGIN_PRIMITIVE_RENDERER,
     PATTERN_ORIGIN_SOURCE_DERIVED, SAMPLE_RATE,
 };
-use grid::Grid;
 #[cfg(test)]
 use grid::frames_for_beats;
-#[cfg(test)]
-use grid_bpm_decision::{GridBpmDecisionReason, GridBpmSource};
+use grid::{Grid, frames_for_beat_position};
 use signal_filter::one_pole_lowpass;
 #[cfg(test)]
 use source_grid_output_drift::{
@@ -72,8 +68,6 @@ use source_grid_output_drift::{
     SOURCE_GRID_OUTPUT_MIN_HIT_RATIO, SourceGridOutputDriftMetrics, source_grid_alignment_report,
 };
 use spectral_energy_metrics::{SpectralEnergyMetrics, spectral_energy_metrics};
-#[cfg(test)]
-use timing_evidence::ManifestSourceTimingGrooveResidual;
 
 #[path = "feral_grid_pack/manifest.rs"]
 mod manifest;
@@ -135,10 +129,37 @@ use w30_source_trigger_policy::{
     w30_source_trigger_variation_proof,
 };
 
+#[path = "feral_grid_pack/source_aware_tr909.rs"]
+mod source_aware_tr909;
+#[path = "feral_grid_pack/tr909_kick_pressure.rs"]
+mod tr909_kick_pressure;
+#[path = "feral_grid_pack/tr909_source_manifest.rs"]
+mod tr909_source_manifest;
+
+#[cfg(test)]
+#[path = "feral_grid_pack/tr909_source_grid_consumer_tests.rs"]
+mod tr909_source_grid_consumer_tests;
+
+use source_aware_tr909::{SourceAwareTr909Profile, derive_source_aware_tr909_profile};
+#[cfg(test)]
+use tr909_kick_pressure::{
+    TR909_KICK_PRESSURE_MAX_PEAK_ABS, TR909_KICK_PRESSURE_MIN_LOW_BAND_RATIO,
+    TR909_SOURCE_ACCENT_MIN_ACCENT_SPAN, TR909_SOURCE_ACCENT_MIN_DISTINCT_ACCENTS,
+    TR909_SOURCE_EVIDENCE_ROLE_PROFILE_AND_ACCENT_DYNAMICS, render_tr909_source_support,
+    render_tr909_source_support_legacy,
+};
+use tr909_kick_pressure::{
+    Tr909KickPressureProof, Tr909SourceAccentDynamicsProof,
+    render_tr909_source_support_with_pressure_and_accents,
+};
+use tr909_source_manifest::{
+    ManifestTr909KickPressureProof, ManifestTr909SourceAccentDynamicsProof,
+    ManifestTr909SourceProfile, manifest_tr909_kick_pressure_proof,
+    manifest_tr909_source_accent_dynamics_proof, manifest_tr909_source_profile,
+};
+
 // Remaining legacy owners consume explicit compatibility imports from the real modules.
 include!("feral_grid_pack/pack_builder.rs");
-include!("feral_grid_pack/source_aware_tr909.rs");
-include!("feral_grid_pack/tr909_kick_pressure.rs");
 include!("feral_grid_pack/tr909_rendered_drum_pressure.rs");
 include!("feral_grid_pack/mc202_bass_pressure.rs");
 include!("feral_grid_pack/mc202_low_body_policy.rs");
@@ -150,4 +171,3 @@ include!("feral_grid_pack/manifest_assertions.rs");
 include!("feral_grid_pack/manifest_mc202_assertions.rs");
 include!("feral_grid_pack/manifest_mix_assertions.rs");
 include!("feral_grid_pack/tests.rs");
-include!("feral_grid_pack/tr909_source_grid_consumer_tests.rs");

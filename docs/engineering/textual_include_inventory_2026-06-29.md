@@ -50,6 +50,10 @@ Result:
   four W-30 policy/playback includes and the W-30 regression include replaced
   by semantic modules, with shared measurements/events and JSON presentation
   separated from policy
+- RIOTBOX-1528 migration, 2026-10-01: 13 remaining sites in 2 owners;
+  both TR-909 profile/pressure includes and the grid-consumer regression include
+  replaced by real modules; serializers and the root render/frame dependencies
+  separated from policy
 - no generated-code include site identified in this inventory
 - every current include is treated as legacy/mechanical until proven otherwise
 
@@ -83,7 +87,7 @@ legacy inventory; it does not approve new textual include sites.
 
 | Owner | Count | Included files / families | Purpose | Classification | Migration risk | Follow-up |
 | --- | ---: | --- | --- | --- | --- | --- |
-| `crates/riotbox-audio/src/bin/feral_grid_pack.rs` | 15 | pack builder, TR-909, MC-202, mix, manifest assertions, render, remaining tests | Feral grid QA/pack CLI | remaining mechanical QA-bin split; numerical evidence, timing and W-30 QA policy/presentation are real owners (RIOTBOX-1521/1523/1527) | medium: large QA surface | bounded semantic ownership slices after RIOTBOX-1524 checkpoint; not a completed root migration |
+| `crates/riotbox-audio/src/bin/feral_grid_pack.rs` | 12 | pack builder, TR-909 rendered-mix pressure, MC-202, mix, source-window selection, manifest assertions, render, remaining tests | Feral grid QA/pack CLI | remaining mechanical QA-bin split; numerical evidence, timing, W-30 and TR-909 profile/pressure policy/presentation are real owners (RIOTBOX-1521/1523/1527/1528) | medium: large QA surface | bounded semantic ownership slices after RIOTBOX-1524 checkpoint; not a completed root migration |
 | `crates/riotbox-audio/src/bin/feral_grid_pack/tests.rs` | 1 | shared test helpers | Feral grid QA tests | mechanical test compatibility split | low: test-only helper scope | future QA-bin module slice |
 
 ## Migration Order

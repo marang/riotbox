@@ -1,27 +1,4 @@
 #[allow(dead_code)]
-fn render_tr909_source_support_legacy(grid: &Grid, profile: SourceAwareTr909Profile) -> Vec<f32> {
-    render_tr909_offline(
-        &Tr909RenderState {
-            mode: Tr909RenderMode::SourceSupport,
-            routing: Tr909RenderRouting::DrumBusSupport,
-            source_support_profile: Some(profile.support_profile),
-            source_support_context: Some(profile.support_context),
-            pattern_adoption: Some(profile.pattern_adoption),
-            phrase_variation: Some(profile.phrase_variation),
-            drum_bus_level: profile.drum_bus_level,
-            slam_intensity: profile.slam_intensity,
-            is_transport_running: true,
-            tempo_bpm: grid.bpm,
-            position_beats: 0.0,
-            ..Tr909RenderState::default()
-        },
-        SAMPLE_RATE,
-        CHANNEL_COUNT,
-        grid.total_frames,
-    )
-}
-
-#[allow(dead_code)]
 fn render_w30_source_chop(grid: &Grid, source_window_preview: W30PreviewSampleWindow) -> Vec<f32> {
     render_w30_source_chop_with_variation(grid, &source_window_preview).0
 }
@@ -137,10 +114,6 @@ fn w30_source_trigger_profile_gain(source_window_preview: &W30PreviewSampleWindo
     } else {
         0.96
     }
-}
-
-fn frames_for_beat_position(bpm: f32, beats: f32) -> usize {
-    (beats as f64 * f64::from(SAMPLE_RATE) * 60.0 / f64::from(bpm)).round() as usize
 }
 
 #[allow(dead_code)]

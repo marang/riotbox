@@ -16,21 +16,21 @@ use riotbox_audio::{
     },
     runtime::{
         MasterBusLimiterReport, OfflineAudioMetrics,
-        apply_master_bus_soft_limiter_with_report, render_tr909_offline,
+        apply_master_bus_soft_limiter_with_report,
         render_w30_preview_offline, signal_metrics_with_grid,
     },
     source_audio::{
         SourceAudioCache, SourceAudioError, SourceAudioWindow, write_interleaved_pcm16_wav,
     },
-    tr909::{
-        Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
-        Tr909RenderState, Tr909SourceSupportContext, Tr909SourceSupportProfile,
-    },
+    tr909::Tr909SourceSupportProfile,
     w30::{
         W30_PREVIEW_SAMPLE_WINDOW_LEN, W30PreviewRenderMode, W30PreviewRenderRouting,
         W30PreviewRenderState, W30PreviewSampleWindow, W30PreviewSourceProfile,
     },
 };
+
+#[cfg(test)]
+use riotbox_audio::tr909::{Tr909PatternAdoption, Tr909PhraseVariation, Tr909SourceSupportContext};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse(env::args().skip(1))?;

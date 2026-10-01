@@ -1,40 +1,37 @@
+//! Existing source-profile policy for the bounded TR-909 offline QA renderer.
+
+use super::config::{CHANNEL_COUNT, SAMPLE_RATE};
+use super::grid::Grid;
+use super::signal_filter::one_pole_lowpass;
+use super::spectral_energy_metrics::spectral_energy_metrics;
+use riotbox_audio::runtime::signal_metrics_with_grid;
+use riotbox_audio::tr909::{
+    Tr909PatternAdoption, Tr909PhraseVariation, Tr909SourceSupportContext,
+    Tr909SourceSupportProfile,
+};
+
 #[derive(Clone, Copy, Debug, PartialEq)]
-struct SourceAwareTr909Profile {
-    signal_rms: f32,
-    low_band_rms: f32,
-    onset_count: usize,
-    event_density_per_bar: f32,
-    low_band_energy_ratio: f32,
-    mid_band_energy_ratio: f32,
-    high_band_energy_ratio: f32,
-    support_profile: Tr909SourceSupportProfile,
-    support_context: Tr909SourceSupportContext,
-    pattern_adoption: Tr909PatternAdoption,
-    phrase_variation: Tr909PhraseVariation,
-    drum_bus_level: f32,
-    slam_intensity: f32,
-    reason: &'static str,
+pub(super) struct SourceAwareTr909Profile {
+    pub(super) signal_rms: f32,
+    pub(super) low_band_rms: f32,
+    pub(super) onset_count: usize,
+    pub(super) event_density_per_bar: f32,
+    pub(super) low_band_energy_ratio: f32,
+    pub(super) mid_band_energy_ratio: f32,
+    pub(super) high_band_energy_ratio: f32,
+    pub(super) support_profile: Tr909SourceSupportProfile,
+    pub(super) support_context: Tr909SourceSupportContext,
+    pub(super) pattern_adoption: Tr909PatternAdoption,
+    pub(super) phrase_variation: Tr909PhraseVariation,
+    pub(super) drum_bus_level: f32,
+    pub(super) slam_intensity: f32,
+    pub(super) reason: &'static str,
 }
 
-#[derive(Serialize)]
-struct ManifestTr909SourceProfile {
-    signal_rms: f32,
-    low_band_rms: f32,
-    onset_count: usize,
-    event_density_per_bar: f32,
-    low_band_energy_ratio: f32,
-    mid_band_energy_ratio: f32,
-    high_band_energy_ratio: f32,
-    support_profile: &'static str,
-    support_context: &'static str,
-    pattern_adoption: &'static str,
-    phrase_variation: &'static str,
-    drum_bus_level: f32,
-    slam_intensity: f32,
-    reason: &'static str,
-}
-
-fn derive_source_aware_tr909_profile(samples: &[f32], grid: &Grid) -> SourceAwareTr909Profile {
+pub(super) fn derive_source_aware_tr909_profile(
+    samples: &[f32],
+    grid: &Grid,
+) -> SourceAwareTr909Profile {
     let signal = signal_metrics_with_grid(
         samples,
         SAMPLE_RATE,
@@ -102,24 +99,5 @@ fn derive_source_aware_tr909_profile(samples: &[f32], grid: &Grid) -> SourceAwar
             slam_intensity: 0.16,
             reason: "source_steady_pulse",
         }
-    }
-}
-
-fn manifest_tr909_source_profile(profile: SourceAwareTr909Profile) -> ManifestTr909SourceProfile {
-    ManifestTr909SourceProfile {
-        signal_rms: profile.signal_rms,
-        low_band_rms: profile.low_band_rms,
-        onset_count: profile.onset_count,
-        event_density_per_bar: profile.event_density_per_bar,
-        low_band_energy_ratio: profile.low_band_energy_ratio,
-        mid_band_energy_ratio: profile.mid_band_energy_ratio,
-        high_band_energy_ratio: profile.high_band_energy_ratio,
-        support_profile: profile.support_profile.label(),
-        support_context: profile.support_context.label(),
-        pattern_adoption: profile.pattern_adoption.label(),
-        phrase_variation: profile.phrase_variation.label(),
-        drum_bus_level: profile.drum_bus_level,
-        slam_intensity: profile.slam_intensity,
-        reason: profile.reason,
     }
 }
