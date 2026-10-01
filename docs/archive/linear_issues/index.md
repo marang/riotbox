@@ -1759,4 +1759,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Isolate Feral grid timing policy, evidence adaptation and CLI dependency leaves
 - [RIOTBOX-1524.md](./RIOTBOX-1524.md)
   Run post-QA-ownership architecture checkpoint after five semantic slices
+- [RIOTBOX-1525.md](./RIOTBOX-1525.md)
+  Reject unrepresentable Feral grid frame/sample capacities before rendering
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
