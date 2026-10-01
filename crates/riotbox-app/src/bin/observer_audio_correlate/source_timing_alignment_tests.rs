@@ -1,4 +1,6 @@
-use super::*;
+use super::report_model::SourceTimingAnchorEvidence;
+use super::report_model::SourceTimingGrooveEvidence;
+use super::report_model::SourceTimingGrooveResidualEvidence;
 
 #[path = "source_timing_alignment_anchor_groove_tests.rs"]
 mod anchor_groove_tests;

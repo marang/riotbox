@@ -32,6 +32,8 @@ Result:
   both JamApp lane-projection includes replaced by semantic render owners
 - RIOTBOX-1513 migration, 2026-10-01: 54 remaining sites in 7 owners;
   both Core TR-909 policy/test includes replaced by ordinary semantic modules
+- RIOTBOX-1514 migration, 2026-10-01: 44 remaining sites in 6 owners;
+  all ten Observer/audio correlation includes replaced by diagnostic modules
 - no generated-code include site identified in this inventory
 - every current include is treated as legacy/mechanical until proven otherwise
 
@@ -71,7 +73,6 @@ legacy inventory; it does not approve new textual include sites.
 | `crates/riotbox-audio/src/bin/lane_recipe_pack.rs` | 6 | pack builder, lane cases, manifest, tests | Lane recipe QA CLI | mechanical QA-bin split | low/medium | future QA-bin module slice |
 | `crates/riotbox-audio/src/bin/w30_preview_compare.rs` | 4 | compare CLI, metrics, manifest, tests | W-30 preview comparison CLI | mechanical QA-bin split | low/medium | future W-30 QA-bin slice |
 | `crates/riotbox-audio/src/bin/w30_preview_render.rs` | 2 | render CLI, tests | W-30 preview render CLI | mechanical QA-bin split | low | future W-30 QA-bin slice |
-| `crates/riotbox-app/src/bin/observer_audio_correlate.rs` | 10 | args, source timing evidence, summary build/render/evidence | Observer/audio correlation CLI | mechanical QA-bin split | medium: QA contract | future observer QA-bin slice |
 
 ## Migration Order
 
@@ -108,3 +109,4 @@ of mixing them into the module move.
 | `crates/riotbox-audio/src/runtime/tests.rs` | 12 | RIOTBOX-1511 | Ordinary lifecycle, shared-state, mixer/lane, transport-stop, Source Monitor, fill, gesture and metrics regressions with explicit imports. Shared fixture models, synthetic PCM, signal helpers, mix plans, fill recipes and gesture fixtures are test-only owners. The existing telemetry test imports its actual runtime owners; production runtime and DSP are unchanged. |
 | `crates/riotbox-app/src/jam_app/projection.rs` | 2 | RIOTBOX-1512 | Explicit JamApp-only compatibility exports over private TR-909, MC-202, scene-context and W-30 preview/material/resample owners, retaining the existing source-phrase child. All render policy, preparation, timing/identity and fail-closed behavior unchanged. |
 | `crates/riotbox-core/src/tr909_policy.rs` | 2 | RIOTBOX-1513 | Explicit public compatibility facade over private typed model, render-policy composition, source-support and pattern/phrase owners; ordinary synthetic regressions with explicit imports. All vocabulary, source/scene/transport precedence, algorithms and public APIs unchanged. Historical RIOTBOX-1331 shipped source-derived lane differentiation, not this include migration. |
+| `crates/riotbox-app/src/bin/observer_audio_correlate.rs` | 10 | RIOTBOX-1514 | Cargo-standard directory main and ordinary private diagnostic owners for metadata I/O, report types, observer/manifest parsing, alignment, evidence and JSON/Markdown presentation; explicit regression imports. Binary identity, schemas, thresholds, CLI/report bytes and fail-closed evidence unchanged. |

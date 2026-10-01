@@ -1,18 +1,11 @@
-#[derive(Clone, Debug, PartialEq)]
-struct SourceTimingGrooveEvidence {
-    primary_groove_residual_count: u64,
-    primary_max_abs_offset_ms: f64,
-    primary_groove_preview: Vec<SourceTimingGrooveResidualEvidence>,
-}
+use super::report_model::SourceTimingGrooveEvidence;
+use super::report_model::SourceTimingGrooveResidualEvidence;
+use super::value_fields::f64_field;
+use super::value_fields::non_negative_f64_field;
+use super::value_fields::u64_field;
+use serde_json::Value;
 
-#[derive(Clone, Debug, PartialEq)]
-struct SourceTimingGrooveResidualEvidence {
-    subdivision: String,
-    offset_ms: f64,
-    confidence: f64,
-}
-
-fn collect_optional_source_timing_groove_evidence(
+pub(super) fn collect_optional_source_timing_groove_evidence(
     source_timing: &Value,
 ) -> Result<Option<SourceTimingGrooveEvidence>, ()> {
     let Some(value) = source_timing.get("groove_evidence") else {
@@ -26,10 +19,7 @@ fn collect_optional_source_timing_groove_evidence(
     };
 
     let evidence = SourceTimingGrooveEvidence {
-        primary_groove_residual_count: u64_field(
-            groove_evidence,
-            "primary_groove_residual_count",
-        )?,
+        primary_groove_residual_count: u64_field(groove_evidence, "primary_groove_residual_count")?,
         primary_max_abs_offset_ms: non_negative_f64_field(
             groove_evidence,
             "primary_max_abs_offset_ms",
@@ -70,12 +60,7 @@ fn collect_source_timing_groove_residual(
     let Some(subdivision) = residual
         .get("subdivision")
         .and_then(Value::as_str)
-        .filter(|value| {
-            matches!(
-                *value,
-                "eighth" | "triplet" | "sixteenth" | "thirty_second"
-            )
-        })
+        .filter(|value| matches!(*value, "eighth" | "triplet" | "sixteenth" | "thirty_second"))
     else {
         return Err(());
     };
@@ -91,25 +76,7 @@ fn collect_source_timing_groove_residual(
     })
 }
 
-fn f64_field(
-    object: &serde_json::Map<String, Value>,
-    field: &str,
-) -> Result<f64, ()> {
-    object.get(field).and_then(Value::as_f64).ok_or(())
-}
-
-fn non_negative_f64_field(
-    object: &serde_json::Map<String, Value>,
-    field: &str,
-) -> Result<f64, ()> {
-    let value = f64_field(object, field)?;
-    if value < 0.0 {
-        return Err(());
-    }
-    Ok(value)
-}
-
-fn source_timing_groove_evidence_json(
+pub(super) fn source_timing_groove_evidence_json(
     evidence: &SourceTimingGrooveEvidence,
 ) -> serde_json::Value {
     serde_json::json!({

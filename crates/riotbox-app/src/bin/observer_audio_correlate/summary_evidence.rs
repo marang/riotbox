@@ -1,21 +1,22 @@
-fn format_output_path_issues(summary: &CorrelationSummary) -> String {
-    let failures = output_path_evidence_failures(summary);
-    if failures.is_empty() {
-        "none".to_string()
-    } else {
-        failures.join(", ")
-    }
-}
+use super::lane_recipe_output::lane_recipe_metric_failures;
+use super::report_model::CorrelationSummary;
+use super::report_model::SourceGridOutputDriftEvidence;
+use super::source_timing_policy::source_timing_policy_failures;
+use std::io;
 
-fn control_path_present(summary: &CorrelationSummary) -> bool {
+const STRICT_OUTPUT_METRIC_FLOOR: f64 = 1.0e-6;
+
+const SOURCE_GRID_OUTPUT_MIN_HIT_RATIO: f64 = 0.5;
+
+pub(super) fn control_path_present(summary: &CorrelationSummary) -> bool {
     summary.first_commit != "none"
 }
 
-fn output_path_present(summary: &CorrelationSummary) -> bool {
+pub(super) fn output_path_present(summary: &CorrelationSummary) -> bool {
     output_path_evidence_failures(summary).is_empty()
 }
 
-fn output_path_evidence_failures(summary: &CorrelationSummary) -> Vec<String> {
+pub(super) fn output_path_evidence_failures(summary: &CorrelationSummary) -> Vec<String> {
     let mut failures = Vec::new();
 
     if summary.manifest_result != "pass" {
@@ -71,7 +72,7 @@ fn feral_grid_metric_failures(summary: &CorrelationSummary) -> Vec<String> {
     failures
 }
 
-fn scene_movement_audio_evidence_failures(summary: &CorrelationSummary) -> Vec<String> {
+pub(super) fn scene_movement_audio_evidence_failures(summary: &CorrelationSummary) -> Vec<String> {
     let mut failures = Vec::new();
 
     if summary.observer_scene_movement_malformed {
@@ -96,10 +97,7 @@ fn scene_movement_audio_evidence_failures(summary: &CorrelationSummary) -> Vec<S
         failures.push("scene_movement.source_anchor_seconds=missing".to_string());
     }
     if movement.w30_intent != "pin" {
-        failures.push(format!(
-            "scene_movement.w30_intent={}",
-            movement.w30_intent
-        ));
+        failures.push(format!("scene_movement.w30_intent={}", movement.w30_intent));
     }
 
     failures
@@ -125,12 +123,10 @@ fn mc202_bass_pressure_failures(summary: &CorrelationSummary) -> Vec<String> {
             match summary.mc202_source_expression_render_plan_applied {
                 Some(true) => {}
                 Some(false) => failures.push(
-                    "mc202_bass_pressure.source_expression_render_plan_applied=false"
-                        .to_string(),
+                    "mc202_bass_pressure.source_expression_render_plan_applied=false".to_string(),
                 ),
                 None => failures.push(
-                    "mc202_bass_pressure.source_expression_render_plan_applied=missing"
-                        .to_string(),
+                    "mc202_bass_pressure.source_expression_render_plan_applied=missing".to_string(),
                 ),
             }
             if !matches!(
@@ -144,10 +140,12 @@ fn mc202_bass_pressure_failures(summary: &CorrelationSummary) -> Vec<String> {
             }
             match summary.mc202_source_failure_fallback {
                 Some(false) => {}
-                Some(true) => failures
-                    .push("mc202_bass_pressure.source_failure_fallback=true".to_string()),
-                None => failures
-                    .push("mc202_bass_pressure.source_failure_fallback=missing".to_string()),
+                Some(true) => {
+                    failures.push("mc202_bass_pressure.source_failure_fallback=true".to_string())
+                }
+                None => {
+                    failures.push("mc202_bass_pressure.source_failure_fallback=missing".to_string())
+                }
             }
             if summary.mc202_source_contour_pattern_origin != "source_derived_contour" {
                 failures.push(format!(
@@ -157,9 +155,7 @@ fn mc202_bass_pressure_failures(summary: &CorrelationSummary) -> Vec<String> {
             }
             match summary.mc202_source_contour_applied {
                 Some(true) => {}
-                Some(false) => {
-                    failures.push("mc202_source_contour.applied=false".to_string())
-                }
+                Some(false) => failures.push("mc202_source_contour.applied=false".to_string()),
                 None => failures.push("mc202_source_contour.applied=missing".to_string()),
             }
             match (
@@ -167,9 +163,7 @@ fn mc202_bass_pressure_failures(summary: &CorrelationSummary) -> Vec<String> {
                 summary.mc202_source_contour_min_required_delta_rms,
             ) {
                 (Some(delta), Some(minimum))
-                    if delta >= 0.0 && minimum >= 0.0 && delta >= minimum =>
-                {
-                }
+                    if delta >= 0.0 && minimum >= 0.0 && delta >= minimum => {}
                 (Some(delta), Some(minimum)) => failures.push(format!(
                     "mc202_source_contour.delta_rms={delta:.6}<min={minimum:.6}"
                 )),
@@ -339,11 +333,7 @@ fn metric_is_noncollapsed(metric: Option<f64>) -> bool {
     metric.is_some_and(|value| value > STRICT_OUTPUT_METRIC_FLOOR)
 }
 
-fn yes_no(value: bool) -> &'static str {
-    if value { "yes" } else { "no" }
-}
-
-fn validate_required_evidence(summary: &CorrelationSummary) -> Result<(), io::Error> {
+pub(super) fn validate_required_evidence(summary: &CorrelationSummary) -> Result<(), io::Error> {
     if !control_path_present(summary) {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,

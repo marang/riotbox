@@ -1,36 +1,14 @@
-#[derive(Debug, PartialEq)]
-struct SourceTimingAlignmentEvidence {
-    status: String,
-    bpm_delta: Option<f64>,
-    bpm_tolerance: f64,
-    observer_grid_use: String,
-    manifest_grid_use: Option<String>,
-    grid_use_compatibility: String,
-    observer_downbeat_offset_beats: Option<u64>,
-    manifest_downbeat_offset_beats: Option<u64>,
-    downbeat_offset_compatibility: String,
-    downbeat_ambiguity_compatibility: String,
-    warning_overlap: Vec<String>,
-    issues: Vec<String>,
-}
+use super::report_model::ObserverSourceTimingReadiness;
+use super::report_model::SourceTimingAlignmentEvidence;
+use super::report_model::SourceTimingAnchorAlignmentEvidence;
+use super::report_model::SourceTimingAnchorEvidence;
+use super::report_model::SourceTimingEvidence;
+use super::report_model::SourceTimingGrooveAlignmentEvidence;
+use super::report_model::SourceTimingGrooveEvidence;
 
-#[derive(Debug, PartialEq)]
-struct SourceTimingAnchorAlignmentEvidence {
-    status: String,
-    observer: Option<SourceTimingAnchorEvidence>,
-    manifest: Option<SourceTimingAnchorEvidence>,
-    issues: Vec<String>,
-}
+pub(super) const SOURCE_TIMING_BPM_ALIGNMENT_TOLERANCE: f64 = 1.0;
 
-#[derive(Debug, PartialEq)]
-struct SourceTimingGrooveAlignmentEvidence {
-    status: String,
-    observer: Option<SourceTimingGrooveEvidence>,
-    manifest: Option<SourceTimingGrooveEvidence>,
-    issues: Vec<String>,
-}
-
-fn collect_source_timing_alignment(
+pub(super) fn collect_source_timing_alignment(
     observer_timing: Option<&ObserverSourceTimingReadiness>,
     manifest_timing: Option<&SourceTimingEvidence>,
     observer_malformed: bool,
@@ -132,7 +110,10 @@ fn source_timing_grid_use_compatibility(
     }
 
     if matches!(observer_grid_use, "unavailable" | "fallback_grid")
-        && matches!(manifest_grid_use, "locked_grid" | "short_loop_manual_confirm")
+        && matches!(
+            manifest_grid_use,
+            "locked_grid" | "short_loop_manual_confirm"
+        )
     {
         return (
             "mismatch".to_string(),
@@ -142,12 +123,13 @@ fn source_timing_grid_use_compatibility(
         );
     }
 
-    if matches!(observer_grid_use, "manual_confirm_only" | "short_loop_manual_confirm")
-        && matches!(
-            manifest_grid_use,
-            "manual_confirm_only" | "short_loop_manual_confirm" | "locked_grid"
-        )
-    {
+    if matches!(
+        observer_grid_use,
+        "manual_confirm_only" | "short_loop_manual_confirm"
+    ) && matches!(
+        manifest_grid_use,
+        "manual_confirm_only" | "short_loop_manual_confirm" | "locked_grid"
+    ) {
         return ("compatible".to_string(), Vec::new());
     }
 
@@ -193,8 +175,7 @@ fn source_timing_downbeat_ambiguity_compatibility(
     if observer.primary_downbeat_score.is_some() && manifest.primary_downbeat_score.is_some() {
         comparable_evidence = true;
     }
-    if observer.primary_downbeat_score_gap.is_some() && manifest.primary_downbeat_margin.is_some()
-    {
+    if observer.primary_downbeat_score_gap.is_some() && manifest.primary_downbeat_margin.is_some() {
         comparable_evidence = true;
     }
 
@@ -207,7 +188,7 @@ fn source_timing_downbeat_ambiguity_compatibility(
     }
 }
 
-fn collect_source_timing_anchor_alignment(
+pub(super) fn collect_source_timing_anchor_alignment(
     observer_timing: Option<&ObserverSourceTimingReadiness>,
     manifest_timing: Option<&SourceTimingEvidence>,
     observer_malformed: bool,
@@ -242,7 +223,7 @@ fn collect_source_timing_anchor_alignment(
     })
 }
 
-fn collect_source_timing_groove_alignment(
+pub(super) fn collect_source_timing_groove_alignment(
     observer_timing: Option<&ObserverSourceTimingReadiness>,
     manifest_timing: Option<&SourceTimingEvidence>,
     observer_malformed: bool,
@@ -306,12 +287,8 @@ fn source_timing_anchor_alignment_issues(
     if observer.primary_backbeat_anchor_count > 0 && manifest.primary_backbeat_anchor_count == 0 {
         issues.push("source_timing_anchor_alignment.manifest_backbeat_anchor_count=0".to_string());
     }
-    if observer.primary_transient_anchor_count > 0
-        && manifest.primary_transient_anchor_count == 0
-    {
-        issues.push(
-            "source_timing_anchor_alignment.manifest_transient_anchor_count=0".to_string(),
-        );
+    if observer.primary_transient_anchor_count > 0 && manifest.primary_transient_anchor_count == 0 {
+        issues.push("source_timing_anchor_alignment.manifest_transient_anchor_count=0".to_string());
     }
     issues
 }
@@ -337,9 +314,7 @@ fn source_timing_groove_alignment_issues(
     };
 
     let mut issues = Vec::new();
-    if observer.primary_groove_residual_count > 0
-        && manifest.primary_groove_residual_count == 0
-    {
+    if observer.primary_groove_residual_count > 0 && manifest.primary_groove_residual_count == 0 {
         issues.push("source_timing_groove_alignment.manifest_residual_count=0".to_string());
     }
     issues

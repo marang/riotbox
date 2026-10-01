@@ -1,15 +1,17 @@
+use std::path::PathBuf;
+
 #[derive(Debug, PartialEq, Eq)]
-struct Args {
-    observer_path: PathBuf,
-    manifest_path: PathBuf,
-    output_path: Option<PathBuf>,
-    require_evidence: bool,
-    json_output: bool,
-    show_help: bool,
+pub(super) struct Args {
+    pub(super) observer_path: PathBuf,
+    pub(super) manifest_path: PathBuf,
+    pub(super) output_path: Option<PathBuf>,
+    pub(super) require_evidence: bool,
+    pub(super) json_output: bool,
+    pub(super) show_help: bool,
 }
 
 impl Args {
-    fn parse(args: impl IntoIterator<Item = String>) -> Result<Self, String> {
+    pub(super) fn parse(args: impl IntoIterator<Item = String>) -> Result<Self, String> {
         let mut observer_path = None;
         let mut manifest_path = None;
         let mut output_path = None;
@@ -67,7 +69,7 @@ impl Args {
     }
 }
 
-fn print_help() {
+pub(super) fn print_help() {
     println!(
         "Usage: observer_audio_correlate --observer PATH --manifest PATH [--output PATH] [--json]\n\
          \n\
