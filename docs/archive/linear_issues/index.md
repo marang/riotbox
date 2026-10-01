@@ -1783,4 +1783,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Reject Feral grid pack output paths that overwrite the input source
 - [RIOTBOX-1536.md](./RIOTBOX-1536.md)
   Preserve W-30 preview input across WAV and metrics output collisions
+- [RIOTBOX-1537.md](./RIOTBOX-1537.md)
+  Reject Before/After pack destinations that replace their input source
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
