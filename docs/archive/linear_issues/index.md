@@ -1789,4 +1789,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Preserve W-30 comparison inputs before report and manifest publication
 - [RIOTBOX-1539.md](./RIOTBOX-1539.md)
   Review cross-slice QA input integrity and product-spine boundaries
+- [RIOTBOX-1540.md](./RIOTBOX-1540.md)
+  Reject physical aliases between W-30 WAV and metrics outputs
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
