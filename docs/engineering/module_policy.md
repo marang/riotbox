@@ -414,6 +414,26 @@ These assertions constrain diagnostics, never award music/hardness/source-
 general/human/release or live-device authority. No source/DAW/device/playback,
 Core/Session/replay/library DSP/runtime or frozen Stage-A change.
 
+### Feral Pack Orchestration And Report Ownership
+
+The Feral root owns CLI main and delegates to the ordinary pack_builder
+orchestration owner (RBX-412 / RIOTBOX-1543). Source loading/format, actual output
+preflights, timing/window selection, lane/mix/stem preparation and artifact/report
+ordering remain the same complete render function, with explicit actual-owner
+imports. The shared PackReport value has a separate binary-private pack_report
+owner so renderer, validation and presentation share it without a builder/data
+dependency cycle. It remains ephemeral offline QA evidence, never a new
+Core/Session/replay or musical-truth model.
+
+Keep report fields/types/derives, complete bodies, source/capacity/error/write
+ordering, algorithms/literals/thresholds, every test/fixture/ignored state and
+CLI/schema/artifact bytes unchanged in the mechanical migration. Narrow parent
+bridges serve only still-counted legacy writer/stem consumers; retain root
+aliases needed by those consumers or tests, removing only obsolete imports.
+Four textual include sites remain: three root owners and the test-helper site.
+This is not a completed Feral root migration or new source/music/hardness/
+human/release/device qualification.
+
 ## Include Inventory And Guardrail
 
 The initial RIOTBOX-1321 inventory lives in

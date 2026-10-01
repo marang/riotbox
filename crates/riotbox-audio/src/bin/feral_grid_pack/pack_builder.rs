@@ -1,82 +1,50 @@
-use std::{
-    env, fs,
-    path::Path,
+//! Existing pack orchestration with explicit policy and artifact dependencies.
+use std::fs;
+
+use riotbox_audio::source_audio::SourceAudioCache;
+
+use super::{
+    args::Args,
+    config::{CHANNEL_COUNT, DEFAULT_BEATS_PER_BAR, SAMPLE_RATE},
+    grid::Grid,
+    grid_bpm_decision::choose_grid_bpm,
+    manifest::write_manifest,
+    mc202_bass_pressure::render_mc202_bass_pressure_with_source_contour,
+    mc202_source_contour::Mc202SourceContourProfile,
+    mix_components::render_mix_with_master_bus_report,
+    mix_movement_evidence::all_lane_mix_movement_proof_for_source_contour,
+    mix_policy::{
+        generated_support_mix_policy_for_source_contour_and_stems,
+        render_source_first_mix_with_master_bus_report, source_first_generated_to_source_rms_ratio,
+        support_generated_to_source_rms_ratio_for_source_contour,
+    },
+    output_paths::PackOutputPaths,
+    pack_report::PackReport,
+    product_stem_contributions::{
+        ProductStemContributionRender, render_product_stem_contributions,
+        validate_written_product_stem_reconstruction,
+    },
+    render_measurements::render_metrics,
+    source_aware_tr909::derive_source_aware_tr909_profile,
+    source_character_window_selection::{
+        select_source_character_window, source_character_search_window,
+    },
+    source_grid_output_drift::source_grid_alignment_report,
+    source_timing_analysis::source_timing_analysis_for_source,
+    source_timing_groove_policy::{apply_tr909_groove_timing, tr909_groove_timing_policy},
+    tr909_kick_pressure::render_tr909_source_support_with_pressure_and_accents,
+    tr909_rendered_drum_pressure::{
+        Tr909RenderedDrumPressureInput, tr909_rendered_drum_pressure_proof,
+    },
+    w30_source_chop::{source_chop_preview_from_interleaved, w30_source_loop_closure_proof},
+};
+// Narrow bridges to still-counted legacy writer/stem owners in the parent.
+use super::{
+    assert_grid_len, render_w30_source_chop_with_variation, validate_report,
+    write_audio_with_metrics, write_readme, write_report,
 };
 
-#[cfg(test)]
-use std::path::PathBuf;
-
-use riotbox_core::source_graph::SourceTimingProbeReadinessReport;
-
-use riotbox_audio::{
-    runtime::{
-        MasterBusLimiterReport,
-        render_w30_preview_offline,
-    },
-    source_audio::{
-        SourceAudioCache, SourceAudioError, write_interleaved_pcm16_wav,
-    },
-    w30::{
-        W30_PREVIEW_SAMPLE_WINDOW_LEN, W30PreviewRenderMode, W30PreviewRenderRouting,
-        W30PreviewRenderState, W30PreviewSampleWindow, W30PreviewSourceProfile,
-    },
-};
-
-#[cfg(test)]
-use riotbox_audio::tr909::{
-    Tr909PatternAdoption, Tr909PhraseVariation, Tr909SourceSupportContext, Tr909SourceSupportProfile,
-};
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args = Args::parse(env::args().skip(1))?;
-    if args.show_help {
-        print_help();
-        return Ok(());
-    }
-
-    render_pack(&args)?;
-    println!("wrote {}", args.output_dir().display());
-    Ok(())
-}
-
-
-
-#[derive(Clone, Copy, Debug)]
-struct PackReport {
-    source_character_window_selection: SourceCharacterWindowSelection,
-    tr909_source_profile: SourceAwareTr909Profile,
-    tr909_groove_timing: Tr909GrooveTimingPolicy,
-    tr909_kick_pressure: Tr909KickPressureProof,
-    tr909_source_accent_dynamics: Tr909SourceAccentDynamicsProof,
-    tr909_rendered_drum_pressure: Tr909RenderedDrumPressureProof,
-    mc202_bass_pressure: Mc202BassPressureProof,
-    mc202_source_contour: Mc202SourceContourProof,
-    w30_source_chop_profile: W30SourceChopProfile,
-    w30_source_loop_closure: W30SourceLoopClosureProof,
-    w30_source_trigger_variation: W30SourceTriggerVariationProof,
-    w30_source_slice_choice: W30SourceSliceChoiceProof,
-    w30_source_accent_dynamics: W30SourceAccentDynamicsProof,
-    all_lane_mix_movement: AllLaneMixMovementProof,
-    tr909: RenderMetrics,
-    mc202: RenderMetrics,
-    w30: RenderMetrics,
-    source_first_mix: RenderMetrics,
-    full_mix: RenderMetrics,
-    product_stem_drums: RenderMetrics,
-    product_stem_music: RenderMetrics,
-    product_stem_bass: RenderMetrics,
-    product_stem_reconstruction: ProductStemReconstructionReport,
-    source_first_master_bus_limiter: MasterBusLimiterReport,
-    full_mix_master_bus_limiter: MasterBusLimiterReport,
-    tr909_source_grid_alignment: SourceGridOutputDriftMetrics,
-    mc202_source_grid_alignment: SourceGridOutputDriftMetrics,
-    w30_source_grid_alignment: SourceGridOutputDriftMetrics,
-    source_grid_output_drift: SourceGridOutputDriftMetrics,
-    source_first_generated_to_source_rms_ratio: f32,
-    support_generated_to_source_rms_ratio: f32,
-}
-
-fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
+pub(super) fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let output_dir = args.output_dir();
     let paths = PackOutputPaths::new(&output_dir);
     let stems_dir = output_dir.join("stems");
@@ -98,12 +66,11 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         args.source_window_seconds.min(grid.duration_seconds()),
     );
     let source_character_search_window = source_character_search_window(&source, args, &grid);
-    let (w30_source_window, source_character_window_selection) =
-        select_source_character_window(
-            &source,
-            requested_source_window,
-            source_character_search_window,
-        );
+    let (w30_source_window, source_character_window_selection) = select_source_character_window(
+        &source,
+        requested_source_window,
+        source_character_search_window,
+    );
     let source_window_samples = source.window_samples(w30_source_window);
     let (w30_preview, w30_source_chop_profile) = source_chop_preview_from_interleaved(
         source_window_samples,
@@ -148,13 +115,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         drums: product_stem_drums,
         music: product_stem_music,
         bass: product_stem_bass,
-    } = render_product_stem_contributions(
-        &tr909,
-        &mc202,
-        &w30,
-        &full_mix,
-        full_mix_policy,
-    )?;
+    } = render_product_stem_contributions(&tr909, &mc202, &w30, &full_mix, full_mix_policy)?;
     let all_lane_mix_movement = all_lane_mix_movement_proof_for_source_contour(
         &tr909,
         &mc202,
@@ -166,13 +127,14 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     );
     let source_first_generated_to_source_rms_ratio =
         source_first_generated_to_source_rms_ratio(&tr909, &mc202, &w30, &grid);
-    let support_generated_to_source_rms_ratio = support_generated_to_source_rms_ratio_for_source_contour(
-        &tr909,
-        &mc202,
-        &w30,
-        &grid,
-        mc202_source_contour_profile,
-    );
+    let support_generated_to_source_rms_ratio =
+        support_generated_to_source_rms_ratio_for_source_contour(
+            &tr909,
+            &mc202,
+            &w30,
+            &grid,
+            mc202_source_contour_profile,
+        );
 
     assert_grid_len("tr909", &tr909, &grid);
     assert_grid_len("mc202", &mc202, &grid);
@@ -192,16 +154,8 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     write_audio_with_metrics(&product_stem_drums_path, &product_stem_drums, &grid)?;
     write_audio_with_metrics(&product_stem_music_path, &product_stem_music, &grid)?;
     write_audio_with_metrics(&product_stem_bass_path, &product_stem_bass, &grid)?;
-    write_audio_with_metrics(
-        &paths.source_first_mix,
-        &source_first_mix,
-        &grid,
-    )?;
-    write_audio_with_metrics(
-        &paths.full_mix,
-        &full_mix,
-        &grid,
-    )?;
+    write_audio_with_metrics(&paths.source_first_mix, &source_first_mix, &grid)?;
+    write_audio_with_metrics(&paths.full_mix, &full_mix, &grid)?;
     let product_stem_reconstruction = validate_written_product_stem_reconstruction(
         &product_stem_drums_path,
         &product_stem_music_path,
@@ -219,7 +173,8 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         .into());
     }
 
-    let source_grid_alignment = source_grid_alignment_report(&tr909, &mc202, &w30, &full_mix, &grid);
+    let source_grid_alignment =
+        source_grid_alignment_report(&tr909, &mc202, &w30, &full_mix, &grid);
     let tr909_rendered_drum_pressure =
         tr909_rendered_drum_pressure_proof(Tr909RenderedDrumPressureInput {
             source_profile: tr909_source_profile,
@@ -267,7 +222,14 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     };
     validate_report(&report)?;
     let report_path = paths.report;
-    write_report(&report_path, args, &grid, report, timing_readiness, grid_bpm)?;
+    write_report(
+        &report_path,
+        args,
+        &grid,
+        report,
+        timing_readiness,
+        grid_bpm,
+    )?;
     write_manifest(
         &paths.manifest,
         args,
