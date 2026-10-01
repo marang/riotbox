@@ -1,3 +1,31 @@
+use std::{env, fs, path::Path};
+
+#[cfg(test)]
+use std::path::PathBuf;
+
+use riotbox_core::source_graph::SourceTimingProbeReadinessReport;
+
+use riotbox_audio::{
+    runtime::{MasterBusLimiterReport, render_w30_preview_offline},
+    source_audio::{SourceAudioError, write_interleaved_pcm16_wav},
+    w30::{
+        W30_PREVIEW_SAMPLE_WINDOW_LEN, W30PreviewRenderMode, W30PreviewRenderRouting,
+        W30PreviewRenderState, W30PreviewSampleWindow, W30PreviewSourceProfile,
+    },
+};
+
+#[cfg(test)]
+use riotbox_audio::source_audio::SourceAudioCache;
+
+#[cfg(test)]
+use riotbox_audio::tr909::{
+    Tr909PatternAdoption, Tr909PhraseVariation, Tr909SourceSupportContext,
+    Tr909SourceSupportProfile,
+};
+
+use pack_builder::render_pack;
+use pack_report::PackReport;
+
 #[path = "feral_grid_pack/args.rs"]
 mod args;
 #[path = "feral_grid_pack/grid_bpm_decision.rs"]
@@ -23,14 +51,12 @@ mod bpm_decision_tests;
 
 use args::{Args, print_help};
 use grid_bpm_decision::{
-    GridBpmDecision, choose_grid_bpm, grid_bpm_decision_reason_label, grid_bpm_source_label,
+    GridBpmDecision, grid_bpm_decision_reason_label, grid_bpm_source_label,
     source_timing_bpm_agrees,
 };
-use output_paths::{PackOutputPaths, metrics_path_for};
-use source_timing_analysis::{SourceTimingAnalysisForManifest, source_timing_analysis_for_source};
-use source_timing_groove_policy::{
-    Tr909GrooveTimingPolicy, apply_tr909_groove_timing, tr909_groove_timing_policy,
-};
+use output_paths::metrics_path_for;
+use source_timing_analysis::SourceTimingAnalysisForManifest;
+use source_timing_groove_policy::Tr909GrooveTimingPolicy;
 use timing_readiness_manifest::{
     ManifestSourceTimingReadiness, confidence_result_label, downbeat_evidence_status_label,
     drift_status_label, manifest_source_timing_readiness, phrase_status_label,
@@ -58,7 +84,7 @@ use bar_variation_metrics::BarVariationMetrics;
 #[cfg(test)]
 use bar_variation_metrics::bar_variation_metrics;
 use config::{
-    CHANNEL_COUNT, DEFAULT_BEATS_PER_BAR, MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO,
+    CHANNEL_COUNT, MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO,
     MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO, MIN_LOW_BAND_RMS, MIN_SIGNAL_RMS,
     MIN_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO, PACK_ID, SAMPLE_RATE,
 };
@@ -69,9 +95,7 @@ use grid::{Grid, frames_for_beat_position};
 use signal_filter::one_pole_lowpass;
 #[cfg(test)]
 use source_grid_output_drift::source_grid_output_drift_metrics;
-use source_grid_output_drift::{
-    SOURCE_GRID_OUTPUT_MIN_HIT_RATIO, SourceGridOutputDriftMetrics, source_grid_alignment_report,
-};
+use source_grid_output_drift::{SOURCE_GRID_OUTPUT_MIN_HIT_RATIO, SourceGridOutputDriftMetrics};
 use spectral_energy_metrics::{SpectralEnergyMetrics, spectral_energy_metrics};
 
 #[path = "feral_grid_pack/manifest.rs"]
@@ -79,11 +103,7 @@ mod manifest;
 #[path = "feral_grid_pack/product_stem_contributions.rs"]
 mod product_stem_contributions;
 
-use manifest::write_manifest;
-use product_stem_contributions::{
-    ProductStemContributionRender, ProductStemReconstructionReport,
-    render_product_stem_contributions, validate_written_product_stem_reconstruction,
-};
+use product_stem_contributions::ProductStemReconstructionReport;
 
 #[path = "feral_grid_pack/sample_measurements.rs"]
 mod sample_measurements;
@@ -108,10 +128,7 @@ mod w30_source_chop_tests;
 
 use w30_slice_choice::{W30SourceSliceChoiceProof, w30_source_slice_choice_plan};
 use w30_source_accent_dynamics::{W30SourceAccentDynamicsProof, w30_source_accent_dynamics_proof};
-use w30_source_chop::{
-    W30SourceChopProfile, W30SourceLoopClosureProof, chop_articulation_metrics,
-    source_chop_preview_from_interleaved, w30_source_loop_closure_proof,
-};
+use w30_source_chop::chop_articulation_metrics;
 use w30_source_events::W30SourceTriggerEvent;
 use w30_source_manifest::{
     ManifestW30SourceAccentDynamicsProof, ManifestW30SourceChopProfile,
@@ -137,16 +154,15 @@ mod tr909_source_manifest;
 #[path = "feral_grid_pack/tr909_source_grid_consumer_tests.rs"]
 mod tr909_source_grid_consumer_tests;
 
+#[cfg(test)]
 use source_aware_tr909::{SourceAwareTr909Profile, derive_source_aware_tr909_profile};
+#[cfg(test)]
+use tr909_kick_pressure::render_tr909_source_support_with_pressure_and_accents;
 #[cfg(test)]
 use tr909_kick_pressure::{
     TR909_KICK_PRESSURE_MIN_LOW_BAND_RATIO, TR909_SOURCE_ACCENT_MIN_ACCENT_SPAN,
     TR909_SOURCE_ACCENT_MIN_DISTINCT_ACCENTS, render_tr909_source_support,
     render_tr909_source_support_legacy,
-};
-use tr909_kick_pressure::{
-    Tr909KickPressureProof, Tr909SourceAccentDynamicsProof,
-    render_tr909_source_support_with_pressure_and_accents,
 };
 use tr909_source_manifest::{
     ManifestTr909KickPressureProof, ManifestTr909SourceAccentDynamicsProof,
@@ -160,9 +176,7 @@ mod source_character_window_selection;
 #[path = "feral_grid_pack/source_character_window_selection_tests.rs"]
 mod source_character_window_selection_tests;
 
-use source_character_window_selection::{
-    SourceCharacterWindowSelection, select_source_character_window, source_character_search_window,
-};
+use source_character_window_selection::SourceCharacterWindowSelection;
 
 #[path = "feral_grid_pack/mc202_bass_pressure.rs"]
 mod mc202_bass_pressure;
@@ -177,16 +191,16 @@ mod mc202_source_phrase;
 #[path = "feral_grid_pack/render_measurements.rs"]
 mod render_measurements;
 
+use mc202_bass_pressure::Mc202PatternOrigin;
+#[cfg(test)]
+use mc202_bass_pressure::render_mc202_bass_pressure_with_source_contour;
 #[cfg(test)]
 use mc202_bass_pressure::{
     MC202_BASS_PRESSURE_MIN_LOW_BAND_RMS, MC202_BASS_PRESSURE_MIN_LOW_TO_MID_ENERGY_RATIO,
     MC202_BASS_PRESSURE_MIN_SIGNAL_RMS, MC202_PRESSURE_ROLE_WITH_SOURCE_CONTOUR,
     MC202_REASON_SOURCE_GRID_PROOF_RENDERER, MC202_SOURCE_CONTOUR_MIN_DELTA_RMS,
 };
-use mc202_bass_pressure::{
-    Mc202BassPressureProof, Mc202PatternOrigin, Mc202SourceContourProof,
-    render_mc202_bass_pressure_with_source_contour,
-};
+#[cfg(test)]
 use mc202_source_contour::Mc202SourceContourProfile;
 #[cfg(test)]
 use mc202_source_contour::{
@@ -215,36 +229,43 @@ mod mix_policy;
 use mix_components::MixPolicy;
 #[cfg(test)]
 use mix_components::generated_to_source_rms_ratio;
+#[cfg(test)]
 use mix_components::render_mix_with_master_bus_report;
+use mix_movement_evidence::AllLaneMixMovementProof;
 #[cfg(test)]
 use mix_movement_evidence::{
     ALL_LANE_MIX_MAX_CORRELATION, ALL_LANE_MIX_MIN_RMS_DELTA, all_lane_mix_movement_proof,
 };
-use mix_movement_evidence::{
-    AllLaneMixMovementProof, all_lane_mix_movement_proof_for_source_contour,
-};
-use mix_policy::{
-    generated_support_mix_policy_for_source_contour_and_stems,
-    render_source_first_mix_with_master_bus_report, source_first_generated_to_source_rms_ratio,
-    support_generated_to_source_rms_ratio_for_source_contour,
-};
+#[cfg(test)]
+use mix_policy::source_first_generated_to_source_rms_ratio;
 #[cfg(test)]
 use mix_policy::{
     render_generated_support_mix, render_source_first_mix, support_generated_to_source_rms_ratio,
 };
 
 // Remaining legacy owners consume explicit compatibility imports from the real modules.
-include!("feral_grid_pack/pack_builder.rs");
+#[path = "feral_grid_pack/pack_builder.rs"]
+mod pack_builder;
+#[path = "feral_grid_pack/pack_report.rs"]
+mod pack_report;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args = Args::parse(env::args().skip(1))?;
+    if args.show_help {
+        print_help();
+        return Ok(());
+    }
+
+    render_pack(&args)?;
+    println!("wrote {}", args.output_dir().display());
+    Ok(())
+}
 #[path = "feral_grid_pack/tr909_rendered_drum_pressure.rs"]
 mod tr909_rendered_drum_pressure;
 #[cfg(test)]
 #[path = "feral_grid_pack/tr909_rendered_drum_pressure_tests.rs"]
 mod tr909_rendered_drum_pressure_tests;
 
-use tr909_rendered_drum_pressure::{
-    Tr909RenderedDrumPressureInput, Tr909RenderedDrumPressureProof,
-    tr909_rendered_drum_pressure_proof,
-};
 include!("feral_grid_pack/pack_text_outputs.rs");
 include!("feral_grid_pack/render_stems.rs");
 #[cfg(test)]
