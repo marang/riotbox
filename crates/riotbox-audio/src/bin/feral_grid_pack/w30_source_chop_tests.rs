@@ -12,8 +12,7 @@ use super::w30_source_chop::{
     W30SourceChopProfile, source_chop_preview_from_interleaved, w30_source_loop_closure_proof,
 };
 use super::w30_source_trigger_policy::W30_SOURCE_TRIGGER_GRID_SUBDIVISION;
-// Unchanged regressions retain root compatibility aliases for the real trigger renderer.
-use super::{
+use super::w30_trigger_render::{
     render_w30_source_chop, render_w30_source_chop_legacy, render_w30_source_chop_with_variation,
 };
 use riotbox_audio::runtime::{render_w30_preview_offline, signal_metrics};

@@ -14,7 +14,7 @@ use super::{
     grid_bpm_decision::{
         GridBpmDecisionReason, GridBpmSource, choose_grid_bpm, source_timing_bpm_agrees,
     },
-    verification_command,
+    verification_command::verification_command,
 };
 
 #[test]

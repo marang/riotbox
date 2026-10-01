@@ -1,4 +1,4 @@
-use super::{Args, Grid, verification_command};
+use super::{args::Args, grid::Grid, verification_command::verification_command};
 
 fn command_for(source: &str, date: &str, explicit_bpm: bool) -> String {
     let mut argv = vec![
