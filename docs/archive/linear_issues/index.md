@@ -1779,4 +1779,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Give rendered TR-909 QA pressure an explicit computation and regression owner
 - [RIOTBOX-1534.md](./RIOTBOX-1534.md)
   Give Feral manifest assertions ordinary explicit test ownership
+- [RIOTBOX-1535.md](./RIOTBOX-1535.md)
+  Reject Feral grid pack output paths that overwrite the input source
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
