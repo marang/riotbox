@@ -1785,4 +1785,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Preserve W-30 preview input across WAV and metrics output collisions
 - [RIOTBOX-1537.md](./RIOTBOX-1537.md)
   Reject Before/After pack destinations that replace their input source
+- [RIOTBOX-1538.md](./RIOTBOX-1538.md)
+  Preserve W-30 comparison inputs before report and manifest publication
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
