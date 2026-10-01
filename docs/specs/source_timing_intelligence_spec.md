@@ -858,7 +858,19 @@ where Just and POSIX sh are present. See RBX-396 and
 `just feral-grid-verification-contract-fixtures`.
 
 Generated Feral grid listening packs may use this readiness report as their
-bounded BPM policy:
+bounded BPM policy. Render capacity is validated separately.
+
+The QA Grid constructor preserves cumulative `f64` frame rounding but rejects
+unrepresentable interleaved render buffers through its existing Result before
+lane rendering or allocation. Frame count times the configured channel count
+and `size_of::<f32>()` must fit `usize`, and the resulting byte layout must not
+exceed `isize::MAX`. Saturated frame casts fail that check too. This is mechanical
+buffer representability, not a musical BPM threshold or general memory budget;
+very large representable renders may still exhaust available memory. Source
+loading/analysis and output-directory creation retain their existing ordering
+before Grid construction; no transactional pack publication is implied.
+
+The selection policy remains:
 
 - explicit `--bpm` always wins and is recorded as `grid_bpm_source:
   user_override`
