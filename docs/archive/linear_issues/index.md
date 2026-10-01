@@ -1771,4 +1771,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Isolate bounded source-window selection and search preparation from Feral QA orchestration
 - [RIOTBOX-1530.md](./RIOTBOX-1530.md)
   Isolate Feral MC-202 contour, phrase, pressure and manifest QA owners
+- [RIOTBOX-1531.md](./RIOTBOX-1531.md)
+  Isolate Feral mix component math, source balance policy and movement evidence
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
