@@ -1753,4 +1753,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Replace Feral before/after QA includes with semantic diagnostic owners
 - [RIOTBOX-1521.md](./RIOTBOX-1521.md)
   Isolate Feral grid numerical evidence and grid/filter dependency leaves
+- [RIOTBOX-1522.md](./RIOTBOX-1522.md)
+  Quote Feral grid verification command arguments without shell expansion
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
