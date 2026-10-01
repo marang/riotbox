@@ -1743,4 +1743,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Architecture checkpoint after Core projection/timing/policy and Observer QA ownership
 - [RIOTBOX-1515.md](./RIOTBOX-1515.md)
   Reject overflowing Observer/audio anchor totals without panic or wrapped acceptance
+- [RIOTBOX-1517.md](./RIOTBOX-1517.md)
+  Replace lane recipe QA includes with semantic, source-free Rust owners
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
