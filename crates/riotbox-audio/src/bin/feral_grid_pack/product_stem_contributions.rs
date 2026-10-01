@@ -3,7 +3,7 @@ use std::path::Path;
 use riotbox_audio::{runtime::apply_master_bus_soft_limiter, source_audio::SourceAudioCache};
 use serde::Serialize;
 
-use super::{MixPolicy, one_pole_lowpass};
+use super::{mix_components::MixPolicy, signal_filter::one_pole_lowpass};
 
 pub(super) const PRODUCT_STEM_RECONSTRUCTION_SCHEMA: &str =
     "riotbox.product_stem_reconstruction.v1";

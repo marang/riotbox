@@ -61,6 +61,7 @@ use config::{
 #[cfg(test)]
 use grid::frames_for_beats;
 use grid::{Grid, frames_for_beat_position};
+#[cfg(test)]
 use signal_filter::one_pole_lowpass;
 #[cfg(test)]
 use source_grid_output_drift::{
@@ -208,14 +209,44 @@ use mc202_source_phrase::{
     MC202_SOURCE_EXPRESSION_ROLE_ANSWER_LIFT, MC202_SOURCE_EXPRESSION_ROLE_BASS_PRESSURE,
     MC202_SOURCE_EXPRESSION_ROLE_HOOK_RESTRAINT_HOLD,
 };
-use render_measurements::{RenderMetrics, render_metrics, rms_delta};
+use render_measurements::{RenderMetrics, render_metrics};
 #[cfg(test)]
-use riotbox_audio::mc202::Mc202NoteBudget;
+use riotbox_audio::mc202::{Mc202ContourHint, Mc202NoteBudget};
+
+#[path = "feral_grid_pack/mix_components.rs"]
+mod mix_components;
+#[path = "feral_grid_pack/mix_movement_evidence.rs"]
+mod mix_movement_evidence;
+#[path = "feral_grid_pack/mix_policy.rs"]
+mod mix_policy;
+
+#[cfg(test)]
+use mix_components::MixPolicy;
+#[cfg(test)]
+use mix_components::generated_to_source_rms_ratio;
+use mix_components::render_mix_with_master_bus_report;
+#[cfg(test)]
+use mix_movement_evidence::{
+    ALL_LANE_MIX_MAX_CORRELATION, ALL_LANE_MIX_MIN_GENERATED_TO_W30_RATIO,
+    ALL_LANE_MIX_MIN_LANE_CONTRIBUTION_RATIO, ALL_LANE_MIX_MIN_RMS_DELTA,
+    all_lane_mix_movement_proof,
+};
+use mix_movement_evidence::{
+    AllLaneMixMovementProof, all_lane_mix_movement_proof_for_source_contour,
+};
+use mix_policy::{
+    generated_support_mix_policy_for_source_contour_and_stems,
+    render_source_first_mix_with_master_bus_report, source_first_generated_to_source_rms_ratio,
+    support_generated_to_source_rms_ratio_for_source_contour,
+};
+#[cfg(test)]
+use mix_policy::{
+    render_generated_support_mix, render_source_first_mix, support_generated_to_source_rms_ratio,
+};
 
 // Remaining legacy owners consume explicit compatibility imports from the real modules.
 include!("feral_grid_pack/pack_builder.rs");
 include!("feral_grid_pack/tr909_rendered_drum_pressure.rs");
-include!("feral_grid_pack/mix_policy.rs");
 include!("feral_grid_pack/pack_text_outputs.rs");
 include!("feral_grid_pack/render_stems.rs");
 include!("feral_grid_pack/manifest_assertions.rs");

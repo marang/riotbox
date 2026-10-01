@@ -350,6 +350,31 @@ change. These fixed QA plans and synthetic metrics stay diagnostic, not
 source-general/product/music/hardness/human/live-device authority. Other root
 families remain visibly legacy; this is not a completed root migration.
 
+### Feral Grid Mix Policy And Evidence Ownership
+
+The bounded mix family inside `feral_grid_pack` uses ordinary binary-private
+owners (RBX-402 / RIOTBOX-1531). Mix components own existing scalar `MixPolicy`
+data, pre/master-bus rendering and weighted contribution/ratio measurements.
+Source/contour-selected balance policy consumes those computations and the
+actual MC-202 contour, retaining its caps/floors and call-facing wrappers.
+Movement evidence consumes components, policy and shared RMS measurements;
+correlation/evidence helpers stay private. No dependency points backwards to
+root orchestration or presentation. Existing directly serializable movement
+evidence keeps all fields/labels; retained legacy fixture construction requires
+binary-bound fields/constants, not a new public product model.
+
+Product-stem production imports consume actual component/filter owners.
+Existing root test compatibility paths/bodies stay intact, not newly claimed as
+a fully migrated regression family. Local helpers/policy constants stay private;
+shared data/functions and retained assertion constants stay binary-bound.
+Preserve complete definitions, values/thresholds/literals/schemas, allocations,
+limiter and access/error/publication order, regression identities and every
+CLI/artifact byte. No library runtime/DSP/API, Core/Session/replay or Stage-A
+change. These mixes remain QA controls, not source-general/music/hardness/human
+authority. After this fifth ownership slice since RIOTBOX-1524, perform a
+risk-directed architecture checkpoint before another family migration; this
+bounded checkpoint is not a new global numeric audit cadence.
+
 ## Include Inventory And Guardrail
 
 The initial RIOTBOX-1321 inventory lives in
