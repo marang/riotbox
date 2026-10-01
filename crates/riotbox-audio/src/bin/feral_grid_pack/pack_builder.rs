@@ -39,24 +39,24 @@ use riotbox_audio::{
     },
 };
 
-const PACK_ID: &str = "feral-grid-demo";
-const SAMPLE_RATE: u32 = 44_100;
-const CHANNEL_COUNT: u16 = 2;
-const DEFAULT_DATE: &str = "local";
-const DEFAULT_BPM: f32 = 128.0;
-const DEFAULT_BARS: u32 = 8;
-const DEFAULT_BEATS_PER_BAR: u32 = 4;
-const MIN_BARS: u32 = 2;
-const DEFAULT_SOURCE_START_SECONDS: f32 = 0.0;
-const DEFAULT_SOURCE_WINDOW_SECONDS: f32 = 1.0;
-const MIN_SIGNAL_RMS: f32 = 0.001;
-const MIN_LOW_BAND_RMS: f32 = 0.004;
-const MIN_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO: f32 = 0.145;
-const MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO: f32 = 0.08;
-const MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO: f32 = 0.46;
-const SOURCE_TIMING_BPM_MATCH_TOLERANCE: f32 = 1.0;
-const PATTERN_ORIGIN_SOURCE_DERIVED: &str = "source_derived";
-const PATTERN_ORIGIN_PRIMITIVE_RENDERER: &str = "primitive_renderer";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse(env::args().skip(1))?;
@@ -177,14 +177,7 @@ impl Args {
     }
 }
 
-#[derive(Clone, Debug)]
-struct Grid {
-    bpm: f32,
-    beats_per_bar: u32,
-    bars: u32,
-    total_beats: u32,
-    total_frames: usize,
-}
+
 
 #[derive(Clone, Copy, Debug)]
 struct RenderMetrics {
@@ -508,49 +501,9 @@ fn source_character_search_window(
     )
 }
 
-impl Grid {
-    fn new(bpm: f32, beats_per_bar: u32, bars: u32) -> Result<Self, String> {
-        if !bpm.is_finite() || bpm <= 0.0 {
-            return Err("bpm must be greater than zero".to_string());
-        }
-        if beats_per_bar == 0 || bars == 0 {
-            return Err("beats_per_bar and bars must be greater than zero".to_string());
-        }
-        let total_beats = beats_per_bar
-            .checked_mul(bars)
-            .ok_or_else(|| "grid beat count overflowed".to_string())?;
-        let total_frames = frames_for_beats(bpm, total_beats);
-        Ok(Self {
-            bpm,
-            beats_per_bar,
-            bars,
-            total_beats,
-            total_frames,
-        })
-    }
 
-    fn duration_seconds(&self) -> f32 {
-        self.total_beats as f32 * 60.0 / self.bpm
-    }
 
-    fn bar_start_frame(&self, bar: u32) -> usize {
-        frames_for_beats(self.bpm, bar.saturating_mul(self.beats_per_bar))
-    }
 
-    fn bar_end_frame(&self, bar: u32) -> usize {
-        frames_for_beats(self.bpm, (bar + 1).saturating_mul(self.beats_per_bar))
-    }
-
-    #[cfg(test)]
-    fn bar_frame_count(&self, bar: u32) -> usize {
-        self.bar_end_frame(bar)
-            .saturating_sub(self.bar_start_frame(bar))
-    }
-}
-
-fn frames_for_beats(bpm: f32, beats: u32) -> usize {
-    (beats as f64 * f64::from(SAMPLE_RATE) * 60.0 / f64::from(bpm)).round() as usize
-}
 
 fn validate_source_format(source: &SourceAudioCache) -> Result<(), Box<dyn std::error::Error>> {
     if source.sample_rate != SAMPLE_RATE || source.channel_count != CHANNEL_COUNT {

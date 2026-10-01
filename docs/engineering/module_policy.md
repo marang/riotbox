@@ -196,6 +196,21 @@ bytes and side-effect/error ordering. Fixed plans and numerical distinctness
 are diagnostic controls, not source intelligence, human approval or live-mixer
 proof. This migration changes no library runtime/DSP/API or product-state model.
 
+### Feral Grid Numerical Evidence Ownership
+
+The bounded numerical-evidence family inside `feral_grid_pack` has ordinary
+private owners (RBX-395 / RIOTBOX-1521), not a fully migrated root. Existing
+config, QA `Grid`/frame rounding and one-pole filtering are dependency leaves;
+bar variation, spectral energy and source-grid drift import their actual
+owners without depending back on orchestration or render stems. Drift
+regressions are a directory-module child with explicit owner imports.
+Correlation/energy/peak helpers stay private and shared items stay binary-bound.
+Explicit root compatibility imports preserve remaining lexical consumers,
+including existing manifest/product-stem owners; unconverted includes remain
+counted legacy. Preserve complete algorithms/impls, thresholds, schemas,
+fixture bodies and CLI/artifact bytes. These ephemeral QA metrics/Grid are not
+Session, arrangement/replay truth or fresh source/human authority.
+
 ## Target Shape
 
 Prefer this:

@@ -1,11 +1,14 @@
+use super::signal_filter::one_pole_lowpass;
+use serde::Serialize;
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize)]
-struct SpectralEnergyMetrics {
-    low_band_energy_ratio: f32,
-    mid_band_energy_ratio: f32,
-    high_band_energy_ratio: f32,
+pub(super) struct SpectralEnergyMetrics {
+    pub(super) low_band_energy_ratio: f32,
+    pub(super) mid_band_energy_ratio: f32,
+    pub(super) high_band_energy_ratio: f32,
 }
 
-fn spectral_energy_metrics(samples: &[f32]) -> SpectralEnergyMetrics {
+pub(super) fn spectral_energy_metrics(samples: &[f32]) -> SpectralEnergyMetrics {
     let total_energy = signal_energy(samples);
     if total_energy <= f32::EPSILON {
         return SpectralEnergyMetrics::default();
