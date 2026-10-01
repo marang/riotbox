@@ -43,6 +43,9 @@ Result:
 - RIOTBOX-1521 migration, 2026-10-01: 26 remaining sites in 2 owners;
   three numerical metric includes and the drift-test include replaced by real
   modules, with shared QA config/grid/filter dependency leaves extracted
+- RIOTBOX-1523 migration, 2026-10-01: 21 remaining sites in 2 owners;
+  four timing policy/presentation includes and the BPM regression include
+  replaced by real modules, with CLI, Core adaptation and pure evidence leaves
 - no generated-code include site identified in this inventory
 - every current include is treated as legacy/mechanical until proven otherwise
 
@@ -76,7 +79,7 @@ legacy inventory; it does not approve new textual include sites.
 
 | Owner | Count | Included files / families | Purpose | Classification | Migration risk | Follow-up |
 | --- | ---: | --- | --- | --- | --- | --- |
-| `crates/riotbox-audio/src/bin/feral_grid_pack.rs` | 25 | pack builder, TR-909, MC-202, W-30, mix, timing, manifest assertions, render, remaining tests | Feral grid QA/pack CLI | remaining mechanical QA-bin split; config/grid/filter and bar/spectral/drift metrics are real owners (RIOTBOX-1521) | medium: large QA surface | next bounded QA-bin family; not a completed root migration |
+| `crates/riotbox-audio/src/bin/feral_grid_pack.rs` | 20 | pack builder, TR-909, MC-202, W-30, mix, manifest assertions, render, remaining tests | Feral grid QA/pack CLI | remaining mechanical QA-bin split; numerical evidence and timing policy/CLI/adaptation/presentation are real owners (RIOTBOX-1521/1523) | medium: large QA surface | architecture checkpoint before another structural slice; not a completed root migration |
 | `crates/riotbox-audio/src/bin/feral_grid_pack/tests.rs` | 1 | shared test helpers | Feral grid QA tests | mechanical test compatibility split | low: test-only helper scope | future QA-bin module slice |
 
 ## Migration Order

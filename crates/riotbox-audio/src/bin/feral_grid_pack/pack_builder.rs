@@ -5,15 +5,9 @@ use std::{
 
 use serde::Serialize;
 
-use riotbox_core::source_graph::{
-    MeterHint, SourceTimingCandidateConfidenceResult, SourceTimingCandidateDriftStatus,
-    SourceTimingCandidatePhraseStatus, SourceTimingProbeBeatEvidenceStatus,
-    SourceTimingProbeBpmCandidatePolicy, SourceTimingProbeDownbeatEvidenceStatus,
-    SourceTimingProbeReadinessReport, SourceTimingProbeReadinessStatus,
-    source_timing_can_use_cautious_grid_bpm, source_timing_grid_use,
-    source_timing_readiness_report_labels, source_timing_probe_readiness_report,
-    timing_model_from_probe_bpm_candidates,
-};
+use riotbox_core::source_graph::SourceTimingProbeReadinessReport;
+#[cfg(test)]
+use riotbox_core::source_graph::SourceTimingProbeBpmCandidatePolicy;
 
 use riotbox_audio::{
     mc202::{
@@ -28,7 +22,6 @@ use riotbox_audio::{
     source_audio::{
         SourceAudioCache, SourceAudioError, SourceAudioWindow, write_interleaved_pcm16_wav,
     },
-    source_timing_probe::{SourceTimingProbeConfig, analyze_source_timing_probe},
     tr909::{
         Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
         Tr909RenderState, Tr909SourceSupportContext, Tr909SourceSupportProfile,
@@ -38,25 +31,6 @@ use riotbox_audio::{
         W30PreviewRenderState, W30PreviewSampleWindow, W30PreviewSourceProfile,
     },
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse(env::args().skip(1))?;
@@ -69,115 +43,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("wrote {}", args.output_dir().display());
     Ok(())
 }
-
-#[derive(Debug, PartialEq)]
-struct Args {
-    source_path: PathBuf,
-    output_dir: Option<PathBuf>,
-    date: String,
-    bpm: f32,
-    bpm_overridden: bool,
-    bars: u32,
-    source_start_seconds: f32,
-    source_window_seconds: f32,
-    show_help: bool,
-}
-
-impl Args {
-    fn parse(args: impl IntoIterator<Item = String>) -> Result<Self, String> {
-        let mut source_path = None;
-        let mut output_dir = None;
-        let mut date = DEFAULT_DATE.to_string();
-        let mut bpm = DEFAULT_BPM;
-        let mut bpm_overridden = false;
-        let mut bars = DEFAULT_BARS;
-        let mut source_start_seconds = DEFAULT_SOURCE_START_SECONDS;
-        let mut source_window_seconds = DEFAULT_SOURCE_WINDOW_SECONDS;
-        let mut show_help = false;
-        let mut args = args.into_iter();
-
-        while let Some(arg) = args.next() {
-            match arg.as_str() {
-                "--help" | "-h" => show_help = true,
-                "--source" => {
-                    source_path = Some(PathBuf::from(
-                        args.next()
-                            .ok_or_else(|| "--source requires a path".to_string())?,
-                    ));
-                }
-                "--output-dir" => {
-                    output_dir =
-                        Some(PathBuf::from(args.next().ok_or_else(|| {
-                            "--output-dir requires a value".to_string()
-                        })?));
-                }
-                "--date" => {
-                    date = args
-                        .next()
-                        .ok_or_else(|| "--date requires a value".to_string())?;
-                }
-                "--bpm" => {
-                    bpm = parse_positive_f32(
-                        "--bpm",
-                        &args
-                            .next()
-                            .ok_or_else(|| "--bpm requires a value".to_string())?,
-                    )?;
-                    bpm_overridden = true;
-                }
-                "--bars" => {
-                    bars = parse_bars(
-                        &args
-                            .next()
-                            .ok_or_else(|| "--bars requires a value".to_string())?,
-                    )?;
-                }
-                "--source-start-seconds" => {
-                    source_start_seconds = parse_non_negative_f32(
-                        "--source-start-seconds",
-                        &args
-                            .next()
-                            .ok_or_else(|| "--source-start-seconds requires a value".to_string())?,
-                    )?;
-                }
-                "--source-window-seconds" => {
-                    source_window_seconds = parse_positive_f32(
-                        "--source-window-seconds",
-                        &args.next().ok_or_else(|| {
-                            "--source-window-seconds requires a value".to_string()
-                        })?,
-                    )?;
-                }
-                other => return Err(format!("unknown argument: {other}")),
-            }
-        }
-
-        let source_path = source_path.ok_or_else(|| "--source is required".to_string())?;
-
-        Ok(Self {
-            source_path,
-            output_dir,
-            date,
-            bpm,
-            bpm_overridden,
-            bars,
-            source_start_seconds,
-            source_window_seconds,
-            show_help,
-        })
-    }
-
-    fn output_dir(&self) -> PathBuf {
-        self.output_dir.clone().unwrap_or_else(|| {
-            Path::new("artifacts")
-                .join("audio_qa")
-                .join(&self.date)
-                .join(PACK_ID)
-        })
-    }
-}
-
-
 
 #[derive(Clone, Copy, Debug)]
 struct RenderMetrics {
@@ -220,63 +85,6 @@ struct PackReport {
     source_grid_output_drift: SourceGridOutputDriftMetrics,
     source_first_generated_to_source_rms_ratio: f32,
     support_generated_to_source_rms_ratio: f32,
-}
-
-fn print_help() {
-    println!(
-        "Usage: feral_grid_pack --source PATH [--date NAME] [--output-dir PATH]\n\
-         \n\
-         Optional grid controls:\n\
-          --bpm BPM              Override source-timing BPM selection\n\
-           --bars BARS\n\
-           --source-start-seconds SECONDS\n\
-           --source-window-seconds SECONDS\n\
-         \n\
-         Renders a local grid-locked Feral demo pack. Without --bpm, the pack\n\
-         uses ready source timing that does not require manual confirmation\n\
-         when available and otherwise falls back to\n\
-         the static default BPM. TR-909 beat/fill, MC-202 bass pressure,\n\
-         and W-30 source chop stems share one beat/bar grid\n\
-         so the output can be checked for musical timing instead of only logs."
-    );
-}
-
-fn parse_positive_f32(flag: &str, value: &str) -> Result<f32, String> {
-    let parsed = value
-        .parse::<f32>()
-        .map_err(|_| format!("{flag} must be greater than zero"))?;
-    if !parsed.is_finite() || parsed <= 0.0 {
-        return Err(format!("{flag} must be greater than zero"));
-    }
-    Ok(parsed)
-}
-
-fn parse_non_negative_f32(flag: &str, value: &str) -> Result<f32, String> {
-    let parsed = value
-        .parse::<f32>()
-        .map_err(|_| format!("{flag} must be a non-negative number"))?;
-    if !parsed.is_finite() || parsed < 0.0 {
-        return Err(format!("{flag} must be a non-negative number"));
-    }
-    Ok(parsed)
-}
-
-fn parse_positive_u32(flag: &str, value: &str) -> Result<u32, String> {
-    let parsed = value
-        .parse::<u32>()
-        .map_err(|_| format!("{flag} must be greater than zero"))?;
-    if parsed == 0 {
-        return Err(format!("{flag} must be greater than zero"));
-    }
-    Ok(parsed)
-}
-
-fn parse_bars(value: &str) -> Result<u32, String> {
-    let bars = parse_positive_u32("--bars", value)?;
-    if bars < MIN_BARS {
-        return Err(format!("--bars must be at least {MIN_BARS}"));
-    }
-    Ok(bars)
 }
 
 fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
@@ -501,10 +309,6 @@ fn source_character_search_window(
     )
 }
 
-
-
-
-
 fn validate_source_format(source: &SourceAudioCache) -> Result<(), Box<dyn std::error::Error>> {
     if source.sample_rate != SAMPLE_RATE || source.channel_count != CHANNEL_COUNT {
         return Err(format!(
@@ -514,37 +318,4 @@ fn validate_source_format(source: &SourceAudioCache) -> Result<(), Box<dyn std::
         .into());
     }
     Ok(())
-}
-
-struct SourceTimingAnalysisForManifest {
-    readiness: SourceTimingProbeReadinessReport,
-    anchor_evidence: ManifestSourceTimingAnchorEvidence,
-    groove_evidence: ManifestSourceTimingGrooveEvidence,
-}
-
-fn source_timing_analysis_for_source(
-    source: &SourceAudioCache,
-    source_path: &Path,
-) -> SourceTimingAnalysisForManifest {
-    let probe = analyze_source_timing_probe(source, SourceTimingProbeConfig::default());
-    let input = probe.bpm_candidate_input(
-        source_path.display().to_string(),
-        MeterHint {
-            beats_per_bar: DEFAULT_BEATS_PER_BAR as u8,
-            beat_unit: 4,
-        },
-    );
-    let readiness = source_timing_probe_readiness_report(
-        &input,
-        SOURCE_TIMING_POLICY_PROFILE.bpm_candidate_policy,
-    );
-    let timing = timing_model_from_probe_bpm_candidates(
-        &input,
-        SOURCE_TIMING_POLICY_PROFILE.bpm_candidate_policy,
-    );
-    SourceTimingAnalysisForManifest {
-        readiness,
-        anchor_evidence: ManifestSourceTimingAnchorEvidence::from_timing(&timing),
-        groove_evidence: ManifestSourceTimingGrooveEvidence::from_timing(&timing),
-    }
 }
