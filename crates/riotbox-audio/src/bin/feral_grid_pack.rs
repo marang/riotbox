@@ -49,7 +49,9 @@ mod spectral_energy_metrics;
 #[path = "feral_grid_pack/verification_command_tests.rs"]
 mod verification_command_tests;
 
-use bar_variation_metrics::{BarVariationMetrics, bar_variation_metrics};
+use bar_variation_metrics::BarVariationMetrics;
+#[cfg(test)]
+use bar_variation_metrics::bar_variation_metrics;
 use config::{
     CHANNEL_COUNT, DEFAULT_BEATS_PER_BAR, MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO,
     MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO, MIN_LOW_BAND_RMS, MIN_SIGNAL_RMS,
@@ -167,11 +169,52 @@ use source_character_window_selection::{
     SourceCharacterWindowSelection, select_source_character_window, source_character_search_window,
 };
 
+#[path = "feral_grid_pack/mc202_bass_pressure.rs"]
+mod mc202_bass_pressure;
+#[path = "feral_grid_pack/mc202_low_body_policy.rs"]
+mod mc202_low_body_policy;
+#[path = "feral_grid_pack/mc202_source_contour.rs"]
+mod mc202_source_contour;
+#[path = "feral_grid_pack/mc202_source_manifest.rs"]
+mod mc202_source_manifest;
+#[path = "feral_grid_pack/mc202_source_phrase.rs"]
+mod mc202_source_phrase;
+#[path = "feral_grid_pack/render_measurements.rs"]
+mod render_measurements;
+
+#[cfg(test)]
+use mc202_bass_pressure::{
+    MC202_BASS_PRESSURE_MIN_LOW_BAND_RMS, MC202_BASS_PRESSURE_MIN_LOW_TO_MID_ENERGY_RATIO,
+    MC202_BASS_PRESSURE_MIN_SIGNAL_RMS, MC202_PRESSURE_ROLE_WITH_SOURCE_CONTOUR,
+    MC202_REASON_SOURCE_GRID_PROOF_RENDERER, MC202_SOURCE_CONTOUR_MIN_DELTA_RMS,
+};
+use mc202_bass_pressure::{
+    Mc202BassPressureProof, Mc202PatternOrigin, Mc202SourceContourProof,
+    render_mc202_bass_pressure_with_source_contour,
+};
+use mc202_source_contour::Mc202SourceContourProfile;
+#[cfg(test)]
+use mc202_source_contour::{
+    MC202_REASON_LOW_SECTION_DROP_CONTOUR, MC202_REASON_MID_SECTION_HOLD_CONTOUR,
+};
+#[cfg(test)]
+use mc202_source_manifest::MC202_PATTERN_ORIGIN_SOURCE_DERIVED_CONTOUR;
+use mc202_source_manifest::{
+    ManifestMc202BassPressureProof, ManifestMc202SourceContourProof,
+    manifest_mc202_bass_pressure_proof, manifest_mc202_source_contour_proof,
+};
+#[cfg(test)]
+use mc202_source_phrase::{
+    MC202_SOURCE_EXPRESSION_ROLE_ANSWER_LIFT, MC202_SOURCE_EXPRESSION_ROLE_BASS_PRESSURE,
+    MC202_SOURCE_EXPRESSION_ROLE_HOOK_RESTRAINT_HOLD,
+};
+use render_measurements::{RenderMetrics, render_metrics, rms_delta};
+#[cfg(test)]
+use riotbox_audio::mc202::Mc202NoteBudget;
+
 // Remaining legacy owners consume explicit compatibility imports from the real modules.
 include!("feral_grid_pack/pack_builder.rs");
 include!("feral_grid_pack/tr909_rendered_drum_pressure.rs");
-include!("feral_grid_pack/mc202_bass_pressure.rs");
-include!("feral_grid_pack/mc202_low_body_policy.rs");
 include!("feral_grid_pack/mix_policy.rs");
 include!("feral_grid_pack/pack_text_outputs.rs");
 include!("feral_grid_pack/render_stems.rs");

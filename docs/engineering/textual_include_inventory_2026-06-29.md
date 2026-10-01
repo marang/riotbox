@@ -58,6 +58,9 @@ Result:
   the source-character window-selection include replaced by a real cache/search
   policy owner and ordinary regressions, with search preparation removed from
   root orchestration
+- RIOTBOX-1530 migration, 2026-10-01: 10 remaining sites in 2 owners;
+  both MC-202 includes replaced by contour, phrase/state, pressure and low-body
+  policy owners, separate JSON presentation and shared render measurements
 - no generated-code include site identified in this inventory
 - every current include is treated as legacy/mechanical until proven otherwise
 
@@ -91,7 +94,7 @@ legacy inventory; it does not approve new textual include sites.
 
 | Owner | Count | Included files / families | Purpose | Classification | Migration risk | Follow-up |
 | --- | ---: | --- | --- | --- | --- | --- |
-| `crates/riotbox-audio/src/bin/feral_grid_pack.rs` | 11 | pack builder, TR-909 rendered-mix pressure, MC-202, mix, manifest assertions, render, remaining tests | Feral grid QA/pack CLI | remaining mechanical QA-bin split; numerical evidence, timing, W-30/TR-909 policies and cache-window preparation are real owners (RIOTBOX-1521/1523/1527/1528/1529) | medium: large QA surface | bounded semantic ownership slices after RIOTBOX-1524 checkpoint; not a completed root migration |
+| `crates/riotbox-audio/src/bin/feral_grid_pack.rs` | 9 | pack builder, TR-909 rendered-mix pressure, mix, manifest assertions, render, remaining tests | Feral grid QA/pack CLI | remaining mechanical QA-bin split; numerical evidence, timing, W-30/TR-909/MC-202 policies and cache-window preparation are real owners (RIOTBOX-1521/1523/1527/1528/1529/1530) | medium: large QA surface | bounded semantic ownership slices after RIOTBOX-1524 checkpoint; not a completed root migration |
 | `crates/riotbox-audio/src/bin/feral_grid_pack/tests.rs` | 1 | shared test helpers | Feral grid QA tests | mechanical test compatibility split | low: test-only helper scope | future QA-bin module slice |
 
 ## Migration Order
