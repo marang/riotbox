@@ -83,6 +83,10 @@ Result:
   the twelve stable root regressions and four synthetic fixture functions have
   real test-only owners and explicit imports; the retained empty allowlist
   rejects any new site, while remaining root compatibility aliases stay visible
+- RIOTBOX-1548 completion, 2026-10-01: still 0 sites;
+  Feral manifest and regression consumers import actual owners directly and the
+  root owns only main/composition; a current-state checkpoint must assess the
+  resulting dependencies, not infer architectural quality from the count
 - no generated-code include site identified in this inventory
 - every current include is treated as legacy/mechanical until proven otherwise
 
@@ -116,7 +120,7 @@ legacy inventory; it does not approve new textual include sites.
 
 | Owner | Count | Included files / families | Purpose | Classification | Migration risk | Follow-up |
 | --- | ---: | --- | --- | --- | --- | --- |
-| None | 0 | None | All scanned Rust owners | Textual include inventory complete | Remaining Feral root manifest/test compatibility aliases still need semantic assessment | No thin-facade, whole-architecture or audio-quality claim follows from zero includes |
+| None | 0 | None | All scanned Rust owners | Textual include inventory complete; Feral root dependency bridges removed by RIOTBOX-1548 | Current-state architecture checkpoint still required | Count alone is not a whole-architecture or audio-quality verdict |
 
 ## Migration Order
 

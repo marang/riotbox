@@ -498,6 +498,30 @@ Zero textual includes completes this inventory, not the root's compatibility
 alias migration or a thin-facade/whole-architecture/quality verdict. No Core/
 Session/replay/runtime/frozen Stage-A change or source/human/release promotion.
 
+### Feral Composition-Only Entrypoint
+
+RBX-416 / RIOTBOX-1548 removes the remaining manifest and test root bridges.
+Manifest imports all existing data/presentation/config owners directly;
+MasterBusLimiterReport comes from its actual Audio library owner. Keep all 49
+resolved bindings and fourteen complete schema/derive/function definitions
+identical. Verification/BPM/W-30 regressions import their actual Args/Grid/
+command/trigger owners; the nested product-stem regression qualifies the same
+mix_components function directly with unchanged arguments and assertions.
+
+Remove exactly 21 compiler-proven unused root import groups. Root owns only
+env, Args/help, render_pack, unchanged main and ordinary module declarations;
+no duplicate aliases, public API or facade framework. Preserve all module names
+and path/cfg attributes even when rustfmt reorders adjacent declarations after
+obsolete imports disappear. The zero-include guard remains unchanged.
+
+Whole-definition proof accounts for the single test call-path qualification
+explicitly; all other complete bodies remain identical apart from formatting.
+Fresh identity, CLI/artifact, full source-free CI and native gates still apply.
+This completes this Feral root dependency migration, not a whole-repository
+architecture or audio-quality verdict. Perform a bounded current-state review
+checkpoint before selecting further maintenance. No DSP/policy/threshold/schema/
+Core/Session/replay/runtime/frozen Stage-A change or source/human/release claim.
+
 ## Include Inventory And Guardrail
 
 The initial RIOTBOX-1321 inventory lives in

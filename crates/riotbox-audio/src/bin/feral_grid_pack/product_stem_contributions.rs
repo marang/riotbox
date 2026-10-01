@@ -190,8 +190,9 @@ mod tests {
         let tr909 = signal(1_024, 0.37, 0.71);
         let mc202 = signal(1_024, 0.19, 1.13);
         let w30 = signal(1_024, 0.41, 0.29);
-        let (full_mix, _) =
-            super::super::render_mix_with_master_bus_report(&tr909, &mc202, &w30, policy);
+        let (full_mix, _) = super::super::mix_components::render_mix_with_master_bus_report(
+            &tr909, &mc202, &w30, policy,
+        );
 
         let stems = render_product_stem_contributions(&tr909, &mc202, &w30, &full_mix, policy)
             .expect("render product stem contributions");
