@@ -1801,4 +1801,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Replace Feral text-output include with an explicit Markdown publication owner
 - [RIOTBOX-1545.md](./RIOTBOX-1545.md)
   Review QA artifact integrity and product-spine boundaries after the five-branch checkpoint
+- [RIOTBOX-1546.md](./RIOTBOX-1546.md)
+  Replace mixed Feral stem include with explicit rendering validation and artifact owners
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
