@@ -1,57 +1,34 @@
-#[derive(Clone, Copy, Debug, PartialEq)]
-struct W30SourceAccentDynamicsProof {
-    applied: bool,
-    trigger_count: u32,
-    distinct_velocity_count: usize,
-    min_velocity: f32,
-    max_velocity: f32,
-    velocity_span: f32,
-    min_required_velocity_span: f32,
-    source_energy_span: f32,
-    reason: &'static str,
-}
+//! Source-energy accent policy and evidence for the bounded QA renderer.
 
-#[derive(Serialize)]
-struct ManifestW30SourceAccentDynamicsProof {
-    pattern_origin: &'static str,
-    applied: bool,
-    trigger_count: u32,
-    distinct_velocity_count: usize,
-    min_velocity: f32,
-    max_velocity: f32,
-    velocity_span: f32,
-    min_required_velocity_span: f32,
-    source_energy_span: f32,
-    reason: &'static str,
-}
-
-const W30_SOURCE_ACCENT_MIN_VELOCITY_SPAN: f32 = 0.12;
-const W30_SOURCE_ACCENT_MIN_DISTINCT_VELOCITIES: usize = 3;
+use super::sample_measurements::{positive_abs_delta, rms};
+use super::w30_slice_choice::W30_SOURCE_SLICE_CHOICE_CANDIDATE_COUNT;
+use super::w30_source_events::W30SourceTriggerEvent;
+use riotbox_audio::w30::{W30_PREVIEW_SAMPLE_WINDOW_LEN, W30PreviewSampleWindow};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-struct W30SourceAccentFeatures {
-    velocity: f32,
-    source_energy_score: f32,
+pub(super) struct W30SourceAccentDynamicsProof {
+    pub(super) applied: bool,
+    pub(super) trigger_count: u32,
+    pub(super) distinct_velocity_count: usize,
+    pub(super) min_velocity: f32,
+    pub(super) max_velocity: f32,
+    pub(super) velocity_span: f32,
+    pub(super) min_required_velocity_span: f32,
+    pub(super) source_energy_span: f32,
+    pub(super) reason: &'static str,
 }
 
-fn manifest_w30_source_accent_dynamics_proof(
-    proof: W30SourceAccentDynamicsProof,
-) -> ManifestW30SourceAccentDynamicsProof {
-    ManifestW30SourceAccentDynamicsProof {
-        pattern_origin: PATTERN_ORIGIN_SOURCE_DERIVED,
-        applied: proof.applied,
-        trigger_count: proof.trigger_count,
-        distinct_velocity_count: proof.distinct_velocity_count,
-        min_velocity: proof.min_velocity,
-        max_velocity: proof.max_velocity,
-        velocity_span: proof.velocity_span,
-        min_required_velocity_span: proof.min_required_velocity_span,
-        source_energy_span: proof.source_energy_span,
-        reason: proof.reason,
-    }
+pub(super) const W30_SOURCE_ACCENT_MIN_VELOCITY_SPAN: f32 = 0.12;
+
+pub(super) const W30_SOURCE_ACCENT_MIN_DISTINCT_VELOCITIES: usize = 3;
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(super) struct W30SourceAccentFeatures {
+    pub(super) velocity: f32,
+    pub(super) source_energy_score: f32,
 }
 
-fn w30_source_accent_dynamics_proof(
+pub(super) fn w30_source_accent_dynamics_proof(
     events: &[W30SourceTriggerEvent],
 ) -> W30SourceAccentDynamicsProof {
     if events.is_empty() {
@@ -111,7 +88,7 @@ fn w30_source_accent_dynamics_proof(
     }
 }
 
-fn w30_source_accent_features(
+pub(super) fn w30_source_accent_features(
     source_window_preview: &W30PreviewSampleWindow,
     source_offset_samples: usize,
 ) -> W30SourceAccentFeatures {
@@ -131,11 +108,13 @@ fn w30_source_accent_features(
     let global_rms = rms(samples).max(f32::EPSILON);
     let local_delta = positive_abs_delta_circular(samples, source_offset_samples, slice_len);
     let global_delta = positive_abs_delta(samples).max(f32::EPSILON);
-    let energy = ((local_rms / global_rms) * 0.72 + (local_delta / global_delta) * 0.28)
-        .clamp(0.0, 1.4);
+    let energy =
+        ((local_rms / global_rms) * 0.72 + (local_delta / global_delta) * 0.28).clamp(0.0, 1.4);
     let source_position = source_offset_samples as f32 / sample_count.max(1) as f32;
-    let source_position_accent =
-        (source_position * std::f32::consts::TAU).sin().mul_add(0.5, 0.5) * 0.12;
+    let source_position_accent = (source_position * std::f32::consts::TAU)
+        .sin()
+        .mul_add(0.5, 0.5)
+        * 0.12;
     W30SourceAccentFeatures {
         velocity: (0.56 + energy * 0.27 + source_position_accent).clamp(0.58, 1.0),
         source_energy_score: energy,

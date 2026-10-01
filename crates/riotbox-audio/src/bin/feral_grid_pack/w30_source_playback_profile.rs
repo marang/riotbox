@@ -1,11 +1,17 @@
+//! Existing source-window playback profile for the offline QA renderer.
+
+use super::spectral_energy_metrics::spectral_energy_metrics;
+use super::w30_source_chop::chop_articulation_metrics;
+use riotbox_audio::w30::{W30_PREVIEW_SAMPLE_WINDOW_LEN, W30PreviewSampleWindow};
+
 #[derive(Clone, Copy, Debug)]
-struct W30SourcePlaybackProfile {
-    phase_offset_samples: usize,
-    stride_divisor: usize,
-    gain: f32,
+pub(super) struct W30SourcePlaybackProfile {
+    pub(super) phase_offset_samples: usize,
+    pub(super) stride_divisor: usize,
+    pub(super) gain: f32,
 }
 
-fn w30_source_playback_profile(
+pub(super) fn w30_source_playback_profile(
     source_window_preview: &W30PreviewSampleWindow,
 ) -> W30SourcePlaybackProfile {
     let sample_count = source_window_preview

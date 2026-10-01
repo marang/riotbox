@@ -233,6 +233,29 @@ CLI/artifact byte, including RIOTBOX-1522's literal verification command.
 Core owns timing truth; these are ephemeral QA consumers, not source-general,
 Session, arrangement/replay, human or live-device authority.
 
+### Feral Grid W-30 QA Policy And Presentation Ownership
+
+The bounded W-30 family inside `feral_grid_pack` uses ordinary binary-private
+owners (RBX-398 / RIOTBOX-1527). Shared scalar sample measurements are a
+dependency leaf also consumed by legacy source-window selection. Window
+preparation owns selection, gain, articulation and loop-closure evidence;
+slice choice owns its candidate scoring and private selected offsets. Existing
+trigger-event data form a shared leaf, so accent evidence and trigger planning
+do not depend on each other cyclically. Trigger policy consumes Grid, slice
+choice and accent features; playback profile consumes articulation/spectral
+metrics. JSON presentation consumes their evidence, never the reverse.
+
+Single-owner helpers, constants, candidate/offset internals and serializer
+fields remain private. Cross-owner items stay `pub(super)`, not library APIs.
+Ordinary W-30 regressions import actual owners and preserve every test/fixture
+body and identity; only the still-legacy stem renderer uses root compatibility.
+Root explicit imports preserve untouched consumers. Remaining lexical includes
+stay counted legacy, not an approved completed root migration. Preserve full
+algorithms/impls, literals, thresholds, labels, schemas, render/access/error
+ordering and CLI/artifact bytes, including prior capacity and literal-command
+fixes. These policies are offline QA controls, not another product source,
+Session, arrangement/replay or human/musical/hardness authority.
+
 ## Target Shape
 
 Prefer this:

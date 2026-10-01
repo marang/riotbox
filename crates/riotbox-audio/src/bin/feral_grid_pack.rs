@@ -93,6 +93,48 @@ use product_stem_contributions::{
 #[cfg(test)]
 use riotbox_audio::listening_manifest::LISTENING_MANIFEST_SCHEMA_VERSION;
 
+#[path = "feral_grid_pack/sample_measurements.rs"]
+mod sample_measurements;
+#[path = "feral_grid_pack/w30_slice_choice.rs"]
+mod w30_slice_choice;
+#[path = "feral_grid_pack/w30_source_accent_dynamics.rs"]
+mod w30_source_accent_dynamics;
+#[path = "feral_grid_pack/w30_source_chop.rs"]
+mod w30_source_chop;
+#[path = "feral_grid_pack/w30_source_events.rs"]
+mod w30_source_events;
+#[path = "feral_grid_pack/w30_source_manifest.rs"]
+mod w30_source_manifest;
+#[path = "feral_grid_pack/w30_source_playback_profile.rs"]
+mod w30_source_playback_profile;
+#[path = "feral_grid_pack/w30_source_trigger_policy.rs"]
+mod w30_source_trigger_policy;
+
+#[cfg(test)]
+#[path = "feral_grid_pack/w30_source_chop_tests.rs"]
+mod w30_source_chop_tests;
+
+use sample_measurements::{mono_frames, peak_abs, positive_abs_delta, rms};
+use w30_slice_choice::{W30SourceSliceChoiceProof, w30_source_slice_choice_plan};
+use w30_source_accent_dynamics::{W30SourceAccentDynamicsProof, w30_source_accent_dynamics_proof};
+use w30_source_chop::{
+    W30SourceChopProfile, W30SourceLoopClosureProof, chop_articulation_metrics,
+    source_chop_preview_from_interleaved, w30_source_loop_closure_proof,
+};
+use w30_source_events::W30SourceTriggerEvent;
+use w30_source_manifest::{
+    ManifestW30SourceAccentDynamicsProof, ManifestW30SourceChopProfile,
+    ManifestW30SourceLoopClosureProof, ManifestW30SourceSliceChoiceProof,
+    ManifestW30SourceTriggerVariationProof, manifest_w30_source_accent_dynamics_proof,
+    manifest_w30_source_chop_profile, manifest_w30_source_loop_closure_proof,
+    manifest_w30_source_slice_choice_proof, manifest_w30_source_trigger_variation_proof,
+};
+use w30_source_playback_profile::w30_source_playback_profile;
+use w30_source_trigger_policy::{
+    W30SourceTriggerVariationProof, is_beat_anchor, w30_source_trigger_events_with_slice_plan,
+    w30_source_trigger_variation_proof,
+};
+
 // Remaining legacy owners consume explicit compatibility imports from the real modules.
 include!("feral_grid_pack/pack_builder.rs");
 include!("feral_grid_pack/source_aware_tr909.rs");
@@ -100,11 +142,7 @@ include!("feral_grid_pack/tr909_kick_pressure.rs");
 include!("feral_grid_pack/tr909_rendered_drum_pressure.rs");
 include!("feral_grid_pack/mc202_bass_pressure.rs");
 include!("feral_grid_pack/mc202_low_body_policy.rs");
-include!("feral_grid_pack/w30_source_chop.rs");
 include!("feral_grid_pack/source_character_window_selection.rs");
-include!("feral_grid_pack/w30_slice_choice.rs");
-include!("feral_grid_pack/w30_source_accent_dynamics.rs");
-include!("feral_grid_pack/w30_source_playback_profile.rs");
 include!("feral_grid_pack/mix_policy.rs");
 include!("feral_grid_pack/pack_text_outputs.rs");
 include!("feral_grid_pack/render_stems.rs");
@@ -112,5 +150,4 @@ include!("feral_grid_pack/manifest_assertions.rs");
 include!("feral_grid_pack/manifest_mc202_assertions.rs");
 include!("feral_grid_pack/manifest_mix_assertions.rs");
 include!("feral_grid_pack/tests.rs");
-include!("feral_grid_pack/w30_source_chop_tests.rs");
 include!("feral_grid_pack/tr909_source_grid_consumer_tests.rs");
