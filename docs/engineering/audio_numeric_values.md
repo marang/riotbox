@@ -87,8 +87,9 @@ The master bus is not a hard clipper at `0.92`:
 1. samples with magnitude at or below `0.92` pass unchanged;
 2. samples above `0.92` enter a `tanh` soft knee;
 3. the shaped result is capped at `0.985`;
-4. a sample is counted in `limited_sample_count` whenever that process changes
-   it;
+4. a sample is written and counted in `limited_sample_count` only when the
+   computed change is strictly greater than `f32::EPSILON`; an immediate
+   above-knee f32 neighbor can remain bit-identical and uncounted;
 5. ordinary clipping is separately counted at magnitude `>= 1.0`.
 
 The limiter is valid runtime protection. The RIOTBOX-1402 exact-path gate is
@@ -147,6 +148,12 @@ provisional engineering contract. RBX-379 explicitly accepts retaining both
 values unchanged; RIOTBOX-1501 owns the dedicated calibration decision,
 authorized source protocol, device limitations and intended headroom. This is
 sample-peak protection, not a true-peak or hearing-safety guarantee.
+
+[Source-free baseline protocol v1](../benchmarks/master_bus_limiter_baseline_protocol_v1.md)
+and RIOTBOX-1550 freeze the bounded engineering controls and actual write/count
+semantics, including representable knee neighbors. They retain the existing
+values and clean-path gates; they do not calibrate perceived hardness or permit
+new source/candidate access. RIOTBOX-1501 still owns that separate decision.
 
 ### 3. QA acceptance thresholds
 
