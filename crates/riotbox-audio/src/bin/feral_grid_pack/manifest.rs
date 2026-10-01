@@ -7,6 +7,7 @@ use riotbox_audio::listening_manifest::{
     ListeningPackRenderMetrics as ManifestRenderMetrics, write_manifest_json,
 };
 
+use super::output_paths::metrics_path_for;
 use super::tr909_rendered_drum_pressure::Tr909RenderedDrumPressureProof;
 
 use super::{
@@ -26,7 +27,7 @@ use super::{
     manifest_tr909_source_accent_dynamics_proof, manifest_tr909_source_profile,
     manifest_w30_source_accent_dynamics_proof, manifest_w30_source_chop_profile,
     manifest_w30_source_loop_closure_proof, manifest_w30_source_slice_choice_proof,
-    manifest_w30_source_trigger_variation_proof, metrics_path_for, verification_command,
+    manifest_w30_source_trigger_variation_proof, verification_command,
 };
 
 #[derive(Serialize)]

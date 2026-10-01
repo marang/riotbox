@@ -2,6 +2,8 @@
 mod args;
 #[path = "feral_grid_pack/grid_bpm_decision.rs"]
 mod grid_bpm_decision;
+#[path = "feral_grid_pack/output_paths.rs"]
+mod output_paths;
 #[path = "feral_grid_pack/source_timing_analysis.rs"]
 mod source_timing_analysis;
 #[path = "feral_grid_pack/source_timing_groove_policy.rs"]
@@ -22,6 +24,7 @@ use grid_bpm_decision::{
     GridBpmDecision, choose_grid_bpm, grid_bpm_decision_reason_label, grid_bpm_source_label,
     source_timing_bpm_agrees,
 };
+use output_paths::{PackOutputPaths, metrics_path_for};
 use source_timing_analysis::{SourceTimingAnalysisForManifest, source_timing_analysis_for_source};
 use source_timing_groove_policy::{
     Tr909GrooveTimingPolicy, apply_tr909_groove_timing, tr909_groove_timing_policy,

@@ -410,15 +410,6 @@ fn write_audio_with_metrics(
         .map_err(|error| SourceAudioError::Io(error.to_string()))
 }
 
-fn metrics_path_for(path: &Path) -> PathBuf {
-    let mut metrics_path = path.to_path_buf();
-    metrics_path.set_file_name(match path.file_stem().and_then(|stem| stem.to_str()) {
-        Some(stem) => format!("{stem}.metrics.md"),
-        None => "metrics.md".to_string(),
-    });
-    metrics_path
-}
-
 fn write_metrics_markdown(path: &Path, metrics: RenderMetrics) -> std::io::Result<()> {
     fs::write(
         path,

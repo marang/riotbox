@@ -1,7 +1,10 @@
 use std::{
     env, fs,
-    path::{Path, PathBuf},
+    path::Path,
 };
+
+#[cfg(test)]
+use std::path::PathBuf;
 
 use riotbox_core::source_graph::SourceTimingProbeReadinessReport;
 
@@ -75,6 +78,7 @@ struct PackReport {
 
 fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let output_dir = args.output_dir();
+    let paths = PackOutputPaths::new(&output_dir);
     let stems_dir = output_dir.join("stems");
     let product_stems_dir = stems_dir.join("product");
     fs::create_dir_all(&stems_dir)?;
@@ -82,6 +86,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
 
     let source = SourceAudioCache::load_pcm_wav(&args.source_path)?;
     validate_source_format(&source)?;
+    paths.reject_source_aliases(&args.source_path)?;
     let source_timing_analysis = source_timing_analysis_for_source(&source, &args.source_path);
     let timing_readiness = &source_timing_analysis.readiness;
     let grid_bpm = choose_grid_bpm(args, timing_readiness);
@@ -177,22 +182,22 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     assert_grid_len("product_stem_music", &product_stem_music, &grid);
     assert_grid_len("product_stem_bass", &product_stem_bass, &grid);
 
-    write_audio_with_metrics(&stems_dir.join("01_tr909_beat_fill.wav"), &tr909, &grid)?;
-    write_audio_with_metrics(&stems_dir.join("02_w30_feral_source_chop.wav"), &w30, &grid)?;
-    write_audio_with_metrics(&stems_dir.join("03_mc202_bass_pressure.wav"), &mc202, &grid)?;
-    let product_stem_drums_path = product_stems_dir.join("01_stem_drums.wav");
-    let product_stem_music_path = product_stems_dir.join("02_stem_music.wav");
-    let product_stem_bass_path = product_stems_dir.join("03_stem_bass.wav");
+    write_audio_with_metrics(&paths.tr909, &tr909, &grid)?;
+    write_audio_with_metrics(&paths.w30, &w30, &grid)?;
+    write_audio_with_metrics(&paths.mc202, &mc202, &grid)?;
+    let product_stem_drums_path = paths.product_drums;
+    let product_stem_music_path = paths.product_music;
+    let product_stem_bass_path = paths.product_bass;
     write_audio_with_metrics(&product_stem_drums_path, &product_stem_drums, &grid)?;
     write_audio_with_metrics(&product_stem_music_path, &product_stem_music, &grid)?;
     write_audio_with_metrics(&product_stem_bass_path, &product_stem_bass, &grid)?;
     write_audio_with_metrics(
-        &output_dir.join("04_riotbox_source_first_mix.wav"),
+        &paths.source_first_mix,
         &source_first_mix,
         &grid,
     )?;
     write_audio_with_metrics(
-        &output_dir.join("05_riotbox_generated_support_mix.wav"),
+        &paths.full_mix,
         &full_mix,
         &grid,
     )?;
@@ -200,7 +205,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         &product_stem_drums_path,
         &product_stem_music_path,
         &product_stem_bass_path,
-        &output_dir.join("05_riotbox_generated_support_mix.wav"),
+        &paths.full_mix,
     )?;
     if !product_stem_reconstruction.passed {
         return Err(format!(
@@ -260,10 +265,10 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         support_generated_to_source_rms_ratio,
     };
     validate_report(&report)?;
-    let report_path = output_dir.join("grid-report.md");
+    let report_path = paths.report;
     write_report(&report_path, args, &grid, report, timing_readiness, grid_bpm)?;
     write_manifest(
-        &output_dir.join("manifest.json"),
+        &paths.manifest,
         args,
         &grid,
         report,
@@ -271,7 +276,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         grid_bpm,
     )?;
     write_readme(
-        &output_dir,
+        &paths.readme,
         args,
         &grid,
         grid_bpm,
