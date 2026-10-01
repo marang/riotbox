@@ -165,6 +165,23 @@ model. Preserve every algorithm/literal/threshold, CLI/report/WAV byte and
 the existing primitive-renderer promotion boundary. Technical-only reruns do
 not supply or transfer a human verdict.
 
+### W-30 Preview QA Ownership
+
+`w30_preview_render/main.rs` and `w30_preview_compare/main.rs` retain the two
+existing standalone Cargo binaries (RBX-393 / RIOTBOX-1519). Renderer arguments
+retain their complete parsing/input-adaptation impl; source-window projection
+and synthetic control construction are independent of CLI and artifact I/O.
+The existing WAV/metrics publication belongs to one artifact owner. Comparison
+configuration is a leaf; metrics ingestion owns its existing typed values,
+comparison owns the ephemeral report and numeric policy, and Markdown and
+manifest presentation consume those owners. Manifest-only serialization types,
+numeric defaults and one-owner helpers stay private; shared items are bounded
+to each binary. Ordinary tests use explicit actual-owner imports. Preserve
+complete algorithms/impls, the finite-duration rejection, thresholds, schemas,
+CLI/error/report bytes and existing side-effect order. Synthetic controls are
+QA inputs, never missing-source product fallback or fresh source intelligence.
+This migration changes no library API, runtime/DSP or product-state ownership.
+
 ## Target Shape
 
 Prefer this:

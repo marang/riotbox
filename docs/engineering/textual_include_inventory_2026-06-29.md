@@ -34,6 +34,10 @@ Result:
   both Core TR-909 policy/test includes replaced by ordinary semantic modules
 - RIOTBOX-1514 migration, 2026-10-01: 44 remaining sites in 6 owners;
   all ten Observer/audio correlation includes replaced by diagnostic modules
+- RIOTBOX-1517 migration, 2026-10-01: 38 remaining sites in 5 owners;
+  all six lane recipe includes replaced by ordinary diagnostic modules
+- RIOTBOX-1519 migration, 2026-10-01: 32 remaining sites in 3 owners;
+  all six W-30 renderer/comparison includes replaced by semantic QA modules
 - no generated-code include site identified in this inventory
 - every current include is treated as legacy/mechanical until proven otherwise
 
@@ -70,8 +74,6 @@ legacy inventory; it does not approve new textual include sites.
 | `crates/riotbox-audio/src/bin/feral_grid_pack.rs` | 29 | pack builder, metrics, TR-909, MC-202, W-30, mix, timing, manifest, render, tests | Feral grid QA/pack CLI | mechanical QA-bin split | medium: large QA surface | future QA-bin module slice |
 | `crates/riotbox-audio/src/bin/feral_grid_pack/tests.rs` | 1 | shared test helpers | Feral grid QA tests | mechanical test compatibility split | low: test-only helper scope | future QA-bin module slice |
 | `crates/riotbox-audio/src/bin/feral_before_after_pack.rs` | 2 | pack builder, metrics manifest | Feral before/after QA CLI | mechanical QA-bin split | low | future QA-bin module slice |
-| `crates/riotbox-audio/src/bin/w30_preview_compare.rs` | 4 | compare CLI, metrics, manifest, tests | W-30 preview comparison CLI | mechanical QA-bin split | low/medium | future W-30 QA-bin slice |
-| `crates/riotbox-audio/src/bin/w30_preview_render.rs` | 2 | render CLI, tests | W-30 preview render CLI | mechanical QA-bin split | low | future W-30 QA-bin slice |
 
 ## Migration Order
 
@@ -110,3 +112,5 @@ of mixing them into the module move.
 | `crates/riotbox-core/src/tr909_policy.rs` | 2 | RIOTBOX-1513 | Explicit public compatibility facade over private typed model, render-policy composition, source-support and pattern/phrase owners; ordinary synthetic regressions with explicit imports. All vocabulary, source/scene/transport precedence, algorithms and public APIs unchanged. Historical RIOTBOX-1331 shipped source-derived lane differentiation, not this include migration. |
 | `crates/riotbox-app/src/bin/observer_audio_correlate.rs` | 10 | RIOTBOX-1514 | Cargo-standard directory main and ordinary private diagnostic owners for metadata I/O, report types, observer/manifest parsing, alignment, evidence and JSON/Markdown presentation; explicit regression imports. Binary identity, schemas, thresholds, CLI/report bytes and fail-closed evidence unchanged. |
 | `crates/riotbox-audio/src/bin/lane_recipe_pack.rs` | 6 | RIOTBOX-1517 | Cargo-standard directory main and ordinary private CLI/config, report data, case catalog, rendering, grid/source-slot measurements, signal delta, WAV I/O, manifest and Markdown owners; explicit regression imports. Pure data/config/measurement leaves prevent builder/rendering cycles. Primitive diagnostic boundary, complete algorithms, CLI/report/WAV bytes and thresholds unchanged. |
+| `crates/riotbox-audio/src/bin/w30_preview_compare.rs` | 4 | RIOTBOX-1519 | Same Cargo binary through directory main; private arguments/config, metrics ingestion, comparison policy, Markdown and manifest owners with explicit ordinary regression imports. All finite checks, thresholds, schemas and CLI/artifact bytes retained. |
+| `crates/riotbox-audio/src/bin/w30_preview_render.rs` | 2 | RIOTBOX-1519 | Same Cargo binary through directory main; private arguments/config, source-window adaptation and artifact I/O owners with explicit regressions. RIOTBOX-1518 guard and all rendering/source-window behavior retained; only freshly generated synthetic controls used for parity. |
