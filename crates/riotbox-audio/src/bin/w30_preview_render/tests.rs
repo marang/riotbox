@@ -85,6 +85,26 @@ mod tests {
     }
 
     #[test]
+    fn rejects_nan_render_durations() {
+        for duration in ["NaN", "nan", "+NaN", "-NaN"] {
+            assert!(
+                Args::parse(["--duration-seconds".into(), duration.into()]).is_err(),
+                "accepted duration {duration}"
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_infinite_render_durations() {
+        for duration in ["inf", "+inf", "-inf", "infinity", "+infinity", "-infinity"] {
+            assert!(
+                Args::parse(["--duration-seconds".into(), duration.into()]).is_err(),
+                "accepted duration {duration}"
+            );
+        }
+    }
+
+    #[test]
     fn averages_interleaved_source_frames_into_preview() {
         let preview =
             source_preview_from_interleaved(&[1.0, 3.0, 5.0, 7.0], 2, 10, 12).expect("preview");

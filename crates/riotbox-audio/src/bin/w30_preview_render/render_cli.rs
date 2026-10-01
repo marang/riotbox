@@ -155,7 +155,7 @@ impl Args {
                     duration_seconds = value
                         .parse::<f32>()
                         .map_err(|_| "--duration-seconds must be a number".to_string())?;
-                    if duration_seconds <= 0.0 {
+                    if !duration_seconds.is_finite() || duration_seconds <= 0.0 {
                         return Err("--duration-seconds must be greater than zero".into());
                     }
                 }
