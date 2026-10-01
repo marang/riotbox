@@ -41,7 +41,7 @@ Shared implementation and all twelve existing Feral/W-30 CLI safety bodies
 remain byte-identical. No another identity loop, generalized pack framework,
 new target/dependency, public library API or product/replay/source authority.
 
-The new layout owner is 57 lines and regression owner 169. Existing source/
+The new layout owner is 57 lines and regression owner 204. Existing source/
 mix/render-plan/metrics/configuration bodies remain untouched. Directory
 creation retains its original position and may precede rejection.
 
@@ -98,4 +98,6 @@ source-directory search or playback.
 - Both manifests, Rustfmt, diff/include gates and targeted RBX-407 readback pass.
 - Full source-free CI: `/tmp/riotbox-1537-ci-final.log`, actual exit zero
   and explicit final warning/error scan clear.
-- Exact-head native PR review/merge, archive and cleanup remain required.
+- Feature PR #1618 passed both exact-head native checks with no outstanding
+  review findings and merged as `468a9e9e9ca4d08bca76bedfc5372120424a5588`.
+  Archive PR #1619 and final branch/Linear cleanup remain separate obligations.
