@@ -327,6 +327,29 @@ include!("session/defaults.rs");
 The `pub use` layer can preserve compatibility, but the true ownership tree
 should be visible as modules.
 
+### Feral Grid MC-202 QA Ownership
+
+The bounded MC-202 family inside `feral_grid_pack` uses ordinary binary-private
+owners (RBX-401 / RIOTBOX-1530). Contour measurement/classification and low-band
+dominance own the existing profile. Phrase/state policy consumes that profile
+and the existing TR-909 support profile. Pressure rendering/evidence consumes
+those policies, low-body DSP and the existing library renderer; JSON
+presentation consumes the typed proofs and keeps serializer fields private.
+Shared render measurements own the unchanged `RenderMetrics`, `render_metrics`
+and `rms_delta`, rather than making pressure depend backwards on stem or mix
+orchestration. All dependencies are in-process, not new adapters or product
+truth. Shared data/functions and retained assertion constants are binary-bound;
+single-owner helpers/thresholds remain private. Explicit root compatibility
+imports preserve untouched legacy consumers, including manifest metric types.
+
+Preserve complete definitions, typed origin, fixed phrase vocabulary, all
+thresholds/literals/schemas, allocation and access/error/publication order, and
+existing regression/fixture identities and CLI/artifact bytes. No algorithm
+tuning, library runtime/DSP/API, Core/Session/action/replay or frozen Stage-A
+change. These fixed QA plans and synthetic metrics stay diagnostic, not
+source-general/product/music/hardness/human/live-device authority. Other root
+families remain visibly legacy; this is not a completed root migration.
+
 ## Include Inventory And Guardrail
 
 The initial RIOTBOX-1321 inventory lives in

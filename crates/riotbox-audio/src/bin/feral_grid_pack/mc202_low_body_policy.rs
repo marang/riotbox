@@ -1,10 +1,8 @@
-fn mc202_source_low_dominance(source_contour: Mc202SourceContourProfile) -> f32 {
-    (source_contour.low_band_energy_ratio
-        - source_contour
-            .mid_band_energy_ratio
-            .max(source_contour.high_band_energy_ratio))
-    .max(0.0)
-}
+use super::{
+    mc202_source_contour::{Mc202SourceContourProfile, mc202_source_low_dominance},
+    signal_filter::one_pole_lowpass,
+};
+use riotbox_audio::mc202::Mc202ContourHint;
 
 fn mc202_low_body_emphasis(source_contour: Mc202SourceContourProfile) -> f32 {
     if source_contour.contour_hint != Mc202ContourHint::Drop {
@@ -15,7 +13,7 @@ fn mc202_low_body_emphasis(source_contour: Mc202SourceContourProfile) -> f32 {
     ((low_dominance - 0.22) * 0.72).clamp(0.0, 0.38)
 }
 
-fn apply_mc202_low_body_emphasis(
+pub(super) fn apply_mc202_low_body_emphasis(
     samples: &mut [f32],
     source_contour: Mc202SourceContourProfile,
 ) -> f32 {

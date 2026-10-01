@@ -155,26 +155,7 @@ fn assert_grid_len(name: &str, samples: &[f32], grid: &Grid) {
     );
 }
 
-fn render_metrics(samples: &[f32], grid: &Grid) -> RenderMetrics {
-    RenderMetrics {
-        signal: signal_metrics_with_grid(
-            samples,
-            SAMPLE_RATE,
-            CHANNEL_COUNT,
-            grid.bpm,
-            grid.beats_per_bar,
-        ),
-        low_band: signal_metrics_with_grid(
-            &one_pole_lowpass(samples, 165.0),
-            SAMPLE_RATE,
-            CHANNEL_COUNT,
-            grid.bpm,
-            grid.beats_per_bar,
-        ),
-        bar_variation: bar_variation_metrics(samples, grid),
-        spectral_energy: spectral_energy_metrics(samples),
-    }
-}
+
 
 fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>> {
     let mut required_signal_metrics = vec![

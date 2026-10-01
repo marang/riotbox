@@ -374,21 +374,7 @@ fn mix_source_component_rms(samples: &[f32], gain: f32, grid: &Grid) -> f32 {
     .rms
 }
 
-fn rms_delta(left: &[f32], right: &[f32], grid: &Grid) -> f32 {
-    let delta: Vec<_> = left
-        .iter()
-        .zip(right.iter())
-        .map(|(left, right)| left - right)
-        .collect();
-    signal_metrics_with_grid(
-        &delta,
-        SAMPLE_RATE,
-        CHANNEL_COUNT,
-        grid.bpm,
-        grid.beats_per_bar,
-    )
-    .rms
-}
+
 
 fn sample_correlation(left: &[f32], right: &[f32]) -> f32 {
     let sample_count = left.len().min(right.len());
