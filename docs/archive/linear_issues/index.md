@@ -1739,4 +1739,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Replace TR-909 Core policy includes with explicit semantic policy modules
 - [RIOTBOX-1514.md](./RIOTBOX-1514.md)
   Replace observer/audio QA correlation includes with semantic Rust owners
+- [RIOTBOX-1516.md](./RIOTBOX-1516.md)
+  Architecture checkpoint after Core projection/timing/policy and Observer QA ownership
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
