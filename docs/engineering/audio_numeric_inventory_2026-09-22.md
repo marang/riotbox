@@ -47,6 +47,11 @@ Owner: [`public_api_shell.rs`](../../crates/riotbox-audio/src/runtime/public_api
 
 Evidence: `runtime/tests/signal_metrics.rs`, `runtime/tests/render_parity.rs`,
 source-monitor hot-sum tests; existing RIOTBOX-1402 evidence in the guide.
+[Baseline protocol v1](../benchmarks/master_bus_limiter_baseline_protocol_v1.md)
+(RIOTBOX-1550 / RBX-417) adds signed-neighbor/overload/partition and named
+five-owner synthetic exact-mix evidence. A write/count requires the computed
+delta to be strictly greater than `f32::EPSILON`; this is not above-knee count.
+The unchanged values remain provisional, not human-calibrated.
 Change rule: shared runtime safety requires buffer/parity proof and the
 RIOTBOX-1501 versioned calibration protocol before audible tuning. No inferred
 speaker, hearing-safety, intersample-peak or device guarantee.

@@ -594,6 +594,12 @@ Current limiter policy:
   enter the existing tanh knee capped at the ceiling. Retaining these values is
   not a claim of true-peak, device or hearing-safety calibration. Exact clean-
   path QA still requires zero limiter-modified samples and zero pre/post clips
+- [Source-free baseline protocol v1](../benchmarks/master_bus_limiter_baseline_protocol_v1.md)
+  (RIOTBOX-1550 / RBX-417) fixes in-memory boundary/overload/partition and named
+  five-owner RuntimeMix controls. Actual writes/counting require a shaped delta
+  strictly greater than `f32::EPSILON`; mathematical above-knee count is not the
+  modification count. This is a baseline prerequisite, not RIOTBOX-1501
+  calibration or authorization for source, alternative policy or playback.
 - product runtime mixes and Feral-grid product mixes pass through the shared
   master-bus soft-limiter seam after source-monitor / lane mix policy and
   before device or WAV output
