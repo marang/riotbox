@@ -476,6 +476,28 @@ root tests and their helper; root is not yet a thin facade or fully migrated.
 No library DSP/runtime/Core/Session/frozen Stage-A change or source/music/
 hardness/human/release/device verdict follows from namespace ownership.
 
+### Final Feral Regression And Synthetic Fixture Ownership
+
+RBX-415 / RIOTBOX-1547 replaces the last two textual includes with one ordinary
+cfg(test) root tests module and one cfg(test) synthetic fixture sibling. Keep
+all twelve regression names under tests:: and all four complete fixture
+functions; import actual owners rather than root wildcard capture. Only the
+fixture functions are pub(super), never a production fallback or public API.
+Do not introduce family namespaces merely for file size and lose stable test
+identities. Remove only the 26 compiler-proven unused root test imports;
+untouched manifest/test consumers retain their necessary compatibility aliases.
+
+Compare all complete test/attribute bodies after applying the same rustfmt to
+the original unwrapped module and candidate: ordinary-module formatting adds
+one expression-closure brace pair that the legacy include was not formatting.
+Keep every assertion, literal, fixture, algorithm and ignored state unchanged.
+Four fixture body tokens match apart from binary-private visibility/formatting.
+Fresh Debug/Release identities, actual CLI/artifact parity and exact include
+guard are required. The retained empty allowlist is valid and admits no site.
+Zero textual includes completes this inventory, not the root's compatibility
+alias migration or a thin-facade/whole-architecture/quality verdict. No Core/
+Session/replay/runtime/frozen Stage-A change or source/human/release promotion.
+
 ## Include Inventory And Guardrail
 
 The initial RIOTBOX-1321 inventory lives in

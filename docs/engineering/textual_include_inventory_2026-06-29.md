@@ -79,6 +79,10 @@ Result:
 - RIOTBOX-1546 migration, 2026-10-01: 2 remaining sites in 2 owners;
   mixed stem functions have actual W-30 trigger, validation, artifact-I/O and
   reproduction-command owners; only root tests and their helper stay legacy
+- RIOTBOX-1547 migration, 2026-10-01: 0 remaining sites in 0 owners;
+  the twelve stable root regressions and four synthetic fixture functions have
+  real test-only owners and explicit imports; the retained empty allowlist
+  rejects any new site, while remaining root compatibility aliases stay visible
 - no generated-code include site identified in this inventory
 - every current include is treated as legacy/mechanical until proven otherwise
 
@@ -112,8 +116,7 @@ legacy inventory; it does not approve new textual include sites.
 
 | Owner | Count | Included files / families | Purpose | Classification | Migration risk | Follow-up |
 | --- | ---: | --- | --- | --- | --- | --- |
-| `crates/riotbox-audio/src/bin/feral_grid_pack.rs` | 1 | remaining tests | Feral grid QA/pack CLI | remaining test compatibility assembly; production numerical/timing/policy/rendering/validation/publication/reproduction and shared report values have actual owners (RIOTBOX-1521/1523/1527/1528/1529/1530/1531/1533/1534/1543/1544/1546) | low: test-only lexical owner, root compatibility aliases still explicit | RIOTBOX-1545 checkpoint completed; bounded test/helper ownership may follow, not a thin-facade or completed root migration |
-| `crates/riotbox-audio/src/bin/feral_grid_pack/tests.rs` | 1 | shared test helpers | Feral grid QA tests | mechanical test compatibility split | low: test-only helper scope | future QA-bin module slice |
+| None | 0 | None | All scanned Rust owners | Textual include inventory complete | Remaining Feral root manifest/test compatibility aliases still need semantic assessment | No thin-facade, whole-architecture or audio-quality claim follows from zero includes |
 
 ## Migration Order
 
