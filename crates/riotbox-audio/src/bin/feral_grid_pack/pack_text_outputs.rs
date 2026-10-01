@@ -266,7 +266,7 @@ fn master_bus_limiter_report_lines(report: &PackReport) -> String {
 }
 
 fn write_readme(
-    output_dir: &Path,
+    path: &Path,
     args: &Args,
     grid: &Grid,
     grid_bpm: GridBpmDecision,
@@ -274,7 +274,7 @@ fn write_readme(
     source_character_window_selection: SourceCharacterWindowSelection,
 ) -> std::io::Result<()> {
     fs::write(
-        output_dir.join("README.md"),
+        path,
         format!(
             "# Feral Grid Demo Pack\n\n\
              This pack is the current Riotbox offline QA path for checking a musical grid,\n\

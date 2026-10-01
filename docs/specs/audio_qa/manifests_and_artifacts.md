@@ -156,6 +156,30 @@ contract before playback or promotion.
 
 Local audio QA output should use a stable structure.
 
+### Feral grid source-preservation preflight
+
+`feral_grid_pack` owns one typed plan for its eight WAVs, eight associated
+metrics files and three metadata files (RBX-405 / RIOTBOX-1535). Before analysis,
+rendering or any artifact replacement, compare every existing planned output
+with the input's physical file identity. Reject same-path, symlink, hardlink and
+directory-alias collisions. A WAV stored under a metrics or metadata filename
+is still an input and must not be overwritten. Distinct files with equal bytes
+are not identity collisions; unrelated inputs inside the output directory remain
+supported. Writers consume that same plan, including the shared metrics naming
+function, rather than maintaining a second safety-only layout list.
+
+Only a missing output directory entry may be skipped. Existing dangling links,
+non-regular destinations and metadata/identity/open failures reject before any
+artifact replacement. `same-file` supplies read-only identity handles on Unix
+and Windows; both compared handles remain open through comparison. This adds
+an explicit requirement that existing outputs be readable/identifiable. An
+unsupported identity backend fails closed rather than using lexical equality.
+Directory creation can still precede rejection. This is a bounded offline
+preflight against a stable filesystem namespace, not concurrent namespace
+locking, atomic multi-file publication, a power-loss guarantee or a source
+identity/qualification gate. It changes no DSP, musical policy, frozen Stage-A
+contract or human verdict.
+
 Recommended shape:
 
 ```text
