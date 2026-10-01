@@ -1737,4 +1737,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Replace JamApp lane-projection include namespace with semantic render owners
 - [RIOTBOX-1513.md](./RIOTBOX-1513.md)
   Replace TR-909 Core policy includes with explicit semantic policy modules
+- [RIOTBOX-1514.md](./RIOTBOX-1514.md)
+  Replace observer/audio QA correlation includes with semantic Rust owners
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
