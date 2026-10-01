@@ -148,6 +148,23 @@ Existing cohesive CLI/drift regression families remain together despite their
 roughly 500-line size; splitting their fixture contracts only for line count
 would obscure the first migration's behavior-preservation proof.
 
+### Lane Recipe Diagnostic Ownership
+
+`lane_recipe_pack/main.rs` retains the single existing Cargo binary
+(RBX-392 / RIOTBOX-1517). Ordinary private owners separate arguments/config,
+typed ephemeral report data, the existing case catalog, pack orchestration,
+per-case rendering, MC-202 grid/source-slot measurements, signal deltas,
+WAV publication, manifest serialization and Markdown presentation. Shared data,
+config and signal measurements are dependency leaves; rendering and reporting
+consume them, not the reverse. Cross-owner helpers/fields are bounded to the
+binary; serialization internals and one-owner helpers stay private. Ordinary
+regressions name actual owners and retain complete bodies/fixture identities.
+The existing generated PCM timing evidence and fixed render plans are
+diagnostic controls, not product source intelligence or a second arrangement
+model. Preserve every algorithm/literal/threshold, CLI/report/WAV byte and
+the existing primitive-renderer promotion boundary. Technical-only reruns do
+not supply or transfer a human verdict.
+
 ## Target Shape
 
 Prefer this:

@@ -1,27 +1,23 @@
+use super::config::CHANNEL_COUNT;
+use super::config::SAMPLE_RATE;
+use super::report_model::Mc202PhraseGridTimingMetrics;
+use super::report_model::RenderPair;
+
 const MC202_PHRASE_GRID_RESOLUTION: &str = "sixteenth";
+
 const MC202_PHRASE_LENGTH_STEPS: u32 = 64;
+
 const MC202_PHRASE_LENGTH_BEATS: f64 = 16.0;
-const MC202_PHRASE_GRID_MIN_HIT_RATIO: f64 = 0.95;
-const MC202_PHRASE_GRID_MAX_ONSET_OFFSET_MS: f64 = 8.0;
+
+pub(super) const MC202_PHRASE_GRID_MIN_HIT_RATIO: f64 = 0.95;
+
+pub(super) const MC202_PHRASE_GRID_MAX_ONSET_OFFSET_MS: f64 = 8.0;
+
 const MC202_ONSET_THRESHOLD: f32 = 0.0001;
+
 const MC202_ONSET_WINDOW_FRAMES: usize = 128;
 
-#[derive(Copy, Clone, Debug, PartialEq, Serialize)]
-struct Mc202PhraseGridTimingMetrics {
-    resolution: &'static str,
-    phrase_length_steps: u32,
-    phrase_length_beats: f64,
-    position_beats: f64,
-    starts_on_phrase_boundary: bool,
-    candidate_onset_count: usize,
-    grid_aligned_onset_count: usize,
-    hit_ratio: f64,
-    max_onset_offset_ms: f64,
-    max_allowed_onset_offset_ms: f64,
-    passed: bool,
-}
-
-fn mc202_phrase_grid_metrics(
+pub(super) fn mc202_phrase_grid_metrics(
     render_pair: &RenderPair,
     candidate_samples: &[f32],
 ) -> Option<Mc202PhraseGridTimingMetrics> {
@@ -45,11 +41,8 @@ fn mc202_phrase_grid_metrics(
     } else {
         grid_aligned_onset_count as f64 / onset_frames.len() as f64
     };
-    let max_onset_offset_ms = offsets
-        .into_iter()
-        .fold(0.0_f64, f64::max)
-        * 1000.0
-        / SAMPLE_RATE as f64;
+    let max_onset_offset_ms =
+        offsets.into_iter().fold(0.0_f64, f64::max) * 1000.0 / SAMPLE_RATE as f64;
     let starts_on_phrase_boundary =
         nearest_grid_offset_beats(candidate.position_beats, MC202_PHRASE_LENGTH_BEATS) <= 0.0001;
     let passed = starts_on_phrase_boundary

@@ -1,33 +1,25 @@
-use riotbox_core::source_graph::{
-    MeterHint, PhraseSpan, SourceTimingProbeBpmCandidatePolicy, TimingModel,
-    timing_model_from_probe_bpm_candidates,
-};
+use super::config::BEATS_PER_BAR;
+use super::config::DEFAULT_BPM;
+use super::report_model::Mc202SourcePhraseSlotMetrics;
+use super::report_model::RenderPair;
+use riotbox_audio::source_audio::SourceAudioCache;
+use riotbox_audio::source_timing_probe::SourceTimingProbeConfig;
+use riotbox_audio::source_timing_probe::analyze_source_timing_probe;
+use riotbox_core::source_graph::MeterHint;
+use riotbox_core::source_graph::PhraseSpan;
+use riotbox_core::source_graph::SourceTimingProbeBpmCandidatePolicy;
+use riotbox_core::source_graph::TimingModel;
+use riotbox_core::source_graph::timing_model_from_probe_bpm_candidates;
 
-use riotbox_audio::{
-    source_audio::SourceAudioCache,
-    source_timing_probe::{SourceTimingProbeConfig, analyze_source_timing_probe},
-};
+pub(super) const MC202_SOURCE_PHRASE_SLOT_CONTRACT: &str = "source_graph_phrase_grid.v0";
 
-const MC202_SOURCE_PHRASE_SLOT_CONTRACT: &str = "source_graph_phrase_grid.v0";
 const LANE_RECIPE_SOURCE_TIMING_SAMPLE_RATE: u32 = 4_096;
+
 const LANE_RECIPE_SOURCE_TIMING_CHANNELS: u16 = 1;
+
 const LANE_RECIPE_SOURCE_TIMING_IMPULSE_FRAMES: usize = 64;
 
-#[derive(Clone, Debug, PartialEq, Serialize)]
-struct Mc202SourcePhraseSlotMetrics {
-    contract: &'static str,
-    source_hypothesis_id: Option<String>,
-    phrase_grid_available: bool,
-    phrase_index: Option<u32>,
-    phrase_start_bar: Option<u32>,
-    phrase_end_bar: Option<u32>,
-    candidate_position_beats: f64,
-    candidate_bar_index: u32,
-    starts_on_source_phrase_boundary: bool,
-    passed: bool,
-}
-
-fn mc202_source_phrase_slot_metrics(
+pub(super) fn mc202_source_phrase_slot_metrics(
     render_pair: &RenderPair,
     source_timing: &TimingModel,
 ) -> Option<Mc202SourcePhraseSlotMetrics> {
@@ -37,9 +29,9 @@ fn mc202_source_phrase_slot_metrics(
 
     let phrase_grid = primary_phrase_grid(source_timing);
     let candidate_bar_index = bar_index_for_position(candidate.position_beats);
-    let selected_phrase = phrase_grid
-        .iter()
-        .find(|phrase| candidate_bar_index >= phrase.start_bar && candidate_bar_index <= phrase.end_bar);
+    let selected_phrase = phrase_grid.iter().find(|phrase| {
+        candidate_bar_index >= phrase.start_bar && candidate_bar_index <= phrase.end_bar
+    });
     let starts_on_source_phrase_boundary = selected_phrase.is_some_and(|phrase| {
         candidate_bar_index == phrase.start_bar
             && phrase_boundary_offset_beats(candidate.position_beats, phrase.start_bar) <= 0.0001
@@ -59,7 +51,7 @@ fn mc202_source_phrase_slot_metrics(
     })
 }
 
-fn lane_recipe_source_timing_model() -> TimingModel {
+pub(super) fn lane_recipe_source_timing_model() -> TimingModel {
     let source = lane_recipe_source_timing_audio();
     let probe = analyze_source_timing_probe(
         &source,
