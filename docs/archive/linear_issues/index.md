@@ -1751,4 +1751,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Replace W-30 preview QA includes with semantic Rust module owners
 - [RIOTBOX-1520.md](./RIOTBOX-1520.md)
   Replace Feral before/after QA includes with semantic diagnostic owners
+- [RIOTBOX-1521.md](./RIOTBOX-1521.md)
+  Isolate Feral grid numerical evidence and grid/filter dependency leaves
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
