@@ -1807,4 +1807,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Replace final Feral test includes with explicit regression and synthetic fixture modules
 - [RIOTBOX-1548.md](./RIOTBOX-1548.md)
   Remove final Feral root manifest and regression compatibility bridges
+- [RIOTBOX-1549.md](./RIOTBOX-1549.md)
+  Review completed semantic QA module boundaries and product evidence separation
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
