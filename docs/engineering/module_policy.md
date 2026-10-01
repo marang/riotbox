@@ -115,6 +115,20 @@ private. Preserve timing trust, source/section/capture identity, availability,
 sample-selection/chop logic and committed-action semantics. This boundary
 neither loads audio nor changes sound policy.
 
+### Core TR-909 Policy Ownership
+
+`tr909_policy` remains the Core-owned public policy facade
+(RBX-390 / RIOTBOX-1513). Explicit exports preserve its nine public types and
+three public functions. Private modules own typed vocabulary/projection,
+render-policy composition, source-support section/profile/reason and
+pattern/phrase adaptation. Source Graph and Session remain inputs, not App or
+Audio dependencies. Shared internal support data and the three cross-owner
+helpers are visible only within the policy subtree; remaining helpers stay
+private. Ordinary synthetic regressions consume the existing facade explicitly.
+Preserve complete enum labels/methods, public attributes/fields/signatures,
+source/scene/transport precedence, algorithm bodies and fixture identities.
+This migration creates no second policy or product model and changes no sound.
+
 ## Target Shape
 
 Prefer this:

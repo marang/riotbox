@@ -30,6 +30,8 @@ Result:
   all 12 Audio runtime-test includes replaced by ordinary regression modules
 - RIOTBOX-1512 migration, 2026-10-01: 56 remaining sites in 8 owners;
   both JamApp lane-projection includes replaced by semantic render owners
+- RIOTBOX-1513 migration, 2026-10-01: 54 remaining sites in 7 owners;
+  both Core TR-909 policy/test includes replaced by ordinary semantic modules
 - no generated-code include site identified in this inventory
 - every current include is treated as legacy/mechanical until proven otherwise
 
@@ -63,7 +65,6 @@ legacy inventory; it does not approve new textual include sites.
 
 | Owner | Count | Included files / families | Purpose | Classification | Migration risk | Follow-up |
 | --- | ---: | --- | --- | --- | --- | --- |
-| `crates/riotbox-core/src/tr909_policy.rs` | 2 | `tr909_policy/render_policy`, tests | TR-909 policy and tests | mechanical product split | low/medium: policy API | RIOTBOX-1331 |
 | `crates/riotbox-audio/src/bin/feral_grid_pack.rs` | 29 | pack builder, metrics, TR-909, MC-202, W-30, mix, timing, manifest, render, tests | Feral grid QA/pack CLI | mechanical QA-bin split | medium: large QA surface | future QA-bin module slice |
 | `crates/riotbox-audio/src/bin/feral_grid_pack/tests.rs` | 1 | shared test helpers | Feral grid QA tests | mechanical test compatibility split | low: test-only helper scope | future QA-bin module slice |
 | `crates/riotbox-audio/src/bin/feral_before_after_pack.rs` | 2 | pack builder, metrics manifest | Feral before/after QA CLI | mechanical QA-bin split | low | future QA-bin module slice |
@@ -106,3 +107,4 @@ of mixing them into the module move.
 | `crates/riotbox-core/src/source_graph/timing_probe_candidates.rs` | 12 | RIOTBOX-1510 | Explicit public compatibility exports over private onset-evidence, period-scoring, downbeat, hypothesis, grid, drift/groove, model, report and grid-use-policy owners. Hybrid candidate tests become ordinary regression-family children with separate synthetic fixtures; comparator tests live under period scoring. Algorithms and thresholds unchanged. Historical RIOTBOX-1330 covered live-ingest/confirmation wiring, not this include migration. |
 | `crates/riotbox-audio/src/runtime/tests.rs` | 12 | RIOTBOX-1511 | Ordinary lifecycle, shared-state, mixer/lane, transport-stop, Source Monitor, fill, gesture and metrics regressions with explicit imports. Shared fixture models, synthetic PCM, signal helpers, mix plans, fill recipes and gesture fixtures are test-only owners. The existing telemetry test imports its actual runtime owners; production runtime and DSP are unchanged. |
 | `crates/riotbox-app/src/jam_app/projection.rs` | 2 | RIOTBOX-1512 | Explicit JamApp-only compatibility exports over private TR-909, MC-202, scene-context and W-30 preview/material/resample owners, retaining the existing source-phrase child. All render policy, preparation, timing/identity and fail-closed behavior unchanged. |
+| `crates/riotbox-core/src/tr909_policy.rs` | 2 | RIOTBOX-1513 | Explicit public compatibility facade over private typed model, render-policy composition, source-support and pattern/phrase owners; ordinary synthetic regressions with explicit imports. All vocabulary, source/scene/transport precedence, algorithms and public APIs unchanged. Historical RIOTBOX-1331 shipped source-derived lane differentiation, not this include migration. |

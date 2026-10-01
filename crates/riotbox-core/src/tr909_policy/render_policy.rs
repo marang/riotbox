@@ -1,172 +1,15 @@
+use super::model::{
+    Tr909RenderModePolicy, Tr909RenderPolicyProjection, Tr909RenderRoutingPolicy,
+    Tr909TakeoverRenderProfilePolicy,
+};
+use super::pattern_variation::{derive_tr909_pattern_adoption, derive_tr909_phrase_variation};
+use super::source_support::derive_tr909_source_support;
 use crate::{
     ids::SceneId,
     session::{SceneState, Tr909LaneState, Tr909ReinforcementModeState, Tr909TakeoverProfileState},
-    source_graph::{
-        EnergyClass, Section, SectionLabelHint, SourceGraph, section_for_projected_scene,
-        section_for_transport_bar,
-    },
+    source_graph::SourceGraph,
     transport::TransportClockState,
 };
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Tr909RenderModePolicy {
-    Idle,
-    SourceSupport,
-    Fill,
-    BreakReinforce,
-    Takeover,
-}
-
-impl Tr909RenderModePolicy {
-    #[must_use]
-    pub const fn label(self) -> &'static str {
-        match self {
-            Self::Idle => "idle",
-            Self::SourceSupport => "source_support",
-            Self::Fill => "fill",
-            Self::BreakReinforce => "break_reinforce",
-            Self::Takeover => "takeover",
-        }
-    }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Tr909RenderRoutingPolicy {
-    SourceOnly,
-    DrumBusSupport,
-    DrumBusTakeover,
-}
-
-impl Tr909RenderRoutingPolicy {
-    #[must_use]
-    pub const fn label(self) -> &'static str {
-        match self {
-            Self::SourceOnly => "source_only",
-            Self::DrumBusSupport => "drum_bus_support",
-            Self::DrumBusTakeover => "drum_bus_takeover",
-        }
-    }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Tr909SourceSupportProfilePolicy {
-    SteadyPulse,
-    BreakLift,
-    DropDrive,
-}
-
-impl Tr909SourceSupportProfilePolicy {
-    #[must_use]
-    pub const fn label(self) -> &'static str {
-        match self {
-            Self::SteadyPulse => "steady_pulse",
-            Self::BreakLift => "break_lift",
-            Self::DropDrive => "drop_drive",
-        }
-    }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Tr909SourceSupportContextPolicy {
-    SceneTarget,
-    TransportBar,
-}
-
-impl Tr909SourceSupportContextPolicy {
-    #[must_use]
-    pub const fn label(self) -> &'static str {
-        match self {
-            Self::SceneTarget => "scene_target",
-            Self::TransportBar => "transport_bar",
-        }
-    }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Tr909SourceSupportReasonPolicy {
-    FeralBreakLift,
-}
-
-impl Tr909SourceSupportReasonPolicy {
-    #[must_use]
-    pub const fn label(self) -> &'static str {
-        match self {
-            Self::FeralBreakLift => "feral_break_lift",
-        }
-    }
-
-    #[must_use]
-    pub const fn cue_label(self) -> &'static str {
-        match self {
-            Self::FeralBreakLift => "feral break lift",
-        }
-    }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Tr909TakeoverRenderProfilePolicy {
-    ControlledPhrase,
-    SceneLock,
-}
-
-impl Tr909TakeoverRenderProfilePolicy {
-    #[must_use]
-    pub const fn label(self) -> &'static str {
-        match self {
-            Self::ControlledPhrase => "controlled_phrase",
-            Self::SceneLock => "scene_lock",
-        }
-    }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Tr909PatternAdoptionPolicy {
-    SupportPulse,
-    MainlineDrive,
-    TakeoverGrid,
-}
-
-impl Tr909PatternAdoptionPolicy {
-    #[must_use]
-    pub const fn label(self) -> &'static str {
-        match self {
-            Self::SupportPulse => "support_pulse",
-            Self::MainlineDrive => "mainline_drive",
-            Self::TakeoverGrid => "takeover_grid",
-        }
-    }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Tr909PhraseVariationPolicy {
-    PhraseAnchor,
-    PhraseLift,
-    PhraseDrive,
-    PhraseRelease,
-}
-
-impl Tr909PhraseVariationPolicy {
-    #[must_use]
-    pub const fn label(self) -> &'static str {
-        match self {
-            Self::PhraseAnchor => "phrase_anchor",
-            Self::PhraseLift => "phrase_lift",
-            Self::PhraseDrive => "phrase_drive",
-            Self::PhraseRelease => "phrase_release",
-        }
-    }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct Tr909RenderPolicyProjection {
-    pub mode: Tr909RenderModePolicy,
-    pub routing: Tr909RenderRoutingPolicy,
-    pub source_support_profile: Option<Tr909SourceSupportProfilePolicy>,
-    pub source_support_context: Option<Tr909SourceSupportContextPolicy>,
-    pub takeover_profile: Option<Tr909TakeoverRenderProfilePolicy>,
-    pub pattern_adoption: Option<Tr909PatternAdoptionPolicy>,
-    pub phrase_variation: Option<Tr909PhraseVariationPolicy>,
-}
 
 #[must_use]
 pub fn derive_tr909_render_policy(
@@ -174,7 +17,13 @@ pub fn derive_tr909_render_policy(
     transport: &TransportClockState,
     source_graph: Option<&SourceGraph>,
 ) -> Tr909RenderPolicyProjection {
-    derive_tr909_render_policy_with_scene_context(tr909, transport, source_graph, None, &SceneState::default())
+    derive_tr909_render_policy_with_scene_context(
+        tr909,
+        transport,
+        source_graph,
+        None,
+        &SceneState::default(),
+    )
 }
 
 #[must_use]
@@ -249,94 +98,6 @@ pub fn derive_tr909_render_policy_with_scene_context(
     }
 }
 
-#[must_use]
-pub fn derive_tr909_source_support_reason(
-    source_graph: Option<&SourceGraph>,
-    transport: &TransportClockState,
-    scene_context: Option<&SceneId>,
-    scene_state: &SceneState,
-) -> Option<Tr909SourceSupportReasonPolicy> {
-    let graph = source_graph?;
-    let (current_section, _) = tr909_source_support_section(graph, transport, scene_context, scene_state)?;
-    let profile = source_support_profile_for_section(current_section);
-    should_lift_feral_break_support(graph, profile)
-        .then_some(Tr909SourceSupportReasonPolicy::FeralBreakLift)
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-struct Tr909SourceSupportPolicy {
-    profile: Tr909SourceSupportProfilePolicy,
-    context: Tr909SourceSupportContextPolicy,
-}
-
-fn derive_tr909_source_support(
-    source_graph: Option<&SourceGraph>,
-    transport: &TransportClockState,
-    scene_context: Option<&SceneId>,
-    scene_state: &SceneState,
-) -> Option<Tr909SourceSupportPolicy> {
-    let graph = source_graph?;
-    let (current_section, context) = tr909_source_support_section(graph, transport, scene_context, scene_state)?;
-
-    Some(Tr909SourceSupportPolicy {
-        profile: source_support_profile_for_graph_section(graph, current_section),
-        context,
-    })
-}
-
-fn tr909_source_support_section<'a>(
-    graph: &'a SourceGraph,
-    transport: &TransportClockState,
-    scene_context: Option<&SceneId>,
-    scene_state: &SceneState,
-) -> Option<(&'a Section, Tr909SourceSupportContextPolicy)> {
-    scene_context
-        .and_then(|scene_id| {
-            section_for_projected_scene(graph, scene_state, scene_id)
-                .map(|section| (section, Tr909SourceSupportContextPolicy::SceneTarget))
-        })
-        .or_else(|| {
-            section_for_transport_bar(graph, transport)
-                .map(|section| (section, Tr909SourceSupportContextPolicy::TransportBar))
-        })
-}
-
-fn source_support_profile_for_graph_section(
-    graph: &SourceGraph,
-    section: &Section,
-) -> Tr909SourceSupportProfilePolicy {
-    let profile = source_support_profile_for_section(section);
-    if should_lift_feral_break_support(graph, profile) {
-        Tr909SourceSupportProfilePolicy::BreakLift
-    } else {
-        profile
-    }
-}
-
-fn source_support_profile_for_section(section: &Section) -> Tr909SourceSupportProfilePolicy {
-    match (section.label_hint, section.energy_class) {
-        (SectionLabelHint::Break | SectionLabelHint::Build, _) => {
-            Tr909SourceSupportProfilePolicy::BreakLift
-        }
-        (
-            SectionLabelHint::Drop | SectionLabelHint::Chorus,
-            EnergyClass::High | EnergyClass::Peak,
-        ) => Tr909SourceSupportProfilePolicy::DropDrive,
-        _ => Tr909SourceSupportProfilePolicy::SteadyPulse,
-    }
-}
-
-fn should_lift_feral_break_support(
-    graph: &SourceGraph,
-    profile: Tr909SourceSupportProfilePolicy,
-) -> bool {
-    if profile != Tr909SourceSupportProfilePolicy::SteadyPulse {
-        return false;
-    }
-
-    graph.has_feral_break_support_evidence()
-}
-
 fn derive_tr909_takeover_render_profile(
     tr909: &Tr909LaneState,
 ) -> Option<Tr909TakeoverRenderProfilePolicy> {
@@ -352,108 +113,4 @@ fn derive_tr909_takeover_render_profile(
             Some(Tr909TakeoverRenderProfilePolicy::SceneLock)
         }
     }
-}
-
-fn derive_tr909_pattern_adoption(
-    mode: Tr909RenderModePolicy,
-    pattern_ref: Option<&str>,
-    source_support_profile: Option<Tr909SourceSupportProfilePolicy>,
-    takeover_profile: Option<Tr909TakeoverRenderProfilePolicy>,
-) -> Option<Tr909PatternAdoptionPolicy> {
-    if matches!(mode, Tr909RenderModePolicy::Idle) {
-        return None;
-    }
-
-    if matches!(mode, Tr909RenderModePolicy::Takeover)
-        || matches!(
-            takeover_profile,
-            Some(Tr909TakeoverRenderProfilePolicy::ControlledPhrase)
-        )
-    {
-        return Some(Tr909PatternAdoptionPolicy::TakeoverGrid);
-    }
-
-    let pattern_ref = pattern_ref.map(str::to_ascii_lowercase);
-    if pattern_ref
-        .as_deref()
-        .is_some_and(|pattern| pattern.contains("takeover"))
-    {
-        return Some(Tr909PatternAdoptionPolicy::TakeoverGrid);
-    }
-
-    if pattern_ref
-        .as_deref()
-        .is_some_and(|pattern| pattern.contains("main") || pattern.contains("drop"))
-        || matches!(
-            source_support_profile,
-            Some(Tr909SourceSupportProfilePolicy::DropDrive)
-        )
-        || matches!(
-            mode,
-            Tr909RenderModePolicy::Fill | Tr909RenderModePolicy::BreakReinforce
-        )
-    {
-        return Some(Tr909PatternAdoptionPolicy::MainlineDrive);
-    }
-
-    Some(Tr909PatternAdoptionPolicy::SupportPulse)
-}
-
-fn derive_tr909_phrase_variation(
-    mode: Tr909RenderModePolicy,
-    transport: &TransportClockState,
-    pattern_ref: Option<&str>,
-    source_support_profile: Option<Tr909SourceSupportProfilePolicy>,
-    takeover_profile: Option<Tr909TakeoverRenderProfilePolicy>,
-) -> Option<Tr909PhraseVariationPolicy> {
-    if matches!(mode, Tr909RenderModePolicy::Idle) {
-        return None;
-    }
-
-    let pattern_ref = pattern_ref.map(str::to_ascii_lowercase);
-    if pattern_ref
-        .as_deref()
-        .is_some_and(|pattern| pattern.contains("release"))
-    {
-        return Some(Tr909PhraseVariationPolicy::PhraseRelease);
-    }
-
-    let phrase_cycle = transport.phrase_index % 4;
-    let variation = match mode {
-        Tr909RenderModePolicy::Takeover => match takeover_profile {
-            Some(Tr909TakeoverRenderProfilePolicy::ControlledPhrase) | None => match phrase_cycle {
-                0 => Tr909PhraseVariationPolicy::PhraseAnchor,
-                1 => Tr909PhraseVariationPolicy::PhraseLift,
-                2 => Tr909PhraseVariationPolicy::PhraseDrive,
-                _ => Tr909PhraseVariationPolicy::PhraseRelease,
-            },
-            Some(Tr909TakeoverRenderProfilePolicy::SceneLock) => match phrase_cycle % 2 {
-                0 => Tr909PhraseVariationPolicy::PhraseDrive,
-                _ => Tr909PhraseVariationPolicy::PhraseAnchor,
-            },
-        },
-        Tr909RenderModePolicy::Fill | Tr909RenderModePolicy::BreakReinforce => {
-            match phrase_cycle % 2 {
-                0 => Tr909PhraseVariationPolicy::PhraseDrive,
-                _ => Tr909PhraseVariationPolicy::PhraseLift,
-            }
-        }
-        Tr909RenderModePolicy::SourceSupport => match source_support_profile {
-            Some(Tr909SourceSupportProfilePolicy::SteadyPulse) | None => match phrase_cycle % 2 {
-                0 => Tr909PhraseVariationPolicy::PhraseAnchor,
-                _ => Tr909PhraseVariationPolicy::PhraseLift,
-            },
-            Some(Tr909SourceSupportProfilePolicy::BreakLift) => match phrase_cycle % 2 {
-                0 => Tr909PhraseVariationPolicy::PhraseLift,
-                _ => Tr909PhraseVariationPolicy::PhraseDrive,
-            },
-            Some(Tr909SourceSupportProfilePolicy::DropDrive) => match phrase_cycle % 2 {
-                0 => Tr909PhraseVariationPolicy::PhraseDrive,
-                _ => Tr909PhraseVariationPolicy::PhraseLift,
-            },
-        },
-        Tr909RenderModePolicy::Idle => Tr909PhraseVariationPolicy::PhraseAnchor,
-    };
-
-    Some(variation)
 }
