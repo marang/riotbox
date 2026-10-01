@@ -1749,4 +1749,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Reject non-finite W-30 preview render durations before artifact writes
 - [RIOTBOX-1519.md](./RIOTBOX-1519.md)
   Replace W-30 preview QA includes with semantic Rust module owners
+- [RIOTBOX-1520.md](./RIOTBOX-1520.md)
+  Replace Feral before/after QA includes with semantic diagnostic owners
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
