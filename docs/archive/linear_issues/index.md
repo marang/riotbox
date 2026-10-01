@@ -1787,4 +1787,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Reject Before/After pack destinations that replace their input source
 - [RIOTBOX-1538.md](./RIOTBOX-1538.md)
   Preserve W-30 comparison inputs before report and manifest publication
+- [RIOTBOX-1539.md](./RIOTBOX-1539.md)
+  Review cross-slice QA input integrity and product-spine boundaries
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
