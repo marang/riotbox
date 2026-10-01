@@ -4,6 +4,8 @@ mod args;
 mod grid_bpm_decision;
 #[path = "feral_grid_pack/output_paths.rs"]
 mod output_paths;
+#[path = "qa_source_safety/mod.rs"]
+mod qa_source_safety;
 #[path = "feral_grid_pack/source_timing_analysis.rs"]
 mod source_timing_analysis;
 #[path = "feral_grid_pack/source_timing_groove_policy.rs"]
