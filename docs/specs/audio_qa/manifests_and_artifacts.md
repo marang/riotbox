@@ -231,6 +231,21 @@ unchanged valid WAV/metrics bytes. This is a stable-namespace two-output check,
 not a whole-pack transaction, content-integrity/quality claim or automatic
 missing-source fallback. Other renderers' mutual-output behavior is not covered.
 
+`feral_grid_pack` additionally requires every pair among its nineteen planned
+WAV/metrics/metadata destinations to be physically distinct
+(RBX-410 / RIOTBOX-1541). One private artifact iterator in the existing typed
+plan supplies both source preservation and mutual-output admission. After the
+existing source-format and source-alias checks, admit all destinations with
+the shared absent/regular helper, then compare existing files through the same
+read-only identity guard, before analysis/rendering or any artifact write.
+Only genuinely absent entries skip; even a late invalid or coupled metadata
+destination cannot publish earlier audio. Independent equal-content files and
+ordinary overwrite remain supported. This bounded offline check has at most
+171 pair comparisons, preserves the actual layout and valid artifact bytes,
+and introduces no second filesystem backend, product state or pack transaction.
+Stable-namespace/readability/fail-closed limits above apply. No inferred fix for
+other pack renderers, sound-quality/source/human/Windows Audio claim or fallback.
+
 Recommended shape:
 
 ```text

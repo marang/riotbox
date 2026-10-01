@@ -87,6 +87,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let source = SourceAudioCache::load_pcm_wav(&args.source_path)?;
     validate_source_format(&source)?;
     paths.reject_source_aliases(&args.source_path)?;
+    paths.reject_output_aliases()?;
     let source_timing_analysis = source_timing_analysis_for_source(&source, &args.source_path);
     let timing_readiness = &source_timing_analysis.readiness;
     let grid_bpm = choose_grid_bpm(args, timing_readiness);
