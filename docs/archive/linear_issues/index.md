@@ -1781,4 +1781,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Give Feral manifest assertions ordinary explicit test ownership
 - [RIOTBOX-1535.md](./RIOTBOX-1535.md)
   Reject Feral grid pack output paths that overwrite the input source
+- [RIOTBOX-1536.md](./RIOTBOX-1536.md)
+  Preserve W-30 preview input across WAV and metrics output collisions
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
