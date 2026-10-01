@@ -1747,4 +1747,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Replace lane recipe QA includes with semantic, source-free Rust owners
 - [RIOTBOX-1518.md](./RIOTBOX-1518.md)
   Reject non-finite W-30 preview render durations before artifact writes
+- [RIOTBOX-1519.md](./RIOTBOX-1519.md)
+  Replace W-30 preview QA includes with semantic Rust module owners
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
