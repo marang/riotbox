@@ -1773,4 +1773,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Isolate Feral MC-202 contour, phrase, pressure and manifest QA owners
 - [RIOTBOX-1531.md](./RIOTBOX-1531.md)
   Isolate Feral mix component math, source balance policy and movement evidence
+- [RIOTBOX-1532.md](./RIOTBOX-1532.md)
+  Audit integrated QA ownership after W-30, TR-909, window, MC-202 and mix migrations
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
