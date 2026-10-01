@@ -19,7 +19,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    let frame_count = (SAMPLE_RATE as f32 * args.duration_seconds).round() as usize;
+    let frame_count = args.render_frame_count()?;
     let source_window_preview = args.source_window_preview()?;
     let samples = render_w30_preview_offline(
         &source_window_smoke_state(source_window_preview),
