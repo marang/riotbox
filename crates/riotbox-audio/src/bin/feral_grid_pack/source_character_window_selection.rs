@@ -1,28 +1,38 @@
-const SOURCE_CHARACTER_MIN_SCORE_LIFT: f32 = 0.0025;
-const SOURCE_CHARACTER_MIN_RMS_RETENTION: f32 = 0.98;
+//! Existing bounded QA window search/selection over a decoded in-memory cache.
+//! No source-file I/O or product source-qualification authority lives here.
+
+use super::args::Args;
+use super::grid::Grid;
+use super::sample_measurements::{mono_frames, peak_abs, positive_abs_delta, rms};
+use riotbox_audio::source_audio::{SourceAudioCache, SourceAudioWindow};
+use riotbox_audio::w30::W30_PREVIEW_SAMPLE_WINDOW_LEN;
+
+pub(super) const SOURCE_CHARACTER_MIN_SCORE_LIFT: f32 = 0.0025;
+
+pub(super) const SOURCE_CHARACTER_MIN_RMS_RETENTION: f32 = 0.98;
 
 #[derive(Clone, Copy, Debug, PartialEq, serde::Serialize)]
-struct SourceCharacterWindowSelection {
+pub(super) struct SourceCharacterWindowSelection {
     requested_start_seconds: f32,
-    requested_duration_seconds: f32,
+    pub(super) requested_duration_seconds: f32,
     search_start_seconds: f32,
-    search_duration_seconds: f32,
-    selected_start_seconds: f32,
-    selected_duration_seconds: f32,
+    pub(super) search_duration_seconds: f32,
+    pub(super) selected_start_seconds: f32,
+    pub(super) selected_duration_seconds: f32,
     selected_start_frame: u64,
     selected_frame_count: usize,
-    requested_head_score: f32,
-    selected_score: f32,
-    score_lift: f32,
-    requested_head_rms: f32,
-    selected_rms: f32,
-    rms_retention_ratio: f32,
-    min_rms_retention_ratio: f32,
-    scanned_candidate_count: u32,
-    reason: &'static str,
+    pub(super) requested_head_score: f32,
+    pub(super) selected_score: f32,
+    pub(super) score_lift: f32,
+    pub(super) requested_head_rms: f32,
+    pub(super) selected_rms: f32,
+    pub(super) rms_retention_ratio: f32,
+    pub(super) min_rms_retention_ratio: f32,
+    pub(super) scanned_candidate_count: u32,
+    pub(super) reason: &'static str,
 }
 
-fn select_source_character_window(
+pub(super) fn select_source_character_window(
     source: &SourceAudioCache,
     requested: SourceAudioWindow,
     search: SourceAudioWindow,
@@ -115,9 +125,13 @@ fn select_source_character_window(
     } else {
         requested_head_score
     };
-    let selected_rms =
-        source_character_window_rms(source, selected_window.start_frame, selected_window.frame_count);
-    let rms_retention_ratio = source_character_rms_retention_ratio(selected_rms, requested_head_rms);
+    let selected_rms = source_character_window_rms(
+        source,
+        selected_window.start_frame,
+        selected_window.frame_count,
+    );
+    let rms_retention_ratio =
+        source_character_rms_retention_ratio(selected_rms, requested_head_rms);
     let selected_start_seconds = selected_window.start_frame as f32 / source.sample_rate as f32;
     let selected_duration_seconds = selected_window.frame_count as f32 / source.sample_rate as f32;
 
@@ -193,9 +207,11 @@ fn source_character_window_score(
     let transient = positive_abs_delta(&mono);
     let peak = peak_abs(&mono);
     let active_floor = (rms_value * 0.35).max(0.001);
-    let active_ratio =
-        mono.iter().filter(|sample| sample.abs() >= active_floor).count() as f32
-            / mono.len() as f32;
+    let active_ratio = mono
+        .iter()
+        .filter(|sample| sample.abs() >= active_floor)
+        .count() as f32
+        / mono.len() as f32;
     let crest = if rms_value > f32::EPSILON {
         peak / rms_value
     } else {
@@ -206,98 +222,15 @@ fn source_character_window_score(
     rms_value * 0.55 + transient * 1.20 + peak * 0.10 + active_ratio * 0.015 + crest * 0.002
 }
 
-#[cfg(test)]
-mod source_character_window_selection_tests {
-    use super::*;
-
-    #[test]
-    fn source_character_window_selection_promotes_late_transient_character() {
-        let one_second = SAMPLE_RATE as usize;
-        let mut samples = Vec::with_capacity(one_second * 2 * usize::from(CHANNEL_COUNT));
-        for frame in 0..one_second * 2 {
-            let phase = frame as f32 / SAMPLE_RATE as f32;
-            let sample = if frame < one_second {
-                (phase * 90.0 * std::f32::consts::TAU).sin() * 0.004
-            } else {
-                let local = frame - one_second;
-                let pulse = local % 5_512;
-                let transient = if pulse < 192 {
-                    0.72 * (1.0 - pulse as f32 / 192.0)
-                } else {
-                    0.0
-                };
-                let grit = (phase * 1_900.0 * std::f32::consts::TAU).sin() * 0.065;
-                transient + grit
-            };
-            samples.push(sample);
-            samples.push(sample * 0.96);
-        }
-        let source = SourceAudioCache::from_interleaved_samples(
-            "late-character.wav",
-            SAMPLE_RATE,
-            CHANNEL_COUNT,
-            samples,
-        )
-        .expect("source");
-        let requested = source.window_by_seconds(0.0, 1.0);
-        let search = source.window_by_seconds(0.0, 2.0);
-
-        let (selected, proof) = select_source_character_window(&source, requested, search);
-        let (selected_repeat, proof_repeat) =
-            select_source_character_window(&source, requested, search);
-
-        assert_eq!(selected, selected_repeat);
-        assert_eq!(proof, proof_repeat);
-        assert!(selected.start_frame >= one_second, "{proof:?}");
-        assert!(proof.score_lift >= SOURCE_CHARACTER_MIN_SCORE_LIFT);
-        assert_eq!(proof.reason, "source_character_window_promoted");
-        assert!(proof.selected_score > proof.requested_head_score);
-        assert!(proof.rms_retention_ratio >= proof.min_rms_retention_ratio);
-        assert!(proof.selected_rms >= proof.requested_head_rms * SOURCE_CHARACTER_MIN_RMS_RETENTION);
-        assert!(proof.search_duration_seconds > proof.requested_duration_seconds);
-        assert!(proof.scanned_candidate_count >= 2);
-    }
-
-    #[test]
-    fn source_character_window_selection_rejects_transient_peak_with_weaker_rms_base() {
-        let half_second = SAMPLE_RATE as usize / 2;
-        let mut samples = Vec::with_capacity(half_second * 4 * usize::from(CHANNEL_COUNT));
-        for frame in 0..half_second * 4 {
-            let phase = frame as f32 / SAMPLE_RATE as f32;
-            let sample = if frame < half_second {
-                (phase * 140.0 * std::f32::consts::TAU).sin() * 0.20
-            } else if frame >= half_second * 3 {
-                let local = frame - half_second * 3;
-                let pulse = local % 5_512;
-                let transient = if pulse < 96 {
-                    0.78 * (1.0 - pulse as f32 / 96.0)
-                } else {
-                    0.0
-                };
-                let grit = (phase * 1_700.0 * std::f32::consts::TAU).sin() * 0.045;
-                transient + grit
-            } else {
-                (phase * 110.0 * std::f32::consts::TAU).sin() * 0.12
-            };
-            samples.push(sample);
-            samples.push(sample * 0.96);
-        }
-        let source = SourceAudioCache::from_interleaved_samples(
-            "late-peak-weaker-rms.wav",
-            SAMPLE_RATE,
-            CHANNEL_COUNT,
-            samples,
-        )
-        .expect("source");
-        let requested = source.window_by_seconds(0.0, 0.5);
-        let search = source.window_by_seconds(0.0, 2.0);
-
-        let (selected, proof) = select_source_character_window(&source, requested, search);
-
-        assert_eq!(selected.start_frame, requested.start_frame, "{proof:?}");
-        assert_eq!(proof.reason, "requested_source_window_kept");
-        assert_eq!(proof.score_lift, 0.0);
-        assert_eq!(proof.rms_retention_ratio, 1.0);
-        assert!(proof.scanned_candidate_count >= 2);
-    }
+pub(super) fn source_character_search_window(
+    source: &SourceAudioCache,
+    args: &Args,
+    grid: &Grid,
+) -> SourceAudioWindow {
+    let available_seconds =
+        (source.duration_seconds() - args.source_start_seconds).max(args.source_window_seconds);
+    source.window_by_seconds(
+        args.source_start_seconds,
+        available_seconds.max(grid.duration_seconds()),
+    )
 }
