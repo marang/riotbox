@@ -1793,4 +1793,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Reject physical aliases between W-30 WAV and metrics outputs
 - [RIOTBOX-1541.md](./RIOTBOX-1541.md)
   Reject physically coupled Feral pack artifact destinations before rendering
+- [RIOTBOX-1542.md](./RIOTBOX-1542.md)
+  Reject coupled Before/After pack output roles before the early excerpt write
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
