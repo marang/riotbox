@@ -14,6 +14,10 @@ check:
 restore-history-benchmark:
     cargo test --release -p riotbox-app --lib benchmark_restore_history_scaling -- --ignored --nocapture
 
+# Source-free public snapshot/undo planning medians; no wall-clock CI assertion.
+replay-cursor-benchmark:
+    cargo test --release -p riotbox-core --lib public_replay_cursor_scaling_release_benchmark -- --ignored --nocapture --test-threads=1
+
 # Preview selected legacy captures; add --accept-current-content to persist their current identity.
 capture-identity-migrate session +args:
     cargo run -q -p riotbox-app --bin capture_identity_migrate -- {{quote(session)}} {{args}}

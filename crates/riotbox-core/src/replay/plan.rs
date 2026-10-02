@@ -13,6 +13,9 @@ use crate::{
     transport::CommitBoundaryState,
 };
 
+mod cursor_safety;
+use cursor_safety::UndoCursorSafety;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ReplayPlanError {
     MissingAction {
@@ -181,8 +184,9 @@ pub fn build_snapshot_replay_plan_comparison<'a>(
         });
     }
     let origin = build_committed_replay_plan(action_log)?;
-    if let Some(action_id) =
-        first_unresolved_undone_action_before_cursor(action_log, snapshot.action_cursor)
+    if snapshot.action_cursor > 0
+        && let Some(action_id) =
+            UndoCursorSafety::new(action_log).first_unresolved(snapshot.action_cursor)
     {
         return Err(ReplayPlanError::SnapshotContainsUndoneAction {
             snapshot_id: snapshot.snapshot_id.clone(),
@@ -251,10 +255,21 @@ pub fn build_replay_target_plan<'a>(
     target_action_cursor: usize,
 ) -> Result<ReplayTargetPlan<'a>, ReplayPlanError> {
     let origin = build_committed_replay_plan(action_log)?;
-    let anchor = select_safe_replay_snapshot_anchor(action_log, snapshots, target_action_cursor)?;
+    // Preserve complete cursor validation before safety, including snapshots
+    // after the target. No index is needed for log-end replay without anchors.
+    select_replay_snapshot_anchor(snapshots, target_action_cursor, action_log.actions.len())?;
+    let needs_safety = (target_action_cursor > 0
+        && target_action_cursor < action_log.actions.len())
+        || snapshots.iter().any(|snapshot| {
+            snapshot.action_cursor > 0 && snapshot.action_cursor <= target_action_cursor
+        });
+    let cursor_safety = needs_safety.then(|| UndoCursorSafety::new(action_log));
+    let anchor =
+        select_safe_replay_snapshot_anchor(snapshots, target_action_cursor, cursor_safety.as_ref());
     if target_action_cursor < action_log.actions.len()
-        && let Some(action_id) =
-            first_unresolved_undone_action_before_cursor(action_log, target_action_cursor)
+        && let Some(action_id) = cursor_safety
+            .as_ref()
+            .and_then(|safety| safety.first_unresolved(target_action_cursor))
     {
         return Err(
             ReplayPlanError::HistoricalReplayTargetContainsUndoneAction {
@@ -282,19 +297,15 @@ pub fn build_replay_target_plan<'a>(
 }
 
 fn select_safe_replay_snapshot_anchor<'a>(
-    action_log: &ActionLog,
     snapshots: &'a [Snapshot],
     target_action_cursor: usize,
-) -> Result<Option<&'a Snapshot>, ReplayPlanError> {
-    // Preserve the public selector's complete cursor validation before applying
-    // the stricter payload-safety rule below.
-    select_replay_snapshot_anchor(snapshots, target_action_cursor, action_log.actions.len())?;
-
+    cursor_safety: Option<&UndoCursorSafety>,
+) -> Option<&'a Snapshot> {
     let mut selected: Option<(usize, &Snapshot)> = None;
     for (index, snapshot) in snapshots.iter().enumerate() {
         if snapshot.action_cursor > target_action_cursor
-            || first_unresolved_undone_action_before_cursor(action_log, snapshot.action_cursor)
-                .is_some()
+            || cursor_safety
+                .is_some_and(|safety| safety.first_unresolved(snapshot.action_cursor).is_some())
         {
             continue;
         }
@@ -312,57 +323,7 @@ fn select_safe_replay_snapshot_anchor<'a>(
         }
     }
 
-    Ok(selected.map(|(_, snapshot)| snapshot))
-}
-
-fn first_unresolved_undone_action_before_cursor(
-    action_log: &ActionLog,
-    cursor: usize,
-) -> Option<ActionId> {
-    action_log
-        .actions
-        .iter()
-        .take(cursor)
-        .enumerate()
-        .find(|(target_index, action)| {
-            action.status == ActionStatus::Undone
-                && !undo_marker_resolves_target_before_cursor(
-                    action_log,
-                    *target_index,
-                    action.id,
-                    cursor,
-                )
-        })
-        .map(|(_, action)| action.id)
-}
-
-fn undo_marker_resolves_target_before_cursor(
-    action_log: &ActionLog,
-    target_index: usize,
-    target_action_id: ActionId,
-    cursor: usize,
-) -> bool {
-    action_log
-        .actions
-        .iter()
-        .enumerate()
-        .take(cursor)
-        .skip(target_index.saturating_add(1))
-        .any(|(_, marker)| {
-            marker.command == ActionCommand::UndoLast
-                && marker.status == ActionStatus::Committed
-                && marker.result.as_ref().is_some_and(|result| result.accepted)
-                && matches!(
-                    &marker.params,
-                    ActionParams::Undo {
-                        target_action_id: marker_target
-                    } if *marker_target == target_action_id
-                )
-                && action_log
-                    .commit_records
-                    .iter()
-                    .any(|record| record.action_id == marker.id)
-        })
+    selected.map(|(_, snapshot)| snapshot)
 }
 
 fn validate_typed_undo_relations(
