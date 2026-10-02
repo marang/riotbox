@@ -462,8 +462,47 @@ The bounded early seam is a non-realtime source-audio cache:
   so FIFO inputs fail without waiting for a producer. Original-source symlinks
   to regular files remain supported, unlike the stricter capture/export
   no-follow policies. App restore hashes the same returned bytes it decodes;
-  admission failures stay visibly unavailable with no source cache. This is
-  file-type admission, not a deadline or size limit for regular-file I/O
+  admission failures stay visibly unavailable with no source cache. The opened
+  descriptor byte budget below is shared with capture hydration, not its path
+  or no-follow policy. Regular-file I/O has no deadline guarantee.
+
+#### Rust WAV/PCM resource admission V1 (RBX-425 / RIOTBOX-1556)
+
+The non-realtime Rust WAV reader admits at most `268435456` encoded bytes
+(256 MiB), including headers and ignored chunks. The PCM16/24 decoder admits
+at most `67108864` interleaved samples, or 256 MiB of `f32` payload; this is a
+sample count, not a frame count. These fixed limits are independent of source
+results and have no public override. A new policy version/Decision is required
+to change them.
+
+- Check the opened regular descriptor's size before allocating payload; then
+  bound actual stream reads even when metadata understates a growing file.
+  The one-byte overrun probe stays in stack scratch. Never return a truncated
+  successful WAV or reopen a path between admission, hashing and decoding.
+- Use fallible, capped requested buffer growth and fallible exact PCM
+  reservation before writing samples. `ResourceLimitExceeded` names encoded
+  bytes or decoded samples with the limit and observed minimum required count;
+  `AllocationFailed` names the failed resource. Allocator overhead/rounding is
+  not the payload budget and successful reservation is not an OOM guarantee.
+- `SourceAudioCache::from_pcm_wav_bytes` applies both limits to supplied bytes;
+  caller-owned input allocation has already occurred. `from_interleaved_samples`
+  adopts an already-owned vector and is outside this per-read/per-decode rule.
+- Capture hydration keeps its own no-follow admission but shares the bounded
+  opened-descriptor read and decoder. Original-source symlinks to regular files
+  remain supported. Rejection installs no cache/trusted playback for that asset
+  and preserves stored identity; independent valid captures may remain loaded.
+- Existing larger assets that previously decoded become visibly unavailable,
+  not silently truncated, rehashed/adopted, migrated or replaced with music.
+  No Session schema, timing/analysis algorithm, DSP or realtime path changes.
+
+This bounds individual Rust encoded/decoded payload requests only. Both
+buffers may coexist, and multiple cached assets accumulate; it is not a global
+cache/process memory cap, source-import memory guarantee, I/O/CPU deadline or
+device-endurance proof. In particular, ingest invokes the Python sidecar before
+Rust timing enrichment; its earlier file/frame/Python-sample allocations are
+not bounded by this Rust contract. Capture/WAV writers and unrelated render
+allocations are also outside it. Generated small-budget and sparse-file tests
+do not qualify real sources, Holdouts or musical/release quality.
 
 The existing transport-selected source window remains the default. Only a
 committed `feral_break_alpha_v2` preset with a non-baseline typed hook policy may

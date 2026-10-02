@@ -1,11 +1,11 @@
 //! Capture integrity is persisted in Core; these statuses describe this load only.
-use riotbox_audio::source_audio::{SourceAudioCache, pcm16_wave_bytes};
+use riotbox_audio::source_audio::{SourceAudioCache, pcm16_wave_bytes, read_opened_wav_bytes};
 use riotbox_core::session::{CaptureAudioIdentity, CaptureAudioIdentityProvenance, CaptureRef};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::{
     fs::{File, OpenOptions},
-    io::{self, Read, Write},
+    io::{self, Write},
     path::{Path, PathBuf},
 };
 
@@ -27,7 +27,7 @@ pub(super) fn read_wav(path: &Path) -> Result<(Vec<u8>, SourceAudioCache), Strin
         use std::os::unix::fs::OpenOptionsExt;
         options.custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK);
     }
-    let mut file = options.open(path).map_err(|error| error.to_string())?;
+    let file = options.open(path).map_err(|error| error.to_string())?;
     if !file
         .metadata()
         .map_err(|error| error.to_string())?
@@ -35,9 +35,7 @@ pub(super) fn read_wav(path: &Path) -> Result<(Vec<u8>, SourceAudioCache), Strin
     {
         return Err("capture artifact is not a regular file".into());
     }
-    let mut bytes = Vec::new();
-    file.read_to_end(&mut bytes)
-        .map_err(|error| error.to_string())?;
+    let bytes = read_opened_wav_bytes(file).map_err(|error| error.to_string())?;
     let cache =
         SourceAudioCache::from_pcm_wav_bytes(path, &bytes).map_err(|error| error.to_string())?;
     Ok((bytes, cache))
@@ -108,11 +106,86 @@ fn publish_new_wav(
 
 #[cfg(test)]
 mod tests {
-    use super::{publish_new_wav, write_new_wav};
+    use super::{CaptureAudioStatus, load_verified, publish_new_wav, read_wav, write_new_wav};
+    use crate::jam_app::tests::{sample_graph, sample_session};
+    use riotbox_audio::source_audio::SOURCE_AUDIO_MAX_ENCODED_BYTES_V1;
+    use riotbox_core::session::{CaptureAudioIdentity, CaptureAudioIdentityProvenance};
     use std::{
         fs,
         io::{self, Write},
     };
+
+    #[test]
+    fn read_wav_rejects_oversized_sparse_capture_before_decode() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("oversized-capture.wav");
+        fs::File::create(&path)
+            .unwrap()
+            .set_len(SOURCE_AUDIO_MAX_ENCODED_BYTES_V1 as u64 + 1)
+            .unwrap();
+
+        let reason = read_wav(&path).unwrap_err();
+
+        assert!(reason.contains("resource limit exceeded"), "{reason}");
+        assert!(reason.contains("encoded WAV bytes"), "{reason}");
+    }
+
+    #[test]
+    fn verified_oversized_sparse_capture_is_unavailable_before_identity_hashing() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("oversized-capture.wav");
+        fs::File::create(&path)
+            .unwrap()
+            .set_len(SOURCE_AUDIO_MAX_ENCODED_BYTES_V1 as u64 + 1)
+            .unwrap();
+        let mut session = sample_session(&sample_graph());
+        let capture = &mut session.captures[0];
+        capture.storage_path = path.to_string_lossy().into_owned();
+        // Never compute this identity from the oversized fixture's bytes.
+        capture.audio_identity = Some(CaptureAudioIdentity {
+            sha256: format!("sha256:{}", "ab".repeat(32)),
+            provenance: CaptureAudioIdentityProvenance::CreatedFromEncodedBytesV1,
+        });
+
+        assert!(matches!(
+            load_verified(capture, &path),
+            Err(CaptureAudioStatus::Unavailable { reason })
+                if reason.contains("resource limit exceeded") && reason.contains("encoded WAV bytes")
+        ));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn capture_no_follow_survives_shared_descriptor_budget_reader() {
+        let dir = tempfile::tempdir().unwrap();
+        let target = dir.path().join("generated-capture.wav");
+        let link = dir.path().join("capture-link.wav");
+        let bytes = riotbox_audio::source_audio::pcm16_wave_bytes(48_000, 1, &[0.25; 4]).unwrap();
+        fs::write(&target, &bytes).unwrap();
+        std::os::unix::fs::symlink(&target, &link).unwrap();
+
+        let (admitted, cache) = read_wav(&target).unwrap();
+        assert_eq!(admitted, bytes);
+        assert_eq!(cache.frame_count(), 4);
+        // Original-source symlinks remain supported, while the capture wrapper
+        // must not replace its no-follow opener with the source path reader.
+        assert_eq!(
+            riotbox_audio::source_audio::read_source_wav_bytes(&link).unwrap(),
+            bytes
+        );
+        assert!(read_wav(&link).is_err());
+
+        let mut session = sample_session(&sample_graph());
+        let capture = &mut session.captures[0];
+        capture.audio_identity = Some(super::identity(
+            &bytes,
+            CaptureAudioIdentityProvenance::CreatedFromEncodedBytesV1,
+        ));
+        assert!(matches!(
+            load_verified(capture, &link),
+            Err(CaptureAudioStatus::Unavailable { .. })
+        ));
+    }
 
     #[test]
     fn partial_write_failure_discards_only_its_own_allocation() {

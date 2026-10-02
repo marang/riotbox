@@ -8,6 +8,122 @@ use super::{
 };
 
 #[test]
+fn memory_limit_rejects_decoded_pcm_before_output_allocation() {
+    let bytes = super::pcm16_wave_bytes(48_000, 1, &[0.25; 5]).unwrap();
+    let error = super::cache::decode_pcm_wav_with_limits(
+        &bytes,
+        super::resource_limits::SourceAudioLimits {
+            encoded_bytes: bytes.len(),
+            decoded_samples: 4,
+        },
+    )
+    .unwrap_err();
+    assert_eq!(
+        error,
+        SourceAudioError::ResourceLimitExceeded {
+            resource: super::SourceAudioResource::DecodedSamples,
+            limit: 4,
+            required: 5,
+        }
+    );
+}
+
+#[test]
+fn memory_limit_pcm16_and_pcm24_count_interleaved_samples_not_frames() {
+    use super::resource_limits::SourceAudioLimits;
+    for channels in [1, 2] {
+        let sixteen = super::pcm16_wave_bytes(48_000, channels, &[0.0, 0.25, -0.25, 1.0]).unwrap();
+        let twenty_four =
+            pcm24_wave_bytes(48_000, channels, &[0, 2_097_151, -2_097_151, 8_388_607]);
+        for bytes in [sixteen, twenty_four] {
+            let decoded = super::cache::decode_pcm_wav_with_limits(
+                &bytes,
+                SourceAudioLimits {
+                    encoded_bytes: bytes.len(),
+                    decoded_samples: 4,
+                },
+            )
+            .unwrap();
+            let original = decode_pcm_wav(&bytes).unwrap();
+            assert_eq!(decoded.samples, original.samples);
+            assert_eq!(decoded.samples.len(), 4);
+            let error = super::cache::decode_pcm_wav_with_limits(
+                &bytes,
+                SourceAudioLimits {
+                    encoded_bytes: bytes.len(),
+                    decoded_samples: 3,
+                },
+            )
+            .unwrap_err();
+            assert_eq!(
+                error,
+                SourceAudioError::ResourceLimitExceeded {
+                    resource: super::SourceAudioResource::DecodedSamples,
+                    limit: 3,
+                    required: 4,
+                }
+            );
+        }
+    }
+}
+
+#[test]
+fn memory_limit_encoded_bytes_include_ignored_chunks_and_caller_owned_input() {
+    let mut bytes = super::pcm16_wave_bytes(48_000, 1, &[0.25]).unwrap();
+    bytes.extend_from_slice(b"JUNK");
+    bytes.extend_from_slice(&4_u32.to_le_bytes());
+    bytes.extend_from_slice(b"skip");
+    let riff_size = (bytes.len() - 8) as u32;
+    bytes[4..8].copy_from_slice(&riff_size.to_le_bytes());
+    let input = bytes.clone();
+    let exact = super::resource_limits::SourceAudioLimits {
+        encoded_bytes: bytes.len(),
+        decoded_samples: 1,
+    };
+    assert_eq!(
+        super::cache::decode_pcm_wav_with_limits(&bytes, exact)
+            .unwrap()
+            .samples
+            .len(),
+        1
+    );
+    let error = super::cache::decode_pcm_wav_with_limits(
+        &bytes,
+        super::resource_limits::SourceAudioLimits {
+            encoded_bytes: bytes.len() - 1,
+            ..exact
+        },
+    )
+    .unwrap_err();
+    assert_eq!(
+        error,
+        SourceAudioError::ResourceLimitExceeded {
+            resource: super::SourceAudioResource::EncodedBytes,
+            limit: bytes.len() as u64 - 1,
+            required: bytes.len() as u64,
+        }
+    );
+    assert_eq!(bytes, input);
+}
+
+#[test]
+fn memory_limit_preserves_invalid_wav_errors_within_budget() {
+    let bytes = b"not a wav";
+    let error = super::cache::decode_pcm_wav_with_limits(
+        bytes,
+        super::resource_limits::SourceAudioLimits {
+            encoded_bytes: bytes.len(),
+            decoded_samples: 0,
+        },
+    )
+    .unwrap_err();
+    assert_eq!(
+        error,
+        SourceAudioError::InvalidWave("header shorter than RIFF/WAVE".into())
+    );
+}
+
+#[test]
 fn loads_pcm16_wav_into_interleaved_float_cache() {
     let tempdir = tempdir().expect("create tempdir");
     let path = tempdir.path().join("source.wav");

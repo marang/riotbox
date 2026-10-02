@@ -114,6 +114,10 @@ Rules:
   for that `source_id`; a mismatch leaves source audio unavailable rather than
   routing unverified PCM
 - session restore should prefer `content_hash` verification over path trust
+- Rust source hydration applies the versioned WAV/PCM resource admission in
+  [Audio Core §11.1](audio_core_spec.md#111-source-audio-cache-seam). A resource
+  or allocation rejection leaves the source unavailable with its stored identity
+  intact; it does not truncate audio, mutate this schema or silently migrate it.
 - `path_hint` may help the UI, but path alone must not be the authority
 - `decode_profile` uses the same typed `DecodeProfile` as the Source Graph.
   Legacy standard strings (`native`, `normalized_stereo`, `normalized_mono`)
@@ -1526,6 +1530,10 @@ For internally printed W-30 resample captures, `storage_path` should point to th
 
 Artifact-hydration identity boundary:
 
+- The Rust descriptor reader/decoder shares the versioned resource admission
+  in [Audio Core §11.1](audio_core_spec.md#111-source-audio-cache-seam) while
+  retaining capture no-follow policy. Resource rejection adds no trusted cache
+  or adopted legacy identity and does not rewrite the saved Session.
 - `audio_identity` binds the complete encoded capture WAV with canonical
   `sha256:<lowercase hex>` and typed provenance: `created_from_encoded_bytes_v1`
   or `adopted_legacy_v1` with `adopted_at`. Newly written source-window and bus

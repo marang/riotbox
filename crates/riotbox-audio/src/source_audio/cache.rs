@@ -6,6 +6,9 @@ use std::{
 };
 
 use super::file_io::read_source_wav_bytes;
+use super::resource_limits::{
+    SourceAudioLimits, SourceAudioResource, check_limit, reserve_payload,
+};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct SourceAudioCache {
@@ -26,6 +29,14 @@ pub enum SourceAudioError {
     Io(String),
     InvalidWave(String),
     UnsupportedWave(String),
+    ResourceLimitExceeded {
+        resource: SourceAudioResource,
+        limit: u64,
+        required: u64,
+    },
+    AllocationFailed {
+        resource: SourceAudioResource,
+    },
 }
 
 impl SourceAudioCache {
@@ -170,6 +181,20 @@ impl fmt::Display for SourceAudioError {
             Self::UnsupportedWave(message) => {
                 write!(formatter, "unsupported WAV source audio: {message}")
             }
+            Self::ResourceLimitExceeded {
+                resource,
+                limit,
+                required,
+            } => write!(
+                formatter,
+                "source audio resource limit exceeded: {} requires at least {required}, limit {limit}",
+                resource.label(),
+            ),
+            Self::AllocationFailed { resource } => write!(
+                formatter,
+                "source audio allocation failed: {}",
+                resource.label(),
+            ),
         }
     }
 }
@@ -180,10 +205,22 @@ impl Error for SourceAudioError {}
 pub(super) struct DecodedPcmWave {
     sample_rate: u32,
     channel_count: u16,
-    samples: Vec<f32>,
+    pub(super) samples: Vec<f32>,
 }
 
 pub(super) fn decode_pcm_wav(bytes: &[u8]) -> Result<DecodedPcmWave, SourceAudioError> {
+    decode_pcm_wav_with_limits(bytes, SourceAudioLimits::V1)
+}
+
+pub(super) fn decode_pcm_wav_with_limits(
+    bytes: &[u8],
+    limits: SourceAudioLimits,
+) -> Result<DecodedPcmWave, SourceAudioError> {
+    check_limit(
+        SourceAudioResource::EncodedBytes,
+        bytes.len() as u64,
+        limits.encoded_bytes,
+    )?;
     if bytes.len() < 12 {
         return Err(SourceAudioError::InvalidWave(
             "header shorter than RIFF/WAVE".into(),
@@ -231,10 +268,22 @@ pub(super) fn decode_pcm_wav(bytes: &[u8]) -> Result<DecodedPcmWave, SourceAudio
     }
 
     let bytes_per_sample = usize::from(format.bits_per_sample / 8);
-    let samples = data
-        .chunks_exact(bytes_per_sample)
-        .map(|bytes| decode_pcm_sample(bytes, format.bits_per_sample))
-        .collect();
+    let sample_count = data.len() / bytes_per_sample;
+    check_limit(
+        SourceAudioResource::DecodedSamples,
+        sample_count as u64,
+        limits.decoded_samples,
+    )?;
+    let mut samples = Vec::new();
+    // try_reserve_exact also checks the byte-size/isize allocation bound.
+    reserve_payload(
+        &mut samples,
+        sample_count,
+        SourceAudioResource::DecodedSamples,
+    )?;
+    for bytes in data.chunks_exact(bytes_per_sample) {
+        samples.push(decode_pcm_sample(bytes, format.bits_per_sample));
+    }
 
     Ok(DecodedPcmWave {
         sample_rate: format.sample_rate,
