@@ -1264,7 +1264,7 @@ Additional receipt fields required before wider export scopes:
   captures are excluded. Their declared lineage is included only after every
   active owner and lineage target resolves in the Session.
 - `live_recording.runtime_master_bar_window_v2`, pack id
-  `live-recording-runtime-master-bar-window`, is the current runnable receipt
+  `live-recording-runtime-master-bar-window`, is the default runnable receipt
   boundary. It preserves every V1 audio tap, writer, artifact, lineage, and
   host-health requirement while adding exactly one
   `live_recording_bar_window_alignment` gate and a typed
@@ -1275,15 +1275,46 @@ Additional receipt fields required before wider export scopes:
   verifies anchor congruence and recomputes position bounds from frame geometry;
   missing, contradictory, or duplicate V2 evidence fails. The versioned proof
   schema is `riotbox.live_recording_runtime_master_bar_window.v2`.
+  Legacy V2 publication retains its host-audio-only receipt gate after the
+  physical timing/read-back checks. Publication is not a full-readiness or
+  DAW-admission guarantee: runtime-float proof rounding and integer-micro-BPM
+  readiness can disagree at ties (RIOTBOX-1552). V3's full receipt commit gate
+  must not retroactively change that V2 behavior or rewrite historical evidence.
+- RBX-422 adds `live_recording.runtime_master_bar_window_v3` and pack id
+  `live-recording-runtime-master-bar-window-v3` for exactly eight/sixteen bars.
+  The receipt's optional typed `live_recording_duration` is respectively
+  `eight_bars`/`sixteen_bars`; historical receipts omit it. V3 proof schema
+  `riotbox.live_recording_runtime_master_bar_window.v3` adds the matching typed
+  `duration`; its `duration_beats` and host timing window are 32/64. Missing or
+  contradictory identity fails closed, including a V2 receipt carrying a V3
+  duration. V3 readiness recomputes frames from rate, canonical runtime f32 BPM
+  reconstructed from persisted micro-BPM and
+  selected duration and cross-checks rounded milliseconds against those frames.
+  The existing start/alignment/error/health/audio/read-back gates stay intact.
+  A committed V3 action must resolve exactly one matching receipt through
+  `created_by_action`; its destination, version and duration must agree.
+  Restore and replay validate these explicit-duration contracts without
+  reopening audio. Replay remains unsupported for the external recording
+  action and never performs another capture. Historical omitted-field V1/V2
+  restore policy and wire representation remain unchanged.
+  V3 admission requires the original runtime BPM bits to roundtrip through
+  this canonical micro-BPM representation before allocating. Planning and
+  proof geometry therefore cannot choose different frames near a half-frame
+  boundary; unrepresentable low tempos fail visibly without retiming transport.
+  V3 `duration_error_frame_micros` describes exact frame-count rounding, not
+  accumulated f64 callback-clock error. Actual endpoints remain unchanged and
+  must pass the separately bounded V3 position-arithmetic contract in the Audio
+  Core spec before publication, plus the existing serialized microbeat checks.
 - the live-recording readiness operator report is a read-only Session report:
   `riotbox-app --live-recording-readiness-report --session <session.json>`
   inspects the latest live-recording receipt and projects the same host-audio
   readiness blockers without mutating the Session, writing observer events,
   launching a host, or capturing audio.
-- `just live-master-recording <session> <destination.wav> [graph] [observer]`
-  is the sole V2 real user-session ingress. It starts the existing CPAL output,
+- `just live-master-recording <session> <destination.wav> [graph] [observer] [bars]`
+  is the bounded real user-session ingress (default 2/V2, explicit 8 or 16/V3).
+  It starts the existing CPAL output,
   confirms transport, Session BPM, and 4/4 meter, arms for the strictly next
-  phase-aligned bar, performs the bounded two-bar callback capture,
+  phase-aligned bar, performs the selected bounded callback capture,
   stops and verifies the runtime before any WAV/proof or Session file I/O, and
   persists the Action/receipt only after WAV/proof read-back. Its observer
   snapshot projects requested/started/completed or failed lifecycle from the

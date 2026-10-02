@@ -34,6 +34,6 @@ pub(in crate::cli) fn help_text() -> String {
         DEFAULT_SESSION_PATH, DEFAULT_SIDECAR_PATH
     );
     format!(
-        "{base}\n\nLive master recording:\n  riotbox-app --live-master-recording-execute --session <session.json> [--graph <source-graph.json>] --live-recording-destination <file.wav> [--observer <events.ndjson>]"
+        "{base}\n\nLive master recording:\n  riotbox-app --live-master-recording-execute --session <session.json> [--graph <source-graph.json>] --live-recording-destination <file.wav> [--observer <events.ndjson>] [--live-recording-bars <2|8|16>]\n  --live-recording-bars defaults to 2; the non-interactive capture keeps the current scene unchanged."
     )
 }

@@ -14,6 +14,8 @@ pub const LIVE_RECORDING_RECEIPT_PACK_ID: &str = "live-recording-receipt-contrac
 pub const LIVE_RECORDING_RUNTIME_MASTER_PACK_ID: &str = "live-recording-runtime-master";
 pub const LIVE_RECORDING_RUNTIME_MASTER_BAR_WINDOW_PACK_ID: &str =
     "live-recording-runtime-master-bar-window";
+pub const LIVE_RECORDING_RUNTIME_MASTER_BAR_WINDOW_V3_PACK_ID: &str =
+    "live-recording-runtime-master-bar-window-v3";
 
 #[must_use]
 pub fn default_product_export_pack_id() -> String {
@@ -56,6 +58,7 @@ pub enum ProductExportBoundary {
     LiveRecordingReceiptContractV1,
     LiveRecordingRuntimeMasterCaptureV1,
     LiveRecordingRuntimeMasterBarWindowV2,
+    LiveRecordingRuntimeMasterBarWindowV3,
 }
 
 impl ProductExportBoundary {
@@ -76,6 +79,9 @@ impl ProductExportBoundary {
             Self::LiveRecordingRuntimeMasterCaptureV1 => "live_recording.runtime_master_capture_v1",
             Self::LiveRecordingRuntimeMasterBarWindowV2 => {
                 "live_recording.runtime_master_bar_window_v2"
+            }
+            Self::LiveRecordingRuntimeMasterBarWindowV3 => {
+                "live_recording.runtime_master_bar_window_v3"
             }
         }
     }
@@ -98,6 +104,9 @@ impl ProductExportBoundary {
             }
             "live_recording.runtime_master_bar_window_v2" => {
                 Ok(Self::LiveRecordingRuntimeMasterBarWindowV2)
+            }
+            "live_recording.runtime_master_bar_window_v3" => {
+                Ok(Self::LiveRecordingRuntimeMasterBarWindowV3)
             }
             other => Err(ExportReadinessError::UnsupportedBoundary(other.to_owned())),
         }

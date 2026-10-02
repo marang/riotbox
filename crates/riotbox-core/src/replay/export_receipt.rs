@@ -440,6 +440,7 @@ mod tests {
             pack_id: crate::export_readiness::PRODUCT_EXPORT_PACK_ID.into(),
             export_role: ProductExportRole::FullGridMix,
             export_boundary: ProductExportBoundary::FeralGridGeneratedSupport,
+            live_recording_duration: None,
             artifact_path: artifact_path.into(),
             proof_path: proof_path.into(),
             manifest_path: None,

@@ -1,7 +1,10 @@
 use crate::cli::args::parse_args;
+use crate::cli::live_recording_report::live_recording_host_audio_ref_summary;
 use crate::cli::live_recording_report::live_recording_readiness_report_summary;
+use crate::cli::live_recording_report::live_recording_receipt_summary;
 use crate::cli::model::AppLaunch;
 use crate::cli::model::LaunchMode;
+use riotbox_core::action::LiveRecordingDuration;
 use riotbox_core::export_readiness::EXPORT_READINESS_CONTRACT_SCHEMA;
 use riotbox_core::export_readiness::ExportReadinessContract;
 use riotbox_core::export_readiness::ExportReadinessStatus;
@@ -16,10 +19,50 @@ use riotbox_core::persistence::save_session_json;
 use riotbox_core::session::ExportLiveRecordingCallbackGapSummary;
 use riotbox_core::session::ExportLiveRecordingHostAudioRef;
 use riotbox_core::session::ExportLiveRecordingStreamErrorSummary;
+use riotbox_core::session::ExportLiveRecordingTimingWindow;
 use riotbox_core::session::ExportReceiptState;
 use riotbox_core::session::SessionFile;
 use serde_json::json;
 use std::path::PathBuf;
+
+#[test]
+fn live_recording_report_projects_v3_duration_and_exact_timing_geometry() {
+    for duration in [
+        LiveRecordingDuration::EightBars,
+        LiveRecordingDuration::SixteenBars,
+    ] {
+        let mut receipt = ready_live_recording_receipt(ActionId(1551));
+        receipt.export_boundary = ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV3;
+        receipt.live_recording_duration = Some(duration);
+        let summary = live_recording_receipt_summary(&receipt);
+        assert_eq!(summary["live_recording_duration"], json!(duration));
+        assert_eq!(
+            summary["export_boundary"],
+            "live_recording.runtime_master_bar_window_v3"
+        );
+
+        let evidence = &mut receipt.live_recording_host_audio_refs[0];
+        evidence.timing_window = Some(ExportLiveRecordingTimingWindow {
+            confirmed_bpm_micros: 120_000_000,
+            bar_grid_anchor_position_microbeats: 0,
+            beat_span_per_frame_nanobeats: 41_667,
+            requested_start_position_microbeats: 4_000_000,
+            captured_start_position_microbeats: 4_000_000,
+            captured_end_position_microbeats: 4_000_000
+                + u64::from(duration.duration_beats()) * 1_000_000,
+            start_alignment_error_frame_micros: 0,
+            duration_error_frame_micros: 0,
+            beats_per_bar: 4,
+            duration_beats: duration.duration_beats(),
+        });
+        let host_summary = live_recording_host_audio_ref_summary(evidence);
+        assert_eq!(host_summary["timing_window"], json!(evidence.timing_window));
+        assert_eq!(
+            host_summary["timing_window"]["duration_beats"],
+            json!(duration.duration_beats())
+        );
+    }
+}
 
 #[test]
 fn parse_args_builds_live_recording_readiness_report_mode() {

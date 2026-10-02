@@ -9,6 +9,13 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 pub(super) fn validate_mvp_session_restore_contracts(
     session: &SessionFile,
 ) -> Result<(), JamAppError> {
+    session
+        .validate_live_recording_duration_contracts()
+        .map_err(|error| {
+            JamAppError::InvalidSession(format!(
+                "live recording duration contract is invalid: {error:?}"
+            ))
+        })?;
     if session.source_refs.len() > 1 {
         return Err(JamAppError::InvalidSession(
             "Riotbox MVP currently supports exactly one source reference per session".into(),

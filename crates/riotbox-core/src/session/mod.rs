@@ -7,6 +7,7 @@ mod defaults;
 mod export_artifact_evidence;
 mod export_qa_gates;
 mod export_types;
+mod live_recording_contract;
 mod live_recording_host_audio;
 mod live_recording_readiness;
 mod mc202_types;
@@ -54,6 +55,7 @@ pub use export_types::{
     ExportReceiptState, StemPackageReceiptReadinessBlocker, StemPackageReceiptReadinessReport,
     StemPackageReceiptReadinessStatus, validate_stem_package_receipt_readiness,
 };
+pub use live_recording_contract::LiveRecordingDurationContractError;
 pub use live_recording_host_audio::{
     ExportLiveRecordingCallbackGapSummary, ExportLiveRecordingHostAudioRef,
     ExportLiveRecordingStreamErrorSummary, ExportLiveRecordingTimingWindow,

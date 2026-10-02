@@ -1079,10 +1079,10 @@ live-master-dawproject session destination observer="":
     if [[ -n {{quote(observer)}} ]]; then args+=(--observer {{quote(observer)}}); fi
     cargo run --quiet -p riotbox-app --bin riotbox-app -- "${args[@]}"
 
-live-master-recording session destination graph="" observer="":
+live-master-recording session destination graph="" observer="" bars="2":
     #!/usr/bin/env bash
     set -euo pipefail
-    args=(--live-master-recording-execute --session {{quote(session)}} --live-recording-destination {{quote(destination)}})
+    args=(--live-master-recording-execute --session {{quote(session)}} --live-recording-destination {{quote(destination)}} --live-recording-bars {{quote(bars)}})
     if [[ -n {{quote(graph)}} ]]; then args+=(--graph {{quote(graph)}}); fi
     if [[ -n {{quote(observer)}} ]]; then args+=(--observer {{quote(observer)}}); fi
     cargo run --quiet -p riotbox-app --bin riotbox-app -- "${args[@]}"

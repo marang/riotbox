@@ -17,6 +17,7 @@ use super::live_recording_readiness::{
 };
 use crate::{
     TimestampMs,
+    action::{LiveRecordingDuration, LiveRecordingExportBoundary},
     export_readiness::{
         ExportReadinessContract, ExportReadinessStatus, ExportScope, ProductExportBoundary,
         ProductExportRole, UnsupportedExportScope, default_export_scope,
@@ -41,6 +42,8 @@ pub struct ExportReceiptState {
     pub pack_id: String,
     pub export_role: ProductExportRole,
     pub export_boundary: ProductExportBoundary,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub live_recording_duration: Option<LiveRecordingDuration>,
     pub artifact_path: String,
     pub proof_path: String,
     #[serde(default)]
@@ -101,10 +104,52 @@ impl ExportReceiptState {
     }
 
     #[must_use]
+    pub fn is_live_recording_runtime_master_bar_window_v3(&self) -> bool {
+        self.export_scope == ExportScope::LiveRecording
+            && self.pack_id
+                == crate::export_readiness::LIVE_RECORDING_RUNTIME_MASTER_BAR_WINDOW_V3_PACK_ID
+            && self.export_role == ProductExportRole::LiveRecordingCapture
+            && self.export_boundary == ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV3
+    }
+
+    /// One shared Action/receipt duration contract for commit, restore, and replay.
+    #[must_use]
+    pub fn live_recording_action_contract_matches(
+        &self,
+        boundary: LiveRecordingExportBoundary,
+        duration: Option<LiveRecordingDuration>,
+    ) -> bool {
+        boundary.valid_duration(duration)
+            && self.live_recording_duration == duration
+            && match boundary {
+                LiveRecordingExportBoundary::RuntimeMasterCaptureV1 => {
+                    self.is_live_recording_runtime_master_v1()
+                }
+                LiveRecordingExportBoundary::RuntimeMasterBarWindowV2 => {
+                    self.is_live_recording_runtime_master_bar_window_v2()
+                }
+                LiveRecordingExportBoundary::RuntimeMasterBarWindowV3 => {
+                    self.is_live_recording_runtime_master_bar_window_v3()
+                }
+                LiveRecordingExportBoundary::ReservedContractOnly => false,
+            }
+    }
+
+    #[must_use]
     pub fn live_recording_runtime_master_ready(&self) -> bool {
         let is_v1 = self.is_live_recording_runtime_master_v1();
         let is_v2 = self.is_live_recording_runtime_master_bar_window_v2();
-        if !(is_v1 || is_v2) || !self.live_recording_host_audio_readiness_report().ready() {
+        let is_v3 = self.is_live_recording_runtime_master_bar_window_v3();
+        let duration_identity_valid = if is_v3 {
+            LiveRecordingExportBoundary::RuntimeMasterBarWindowV3
+                .valid_duration(self.live_recording_duration)
+        } else {
+            self.live_recording_duration.is_none()
+        };
+        if !(is_v1 || is_v2 || is_v3)
+            || !duration_identity_valid
+            || !self.live_recording_host_audio_readiness_report().ready()
+        {
             return false;
         }
         let live_artifacts = self
@@ -144,11 +189,23 @@ impl ExportReceiptState {
         let duration_identity_ready = self.live_recording_host_audio_refs.len() == 1
             && live.duration_ms
                 == Some(self.live_recording_host_audio_refs[0].recording_duration_ms);
+        let frame_duration_ready = !is_v3
+            || live.audio_metrics.as_ref().is_some_and(|metrics| {
+                metrics.total_frame_count.is_some_and(|frames| {
+                    let rate = u128::from(live.sample_rate_hz.unwrap_or_default());
+                    let duration_ms = u128::from(frames)
+                        .checked_mul(1_000)
+                        .and_then(|milliframes| milliframes.checked_add(rate / 2))
+                        .and_then(|rounded| rounded.checked_div(rate))
+                        .and_then(|millis| u64::try_from(millis).ok());
+                    duration_ms.is_some() && live.duration_ms == duration_ms
+                })
+            });
         let mut required_gate_ids = vec![
             super::export_qa_gates::LIVE_RECORDING_RUNTIME_CAPTURE_QA_GATE_ID,
             super::export_qa_gates::LIVE_RECORDING_WAV_READBACK_QA_GATE_ID,
         ];
-        if is_v2 {
+        if is_v2 || is_v3 {
             required_gate_ids
                 .push(super::export_qa_gates::LIVE_RECORDING_BAR_WINDOW_ALIGNMENT_QA_GATE_ID);
         }
@@ -166,17 +223,20 @@ impl ExportReceiptState {
                 .first()
                 .and_then(|evidence| evidence.timing_window.as_ref())
                 .is_some_and(|window| {
-                    window.bar_aligned_two_bar_window_ready(
+                    window.bar_aligned_window_ready(
                         live.sample_rate_hz.unwrap_or_default(),
                         live.audio_metrics
                             .as_ref()
                             .and_then(|metrics| metrics.total_frame_count)
                             .unwrap_or_default(),
+                        self.live_recording_duration
+                            .unwrap_or(LiveRecordingDuration::TwoBars),
                     )
                 });
         artifacts_ready
             && top_level_identity_ready
             && duration_identity_ready
+            && frame_duration_ready
             && required_gates_ready
             && timing_window_ready
     }
@@ -199,6 +259,7 @@ impl ExportReceiptState {
             pack_id: contract.pack_id.clone(),
             export_role: contract.export_role,
             export_boundary: contract.boundary,
+            live_recording_duration: None,
             artifact_path: artifact_path.clone(),
             proof_path: proof_path.into(),
             manifest_path,
@@ -594,6 +655,9 @@ pub enum ExportArtifactMediaType {
 #[cfg(test)]
 #[path = "export_live_recording_contract_tests.rs"]
 mod export_live_recording_contract_tests;
+#[cfg(test)]
+#[path = "export_live_recording_window_tests.rs"]
+mod export_live_recording_window_tests;
 #[cfg(test)]
 #[path = "export_types_tests.rs"]
 mod export_types_tests;

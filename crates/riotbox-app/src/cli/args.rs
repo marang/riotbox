@@ -6,6 +6,7 @@ use crate::cli::args::support::parse_export_artifact_role;
 use crate::cli::model::AppLaunch;
 use crate::cli::model::LaunchMode;
 use crate::cli::model::ProductMixExportHandoff;
+use riotbox_core::action::LiveRecordingDuration;
 use riotbox_sidecar::path::bundled_sidecar_script_path;
 use std::path::PathBuf;
 
@@ -57,6 +58,7 @@ pub(in crate::cli) fn parse_args(
     let mut daw_session_host_import_proof_path = None;
     let mut daw_session_audible_output_proof_path = None;
     let mut live_recording_destination_path = None;
+    let mut live_recording_duration = None;
     let mut claimed_stem_roles = Vec::new();
 
     while let Some(arg) = args.next() {
@@ -119,6 +121,20 @@ pub(in crate::cli) fn parse_args(
             "--live-recording-destination" => {
                 live_recording_destination_path =
                     Some(next_path(&mut args, "--live-recording-destination")?);
+            }
+            "--live-recording-bars" => {
+                if live_recording_duration.is_some() {
+                    return Err("--live-recording-bars must be specified at most once".into());
+                }
+                let value = args
+                    .next()
+                    .ok_or_else(|| "missing value for --live-recording-bars".to_string())?;
+                live_recording_duration = Some(match value.as_str() {
+                    "2" => LiveRecordingDuration::TwoBars,
+                    "8" => LiveRecordingDuration::EightBars,
+                    "16" => LiveRecordingDuration::SixteenBars,
+                    _ => return Err("--live-recording-bars requires 2, 8, or 16".into()),
+                });
             }
             "--stem-role" => {
                 let value = args
@@ -195,6 +211,9 @@ pub(in crate::cli) fn parse_args(
         }
     }
 
+    if live_recording_duration.is_some() && !live_master_recording_execute {
+        return Err("--live-recording-bars requires --live-master-recording-execute".into());
+    }
     if explicit_source_bpm.is_some() && source_path.is_none() {
         return Err("--source-bpm requires --source <audio.wav>".into());
     }
@@ -268,6 +287,7 @@ pub(in crate::cli) fn parse_args(
                 session_path,
                 source_graph_path,
                 destination_path,
+                duration: live_recording_duration.unwrap_or(LiveRecordingDuration::TwoBars),
             },
             observer_path,
         });

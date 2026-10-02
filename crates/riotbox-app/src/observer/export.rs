@@ -247,6 +247,10 @@ fn export_receipt_observer_snapshot(receipt: &ExportReceiptState) -> Value {
     if receipt.export_scope == ExportScope::LiveRecording {
         let object = snapshot.as_object_mut().expect("receipt snapshot object");
         object.insert(
+            "live_recording_duration".into(),
+            json!(receipt.live_recording_duration),
+        );
+        object.insert(
             "live_recording_host_audio_refs".into(),
             json!(receipt.live_recording_host_audio_refs),
         );

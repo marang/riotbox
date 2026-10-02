@@ -110,6 +110,7 @@ pub(in crate::cli) fn live_recording_receipt_summary(
         "export_scope": receipt.export_scope.as_str(),
         "export_role": receipt.export_role.as_str(),
         "export_boundary": receipt.export_boundary.as_proof_str(),
+        "live_recording_duration": receipt.live_recording_duration,
         "readiness_status": receipt.readiness_status,
         "unsupported_scopes": receipt.unsupported_scopes,
     })
@@ -124,6 +125,7 @@ pub(in crate::cli) fn live_recording_host_audio_ref_summary(
         "recording_duration_ms": evidence.recording_duration_ms,
         "callback_gap_summary": evidence.callback_gap_summary,
         "stream_error_summary": evidence.stream_error_summary,
+        "timing_window": evidence.timing_window,
     })
 }
 

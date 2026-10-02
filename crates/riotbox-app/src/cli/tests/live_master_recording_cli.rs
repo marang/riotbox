@@ -3,6 +3,8 @@ use crate::cli::live_master_recording::apply_live_master_observer_status;
 use crate::cli::live_master_recording::validate_live_master_observer_path;
 use crate::cli::model::LaunchMode;
 use crate::cli::observer::UserSessionObserver;
+use crate::cli::observer::launch_summary;
+use riotbox_core::action::LiveRecordingDuration;
 use serde_json::Value;
 use serde_json::json;
 use std::fs;
@@ -28,18 +30,145 @@ fn live_master_recording_cli_parses_one_explicit_real_audio_path() {
         launch.observer_path,
         Some(PathBuf::from("artifacts/live-master.ndjson"))
     );
+    let summary = launch_summary(&launch);
+    assert_eq!(summary["duration_bars"], 2);
+    assert_eq!(summary["duration_beats"], 8);
+    assert_eq!(summary["boundary"], "runtime_master_bar_window_v2");
     match launch.mode {
         LaunchMode::LiveMasterRecordingExecute {
             session_path,
             source_graph_path,
             destination_path,
+            duration,
         } => {
             assert_eq!(session_path, PathBuf::from("session.json"));
             assert_eq!(source_graph_path, Some(PathBuf::from("graph.json")));
             assert_eq!(destination_path, PathBuf::from("exports/live-master.wav"));
+            assert_eq!(duration, LiveRecordingDuration::TwoBars);
         }
         other => panic!("expected live master recording execute, got {other:?}"),
     }
+}
+
+#[test]
+fn live_master_recording_cli_accepts_only_typed_bounded_windows_and_reports_them() {
+    for (bars, duration, boundary) in [
+        (
+            "2",
+            LiveRecordingDuration::TwoBars,
+            "runtime_master_bar_window_v2",
+        ),
+        (
+            "8",
+            LiveRecordingDuration::EightBars,
+            "runtime_master_bar_window_v3",
+        ),
+        (
+            "16",
+            LiveRecordingDuration::SixteenBars,
+            "runtime_master_bar_window_v3",
+        ),
+    ] {
+        let mut args = recording_args();
+        args.extend(["--live-recording-bars".into(), bars.into()]);
+        let launch = parse_args(args).expect("bounded duration");
+        assert!(
+            matches!(launch.mode, LaunchMode::LiveMasterRecordingExecute {
+            duration: actual, ..
+        } if actual == duration)
+        );
+        let summary = launch_summary(&launch);
+        assert_eq!(summary["duration_bars"], json!(duration.bars()));
+        assert_eq!(summary["duration_beats"], json!(duration.duration_beats()));
+        assert_eq!(summary["boundary"], boundary);
+    }
+}
+
+#[test]
+fn live_master_recording_cli_rejects_missing_invalid_and_repeated_windows() {
+    let mut missing = recording_args();
+    missing.push("--live-recording-bars".into());
+    assert!(parse_args(missing).unwrap_err().contains("missing value"));
+    for invalid in [
+        "",
+        "0",
+        "1",
+        "4",
+        "17",
+        "-2",
+        "2.0",
+        "02",
+        "all",
+        "--observer",
+    ] {
+        let mut args = recording_args();
+        args.extend(["--live-recording-bars".into(), invalid.into()]);
+        assert!(
+            parse_args(args)
+                .unwrap_err()
+                .contains("requires 2, 8, or 16")
+        );
+    }
+    for repeated in ["8", "16"] {
+        let mut args = recording_args();
+        args.extend([
+            "--live-recording-bars".into(),
+            "8".into(),
+            "--live-recording-bars".into(),
+            repeated.into(),
+        ]);
+        assert!(parse_args(args).unwrap_err().contains("at most once"));
+    }
+}
+
+#[test]
+fn live_master_recording_cli_rejects_orphan_windows_before_other_mode_dispatch() {
+    for mode in [
+        None,
+        Some("--live-recording-readiness-report"),
+        Some("--daw-export-readiness-report"),
+        Some("--stem-package-local-ci-report"),
+        Some("--live-master-dawproject-execute"),
+    ] {
+        let mut args = vec![
+            "--session".into(),
+            "session.json".into(),
+            "--live-recording-bars".into(),
+            "8".into(),
+        ];
+        args.extend(mode.map(str::to_owned));
+        assert_eq!(
+            parse_args(args).unwrap_err(),
+            "--live-recording-bars requires --live-master-recording-execute"
+        );
+    }
+}
+
+#[test]
+fn live_master_recording_cli_rejects_conflicting_modes_with_explicit_window() {
+    for conflict in [
+        "--live-recording-readiness-report",
+        "--daw-export-readiness-report",
+        "--stem-package-local-ci-report",
+        "--live-master-dawproject-execute",
+    ] {
+        let mut args = recording_args();
+        args.extend(["--live-recording-bars".into(), "16".into(), conflict.into()]);
+        assert!(parse_args(args).unwrap_err().contains("cannot be combined"));
+    }
+}
+
+fn recording_args() -> Vec<String> {
+    [
+        "--live-master-recording-execute",
+        "--session",
+        "session.json",
+        "--live-recording-destination",
+        "exports/live-master.wav",
+    ]
+    .into_iter()
+    .map(str::to_owned)
+    .collect()
 }
 
 #[test]

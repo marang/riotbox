@@ -1,5 +1,6 @@
 use crate::cli::model::AppLaunch;
 use crate::cli::model::LaunchMode;
+use crate::cli::model::live_master_recording_boundary;
 use crate::cli::observer::UserSessionObserver;
 use crate::cli::observer::launch_summary;
 use crate::cli::observer::timestamp_now;
@@ -9,6 +10,7 @@ use crate::ui::JamShellState;
 use crate::ui::ShellLaunchMode;
 use riotbox_audio::runtime::AudioRuntimeLifecycle;
 use riotbox_audio::runtime::AudioRuntimeShell;
+use riotbox_core::action::LiveRecordingDuration;
 use serde_json::Value;
 use serde_json::json;
 use std::fs;
@@ -116,6 +118,7 @@ fn open_live_master_recording_observer(
         session_path,
         source_graph_path,
         destination_path,
+        ..
     } = &launch.mode
     else {
         return Err("live master observer requires live master recording mode".into());
@@ -204,6 +207,7 @@ fn live_master_recording_execute_summary(
         session_path,
         source_graph_path,
         destination_path,
+        duration,
     } = &launch.mode
     else {
         return Err("not a live master recording execute launch".into());
@@ -234,7 +238,12 @@ fn live_master_recording_execute_summary(
         return Err(error);
     }
 
-    let plan = match state.queue_live_master_recording(timestamp_now(), &output, destination_path) {
+    let plan = match state.queue_live_master_recording_with_duration(
+        timestamp_now(),
+        &output,
+        destination_path,
+        *duration,
+    ) {
         crate::jam_app::LiveMasterRecordingQueueResult::Enqueued(plan) => plan,
         crate::jam_app::LiveMasterRecordingQueueResult::Rejected { reason } => {
             return Ok(blocked_live_master_recording_result(
@@ -409,12 +418,13 @@ fn live_master_recording_execute_summary(
         "mutates_session": true,
         "runtime_stopped": true,
         "observer_events": launch.observer_path.is_some(),
-        "boundary": "runtime_master_bar_window_v2",
+        "boundary": live_master_recording_boundary(plan.duration),
         "receipt_boundary": receipt.export_boundary.as_proof_str(),
         "session_path": session_path,
         "destination_path": destination_path,
         "proof_path": plan.proof_path,
-        "duration_beats": crate::jam_app::LIVE_MASTER_RECORDING_DURATION_BEATS,
+        "duration_bars": plan.duration.bars(),
+        "duration_beats": plan.duration.duration_beats(),
         "beats_per_bar": plan.beats_per_bar,
         "bar_grid_anchor_beat_cursor": plan.bar_grid_anchor_beat_cursor,
         "requested_start_position_beats": plan.requested_start_position_beats,
@@ -436,7 +446,7 @@ fn live_master_recording_execute_summary(
             "qa_gates": receipt.qa_gates,
             "host_audio_readiness": receipt.live_recording_host_audio_readiness_report(),
         },
-        "scope_note": "captured the next exact two-bar 4/4 window from the real post-limiter callback master; no input recording, offline substitute, new DSP, or release claim",
+        "scope_note": format!("captured the next exact {}-bar 4/4 window from the real post-limiter callback master with the current scene unchanged; no input recording, offline substitute, new DSP, or release claim", plan.duration.bars()),
     });
     let shell = JamShellState::new(state, ShellLaunchMode::Load);
     Ok((summary, shell))
@@ -469,6 +479,10 @@ fn blocked_live_master_recording_result(
         .flat_map(|plan| [&plan.destination_path, &plan.proof_path])
         .filter(|path| path.exists())
         .collect::<Vec<_>>();
+    let duration = match launch.mode {
+        LaunchMode::LiveMasterRecordingExecute { duration, .. } => Some(duration),
+        _ => None,
+    };
     let summary = json!({
         "mode": "live_master_recording_execute",
         "status": "blocked",
@@ -477,7 +491,9 @@ fn blocked_live_master_recording_result(
         "mutates_session": false,
         "runtime_stopped": true,
         "observer_events": launch.observer_path.is_some(),
-        "boundary": "runtime_master_bar_window_v2",
+        "boundary": duration.map(live_master_recording_boundary),
+        "duration_bars": duration.map(LiveRecordingDuration::bars),
+        "duration_beats": duration.map(LiveRecordingDuration::duration_beats),
         "destination_path": plan.map(|plan| &plan.destination_path),
         "proof_path": plan.map(|plan| &plan.proof_path),
         "action_id": plan.map(|plan| plan.action_id.0),

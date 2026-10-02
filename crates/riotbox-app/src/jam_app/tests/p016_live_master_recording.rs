@@ -25,6 +25,8 @@ use riotbox_core::session::SessionFile;
 use std::fs;
 use tempfile::tempdir;
 
+mod windows;
+
 pub(super) fn live_master_recording_state() -> JamAppState {
     let mut session = SessionFile::new(
         "live-master-session",
