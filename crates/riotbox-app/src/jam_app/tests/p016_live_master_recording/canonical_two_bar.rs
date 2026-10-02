@@ -8,6 +8,7 @@ use crate::jam_app::{
     live_master_recording::LIVE_MASTER_RECORDING_PROOF_SCHEMA_V4,
 };
 use riotbox_core::action::{ActionParams, LiveRecordingDuration, LiveRecordingExportBoundary};
+use riotbox_core::session::LIVE_RECORDING_BAR_WINDOW_ALIGNMENT_QA_GATE_ID;
 use std::fs;
 use tempfile::tempdir;
 
@@ -59,6 +60,18 @@ fn canonical_two_bar_rounding_ties_publish_fully_ready_identity_and_restore() {
             .unwrap();
         assert!(receipt.is_live_recording_runtime_master_bar_window_v4());
         assert!(receipt.live_recording_runtime_master_ready());
+        assert_eq!(
+            receipt
+                .qa_gates
+                .iter()
+                .find(|gate| gate.gate_id == LIVE_RECORDING_BAR_WINDOW_ALIGNMENT_QA_GATE_ID)
+                .unwrap()
+                .summary
+                .as_deref(),
+            Some(
+                "real callback capture began on the requested 4/4 bar boundary within one output frame and completed the exact 2-bar window"
+            )
+        );
         assert_eq!(
             receipt.live_recording_duration,
             Some(LiveRecordingDuration::TwoBars)

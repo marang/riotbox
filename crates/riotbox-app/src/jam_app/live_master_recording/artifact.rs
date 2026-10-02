@@ -441,7 +441,10 @@ pub(super) fn build_recording_receipt(
     receipt.qa_gates = vec![
         ExportReceiptQaGateResult::live_recording_runtime_master_capture(),
         ExportReceiptQaGateResult::live_recording_wav_readback(),
-        ExportReceiptQaGateResult::live_recording_bar_window_alignment(),
+        receipt.live_recording_duration.map_or_else(
+            ExportReceiptQaGateResult::live_recording_bar_window_alignment,
+            ExportReceiptQaGateResult::live_recording_bar_window_alignment_with_duration,
+        ),
     ];
     receipt.live_recording_host_audio_refs = vec![ExportLiveRecordingHostAudioRef {
         host: plan.output.host_name.clone(),

@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::action::LiveRecordingDuration;
+
 use super::export_types::ExportArtifactRole;
 
 pub const PRODUCT_EXPORT_REPRODUCIBILITY_QA_GATE_ID: &str = "product_export_reproducibility_smoke";
@@ -295,6 +297,20 @@ impl ExportReceiptQaGateResult {
                 "real callback capture began on the requested 4/4 bar boundary within one output frame and completed the exact two-bar window"
                     .into(),
             ),
+        }
+    }
+
+    /// Describe new explicit-duration receipts without changing legacy V2 text.
+    #[must_use]
+    pub fn live_recording_bar_window_alignment_with_duration(
+        duration: LiveRecordingDuration,
+    ) -> Self {
+        Self {
+            summary: Some(format!(
+                "real callback capture began on the requested 4/4 bar boundary within one output frame and completed the exact {}-bar window",
+                duration.bars(),
+            )),
+            ..Self::live_recording_bar_window_alignment()
         }
     }
 }

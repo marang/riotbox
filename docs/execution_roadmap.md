@@ -2186,3 +2186,13 @@ V2 proof/readiness and its usable DAW-V1 path remain unchanged; invalid old
 receipts are not silently repaired or substituted. This is source-free
 maintenance of the recording/export spine, not a fresh host, musical, human,
 DAW-import or release qualification. RIOTBOX-1036 remains open.
+
+RIOTBOX-1553 closes the separately bounded eight-bar real-host callback
+qualification for the existing held hook-plus-beat: one exact 16-second V3
+recording, matching saved receipt/readiness and a human report of no recording
+problem. The musical material is unchanged; this is recording-continuity
+evidence, not a new musical mechanism, repeated-join, physical-device endurance,
+DAW-import, demo or release pass. RIOTBOX-1554 corrects future alignment-gate
+descriptions to use the existing typed 2/8/16-bar duration, preserving legacy
+wording and all stored historical evidence. Neither slice adds a recorder or
+changes sound; RIOTBOX-1036 remains the broader open workflow owner.
