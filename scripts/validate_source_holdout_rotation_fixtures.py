@@ -16,6 +16,7 @@ import tempfile
 import uuid
 import wave
 from array import array
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, Callable
 
@@ -485,6 +486,7 @@ def run_development_access_fixtures(
     )
     run_stage_a_entry_contract_fixtures(manifest, registry)
     run_development_access_success_fixture(registry)
+    run_explicit_width_admission_fixtures(registry)
     run_crash_snapshot_blocking_fixtures(registry)
     run_parent_directory_fsync_fixture()
     run_qualification_owner_failure_fixture(registry)
@@ -494,6 +496,159 @@ def run_development_access_fixtures(
     run_strict_riff_rejection_fixtures(registry)
     run_pre_read_size_rejection_fixture(registry)
     run_containment_rejection_fixtures(registry)
+
+
+def run_explicit_width_admission_fixtures(registry: PinnedStageARegistry) -> None:
+    unknown_width_format = dict(LEGACY_SOURCE_FORMAT)
+    del unknown_width_format["sample_width_bits"]
+    maximum_bytes = maximum_source_file_bytes(
+        unknown_width_format, allowed_sample_width_bits=(16, 24)
+    )
+    require(
+        maximum_bytes
+        == maximum_source_file_bytes({**LEGACY_SOURCE_FORMAT, "sample_width_bits": 24})
+        > maximum_source_file_bytes(LEGACY_SOURCE_FORMAT),
+        "explicit width admission must bound bytes at its largest declared width",
+    )
+    with tempfile.TemporaryDirectory(prefix="riotbox-width-admission-") as temp:
+        temp_repo = Path(temp)
+        source = temp_repo / "generated.wav"
+        for width in (16, 24):
+            write_fixture_wav(source, 43, sample_width_bits=width)
+            payload = source.read_bytes()
+            identity = SourceIdentity(
+                case_id="synthetic_width",
+                source_path=source.name,
+                expected_sha256=hashlib.sha256(payload).hexdigest(),
+                partition="development",
+                source_format=unknown_width_format,
+                allowed_sample_width_bits=(16, 24),
+            )
+            for allowed in ((width,), (16, 24)):
+                opened: list[Path] = []
+                delivered: list[tuple[bytes, dict[str, Any]]] = []
+                log_path = temp_repo / f"width-{width}-set-{len(allowed)}.json"
+                result = run_development_access_session(
+                    [replace(identity, allowed_sample_width_bits=allowed)],
+                    [identity.case_id],
+                    repo=temp_repo,
+                    registry=registry,
+                    access_log_path=log_path,
+                    qualification_owner_id="synthetic-width-owner",
+                    qualification_owner=lambda _identity, data, record: delivered.append(
+                        (data, record)
+                    ),
+                    on_file_open=opened.append,
+                )
+                record = result["opened_development_files"][0]
+                require(
+                    opened == [source]
+                    and len(delivered) == 1
+                    and delivered[0][0] == payload
+                    and record["declared_sample_width_bits"] == list(allowed)
+                    and record["actual_source_format"]["sample_width_bits"] == width
+                    and delivered[0][1]["declared_sample_width_bits"] == list(allowed)
+                    and delivered[0][1]["actual_source_format"]["sample_width_bits"] == width
+                    and json.loads(log_path.read_text()) == result,
+                    "width admission must deliver one verified payload and log declared/actual widths",
+                )
+
+        # The final generated payload is PCM24; exact-width defaults must remain strict.
+        assert_rejected_access(
+            "unchanged exact width",
+            [replace(identity, source_format=LEGACY_SOURCE_FORMAT, allowed_sample_width_bits=None)],
+            [identity.case_id],
+            "sample-width mismatch",
+            repo=temp_repo,
+            registry=registry,
+            expected_open_count=1,
+        )
+        assert_rejected_access(
+            "explicit singleton mismatch",
+            [replace(identity, allowed_sample_width_bits=(16,))],
+            [identity.case_id],
+            "sample-width mismatch",
+            repo=temp_repo,
+            registry=registry,
+            expected_open_count=1,
+        )
+        invalid_sets = ((), (16, 16), (24, 16), (True,), (16.0,), (32,), [16, 24], "16,24")
+        for index, invalid in enumerate(invalid_sets):
+            invalid_identity = replace(
+                identity,
+                case_id="invalid_second_case",
+                allowed_sample_width_bits=invalid,
+            )
+            assert_rejected_access(
+                f"invalid width declaration {index}",
+                [identity, invalid_identity],
+                [identity.case_id, invalid_identity.case_id],
+                "allowed_sample_width_bits must be",
+                repo=temp_repo,
+                registry=registry,
+                expected_open_count=0,
+            )
+        assert_rejected_access(
+            "contradictory exact width claim",
+            [replace(identity, source_format=LEGACY_SOURCE_FORMAT)],
+            [identity.case_id],
+            "explicit width admission must omit exact sample_width_bits",
+            repo=temp_repo,
+            registry=registry,
+            expected_open_count=0,
+        )
+
+        mutations = (
+            ("unadmitted PCM32", 34, b"\x20\x00", "sample-width mismatch"),
+            ("non PCM header", 20, b"\x03\x00", "format_tag must be 1 PCM"),
+            ("invalid byte rate", 28, b"\x01\x00\x00\x00", "byte_rate mismatch"),
+            ("clipped PCM24", 44, b"\xff\xff\x7f", "clipped integer samples"),
+        )
+        for name, offset, changed_bytes, expected_fragment in mutations:
+            mutated = bytearray(payload)
+            mutated[offset : offset + len(changed_bytes)] = changed_bytes
+            source.write_bytes(mutated)
+            assert_rejected_access(
+                name,
+                [replace(identity, expected_sha256=hashlib.sha256(mutated).hexdigest())],
+                [identity.case_id],
+                expected_fragment,
+                repo=temp_repo,
+                registry=registry,
+                expected_open_count=1,
+            )
+        source.write_bytes(payload)
+        assert_rejected_access(
+            "width admission hash mismatch",
+            [replace(identity, expected_sha256="0" * 64)],
+            [identity.case_id],
+            "source SHA-256 mismatch",
+            repo=temp_repo,
+            registry=registry,
+            expected_open_count=1,
+        )
+        linked = temp_repo / "linked.wav"
+        linked.symlink_to(source)
+        assert_rejected_access(
+            "width admission symlink",
+            [replace(identity, source_path=linked.name)],
+            [identity.case_id],
+            "selected source file is a symlink",
+            repo=temp_repo,
+            registry=registry,
+            expected_open_count=0,
+        )
+        with source.open("wb") as oversized:
+            oversized.truncate(maximum_bytes + 1)
+        assert_rejected_access(
+            "width admission byte budget",
+            [identity],
+            [identity.case_id],
+            "exceeds its pre-read byte boundary",
+            repo=temp_repo,
+            registry=registry,
+            expected_open_count=1,
+        )
 
 
 def run_development_access_success_fixture(registry: PinnedStageARegistry) -> None:
@@ -657,6 +812,10 @@ def run_development_access_success_fixture(registry: PinnedStageARegistry) -> No
                 record["access_verification_status"]
                 == "verified_and_delivered_to_owner",
                 "each verified payload must be delivered to the in-process owner",
+            )
+            require(
+                "declared_sample_width_bits" not in record,
+                "default exact-width access must retain its existing log shape",
             )
             actual_format = record["actual_source_format"]
             require(

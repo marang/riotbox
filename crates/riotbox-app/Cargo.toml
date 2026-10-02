@@ -4,6 +4,9 @@ version.workspace = true
 edition.workspace = true
 license-file.workspace = true
 
+[features]
+limiter-calibration = ["riotbox-audio/limiter-calibration"]
+
 [dependencies]
 crossterm = "0.29"
 dawproject = "=0.11.0"

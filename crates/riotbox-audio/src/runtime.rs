@@ -9,6 +9,8 @@ use crate::runtime::{
 use std::sync::atomic::{AtomicU64, Ordering};
 
 mod fill_focus;
+#[cfg(any(test, feature = "limiter-calibration"))]
+pub mod limiter_calibration;
 mod live_master_capture;
 mod public_api_shell;
 mod render_tr909_w30_preview;

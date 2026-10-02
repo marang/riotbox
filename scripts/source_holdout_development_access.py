@@ -65,6 +65,9 @@ class SourceIdentity:
     expected_sha256: str
     partition: str
     source_format: dict[str, Any]
+    # Explicit admission, not a claim about an unknown historical WAV header.
+    # When present, source_format must omit the exact sample_width_bits field.
+    allowed_sample_width_bits: tuple[int, ...] | None = None
 
 
 @dataclass(frozen=True)
@@ -161,6 +164,12 @@ def preflight_development_identities(
             identity.partition == "development",
             f"{prefix}: exact case is not development-owned: {case_id}",
         )
+        if identity.allowed_sample_width_bits is not None:
+            validate_source_format(
+                identity.source_format,
+                f"{prefix}: {case_id}.source_format",
+                allowed_sample_width_bits=identity.allowed_sample_width_bits,
+            )
         selected.append(identity)
 
     return DevelopmentAccessPlan(
@@ -267,6 +276,10 @@ def run_development_access_session(
                         "expected_sha256": selected_identity.expected_sha256,
                         "access_verification_status": "opened",
                     }
+                    if selected_identity.allowed_sample_width_bits is not None:
+                        opened_record["declared_sample_width_bits"] = list(
+                            selected_identity.allowed_sample_width_bits
+                        )
                     access_log["opened_development_files"].append(opened_record)
                     access_log["access_status"] = "reading_development_sources"
                     persist_access_log(access_log_file, access_log)
@@ -281,6 +294,7 @@ def run_development_access_session(
                     f"{registry.path}: {identity.case_id}",
                     on_open=record_open,
                     return_payload=True,
+                    allowed_sample_width_bits=identity.allowed_sample_width_bits,
                 )
                 require(
                     opened_record is not None,
@@ -352,8 +366,11 @@ def validate_contained_source_file(
     *,
     on_open: Callable[[Path], None] | None = None,
     return_payload: bool = False,
+    allowed_sample_width_bits: tuple[int, ...] | None = None,
 ) -> dict[str, Any] | tuple[bytes, dict[str, Any]]:
-    maximum_bytes = maximum_source_file_bytes(source_format)
+    maximum_bytes = maximum_source_file_bytes(
+        source_format, allowed_sample_width_bits=allowed_sample_width_bits
+    )
     payload = read_contained_regular_file(
         repo,
         relative_path,
@@ -361,7 +378,13 @@ def validate_contained_source_file(
         on_open=on_open,
         maximum_bytes=maximum_bytes,
     )
-    result = validate_wav_payload(payload, expected_sha256, source_format, prefix)
+    result = validate_wav_payload(
+        payload,
+        expected_sha256,
+        source_format,
+        prefix,
+        allowed_sample_width_bits=allowed_sample_width_bits,
+    )
     if return_payload:
         return payload, result
     return result
@@ -515,11 +538,22 @@ def validate_wav_payload(
     expected_sha256: str,
     source_format: dict[str, Any],
     prefix: str,
+    *,
+    allowed_sample_width_bits: tuple[int, ...] | None = None,
 ) -> dict[str, Any]:
-    validate_source_format(source_format, f"{prefix}.source_format")
+    validate_source_format(
+        source_format,
+        f"{prefix}.source_format",
+        allowed_sample_width_bits=allowed_sample_width_bits,
+    )
     actual_hash = hashlib.sha256(payload).hexdigest()
     require(actual_hash == expected_sha256, f"{prefix}: source SHA-256 mismatch")
-    parsed = parse_strict_pcm_wave(payload, source_format, prefix)
+    parsed = parse_strict_pcm_wave(
+        payload,
+        source_format,
+        prefix,
+        allowed_sample_width_bits=allowed_sample_width_bits,
+    )
     sample_width_bits = parsed["sample_width_bits"]
     max_absolute = maximum_pcm_absolute(
         parsed.pop("sample_bytes"), sample_width_bits // 8
@@ -529,17 +563,28 @@ def validate_wav_payload(
         max_absolute < full_scale_positive,
         f"{prefix}: source WAV contains clipped integer samples",
     )
-    return {
+    result = {
         "actual_sha256": actual_hash,
         "actual_source_format": parsed,
     }
+    if allowed_sample_width_bits is not None:
+        result["declared_sample_width_bits"] = list(allowed_sample_width_bits)
+    return result
 
 
 def parse_strict_pcm_wave(
     payload: bytes,
     source_format: dict[str, Any],
     prefix: str,
+    *,
+    allowed_sample_width_bits: tuple[int, ...] | None = None,
 ) -> dict[str, Any]:
+    if allowed_sample_width_bits is not None:
+        validate_source_format(
+            source_format,
+            f"{prefix}.source_format",
+            allowed_sample_width_bits=allowed_sample_width_bits,
+        )
     require(len(payload) >= 12, f"{prefix}: source WAV header is truncated")
     require(
         payload[:4] == b"RIFF",
@@ -596,7 +641,9 @@ def parse_strict_pcm_wave(
         f"{prefix}: source WAV sample-rate mismatch",
     )
     require(
-        bits == source_format["sample_width_bits"],
+        bits in allowed_sample_width_bits
+        if allowed_sample_width_bits is not None
+        else bits == source_format["sample_width_bits"],
         f"{prefix}: source WAV sample-width mismatch",
     )
     expected_block_align = channels * (bits // 8)
@@ -635,7 +682,12 @@ def parse_strict_pcm_wave(
     }
 
 
-def validate_source_format(source_format: dict[str, Any], prefix: str) -> None:
+def validate_source_format(
+    source_format: dict[str, Any],
+    prefix: str,
+    *,
+    allowed_sample_width_bits: tuple[int, ...] | None = None,
+) -> None:
     require(
         isinstance(source_format.get("sample_rate_hz"), int)
         and not isinstance(source_format.get("sample_rate_hz"), bool)
@@ -646,10 +698,22 @@ def validate_source_format(source_format: dict[str, Any], prefix: str) -> None:
         source_format.get("channels") in {1, 2},
         f"{prefix}.channels must be 1 or 2",
     )
-    require(
-        source_format.get("sample_width_bits") in {16, 24},
-        f"{prefix}.sample_width_bits must be 16 or 24",
-    )
+    if allowed_sample_width_bits is None:
+        require(
+            source_format.get("sample_width_bits") in {16, 24},
+            f"{prefix}.sample_width_bits must be 16 or 24",
+        )
+    else:
+        require(
+            isinstance(allowed_sample_width_bits, tuple)
+            and all(type(width) is int for width in allowed_sample_width_bits)
+            and allowed_sample_width_bits in ((16,), (24,), (16, 24)),
+            f"{prefix}: allowed_sample_width_bits must be (16,), (24,), or (16, 24)",
+        )
+        require(
+            "sample_width_bits" not in source_format,
+            f"{prefix}: explicit width admission must omit exact sample_width_bits",
+        )
     require(
         source_format.get("compression_type") == "NONE",
         f"{prefix}.compression_type must be NONE",
@@ -663,17 +727,30 @@ def validate_source_format(source_format: dict[str, Any], prefix: str) -> None:
     )
 
 
-def maximum_source_file_bytes(source_format: dict[str, Any]) -> int:
-    validate_source_format(source_format, "source_format")
+def maximum_source_file_bytes(
+    source_format: dict[str, Any],
+    *,
+    allowed_sample_width_bits: tuple[int, ...] | None = None,
+) -> int:
+    validate_source_format(
+        source_format,
+        "source_format",
+        allowed_sample_width_bits=allowed_sample_width_bits,
+    )
     maximum_frames = (
         source_format["sample_rate_hz"]
         * source_format["maximum_duration_seconds"]
         + 1
     )
+    maximum_width = (
+        max(allowed_sample_width_bits)
+        if allowed_sample_width_bits is not None
+        else source_format["sample_width_bits"]
+    )
     maximum_data_bytes = (
         maximum_frames
         * source_format["channels"]
-        * (source_format["sample_width_bits"] // 8)
+        * (maximum_width // 8)
     )
     return maximum_data_bytes + MAX_RIFF_CONTAINER_OVERHEAD_BYTES
 

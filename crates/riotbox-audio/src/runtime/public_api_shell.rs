@@ -390,9 +390,23 @@ pub fn master_bus_limiter_ceiling() -> f32 {
 }
 
 pub fn apply_master_bus_soft_limiter(samples: &mut [f32]) -> usize {
+    apply_master_bus_soft_limiter_with_bounds(
+        samples,
+        MASTER_BUS_LIMITER_THRESHOLD,
+        MASTER_BUS_LIMITER_CEILING,
+    )
+}
+
+// Only the fixed production wrapper and the gated offline comparison call this helper.
+// Keep the operation order and actual-write predicate shared, not a second DSP renderer.
+pub(super) fn apply_master_bus_soft_limiter_with_bounds(
+    samples: &mut [f32],
+    threshold: f32,
+    ceiling: f32,
+) -> usize {
     let mut limited_sample_count = 0;
     for sample in samples {
-        let limited = master_bus_limited_sample(*sample);
+        let limited = master_bus_limited_sample(*sample, threshold, ceiling);
         if (limited - *sample).abs() > f32::EPSILON {
             limited_sample_count += 1;
             *sample = limited;
@@ -422,16 +436,15 @@ const CLIP_THRESHOLD: f32 = 1.0;
 const MASTER_BUS_LIMITER_THRESHOLD: f32 = 0.92;
 const MASTER_BUS_LIMITER_CEILING: f32 = 0.985;
 
-fn master_bus_limited_sample(sample: f32) -> f32 {
+fn master_bus_limited_sample(sample: f32, threshold: f32, ceiling: f32) -> f32 {
     let magnitude = sample.abs();
-    if magnitude <= MASTER_BUS_LIMITER_THRESHOLD {
+    if magnitude <= threshold {
         return sample;
     }
 
-    let knee_width = MASTER_BUS_LIMITER_CEILING - MASTER_BUS_LIMITER_THRESHOLD;
-    let shaped_excess = ((magnitude - MASTER_BUS_LIMITER_THRESHOLD) / knee_width).tanh();
-    let limited_magnitude =
-        (MASTER_BUS_LIMITER_THRESHOLD + knee_width * shaped_excess).min(MASTER_BUS_LIMITER_CEILING);
+    let knee_width = ceiling - threshold;
+    let shaped_excess = ((magnitude - threshold) / knee_width).tanh();
+    let limited_magnitude = (threshold + knee_width * shaped_excess).min(ceiling);
     sample.signum() * limited_magnitude
 }
 

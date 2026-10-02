@@ -141,6 +141,25 @@ pub fn render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
     channel_count: u16,
     callback_frame_count: usize,
 ) -> Vec<RuntimeMixRenderOutput> {
+    render_sequence_with_pre_limiter_sink(
+        steps,
+        sample_rate,
+        channel_count,
+        callback_frame_count,
+        drop,
+    )
+}
+
+// The existing offline allocation is transferred once per step, after its metrics are
+// computed. The ordinary report path drops it at the same step; the gated diagnostic
+// retains it. This does not install a sink in the live callback or duplicate the mixer.
+pub(super) fn render_sequence_with_pre_limiter_sink(
+    steps: &[RuntimeMixRenderSequenceStep<'_>],
+    sample_rate: u32,
+    channel_count: u16,
+    callback_frame_count: usize,
+    mut pre_limiter_sink: impl FnMut(Vec<f32>),
+) -> Vec<RuntimeMixRenderOutput> {
     let Some(first_step) = steps.first() else {
         return Vec::new();
     };
@@ -241,7 +260,7 @@ pub fn render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
                 pre_limiter_block.copy_from_slice(block);
                 limited_sample_count += apply_master_bus_soft_limiter(block);
             }
-            RuntimeMixRenderOutput {
+            let rendered = RuntimeMixRenderOutput {
                 limiter: MasterBusLimiterReport {
                     applied: limited_sample_count > 0,
                     threshold: master_bus_limiter_threshold(),
@@ -251,7 +270,9 @@ pub fn render_runtime_mix_plan_sequence_realtime_simulation_offline_with_report(
                     post: signal_metrics(&output),
                 },
                 samples: output,
-            }
+            };
+            pre_limiter_sink(pre_limiter);
+            rendered
         })
         .collect()
 }

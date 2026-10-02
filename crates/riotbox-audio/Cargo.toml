@@ -4,6 +4,9 @@ version.workspace = true
 edition.workspace = true
 license-file.workspace = true
 
+[features]
+limiter-calibration = []
+
 [dependencies]
 arc-swap = "1.7"
 cpal = "0.17.3"

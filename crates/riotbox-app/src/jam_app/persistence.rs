@@ -3,6 +3,8 @@ use riotbox_audio::source_audio::read_source_wav_bytes;
 
 mod graph_paths;
 mod history_validation;
+#[cfg(feature = "limiter-calibration")]
+mod limiter_calibration;
 use history_validation::validate_mvp_session_restore_contracts;
 
 #[cfg(test)]
