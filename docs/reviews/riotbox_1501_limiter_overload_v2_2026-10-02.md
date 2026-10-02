@@ -152,7 +152,8 @@ not true-peak, device or hearing-safety guarantees.
 
 B and C differ from A in every whole-render 4x case. This does not establish
 audibility, distortion preference or musical quality. Whole-render f64 delta
-RMS relative to A is Dense B/C 0.0005231429/0.0022410337, Tonal
+RMS of (candidate − A), without normalization, is Dense B/C
+0.0005231429/0.0022410337, Tonal
 0.0000557992/0.0001812127, Sparse 0.0001785964/0.0011311950. The persisted report
 separately retains original Rust f32 metrics; these descriptive f64 values do
 not replace them or redefine the product's numerical contract.
@@ -197,3 +198,10 @@ Sparse future window. **Zero findings.** The access layer's non-qualification
 status is correctly separate from completed technical comparison; no metric or
 artifact-availability flag is promoted to a human verdict. Main final self-review
 also retains zero findings; post-access changes are result documentation only.
+
+The subsequent documentation-delta review raised one P3 terminology finding
+(Spec And Evidence Auditor): “delta RMS relative to A” could be confused with
+the separately normalized `relative_delta_rms` field. Fixed the description to
+unnormalized RMS of (candidate − A), matching the quoted `delta_rms_f64` values;
+no numbers, evidence, contracts or implementation changed. Follow-up self-review
+finds no remaining discrepancy.
