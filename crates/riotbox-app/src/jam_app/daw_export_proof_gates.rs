@@ -99,14 +99,15 @@ pub fn default_daw_export_release_blockers() -> Vec<DawExportReleaseBlocker> {
 
 pub fn release_blockers_for_receipt(receipt: &ExportReceiptState) -> Vec<DawExportReleaseBlocker> {
     let mut blockers = vec![DawExportReleaseBlocker::DeveloperProofOnly];
-    let writer_passed = if receipt.is_live_master_dawproject_v1() {
-        receipt.live_master_dawproject_archive_ready()
-    } else if receipt.is_dawproject_archive_receipt() {
-        gate_passed(receipt, DAWPROJECT_ARCHIVE_QA_GATE_ID)
-            && receipt.dawproject_xml_document_ready()
-    } else {
-        gate_passed(receipt, DAW_SESSION_WRITER_QA_GATE_ID)
-    };
+    let writer_passed =
+        if receipt.is_live_master_dawproject_v1() || receipt.is_live_master_dawproject_v2() {
+            receipt.live_master_dawproject_archive_ready()
+        } else if receipt.is_dawproject_archive_receipt() {
+            gate_passed(receipt, DAWPROJECT_ARCHIVE_QA_GATE_ID)
+                && receipt.dawproject_xml_document_ready()
+        } else {
+            gate_passed(receipt, DAW_SESSION_WRITER_QA_GATE_ID)
+        };
     if !writer_passed {
         blockers.push(DawExportReleaseBlocker::DawWriterMissing);
     }
@@ -193,7 +194,7 @@ fn proof_gate_summary(
     if gate_id == DAWPROJECT_ARCHIVE_QA_GATE_ID
         && receipt.is_dawproject_archive_receipt()
         && (!receipt.dawproject_xml_document_ready()
-            || (receipt.is_live_master_dawproject_v1()
+            || ((receipt.is_live_master_dawproject_v1() || receipt.is_live_master_dawproject_v2())
                 && !receipt.live_master_dawproject_archive_ready()))
     {
         summary.status = DawExportProofGateStatus::Failed;

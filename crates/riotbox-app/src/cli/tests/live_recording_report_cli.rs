@@ -26,20 +26,27 @@ use serde_json::json;
 use std::path::PathBuf;
 
 #[test]
-fn live_recording_report_projects_v3_duration_and_exact_timing_geometry() {
-    for duration in [
-        LiveRecordingDuration::EightBars,
-        LiveRecordingDuration::SixteenBars,
+fn live_recording_report_projects_versioned_duration_and_exact_timing_geometry() {
+    for (duration, boundary) in [
+        (
+            LiveRecordingDuration::TwoBars,
+            ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV4,
+        ),
+        (
+            LiveRecordingDuration::EightBars,
+            ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV3,
+        ),
+        (
+            LiveRecordingDuration::SixteenBars,
+            ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV3,
+        ),
     ] {
         let mut receipt = ready_live_recording_receipt(ActionId(1551));
-        receipt.export_boundary = ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV3;
+        receipt.export_boundary = boundary;
         receipt.live_recording_duration = Some(duration);
         let summary = live_recording_receipt_summary(&receipt);
         assert_eq!(summary["live_recording_duration"], json!(duration));
-        assert_eq!(
-            summary["export_boundary"],
-            "live_recording.runtime_master_bar_window_v3"
-        );
+        assert_eq!(summary["export_boundary"], boundary.as_proof_str());
 
         let evidence = &mut receipt.live_recording_host_audio_refs[0];
         evidence.timing_window = Some(ExportLiveRecordingTimingWindow {

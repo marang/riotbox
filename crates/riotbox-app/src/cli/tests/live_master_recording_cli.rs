@@ -33,7 +33,7 @@ fn live_master_recording_cli_parses_one_explicit_real_audio_path() {
     let summary = launch_summary(&launch);
     assert_eq!(summary["duration_bars"], 2);
     assert_eq!(summary["duration_beats"], 8);
-    assert_eq!(summary["boundary"], "runtime_master_bar_window_v2");
+    assert_eq!(summary["boundary"], "runtime_master_bar_window_v4");
     match launch.mode {
         LaunchMode::LiveMasterRecordingExecute {
             session_path,
@@ -56,7 +56,7 @@ fn live_master_recording_cli_accepts_only_typed_bounded_windows_and_reports_them
         (
             "2",
             LiveRecordingDuration::TwoBars,
-            "runtime_master_bar_window_v2",
+            "runtime_master_bar_window_v4",
         ),
         (
             "8",

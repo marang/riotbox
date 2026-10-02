@@ -25,11 +25,14 @@ use std::path::Path;
 
 mod document;
 mod input;
+mod version;
 pub use document::LiveMasterDawprojectProof;
 use input::{latest_live_master_receipt, validate_queue_source_receipt};
+use version::LiveMasterDawprojectVersion;
 
 pub const LIVE_MASTER_DAWPROJECT_ACTION_BOUNDARY_ID: &str = "live_master_dawproject_v1";
 pub const LIVE_MASTER_DAWPROJECT_PROOF_SCHEMA: &str = "riotbox.live_master_dawproject.v1";
+const LIVE_MASTER_DAWPROJECT_PROOF_SCHEMA_V2: &str = "riotbox.live_master_dawproject.v2";
 const EMBEDDED_AUDIO_PATH: &str = "audio/live_master.wav";
 
 impl JamAppState {
@@ -38,8 +41,11 @@ impl JamAppState {
         requested_at: TimestampMs,
         destination_path: Option<String>,
     ) -> DawSessionExportQueueResult {
-        let receipt_id = latest_live_master_receipt(&self.session)
-            .map(|receipt| receipt.receipt_id.as_str().to_owned());
+        let source_receipt = latest_live_master_receipt(&self.session);
+        let receipt_id = source_receipt.map(|receipt| receipt.receipt_id.as_str().to_owned());
+        let version = source_receipt
+            .and_then(|receipt| LiveMasterDawprojectVersion::for_recording(receipt.export_boundary))
+            .unwrap_or(LiveMasterDawprojectVersion::LegacyV1);
         let mut draft = ActionDraft::new(
             ActorType::User,
             ActionCommand::ExportDawSession,
@@ -51,7 +57,7 @@ impl JamAppState {
         );
         draft.params = ActionParams::DawSessionExport {
             export_scope: ExportScope::DawSession,
-            boundary: DawSessionExportBoundary::LiveMasterDawprojectV1,
+            boundary: version.action_boundary(),
             include_manifest: true,
             destination_kind: ProductExportDestinationKind::LocalFilePath,
             destination_path: destination_path.clone(),
@@ -118,15 +124,20 @@ impl JamAppState {
                 }
             },
         };
-        let source_receipt_id = self.pending_live_master_dawproject_source_receipt_id(action_id)?;
-        let receipt = match write_live_master_dawproject(
-            &self.session,
-            self.session_base_dir(),
-            destination_path,
-            action_id,
-            &source_receipt_id,
-            requested_at,
-        ) {
+        let prepared = self
+            .pending_live_master_dawproject_source(action_id)
+            .and_then(|(source_receipt_id, version)| {
+                write_live_master_dawproject(
+                    &self.session,
+                    self.session_base_dir(),
+                    destination_path,
+                    action_id,
+                    &source_receipt_id,
+                    version,
+                    requested_at,
+                )
+            });
+        let receipt = match prepared {
             Ok(receipt) => receipt,
             Err(error) => {
                 self.queue.reject(action_id, error.to_string());
@@ -207,32 +218,37 @@ impl JamAppState {
                 action.command == ActionCommand::ExportDawSession
                     && matches!(&action.params,
                 ActionParams::DawSessionExport {
-                    boundary: DawSessionExportBoundary::LiveMasterDawprojectV1,
+                    boundary: DawSessionExportBoundary::LiveMasterDawprojectV1
+                        | DawSessionExportBoundary::LiveMasterDawprojectV2,
                     destination_path: Some(path), ..
                 } if path == destination.as_ref())
             })
             .map(|action| action.id)
     }
 
-    fn pending_live_master_dawproject_source_receipt_id(
+    fn pending_live_master_dawproject_source(
         &self,
         action_id: ActionId,
-    ) -> Result<ExportReceiptId, JamAppError> {
+    ) -> Result<(ExportReceiptId, LiveMasterDawprojectVersion), JamAppError> {
         self.queue
             .pending_actions()
             .into_iter()
             .find(|action| action.id == action_id)
             .and_then(|action| match &action.params {
                 ActionParams::DawSessionExport {
-                    boundary: DawSessionExportBoundary::LiveMasterDawprojectV1,
+                    export_scope: ExportScope::DawSession,
+                    boundary,
+                    include_manifest: true,
+                    destination_kind: ProductExportDestinationKind::LocalFilePath,
                     receipt_id: Some(receipt_id),
                     ..
-                } => Some(ExportReceiptId::new(receipt_id.clone())),
+                } => LiveMasterDawprojectVersion::for_action(*boundary)
+                    .map(|version| (ExportReceiptId::new(receipt_id.clone()), version)),
                 _ => None,
             })
             .ok_or_else(|| {
                 JamAppError::InvalidSession(
-                    "queued live-master DAWproject action is missing its pinned V2 receipt ID"
+                    "queued live-master DAWproject action is missing its pinned source receipt or version"
                         .into(),
                 )
             })
@@ -251,13 +267,14 @@ fn write_live_master_dawproject(
     destination: &Path,
     action_id: ActionId,
     source_receipt_id: &ExportReceiptId,
+    version: LiveMasterDawprojectVersion,
     created_at: TimestampMs,
 ) -> Result<ExportReceiptState, JamAppError> {
     validate_destination(destination)?;
-    let input = input::prepare_input(session, session_base_dir, source_receipt_id)?;
+    let input = input::prepare_input(session, session_base_dir, source_receipt_id, version)?;
     let proof = document::build_proof(&input);
     let proof_json = serde_json::to_vec_pretty(&proof)?;
-    let metadata = document::build_metadata();
+    let metadata = document::build_metadata(input.version);
     let project = document::build_project(&input.proof);
     let archive = write_dawproject_archive(
         destination,

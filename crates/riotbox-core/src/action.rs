@@ -369,11 +369,12 @@ pub enum LiveRecordingExportBoundary {
     RuntimeMasterCaptureV1,
     RuntimeMasterBarWindowV2,
     RuntimeMasterBarWindowV3,
+    RuntimeMasterBarWindowV4,
 }
 
 impl LiveRecordingExportBoundary {
-    /// Historical boundaries retain their omitted duration identity; only V3
-    /// accepts the explicitly selected longer recording windows.
+    /// Historical boundaries retain their omitted duration identity. V3 owns
+    /// explicit longer windows; V4 owns the canonical explicit two-bar window.
     #[must_use]
     pub const fn valid_duration(self, duration: Option<LiveRecordingDuration>) -> bool {
         match self {
@@ -384,6 +385,9 @@ impl LiveRecordingExportBoundary {
                 duration,
                 Some(LiveRecordingDuration::EightBars | LiveRecordingDuration::SixteenBars)
             ),
+            Self::RuntimeMasterBarWindowV4 => {
+                matches!(duration, Some(LiveRecordingDuration::TwoBars))
+            }
         }
     }
 }
@@ -413,7 +417,7 @@ impl LiveRecordingDuration {
     }
 
     /// Recover the runtime's f32 tempo only when its persisted micro-BPM identity
-    /// is canonical. Callers arming V3 must also compare the original tempo bits.
+    /// is canonical. Callers arming V3/V4 must also compare the original tempo bits.
     #[must_use]
     pub fn confirmed_runtime_bpm(confirmed_bpm_micros: u64) -> Option<f32> {
         let bpm = (confirmed_bpm_micros as f64 / 1_000_000.0) as f32;
@@ -426,7 +430,7 @@ impl LiveRecordingDuration {
     }
 
     /// Round the confirmed runtime-f32 4/4 window once to whole output frames.
-    /// V3 uses this geometry; V2 retains its historical integer-micro-BPM check.
+    /// V3/V4 use this geometry; V2 retains its historical integer-micro-BPM check.
     /// Allocation limits remain a separate preallocation gate at the recorder.
     #[must_use]
     pub fn target_frame_count(self, sample_rate_hz: u32, confirmed_bpm_micros: u64) -> Option<u64> {
@@ -440,7 +444,7 @@ impl LiveRecordingDuration {
         (frames.is_finite() && frames > 0.0 && frames < u64::MAX as f64).then_some(frames as u64)
     }
 
-    /// V3-only representation budget for the incrementally accumulated runtime
+    /// Canonical V3/V4 representation budget for the incrementally accumulated runtime
     /// endpoint, never a replacement for physical start or frame-duration gates.
     ///
     /// Each captured callback contributes one span multiply and one position
@@ -460,8 +464,7 @@ impl LiveRecordingDuration {
         callback_count: u64,
         frame_count: u64,
     ) -> Option<f64> {
-        if self == Self::TwoBars
-            || !beats_per_frame.is_finite()
+        if !beats_per_frame.is_finite()
             || beats_per_frame <= 0.0
             || !captured_start.is_finite()
             || !captured_end.is_finite()
@@ -500,6 +503,7 @@ pub enum DawSessionExportBoundary {
     AudibleOutputProofV1,
     W30HookDawprojectV1,
     LiveMasterDawprojectV1,
+    LiveMasterDawprojectV2,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

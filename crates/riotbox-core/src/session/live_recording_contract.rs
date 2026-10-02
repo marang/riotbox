@@ -21,7 +21,7 @@ pub enum LiveRecordingDurationContractError {
 }
 
 impl SessionFile {
-    /// Validate V3 or explicit-duration state without loading or reproducing audio.
+    /// Validate V3/V4 or explicit-duration state without loading or reproducing audio.
     /// Legacy omitted-duration V1/V2 receipts retain their existing restore policy.
     pub fn validate_live_recording_duration_contracts(
         &self,
@@ -52,8 +52,11 @@ impl SessionFile {
                 continue;
             };
             if action.status != ActionStatus::Committed
-                || (*boundary != LiveRecordingExportBoundary::RuntimeMasterBarWindowV3
-                    && duration.is_none())
+                || (!matches!(
+                    boundary,
+                    LiveRecordingExportBoundary::RuntimeMasterBarWindowV3
+                        | LiveRecordingExportBoundary::RuntimeMasterBarWindowV4
+                ) && duration.is_none())
             {
                 continue;
             }
@@ -70,9 +73,11 @@ impl SessionFile {
             validate_action_receipt(action, receipt)?;
         }
         for receipt in &self.export_receipts {
-            if receipt.export_boundary
-                != ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV3
-                && receipt.live_recording_duration.is_none()
+            if !matches!(
+                receipt.export_boundary,
+                ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV3
+                    | ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV4
+            ) && receipt.live_recording_duration.is_none()
             {
                 continue;
             }

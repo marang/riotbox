@@ -189,10 +189,18 @@ fn v3_roundoff_budget_admits_actual_clock_accumulation_but_not_frame_displacemen
     assert!(bound <= 1.0e-6);
     assert!(bound < span * 0.5);
     assert!(bound < (end + span - expected_end).abs());
-    assert!(
-        LiveRecordingDuration::TwoBars
-            .position_roundoff_bound(span, start, end, expected_end, count, frames)
-            .is_none()
+    // Canonical V4 can use the same bounded arithmetic for TwoBars; historical
+    // V2 callers keep their own unchanged representation check.
+    assert_eq!(
+        LiveRecordingDuration::TwoBars.position_roundoff_bound(
+            span,
+            start,
+            end,
+            expected_end,
+            count,
+            frames
+        ),
+        Some(bound)
     );
 }
 
@@ -496,7 +504,7 @@ fn window_receipt(duration: LiveRecordingDuration) -> ExportReceiptState {
     receipt
 }
 
-fn window_session(duration: LiveRecordingDuration) -> SessionFile {
+pub(super) fn window_session(duration: LiveRecordingDuration) -> SessionFile {
     let mut session = SessionFile::new("bounded-window-test", "test", "test");
     let receipt = window_receipt(duration);
     session.action_log.actions.push(Action {

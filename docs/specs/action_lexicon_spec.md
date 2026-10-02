@@ -625,20 +625,20 @@ Runnable `runtime_master_bar_window_v2` boundary:
   tempo fault counts. Receipt readiness cross-checks these values rather than
   trusting independent pass flags
 - V1 actions, receipts, proofs, and readiness remain readable and unchanged;
-  V2 remains the default two-bar `just live-master-recording` ingress.
+  V2 is the historical two-bar ingress, superseded for new takes by RBX-423/V4.
 
 Bounded extended `runtime_master_bar_window_v3` boundary (RBX-422):
 
 - The same action accepts typed `duration: eight_bars | sixteen_bars` only for
   V3, corresponding to 32 or 64 beats in confirmed 4/4. V1/V2/reserved actions
-  omit this field; `two_bars` is a CLI/API selection that still creates V2,
+  omit this field; `two_bars` now creates V4 under RBX-423,
   never an alternative meaning for V3. Unknown selections fail closed.
 - `--live-recording-bars 2|8|16` belongs exclusively to
   `--live-master-recording-execute`; omission means 2. The Just recipe adds
   `bars` after its existing optional graph/observer arguments.
 - V3 reuses the same next-bar arm, post-limiter callback, float32 publication,
   allocation ceiling, health/start/half-frame duration gates and side-effect
-  commit path. The V3-only numerical position contract is owned by the Audio
+  commit path. The canonical numerical position contract is owned by the Audio
   Core spec; it distinguishes accumulated clock arithmetic from frame duration.
   Its checked whole-frame duration uses the exact runtime f32 BPM reconstructed
   from persisted micro-BPM, with an exact bit/canonical roundtrip required before
@@ -654,8 +654,23 @@ Bounded extended `runtime_master_bar_window_v3` boundary (RBX-422):
   remains unsupported, not a request to recapture external audio. Restore and
   replay entrypoints validate explicit-duration identity without file I/O.
 - The source-free implementation evidence does not qualify a new device,
-  human listening, DAW import, source, hardness, or release claim. Existing
-  two-bar DAWproject handoff continues to accept V2 only.
+  human listening, DAW import, source, hardness, or release claim. V3 long
+  windows remain outside the two-bar DAWproject handoff.
+
+Canonical two-bar `runtime_master_bar_window_v4` successor (RBX-423):
+
+- Default/explicit `--live-recording-bars 2` now selects V4 with typed
+  `duration: two_bars`; its receipt, pack and proof are respectively
+  `live_recording.runtime_master_bar_window_v4`,
+  `live-recording-runtime-master-bar-window-v4` and
+  `riotbox.live_recording_runtime_master_bar_window.v4`.
+- Use RBX-422's canonical runtime-f32 frame and endpoint arithmetic for exactly
+  eight beats, and require full receipt readiness before side-effect commit.
+  Geometry follows the version, not just the duration: legacy V2 two-bar
+  evidence retains its integer geometry and existing readiness outcome.
+- No legacy evidence migration or automatic reassessment. V1/V2/V3 remain
+  readable under their original meanings; no runtime/DSP change or new claim
+  follows from source-free implementation tests.
 
 Contract for `export.stem_package`:
 
@@ -1037,6 +1052,14 @@ Contract for `export.stem_package`:
   hydration, host launch, TUI/Ghost affordance, host-import pass or new human
   verdict is implied. An optional observer must be fresh/non-aliasing;
   observer failure after saved success is reported separately.
+- RBX-423 adds the separate `live_master_dawproject_v2` action/receipt/proof
+  path for a ready V4 two-bar source only. Select the latest supported V2/V4
+  two-bar receipt, pin its ID and matching DAW version at queue time, and fail
+  on invalid latest evidence without substituting an older take. Preserve
+  V2-to-DAW-V1 unchanged; V4-to-DAW-V2 carries the actual source version and
+  validates canonical runtime-f32 geometry. Both reuse the same byte-identical
+  four-member archive, placement, read-back/XML, metadata-only restore and
+  rollback mechanisms. V3 long windows remain unsupported by this consumer.
 - Current DAW writer proof skeleton:
   `riotbox-app --daw-session-writer-proof-execute --session <session.json>
   --daw-session-destination <dir>` requires a ready DAW-session receipt plus a

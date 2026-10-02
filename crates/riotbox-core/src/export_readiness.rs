@@ -10,12 +10,15 @@ pub const STEM_PACKAGE_W30_HOOK_LOOP_PACK_ID: &str = "stem-package-w30-hook-loop
 pub const ARRANGEMENT_DAW_PLACEMENT_PACK_ID: &str = "arrangement-daw-placement-contract";
 pub const W30_HOOK_DAWPROJECT_PACK_ID: &str = "w30-hook-dawproject";
 pub const LIVE_MASTER_DAWPROJECT_PACK_ID: &str = "live-master-dawproject";
+pub const LIVE_MASTER_DAWPROJECT_V2_PACK_ID: &str = "live-master-dawproject-v2";
 pub const LIVE_RECORDING_RECEIPT_PACK_ID: &str = "live-recording-receipt-contract";
 pub const LIVE_RECORDING_RUNTIME_MASTER_PACK_ID: &str = "live-recording-runtime-master";
 pub const LIVE_RECORDING_RUNTIME_MASTER_BAR_WINDOW_PACK_ID: &str =
     "live-recording-runtime-master-bar-window";
 pub const LIVE_RECORDING_RUNTIME_MASTER_BAR_WINDOW_V3_PACK_ID: &str =
     "live-recording-runtime-master-bar-window-v3";
+pub const LIVE_RECORDING_RUNTIME_MASTER_BAR_WINDOW_V4_PACK_ID: &str =
+    "live-recording-runtime-master-bar-window-v4";
 
 #[must_use]
 pub fn default_product_export_pack_id() -> String {
@@ -55,10 +58,12 @@ pub enum ProductExportBoundary {
     ArrangementDawPlacementContractV1,
     DawSessionW30HookDawprojectV1,
     DawSessionLiveMasterDawprojectV1,
+    DawSessionLiveMasterDawprojectV2,
     LiveRecordingReceiptContractV1,
     LiveRecordingRuntimeMasterCaptureV1,
     LiveRecordingRuntimeMasterBarWindowV2,
     LiveRecordingRuntimeMasterBarWindowV3,
+    LiveRecordingRuntimeMasterBarWindowV4,
 }
 
 impl ProductExportBoundary {
@@ -75,6 +80,7 @@ impl ProductExportBoundary {
             Self::ArrangementDawPlacementContractV1 => "arrangement.daw_placement_contract_v1",
             Self::DawSessionW30HookDawprojectV1 => "daw_session.w30_hook_dawproject_v1",
             Self::DawSessionLiveMasterDawprojectV1 => "daw_session.live_master_dawproject_v1",
+            Self::DawSessionLiveMasterDawprojectV2 => "daw_session.live_master_dawproject_v2",
             Self::LiveRecordingReceiptContractV1 => "live_recording.receipt_contract_v1",
             Self::LiveRecordingRuntimeMasterCaptureV1 => "live_recording.runtime_master_capture_v1",
             Self::LiveRecordingRuntimeMasterBarWindowV2 => {
@@ -82,6 +88,9 @@ impl ProductExportBoundary {
             }
             Self::LiveRecordingRuntimeMasterBarWindowV3 => {
                 "live_recording.runtime_master_bar_window_v3"
+            }
+            Self::LiveRecordingRuntimeMasterBarWindowV4 => {
+                "live_recording.runtime_master_bar_window_v4"
             }
         }
     }
@@ -98,6 +107,7 @@ impl ProductExportBoundary {
             "arrangement.daw_placement_contract_v1" => Ok(Self::ArrangementDawPlacementContractV1),
             "daw_session.w30_hook_dawproject_v1" => Ok(Self::DawSessionW30HookDawprojectV1),
             "daw_session.live_master_dawproject_v1" => Ok(Self::DawSessionLiveMasterDawprojectV1),
+            "daw_session.live_master_dawproject_v2" => Ok(Self::DawSessionLiveMasterDawprojectV2),
             "live_recording.receipt_contract_v1" => Ok(Self::LiveRecordingReceiptContractV1),
             "live_recording.runtime_master_capture_v1" => {
                 Ok(Self::LiveRecordingRuntimeMasterCaptureV1)
@@ -107,6 +117,9 @@ impl ProductExportBoundary {
             }
             "live_recording.runtime_master_bar_window_v3" => {
                 Ok(Self::LiveRecordingRuntimeMasterBarWindowV3)
+            }
+            "live_recording.runtime_master_bar_window_v4" => {
+                Ok(Self::LiveRecordingRuntimeMasterBarWindowV4)
             }
             other => Err(ExportReadinessError::UnsupportedBoundary(other.to_owned())),
         }

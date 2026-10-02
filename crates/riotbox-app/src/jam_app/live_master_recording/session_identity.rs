@@ -10,7 +10,7 @@ use riotbox_audio::{
     },
 };
 use riotbox_core::{
-    action::LiveRecordingDuration,
+    action::{LiveRecordingDuration, LiveRecordingExportBoundary},
     ids::{CaptureId, SceneId},
     session::{
         ExportArtifactSourceGraphRef, ExportArtifactTimingGridRef,
@@ -22,7 +22,7 @@ use sha2::{Digest, Sha256};
 
 use super::{
     super::{JamAppError, JamAppState, persistence::source_graph_hash},
-    LIVE_MASTER_RECORDING_DURATION_BEATS,
+    LIVE_MASTER_RECORDING_DURATION_BEATS, recording_duration_identity, recording_proof_schema,
 };
 
 pub(super) struct LiveMasterSessionIdentity {
@@ -54,13 +54,18 @@ pub(super) fn prepare_recording_plan_input(
     state: &JamAppState,
     output: &AudioOutputInfo,
     destination_path: &Path,
+    boundary: LiveRecordingExportBoundary,
     duration: LiveRecordingDuration,
 ) -> Result<PreparedLiveMasterRecordingPlanInput, JamAppError> {
     validate_destination(destination_path)?;
     validate_output(output)?;
     let identity = live_master_session_identity(state)?;
-    let target_frame_count =
-        live_master_window_frame_count(output.sample_rate, identity.confirmed_bpm, duration)?;
+    let target_frame_count = live_master_window_frame_count(
+        output.sample_rate,
+        identity.confirmed_bpm,
+        boundary,
+        duration,
+    )?;
     live_master_target_sample_count(target_frame_count, output.channel_count)?;
     let start_position_beats = live_master_next_bar_start_position(
         state.runtime.transport.position_beats,
@@ -333,9 +338,19 @@ pub(super) fn live_master_target_frame_count(
 pub(super) fn live_master_window_frame_count(
     sample_rate: u32,
     bpm: f32,
+    boundary: LiveRecordingExportBoundary,
     duration: LiveRecordingDuration,
 ) -> Result<usize, JamAppError> {
-    if duration == LiveRecordingDuration::TwoBars {
+    recording_proof_schema(boundary)?;
+    if !boundary.valid_duration(recording_duration_identity(boundary, duration))
+        || (boundary == LiveRecordingExportBoundary::RuntimeMasterBarWindowV2
+            && duration != LiveRecordingDuration::TwoBars)
+    {
+        return Err(JamAppError::InvalidSession(
+            "live master recording boundary and duration disagree".into(),
+        ));
+    }
+    if boundary == LiveRecordingExportBoundary::RuntimeMasterBarWindowV2 {
         return live_master_target_frame_count(sample_rate, bpm);
     }
     if !bpm.is_finite() || bpm <= 0.0 {
@@ -348,7 +363,7 @@ pub(super) fn live_master_window_frame_count(
         .is_some_and(|canonical| canonical.to_bits() == bpm.to_bits())
     {
         return Err(JamAppError::InvalidSession(
-            "live master V3 recording cannot preserve the exact runtime BPM in micro-BPM evidence"
+            "canonical live master recording cannot preserve the exact runtime BPM in micro-BPM evidence"
                 .into(),
         ));
     }

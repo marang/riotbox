@@ -82,8 +82,18 @@ impl ExportReceiptState {
     }
 
     #[must_use]
+    pub fn is_live_master_dawproject_v2(&self) -> bool {
+        self.export_scope == ExportScope::DawSession
+            && self.pack_id == crate::export_readiness::LIVE_MASTER_DAWPROJECT_V2_PACK_ID
+            && self.export_role == ProductExportRole::ArrangementManifest
+            && self.export_boundary == ProductExportBoundary::DawSessionLiveMasterDawprojectV2
+    }
+
+    #[must_use]
     pub fn is_dawproject_archive_receipt(&self) -> bool {
-        self.is_w30_hook_dawproject_v1() || self.is_live_master_dawproject_v1()
+        self.is_w30_hook_dawproject_v1()
+            || self.is_live_master_dawproject_v1()
+            || self.is_live_master_dawproject_v2()
     }
 
     #[must_use]
@@ -112,6 +122,15 @@ impl ExportReceiptState {
             && self.export_boundary == ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV3
     }
 
+    #[must_use]
+    pub fn is_live_recording_runtime_master_bar_window_v4(&self) -> bool {
+        self.export_scope == ExportScope::LiveRecording
+            && self.pack_id
+                == crate::export_readiness::LIVE_RECORDING_RUNTIME_MASTER_BAR_WINDOW_V4_PACK_ID
+            && self.export_role == ProductExportRole::LiveRecordingCapture
+            && self.export_boundary == ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV4
+    }
+
     /// One shared Action/receipt duration contract for commit, restore, and replay.
     #[must_use]
     pub fn live_recording_action_contract_matches(
@@ -131,6 +150,9 @@ impl ExportReceiptState {
                 LiveRecordingExportBoundary::RuntimeMasterBarWindowV3 => {
                     self.is_live_recording_runtime_master_bar_window_v3()
                 }
+                LiveRecordingExportBoundary::RuntimeMasterBarWindowV4 => {
+                    self.is_live_recording_runtime_master_bar_window_v4()
+                }
                 LiveRecordingExportBoundary::ReservedContractOnly => false,
             }
     }
@@ -140,13 +162,17 @@ impl ExportReceiptState {
         let is_v1 = self.is_live_recording_runtime_master_v1();
         let is_v2 = self.is_live_recording_runtime_master_bar_window_v2();
         let is_v3 = self.is_live_recording_runtime_master_bar_window_v3();
+        let is_v4 = self.is_live_recording_runtime_master_bar_window_v4();
         let duration_identity_valid = if is_v3 {
             LiveRecordingExportBoundary::RuntimeMasterBarWindowV3
+                .valid_duration(self.live_recording_duration)
+        } else if is_v4 {
+            LiveRecordingExportBoundary::RuntimeMasterBarWindowV4
                 .valid_duration(self.live_recording_duration)
         } else {
             self.live_recording_duration.is_none()
         };
-        if !(is_v1 || is_v2 || is_v3)
+        if !(is_v1 || is_v2 || is_v3 || is_v4)
             || !duration_identity_valid
             || !self.live_recording_host_audio_readiness_report().ready()
         {
@@ -189,7 +215,7 @@ impl ExportReceiptState {
         let duration_identity_ready = self.live_recording_host_audio_refs.len() == 1
             && live.duration_ms
                 == Some(self.live_recording_host_audio_refs[0].recording_duration_ms);
-        let frame_duration_ready = !is_v3
+        let frame_duration_ready = !(is_v3 || is_v4)
             || live.audio_metrics.as_ref().is_some_and(|metrics| {
                 metrics.total_frame_count.is_some_and(|frames| {
                     let rate = u128::from(live.sample_rate_hz.unwrap_or_default());
@@ -205,7 +231,7 @@ impl ExportReceiptState {
             super::export_qa_gates::LIVE_RECORDING_RUNTIME_CAPTURE_QA_GATE_ID,
             super::export_qa_gates::LIVE_RECORDING_WAV_READBACK_QA_GATE_ID,
         ];
-        if is_v2 || is_v3 {
+        if is_v2 || is_v3 || is_v4 {
             required_gate_ids
                 .push(super::export_qa_gates::LIVE_RECORDING_BAR_WINDOW_ALIGNMENT_QA_GATE_ID);
         }
@@ -223,15 +249,19 @@ impl ExportReceiptState {
                 .first()
                 .and_then(|evidence| evidence.timing_window.as_ref())
                 .is_some_and(|window| {
-                    window.bar_aligned_window_ready(
-                        live.sample_rate_hz.unwrap_or_default(),
-                        live.audio_metrics
-                            .as_ref()
-                            .and_then(|metrics| metrics.total_frame_count)
-                            .unwrap_or_default(),
-                        self.live_recording_duration
-                            .unwrap_or(LiveRecordingDuration::TwoBars),
-                    )
+                    let rate = live.sample_rate_hz.unwrap_or_default();
+                    let frames = live
+                        .audio_metrics
+                        .as_ref()
+                        .and_then(|metrics| metrics.total_frame_count)
+                        .unwrap_or_default();
+                    if is_v2 {
+                        window.bar_aligned_two_bar_window_ready(rate, frames)
+                    } else {
+                        self.live_recording_duration.is_some_and(|duration| {
+                            window.canonical_runtime_bar_window_ready(rate, frames, duration)
+                        })
+                    }
                 });
         artifacts_ready
             && top_level_identity_ready
@@ -655,6 +685,9 @@ pub enum ExportArtifactMediaType {
 #[cfg(test)]
 #[path = "export_live_recording_contract_tests.rs"]
 mod export_live_recording_contract_tests;
+#[cfg(test)]
+#[path = "export_live_recording_v4_tests.rs"]
+mod export_live_recording_v4_tests;
 #[cfg(test)]
 #[path = "export_live_recording_window_tests.rs"]
 mod export_live_recording_window_tests;

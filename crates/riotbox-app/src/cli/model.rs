@@ -8,7 +8,7 @@ pub(in crate::cli) fn live_master_recording_boundary(
     duration: LiveRecordingDuration,
 ) -> LiveRecordingExportBoundary {
     match duration {
-        LiveRecordingDuration::TwoBars => LiveRecordingExportBoundary::RuntimeMasterBarWindowV2,
+        LiveRecordingDuration::TwoBars => LiveRecordingExportBoundary::RuntimeMasterBarWindowV4,
         LiveRecordingDuration::EightBars | LiveRecordingDuration::SixteenBars => {
             LiveRecordingExportBoundary::RuntimeMasterBarWindowV3
         }

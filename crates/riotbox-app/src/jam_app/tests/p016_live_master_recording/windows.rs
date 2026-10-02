@@ -13,7 +13,7 @@ use std::fs;
 use tempfile::tempdir;
 
 #[test]
-fn default_two_bar_publication_preserves_legacy_rounding_and_readiness() {
+fn legacy_two_bar_publication_preserves_legacy_rounding_and_readiness() {
     for (bpm, expected_span_nanobeats) in [(121.5, 42_187), (166.5, 57_812)] {
         let temp = tempdir().unwrap();
         let destination = temp.path().join("legacy-two-bar.wav");
@@ -27,7 +27,7 @@ fn default_two_bar_publication_preserves_legacy_rounding_and_readiness() {
             source_graph_path: None,
         });
         let LiveMasterRecordingQueueResult::Enqueued(plan) =
-            state.queue_live_master_recording(1_000, &output, &destination)
+            state.queue_legacy_two_bar_recording_fixture(1_000, &output, &destination)
         else {
             panic!("queue default two-bar window")
         };

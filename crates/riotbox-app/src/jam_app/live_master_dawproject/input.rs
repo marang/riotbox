@@ -1,17 +1,18 @@
-//! Admits one pinned V2 receipt using only its exact WAV and proof files.
+//! Admits one pinned V2/V4 receipt using only its exact WAV and proof files.
 //! Hashing, decoding, metrics and semantic identity use the same opened bytes.
 
+use super::version::LiveMasterDawprojectVersion;
 use crate::jam_app::{
     JamAppError, LiveMasterRecordingProof,
     live_master_recording::{
-        LIVE_MASTER_RECORDING_DURATION_BEATS, LIVE_MASTER_RECORDING_PROOF_SCHEMA,
-        decode_recorded_float32_wav, recorded_float32_sample_payload_sha256,
+        LIVE_MASTER_RECORDING_DURATION_BEATS, decode_recorded_float32_wav,
+        recorded_float32_sample_payload_sha256,
     },
 };
 use riotbox_audio::runtime::signal_metrics;
 use riotbox_core::{
-    action::{ActionCommand, ActionParams, ActionStatus, LiveRecordingExportBoundary},
-    export_readiness::{ProductExportBoundary, ProductExportDestinationKind},
+    action::{ActionCommand, ActionParams, ActionStatus, LiveRecordingDuration},
+    export_readiness::ProductExportDestinationKind,
     ids::ExportReceiptId,
     session::{
         ExportArtifactLocation, ExportArtifactMediaType, ExportArtifactRole,
@@ -27,6 +28,7 @@ use std::{
 };
 
 pub(super) struct LiveMasterDawprojectInput {
+    pub(super) version: LiveMasterDawprojectVersion,
     pub(super) source_receipt_id: ExportReceiptId,
     pub(super) source_proof_sha256: String,
     pub(super) source_wav_sha256: String,
@@ -37,20 +39,20 @@ pub(super) struct LiveMasterDawprojectInput {
 
 pub(super) fn latest_live_master_receipt(session: &SessionFile) -> Option<&ExportReceiptState> {
     session.export_receipts.iter().rev().find(|receipt| {
-        receipt.export_boundary == ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV2
+        LiveMasterDawprojectVersion::for_recording(receipt.export_boundary).is_some()
     })
 }
 
 pub(super) fn validate_queue_source_receipt(session: &SessionFile) -> Result<(), JamAppError> {
     let receipt = latest_live_master_receipt(session).ok_or_else(|| {
         JamAppError::InvalidSession(
-            "live-master DAWproject export requires a Session-owned V2 live-master receipt".into(),
+            "live-master DAWproject export requires a Session-owned V2 or V4 two-bar live-master receipt".into(),
         )
     })?;
     unique_pinned_receipt(session, &receipt.receipt_id)?;
     if !receipt.live_recording_runtime_master_ready() {
         return Err(JamAppError::InvalidSession(
-            "latest V2 live-master receipt is not ready; no older take may be substituted".into(),
+            "latest supported two-bar live-master receipt is not ready; no older take may be substituted".into(),
         ));
     }
     Ok(())
@@ -60,14 +62,15 @@ pub(super) fn prepare_input(
     session: &SessionFile,
     base_dir: Option<&Path>,
     source_receipt_id: &ExportReceiptId,
+    version: LiveMasterDawprojectVersion,
 ) -> Result<LiveMasterDawprojectInput, JamAppError> {
     let receipt = Some(unique_pinned_receipt(session, source_receipt_id)?)
         .filter(|receipt| {
-            receipt.export_boundary == ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV2
+            receipt.export_boundary == version.recording_boundary()
         })
         .ok_or_else(|| {
             JamAppError::InvalidSession(
-                "pinned live-master DAWproject source receipt is absent or not V2".into(),
+                "pinned live-master DAWproject source receipt does not match its queued handoff version".into(),
             )
         })?;
     if !receipt.live_recording_runtime_master_ready() {
@@ -89,8 +92,17 @@ pub(super) fn prepare_input(
         ));
     }
     let proof: LiveMasterRecordingProof = serde_json::from_slice(&proof_bytes)?;
-    validate_source_identity(session, receipt, wav, proof_artifact, &proof, &wav_bytes)?;
+    validate_source_identity(
+        session,
+        receipt,
+        wav,
+        proof_artifact,
+        &proof,
+        &wav_bytes,
+        version,
+    )?;
     Ok(LiveMasterDawprojectInput {
+        version,
         source_receipt_id: receipt.receipt_id.clone(),
         source_proof_sha256: proof_sha256,
         source_wav_sha256: wav_sha256,
@@ -135,7 +147,7 @@ fn unique_source_artifacts(
         || proofs[0].media_type != ExportArtifactMediaType::Json
     {
         return Err(JamAppError::InvalidSession(
-            "live-master V2 receipt must declare exactly one WAV and one proof".into(),
+            "live-master receipt must declare exactly one WAV and one proof".into(),
         ));
     }
     Ok((wavs[0], proofs[0]))
@@ -148,9 +160,10 @@ fn validate_source_identity(
     proof_artifact: &ExportArtifactSetEntry,
     proof: &LiveMasterRecordingProof,
     wav_bytes: &[u8],
+    version: LiveMasterDawprojectVersion,
 ) -> Result<(), JamAppError> {
-    if proof.schema != LIVE_MASTER_RECORDING_PROOF_SCHEMA
-        || proof.duration.is_some()
+    if proof.schema != version.recording_proof_schema()
+        || proof.duration != version.recording_duration()
         || proof.receipt_id != receipt.receipt_id
         || proof.action_id != receipt.created_by_action
         || proof.session_id != session.session_id
@@ -170,7 +183,7 @@ fn validate_source_identity(
         || proof.wav_sample_format != "ieee_float32"
     {
         return Err(JamAppError::InvalidSession(
-            "live-master proof does not match its V2 receipt identity".into(),
+            "live-master proof does not match its versioned receipt identity".into(),
         ));
     }
     let source_action = session
@@ -185,19 +198,22 @@ fn validate_source_identity(
         })?;
     let action_destination = match &source_action.params {
         ActionParams::LiveRecordingExport {
-            boundary: LiveRecordingExportBoundary::RuntimeMasterBarWindowV2,
-            duration: None,
+            boundary,
+            duration,
             destination_kind: ProductExportDestinationKind::LocalFilePath,
             destination_path: Some(path),
             ..
         } if source_action.command == ActionCommand::ExportLiveRecording
-            && source_action.status == ActionStatus::Committed =>
+            && source_action.status == ActionStatus::Committed
+            && *boundary == version.recording_action_boundary()
+            && *duration == version.recording_duration() =>
         {
             path
         }
         _ => {
             return Err(JamAppError::InvalidSession(
-                "live-master proof action is not the committed V2 recording action".into(),
+                "live-master proof action is not the committed source-version recording action"
+                    .into(),
             ));
         }
     };
@@ -288,10 +304,16 @@ fn validate_source_identity(
         ));
     }
     validate_metadata_lineage(session, proof, wav)?;
-    let expected_frames = (f64::from(proof.sample_rate_hz) * 60.0 * f64::from(proof.duration_beats)
-        / (proof.confirmed_bpm_micros as f64 / 1_000_000.0))
-        .round() as u64;
-    if proof.confirmed_bpm_micros == 0 || proof.frame_count != expected_frames {
+    let expected_frames = match version {
+        LiveMasterDawprojectVersion::LegacyV1 => Some(
+            (f64::from(proof.sample_rate_hz) * 60.0 * f64::from(proof.duration_beats)
+                / (proof.confirmed_bpm_micros as f64 / 1_000_000.0))
+                .round() as u64,
+        ),
+        LiveMasterDawprojectVersion::CanonicalV2 => LiveRecordingDuration::TwoBars
+            .target_frame_count(proof.sample_rate_hz, proof.confirmed_bpm_micros),
+    };
+    if proof.confirmed_bpm_micros == 0 || Some(proof.frame_count) != expected_frames {
         return Err(JamAppError::InvalidSession(
             "live-master proof frame geometry does not match its recorded tempo".into(),
         ));

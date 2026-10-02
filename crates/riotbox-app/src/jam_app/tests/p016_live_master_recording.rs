@@ -25,6 +25,7 @@ use riotbox_core::session::SessionFile;
 use std::fs;
 use tempfile::tempdir;
 
+mod canonical_two_bar;
 mod windows;
 
 pub(super) fn live_master_recording_state() -> JamAppState {
@@ -118,12 +119,12 @@ pub(super) fn live_master_test_outcome(
 }
 
 #[test]
-fn real_runtime_master_take_commits_wav_proof_action_session_and_receipt() {
+fn generated_legacy_v2_take_retains_wav_proof_action_session_and_receipt() {
     let temp = tempdir().expect("tempdir");
     let destination = temp.path().join("live-master.wav");
     let output = live_master_test_output();
     let mut state = live_master_recording_state();
-    let plan = match state.queue_live_master_recording(1_000, &output, &destination) {
+    let plan = match state.queue_legacy_two_bar_recording_fixture(1_000, &output, &destination) {
         LiveMasterRecordingQueueResult::Enqueued(plan) => plan,
         other => panic!("expected queued live master recording, got {other:?}"),
     };
