@@ -9,6 +9,7 @@ use crate::jam_app::{
 use riotbox_core::action::{
     ActionParams, ActionStatus, LiveRecordingDuration, LiveRecordingExportBoundary,
 };
+use riotbox_core::session::LIVE_RECORDING_BAR_WINDOW_ALIGNMENT_QA_GATE_ID;
 use std::fs;
 use tempfile::tempdir;
 
@@ -45,6 +46,18 @@ fn legacy_two_bar_publication_preserves_legacy_rounding_and_readiness() {
         assert_eq!(plan.duration, LiveRecordingDuration::TwoBars);
         assert_eq!(proof.duration, None);
         assert_eq!(receipt.live_recording_duration, None);
+        assert_eq!(
+            receipt
+                .qa_gates
+                .iter()
+                .find(|gate| gate.gate_id == LIVE_RECORDING_BAR_WINDOW_ALIGNMENT_QA_GATE_ID)
+                .unwrap()
+                .summary
+                .as_deref(),
+            Some(
+                "real callback capture began on the requested 4/4 bar boundary within one output frame and completed the exact two-bar window"
+            )
+        );
         assert!(receipt.is_live_recording_runtime_master_bar_window_v2());
         assert_eq!(proof.beat_span_per_frame_nanobeats, expected_span_nanobeats);
         assert!(receipt.live_recording_host_audio_readiness_report().ready());
@@ -95,6 +108,18 @@ fn bounded_windows_bind_action_proof_receipt_and_restore_without_reopening_audio
         assert!(receipt.is_live_recording_runtime_master_bar_window_v3());
         assert!(receipt.live_recording_runtime_master_ready());
         assert_eq!(receipt.live_recording_duration, Some(duration));
+        assert_eq!(
+            receipt
+                .qa_gates
+                .iter()
+                .find(|gate| gate.gate_id == LIVE_RECORDING_BAR_WINDOW_ALIGNMENT_QA_GATE_ID)
+                .unwrap()
+                .summary,
+            Some(format!(
+                "real callback capture began on the requested 4/4 bar boundary within one output frame and completed the exact {}-bar window",
+                duration.bars()
+            ))
+        );
         let proof: LiveMasterRecordingProof =
             serde_json::from_slice(&fs::read(&plan.proof_path).unwrap()).unwrap();
         assert_eq!(
@@ -122,6 +147,28 @@ fn bounded_windows_bind_action_proof_receipt_and_restore_without_reopening_audio
             state.session.export_receipts
         );
         assert_eq!(restored.session.action_log, state.session.action_log);
+
+        // Old V3 receipts used the legacy description. Restore must retain it,
+        // not normalize hash-bound historical evidence to the new producer text.
+        let mut historical = state.session.clone();
+        historical.export_receipts[0]
+            .qa_gates
+            .iter_mut()
+            .find(|gate| gate.gate_id == LIVE_RECORDING_BAR_WINDOW_ALIGNMENT_QA_GATE_ID)
+            .unwrap()
+            .summary = Some("real callback capture began on the requested 4/4 bar boundary within one output frame and completed the exact two-bar window".into());
+        let stored = serde_json::to_vec(&historical).unwrap();
+        fs::write(&session_path, &stored).unwrap();
+        let historical_restored =
+            JamAppState::from_json_files(&session_path, None::<&std::path::Path>).unwrap();
+        assert_eq!(
+            historical_restored.session.export_receipts,
+            historical.export_receipts
+        );
+        assert!(
+            historical_restored.session.export_receipts[0].live_recording_runtime_master_ready()
+        );
+        assert_eq!(fs::read(&session_path).unwrap(), stored);
 
         // A V3 recording must not silently expand the existing two-bar DAW contract.
         assert!(!receipt.is_live_recording_runtime_master_bar_window_v2());

@@ -1,8 +1,40 @@
 use super::*;
 use crate::{
+    action::LiveRecordingDuration,
     export_qa::validate_stem_package_artifact_set_evidence,
     session::{ExportArtifactLocation, ExportArtifactMediaType, ExportArtifactSetEntry},
 };
+
+#[test]
+fn typed_recording_alignment_changes_only_the_description_and_preserves_legacy() {
+    let legacy = ExportReceiptQaGateResult::live_recording_bar_window_alignment();
+    assert_eq!(
+        legacy.summary.as_deref(),
+        Some(
+            "real callback capture began on the requested 4/4 bar boundary within one output frame and completed the exact two-bar window"
+        )
+    );
+    let legacy_bytes = serde_json::to_vec(&legacy).unwrap();
+    for (duration, bars) in [
+        (LiveRecordingDuration::TwoBars, 2),
+        (LiveRecordingDuration::EightBars, 8),
+        (LiveRecordingDuration::SixteenBars, 16),
+    ] {
+        let actual =
+            ExportReceiptQaGateResult::live_recording_bar_window_alignment_with_duration(duration);
+        let mut expected = legacy.clone();
+        expected.summary = Some(format!(
+            "real callback capture began on the requested 4/4 bar boundary within one output frame and completed the exact {bars}-bar window"
+        ));
+        assert_eq!(actual, expected);
+    }
+    let restored: ExportReceiptQaGateResult = serde_json::from_slice(&legacy_bytes).unwrap();
+    assert_eq!(serde_json::to_vec(&restored).unwrap(), legacy_bytes);
+    assert_eq!(
+        ExportReceiptQaGateResult::live_recording_bar_window_alignment(),
+        legacy
+    );
+}
 
 #[test]
 fn stem_package_artifact_set_gate_result_records_deferred_structure() {

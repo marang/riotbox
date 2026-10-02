@@ -1325,6 +1325,11 @@ Additional receipt fields required before wider export scopes:
   readiness without opening audio. V1/V2/V3 wire meaning remains unchanged;
   legacy V2 receipts whose proof disagrees with full readiness remain non-ready
   and unmodified. No automatic migration or reassessment is performed.
+- future V3/V4 `live_recording_bar_window_alignment` gate summaries describe
+  the receipt's existing typed duration (8/16/2 bars respectively). This text
+  is descriptive, not readiness authority. Legacy V2 producer wording and all
+  stored historical gate summaries remain unchanged; restore/report/replay do
+  not normalize existing receipts or rewrite their evidence (RIOTBOX-1554).
 - the live-recording readiness operator report is a read-only Session report:
   `riotbox-app --live-recording-readiness-report --session <session.json>`
   inspects the latest live-recording receipt and projects the same host-audio
