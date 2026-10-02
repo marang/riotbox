@@ -155,6 +155,10 @@ semantics, including representable knee neighbors. They retain the existing
 values and clean-path gates; they do not calibrate perceived hardness or permit
 new source/candidate access. RIOTBOX-1501 still owns that separate decision.
 
+Its [calibration design draft](../benchmarks/master_bus_limiter_calibration_protocol_v1_draft.md)
+proposes a bounded comparison and records unresolved execution gates. It is not
+an accepted protocol, source-access grant or change to the production values.
+
 ### 3. QA acceptance thresholds
 
 Examples in the exact dense-break path:
