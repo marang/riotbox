@@ -13,6 +13,51 @@ use std::fs;
 use tempfile::tempdir;
 
 #[test]
+fn default_two_bar_publication_preserves_legacy_rounding_and_readiness() {
+    for (bpm, expected_span_nanobeats) in [(121.5, 42_187), (166.5, 57_812)] {
+        let temp = tempdir().unwrap();
+        let destination = temp.path().join("legacy-two-bar.wav");
+        let session_path = temp.path().join("session.json");
+        let mut output = live_master_test_output();
+        output.sample_rate = 48_000;
+        let mut state = live_master_recording_state();
+        state.session.runtime_state.source_timing.confirmed_bpm = Some(bpm);
+        state.files = Some(JamFileSet {
+            session_path: session_path.clone(),
+            source_graph_path: None,
+        });
+        let LiveMasterRecordingQueueResult::Enqueued(plan) =
+            state.queue_live_master_recording(1_000, &output, &destination)
+        else {
+            panic!("queue default two-bar window")
+        };
+        let receipt = state
+            .commit_and_save_live_master_recording(
+                &plan,
+                &live_master_test_outcome(&plan),
+                &live_master_test_health(&output),
+                40_000,
+            )
+            .unwrap();
+        let proof: LiveMasterRecordingProof =
+            serde_json::from_slice(&fs::read(&plan.proof_path).unwrap()).unwrap();
+        assert!(destination.is_file());
+        assert_eq!(plan.duration, LiveRecordingDuration::TwoBars);
+        assert_eq!(proof.duration, None);
+        assert_eq!(receipt.live_recording_duration, None);
+        assert!(receipt.is_live_recording_runtime_master_bar_window_v2());
+        assert_eq!(proof.beat_span_per_frame_nanobeats, expected_span_nanobeats);
+        assert!(receipt.live_recording_host_audio_readiness_report().ready());
+        // Historical publication did not imply full receipt/DAW readiness.
+        // Keep that distinction without retroactively rewriting V2 evidence.
+        assert!(!receipt.live_recording_runtime_master_ready());
+        let restored =
+            JamAppState::from_json_files(&session_path, None::<&std::path::Path>).unwrap();
+        assert_eq!(restored.session.export_receipts, vec![receipt]);
+    }
+}
+
+#[test]
 fn bounded_windows_bind_action_proof_receipt_and_restore_without_reopening_audio() {
     for (duration, rate, bpm) in [
         (LiveRecordingDuration::EightBars, 44_100, 137.25),

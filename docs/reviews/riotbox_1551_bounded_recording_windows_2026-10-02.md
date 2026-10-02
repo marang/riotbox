@@ -28,7 +28,9 @@ recorder, input recorder, DAW host, new TUI control or arbitrary-duration take.
   contract. V1/V2 omit new fields; V3 admits only eight/sixteen bars.
 - App selects the version before queueing, binds the planned duration to the
   pending Action, publishes the exact float32 WAV/proof through the existing
-  no-clobber transaction and validates full receipt readiness before commit.
+  no-clobber transaction and validates full V3 receipt readiness before commit.
+  V2 retains its historical host-audio publication gate, distinct from full
+  consumer readiness; both versions bind the Action/receipt identity.
   Failed Session save restores state and removes only hash-owned outputs.
 - Indexed Core validation cross-checks explicit-duration Action/receipt pairs
   at App restore and Core replay entrypoints, including snapshot hydration.
@@ -69,15 +71,30 @@ recorder, input recorder, DAW host, new TUI control or arbitrary-duration take.
    microbeat; nominal frame rounding retains the half-frame physical gate.
    Actual endpoints stay in evidence, V2 stays unchanged and runtime code is
    untouched. Production-clock 64/128/1024/varied-partition regressions turn
-   green; App accepts the reproduced values but rejects a quarter-frame
-   displaced end without publishing files.
+    green; App accepts the reproduced values but rejects a quarter-frame
+    displaced end without publishing files.
+3. **P2 — applying the V3 commit gate to V2 broke compatibility. Fixed.**
+   Coordinator's final compatibility challenge prompted an independent Core
+   reviewer check of the App consumer. At 121.5/166.5 BPM and 48 kHz, existing
+   V2 proof spans are 42187/57812 nanobeats, whereas its frozen integer Core
+   readiness expects 42188/57813. Base `92f4f9b9` publishes these physically
+   valid recordings but does not grant full receipt or DAW readiness. Applying
+   V3's full commit check to all durations newly rejected and removed them.
+   Restore the historical V2 host-audio commit gate, keep full V3 readiness and
+   common Action identity checks. A generated default-two-bar regression checks
+   exact old proof spans, successful commit/save/restore and unchanged false
+   full readiness. The inherited consumer inconsistency is separately captured
+   as High/Todo RIOTBOX-1552, not silently fixed by changing V2 interpretation.
 
-No findings were deferred or rejected. Both independent follow-up reviews
-retain zero open findings: Spec and Evidence Auditor, and Adversarial/API/
+No introduced finding was deferred or rejected. The pre-existing V2 consumer
+inconsistency is the explicit RIOTBOX-1552 follow-up above. Independent reviews
+cover Spec and Evidence Auditor, and Adversarial/API/
 Performance lenses. Each reran the Core/App/actual-clock checks relevant to
-its findings. Coordinator compatibility/maintainer, product-pragmatist and
-risk-assessor self-review also retains zero additional findings; the deliberate
-boundary is engineering implementation without new host/human qualification.
+its findings; the independent late V2 compatibility follow-up reran all seven
+App window tests and retains zero introduced findings.
+Coordinator compatibility/maintainer, product-pragmatist and risk-assessor
+self-review includes all three corrected findings; the deliberate boundary
+is engineering implementation without new host/human qualification.
 
 ## Verification
 
@@ -87,11 +104,15 @@ boundary is engineering implementation without new host/human qualification.
 - Core replay family: 121 passed before the final isolated roundoff helper;
   full final CI re-exercises it.
 - CLI library tests: 144 passed; Just dry-runs preserve existing argument order.
-- App V3 publication/restore/rollback/precision family: six passed, including
-  exact WAV/proof identity and V2 DAW refusal.
+- App duration publication/restore/rollback/precision family: seven tests,
+  including exact V3 WAV/proof identity, V2 DAW refusal and the late V2
+  publication compatibility regression. The V2 focused test passed in
+  `/tmp/riotbox-1551-v2-compatibility-green.log`.
 - Audio capture family: 18 passed; actual-clock RED-to-GREEN and strict Audio
-  library/tests Clippy passed. Final source-free `just ci` passed; full log:
-  `/tmp/riotbox-1551-ci-final.log`. This includes workspace tests, format,
+  library/tests Clippy passed. Source-free `just ci` passed both before the late
+  V2 correction (`/tmp/riotbox-1551-ci-final.log`) and after it in the final
+  rerun (`/tmp/riotbox-1551-ci-compatibility-final.log`). This includes
+  workspace tests, format,
   strict all-target/all-feature Clippy, generated audio smokes and contract
   fixtures; it does not supply host-device or human-listening evidence.
 - Initial full CI crossed an intermediate missing-helper compilation while the

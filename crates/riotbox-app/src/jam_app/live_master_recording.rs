@@ -254,7 +254,18 @@ impl JamAppState {
                 return Err(error);
             }
         };
-        if !receipt.live_recording_runtime_master_ready()
+        // V2 keeps its historical publication gate. Its frozen integer timing
+        // readiness can disagree with the runtime-f32 proof at rounding ties;
+        // extending V3 must not newly discard previously publishable V2 takes.
+        let receipt_ready = match plan.duration {
+            LiveRecordingDuration::TwoBars => {
+                receipt.live_recording_host_audio_readiness_report().ready()
+            }
+            LiveRecordingDuration::EightBars | LiveRecordingDuration::SixteenBars => {
+                receipt.live_recording_runtime_master_ready()
+            }
+        };
+        if !receipt_ready
             || !receipt.live_recording_action_contract_matches(
                 recording_action_boundary(plan.duration),
                 recording_duration_identity(plan.duration),

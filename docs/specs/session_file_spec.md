@@ -1275,6 +1275,11 @@ Additional receipt fields required before wider export scopes:
   verifies anchor congruence and recomputes position bounds from frame geometry;
   missing, contradictory, or duplicate V2 evidence fails. The versioned proof
   schema is `riotbox.live_recording_runtime_master_bar_window.v2`.
+  Legacy V2 publication retains its host-audio-only receipt gate after the
+  physical timing/read-back checks. Publication is not a full-readiness or
+  DAW-admission guarantee: runtime-float proof rounding and integer-micro-BPM
+  readiness can disagree at ties (RIOTBOX-1552). V3's full receipt commit gate
+  must not retroactively change that V2 behavior or rewrite historical evidence.
 - RBX-422 adds `live_recording.runtime_master_bar_window_v3` and pack id
   `live-recording-runtime-master-bar-window-v3` for exactly eight/sixteen bars.
   The receipt's optional typed `live_recording_duration` is respectively
