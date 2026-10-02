@@ -470,6 +470,14 @@ Decision:
   manifest/proof JSON. Missing identity and missing local file are distinct
   diagnostics; neither path may regenerate, rewrite, or infer package artifacts
   during restore.
+- Explicit-duration live-master DAW V3 contracts (RBX-424) are validated
+  from Core/Session metadata: committed export action, matching receipt
+  version/duration, and exactly one pinned ready V3 recording source of the
+  same duration, audio identity and recorded tempo. New eight-/sixteen-bar
+  receipt placement and tempo spans must match 32/64 beats. Missing, ambiguous
+  or inconsistent identity fails closed. Historical DAW V1/V2 restore policy
+  remains unchanged; no replay or metadata-only restore opens source audio or
+  regenerates the external archive.
 - arrangement / DAW placement receipt validation consumes
   `arrangement_placement_refs[]` from Session receipts only. Missing placement
   evidence, blank scene refs, invalid bar ranges, and invalid beat ranges are

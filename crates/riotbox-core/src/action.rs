@@ -316,6 +316,8 @@ pub enum ActionParams {
         #[serde(default = "default_daw_session_export_scope")]
         export_scope: ExportScope,
         boundary: DawSessionExportBoundary,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        duration: Option<LiveRecordingDuration>,
         include_manifest: bool,
         destination_kind: ProductExportDestinationKind,
         destination_path: Option<String>,
@@ -504,6 +506,20 @@ pub enum DawSessionExportBoundary {
     W30HookDawprojectV1,
     LiveMasterDawprojectV1,
     LiveMasterDawprojectV2,
+    LiveMasterDawprojectV3,
+}
+
+impl DawSessionExportBoundary {
+    #[must_use]
+    pub const fn valid_duration(self, duration: Option<LiveRecordingDuration>) -> bool {
+        match self {
+            Self::LiveMasterDawprojectV3 => matches!(
+                duration,
+                Some(LiveRecordingDuration::EightBars | LiveRecordingDuration::SixteenBars)
+            ),
+            _ => duration.is_none(),
+        }
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

@@ -331,7 +331,7 @@ fn v4_session(bpm: f32, rate: u32) -> SessionFile {
     session
 }
 
-fn daw_receipt(boundary: ProductExportBoundary, pack: &str) -> ExportReceiptState {
+pub(super) fn daw_receipt(boundary: ProductExportBoundary, pack: &str) -> ExportReceiptState {
     let mut receipt = runtime_master_fixture_receipt();
     let path = "generated.dawproject";
     let archive_hash = "a".repeat(64);

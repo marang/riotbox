@@ -90,10 +90,23 @@ impl ExportReceiptState {
     }
 
     #[must_use]
-    pub fn is_dawproject_archive_receipt(&self) -> bool {
-        self.is_w30_hook_dawproject_v1()
-            || self.is_live_master_dawproject_v1()
+    pub fn is_live_master_dawproject_v3(&self) -> bool {
+        self.export_scope == ExportScope::DawSession
+            && self.pack_id == crate::export_readiness::LIVE_MASTER_DAWPROJECT_V3_PACK_ID
+            && self.export_role == ProductExportRole::ArrangementManifest
+            && self.export_boundary == ProductExportBoundary::DawSessionLiveMasterDawprojectV3
+    }
+
+    #[must_use]
+    pub fn is_live_master_dawproject(&self) -> bool {
+        self.is_live_master_dawproject_v1()
             || self.is_live_master_dawproject_v2()
+            || self.is_live_master_dawproject_v3()
+    }
+
+    #[must_use]
+    pub fn is_dawproject_archive_receipt(&self) -> bool {
+        self.is_w30_hook_dawproject_v1() || self.is_live_master_dawproject()
     }
 
     #[must_use]
@@ -682,6 +695,9 @@ pub enum ExportArtifactMediaType {
     DawProjectZip,
 }
 
+#[cfg(test)]
+#[path = "export_live_master_dawproject_tests.rs"]
+mod export_live_master_dawproject_tests;
 #[cfg(test)]
 #[path = "export_live_recording_contract_tests.rs"]
 mod export_live_recording_contract_tests;

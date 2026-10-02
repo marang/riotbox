@@ -11,6 +11,7 @@ pub const ARRANGEMENT_DAW_PLACEMENT_PACK_ID: &str = "arrangement-daw-placement-c
 pub const W30_HOOK_DAWPROJECT_PACK_ID: &str = "w30-hook-dawproject";
 pub const LIVE_MASTER_DAWPROJECT_PACK_ID: &str = "live-master-dawproject";
 pub const LIVE_MASTER_DAWPROJECT_V2_PACK_ID: &str = "live-master-dawproject-v2";
+pub const LIVE_MASTER_DAWPROJECT_V3_PACK_ID: &str = "live-master-dawproject-v3";
 pub const LIVE_RECORDING_RECEIPT_PACK_ID: &str = "live-recording-receipt-contract";
 pub const LIVE_RECORDING_RUNTIME_MASTER_PACK_ID: &str = "live-recording-runtime-master";
 pub const LIVE_RECORDING_RUNTIME_MASTER_BAR_WINDOW_PACK_ID: &str =
@@ -59,6 +60,7 @@ pub enum ProductExportBoundary {
     DawSessionW30HookDawprojectV1,
     DawSessionLiveMasterDawprojectV1,
     DawSessionLiveMasterDawprojectV2,
+    DawSessionLiveMasterDawprojectV3,
     LiveRecordingReceiptContractV1,
     LiveRecordingRuntimeMasterCaptureV1,
     LiveRecordingRuntimeMasterBarWindowV2,
@@ -81,6 +83,7 @@ impl ProductExportBoundary {
             Self::DawSessionW30HookDawprojectV1 => "daw_session.w30_hook_dawproject_v1",
             Self::DawSessionLiveMasterDawprojectV1 => "daw_session.live_master_dawproject_v1",
             Self::DawSessionLiveMasterDawprojectV2 => "daw_session.live_master_dawproject_v2",
+            Self::DawSessionLiveMasterDawprojectV3 => "daw_session.live_master_dawproject_v3",
             Self::LiveRecordingReceiptContractV1 => "live_recording.receipt_contract_v1",
             Self::LiveRecordingRuntimeMasterCaptureV1 => "live_recording.runtime_master_capture_v1",
             Self::LiveRecordingRuntimeMasterBarWindowV2 => {
@@ -108,6 +111,7 @@ impl ProductExportBoundary {
             "daw_session.w30_hook_dawproject_v1" => Ok(Self::DawSessionW30HookDawprojectV1),
             "daw_session.live_master_dawproject_v1" => Ok(Self::DawSessionLiveMasterDawprojectV1),
             "daw_session.live_master_dawproject_v2" => Ok(Self::DawSessionLiveMasterDawprojectV2),
+            "daw_session.live_master_dawproject_v3" => Ok(Self::DawSessionLiveMasterDawprojectV3),
             "live_recording.receipt_contract_v1" => Ok(Self::LiveRecordingReceiptContractV1),
             "live_recording.runtime_master_capture_v1" => {
                 Ok(Self::LiveRecordingRuntimeMasterCaptureV1)

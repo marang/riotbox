@@ -655,7 +655,8 @@ Bounded extended `runtime_master_bar_window_v3` boundary (RBX-422):
   replay entrypoints validate explicit-duration identity without file I/O.
 - The source-free implementation evidence does not qualify a new device,
   human listening, DAW import, source, hardness, or release claim. V3 long
-  windows remain outside the two-bar DAWproject handoff.
+  windows remain outside the two-bar DAWproject V1/V2 contracts; RBX-424 adds
+  their separate V3 DAWproject handoff below.
 
 Canonical two-bar `runtime_master_bar_window_v4` successor (RBX-423):
 
@@ -1059,7 +1060,20 @@ Contract for `export.stem_package`:
   V2-to-DAW-V1 unchanged; V4-to-DAW-V2 carries the actual source version and
   validates canonical runtime-f32 geometry. Both reuse the same byte-identical
   four-member archive, placement, read-back/XML, metadata-only restore and
-  rollback mechanisms. V3 long windows remain unsupported by this consumer.
+  rollback mechanisms. V3 long windows remain unsupported by these two-bar
+  V1/V2 consumers; their separate successor follows below.
+- RBX-424 adds `live_master_dawproject_v3` for ready V3 eight-/sixteen-bar
+  recordings. The existing `DawSessionExport` params gain optional typed
+  `duration`, required only for V3 as `eight_bars`/`sixteen_bars`; omitted for
+  all older boundaries. Queue pins source receipt ID, DAW version and duration.
+  Selection covers V2/V3/V4 boundaries before readiness validation and never
+  falls back from invalid newest evidence. Commit reads only the pinned
+  recording's WAV/proof, validates existing version-specific geometry, then
+  publishes the same four-member archive with a 32-/64-beat clip and matching
+  Core/Session receipt duration. Existing shared no-clobber, XML/readback,
+  save rollback, external side-effect replay policy and observer lifecycle
+  apply unchanged. This extends the existing CLI, not TUI/Ghost or DAW-host
+  qualification; legacy V1/V2 paths stay two-bar and byte-identical.
 - Current DAW writer proof skeleton:
   `riotbox-app --daw-session-writer-proof-execute --session <session.json>
   --daw-session-destination <dir>` requires a ready DAW-session receipt plus a

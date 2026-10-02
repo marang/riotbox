@@ -33,13 +33,13 @@ use std::{
 use tempfile::tempdir;
 
 #[derive(Clone, Copy)]
-enum GeneratedRecording {
+pub(super) enum GeneratedRecording {
     LegacyV2,
     CanonicalV4,
-    ExtendedV3,
+    ExtendedV3(LiveRecordingDuration),
 }
 
-fn generated_recording(
+pub(super) fn generated_recording(
     root: &Path,
     kind: GeneratedRecording,
     bpm: f32,
@@ -61,12 +61,9 @@ fn generated_recording(
         GeneratedRecording::CanonicalV4 => {
             state.queue_live_master_recording(1_000, &output, &recording)
         }
-        GeneratedRecording::ExtendedV3 => state.queue_live_master_recording_with_duration(
-            1_000,
-            &output,
-            &recording,
-            LiveRecordingDuration::EightBars,
-        ),
+        GeneratedRecording::ExtendedV3(duration) => {
+            state.queue_live_master_recording_with_duration(1_000, &output, &recording, duration)
+        }
     };
     let LiveMasterRecordingQueueResult::Enqueued(plan) = queued else {
         panic!("queue generated recording")
@@ -83,7 +80,7 @@ fn generated_recording(
     (state, recording)
 }
 
-fn append_generated_recording(state: &mut JamAppState, other: JamAppState) {
+pub(super) fn append_generated_recording(state: &mut JamAppState, other: JamAppState) {
     assert_eq!(state.session.session_id, other.session.session_id);
     assert_eq!(
         state.session.source_graph_refs,
@@ -114,7 +111,7 @@ fn append_generated_recording(state: &mut JamAppState, other: JamAppState) {
         .extend(other.session.export_receipts);
 }
 
-fn embedded_proof(destination: &Path) -> LiveMasterDawprojectProof {
+pub(super) fn embedded_proof(destination: &Path) -> LiveMasterDawprojectProof {
     let mut reader = DawprojectReader::open(destination).expect("open generated archive");
     let mut bytes = Vec::new();
     reader
@@ -170,9 +167,20 @@ fn canonical_two_bar_recordings_restore_and_export_exact_v2_archives_at_fraction
             .unwrap();
         assert!(receipt.is_live_master_dawproject_v2());
         assert!(!receipt.is_live_master_dawproject_v1());
+        assert!(
+            serde_json::to_value(&receipt)
+                .unwrap()
+                .get("live_recording_duration")
+                .is_none()
+        );
         assert!(receipt.live_master_dawproject_archive_ready());
         assert_eq!(receipt.pack_id, "live-master-dawproject-v2");
         let action = restored.session.action_log.actions.last().unwrap();
+        assert!(
+            serde_json::to_value(action).unwrap()["params"]["DawSessionExport"]
+                .get("duration")
+                .is_none()
+        );
         assert!(matches!(
             action.params,
             ActionParams::DawSessionExport {
@@ -181,6 +189,7 @@ fn canonical_two_bar_recordings_restore_and_export_exact_v2_archives_at_fraction
             }
         ));
         let proof = embedded_proof(&destination);
+        assert_eq!(proof.duration, None);
         assert_eq!(proof.schema, "riotbox.live_master_dawproject.v2");
         assert_eq!(
             proof.source_boundary,
@@ -194,6 +203,14 @@ fn canonical_two_bar_recordings_restore_and_export_exact_v2_archives_at_fraction
         assert_eq!(proof.start_beat, 0);
         assert_dawproject_xml_documents_conform(&destination);
         let mut reader = DawprojectReader::open(&destination).unwrap();
+        let mut proof_bytes = Vec::new();
+        reader
+            .by_name("riotbox-proof.json")
+            .unwrap()
+            .read_to_end(&mut proof_bytes)
+            .unwrap();
+        let proof_json: serde_json::Value = serde_json::from_slice(&proof_bytes).unwrap();
+        assert!(proof_json.get("duration").is_none());
         reader.read_dawproject().unwrap();
         let project = reader.build_dawproject().unwrap();
         assert_eq!(
@@ -315,19 +332,19 @@ fn mixed_supported_versions_pin_source_id_and_handoff_version_before_later_takes
 }
 
 #[test]
-fn invalid_latest_v4_does_not_fall_back_and_v3_does_not_replace_supported_two_bar_source() {
+fn invalid_latest_v4_does_not_fall_back_and_valid_v3_uses_only_its_new_handoff() {
     for invalid_newer in [true, false] {
         let temp = tempdir().unwrap();
         let (mut state, _) = prepared_live_master_state(temp.path());
-        let legacy_id = state.session.export_receipts[0].receipt_id.clone();
         let newer_root = temp.path().join("newer");
         fs::create_dir(&newer_root).unwrap();
         let kind = if invalid_newer {
             GeneratedRecording::CanonicalV4
         } else {
-            GeneratedRecording::ExtendedV3
+            GeneratedRecording::ExtendedV3(LiveRecordingDuration::EightBars)
         };
         let (mut newer, _) = generated_recording(&newer_root, kind, 120.0, 1_000, 100);
+        let newer_id = newer.session.export_receipts[0].receipt_id.clone();
         if invalid_newer {
             newer.session.export_receipts[0].export_hash = "invalid".into();
         }
@@ -338,8 +355,11 @@ fn invalid_latest_v4_does_not_fall_back_and_v3_does_not_replace_supported_two_ba
             assert!(result.is_err());
             assert!(!destination.exists());
         } else {
-            assert!(result.unwrap().is_live_master_dawproject_v1());
-            assert_eq!(embedded_proof(&destination).source_receipt_id, legacy_id);
+            let receipt = result.unwrap();
+            assert!(receipt.is_live_master_dawproject_v3());
+            assert!(!receipt.is_live_master_dawproject_v1());
+            assert!(!receipt.is_live_master_dawproject_v2());
+            assert_eq!(embedded_proof(&destination).source_receipt_id, newer_id);
         }
     }
 }

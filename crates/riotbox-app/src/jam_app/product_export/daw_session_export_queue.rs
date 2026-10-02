@@ -46,6 +46,7 @@ impl JamAppState {
         draft.params = ActionParams::DawSessionExport {
             export_scope: ExportScope::DawSession,
             boundary: DawSessionExportBoundary::ReservedContractOnly,
+            duration: None,
             include_manifest: true,
             destination_kind: ProductExportDestinationKind::LocalArtifactDirectory,
             destination_path,
@@ -92,6 +93,7 @@ impl JamAppState {
         draft.params = ActionParams::DawSessionExport {
             export_scope: ExportScope::DawSession,
             boundary: DawSessionExportBoundary::LocalProjectWriterV1,
+            duration: None,
             include_manifest: true,
             destination_kind: ProductExportDestinationKind::LocalArtifactDirectory,
             destination_path: destination_path.clone(),
@@ -148,6 +150,7 @@ impl JamAppState {
         draft.params = ActionParams::DawSessionExport {
             export_scope: ExportScope::DawSession,
             boundary: DawSessionExportBoundary::HostImportProofV1,
+            duration: None,
             include_manifest: false,
             destination_kind: ProductExportDestinationKind::LocalFilePath,
             destination_path: proof_path.clone(),
@@ -202,6 +205,7 @@ impl JamAppState {
         draft.params = ActionParams::DawSessionExport {
             export_scope: ExportScope::DawSession,
             boundary: DawSessionExportBoundary::AudibleOutputProofV1,
+            duration: None,
             include_manifest: false,
             destination_kind: ProductExportDestinationKind::LocalFilePath,
             destination_path: proof_path.clone(),

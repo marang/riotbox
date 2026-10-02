@@ -170,14 +170,14 @@ fn bounded_windows_bind_action_proof_receipt_and_restore_without_reopening_audio
         );
         assert_eq!(fs::read(&session_path).unwrap(), stored);
 
-        // A V3 recording must not silently expand the existing two-bar DAW contract.
+        // V3 has its own DAW handoff, but recording readiness alone cannot
+        // replace the Source Graph/timing lineage required by that consumer.
         assert!(!receipt.is_live_recording_runtime_master_bar_window_v2());
-        let daw_destination = temp.path().join("unsupported-v3.dawproject");
-        assert!(
-            state
-                .commit_live_master_dawproject_export(&daw_destination, 41_000)
-                .is_err()
-        );
+        let daw_destination = temp.path().join("missing-lineage-v3.dawproject");
+        let error = state
+            .commit_live_master_dawproject_export(&daw_destination, 41_000)
+            .unwrap_err();
+        assert!(error.to_string().contains("missing Source Graph lineage"));
         assert!(!daw_destination.exists());
 
         let mut changed = state.session.clone();

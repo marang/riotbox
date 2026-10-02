@@ -427,6 +427,7 @@ fn daw_session_export_action_contract_roundtrips_as_reserved_scope() {
         params: ActionParams::DawSessionExport {
             export_scope: ExportScope::DawSession,
             boundary: DawSessionExportBoundary::ReservedContractOnly,
+            duration: None,
             include_manifest: true,
             destination_kind: ProductExportDestinationKind::LocalArtifactDirectory,
             destination_path: Some("exports/daw-session".into()),
