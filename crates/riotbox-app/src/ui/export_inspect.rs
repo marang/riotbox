@@ -208,6 +208,7 @@ pub(in crate::ui) fn export_boundary_short_label(boundary: ProductExportBoundary
         ProductExportBoundary::DawSessionW30HookDawprojectV1 => "w30-daw",
         ProductExportBoundary::DawSessionLiveMasterDawprojectV1 => "live-master-daw",
         ProductExportBoundary::DawSessionLiveMasterDawprojectV2 => "live-master-daw-v2",
+        ProductExportBoundary::DawSessionLiveMasterDawprojectV3 => "live-master-daw-v3",
         ProductExportBoundary::LiveRecordingReceiptContractV1 => "live-rec",
         ProductExportBoundary::LiveRecordingRuntimeMasterCaptureV1 => "live-master",
         ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV2 => "live-bar",

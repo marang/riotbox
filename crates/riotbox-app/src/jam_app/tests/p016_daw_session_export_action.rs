@@ -114,6 +114,7 @@ fn reserved_daw_session_export_queue_attempt_is_rejected_without_side_effects() 
             destination_kind,
             destination_path,
             receipt_id: action_receipt_id,
+            duration: None,
         } => {
             assert_eq!(*export_scope, ExportScope::DawSession);
             assert_eq!(

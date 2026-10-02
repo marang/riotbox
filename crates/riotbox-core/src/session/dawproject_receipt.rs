@@ -1,6 +1,8 @@
 //! Metadata integrity of DAWproject document and live-master archive receipts.
 //! No file access or host-import claim belongs to this check.
 
+use crate::action::{DawSessionExportBoundary, LiveRecordingDuration};
+
 use super::{
     ExportArtifactLocation, ExportArtifactMediaType, ExportArtifactRole, ExportReceiptQaGateStatus,
     ExportReceiptState,
@@ -8,6 +10,76 @@ use super::{
 };
 
 impl ExportReceiptState {
+    /// Match persisted live-master Action identity; readiness is checked separately.
+    #[must_use]
+    pub fn live_master_dawproject_action_contract_matches(
+        &self,
+        boundary: DawSessionExportBoundary,
+        duration: Option<LiveRecordingDuration>,
+    ) -> bool {
+        boundary.valid_duration(duration)
+            && self.live_recording_duration == duration
+            && match boundary {
+                DawSessionExportBoundary::LiveMasterDawprojectV1 => {
+                    self.is_live_master_dawproject_v1()
+                }
+                DawSessionExportBoundary::LiveMasterDawprojectV2 => {
+                    self.is_live_master_dawproject_v2()
+                }
+                DawSessionExportBoundary::LiveMasterDawprojectV3 => {
+                    self.is_live_master_dawproject_v3()
+                }
+                _ => false,
+            }
+    }
+
+    /// Bind a new extended archive to its admitted V3 recording without file I/O.
+    /// Historical two-bar handoffs retain their existing source-validation policy.
+    #[must_use]
+    pub fn live_master_dawproject_source_contract_matches(&self, source: &Self) -> bool {
+        if !self.is_live_master_dawproject_v3()
+            || !self.live_master_dawproject_archive_ready()
+            || !source.is_live_recording_runtime_master_bar_window_v3()
+            || !source.live_recording_runtime_master_ready()
+            || self.live_recording_duration != source.live_recording_duration
+        {
+            return false;
+        }
+        let Some(audio) = self
+            .artifact_set
+            .iter()
+            .find(|entry| entry.role == ExportArtifactRole::LiveRecordingCapture)
+        else {
+            return false;
+        };
+        let Some(source_audio) = source
+            .artifact_set
+            .iter()
+            .find(|entry| entry.role == ExportArtifactRole::LiveRecordingCapture)
+        else {
+            return false;
+        };
+        let source_tempo = source
+            .live_recording_host_audio_refs
+            .first()
+            .and_then(|host| host.timing_window.as_ref())
+            .map(|window| window.confirmed_bpm_micros);
+        audio.sha256 == source_audio.sha256
+            && audio.sample_rate_hz == source_audio.sample_rate_hz
+            && audio.channel_count == source_audio.channel_count
+            && audio.duration_ms == source_audio.duration_ms
+            && audio.audio_metrics == source_audio.audio_metrics
+            && audio.source_graph_ref == source_audio.source_graph_ref
+            && audio.timing_grid_ref == source_audio.timing_grid_ref
+            && audio.source_capture_refs == source_audio.source_capture_refs
+            && audio.lineage_capture_refs == source_audio.lineage_capture_refs
+            && self
+                .daw_tempo_map_ref
+                .as_ref()
+                .map(|tempo| u64::from(tempo.bpm_micros))
+                == source_tempo
+    }
+
     #[must_use]
     pub fn dawproject_xml_document_ready(&self) -> bool {
         let mut matching = self
@@ -45,7 +117,8 @@ impl ExportReceiptState {
             ),
             (DawProjectProof, Json, Some("riotbox-proof.json")),
         ];
-        if !(self.is_live_master_dawproject_v1() || self.is_live_master_dawproject_v2())
+        if !self.is_live_master_dawproject()
+            || (self.is_live_master_dawproject_v3() && !self.extended_live_master_geometry_ready())
             || !self.dawproject_xml_document_ready()
             || self.artifact_set.len() != members.len()
             || self.artifact_path.is_empty()
@@ -99,5 +172,60 @@ impl ExportReceiptState {
             && members
                 .iter()
                 .all(|(role, _, _)| gate.artifact_roles.contains(role))
+    }
+
+    fn extended_live_master_geometry_ready(&self) -> bool {
+        let Some(
+            duration @ (LiveRecordingDuration::EightBars | LiveRecordingDuration::SixteenBars),
+        ) = self.live_recording_duration
+        else {
+            return false;
+        };
+        let [placement] = self.arrangement_placement_refs.as_slice() else {
+            return false;
+        };
+        let Some(tempo) = &self.daw_tempo_map_ref else {
+            return false;
+        };
+        if !self.arrangement_export_placement_report().ready()
+            || !self.daw_tempo_map_report().ready()
+            || placement.start_bar != 1
+            || placement.end_bar != u32::from(duration.bars())
+            || placement.start_beat != 0
+            || placement.end_beat != u64::from(duration.duration_beats())
+            || tempo.start_beat != 0
+            || tempo.end_beat != placement.end_beat
+            || placement.source_id.as_ref() != Some(&tempo.source_id)
+        {
+            return false;
+        }
+        let Some(audio) = self
+            .artifact_set
+            .iter()
+            .find(|entry| entry.role == ExportArtifactRole::LiveRecordingCapture)
+        else {
+            return false;
+        };
+        let rate = audio.sample_rate_hz.unwrap_or_default();
+        let Some(frames) = duration.target_frame_count(rate, u64::from(tempo.bpm_micros)) else {
+            return false;
+        };
+        let millis = (u128::from(frames) * 1_000 + u128::from(rate) / 2)
+            .checked_div(u128::from(rate))
+            .and_then(|value| u64::try_from(value).ok());
+        audio.channel_count.is_some_and(|channels| channels > 0)
+            && audio
+                .audio_metrics
+                .as_ref()
+                .and_then(|metrics| metrics.total_frame_count)
+                == Some(frames)
+            && millis.is_some()
+            && audio.duration_ms == millis
+            && audio.timing_grid_ref.as_ref().is_some_and(|grid| {
+                grid.source_id == tempo.source_id
+                    && grid.hypothesis_id == tempo.hypothesis_id
+                    && grid.confirmed_by_action == tempo.confirmed_by_action
+                    && grid.confirmed_at == tempo.confirmed_at
+            })
     }
 }

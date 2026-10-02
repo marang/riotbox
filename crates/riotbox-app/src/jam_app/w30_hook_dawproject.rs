@@ -109,6 +109,7 @@ impl JamAppState {
         draft.params = ActionParams::DawSessionExport {
             export_scope: ExportScope::DawSession,
             boundary: DawSessionExportBoundary::W30HookDawprojectV1,
+            duration: None,
             include_manifest: true,
             destination_kind: ProductExportDestinationKind::LocalFilePath,
             destination_path: destination_path.clone(),

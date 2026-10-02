@@ -19,6 +19,7 @@ use crate::jam_app::{
 };
 use riotbox_core::{
     TimestampMs,
+    action::LiveRecordingDuration,
     export_readiness::{
         ExportReadinessContract, ExportReadinessStatus, ExportScope, ProductExportRole,
     },
@@ -47,6 +48,8 @@ pub struct LiveMasterDawprojectProof {
     pub confirmed_bpm_micros: u64,
     pub start_beat: u32,
     pub duration_beats: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub duration: Option<LiveRecordingDuration>,
     pub beats_per_bar: u8,
     pub bar_grid_anchor_position_microbeats: u64,
     pub requested_start_position_microbeats: u64,
@@ -87,6 +90,7 @@ pub(super) fn build_proof(input: &LiveMasterDawprojectInput) -> LiveMasterDawpro
         confirmed_bpm_micros: source.confirmed_bpm_micros,
         start_beat: 0,
         duration_beats: source.duration_beats,
+        duration: input.version.export_duration(),
         beats_per_bar: source.beats_per_bar,
         bar_grid_anchor_position_microbeats: source.bar_grid_anchor_position_microbeats,
         requested_start_position_microbeats: source.requested_start_position_microbeats,
@@ -132,6 +136,8 @@ pub(super) fn build_metadata(version: LiveMasterDawprojectVersion) -> MetaData {
                 "Recorded Riotbox live master; embedded audio is byte-identical to its V2 receipt.",
             LiveMasterDawprojectVersion::CanonicalV2 =>
                 "Recorded Riotbox live master; embedded audio is byte-identical to its V4 receipt.",
+            LiveMasterDawprojectVersion::ExtendedV3(_) =>
+                "Recorded Riotbox live master; embedded audio is byte-identical to its V3 receipt.",
         }.into()),
     }
 }
@@ -191,7 +197,10 @@ pub(super) fn build_project(proof: &LiveMasterRecordingProof) -> Project {
         track: Vec::new(),
     };
     let clip = ClipType {
-        name: Some("Live Master — 2 bars".into()),
+        name: Some(format!(
+            "Live Master — {} bars",
+            proof.duration_beats / u32::from(proof.beats_per_bar)
+        )),
         color: Some("#ff3b1f".into()),
         comment: None,
         time: 0.0,
@@ -280,7 +289,14 @@ pub(super) fn build_project(proof: &LiveMasterRecordingProof) -> Project {
         arrangement: Some(ArrangementType {
             name: Some("Live Master Arrangement".into()),
             color: None,
-            comment: Some("One recorded two-bar live master at beat zero".into()),
+            comment: Some(if proof.duration_beats == 8 {
+                "One recorded two-bar live master at beat zero".into()
+            } else {
+                format!(
+                    "One recorded {}-bar live master at beat zero",
+                    proof.duration_beats / u32::from(proof.beats_per_bar)
+                )
+            }),
             id: Some("riotbox-arrangement".into()),
             lanes: Some(LanesType {
                 name: Some("Arrangement".into()),
@@ -342,6 +358,7 @@ pub(super) fn build_receipt(
         destination.clone(),
         Some(destination.clone()),
     );
+    receipt.live_recording_duration = input.version.export_duration();
     let proof_uri = format!("{destination}#{DAWPROJECT_PROOF_PATH}");
     let project_uri = format!("{destination}#project.xml");
     let audio_uri = format!("{destination}#{EMBEDDED_AUDIO_PATH}");
@@ -391,7 +408,7 @@ pub(super) fn build_receipt(
         input.proof.scene_id.clone(),
         Some(timing.source_id.clone()),
         1,
-        2,
+        u32::from(input.version.duration().bars()),
         0,
         u64::from(input.proof.duration_beats),
     )];
@@ -407,6 +424,17 @@ pub(super) fn build_receipt(
         u64::from(input.proof.duration_beats),
         tempo_bpm_micros,
     ));
+    if input.version.export_duration().is_some()
+        && (!receipt.live_master_dawproject_action_contract_matches(
+            input.version.action_boundary(),
+            input.version.export_duration(),
+        ) || !receipt.live_master_dawproject_source_contract_matches(&input.source_receipt))
+    {
+        return Err(JamAppError::InvalidSession(
+            "extended live-master DAWproject receipt failed its Core duration/source contract"
+                .into(),
+        ));
+    }
     Ok(receipt)
 }
 

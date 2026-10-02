@@ -86,7 +86,9 @@ fn export_result_summary(
     result: Result<ExportReceiptState, JamAppError>,
 ) -> Value {
     match result {
-        Ok(receipt) => json!({
+        Ok(receipt) => {
+            let duration = receipt.live_recording_duration;
+            let mut summary = json!({
             "mode": "live_master_dawproject_execute", "status": "ready", "ready": true,
             "writes_files": true, "mutates_session": true, "observer_events": false,
             "boundary": state.queue.history_action(receipt.created_by_action)
@@ -99,7 +101,12 @@ fn export_result_summary(
                 "sha256": receipt.export_hash, "project_xml_sha256": receipt.normalized_manifest_hash,
                 "artifact_count": receipt.artifact_set.len(), "qa_gates": receipt.qa_gates },
             "scope_note": "archive readback and byte-identical recorded audio are proven; DAW host import, audible DAW output, release, and quality remain unproven",
-        }),
+            });
+            if let Some(duration) = duration {
+                summary["receipt"]["duration"] = json!(duration);
+            }
+            summary
+        }
         Err(error) => json!({
             "mode": "live_master_dawproject_execute", "status": "blocked", "ready": false,
             "writes_files": false, "mutates_session": false, "observer_events": false,
@@ -121,7 +128,8 @@ fn dawproject_action_boundary(action: &Action) -> Option<DawSessionExportBoundar
         ActionParams::DawSessionExport {
             boundary:
                 boundary @ (DawSessionExportBoundary::LiveMasterDawprojectV1
-                | DawSessionExportBoundary::LiveMasterDawprojectV2),
+                | DawSessionExportBoundary::LiveMasterDawprojectV2
+                | DawSessionExportBoundary::LiveMasterDawprojectV3),
             receipt_id: Some(_),
             ..
         } if action.command == ActionCommand::ExportDawSession => Some(*boundary),
@@ -243,8 +251,15 @@ mod tests {
             12,
         );
         queue
-            .commit_pending_after_side_effect(v2_id, commit_boundary, 13, "fixture")
+            .commit_pending_after_side_effect(v2_id, commit_boundary.clone(), 13, "fixture")
             .expect("committed V2 Action projection fixture");
+        let v3_id = queue.enqueue(
+            daw_draft(DawSessionExportBoundary::LiveMasterDawprojectV3),
+            14,
+        );
+        queue
+            .commit_pending_after_side_effect(v3_id, commit_boundary, 15, "fixture")
+            .expect("committed V3 Action projection fixture");
         let state =
             JamAppState::from_parts(SessionFile::new("summary", "test", "now"), None, queue);
         for (action_id, boundary, receipt_boundary) in [
@@ -257,6 +272,11 @@ mod tests {
                 v2_id,
                 "live_master_dawproject_v2",
                 ProductExportBoundary::DawSessionLiveMasterDawprojectV2,
+            ),
+            (
+                v3_id,
+                "live_master_dawproject_v3",
+                ProductExportBoundary::DawSessionLiveMasterDawprojectV3,
             ),
         ] {
             let contract = ExportReadinessContract {
@@ -273,7 +293,7 @@ mod tests {
                 normalized_manifest_sha256: "33".repeat(32),
                 unsupported_scopes: vec![],
             };
-            let receipt = ExportReceiptState::from_readiness_contract(
+            let mut receipt = ExportReceiptState::from_readiness_contract(
                 action_id,
                 13,
                 &contract,
@@ -281,6 +301,10 @@ mod tests {
                 "proof.json",
                 None,
             );
+            if action_id == v3_id {
+                receipt.live_recording_duration =
+                    Some(riotbox_core::action::LiveRecordingDuration::EightBars);
+            }
             let summary = export_result_summary(
                 &state,
                 Path::new("session.json"),
@@ -290,6 +314,11 @@ mod tests {
             );
             assert_eq!(summary["boundary"], boundary);
             assert_eq!(summary["receipt_boundary"], receipt_boundary.as_proof_str());
+            if action_id == v3_id {
+                assert_eq!(summary["receipt"]["duration"], "eight_bars");
+            } else {
+                assert!(summary["receipt"].get("duration").is_none());
+            }
         }
     }
 
@@ -299,14 +328,18 @@ mod tests {
         for boundary in [
             DawSessionExportBoundary::LiveMasterDawprojectV1,
             DawSessionExportBoundary::LiveMasterDawprojectV2,
+            DawSessionExportBoundary::LiveMasterDawprojectV3,
         ] {
             let id = queue.enqueue(daw_draft(boundary), 10);
             queue.reject(id, "synthetic preflight failure");
         }
         let state =
             JamAppState::from_parts(SessionFile::new("summary", "test", "now"), None, queue);
-        for (history_start, expected) in [(1, json!("live_master_dawproject_v2")), (2, Value::Null)]
-        {
+        for (history_start, expected) in [
+            (1, json!("live_master_dawproject_v3")),
+            (2, json!("live_master_dawproject_v3")),
+            (3, Value::Null),
+        ] {
             let summary = export_result_summary(
                 &state,
                 Path::new("session.json"),
@@ -333,6 +366,8 @@ mod tests {
         draft.params = ActionParams::DawSessionExport {
             export_scope: ExportScope::DawSession,
             boundary,
+            duration: (boundary == DawSessionExportBoundary::LiveMasterDawprojectV3)
+                .then_some(riotbox_core::action::LiveRecordingDuration::EightBars),
             include_manifest: true,
             destination_kind: ProductExportDestinationKind::LocalFilePath,
             destination_path: Some("live.dawproject".into()),

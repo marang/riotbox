@@ -635,6 +635,20 @@ Rules:
   DAW V1 remains supported unchanged. Queue selection pins the latest supported
   V2/V4 two-bar receipt and matching DAW version; invalid latest evidence blocks
   rather than falling back to an older supported receipt.
+- RBX-424 adds `daw_session.live_master_dawproject_v3`, pack
+  `live-master-dawproject-v3`, proof `riotbox.live_master_dawproject.v3` for
+  ready V3 eight-/sixteen-bar recordings only. DAW action `duration`, receipt
+  `live_recording_duration`, proof `duration`, and pinned source receipt duration
+  must agree on `eight_bars` or `sixteen_bars`. Existing DAW boundaries retain
+  omitted duration fields and their frozen two-bar semantics. Latest selection
+  now covers V2/V3/V4 recording boundaries before readiness checks; malformed
+  newest evidence blocks without substituting an older take. The archive keeps
+  the same four members and exact WAV bytes, with the recording's canonical
+  tempo/frame geometry, a 32-/64-beat clip at zero and bar placement 1..8/16.
+  Core commit/restore/replay validates new V3 Action/receipt identity and the
+  unique pinned ready V3 source, including duration, embedded audio metadata,
+  and recorded tempo, using stored Session evidence only. No source hydration,
+  external file regeneration, host-import/output or human qualification follows.
 - the first reserved live-recording receipt boundary is
   `live_recording.receipt_contract_v1` with
   `export_scope: live_recording`, `export_role: live_recording_capture`,

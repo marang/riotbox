@@ -41,6 +41,8 @@ use std::path::PathBuf;
 use tempfile::tempdir;
 
 mod canonical_recording;
+mod extended_integrity;
+mod extended_recording;
 
 fn prepared_live_master_state(root: &std::path::Path) -> (JamAppState, PathBuf) {
     let recording = root.join("recorded-live-master.wav");
@@ -140,6 +142,12 @@ fn live_master_dawproject_commits_typed_four_member_archive_and_preserves_record
     );
 
     assert!(receipt.is_live_master_dawproject_v1());
+    assert!(
+        serde_json::to_value(&receipt)
+            .unwrap()
+            .get("live_recording_duration")
+            .is_none()
+    );
     assert_eq!(receipt.export_scope, ExportScope::DawSession);
     assert_eq!(
         receipt.export_boundary,
@@ -169,11 +177,24 @@ fn live_master_dawproject_commits_typed_four_member_archive_and_preserves_record
     assert_eq!(action.command, ActionCommand::ExportDawSession);
     assert_eq!(action.status, ActionStatus::Committed);
     assert!(
+        serde_json::to_value(action).unwrap()["params"]["DawSessionExport"]
+            .get("duration")
+            .is_none()
+    );
+    assert!(
         matches!(&action.params, ActionParams::DawSessionExport { receipt_id: Some(id), .. }
         if id == state.session.export_receipts[0].receipt_id.as_str())
     );
 
     let mut reader = DawprojectReader::open(&destination).expect("open archive");
+    let mut proof_bytes = Vec::new();
+    reader
+        .by_name("riotbox-proof.json")
+        .unwrap()
+        .read_to_end(&mut proof_bytes)
+        .unwrap();
+    let proof_json: serde_json::Value = serde_json::from_slice(&proof_bytes).unwrap();
+    assert!(proof_json.get("duration").is_none());
     reader.read_dawproject().expect("parse archive");
     let project = reader.build_dawproject().expect("typed project");
     assert_eq!(

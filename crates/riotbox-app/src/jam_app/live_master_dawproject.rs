@@ -33,6 +33,7 @@ use version::LiveMasterDawprojectVersion;
 pub const LIVE_MASTER_DAWPROJECT_ACTION_BOUNDARY_ID: &str = "live_master_dawproject_v1";
 pub const LIVE_MASTER_DAWPROJECT_PROOF_SCHEMA: &str = "riotbox.live_master_dawproject.v1";
 const LIVE_MASTER_DAWPROJECT_PROOF_SCHEMA_V2: &str = "riotbox.live_master_dawproject.v2";
+const LIVE_MASTER_DAWPROJECT_PROOF_SCHEMA_V3: &str = "riotbox.live_master_dawproject.v3";
 const EMBEDDED_AUDIO_PATH: &str = "audio/live_master.wav";
 
 impl JamAppState {
@@ -42,10 +43,15 @@ impl JamAppState {
         destination_path: Option<String>,
     ) -> DawSessionExportQueueResult {
         let source_receipt = latest_live_master_receipt(&self.session);
-        let receipt_id = source_receipt.map(|receipt| receipt.receipt_id.as_str().to_owned());
-        let version = source_receipt
-            .and_then(|receipt| LiveMasterDawprojectVersion::for_recording(receipt.export_boundary))
-            .unwrap_or(LiveMasterDawprojectVersion::LegacyV1);
+        let version = source_receipt.and_then(|receipt| {
+            LiveMasterDawprojectVersion::for_recording(
+                receipt.export_boundary,
+                receipt.live_recording_duration,
+            )
+        });
+        let receipt_id = source_receipt
+            .filter(|_| version.is_some())
+            .map(|receipt| receipt.receipt_id.as_str().to_owned());
         let mut draft = ActionDraft::new(
             ActorType::User,
             ActionCommand::ExportDawSession,
@@ -57,7 +63,10 @@ impl JamAppState {
         );
         draft.params = ActionParams::DawSessionExport {
             export_scope: ExportScope::DawSession,
-            boundary: version.action_boundary(),
+            boundary: version.map_or(DawSessionExportBoundary::ReservedContractOnly, |version| {
+                version.action_boundary()
+            }),
+            duration: version.and_then(|version| version.export_duration()),
             include_manifest: true,
             destination_kind: ProductExportDestinationKind::LocalFilePath,
             destination_path: destination_path.clone(),
@@ -66,7 +75,16 @@ impl JamAppState {
         draft.undo_policy = UndoPolicy::NotUndoable {
             reason: "DAWproject export writes a musician file outside musical undo".into(),
         };
-        draft.explanation = Some("place the committed live master as one two-bar DAW clip".into());
+        draft.explanation = Some(match version {
+            None => "live-master DAW handoff has no eligible versioned source".into(),
+            Some(LiveMasterDawprojectVersion::ExtendedV3(duration)) => format!(
+                "place the committed live master as one {}-bar DAW clip",
+                duration.bars()
+            ),
+            Some(
+                LiveMasterDawprojectVersion::LegacyV1 | LiveMasterDawprojectVersion::CanonicalV2,
+            ) => "place the committed live master as one two-bar DAW clip".into(),
+        });
         match self
             .queue
             .enqueue_if_no_pending_command(draft, requested_at)
@@ -219,7 +237,8 @@ impl JamAppState {
                     && matches!(&action.params,
                 ActionParams::DawSessionExport {
                     boundary: DawSessionExportBoundary::LiveMasterDawprojectV1
-                        | DawSessionExportBoundary::LiveMasterDawprojectV2,
+                        | DawSessionExportBoundary::LiveMasterDawprojectV2
+                        | DawSessionExportBoundary::LiveMasterDawprojectV3,
                     destination_path: Some(path), ..
                 } if path == destination.as_ref())
             })
@@ -238,17 +257,18 @@ impl JamAppState {
                 ActionParams::DawSessionExport {
                     export_scope: ExportScope::DawSession,
                     boundary,
+                    duration,
                     include_manifest: true,
                     destination_kind: ProductExportDestinationKind::LocalFilePath,
                     receipt_id: Some(receipt_id),
                     ..
-                } => LiveMasterDawprojectVersion::for_action(*boundary)
+                } => LiveMasterDawprojectVersion::for_action(*boundary, *duration)
                     .map(|version| (ExportReceiptId::new(receipt_id.clone()), version)),
                 _ => None,
             })
             .ok_or_else(|| {
                 JamAppError::InvalidSession(
-                    "queued live-master DAWproject action is missing its pinned source receipt or version"
+                    "queued live-master DAWproject action is missing its pinned source receipt, version or duration"
                         .into(),
                 )
             })

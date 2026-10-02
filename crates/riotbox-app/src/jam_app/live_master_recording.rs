@@ -34,7 +34,7 @@ use session_identity::prepare_recording_plan_input;
 pub const LIVE_MASTER_RECORDING_DURATION_BEATS: u32 = 8;
 pub const LIVE_MASTER_RECORDING_PROOF_SCHEMA: &str =
     "riotbox.live_recording_runtime_master_bar_window.v2";
-const LIVE_MASTER_RECORDING_PROOF_SCHEMA_V3: &str =
+pub(in crate::jam_app) const LIVE_MASTER_RECORDING_PROOF_SCHEMA_V3: &str =
     "riotbox.live_recording_runtime_master_bar_window.v3";
 pub(in crate::jam_app) const LIVE_MASTER_RECORDING_PROOF_SCHEMA_V4: &str =
     "riotbox.live_recording_runtime_master_bar_window.v4";

@@ -2196,3 +2196,16 @@ DAW-import, demo or release pass. RIOTBOX-1554 corrects future alignment-gate
 descriptions to use the existing typed 2/8/16-bar duration, preserving legacy
 wording and all stored historical evidence. Neither slice adds a recorder or
 changes sound; RIOTBOX-1036 remains the broader open workflow owner.
+
+RIOTBOX-1555 adds the separately versioned DAW V3 handoff (RBX-424) for ready
+eight-/sixteen-bar V3 recordings. It removes the exact local-file handoff gap:
+the existing metadata-only command now carries the byte-identical master into
+one 32-/64-beat DAWproject clip with the recorded tempo. Core owns explicit
+queued duration, source-receipt pinning and restore/replay integrity; historical
+two-bar DAW V1/V2 contracts and the shared archive publisher remain unchanged.
+Generated engineering evidence and review are recorded in
+[the RIOTBOX-1555 report](reviews/riotbox_1555_extended_live_master_dawproject_2026-10-02.md).
+This is not a DAW-host import, audible DAW output, new listening or release pass.
+The named audible follow-up remains RIOTBOX-1036's real-host DAW import/output
+qualification when user DAW setup is available; no extra source access or
+repeated hearing is authorized by this contract enabler.
