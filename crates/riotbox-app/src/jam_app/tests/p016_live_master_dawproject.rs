@@ -390,6 +390,7 @@ fn live_master_dawproject_rejects_hash_and_metadata_proof_drift_without_archive_
         "beat-span",
         "start-error",
         "duration-error",
+        "v3-duration-on-v2",
         "health",
         "callback-gap",
         "unarmed",
@@ -433,6 +434,10 @@ fn live_master_dawproject_rejects_hash_and_metadata_proof_drift_without_archive_
                     "beat-span" => proof.beat_span_per_frame_nanobeats += 1,
                     "start-error" => proof.start_alignment_error_frame_micros += 1,
                     "duration-error" => proof.duration_error_frame_micros += 1,
+                    "v3-duration-on-v2" => {
+                        proof.duration =
+                            Some(riotbox_core::action::LiveRecordingDuration::EightBars)
+                    }
                     "health" => proof.stream_error_count = 1,
                     "callback-gap" => proof.callback_gap_over_threshold_count = 1,
                     "unarmed" => proof.armed_callback_count = 0,

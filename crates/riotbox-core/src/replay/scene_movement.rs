@@ -15,6 +15,9 @@ pub fn apply_graph_aware_replay_plan_to_session(
     entries: &[ReplayPlanEntry<'_>],
     source_graph: &SourceGraph,
 ) -> Result<ReplayExecutionReport, ReplayExecutionError> {
+    session
+        .validate_live_recording_duration_contracts()
+        .map_err(ReplayExecutionError::InvalidLiveRecordingDuration)?;
     let mut working = session.clone();
     working.migrate_scene_source_bindings_with_refs(
         source_graph,

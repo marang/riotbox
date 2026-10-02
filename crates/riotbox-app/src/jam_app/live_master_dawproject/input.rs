@@ -150,6 +150,7 @@ fn validate_source_identity(
     wav_bytes: &[u8],
 ) -> Result<(), JamAppError> {
     if proof.schema != LIVE_MASTER_RECORDING_PROOF_SCHEMA
+        || proof.duration.is_some()
         || proof.receipt_id != receipt.receipt_id
         || proof.action_id != receipt.created_by_action
         || proof.session_id != session.session_id
@@ -185,6 +186,7 @@ fn validate_source_identity(
     let action_destination = match &source_action.params {
         ActionParams::LiveRecordingExport {
             boundary: LiveRecordingExportBoundary::RuntimeMasterBarWindowV2,
+            duration: None,
             destination_kind: ProductExportDestinationKind::LocalFilePath,
             destination_path: Some(path),
             ..

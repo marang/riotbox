@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::action::LiveRecordingDuration;
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExportLiveRecordingHostAudioRef {
     pub host: String,
@@ -28,6 +30,16 @@ pub struct ExportLiveRecordingTimingWindow {
 impl ExportLiveRecordingTimingWindow {
     #[must_use]
     pub fn bar_aligned_two_bar_window_ready(&self, sample_rate_hz: u32, frame_count: u64) -> bool {
+        self.bar_aligned_window_ready(sample_rate_hz, frame_count, LiveRecordingDuration::TwoBars)
+    }
+
+    #[must_use]
+    pub fn bar_aligned_window_ready(
+        &self,
+        sample_rate_hz: u32,
+        frame_count: u64,
+        duration: LiveRecordingDuration,
+    ) -> bool {
         let bar_microbeats = u64::from(self.beats_per_bar).saturating_mul(1_000_000);
         let start_error_nanobeats = self
             .captured_start_position_microbeats
@@ -43,25 +55,42 @@ impl ExportLiveRecordingTimingWindow {
             u128::from(self.duration_beats).saturating_mul(1_000_000_000);
         let frame_span_nanobeats = u128::from(self.beat_span_per_frame_nanobeats);
         let frame_span_denominator = u128::from(sample_rate_hz).saturating_mul(60);
-        let expected_frame_span_nanobeats = u128::from(self.confirmed_bpm_micros)
-            .saturating_mul(1_000)
-            .saturating_add(frame_span_denominator / 2)
-            .checked_div(frame_span_denominator);
-        let exact_window_frame_numerator = u128::from(sample_rate_hz)
-            .saturating_mul(60)
-            .saturating_mul(u128::from(self.duration_beats))
-            .saturating_mul(1_000_000);
-        let expected_frame_count = exact_window_frame_numerator
-            .saturating_add(u128::from(self.confirmed_bpm_micros) / 2)
-            .checked_div(u128::from(self.confirmed_bpm_micros));
+        let (expected_frame_span_nanobeats, expected_frame_count) =
+            if duration == LiveRecordingDuration::TwoBars {
+                // Frozen V2 geometry used integer micro-BPM and must remain unchanged.
+                let span = u128::from(self.confirmed_bpm_micros)
+                    .saturating_mul(1_000)
+                    .saturating_add(frame_span_denominator / 2)
+                    .checked_div(frame_span_denominator);
+                let frame_numerator = u128::from(sample_rate_hz)
+                    .saturating_mul(60)
+                    .saturating_mul(u128::from(self.duration_beats))
+                    .saturating_mul(1_000_000);
+                let count = frame_numerator
+                    .saturating_add(u128::from(self.confirmed_bpm_micros) / 2)
+                    .checked_div(u128::from(self.confirmed_bpm_micros))
+                    .and_then(|frames| u64::try_from(frames).ok());
+                (span, count)
+            } else {
+                let span = LiveRecordingDuration::confirmed_runtime_bpm(self.confirmed_bpm_micros)
+                    .filter(|_| sample_rate_hz > 0)
+                    .map(|bpm| {
+                        (f64::from(bpm) / 60.0 / f64::from(sample_rate_hz) * 1_000_000_000.0)
+                            .round() as u128
+                    });
+                (
+                    span,
+                    duration.target_frame_count(sample_rate_hz, self.confirmed_bpm_micros),
+                )
+            };
         self.beats_per_bar == 4
-            && self.duration_beats == 8
+            && self.duration_beats == duration.duration_beats()
             && self.confirmed_bpm_micros > 0
             && sample_rate_hz > 0
             && bar_microbeats > 0
             && self.beat_span_per_frame_nanobeats > 0
             && expected_frame_span_nanobeats == Some(u128::from(self.beat_span_per_frame_nanobeats))
-            && expected_frame_count == Some(u128::from(frame_count))
+            && expected_frame_count == Some(frame_count)
             && self
                 .bar_grid_anchor_position_microbeats
                 .is_multiple_of(1_000_000)

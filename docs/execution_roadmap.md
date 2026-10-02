@@ -2166,3 +2166,14 @@ pipeline without loading Source Graph files or source/capture audio, preserving
 stored references rather than constructing a second persistence model. The
 existing recording and human review remain immutable; archive readiness and
 existing listening evidence do not claim host import or audible DAW playback.
+
+RIOTBOX-1551 extends the existing recording path under RIOTBOX-1036 with
+explicit eight/sixteen-bar V3 windows; omission and `2` retain V2. Core owns
+duration identity across the Action, receipt, restore and replay checks;
+the existing callback and file transaction remain the recording path.
+This engineering extension removes the fixed two-bar operator limit without
+changing the held Scene, accepting live gestures or expanding the V2 DAW
+consumer. Generated PCM/callback and persistence tests are implementation
+evidence, not a longer real-host or human pass. The next audible follow-up is
+one separately authorized bounded real-host extended-window recording; no new
+source access, playback, DAW host or release claim follows from this slice.

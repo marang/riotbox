@@ -10,6 +10,7 @@ use riotbox_audio::{
     },
 };
 use riotbox_core::{
+    action::LiveRecordingDuration,
     ids::{CaptureId, SceneId},
     session::{
         ExportArtifactSourceGraphRef, ExportArtifactTimingGridRef,
@@ -53,12 +54,13 @@ pub(super) fn prepare_recording_plan_input(
     state: &JamAppState,
     output: &AudioOutputInfo,
     destination_path: &Path,
+    duration: LiveRecordingDuration,
 ) -> Result<PreparedLiveMasterRecordingPlanInput, JamAppError> {
     validate_destination(destination_path)?;
     validate_output(output)?;
     let identity = live_master_session_identity(state)?;
     let target_frame_count =
-        live_master_target_frame_count(output.sample_rate, identity.confirmed_bpm)?;
+        live_master_window_frame_count(output.sample_rate, identity.confirmed_bpm, duration)?;
     live_master_target_sample_count(target_frame_count, output.channel_count)?;
     let start_position_beats = live_master_next_bar_start_position(
         state.runtime.transport.position_beats,
@@ -326,6 +328,37 @@ pub(super) fn live_master_target_frame_count(
         ));
     }
     Ok(frames as usize)
+}
+
+pub(super) fn live_master_window_frame_count(
+    sample_rate: u32,
+    bpm: f32,
+    duration: LiveRecordingDuration,
+) -> Result<usize, JamAppError> {
+    if duration == LiveRecordingDuration::TwoBars {
+        return live_master_target_frame_count(sample_rate, bpm);
+    }
+    if !bpm.is_finite() || bpm <= 0.0 {
+        return Err(JamAppError::InvalidSession(
+            "live master recording BPM is invalid".into(),
+        ));
+    }
+    let bpm_micros = (f64::from(bpm) * 1_000_000.0).round() as u64;
+    if !LiveRecordingDuration::confirmed_runtime_bpm(bpm_micros)
+        .is_some_and(|canonical| canonical.to_bits() == bpm.to_bits())
+    {
+        return Err(JamAppError::InvalidSession(
+            "live master V3 recording cannot preserve the exact runtime BPM in micro-BPM evidence"
+                .into(),
+        ));
+    }
+    duration
+        .target_frame_count(sample_rate, bpm_micros)
+        .and_then(|frames| usize::try_from(frames).ok())
+        .filter(|frames| *frames > 0)
+        .ok_or_else(|| {
+            JamAppError::InvalidSession("live master recording frame count is invalid".into())
+        })
 }
 
 pub(super) fn live_master_target_sample_count(

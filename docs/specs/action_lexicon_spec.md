@@ -625,8 +625,37 @@ Runnable `runtime_master_bar_window_v2` boundary:
   tempo fault counts. Receipt readiness cross-checks these values rather than
   trusting independent pass flags
 - V1 actions, receipts, proofs, and readiness remain readable and unchanged;
-  V2 is the sole boundary created by the current `just live-master-recording`
-  ingress
+  V2 remains the default two-bar `just live-master-recording` ingress.
+
+Bounded extended `runtime_master_bar_window_v3` boundary (RBX-422):
+
+- The same action accepts typed `duration: eight_bars | sixteen_bars` only for
+  V3, corresponding to 32 or 64 beats in confirmed 4/4. V1/V2/reserved actions
+  omit this field; `two_bars` is a CLI/API selection that still creates V2,
+  never an alternative meaning for V3. Unknown selections fail closed.
+- `--live-recording-bars 2|8|16` belongs exclusively to
+  `--live-master-recording-execute`; omission means 2. The Just recipe adds
+  `bars` after its existing optional graph/observer arguments.
+- V3 reuses the same next-bar arm, post-limiter callback, float32 publication,
+  allocation ceiling, health/start/half-frame duration gates and side-effect
+  commit path. The V3-only numerical position contract is owned by the Audio
+  Core spec; it distinguishes accumulated clock arithmetic from frame duration.
+  Its checked whole-frame duration uses the exact runtime f32 BPM reconstructed
+  from persisted micro-BPM, with an exact bit/canonical roundtrip required before
+  arming. Unrepresentable tempos reject instead of shifting a frame. Oversized
+  rate/channel/tempo combinations reject before callback-buffer allocation.
+- Receipt boundary: `live_recording.runtime_master_bar_window_v3`; pack id:
+  `live-recording-runtime-master-bar-window-v3`; proof schema:
+  `riotbox.live_recording_runtime_master_bar_window.v3`. Action selection, proof
+  selection/beat duration and receipt selection/timing geometry must agree.
+- This non-interactive command records the existing stable Scene for longer;
+  it does not accept new performer gestures, record inputs, change DSP, or
+  implement an arbitrary-length recorder. Historical live-recording replay
+  remains unsupported, not a request to recapture external audio. Restore and
+  replay entrypoints validate explicit-duration identity without file I/O.
+- The source-free implementation evidence does not qualify a new device,
+  human listening, DAW import, source, hardness, or release claim. Existing
+  two-bar DAWproject handoff continues to accept V2 only.
 
 Contract for `export.stem_package`:
 

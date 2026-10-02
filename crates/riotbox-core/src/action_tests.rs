@@ -307,6 +307,7 @@ fn live_recording_export_action_contract_roundtrips_as_reserved_scope() {
             export_scope: ExportScope::LiveRecording,
             export_role: LiveRecordingExportRole::LiveRecordingCapture,
             boundary: LiveRecordingExportBoundary::ReservedContractOnly,
+            duration: None,
             include_manifest: true,
             destination_kind: ProductExportDestinationKind::LocalArtifactDirectory,
             destination_path: Some("exports/live-recording".into()),
@@ -374,6 +375,7 @@ fn live_recording_export_action_contract_roundtrips_as_reserved_scope() {
             export_scope: ExportScope::LiveRecording,
             export_role: LiveRecordingExportRole::LiveRecordingCapture,
             boundary: LiveRecordingExportBoundary::ReservedContractOnly,
+            duration: None,
             include_manifest: true,
             destination_kind: ProductExportDestinationKind::LocalArtifactDirectory,
             destination_path: Some("exports/live-recording".into()),
@@ -398,6 +400,7 @@ fn live_recording_runtime_master_boundary_roundtrips_as_versioned_action_params(
             export_scope: ExportScope::LiveRecording,
             export_role: LiveRecordingExportRole::LiveRecordingCapture,
             boundary,
+            duration: None,
             include_manifest: true,
             destination_kind: ProductExportDestinationKind::LocalFilePath,
             destination_path: Some("exports/live-master.wav".into()),
@@ -406,6 +409,7 @@ fn live_recording_runtime_master_boundary_roundtrips_as_versioned_action_params(
 
         let json = serde_json::to_value(&params).expect("serialize live runtime-master params");
         assert_eq!(json["LiveRecordingExport"]["boundary"], expected);
+        assert!(json["LiveRecordingExport"].get("duration").is_none());
         assert_eq!(
             serde_json::from_value::<ActionParams>(json)
                 .expect("deserialize live runtime-master params"),

@@ -305,6 +305,8 @@ pub enum ActionParams {
         export_scope: ExportScope,
         export_role: LiveRecordingExportRole,
         boundary: LiveRecordingExportBoundary,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        duration: Option<LiveRecordingDuration>,
         include_manifest: bool,
         destination_kind: ProductExportDestinationKind,
         destination_path: Option<String>,
@@ -366,6 +368,127 @@ pub enum LiveRecordingExportBoundary {
     ReservedContractOnly,
     RuntimeMasterCaptureV1,
     RuntimeMasterBarWindowV2,
+    RuntimeMasterBarWindowV3,
+}
+
+impl LiveRecordingExportBoundary {
+    /// Historical boundaries retain their omitted duration identity; only V3
+    /// accepts the explicitly selected longer recording windows.
+    #[must_use]
+    pub const fn valid_duration(self, duration: Option<LiveRecordingDuration>) -> bool {
+        match self {
+            Self::ReservedContractOnly
+            | Self::RuntimeMasterCaptureV1
+            | Self::RuntimeMasterBarWindowV2 => duration.is_none(),
+            Self::RuntimeMasterBarWindowV3 => matches!(
+                duration,
+                Some(LiveRecordingDuration::EightBars | LiveRecordingDuration::SixteenBars)
+            ),
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum LiveRecordingDuration {
+    #[default]
+    TwoBars,
+    EightBars,
+    SixteenBars,
+}
+
+impl LiveRecordingDuration {
+    #[must_use]
+    pub const fn bars(self) -> u8 {
+        match self {
+            Self::TwoBars => 2,
+            Self::EightBars => 8,
+            Self::SixteenBars => 16,
+        }
+    }
+
+    #[must_use]
+    pub const fn duration_beats(self) -> u32 {
+        self.bars() as u32 * 4
+    }
+
+    /// Recover the runtime's f32 tempo only when its persisted micro-BPM identity
+    /// is canonical. Callers arming V3 must also compare the original tempo bits.
+    #[must_use]
+    pub fn confirmed_runtime_bpm(confirmed_bpm_micros: u64) -> Option<f32> {
+        let bpm = (confirmed_bpm_micros as f64 / 1_000_000.0) as f32;
+        let roundtrip_micros = (f64::from(bpm) * 1_000_000.0).round();
+        (bpm.is_finite()
+            && bpm > 0.0
+            && roundtrip_micros < u64::MAX as f64
+            && roundtrip_micros as u64 == confirmed_bpm_micros)
+            .then_some(bpm)
+    }
+
+    /// Round the confirmed runtime-f32 4/4 window once to whole output frames.
+    /// V3 uses this geometry; V2 retains its historical integer-micro-BPM check.
+    /// Allocation limits remain a separate preallocation gate at the recorder.
+    #[must_use]
+    pub fn target_frame_count(self, sample_rate_hz: u32, confirmed_bpm_micros: u64) -> Option<u64> {
+        if sample_rate_hz == 0 {
+            return None;
+        }
+        let bpm = Self::confirmed_runtime_bpm(confirmed_bpm_micros)?;
+        let frames = (f64::from(sample_rate_hz) * 60.0 * f64::from(self.duration_beats())
+            / f64::from(bpm))
+        .round();
+        (frames.is_finite() && frames > 0.0 && frames < u64::MAX as f64).then_some(frames as u64)
+    }
+
+    /// V3-only representation budget for the incrementally accumulated runtime
+    /// endpoint, never a replacement for physical start or frame-duration gates.
+    ///
+    /// Each captured callback contributes one span multiply and one position
+    /// add. Sixteen further rounded operations conservatively cover first/last
+    /// frame interpolation, the reference endpoint, and its residual. For unit
+    /// roundoff u, gamma(n) = n*u/(1-n*u) bounds their accumulated error. Positive
+    /// positions/spans bound intermediate magnitudes by the largest endpoint.
+    /// The allowed budget must remain below both 1/1024 frame and the existing
+    /// one-microbeat serialization margin, otherwise precision fails closed.
+    #[must_use]
+    pub fn position_roundoff_bound(
+        self,
+        beats_per_frame: f64,
+        captured_start: f64,
+        captured_end: f64,
+        expected_end: f64,
+        callback_count: u64,
+        frame_count: u64,
+    ) -> Option<f64> {
+        if self == Self::TwoBars
+            || !beats_per_frame.is_finite()
+            || beats_per_frame <= 0.0
+            || !captured_start.is_finite()
+            || !captured_end.is_finite()
+            || !expected_end.is_finite()
+            || captured_start < 0.0
+            || captured_end <= captured_start
+            || expected_end <= captured_start
+            || callback_count == 0
+            || callback_count > frame_count
+        {
+            return None;
+        }
+        let operation_count = callback_count.checked_mul(2)?.checked_add(16)?;
+        let accumulated_roundoff = operation_count as f64 * (f64::EPSILON / 2.0);
+        if accumulated_roundoff >= 1.0 {
+            return None;
+        }
+        let gamma = accumulated_roundoff / (1.0 - accumulated_roundoff);
+        let magnitude = captured_start
+            .abs()
+            .max(captured_end.abs())
+            .max(expected_end.abs())
+            .max(1.0);
+        let bound = (beats_per_frame * 1.0e-6).max(gamma * magnitude);
+        let ceiling = (beats_per_frame / 1_024.0).min(1.0e-6);
+        (bound.is_finite() && bound <= ceiling).then_some(bound)
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

@@ -70,6 +70,7 @@ const REPLAY_SUPPORTED_ACTION_COMMANDS: &[ActionCommand] = &[
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ReplayExecutionError {
+    InvalidLiveRecordingDuration(crate::session::LiveRecordingDurationContractError),
     InvalidSceneSourceBinding(crate::session::SceneSourceBindingError),
     UnsupportedAction {
         action_id: ActionId,
@@ -549,6 +550,9 @@ pub fn apply_replay_plan_to_session(
     session: &mut SessionFile,
     plan: &[ReplayPlanEntry<'_>],
 ) -> Result<ReplayExecutionReport, ReplayExecutionError> {
+    session
+        .validate_live_recording_duration_contracts()
+        .map_err(ReplayExecutionError::InvalidLiveRecordingDuration)?;
     let mut candidate = session.clone();
     let mut applied_action_ids = Vec::with_capacity(plan.len());
 

@@ -422,7 +422,7 @@ fn bar_window_v2_readiness_requires_typed_alignment_evidence_and_preserves_v1() 
     assert!(!duplicate_alignment_gate.live_recording_runtime_master_ready());
 }
 
-fn runtime_master_fixture_receipt() -> ExportReceiptState {
+pub(super) fn runtime_master_fixture_receipt() -> ExportReceiptState {
     let wav_sha = "abababababababababababababababababababababababababababababababab";
     let proof_sha = "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd";
     let contract = ExportReadinessContract {

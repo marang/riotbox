@@ -38,6 +38,7 @@ impl JamAppState {
             export_scope: ExportScope::LiveRecording,
             export_role: LiveRecordingExportRole::LiveRecordingCapture,
             boundary: LiveRecordingExportBoundary::ReservedContractOnly,
+            duration: None,
             include_manifest: true,
             destination_kind: ProductExportDestinationKind::LocalArtifactDirectory,
             destination_path,

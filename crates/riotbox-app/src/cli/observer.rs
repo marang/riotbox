@@ -1,5 +1,6 @@
 use crate::cli::model::AppLaunch;
 use crate::cli::model::LaunchMode;
+use crate::cli::model::live_master_recording_boundary;
 use crate::cli::stem_package_export::export_artifact_role_label;
 use crate::observer::compact_commit;
 use crate::observer::observer_snapshot;
@@ -231,8 +232,12 @@ pub(in crate::cli) fn launch_summary(launch: &AppLaunch) -> Value {
             session_path,
             source_graph_path,
             destination_path,
+            duration,
         } => json!({
             "mode": "live_master_recording_execute",
+            "boundary": live_master_recording_boundary(*duration),
+            "duration_bars": duration.bars(),
+            "duration_beats": duration.duration_beats(),
             "session_path": session_path,
             "source_graph_path": source_graph_path,
             "destination_path": destination_path,

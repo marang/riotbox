@@ -220,5 +220,6 @@ fn export_boundary_short_label(boundary: ProductExportBoundary) -> &'static str 
         ProductExportBoundary::LiveRecordingReceiptContractV1 => "live-rec",
         ProductExportBoundary::LiveRecordingRuntimeMasterCaptureV1 => "live-master",
         ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV2 => "live-bar",
+        ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV3 => "live-bar-v3",
     }
 }

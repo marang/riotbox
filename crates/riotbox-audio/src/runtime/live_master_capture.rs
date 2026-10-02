@@ -505,6 +505,9 @@ fn position_from_bits(bits: u64) -> Option<f64> {
 }
 
 #[cfg(test)]
+mod long_window_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
 

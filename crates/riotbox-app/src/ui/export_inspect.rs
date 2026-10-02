@@ -210,6 +210,7 @@ pub(in crate::ui) fn export_boundary_short_label(boundary: ProductExportBoundary
         ProductExportBoundary::LiveRecordingReceiptContractV1 => "live-rec",
         ProductExportBoundary::LiveRecordingRuntimeMasterCaptureV1 => "live-master",
         ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV2 => "live-bar",
+        ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV3 => "live-bar-v3",
     }
 }
 

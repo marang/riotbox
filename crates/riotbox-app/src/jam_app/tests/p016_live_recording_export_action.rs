@@ -72,6 +72,7 @@ fn reserved_live_recording_export_queue_attempt_is_rejected_without_side_effects
             destination_kind,
             destination_path,
             receipt_id,
+            duration,
         } => {
             assert_eq!(*export_scope, ExportScope::LiveRecording);
             assert_eq!(
@@ -92,6 +93,7 @@ fn reserved_live_recording_export_queue_attempt_is_rejected_without_side_effects
                 Some(destination.to_string_lossy().as_ref())
             );
             assert_eq!(receipt_id, &None);
+            assert_eq!(duration, &None);
         }
         other => panic!("expected live recording params, got {other:?}"),
     }

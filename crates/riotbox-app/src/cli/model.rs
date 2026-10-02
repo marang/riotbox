@@ -1,6 +1,19 @@
 use crate::ui::ShellLaunchMode;
+use riotbox_core::action::LiveRecordingDuration;
+use riotbox_core::action::LiveRecordingExportBoundary;
 use riotbox_core::session::ExportArtifactRole;
 use std::path::PathBuf;
+
+pub(in crate::cli) fn live_master_recording_boundary(
+    duration: LiveRecordingDuration,
+) -> LiveRecordingExportBoundary {
+    match duration {
+        LiveRecordingDuration::TwoBars => LiveRecordingExportBoundary::RuntimeMasterBarWindowV2,
+        LiveRecordingDuration::EightBars | LiveRecordingDuration::SixteenBars => {
+            LiveRecordingExportBoundary::RuntimeMasterBarWindowV3
+        }
+    }
+}
 
 #[derive(Clone, Debug)]
 pub(in crate::cli) enum LaunchMode {
@@ -50,6 +63,7 @@ pub(in crate::cli) enum LaunchMode {
         session_path: PathBuf,
         source_graph_path: Option<PathBuf>,
         destination_path: PathBuf,
+        duration: LiveRecordingDuration,
     },
     DawExportReadinessReport {
         session_path: PathBuf,
