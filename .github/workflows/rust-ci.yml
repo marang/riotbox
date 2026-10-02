@@ -115,6 +115,21 @@ jobs:
       - name: Cache cargo artifacts
         uses: Swatinem/rust-cache@v2
       - name: Source-free Sidecar protocol and transport tests
-        run: cargo test --locked -p riotbox-sidecar
+        shell: pwsh
+        run: |
+          # Temporary RIOTBOX-1509 probe: preserve the original command and
+          # environment; the first iteration is the fresh-worker observation.
+          $sidecarProbeRounds = 1
+          if ($env:GITHUB_HEAD_REF -eq 'feature/riotbox-1509-startup-reproduction-v2') {
+            $sidecarProbeRounds = 30
+          }
+          for ($sidecarProbeRound = 1; $sidecarProbeRound -le $sidecarProbeRounds; $sidecarProbeRound++) {
+            Write-Host "[DEBUG-rbx1509] round=$sidecarProbeRound/$sidecarProbeRounds start=$([DateTime]::UtcNow.ToString('o'))"
+            $sidecarProbeClock = [Diagnostics.Stopwatch]::StartNew()
+            cargo test --locked -p riotbox-sidecar
+            $sidecarProbeExit = $LASTEXITCODE
+            Write-Host "[DEBUG-rbx1509] round=$sidecarProbeRound elapsed_ms=$($sidecarProbeClock.ElapsedMilliseconds) exit=$sidecarProbeExit"
+            if ($sidecarProbeExit -ne 0) { exit $sidecarProbeExit }
+          }
       - name: Sidecar lint
         run: cargo clippy --locked -p riotbox-sidecar --all-targets -- -D warnings
