@@ -1,3 +1,4 @@
+use crate::jam_app::CaptureAudioStatus;
 use crate::jam_app::state::JamAppState;
 use crate::jam_app::state::QueueControlResult;
 use crate::jam_app::state::SessionHydrationPolicy;
@@ -15,6 +16,7 @@ use riotbox_audio::mc202::Mc202RenderMode;
 use riotbox_audio::mc202::Mc202RenderRouting;
 use riotbox_audio::runtime::AudioRuntimeLifecycle;
 use riotbox_audio::runtime::SourceMonitorAudioRoute;
+use riotbox_audio::source_audio::SOURCE_AUDIO_MAX_ENCODED_BYTES_V1;
 use riotbox_audio::source_audio::SourceAudioCache;
 use riotbox_core::action::CommitBoundary;
 use riotbox_core::action::SourceMonitorMode;
@@ -25,6 +27,8 @@ use riotbox_core::persistence::load_source_graph_json;
 use riotbox_core::persistence::save_session_json;
 use riotbox_core::persistence::save_source_graph_json;
 use riotbox_core::queue::ActionQueue;
+use riotbox_core::session::CaptureAudioIdentity;
+use riotbox_core::session::CaptureAudioIdentityProvenance;
 use riotbox_core::session::CaptureRef;
 use riotbox_core::session::CaptureType;
 use riotbox_core::session::GraphStorageMode;
@@ -318,6 +322,100 @@ fn source_audio_load_failure_surfaces_runtime_warning() {
             && warning.contains("missing-source.wav")
             && warning.contains("source audio I/O failed")
     }));
+}
+
+#[test]
+fn oversized_sparse_source_restore_stays_unavailable_without_rewriting_session() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("session.json");
+    let source_path = dir.path().join("oversized-source.wav");
+    fs::File::create(&source_path)
+        .expect("create sparse source fixture")
+        .set_len(SOURCE_AUDIO_MAX_ENCODED_BYTES_V1 as u64 + 1)
+        .expect("extend sparse source fixture");
+
+    let mut graph = sample_graph();
+    graph.source.path = source_path.to_string_lossy().into_owned();
+    // Retain the fixture identity: admission must fail before reading or hashing
+    // this sparse file, so binding an identity from its bytes is forbidden here.
+    let mut session = sample_session(&graph);
+    session.runtime_state.source_monitor.mode = SourceMonitorMode::Source;
+    save_session_json(&session_path, &session).expect("save session fixture");
+    let persisted_before = fs::read(&session_path).expect("read saved session");
+
+    let state =
+        JamAppState::from_json_files(&session_path, None::<&Path>).expect("restore app state");
+
+    assert!(state.source_audio_cache.is_none());
+    assert!(matches!(
+        &state.runtime.source_audio.status,
+        SourceAudioStatus::Unavailable { reason, .. }
+            if reason.contains("resource limit exceeded") && reason.contains("encoded WAV bytes")
+    ));
+    assert_eq!(
+        state.runtime.source_monitor_audio_route,
+        SourceMonitorAudioRoute::SourceUnavailable
+    );
+    assert_eq!(
+        state.runtime_view.source_monitor_audio_route,
+        "source_unavailable"
+    );
+    assert!(state.source_monitor_render_state().source.is_none());
+    assert!(state.runtime_view.runtime_warnings.iter().any(|warning| {
+        warning.contains("source audio unavailable for source monitor")
+            && warning.contains("resource limit exceeded")
+            && warning.contains("encoded WAV bytes")
+    }));
+    assert_eq!(
+        fs::read(&session_path).expect("reread saved session"),
+        persisted_before
+    );
+}
+
+#[test]
+fn oversized_sparse_capture_restore_never_admits_a_trusted_cache_or_rewrites_session() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("session.json");
+    let capture_path = dir.path().join("oversized-capture.wav");
+    fs::File::create(&capture_path)
+        .expect("create sparse capture fixture")
+        .set_len(SOURCE_AUDIO_MAX_ENCODED_BYTES_V1 as u64 + 1)
+        .expect("extend sparse capture fixture");
+
+    let mut graph = sample_graph();
+    graph.source.path = dir
+        .path()
+        .join("missing-source.wav")
+        .to_string_lossy()
+        .into_owned();
+    let mut session = sample_session(&graph);
+    let capture = &mut session.captures[0];
+    capture.storage_path = "oversized-capture.wav".into();
+    // A valid synthetic identity lets the resource guard run before byte hashing.
+    capture.audio_identity = Some(CaptureAudioIdentity {
+        sha256: format!("sha256:{}", "ab".repeat(32)),
+        provenance: CaptureAudioIdentityProvenance::CreatedFromEncodedBytesV1,
+    });
+    let capture_id = capture.capture_id.clone();
+    save_session_json(&session_path, &session).expect("save session fixture");
+    let persisted_before = fs::read(&session_path).expect("read saved session");
+
+    let state =
+        JamAppState::from_json_files(&session_path, None::<&Path>).expect("restore app state");
+
+    assert!(!state.capture_audio_cache.contains_key(&capture_id));
+    assert!(matches!(
+        state.runtime.capture_audio_status.get(&capture_id),
+        Some(CaptureAudioStatus::Unavailable { reason })
+            if reason.contains("resource limit exceeded") && reason.contains("encoded WAV bytes")
+    ));
+    assert!(state.runtime_view.runtime_warnings.iter().any(|warning| {
+        warning.contains("resource limit exceeded") && warning.contains("encoded WAV bytes")
+    }));
+    assert_eq!(
+        fs::read(&session_path).expect("reread saved session"),
+        persisted_before
+    );
 }
 
 #[test]
