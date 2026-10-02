@@ -181,6 +181,11 @@ reproduced all historical controls and exercised A/B/C protection in all three
 policy differences, but no comparison artifact or human verdict exists. This
 is not a perceptual calibration decision; A remains provisional.
 
+The separately authorized [fixed-window artifact phase](../benchmarks/master_bus_limiter_review_artifact_protocol_v1.md)
+prepares only the already selected Sparse 4x A/B/C interval, with one common
+presentation attenuation and exact-file preflight. It neither reopens V2's
+consumed budget nor authorizes playback or a preferred-policy claim.
+
 ### 3. QA acceptance thresholds
 
 Examples in the exact dense-break path:

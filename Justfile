@@ -100,13 +100,13 @@ hook-chop-diagnostic-contract-fixtures:
 feral-grid-verification-contract-fixtures:
     python3 -m unittest discover -s scripts -p 'test_feral_grid_verification_contract.py'
 
-# Generated buffers only; never invokes the Development executor or metadata preflight.
+# Generated fixtures only; never invokes the Development executor or metadata preflight.
 limiter-calibration-fixtures:
     just source-holdout-rotation-fixtures
     cargo test -p riotbox-audio --lib --features limiter-calibration limiter_calibration
     cargo test -p riotbox-app --lib --features limiter-calibration limiter_calibration
     cargo test -p riotbox-app --bin dense_break_live_path_render --features limiter-calibration calibration
-    python3 -m unittest discover -s scripts -p 'test_master_bus_limiter_calibration*.py'
+    python3 -m unittest discover -s scripts -p 'test_master_bus_limiter*.py'
 
 audio-qa-access-guard-fixtures:
     scripts/validate_broad_audio_qa_access_guard.sh
