@@ -10,7 +10,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from master_bus_limiter_calibration_metrics import Version, measure_case
 from source_holdout_development_access import (
@@ -158,9 +158,16 @@ def preflight(version: Version = Version.V1, *, execute: bool = False) -> tuple[
         basis = protocol["historical_basis"]
         historical_report = metadata(basis["report_path"], basis["report_sha256"], repo=REPO)
         validate_historical_report(protocol, historical_report)
-    corpus = metadata(protocol["corpus"]["path"], protocol["corpus"]["sha256"])
+    identities = load_registered_identities(protocol, CASE_IDS, prefix=binding.path)
+    graphs = {case["case_id"]: load_case_graph(case) for case in protocol["cases"]}
+    return protocol, identities, graphs
+
+
+def load_registered_identities(protocol: dict[str, Any], case_ids: list[str], *, prefix: str) -> list[SourceIdentity]:
+    """Read only registry/corpus metadata and exclude protected identities before source access."""
+    corpus = metadata(protocol["corpus"]["path"], protocol["corpus"]["sha256"], repo=REPO)
     registry_binding = protocol["protected_registry"]
-    registry = metadata(registry_binding["path"], registry_binding["sha256"])
+    registry = metadata(registry_binding["path"], registry_binding["sha256"], repo=REPO)
     require(registry["schema"] == registry_binding["schema"], "registry schema")
     protected = [entry for entry in registry["entries"] if entry["partition"].startswith("holdout_")]
     require(len(protected) == registry_binding["expected_protected_count"], "protected count")
@@ -179,28 +186,30 @@ def preflight(version: Version = Version.V1, *, execute: bool = False) -> tuple[
         identities.append(SourceIdentity(case["case_id"], case["source_path"], case["sha256"],
                                          case["partition"], fmt, allowed_sample_width_bits=widths))
     # Pure exclusion of every identity/path/hash before any selected audio access.
-    preflight_development_identities(identities, CASE_IDS, prefix=binding.path)
-    graphs = {}
-    for case in protocol["cases"]:
-        directory = case["metadata_directory"]
-        graph = metadata(f"{directory}/source-graph.json", case["graph_sha256"])
-        historical = metadata(f"{directory}/session.json", case["session_sha256"])
-        source = graph["source"]
-        require(source["source_id"] == case["source_id"]
-                and source["path"] == str(REPO / case["source_path"])
-                and source["content_hash"] == f"sha256:{case['sha256']}"
-                and graph["provenance"]["source_hash"] == source["content_hash"]
-                and source["sample_rate"] == 44100 and source["channel_count"] == 2
-                and source["duration_seconds"] == case["graph_duration_seconds"]
-                and source["decode_profile"] == "Native", "graph/source metadata binding")
-        timing = historical["runtime_state"]["source_timing"]
-        require(timing["confirmed_grid"]["source_id"] == case["source_id"]
-                and timing["confirmed_grid"]["hypothesis_id"] == case["hypothesis_id"]
-                and timing["confirmed_bpm"] == case["confirmed_bpm"]
-                and graph["timing"]["primary_hypothesis_id"] == case["hypothesis_id"],
-                "historical committed timing identity")
-        graphs[case["case_id"]] = graph
-    return protocol, identities, graphs
+    preflight_development_identities(identities, case_ids, prefix=prefix)
+    return identities
+
+
+def load_case_graph(case: dict[str, Any]) -> dict[str, Any]:
+    """Read exactly one registered Graph/Session metadata pair, never hydrate audio."""
+    directory = case["metadata_directory"]
+    graph = metadata(f"{directory}/source-graph.json", case["graph_sha256"], repo=REPO)
+    historical = metadata(f"{directory}/session.json", case["session_sha256"], repo=REPO)
+    source = graph["source"]
+    require(source["source_id"] == case["source_id"]
+            and source["path"] == str(REPO / case["source_path"])
+            and source["content_hash"] == f"sha256:{case['sha256']}"
+            and graph["provenance"]["source_hash"] == source["content_hash"]
+            and source["sample_rate"] == 44100 and source["channel_count"] == 2
+            and source["duration_seconds"] == case["graph_duration_seconds"]
+            and source["decode_profile"] == "Native", "graph/source metadata binding")
+    timing = historical["runtime_state"]["source_timing"]
+    require(timing["confirmed_grid"]["source_id"] == case["source_id"]
+            and timing["confirmed_grid"]["hypothesis_id"] == case["hypothesis_id"]
+            and timing["confirmed_bpm"] == case["confirmed_bpm"]
+            and graph["timing"]["primary_hypothesis_id"] == case["hypothesis_id"],
+            "historical committed timing identity")
+    return graph
 
 
 def git_identity() -> str:
@@ -240,6 +249,39 @@ def build_executor(head: str, *, expected_rustc: str | None = None) -> tuple[Pat
                     "executable": str(binary), "sha256": sha256(binary.read_bytes())}
 
 
+def run_case_executor(binary: Path, version: Version, request: dict[str, Any], budget: dict[str, Any],
+                      retain: Callable[[dict[str, Any]], None]) -> dict[str, Any]:
+    """One bounded child; persist diagnostics before rejecting any consumed source."""
+    require(isinstance(version, Version), "unknown calibration version")
+    encoded = json.dumps(request, allow_nan=False).encode()
+    require(len(encoded) <= budget["max_stdin_json_bytes"], "request byte budget")
+    require(len(request["source_wav_bytes"]) <= budget["max_wav_payload_bytes"], "WAV byte budget")
+    try:
+        process = subprocess.run([str(binary), f"--limiter-calibration-{version.value}"], input=encoded, cwd=REPO,
+                                 capture_output=True, timeout=budget["child_timeout_seconds"])
+    except subprocess.TimeoutExpired as error:
+        retain({"status": "executor_timeout",
+                "executor_stderr": (error.stderr or b"")[:budget["max_child_stderr_bytes"]].decode(errors="replace")})
+        raise
+    retain({"executor_exit_code": process.returncode,
+            "executor_stderr": process.stderr[:budget["max_child_stderr_bytes"]].decode(errors="replace"),
+            "stderr_truncated": len(process.stderr) > budget["max_child_stderr_bytes"]})
+    require(len(process.stdout) <= budget["max_child_stdout_bytes"], "response byte budget")
+    require(len(process.stderr) <= budget["max_child_stderr_bytes"], "diagnostic byte budget")
+    require(process.returncode == 0, f"{request['case_id']}: executor rejected; see retained pending_case")
+    raw = parse_strict_json_object(process.stdout, request["case_id"])
+    require(raw["case_id"] == request["case_id"], "response case identity")
+    return raw
+
+
+def case_observations(raw: dict[str, Any]) -> dict[str, Any]:
+    """Bounded preparation/reports retained independently of subsequent identity/metric gates."""
+    return {"preparation": raw["preparation"], "limiter_observations": [
+        {"condition": condition["condition"], "outputs": [
+            {"policy": row["policy"], "limiter": row["limiter"]} for row in condition["outputs"]]}
+        for condition in raw["conditions"]]}
+
+
 def execute(version: Version = Version.V1) -> None:
     require(sys.platform.startswith("linux"), "this calibration is Linux-only")
     require(isinstance(version, Version), "unknown calibration version")
@@ -276,37 +318,15 @@ def execute(version: Version = Version.V1) -> None:
         case = cases[identity.case_id]
         case_output = output / identity.case_id
         case_output.mkdir(exist_ok=False)
-        request = json.dumps({"case_id": identity.case_id, "graph": graphs[identity.case_id],
-                              "source_wav_bytes": list(payload), "output_dir": str(case_output)},
-                             allow_nan=False).encode()
-        require(len(request) <= protocol["budget"]["max_stdin_json_bytes"], "request byte budget")
-        require(len(payload) <= protocol["budget"]["max_wav_payload_bytes"], "WAV byte budget")
-        try:
-            process = subprocess.run([str(binary), f"--limiter-calibration-{version.value}"], input=request, cwd=REPO,
-                                     capture_output=True, timeout=protocol["budget"]["child_timeout_seconds"])
-        except subprocess.TimeoutExpired as error:
-            report["pending_case"].update(
-                status="executor_timeout",
-                executor_stderr=(error.stderr or b"")[:protocol["budget"]["max_child_stderr_bytes"]].decode(errors="replace"))
+        request = {"case_id": identity.case_id, "graph": graphs[identity.case_id],
+                   "source_wav_bytes": list(payload), "output_dir": str(case_output)}
+
+        def retain(fields: dict[str, Any]) -> None:
+            report["pending_case"].update(fields)
             save_report()
-            raise
-        stderr = process.stderr[:protocol["budget"]["max_child_stderr_bytes"]].decode(errors="replace")
-        report["pending_case"].update(executor_exit_code=process.returncode, executor_stderr=stderr,
-                                      stderr_truncated=len(process.stderr) > protocol["budget"]["max_child_stderr_bytes"])
-        save_report()
-        require(len(process.stdout) <= protocol["budget"]["max_child_stdout_bytes"], "response byte budget")
-        require(len(process.stderr) <= protocol["budget"]["max_child_stderr_bytes"], "diagnostic byte budget")
-        require(process.returncode == 0, f"{identity.case_id}: executor rejected; see retained pending_case")
-        raw = parse_strict_json_object(process.stdout, identity.case_id)
-        require(raw["case_id"] == identity.case_id, "response case identity")
-        report["pending_case"] = {
-            "case_id": identity.case_id, "access": access, "preparation": raw["preparation"],
-            "limiter_observations": [
-                {"condition": condition["condition"], "outputs": [
-                    {"policy": row["policy"], "limiter": row["limiter"]}
-                    for row in condition["outputs"]]}
-                for condition in raw["conditions"]],
-        }
+
+        raw = run_case_executor(binary, version, request, protocol["budget"], retain)
+        report["pending_case"] = {"case_id": identity.case_id, "access": access, **case_observations(raw)}
         save_report()
         listening = protocol["preselected_future_listening"]
         selected_window = tuple(listening["frame_window"]) if identity.case_id == listening["case_id"] else None

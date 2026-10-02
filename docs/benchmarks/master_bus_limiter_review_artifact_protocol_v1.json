@@ -1,0 +1,91 @@
+{
+  "schema": "riotbox.master_bus_limiter_review_artifact.v1",
+  "status": "accepted",
+  "owner_ticket": "RIOTBOX-1501",
+  "authorization": "2026-10-02 user: ja dann los bitte; prepare three fixed Sparse A/B/C comparison WAVs, one new exact original read, no playback",
+  "platform": "linux",
+  "repository_root": "/home/markus/Dev/riotbox",
+  "quality_proof": false,
+  "human_verdict": "unverified",
+  "production_policy_changes": false,
+  "historical_basis": {
+    "protocol_path": "docs/benchmarks/master_bus_limiter_calibration_protocol_v2.json",
+    "protocol_sha256": "e30a439dbc0d61245cb56ad099c4110481342a0bad0e4a3426125cfcaaeae9af",
+    "report_path": "artifacts/development/riotbox-1501/calibration-v2/comparison.json",
+    "report_sha256": "cfbe5eae3848503f8a906b4a4ea62cf6ad9cfebd25c7f6a4e583fdf3cb6f8ed2",
+    "implementation_commit": "0bb7a17b72f15addb3da38748a13a36be9ea5371"
+  },
+  "case_id": "sparse_kicksnr_120",
+  "source_path": "data/test_audio/examples/DH_BeatC_KickSnr_120-01.wav",
+  "source_sha256": "8a970e5d7bd9b29771aba85f75e697c7510940d4404714bfb1e55e210c15f46c",
+  "source_admission": "Exact Sparse identity, PCM16/44100/stereo, Graph/Session, corpus and protected v3 registry pins inherited from accepted V2. Read only the exact Sparse Graph/Session metadata; never hydrate historical captures.",
+  "executor": "unchanged dense_break_live_path_render --limiter-calibration-v2; one admitted byte buffer; same eleven committed actions; full 192000-frame recipe at beat 17; no alternate gain/recipe knobs",
+  "condition": "stress_4x",
+  "frame_window": [0, 96000],
+  "full_render_identity": {
+    "required_conditions": ["clean", "stress_2x", "stress_4x"],
+    "required_policies": ["A", "B", "C"],
+    "verification": "All three input hashes, all nine output hashes and preparation must equal the pinned V2 Sparse case before any comparison WAV is written, with only the precisely declared randomized capture basename normalization below.",
+    "preparation_normalization": "Only committed_actions[4] with id=5 and command=PromoteCaptureToPad: result.summary must fully match 'capture 1 bar from source into W-30 path | audio artifact written captures/capture-[A-Za-z0-9]{6}.wav | promoted to pad bank-a/pad-01'. In comparison copies only, replace that six-character token by a fixed marker. Preserve raw evidence. No other field/text/path normalization; all remaining preparation, commit records, capture content hash and source window remain exact. Missing/malformed summary fails closed.",
+    "stress_4x_input_sha256_f32le": "c1c5f5883884e680363e10b9aea106b53c7e2f7b725ac35562af87592f20d893",
+    "stress_4x_output_sha256_f32le": {
+      "A": "6c261d9d85a70138071f1d07723a75fb3b327a25609c47a3366157b47d09c3b4",
+      "B": "d502db4bdd4945af5cb5c45144025cfe5130f313edbc8a08c1156063ab65de7b",
+      "C": "48328ee5529330c959f783e576a18b47345a0cf7289491029e988c461141ac20"
+    }
+  },
+  "artifacts": [
+    {"policy": "A", "filename": "A.wav"},
+    {"policy": "B", "filename": "B.wav"},
+    {"policy": "C", "filename": "C.wav"}
+  ],
+  "format": {"codec": "pcm_f32le", "sample_rate_hz": 48000, "channels": 2, "frame_count": 96000, "duration_seconds": 2.0},
+  "presentation": {
+    "estimator": "conservative_four_x_bandlimited_fft_v1",
+    "implementation": "generate_dense_break_performance_pack.conservative_true_peak_amplitude and apply_presentation_gain; pure in-memory helpers only, never its writer",
+    "oversample_factor": 4,
+    "target_true_peak_dbtp": -1.2,
+    "maximum_true_peak_dbtp": -1.0,
+    "gain_rule": "min(1.0, 10**(-1.2/20) / max(estimated_raw_crop_peak_A, estimated_raw_crop_peak_B, estimated_raw_crop_peak_C)); exactly one shared attenuation-only gain applied once in f32 to all three crops",
+    "forbidden": ["per_policy_normalization", "makeup_gain", "fades", "resampling", "additional_limiting", "dither", "PCM16_conversion", "concatenated_fourth_WAV"],
+    "final_gate": "Decode exact written float32 WAVs and require sample-bit identity to their corresponding presented crops; finite, active, zero sample clips and estimated true peak <= -1.0 dBTP. Independently run ffprobe and ffmpeg ebur128=peak=true on those exact WAVs; retain LUFS and reported true peak, rejecting a reported peak above -1.0 dBTP without regenerating."
+  },
+  "analysis": {
+    "local_frame_windows": [["attack", 0, 960], ["body", 960, 5760], ["recovery", 5760, 12000]],
+    "comparison": "Full two-second and fixed local per-channel level, unnormalized/relative delta RMS, correlation and spectral fractions against A, reusing V2 measurement definitions. Raw crop, presented PCM and final WAV identities remain distinct.",
+    "silence": "exact-zero sample count/fraction plus finite active RMS; no newly invented audibility threshold",
+    "tools": "Require ffmpeg and ffprobe availability with one generated-only two-second roundtrip WAV in a private temporary directory before original access; remove only that disposable fixture and record proof plus actual version identities. This is not a source-derived candidate. Bounded 30-second child calls, max 4 MiB analysis stdout and 256 KiB diagnostics. No audio device or player."
+  },
+  "contributors": ["w30_source_transform", "tr909_hardest_transient", "mc202_punctuation"],
+  "silent_owners": ["source_monitor", "resample_tap"],
+  "bass_owner": "unassigned",
+  "review": {
+    "kind": "one-bar composite diagnostic limiter comparison, not a new musical candidate or isolated lane",
+    "schema": "riotbox.listening_review.v1",
+    "workflow": "Reuse listening_review_workflow.create_pack with source_file=None and exactly three candidates, attach artifact/report hashes and override the generic prompt with this one-bar purpose; keep all human/taste fields unverified.",
+    "purpose": "Judge whether limiter coloration or transient/clarity differences can be heard in the same fixed one-bar composite; no forced winner, new hook, bass-pressure or hardness claim.",
+    "pre_listen_assessment": "Independent artifact-bound assessment after technical preflight; distinguish predicted usefulness from unverified human verdict and do not expose preference predictions in the factual listener brief.",
+    "playback_authorized": false
+  },
+  "budget": {
+    "original_file_opens": 1,
+    "access_sessions": 1,
+    "source_pcm_decodes": 1,
+    "hash_checks_per_admitted_buffer": 2,
+    "runtime_mix_renders": 3,
+    "distinct_policy_outputs": 9,
+    "derived_capture_wavs": 1,
+    "comparison_wavs": 3,
+    "playbacks": 0,
+    "max_stdin_json_bytes": 33554432,
+    "max_wav_payload_bytes": 6291456,
+    "max_child_stdout_bytes": 134217728,
+    "max_child_stderr_bytes": 65536,
+    "child_timeout_seconds": 120
+  },
+  "output_directory": "artifacts/development/riotbox-1501/review-artifacts-v1",
+  "access_log": "development-access.json",
+  "summary_report": "artifact-report.json",
+  "review_directory": "listening-review",
+  "stopping_rule": "Any source/metadata/build/preparation/parity/historical/sample/format/safety/writer failure aborts this single session and retains available partial reports/files, no retry/overwrite/delete, alternate source/window/policy or result-driven change. No access before accepted pin, review, source-free tests and clean commit. No Holdout/commercial audio, source discovery, historical capture hydration or playback."
+}
