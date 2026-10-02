@@ -123,7 +123,9 @@ The access log records exactly one verified Sparse file delivered to the owner,
 no directory discovery and no Holdout audio reads. The unchanged executor used
 one source decode, three full mix passes, nine policy outputs and one ordinary
 derived capture. Exactly three review WAVs were written, with zero playbacks.
-No implementation, contract, algorithm or threshold was edited after access.
+No execution implementation, contract, algorithm or threshold was edited after
+access. Subsequent changes are evidence documentation and the source-free test
+fixture correction described below; the artifact session is never rerun.
 
 Retained ignored evidence under
 `artifacts/development/riotbox-1501/review-artifacts-v1/`:
@@ -217,3 +219,29 @@ the files. The next dependent step needs a fresh readiness confirmation after
 the factual brief, then bounded playback and verified stop/silence. No playback
 is authorized by this preparation phase. Human verdict, demo readiness, musical
 quality, hardness and product calibration remain unverified/open.
+
+## Native CI test-fixture correction
+
+PR #1652 run `36998596637` passes Rust tests but exposes a P2 Test Evidence
+finding in the new synthetic phase suite (Spec And Evidence Auditor): its
+in-memory contract retained the real `/home/markus/Dev/riotbox` workspace pin.
+On GitHub's different checkout, the correct production guard rejects it before
+the intended synthetic metadata/status assertions. Two tests fail and a generic
+historical-rejection assertion can pass for the wrong reason. The real local
+single execution and artifact identities are not affected.
+
+Repair only the generated test fixtures: bind their in-memory workspace identity
+to the test checkout, explicitly exercise a different temporary workspace, and
+require historical-rejection tests to reach both pinned metadata loads and fail
+for the intended identity reason. Do not relax the real protocol's workspace
+pin, edit accepted execution code or regenerate any source-derived artifact.
+This is CI-driven test isolation, not source-result-driven algorithm tuning or
+a new access phase. The native rerun is required before merge.
+
+Both main and independent reruns pass all 47 generated tests after this repair
+(`/tmp/riotbox-1501-artifacts-portable-tests.log`,
+`/tmp/riotbox-1501-ci-fixture-independent.log`). Independent review of the
+test/docs-only delta against `871eed0d` retains zero findings. Its additional
+generated negative check confirms that the unchanged production preflight still
+rejects a wrong workspace before any metadata load. Main self-review and
+`git diff --check` also pass. No execution code or artifact is changed or rerun.

@@ -8,7 +8,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 import master_bus_limiter_calibration_runner as calibration
 from master_bus_limiter_calibration_metrics import Version
@@ -17,10 +17,11 @@ import source_holdout_development_access as access_guard
 from source_holdout_development_access import SourceIdentity
 
 
-def contracts():
+def contracts(*, repository_root=None):
     # Only tracked contracts, never the ignored metadata/audio paths they contain.
     contract = json.loads((phase.REPO / phase.PROTOCOL).read_text())
     parent = json.loads((phase.REPO / phase.EXPECTED_BASIS["protocol_path"]).read_text())
+    contract["repository_root"] = str(repository_root if repository_root is not None else phase.REPO)
     return contract, parent
 
 
@@ -50,8 +51,8 @@ def measured_case():
             "conditions": conditions, "preparation": preparation(), "human_verdict": "unverified"}
 
 
-def synthetic_phase():
-    contract, parent = contracts()
+def synthetic_phase(*, repository_root=None):
+    contract, parent = contracts(repository_root=repository_root)
     case = copy.deepcopy(next(row for row in parent["cases"] if row["case_id"] == phase.CASE_ID))
     prior = measured_case()
     prior["preparation"] = preparation("Ef34Gh")
@@ -79,6 +80,7 @@ def run_generated_phase(*, measured_mutation=None, child_failure=False, publicat
     prepared, _ = synthetic_phase()
     with tempfile.TemporaryDirectory(prefix="riotbox-review-artifact-phase-test-") as temp:
         repo = Path(temp)
+        prepared.contract["repository_root"] = str(repo)
         prepared.contract["output_directory"] = "result"
         protocol_file = repo / "protocol.json"
         protocol_file.write_text("{}")
@@ -229,22 +231,31 @@ class ArtifactPhaseIdentityTests(unittest.TestCase):
             with self.subTest(mutation=mutation), self.assertRaises(ValueError):
                 phase.verify_full_identity(changed, previous)
 
-    def test_preflight_loads_only_sparse_graph_metadata_and_exact_parent_report(self):
-        prepared, previous = synthetic_phase()
-        contract = prepared.contract
-        contract["status"] = "accepted"
-        payload = json.dumps(contract).encode()
-        with patch.object(phase, "read_contained_regular_file", return_value=payload), \
-                patch.object(phase, "PROTOCOL_SHA256", calibration.sha256(payload)), \
-                patch.object(calibration, "metadata", side_effect=[prepared.parent, previous]) as metadata, \
-                patch.object(calibration, "load_registered_identities", return_value=prepared.identities) as identities, \
-                patch.object(calibration, "load_case_graph", return_value={}) as graph:
-            result = phase.preflight(execute=True)
-        self.assertEqual(result.case["case_id"], phase.CASE_ID)
-        graph.assert_called_once_with(prepared.case)
-        self.assertEqual(identities.call_args.args[1], [phase.CASE_ID])
-        self.assertEqual([call.args[0] for call in metadata.call_args_list],
-                         [phase.EXPECTED_BASIS["protocol_path"], phase.EXPECTED_BASIS["report_path"]])
+    def test_preflight_in_distinct_checkout_loads_only_sparse_and_exact_parent_metadata(self):
+        with tempfile.TemporaryDirectory(prefix="riotbox-review-foreign-checkout-") as temp:
+            repo = Path(temp)
+            self.assertNotEqual(repo, phase.REPO)
+            # Load tracked templates before patching REPO; all preflight reads are mocked below.
+            prepared, previous = synthetic_phase(repository_root=repo)
+            contract = prepared.contract
+            contract["status"] = "accepted"
+            payload = json.dumps(contract).encode()
+            with patch.object(phase, "REPO", repo), patch.object(calibration, "REPO", repo), \
+                    patch.object(phase, "read_contained_regular_file", return_value=payload) as read, \
+                    patch.object(phase, "PROTOCOL_SHA256", calibration.sha256(payload)), \
+                    patch.object(calibration, "metadata", side_effect=[prepared.parent, previous]) as metadata, \
+                    patch.object(calibration, "load_registered_identities", return_value=prepared.identities) as identities, \
+                    patch.object(calibration, "load_case_graph", return_value={}) as graph:
+                result = phase.preflight(execute=True)
+            self.assertEqual(result.case["case_id"], phase.CASE_ID)
+            self.assertEqual(result.contract["repository_root"], str(repo))
+            read.assert_called_once_with(repo, Path(phase.PROTOCOL), phase.PROTOCOL, maximum_bytes=8 * 1024 * 1024)
+            graph.assert_called_once_with(prepared.case)
+            identities.assert_called_once_with(prepared.parent, [phase.CASE_ID], prefix=phase.PROTOCOL)
+            self.assertEqual(metadata.call_args_list, [
+                call(phase.EXPECTED_BASIS["protocol_path"], phase.EXPECTED_BASIS["protocol_sha256"], repo=repo),
+                call(phase.EXPECTED_BASIS["report_path"], phase.EXPECTED_BASIS["report_sha256"], repo=repo),
+            ])
 
     def test_bad_historical_control_or_4x_origin_blocks_graph_and_source_admission(self):
         for condition in (0, 1, 2):
@@ -254,11 +265,16 @@ class ArtifactPhaseIdentityTests(unittest.TestCase):
             with self.subTest(condition=condition), \
                     patch.object(phase, "read_contained_regular_file", return_value=payload), \
                     patch.object(phase, "PROTOCOL_SHA256", calibration.sha256(payload)), \
-                    patch.object(calibration, "metadata", side_effect=[prepared.parent, previous]), \
+                    patch.object(calibration, "metadata", side_effect=[prepared.parent, previous]) as metadata, \
                     patch.object(calibration, "load_registered_identities") as identities, \
                     patch.object(calibration, "load_case_graph") as graph:
-                with self.assertRaises(ValueError):
+                expected = "historical clean/2x control mismatch" if condition < 2 else "historical 4x fingerprints"
+                with self.assertRaisesRegex(ValueError, expected):
                     phase.preflight()
+                self.assertEqual(metadata.call_args_list, [
+                    call(phase.EXPECTED_BASIS["protocol_path"], phase.EXPECTED_BASIS["protocol_sha256"], repo=phase.REPO),
+                    call(phase.EXPECTED_BASIS["report_path"], phase.EXPECTED_BASIS["report_sha256"], repo=phase.REPO),
+                ])
                 identities.assert_not_called()
                 graph.assert_not_called()
 
