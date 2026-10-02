@@ -10,6 +10,9 @@ use crate::{
     transport::CommitBoundaryState,
 };
 
+mod cursor_equivalence;
+mod scaling;
+
 fn action(id: u64, committed_at: TimestampMs) -> Action {
     Action {
         id: ActionId(id),

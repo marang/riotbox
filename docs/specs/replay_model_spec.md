@@ -188,6 +188,17 @@ Current implementation:
   before the matching typed undo marker remains unsafe because it contains the
   now-undone state; a snapshot at or after that committed marker is a valid
   anchor. Later tail actions replay normally from that post-undo anchor.
+- Cursor safety is a transient Core projection, never persisted replay truth
+  (RBX-426). After the existing history-validation gate, a forward sweep records
+  the first unresolved `Undone` action in action-vector order for each cursor.
+  Only a prior typed, committed, accepted Undo marker with a commit record
+  resolves its target; legacy untyped markers remain untrusted. Candidate
+  snapshots share that index rather than repeating action/marker/record scans.
+  Plain histories need no prefix allocation or record index, and log-end replay
+  without eligible nonzero anchors needs no safety index at all. Complete cursor
+  validation, first-error identity, latest-on-tie selection and the log-end
+  target exception stay unchanged. `just replay-cursor-benchmark` measures the
+  public planners using generated histories only; timing is not a CI threshold.
 - A request may reach its quantized commit boundary yet produce
   `ActionResult.accepted == false` when the product-side precondition cannot be
   proven. Its action and commit record remain historical evidence, but the
