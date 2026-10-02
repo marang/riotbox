@@ -1,5 +1,9 @@
 mod alpha_arc;
 mod alpha_manifest;
+#[cfg(feature = "limiter-calibration")]
+mod calibration;
+#[cfg(feature = "limiter-calibration")]
+mod calibration_preparation;
 mod controlled_source_manifest;
 mod live_flow;
 mod manifest;
@@ -17,6 +21,15 @@ const MAX_SOURCE_BPM_HINT: f32 = 400.0;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = env::args().skip(1).collect::<Vec<_>>();
+    if args.iter().any(|arg| arg == "--limiter-calibration-v1") {
+        if args != ["--limiter-calibration-v1"] {
+            return Err("limiter calibration accepts only its stdin JSON request".into());
+        }
+        #[cfg(feature = "limiter-calibration")]
+        return calibration::run(std::io::stdin().lock(), std::io::stdout().lock());
+        #[cfg(not(feature = "limiter-calibration"))]
+        return Err("limiter calibration requires the opt-in limiter-calibration feature".into());
+    }
     if args.iter().any(|arg| arg == "--w30-hook-export") {
         return Err(
             "the Dense semantic-hook export path is closed; use the frozen V4 w30_live_path_render owner"

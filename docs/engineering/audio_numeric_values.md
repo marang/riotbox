@@ -159,6 +159,18 @@ Its [calibration design draft](../benchmarks/master_bus_limiter_calibration_prot
 proposes a bounded comparison and records unresolved execution gates. It is not
 an accepted protocol, source-access grant or change to the production values.
 
+The [bounded Development successor](../benchmarks/master_bus_limiter_calibration_protocol_v1.md)
+binds the diagnostic implementation and access/measurement budget separately.
+Only its accepted, pinned execution state can open the exact authorized cases;
+neither the default-off comparison feature nor source-free tests select a
+production policy or calibrate perceived quality.
+
+The [2026-10-02 bounded result](../reviews/riotbox_1501_limiter_development_comparison_2026-10-02.md)
+preserved all three exact clean paths. The preregistered 2x inputs also remained
+below the knee, so A/B/C were bit-identical and source-backed protection was
+unobserved. The inherited values remain provisional, not a calibrated optimum;
+do not infer a policy preference or extend the consumed access budget.
+
 ### 3. QA acceptance thresholds
 
 Examples in the exact dense-break path:

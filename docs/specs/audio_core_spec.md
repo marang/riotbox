@@ -600,6 +600,13 @@ Current limiter policy:
   strictly greater than `f32::EPSILON`; mathematical above-knee count is not the
   modification count. This is a baseline prerequisite, not RIOTBOX-1501
   calibration or authorization for source, alternative policy or playback.
+- The default-off `limiter-calibration` diagnostic feature reuses that exact
+  limiter implementation for fixed offline A/B/C comparisons and retains the
+  existing offline RuntimeMix pre-buffer. It adds no live callback sink or
+  production policy knob. Execution, source admission and interpretation belong
+  to the [bounded Development protocol](../benchmarks/master_bus_limiter_calibration_protocol_v1.md);
+  an available diagnostic interface is not itself an execution grant or a
+  completed calibration decision.
 - product runtime mixes and Feral-grid product mixes pass through the shared
   master-bus soft-limiter seam after source-monitor / lane mix policy and
   before device or WAV output
