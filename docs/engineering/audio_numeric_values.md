@@ -141,19 +141,30 @@ These values define runtime signal handling or diagnostics. They need a named
 owner and buffer-level tests. Changing one can affect every lane and must not be
 used as a shortcut to make a single candidate pass.
 
-The current repository has a named and tested owner for these values, but no
-decision-log entry was found that calibrates why the limiter knee is exactly
-`0.92` rather than a nearby value. Treat that choice as an inherited,
-provisional engineering contract. RBX-379 explicitly accepts retaining both
-values unchanged; RIOTBOX-1501 owns the dedicated calibration decision,
-authorized source protocol, device limitations and intended headroom. This is
-sample-peak protection, not a true-peak or hearing-safety guarantee.
+RBX-421 / RIOTBOX-1501 now accepts retaining these inherited values as a bounded
+engineering baseline, following the [measured retention decision](../reviews/riotbox_1501_limiter_retention_decision_2026-10-02.md).
+This resolves RBX-379's pending calibration follow-up without claiming that
+`0.92` or `0.985` is a perceptual optimum. Synthetic boundary/overload/quiet and
+five-owner controls, unchanged clean paths on three registered Development
+cases, and protected fixed 4x inputs provide the engineering rationale. The
+exact Sparse A/B/C human comparison supplied no audible distinction or preferred
+alternative. These limited observations justify keeping the implementation,
+not a universal equivalence claim or a new musical pass.
+
+The intended ceiling leaves nominal sample headroom of `0.015` linear
+amplitude (about `0.1313 dB` below full scale), not an intersample-peak margin.
+Indeed the unattenuated reviewed Sparse crop exceeded `0 dBTP` under the specified
+conservative FFT estimator despite bounded samples. Its separate presentation
+attenuation must not be mistaken for product true-peak limiting. Clean product paths still require
+zero limiter writes and zero pre/post clips. No makeup gain, source-relative
+level tuning, device or hearing-safety guarantee follows from this decision.
 
 [Source-free baseline protocol v1](../benchmarks/master_bus_limiter_baseline_protocol_v1.md)
 and RIOTBOX-1550 freeze the bounded engineering controls and actual write/count
 semantics, including representable knee neighbors. They retain the existing
 values and clean-path gates; they do not calibrate perceived hardness or permit
-new source/candidate access. RIOTBOX-1501 still owns that separate decision.
+new source/candidate access. RBX-421 combines this prerequisite with the later
+bounded comparison and human evidence; it does not change the frozen protocol.
 
 Its [calibration design draft](../benchmarks/master_bus_limiter_calibration_protocol_v1_draft.md)
 proposes a bounded comparison and records unresolved execution gates. It is not
@@ -168,7 +179,7 @@ production policy or calibrate perceived quality.
 The [2026-10-02 bounded result](../reviews/riotbox_1501_limiter_development_comparison_2026-10-02.md)
 preserved all three exact clean paths. The preregistered 2x inputs also remained
 below the knee, so A/B/C were bit-identical and source-backed protection was
-unobserved. The inherited values remain provisional, not a calibrated optimum;
+unobserved. At that V1 closeout the values remained provisional, not a calibrated optimum;
 do not infer a policy preference or extend the consumed access budget.
 
 The separately authorized [fixed-overload v2 follow-up](../benchmarks/master_bus_limiter_calibration_protocol_v2.md)
@@ -179,13 +190,16 @@ Its [completed technical result](../reviews/riotbox_1501_limiter_overload_v2_202
 reproduced all historical controls and exercised A/B/C protection in all three
 4x cases with zero output sample clips. The fixed Sparse future window contains
 policy differences, but at V2 closeout no comparison artifact or human verdict existed. This
-is not a perceptual calibration decision; A remains provisional.
+was not a perceptual calibration decision; A remained provisional at V2 closeout.
 
 The separately authorized [fixed-window artifact phase](../benchmarks/master_bus_limiter_review_artifact_protocol_v1.md)
 has now prepared only the already selected Sparse 4x A/B/C interval, with one common
 presentation attenuation and passing exact-file preflight. Its [result](../reviews/riotbox_1501_limiter_review_artifacts_2026-10-02.md)
-records three technically valid WAVs and no human verdict. It neither reopens V2's
-consumed budget nor authorizes playback or a preferred-policy claim.
+records three technically valid WAVs and no human verdict at artifact-generation
+closeout. It neither reopens V2's consumed budget nor authorizes playback or a
+preferred-policy claim. Later explicitly requested listening is recorded in the
+retention decision above; its no-preference outcome closes this comparison
+without a new candidate, access phase, threshold or production change.
 
 ### 3. QA acceptance thresholds
 

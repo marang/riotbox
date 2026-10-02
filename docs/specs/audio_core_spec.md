@@ -588,12 +588,18 @@ Current metric contract:
 
 Current limiter policy:
 
-- the shared sample-peak knee `0.92` and ceiling `0.985` remain explicitly
-  provisional engineering choices (RBX-379, calibration follow-up RIOTBOX-1501).
+- the shared sample-peak knee `0.92` and ceiling `0.985` are retained as the
+  accepted bounded engineering baseline (RBX-421 / RIOTBOX-1501), replacing
+  RBX-379's pending retention decision without changing their values or DSP.
   Magnitudes at or below the knee pass unchanged; strictly greater magnitudes
   enter the existing tanh knee capped at the ceiling. Retaining these values is
   not a claim of true-peak, device or hearing-safety calibration. Exact clean-
-  path QA still requires zero limiter-modified samples and zero pre/post clips
+  path QA still requires zero limiter-modified samples and zero pre/post clips.
+  The [retention decision](../reviews/riotbox_1501_limiter_retention_decision_2026-10-02.md)
+  binds synthetic controls, three Development cases and the exact Sparse human
+  comparison: no audible policy distinction or preference. It establishes no
+  perceptual optimum, universal source equivalence or musical-quality pass;
+  absence of a demonstrated alternative benefit justifies no production change
 - [Source-free baseline protocol v1](../benchmarks/master_bus_limiter_baseline_protocol_v1.md)
   (RIOTBOX-1550 / RBX-417) fixes in-memory boundary/overload/partition and named
   five-owner RuntimeMix controls. Actual writes/counting require a shaped delta
