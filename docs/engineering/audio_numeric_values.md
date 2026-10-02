@@ -175,6 +175,11 @@ The separately authorized [fixed-overload v2 follow-up](../benchmarks/master_bus
 retains the V1 controls and preregisters one additional 4x diagnostic challenge.
 It requires its own accepted pin, historical-control identity and fresh bounded
 access session; it does not change production gain or limiter parameters.
+Its [completed technical result](../reviews/riotbox_1501_limiter_overload_v2_2026-10-02.md)
+reproduced all historical controls and exercised A/B/C protection in all three
+4x cases with zero output sample clips. The fixed Sparse future window contains
+policy differences, but no comparison artifact or human verdict exists. This
+is not a perceptual calibration decision; A remains provisional.
 
 ### 3. QA acceptance thresholds
 

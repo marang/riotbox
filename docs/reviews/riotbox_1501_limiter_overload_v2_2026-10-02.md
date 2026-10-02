@@ -102,3 +102,98 @@ The accepted JSON SHA-256 is
 After pinning, metadata-only preflight and the complete 9/8/18/23 synthetic
 fixture suite passed again (`/tmp/riotbox-1501-overload-v2-frozen-fixtures.log`).
 No result-driven contract changes are permitted after the next source access.
+
+## One bounded execution
+
+Execution used clean implementation commit
+`0bb7a17b72f15addb3da38748a13a36be9ea5371`, after acceptance and all pre-access
+checks. The runner rebuilt the locked native Linux feature target and bound
+executable SHA-256
+`573faddf9e9e418b6f7a0509de10e847112ac410ae7e30c09fd0574244d4dde0`.
+The exact compiler equals V1's pinned identity. No implementation, contract,
+parameter, window or admission changes followed source results.
+
+Access session `1ecaadb0-30f8-44c3-8be2-5fc33f594806` ran from
+`2026-10-02T10:02:40.945290Z` to `2026-10-02T10:03:03.750437Z` and completed
+successfully: three exact original admissions and owner deliveries, no directory
+discovery. The access layer correctly says qualification is not evaluated by
+that layer; the comparison report owns the actual technical result.
+
+Local ignored metadata, retained without audio hydration:
+
+- `artifacts/development/riotbox-1501/calibration-v2/comparison.json`:
+  `cfbe5eae3848503f8a906b4a4ea62cf6ad9cfebd25c7f6a4e583fdf3cb6f8ed2`.
+- `artifacts/development/riotbox-1501/calibration-v2/development-access.json`:
+  `f633731e056a9bc3daa9a23b142b88f8854c8d32d92177d5f28da13b4d44f32d`.
+
+The successful nine mix passes yield 27 policy outputs and three ordinary
+artifact-backed captures, with six/six/eleven committed preparation actions and
+their matching commit records. All repeat-128, partition-257 and baseline-API
+controls pass. Every clean/2x input and output matches the frozen historical
+f32LE identity, has zero limiter writes and remains unclipped. V1 comparison
+and access JSON hashes remain exactly unchanged.
+
+## Fixed 4x observations
+
+Counts are individual interleaved samples, not frames or events. Input clips
+mean `abs(sample) >= 1`; this deliberately overloaded diagnostic input is not
+an assertion that the unchanged ordinary product clips.
+
+| Case | 4x input peak | Input clip count | A writes | B writes | C writes | All output clips |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Dense | 1.5995879173 | 1520 | 4984 | 3208 | 5024 | 0 |
+| Tonal | 1.0745946169 | 8 | 104 | 32 | 110 | 0 |
+| Sparse | 1.5667495728 | 460 | 964 | 728 | 972 | 0 |
+
+All outputs stay within their declared f32 sample-peak ceilings. Dense/Sparse
+reach approximately 0.9850000143 for A/B and 0.9524999857 for C; Tonal peaks are
+0.9838923812 / 0.9849645495 / 0.9524951577. These are sample-peak observations,
+not true-peak, device or hearing-safety guarantees.
+
+B and C differ from A in every whole-render 4x case. This does not establish
+audibility, distortion preference or musical quality. Whole-render f64 delta
+RMS relative to A is Dense B/C 0.0005231429/0.0022410337, Tonal
+0.0000557992/0.0001812127, Sparse 0.0001785964/0.0011311950. The persisted report
+separately retains original Rust f32 metrics; these descriptive f64 values do
+not replace them or redefine the product's numerical contract.
+
+Fixed local windows are reported without adaptation: Tonal's attack window has
+zero writes under every policy, despite its whole-render intervention. Dense
+and Sparse have writes in all three local windows; Tonal has writes in body and
+recovery. No onset detector, peak search or window substitution was introduced.
+
+The preselected possible future comparison is specifically Sparse `stress_4x`,
+frames [0,96000), two seconds at 48 kHz. A/B/C modify 766/544/772 samples there;
+B and C are each non-bit-identical to A in that same window. Thus it contains
+actual policy differentiation, unlike V1's identical controls. No comparison
+WAV was generated or played; `artifact_generated=false`,
+`human_verdict=unverified`, `quality_proof=false` remain correct.
+
+## Interpretation and remaining boundary
+
+Status: `technical_comparison_complete_no_policy_selection`. This phase proves
+bounded source-backed sample-peak protection under the declared 4x diagnostic
+challenge, while preserving historical controls. It does not calibrate a
+perceptually preferred policy or qualify source intelligence, hardness or a
+release. Production stays provisional A with unchanged gain and parameters.
+
+The V2 one-session source budget is consumed. Do not rerun or extend it. A later
+comparison artifact would need its own explicit bounded artifact/source phase,
+unchanged preselected interval, exact technical preflight and fresh human
+readiness under the listening-review workflow. No source/capture opens, implicit
+playback, adaptive gain or additional candidates are authorized by this result.
+RIOTBOX-1501 remains open; this is a completed technical slice, not full issue
+completion. PR/remote CI and merge closeout follow.
+
+## Independent result audit
+
+The independent reviewer read only the two exact V2 JSON artifacts plus tracked
+contracts/code, without audio/capture/binary hydration or re-execution. Raw
+report/access hashes, shared session ID, compiler/build/protocol identities,
+three admissions, preparation/commit ownership, all 27 outputs and historical
+control fingerprints match. The reviewer independently confirmed the 4x table,
+unobserved Tonal attack intervention and actual differentiation in the fixed
+Sparse future window. **Zero findings.** The access layer's non-qualification
+status is correctly separate from completed technical comparison; no metric or
+artifact-availability flag is promoted to a human verdict. Main final self-review
+also retains zero findings; post-access changes are result documentation only.
