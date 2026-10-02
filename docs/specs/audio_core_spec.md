@@ -604,7 +604,8 @@ Current limiter policy:
   limiter implementation for fixed offline A/B/C comparisons and retains the
   existing offline RuntimeMix pre-buffer. It adds no live callback sink or
   production policy knob. Execution, source admission and interpretation belong
-  to the [bounded Development protocol](../benchmarks/master_bus_limiter_calibration_protocol_v1.md);
+  to the [bounded Development v1 protocol](../benchmarks/master_bus_limiter_calibration_protocol_v1.md)
+  and its separately authorized [fixed-overload v2 follow-up](../benchmarks/master_bus_limiter_calibration_protocol_v2.md);
   an available diagnostic interface is not itself an execution grant or a
   completed calibration decision.
 - product runtime mixes and Feral-grid product mixes pass through the shared

@@ -1,5 +1,7 @@
 //! Bounded diagnostic adapter; source admission belongs to the preregistered caller.
 
+mod protocol;
+
 use std::{
     error::Error,
     fmt, fs,
@@ -18,6 +20,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 use crate::calibration_preparation;
+pub(super) use protocol::CalibrationVersion;
+use protocol::{HistoricalControls, pcm_hash};
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 const MAX_REQUEST_BYTES: usize = 32 * 1024 * 1024;
@@ -140,7 +144,11 @@ fn read_request(reader: impl Read) -> Result<Request> {
     Ok(request)
 }
 
-pub(super) fn run(reader: impl Read, writer: impl Write) -> Result<()> {
+pub(super) fn run(
+    reader: impl Read,
+    writer: impl Write,
+    version: CalibrationVersion,
+) -> Result<()> {
     let request = read_request(reader)?;
     // Only the caller-created output directory is inspected. Source and graph paths
     // remain opaque metadata; the constructor receives the admitted bytes directly.
@@ -184,7 +192,16 @@ pub(super) fn run(reader: impl Read, writer: impl Write) -> Result<()> {
             return Err(error);
         }
     };
-    let mut result = match compare_plan(&plan, frame_count, request.case_id) {
+    let comparison = match version {
+        CalibrationVersion::V1 => compare_plan(&plan, frame_count, request.case_id),
+        CalibrationVersion::V2 => compare_plan_with_history(
+            &plan,
+            frame_count,
+            request.case_id,
+            Some(&HistoricalControls::registered(request.case_id)),
+        ),
+    };
+    let mut result = match comparison {
         Ok(result) => result,
         Err(error) => {
             write_failure_record(
@@ -359,6 +376,17 @@ pub(super) fn compare_plan(
     frames: usize,
     case: Case,
 ) -> Result<Value> {
+    compare_plan_with_history(plan, frames, case, None)
+}
+
+// Only V2 supplies the closed per-case historical controls. Tests may inject
+// synthetic references here; neither CLI nor stdin exposes a reference override.
+fn compare_plan_with_history(
+    plan: &RuntimeMixRenderPlan,
+    frames: usize,
+    case: Case,
+    historical: Option<&HistoricalControls>,
+) -> Result<Value> {
     let primary = render_once(plan, frames, 128)?;
     let repeat = render_once(plan, frames, 128)?;
     let partition = render_once(plan, frames, 257)?;
@@ -438,20 +466,64 @@ pub(super) fn compare_plan(
         diagnostics[format!("stress_2x_{}", policy_name(output.policy))] =
             report_value(output.limiter);
     }
+    let actual_history = historical.map(|_| HistoricalControls {
+        pre: pcm_hash(&primary.pre_samples),
+        stress_2x: std::array::from_fn(|index| pcm_hash(&stress[index].samples)),
+    });
     let stress_outputs = outputs_json(stress, frames)
         .map_err(|error| failed("stress_output_validation", error, &diagnostics))?;
-    Ok(json!({
+    let mut conditions = vec![
+        json!({"condition": "clean", "outputs": clean_outputs}),
+        json!({"condition": "stress_2x", "outputs": stress_outputs}),
+    ];
+    if let Some(expected) = historical {
+        // Clean A/B/C are already bit-identical to pre, so the pre hash binds
+        // all four clean controls without rehashing or changing the V1 gates.
+        let actual = actual_history
+            .as_ref()
+            .expect("V2 historical hashes computed");
+        diagnostics["historical_v1_controls"] = expected.diagnostics(actual);
+        if actual != expected {
+            return Err(failed(
+                "historical_controls",
+                "clean/pre or 2x PCM differs from the frozen V1 report",
+                &diagnostics,
+            ));
+        }
+        // No 4x samples are constructed until every historical control passes.
+        conditions.push(fourfold_condition(
+            &primary.pre_samples,
+            frames,
+            &mut diagnostics,
+        )?);
+    }
+    let mut result = json!({
         "sample_rate_hz": SAMPLE_RATE, "channels": CHANNELS, "frame_count": frames,
         "controls": {
             "repeat_128_bit_exact": true, "partition_257_bit_exact": true,
             "baseline_api_bit_exact": true,
         },
         "pre_samples": primary.pre_samples,
-        "conditions": [
-            {"condition": "clean", "outputs": clean_outputs},
-            {"condition": "stress_2x", "outputs": stress_outputs},
-        ],
-    }))
+        "conditions": conditions,
+    });
+    if historical.is_some() {
+        result["protocol_version"] = json!("v2");
+    }
+    Ok(result)
+}
+
+fn fourfold_condition(pre: &[f32], frames: usize, diagnostics: &mut Value) -> Result<Value> {
+    // Fixed diagnostic overload only: never derive from limited or doubled PCM.
+    let samples: Vec<f32> = pre.iter().map(|sample| *sample * 4.0_f32).collect();
+    let outputs = limiter_calibration::compare(&samples)
+        .map_err(|error| failed("stress_4x_comparison", error, diagnostics))?;
+    for output in &outputs {
+        diagnostics[format!("stress_4x_{}", policy_name(output.policy))] =
+            report_value(output.limiter);
+    }
+    let outputs = outputs_json(outputs, frames)
+        .map_err(|error| failed("stress_4x_output_validation", error, diagnostics))?;
+    Ok(json!({"condition": "stress_4x", "outputs": outputs}))
 }
 
 fn outputs_json(outputs: [PolicyOutput; 3], frames: usize) -> Result<Vec<Value>> {
@@ -514,243 +586,4 @@ fn metrics_value(metrics: OfflineAudioMetrics) -> Value {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use riotbox_audio::{
-        runtime::{AudioRuntimeTimingSnapshot, SourceMonitorRenderState},
-        source_audio::SourceAudioCache,
-    };
-    use riotbox_core::{
-        action::SourceMonitorMode,
-        source_graph::{
-            GraphProvenance, ManualSourceTimingGrid, SourceDescriptor,
-            install_manual_source_timing_grid,
-        },
-    };
-
-    fn metadata_request() -> Value {
-        let (path, hash, source_id) = Case::Tonal.identity();
-        let mut graph = SourceGraph::new(
-            SourceDescriptor {
-                source_id: source_id.into(),
-                path: path.into(),
-                content_hash: hash.into(),
-                duration_seconds: 4.0,
-                sample_rate: 44_100,
-                channel_count: 2,
-                decode_profile: DecodeProfile::Native,
-            },
-            GraphProvenance {
-                sidecar_version: "synthetic-metadata-test".into(),
-                provider_set: Vec::new(),
-                generated_at: "synthetic".into(),
-                source_hash: hash.into(),
-                analysis_seed: 1,
-                run_notes: None,
-            },
-        );
-        install_manual_source_timing_grid(
-            &mut graph,
-            ManualSourceTimingGrid {
-                bpm: 120.0,
-                downbeat_seconds: 0.0,
-            },
-        )
-        .unwrap();
-        // Deliberately not real audio: only the metadata reader may admit this;
-        // the in-memory constructor must reject its content hash.
-        json!({"case_id": Case::Tonal, "graph": graph, "source_wav_bytes": [1],
-            "output_dir": "/unused-synthetic-output"})
-    }
-
-    #[test]
-    fn unknown_cases_and_fields_fail_before_any_output_io() {
-        assert!(serde_json::from_str::<Case>("\"holdout\"").is_err());
-        assert!(read_request(b"{}".as_slice()).is_err());
-        assert!(run(b"{\"case_id\":\"holdout\"}".as_slice(), Vec::new()).is_err());
-        let mut request = metadata_request();
-        request["extra_field"] = json!(true);
-        assert!(read_request(serde_json::to_vec(&request).unwrap().as_slice()).is_err());
-    }
-
-    #[test]
-    fn graph_identity_format_and_timing_guards_are_metadata_only() {
-        let encoded = serde_json::to_vec(&metadata_request()).unwrap();
-        let request = read_request(encoded.as_slice()).unwrap();
-        let mutations: [fn(&mut SourceGraph); 5] = [
-            |graph| graph.source.path = "unregistered.wav".into(),
-            |graph| graph.source.content_hash = "sha256:wrong".into(),
-            |graph| graph.provenance.source_hash = "sha256:wrong".into(),
-            |graph| graph.source.sample_rate = 48_000,
-            |graph| graph.timing.primary_hypothesis_id = None,
-        ];
-        for mutate in mutations {
-            let mut graph = request.graph.clone();
-            mutate(&mut graph);
-            assert!(Case::Tonal.validate_graph(&graph).is_err());
-        }
-        assert!(Case::Dense.validate_graph(&request.graph).is_err());
-        let directory = tempfile::tempdir().unwrap();
-        let mut value = metadata_request();
-        value["output_dir"] = json!(directory.path());
-        let error = run(serde_json::to_vec(&value).unwrap().as_slice(), Vec::new()).unwrap_err();
-        assert!(error.to_string().contains("hash"), "{error}");
-        assert!(directory.path().read_dir().unwrap().next().is_none());
-    }
-
-    #[test]
-    fn bounded_reader_rejects_oversized_request() {
-        let input = std::io::repeat(b' ').take((MAX_REQUEST_BYTES + 10) as u64);
-        assert!(
-            read_request(input)
-                .err()
-                .unwrap()
-                .to_string()
-                .contains("32 MiB")
-        );
-    }
-
-    #[test]
-    fn bit_parity_rejects_signed_zero_and_bad_alignment() {
-        assert!(!bits_equal(&[0.0], &[-0.0]));
-        assert!(!bits_equal(&[0.0], &[]));
-        assert!(validate_samples(&[0.0, f32::NAN], 1).is_err());
-        assert!(validate_samples(&[0.0], 1).is_err());
-        assert!(validate_samples(&[], 0).is_err());
-        assert!(validate_samples(&[0.1, -0.1], 1).is_ok());
-    }
-
-    #[test]
-    fn silence_and_nonfinite_metrics_do_not_become_success_json() {
-        assert!(compare_plan(&RuntimeMixRenderPlan::default(), 16, Case::Tonal).is_err());
-        assert!(
-            metrics_json(OfflineAudioMetrics {
-                rms: f32::INFINITY,
-                ..Default::default()
-            })
-            .is_err()
-        );
-    }
-
-    fn synthetic_monitor_plan(amplitude: f32) -> RuntimeMixRenderPlan {
-        let cache = SourceAudioCache::from_interleaved_samples(
-            "synthetic-no-file.wav",
-            SAMPLE_RATE,
-            CHANNELS,
-            vec![amplitude; 2_048],
-        )
-        .unwrap();
-        RuntimeMixRenderPlan {
-            transport: AudioRuntimeTimingSnapshot {
-                is_transport_running: true,
-                tempo_bpm: 120.0,
-                position_beats: 0.0,
-            },
-            source_monitor_render: SourceMonitorRenderState {
-                source_anchor_seconds: Some(0.0),
-                ..SourceMonitorRenderState::from_source_cache(
-                    SourceMonitorMode::Source,
-                    Some(&cache),
-                )
-            },
-            ..Default::default()
-        }
-    }
-
-    #[test]
-    fn synthetic_comparison_preserves_clean_and_limits_exact_doubled_stress() {
-        let result = compare_plan(&synthetic_monitor_plan(0.8), 514, Case::Tonal).unwrap();
-        assert_eq!(result["pre_samples"].as_array().unwrap().len(), 1_028);
-        assert_eq!(result["controls"]["baseline_api_bit_exact"], true);
-        assert_eq!(result["controls"]["repeat_128_bit_exact"], true);
-        assert_eq!(result["controls"]["partition_257_bit_exact"], true);
-        let pre_peak = result["conditions"][0]["outputs"][0]["limiter"]["pre"]["peak_abs"]
-            .as_f64()
-            .unwrap();
-        for output in result["conditions"][0]["outputs"].as_array().unwrap() {
-            assert_eq!(output["samples"], result["pre_samples"]);
-            assert_eq!(output["limiter"]["applied"], false);
-        }
-        for output in result["conditions"][1]["outputs"].as_array().unwrap() {
-            assert_eq!(
-                output["limiter"]["pre"]["peak_abs"].as_f64().unwrap(),
-                pre_peak * 2.0
-            );
-            assert_eq!(output["limiter"]["applied"], true);
-        }
-    }
-
-    #[test]
-    fn clean_failure_retains_actual_reports_without_running_stress() {
-        let error = compare_plan(&synthetic_monitor_plan(1.3), 514, Case::Tonal)
-            .map(|_| ())
-            .expect_err("synthetic overload must fail the clean gate");
-        let failure = error.downcast_ref::<ComparisonFailure>().unwrap();
-        let mut record = Vec::new();
-        let preparation = json!({"recipe": "synthetic-test", "committed_actions": [], "capture_window": {"start_frame": 0, "end_frame": 88_200}});
-        write_failure_record(
-            failure,
-            "comparison",
-            Some(preparation.clone()),
-            &mut record,
-        )
-        .unwrap();
-        assert!(record.len() < 64 * 1024);
-        let line = String::from_utf8(record).unwrap();
-        let envelope: Value = serde_json::from_str(
-            line.trim()
-                .strip_prefix("RIOTBOX_LIMITER_CALIBRATION_FAILURE ")
-                .unwrap(),
-        )
-        .unwrap();
-        assert_eq!(envelope["stage"], "clean_gate");
-        assert_eq!(envelope["preparation"], preparation);
-        let reports = &envelope["diagnostics"];
-        for name in ["primary_128", "repeat_128", "partition_257"] {
-            assert!(
-                reports[name]["limiter"]["pre"]["peak_abs"]
-                    .as_f64()
-                    .unwrap()
-                    > 1.0
-            );
-            assert!(
-                reports[name]["limiter"]["limited_sample_count"]
-                    .as_u64()
-                    .unwrap()
-                    > 0
-            );
-            assert!(
-                reports[name]["limiter"]["post"]["peak_abs"]
-                    .as_f64()
-                    .unwrap()
-                    < 1.0
-            );
-        }
-        for name in ["clean_A", "clean_B", "clean_C"] {
-            assert!(reports[name]["limited_sample_count"].as_u64().unwrap() > 0);
-        }
-        assert!(reports.get("stress_2x_A").is_none());
-        assert!(!line.contains("\"samples\""));
-    }
-
-    #[test]
-    fn existing_activity_and_sparse_rms_gates_stop_before_stress() {
-        for (amplitude, case, stage) in [
-            (1.0e-8, Case::Tonal, "clean_silence"),
-            (0.005, Case::Sparse, "clean_sparse_rms"),
-        ] {
-            let error = compare_plan(&synthetic_monitor_plan(amplitude), 514, case)
-                .map(|_| ())
-                .expect_err("synthetic weak interval must fail the existing recipe gate");
-            let failure = error.downcast_ref::<ComparisonFailure>().unwrap();
-            assert_eq!(failure.stage, stage);
-            assert!(
-                failure.diagnostics["clean_A"]["pre"]["peak_abs"]
-                    .as_f64()
-                    .unwrap()
-                    > 0.0
-            );
-            assert!(failure.diagnostics.get("stress_2x_A").is_none());
-        }
-    }
-}
+mod tests;

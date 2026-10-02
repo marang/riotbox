@@ -171,6 +171,11 @@ below the knee, so A/B/C were bit-identical and source-backed protection was
 unobserved. The inherited values remain provisional, not a calibrated optimum;
 do not infer a policy preference or extend the consumed access budget.
 
+The separately authorized [fixed-overload v2 follow-up](../benchmarks/master_bus_limiter_calibration_protocol_v2.md)
+retains the V1 controls and preregisters one additional 4x diagnostic challenge.
+It requires its own accepted pin, historical-control identity and fresh bounded
+access session; it does not change production gain or limiter parameters.
+
 ### 3. QA acceptance thresholds
 
 Examples in the exact dense-break path:
