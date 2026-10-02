@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""The unchanged v1 entrypoint; execution remains bound to its frozen protocol."""
+"""The fixed clean/2x/4x follow-up; no source access without its frozen protocol."""
 
 from master_bus_limiter_calibration_runner import Version, main
 
 
 if __name__ == "__main__":
-    main(Version.V1)
+    main(Version.V2)

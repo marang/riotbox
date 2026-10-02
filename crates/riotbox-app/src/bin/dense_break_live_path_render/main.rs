@@ -21,12 +21,25 @@ const MAX_SOURCE_BPM_HINT: f32 = 400.0;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = env::args().skip(1).collect::<Vec<_>>();
-    if args.iter().any(|arg| arg == "--limiter-calibration-v1") {
-        if args != ["--limiter-calibration-v1"] {
+    if args.iter().any(|arg| {
+        matches!(
+            arg.as_str(),
+            "--limiter-calibration-v1" | "--limiter-calibration-v2"
+        )
+    }) {
+        if args.len() != 1 {
             return Err("limiter calibration accepts only its stdin JSON request".into());
         }
         #[cfg(feature = "limiter-calibration")]
-        return calibration::run(std::io::stdin().lock(), std::io::stdout().lock());
+        return calibration::run(
+            std::io::stdin().lock(),
+            std::io::stdout().lock(),
+            if args[0] == "--limiter-calibration-v1" {
+                calibration::CalibrationVersion::V1
+            } else {
+                calibration::CalibrationVersion::V2
+            },
+        );
         #[cfg(not(feature = "limiter-calibration"))]
         return Err("limiter calibration requires the opt-in limiter-calibration feature".into());
     }

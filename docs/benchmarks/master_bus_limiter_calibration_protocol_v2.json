@@ -1,0 +1,169 @@
+{
+  "schema": "riotbox.master_bus_limiter_calibration.v2",
+  "status": "accepted",
+  "owner_ticket": "RIOTBOX-1501",
+  "authorization": "2026-10-02 user: dann bitte weiter; one separately frozen overload phase on the same three Development files; no playback or production change",
+  "platform": "linux",
+  "repository_root": "/home/markus/Dev/riotbox",
+  "quality_proof": false,
+  "human_verdict": "unverified",
+  "production_policy_changes": false,
+  "historical_basis": {
+    "protocol_path": "docs/benchmarks/master_bus_limiter_calibration_protocol_v1.json",
+    "protocol_sha256": "c9d72c910aea77045a25c30ecc8a5bfec2e66481a9762aa2ba8827aa0f94a42d",
+    "report_path": "artifacts/development/riotbox-1501/calibration-v1/comparison.json",
+    "report_sha256": "7f8cecb384357b2ea725ef916707320c51299f1d26adf577df2e644b4de206d8",
+    "implementation_commit": "2b24c44d974f58487aa3f23b3653debc23d1d6d2",
+    "interpretation": "V1 was consumed Development evidence: fixed 2x did not exercise protection. V2 deliberately adds 4x; neither blind validation nor product gain tuning. V1 remains immutable."
+  },
+  "build_rustc_verbose_version": "rustc 1.98.1 (48a229cea 2026-09-01) (Arch Linux rust 1:1.98.1-1)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.1\nLLVM version: 22.1.8\n",
+  "historical_control_identity": "Same registered Linux workspace/compiler and frozen preparation. Clean pre/outputs and all three 2x outputs must match V1 f32LE hashes before any 4x computation. No cross-host/build portability promise or tolerance; mismatch fails closed.",
+  "corpus": {
+    "path": "docs/benchmarks/sound_excellence_source_corpus_v1.json",
+    "sha256": "67b5b8b2882575cf70fa61aacf25ae282c17714fe51ffcb13f905458e025d552",
+    "rights": "MusicRadar SampleRadar; local ignored test audio, no redistribution; not CC0"
+  },
+  "protected_registry": {
+    "path": "docs/benchmarks/source_holdout_rotation_v3.json",
+    "schema": "riotbox.source_holdout_rotation.v3",
+    "sha256": "9e5e03ad64319061a4baaa6cee7c40fc5e993171b0d11003ec29767f273bc502",
+    "expected_protected_count": 9
+  },
+  "source_format_admission": {
+    "container": "strict RIFF/WAVE PCM tag 1, one 16-byte fmt chunk then one data chunk",
+    "sample_rate_hz": 44100,
+    "channels": 2,
+    "compression_type": "NONE",
+    "maximum_duration_seconds": 16,
+    "duration_identity": "exact native f32 duration OR existing Python round(max(0.001, frames/rate), 3); graph metadata unchanged",
+    "known_width_rule": "Dense PCM24 and Tonal/Sparse PCM16 are known from the pinned consumed V1 report. Exact-width admission; no fresh header reconnaissance."
+  },
+  "cases": [
+    {
+      "case_id": "dense_beat03_130",
+      "source_family": "dense_break",
+      "partition": "development",
+      "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+      "sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a",
+      "sample_width_bits": 24,
+      "metadata_directory": "artifacts/development/riotbox-1474/qualification-v1",
+      "graph_sha256": "ad54e0d8908421bf65c6ef86403227f2307f35b9cbd84c779d59ca5756138679",
+      "session_sha256": "9421ad275141478b5bd56a42ce0e3c18ea8538c706094fc0a75c7e8d2d58ee92",
+      "source_id": "src-e752819f53f7",
+      "graph_duration_seconds": 3.692,
+      "confirmed_bpm": 130.0,
+      "hypothesis_id": "probe-bpm-primary",
+      "capture_source_frames": [0, 81237],
+      "recipe": "w30_six_action_owner",
+      "start_beat": 8,
+      "frame_count": 177231,
+      "contributors": ["w30_source_transform"],
+      "historical_controls": {
+        "clean_pcm_sha256_f32le": "4a0f95a42f482e5f655661499c7e46cf4696f6c772c80faa594aca8c0f082036",
+        "stress_2x_pcm_sha256_f32le": "ca217edf442f8a43cb69dbf9e9315dae41b89789bce1296340484c0b3bffbeb5"
+      }
+    },
+    {
+      "case_id": "tonal_rusharp_120",
+      "source_family": "tonal_riff",
+      "partition": "development",
+      "source_path": "data/test_audio/examples/DH_RushArp_120_A.wav",
+      "sha256": "ec2a0c930eb338bf81cd5cb4b5fef487e07c140ad40181e1d92b2a0990334e0e",
+      "sample_width_bits": 16,
+      "metadata_directory": "artifacts/development/riotbox-1466/qualification-v1",
+      "graph_sha256": "dcfd93e3cd9939e89a0cb39e30eed38c492bb9ea81ecd67e1c836658eeb102de",
+      "session_sha256": "50b333f7b9dbcd9812c5199943ae74a96933539a0d4a528caeaf3932752002ca",
+      "source_id": "src-ec2a0c930eb3",
+      "graph_duration_seconds": 4.0,
+      "confirmed_bpm": 120.0,
+      "hypothesis_id": "manual-source-grid-v1-42f00000-00000000",
+      "capture_source_frames": [0, 88200],
+      "recipe": "w30_six_action_owner",
+      "start_beat": 8,
+      "frame_count": 192000,
+      "contributors": ["w30_source_transform"],
+      "historical_controls": {
+        "clean_pcm_sha256_f32le": "40e6af452477f4a29a2338dccc73face9b3d4aba743c49e940ffad726455deae",
+        "stress_2x_pcm_sha256_f32le": "7da1d98a6a274eda80d847ceeef16dac978536863c2f2c55920811b3db0cfe02"
+      }
+    },
+    {
+      "case_id": "sparse_kicksnr_120",
+      "source_family": "sparse_drums",
+      "partition": "development",
+      "source_path": "data/test_audio/examples/DH_BeatC_KickSnr_120-01.wav",
+      "sha256": "8a970e5d7bd9b29771aba85f75e697c7510940d4404714bfb1e55e210c15f46c",
+      "sample_width_bits": 16,
+      "metadata_directory": "artifacts/development/riotbox-1467/qualification-v1",
+      "graph_sha256": "639170698c6b6e385f2163c79541ceef305a43cd06492894ec88fb4dbd492804",
+      "session_sha256": "39ddf6fb562a77397c11fbc2b771e49faa51270f23476f15db94856ca329dcd5",
+      "source_id": "src-8a970e5d7bd9",
+      "graph_duration_seconds": 4.0,
+      "confirmed_bpm": 120.0,
+      "hypothesis_id": "manual-source-grid-v1-42f00000-00000000",
+      "capture_source_frames": [0, 88200],
+      "recipe": "sparse_existing_prefix_after_w",
+      "minimum_mix_rms": 0.01,
+      "start_beat": 17,
+      "frame_count": 192000,
+      "contributors": ["w30_source_transform", "tr909_hardest_transient", "mc202_punctuation"],
+      "historical_controls": {
+        "clean_pcm_sha256_f32le": "cbe1d1d7fa9c1457717ab5e0d439c15b31f480a08977c7c67055f7ce9e77f6ef",
+        "stress_2x_pcm_sha256_f32le": "f50cb7c9fcb2da0c65f255eb298a38a7a87183811c605198e89d8d07ca9953d7"
+      }
+    }
+  ],
+  "policies": [
+    {"id": "A", "threshold": 0.92, "ceiling": 0.985, "threshold_f32_bits": "3f6b851f", "ceiling_f32_bits": "3f7c28f6"},
+    {"id": "B", "threshold": 0.9525, "ceiling": 0.985, "threshold_f32_bits": "3f73d70a", "ceiling_f32_bits": "3f7c28f6"},
+    {"id": "C", "threshold": 0.92, "ceiling": 0.9525, "threshold_f32_bits": "3f6b851f", "ceiling_f32_bits": "3f73d70a"}
+  ],
+  "render": {
+    "sample_rate_hz": 48000,
+    "channels": 2,
+    "duration_beats": 8,
+    "callback_frame_counts": [128, 128, 257],
+    "conditions": [{"id": "clean", "gain": 1.0}, {"id": "stress_2x", "gain": 2.0}, {"id": "stress_4x", "gain": 4.0}],
+    "stress_4x_gain_f32_bits": "40800000",
+    "source_monitor": "Riotbox; no source monitor contribution",
+    "resample_tap": "silent",
+    "fill_focus": "absent",
+    "clean_activity": "existing OfflineAudioMetrics.active_samples > 0 for every case; Sparse additionally retains existing whole-mix f32 RMS >= 0.01; no full-journey or isolated-lane qualification claim",
+    "comparison": "A/B/C independently process the identical shared raw pre-limiter f32 input for each condition. Each gain directly multiplies original pre, never another condition or limited output. No gain compensation or normalization."
+  },
+  "measurement": {
+    "local_frame_windows": [["attack", 0, 960], ["body", 960, 5760], ["recovery", 5760, 12000]],
+    "local_window_origin": "fixed start of committed product render; descriptive labels, not event detection or adaptive peak selection",
+    "spectral": "per-channel whole-window symmetric Hann; f64 rFFT; undoubled one-sided squared magnitude; fractions [0,180), [180,2500), [2500,24000] Hz; zero total => null; no epsilon floor",
+    "correlation": "per-channel local mean-centered Pearson in f64; zero norm => null",
+    "delta": "candidate minus A in f64; signed min/max, absolute peak, RMS; relative RMS divided by A RMS, zero denominator => null",
+    "crest": "peak/RMS; zero RMS => null",
+    "identity": "SHA-256 of raw interleaved f32 little-endian bytes; sample-bit equality, not padded comparison"
+  },
+  "budget": {
+    "original_file_opens": 3,
+    "access_sessions": 1,
+    "source_pcm_decodes": 3,
+    "hash_checks_per_admitted_buffer": 2,
+    "runtime_mix_renders": 9,
+    "distinct_policy_outputs": 27,
+    "derived_capture_wavs": 3,
+    "comparison_wavs": 0,
+    "playbacks": 0,
+    "max_stdin_json_bytes": 33554432,
+    "max_wav_payload_bytes": 6291456,
+    "max_child_stdout_bytes": 134217728,
+    "max_child_stderr_bytes": 65536,
+    "child_timeout_seconds": 120
+  },
+  "output_directory": "artifacts/development/riotbox-1501/calibration-v2",
+  "access_log": "development-access.json",
+  "summary_report": "comparison.json",
+  "preselected_future_listening": {
+    "case_id": "sparse_kicksnr_120",
+    "condition": "stress_4x",
+    "frame_window": [0, 96000],
+    "status": "not generated or authorized for playback; global protection does not imply protection in this window; no substitution if unobserved"
+  },
+  "stopping_rule": "Stop first identity/access/format/recipe/parity/historical-control/finite/bound/clean-regression failure; retain partial reports including available clean/2x/4x and preparation, no remaining source opens or retry. Unobserved 4x/local protection permits no gain/window/source change. Post-access changes require a new version and Decision. No Holdout, commercial reference, source discovery, hardware or human playback."
+}

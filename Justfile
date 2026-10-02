@@ -106,7 +106,7 @@ limiter-calibration-fixtures:
     cargo test -p riotbox-audio --lib --features limiter-calibration limiter_calibration
     cargo test -p riotbox-app --lib --features limiter-calibration limiter_calibration
     cargo test -p riotbox-app --bin dense_break_live_path_render --features limiter-calibration calibration
-    python3 -m unittest discover -s scripts -p 'test_master_bus_limiter_calibration.py'
+    python3 -m unittest discover -s scripts -p 'test_master_bus_limiter_calibration*.py'
 
 audio-qa-access-guard-fixtures:
     scripts/validate_broad_audio_qa_access_guard.sh

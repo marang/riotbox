@@ -11,16 +11,16 @@ from unittest.mock import patch
 import numpy as np
 
 from master_bus_limiter_calibration_metrics import (
-    POLICIES, delta, level, measure_case, pcm, pcm_identity, spectral_fractions,
+    POLICIES, Version, delta, level, measure_case, pcm, pcm_identity, spectral_fractions,
 )
-import run_master_bus_limiter_calibration_v1 as runner
+import master_bus_limiter_calibration_runner as runner
 from source_holdout_development_access import SourceIdentity
 
 
-def generated_report():
+def generated_report(version=Version.V1):
     pre = np.tile(np.array([0.1, -0.1, 0.2, -0.2], dtype=np.float32), 6000)
     conditions = []
-    for name, gain in (("clean", 1.0), ("stress_2x", 2.0)):
+    for name, gain in version.conditions:
         conditions.append({"condition": name, "outputs": [
             {"policy": policy, "samples": (pre * np.float32(gain)).tolist(),
              "limiter": {"threshold_bits": int(np.float32(threshold).view(np.uint32)),
@@ -28,10 +28,13 @@ def generated_report():
                          "limited_sample_count": 0,
                          "post": {"active_samples": pre.size, "rms": 0.15 * gain}}}
             for policy, threshold, ceiling in POLICIES]})
-    return {"sample_rate_hz": 48000, "channels": 2, "frame_count": 12000,
+    report = {"sample_rate_hz": 48000, "channels": 2, "frame_count": 12000,
             "controls": {"repeat_128_bit_exact": True, "partition_257_bit_exact": True,
                          "baseline_api_bit_exact": True},
             "pre_samples": pre.tolist(), "conditions": conditions}
+    if version is Version.V2:
+        report["protocol_version"] = version.value
+    return report
 
 
 class CalibrationMetricsTests(unittest.TestCase):
@@ -153,7 +156,7 @@ class CalibrationExecutionTests(unittest.TestCase):
                                    "child_timeout_seconds": 1}}
             transitions = []
 
-            def build(head):
+            def build(head, **kwargs):
                 transitions.append("build")
                 return executable, {"sha256": runner.sha256(executable.read_bytes())}
 
@@ -165,8 +168,8 @@ class CalibrationExecutionTests(unittest.TestCase):
                 self.fail("failed owner must not resume access")
 
             child = subprocess.CompletedProcess([], 1, b"", b'RIOTBOX_LIMITER_CALIBRATION_FAILURE {"writes":2}')
-            with patch.object(runner, "REPO", repo), patch.object(runner, "PROTOCOL", "protocol.json"), \
-                    patch.object(runner, "PROTOCOL_SHA256", runner.sha256(protocol_file.read_bytes())), \
+            binding = runner.ProtocolBinding("protocol.json", runner.sha256(protocol_file.read_bytes()))
+            with patch.object(runner, "REPO", repo), patch.dict(runner.PROTOCOLS, {Version.V1: binding}), \
                     patch.object(runner, "preflight", return_value=(protocol, [], {"generated": {}})), \
                     patch.object(runner, "git_identity", return_value="head"), \
                     patch.object(runner, "build_executor", side_effect=build), \

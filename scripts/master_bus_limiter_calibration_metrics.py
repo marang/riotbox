@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from enum import Enum
 from typing import Any
 
 import numpy as np
@@ -14,6 +15,18 @@ SAMPLE_RATE = 48_000
 CHANNELS = 2
 POLICIES = (("A", 0.92, 0.985), ("B", 0.9525, 0.985), ("C", 0.92, 0.9525))
 LOCAL_WINDOWS = (("attack", 0, 960), ("body", 960, 5760), ("recovery", 5760, 12000))
+
+
+class Version(Enum):
+    """The two closed preregistered experiments, never caller-selected gains."""
+
+    V1 = "v1"
+    V2 = "v2"
+
+    @property
+    def conditions(self) -> tuple[tuple[str, float], ...]:
+        controls = (("clean", 1.0), ("stress_2x", 2.0))
+        return controls if self is Version.V1 else (*controls, ("stress_4x", 4.0))
 
 
 def pcm(values: Any, sample_count: int) -> np.ndarray:
@@ -79,9 +92,17 @@ def delta(control: np.ndarray, candidate: np.ndarray) -> dict[str, Any]:
 
 
 def measure_case(raw: dict[str, Any], frame_count: int, *,
+                 version: Version = Version.V1,
+                 historical_controls: dict[str, str] | None = None,
                  minimum_mix_rms: float | None = None,
                  listening_frame_window: tuple[int, int] | None = None) -> dict[str, Any]:
-    """Validate alignment/clean control first, then describe fixed clean and 2x outputs."""
+    """Validate unchanged controls, then describe only the version's fixed conditions."""
+    require(isinstance(version, Version), "unknown calibration version")
+    if version is Version.V2:
+        require(raw.get("protocol_version") == "v2", "response protocol version mismatch")
+        require(isinstance(historical_controls, dict)
+                and set(historical_controls) == {"clean_pcm_sha256_f32le", "stress_2x_pcm_sha256_f32le"},
+                "missing historical control identities")
     require(raw["controls"] == {"repeat_128_bit_exact": True, "partition_257_bit_exact": True,
                                 "baseline_api_bit_exact": True}, "baseline parity failed")
     require(raw["sample_rate_hz"] == SAMPLE_RATE and raw["channels"] == CHANNELS,
@@ -92,20 +113,32 @@ def measure_case(raw: dict[str, Any], frame_count: int, *,
         require(0 <= start < end <= frame_count, "preselected window exceeds render")
     pre = pcm(raw["pre_samples"], frame_count * CHANNELS)
     require(raw["frame_count"] == frame_count, "render duration mismatch")
-    require([row["condition"] for row in raw["conditions"]] == ["clean", "stress_2x"],
+    require([row["condition"] for row in raw["conditions"]]
+            == [name for name, _ in version.conditions],
             "condition order/budget mismatch")
     report: dict[str, Any] = {"controls": raw["controls"], "frame_count": frame_count,
                               "sample_rate_hz": SAMPLE_RATE, "channels": CHANNELS,
                               "conditions": [], "human_verdict": "unverified"}
-    for condition, factor in zip(raw["conditions"], (1.0, 2.0), strict=True):
+    for condition, (condition_name, factor) in zip(raw["conditions"], version.conditions, strict=True):
+        # Every condition derives directly from the original f32 buffer, never another output.
         shared = pre * np.float32(factor)
+        require(bool(np.isfinite(shared).all()), "nonfinite condition input")
         require([row["policy"] for row in condition["outputs"]] == ["A", "B", "C"],
                 "policy order/budget mismatch")
         outputs = [pcm(row["samples"], pre.size) for row in condition["outputs"]]
         measured = {"condition": condition["condition"], "input_sha256_f32le": pcm_identity(shared),
                     "input": level(shared), "outputs": []}
+        historical_hash = None
+        if version is Version.V2 and condition_name in {"clean", "stress_2x"}:
+            historical_hash = historical_controls[f"{condition_name}_pcm_sha256_f32le"]
+            require(measured["input_sha256_f32le"] == historical_hash,
+                    f"{condition_name}: historical input identity mismatch")
         for row, output, (name, threshold, ceiling) in zip(
                 condition["outputs"], outputs, POLICIES, strict=True):
+            output_hash = pcm_identity(output)
+            if historical_hash is not None:
+                require(output_hash == historical_hash,
+                        f"{condition_name}/{name}: historical output identity mismatch")
             limiter = row["limiter"]
             require(limiter["threshold_bits"] == int(np.float32(threshold).view(np.uint32))
                     and limiter["ceiling_bits"] == int(np.float32(ceiling).view(np.uint32)),
@@ -135,7 +168,7 @@ def measure_case(raw: dict[str, Any], frame_count: int, *,
                                   "delta_vs_a": delta(control, candidate),
                                   "spectral_power_fractions": spectral_fractions(candidate)})
             output_report = {"policy": name, "limiter": limiter,
-                             "output_sha256_f32le": pcm_identity(output),
+                             "output_sha256_f32le": output_hash,
                              "output": level(output), "delta_vs_a": delta(outputs[0], output),
                              "local_windows": local}
             if listening_frame_window is not None:
@@ -150,4 +183,7 @@ def measure_case(raw: dict[str, Any], frame_count: int, *,
                 }
             measured["outputs"].append(output_report)
         report["conditions"].append(measured)
+    if version is Version.V2:
+        report["protocol_version"] = version.value
+        report["historical_controls"] = dict(historical_controls)
     return report
