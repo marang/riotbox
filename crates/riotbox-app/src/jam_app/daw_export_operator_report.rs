@@ -244,7 +244,9 @@ fn report_for_receipt(
         readiness_blockers.push(DawExportReadinessBlocker::MissingArtifactIdentity);
     }
 
-    if receipt.is_live_master_dawproject_v1() && !receipt.live_master_dawproject_archive_ready() {
+    if (receipt.is_live_master_dawproject_v1() || receipt.is_live_master_dawproject_v2())
+        && !receipt.live_master_dawproject_archive_ready()
+    {
         readiness_blockers.push(DawExportReadinessBlocker::MissingArtifactIdentity);
     }
 

@@ -5,11 +5,12 @@ use riotbox_audio::runtime::{
 };
 use riotbox_core::{
     TimestampMs,
-    action::{ActionParams, LiveRecordingDuration, LiveRecordingExportRole},
+    action::{ActionParams, LiveRecordingExportBoundary, LiveRecordingExportRole},
     export_readiness::{
         EXPORT_READINESS_CONTRACT_SCHEMA, ExportReadinessContract, ExportReadinessStatus,
         ExportScope, LIVE_RECORDING_RUNTIME_MASTER_BAR_WINDOW_PACK_ID,
-        LIVE_RECORDING_RUNTIME_MASTER_BAR_WINDOW_V3_PACK_ID, ProductExportBoundary,
+        LIVE_RECORDING_RUNTIME_MASTER_BAR_WINDOW_V3_PACK_ID,
+        LIVE_RECORDING_RUNTIME_MASTER_BAR_WINDOW_V4_PACK_ID, ProductExportBoundary,
         ProductExportDestinationKind, ProductExportRole,
     },
     ids::ExportReceiptId,
@@ -23,8 +24,8 @@ use sha2::{Digest, Sha256};
 
 use super::{
     super::{JamAppError, JamAppState},
-    LiveMasterRecordingPlan, LiveMasterRecordingProof, recording_action_boundary,
-    recording_duration_identity, recording_proof_schema,
+    LiveMasterRecordingPlan, LiveMasterRecordingProof, recording_duration_identity,
+    recording_proof_schema,
     session_identity::{
         live_master_session_identity, live_master_target_sample_count,
         live_master_window_frame_count, proof_path_for, validate_destination, validate_output,
@@ -52,8 +53,12 @@ pub(super) fn prepare_validated_recording(
     validate_destination(&plan.destination_path)?;
     validate_output(&plan.output)?;
     let identity = live_master_session_identity(state)?;
-    let expected_frame_count =
-        live_master_window_frame_count(plan.output.sample_rate, plan.confirmed_bpm, plan.duration)?;
+    let expected_frame_count = live_master_window_frame_count(
+        plan.output.sample_rate,
+        plan.confirmed_bpm,
+        plan.boundary,
+        plan.duration,
+    )?;
     let requested_start_beat_cursor = plan.requested_start_position_beats as u64;
     if identity.confirmed_bpm.to_bits() != plan.confirmed_bpm.to_bits()
         || identity.scene_id != plan.scene_id
@@ -104,8 +109,8 @@ pub(super) fn prepare_validated_recording(
                 destination_path: Some(destination),
                 receipt_id: None,
             } if destination == &plan.destination_path.to_string_lossy()
-                && *boundary == recording_action_boundary(plan.duration)
-                && *duration == recording_duration_identity(plan.duration)
+                && *boundary == plan.boundary
+                && *duration == recording_duration_identity(plan.boundary, plan.duration)
         )
     {
         return Err(JamAppError::InvalidSession(
@@ -155,24 +160,27 @@ pub(super) fn prepare_validated_recording(
     let start_error_frames =
         (captured_start - plan.requested_start_position_beats) / beats_per_frame;
     let captured_duration_beats = captured_end - captured_start;
-    // V3 separates exact sample-frame duration from accumulated clock roundoff.
+    // V3/V4 separate exact sample-frame duration from accumulated clock roundoff.
     // V2 retains its historical endpoint-based duration and fixed epsilon.
-    let measured_duration = if plan.duration == LiveRecordingDuration::TwoBars {
-        captured_duration_beats
-    } else {
-        beats_per_frame * plan.request.target_frame_count as f64
-    };
+    let measured_duration =
+        if plan.boundary == LiveRecordingExportBoundary::RuntimeMasterBarWindowV2 {
+            captured_duration_beats
+        } else {
+            beats_per_frame * plan.request.target_frame_count as f64
+        };
     let duration_error_frames =
         (measured_duration - f64::from(plan.duration.duration_beats())).abs() / beats_per_frame;
     let expected_end = captured_start + beats_per_frame * plan.request.target_frame_count as f64;
-    let position_tolerance = if plan.duration == LiveRecordingDuration::TwoBars {
+    let position_tolerance = if plan.boundary
+        == LiveRecordingExportBoundary::RuntimeMasterBarWindowV2
+    {
         beats_per_frame * 1.0e-6
     } else {
         plan.duration.position_roundoff_bound(
             beats_per_frame, captured_start, captured_end, expected_end,
             outcome.progress.callback_count, plan.request.target_frame_count as u64,
         ).ok_or_else(|| JamAppError::InvalidSession(
-            "live master V3 callback position precision cannot satisfy the bounded roundoff contract".into(),
+            "canonical live master callback position precision cannot satisfy the bounded roundoff contract".into(),
         ))?
     };
     if !captured_start.is_finite()
@@ -224,14 +232,14 @@ pub(super) fn prepare_validated_recording(
     let sample_payload_sha256 = sha256_float_samples(&outcome.samples);
     let receipt_id = ExportReceiptId::new(format!("export-receipt-{}", plan.action_id));
     let proof = LiveMasterRecordingProof {
-        schema: recording_proof_schema(plan.duration).into(),
+        schema: recording_proof_schema(plan.boundary)?.into(),
         receipt_id,
         action_id: plan.action_id,
         session_id: plan.session_id.clone(),
         session_pre_capture_sha256: plan.session_pre_capture_sha256.clone(),
         scene_id: plan.scene_id.clone(),
         confirmed_bpm_micros: (f64::from(plan.confirmed_bpm) * 1_000_000.0).round() as u64,
-        duration: recording_duration_identity(plan.duration),
+        duration: recording_duration_identity(plan.boundary, plan.duration),
         duration_beats: plan.duration.duration_beats(),
         beats_per_bar: plan.beats_per_bar,
         bar_grid_anchor_position_microbeats: beat_cursor_microbeats(
@@ -361,22 +369,32 @@ pub(super) fn build_recording_receipt(
 ) -> Result<ExportReceiptState, JamAppError> {
     let wav_path = plan.destination_path.to_string_lossy().into_owned();
     let proof_path = plan.proof_path.to_string_lossy().into_owned();
+    let (boundary, pack_id) = match plan.boundary {
+        LiveRecordingExportBoundary::RuntimeMasterBarWindowV2 => (
+            ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV2,
+            LIVE_RECORDING_RUNTIME_MASTER_BAR_WINDOW_PACK_ID,
+        ),
+        LiveRecordingExportBoundary::RuntimeMasterBarWindowV3 => (
+            ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV3,
+            LIVE_RECORDING_RUNTIME_MASTER_BAR_WINDOW_V3_PACK_ID,
+        ),
+        LiveRecordingExportBoundary::RuntimeMasterBarWindowV4 => (
+            ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV4,
+            LIVE_RECORDING_RUNTIME_MASTER_BAR_WINDOW_V4_PACK_ID,
+        ),
+        _ => {
+            return Err(JamAppError::InvalidSession(
+                "unsupported live master recording boundary".into(),
+            ));
+        }
+    };
     let contract = ExportReadinessContract {
         schema: EXPORT_READINESS_CONTRACT_SCHEMA.into(),
         status: ExportReadinessStatus::Reproducible,
-        proof_schema: recording_proof_schema(plan.duration).into(),
+        proof_schema: recording_proof_schema(plan.boundary)?.into(),
         export_scope: ExportScope::LiveRecording,
-        boundary: if plan.duration == LiveRecordingDuration::TwoBars {
-            ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV2
-        } else {
-            ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV3
-        },
-        pack_id: if plan.duration == LiveRecordingDuration::TwoBars {
-            LIVE_RECORDING_RUNTIME_MASTER_BAR_WINDOW_PACK_ID
-        } else {
-            LIVE_RECORDING_RUNTIME_MASTER_BAR_WINDOW_V3_PACK_ID
-        }
-        .into(),
+        boundary,
+        pack_id: pack_id.into(),
         export_role: ProductExportRole::LiveRecordingCapture,
         export_artifact: wav_path.clone(),
         source_sha256: written.proof.session_pre_capture_sha256.clone(),
@@ -393,7 +411,7 @@ pub(super) fn build_recording_receipt(
         Some(proof_path.clone()),
     );
     let duration_ms = duration_ms(plan.request.target_frame_count, plan.output.sample_rate)?;
-    receipt.live_recording_duration = recording_duration_identity(plan.duration);
+    receipt.live_recording_duration = recording_duration_identity(plan.boundary, plan.duration);
     let mut audio_artifact = riotbox_core::session::ExportArtifactSetEntry::live_recording_capture(
         wav_path,
         written.wav_sha256.clone(),

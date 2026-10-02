@@ -626,6 +626,15 @@ Rules:
   hydration and graph writes. Normal runtime loading/saving remains unchanged.
   The saved export action, commit record and receipt remain the only export
   truth; a failed Session save leaves the prior Session and source take intact.
+- RBX-423 adds `daw_session.live_master_dawproject_v2`, pack
+  `live-master-dawproject-v2`, proof `riotbox.live_master_dawproject.v2` for
+  ready V4 two-bar recordings. The exact V4 source boundary and source hashes
+  remain in proof; no V4 evidence is relabeled as V2. Artifact membership,
+  byte-identical audio, eight-beat placement, archive/XML checks and missing
+  host-import/audible-output/release gates remain the same. V2 recording to
+  DAW V1 remains supported unchanged. Queue selection pins the latest supported
+  V2/V4 two-bar receipt and matching DAW version; invalid latest evidence blocks
+  rather than falling back to an older supported receipt.
 - the first reserved live-recording receipt boundary is
   `live_recording.receipt_contract_v1` with
   `export_scope: live_recording`, `export_role: live_recording_capture`,
@@ -1264,7 +1273,7 @@ Additional receipt fields required before wider export scopes:
   captures are excluded. Their declared lineage is included only after every
   active owner and lineage target resolves in the Session.
 - `live_recording.runtime_master_bar_window_v2`, pack id
-  `live-recording-runtime-master-bar-window`, is the default runnable receipt
+  `live-recording-runtime-master-bar-window`, is the historical two-bar receipt
   boundary. It preserves every V1 audio tap, writer, artifact, lineage, and
   host-health requirement while adding exactly one
   `live_recording_bar_window_alignment` gate and a typed
@@ -1305,13 +1314,24 @@ Additional receipt fields required before wider export scopes:
   accumulated f64 callback-clock error. Actual endpoints remain unchanged and
   must pass the separately bounded V3 position-arithmetic contract in the Audio
   Core spec before publication, plus the existing serialized microbeat checks.
+- RBX-423 adds `live_recording.runtime_master_bar_window_v4`, pack
+  `live-recording-runtime-master-bar-window-v4` and proof
+  `riotbox.live_recording_runtime_master_bar_window.v4` for future default and
+  explicit two-bar recording. Typed duration is exactly `two_bars` in Action,
+  receipt and proof; the recorded window is eight beats in 4/4. V4 uses V3's
+  canonical runtime-f32 frame/span/position arithmetic and full receipt commit
+  gate, not legacy V2 integer geometry. Restore/replay validate the explicit
+  duration, matching version, unique committed Action/receipt, destination and
+  readiness without opening audio. V1/V2/V3 wire meaning remains unchanged;
+  legacy V2 receipts whose proof disagrees with full readiness remain non-ready
+  and unmodified. No automatic migration or reassessment is performed.
 - the live-recording readiness operator report is a read-only Session report:
   `riotbox-app --live-recording-readiness-report --session <session.json>`
   inspects the latest live-recording receipt and projects the same host-audio
   readiness blockers without mutating the Session, writing observer events,
   launching a host, or capturing audio.
 - `just live-master-recording <session> <destination.wav> [graph] [observer] [bars]`
-  is the bounded real user-session ingress (default 2/V2, explicit 8 or 16/V3).
+  is the bounded real user-session ingress (default 2/V4, explicit 8 or 16/V3).
   It starts the existing CPAL output,
   confirms transport, Session BPM, and 4/4 meter, arms for the strictly next
   phase-aligned bar, performs the selected bounded callback capture,

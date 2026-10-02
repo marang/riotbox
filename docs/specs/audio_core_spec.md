@@ -645,11 +645,13 @@ Current limiter policy:
   micro-BPM evidence must reconstruct the original f32 tempo exactly. App enforces
   the unchanged `16,777,216` interleaved-slot ceiling before arming. Longer
   windows do not raise allocation limits, loosen health/physical frame gates or
-  add callback work. V1/V2 and the default two-bar ingress retain their meaning.
+  add callback work. Historical V1/V2 retain their meaning; RBX-423 separately
+  selects canonical V4 for future default two-bar recordings.
   Generated callback-partition and publication tests establish implementation
   evidence only; extended real-device and human qualification remain separate.
 
-V3 recording position arithmetic (RBX-422): the callback clock accumulates
+V3/V4 recording position arithmetic (RBX-422, extended to exactly two bars by
+RBX-423): the callback clock accumulates
 positive f64 beat spans. An exact long sample window can therefore exceed V2's
 fixed `1e-6`-frame endpoint comparison without a skipped sample or transport
 fault. Keep V2 unchanged. V3 checks physical duration from the exact frame count
@@ -657,7 +659,7 @@ times the canonical runtime beats-per-frame, retaining the `0.500001`-frame
 rounding limit and the existing start-alignment gate. Retain actual callback
 start/end positions in evidence, never replace them with idealized endpoints.
 
-For V3 only, compare the actual end with `start + frames * beats_per_frame`
+For canonical V3/V4 only, compare the actual end with `start + frames * beats_per_frame`
 using `max(beats_per_frame * 1e-6, gamma(2K+16) * M)`, where `K` is the captured
 callback count, `M=max(abs(start),abs(end),abs(expected_end),1)`,
 `gamma(n)=n*u/(1-n*u)` and `u=f64::EPSILON/2`. The two operations per callback
@@ -670,7 +672,11 @@ frame, discontinuous clock or degraded callback health. Core's existing
 microbeat readiness checks remain mandatory. V3 proof `duration_error_frame_micros`
 records nominal frame rounding, while actual endpoint discrepancy is checked
 against this arithmetic bound before publication. No realtime clock/DSP change
-or new host/listening claim follows.
+or new host/listening claim follows. V4 changes the future default two-bar
+producer to this canonical contract while leaving historical V2 arithmetic
+and evidence unchanged. The callback clock/tap and allocation ceiling stay
+unchanged; synthetic tests do not transfer existing device/listening evidence
+to a fresh V4 qualification.
 - the Feral-grid development product-stem seam attributes the already rendered
   generated-support mix across typed TR-909 drums, W-30 music, and MC-202 bass
   contributions after the shared nonlinear product bus. The symmetric

@@ -36,6 +36,8 @@ pub const LIVE_MASTER_RECORDING_PROOF_SCHEMA: &str =
     "riotbox.live_recording_runtime_master_bar_window.v2";
 const LIVE_MASTER_RECORDING_PROOF_SCHEMA_V3: &str =
     "riotbox.live_recording_runtime_master_bar_window.v3";
+pub(in crate::jam_app) const LIVE_MASTER_RECORDING_PROOF_SCHEMA_V4: &str =
+    "riotbox.live_recording_runtime_master_bar_window.v4";
 
 pub fn live_master_recording_proof_path(
     destination_path: impl AsRef<Path>,
@@ -46,6 +48,7 @@ pub fn live_master_recording_proof_path(
 #[derive(Clone, Debug, PartialEq)]
 pub struct LiveMasterRecordingPlan {
     pub action_id: ActionId,
+    pub boundary: LiveRecordingExportBoundary,
     pub duration: LiveRecordingDuration,
     pub request: LiveMasterCaptureRequest,
     pub destination_path: PathBuf,
@@ -141,7 +144,41 @@ impl JamAppState {
         destination_path: impl AsRef<Path>,
         duration: LiveRecordingDuration,
     ) -> LiveMasterRecordingQueueResult {
-        let destination_path = destination_path.as_ref();
+        self.queue_versioned_live_master_recording(
+            requested_at,
+            output,
+            destination_path.as_ref(),
+            recording_action_boundary(duration),
+            duration,
+        )
+    }
+
+    // Explicit generated historical controls only; the current public producer
+    // never creates new V2 evidence or silently reinterprets an existing take.
+    #[cfg(test)]
+    pub(in crate::jam_app) fn queue_legacy_two_bar_recording_fixture(
+        &mut self,
+        requested_at: TimestampMs,
+        output: &AudioOutputInfo,
+        destination_path: impl AsRef<Path>,
+    ) -> LiveMasterRecordingQueueResult {
+        self.queue_versioned_live_master_recording(
+            requested_at,
+            output,
+            destination_path.as_ref(),
+            LiveRecordingExportBoundary::RuntimeMasterBarWindowV2,
+            LiveRecordingDuration::TwoBars,
+        )
+    }
+
+    fn queue_versioned_live_master_recording(
+        &mut self,
+        requested_at: TimestampMs,
+        output: &AudioOutputInfo,
+        destination_path: &Path,
+        boundary: LiveRecordingExportBoundary,
+        duration: LiveRecordingDuration,
+    ) -> LiveMasterRecordingQueueResult {
         let target_scene = self.session.runtime_state.scene_state.active_scene.clone();
 
         let mut draft = ActionDraft::new(
@@ -157,8 +194,8 @@ impl JamAppState {
         draft.params = ActionParams::LiveRecordingExport {
             export_scope: ExportScope::LiveRecording,
             export_role: LiveRecordingExportRole::LiveRecordingCapture,
-            boundary: recording_action_boundary(duration),
-            duration: recording_duration_identity(duration),
+            boundary,
+            duration: recording_duration_identity(boundary, duration),
             include_manifest: true,
             destination_kind: ProductExportDestinationKind::LocalFilePath,
             destination_path: Some(destination_path.to_string_lossy().into_owned()),
@@ -180,13 +217,20 @@ impl JamAppState {
                 LiveMasterRecordingQueueResult::AlreadyPending
             }
             QueueEnqueueResult::Enqueued(action_id) => {
-                match prepare_recording_plan_input(self, output, destination_path, duration) {
+                match prepare_recording_plan_input(
+                    self,
+                    output,
+                    destination_path,
+                    boundary,
+                    duration,
+                ) {
                     Ok(prepared) => {
                         let identity = prepared.identity;
                         self.refresh_view();
                         LiveMasterRecordingQueueResult::Enqueued(Box::new(
                             LiveMasterRecordingPlan {
                                 action_id,
+                                boundary,
                                 duration,
                                 request: LiveMasterCaptureRequest {
                                     target_frame_count: prepared.target_frame_count,
@@ -257,18 +301,20 @@ impl JamAppState {
         // V2 keeps its historical publication gate. Its frozen integer timing
         // readiness can disagree with the runtime-f32 proof at rounding ties;
         // extending V3 must not newly discard previously publishable V2 takes.
-        let receipt_ready = match plan.duration {
-            LiveRecordingDuration::TwoBars => {
+        let receipt_ready = match plan.boundary {
+            LiveRecordingExportBoundary::RuntimeMasterBarWindowV2 => {
                 receipt.live_recording_host_audio_readiness_report().ready()
             }
-            LiveRecordingDuration::EightBars | LiveRecordingDuration::SixteenBars => {
+            LiveRecordingExportBoundary::RuntimeMasterBarWindowV3
+            | LiveRecordingExportBoundary::RuntimeMasterBarWindowV4 => {
                 receipt.live_recording_runtime_master_ready()
             }
+            _ => false,
         };
         if !receipt_ready
             || !receipt.live_recording_action_contract_matches(
-                recording_action_boundary(plan.duration),
-                recording_duration_identity(plan.duration),
+                plan.boundary,
+                recording_duration_identity(plan.boundary, plan.duration),
             )
         {
             remove_owned_recording(plan, &written);
@@ -334,22 +380,35 @@ impl JamAppState {
 
 fn recording_action_boundary(duration: LiveRecordingDuration) -> LiveRecordingExportBoundary {
     match duration {
-        LiveRecordingDuration::TwoBars => LiveRecordingExportBoundary::RuntimeMasterBarWindowV2,
+        LiveRecordingDuration::TwoBars => LiveRecordingExportBoundary::RuntimeMasterBarWindowV4,
         LiveRecordingDuration::EightBars | LiveRecordingDuration::SixteenBars => {
             LiveRecordingExportBoundary::RuntimeMasterBarWindowV3
         }
     }
 }
 
-fn recording_duration_identity(duration: LiveRecordingDuration) -> Option<LiveRecordingDuration> {
-    (duration != LiveRecordingDuration::TwoBars).then_some(duration)
+fn recording_duration_identity(
+    boundary: LiveRecordingExportBoundary,
+    duration: LiveRecordingDuration,
+) -> Option<LiveRecordingDuration> {
+    (boundary != LiveRecordingExportBoundary::RuntimeMasterBarWindowV2).then_some(duration)
 }
 
-fn recording_proof_schema(duration: LiveRecordingDuration) -> &'static str {
-    match duration {
-        LiveRecordingDuration::TwoBars => LIVE_MASTER_RECORDING_PROOF_SCHEMA,
-        LiveRecordingDuration::EightBars | LiveRecordingDuration::SixteenBars => {
-            LIVE_MASTER_RECORDING_PROOF_SCHEMA_V3
+fn recording_proof_schema(
+    boundary: LiveRecordingExportBoundary,
+) -> Result<&'static str, JamAppError> {
+    match boundary {
+        LiveRecordingExportBoundary::RuntimeMasterBarWindowV2 => {
+            Ok(LIVE_MASTER_RECORDING_PROOF_SCHEMA)
         }
+        LiveRecordingExportBoundary::RuntimeMasterBarWindowV3 => {
+            Ok(LIVE_MASTER_RECORDING_PROOF_SCHEMA_V3)
+        }
+        LiveRecordingExportBoundary::RuntimeMasterBarWindowV4 => {
+            Ok(LIVE_MASTER_RECORDING_PROOF_SCHEMA_V4)
+        }
+        _ => Err(JamAppError::InvalidSession(
+            "unsupported live master recording boundary".into(),
+        )),
     }
 }

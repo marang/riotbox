@@ -2177,3 +2177,12 @@ consumer. Generated PCM/callback and persistence tests are implementation
 evidence, not a longer real-host or human pass. The next audible follow-up is
 one separately authorized bounded real-host extended-window recording; no new
 source access, playback, DAW host or release claim follows from this slice.
+
+RIOTBOX-1552 corrects a separate inherited two-bar proof/readiness rounding
+inconsistency exposed by that compatibility review. RBX-423 selects explicit
+two-bar V4 for future recordings using the canonical runtime-f32 geometry, and
+adds V4-to-DAW-V2 through the existing byte-identical archive writer. Historical
+V2 proof/readiness and its usable DAW-V1 path remain unchanged; invalid old
+receipts are not silently repaired or substituted. This is source-free
+maintenance of the recording/export spine, not a fresh host, musical, human,
+DAW-import or release qualification. RIOTBOX-1036 remains open.

@@ -9,6 +9,7 @@ use riotbox_core::action::ActionResult;
 use riotbox_core::action::ActionStatus;
 use riotbox_core::action::ActionTarget;
 use riotbox_core::action::ActorType;
+use riotbox_core::action::LiveRecordingDuration;
 use riotbox_core::action::LiveRecordingExportBoundary;
 use riotbox_core::action::LiveRecordingExportRole;
 use riotbox_core::action::Quantization;
@@ -33,6 +34,73 @@ use riotbox_core::session::ExportLiveRecordingStreamErrorSummary;
 use riotbox_core::session::ExportLiveRecordingTimingWindow;
 use riotbox_core::session::ExportReceiptState;
 use riotbox_core::session::SessionFile;
+
+#[test]
+fn observer_preserves_legacy_v2_and_explicit_v4_duration_after_metadata_roundtrip() {
+    for (boundary, receipt_boundary, duration) in [
+        (
+            LiveRecordingExportBoundary::RuntimeMasterBarWindowV2,
+            ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV2,
+            None,
+        ),
+        (
+            LiveRecordingExportBoundary::RuntimeMasterBarWindowV4,
+            ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV4,
+            Some(LiveRecordingDuration::TwoBars),
+        ),
+    ] {
+        let action_id = ActionId(1552);
+        let mut session = SessionFile::new("version-projection", "test", "2026-10-02T00:00:00Z");
+        let mut action = live_recording_action(action_id, "generated metadata projection");
+        let ActionParams::LiveRecordingExport {
+            boundary: action_boundary,
+            duration: action_duration,
+            ..
+        } = &mut action.params
+        else {
+            panic!("recording Action fixture");
+        };
+        *action_boundary = boundary;
+        *action_duration = duration;
+        let mut receipt = live_recording_receipt(action_id);
+        receipt.export_boundary = receipt_boundary;
+        receipt.live_recording_duration = duration;
+        let action_json = serde_json::to_value(&action).expect("Action JSON");
+        let receipt_json = serde_json::to_value(&receipt).expect("receipt JSON");
+        assert_eq!(
+            action_json["params"]["LiveRecordingExport"]
+                .get("duration")
+                .is_some(),
+            duration.is_some()
+        );
+        assert_eq!(
+            receipt_json.get("live_recording_duration").is_some(),
+            duration.is_some()
+        );
+        session.action_log.actions.push(action);
+        session.export_receipts.push(receipt);
+        let encoded = serde_json::to_vec(&session).expect("serialize metadata");
+        let restored: SessionFile = serde_json::from_slice(&encoded).expect("load metadata");
+        assert_eq!(
+            serde_json::to_vec(&restored).expect("serialize restored"),
+            encoded
+        );
+        let shell = JamShellState::new(
+            JamAppState::from_parts(restored, None, ActionQueue::new()),
+            ShellLaunchMode::Load,
+        );
+        let snapshot = observer_snapshot(&shell);
+        let projected = &snapshot["export"]["lifecycle"][2]["receipt"];
+        assert_eq!(
+            projected["export_boundary"],
+            serde_json::json!(receipt_boundary)
+        );
+        assert_eq!(
+            projected["live_recording_duration"],
+            serde_json::json!(duration)
+        );
+    }
+}
 
 #[test]
 fn observer_snapshot_projects_live_recording_host_audio_refs_from_real_action_receipt() {

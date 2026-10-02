@@ -508,6 +508,9 @@ fn position_from_bits(bits: u64) -> Option<f64> {
 mod long_window_tests;
 
 #[cfg(test)]
+mod canonical_two_bar_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
 

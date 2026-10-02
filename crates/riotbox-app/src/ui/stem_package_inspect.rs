@@ -217,9 +217,45 @@ fn export_boundary_short_label(boundary: ProductExportBoundary) -> &'static str 
         ProductExportBoundary::ArrangementDawPlacementContractV1 => "arrange-daw",
         ProductExportBoundary::DawSessionW30HookDawprojectV1 => "w30-daw",
         ProductExportBoundary::DawSessionLiveMasterDawprojectV1 => "live-master-daw",
+        ProductExportBoundary::DawSessionLiveMasterDawprojectV2 => "live-master-daw-v2",
         ProductExportBoundary::LiveRecordingReceiptContractV1 => "live-rec",
         ProductExportBoundary::LiveRecordingRuntimeMasterCaptureV1 => "live-master",
         ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV2 => "live-bar",
         ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV3 => "live-bar-v3",
+        ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV4 => "live-bar-v4",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::export_boundary_short_label;
+    use riotbox_core::export_readiness::ProductExportBoundary;
+
+    #[test]
+    fn live_export_labels_keep_historical_and_successor_versions_distinct() {
+        for (boundary, label) in [
+            (
+                ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV2,
+                "live-bar",
+            ),
+            (
+                ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV3,
+                "live-bar-v3",
+            ),
+            (
+                ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV4,
+                "live-bar-v4",
+            ),
+            (
+                ProductExportBoundary::DawSessionLiveMasterDawprojectV1,
+                "live-master-daw",
+            ),
+            (
+                ProductExportBoundary::DawSessionLiveMasterDawprojectV2,
+                "live-master-daw-v2",
+            ),
+        ] {
+            assert_eq!(export_boundary_short_label(boundary), label);
+        }
     }
 }

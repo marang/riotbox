@@ -40,11 +40,14 @@ use std::os::unix::fs::symlink;
 use std::path::PathBuf;
 use tempfile::tempdir;
 
+mod canonical_recording;
+
 fn prepared_live_master_state(root: &std::path::Path) -> (JamAppState, PathBuf) {
     let recording = root.join("recorded-live-master.wav");
     let output = live_master_test_output();
     let mut state = live_master_recording_state();
-    let plan = match state.queue_live_master_recording(1_000, &output, &recording) {
+    // Existing DAW V1 regressions keep an explicitly legacy V2 recording.
+    let plan = match state.queue_legacy_two_bar_recording_fixture(1_000, &output, &recording) {
         LiveMasterRecordingQueueResult::Enqueued(plan) => plan,
         other => panic!("expected live master record plan, got {other:?}"),
     };
@@ -54,6 +57,11 @@ fn prepared_live_master_state(root: &std::path::Path) -> (JamAppState, PathBuf) 
         .commit_live_master_recording(&plan, &live_master_test_outcome(&plan), &health, 2_000)
         .expect("commit synthetic live master");
 
+    attach_generated_recording_lineage(&mut state);
+    (state, recording)
+}
+
+fn attach_generated_recording_lineage(state: &mut JamAppState) {
     let source_id = SourceId::from("synthetic-source");
     let graph_ref = ExportArtifactSourceGraphRef {
         source_id: source_id.clone(),
@@ -114,7 +122,6 @@ fn prepared_live_master_state(root: &std::path::Path) -> (JamAppState, PathBuf) 
             artifact.sha256 = proof_sha.clone();
         }
     }
-    (state, recording)
 }
 
 #[test]

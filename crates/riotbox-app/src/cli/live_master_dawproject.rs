@@ -3,10 +3,16 @@ use crate::cli::model::LaunchMode;
 use crate::cli::observer::UserSessionObserver;
 use crate::cli::observer::launch_summary;
 use crate::cli::observer::timestamp_now;
+use crate::jam_app::JamAppError;
 use crate::jam_app::JamAppState;
 use crate::observer::observer_snapshot;
 use crate::ui::JamShellState;
 use crate::ui::ShellLaunchMode;
+use riotbox_core::action::Action;
+use riotbox_core::action::ActionCommand;
+use riotbox_core::action::ActionParams;
+use riotbox_core::action::DawSessionExportBoundary;
+use riotbox_core::session::ExportReceiptState;
 use serde_json::Value;
 use serde_json::json;
 use std::fs;
@@ -59,13 +65,32 @@ fn live_master_dawproject_execute_summary(
         return Err("not a live-master DAWproject execute launch".into());
     };
     let mut state = JamAppState::from_json_files_for_export_metadata(session_path)?;
-    let summary = match state
-        .commit_and_save_live_master_dawproject_export(destination_path, timestamp_now())
-    {
+    let history_start = state.queue.history().len();
+    let result =
+        state.commit_and_save_live_master_dawproject_export(destination_path, timestamp_now());
+    let summary = export_result_summary(
+        &state,
+        session_path,
+        destination_path,
+        history_start,
+        result,
+    );
+    Ok((summary, JamShellState::new(state, ShellLaunchMode::Load)))
+}
+
+fn export_result_summary(
+    state: &JamAppState,
+    session_path: &Path,
+    destination_path: &Path,
+    history_start: usize,
+    result: Result<ExportReceiptState, JamAppError>,
+) -> Value {
+    match result {
         Ok(receipt) => json!({
             "mode": "live_master_dawproject_execute", "status": "ready", "ready": true,
             "writes_files": true, "mutates_session": true, "observer_events": false,
-            "boundary": crate::jam_app::LIVE_MASTER_DAWPROJECT_ACTION_BOUNDARY_ID,
+            "boundary": state.queue.history_action(receipt.created_by_action)
+                .and_then(dawproject_action_boundary),
             "receipt_boundary": receipt.export_boundary.as_proof_str(),
             "session_path": session_path, "destination_path": destination_path,
             "readiness_blockers": [],
@@ -78,14 +103,30 @@ fn live_master_dawproject_execute_summary(
         Err(error) => json!({
             "mode": "live_master_dawproject_execute", "status": "blocked", "ready": false,
             "writes_files": false, "mutates_session": false, "observer_events": false,
-            "boundary": crate::jam_app::LIVE_MASTER_DAWPROJECT_ACTION_BOUNDARY_ID,
-            "receipt_boundary": "daw_session.live_master_dawproject_v1",
+            "boundary": state.queue.history()[history_start..].iter().rev()
+                .find(|action| matches!(&action.params,
+                    ActionParams::DawSessionExport { destination_path: Some(path), .. }
+                        if Path::new(path) == destination_path))
+                .and_then(dawproject_action_boundary),
+            "receipt_boundary": null,
             "session_path": session_path, "destination_path": destination_path,
             "readiness_blockers": [error.to_string()], "receipt": null,
             "scope_note": "no DAWproject archive or DAW Session receipt was committed",
         }),
-    };
-    Ok((summary, JamShellState::new(state, ShellLaunchMode::Load)))
+    }
+}
+
+fn dawproject_action_boundary(action: &Action) -> Option<DawSessionExportBoundary> {
+    match &action.params {
+        ActionParams::DawSessionExport {
+            boundary:
+                boundary @ (DawSessionExportBoundary::LiveMasterDawprojectV1
+                | DawSessionExportBoundary::LiveMasterDawprojectV2),
+            receipt_id: Some(_),
+            ..
+        } if action.command == ActionCommand::ExportDawSession => Some(*boundary),
+        _ => None,
+    }
 }
 
 fn open_observer(
@@ -165,11 +206,143 @@ fn apply_observer_status(summary: &mut Value, requested: bool, result: &io::Resu
 #[cfg(test)]
 mod tests {
     use super::*;
+    use riotbox_core::action::ActionDraft;
+    use riotbox_core::action::ActionTarget;
+    use riotbox_core::action::ActorType;
+    use riotbox_core::action::CommitBoundary;
+    use riotbox_core::action::Quantization;
+    use riotbox_core::export_readiness::ExportReadinessContract;
+    use riotbox_core::export_readiness::ExportReadinessStatus;
+    use riotbox_core::export_readiness::ExportScope;
+    use riotbox_core::export_readiness::ProductExportBoundary;
+    use riotbox_core::export_readiness::ProductExportDestinationKind;
+    use riotbox_core::export_readiness::ProductExportRole;
+    use riotbox_core::queue::ActionQueue;
+    use riotbox_core::transport::CommitBoundaryState;
     use riotbox_core::{persistence::save_session_json, session::SessionFile};
 
     #[test]
-    fn cli_parses_metadata_only_live_master_dawproject_mode_and_fails_closed_without_a_v2_receipt()
-    {
+    fn successful_summary_uses_receipts_own_action_version_not_latest_action() {
+        let mut queue = ActionQueue::new();
+        let v1_id = queue.enqueue(
+            daw_draft(DawSessionExportBoundary::LiveMasterDawprojectV1),
+            10,
+        );
+        let commit_boundary = CommitBoundaryState {
+            kind: CommitBoundary::Immediate,
+            beat_index: 0,
+            bar_index: 0,
+            phrase_index: 0,
+            scene_id: None,
+        };
+        queue
+            .commit_pending_after_side_effect(v1_id, commit_boundary.clone(), 11, "fixture")
+            .expect("committed V1 Action projection fixture");
+        let v2_id = queue.enqueue(
+            daw_draft(DawSessionExportBoundary::LiveMasterDawprojectV2),
+            12,
+        );
+        queue
+            .commit_pending_after_side_effect(v2_id, commit_boundary, 13, "fixture")
+            .expect("committed V2 Action projection fixture");
+        let state =
+            JamAppState::from_parts(SessionFile::new("summary", "test", "now"), None, queue);
+        for (action_id, boundary, receipt_boundary) in [
+            (
+                v1_id,
+                "live_master_dawproject_v1",
+                ProductExportBoundary::DawSessionLiveMasterDawprojectV1,
+            ),
+            (
+                v2_id,
+                "live_master_dawproject_v2",
+                ProductExportBoundary::DawSessionLiveMasterDawprojectV2,
+            ),
+        ] {
+            let contract = ExportReadinessContract {
+                schema: "riotbox.export_readiness.v1".into(),
+                status: ExportReadinessStatus::Reproducible,
+                proof_schema: "generated-metadata-projection".into(),
+                export_scope: ExportScope::DawSession,
+                boundary: receipt_boundary,
+                pack_id: "generated-metadata-projection".into(),
+                export_role: ProductExportRole::ArrangementManifest,
+                export_artifact: "live.dawproject".into(),
+                source_sha256: "11".repeat(32),
+                export_sha256: "22".repeat(32),
+                normalized_manifest_sha256: "33".repeat(32),
+                unsupported_scopes: vec![],
+            };
+            let receipt = ExportReceiptState::from_readiness_contract(
+                action_id,
+                13,
+                &contract,
+                "live.dawproject",
+                "proof.json",
+                None,
+            );
+            let summary = export_result_summary(
+                &state,
+                Path::new("session.json"),
+                Path::new("live.dawproject"),
+                0,
+                Ok(receipt),
+            );
+            assert_eq!(summary["boundary"], boundary);
+            assert_eq!(summary["receipt_boundary"], receipt_boundary.as_proof_str());
+        }
+    }
+
+    #[test]
+    fn failed_summary_reports_only_this_attempts_selected_boundary_without_a_receipt() {
+        let mut queue = ActionQueue::new();
+        for boundary in [
+            DawSessionExportBoundary::LiveMasterDawprojectV1,
+            DawSessionExportBoundary::LiveMasterDawprojectV2,
+        ] {
+            let id = queue.enqueue(daw_draft(boundary), 10);
+            queue.reject(id, "synthetic preflight failure");
+        }
+        let state =
+            JamAppState::from_parts(SessionFile::new("summary", "test", "now"), None, queue);
+        for (history_start, expected) in [(1, json!("live_master_dawproject_v2")), (2, Value::Null)]
+        {
+            let summary = export_result_summary(
+                &state,
+                Path::new("session.json"),
+                Path::new("live.dawproject"),
+                history_start,
+                Err(JamAppError::InvalidSession(
+                    "synthetic preflight failure".into(),
+                )),
+            );
+            assert_eq!(summary["status"], "blocked");
+            assert_eq!(summary["boundary"], expected);
+            assert_eq!(summary["receipt_boundary"], Value::Null);
+            assert_eq!(summary["receipt"], Value::Null);
+        }
+    }
+
+    fn daw_draft(boundary: DawSessionExportBoundary) -> ActionDraft {
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::ExportDawSession,
+            Quantization::Immediate,
+            ActionTarget::default(),
+        );
+        draft.params = ActionParams::DawSessionExport {
+            export_scope: ExportScope::DawSession,
+            boundary,
+            include_manifest: true,
+            destination_kind: ProductExportDestinationKind::LocalFilePath,
+            destination_path: Some("live.dawproject".into()),
+            receipt_id: Some("source-recording".into()),
+        };
+        draft
+    }
+
+    #[test]
+    fn metadata_only_cli_fails_closed_without_a_supported_recording_receipt() {
         let launch = crate::cli::args::parse_args([
             "--live-master-dawproject-execute".into(),
             "--session".into(),
@@ -182,6 +355,7 @@ mod tests {
             launch.mode,
             LaunchMode::LiveMasterDawprojectExecute { .. }
         ));
+        assert!(launch_summary(&launch).get("boundary").is_none());
 
         let dir = tempfile::tempdir().expect("tempdir");
         let session_path = dir.path().join("session.json");
@@ -201,6 +375,8 @@ mod tests {
         let (summary, _) =
             live_master_dawproject_execute_summary(&blocked).expect("blocked summary");
         assert_eq!(summary["status"], "blocked");
+        assert_eq!(summary["boundary"], Value::Null);
+        assert_eq!(summary["receipt_boundary"], Value::Null);
         assert!(!destination.exists());
     }
 

@@ -45,7 +45,7 @@ impl ExportReceiptState {
             ),
             (DawProjectProof, Json, Some("riotbox-proof.json")),
         ];
-        if !self.is_live_master_dawproject_v1()
+        if !(self.is_live_master_dawproject_v1() || self.is_live_master_dawproject_v2())
             || !self.dawproject_xml_document_ready()
             || self.artifact_set.len() != members.len()
             || self.artifact_path.is_empty()

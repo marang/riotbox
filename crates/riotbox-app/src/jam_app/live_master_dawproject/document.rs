@@ -11,7 +11,7 @@ use dawproject::{MetaData, Project};
 use std::path::Path;
 
 use super::{
-    EMBEDDED_AUDIO_PATH, LIVE_MASTER_DAWPROJECT_PROOF_SCHEMA, input::LiveMasterDawprojectInput,
+    EMBEDDED_AUDIO_PATH, input::LiveMasterDawprojectInput, version::LiveMasterDawprojectVersion,
 };
 use crate::jam_app::{
     JamAppError, LiveMasterRecordingProof,
@@ -20,8 +20,7 @@ use crate::jam_app::{
 use riotbox_core::{
     TimestampMs,
     export_readiness::{
-        ExportReadinessContract, ExportReadinessStatus, ExportScope,
-        LIVE_MASTER_DAWPROJECT_PACK_ID, ProductExportBoundary, ProductExportRole,
+        ExportReadinessContract, ExportReadinessStatus, ExportScope, ProductExportRole,
     },
     ids::{ActionId, CaptureId, ExportReceiptId, SceneId},
     session::{
@@ -76,11 +75,9 @@ pub struct LiveMasterDawprojectProof {
 pub(super) fn build_proof(input: &LiveMasterDawprojectInput) -> LiveMasterDawprojectProof {
     let source: &LiveMasterRecordingProof = &input.proof;
     LiveMasterDawprojectProof {
-        schema: LIVE_MASTER_DAWPROJECT_PROOF_SCHEMA.into(),
+        schema: input.version.proof_schema().into(),
         source_receipt_id: input.source_receipt_id.clone(),
-        source_boundary: ProductExportBoundary::LiveRecordingRuntimeMasterBarWindowV2
-            .as_proof_str()
-            .into(),
+        source_boundary: input.version.recording_boundary().as_proof_str().into(),
         source_action_id: source.action_id,
         session_id: source.session_id.clone(),
         source_proof_sha256: input.source_proof_sha256.clone(),
@@ -116,7 +113,7 @@ pub(super) fn build_proof(input: &LiveMasterDawprojectInput) -> LiveMasterDawpro
     }
 }
 
-pub(super) fn build_metadata() -> MetaData {
+pub(super) fn build_metadata(version: LiveMasterDawprojectVersion) -> MetaData {
     MetaData {
         title: Some("Riotbox Live Master".into()),
         artist: None,
@@ -130,10 +127,12 @@ pub(super) fn build_metadata() -> MetaData {
         genre: Some("rave-punk breakbeat".into()),
         copyright: None,
         website: None,
-        comment: Some(
-            "Recorded Riotbox live master; embedded audio is byte-identical to its V2 receipt."
-                .into(),
-        ),
+        comment: Some(match version {
+            LiveMasterDawprojectVersion::LegacyV1 =>
+                "Recorded Riotbox live master; embedded audio is byte-identical to its V2 receipt.",
+            LiveMasterDawprojectVersion::CanonicalV2 =>
+                "Recorded Riotbox live master; embedded audio is byte-identical to its V4 receipt.",
+        }.into()),
     }
 }
 
@@ -324,10 +323,10 @@ pub(super) fn build_receipt(
     let contract = ExportReadinessContract {
         schema: riotbox_core::export_readiness::EXPORT_READINESS_CONTRACT_SCHEMA.into(),
         status: ExportReadinessStatus::Reproducible,
-        proof_schema: LIVE_MASTER_DAWPROJECT_PROOF_SCHEMA.into(),
+        proof_schema: input.version.proof_schema().into(),
         export_scope: ExportScope::DawSession,
-        boundary: ProductExportBoundary::DawSessionLiveMasterDawprojectV1,
-        pack_id: LIVE_MASTER_DAWPROJECT_PACK_ID.into(),
+        boundary: input.version.receipt_boundary(),
+        pack_id: input.version.pack_id().into(),
         export_role: ProductExportRole::ArrangementManifest,
         export_artifact: destination.clone(),
         source_sha256: input.source_wav_sha256.clone(),

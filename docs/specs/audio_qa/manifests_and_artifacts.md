@@ -811,12 +811,16 @@ of Session/Core truth rather than second readiness engines.
     lifecycle path stays distinct from read-only live-recording receipt
     projection: it creates no receipt, writes no destination, and reports the
     explicit future-capture-writer reason.
-  - runnable live recording now uses the separately versioned RuntimeMaster
-    V1/V2 contracts in the Action Lexicon and Session spec. V2 owns the exact
+  - runnable live recording uses the separately versioned RuntimeMaster
+    contracts in the Action Lexicon and Session spec. Historical V2 owns the exact
     real post-limiter two-bar callback recording, timing window, float32 WAV,
     proof, receipt and host-health gates; it does not change the reserved
     boundary above. RIOTBOX-1492's exact composite has a bounded human keep,
     not a blanket pass for recordings or separate stems.
+    RBX-422/V3 adds bounded eight/sixteen-bar implementation evidence;
+    RBX-423/V4 makes future two-bar proof and readiness use one canonical
+    runtime-f32 geometry without reinterpreting V2. Generated clock/PCM tests
+    are not new host-device, listening, source-general or hardness evidence.
   - RBX-373 corrects the shared writer's generated-type XML roots. New W-30
     and live-master archives require `dawproject_xml_document_v1` as well as
     archive readback. Typed serializer/reader agreement is not external schema
@@ -835,6 +839,11 @@ of Session/Core truth rather than second readiness engines.
     A technical-only handoff of unchanged reviewed audio requires byte/lineage
     evidence, not repeated taste listening. Actual DAW playback remains
     unverified until separately demonstrated in a host.
+    RBX-423 adds the distinct `live_master_dawproject_v2` for a ready V4
+    two-bar receipt through that same archive/readback/XML path. Existing V2
+    recording to DAW V1 remains unchanged. Exact source and handoff versions
+    must agree; no older supported take may replace an invalid latest one.
+    The new format does not inherit a host-import or human pass.
   - new evidence required before readiness: one written WAV per claimed stem
     role, per-stem format metrics, per-stem non-silence, per-stem hash
     stability across repeated writer/render output, per-stem source/capture or
