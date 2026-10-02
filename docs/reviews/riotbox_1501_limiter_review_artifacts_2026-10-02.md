@@ -110,3 +110,110 @@ fixture/preflight rerun passes before the clean pre-access commit:
 `/tmp/riotbox-1501-artifacts-frozen-fixtures.log`. The accepted pinned metadata
 preflight also passes without audio access. No protocol/algorithm tuning follows
 this freeze; execution results are recorded separately below.
+
+## Single execution and exact artifacts
+
+Execution occurred from clean pre-access commit
+`a38aef8199c659573cfd6df6ea78f87c5f55ecb0`; its bound native binary SHA-256
+`573faddf9e9e418b6f7a0509de10e847112ac410ae7e30c09fd0574244d4dde0`
+is unchanged from V2. The one session
+`55d17a71-6186-4590-827e-39265c3a39db` ran
+2026-10-02 10:54:07.826718–10:54:16.799420 UTC and completed successfully.
+The access log records exactly one verified Sparse file delivered to the owner,
+no directory discovery and no Holdout audio reads. The unchanged executor used
+one source decode, three full mix passes, nine policy outputs and one ordinary
+derived capture. Exactly three review WAVs were written, with zero playbacks.
+No implementation, contract, algorithm or threshold was edited after access.
+
+Retained ignored evidence under
+`artifacts/development/riotbox-1501/review-artifacts-v1/`:
+
+- `artifact-report.json` SHA-256
+  `d043da4727c8f4f3751e0305ee37bf16ed8876f1666d6ddf513c32aff6a24ea0`.
+- `development-access.json` SHA-256
+  `e243a1867fc1cd9e9574e85eca29d32eeb9034d4ccb7abdaa74dd376b6e52a58`.
+- Existing structured `listening-review/review.json` binds the report and all
+  three WAV identities; `prompt.md` supplies the neutral one-bar review purpose.
+  After adding only the completed independent-assessment reference, review SHA-256
+  is `8dfa48ed44872dd57a934a5c31ccdf23fa1be913189063ffeb990eab93f5cfb0`
+  (initial generated review: `d95bc0a9c18c97b4b67e5d1841825dfab2bde817d96f3e2478804971b4e27014`).
+  Raw report/WAV bytes and every human verdict field remain unchanged.
+
+All three full input hashes and nine output hashes exactly reproduce V2;
+repeat/partition/baseline controls pass. Complete preparation also matches after
+only the declared comparison-copy filename token normalization. The capture's
+encoded content identity remains
+`sha256:396744f6e6574204e98d3d59bb921617a9bc3a2a54cfabf60c337de3da9e7bdc`.
+Neither an old capture nor another original was hydrated.
+
+| File | Exact WAV SHA-256 |
+| --- | --- |
+| `A.wav` | `5a346e98ad5c647e87894e3570e27a38d6c960710ca16b7ce148ea0a4ca9d6a1` |
+| `B.wav` | `7a4fac4c4c03a71d4741708380faaea46e49fd1f05d997ab1130f49853a4628f` |
+| `C.wav` | `5d7fff7b0b90ab05c8660c51236adf65d3004d3d9212f05680e3337054a431c4` |
+
+All files are 768092 bytes, float32/48000 Hz/stereo/96000 frames/2.0 seconds;
+ffprobe and decoding operate on each exact hashed file buffer. Readback is
+sample-bit-identical to the corresponding presented crop. All files are finite,
+active, with zero clipped or exactly-zero samples. Tool versions are ffmpeg and
+ffprobe n9.0.2; no player or device is opened.
+
+One shared f32 gain `0.6517586708068848` (bits `3f26d9a8`, −3.718264 dB)
+protects the presentation; no per-policy gain or production setting changes.
+The maximum estimated raw-crop intersample peak was +2.518264 dBTP, which is
+why sample-peak-only protection would have been insufficient for presentation.
+The finite estimators remain diagnostic, not hearing/device-safety guarantees.
+
+| Policy | Sample peak | RMS | LUFS | FFT estimate dBTP | ffmpeg peak dBFS |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| A | 0.641982 | 0.174520 | −15.8 | −1.200000 | −1.3 |
+| B | 0.641982 | 0.174543 | −15.8 | −1.201114 | −1.3 |
+| C | 0.620800 | 0.174363 | −15.8 | −1.342408 | −1.4 |
+
+Full two-second candidate-minus-A RMS is 0.000150273 for B and 0.000863421
+for C; relative delta RMS is 0.000861066 / 0.004947417, with correlation
+0.999999638 / 0.999988155. Fixed attack/body/recovery windows and each channel
+are measured separately, including spectral-power-fraction deltas. These are
+real numeric differences, not proof of audibility, preference or hardness.
+The report's status is `artifact_preflight_complete_human_unverified`;
+all human/taste/demo fields remain unverified and production remains A.
+
+## Independent artifact-bound pre-listen assessment
+
+Recorded before any playback or listener feedback, against exactly the three
+WAV hashes in the table above and report `d043da47…6a24ea0`. An independent
+reviewer audited only the authorized result/access/review metadata and retained
+zero findings. The exact-file technical evidence comes from the publisher's
+hash-bound probe/decode/measurement of those WAV bytes, not from agent listening.
+No audio was opened by the reviewer and no earlier human verdict is transferred.
+
+Technical validity passes. Musical statements below are predictions, not human
+evidence, and stay out of the factual listener brief:
+
+- Assignment and role: correctly assigned one-bar composite of W-30 source
+  transformation, TR-909 transient lead and MC-202 punctuation. Monitor/tap are
+  silent; no bass role is assigned. The intended composite role is retained.
+- Strongest expected element: TR-909-led drum/transient character follows from
+  the declared recipe, not an independently heard judgment.
+- Source/hook: exact source/capture identity and preparation survive; audible
+  recognizability and hook quality are unverified. One bar cannot prove the
+  generic two-bar hook criterion.
+- Groove: identical preparation/timing predicts rhythmic equivalence; musical
+  feel remains unobserved.
+- Clarity: small spectral-fraction changes predict broadly similar coloration;
+  there is no measured basis for calling a version clearer.
+- Dynamics/impact: C reduces sample peaks more than B, which does not establish
+  improved impact. Full-window delta RMS relative to A is B 0.0861%, C 0.4947%;
+  fixed attack-window values are 0.2000% and 0.8868%.
+- Changed: limiter policy. Unchanged: source, committed actions/timing, window,
+  contributors and common presentation gain.
+- Likely failure mechanism: perceptual indistinguishability or inconclusive
+  preference, particularly A/B; the composite can mask localized differences.
+
+The reviewer judges a neutral diagnostic comparison useful, with **weak/uncertain
+expected discrimination**. This is neither a human `weak` verdict nor a policy
+winner. Accept “no clear difference” without forcing a preference or regenerating
+the files. The next dependent step needs a fresh readiness confirmation after
+the factual brief, then bounded playback and verified stop/silence. No playback
+is authorized by this preparation phase. Human verdict, demo readiness, musical
+quality, hardness and product calibration remain unverified/open.
