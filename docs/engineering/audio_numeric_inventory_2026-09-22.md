@@ -22,7 +22,7 @@ human listening was used. Historical evidence below is cited, not rerun.
 | Existing-render path assumed 44.1-kHz source and a 480-frame window | Compare source format to stored Graph; derive window frames from output rate and recorded milliseconds. The generator's 48-kHz output remains unchanged. |
 | Dense and first-playable wrappers duplicated different limiter checks | One `scripts/exact_mix_numeric.jq` predicate, preserving the categorical **zero limited samples** contract and rejecting malformed counts. |
 | Twelve identical suite producer/validator thresholds had two owners | Move unchanged to `scripts/professional_output_numeric_policy.py`; explicit imports, synthetic metadata regression at inclusive boundaries. |
-| Limiter knee/ceiling have no located calibration rationale | Explicit provisional acceptance in RBX-379 / audio core spec; **RIOTBOX-1501** owns bounded calibration. No retuning here. |
+| Limiter knee/ceiling lacked a located calibration rationale at audit | RBX-379 provisionally retained them; **RIOTBOX-1501 / RBX-421** now records measured baseline retention after the bounded comparison. No retuning or optimality claim. |
 | Hook/Chop spec says two reverse gestures; suite's named floor is one | Audit finding corrected on 2026-09-30 by **RIOTBOX-1502 / RBX-383**: one shared two-reverse count contract, unchanged renderer. Historical one-reverse passes retain their weaker meaning; no verdict is relabeled. |
 | Other repeated numbers (`0.92`, `0.985`, `0.10`, `1e-5`) | Keep separate when units/semantics differ. Do not couple waveform similarity, safety, silence, window activity, normalized controls or numerical tolerance. |
 
@@ -39,8 +39,8 @@ Owner: [`public_api_shell.rs`](../../crates/riotbox-audio/src/runtime/public_api
 
 | Semantic name | Kind / unit / scope | Comparator and provenance |
 | --- | --- | --- |
-| `MASTER_BUS_LIMITER_THRESHOLD = 0.92` | Safety, linear absolute sample amplitude, shared master bus | `abs(sample) <= knee` unchanged; strictly above enters stateless tanh knee. Inherited provisional engineering choice, RBX-379. |
-| `MASTER_BUS_LIMITER_CEILING = 0.985` | Safety, linear absolute sample amplitude, same bus | Shaped magnitude capped at ceiling; not a true-peak limit. Inherited provisional, not Alpha correlation. |
+| `MASTER_BUS_LIMITER_THRESHOLD = 0.92` | Safety, linear absolute sample amplitude, shared master bus | `abs(sample) <= knee` unchanged; strictly above enters stateless tanh knee. Inherited value retained as bounded engineering baseline, RBX-421; not a perceptual optimum. |
+| `MASTER_BUS_LIMITER_CEILING = 0.985` | Safety, linear absolute sample amplitude, same bus | Shaped magnitude capped at ceiling; not a true-peak limit. Retained by RBX-421 with nominal 0.015 sample headroom; not Alpha correlation. |
 | `CLIP_THRESHOLD = 1.0` | Measurement classification, normalized full scale | `abs(sample) >= 1.0` counts a clip, equality included; signal-domain definition. |
 | `NEAR_CLIP_THRESHOLD = 0.98` | Diagnostic count, normalized sample amplitude | `abs(sample) >= 0.98`, equality included; provisional warning band, not limiter onset. |
 | `peak_abs`, `rms`, `limited_sample_count` | Observed artifact values, amplitude / sample count | Generated per exact render, never tuning targets. Historical `0.916060388...` is a RIOTBOX-1402 observation, not a constant. |
@@ -51,10 +51,14 @@ source-monitor hot-sum tests; existing RIOTBOX-1402 evidence in the guide.
 (RIOTBOX-1550 / RBX-417) adds signed-neighbor/overload/partition and named
 five-owner synthetic exact-mix evidence. A write/count requires the computed
 delta to be strictly greater than `f32::EPSILON`; this is not above-knee count.
-The unchanged values remain provisional, not human-calibrated.
-Change rule: shared runtime safety requires buffer/parity proof and the
-RIOTBOX-1501 versioned calibration protocol before audible tuning. No inferred
-speaker, hearing-safety, intersample-peak or device guarantee.
+The later [RIOTBOX-1501 retention decision](../reviews/riotbox_1501_limiter_retention_decision_2026-10-02.md)
+adds three bounded Development cases and an exact human comparison with no
+audible policy distinction or preference. It accepts keeping these values,
+not perceptual optimality, source-general equivalence or musical quality.
+Change rule: shared runtime safety requires buffer/parity proof and a new
+scoped decision/versioned comparison before audible tuning; consumed historical
+protocols remain immutable. No inferred speaker, hearing-safety, intersample-
+peak or device guarantee.
 
 ### 2. Callback capture bounds
 
