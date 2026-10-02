@@ -81,9 +81,70 @@ that window. No policy or source access was selected from test outcomes.
   child failure and exclusion of policy differences outside the preselected
   future listening window.
 
-## Execution state
+## One bounded execution
 
-Not yet executed. The reviewed protocol is accepted under RBX-418 and final
-source-free verification passed; execution still requires a clean commit. No real source,
-candidate output, listening artifact, device or human review was used. This
-report is not a calibration decision; RIOTBOX-1501 remains In Progress.
+Execution succeeded on Linux at 2026-10-02 09:09:46–09:10:06 UTC, after the
+reviewed implementation was committed with a clean worktree:
+
+- Implementation: `2b24c44d974f58487aa3f23b3653debc23d1d6d2`.
+- Protocol SHA-256: `c9d72c910aea77045a25c30ecc8a5bfec2e66481a9762aa2ba8827aa0f94a42d`.
+- Native feature-build binary SHA-256: `13fe903bc262617b97eb6c09c2370b29ef77cc8d469da94c8d7b210961d3d557`.
+- Access session: `08c1a823-3d62-40aa-acdb-4221e469b13f`.
+- Local report: `artifacts/development/riotbox-1501/calibration-v1/comparison.json`;
+  SHA-256 `7f8cecb384357b2ea725ef916707320c51299f1d26adf577df2e644b4de206d8`.
+- Local access log: `artifacts/development/riotbox-1501/calibration-v1/development-access.json`;
+  SHA-256 `00fb0f950e311151cfb223ffa36afd58b691562414d7920aca46a0dc0e35f414`.
+- Command exited 0; `/tmp/riotbox-1501-development-execution.log`.
+
+The access log records exactly the three declared originals, every expected
+hash matched, and no directory discovery. Dense was PCM24 / 162831 native
+frames; Tonal and Sparse were PCM16 / 176400 frames each, all 44.1-kHz stereo.
+These actual widths are results, not retrospective changes to admission.
+The access layer deliberately says `not_evaluated_by_access_layer`; technical
+comparison success comes from the separate owner report, not source admission.
+
+All three cases passed 128-frame repeat, 257-frame partition and production-A
+bit parity. Dense/Tonal each retained six committed actions and the declared
+capture window; Sparse retained eleven and beat-17 W-30/TR-909/MC-202 ownership.
+Three ordinary derived captures were produced. Nine RuntimeMix passes and
+eighteen in-memory policy outputs stayed within the budget; no comparison WAV,
+original reopen, analyzer pass, Holdout/commercial access or playback occurred.
+
+## Measured result and limits
+
+Values below are the original Rust f32 reports, rounded for display. Full f64
+descriptors, local windows and raw-f32 output identities remain in the report.
+
+| Case | Clean peak | Clean RMS | Fixed 2x peak | Actual writes A/B/C, clean and 2x |
+| --- | ---: | ---: | ---: | --- |
+| Dense | 0.399897 | 0.069313 | 0.799794 | 0 / 0 / 0 |
+| Tonal | 0.268649 | 0.107563 | 0.537297 | 0 / 0 / 0 |
+| Sparse | 0.391687 | 0.064179 | 0.783375 | 0 / 0 / 0 |
+
+Every clean path had positive activity, zero pre/post clips and zero modified
+samples; Sparse retained its minimum RMS gate. In **every** source/condition,
+A/B/C outputs were bit-identical, had identical raw-f32 hashes and zero deltas.
+Even the fixed 2x challenges remained below the lowest knee of 0.92. Thus this
+run supports clean-path preservation for these exact gestures, but **does not
+exercise source-backed protection or discriminate between policies**. The
+synthetic overload controls do not fill that musical-evidence gap.
+
+The preregistered Sparse two-second future window likewise has no protection
+or policy difference. No listening artifact or human test is warranted for
+identical PCM. No gain, source, recipe, window, threshold or measurement was
+adjusted after these results; there was no retry.
+
+Final technical status is `technical_comparison_complete_no_policy_selection`;
+`human_verdict=unverified`, `quality_proof=false`. Production remains provisional
+A, not an optimum selected by this run. RIOTBOX-1501 remains incomplete and
+must not be archived as calibrated. Any further source-backed protection
+experiment needs a new version, Decision and explicit bounded source-access
+phase; it cannot silently extend this consumed one-session budget.
+
+Independent post-result evidence audit retained zero findings: exact protocol,
+report and access-log hashes; all three admitted identities; nine parity flags;
+6/6/11 accepted commit records; eighteen zero-write/zero-clip outputs with
+input-identical hashes; and the unobserved fixed listening window were checked.
+Only the two permitted result JSONs and code/docs were read, never originals or
+capture audio. The only post-execution repository changes are this evidence
+summary and its numeric-guide route; the accepted algorithm/contract is intact.
