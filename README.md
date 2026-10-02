@@ -649,6 +649,109 @@ So if the first recipe feels too similar every run, that does **not** mean
 nothing is working. It usually means you have learned the bounded Golden Path
 and should now try a different lane, source, or scene strategy.
 
+## How Riotbox Works
+
+Riotbox connects source analysis, performer actions, persistent session state,
+and realtime audio through one shared architecture. Analysis provides musical
+evidence; actions turn that evidence into explicit performance decisions; the
+audio runtime renders the resulting state.
+
+```mermaid
+flowchart TB
+    Source["Source WAV"]
+
+    subgraph Preparation["Source preparation · outside realtime"]
+        Analysis["Sidecar analysis"]
+        Graph["Source Graph<br/>Identity · timing · sections · candidates"]
+        Cache["Decoded audio cache"]
+        Analysis --> Graph
+    end
+
+    Source --> Analysis
+    Source --> Cache
+
+    subgraph Control["Performance control · riotbox-app + riotbox-core"]
+        Input["TUI gesture or accepted Ghost suggestion"]
+        Action["Typed ActionCommand<br/>Parameters · target · quantization"]
+        Queue["ActionQueue<br/>Wait for the required commit boundary"]
+        Session["Session<br/>Lane state · captures · scenes · action history"]
+        Projection["App projection<br/>Prepare audio render states"]
+
+        Input --> Action --> Queue --> Session --> Projection
+    end
+
+    Graph -. "Evidence for source-backed decisions" .-> Action
+    Graph -. "Source context" .-> Projection
+    Session --> Persistence["Save · restore · replay"]
+
+    subgraph Realtime["Realtime audio · riotbox-audio"]
+        Render["Render active lanes<br/>Source Monitor · W-30 · TR-909 · MC-202"]
+        Mix["Mixing and monitor routing"]
+        Limiter["Master limiter"]
+
+        Render --> Mix --> Limiter
+    end
+
+    Projection --> Render
+    Cache --> Render
+    Limiter --> Output["Audio device"]
+
+    Render -. "Transport timing" .-> Queue
+```
+
+The **Source Graph** describes the recording: its identity, timing evidence,
+structure, candidate material, and analysis confidence. Decoded audio lives in
+audio caches and supplies the actual samples used for playback. Captured and
+reused audio is tracked through Session capture lineage.
+
+The **Session** holds the durable performance state, including capture lineage,
+lane settings, scenes, committed actions, and replay information. `JamAppState`
+coordinates these models and prepares their audio projections.
+
+The **action lifecycle** makes musical changes deliberate. A gesture becomes a
+typed command, enters the queue, and commits according to its policy:
+immediately or at a beat, bar, phrase, or other supported boundary. Queue status
+and committed results remain visible to the performer.
+
+The **realtime boundary** keeps playback independent of analysis, Ghost
+reasoning, disk operations, and UI rendering. The callback consumes prepared
+render states and available audio, renders the active lanes, applies monitor
+routing, and limits the master output.
+
+| Crate | Responsibility |
+| --- | --- |
+| [`riotbox-app`](crates/riotbox-app/) | Terminal interface, gesture handling, application coordination, and projection into audio render states |
+| [`riotbox-core`](crates/riotbox-core/) | Source Graph, typed actions, queue semantics, transport models, Session, persistence, and replay |
+| [`riotbox-audio`](crates/riotbox-audio/) | Source playback, W-30 sample transformations, TR-909 drum rendering, MC-202 voice rendering, mixing, and audio callbacks |
+| [`riotbox-sidecar`](crates/riotbox-sidecar/) | Protocol and process communication with the analysis sidecar |
+
+For example, pressing `f` follows this path:
+
+```text
+Press f
+  create Tr909FillNext action
+    target: TR-909 lane
+    quantization: next bar
+  enqueue action
+    show pending intent on Jam
+  reach the next bar boundary
+    commit action and update Session state
+    prepare the corresponding TR-909 render state
+  audio callback
+    render the fill according to the active monitor route
+    mix and limit the output
+```
+
+If a source-backed operation lacks the required audio or trusted timing,
+Riotbox exposes an unavailable or degraded state and fails closed rather than
+inventing replacement music. Source monitoring remains a separate route from
+generated-lane eligibility.
+
+See the [Source Graph](docs/specs/source_graph_spec.md),
+[Action Lexicon](docs/specs/action_lexicon_spec.md),
+[Session](docs/specs/session_file_spec.md), and
+[Audio Core](docs/specs/audio_core_spec.md) specs for the detailed contracts.
+
 ## Repo Map
 
 - [`docs/`](docs/) — specs, decision log, workflow, and review artifacts
@@ -656,6 +759,7 @@ and should now try a different lane, source, or scene strategy.
 - [`crates/riotbox-app`](crates/riotbox-app/) — shell, app orchestration, runtime-facing state
 - [`crates/riotbox-core`](crates/riotbox-core/) — core models, queue, transport, session, action lexicon
 - [`crates/riotbox-audio`](crates/riotbox-audio/) — callback-side audio/runtime seams
+- [`crates/riotbox-sidecar`](crates/riotbox-sidecar/) — analysis protocol and process communication
 - [`data/test_audio`](data/test_audio/) — source links and local-test audio notes
 
 ## Product Status
