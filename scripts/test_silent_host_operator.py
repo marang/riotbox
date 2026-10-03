@@ -20,7 +20,7 @@ from test_silent_host_routes import fixture
 
 
 PROTOCOL = load_protocol(Path(__file__).resolve().parents[1]
-                         / "docs/benchmarks/silent_host_observation_v1.json")
+                         / "docs/benchmarks/silent_host_observation_v2.json")
 
 
 class CloseFailureLog:
@@ -190,6 +190,51 @@ class OperatorTests(unittest.TestCase):
             with self.assertRaises(subprocess.TimeoutExpired):
                 HostCommands(0.01).snapshot()
 
+    def test_metadata_text_preserves_empty_short_module_argument_columns(self):
+        output = subprocess.CompletedProcess([], 0, "7\tmodule-always-sink\t\t\n", "")
+        with patch("run_silent_host_probe.subprocess.run", return_value=output):
+            self.assertEqual(HostCommands(3).text(["generated-metadata"]),
+                             "7\tmodule-always-sink\t\t")
+
+    def test_active_route_serial_change_is_rejected_even_with_identical_ids(self):
+        class ReplacedNodeHost(GeneratedHost):
+            def snapshot(self):
+                data = super().snapshot()
+                if len(data) > 1 and self.route_calls > 1:
+                    data[2]["info"]["props"]["object.serial"] = 4000
+                return data
+
+        host = ReplacedNodeHost(self.prefix.with_suffix(".stdout.ndjson"))
+        with self.assertRaisesRegex(EvidenceError, "admitted process route changed"):
+            run_program(generated_command(), self.prefix, host,
+                        self.sink, self.protocol, os.environ.copy())
+        first = json.loads(self.prefix.with_suffix(".stdout.ndjson").read_text().splitlines()[0])
+        self.assertFalse(Path(f"/proc/{first['pid']}").exists())
+
+    def test_generated_process_teardown_keeps_original_lifetime_when_id_is_recycled(self):
+        for kind in ("Client", "Node"):
+            with self.subTest(replacement=kind):
+                prefix = self.prefix.with_name(f"reused-{kind}")
+
+                class RecycledIdHost(GeneratedHost):
+                    def snapshot(self):
+                        data = super().snapshot()
+                        if len(data) == 1 and self.route_calls > 1:
+                            data.append({
+                                "id": 30, "type": f"PipeWire:Interface:{kind}",
+                                "info": {"props": {"object.serial": 4000,
+                                                   "application.process.id": 9876,
+                                                   "media.class": "Audio/Sink"}},
+                            })
+                        return data
+
+                result = run_program(generated_command(), prefix,
+                                     RecycledIdHost(prefix.with_suffix(".stdout.ndjson")),
+                                     self.sink, self.protocol, os.environ.copy())
+                self.assertEqual(result["route"]["node"], {"node_id": 30, "serial": 3000})
+                self.assertEqual(result["result"]["sample_count"], 1)
+                self.assertFalse(Path(f"/proc/{result['pid']}").exists())
+
     def test_failed_stream_removal_retains_typed_attribution_after_successful_process_exit(self):
         with patch("run_silent_host_probe.require_removed", side_effect=EvidenceError("node remains")):
             with self.assertRaises(UnverifiedStreamCleanup) as captured:
@@ -229,13 +274,15 @@ class OwnedSinkCleanupTests(unittest.TestCase):
                 self.own_present = True
                 self.commands = []
 
-            def json(self, command):
-                items = [{"index": 7, "name": "module-null-sink", "argument": "sink_name=unrelated"}]
-                if self.own_present:
-                    items.append({"index": 42, "name": "module-null-sink", "argument": "sink_name=owned-test channels=2"})
-                return items
-
             def text(self, command):
+                if command == ["pactl", "--format=text", "list", "short", "modules"]:
+                    rows = "7\tmodule-null-sink\tsink_name=unrelated\t\n"
+                    if self.own_present:
+                        rows += ("42\tmodule-null-sink\tsink_name=owned-test channels=2 "
+                                 "channel_map=front-left,front-right\t\n")
+                    return rows
+                if command != ["pactl", "unload-module", "42"]:
+                    raise AssertionError(command)
                 self.commands.append(command)
                 self.own_present = False
                 return ""

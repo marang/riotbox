@@ -11,7 +11,7 @@ from silent_host_evidence import (
 
 
 PROTOCOL = load_protocol(Path(__file__).resolve().parents[1]
-                         / "docs/benchmarks/silent_host_observation_v1.json")
+                         / "docs/benchmarks/silent_host_observation_v2.json")
 
 
 def transcript():

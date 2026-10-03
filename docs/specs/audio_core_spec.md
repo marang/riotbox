@@ -913,6 +913,13 @@ ephemeral evidence. Generated tests never open CPAL. Even a successful attempt
 is only sampled silent virtual-endpoint evidence, not completion of the soak,
 loaded-runtime, physical-device, musical or release gates above.
 
+V1's actual attempt is consumed and failed. RIOTBOX-1567 / RBX-437 repairs
+[Node lifetime and Pulse module identity in V2](../benchmarks/silent_host_observation_v2.md)
+without changing the Rust driver, runtime or any operational budget. This is
+generated-only verification; the normal host-launch entry point is disabled.
+The original evidence is not upgraded, and another host attempt requires a
+separate prospective phase and owner.
+
 ---
 
 ## 16. Open Follow-Ups

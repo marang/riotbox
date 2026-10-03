@@ -30,6 +30,10 @@ class AttemptTests(unittest.TestCase):
                     return "generated-revision"
                 if command[0] == "loginctl":
                     return f"Active=yes\nRemote=no\nUser={os.getuid()}"
+                if command == ["pactl", "--format=text", "list", "short", "modules"]:
+                    return ("42\tmodule-null-sink\tsink_name=riotbox_silent_host_v2_fixture "
+                            "channels=2 channel_map=front-left,front-right\t\n"
+                            if self.created and not self.unloaded else "")
                 if command[:2] == ["pactl", "load-module"]:
                     self.created = True
                     return "42"
@@ -41,14 +45,11 @@ class AttemptTests(unittest.TestCase):
             def json(self, command):
                 if command[-1] == "info":
                     return {"is_local": "yes", "server_name": "PipeWire generated", "host_name": "fixture"}
-                if command[-1] == "modules":
-                    return ([{"name": "module-null-sink", "argument": "sink_name=riotbox_1566_fixture",
-                              "index": 42}] if self.created and not self.unloaded else [])
                 raise AssertionError(command)
 
             def snapshot(self):
                 data = fixture()[:1]
-                data[0]["info"]["props"]["node.name"] = "riotbox_1566_fixture"
+                data[0]["info"]["props"]["node.name"] = "riotbox_silent_host_v2_fixture"
                 return data if self.created and not self.unloaded else []
 
             def default_state(self):
@@ -57,9 +58,10 @@ class AttemptTests(unittest.TestCase):
         host = Host()
         with tempfile.TemporaryDirectory(prefix="riotbox-attempt-fixture-") as directory:
             root = Path(directory)
-            protocol = root / "docs/benchmarks/silent_host_observation_v1.json"
+            protocol = root / "docs/benchmarks/silent_host_observation_v2.json"
             protocol.parent.mkdir(parents=True)
-            protocol.write_bytes((operator.ROOT / "docs/benchmarks/silent_host_observation_v1.json").read_bytes())
+            protocol.write_bytes((operator.ROOT / "docs/benchmarks/silent_host_observation_v2.json").read_bytes())
+            owner = root / "generated-attempt"
             for name in ("cpal_spike", "silent_host_probe"):
                 binary = root / "target/debug" / name
                 binary.parent.mkdir(parents=True, exist_ok=True)
@@ -74,9 +76,9 @@ class AttemptTests(unittest.TestCase):
                 stack.enter_context(patch.dict(os.environ, {"XDG_SESSION_ID": "generated", "XDG_RUNTIME_DIR": "/run/user/1000"}))
                 with OperatorInterrupts() as interrupts:
                     with self.assertRaises(type(error)):
-                        operator.execute_attempt(interrupts)
+                        operator.execute_attempt(interrupts, owner=owner)
                 launch.assert_called_once()
-                result = json.loads((root / "artifacts/development/riotbox-1566/attempt-01/result.json").read_text())
+                result = json.loads((owner / "result.json").read_text())
                 return host, result
 
     def test_unverified_group_or_stream_removal_retains_containment_and_failure_attribution(self):
