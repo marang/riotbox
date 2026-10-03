@@ -887,6 +887,24 @@ Benchmark tie-ins:
 - action queue lag
 - time to first playable audio state
 
+### Bounded Output Probe Observation V1
+
+RBX-435 / RIOTBOX-1565 makes the existing source-free `cpal_spike` diagnostic
+fail closed for automation. `Ok` requires Running or Stopped health, at least
+one observed output callback, zero stream-error/scratch-overflow counters and
+no retained stream-error detail. Failure precedence is stream error/detail,
+scratch overflow, lifecycle, then missing callback observation. The summary
+preserves both error counters and context; process exit is zero only for typed
+`Ok`, nonzero for `Failed` or `NotRun`.
+
+The silent defaults, fixed 250 ms duration and snapshot-before-stop lifetime
+are unchanged. Zero callbacks means observation was not established in that
+window, not proof of a broken backend. Gap metrics have no success threshold;
+this is not latency, xrun, continuous-health, route-isolation, audibility or
+endurance qualification. Tag actual observations as sandbox or real session;
+source-free unit/reporting tests never open a device. Historical observations
+are not upgraded by this contract, and RIOTBOX-1041 still owns real-session soak.
+
 ---
 
 ## 16. Open Follow-Ups
