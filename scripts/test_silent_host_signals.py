@@ -77,8 +77,8 @@ class OperatorSignalTests(unittest.TestCase):
         code = """
 import json, os, sys
 from pathlib import Path
-from unittest.mock import patch
 import run_silent_host_probe as operator
+from silent_host_signals import OperatorInterrupts
 from test_silent_host_operator import GeneratedHost, PROTOCOL, generated_command
 from test_silent_host_routes import fixture
 from silent_host_routes import find_sink
@@ -101,8 +101,12 @@ def execute(interrupts):
     finally:
         with interrupts.cleanup():
             (owner / 'outer-cleanup').touch()
-with patch.object(operator, 'execute_attempt', execute):
-    raise SystemExit(operator.main(['--execute-reviewed-attempt']))
+try:
+    with OperatorInterrupts() as interrupts:
+        execute(interrupts)
+except (Exception, KeyboardInterrupt) as error:
+    print(str(error), file=sys.stderr)
+    raise SystemExit(1)
 """
         environment = dict(os.environ, PYTHONPATH=str(Path(__file__).resolve().parent))
         for signum in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT):

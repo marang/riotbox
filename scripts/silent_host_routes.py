@@ -1,4 +1,4 @@
-"""Pure, fail-closed PipeWire route admission for Silent Host Observation V1."""
+"""Pure, fail-closed PipeWire lifetime admission for Silent Host Observation V2."""
 
 from dataclasses import dataclass
 
@@ -12,6 +12,32 @@ class SinkIdentity:
     node_id: int
     serial: int
     name: str
+
+
+@dataclass(frozen=True)
+class NodeIdentity:
+    node_id: int
+    serial: int
+
+    def __post_init__(self):
+        if any(type(value) is not int or value < 0
+               for value in (self.node_id, self.serial)):
+            raise RouteError("node identity requires nonnegative integer ID and serial")
+        if self.node_id >= 2**32 or self.serial >= 2**64:
+            raise RouteError("node identity exceeds the PipeWire ID/serial integer domain")
+
+    @classmethod
+    def from_node(cls, item):
+        if not kind(item, "Node"):
+            raise RouteError("stream identity must name a Node")
+        return cls(number(item["id"]), number(props(item).get("object.serial")))
+
+
+@dataclass(frozen=True)
+class RouteIdentity:
+    client_id: int
+    node: NodeIdentity
+    link_ids: tuple[int, int]
 
 
 def number(value):
@@ -63,6 +89,26 @@ def attached_streams(snapshot, sink):
     return [number(item["id"]) for item in indexed(snapshot).values()
             if kind(item, "Node") and props(item).get("media.class") == "Stream/Output/Audio"
             and str(props(item).get("target.object")) == str(sink.serial)]
+
+
+def node_present(snapshot, identity):
+    """A global ID may be recycled; only the original typed lifetime survives."""
+    objects = indexed(snapshot)
+    for candidate in objects.values():
+        if kind(candidate, "Node"):
+            current = NodeIdentity.from_node(candidate)
+            if current.serial == identity.serial and current.node_id != identity.node_id:
+                raise RouteError("original node serial has inconsistent global identity")
+    item = objects.get(identity.node_id)
+    if item is None:
+        return False
+    interface = item.get("type")
+    if (not isinstance(interface, str) or not interface.startswith("PipeWire:Interface:")
+            or not interface.removeprefix("PipeWire:Interface:")):
+        raise RouteError("node lifetime observation has no valid object type")
+    if not kind(item, "Node"):
+        return False
+    return NodeIdentity.from_node(item) == identity
 
 
 def observe_route(snapshot, sink, pid):
@@ -139,5 +185,5 @@ def observe_route(snapshot, sink, pid):
         channels.add(channel)
     if channels != {"FL", "FR"} or not all_active:
         return None
-    return {"client_id": number(clients[0]["id"]), "node_id": node_id,
-            "link_ids": sorted(number(link["id"]) for link in outgoing)}
+    return RouteIdentity(number(clients[0]["id"]), NodeIdentity.from_node(node),
+                         tuple(sorted(number(link["id"]) for link in outgoing)))

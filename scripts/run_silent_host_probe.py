@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Execute only the reviewed, fixed RIOTBOX-1566 silent virtual-host attempt.
+"""Source-free V2 lifecycle checks; host execution has no active CLI entry point.
 
-No audio service is contacted at import time or without the explicit CLI flag.
+V1 is consumed. A future host attempt requires its own prospective phase/owner.
 """
 
 import argparse
 from contextlib import contextmanager
+from dataclasses import asdict
 import gzip
 import hashlib
 import json
@@ -22,9 +23,9 @@ from silent_host_evidence import (
     validate_preflight, validate_records,
 )
 from silent_host_environment import local_host_environment, prepare_child_environment
+from silent_host_modules import owned_modules, remove_owned_sink
 from silent_host_process import ManagedProcess
-from silent_host_routes import attached_streams, find_sink, observe_route
-from silent_host_signals import OperatorInterrupts
+from silent_host_routes import NodeIdentity, attached_streams, find_sink, node_present, observe_route
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -91,7 +92,8 @@ class HostCommands:
                                 env=self.environment)
         if len(result.stdout) > 16 * 1024 * 1024:
             raise EvidenceError("metadata response is too large")
-        return result.stdout.strip()
+        # Short Pulse module output includes meaningful empty tab columns.
+        return result.stdout.rstrip("\r\n")
 
     def json(self, command):
         return json.loads(self.text(command))
@@ -141,7 +143,8 @@ def stream_present(snapshot, pid):
                in {str(value) for value in clients} for item in snapshot)
 
 
-def require_removed(host, sink, pid, protocol, snapshots, *, deadline=None, node_id=None):
+def require_removed(host, sink, pid, protocol, snapshots, *, deadline=None,
+                    node: NodeIdentity | None = None):
     if deadline is None:
         deadline = time.monotonic() + protocol["teardown_deadline_seconds"]
     while True:
@@ -152,7 +155,7 @@ def require_removed(host, sink, pid, protocol, snapshots, *, deadline=None, node
         observe_route(snapshot, sink, pid)
         if time.monotonic() >= deadline:
             raise EvidenceError(f"terminal teardown deadline exceeded: pid {pid}")
-        node_remains = node_id is not None and any(item.get("id") == node_id for item in snapshot)
+        node_remains = node is not None and node_present(snapshot, node)
         if not node_remains and not attached_streams(snapshot, sink) and not stream_present(snapshot, pid):
             return
         time.sleep(protocol["route_poll_interval_ms"] / 1000)
@@ -267,13 +270,13 @@ def run_program(command, prefix, host, sink, protocol, environment, *, preflight
                 try:
                     require_removed(host, sink, pid, protocol, snapshots,
                                     deadline=terminal_deadline,
-                                    node_id=observed["node_id"] if observed else None)
+                                    node=observed.node if observed else None)
                 except BaseException as cleanup_error:
                     if not isinstance(failure, UnverifiedCleanup):
                         original = failure
                         failure = UnverifiedStreamCleanup(
                             f"stream removal unverified: pid {pid}, node "
-                            f"{observed['node_id'] if observed else 'unadmitted'}")
+                            f"{observed.node.node_id if observed else 'unadmitted'}")
                         if original is not None:
                             failure.add_note(f"original failure: {type(original).__name__}: {original}")
                             for note in getattr(original, "__notes__", []):
@@ -281,43 +284,19 @@ def run_program(command, prefix, host, sink, protocol, environment, *, preflight
                     failure.add_note(f"stream cleanup not verified: {cleanup_error}")
         if failure is not None:
             raise failure
-    return {"pid": pid, "route": observed, "route_observations": route_count,
+    return {"pid": pid, "route": asdict(observed), "route_observations": route_count,
             "elapsed_seconds": time.monotonic() - start, "result": result,
             "stdout_sha256": digest(stdout),
             "routes_sha256": digest(prefix.with_suffix(".routes.ndjson.gz"))}
 
 
-def owned_modules(host, name):
-    modules = host.json(["pactl", "--format=json", "list", "modules"])
-    return [module for module in modules
-            if module.get("name") == "module-null-sink"
-            and f"sink_name={name}" in module.get("argument", "").split()]
+def execute_attempt(interrupts, *, owner):
+    """Reserved orchestration seam; currently called only with generated adapters.
 
-
-def remove_owned_sink(host, name, module_id, protocol):
-    deadline = time.monotonic() + protocol["teardown_deadline_seconds"]
-    matches = owned_modules(host, name)
-    if len(matches) > 1:
-        raise EvidenceError("owned null-sink module is ambiguous; not unloading")
-    if matches:
-        actual_id = int(matches[0]["index"])
-        if module_id is not None and actual_id != module_id:
-            raise EvidenceError("owned null-sink module ID changed; not unloading")
-        host.text(["pactl", "unload-module", str(actual_id)])
-    while True:
-        modules = owned_modules(host, name)
-        nodes = [item for item in host.snapshot()
-                 if item.get("type") == "PipeWire:Interface:Node"
-                 and item.get("info", {}).get("props", {}).get("node.name") == name]
-        if time.monotonic() >= deadline:
-            raise EvidenceError("owned null-sink teardown deadline exceeded")
-        if not modules and not nodes:
-            return
-        time.sleep(protocol["route_poll_interval_ms"] / 1000)
-
-
-def execute_attempt(interrupts):
-    protocol = load_protocol(ROOT / "docs/benchmarks/silent_host_observation_v1.json")
+    There is deliberately no default owner and no CLI path into this function.
+    A real-host caller requires a separately authorized prospective phase.
+    """
+    protocol = load_protocol(ROOT / "docs/benchmarks/silent_host_observation_v2.json")
     if sys.platform != "linux" or os.getuid() == 0:
         raise EvidenceError("requires a non-root real Linux user session")
     host_environment = local_host_environment(os.environ)
@@ -329,15 +308,14 @@ def execute_attempt(interrupts):
         raise EvidenceError("host attempt requires a clean reviewed revision")
     binaries = {name: ROOT / "target/debug" / name for name in ("cpal_spike", "silent_host_probe")}
     hashes = {name: digest(path) for name, path in binaries.items()}
-    owner = ROOT / "artifacts/development/riotbox-1566/attempt-01"
     owner.mkdir(parents=True, exist_ok=False)
-    name = "riotbox_1566_" + uuid.uuid4().hex
+    name = "riotbox_silent_host_v2_" + uuid.uuid4().hex
     module_id = None
     baseline = None
     sink = None
     last_pid = None
     creation_attempted = False
-    attempt = {"schema": "riotbox.silent_host_attempt.v1", "result": "failed",
+    attempt = {"schema": "riotbox.silent_host_attempt.v2", "result": "failed",
                "protocol_sha256": PROTOCOL_SHA256, "binary_sha256": hashes,
                "git_revision": host.text(["git", "rev-parse", "HEAD"]),
                "sink_name": name, "runs": [], "cleanup_verified": False}
@@ -434,13 +412,9 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--execute-reviewed-attempt", action="store_true", required=True)
     parser.parse_args(argv)
-    try:
-        with OperatorInterrupts() as interrupts:
-            execute_attempt(interrupts)
-    except (Exception, KeyboardInterrupt) as error:
-        print(f"silent host attempt failed: {error}", file=sys.stderr)
-        return 1
-    return 0
+    print("silent host execution blocked: V1 is consumed; V2 is source-free only. "
+          "A new host attempt requires a separate prospective phase and owner.", file=sys.stderr)
+    return 1
 
 
 if __name__ == "__main__":

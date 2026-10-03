@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 from run_silent_host_probe import UnverifiedStreamCleanup, remove_owned_sink, require_removed, run_program
 from silent_host_evidence import EvidenceError
-from silent_host_routes import find_sink
+from silent_host_routes import NodeIdentity, find_sink
 from test_silent_host_evidence import PROTOCOL, transcript
 from test_silent_host_routes import fixture
 
@@ -108,15 +108,16 @@ class DeadlineTests(unittest.TestCase):
         clock = SimpleNamespace(now=0.0)
 
         class Host:
-            def json(self, _command):
+            def text(self, command):
+                assert command == ["pactl", "--format=text", "list", "short", "modules"]
                 clock.now += 2.9
-                return []
+                return ""
 
             def snapshot(self):
                 clock.now += 2.9
                 return []
 
-        with patch("run_silent_host_probe.time", SimpleNamespace(monotonic=lambda: clock.now)):
+        with patch("silent_host_modules.time", SimpleNamespace(monotonic=lambda: clock.now)):
             with self.assertRaisesRegex(EvidenceError, "deadline|budget"):
                 remove_owned_sink(Host(), "owned-test", None, PROTOCOL)
 
@@ -131,7 +132,7 @@ class DeadlineTests(unittest.TestCase):
         with patch("run_silent_host_probe.time", SimpleNamespace(monotonic=lambda: clock.now)):
             with self.assertRaisesRegex(EvidenceError, "teardown deadline"):
                 require_removed(Host(), find_sink(fixture(), "owned-test"), 1234,
-                                PROTOCOL, io.StringIO(), deadline=5.0, node_id=30)
+                                PROTOCOL, io.StringIO(), deadline=5.0, node=NodeIdentity(30, 3000))
 
     def test_orphaned_target_node_is_not_absence_even_after_client_and_links_disappear(self):
         clock = SimpleNamespace(now=0.0)
@@ -144,7 +145,7 @@ class DeadlineTests(unittest.TestCase):
         with patch("run_silent_host_probe.time", SimpleNamespace(monotonic=lambda: clock.now, sleep=sleep)):
             with self.assertRaisesRegex(EvidenceError, "teardown deadline"):
                 require_removed(host, find_sink(fixture(), "owned-test"), 1234,
-                                PROTOCOL, io.StringIO(), node_id=30)
+                                PROTOCOL, io.StringIO(), node=NodeIdentity(30, 3000))
 
 
 if __name__ == "__main__":

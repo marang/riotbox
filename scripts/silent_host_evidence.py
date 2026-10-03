@@ -3,7 +3,7 @@
 import hashlib
 import json
 
-PROTOCOL_SHA256 = "ba26bc50db85a6b745738917100689a7ca5ac3c2aa95cc7c699db2ef404358d3"
+PROTOCOL_SHA256 = "9b8517f13285e36a6082fb57131602949c89758199d57ccef42a26f4a542bcea"
 SAMPLE_SCHEMA = "riotbox.silent_host_sample.v1"
 
 
@@ -14,7 +14,7 @@ class EvidenceError(ValueError):
 def load_protocol(path):
     data = path.read_bytes()
     if hashlib.sha256(data).hexdigest() != PROTOCOL_SHA256:
-        raise EvidenceError("frozen V1 protocol bytes changed")
+        raise EvidenceError("frozen V2 protocol bytes changed")
     return json.loads(data)
 
 

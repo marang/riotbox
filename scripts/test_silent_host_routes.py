@@ -3,7 +3,7 @@
 import copy
 import unittest
 
-from silent_host_routes import RouteError, find_sink, observe_route
+from silent_host_routes import NodeIdentity, RouteError, RouteIdentity, find_sink, observe_route
 
 
 def fixture():
@@ -37,8 +37,7 @@ class RouteAdmissionTests(unittest.TestCase):
         snapshot = fixture()
         sink = find_sink(snapshot, "owned-test")
         route = observe_route(snapshot, sink, 4321)
-        self.assertEqual(route, {"client_id": 20, "node_id": 30,
-                                 "link_ids": [60, 61]})
+        self.assertEqual(route, RouteIdentity(20, NodeIdentity(30, 3000), (60, 61)))
         self.assertIsNone(observe_route(snapshot[:1], sink, 4321))
 
     def test_numeric_truthiness_is_not_a_boolean_safety_property(self):
@@ -102,7 +101,7 @@ class RouteAdmissionTests(unittest.TestCase):
         snapshot[2]["info"]["props"]["client.id"] = "20"
         snapshot[0]["info"]["props"]["object.serial"] = "1000"
         route = observe_route(snapshot, find_sink(snapshot, "owned-test"), 4321)
-        self.assertEqual(route["node_id"], 30)
+        self.assertEqual(route.node, NodeIdentity(30, 3000))
 
     def test_absent_sink_or_corrupt_snapshot_is_never_pending(self):
         sink = find_sink(fixture(), "owned-test")
