@@ -38,6 +38,14 @@ What it does:
 
 This is intentionally minimal. It is a confidence spike, not the final audio engine.
 
+Current operational interpretation (RBX-435 / RIOTBOX-1565): the
+[Audio Core bounded-probe contract](../specs/audio_core_spec.md#bounded-output-probe-observation-v1)
+requires observed callbacks and no recorded runtime errors or scratch overflow
+before `Ok`. The summary includes both error counters; `cpal_spike` now returns
+nonzero for failed/not-run probes. A zero-callback window is inconclusive about
+the backend, not successful callback evidence. The historical observations below
+remain unchanged and do not become endurance, route-isolation or audibility proof.
+
 ---
 
 ## What This Spike Validates
