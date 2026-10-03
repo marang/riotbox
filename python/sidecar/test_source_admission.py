@@ -48,7 +48,7 @@ class SourceAdmissionTests(unittest.TestCase):
             with (
                 mock.patch("builtins.open", side_effect=guarded_open),
                 mock.patch.object(sidecar.hashlib, "sha256", side_effect=AssertionError("hashed")),
-                mock.patch.object(sidecar.wave, "open", side_effect=AssertionError("decoded")),
+                mock.patch.object(sidecar, "decode_source_wave", side_effect=AssertionError("decoded")),
             ):
                 response = sidecar.handle_message(
                     {
@@ -166,7 +166,7 @@ class SourceAdmissionTests(unittest.TestCase):
                     with (
                         mock.patch("builtins.open", side_effect=stalled_open),
                         mock.patch.object(sidecar.hashlib, "sha256", side_effect=AssertionError("hashed")),
-                        mock.patch.object(sidecar.wave, "open", side_effect=AssertionError("decoded")),
+                        mock.patch.object(sidecar, "decode_source_wave", side_effect=AssertionError("decoded")),
                     ):
                         response = sidecar.handle_message(analyze_request(path))
                     self.assertEqual(response["code"], "source_unreadable")

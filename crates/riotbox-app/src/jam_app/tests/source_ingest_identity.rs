@@ -107,6 +107,71 @@ fn source_replacement_after_sidecar_analysis_creates_no_new_saved_state() {
     }
 }
 
+#[test]
+fn malformed_riff_extent_is_rejected_before_overwriting_or_creating_saved_state() {
+    for external_graph in [false, true] {
+        let dir = tempfile::tempdir().unwrap();
+        let source_path = dir.path().join("source.wav");
+        let invalid_path = dir.path().join("invalid-container.wav");
+        let session_path = dir.path().join("session.json");
+        let graph_path = dir.path().join("source-graph.json");
+        write_pcm16_wave(&source_path, 8_000, 1, 0.1);
+        let original = JamAppState::analyze_source_file_to_json(
+            &source_path,
+            &session_path,
+            external_graph.then(|| graph_path.clone()),
+            sidecar_script_path(),
+            17,
+        )
+        .unwrap();
+        let saved_session = fs::read(&session_path).unwrap();
+        let saved_graph = external_graph.then(|| fs::read(&graph_path).unwrap());
+        let mut malformed = fs::read(&source_path).unwrap();
+        // Physical PCM remains; only the declared RIFF extent hides it from Python.
+        malformed[4..8].copy_from_slice(&36_u32.to_le_bytes());
+        fs::write(&invalid_path, &malformed).unwrap();
+        assert!(
+            riotbox_audio::source_audio::SourceAudioCache::from_pcm_wav_bytes(
+                &invalid_path,
+                &malformed,
+            )
+            .is_ok(),
+            "the unchanged Rust decoder alone does not reject this layout"
+        );
+
+        for (session, graph) in [
+            (session_path.clone(), graph_path.clone()),
+            (
+                dir.path().join("new/session.json"),
+                dir.path().join("new-graph/graph.json"),
+            ),
+        ] {
+            let result = JamAppState::analyze_source_file_to_json(
+                &invalid_path,
+                &session,
+                external_graph.then_some(graph),
+                sidecar_script_path(),
+                23,
+            );
+            assert!(matches!(result, Err(JamAppError::Sidecar(
+                riotbox_sidecar::client::ClientError::Sidecar(ref payload)
+            )) if payload.code == "source_unsupported"));
+        }
+        assert_eq!(fs::read(&session_path).unwrap(), saved_session);
+        if let Some(saved_graph) = saved_graph {
+            assert_eq!(fs::read(&graph_path).unwrap(), saved_graph);
+        } else {
+            assert!(!graph_path.exists());
+        }
+        assert!(!dir.path().join("new").exists());
+        assert!(!dir.path().join("new-graph").exists());
+        let restored = JamAppState::from_json_files(&session_path, None::<&Path>).unwrap();
+        assert_eq!(restored.session, original.session);
+        assert_eq!(restored.source_graph, original.source_graph);
+        assert_eq!(restored.source_audio_cache, original.source_audio_cache);
+    }
+}
+
 fn write_replacing_sidecar(path: &Path) {
     let sidecar_dir = serde_json::to_string(sidecar_script_path().parent().unwrap()).unwrap();
     // Exercise the real protocol/provider; the only injected behavior is an

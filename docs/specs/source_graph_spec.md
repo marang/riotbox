@@ -157,6 +157,31 @@ Python encoded-source admission V1 (RBX-431 / RIOTBOX-1561):
   outside this encoded-byte limit. No public override or analysis/DSP change;
   a different limit requires a new policy/Decision.
 
+Python WAV container admission V1 (RBX-432 / RIOTBOX-1562):
+
+- Validate the captured bytes as one complete RIFF/WAVE container, with declared
+  extent equal to buffer length, before feature construction. Every top-level
+  chunk header/payload must fit; require exactly one `fmt ` before exactly one
+  `data`. Reject duplicate semantic chunks and incomplete trailing bytes rather
+  than allowing providers to choose different PCM from the same hashed buffer.
+- Preserve opaque metadata chunks and their word padding. Preserve the existing
+  compatibility exception for an unpadded odd terminal `data` payload ending at
+  the container/file end, as emitted by Python's WAV writer. Genuine empty data
+  remains distinct from a truncated nonempty declaration and stays supported.
+- Use public `wave` interfaces, positive rate/channels and existing 1/2/3/4-byte
+  integer sample widths. Require whole-frame data and exact declared/read byte
+  and frame counts before conversion. Keep integer scaling, channel averaging,
+  duration floor and downstream analysis algorithms unchanged.
+- One pure Python decode owner returns validated metadata and mono samples;
+  it never opens the source again. Known malformed parser failures become the
+  existing non-retryable `source_unsupported` error with the request ID. The
+  synchronized peer must still answer ping and analyze a valid file. Do not
+  hide unrelated analysis errors or create a fallback graph.
+- This intentionally rejects inconsistent/ambiguous legacy containers; it does
+  not rewrite historical graphs, replace Rust's decoder, validate arbitrary
+  metadata contents, or add a decoded-memory/RSS/deadline policy. RBX-429/431
+  byte identity and encoded admission remain unchanged.
+
 ---
 
 ## 7. Timing Model

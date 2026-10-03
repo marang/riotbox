@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
 
 import hashlib
-import io
 import json
 import math
 import os
 import sys
-import wave
 from datetime import datetime, timezone
 
 from source_bytes import SourceResourceLimitError, read_source_wav_bytes
+from source_wave import decode_source_wave
 
 
 PROTOCOL_VERSION = "0.1"
 SIDECAR_VERSION = "0.1.0"
-SUPPORTED_WAVE_SAMPLE_WIDTHS = {1, 2, 3, 4}
 TIMING_BPM_CANDIDATES = [80, 90, 100, 110, 120, 126, 128, 130, 135, 140, 145, 150, 160]
 SOURCE_MAP_BUCKET_COUNT = 32
 PHRASE_FEATURE_WINDOW_FRAMES = 512
@@ -134,36 +132,6 @@ def build_stub_graph(source: dict, analysis_seed: int) -> dict:
             "run_notes": "stdio ndjson spike",
         },
     }
-
-
-def decode_pcm_samples(frames: bytes, channel_count: int, sample_width: int) -> list[float]:
-    if sample_width not in SUPPORTED_WAVE_SAMPLE_WIDTHS:
-        raise ValueError(f"unsupported PCM sample width: {sample_width}")
-
-    scale = float((1 << ((sample_width * 8) - 1)) - 1)
-    frame_width = channel_count * sample_width
-    sample_values = []
-
-    for frame_start in range(0, len(frames), frame_width):
-        frame = frames[frame_start : frame_start + frame_width]
-        if len(frame) < frame_width:
-            break
-
-        channel_sum = 0.0
-        for channel_index in range(channel_count):
-            start = channel_index * sample_width
-            sample_bytes = frame[start : start + sample_width]
-            if sample_width == 1:
-                value = sample_bytes[0] - 128
-                scale_value = 127.0
-            else:
-                value = int.from_bytes(sample_bytes, byteorder="little", signed=True)
-                scale_value = scale
-            channel_sum += float(value) / scale_value
-
-        sample_values.append(channel_sum / channel_count)
-
-    return sample_values
 
 
 def rms(values: list[float]) -> float:
@@ -444,21 +412,11 @@ def build_graph_from_decoded_wave(source_path: str, analysis_seed: int) -> dict:
     content_hash = f"sha256:{hashlib.sha256(content).hexdigest()}"
     source_id = f"src-{content_hash.split(':', 1)[1][:12]}"
 
-    with wave.open(io.BytesIO(content), "rb") as wav_file:
-        if wav_file.getcomptype() != "NONE":
-            raise ValueError(f"unsupported WAV compression: {wav_file.getcomptype()}")
-
-        sample_rate = wav_file.getframerate()
-        channel_count = wav_file.getnchannels()
-        frame_count = wav_file.getnframes()
-        sample_width = wav_file.getsampwidth()
-        frames = wav_file.readframes(frame_count)
-
-    if sample_width not in SUPPORTED_WAVE_SAMPLE_WIDTHS:
-        raise ValueError(f"unsupported WAV sample width: {sample_width}")
-
-    duration_seconds = max(frame_count / float(sample_rate), 0.001)
-    sample_values = decode_pcm_samples(frames, channel_count, sample_width)
+    decoded = decode_source_wave(content)
+    sample_rate = decoded.sample_rate
+    channel_count = decoded.channel_count
+    duration_seconds = max(decoded.frame_count / float(sample_rate), 0.001)
+    sample_values = decoded.samples
     total_energy = rms(sample_values)
     midpoint = max(1, len(sample_values) // 2)
     first_half_energy = rms(sample_values[:midpoint])
@@ -693,7 +651,7 @@ def handle_message(message: dict, clock=utc_generated_at) -> dict:
                 "message": str(error),
                 "retryable": False,
             }
-        except (ValueError, wave.Error) as error:
+        except ValueError as error:
             return {
                 "type": "error",
                 "request_id": message.get("request_id"),
