@@ -4,7 +4,7 @@ use std::{
 };
 
 use riotbox_audio::{
-    source_audio::SourceAudioCache,
+    source_audio::{SourceAudioCache, read_source_wav_bytes},
     source_timing_probe::{SourceTimingProbeConfig, analyze_source_timing_probe},
     w30_hook_analysis::analyze_w30_hook_candidates,
 };
@@ -17,6 +17,7 @@ use riotbox_core::{
     },
     transport::CommitBoundaryState,
 };
+use sha2::{Digest, Sha256};
 
 use super::{JamAppError, JamAppState, QueueControlResult};
 
@@ -51,12 +52,26 @@ pub(super) fn enrich_graph_with_rust_source_timing(
     graph: &mut SourceGraph,
     source_path: &Path,
 ) -> Result<SourceAudioCache, JamAppError> {
-    let source = SourceAudioCache::load_pcm_wav(source_path).map_err(|error| {
+    let bytes = read_source_wav_bytes(source_path).map_err(|error| {
+        JamAppError::InvalidSession(format!(
+            "live source timing could not read {}: {error}",
+            source_path.display()
+        ))
+    })?;
+    let actual_hash = format!("sha256:{:x}", Sha256::digest(&bytes));
+    if graph.source.content_hash != actual_hash {
+        return Err(JamAppError::InvalidSession(format!(
+            "source audio hash mismatch during ingest: graph has {}, loaded WAV has {actual_hash}",
+            graph.source.content_hash
+        )));
+    }
+    let source = SourceAudioCache::from_pcm_wav_bytes(source_path, &bytes).map_err(|error| {
         JamAppError::InvalidSession(format!(
             "live source timing could not decode {}: {error}",
             source_path.display()
         ))
     })?;
+    drop(bytes);
     let probe = analyze_source_timing_probe(&source, SourceTimingProbeConfig::default());
     let meter = graph.timing.meter_hint.unwrap_or(MeterHint {
         beats_per_bar: 4,

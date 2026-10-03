@@ -295,6 +295,9 @@ Rules:
   candidates, source features, and provider provenance remain intact, while
   graph provenance must name the Rust timing provider. The ingest work is
   control-plane analysis and must stay outside the realtime callback.
+  The [Source Graph ingest identity contract](./source_graph_spec.md#6-source-object)
+  requires the bounded Rust read to match the provider's source hash before
+  enrichment, and both hash verification and decoding consume that same buffer.
 - TR-909, MC-202, W-30 preview, Source Monitor timing, and transport
   meter/phrase projection must consume one readiness-gated timing authority.
   Analyzer-locked or matching user-confirmed timing may expose a positive BPM;

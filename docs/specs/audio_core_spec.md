@@ -466,9 +466,11 @@ The bounded early seam is a non-realtime source-audio cache:
   admit a regular opened descriptor before reading; on Unix use nonblocking open
   so FIFO inputs fail without waiting for a producer. Original-source symlinks
   to regular files remain supported, unlike the stricter capture/export
-  no-follow policies. App restore hashes the same returned bytes it decodes;
-  admission failures stay visibly unavailable with no source cache. The opened
-  descriptor byte budget below is shared with capture hydration, not its path
+  no-follow policies. App restore and live ingest hash the same returned bytes
+  they decode; live ingest rejects a provider identity mismatch before Rust
+  timing analysis or persistence (Source Graph RBX-429).
+  Restore admission failures stay visibly unavailable with no source cache.
+  The opened descriptor byte budget below is shared with capture hydration, not its path
   or no-follow policy. Regular-file I/O has no deadline guarantee.
 
 #### Rust WAV/PCM resource admission V1 (RBX-425 / RIOTBOX-1556)
