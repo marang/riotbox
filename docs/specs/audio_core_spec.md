@@ -516,6 +516,11 @@ to the earlier Python provider read; Source Graph §6 owns that extension.
 Python decoded/frame/analysis allocations and aggregate memory remain outside
 both encoded-read policies. The Rust V1 reader/decoder contract above is unchanged.
 
+RBX-433 / RIOTBOX-1563 additionally applies the same 67108864 interleaved-input-
+sample count to Python before frame materialization, conversion and features.
+Source Graph §6 owns that separate early admission. It is not a Python object/
+heap bound or a reinterpretation of Python storage as Rust's `f32` payload.
+
 The existing transport-selected source window remains the default. Only a
 committed `feral_break_alpha_v2` preset with a non-baseline typed hook policy may
 replace a one-bar `CaptureBarGroup` window, and only when persisted eligible

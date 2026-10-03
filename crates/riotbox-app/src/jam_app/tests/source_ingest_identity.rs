@@ -172,6 +172,75 @@ fn malformed_riff_extent_is_rejected_before_overwriting_or_creating_saved_state(
     }
 }
 
+#[test]
+fn decoded_sample_rejection_preserves_saved_state_and_creates_no_new_state() {
+    for external_graph in [false, true] {
+        let dir = tempfile::tempdir().unwrap();
+        let source_path = dir.path().join("source.wav");
+        let over_path = dir.path().join("over-sample-budget.wav");
+        let session_path = dir.path().join("session.json");
+        let graph_path = dir.path().join("source-graph.json");
+        write_pcm16_wave(&source_path, 8_000, 1, 0.1);
+        write_pcm16_wave(&over_path, 8_000, 2, 0.1);
+        let original = JamAppState::analyze_source_file_to_json(
+            &source_path,
+            &session_path,
+            external_graph.then(|| graph_path.clone()),
+            sidecar_script_path(),
+            17,
+        )
+        .unwrap();
+        let saved_session = fs::read(&session_path).unwrap();
+        let saved_graph = external_graph.then(|| fs::read(&graph_path).unwrap());
+        let wrapper = dir.path().join("small_budget_sidecar.py");
+        let sidecar_dir = serde_json::to_string(sidecar_script_path().parent().unwrap()).unwrap();
+        // Inject only a small test budget. Production uses the frozen default;
+        // this is a preservation/propagation test, not a large-file exercise.
+        fs::write(
+            &wrapper,
+            format!(
+                "import sys\nsys.path.insert(0, {sidecar_dir})\nimport source_wave\n\
+                 source_wave.SOURCE_WAV_MAX_DECODED_SAMPLES_V1 = 4\n\
+                 import json_stdio_sidecar\njson_stdio_sidecar.main()\n"
+            ),
+        )
+        .unwrap();
+
+        for (session, graph) in [
+            (session_path.clone(), graph_path.clone()),
+            (
+                dir.path().join("new/session.json"),
+                dir.path().join("new-graph/graph.json"),
+            ),
+        ] {
+            let result = JamAppState::analyze_source_file_to_json(
+                &over_path,
+                &session,
+                external_graph.then_some(graph),
+                &wrapper,
+                23,
+            );
+            assert!(matches!(result, Err(JamAppError::Sidecar(
+                riotbox_sidecar::client::ClientError::Sidecar(ref payload)
+            )) if payload.code == "source_resource_limit"
+                && payload.message.contains("decoded interleaved samples")
+                && payload.message.contains("required 1600, limit 4")));
+        }
+        assert_eq!(fs::read(&session_path).unwrap(), saved_session);
+        if let Some(saved_graph) = saved_graph {
+            assert_eq!(fs::read(&graph_path).unwrap(), saved_graph);
+        } else {
+            assert!(!graph_path.exists());
+        }
+        assert!(!dir.path().join("new").exists());
+        assert!(!dir.path().join("new-graph").exists());
+        let restored = JamAppState::from_json_files(&session_path, None::<&Path>).unwrap();
+        assert_eq!(restored.session, original.session);
+        assert_eq!(restored.source_graph, original.source_graph);
+        assert_eq!(restored.source_audio_cache, original.source_audio_cache);
+    }
+}
+
 fn write_replacing_sidecar(path: &Path) {
     let sidecar_dir = serde_json::to_string(sidecar_script_path().parent().unwrap()).unwrap();
     // Exercise the real protocol/provider; the only injected behavior is an
