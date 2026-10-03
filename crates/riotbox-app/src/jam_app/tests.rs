@@ -26,6 +26,7 @@ mod mc202_source_phrase_quality_gates;
 mod p016_daw_session_audible_output_action;
 mod p016_daw_session_export_action;
 mod p016_daw_session_host_import_action;
+mod p016_daw_writer_receipt_admission;
 mod p016_live_master_dawproject;
 mod p016_live_master_recording;
 mod p016_live_recording_export_action;
