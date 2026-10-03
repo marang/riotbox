@@ -3,9 +3,17 @@ use std::sync::{
     atomic::{AtomicBool, AtomicU32, AtomicU64, AtomicUsize, Ordering},
 };
 
-use arc_swap::ArcSwapOption;
+use triple_buffer::{Input, Output, triple_buffer};
 
 use super::CallbackTimingSnapshot;
+
+mod admission;
+
+mod admission_sync {
+    pub(super) use std::sync::atomic::{AtomicUsize, Ordering};
+}
+
+use admission::CaptureAdmission;
 
 pub const LIVE_MASTER_CALLBACK_GAP_THRESHOLD_MICROS: u64 = 100_000;
 /// Maximum capture payload admitted before allocating the atomic callback buffer.
@@ -73,24 +81,45 @@ pub enum LiveMasterCaptureError {
 }
 
 pub(super) struct SharedLiveMasterCapture {
-    active: ArcSwapOption<LiveMasterCaptureBuffer>,
     control: Mutex<LiveMasterCaptureControl>,
 }
 
-#[derive(Default)]
 struct LiveMasterCaptureControl {
-    /// Buffers removed from `active` while a callback still holds an `Arc`.
-    /// Reaping stays on the control thread so the realtime callback can never
-    /// become the owner that deallocates a large capture buffer.
+    latest: Option<Arc<LiveMasterCaptureBuffer>>,
+    input: Input<Option<Arc<LiveMasterCaptureBuffer>>>,
+    output: Option<Output<Option<Arc<LiveMasterCaptureBuffer>>>>,
+    /// Closed buffers can remain in any of the three publication slots.
+    /// Only control-side publication replaces those owning references; a
+    /// callback borrows its slot without cloning or dropping an `Arc`.
     retired: Vec<Arc<LiveMasterCaptureBuffer>>,
+}
+
+/// The unique realtime consumer. Keep its control owner alive until the
+/// callback is stopped and this reader has been dropped.
+pub(super) struct LiveMasterCaptureCallbackReader {
+    output: Output<Option<Arc<LiveMasterCaptureBuffer>>>,
 }
 
 impl SharedLiveMasterCapture {
     pub(super) fn new() -> Self {
+        let (input, output) = triple_buffer(&None);
         Self {
-            active: ArcSwapOption::empty(),
-            control: Mutex::new(LiveMasterCaptureControl::default()),
+            control: Mutex::new(LiveMasterCaptureControl {
+                latest: None,
+                input,
+                output: Some(output),
+                retired: Vec::new(),
+            }),
         }
+    }
+
+    pub(super) fn take_callback_reader(&self) -> Option<LiveMasterCaptureCallbackReader> {
+        self.control
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .output
+            .take()
+            .map(|output| LiveMasterCaptureCallbackReader { output })
     }
 
     #[cfg(test)]
@@ -122,7 +151,7 @@ impl SharedLiveMasterCapture {
         {
             return Err(LiveMasterCaptureError::InvalidTarget);
         }
-        if self.active.load().is_some() {
+        if control.latest.is_some() {
             return Err(LiveMasterCaptureError::AlreadyActive);
         }
         let capture = LiveMasterCaptureBuffer::try_new(
@@ -130,12 +159,19 @@ impl SharedLiveMasterCapture {
             &request,
             last_callback_micros.filter(|_| request.start_position_beats.is_some()),
         )?;
-        self.active.store(Some(Arc::new(capture)));
+        let capture = Arc::new(capture);
+        control.input.write(Some(Arc::clone(&capture)));
+        control.latest = Some(capture);
         Ok(())
     }
 
     pub(super) fn progress(&self) -> Option<LiveMasterCaptureProgress> {
-        self.active.load_full().map(|capture| capture.progress())
+        self.control
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .latest
+            .as_ref()
+            .map(|capture| capture.progress())
     }
 
     pub(super) fn finish(&self) -> Result<LiveMasterCaptureOutcome, LiveMasterCaptureError> {
@@ -144,28 +180,33 @@ impl SharedLiveMasterCapture {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         Self::reap_retired(&mut control);
-        let capture = self
-            .active
-            .load_full()
+        let capture = control
+            .latest
+            .as_ref()
             .ok_or(LiveMasterCaptureError::NotActive)?;
         let progress = capture.progress();
         if !progress.complete {
             return Err(LiveMasterCaptureError::NotComplete(progress));
         }
 
-        let Some(removed) = self.active.swap(None) else {
-            return Err(LiveMasterCaptureError::NotActive);
+        // Close before observing quiescence. A stale publication slot may
+        // still be borrowed, but can no longer admit payload or timing work.
+        capture.admission.close();
+        let is_quiescent = capture.admission.is_quiescent();
+        let capture = control
+            .latest
+            .take()
+            .ok_or(LiveMasterCaptureError::NotActive)?;
+        control.input.write(None);
+        let result = if is_quiescent {
+            Ok(capture.outcome())
+        } else {
+            Err(LiveMasterCaptureError::CallbackStillActive(
+                capture.progress(),
+            ))
         };
-        debug_assert!(Arc::ptr_eq(&capture, &removed));
-        if Arc::strong_count(&removed) > 2 {
-            let progress = removed.progress();
-            drop(capture);
-            control.retired.push(removed);
-            return Err(LiveMasterCaptureError::CallbackStillActive(progress));
-        }
-        let outcome = removed.outcome();
-        drop(capture);
-        Ok(outcome)
+        control.retired.push(capture);
+        result
     }
 
     pub(super) fn abort(&self) -> Option<LiveMasterCaptureProgress> {
@@ -174,36 +215,50 @@ impl SharedLiveMasterCapture {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         Self::reap_retired(&mut control);
-        let capture = self.active.swap(None)?;
+        let capture = control.latest.take()?;
+        capture.admission.close();
+        control.input.write(None);
         let progress = capture.progress();
-        if Arc::strong_count(&capture) > 1 {
-            control.retired.push(capture);
-        }
+        control.retired.push(capture);
         Some(progress)
     }
 
+    // Existing generated timing tests use this control-only adapter. Runtime
+    // callbacks must use the unique reader, which takes no control lock.
+    #[cfg(test)]
     pub(super) fn record_callback(
         &self,
         samples: &[f32],
         timing: &CallbackTimingSnapshot,
         now_micros: u64,
     ) {
-        if let Some(capture) = self.active.load_full() {
+        let control = self
+            .control
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if let Some(capture) = control.latest.as_ref() {
             capture.record_callback(samples, timing, now_micros);
         }
     }
 
+    #[cfg(test)]
     pub(super) fn record_scratch_overflow(&self, timing: &CallbackTimingSnapshot, now_micros: u64) {
-        if let Some(capture) = self.active.load_full() {
-            capture.record_captured_callback_timing(timing, now_micros);
-            capture
-                .callback_scratch_overflow_count
-                .fetch_add(1, Ordering::Relaxed);
+        let control = self
+            .control
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if let Some(capture) = control.latest.as_ref() {
+            capture.record_scratch_overflow(timing, now_micros);
         }
     }
 
     pub(super) fn record_stream_error(&self) {
-        if let Some(capture) = self.active.load_full() {
+        // The stream-error handler is a control path, not the sample callback.
+        let control = self
+            .control
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if let Some(capture) = control.latest.as_ref() {
             capture.stream_error_count.fetch_add(1, Ordering::Relaxed);
         }
     }
@@ -215,7 +270,31 @@ impl SharedLiveMasterCapture {
     }
 }
 
+impl LiveMasterCaptureCallbackReader {
+    pub(super) fn record_callback(
+        &mut self,
+        samples: &[f32],
+        timing: &CallbackTimingSnapshot,
+        now_micros: u64,
+    ) {
+        if let Some(capture) = self.output.read().as_ref() {
+            capture.record_callback(samples, timing, now_micros);
+        }
+    }
+
+    pub(super) fn record_scratch_overflow(
+        &mut self,
+        timing: &CallbackTimingSnapshot,
+        now_micros: u64,
+    ) {
+        if let Some(capture) = self.output.read().as_ref() {
+            capture.record_scratch_overflow(timing, now_micros);
+        }
+    }
+}
+
 struct LiveMasterCaptureBuffer {
+    admission: CaptureAdmission,
     samples: Box<[AtomicU32]>,
     written_sample_count: AtomicUsize,
     channel_count: usize,
@@ -251,6 +330,7 @@ impl LiveMasterCaptureBuffer {
             .map_err(|_| LiveMasterCaptureError::AllocationFailed)?;
         samples.extend((0..target_sample_count).map(|_| AtomicU32::new(0.0_f32.to_bits())));
         Ok(Self {
+            admission: CaptureAdmission::new(),
             samples: samples.into_boxed_slice(),
             written_sample_count: AtomicUsize::new(0),
             channel_count: usize::from(request.channel_count),
@@ -276,6 +356,9 @@ impl LiveMasterCaptureBuffer {
     }
 
     fn record_callback(&self, samples: &[f32], timing: &CallbackTimingSnapshot, now_micros: u64) {
+        let Some(_lease) = self.admission.try_enter() else {
+            return;
+        };
         if self.complete.load(Ordering::Acquire) {
             return;
         }
@@ -314,6 +397,15 @@ impl LiveMasterCaptureBuffer {
         if written == self.samples.len() {
             self.complete.store(true, Ordering::Release);
         }
+    }
+
+    fn record_scratch_overflow(&self, timing: &CallbackTimingSnapshot, now_micros: u64) {
+        let Some(_lease) = self.admission.try_enter() else {
+            return;
+        };
+        self.record_captured_callback_timing(timing, now_micros);
+        self.callback_scratch_overflow_count
+            .fetch_add(1, Ordering::Relaxed);
     }
 
     fn capture_source_start(
@@ -509,6 +601,9 @@ mod long_window_tests;
 
 #[cfg(test)]
 mod canonical_two_bar_tests;
+
+#[cfg(test)]
+mod callback_reader_tests;
 
 #[cfg(test)]
 mod tests {
@@ -849,46 +944,5 @@ mod tests {
 
         assert_eq!(error, LiveMasterCaptureError::InvalidTarget);
         assert!(shared.progress().is_none());
-    }
-
-    #[test]
-    fn finish_and_abort_retire_callback_owned_buffers_without_waiting() {
-        let shared = SharedLiveMasterCapture::new();
-        shared
-            .begin(LiveMasterCaptureRequest {
-                target_frame_count: 1,
-                channel_count: 1,
-                expected_tempo_bpm: 128.0,
-                start_position_beats: None,
-            })
-            .expect("begin completed capture");
-        let held_completed = shared.active.load_full().expect("held callback Arc");
-        shared.record_callback(&[0.25], &timing(true, 128.0), 1_000);
-
-        let error = shared
-            .finish()
-            .expect_err("finish rejects a callback-owned buffer without waiting");
-        assert!(matches!(
-            error,
-            LiveMasterCaptureError::CallbackStillActive(_)
-        ));
-        assert_eq!(shared.control.lock().unwrap().retired.len(), 1);
-
-        drop(held_completed);
-        shared
-            .begin(LiveMasterCaptureRequest {
-                target_frame_count: 2,
-                channel_count: 1,
-                expected_tempo_bpm: 128.0,
-                start_position_beats: None,
-            })
-            .expect("next begin reaps retired completed capture");
-        assert!(shared.control.lock().unwrap().retired.is_empty());
-        let held_incomplete = shared.active.load_full().expect("held callback Arc");
-
-        let progress = shared.abort().expect("abort does not wait for held Arc");
-        assert!(!progress.complete);
-        assert_eq!(shared.control.lock().unwrap().retired.len(), 1);
-        drop(held_incomplete);
     }
 }

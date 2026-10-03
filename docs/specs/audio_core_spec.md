@@ -142,8 +142,13 @@ Rules:
   current source, while only a named source-replacement operation may install
   new PCM or make source availability absent
 - source-snapshot reads in the callback must remain lock-free and allocation-free;
-  replaced snapshots and their PCM ownership are retired and reclaimed from the
-  control side so the callback never becomes responsible for freeing a source
+  RBX-427 uses a preallocated single-producer/single-consumer triple buffer with
+  a unique callback reader borrowing an immutable payload. Control writers
+  retain the authoritative latest snapshot separately from recycled slots.
+  Replaced slot payloads and their PCM ownership are reclaimed on the control
+  side, never by callback-invocation Arc cloning/dropping. Retained slots may
+  delay reclamation until later publication or shutdown; the slot count does
+  not bound total source/cache memory
 - map transport position to source frame position through the selected timing /
   source-time contract outside expensive callback work
 - source seek updates callback-consumable cursor state without file I/O
@@ -596,6 +601,18 @@ Current implementation:
   stable-read check; rejected reads must not advance the cached revision.
   Before the first complete read the fallback is silent. Callback-owned timing
   is refreshed separately on every invocation, even when payload data is reused.
+- source-monitor and live-master capture use RBX-427's preallocated borrowed
+  SPSC publication rather than first-use thread-local snapshot registration.
+  Their unique noncloneable readers are acquired during control-side processor
+  preparation; a repeated acquisition fails closed there. Neither reads nor
+  slot refreshes may allocate, reclaim payloads, or acquire control mutexes.
+  Control ownership must outlive stream shutdown. Processor/worker teardown is
+  distinct from a callback invocation and is not claimed heap-free.
+- test-only per-thread heap accounting must exercise the exact production
+  processor, including a first invocation in a fresh process/worker without
+  callback-side warmup. Cover allocation, zeroed allocation, reallocation and
+  deallocation, with positive controls; synthetic checks do not prove host
+  deadlines, device endurance or human audio quality.
 
 Tests should cover partial-update and revision-mismatch cases before this
 becomes a broad lane-control surface.
@@ -671,6 +688,19 @@ Current limiter policy:
   sample slots on the control thread, never spins while retiring callback-owned
   buffers, and stops the output stream before control-thread WAV/proof/Session
   I/O begins
+- capture publication uses the same borrowed SPSC policy. Retained slot Arcs
+  are ownership, not active callback usage. A per-buffer permanently closable
+  admission gate and explicit in-flight borrowed leases protect all callback
+  timing/sample work. RBX-428 encodes the closed bit and lease count in one
+  atomic word: registration increments and checks its returned previous word,
+  closure sets the bit, and release decrements after work. These operations are
+  SeqCst with a half-range overflow-abort bound and no retry/spin loop.
+  Finish preserves the completeness precheck, then closes admission
+  before checking quiescence and detaching; active work returns the existing
+  nonwaiting `CallbackStillActive` outcome and remains control-retained.
+  Abort closes before detaching. Stale readers cannot write to a closed buffer,
+  and a new begin never reopens it. Test the actual admission module with Loom;
+  reference counts alone cannot establish safe finalization.
 - V2 reuses that allocation and tap but arms until an absolute Session beat.
   Pre-boundary callbacks write no payload; a straddling callback begins at the
   first complete frame at or after the requested beat. The callback publishes

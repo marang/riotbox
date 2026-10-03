@@ -2,7 +2,6 @@ use crate::mc202::Mc202RenderState;
 use crate::runtime::begin_coherent_snapshot_update;
 use crate::runtime::coherent_snapshot;
 use crate::runtime::coherent_snapshot_or;
-use crate::runtime::fill_focus::FillFocusRenderState;
 use crate::runtime::finish_coherent_snapshot_update;
 use crate::runtime::live_master_capture::LiveMasterCaptureError;
 use crate::runtime::live_master_capture::LiveMasterCaptureOutcome;
@@ -15,23 +14,12 @@ use crate::runtime::public_api_shell::AudioRuntimeHealth;
 use crate::runtime::public_api_shell::AudioRuntimeLifecycle;
 use crate::runtime::public_api_shell::AudioRuntimeShell;
 use crate::runtime::public_api_shell::AudioRuntimeTimingSnapshot;
-use crate::runtime::public_api_shell::apply_master_bus_soft_limiter;
 use crate::runtime::shared_mc202::SharedMc202RenderState;
 use crate::runtime::shared_w30_resample_callback::SharedW30ResampleTapState;
-use crate::runtime::shared_w30_resample_callback::Tr909CallbackState;
-use crate::runtime::shared_w30_resample_callback::TransportTimingCallbackState;
-use crate::runtime::shared_w30_resample_callback::W30MixRenderState;
-use crate::runtime::shared_w30_resample_callback::W30PreviewCallbackState;
-use crate::runtime::shared_w30_resample_callback::W30ResampleTapCallbackState;
-use crate::runtime::shared_w30_resample_callback::advance_transport_timing;
-use crate::runtime::shared_w30_resample_callback::render_mix_buffer;
 use crate::runtime::source_monitor::SharedSourceMonitorRenderState;
-use crate::runtime::source_monitor::SourceMonitorCallbackState;
 use crate::runtime::source_monitor::SourceMonitorRenderState;
-use crate::runtime::source_monitor::apply_source_monitor_policy_with_state_and_fill_focus;
 use crate::runtime::telemetry::RuntimeTelemetry;
 use crate::runtime::w30_preview_snapshot::SharedW30PreviewRenderState;
-use crate::runtime::w30_preview_snapshot::W30PreviewSnapshotCache;
 use crate::tr909::Tr909PatternAdoption;
 use crate::tr909::Tr909PhraseVariation;
 use crate::tr909::Tr909RenderMode;
@@ -51,6 +39,8 @@ use std::sync::atomic::AtomicU32;
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
 use std::time::Instant;
+
+mod output_callback;
 
 const DEFAULT_CALLBACK_SCRATCH_FRAMES: usize = 4096;
 
@@ -389,113 +379,18 @@ pub(super) fn build_silent_output_stream<T>(
 where
     T: cpal::SizedSample + cpal::FromSample<f32>,
 {
-    let callback_telemetry = Arc::clone(&shared.telemetry);
     let error_telemetry = Arc::clone(&shared.telemetry);
     let error_live_master_capture = Arc::clone(&shared.live_master_capture);
-    let callback_transport = Arc::clone(&shared.transport);
-    let mut render_state = Tr909CallbackState::default();
-    let mut transport_state = TransportTimingCallbackState::default();
-    let channel_count = usize::from(config.channels.max(1));
-    let mut w30_preview_state =
-        W30PreviewCallbackState::with_sample_rate_and_channels(config.sample_rate, channel_count);
-    let mut w30_resample_state = W30ResampleTapCallbackState::default();
-    let mut source_monitor_callback_state = SourceMonitorCallbackState::default();
-    let sample_rate = config.sample_rate;
-    let mut mix_buffer = vec![0.0; callback_scratch_sample_count(config, channel_count)];
-    let mut last_transport_snapshot = callback_transport.snapshot();
-    let mut last_tr909_render_snapshot = shared.tr909_render.snapshot();
-    let mut last_mc202_render_snapshot = shared.mc202_render.snapshot();
-    let mut w30_preview_snapshot = W30PreviewSnapshotCache::new(&shared.w30_preview);
-    let mut last_w30_resample_snapshot = shared.w30_resample_tap.snapshot();
+    let mut callback = output_callback::prepare_output_callback::<T>(config, shared, start)
+        .map_err(|error| cpal::BuildStreamError::BackendSpecific {
+            err: cpal::BackendSpecificError {
+                description: error.message().into(),
+            },
+        })?;
 
     device.build_output_stream(
         config,
-        move |data: &mut [T], _| {
-            let frame_count = data.len() / channel_count.max(1);
-            let transport_snapshot =
-                callback_transport.snapshot_or_previous(&last_transport_snapshot);
-            last_transport_snapshot = transport_snapshot;
-            let callback_timing = advance_transport_timing(
-                &transport_snapshot,
-                &mut transport_state,
-                sample_rate,
-                frame_count,
-            );
-            let Some(mix_buffer) = mix_buffer.get_mut(..data.len()) else {
-                for output in data.iter_mut() {
-                    *output = T::from_sample(0.0);
-                }
-                let now = start.elapsed().as_micros() as u64;
-                shared
-                    .live_master_capture
-                    .record_scratch_overflow(&callback_timing, now);
-                callback_telemetry.record_callback_scratch_overflow_at(now, &callback_timing);
-                return;
-            };
-            let mut tr909_render_state = shared
-                .tr909_render
-                .snapshot_or_previous(&last_tr909_render_snapshot);
-            last_tr909_render_snapshot = tr909_render_state;
-            tr909_render_state.is_transport_running = callback_timing.is_transport_running;
-            tr909_render_state.tempo_bpm = callback_timing.tempo_bpm;
-            tr909_render_state.position_beats = callback_timing.render_position_beats;
-            let mut mc202_render_state = shared
-                .mc202_render
-                .snapshot_or_previous(&last_mc202_render_snapshot);
-            last_mc202_render_snapshot = mc202_render_state;
-            mc202_render_state.is_transport_running = callback_timing.is_transport_running;
-            mc202_render_state.tempo_bpm = callback_timing.tempo_bpm;
-            mc202_render_state.position_beats = callback_timing.render_position_beats;
-            let w30_preview_render_state = w30_preview_snapshot.refresh(&shared.w30_preview);
-            w30_preview_render_state.is_transport_running = callback_timing.is_transport_running;
-            w30_preview_render_state.tempo_bpm = callback_timing.tempo_bpm;
-            w30_preview_render_state.position_beats = callback_timing.render_position_beats;
-            let mut w30_resample_render_state = shared
-                .w30_resample_tap
-                .snapshot_or_previous(&last_w30_resample_snapshot);
-            last_w30_resample_snapshot = w30_resample_render_state;
-            w30_resample_render_state.is_transport_running = callback_timing.is_transport_running;
-            w30_resample_render_state.tempo_bpm = callback_timing.tempo_bpm;
-            w30_resample_render_state.position_beats = callback_timing.render_position_beats;
-            let source_monitor_snapshot = shared.source_monitor.snapshot();
-            let mut source_monitor_state = source_monitor_snapshot.render_state();
-            source_monitor_state.is_transport_running = callback_timing.is_transport_running;
-            source_monitor_state.tempo_bpm = callback_timing.tempo_bpm;
-            source_monitor_state.position_beats = callback_timing.render_position_beats;
-
-            render_mix_buffer(
-                mix_buffer,
-                sample_rate,
-                channel_count,
-                &tr909_render_state,
-                &mc202_render_state,
-                &mut render_state,
-                &mut W30MixRenderState {
-                    preview_render: w30_preview_render_state,
-                    preview_state: &mut w30_preview_state,
-                    resample_render: &w30_resample_render_state,
-                    resample_state: &mut w30_resample_state,
-                },
-            );
-            apply_source_monitor_policy_with_state_and_fill_focus(
-                mix_buffer,
-                sample_rate,
-                channel_count,
-                &source_monitor_state,
-                FillFocusRenderState::from_tr909(&tr909_render_state),
-                &mut source_monitor_callback_state,
-            );
-            apply_master_bus_soft_limiter(mix_buffer);
-            let now = start.elapsed().as_micros() as u64;
-            shared
-                .live_master_capture
-                .record_callback(mix_buffer, &callback_timing, now);
-            for (output, sample) in data.iter_mut().zip(mix_buffer.iter().copied()) {
-                *output = T::from_sample(sample);
-            }
-
-            callback_telemetry.record_callback_at(now, &callback_timing);
-        },
+        move |data: &mut [T], _| callback(data),
         move |error| {
             error_live_master_capture.record_stream_error();
             error_telemetry.record_stream_error(error.to_string());
