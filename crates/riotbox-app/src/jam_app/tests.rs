@@ -48,6 +48,7 @@ mod scene_source_identity;
 mod snapshot_payload_restore_failures;
 #[cfg(unix)]
 mod source_file_admission;
+mod source_ingest_identity;
 mod source_map_navigation;
 mod source_monitor_scene_reposition;
 mod source_ref_profile;

@@ -3,6 +3,7 @@ use crate::jam_app::live_source_timing::enrich_graph_with_rust_source_timing;
 use crate::jam_app::state::JamAppState;
 use crate::jam_app::tests::fixtures::session_source::sample_graph;
 use crate::jam_app::tests::fixtures::session_source::sample_session;
+use crate::jam_app::tests::fixtures::source_io::bind_synthetic_wav_identity;
 use crate::jam_app::tests::fixtures::source_io::sidecar_script_path;
 use crate::jam_app::tests::source_timing_consumer_readiness::manual_confirm_source_window_graph;
 use riotbox_audio::mc202::Mc202RenderMode;
@@ -31,6 +32,9 @@ fn live_ingest_rust_timing_is_stable_and_carries_source_identity() {
         .expect("write source");
     let mut first = sample_graph();
     let mut second = sample_graph();
+
+    bind_synthetic_wav_identity(&mut first, &source_path);
+    bind_synthetic_wav_identity(&mut second, &source_path);
 
     enrich_graph_with_rust_source_timing(&mut first, &source_path).expect("enrich first graph");
     enrich_graph_with_rust_source_timing(&mut second, &source_path).expect("enrich second graph");
@@ -75,6 +79,8 @@ fn different_live_sources_do_not_reuse_stale_timing_or_identity() {
     let mut first = sample_graph();
     let mut second = sample_graph();
     second.source.source_id = SourceId::from("src-2");
+    bind_synthetic_wav_identity(&mut first, &source_128);
+    bind_synthetic_wav_identity(&mut second, &source_120);
 
     enrich_graph_with_rust_source_timing(&mut first, &source_128).expect("enrich first graph");
     enrich_graph_with_rust_source_timing(&mut second, &source_120).expect("enrich second graph");

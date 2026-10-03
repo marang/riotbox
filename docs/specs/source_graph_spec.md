@@ -112,6 +112,22 @@ Rules:
 - `content_hash` should identify audio content rather than path alone.
 - `decode_profile` should record normalization assumptions that matter for repeatability.
 
+Live WAV ingest identity (RBX-429 / RIOTBOX-1559):
+
+- The current identity is `sha256:<lowercase hex>` over the complete encoded
+  WAV. The Python provider hashes and decodes one captured byte buffer so its
+  source metadata, map and phrase features describe those same bytes.
+- Before Rust timing enrichment or hook analysis, App reads the source through
+  Audio's bounded regular-file reader, checks that buffer against
+  `source.content_hash`, and decodes that same buffer. A mismatch fails ingest
+  before graph mutation or Session/Graph publication, preserving any previously
+  saved pair. This applies to external and embedded graphs.
+- Python and Rust retain separate reads; matching identities bind their evidence
+  without another IPC payload or persisted model. This is not an atomic snapshot
+  of a changing filesystem. A later source change remains subject to the normal
+  restore/hydration check. Existing graphs are not rehashed or migrated; this
+  guard cannot retrospectively attest their previously computed analysis.
+
 ---
 
 ## 7. Timing Model

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import hashlib
+import io
 import json
 import math
 import os
@@ -442,7 +443,7 @@ def build_graph_from_decoded_wave(source_path: str, analysis_seed: int) -> dict:
     content_hash = f"sha256:{hashlib.sha256(content).hexdigest()}"
     source_id = f"src-{content_hash.split(':', 1)[1][:12]}"
 
-    with wave.open(canonical_path, "rb") as wav_file:
+    with wave.open(io.BytesIO(content), "rb") as wav_file:
         if wav_file.getcomptype() != "NONE":
             raise ValueError(f"unsupported WAV compression: {wav_file.getcomptype()}")
 
