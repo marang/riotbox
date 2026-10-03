@@ -7,7 +7,8 @@ import os
 import sys
 from datetime import datetime, timezone
 
-from source_bytes import SourceResourceLimitError, read_source_wav_bytes
+from source_bytes import read_source_wav_bytes
+from source_limits import SourceResourceLimitError
 from source_wave import decode_source_wave
 
 

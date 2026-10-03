@@ -12,6 +12,7 @@ from unittest import mock
 
 import json_stdio_sidecar as sidecar
 import source_bytes
+from source_limits import SourceResourceLimitError
 
 
 def analyze_request(path: Path) -> dict:
@@ -76,7 +77,7 @@ class SourceAdmissionTests(unittest.TestCase):
                     path.write_bytes(payload)
                     self.assertEqual(source_bytes.read_source_wav_bytes(str(path)), payload)
                 path.write_bytes(b"12345")
-                with self.assertRaises(source_bytes.SourceResourceLimitError):
+                with self.assertRaises(SourceResourceLimitError):
                     source_bytes.read_source_wav_bytes(str(path))
 
     def test_understated_size_short_reads_and_interruptions_stop_at_one_overrun_byte(self) -> None:
@@ -122,7 +123,7 @@ class SourceAdmissionTests(unittest.TestCase):
                     mock.patch.object(os, "fstat", side_effect=understated_stat),
                     mock.patch.object(source_bytes, "SOURCE_WAV_MAX_ENCODED_BYTES_V1", 4),
                 ):
-                    with self.assertRaisesRegex(source_bytes.SourceResourceLimitError, "required 5, limit 4"):
+                    with self.assertRaisesRegex(SourceResourceLimitError, "required 5, limit 4"):
                         source_bytes.read_source_wav_bytes(str(path))
                 self.assertEqual(positions[-1], 5)
                 self.assertEqual(descriptor_positions[-1], 5)

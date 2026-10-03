@@ -182,6 +182,23 @@ Python WAV container admission V1 (RBX-432 / RIOTBOX-1562):
   metadata contents, or add a decoded-memory/RSS/deadline policy. RBX-429/431
   byte identity and encoded admission remain unchanged.
 
+Python decoded-sample admission V1 (RBX-433 / RIOTBOX-1563):
+
+- After container/format/whole-frame validation, before `wave.readframes`, sample
+  conversion or features, require `frame_count * channel_count <= 67108864`.
+  This is the existing Rust V1 interleaved-input-sample count, not the averaged
+  mono output length. Exact-limit and genuinely empty input remain admissible.
+- A pure Python `source_limits` owner distinguishes encoded bytes from decoded
+  interleaved samples with a typed resource/error and frozen constants. The
+  existing `source_resource_limit` envelope retains request ID, non-retryable
+  status and required/limit/unit context; a rejected request leaves the peer
+  usable. No public override or new numeric threshold is introduced.
+- Encoded reading and hashing already occurred. This count policy does not
+  grant a Python heap/RSS, aggregate-memory or runtime deadline guarantee, or
+  reinterpret Python objects as Rust's `f32` payload. Existing supported PCM,
+  integer scaling, averaging, empty data, analysis, identity, Rust decoding and
+  persistence contracts otherwise remain unchanged.
+
 ---
 
 ## 7. Timing Model

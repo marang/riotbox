@@ -4,17 +4,9 @@ import errno
 import os
 import stat
 
+from source_limits import SOURCE_WAV_MAX_ENCODED_BYTES_V1, SourceResource, check_source_limit
 
-# RBX-431 extends the existing Rust V1 encoded budget, not its PCM/RSS guarantees.
-SOURCE_WAV_MAX_ENCODED_BYTES_V1 = 256 * 1024 * 1024
 _READ_CHUNK_BYTES = 64 * 1024
-
-
-class SourceResourceLimitError(ValueError):
-    def __init__(self, required: int, limit: int) -> None:
-        super().__init__(
-            f"source WAV encoded bytes exceed admission limit: required {required}, limit {limit}"
-        )
 
 
 def _open_nonblocking(path: str, flags: int) -> int:
@@ -31,8 +23,7 @@ def read_source_wav_bytes(path: str) -> bytes:
         if not stat.S_ISREG(metadata.st_mode):
             raise ValueError("source WAV is not a regular file")
         limit = SOURCE_WAV_MAX_ENCODED_BYTES_V1
-        if metadata.st_size > limit:
-            raise SourceResourceLimitError(metadata.st_size, limit)
+        check_source_limit(SourceResource.ENCODED_BYTES, metadata.st_size, limit)
 
         content = bytearray()
         while True:
@@ -47,7 +38,6 @@ def read_source_wav_bytes(path: str) -> bytes:
             if not chunk:
                 return bytes(content)
             required = len(content) + len(chunk)
-            if required > limit:
-                raise SourceResourceLimitError(required, limit)
+            check_source_limit(SourceResource.ENCODED_BYTES, required, limit)
             # One accumulator avoids retaining an object per short read.
             content.extend(chunk)

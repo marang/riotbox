@@ -4,6 +4,7 @@ import io
 import wave
 from dataclasses import dataclass
 
+from source_limits import SOURCE_WAV_MAX_DECODED_SAMPLES_V1, SourceResource, check_source_limit
 
 _SUPPORTED_SAMPLE_WIDTHS = {1, 2, 3, 4}
 
@@ -35,6 +36,11 @@ def decode_source_wave(content: bytes) -> DecodedSourceWave:
                 raise ValueError("source WAV data does not contain whole PCM frames")
             if frame_count * frame_width != data_size:
                 raise ValueError("source WAV declared frame count does not match data size")
+            check_source_limit(
+                SourceResource.DECODED_INTERLEAVED_SAMPLES,
+                frame_count * channel_count,
+                SOURCE_WAV_MAX_DECODED_SAMPLES_V1,
+            )
             frames = wav_file.readframes(frame_count)
     except (EOFError, wave.Error, RuntimeError) as error:
         # Only parser operations live inside this guard, not graph analysis.
