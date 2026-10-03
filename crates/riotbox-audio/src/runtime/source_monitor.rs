@@ -1,10 +1,11 @@
 use crate::runtime::fill_focus::FillFocusRenderState;
 use crate::source_audio::SourceAudioCache;
-use arc_swap::ArcSwap;
-use arc_swap::Guard;
 use riotbox_core::action::SourceMonitorMode;
 use std::sync::Arc;
 use std::sync::Mutex;
+use triple_buffer::Input;
+use triple_buffer::Output;
+use triple_buffer::TripleBuffer;
 
 #[cfg(test)]
 mod replacement_tests;
@@ -113,69 +114,96 @@ impl SourceMonitorRenderState {
 }
 
 pub(super) struct SharedSourceMonitorRenderState {
-    snapshot: ArcSwap<SourceMonitorSharedSnapshot>,
-    // Serializes control-side writers and defers old-snapshot reclamation away from the callback.
-    retired_snapshots: Mutex<Vec<Arc<SourceMonitorSharedSnapshot>>>,
+    control: Mutex<SourceMonitorControlState>,
+}
+
+struct SourceMonitorControlState {
+    // The producer's recycled slot is not necessarily the latest publication.
+    latest: Arc<SourceMonitorSharedSnapshot>,
+    input: Input<Arc<SourceMonitorSharedSnapshot>>,
+    callback_output: Option<Output<Arc<SourceMonitorSharedSnapshot>>>,
+}
+
+/// Single callback consumer. Keep the shared control owner alive until this
+/// reader is torn down, so final slot reclamation stays on the control side.
+pub(super) struct SourceMonitorCallbackReader {
+    output: Output<Arc<SourceMonitorSharedSnapshot>>,
+}
+
+impl SourceMonitorCallbackReader {
+    /// Borrows the consumer slot without cloning or dropping its payload.
+    pub(super) fn snapshot(&mut self) -> &SourceMonitorSharedSnapshot {
+        self.output.read().as_ref()
+    }
 }
 
 impl SharedSourceMonitorRenderState {
     pub(super) fn new(render_state: &SourceMonitorRenderState) -> Self {
+        let latest = Arc::new(SourceMonitorSharedSnapshot::from_render_state(render_state));
+        let (input, output) = TripleBuffer::new(&latest).split();
         Self {
-            snapshot: ArcSwap::from_pointee(SourceMonitorSharedSnapshot::from_render_state(
-                render_state,
-            )),
-            retired_snapshots: Mutex::new(Vec::new()),
+            control: Mutex::new(SourceMonitorControlState {
+                latest,
+                input,
+                callback_output: Some(output),
+            }),
         }
     }
 
     pub(super) fn update_controls(&self, render_state: &SourceMonitorRenderState) {
-        let mut retired = self
-            .retired_snapshots
+        let mut control = self
+            .control
             .lock()
             .expect("source-monitor writer mutex poisoned");
-        let current = self.snapshot.load();
-        if current.controls_match(render_state) {
+        if control.latest.controls_match(render_state) {
             return;
         }
-        let next =
-            SourceMonitorSharedSnapshot::from_control_state(render_state, current.source.clone());
-        drop(current);
-        self.publish(next, &mut retired);
+        let next = SourceMonitorSharedSnapshot::from_control_state(
+            render_state,
+            control.latest.source.clone(),
+        );
+        Self::publish(next, &mut control);
     }
 
     pub(super) fn replace_source_and_controls(&self, render_state: &SourceMonitorRenderState) {
-        let mut retired = self
-            .retired_snapshots
+        let mut control = self
+            .control
             .lock()
             .expect("source-monitor writer mutex poisoned");
-        self.publish(
+        Self::publish(
             SourceMonitorSharedSnapshot::from_render_state(render_state),
-            &mut retired,
+            &mut control,
         );
     }
 
-    pub(super) fn snapshot(&self) -> Guard<Arc<SourceMonitorSharedSnapshot>> {
-        self.snapshot.load()
+    /// Control/observer-only access: locks and clones an Arc. Never call from
+    /// the realtime processor; it must use its single callback reader instead.
+    pub(super) fn snapshot(&self) -> Arc<SourceMonitorSharedSnapshot> {
+        Arc::clone(
+            &self
+                .control
+                .lock()
+                .expect("source-monitor writer mutex poisoned")
+                .latest,
+        )
     }
 
-    #[cfg(test)]
-    fn retired_snapshot_count(&self) -> usize {
-        self.retired_snapshots
+    /// Acquires the sole reader once during control-side callback preparation.
+    pub(super) fn take_callback_reader(&self) -> Option<SourceMonitorCallbackReader> {
+        self.control
             .lock()
             .expect("source-monitor writer mutex poisoned")
-            .len()
+            .callback_output
+            .take()
+            .map(|output| SourceMonitorCallbackReader { output })
     }
 
-    fn publish(
-        &self,
-        next: SourceMonitorSharedSnapshot,
-        retired: &mut Vec<Arc<SourceMonitorSharedSnapshot>>,
-    ) {
-        let previous = self.snapshot.swap(Arc::new(next));
-        retired.retain(|snapshot| Arc::strong_count(snapshot) > 1);
-        if Arc::strong_count(&previous) > 1 {
-            retired.push(previous);
-        }
+    fn publish(next: SourceMonitorSharedSnapshot, control: &mut SourceMonitorControlState) {
+        let next = Arc::new(next);
+        // Only the producer replaces slot payloads. Consumer reads swap indices
+        // and borrow one of the fixed three slots without reclaiming old PCM.
+        control.input.write(Arc::clone(&next));
+        control.latest = next;
     }
 }
 
