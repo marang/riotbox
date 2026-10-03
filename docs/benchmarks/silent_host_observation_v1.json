@@ -1,0 +1,20 @@
+{
+  "schema": "riotbox.silent_host_observation.v1",
+  "schema_version": 1,
+  "run_count": 3,
+  "run_seconds": 60,
+  "sample_interval_ms": 1000,
+  "process_timeout_seconds": 75,
+  "kill_grace_seconds": 2,
+  "metadata_timeout_seconds": 3,
+  "route_poll_interval_ms": 100,
+  "startup_route_deadline_seconds": 5,
+  "teardown_deadline_seconds": 5,
+  "preflight_process_timeout_seconds": 8,
+  "runtime_profile": "idle_defaults",
+  "source_access": "none",
+  "host_context": "real_linux_user_session",
+  "route": "isolated_stereo_virtual_sink",
+  "failure_policy": "stop_no_retry",
+  "evidence_scope": "sampled_silent_virtual_callback_lifetime"
+}

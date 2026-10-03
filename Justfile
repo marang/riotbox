@@ -33,6 +33,7 @@ ci:
     cargo fmt --check
     cargo test
     just sidecar-contract-fixtures
+    just silent-host-contract-fixtures
     just hook-chop-diagnostic-contract-fixtures
     just feral-grid-verification-contract-fixtures
     just limiter-calibration-fixtures
@@ -76,6 +77,10 @@ _ci-broad-extra:
 
 sidecar-contract-fixtures:
     python3 -m unittest discover -s python/sidecar -p 'test_*.py'
+
+# Generated metadata/process fixtures only; never creates a sink or opens CPAL.
+silent-host-contract-fixtures:
+    python3 -W error::ResourceWarning -m unittest discover -s scripts -p 'test_silent_host_*.py'
 
 tracked-json-validate:
     git ls-files -z '*.json' | xargs -0 -r -n 64 jq empty

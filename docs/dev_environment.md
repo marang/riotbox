@@ -35,6 +35,12 @@ error path; a real filesystem matrix has not been qualified.
 - Record whether Linux audio validation came from sandbox or real user session.
 - Treat sandbox-only audio failures as inconclusive.
 
+The dev-only [RIOTBOX-1566 silent-host protocol](benchmarks/silent_host_observation_v1.md)
+owns its one-attempt Linux/PipeWire route and cleanup gates. It uses a child-local
+PipeWire-only ALSA configuration, not the user's potentially physical `default`
+PCM. Its explicit operator flag is not a general device-test or retry recipe;
+generated CI fixtures never contact the host audio service.
+
 ## Agent Sandbox Self-Checks
 
 Run these when Riotbox runs inside `agent-sandbox` and host capability is unclear:
