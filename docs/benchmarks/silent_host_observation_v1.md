@@ -4,6 +4,14 @@ Owner: RIOTBOX-1566, partial P017 / RIOTBOX-1041 operational evidence for the
 accepted P023 callback path. Classification: maintenance / observation, not an
 audible mechanism, physical-device qualification or a new telemetry authority.
 
+**Execution status, 2026-10-03: consumed and failed. Do not execute V1 again.**
+The [attempt report](../reviews/riotbox_1566_silent_host_observation_2026-10-03.md)
+records a first-run teardown false rejection and a separate module-metadata
+cleanup defect. Its original failed artifacts and numeric contract are retained;
+RIOTBOX-1567 tracks a versioned repair, not permission to retry this attempt.
+The procedure below is the historical prospective contract, not a new launch
+instruction.
+
 The [frozen numeric protocol](silent_host_observation_v1.json) is shared by the
 dev-only Rust driver and Linux operator. Freeze it before the first host probe;
 any changed limit or acceptance condition requires a new version and decision.
