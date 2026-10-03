@@ -106,7 +106,26 @@ Clarification:
   spawned. Valid source-analysis errors do not invalidate a synchronized peer.
   Protocol 0.1 and legacy final EOF frames without a newline stay compatible.
   This bounds pipe backpressure/response wait, not process spawn, local JSON CPU,
-  host scheduling/kernel stalls, process-tree containment or maximum frame size
+  host scheduling/kernel stalls or process-tree containment
+- Rust response admission V1 (RBX-430) caps each stdio response at 8 MiB
+  (`SIDECAR_MAX_RESPONSE_BYTES_V1`), counted as wire bytes including CR/LF when
+  present. This applies equally to control and analysis, before UTF-8/JSON
+  decoding. Exactly-at-limit final EOF frames remain valid; an unterminated
+  frame at the limit waits for EOF or one overrun byte under the same deadline.
+  The overrun byte is never appended. Reads are restricted to remaining space,
+  so a valid response does not consume the next frame's budget. Coalesced
+  trailing bytes stay available to the next exchange.
+  Frame growth and trailing-byte preservation use fallible allocation; requested
+  frame capacity never exceeds the limit, and trailing storage is smaller than
+  one 8192-byte read chunk. Completed frame capacity is not retained by the
+  client. `ResponseTooLarge` reports operation and limit; allocation failure
+  reports `ResponseAllocationFailed` with its cause. Both invalidate the client
+  and terminate/reap the direct peer through the existing fatal transport path.
+  This is a fixed client admission policy, not a new wire/schema version or a
+  claim that every otherwise-valid large graph will fit. Oversized legitimate
+  graphs fail visibly instead of being truncated. The limit does not bound
+  parsed JSON allocations/CPU, outgoing requests, Python analysis, concurrent
+  clients, allocator overhead or total process memory
 - short-budget analysis transport regressions establish protocol readiness under
   the ordinary bounded policy before installing their test policy. Synthetic
   startup delays verify that the test reaches analysis rather than depending

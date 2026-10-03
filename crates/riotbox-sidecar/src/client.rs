@@ -3,9 +3,11 @@ use crate::protocol::{
     PongPayload, SidecarErrorPayload, SidecarRequest, SidecarResponse, decode_json_line,
     encode_json_line,
 };
+pub use crate::transport::SIDECAR_MAX_RESPONSE_BYTES_V1;
 use crate::transport::{StdioTransport, TransportError};
 use riotbox_core::source_graph::{SourceDescriptor, SourceGraph};
 use std::{
+    collections::TryReserveError,
     error::Error,
     fmt::{self, Display, Formatter},
     io,
@@ -66,6 +68,14 @@ pub enum ClientError {
         operation: SidecarOperation,
         timeout: Duration,
     },
+    ResponseTooLarge {
+        operation: SidecarOperation,
+        limit_bytes: usize,
+    },
+    ResponseAllocationFailed {
+        operation: SidecarOperation,
+        source: TryReserveError,
+    },
     RequestIdMismatch {
         expected: String,
         received: Option<String>,
@@ -104,6 +114,17 @@ impl Display for ClientError {
                 "sidecar {operation} transport did not complete within {:.1}s",
                 timeout.as_secs_f32()
             ),
+            Self::ResponseTooLarge {
+                operation,
+                limit_bytes,
+            } => write!(
+                f,
+                "sidecar {operation} response exceeds the {limit_bytes}-byte framing limit; transport closed"
+            ),
+            Self::ResponseAllocationFailed { operation, source } => write!(
+                f,
+                "cannot allocate sidecar {operation} response buffer: {source}; transport closed"
+            ),
             Self::RequestIdMismatch { expected, received } => write!(
                 f,
                 "sidecar response request_id mismatch: expected {expected}, got {}",
@@ -133,6 +154,7 @@ impl Error for ClientError {
                 Some(source)
             }
             Self::Protocol(error) => Some(error),
+            Self::ResponseAllocationFailed { source, .. } => Some(source),
             Self::MissingStdin
             | Self::MissingStdout
             | Self::UnexpectedEof
@@ -140,6 +162,7 @@ impl Error for ClientError {
             | Self::Sidecar(_)
             | Self::UnexpectedResponse(_)
             | Self::ResponseTimeout { .. }
+            | Self::ResponseTooLarge { .. }
             | Self::RequestIdMismatch { .. }
             | Self::ProtocolVersionMismatch { .. }
             | Self::UntrustedAnalysisProvider { .. } => None,
@@ -346,6 +369,13 @@ impl StdioSidecarClient {
                     TransportError::Io(error) => ClientError::Io(error),
                     TransportError::Deadline => ClientError::ResponseTimeout { operation, timeout },
                     TransportError::Eof => ClientError::UnexpectedEof,
+                    TransportError::ResponseTooLarge => ClientError::ResponseTooLarge {
+                        operation,
+                        limit_bytes: SIDECAR_MAX_RESPONSE_BYTES_V1,
+                    },
+                    TransportError::ResponseAllocationFailed(source) => {
+                        ClientError::ResponseAllocationFailed { operation, source }
+                    }
                 });
             }
         };
@@ -441,6 +471,9 @@ impl Drop for StdioSidecarClient {
 
 #[cfg(test)]
 mod transport_deadline_tests;
+
+#[cfg(test)]
+mod response_limit_tests;
 
 #[cfg(test)]
 mod tests {
