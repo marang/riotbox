@@ -128,6 +128,35 @@ Live WAV ingest identity (RBX-429 / RIOTBOX-1559):
   restore/hydration check. Existing graphs are not rehashed or migrated; this
   guard cannot retrospectively attest their previously computed analysis.
 
+Python encoded-source admission V1 (RBX-431 / RIOTBOX-1561):
+
+- Before hashing or decoding, admit the opened original-source descriptor as
+  a regular file and reject a declared size above `268435456` bytes (256 MiB).
+  This extends the existing Rust encoded-byte policy to the earlier provider
+  read; it does not extend Rust's decoded-PCM policy to Python.
+- On Unix use nonblocking open before descriptor admission, so a FIFO cannot
+  wait for a producer. Keep regular-file symlinks and canonical source paths;
+  capture/export no-follow rules are not substituted here.
+- Read unbuffered, in at most 64 KiB chunks, under the actual byte budget even
+  when metadata understates growth. At the limit allow only one overrun probe
+  byte. Exact-limit EOF succeeds; excess never becomes a truncated success or
+  reaches hash/decode. Short/interrupted reads preserve this rule. Unbuffered
+  I/O is required so implicit prefetch cannot exceed the probe boundary.
+  A raw nonblocking `None` result is an I/O failure, never EOF or a successful
+  partial source; do not wait or spin for its availability.
+- Size rejection returns the existing error envelope with code
+  `source_resource_limit`, request ID, limit/required context and `retryable:
+  false`. Other file and unsupported-format errors retain their existing
+  envelopes. Complete admission errors leave the synchronized peer usable;
+  App propagates them before enrichment or Session/Graph publication.
+- Hash and decode the one successfully admitted immutable buffer (RBX-429).
+  This is not an atomic filesystem snapshot or a 256 MiB RSS guarantee:
+  the single bytearray accumulator and its final immutable copy may coexist;
+  allocator growth/overhead, WAV frame copies, Python sample/analysis arrays
+  and concurrent processes remain
+  outside this encoded-byte limit. No public override or analysis/DSP change;
+  a different limit requires a new policy/Decision.
+
 ---
 
 ## 7. Timing Model
