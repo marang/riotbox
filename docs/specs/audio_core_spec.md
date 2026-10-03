@@ -905,6 +905,14 @@ endurance qualification. Tag actual observations as sandbox or real session;
 source-free unit/reporting tests never open a device. Historical observations
 are not upgraded by this contract, and RIOTBOX-1041 still owns real-session soak.
 
+RIOTBOX-1566 / RBX-436 adds a separate dev-only
+[silent virtual-host observation](../benchmarks/silent_host_observation_v1.md).
+Its fixed driver reuses this health projection and the default idle runtime;
+the Linux operator owns backend/route containment, bounded supervision and
+ephemeral evidence. Generated tests never open CPAL. Even a successful attempt
+is only sampled silent virtual-endpoint evidence, not completion of the soak,
+loaded-runtime, physical-device, musical or release gates above.
+
 ---
 
 ## 16. Open Follow-Ups

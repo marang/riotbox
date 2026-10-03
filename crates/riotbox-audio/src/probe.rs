@@ -80,7 +80,10 @@ pub fn run_output_probe(run_for: Duration) -> AudioProbeSummary {
 }
 
 impl AudioProbeSummary {
-    fn from_health(health: AudioRuntimeHealth) -> Self {
+    /// Project supplied health without opening a device. Callers own observation
+    /// timing and routing verification; this projection adds neither claim.
+    #[must_use]
+    pub fn from_health(health: AudioRuntimeHealth) -> Self {
         let default_output_config = health.output.as_ref().map(|output| {
             format!(
                 "{}, channels={}, sample_rate={}, buffer_size={}",
