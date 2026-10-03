@@ -511,6 +511,11 @@ not bounded by this Rust contract. Capture/WAV writers and unrelated render
 allocations are also outside it. Generated small-budget and sparse-file tests
 do not qualify real sources, Holdouts or musical/release quality.
 
+RBX-431 / RIOTBOX-1561 separately applies the same 256 MiB encoded-file budget
+to the earlier Python provider read; Source Graph §6 owns that extension.
+Python decoded/frame/analysis allocations and aggregate memory remain outside
+both encoded-read policies. The Rust V1 reader/decoder contract above is unchanged.
+
 The existing transport-selected source window remains the default. Only a
 committed `feral_break_alpha_v2` preset with a non-baseline typed hook policy may
 replace a one-bar `CaptureBarGroup` window, and only when persisted eligible

@@ -9,6 +9,8 @@ import sys
 import wave
 from datetime import datetime, timezone
 
+from source_bytes import SourceResourceLimitError, read_source_wav_bytes
+
 
 PROTOCOL_VERSION = "0.1"
 SIDECAR_VERSION = "0.1.0"
@@ -437,8 +439,7 @@ def build_graph_from_decoded_wave(source_path: str, analysis_seed: int) -> dict:
     if not os.path.exists(canonical_path):
         raise FileNotFoundError(canonical_path)
 
-    with open(canonical_path, "rb") as handle:
-        content = handle.read()
+    content = read_source_wav_bytes(canonical_path)
 
     content_hash = f"sha256:{hashlib.sha256(content).hexdigest()}"
     source_id = f"src-{content_hash.split(':', 1)[1][:12]}"
@@ -682,6 +683,14 @@ def handle_message(message: dict, clock=utc_generated_at) -> dict:
                 "request_id": message.get("request_id"),
                 "code": "source_missing",
                 "message": f"source file not found: {error}",
+                "retryable": False,
+            }
+        except SourceResourceLimitError as error:
+            return {
+                "type": "error",
+                "request_id": message.get("request_id"),
+                "code": "source_resource_limit",
+                "message": str(error),
                 "retryable": False,
             }
         except (ValueError, wave.Error) as error:
