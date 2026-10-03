@@ -53,6 +53,30 @@ impl JamAppState {
             },
         };
 
+        // The writer and its readiness plan intentionally select the latest DAW
+        // receipt. Refuse stale work before either can publish for a different
+        // identity than the queued action; Session is exclusive during commit.
+        let queued_receipt_id = self.pending_daw_session_proof_receipt_id(
+            action_id,
+            DawSessionExportBoundary::LocalProjectWriterV1,
+        );
+        let receipt_index = match latest_daw_session_receipt_index(&self.session) {
+            Some(index)
+                if queued_receipt_id.as_deref()
+                    == Some(self.session.export_receipts[index].receipt_id.as_str()) =>
+            {
+                index
+            }
+            _ => {
+                let message = format!(
+                    "queued DAW session writer action {action_id} receipt is missing or no longer selected; queue the export again"
+                );
+                self.queue.reject(action_id, message.clone());
+                self.refresh_view();
+                return Err(JamAppError::InvalidSession(message));
+            }
+        };
+
         if let Err(error) = write_daw_session_writer_proof_skeleton(
             &self.session,
             session_base_dir,
@@ -64,11 +88,6 @@ impl JamAppState {
         }
 
         let report = daw_session_writer_proof_report(destination_dir);
-        let receipt_index = latest_daw_session_receipt_index(&self.session).ok_or_else(|| {
-            JamAppError::InvalidSession(
-                "DAW session writer export requires a DAW session receipt".into(),
-            )
-        })?;
         if let Err(error) = attach_daw_session_writer_proof_evidence_to_receipt(
             &mut self.session.export_receipts[receipt_index],
             &report,

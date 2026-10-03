@@ -1102,7 +1102,15 @@ Contract for `export.stem_package`:
   app code may enqueue `export.daw_session` with
   `daw_session.local_project_writer_v1` only when the latest DAW-session
   receipt is ready for the writer plan and has passed
-  `daw_session_json_package_integrity` evidence. The commit path runs the
+  `daw_session_json_package_integrity` evidence. Before any writer side effect,
+  commit requires the queued receipt identity to remain the current latest
+  DAW-session receipt (RBX-434). Missing, unknown, removed, wrong-scope or stale
+  selection rejects the attempt without changing files, receipt evidence or the
+  committed action log; the operator must requeue against the current receipt.
+  A later non-DAW receipt does not invalidate that selection. This local writer
+  still uses its latest-receipt plan; unlike the proof-only boundaries below,
+  it does not newly support writing for an older selected receipt.
+  The commit path runs the
   existing staged local writer proof outside realtime audio, writes only
   `daw_session_writer/local_project_skeleton.json` and
   `daw_session_writer/writer_proof.json`, attaches the
