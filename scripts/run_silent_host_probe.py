@@ -162,7 +162,7 @@ def require_removed(host, sink, pid, protocol, snapshots, *, deadline=None,
         time.sleep(protocol["route_poll_interval_ms"] / 1000)
 
 
-def run_program(command, prefix, host, sink, protocol, environment, *, preflight=False):
+def run_program(command, prefix, host, sink, protocol, environment, *, preflight=False, diagnostics=None):
     """Own one process and continuously observe the exact external route."""
     stdout = prefix.with_suffix(".stdout.log" if preflight else ".stdout.ndjson")
     stderr = prefix.with_suffix(".stderr.log")
@@ -176,6 +176,8 @@ def run_program(command, prefix, host, sink, protocol, environment, *, preflight
     result = None
     terminal_deadline = None
     interval_count = protocol["run_seconds"] * 1000 // protocol["sample_interval_ms"]
+    if diagnostics is not None:
+        command = diagnostics.wrap(command, prefix, environment)
     managed = ManagedProcess(command, stdout, stderr, environment, watchdog,
                              protocol["kill_grace_seconds"])
     with route_snapshots(prefix.with_suffix(".routes.ndjson.gz")) as snapshots:
@@ -283,21 +285,34 @@ def run_program(command, prefix, host, sink, protocol, environment, *, preflight
                             for note in getattr(original, "__notes__", []):
                                 failure.add_note(note)
                     failure.add_note(f"stream cleanup not verified: {cleanup_error}")
+        measurement = None
+        if diagnostics is not None and managed.cleanup_verified and pid is not None:
+            try:
+                measurement = diagnostics.finish(prefix, pid, complete=failure is None)
+                if failure is None:
+                    diagnostics.verify_geometry(measurement, result, preflight=preflight)
+            except BaseException as diagnostic_error:
+                if failure is None:
+                    failure = diagnostic_error
+                else:
+                    failure.add_note(f"diagnostic validation failed: {diagnostic_error}")
         if failure is not None:
             raise failure
     return {"pid": pid, "route": asdict(observed), "route_observations": route_count,
             "elapsed_seconds": time.monotonic() - start, "result": result,
             "stdout_sha256": digest(stdout),
-            "routes_sha256": digest(prefix.with_suffix(".routes.ndjson.gz"))}
+            "routes_sha256": digest(prefix.with_suffix(".routes.ndjson.gz")),
+            **({"alsa_measurements": measurement} if diagnostics is not None else {})}
 
 
-def execute_attempt(interrupts, *, owner):
+def execute_attempt(interrupts, *, owner, diagnostics=None):
     """Reserved orchestration seam; currently called only with generated adapters.
 
     There is deliberately no default owner and no CLI path into this function.
     A real-host caller requires a separately authorized prospective phase.
     """
-    protocol = load_protocol(ROOT / "docs/benchmarks/silent_host_observation_v3.json")
+    protocol = (load_protocol(ROOT / "docs/benchmarks/silent_host_observation_v3.json")
+                if diagnostics is None else diagnostics.protocol)
     if sys.platform != "linux" or os.getuid() == 0:
         raise EvidenceError("requires a non-root real Linux user session")
     host_environment = local_host_environment(os.environ)
@@ -320,6 +335,10 @@ def execute_attempt(interrupts, *, owner):
                "protocol_sha256": PROTOCOL_SHA256, "binary_sha256": hashes,
                "git_revision": host.text(["git", "rev-parse", "HEAD"]),
                "sink_name": name, "runs": [], "cleanup_verified": False}
+    if diagnostics is not None:
+        from silent_host_diagnostics import V4_PROTOCOL_SHA256
+        attempt.update(schema="riotbox.silent_host_attempt.v4", protocol_sha256=V4_PROTOCOL_SHA256,
+                       diagnostic_library_sha256=diagnostics.expected_hash)
     write_json(owner / "admission.json", attempt)
     failure = None
     try:
@@ -357,13 +376,15 @@ def execute_attempt(interrupts, *, owner):
         attempt["alsa_config_sha256"] = digest(Path(environment["ALSA_CONFIG_PATH"]))
         attempt["pipewire_remote"] = environment["PIPEWIRE_REMOTE"]
         attempt["preflight"] = run_program([str(binaries["cpal_spike"])], owner / "preflight",
-                                           host, sink, protocol, environment, preflight=True)
+                                           host, sink, protocol, environment, preflight=True,
+                                           **({"diagnostics": diagnostics} if diagnostics is not None else {}))
         last_pid = attempt["preflight"]["pid"]
         for index in range(1, protocol["run_count"] + 1):
             if host.default_state() != baseline:
                 raise EvidenceError("default output changed before the next run")
             result = run_program([str(binaries["silent_host_probe"]), "--isolated-silent-host"],
-                                 owner / f"run-{index}", host, sink, protocol, environment)
+                                 owner / f"run-{index}", host, sink, protocol, environment,
+                                 **({"diagnostics": diagnostics} if diagnostics is not None else {}))
             last_pid = result["pid"]
             attempt["runs"].append(result)
         if host.default_state() != baseline:

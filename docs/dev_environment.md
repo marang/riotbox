@@ -55,6 +55,14 @@ underrun/overrun and stopped; run 3 did not start. Owned cleanup and unchanged
 default/mute/volume were verified. This is negative real-session evidence, not
 an endurance pass or permission to retry. The frozen V3 operator stays unchanged.
 
+[RIOTBOX-1574 V4](benchmarks/silent_host_observation_v4.md) adds an opt-in,
+QA-only ALSA measurement adapter to that operator. Its separately authorized
+one-shot fence pins the diagnostic library as well as the reviewed Rust binaries
+and protocol. Only the target audio child is instrumented, not timeout/metadata;
+read diagnostics after verified group cleanup. It changes no production runtime,
+buffer, priority or original verdict and does not enable the ordinary CLI.
+An instrumented observation is not a zero-overhead or original-trigger fix claim.
+
 ## Agent Sandbox Self-Checks
 
 Run these when Riotbox runs inside `agent-sandbox` and host capability is unclear:
