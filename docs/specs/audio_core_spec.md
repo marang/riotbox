@@ -928,6 +928,12 @@ the driver/runtime, numeric values and route/process protections. Paired JSON
 payload/text-index framing, opaque native argument handling and exact named-Node
 collision admission must not enable the CLI or imply another host attempt.
 
+RIOTBOX-1572's separately authorized V3 observation admitted the owned virtual
+route and completed one silent 60-second run; the second recorded one backend
+buffer underrun/overrun at sample 36 and stopped. Cleanup was verified, the
+third run did not start, and the full observation gate failed. The consumed
+negative result does not change V3/runtime thresholds or qualify endurance.
+
 ---
 
 ## 16. Open Follow-Ups
