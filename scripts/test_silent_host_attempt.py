@@ -17,7 +17,7 @@ from test_silent_host_routes import fixture
 
 
 class AttemptTests(unittest.TestCase):
-    def run_attempt(self, error):
+    def run_attempt(self, error, *, preexisting_sink=False):
         class Host:
             def __init__(self, *args):
                 self.created = False
@@ -31,7 +31,7 @@ class AttemptTests(unittest.TestCase):
                 if command[0] == "loginctl":
                     return f"Active=yes\nRemote=no\nUser={os.getuid()}"
                 if command == ["pactl", "--format=text", "list", "short", "modules"]:
-                    return ("42\tmodule-null-sink\tsink_name=riotbox_silent_host_v2_fixture "
+                    return ("42\tmodule-null-sink\tsink_name=riotbox_silent_host_v3_fixture "
                             "channels=2 channel_map=front-left,front-right\t\n"
                             if self.created and not self.unloaded else "")
                 if command[:2] == ["pactl", "load-module"]:
@@ -43,14 +43,18 @@ class AttemptTests(unittest.TestCase):
                 raise AssertionError(command)
 
             def json(self, command):
+                if command == ["pactl", "--format=json", "list", "short", "modules"]:
+                    return [{"name": "module-null-sink", "argument":
+                             "sink_name=riotbox_silent_host_v3_fixture channels=2 channel_map=front-left,front-right"}
+                            ] if self.created and not self.unloaded else []
                 if command[-1] == "info":
                     return {"is_local": "yes", "server_name": "PipeWire generated", "host_name": "fixture"}
                 raise AssertionError(command)
 
             def snapshot(self):
                 data = fixture()[:1]
-                data[0]["info"]["props"]["node.name"] = "riotbox_silent_host_v2_fixture"
-                return data if self.created and not self.unloaded else []
+                data[0]["info"]["props"]["node.name"] = "riotbox_silent_host_v3_fixture"
+                return data if preexisting_sink or (self.created and not self.unloaded) else []
 
             def default_state(self):
                 return {"default_sink_name": "untouched", "mute": False, "volume": {"fixture": 100}}
@@ -58,9 +62,9 @@ class AttemptTests(unittest.TestCase):
         host = Host()
         with tempfile.TemporaryDirectory(prefix="riotbox-attempt-fixture-") as directory:
             root = Path(directory)
-            protocol = root / "docs/benchmarks/silent_host_observation_v2.json"
+            protocol = root / "docs/benchmarks/silent_host_observation_v3.json"
             protocol.parent.mkdir(parents=True)
-            protocol.write_bytes((operator.ROOT / "docs/benchmarks/silent_host_observation_v2.json").read_bytes())
+            protocol.write_bytes((operator.ROOT / "docs/benchmarks/silent_host_observation_v3.json").read_bytes())
             owner = root / "generated-attempt"
             for name in ("cpal_spike", "silent_host_probe"):
                 binary = root / "target/debug" / name
@@ -77,7 +81,10 @@ class AttemptTests(unittest.TestCase):
                 with OperatorInterrupts() as interrupts:
                     with self.assertRaises(type(error)):
                         operator.execute_attempt(interrupts, owner=owner)
-                launch.assert_called_once()
+                if preexisting_sink:
+                    launch.assert_not_called()
+                else:
+                    launch.assert_called_once()
                 result = json.loads((owner / "result.json").read_text())
                 return host, result
 
@@ -97,6 +104,17 @@ class AttemptTests(unittest.TestCase):
         self.assertTrue(host.unloaded)
         self.assertTrue(result["cleanup_verified"])
         self.assertEqual(result["result"], "failed")
+
+    def test_existing_named_node_rejects_before_sink_load_or_audio_start(self):
+        host, result = self.run_attempt(EvidenceError("generated collision"), preexisting_sink=True)
+        self.assertFalse(host.created)
+        self.assertFalse(host.unloaded)
+        self.assertEqual(result["schema"], "riotbox.silent_host_attempt.v3")
+        self.assertEqual(result["runs"], [])
+        self.assertNotIn("preflight", result)
+        self.assertNotIn("module_id", result)
+        self.assertIn("sink", result["error"])
+        self.assertTrue(result["cleanup_verified"])
 
     def test_first_signal_during_result_publication_cannot_leave_success(self):
         original = json.dump

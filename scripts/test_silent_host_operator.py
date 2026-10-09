@@ -274,6 +274,14 @@ class OwnedSinkCleanupTests(unittest.TestCase):
                 self.own_present = True
                 self.commands = []
 
+            def json(self, command):
+                assert command == ["pactl", "--format=json", "list", "short", "modules"]
+                modules = [{"name": "module-null-sink", "argument": "sink_name=unrelated"}]
+                if self.own_present:
+                    modules.append({"name": "module-null-sink", "argument":
+                                    "sink_name=owned-test channels=2 channel_map=front-left,front-right"})
+                return modules
+
             def text(self, command):
                 if command == ["pactl", "--format=text", "list", "short", "modules"]:
                     rows = "7\tmodule-null-sink\tsink_name=unrelated\t\n"
