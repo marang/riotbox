@@ -8,6 +8,7 @@ from silent_host_evidence import EvidenceError
 
 
 QUERY = ["pactl", "--format=text", "list", "short", "modules"]
+JSON_QUERY = ["pactl", "--format=json", "list", "short", "modules"]
 ARGUMENT = "sink_name=owned-test channels=2 channel_map=front-left,front-right"
 OWNED = f"42\tmodule-null-sink\t{ARGUMENT}\t\n"
 FOREIGN = "7\tmodule-always-sink\t\t\n"
@@ -20,6 +21,18 @@ class GeneratedHost:
         self.commands = []
         self.nodes = []
         self.snapshot_count = 0
+
+    def json(self, command):
+        self.commands.append(command)
+        if command != JSON_QUERY:
+            raise AssertionError(f"unexpected generated command: {command}")
+        # Compatibility adapter for the old literal single-line fixtures only.
+        # Independent V3 tests supply explicit JSON and multiline text separately.
+        if not isinstance(self.modules, str):
+            return []
+        return [{"name": fields[1], "argument": fields[2]}
+                for line in self.modules.splitlines()
+                if len(fields := line.split("\t")) >= 3 and fields[1]]
 
     def text(self, command):
         self.commands.append(command)
@@ -38,6 +51,19 @@ class GeneratedHost:
 
 
 class OwnedModulesTests(unittest.TestCase):
+    def test_one_large_pulse_token_checks_deadline_during_lexing(self):
+        host = GeneratedHost("7\tmodule-always-sink\t\"" + "x" * 100000 + "\"\t\n")
+        ticks = [0]
+
+        def clock():
+            ticks[0] += 1
+            return 5.0 if ticks[0] >= 100 else 0.0
+
+        with patch("silent_host_modules.time.monotonic", side_effect=clock):
+            with self.assertRaisesRegex(EvidenceError, "deadline"):
+                owned_modules(host, "owned-test", deadline=5.0)
+        self.assertEqual(host.commands, [JSON_QUERY, QUERY])
+
     def test_short_text_supplies_real_index_and_accepts_optional_empty_column(self):
         for row in [OWNED, OWNED.replace("\t\n", "\n")]:
             with self.subTest(row=row):
@@ -45,7 +71,7 @@ class OwnedModulesTests(unittest.TestCase):
                 self.assertEqual(owned_modules(host, "owned-test"), [
                     {"index": 42, "name": "module-null-sink", "argument": ARGUMENT},
                 ])
-                self.assertEqual(host.commands, [QUERY])
+                self.assertEqual(host.commands, [JSON_QUERY, QUERY])
 
     def test_owned_identity_requires_exact_type_stereo_arguments_and_no_conflicts(self):
         for row in [
@@ -105,7 +131,7 @@ class ModuleCleanupTests(unittest.TestCase):
             with self.subTest(module_id=module_id):
                 host = GeneratedHost(FOREIGN + OWNED)
                 remove_owned_sink(host, "owned-test", module_id, PROTOCOL)
-                self.assertEqual(host.commands, [QUERY, ["pactl", "unload-module", "42"], QUERY])
+                self.assertEqual(host.commands, [JSON_QUERY, QUERY, ["pactl", "unload-module", "42"], JSON_QUERY, QUERY])
                 self.assertEqual(host.snapshot_count, 1)
                 self.assertEqual(host.modules, FOREIGN.rstrip("\n"))
 
@@ -121,7 +147,7 @@ class ModuleCleanupTests(unittest.TestCase):
                 host = GeneratedHost(rows)
                 with self.assertRaises(EvidenceError):
                     remove_owned_sink(host, "owned-test", 42, PROTOCOL)
-                self.assertEqual(host.commands, [QUERY])
+                self.assertEqual(host.commands, [JSON_QUERY, QUERY])
 
     def test_post_unload_replacement_is_rejected_without_a_second_unload(self):
         class ReplacedHost(GeneratedHost):
@@ -134,7 +160,7 @@ class ModuleCleanupTests(unittest.TestCase):
         host = ReplacedHost()
         with self.assertRaises(EvidenceError):
             remove_owned_sink(host, "owned-test", None, PROTOCOL)
-        self.assertEqual(host.commands, [QUERY, ["pactl", "unload-module", "42"], QUERY])
+        self.assertEqual(host.commands, [JSON_QUERY, QUERY, ["pactl", "unload-module", "42"], JSON_QUERY, QUERY])
 
     def test_first_query_consumes_the_same_deadline_before_any_unload_or_snapshot(self):
         for rows in (OWNED, FOREIGN):
@@ -152,7 +178,7 @@ class ModuleCleanupTests(unittest.TestCase):
                 with patch("silent_host_modules.time.monotonic", side_effect=lambda: elapsed[0]):
                     with self.assertRaisesRegex(EvidenceError, "deadline"):
                         remove_owned_sink(host, "owned-test", 42, PROTOCOL)
-                self.assertEqual(host.commands, [QUERY])
+                self.assertEqual(host.commands, [JSON_QUERY, QUERY])
                 self.assertEqual(host.snapshot_count, 0)
 
     def test_unload_time_cannot_grant_fresh_cleanup_queries_after_deadline(self):
@@ -168,7 +194,7 @@ class ModuleCleanupTests(unittest.TestCase):
         with patch("silent_host_modules.time.monotonic", side_effect=lambda: elapsed[0]):
             with self.assertRaisesRegex(EvidenceError, "deadline"):
                 remove_owned_sink(host, "owned-test", 42, PROTOCOL)
-        self.assertEqual(host.commands, [QUERY, ["pactl", "unload-module", "42"]])
+        self.assertEqual(host.commands, [JSON_QUERY, QUERY, ["pactl", "unload-module", "42"]])
         self.assertEqual(host.snapshot_count, 0)
 
     def test_invalid_bound_ids_fail_before_query_or_unload(self):
@@ -187,12 +213,12 @@ class ModuleCleanupTests(unittest.TestCase):
                 host = GeneratedHost(rows)
                 with self.assertRaises(EvidenceError):
                     remove_owned_sink(host, "owned-test", None, PROTOCOL)
-                self.assertEqual(host.commands, [QUERY])
+                self.assertEqual(host.commands, [JSON_QUERY, QUERY])
 
     def test_absence_requires_modules_and_nodes_but_never_unloads_a_foreign_sink(self):
         host = GeneratedHost(OWNED.replace("owned-test", "unrelated"))
         remove_owned_sink(host, "owned-test", None, PROTOCOL)
-        self.assertEqual(host.commands, [QUERY])
+        self.assertEqual(host.commands, [JSON_QUERY, QUERY])
         self.assertEqual(host.snapshot_count, 1)
 
     def test_malformed_sink_metadata_never_proves_absence(self):
@@ -210,7 +236,7 @@ class ModuleCleanupTests(unittest.TestCase):
                 host.nodes = snapshot
                 with self.assertRaises(EvidenceError):
                     remove_owned_sink(host, "owned-test", 42, PROTOCOL)
-                self.assertEqual(host.commands, [QUERY])
+                self.assertEqual(host.commands, [JSON_QUERY, QUERY])
 
     def test_valid_unrelated_objects_do_not_block_named_sink_absence(self):
         host = GeneratedHost("")
@@ -221,7 +247,7 @@ class ModuleCleanupTests(unittest.TestCase):
             {"id": 30, "type": "PipeWire:Interface:Metadata"},
         ]
         remove_owned_sink(host, "owned-test", 42, PROTOCOL)
-        self.assertEqual(host.commands, [QUERY])
+        self.assertEqual(host.commands, [JSON_QUERY, QUERY])
         self.assertEqual(host.snapshot_count, 1)
 
     def test_a_lingering_module_or_named_node_uses_one_budget_without_unload_retry(self):
@@ -265,7 +291,7 @@ class ModuleCleanupTests(unittest.TestCase):
         with patch("silent_host_modules.time.monotonic", side_effect=lambda: elapsed[0]):
             with self.assertRaisesRegex(EvidenceError, "deadline"):
                 remove_owned_sink(host, "owned-test", 42, PROTOCOL)
-        self.assertEqual(host.commands, [QUERY])
+        self.assertEqual(host.commands, [JSON_QUERY, QUERY])
         self.assertEqual(host.snapshot_count, 1)
 
 

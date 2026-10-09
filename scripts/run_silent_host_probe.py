@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Source-free V2 lifecycle checks; host execution has no active CLI entry point.
+"""Source-free V3 lifecycle checks; host execution has no active CLI entry point.
 
-V1 is consumed. A future host attempt requires its own prospective phase/owner.
+V1/V2 are consumed. A future host attempt requires its own prospective phase/owner.
 """
 
 import argparse
@@ -19,11 +19,12 @@ import time
 import uuid
 
 from silent_host_evidence import (
-    EvidenceError, PROTOCOL_SHA256, load_protocol, records_from_bytes,
+    EvidenceError, V3_PROTOCOL_SHA256 as PROTOCOL_SHA256,
+    load_protocol_v3 as load_protocol, records_from_bytes,
     validate_preflight, validate_records,
 )
 from silent_host_environment import local_host_environment, prepare_child_environment
-from silent_host_modules import owned_modules, remove_owned_sink
+from silent_host_modules import owned_modules, remove_owned_sink, require_sink_absent
 from silent_host_process import ManagedProcess
 from silent_host_routes import NodeIdentity, attached_streams, find_sink, node_present, observe_route
 
@@ -296,7 +297,7 @@ def execute_attempt(interrupts, *, owner):
     There is deliberately no default owner and no CLI path into this function.
     A real-host caller requires a separately authorized prospective phase.
     """
-    protocol = load_protocol(ROOT / "docs/benchmarks/silent_host_observation_v2.json")
+    protocol = load_protocol(ROOT / "docs/benchmarks/silent_host_observation_v3.json")
     if sys.platform != "linux" or os.getuid() == 0:
         raise EvidenceError("requires a non-root real Linux user session")
     host_environment = local_host_environment(os.environ)
@@ -309,13 +310,13 @@ def execute_attempt(interrupts, *, owner):
     binaries = {name: ROOT / "target/debug" / name for name in ("cpal_spike", "silent_host_probe")}
     hashes = {name: digest(path) for name, path in binaries.items()}
     owner.mkdir(parents=True, exist_ok=False)
-    name = "riotbox_silent_host_v2_" + uuid.uuid4().hex
+    name = "riotbox_silent_host_v3_" + uuid.uuid4().hex
     module_id = None
     baseline = None
     sink = None
     last_pid = None
     creation_attempted = False
-    attempt = {"schema": "riotbox.silent_host_attempt.v2", "result": "failed",
+    attempt = {"schema": "riotbox.silent_host_attempt.v3", "result": "failed",
                "protocol_sha256": PROTOCOL_SHA256, "binary_sha256": hashes,
                "git_revision": host.text(["git", "rev-parse", "HEAD"]),
                "sink_name": name, "runs": [], "cleanup_verified": False}
@@ -340,8 +341,9 @@ def execute_attempt(interrupts, *, owner):
                               "host": info["host_name"], "uid": os.getuid()}
         baseline = host.default_state()
         attempt["baseline"] = baseline
-        if owned_modules(host, name):
+        if owned_modules(host, name, deadline=time.monotonic() + protocol["metadata_timeout_seconds"]):
             raise EvidenceError("proposed owned sink already exists")
+        require_sink_absent(host, name)
         creation_attempted = True
         module_id = int(host.text(["pactl", "load-module", "module-null-sink",
                                    f"sink_name={name}", "channels=2",
@@ -412,7 +414,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--execute-reviewed-attempt", action="store_true", required=True)
     parser.parse_args(argv)
-    print("silent host execution blocked: V1 is consumed; V2 is source-free only. "
+    print("silent host execution blocked: V1/V2 are consumed; V3 is source-free only. "
           "A new host attempt requires a separate prospective phase and owner.", file=sys.stderr)
     return 1
 

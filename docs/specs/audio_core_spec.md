@@ -920,6 +920,14 @@ generated-only verification; the normal host-launch entry point is disabled.
 The original evidence is not upgraded, and another host attempt requires a
 separate prospective phase and owner.
 
+RIOTBOX-1570's separately authorized V2 call failed admission on native multiline
+module metadata before creating a sink or starting CPAL. Its evidence and
+authorization are consumed. RIOTBOX-1571 / RBX-440 defines the source-free
+[V3 metadata repair](../benchmarks/silent_host_observation_v3.md), preserving
+the driver/runtime, numeric values and route/process protections. Paired JSON
+payload/text-index framing, opaque native argument handling and exact named-Node
+collision admission must not enable the CLI or imply another host attempt.
+
 ---
 
 ## 16. Open Follow-Ups

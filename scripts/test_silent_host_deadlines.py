@@ -108,6 +108,10 @@ class DeadlineTests(unittest.TestCase):
         clock = SimpleNamespace(now=0.0)
 
         class Host:
+            def json(self, command):
+                assert command == ["pactl", "--format=json", "list", "short", "modules"]
+                return []
+
             def text(self, command):
                 assert command == ["pactl", "--format=text", "list", "short", "modules"]
                 clock.now += 2.9

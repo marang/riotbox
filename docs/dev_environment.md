@@ -40,9 +40,14 @@ is consumed and failed; it must not be repeated. The
 [RIOTBOX-1567 V2 repair](benchmarks/silent_host_observation_v2.md) changes only
 lifetime/module identity checks and is source-free. The operator CLI rejects
 execution even with the old explicit flag. `just silent-host-contract-fixtures`
-uses generated metadata/children, never the host audio service. A future host
-phase needs its own authorization/owner and must retain the exclusive
-PipeWire-only ALSA configuration, not the user's potentially physical default.
+uses generated metadata/children, never the host audio service. The separately
+authorized [RIOTBOX-1570 V2 invocation](reviews/riotbox_1570_silent_host_v2_observation_2026-10-09.md)
+is also consumed and failed before any audio start. The
+[RIOTBOX-1571 V3 metadata repair](benchmarks/silent_host_observation_v3.md)
+uses generated fixtures only; it grants no retry. A future host phase needs
+fresh explicit authorization and its own prospective owner/revision/binary
+binding, and must retain exclusive PipeWire-only ALSA configuration, not the
+user's potentially physical default.
 
 ## Agent Sandbox Self-Checks
 

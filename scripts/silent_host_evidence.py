@@ -4,6 +4,7 @@ import hashlib
 import json
 
 PROTOCOL_SHA256 = "9b8517f13285e36a6082fb57131602949c89758199d57ccef42a26f4a542bcea"
+V3_PROTOCOL_SHA256 = "a0934097be7b2f160ff698b3d69c1dd7180e86defcdc0974c5e23606297ef85b"
 SAMPLE_SCHEMA = "riotbox.silent_host_sample.v1"
 
 
@@ -12,9 +13,19 @@ class EvidenceError(ValueError):
 
 
 def load_protocol(path):
+    """Historical V2 binding used by the frozen consumed 1570 command."""
+    return _load_pinned_protocol(path, PROTOCOL_SHA256)
+
+
+def load_protocol_v3(path):
+    """Current source-free operator contract; grants no execution permission."""
+    return _load_pinned_protocol(path, V3_PROTOCOL_SHA256)
+
+
+def _load_pinned_protocol(path, expected_hash):
     data = path.read_bytes()
-    if hashlib.sha256(data).hexdigest() != PROTOCOL_SHA256:
-        raise EvidenceError("frozen V2 protocol bytes changed")
+    if hashlib.sha256(data).hexdigest() != expected_hash:
+        raise EvidenceError("frozen protocol bytes changed")
     return json.loads(data)
 
 
