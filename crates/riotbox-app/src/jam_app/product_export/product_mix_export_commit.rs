@@ -1,7 +1,7 @@
 use std::{
     fs,
     fs::OpenOptions,
-    io::{self, Write},
+    io::{self, Read, Seek, Write},
     path::{Path, PathBuf},
 };
 
@@ -13,6 +13,7 @@ use riotbox_core::{
     session::{ExportArtifactSetEntry, ExportReceiptState},
     transport::CommitBoundaryState,
 };
+use sha2::{Digest, Sha256};
 
 use crate::jam_app::{
     JamAppError, JamAppState,
@@ -23,6 +24,11 @@ use crate::jam_app::{
 };
 
 use super::sha256_file;
+
+#[cfg(test)]
+mod copy_tests;
+#[cfg(test)]
+pub(super) mod test_support;
 
 impl JamAppState {
     pub fn commit_product_mix_export_from_proof(
@@ -198,23 +204,14 @@ fn prepare_product_mix_export(
     destination_dir: &Path,
     expected_source_hash: Option<&str>,
 ) -> Result<WrittenProductMixExport, JamAppError> {
-    let proof: ProductExportReproducibilityProof =
-        serde_json::from_str(&fs::read_to_string(proof_path)?)?;
+    let proof_bytes = fs::read(proof_path)?;
+    let proof: ProductExportReproducibilityProof = serde_json::from_slice(&proof_bytes)?;
     let contract = ExportReadinessContract::from_product_export_proof(&proof)
         .map_err(|error| JamAppError::InvalidSession(format!("{error:?}")))?;
     if let Some(expected_source_hash) = expected_source_hash {
         validate_product_export_source_identity(&contract.source_sha256, expected_source_hash)?;
     }
     let source_artifact = resolve_proof_artifact_path(proof_path, &contract.export_artifact);
-    let source_hash = sha256_file(&source_artifact)?;
-    if source_hash != contract.export_sha256 {
-        return Err(JamAppError::InvalidSession(format!(
-            "export artifact hash mismatch for {}: proof {} actual {}",
-            contract.export_role.as_str(),
-            contract.export_sha256,
-            source_hash
-        )));
-    }
 
     let artifact_file_name = source_artifact.file_name().ok_or_else(|| {
         JamAppError::InvalidSession("export artifact path has no file name".into())
@@ -226,7 +223,26 @@ fn prepare_product_mix_export(
             "product mix artifact name conflicts with product_export_proof.json".into(),
         ));
     }
-    let proof_hash = sha256_file(proof_path)?;
+    #[cfg(test)]
+    test_support::run(test_support::ProductMixCheckpoint::BeforeArtifactSnapshot);
+    // Only this private descriptor is used after admission; mutable handoff
+    // paths are never reopened for publication. Memory use is buffer-bounded.
+    let mut staged_artifact = tempfile::tempfile()?;
+    let mut source = fs::File::open(&source_artifact)?;
+    let source_hash = copy_hashed(&mut source, &mut staged_artifact)?;
+    if source_hash != contract.export_sha256 {
+        return Err(JamAppError::InvalidSession(format!(
+            "export artifact hash mismatch for {}: proof {} actual {}",
+            contract.export_role.as_str(),
+            contract.export_sha256,
+            source_hash
+        )));
+    }
+    drop(source);
+    staged_artifact.rewind()?;
+    let proof_hash = format!("{:x}", Sha256::digest(&proof_bytes));
+    #[cfg(test)]
+    test_support::run(test_support::ProductMixCheckpoint::AfterArtifactSnapshot);
 
     match (
         destination_artifact.try_exists()?,
@@ -249,8 +265,14 @@ fn prepare_product_mix_export(
         }
         (false, false) => {
             fs::create_dir_all(destination_dir)?;
-            copy_file_new(proof_path, &destination_proof)?;
-            if let Err(error) = copy_file_new(&source_artifact, &destination_artifact) {
+            copy_file_new_verified(&mut proof_bytes.as_slice(), &destination_proof, &proof_hash)?;
+            #[cfg(test)]
+            test_support::run(test_support::ProductMixCheckpoint::BeforeArtifactPublication);
+            if let Err(error) = copy_file_new_verified(
+                &mut staged_artifact,
+                &destination_artifact,
+                &contract.export_sha256,
+            ) {
                 let _ = fs::remove_file(&destination_proof);
                 return Err(error);
             }
@@ -300,15 +322,41 @@ fn resolve_proof_artifact_path(proof_path: &Path, artifact_path: &str) -> PathBu
     }
 }
 
-fn copy_file_new(from: &Path, to: &Path) -> Result<(), JamAppError> {
-    let mut source = fs::File::open(from)?;
+fn copy_file_new_verified(
+    source: &mut impl Read,
+    to: &Path,
+    expected_hash: &str,
+) -> Result<(), JamAppError> {
     let mut destination = OpenOptions::new().write(true).create_new(true).open(to)?;
-    let result = io::copy(&mut source, &mut destination)
-        .and_then(|_| destination.flush())
-        .map(|_| ());
+    let result = (|| {
+        let actual_hash = copy_hashed(source, &mut destination)?;
+        destination.flush()?;
+        if actual_hash != expected_hash {
+            return Err(JamAppError::InvalidSession(format!(
+                "published product mix file hash mismatch: expected {expected_hash} actual {actual_hash}"
+            )));
+        }
+        Ok(())
+    })();
     if result.is_err() {
         drop(destination);
         let _ = fs::remove_file(to);
     }
-    result.map_err(Into::into)
+    result
+}
+
+fn copy_hashed(source: &mut impl Read, destination: &mut impl Write) -> io::Result<String> {
+    let mut digest = Sha256::new();
+    let mut buffer = [0_u8; 64 * 1024];
+    loop {
+        let read = match source.read(&mut buffer) {
+            Ok(0) => break,
+            Ok(read) => read,
+            Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
+            Err(error) => return Err(error),
+        };
+        destination.write_all(&buffer[..read])?;
+        digest.update(&buffer[..read]);
+    }
+    Ok(format!("{:x}", digest.finalize()))
 }
