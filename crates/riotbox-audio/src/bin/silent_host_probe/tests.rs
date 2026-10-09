@@ -96,6 +96,48 @@ fn an_initial_error_stops_before_any_interval() {
 }
 
 #[test]
+fn an_interval_backend_error_stops_and_retains_failed_terminal_evidence() {
+    // Generated health reproduces the recorded qualification pattern, not the
+    // real ALSA/PipeWire trigger. No device or host service is opened here.
+    for error_at in [1, 36, 60] {
+        let (mut host, mut writer) = generated_observation();
+        host.stream_error_at = Some(error_at);
+        let error =
+            super::observe(&mut host, &mut writer, &frozen_schedule().unwrap()).unwrap_err();
+        assert!(error.contains("runtime stream error evidence (count 1)"));
+        assert!(error.contains("Buffer underrun/overrun occurred."));
+        assert_eq!(host.waits.len(), error_at);
+        assert!(host.stopped.get());
+        let records = writer.records();
+        assert_eq!(records.len(), error_at + 2);
+        let failed = &records[error_at];
+        assert_eq!(failed["event"], "sample");
+        assert_eq!(failed["sample_index"], error_at);
+        assert_eq!(failed["health"]["lifecycle"], "faulted");
+        let terminal = records.last().unwrap();
+        assert_eq!(terminal["event"], "stopped");
+        assert_eq!(terminal["health"]["lifecycle"], "stopped");
+        for record in [failed, terminal] {
+            assert_eq!(record["result"], "failed");
+            assert_eq!(record["reason"], error);
+            assert_eq!(record["sample_index"], error_at);
+            assert_eq!(record["health"]["stream_error_count"], 1);
+            assert_eq!(record["health"]["callback_scratch_overflow_count"], 0);
+            assert_eq!(
+                record["health"]["last_stream_error"],
+                "Buffer underrun/overrun occurred."
+            );
+        }
+        assert!(
+            writer.stopped_at_flush[..error_at + 1]
+                .iter()
+                .all(|stopped| !stopped)
+        );
+        assert!(writer.stopped_at_flush[error_at + 1]);
+    }
+}
+
+#[test]
 fn intervals_reject_zero_stalled_and_decreased_callback_counts() {
     for (previous, current) in [(0, 0), (5, 5), (5, 4)] {
         assert!(validate_interval(previous, &health(current)).is_err());
@@ -239,6 +281,7 @@ struct GeneratedHost {
     elapsed_ms: u128,
     stopped: Rc<Cell<bool>>,
     stall_at: Option<usize>,
+    stream_error_at: Option<usize>,
 }
 
 impl super::ObservationHost for GeneratedHost {
@@ -253,6 +296,11 @@ impl super::ObservationHost for GeneratedHost {
         self.elapsed_ms += duration.as_millis() + 17;
         if self.stall_at != Some(self.waits.len()) {
             self.health.callback_count += 1;
+        }
+        if self.stream_error_at == Some(self.waits.len()) {
+            self.health.lifecycle = AudioRuntimeLifecycle::Faulted;
+            self.health.stream_error_count = 1;
+            self.health.last_stream_error = Some("Buffer underrun/overrun occurred.".into());
         }
     }
     fn stop(&mut self) {
@@ -318,6 +366,7 @@ fn generated_observation() -> (GeneratedHost, RecordingWriter) {
             elapsed_ms: 0,
             stopped: stopped.clone(),
             stall_at: None,
+            stream_error_at: None,
         },
         RecordingWriter {
             bytes: Vec::new(),
