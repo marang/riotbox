@@ -416,6 +416,17 @@ Boundary:
 - Proof validation, hashing, and file I/O run on the app/control thread, never
   on the realtime audio callback. Successful export bytes remain hash-identical
   to the already validated proof artifact.
+- Product-mix publication parses and hashes one captured proof buffer. The
+  artifact is streamed into a private temporary descriptor while hashing the
+  exact copied bytes; a mismatch rejects before destination publication. Final
+  exclusive writes consume that admitted descriptor and retained proof bytes,
+  never reopened handoff paths, and verify their copy hashes before success.
+  Changes to handoff paths after their snapshots cannot retarget the export.
+  This requires temporary disk space, not a whole-WAV memory allocation or
+  hardlinks. Cleanup targets only files successfully created by this attempt;
+  a failed exclusive create never grants ownership of the collision target.
+  Two-file publication remains non-atomic across interruption; no power-loss,
+  adversarial destination-mutation or aggregate resource guarantee is added.
 - The writer never overwrites destination files. A complete hash-identical
   bundle is an idempotent success; an incomplete or different existing bundle
   rejects before mutation.

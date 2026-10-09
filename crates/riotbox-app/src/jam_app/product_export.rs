@@ -37,6 +37,10 @@ pub use daw_session_surface_gate::{
 pub use live_recording_export_queue::{
     LIVE_RECORDING_EXPORT_RESERVED_REASON, LiveRecordingExportQueueResult,
 };
+#[cfg(test)]
+pub(in crate::jam_app) use product_mix_export_commit::test_support::{
+    ProductMixCheckpoint, with_product_mix_checkpoint,
+};
 
 pub const STEM_PACKAGE_EXPORT_RESERVED_REASON: &str = "stem package export is disabled for musicians; current packages are operator proof only until DAW placement and listening review are ready";
 
