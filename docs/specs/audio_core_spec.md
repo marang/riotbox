@@ -934,6 +934,18 @@ buffer underrun/overrun at sample 36 and stopped. Cleanup was verified, the
 third run did not start, and the full observation gate failed. The consumed
 negative result does not change V3/runtime thresholds or qualify endurance.
 
+RIOTBOX-1574 / RBX-441 adds a separately authorized
+[V4 ALSA-boundary observation](../benchmarks/silent_host_observation_v4.md).
+It preserves the driver, runtime, route protections and numeric budgets while
+adding a QA-only, child-bound measurement leaf. Generated regression tests
+prove error attribution and diagnostic fail-closed behavior, not the original
+backend trigger. Instrumented plugin geometry and timing do not establish
+physical latency, musical quality, a root-cause fix or completion of RIOTBOX-1041.
+The separately approved V4 observation completed all three silent runs without
+reported or measured ALSA errors; cleanup was separately verified. Its consumed
+[observation record](../reviews/riotbox_1574_alsa_diagnostics_2026-10-09.md)
+does not explain or erase the earlier V3 failure, and does not grant another run.
+
 ---
 
 ## 16. Open Follow-Ups

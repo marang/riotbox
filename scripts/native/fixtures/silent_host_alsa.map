@@ -1,0 +1,8 @@
+ALSA_0.9 {
+  global: snd_pcm_open; snd_pcm_close; snd_pcm_hw_params; snd_pcm_get_params;
+          snd_pcm_avail; snd_pcm_writei; snd_pcm_prepare; snd_pcm_recover;
+};
+ALSA_0.9.0rc4 {
+  global: snd_pcm_hw_params_get_channels; snd_pcm_hw_params_get_rate;
+} ALSA_0.9;
+FIXTURE_1 { global: fixture_mode; local: *; };
