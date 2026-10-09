@@ -49,6 +49,12 @@ fresh explicit authorization and its own prospective owner/revision/binary
 binding, and must retain exclusive PipeWire-only ALSA configuration, not the
 user's potentially physical default.
 
+The separately authorized [RIOTBOX-1572 V3 observation](reviews/riotbox_1572_silent_host_v3_observation_2026-10-09.md)
+is consumed: preflight and run 1 completed, run 2 reported a backend buffer
+underrun/overrun and stopped; run 3 did not start. Owned cleanup and unchanged
+default/mute/volume were verified. This is negative real-session evidence, not
+an endurance pass or permission to retry. The frozen V3 operator stays unchanged.
+
 ## Agent Sandbox Self-Checks
 
 Run these when Riotbox runs inside `agent-sandbox` and host capability is unclear:
