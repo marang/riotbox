@@ -713,6 +713,11 @@ Current limiter policy:
   Abort closes before detaching. Stale readers cannot write to a closed buffer,
   and a new begin never reopens it. Test the actual admission module with Loom;
   reference counts alone cannot establish safe finalization.
+- the non-interactive recorder's private CLI control owner (RBX-442) shares
+  its real transport/queue/stop/finalize/publication decisions with generated
+  device-free observations and virtual time. Core/Session and the existing tap
+  remain authoritative; these tests do not establish callback or host health.
+  Failed-stop summaries reflect observed lifecycle, not a hardcoded success.
 - V2 reuses that allocation and tap but arms until an absolute Session beat.
   Pre-boundary callbacks write no payload; a straddling callback begins at the
   first complete frame at or after the requested beat. The callback publishes

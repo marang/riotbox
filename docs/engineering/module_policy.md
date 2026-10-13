@@ -59,6 +59,23 @@ existing crate-internal fixture entrypoints through narrow re-exports when other
 test families already consume them. A cohesive integration or lane-recipe fixture
 owner may remain long when splitting by line count would obscure its contract.
 
+### Live-Master Recorder Control Ownership
+
+RIOTBOX-1575 / RBX-442 keeps observer preflight, Session hydration and real
+device construction in `cli::live_master_recording`. Its private
+`capture_lifecycle` owns transport confirmation, actual App/Core queueing and
+timing commits, capture supervision, stop/finalize ordering, and delegation to
+the existing artifact/receipt/Session writer. One private observation/control
+interface admits the real shell and generated device-free/virtual-time tests;
+neither adapter owns Session, queue, capture lineage or publication policy.
+Borrow the App facade across this owner and construct the UI shell afterward;
+do not copy the large facade through nested controller frames. Preserve the
+existing projection and failure order, numeric budgets, versions, observer and
+receipt contracts. An unconfirmed stop must not produce a verified-stop flag.
+Generated control proof is not actual callback, source, listening, original
+ALSA-trigger or host/endurance qualification. No public Audio test constructor,
+second recorder, new action, DSP or persistent App state belongs to this seam.
+
 ### Core Jam Projection Ownership
 
 `view::jam` is a compatibility facade over private Core projection owners
