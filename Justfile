@@ -86,6 +86,7 @@ generated-live-master-load-fixtures:
 # Generated metadata/process fixtures only; never creates a sink or opens CPAL.
 silent-host-contract-fixtures:
     python3 -W error::ResourceWarning -m unittest discover -s scripts -p 'test_silent_host_*.py'
+    python3 -W error::ResourceWarning -m unittest discover -s scripts -p 'test_loaded_recorder_*.py'
 
 tracked-json-validate:
     git ls-files -z '*.json' | xargs -0 -r -n 64 jq empty

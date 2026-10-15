@@ -2,6 +2,7 @@
 use std::{
     cell::{Cell, RefCell},
     fs,
+    rc::Rc,
     time::{Duration, Instant},
 };
 
@@ -43,6 +44,10 @@ enum Case {
     StopUnconfirmed,
     FinishFailure,
     LateFault,
+    MissingCompletionClock,
+    MissingStoppedClock,
+    MissingBothClocks,
+    ReversedClock,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -51,6 +56,9 @@ enum Event {
     Stop,
     Abort,
     Finish,
+    CompletionClock,
+    StoppedClock,
+    Milestone,
 }
 
 struct GeneratedControl {
@@ -60,7 +68,7 @@ struct GeneratedControl {
     playing: Cell<bool>,
     stopped: Cell<bool>,
     request: RefCell<Option<LiveMasterCaptureRequest>>,
-    events: RefCell<Vec<Event>>,
+    events: Rc<RefCell<Vec<Event>>>,
     destination: std::path::PathBuf,
 }
 
@@ -247,6 +255,26 @@ impl RuntimeControl for GeneratedControl {
             "generated loop must be bounded"
         );
     }
+    fn monotonic_ns(&self) -> Option<u64> {
+        let stopped = self.stopped.get();
+        self.events.borrow_mut().push(if stopped {
+            Event::StoppedClock
+        } else {
+            Event::CompletionClock
+        });
+        if self.case == Case::MissingBothClocks
+            || (self.case == Case::MissingCompletionClock && !stopped)
+            || (self.case == Case::MissingStoppedClock && stopped)
+        {
+            return None;
+        }
+        let time = 1_000_000_000 + u64::try_from(self.elapsed.get().as_nanos()).unwrap();
+        Some(if self.case == Case::ReversedClock && stopped {
+            time - 1
+        } else {
+            time
+        })
+    }
 }
 
 fn fixture(
@@ -288,11 +316,13 @@ fn fixture(
         playing: Cell::new(already_playing),
         stopped: Cell::new(false),
         request: RefCell::new(None),
-        events: RefCell::new(Vec::new()),
+        events: Rc::new(RefCell::new(Vec::new())),
         destination,
     };
     (temp, launch, state, control)
 }
+
+mod observation;
 
 fn assert_blocked(summary: &serde_json::Value, state: &JamAppState, control: &GeneratedControl) {
     assert_eq!(summary["ready"], false);

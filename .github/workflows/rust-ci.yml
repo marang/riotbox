@@ -38,6 +38,7 @@ jobs:
         run: |
           python3 -m unittest discover -s python/sidecar -p 'test_*.py'
           python3 -W error::ResourceWarning -m unittest discover -s scripts -p 'test_silent_host_*.py'
+          python3 -W error::ResourceWarning -m unittest discover -s scripts -p 'test_loaded_recorder_*.py'
           python3 -m unittest discover -s scripts -p 'test_hook_chop_diagnostic_contract.py'
           python3 -m unittest discover -s scripts -p 'test_feral_grid_verification_contract.py'
           python3 -m unittest discover -s scripts -p 'test_generated_live_master_load_fixture.py'

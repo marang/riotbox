@@ -88,6 +88,19 @@ and no-clobber artifact publication. App/Core/Session remain the only product
 truth. No public test constructor or new recorder/runtime is introduced. See
 the [preparation-only contract](../benchmarks/generated_live_master_load_fixture_v1.md).
 
+### Loaded Recorder Observation Ownership
+
+RIOTBOX-1578 / RBX-444 keeps `live_master_recording::observation` a private
+optional typed post-stop sink, not capture policy or a second recorder. The
+existing lifecycle alone observes completion and verifies stop; the existing
+observer performs output and retains failures. Python QA owners separately
+admit immutable generated fixture identities, interpret the closed observer and
+published artifact contract, and supervise the existing process/route/cleanup
+seams. `LoadedRecorderWorkload` selects only this known recorder; it is not an
+arbitrary launcher. Core/Session and the existing readiness report remain
+semantic authority. No production callback logging, persistent state, source
+policy or host-execution permission belongs to these adapters.
+
 ### Core Jam Projection Ownership
 
 `view::jam` is a compatibility facade over private Core projection owners
