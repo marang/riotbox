@@ -1222,6 +1222,12 @@ marker alone can qualify a loaded recording. Actual execution is still blocked
 until a new prospective phase binds reviewed code/binaries/protocol/fixture and
 receives fresh explicit authorization; prior phases remain consumed.
 
+The [prospective RIOTBOX-1579 phase V1](../../benchmarks/loaded_recorder_host_riotbox_1579_v1.md)
+binds the exact new generated owner, approval record, reviewed revision/native
+CI and producer/recorder/diagnostic identities before any host access. Its fence
+tests use only fresh temporary stand-ins and mocked external boundaries; passing
+them is neither actual user consent nor a host observation.
+
 ### 9.2 Initial action or render packs
 
 Each fixture should support a small review set such as:
