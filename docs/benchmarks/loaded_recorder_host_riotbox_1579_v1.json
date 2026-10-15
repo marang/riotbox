@@ -1,0 +1,23 @@
+{
+  "schema": "riotbox.loaded_recorder_host_phase.v1",
+  "schema_version": 1,
+  "owner_ticket": "RIOTBOX-1579",
+  "phase_path": "artifacts/audio_qa/local-loaded-recorder-riotbox-1579-v1-2026-10-15",
+  "fixture_path": "fixture-v1",
+  "attempt_path": "attempt-01",
+  "execution_policy": "fresh_explicit_approval_and_reviewed_native_ci_only",
+  "invocation_count": 1,
+  "preflight_ms": 250,
+  "window_bars": [2, 8, 16],
+  "loaded_protocol_sha256": "687bea31dfa903a299fc14b9e01567bf34b3cd4536220397f2cbb6f780e943ca",
+  "fixture_contract_sha256": "18981581fe9e762c48fc120f0b325a9172b49194ac2cb686f5865eed0fe0b08d",
+  "containment_protocol_sha256": "a0934097be7b2f160ff698b3d69c1dd7180e86defcdc0974c5e23606297ef85b",
+  "diagnostic_protocol_sha256": "36b23fc49def340150c0c63d54ab36b6fb0cc5272249523098d725fea4f7f740",
+  "source_access": "exact_fresh_generated_v1_owner_only",
+  "output_route": "isolated_stereo_virtual_sink",
+  "failure_policy": "stop_no_retry",
+  "quality_proof": false,
+  "physical_output_allowed": false,
+  "human_playback_allowed": false,
+  "holdout_audio_allowed": false
+}
