@@ -36,6 +36,7 @@ ci:
     just silent-host-contract-fixtures
     just hook-chop-diagnostic-contract-fixtures
     just feral-grid-verification-contract-fixtures
+    just generated-live-master-load-fixtures
     just limiter-calibration-fixtures
     just audio-qa-pr
     just audio-qa-access-guard-fixtures
@@ -77,6 +78,10 @@ _ci-broad-extra:
 
 sidecar-contract-fixtures:
     python3 -m unittest discover -s python/sidecar -p 'test_*.py'
+
+# Generated selector controls only; Rust's default cargo test covers preparation.
+generated-live-master-load-fixtures:
+    python3 -m unittest discover -s scripts -p 'test_generated_live_master_load_fixture.py'
 
 # Generated metadata/process fixtures only; never creates a sink or opens CPAL.
 silent-host-contract-fixtures:

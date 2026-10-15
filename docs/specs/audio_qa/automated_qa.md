@@ -1202,6 +1202,16 @@ The first practical audio QA system should define a small stable listening corpu
 - `low_confidence_soft_attacks`
 - `feral_stress`
 
+### 9.1.1 Generated loaded-Session preparation control
+
+[RIOTBOX-1577 / RBX-443 V1](../../benchmarks/generated_live_master_load_fixture_v1.md)
+prepares one fixed generated Session through actual App/Core actions and
+save/restore, then measures existing recording plans and the shared offline
+mixer. Strict identity/ownership controls retain computed metrics before
+aggregate failure. This is source-free CI preparation evidence, not a listening
+pack, new musical mechanism or authorization to execute a host test. Every
+fixture/source-intelligence/host claim stays explicitly false.
+
 ### 9.2 Initial action or render packs
 
 Each fixture should support a small review set such as:
