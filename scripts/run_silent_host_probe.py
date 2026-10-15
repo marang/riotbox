@@ -175,7 +175,8 @@ def run_program(command, prefix, host, sink, protocol, environment, *, preflight
     failure = None
     result = None
     terminal_deadline = None
-    interval_count = protocol["run_seconds"] * 1000 // protocol["sample_interval_ms"]
+    interval_count = (None if preflight else
+                      protocol["run_seconds"] * 1000 // protocol["sample_interval_ms"])
     if diagnostics is not None:
         command = diagnostics.wrap(command, prefix, environment)
     managed = ManagedProcess(command, stdout, stderr, environment, watchdog,
@@ -305,7 +306,7 @@ def run_program(command, prefix, host, sink, protocol, environment, *, preflight
             **({"alsa_measurements": measurement} if diagnostics is not None else {})}
 
 
-def execute_attempt(interrupts, *, owner, diagnostics=None):
+def execute_attempt(interrupts, *, owner, diagnostics=None, workload=None):
     """Reserved orchestration seam; currently called only with generated adapters.
 
     There is deliberately no default owner and no CLI path into this function.
@@ -313,6 +314,11 @@ def execute_attempt(interrupts, *, owner, diagnostics=None):
     """
     protocol = (load_protocol(ROOT / "docs/benchmarks/silent_host_observation_v3.json")
                 if diagnostics is None else diagnostics.protocol)
+    if workload is not None:
+        from loaded_recorder_workload import LoadedRecorderWorkload
+        if type(workload) is not LoadedRecorderWorkload:
+            raise EvidenceError("only the closed loaded recorder workload is supported")
+        protocol = workload.admit(ROOT, ROOT / "target/debug/riotbox-app", diagnostics)
     if sys.platform != "linux" or os.getuid() == 0:
         raise EvidenceError("requires a non-root real Linux user session")
     host_environment = local_host_environment(os.environ)
@@ -322,7 +328,8 @@ def execute_attempt(interrupts, *, owner, diagnostics=None):
             raise EvidenceError(f"required host tool unavailable: {tool}")
     if host.text(["git", "status", "--porcelain"]):
         raise EvidenceError("host attempt requires a clean reviewed revision")
-    binaries = {name: ROOT / "target/debug" / name for name in ("cpal_spike", "silent_host_probe")}
+    binary_names = ("cpal_spike", "silent_host_probe" if workload is None else "riotbox-app")
+    binaries = {name: ROOT / "target/debug" / name for name in binary_names}
     hashes = {name: digest(path) for name, path in binaries.items()}
     owner.mkdir(parents=True, exist_ok=False)
     name = "riotbox_silent_host_v3_" + uuid.uuid4().hex
@@ -339,9 +346,20 @@ def execute_attempt(interrupts, *, owner, diagnostics=None):
         from silent_host_diagnostics import V4_PROTOCOL_SHA256
         attempt.update(schema="riotbox.silent_host_attempt.v4", protocol_sha256=V4_PROTOCOL_SHA256,
                        diagnostic_library_sha256=diagnostics.expected_hash)
+    cases = None
+    if workload is not None:
+        attempt.update(workload.admission())
     write_json(owner / "admission.json", attempt)
     failure = None
     try:
+        if workload is not None:
+            cases = workload.prepare_cases(owner)
+            attempt["cases"] = [{"duration_bars": case.bars,
+                **{key: str(getattr(case, key)) for key in (
+                    "session_path", "destination_path", "proof_path", "observer_path")}}
+                for case in cases]
+            write_json(owner / "cases.json", attempt["cases"])
+            attempt["cases_sha256"] = digest(owner / "cases.json")
         # A container's visible host sockets alone do not establish real-session context.
         container = subprocess.run(["systemd-detect-virt", "--container"],
                                    capture_output=True, text=True,
@@ -379,12 +397,19 @@ def execute_attempt(interrupts, *, owner, diagnostics=None):
                                            host, sink, protocol, environment, preflight=True,
                                            **({"diagnostics": diagnostics} if diagnostics is not None else {}))
         last_pid = attempt["preflight"]["pid"]
-        for index in range(1, protocol["run_count"] + 1):
+        count = protocol["run_count"] if cases is None else len(cases)
+        for index in range(1, count + 1):
             if host.default_state() != baseline:
                 raise EvidenceError("default output changed before the next run")
-            result = run_program([str(binaries["silent_host_probe"]), "--isolated-silent-host"],
-                                 owner / f"run-{index}", host, sink, protocol, environment,
-                                 **({"diagnostics": diagnostics} if diagnostics is not None else {}))
+            if workload is None:
+                result = run_program([str(binaries["silent_host_probe"]), "--isolated-silent-host"],
+                                     owner / f"run-{index}", host, sink, protocol, environment,
+                                     **({"diagnostics": diagnostics} if diagnostics is not None else {}))
+            else:
+                attempt["active_run_prefix"] = str(owner / f"run-{index}")
+                result = workload.run_case(binaries["riotbox-app"], cases[index - 1],
+                                           owner / f"run-{index}", host, sink, protocol,
+                                           environment, diagnostics)
             last_pid = result["pid"]
             attempt["runs"].append(result)
         if host.default_state() != baseline:

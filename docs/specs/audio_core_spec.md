@@ -724,6 +724,16 @@ Current limiter policy:
   geometry and six windows are preparation controls, never actual callback,
   device or recorder execution. All contributors are a named composite; no
   host-qualified receipt, musical verdict or future execution grant follows.
+- the optional [loaded-recorder observation V1](../benchmarks/loaded_recorder_observation_v1.md)
+  (RIOTBOX-1578 / RBX-444) samples completion in memory, stops immediately,
+  verifies Stopped and only then emits its typed milestone before finalization
+  and file publication. Missing clocks remain unavailable, observer errors
+  remain visible and no observer means no clock/observation work. This is not
+  success: the existing recorder/receipt/Session and published artifact gates
+  remain authoritative. The isolated operator's loaded adapter admits only the
+  exact generated V1 fixture and exclusive run-Session copies, with explicit
+  monotonic route ordering and unchanged containment budgets. Source-free tests
+  and merge confer no permission for an actual host invocation.
 - V2 reuses that allocation and tap but arms until an absolute Session beat.
   Pre-boundary callbacks write no payload; a straddling callback begins at the
   first complete frame at or after the requested beat. The callback publishes

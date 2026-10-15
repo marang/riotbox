@@ -2,6 +2,7 @@
 //! Both production and generated tests execute the same queue/stop/publication path.
 use std::time::{Duration, Instant};
 
+use super::observation::{Observation, WindowStopped};
 use crate::cli::{
     model::{AppLaunch, LaunchMode, live_master_recording_boundary},
     observer::timestamp_now,
@@ -19,11 +20,12 @@ pub(super) fn execute(
     launch: &AppLaunch,
     state: &mut JamAppState,
     runtime: &mut AudioRuntimeShell,
+    observation: &mut Observation<'_>,
 ) -> Result<Value, Box<dyn std::error::Error>> {
     // Borrow the large facade; the caller constructs the shell after this
     // control frame returns. Moving it through nested frames can exhaust a
     // normal test-thread stack while committing transport/refreshing its view.
-    execute_with_control(launch, state, &mut DeviceControl(runtime))
+    execute_with_control_observed(launch, state, &mut DeviceControl(runtime), observation)
 }
 
 // Private dependency seam: only observations, projection and existing device
@@ -46,6 +48,7 @@ trait RuntimeControl {
     fn now(&self) -> Instant;
     fn timestamp_now(&self) -> TimestampMs;
     fn wait(&self, duration: Duration);
+    fn monotonic_ns(&self) -> Option<u64>;
 }
 
 struct DeviceControl<'a>(&'a mut AudioRuntimeShell);
@@ -104,12 +107,25 @@ impl RuntimeControl for DeviceControl<'_> {
     fn wait(&self, duration: Duration) {
         std::thread::sleep(duration);
     }
+    fn monotonic_ns(&self) -> Option<u64> {
+        super::observation::monotonic_ns()
+    }
 }
 
+#[cfg(test)]
 fn execute_with_control(
     launch: &AppLaunch,
     state: &mut JamAppState,
     runtime: &mut impl RuntimeControl,
+) -> Result<Value, Box<dyn std::error::Error>> {
+    execute_with_control_observed(launch, state, runtime, &mut Observation::new(None))
+}
+
+fn execute_with_control_observed(
+    launch: &AppLaunch,
+    state: &mut JamAppState,
+    runtime: &mut impl RuntimeControl,
+    observation: &mut Observation<'_>,
 ) -> Result<Value, Box<dyn std::error::Error>> {
     let LaunchMode::LiveMasterRecordingExecute {
         session_path,
@@ -189,7 +205,7 @@ fn execute_with_control(
             / f64::from(plan.confirmed_bpm);
     let deadline = runtime.now()
         + Duration::from_secs_f64(expected_arm_seconds + expected_duration_seconds + 2.0);
-    loop {
+    let completion = loop {
         sync_live_master_runtime(state, runtime);
         let health = runtime.health_snapshot();
         state.set_audio_health(health.clone());
@@ -230,7 +246,11 @@ fn execute_with_control(
                 ));
             }
             if progress.complete {
-                break;
+                // Only in-memory observations before stop; optional observer I/O
+                // cannot prolong the live output window.
+                break observation
+                    .enabled()
+                    .then(|| (runtime.monotonic_ns(), progress));
             }
         }
         if runtime.now() >= deadline {
@@ -249,12 +269,16 @@ fn execute_with_control(
             ));
         }
         runtime.wait(Duration::from_millis(10));
-    }
+    };
 
     sync_live_master_runtime(state, runtime);
     let final_health = runtime.health_snapshot();
     state.set_audio_health(final_health.clone());
     stop_live_master_runtime(state, runtime, started_transport);
+    let stopped_ns = observation
+        .enabled()
+        .then(|| runtime.monotonic_ns())
+        .flatten();
     let stopped_health = runtime.health_snapshot();
     if stopped_health.lifecycle != AudioRuntimeLifecycle::Stopped {
         let progress = runtime.abort_live_master_capture();
@@ -270,6 +294,15 @@ fn execute_with_control(
             Some(&plan),
             &output,
             reason,
+        ));
+    }
+
+    if let Some((complete_ns, progress)) = completion {
+        observation.record(&WindowStopped::new(
+            &plan,
+            complete_ns,
+            stopped_ns,
+            progress.fault_count(),
         ));
     }
 

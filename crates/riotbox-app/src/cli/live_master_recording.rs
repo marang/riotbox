@@ -14,13 +14,23 @@ use std::io;
 use std::path::Path;
 use std::path::PathBuf;
 mod capture_lifecycle;
+mod observation;
+use observation::{Observation, WindowStoppedSink};
 
 pub(super) fn run_live_master_recording_execute(
     launch: &AppLaunch,
     raw_args: &[String],
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut observer = open_live_master_recording_observer(launch)?;
-    let (mut summary, shell) = match live_master_recording_execute_summary(launch) {
+    let (execution, milestone_result) = {
+        let sink = observer
+            .as_mut()
+            .map(|sink| sink as &mut dyn WindowStoppedSink);
+        let mut observation = Observation::new(sink);
+        let execution = live_master_recording_execute_summary(launch, &mut observation);
+        (execution, observation.into_result())
+    };
+    let (mut summary, shell) = match execution {
         Ok(result) => result,
         Err(error) => {
             if let Some(observer) = observer.as_mut()
@@ -45,6 +55,9 @@ pub(super) fn run_live_master_recording_execute(
             return Err(error);
         }
     };
+    if milestone_result.is_err() {
+        apply_live_master_observer_status(&mut summary, observer.is_some(), &milestone_result);
+    }
     let observer_result = match observer.as_mut() {
         Some(observer) => observer.record(json!({
             "event": "live_master_recording_execute",
@@ -62,6 +75,7 @@ pub(super) fn run_live_master_recording_execute(
         })),
         None => Ok(()),
     };
+    let observer_result = milestone_result.and(observer_result);
     apply_live_master_observer_status(&mut summary, observer.is_some(), &observer_result);
     if let Err(error) = observer_result {
         eprintln!(
@@ -198,6 +212,7 @@ fn canonical_future_path(path: &Path, create_parent: bool) -> io::Result<PathBuf
 
 fn live_master_recording_execute_summary(
     launch: &AppLaunch,
+    observation: &mut Observation<'_>,
 ) -> Result<(Value, JamShellState), Box<dyn std::error::Error>> {
     let LaunchMode::LiveMasterRecordingExecute {
         session_path,
@@ -217,6 +232,6 @@ fn live_master_recording_execute_summary(
             state.runtime.w30_resample_tap.clone(),
             state.source_monitor_render_state(),
         )?;
-    let summary = capture_lifecycle::execute(launch, &mut state, &mut runtime)?;
+    let summary = capture_lifecycle::execute(launch, &mut state, &mut runtime, observation)?;
     Ok((summary, JamShellState::new(state, ShellLaunchMode::Load)))
 }

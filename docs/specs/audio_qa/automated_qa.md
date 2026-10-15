@@ -1212,6 +1212,16 @@ aggregate failure. This is source-free CI preparation evidence, not a listening
 pack, new musical mechanism or authorization to execute a host test. Every
 fixture/source-intelligence/host claim stays explicitly false.
 
+The [RIOTBOX-1578 / RBX-444 loaded observer V1](../../benchmarks/loaded_recorder_observation_v1.md)
+adds source-free controls for exact generated-fixture admission, immutable
+baseline checks, exclusive run copies, post-stop milestone/route ordering,
+watchdog and cleanup failures, actual artifact identities and the existing Core
+readiness report. These run with `just silent-host-contract-fixtures` and native
+CI, not a device or host-metadata command. No silent interval transcript or
+marker alone can qualify a loaded recording. Actual execution is still blocked
+until a new prospective phase binds reviewed code/binaries/protocol/fixture and
+receives fresh explicit authorization; prior phases remain consumed.
+
 ### 9.2 Initial action or render packs
 
 Each fixture should support a small review set such as:
