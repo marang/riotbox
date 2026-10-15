@@ -46,6 +46,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=Path("artifacts/audio_qa/local-diverse-test-sources"))
     parser.add_argument("--seconds", type=float, default=DEFAULT_SECONDS)
+    parser.add_argument("--only", choices=[spec.case_id for spec in SOURCES])
     args = parser.parse_args()
     if args.seconds <= 0:
         parser.error("--seconds must be positive")
@@ -53,6 +54,8 @@ def main() -> int:
     args.output.mkdir(parents=True, exist_ok=True)
     entries = []
     for spec in SOURCES:
+        if args.only is not None and spec.case_id != args.only:
+            continue
         path = args.output / f"{spec.case_id}.wav"
         write_wav(path, spec, args.seconds)
         entries.append(

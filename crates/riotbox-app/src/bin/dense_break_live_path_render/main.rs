@@ -5,9 +5,11 @@ mod calibration;
 #[cfg(feature = "limiter-calibration")]
 mod calibration_preparation;
 mod controlled_source_manifest;
+mod generated_load;
 mod live_flow;
 mod manifest;
 mod model;
+mod ready_prefix;
 mod rendering;
 mod sparse_journey;
 mod sparse_live_manifest;
@@ -21,6 +23,12 @@ const MAX_SOURCE_BPM_HINT: f32 = 400.0;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = env::args().skip(1).collect::<Vec<_>>();
+    if args
+        .iter()
+        .any(|arg| arg == "--prepare-generated-live-master-load-v1")
+    {
+        return generated_load::run(&args);
+    }
     if args.iter().any(|arg| {
         matches!(
             arg.as_str(),

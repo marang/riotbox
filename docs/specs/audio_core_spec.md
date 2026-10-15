@@ -718,6 +718,12 @@ Current limiter policy:
   device-free observations and virtual time. Core/Session and the existing tap
   remain authoritative; these tests do not establish callback or host health.
   Failed-stop summaries reflect observed lifecycle, not a hardcoded success.
+- the [generated loaded-Session V1 preparation](../benchmarks/generated_live_master_load_fixture_v1.md)
+  (RIOTBOX-1577 / RBX-443) reuses normal ingest, committed actions, save/restore,
+  recording-plan admission and the shared offline mixer. Its fixed generated
+  geometry and six windows are preparation controls, never actual callback,
+  device or recorder execution. All contributors are a named composite; no
+  host-qualified receipt, musical verdict or future execution grant follows.
 - V2 reuses that allocation and tap but arms until an absolute Session beat.
   Pre-boundary callbacks write no payload; a straddling callback begins at the
   first complete frame at or after the requested beat. The callback publishes

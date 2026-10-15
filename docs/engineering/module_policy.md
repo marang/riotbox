@@ -76,6 +76,18 @@ Generated control proof is not actual callback, source, listening, original
 ALSA-trigger or host/endurance qualification. No public Audio test constructor,
 second recorder, new action, DSP or persistent App state belongs to this seam.
 
+### Generated Loaded-Session Preparation Ownership
+
+RIOTBOX-1577 / RBX-443 keeps the private diagnostic `ready_prefix` responsible
+only for the existing committed capture/preset/instigator sequence and shared
+render-plan helpers. Legacy `live_flow` retains preflight, family validation,
+logging and the full later journey. The private `generated_load` owner admits
+one fixed generated input and owns preparation evidence, while `contract` owns
+strict V1 admission and `windows` owns recording-plan/offline-mixer measurement
+and no-clobber artifact publication. App/Core/Session remain the only product
+truth. No public test constructor or new recorder/runtime is introduced. See
+the [preparation-only contract](../benchmarks/generated_live_master_load_fixture_v1.md).
+
 ### Core Jam Projection Ownership
 
 `view::jam` is a compatibility facade over private Core projection owners

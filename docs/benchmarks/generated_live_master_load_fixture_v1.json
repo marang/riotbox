@@ -1,0 +1,19 @@
+{
+  "schema": "riotbox.generated_live_master_load_fixture.v1",
+  "schema_version": 1,
+  "source_case_id": "dense_break_132",
+  "source_seconds": 32,
+  "source_bpm": 132.0,
+  "source_sample_rate": 44100,
+  "source_channels": 2,
+  "prefix_profile": "feral_break_alpha_v2_ready_v1",
+  "window_bars": [2, 8, 16],
+  "output_sample_rates": [44100, 48000],
+  "output_channels": 2,
+  "offline_callback_frames": 128,
+  "classification": "generated_control_preparation_only",
+  "quality_proof": false,
+  "source_intelligence_qualified": false,
+  "host_execution_allowed": false,
+  "holdout_audio_allowed": false
+}
