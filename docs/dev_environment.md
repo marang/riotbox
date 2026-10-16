@@ -95,12 +95,13 @@ latency, endurance, release or original ALSA-cause qualification. No further
 trial is authorized and the failed V1 result remains unchanged.
 
 The [RIOTBOX-1589 post-repair phase](benchmarks/loaded_recorder_host_riotbox_1589_v1.md)
-prospectively reuses that unchanged generated V2 observation for the now-repaired
-callback/control and history-capacity paths. Its new owner, fresh fixture and
-exact-revision bindings require separate explicit approval; preparation is not
-host access. The 1581 result and consumed permission stay unchanged. This is a
-current-runtime regression, not longer endurance, musical or physical-device
-qualification. No actual 1589 result or further trial is implied.
+has now [completed its separately approved one-shot observation](reviews/riotbox_1589_current_runtime_observation_2026-10-16.md):
+startup plus generated 2/8/16-bar recording passed on the repaired runtime with
+verified cleanup and unchanged defaults. Its fresh approval and invocation are
+consumed; no further trial is authorized. The 1581 result remains unchanged.
+This is only instrumented isolated generated-composite current-runtime regression,
+not longer endurance, musical, physical-device, latency, original ALSA-cause or
+release qualification. RIOTBOX-1041/1036 remain open.
 
 ## Agent Sandbox Self-Checks
 
