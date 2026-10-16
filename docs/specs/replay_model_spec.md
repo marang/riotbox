@@ -118,6 +118,26 @@ The following may be reconstructed only if their inputs are frozen:
 - source summaries
 - replay-time convenience indexes
 
+RIOTBOX-1599 / RBX-457 places optional legacy MC-202 plan resolution at the
+actual missing-plan entry in the existing Core replay traversal. The resolver
+observes immutable pre-entry Session/entry metadata and returns only a plan;
+Core still owns execution, Undo snapshots, order, suffix/anchor selection,
+matching timing invalidation and transactional installation. Persisted
+`Some`, including degraded/stay-out plans, bypasses derivation. Default Core
+interfaces remain no-backfill; there is no general replay hook system. App must
+not overwrite a Core target/payload result by reconstructing the whole prefix.
+An authoritative anchor `None`, empty suffix or reconfirmation without a new
+MC-202 action cannot regenerate old material. Keep the existing App source-ID
+trust check, unchanged source selector and separate unvalidated-constructor
+compatibility contract in the [Session spec](./session_file_spec.md).
+
+RBX-458 corrects the pre-existing MC-202 SetRole replay touch discrepancy:
+SetRole assigns its clamped/default touch, matching the live writer; Generate
+and Mutate retain their existing maximum-with-current-touch behavior. This
+applies to ordinary Core replay as well as legacy resolution, so the next
+missing plan receives the actual preceding performer state. Persisted plans
+still bypass selection. No source-selection arithmetic or thresholds change.
+
 ---
 
 ## 7. Action Log Authority

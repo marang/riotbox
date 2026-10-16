@@ -1,21 +1,19 @@
-use std::collections::BTreeMap;
-
 use riotbox_core::{
-    action::{Action, ActionStatus},
     replay::{
         ReplayPlanError, ReplayTargetDryRunSummary, ReplayTargetExecutionError,
         ReplayTargetExecutionReport, SnapshotPayloadHydrationError,
-        apply_replay_target_suffix_to_session, build_replay_target_dry_run_summary,
-        build_replay_target_plan, hydrate_replay_target_from_snapshot_payload,
+        apply_replay_target_suffix_with_mc202_legacy_resolver, build_replay_target_dry_run_summary,
+        build_replay_target_plan,
+        hydrate_replay_target_from_snapshot_payload_with_mc202_legacy_resolver,
     },
     session::Mc202SourcePhrasePlanState,
-    transport::CommitBoundaryState,
 };
 
-use super::helpers::is_mc202_phrase_action;
 use super::lifecycle::latest_commit_boundary_from_log;
-use super::side_effects::apply_mc202_side_effects;
+use super::side_effects::derive_legacy_mc202_source_phrase_plan;
 use super::{JamAppState, max_action_id, transport_clock_from_state};
+
+mod legacy_mc202;
 
 impl JamAppState {
     pub fn restore_target_dry_run_summary(
@@ -34,13 +32,15 @@ impl JamAppState {
         &mut self,
         target_action_cursor: usize,
     ) -> Result<ReplayTargetExecutionReport, ReplayTargetExecutionError> {
-        let report = apply_replay_target_suffix_to_session(
+        let source_graph = self.source_graph.as_ref();
+        let report = apply_replay_target_suffix_with_mc202_legacy_resolver(
             &mut self.session,
             target_action_cursor,
-            self.source_graph.as_ref(),
+            source_graph,
+            |session, entry| derive_legacy_mc202_source_phrase_plan(session, entry, source_graph),
         )?;
 
-        self.refresh_after_restore_replay(Some(target_action_cursor));
+        self.refresh_after_restore_replay();
 
         Ok(report)
     }
@@ -49,20 +49,25 @@ impl JamAppState {
         &mut self,
         target_action_cursor: usize,
     ) -> Result<ReplayTargetExecutionReport, SnapshotPayloadHydrationError> {
-        let hydration_report = hydrate_replay_target_from_snapshot_payload(
-            &self.session,
-            target_action_cursor,
-            self.source_graph.as_ref(),
-        )?;
+        let source_graph = self.source_graph.as_ref();
+        let hydration_report =
+            hydrate_replay_target_from_snapshot_payload_with_mc202_legacy_resolver(
+                &self.session,
+                target_action_cursor,
+                source_graph,
+                |session, entry| {
+                    derive_legacy_mc202_source_phrase_plan(session, entry, source_graph)
+                },
+            )?;
         let replay_report = hydration_report.replay_report;
 
         self.session = hydration_report.session;
-        self.refresh_after_restore_replay(Some(target_action_cursor));
+        self.refresh_after_restore_replay();
 
         Ok(replay_report)
     }
 
-    fn refresh_after_restore_replay(&mut self, target_action_cursor: Option<usize>) {
+    fn refresh_after_restore_replay(&mut self) {
         self.queue
             .reserve_action_ids_after(max_action_id(&self.session));
         self.runtime.transport =
@@ -80,82 +85,22 @@ impl JamAppState {
             .is_playing
             .then_some(self.runtime.transport.beat_index);
         self.runtime.last_commit_boundary = latest_commit_boundary_from_log(&self.session);
-        self.reconstruct_mc202_source_phrase_plan_for_cursor(
-            target_action_cursor.unwrap_or(self.session.action_log.actions.len()),
-        );
-        self.refresh_view();
-    }
-
-    pub(in crate::jam_app) fn reconstruct_mc202_source_phrase_plan_for_cursor(
-        &mut self,
-        target_action_cursor: usize,
-    ) {
-        let replay_inputs = mc202_phrase_replay_inputs(&self.session, target_action_cursor);
-        if replay_inputs.is_empty() {
-            return;
-        }
-        if let Some(persisted_plan) = replay_inputs
-            .last()
-            .and_then(|input| input.source_phrase_plan.clone())
+        if self
+            .session
+            .runtime_state
+            .lane_state
+            .mc202
+            .source_phrase_plan
+            .as_ref()
+            .is_some_and(|plan| !mc202_source_phrase_plan_is_still_trusted(&self.session, plan))
         {
-            if !mc202_source_phrase_plan_is_still_trusted(&self.session, &persisted_plan) {
-                self.session
-                    .runtime_state
-                    .lane_state
-                    .mc202
-                    .source_phrase_plan = None;
-                return;
-            }
-            self.session
-                .runtime_state
-                .lane_state
-                .mc202
-                .source_phrase_plan = Some(persisted_plan);
-            return;
-        }
-
-        let Some(source_graph) = self.source_graph.as_ref() else {
             self.session
                 .runtime_state
                 .lane_state
                 .mc202
                 .source_phrase_plan = None;
-            return;
-        };
-
-        let mut planning_session = self.session.clone();
-        planning_session
-            .runtime_state
-            .lane_state
-            .mc202
-            .source_phrase_plan = None;
-        planning_session.runtime_state.lane_state.mc202.role = None;
-        planning_session.runtime_state.lane_state.mc202.phrase_ref = None;
-        planning_session
-            .runtime_state
-            .lane_state
-            .mc202
-            .phrase_variant = None;
-        planning_session.runtime_state.macro_state.mc202_touch = 0.0;
-
-        for input in replay_inputs {
-            apply_mc202_side_effects(
-                &mut planning_session,
-                &input.action,
-                Some(&input.boundary),
-                Some(source_graph),
-            );
         }
-
-        self.session
-            .runtime_state
-            .lane_state
-            .mc202
-            .source_phrase_plan = planning_session
-            .runtime_state
-            .lane_state
-            .mc202
-            .source_phrase_plan;
+        self.refresh_view();
     }
 }
 
@@ -169,43 +114,6 @@ fn mc202_source_phrase_plan_is_still_trusted(
         .confirmed_grid
         .as_ref()
         .is_some_and(|confirmed| confirmed.source_id == plan.source_id)
-}
-
-struct Mc202PhraseReplayInput {
-    action: Action,
-    boundary: CommitBoundaryState,
-    source_phrase_plan: Option<Mc202SourcePhrasePlanState>,
-}
-
-fn mc202_phrase_replay_inputs(
-    session: &riotbox_core::session::SessionFile,
-    target_action_cursor: usize,
-) -> Vec<Mc202PhraseReplayInput> {
-    let target_action_cursor = target_action_cursor.min(session.action_log.actions.len());
-    let committed_actions = &session.action_log.actions[..target_action_cursor];
-    let mut action_by_id = BTreeMap::new();
-    for action in committed_actions {
-        // from_parts is unvalidated: preserve the original scan's first match,
-        // including an ineligible duplicate masking a later eligible action.
-        action_by_id.entry(action.id).or_insert(action);
-    }
-
-    session
-        .action_log
-        .commit_records
-        .iter()
-        .filter_map(|record| {
-            let action = action_by_id.get(&record.action_id).copied()?;
-            (action.status == ActionStatus::Committed
-                && action.result.as_ref().is_none_or(|result| result.accepted)
-                && is_mc202_phrase_action(action.command))
-            .then(|| Mc202PhraseReplayInput {
-                action: action.clone(),
-                boundary: record.boundary.clone(),
-                source_phrase_plan: record.mc202_source_phrase_plan.clone(),
-            })
-        })
-        .collect()
 }
 
 #[cfg(test)]

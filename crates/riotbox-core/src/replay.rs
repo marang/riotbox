@@ -5,6 +5,7 @@ mod plan;
 mod scene_movement;
 mod summary;
 mod target_execution;
+mod traversal;
 
 pub use artifact_hydration::{
     W30ArtifactReplayHydrationError, W30ArtifactReplayHydrationPlan,
@@ -36,5 +37,8 @@ pub use summary::{
 pub use target_execution::{
     ReplayTargetExecutionError, ReplayTargetExecutionReport, SnapshotPayloadHydrationError,
     SnapshotPayloadHydrationReport, apply_replay_target_suffix_to_session,
+    apply_replay_target_suffix_with_mc202_legacy_resolver,
     hydrate_replay_target_from_snapshot_payload,
+    hydrate_replay_target_from_snapshot_payload_with_mc202_legacy_resolver,
 };
+pub use traversal::apply_replay_entry_with_mc202_legacy_resolver;

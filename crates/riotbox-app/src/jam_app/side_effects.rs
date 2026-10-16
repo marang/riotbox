@@ -19,6 +19,7 @@ use riotbox_core::{
 use capture::apply_capture_side_effects;
 use ghost::apply_ghost_side_effects;
 pub(super) use mc202::apply_mc202_side_effects;
+pub(super) use mc202::derive_legacy_mc202_source_phrase_plan;
 use preset::apply_preset_side_effects;
 use scene::apply_scene_side_effects;
 use source_monitor::apply_source_monitor_side_effects;

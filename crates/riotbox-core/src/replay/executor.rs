@@ -471,7 +471,11 @@ fn apply_mc202_role(
         Some(mc202_boundary_phrase_ref(entry, role_label));
     session.runtime_state.lane_state.mc202.phrase_variant = None;
     session.runtime_state.macro_state.mc202_touch =
-        session.runtime_state.macro_state.mc202_touch.max(touch);
+        if entry.action.command == ActionCommand::Mc202SetRole {
+            touch
+        } else {
+            session.runtime_state.macro_state.mc202_touch.max(touch)
+        };
     apply_persisted_mc202_source_phrase_plan(session, entry);
 }
 
@@ -550,19 +554,7 @@ pub fn apply_replay_plan_to_session(
     session: &mut SessionFile,
     plan: &[ReplayPlanEntry<'_>],
 ) -> Result<ReplayExecutionReport, ReplayExecutionError> {
-    session
-        .validate_live_recording_duration_contracts()
-        .map_err(ReplayExecutionError::InvalidLiveRecordingDuration)?;
-    let mut candidate = session.clone();
-    let mut applied_action_ids = Vec::with_capacity(plan.len());
-
-    for entry in plan {
-        apply_replay_entry_to_session(&mut candidate, entry)?;
-        applied_action_ids.push(entry.action.id);
-    }
-
-    *session = candidate;
-    Ok(ReplayExecutionReport { applied_action_ids })
+    super::traversal::apply_replay_plan_with_mc202_legacy_resolver(session, plan, None, |_, _| None)
 }
 
 #[cfg(test)]

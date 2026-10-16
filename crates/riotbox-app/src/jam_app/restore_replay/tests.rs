@@ -1,5 +1,5 @@
 //! Characterization of the existing unvalidated App join, not source evidence.
-use super::{Mc202PhraseReplayInput, mc202_phrase_replay_inputs};
+use super::legacy_mc202::mc202_reconstruction_entries;
 use crate::jam_app::{JamAppState, helpers::is_mc202_phrase_action};
 use riotbox_core::{
     action::{
@@ -8,6 +8,7 @@ use riotbox_core::{
     },
     ids::ActionId,
     queue::ActionQueue,
+    replay::ReplayPlanEntry,
     session::{
         ActionCommitRecord, Mc202RoleState, Mc202SourcePhraseNoteBudgetState,
         Mc202SourcePhrasePlanState, Mc202SourcePhraseSlotState, ReplayPolicy, SessionFile,
@@ -17,7 +18,7 @@ use riotbox_core::{
 };
 
 // Retain the original scan independently of the optimized implementation.
-fn linear_oracle(session: &SessionFile, cursor: usize) -> Vec<Mc202PhraseReplayInput> {
+fn linear_oracle(session: &SessionFile, cursor: usize) -> Vec<ReplayPlanEntry<'_>> {
     let prefix = &session.action_log.actions[..cursor.min(session.action_log.actions.len())];
     session
         .action_log
@@ -27,11 +28,15 @@ fn linear_oracle(session: &SessionFile, cursor: usize) -> Vec<Mc202PhraseReplayI
             let action = prefix.iter().find(|action| action.id == record.action_id)?;
             (action.status == ActionStatus::Committed
                 && action.result.as_ref().is_none_or(|result| result.accepted)
-                && is_mc202_phrase_action(action.command))
-            .then(|| Mc202PhraseReplayInput {
-                action: action.clone(),
-                boundary: record.boundary.clone(),
-                source_phrase_plan: record.mc202_source_phrase_plan.clone(),
+                && (is_mc202_phrase_action(action.command)
+                    || matches!(
+                        action.command,
+                        ActionCommand::SourceTimingConfirmGrid
+                            | ActionCommand::SourceTimingRevertGrid
+                    )))
+            .then_some(ReplayPlanEntry {
+                action,
+                commit_record: record,
             })
         })
         .collect()
@@ -48,11 +53,10 @@ fn assert_all_prefixes(session: &SessionFile) {
         let mut declared = session.clone();
         declared.action_log.replay_policy = policy;
         for cursor in 0..=declared.action_log.actions.len() + 1 {
-            let actual = mc202_phrase_replay_inputs(&declared, cursor);
+            let actual = mc202_reconstruction_entries(&declared, cursor);
             let expected = linear_oracle(&declared, cursor);
-            let fields = |input: Mc202PhraseReplayInput| {
-                (input.action, input.boundary, input.source_phrase_plan)
-            };
+            let fields =
+                |input: ReplayPlanEntry<'_>| (input.action.clone(), input.commit_record.clone());
             assert_eq!(
                 actual.into_iter().map(fields).collect::<Vec<_>>(),
                 expected.into_iter().map(fields).collect::<Vec<_>>(),
@@ -184,7 +188,7 @@ fn every_status_result_and_first_duplicate_identity_matches_the_original_scan() 
                     && accepted != Some(false)
                     && command == ActionCommand::Mc202SetRole;
                 assert_eq!(
-                    mc202_phrase_replay_inputs(&session, 2).len(),
+                    mc202_reconstruction_entries(&session, 2).len(),
                     usize::from(eligible)
                 );
             }
@@ -204,7 +208,7 @@ fn missing_duplicate_and_future_records_keep_each_boundary_and_plan_in_stored_or
         .commit_records
         .push(record(100, 40, Some(plan("generated", 0.4))));
     assert_all_prefixes(&session);
-    let selected = mc202_phrase_replay_inputs(&session, usize::MAX);
+    let selected = mc202_reconstruction_entries(&session, usize::MAX);
     assert_eq!(
         selected
             .iter()
@@ -212,9 +216,16 @@ fn missing_duplicate_and_future_records_keep_each_boundary_and_plan_in_stored_or
             .collect::<Vec<_>>(),
         vec![ActionId(100), ActionId(70), ActionId(4), ActionId(100)]
     );
-    assert_eq!(selected.last().unwrap().boundary.beat_index, 40);
     assert_eq!(
-        selected.last().unwrap().source_phrase_plan,
+        selected.last().unwrap().commit_record.boundary.beat_index,
+        40
+    );
+    assert_eq!(
+        selected
+            .last()
+            .unwrap()
+            .commit_record
+            .mc202_source_phrase_plan,
         Some(plan("generated", 0.4))
     );
 }

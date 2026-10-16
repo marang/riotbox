@@ -367,6 +367,24 @@ Graph features from the final graph alone. Older logs may omit the field; those
 logs may reconstruct from trusted Source Graph evidence, and must otherwise
 degrade visibly/silently rather than play hardcoded replacement audio.
 
+RIOTBOX-1599 / RBX-457 resolves a missing historical per-commit plan at that
+executable MC-202 entry inside Core's transactional replay, using the unchanged
+App selector and immutable pre-entry state. Persisted plans, including degraded
+decisions, are never reselected. Later effective timing invalidation remains
+authoritative; reconfirming the same Source/Grid does not resurrect an earlier
+plan. Runtime or snapshot `None` is not permission to scan a historical prefix
+again. Core-selected empty/timing-only suffixes preserve their anchor outcome.
+Existing Core interfaces retain no-backfill behavior, and App retains current
+source-ID trust clearing. Ordinary JSON loading does not start replanning.
+The unvalidated `from_parts` metadata compatibility path remains separate from
+Core target admission and cannot silently reorder/admit historical input.
+Its private compatibility owner keeps first-match/prefix/stored-record rules,
+includes timing transitions through the same Core entry execution, and copies
+only the resulting plan back. No phrase history preserves opaque caller state.
+Unvalidated persisted phrase metadata remains recoverable even when that
+phrase's params are not executable; malformed timing instead fails closed to
+no plan. Neither case grants validated replay or source trust.
+
 The stable candidate-family labels are `sub_pressure_shove`,
 `sparse_offbeat_answer`, `call_back_stab`,
 `hook_restraint_ghost_answer`, `fill_pickup_instigator`, `stay_out`, and

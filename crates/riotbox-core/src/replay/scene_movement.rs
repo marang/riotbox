@@ -15,44 +15,12 @@ pub fn apply_graph_aware_replay_plan_to_session(
     entries: &[ReplayPlanEntry<'_>],
     source_graph: &SourceGraph,
 ) -> Result<ReplayExecutionReport, ReplayExecutionError> {
-    session
-        .validate_live_recording_duration_contracts()
-        .map_err(ReplayExecutionError::InvalidLiveRecordingDuration)?;
-    let mut working = session.clone();
-    working.migrate_scene_source_bindings_with_refs(
-        source_graph,
-        entries.iter().flat_map(|entry| {
-            crate::session::action_scene_refs(entry.action)
-                .chain(entry.commit_record.boundary.scene_id.iter())
-        }),
-    );
-    working
-        .runtime_state
-        .scene_state
-        .validate_source_bindings(source_graph)
-        .map_err(ReplayExecutionError::InvalidSceneSourceBinding)?;
-    let mut applied_action_ids = Vec::with_capacity(entries.len());
-
-    for entry in entries {
-        let scene_movement = derive_scene_movement_for_replay_entry(&working, entry, source_graph);
-        super::apply_replay_entry_to_session(&mut working, entry)?;
-        if matches!(
-            entry.action.command,
-            ActionCommand::SceneLaunch | ActionCommand::SceneRestore
-        ) {
-            if entry.action.command == ActionCommand::SceneLaunch {
-                // The graph-free executor has already preserved the previous projection
-                // in the restore slot. Hydrate only the new launch projection here.
-                working.runtime_state.scene_state.active_projection_movement =
-                    scene_movement.clone();
-            }
-            working.runtime_state.scene_state.last_movement = scene_movement;
-        }
-        applied_action_ids.push(entry.action.id);
-    }
-
-    *session = working;
-    Ok(ReplayExecutionReport { applied_action_ids })
+    super::traversal::apply_replay_plan_with_mc202_legacy_resolver(
+        session,
+        entries,
+        Some(source_graph),
+        |_, _| None,
+    )
 }
 
 /// Moves the persistent lane-audio projection alongside the Scene restore pointer.
