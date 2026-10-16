@@ -15,7 +15,7 @@
 - Labels: `Improvement`
 - PR: [#1679](https://github.com/marang/riotbox/pull/1679)
 - Merge commit: `8e0aeab5a269e78b42f46bcdea13a7e07d1775b0`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: Nine Core/App generated selections and 153 Audio/Sidecar/operator selected checks PASS (overlaps and one ignored informational benchmark attributed); report-branch full local `just ci` and exact native CI 38446251364 PASS; independent report reviews/self-review: zero retained findings.
 - Docs touched: `docs/reviews/riotbox_1576_current_state_checkpoint_2026-10-13.md`
 - Follow-ups: RIOTBOX-1577 generated-load preparation subsequently completed; optional queued product-mix destination remains a non-finding contract question; RIOTBOX-1036/1041 and original ALSA cause remain open.

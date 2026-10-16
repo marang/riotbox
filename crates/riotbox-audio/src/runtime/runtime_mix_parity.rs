@@ -166,15 +166,15 @@ pub(super) fn render_sequence_with_pre_limiter_sink(
     let channel_count = usize::from(channel_count.max(1));
     let callback_sample_count = callback_frame_count.max(1).saturating_mul(channel_count);
     let first_plan = first_step.plan;
-    let shared_transport = SharedTransportTimingState::new(
+    let mut shared_transport = SharedTransportTimingState::new(
         first_plan.transport.is_transport_running,
         first_plan.transport.tempo_bpm,
         first_plan.transport.position_beats,
     );
-    let shared_tr909 = SharedTr909RenderState::new(&first_plan.tr909_render);
-    let shared_mc202 = SharedMc202RenderState::new(&first_plan.mc202_render);
-    let shared_w30_preview = SharedW30PreviewRenderState::new(&first_plan.w30_preview_render);
-    let shared_w30_resample = SharedW30ResampleTapState::new(&first_plan.w30_resample_tap);
+    let mut shared_tr909 = SharedTr909RenderState::new(&first_plan.tr909_render);
+    let mut shared_mc202 = SharedMc202RenderState::new(&first_plan.mc202_render);
+    let mut shared_w30_preview = SharedW30PreviewRenderState::new(&first_plan.w30_preview_render);
+    let mut shared_w30_resample = SharedW30ResampleTapState::new(&first_plan.w30_resample_tap);
     let shared_source_monitor =
         SharedSourceMonitorRenderState::new(&first_plan.source_monitor_render);
     let mut transport_state = TransportTimingCallbackState::default();
@@ -208,24 +208,24 @@ pub(super) fn render_sequence_with_pre_limiter_sink(
             {
                 let block_frame_count = block.len() / channel_count;
                 let timing = advance_transport_timing(
-                    &shared_transport.snapshot(),
+                    &shared_transport.snapshot_exclusive(),
                     &mut transport_state,
                     sample_rate,
                     block_frame_count,
                 );
-                let mut tr909_render = shared_tr909.snapshot();
+                let mut tr909_render = shared_tr909.snapshot_exclusive();
                 tr909_render.is_transport_running = timing.is_transport_running;
                 tr909_render.tempo_bpm = timing.tempo_bpm;
                 tr909_render.position_beats = timing.render_position_beats;
-                let mut mc202_render = shared_mc202.snapshot();
+                let mut mc202_render = shared_mc202.snapshot_exclusive();
                 mc202_render.is_transport_running = timing.is_transport_running;
                 mc202_render.tempo_bpm = timing.tempo_bpm;
                 mc202_render.position_beats = timing.render_position_beats;
-                let mut w30_preview_render = shared_w30_preview.snapshot();
+                let mut w30_preview_render = shared_w30_preview.snapshot_exclusive();
                 w30_preview_render.is_transport_running = timing.is_transport_running;
                 w30_preview_render.tempo_bpm = timing.tempo_bpm;
                 w30_preview_render.position_beats = timing.render_position_beats;
-                let mut w30_resample_render = shared_w30_resample.snapshot();
+                let mut w30_resample_render = shared_w30_resample.snapshot_exclusive();
                 w30_resample_render.is_transport_running = timing.is_transport_running;
                 w30_resample_render.tempo_bpm = timing.tempo_bpm;
                 w30_resample_render.position_beats = timing.render_position_beats;

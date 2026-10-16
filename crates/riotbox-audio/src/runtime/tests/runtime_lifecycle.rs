@@ -66,6 +66,12 @@ fn coherent_snapshot_or_uses_previous_snapshot_during_active_update() {
 }
 
 #[test]
+fn serialized_control_owner_can_still_be_transferred_between_threads() {
+    fn requires_send<T: Send>() {}
+    requires_send::<AudioRuntimeShell>();
+}
+
+#[test]
 fn tr909_snapshot_or_previous_holds_last_complete_state_during_partial_update() {
     let initial = Tr909RenderState {
         mode: Tr909RenderMode::SourceSupport,
@@ -74,7 +80,9 @@ fn tr909_snapshot_or_previous_holds_last_complete_state_during_partial_update() 
         ..Tr909RenderState::default()
     };
     let shared = SharedTr909RenderState::new(&initial);
-    let previous = shared.snapshot();
+    let previous = shared
+        .try_snapshot()
+        .expect("quiescent control publication");
 
     begin_coherent_snapshot_update(&shared.revision);
     shared

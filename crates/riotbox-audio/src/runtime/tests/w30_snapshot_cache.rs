@@ -44,7 +44,9 @@ fn fixture() -> W30PreviewRenderState {
 fn benchmark_w30_snapshot_cost() {
     let mut state = fixture();
     let shared = SharedW30PreviewRenderState::new(&state);
-    let mut previous = shared.snapshot();
+    let mut previous = shared
+        .try_snapshot()
+        .expect("quiescent control publication");
     let iterations = 2_000;
     for cached in [false, true] {
         let mut cache = W30PreviewSnapshotCache::new(&shared);
@@ -97,13 +99,27 @@ fn changed_publication_without_retrigger_changes_render_and_matches_uncached() {
     let shared = SharedW30PreviewRenderState::new(&state);
     let mut cache = W30PreviewSnapshotCache::new(&shared);
     let original = render(cache.refresh(&shared));
-    assert_eq!(original, render(&shared.snapshot()));
+    assert_eq!(
+        original,
+        render(
+            &shared
+                .try_snapshot()
+                .expect("quiescent control publication")
+        )
+    );
     assert!(original.iter().any(|sample| sample.abs() > 0.001));
 
     state.pad_playback.as_mut().unwrap().samples.fill(-0.4);
     shared.update(&state); // Deliberately keep trigger_revision unchanged.
     let changed = render(cache.refresh(&shared));
-    assert_eq!(changed, render(&shared.snapshot()));
+    assert_eq!(
+        changed,
+        render(
+            &shared
+                .try_snapshot()
+                .expect("quiescent control publication")
+        )
+    );
     assert_ne!(original, changed);
 
     // Per-callback timing may be overridden even while sample data is reused.
@@ -112,4 +128,58 @@ fn changed_publication_without_retrigger_changes_render_and_matches_uncached() {
     state.mode = W30PreviewRenderMode::Idle;
     shared.update(&state);
     assert_eq!(render(cache.refresh(&shared)), vec![0.0; 256]);
+}
+
+#[test]
+fn concurrent_preview_publication_keeps_full_arrays_and_metadata_in_one_generation() {
+    use crate::w30::{W30_PREVIEW_SAMPLE_WINDOW_LEN, W30PreviewSampleWindow};
+    use std::sync::Arc;
+    let mut first = fixture();
+    first.source_window_preview = Some(W30PreviewSampleWindow {
+        source_start_frame: 10,
+        source_end_frame: 10 + W30_PREVIEW_SAMPLE_WINDOW_LEN as u64,
+        sample_count: W30_PREVIEW_SAMPLE_WINDOW_LEN,
+        samples: [0.125; W30_PREVIEW_SAMPLE_WINDOW_LEN],
+    });
+    let mut second = first.clone();
+    second.trigger_revision = 2;
+    second.trigger_velocity = 0.5;
+    second
+        .source_window_preview
+        .as_mut()
+        .unwrap()
+        .samples
+        .fill(-0.25);
+    second
+        .source_window_preview
+        .as_mut()
+        .unwrap()
+        .source_start_frame = 20;
+    let pad = second.pad_playback.as_mut().unwrap();
+    pad.samples.fill(-0.5);
+    pad.chop_slice_count = 8;
+    pad.chop_slice_starts = [1, 2, 3, 4, 5, 6, 7, 8];
+    second.position_beats = 16.0;
+    let expected_first = SharedW30PreviewRenderState::new(&first).snapshot_exclusive();
+    let expected_second = SharedW30PreviewRenderState::new(&second).snapshot_exclusive();
+    let shared = Arc::new(SharedW30PreviewRenderState::new(&first));
+    let mut cache = W30PreviewSnapshotCache::new(&shared);
+    std::thread::scope(|scope| {
+        scope.spawn(|| {
+            for _ in 0..32 {
+                shared.update(&second);
+                shared.update(&first);
+            }
+            shared.update(&second);
+        });
+        for _ in 0..128 {
+            let observed = cache.refresh(&shared);
+            assert!(
+                observed == &expected_first || observed == &expected_second,
+                "mixed preview array/metadata generation"
+            );
+            std::thread::yield_now();
+        }
+    });
+    assert_eq!(cache.refresh(&shared), &expected_second);
 }

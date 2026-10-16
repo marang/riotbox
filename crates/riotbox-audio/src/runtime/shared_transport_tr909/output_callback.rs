@@ -22,6 +22,10 @@ mod tests;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum CallbackPreparationError {
+    TransportSnapshotUnavailable,
+    Tr909SnapshotUnavailable,
+    Mc202SnapshotUnavailable,
+    W30ResampleSnapshotUnavailable,
     SourceReaderAlreadyTaken,
     CaptureReaderAlreadyTaken,
 }
@@ -29,6 +33,10 @@ pub(super) enum CallbackPreparationError {
 impl CallbackPreparationError {
     pub(super) const fn message(self) -> &'static str {
         match self {
+            Self::TransportSnapshotUnavailable => "initial transport snapshot unavailable",
+            Self::Tr909SnapshotUnavailable => "initial TR-909 snapshot unavailable",
+            Self::Mc202SnapshotUnavailable => "initial MC-202 snapshot unavailable",
+            Self::W30ResampleSnapshotUnavailable => "initial W-30 resample snapshot unavailable",
             Self::SourceReaderAlreadyTaken => "source-monitor callback reader already acquired",
             Self::CaptureReaderAlreadyTaken => {
                 "live-master capture callback reader already acquired"
@@ -45,6 +53,24 @@ pub(super) fn prepare_output_callback<T>(
 where
     T: cpal::SizedSample + cpal::FromSample<f32>,
 {
+    // Validate required initial groups before consuming the unique readers.
+    // Never seed the callback from unchecked fields or invented musical state.
+    let mut last_transport_snapshot = shared
+        .transport
+        .try_snapshot()
+        .ok_or(CallbackPreparationError::TransportSnapshotUnavailable)?;
+    let mut last_tr909_render_snapshot = shared
+        .tr909_render
+        .try_snapshot()
+        .ok_or(CallbackPreparationError::Tr909SnapshotUnavailable)?;
+    let mut last_mc202_render_snapshot = shared
+        .mc202_render
+        .try_snapshot()
+        .ok_or(CallbackPreparationError::Mc202SnapshotUnavailable)?;
+    let mut last_w30_resample_snapshot = shared
+        .w30_resample_tap
+        .try_snapshot()
+        .ok_or(CallbackPreparationError::W30ResampleSnapshotUnavailable)?;
     // Unique readers are acquired on control, before the worker is created.
     // Never substitute observer snapshots (which lock) in the data callback.
     let mut source_reader = shared
@@ -66,11 +92,7 @@ where
     let mut source_monitor_callback_state = SourceMonitorCallbackState::default();
     let sample_rate = config.sample_rate;
     let mut mix_buffer = vec![0.0; callback_scratch_sample_count(config, channel_count)];
-    let mut last_transport_snapshot = callback_transport.snapshot();
-    let mut last_tr909_render_snapshot = shared.tr909_render.snapshot();
-    let mut last_mc202_render_snapshot = shared.mc202_render.snapshot();
     let mut w30_preview_snapshot = W30PreviewSnapshotCache::new(&shared.w30_preview);
-    let mut last_w30_resample_snapshot = shared.w30_resample_tap.snapshot();
 
     Ok(move |data: &mut [T]| {
         let frame_count = data.len() / channel_count.max(1);

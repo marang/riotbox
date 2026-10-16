@@ -15,7 +15,7 @@
 - Labels: `Audio`, `Improvement`
 - PR: [#1685](https://github.com/marang/riotbox/pull/1685), [#1686](https://github.com/marang/riotbox/pull/1686)
 - Merge commit: `2f0a8e146c81a32920ca310c2ecdd6bd47cde7cf`, `172adb9b1a470658ca6fbf3e13dc63bf605707b8`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: 45 prospective controls PASS; exact preparation full local CI and native 38859803889 PASS; actual startup + three recordings PASS; independent raw/document reviews zero findings; result full local `just ci`, exact native 38862147545 and post-merge main 38862950686 PASS.
 - Docs touched: `docs/benchmarks/loaded_recorder_host_riotbox_1581_v2.json`, `docs/benchmarks/loaded_recorder_host_riotbox_1581_v2.md`, `docs/dev_environment.md`, `docs/research_decision_log.md`, `docs/reviews/riotbox_1581_loaded_v2_phase_preparation_2026-10-16.md`, `docs/reviews/riotbox_1581_loaded_recorder_v2_observation_2026-10-16.md`
 - Follow-ups: RIOTBOX-1582 separately reproduced source-free callback-timing repair subsequently completed; RIOTBOX-1041/1036 remain open; no further V2 trial authorization; original ALSA cause unresolved.

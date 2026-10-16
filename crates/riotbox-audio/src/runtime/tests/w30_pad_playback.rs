@@ -176,7 +176,9 @@ fn w30_grid_gate_chokes_before_the_next_source_percussion_can_drift() {
 #[test]
 fn w30_transport_steps_select_source_derived_chop_slices() {
     let shared = SharedW30PreviewRenderState::new(&W30PreviewRenderState::default());
-    let mut normal = shared.snapshot();
+    let mut normal = shared
+        .try_snapshot()
+        .expect("quiescent control publication");
     normal.mode = W30PreviewRenderMode::LiveRecall;
     normal.routing = W30PreviewRenderRouting::MusicBusPreview;
     normal.pad_playback = RealtimeW30PadPlaybackSampleWindow {
@@ -204,7 +206,9 @@ fn w30_transport_steps_select_source_derived_chop_slices() {
 #[test]
 fn w30_pad_signature_tracks_every_active_chop_slice() {
     let shared = SharedW30PreviewRenderState::new(&W30PreviewRenderState::default());
-    let mut first = shared.snapshot();
+    let mut first = shared
+        .try_snapshot()
+        .expect("quiescent control publication");
     first.pad_playback.sample_count = 8_192;
     first.pad_playback.chop_slice_count = 3;
     first.pad_playback.chop_slice_starts = [100, 900, 2_100, 0, 0, 0, 0, 0];

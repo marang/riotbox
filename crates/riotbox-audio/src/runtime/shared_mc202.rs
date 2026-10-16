@@ -7,7 +7,6 @@ use crate::mc202::Mc202RenderRouting;
 use crate::mc202::Mc202RenderState;
 use crate::mc202::Mc202SourcePhraseRenderPlan;
 use crate::runtime::begin_coherent_snapshot_update;
-use crate::runtime::coherent_snapshot;
 use crate::runtime::coherent_snapshot_or;
 use crate::runtime::finish_coherent_snapshot_update;
 use crate::runtime::shared_transport_tr909::RealtimeTr909RenderState;
@@ -26,6 +25,7 @@ use crate::runtime::tr909_tail_telemetry::support_profile_from_u32;
 use crate::runtime::tr909_tail_telemetry::support_profile_to_u32;
 use crate::runtime::tr909_tail_telemetry::takeover_profile_from_u32;
 use crate::runtime::tr909_tail_telemetry::takeover_profile_to_u32;
+use crate::runtime::try_coherent_snapshot;
 use crate::tr909::Tr909RenderState;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::AtomicU32;
@@ -59,57 +59,62 @@ impl SharedTr909RenderState {
     pub(super) fn update(&self, render_state: &Tr909RenderState) {
         begin_coherent_snapshot_update(&self.revision);
         self.mode
-            .store(mode_to_u32(render_state.mode), Ordering::Relaxed);
+            .store(mode_to_u32(render_state.mode), Ordering::Release);
         self.routing
-            .store(routing_to_u32(render_state.routing), Ordering::Relaxed);
+            .store(routing_to_u32(render_state.routing), Ordering::Release);
         self.source_support_profile.store(
             support_profile_to_u32(render_state.source_support_profile),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         self.source_support_context.store(
             support_context_to_u32(render_state.source_support_context),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         self.pattern_adoption.store(
             pattern_adoption_to_u32(render_state.pattern_adoption),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         self.phrase_variation.store(
             phrase_variation_to_u32(render_state.phrase_variation),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         self.takeover_profile.store(
             takeover_profile_to_u32(render_state.takeover_profile),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         self.drum_bus_level_bits
-            .store(render_state.drum_bus_level.to_bits(), Ordering::Relaxed);
+            .store(render_state.drum_bus_level.to_bits(), Ordering::Release);
         self.slam_enabled
-            .store(render_state.slam_enabled, Ordering::Relaxed);
+            .store(render_state.slam_enabled, Ordering::Release);
         self.slam_intensity_bits
-            .store(render_state.slam_intensity.to_bits(), Ordering::Relaxed);
+            .store(render_state.slam_intensity.to_bits(), Ordering::Release);
         self.is_transport_running
-            .store(render_state.is_transport_running, Ordering::Relaxed);
+            .store(render_state.is_transport_running, Ordering::Release);
         self.tempo_bpm_bits
-            .store(render_state.tempo_bpm.to_bits(), Ordering::Relaxed);
+            .store(render_state.tempo_bpm.to_bits(), Ordering::Release);
         self.position_beats_bits
-            .store(render_state.position_beats.to_bits(), Ordering::Relaxed);
+            .store(render_state.position_beats.to_bits(), Ordering::Release);
         self.source_bar_grid_anchor_present.store(
             render_state.source_bar_grid_anchor_position_beats.is_some(),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         self.source_bar_grid_anchor_position_beats_bits.store(
             render_state
                 .source_bar_grid_anchor_position_beats
                 .unwrap_or(0.0)
                 .to_bits(),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         finish_coherent_snapshot_update(&self.revision);
     }
 
-    pub(super) fn snapshot(&self) -> RealtimeTr909RenderState {
-        coherent_snapshot(&self.revision, || self.read_snapshot_fields())
+    /// Exclusive offline ownership excludes concurrent control writers.
+    pub(super) fn snapshot_exclusive(&mut self) -> RealtimeTr909RenderState {
+        self.read_snapshot_fields()
+    }
+
+    pub(super) fn try_snapshot(&self) -> Option<RealtimeTr909RenderState> {
+        try_coherent_snapshot(&self.revision, || self.read_snapshot_fields())
     }
 
     pub(super) fn snapshot_or_previous(
@@ -121,36 +126,36 @@ impl SharedTr909RenderState {
 
     fn read_snapshot_fields(&self) -> RealtimeTr909RenderState {
         RealtimeTr909RenderState {
-            mode: mode_from_u32(self.mode.load(Ordering::Relaxed)),
-            routing: routing_from_u32(self.routing.load(Ordering::Relaxed)),
+            mode: mode_from_u32(self.mode.load(Ordering::Acquire)),
+            routing: routing_from_u32(self.routing.load(Ordering::Acquire)),
             source_support_profile: support_profile_from_u32(
-                self.source_support_profile.load(Ordering::Relaxed),
+                self.source_support_profile.load(Ordering::Acquire),
             ),
             source_support_context: support_context_from_u32(
-                self.source_support_context.load(Ordering::Relaxed),
+                self.source_support_context.load(Ordering::Acquire),
             ),
             pattern_adoption: pattern_adoption_from_u32(
-                self.pattern_adoption.load(Ordering::Relaxed),
+                self.pattern_adoption.load(Ordering::Acquire),
             ),
             phrase_variation: phrase_variation_from_u32(
-                self.phrase_variation.load(Ordering::Relaxed),
+                self.phrase_variation.load(Ordering::Acquire),
             ),
             takeover_profile: takeover_profile_from_u32(
-                self.takeover_profile.load(Ordering::Relaxed),
+                self.takeover_profile.load(Ordering::Acquire),
             ),
-            drum_bus_level: f32::from_bits(self.drum_bus_level_bits.load(Ordering::Relaxed)),
-            slam_enabled: self.slam_enabled.load(Ordering::Relaxed),
-            slam_intensity: f32::from_bits(self.slam_intensity_bits.load(Ordering::Relaxed)),
-            is_transport_running: self.is_transport_running.load(Ordering::Relaxed),
-            tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::Relaxed)),
-            position_beats: f64::from_bits(self.position_beats_bits.load(Ordering::Relaxed)),
+            drum_bus_level: f32::from_bits(self.drum_bus_level_bits.load(Ordering::Acquire)),
+            slam_enabled: self.slam_enabled.load(Ordering::Acquire),
+            slam_intensity: f32::from_bits(self.slam_intensity_bits.load(Ordering::Acquire)),
+            is_transport_running: self.is_transport_running.load(Ordering::Acquire),
+            tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::Acquire)),
+            position_beats: f64::from_bits(self.position_beats_bits.load(Ordering::Acquire)),
             source_bar_grid_anchor_position_beats: self
                 .source_bar_grid_anchor_present
-                .load(Ordering::Relaxed)
+                .load(Ordering::Acquire)
                 .then(|| {
                     f64::from_bits(
                         self.source_bar_grid_anchor_position_beats_bits
-                            .load(Ordering::Relaxed),
+                            .load(Ordering::Acquire),
                     )
                 }),
         }
@@ -248,101 +253,106 @@ impl SharedMc202RenderState {
     pub(super) fn update(&self, render_state: &Mc202RenderState) {
         begin_coherent_snapshot_update(&self.revision);
         self.mode
-            .store(mc202_mode_to_u32(render_state.mode), Ordering::Relaxed);
+            .store(mc202_mode_to_u32(render_state.mode), Ordering::Release);
         self.routing.store(
             mc202_routing_to_u32(render_state.routing),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         self.phrase_shape.store(
             mc202_phrase_shape_to_u32(render_state.phrase_shape),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         self.note_budget.store(
             mc202_note_budget_to_u32(render_state.note_budget),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         self.contour_hint.store(
             mc202_contour_hint_to_u32(render_state.contour_hint),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         self.hook_response.store(
             mc202_hook_response_to_u32(render_state.hook_response),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         self.source_phrase_active_mask.store(
             render_state
                 .source_phrase_plan
                 .map_or(0, |plan| u32::from(plan.active_mask)),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         self.source_phrase_accent_mask.store(
             render_state
                 .source_phrase_plan
                 .map_or(0, |plan| u32::from(plan.accent_mask)),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         self.source_phrase_destructive_mask.store(
             render_state
                 .source_phrase_plan
                 .map_or(0, |plan| u32::from(plan.destructive_mask)),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         self.source_phrase_pressure_bits.store(
             render_state
                 .source_phrase_plan
                 .map_or(0.0, |plan| plan.pressure)
                 .to_bits(),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         self.source_phrase_contrast_bits.store(
             render_state
                 .source_phrase_plan
                 .map_or(0.0, |plan| plan.contrast)
                 .to_bits(),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         self.source_phrase_bass_weight_bits.store(
             render_state
                 .source_phrase_plan
                 .map_or(0.0, |plan| plan.bass_weight)
                 .to_bits(),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         self.source_phrase_stab_bite_bits.store(
             render_state
                 .source_phrase_plan
                 .map_or(0.0, |plan| plan.stab_bite)
                 .to_bits(),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         self.source_phrase_gate_snap_bits.store(
             render_state
                 .source_phrase_plan
                 .map_or(0.0, |plan| plan.gate_snap)
                 .to_bits(),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         if let Some(plan) = render_state.source_phrase_plan {
             for (index, semitone) in plan.semitones.iter().enumerate() {
                 self.source_phrase_semitones[index]
-                    .store(i8_to_atomic_u32(*semitone), Ordering::Relaxed);
+                    .store(i8_to_atomic_u32(*semitone), Ordering::Release);
             }
         }
         self.touch_bits
-            .store(render_state.touch.to_bits(), Ordering::Relaxed);
+            .store(render_state.touch.to_bits(), Ordering::Release);
         self.music_bus_level_bits
-            .store(render_state.music_bus_level.to_bits(), Ordering::Relaxed);
+            .store(render_state.music_bus_level.to_bits(), Ordering::Release);
         self.tempo_bpm_bits
-            .store(render_state.tempo_bpm.to_bits(), Ordering::Relaxed);
+            .store(render_state.tempo_bpm.to_bits(), Ordering::Release);
         self.position_beats_bits
-            .store(render_state.position_beats.to_bits(), Ordering::Relaxed);
+            .store(render_state.position_beats.to_bits(), Ordering::Release);
         self.is_transport_running
-            .store(render_state.is_transport_running, Ordering::Relaxed);
+            .store(render_state.is_transport_running, Ordering::Release);
         finish_coherent_snapshot_update(&self.revision);
     }
 
-    pub(super) fn snapshot(&self) -> RealtimeMc202RenderState {
-        coherent_snapshot(&self.revision, || self.read_snapshot_fields())
+    pub(super) fn try_snapshot(&self) -> Option<RealtimeMc202RenderState> {
+        try_coherent_snapshot(&self.revision, || self.read_snapshot_fields())
+    }
+
+    /// Exclusive offline ownership excludes concurrent control writers.
+    pub(super) fn snapshot_exclusive(&mut self) -> RealtimeMc202RenderState {
+        self.read_snapshot_fields()
     }
 
     pub(super) fn snapshot_or_previous(
@@ -354,42 +364,42 @@ impl SharedMc202RenderState {
 
     fn read_snapshot_fields(&self) -> RealtimeMc202RenderState {
         RealtimeMc202RenderState {
-            mode: mc202_mode_from_u32(self.mode.load(Ordering::Relaxed)),
-            routing: mc202_routing_from_u32(self.routing.load(Ordering::Relaxed)),
-            phrase_shape: mc202_phrase_shape_from_u32(self.phrase_shape.load(Ordering::Relaxed)),
-            note_budget: mc202_note_budget_from_u32(self.note_budget.load(Ordering::Relaxed)),
-            contour_hint: mc202_contour_hint_from_u32(self.contour_hint.load(Ordering::Relaxed)),
-            hook_response: mc202_hook_response_from_u32(self.hook_response.load(Ordering::Relaxed)),
+            mode: mc202_mode_from_u32(self.mode.load(Ordering::Acquire)),
+            routing: mc202_routing_from_u32(self.routing.load(Ordering::Acquire)),
+            phrase_shape: mc202_phrase_shape_from_u32(self.phrase_shape.load(Ordering::Acquire)),
+            note_budget: mc202_note_budget_from_u32(self.note_budget.load(Ordering::Acquire)),
+            contour_hint: mc202_contour_hint_from_u32(self.contour_hint.load(Ordering::Acquire)),
+            hook_response: mc202_hook_response_from_u32(self.hook_response.load(Ordering::Acquire)),
             source_phrase_plan: self.source_phrase_plan_snapshot(),
-            touch: f32::from_bits(self.touch_bits.load(Ordering::Relaxed)),
-            music_bus_level: f32::from_bits(self.music_bus_level_bits.load(Ordering::Relaxed)),
-            tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::Relaxed)),
-            position_beats: f64::from_bits(self.position_beats_bits.load(Ordering::Relaxed)),
-            is_transport_running: self.is_transport_running.load(Ordering::Relaxed),
+            touch: f32::from_bits(self.touch_bits.load(Ordering::Acquire)),
+            music_bus_level: f32::from_bits(self.music_bus_level_bits.load(Ordering::Acquire)),
+            tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::Acquire)),
+            position_beats: f64::from_bits(self.position_beats_bits.load(Ordering::Acquire)),
+            is_transport_running: self.is_transport_running.load(Ordering::Acquire),
         }
     }
 
     fn source_phrase_plan_snapshot(&self) -> Option<Mc202SourcePhraseRenderPlan> {
-        let active_mask = self.source_phrase_active_mask.load(Ordering::Relaxed) as u16;
+        let active_mask = self.source_phrase_active_mask.load(Ordering::Acquire) as u16;
         if active_mask == 0 {
             return None;
         }
 
         let semitones = std::array::from_fn(|index| {
-            atomic_u32_to_i8(self.source_phrase_semitones[index].load(Ordering::Relaxed))
+            atomic_u32_to_i8(self.source_phrase_semitones[index].load(Ordering::Acquire))
         });
         Some(Mc202SourcePhraseRenderPlan {
             active_mask,
             semitones,
-            accent_mask: self.source_phrase_accent_mask.load(Ordering::Relaxed) as u16,
-            destructive_mask: self.source_phrase_destructive_mask.load(Ordering::Relaxed) as u16,
-            pressure: f32::from_bits(self.source_phrase_pressure_bits.load(Ordering::Relaxed)),
-            contrast: f32::from_bits(self.source_phrase_contrast_bits.load(Ordering::Relaxed)),
+            accent_mask: self.source_phrase_accent_mask.load(Ordering::Acquire) as u16,
+            destructive_mask: self.source_phrase_destructive_mask.load(Ordering::Acquire) as u16,
+            pressure: f32::from_bits(self.source_phrase_pressure_bits.load(Ordering::Acquire)),
+            contrast: f32::from_bits(self.source_phrase_contrast_bits.load(Ordering::Acquire)),
             bass_weight: f32::from_bits(
-                self.source_phrase_bass_weight_bits.load(Ordering::Relaxed),
+                self.source_phrase_bass_weight_bits.load(Ordering::Acquire),
             ),
-            stab_bite: f32::from_bits(self.source_phrase_stab_bite_bits.load(Ordering::Relaxed)),
-            gate_snap: f32::from_bits(self.source_phrase_gate_snap_bits.load(Ordering::Relaxed)),
+            stab_bite: f32::from_bits(self.source_phrase_stab_bite_bits.load(Ordering::Acquire)),
+            gate_snap: f32::from_bits(self.source_phrase_gate_snap_bits.load(Ordering::Acquire)),
         })
     }
 }

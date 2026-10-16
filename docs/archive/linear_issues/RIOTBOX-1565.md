@@ -15,7 +15,7 @@
 - Labels: `Bug`
 - PR: [#1668](https://github.com/marang/riotbox/pull/1668)
 - Merge commit: `07419e47182b5717ff86d41210432f24433ecbe3`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: Historical six pure-health tests and one isolated CLI reporting/exit test; complete riotbox-audio tests (333 library tests, one existing ignored manual benchmark); full source-free local just ci; exact-head native CI 37109534578 passed
 - Docs touched: `docs/research_decision_log.md`, `docs/reviews/riotbox_1565_cpal_probe_admission_2026-10-03.md`, `docs/specs/audio_core_spec.md`, `docs/spikes/cpal_audio_latency_spike.md`
 - Follow-ups: RIOTBOX-1566 separately owned one isolated silent-host observation; RIOTBOX-1041 remains the wider host-soak/endurance anchor

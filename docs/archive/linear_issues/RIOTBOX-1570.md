@@ -15,7 +15,7 @@
 - Labels: `benchmark`
 - PR: [#1673](https://github.com/marang/riotbox/pull/1673)
 - Merge commit: `1a7b9a4ff004ea6fa2f25f3c8657b480817e59fd`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: Historical six exact-command generated tests and 95 host fixtures; full source-free local just ci; pre-execution native CI 37972797712 passed; one consumed FAILED real-user-session admission; final exact-head native CI 37974619234 passed
 - Docs touched: `docs/benchmarks/silent_host_riotbox_1570_once_2026-10-09.md`, `docs/research_decision_log.md`, `docs/reviews/riotbox_1570_silent_host_v2_observation_2026-10-09.md`
 - Follow-ups: RIOTBOX-1571 (source-free multiline module metadata repair), separately completed; RIOTBOX-1572 later owns a distinct prospectively authorized V3 observation; RIOTBOX-1041 remains open

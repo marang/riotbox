@@ -15,7 +15,7 @@
 - Labels: `None`
 - PR: [#1659](https://github.com/marang/riotbox/pull/1659)
 - Merge commit: `fecaf3a7747a14807d67707389a1b49853c0195b`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: Historical: source-free `just ci`; Audio source 33 Debug + 33 Release, App 39 distinct admission/preflight controls; native CI 37076959159 passed. Current archival check: Linear Done and merged PR metadata only.
 - Docs touched: `docs/research_decision_log.md`, `docs/reviews/riotbox_1556_rust_source_memory_2026-10-03.md`, `docs/specs/audio_core_spec.md`, `docs/specs/session_file_spec.md`
 - Follow-ups: RIOTBOX-1557 and RIOTBOX-1558 own the separate measured cursor/callback tasks. Python ingest is outside this Rust boundary; later RIOTBOX-1559/1561/1562/1563 address identity and Python admission gaps.

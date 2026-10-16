@@ -1,11 +1,11 @@
 //! W-30 control-thread publication and callback-local coherent snapshots.
-#[cfg(test)]
-use super::coherent_snapshot_or;
 use super::{
-    COHERENT_SNAPSHOT_READ_ATTEMPTS, begin_coherent_snapshot_update, coherent_snapshot,
+    COHERENT_SNAPSHOT_READ_ATTEMPTS, begin_coherent_snapshot_update,
     finish_coherent_snapshot_update, w30_mode_from_u32, w30_mode_to_u32, w30_routing_from_u32,
     w30_routing_to_u32, w30_source_profile_from_u32, w30_source_profile_to_u32,
 };
+#[cfg(test)]
+use super::{coherent_snapshot_or, try_coherent_snapshot};
 use crate::w30::{
     W30_PAD_CHOP_SLICE_COUNT, W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN, W30_PREVIEW_SAMPLE_WINDOW_LEN,
     W30HookArticulationProfile, W30PadPlaybackSampleWindow, W30PreviewRenderMode,
@@ -233,34 +233,40 @@ impl SharedW30PreviewRenderState {
     pub(super) fn update(&self, render_state: &W30PreviewRenderState) {
         begin_coherent_snapshot_update(&self.revision);
         self.mode
-            .store(w30_mode_to_u32(render_state.mode), Ordering::Relaxed);
+            .store(w30_mode_to_u32(render_state.mode), Ordering::Release);
         self.routing
-            .store(w30_routing_to_u32(render_state.routing), Ordering::Relaxed);
+            .store(w30_routing_to_u32(render_state.routing), Ordering::Release);
         self.source_profile.store(
             w30_source_profile_to_u32(render_state.source_profile),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         self.trigger_revision
-            .store(render_state.trigger_revision, Ordering::Relaxed);
+            .store(render_state.trigger_revision, Ordering::Release);
         self.trigger_velocity_bits
-            .store(render_state.trigger_velocity.to_bits(), Ordering::Relaxed);
+            .store(render_state.trigger_velocity.to_bits(), Ordering::Release);
         self.update_source_window_preview(render_state.source_window_preview.as_ref());
         self.update_pad_playback(render_state.pad_playback.as_ref());
         self.music_bus_level_bits
-            .store(render_state.music_bus_level.to_bits(), Ordering::Relaxed);
+            .store(render_state.music_bus_level.to_bits(), Ordering::Release);
         self.grit_level_bits
-            .store(render_state.grit_level.to_bits(), Ordering::Relaxed);
+            .store(render_state.grit_level.to_bits(), Ordering::Release);
         self.is_transport_running
-            .store(render_state.is_transport_running, Ordering::Relaxed);
+            .store(render_state.is_transport_running, Ordering::Release);
         self.tempo_bpm_bits
-            .store(render_state.tempo_bpm.to_bits(), Ordering::Relaxed);
+            .store(render_state.tempo_bpm.to_bits(), Ordering::Release);
         self.position_beats_bits
-            .store(render_state.position_beats.to_bits(), Ordering::Relaxed);
+            .store(render_state.position_beats.to_bits(), Ordering::Release);
         finish_coherent_snapshot_update(&self.revision);
     }
 
-    pub(super) fn snapshot(&self) -> RealtimeW30PreviewRenderState {
-        coherent_snapshot(&self.revision, || self.read_snapshot_fields())
+    /// Exclusive offline ownership excludes concurrent control writers.
+    pub(super) fn snapshot_exclusive(&mut self) -> RealtimeW30PreviewRenderState {
+        self.read_snapshot_fields()
+    }
+
+    #[cfg(test)]
+    pub(super) fn try_snapshot(&self) -> Option<RealtimeW30PreviewRenderState> {
+        try_coherent_snapshot(&self.revision, || self.read_snapshot_fields())
     }
 
     #[cfg(test)]
@@ -273,20 +279,20 @@ impl SharedW30PreviewRenderState {
 
     fn read_snapshot_fields(&self) -> RealtimeW30PreviewRenderState {
         RealtimeW30PreviewRenderState {
-            mode: w30_mode_from_u32(self.mode.load(Ordering::Relaxed)),
-            routing: w30_routing_from_u32(self.routing.load(Ordering::Relaxed)),
+            mode: w30_mode_from_u32(self.mode.load(Ordering::Acquire)),
+            routing: w30_routing_from_u32(self.routing.load(Ordering::Acquire)),
             source_profile: w30_source_profile_from_u32(
-                self.source_profile.load(Ordering::Relaxed),
+                self.source_profile.load(Ordering::Acquire),
             ),
-            trigger_revision: self.trigger_revision.load(Ordering::Relaxed),
-            trigger_velocity: f32::from_bits(self.trigger_velocity_bits.load(Ordering::Relaxed)),
+            trigger_revision: self.trigger_revision.load(Ordering::Acquire),
+            trigger_velocity: f32::from_bits(self.trigger_velocity_bits.load(Ordering::Acquire)),
             source_window_preview: self.source_window_preview_snapshot(),
             pad_playback: self.pad_playback_snapshot(),
-            music_bus_level: f32::from_bits(self.music_bus_level_bits.load(Ordering::Relaxed)),
-            grit_level: f32::from_bits(self.grit_level_bits.load(Ordering::Relaxed)),
-            is_transport_running: self.is_transport_running.load(Ordering::Relaxed),
-            tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::Relaxed)),
-            position_beats: f64::from_bits(self.position_beats_bits.load(Ordering::Relaxed)),
+            music_bus_level: f32::from_bits(self.music_bus_level_bits.load(Ordering::Acquire)),
+            grit_level: f32::from_bits(self.grit_level_bits.load(Ordering::Acquire)),
+            is_transport_running: self.is_transport_running.load(Ordering::Acquire),
+            tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::Acquire)),
+            position_beats: f64::from_bits(self.position_beats_bits.load(Ordering::Acquire)),
         }
     }
 
@@ -296,32 +302,32 @@ impl SharedW30PreviewRenderState {
                 .sample_count
                 .min(W30_PREVIEW_SAMPLE_WINDOW_LEN);
             self.source_start_frame
-                .store(source_window.source_start_frame, Ordering::Relaxed);
+                .store(source_window.source_start_frame, Ordering::Release);
             self.source_end_frame
-                .store(source_window.source_end_frame, Ordering::Relaxed);
+                .store(source_window.source_end_frame, Ordering::Release);
             for (index, sample) in source_window.samples.iter().copied().enumerate() {
-                self.source_samples[index].store(sample.to_bits(), Ordering::Relaxed);
+                self.source_samples[index].store(sample.to_bits(), Ordering::Release);
             }
             self.source_sample_count
-                .store(sample_count as u32, Ordering::Relaxed);
+                .store(sample_count as u32, Ordering::Release);
         } else {
-            self.source_sample_count.store(0, Ordering::Relaxed);
-            self.source_start_frame.store(0, Ordering::Relaxed);
-            self.source_end_frame.store(0, Ordering::Relaxed);
+            self.source_sample_count.store(0, Ordering::Release);
+            self.source_start_frame.store(0, Ordering::Release);
+            self.source_end_frame.store(0, Ordering::Release);
         }
     }
 
     fn source_window_preview_snapshot(&self) -> RealtimeW30PreviewSampleWindow {
-        let sample_count = (self.source_sample_count.load(Ordering::Relaxed) as usize)
+        let sample_count = (self.source_sample_count.load(Ordering::Acquire) as usize)
             .min(W30_PREVIEW_SAMPLE_WINDOW_LEN);
         let mut samples = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
         for (index, sample) in samples.iter_mut().enumerate() {
-            *sample = f32::from_bits(self.source_samples[index].load(Ordering::Relaxed));
+            *sample = f32::from_bits(self.source_samples[index].load(Ordering::Acquire));
         }
 
         RealtimeW30PreviewSampleWindow {
-            source_start_frame: self.source_start_frame.load(Ordering::Relaxed),
-            source_end_frame: self.source_end_frame.load(Ordering::Relaxed),
+            source_start_frame: self.source_start_frame.load(Ordering::Acquire),
+            source_end_frame: self.source_end_frame.load(Ordering::Acquire),
             sample_count,
             samples,
         }
@@ -333,31 +339,31 @@ impl SharedW30PreviewRenderState {
                 .sample_count
                 .min(W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN);
             self.pad_start_frame
-                .store(pad_playback.source_start_frame, Ordering::Relaxed);
+                .store(pad_playback.source_start_frame, Ordering::Release);
             self.pad_end_frame
-                .store(pad_playback.source_end_frame, Ordering::Relaxed);
+                .store(pad_playback.source_end_frame, Ordering::Release);
             self.pad_source_sample_rate
-                .store(pad_playback.source_sample_rate, Ordering::Relaxed);
+                .store(pad_playback.source_sample_rate, Ordering::Release);
             self.pad_playback_frame_count
-                .store(pad_playback.playback_frame_count, Ordering::Relaxed);
+                .store(pad_playback.playback_frame_count, Ordering::Release);
             self.pad_loop_enabled
-                .store(pad_playback.loop_enabled, Ordering::Relaxed);
+                .store(pad_playback.loop_enabled, Ordering::Release);
             self.pad_playback_rate_bits
-                .store(pad_playback.playback_rate.to_bits(), Ordering::Relaxed);
+                .store(pad_playback.playback_rate.to_bits(), Ordering::Release);
             self.pad_reverse
-                .store(pad_playback.reverse, Ordering::Relaxed);
+                .store(pad_playback.reverse, Ordering::Release);
             self.pad_gate_step_fraction_bits
-                .store(pad_playback.gate_step_fraction.to_bits(), Ordering::Relaxed);
+                .store(pad_playback.gate_step_fraction.to_bits(), Ordering::Release);
             self.pad_loop_crossfade_sample_count.store(
                 pad_playback.loop_crossfade_sample_count.min(sample_count) as u32,
-                Ordering::Relaxed,
+                Ordering::Release,
             );
             let chop_slice_count = pad_playback.chop_slice_count.min(W30_PAD_CHOP_SLICE_COUNT);
             for (index, start) in pad_playback.chop_slice_starts.iter().copied().enumerate() {
-                self.pad_chop_slice_starts[index].store(start, Ordering::Relaxed);
+                self.pad_chop_slice_starts[index].store(start, Ordering::Release);
             }
             self.pad_chop_slice_count
-                .store(chop_slice_count as u32, Ordering::Relaxed);
+                .store(chop_slice_count as u32, Ordering::Release);
             let (articulation_profile, articulation_started_at_beat) = pad_playback
                 .hook_articulation
                 .map_or((0, 0), |articulation| {
@@ -367,74 +373,74 @@ impl SharedW30PreviewRenderState {
                     )
                 });
             self.hook_articulation_profile
-                .store(articulation_profile, Ordering::Relaxed);
+                .store(articulation_profile, Ordering::Release);
             self.hook_articulation_started_at_beat
-                .store(articulation_started_at_beat, Ordering::Relaxed);
+                .store(articulation_started_at_beat, Ordering::Release);
             for (index, sample) in pad_playback.samples.iter().copied().enumerate() {
-                self.pad_samples[index].store(sample.to_bits(), Ordering::Relaxed);
+                self.pad_samples[index].store(sample.to_bits(), Ordering::Release);
             }
             self.pad_sample_count
-                .store(sample_count as u32, Ordering::Relaxed);
+                .store(sample_count as u32, Ordering::Release);
         } else {
-            self.pad_sample_count.store(0, Ordering::Relaxed);
-            self.pad_start_frame.store(0, Ordering::Relaxed);
-            self.pad_end_frame.store(0, Ordering::Relaxed);
-            self.pad_source_sample_rate.store(0, Ordering::Relaxed);
-            self.pad_playback_frame_count.store(0, Ordering::Relaxed);
-            self.pad_loop_enabled.store(false, Ordering::Relaxed);
+            self.pad_sample_count.store(0, Ordering::Release);
+            self.pad_start_frame.store(0, Ordering::Release);
+            self.pad_end_frame.store(0, Ordering::Release);
+            self.pad_source_sample_rate.store(0, Ordering::Release);
+            self.pad_playback_frame_count.store(0, Ordering::Release);
+            self.pad_loop_enabled.store(false, Ordering::Release);
             self.pad_playback_rate_bits
-                .store(1.0_f32.to_bits(), Ordering::Relaxed);
-            self.pad_reverse.store(false, Ordering::Relaxed);
+                .store(1.0_f32.to_bits(), Ordering::Release);
+            self.pad_reverse.store(false, Ordering::Release);
             self.pad_gate_step_fraction_bits
-                .store(0.0_f32.to_bits(), Ordering::Relaxed);
+                .store(0.0_f32.to_bits(), Ordering::Release);
             self.pad_loop_crossfade_sample_count
-                .store(0, Ordering::Relaxed);
-            self.pad_chop_slice_count.store(0, Ordering::Relaxed);
-            self.hook_articulation_profile.store(0, Ordering::Relaxed);
+                .store(0, Ordering::Release);
+            self.pad_chop_slice_count.store(0, Ordering::Release);
+            self.hook_articulation_profile.store(0, Ordering::Release);
             self.hook_articulation_started_at_beat
-                .store(0, Ordering::Relaxed);
+                .store(0, Ordering::Release);
         }
     }
 
     fn pad_playback_snapshot(&self) -> RealtimeW30PadPlaybackSampleWindow {
-        let sample_count = (self.pad_sample_count.load(Ordering::Relaxed) as usize)
+        let sample_count = (self.pad_sample_count.load(Ordering::Acquire) as usize)
             .min(W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN);
         let mut samples = [0.0; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN];
         for (index, sample) in samples.iter_mut().enumerate() {
-            *sample = f32::from_bits(self.pad_samples[index].load(Ordering::Relaxed));
+            *sample = f32::from_bits(self.pad_samples[index].load(Ordering::Acquire));
         }
-        let chop_slice_count = (self.pad_chop_slice_count.load(Ordering::Relaxed) as usize)
+        let chop_slice_count = (self.pad_chop_slice_count.load(Ordering::Acquire) as usize)
             .min(W30_PAD_CHOP_SLICE_COUNT);
         let chop_slice_starts = std::array::from_fn(|index| {
             self.pad_chop_slice_starts[index]
-                .load(Ordering::Relaxed)
+                .load(Ordering::Acquire)
                 .min(sample_count.saturating_sub(1) as u32)
         });
 
         RealtimeW30PadPlaybackSampleWindow {
-            source_start_frame: self.pad_start_frame.load(Ordering::Relaxed),
-            source_end_frame: self.pad_end_frame.load(Ordering::Relaxed),
-            source_sample_rate: self.pad_source_sample_rate.load(Ordering::Relaxed),
-            playback_frame_count: self.pad_playback_frame_count.load(Ordering::Relaxed),
+            source_start_frame: self.pad_start_frame.load(Ordering::Acquire),
+            source_end_frame: self.pad_end_frame.load(Ordering::Acquire),
+            source_sample_rate: self.pad_source_sample_rate.load(Ordering::Acquire),
+            playback_frame_count: self.pad_playback_frame_count.load(Ordering::Acquire),
             sample_count,
-            loop_enabled: self.pad_loop_enabled.load(Ordering::Relaxed),
-            playback_rate: f32::from_bits(self.pad_playback_rate_bits.load(Ordering::Relaxed)),
-            reverse: self.pad_reverse.load(Ordering::Relaxed),
+            loop_enabled: self.pad_loop_enabled.load(Ordering::Acquire),
+            playback_rate: f32::from_bits(self.pad_playback_rate_bits.load(Ordering::Acquire)),
+            reverse: self.pad_reverse.load(Ordering::Acquire),
             gate_step_fraction: f32::from_bits(
-                self.pad_gate_step_fraction_bits.load(Ordering::Relaxed),
+                self.pad_gate_step_fraction_bits.load(Ordering::Acquire),
             ),
             loop_crossfade_sample_count: (self
                 .pad_loop_crossfade_sample_count
-                .load(Ordering::Relaxed) as usize)
+                .load(Ordering::Acquire) as usize)
                 .min(sample_count),
             chop_slice_count,
             chop_slice_starts,
             hook_articulation_profile: w30_hook_articulation_profile_from_u32(
-                self.hook_articulation_profile.load(Ordering::Relaxed),
+                self.hook_articulation_profile.load(Ordering::Acquire),
             ),
             hook_articulation_started_at_beat: self
                 .hook_articulation_started_at_beat
-                .load(Ordering::Relaxed),
+                .load(Ordering::Acquire),
             samples,
         }
     }

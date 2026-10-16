@@ -15,7 +15,7 @@
 - Labels: `Bug`
 - PR: [#1667](https://github.com/marang/riotbox/pull/1667)
 - Merge commit: `2fe224692a5217303c190b63b58aa4ca81e05ec6`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: Historical four new receipt-admission regressions; broader 45 unit + 12 integration DAW tests; full source-free local just ci; exact-head native CI 37108191274 passed
 - Docs touched: `docs/research_decision_log.md`, `docs/reviews/riotbox_1564_local_writer_receipt_2026-10-03.md`, `docs/specs/action_lexicon_spec.md`
 - Follow-ups: RIOTBOX-1036 remains the wider export-workflow anchor; RIOTBOX-1565 separately repaired the probe prerequisite for RIOTBOX-1041

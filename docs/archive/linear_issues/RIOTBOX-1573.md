@@ -15,7 +15,7 @@
 - Labels: `Bug`
 - PR: [#1676](https://github.com/marang/riotbox/pull/1676)
 - Merge commit: `6edf4ec9f31332dcb9495776907fc7b97bb4ce30`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: 12 driver tests, 1 selected AudioRuntime fault projection and 4 corrected telemetry selections PASS; full local `just ci` PASS; exact final native CI 37984429181 PASS; independent reviews/self-review: zero retained findings after P3 test-owner wording correction.
 - Docs touched: `docs/reviews/riotbox_1573_buffer_error_attribution_2026-10-09.md`
 - Follow-ups: RIOTBOX-1574 (separately authorized instrumented diagnostic seam and observation, subsequently completed); RIOTBOX-1041 remains open; original trigger still requires causal evidence.

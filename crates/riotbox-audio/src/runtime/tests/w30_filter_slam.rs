@@ -13,7 +13,9 @@ fn w30_filter_slam_uses_the_frozen_eight_beat_curve_and_twenty_ms_return() {
             started_at_beat: 4,
         },
     )));
-    let render = shared.snapshot();
+    let render = shared
+        .try_snapshot()
+        .expect("quiescent control publication");
 
     let start = crate::runtime::w30_filter_slam::w30_filter_slam_frame(&render, 4.0, 48_000)
         .expect("filter-slam start frame");
@@ -142,7 +144,9 @@ fn render_filter_slam_in_chunks(
     channel_count: usize,
 ) -> Vec<f32> {
     let shared = SharedW30PreviewRenderState::new(render);
-    let snapshot = shared.snapshot();
+    let snapshot = shared
+        .try_snapshot()
+        .expect("quiescent control publication");
     let mut state = W30PreviewCallbackState::with_sample_rate_and_channels(48_000, channel_count);
     let mut output = vec![0.0; total_frames * channel_count];
 

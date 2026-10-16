@@ -15,7 +15,7 @@
 - Labels: `Audio`, `Bug`
 - PR: [#1662](https://github.com/marang/riotbox/pull/1662)
 - Merge commit: `e80cb816e9510086b2e2cb2c46296728d2d6a17d`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: Historical: generated replacement RED→GREEN, Python 3, App ingest 25/timing 8 overlapping filters, source-free `just ci`; native CI 37098264348 passed. Current archival check: Linear Done and merged PR metadata only.
 - Docs touched: `docs/research_decision_log.md`, `docs/reviews/riotbox_1559_ingest_identity_2026-10-03.md`, `docs/specs/audio_core_spec.md`, `docs/specs/source_graph_spec.md`, `docs/specs/source_timing_intelligence_spec.md`
 - Follow-ups: RIOTBOX-1556 Rust payload budgets remain in force; Python admission and aggregate-memory boundaries are separate, later addressed by RIOTBOX-1561/1562/1563. Historical graphs are not automatically re-attested.

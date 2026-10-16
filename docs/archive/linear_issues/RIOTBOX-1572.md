@@ -15,7 +15,7 @@
 - Labels: `benchmark`
 - PR: [#1675](https://github.com/marang/riotbox/pull/1675)
 - Merge commit: `18282cf72b3783f4ae445936c2d484467610b4c5`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: Full local source-free `just ci` PASS before execution; 140 generated fixtures PASS before and after; exact pre-execution native CI 37980167201 PASS; final native CI 37981989835 PASS; independent evidence reviews and self-review: zero retained findings.
 - Docs touched: `docs/benchmarks/silent_host_riotbox_1572_once_2026-10-09.md`, `docs/dev_environment.md`, `docs/reviews/riotbox_1572_silent_host_v3_observation_2026-10-09.md`, `docs/specs/audio_core_spec.md`
 - Follow-ups: RIOTBOX-1573 (attribution, subsequently completed); RIOTBOX-1574 (separate V4 diagnostic observation, subsequently completed); RIOTBOX-1041 remains open; original ALSA trigger unresolved.

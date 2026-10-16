@@ -15,7 +15,7 @@
 - Labels: `Bug`
 - PR: [#1672](https://github.com/marang/riotbox/pull/1672)
 - Merge commit: `c3f28432f0abe66e5d0b690eaf0a46e85b92588a`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: Historical deterministic mutation RED/GREEN; six public-method regressions + two copy-leaf failure tests + 23 prior export tests; full source-free local just ci; exact-head native CI 37969924335 passed
 - Docs touched: `docs/research_decision_log.md`, `docs/reviews/riotbox_1569_product_mix_byte_identity_2026-10-09.md`, `docs/specs/action_lexicon_spec.md`
 - Follow-ups: RIOTBOX-1570 separately owned a newly authorized one-shot silent-host phase; RIOTBOX-1576 is a related later architecture checkpoint

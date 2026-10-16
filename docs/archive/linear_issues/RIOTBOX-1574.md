@@ -15,7 +15,7 @@
 - Labels: `Bug`
 - PR: [#1677](https://github.com/marang/riotbox/pull/1677)
 - Merge commit: `d3e5a28e76f3b8615a841014143cd1ca0344c226`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: 165 generated source-free host controls PASS; full corrected and final local `just ci` PASS; executed-revision native CI 37990118126 PASS; final-head native CI 37992074080 PASS; both final evidence reviews/self-review: zero retained findings.
 - Docs touched: `docs/benchmarks/silent_host_observation_v4.json`, `docs/benchmarks/silent_host_observation_v4.md`, `docs/dev_environment.md`, `docs/research_decision_log.md`, `docs/reviews/riotbox_1574_alsa_diagnostics_2026-10-09.md`, `docs/specs/audio_core_spec.md`
 - Follow-ups: RIOTBOX-1041 remains open; original RIOTBOX-1572 ALSA cause unresolved. Later RIOTBOX-1575..1581 provide separate controller/load/observer evidence, not retroactive requalification.

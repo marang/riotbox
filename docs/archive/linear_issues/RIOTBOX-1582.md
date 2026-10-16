@@ -15,7 +15,7 @@
 - Labels: `Audio`, `Bug`
 - PR: [#1687](https://github.com/marang/riotbox/pull/1687)
 - Merge commit: `418a6a1dc342203e9844434b39f59b347ae255bc`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: Actual App RED→GREEN; focused App/audio/recorder/queue/callback controls and actual-source Loom models PASS (revision-removal mutation fails); full local source-free `just ci` PASS; exact final-head native 38872241510 and post-merge main 38872949552 PASS; independent initial/delta Rust reviews and self-review: zero findings.
 - Docs touched: `docs/research_decision_log.md`, `docs/reviews/riotbox_1582_observed_callback_timing_2026-10-16.md`, `docs/specs/audio_core_spec.md`
 - Follow-ups: RIOTBOX-1583 integrated current-state checkpoint; RIOTBOX-1041/1036 remain open; no new host/endurance/latency/musical/release/original ALSA-cause claim.

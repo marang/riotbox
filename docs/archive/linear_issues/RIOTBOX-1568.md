@@ -15,7 +15,7 @@
 - Labels: `review-followup`
 - PR: [#1671](https://github.com/marang/riotbox/pull/1671)
 - Merge commit: `b70a89d299172d912d1e2f557cba2f26be286b47`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: Historical 48 Core/App + 192 Audio/Sidecar/Python/operator focused generated tests; independent report review; full source-free local just ci (filesystem-permission repeat); exact-head native CI passed
 - Docs touched: `docs/reviews/riotbox_1568_current_state_checkpoint_2026-10-09.md`
 - Follow-ups: RIOTBOX-1569 (verified P2 ProductMix publication identity gap), separately completed

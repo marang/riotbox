@@ -15,7 +15,7 @@
 - Labels: `benchmark`, `Audio`, `Improvement`
 - PR: [#1661](https://github.com/marang/riotbox/pull/1661)
 - Merge commit: `942a8a4412028ce626faae6d8d93c7831af2e7df`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: Historical: source-free `just ci`, release Audio 327 passed/1 existing ignored, targeted actual-callback Debug 5 functions including 7 fresh child cases, canonical Loom 2 models; native CI 37083894800 passed. Current archival check: Linear Done and merged PR metadata only; no heap/model/device rerun.
 - Docs touched: `docs/research_decision_log.md`, `docs/reviews/riotbox_1558_callback_heap_2026-10-03.md`, `docs/reviews/riotbox_1558_current_state_cadence_2026-10-03.md`, `docs/specs/audio_core_spec.md`
 - Follow-ups: RIOTBOX-1559 owns the separate pre-existing mixed-byte ingest identity P2 discovered by the current-state cadence audit; it was not folded into this callback repair. Dependency licensing remains separate.

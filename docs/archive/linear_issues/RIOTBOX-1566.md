@@ -15,7 +15,7 @@
 - Labels: `benchmark`, `Spike`, `Audio`
 - PR: [#1669](https://github.com/marang/riotbox/pull/1669)
 - Merge commit: `37403fdfcb79fc09dc6965e44dd674a9767de750`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: Historical 11 generated Rust driver tests and 58 Python contract tests; two full source-free local just ci passes; one consumed FAILED V1 real-user-session attempt; exact-head native CI 37114303855 passed
 - Docs touched: `docs/benchmarks/silent_host_observation_v1.json`, `docs/benchmarks/silent_host_observation_v1.md`, `docs/dev_environment.md`, `docs/research_decision_log.md`, `docs/reviews/riotbox_1566_silent_host_observation_2026-10-03.md`, `docs/specs/audio_core_spec.md`
 - Follow-ups: RIOTBOX-1567 (two P2 V1 tooling defects, separately repaired under V2); RIOTBOX-1041 remains open; no retry authority survives this completed attempt

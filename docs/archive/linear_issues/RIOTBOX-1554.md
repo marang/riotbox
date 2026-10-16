@@ -15,7 +15,7 @@
 - Labels: `None`
 - PR: [#1657](https://github.com/marang/riotbox/pull/1657)
 - Merge commit: `b8af65947ef8b3dab3e1729a3a73781883479e13`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: Historical: RED/GREEN real publication regression, 21 App recording tests, Core helper/legacy serialization tests, source-free `just ci`; native CI 37064500099 passed. Current archival check: Linear Done and merged PR metadata only.
 - Docs touched: `docs/execution_roadmap.md`, `docs/specs/session_file_spec.md`
 - Follow-ups: RIOTBOX-1036 remained open at implementation closeout. Preserve RIOTBOX-1553's exact hash-bound take and bounded human verdict; no retrospective summary migration or new listening is needed.
