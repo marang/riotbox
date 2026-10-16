@@ -7,6 +7,7 @@ mod capture_artifact_storage;
 mod capture_identity;
 mod capture_w30_audition;
 mod commit_pipeline_order;
+mod commit_sequence_exhaustion;
 mod dawproject_xml_schema;
 mod export_receipt_daw_preflight;
 mod export_receipt_hydration_preflight;

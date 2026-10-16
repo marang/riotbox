@@ -148,16 +148,18 @@ fn cross_section_phrase_at_second_section_boundary_is_explicitly_unavailable() {
         state.queue_mc202_generate_answer(300).unwrap(),
         QueueControlResult::Enqueued
     );
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: 36,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        400,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 36,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert!(
@@ -199,16 +201,18 @@ fn section_owned_phrase_at_uncovered_boundary_is_explicitly_unavailable() {
         state.queue_mc202_generate_answer(300).unwrap(),
         QueueControlResult::Enqueued
     );
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: 60,
-            bar_index: 15,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        400,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 60,
+                bar_index: 15,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert!(
@@ -260,16 +264,18 @@ fn rejected_cross_section_phrase_is_atomic_and_replay_is_a_noop() {
         state.queue_mc202_generate_follower(300).unwrap(),
         QueueControlResult::Enqueued
     );
-    let first_commit = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: 31,
-            bar_index: 8,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        400,
-    );
+    let first_commit = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 31,
+                bar_index: 8,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        )
+        .unwrap();
     assert_eq!(first_commit.len(), 1);
     let previous_mc202 = state.session.runtime_state.lane_state.mc202.clone();
     let previous_touch = state.session.runtime_state.macro_state.mc202_touch;
@@ -279,16 +285,18 @@ fn rejected_cross_section_phrase_is_atomic_and_replay_is_a_noop() {
         state.queue_mc202_generate_answer(500).unwrap(),
         QueueControlResult::Enqueued
     );
-    let rejected_commit = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: 32,
-            bar_index: 9,
-            phrase_index: 3,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        600,
-    );
+    let rejected_commit = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 32,
+                bar_index: 9,
+                phrase_index: 3,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            600,
+        )
+        .unwrap();
     assert_eq!(rejected_commit.len(), 1);
     let rejected_action_id = rejected_commit[0].action_id;
 

@@ -195,16 +195,18 @@ fn queue_accepted_ghost_suggestion_respects_phrase_budget() {
             .unwrap(),
         GhostSuggestionQueueResult::Enqueued(_)
     ));
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 48,
-            bar_index: 12,
-            phrase_index: 3,
-            scene_id: None,
-        },
-        1_500,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 48,
+                bar_index: 12,
+                phrase_index: 3,
+                scene_id: None,
+            },
+            1_500,
+        )
+        .unwrap();
     assert_eq!(committed.len(), 1);
 
     let over_budget = state
@@ -265,16 +267,18 @@ fn queue_accepted_ghost_suggestion_respects_destructive_scene_budget() {
             .unwrap(),
         GhostSuggestionQueueResult::Enqueued(_)
     ));
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: 64,
-            bar_index: 16,
-            phrase_index: 4,
-            scene_id: Some(SceneId::from("scene-a")),
-        },
-        1_500,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 64,
+                bar_index: 16,
+                phrase_index: 4,
+                scene_id: Some(SceneId::from("scene-a")),
+            },
+            1_500,
+        )
+        .unwrap();
     assert_eq!(committed.len(), 1);
 
     let over_budget = state

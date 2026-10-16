@@ -33,6 +33,7 @@ impl JamAppState {
         destination_dir: impl AsRef<Path>,
         requested_at: TimestampMs,
     ) -> Result<ExportReceiptState, JamAppError> {
+        self.preflight_immediate_commit()?;
         let destination_dir = destination_dir.as_ref();
         let action_id = match self.pending_daw_session_writer_export_action_id(destination_dir) {
             Some(action_id) => action_id,
@@ -117,11 +118,12 @@ impl JamAppState {
         let mut committed_ref = self
             .queue
             .commit_pending_after_side_effect(
+                &self.session.action_log,
                 action_id,
                 boundary.clone(),
                 requested_at,
                 result_summary.clone(),
-            )
+            )?
             .ok_or_else(|| {
                 JamAppError::InvalidSession(format!(
                     "queued DAW session writer action {action_id} was not ready to commit"
@@ -151,6 +153,7 @@ impl JamAppState {
         proof_path: impl AsRef<Path>,
         requested_at: TimestampMs,
     ) -> Result<ExportReceiptState, JamAppError> {
+        self.preflight_immediate_commit()?;
         let proof_path = proof_path.as_ref();
         let action_id = match self.pending_daw_session_host_import_proof_action_id(proof_path) {
             Some(action_id) => action_id,
@@ -233,11 +236,12 @@ impl JamAppState {
         let mut committed_ref = self
             .queue
             .commit_pending_after_side_effect(
+                &self.session.action_log,
                 action_id,
                 boundary.clone(),
                 requested_at,
                 result_summary.clone(),
-            )
+            )?
             .ok_or_else(|| {
                 JamAppError::InvalidSession(format!(
                     "queued DAW session host-import proof action {action_id} was not ready to commit"
@@ -267,6 +271,7 @@ impl JamAppState {
         proof_path: impl AsRef<Path>,
         requested_at: TimestampMs,
     ) -> Result<ExportReceiptState, JamAppError> {
+        self.preflight_immediate_commit()?;
         let proof_path = proof_path.as_ref();
         let action_id = match self.pending_daw_session_audible_output_proof_action_id(proof_path) {
             Some(action_id) => action_id,
@@ -349,11 +354,12 @@ impl JamAppState {
         let mut committed_ref = self
             .queue
             .commit_pending_after_side_effect(
+                &self.session.action_log,
                 action_id,
                 boundary.clone(),
                 requested_at,
                 result_summary.clone(),
-            )
+            )?
             .ok_or_else(|| {
                 JamAppError::InvalidSession(format!(
                     "queued DAW session audible-output proof action {action_id} was not ready to commit"

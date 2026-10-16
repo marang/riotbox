@@ -91,6 +91,7 @@ impl JamAppState {
                 "limiter calibration BPM confirmation requires an empty action queue".into(),
             ));
         }
+        self.preflight_immediate_commit()?;
         if self
             .queue_source_timing_grid_confirmation_at_bpm(requested_at, Some(explicit_source_bpm))?
             != QueueControlResult::Enqueued
@@ -103,7 +104,7 @@ impl JamAppState {
             .runtime
             .transport
             .boundary_state(CommitBoundary::Immediate);
-        let committed = self.commit_ready_actions(boundary, requested_at);
+        let committed = self.commit_ready_actions(boundary, requested_at)?;
         let accepted_confirmation = committed.first().is_some_and(|committed| {
             self.session.action_log.actions.iter().any(|action| {
                 action.id == committed.action_id

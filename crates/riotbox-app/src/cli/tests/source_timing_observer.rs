@@ -318,16 +318,18 @@ fn observer_snapshot_records_committed_capture_source_window() {
     state
         .queue_capture_bar(100)
         .expect("generated action ID available");
-    let committed = state.commit_ready_actions(
-        riotbox_core::transport::CommitBoundaryState {
-            kind: riotbox_core::action::CommitBoundary::Bar,
-            beat_index: 8,
-            bar_index: 2,
-            phrase_index: 0,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        200,
-    );
+    let committed = state
+        .commit_ready_actions(
+            riotbox_core::transport::CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Bar,
+                beat_index: 8,
+                bar_index: 2,
+                phrase_index: 0,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            200,
+        )
+        .expect("fixture commit sequence available");
 
     assert_eq!(committed.len(), 1);
     assert_eq!(

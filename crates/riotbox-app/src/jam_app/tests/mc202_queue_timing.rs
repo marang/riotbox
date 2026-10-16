@@ -394,14 +394,16 @@ fn audio_timing_snapshot_commits_crossed_bar_boundary() {
     state.set_transport_playing(true);
     state.queue_tr909_fill(300).unwrap();
 
-    let committed = state.apply_audio_timing_snapshot(
-        Some(AudioRuntimeTimingSnapshot {
-            is_transport_running: true,
-            tempo_bpm: 124.0,
-            position_beats: 36.0,
-        }),
-        3_100,
-    );
+    let committed = state
+        .apply_audio_timing_snapshot(
+            Some(AudioRuntimeTimingSnapshot {
+                is_transport_running: true,
+                tempo_bpm: 124.0,
+                position_beats: 36.0,
+            }),
+            3_100,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert_eq!(committed[0].boundary.kind, CommitBoundary::Bar);
@@ -433,14 +435,16 @@ fn audio_timing_snapshot_advances_transport_from_callback_position() {
     });
     state.set_transport_playing(true);
 
-    let committed = state.apply_audio_timing_snapshot(
-        Some(AudioRuntimeTimingSnapshot {
-            is_transport_running: true,
-            tempo_bpm: 124.0,
-            position_beats: 33.0,
-        }),
-        2_500,
-    );
+    let committed = state
+        .apply_audio_timing_snapshot(
+            Some(AudioRuntimeTimingSnapshot {
+                is_transport_running: true,
+                tempo_bpm: 124.0,
+                position_beats: 33.0,
+            }),
+            2_500,
+        )
+        .unwrap();
 
     assert!(committed.is_empty());
     assert!(state.runtime.transport.position_beats > 32.9);
@@ -465,14 +469,16 @@ fn audio_timing_snapshot_keeps_zero_based_beat_and_one_based_bar_phrase_indices(
         (8.0, 8, 3, 1),
         (16.0, 16, 5, 2),
     ] {
-        state.apply_audio_timing_snapshot(
-            Some(AudioRuntimeTimingSnapshot {
-                is_transport_running: true,
-                tempo_bpm: 124.0,
-                position_beats,
-            }),
-            4_000,
-        );
+        state
+            .apply_audio_timing_snapshot(
+                Some(AudioRuntimeTimingSnapshot {
+                    is_transport_running: true,
+                    tempo_bpm: 124.0,
+                    position_beats,
+                }),
+                4_000,
+            )
+            .unwrap();
 
         assert_eq!(state.runtime.transport.position_beats, position_beats);
         assert_eq!(state.runtime.transport.beat_index, beat_index);

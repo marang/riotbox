@@ -39,16 +39,18 @@ fn committed_w30_promoted_audition_updates_lane_focus_grit_and_log_result() {
         Some(QueueControlResult::Enqueued)
     );
 
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 33,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        700,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 33,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            700,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert_eq!(
@@ -154,16 +156,18 @@ fn committed_w30_trigger_updates_preview_trigger_revision_and_log_result() {
         Some(QueueControlResult::Enqueued)
     );
 
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Beat,
-            beat_index: 33,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        740,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Beat,
+                beat_index: 33,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            740,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert_eq!(state.jam_view.lanes.w30_pending_trigger_target, None);
@@ -225,16 +229,18 @@ fn committed_w30_trigger_preserves_source_window_preview_samples() {
         state.queue_w30_trigger_pad(645).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Beat,
-            beat_index: 33,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        740,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Beat,
+                beat_index: 33,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            740,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert_eq!(

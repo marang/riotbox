@@ -651,16 +651,18 @@ fn source_monitor_mode_queues_commits_and_surfaces_in_runtime_view() {
         QueueControlResult::AlreadyPending
     );
 
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Immediate,
-            beat_index: 0,
-            bar_index: 0,
-            phrase_index: 0,
-            scene_id: None,
-        },
-        120,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Immediate,
+                beat_index: 0,
+                bar_index: 0,
+                phrase_index: 0,
+                scene_id: None,
+            },
+            120,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert_eq!(

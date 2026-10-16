@@ -296,16 +296,18 @@ fn committed_w30_live_recall_updates_lane_focus_and_log_result() {
         Some(QueueControlResult::Enqueued)
     );
 
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 33,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        700,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 33,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            700,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert_eq!(

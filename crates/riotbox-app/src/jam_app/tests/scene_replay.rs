@@ -47,16 +47,18 @@ fn graph_aware_scene_replay_matches_committed_movement_projection() {
         committed_state.queue_scene_select(300).unwrap(),
         QueueControlResult::Enqueued
     );
-    let committed = committed_state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 36,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-01-drop")),
-        },
-        360,
-    );
+    let committed = committed_state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 36,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-01-drop")),
+            },
+            360,
+        )
+        .unwrap();
     assert_eq!(committed.len(), 1);
     let committed_scene = render_scene_recipe_mix_buffer(&committed_state);
 
@@ -186,16 +188,18 @@ fn scene_restore_snapshot_payload_restore_matches_committed_movement_projection(
         committed_state.queue_scene_select(300).unwrap(),
         QueueControlResult::Enqueued
     );
-    let launched = committed_state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 36,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-01-drop")),
-        },
-        360,
-    );
+    let launched = committed_state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 36,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-01-drop")),
+            },
+            360,
+        )
+        .unwrap();
     assert_eq!(launched.len(), 1);
     let after_launch = render_scene_recipe_mix_buffer(&committed_state);
 
@@ -203,16 +207,18 @@ fn scene_restore_snapshot_payload_restore_matches_committed_movement_projection(
         committed_state.queue_scene_restore(420).unwrap(),
         QueueControlResult::Enqueued
     );
-    let restored = committed_state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 40,
-            bar_index: 10,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-02-break")),
-        },
-        480,
-    );
+    let restored = committed_state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 40,
+                bar_index: 10,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-02-break")),
+            },
+            480,
+        )
+        .unwrap();
     assert_eq!(restored.len(), 1);
     let committed_restore = render_scene_recipe_mix_buffer(&committed_state);
     assert_eq!(committed_state.runtime.tr909_render, before_launch_tr909);

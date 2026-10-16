@@ -4,6 +4,7 @@ use crate::{
     TimestampMs,
     action::{Action, ActionCommand, ActionDraft, ActionResult, ActionStatus, CommitBoundary},
     ids::ActionId,
+    session::{ActionLog, CommitSequenceExhausted},
     transport::CommitBoundaryState,
 };
 
@@ -142,10 +143,12 @@ impl ActionQueue {
 
     pub fn commit_ready(
         &mut self,
+        history: &ActionLog,
         boundary: CommitBoundary,
         committed_at: TimestampMs,
-    ) -> Vec<ActionId> {
+    ) -> Result<Vec<ActionId>, CommitSequenceExhausted> {
         self.commit_ready_for_transport(
+            history,
             CommitBoundaryState {
                 kind: boundary,
                 beat_index: 0,
@@ -155,85 +158,97 @@ impl ActionQueue {
             },
             committed_at,
         )
-        .into_iter()
-        .map(|committed| committed.action_id)
-        .collect()
+        .map(|committed| committed.into_iter().map(|item| item.action_id).collect())
+    }
+
+    #[must_use]
+    pub fn ready_action_count_for_transport(&self, boundary: CommitBoundary) -> usize {
+        self.pending
+            .iter()
+            .filter(|action| is_ready_for_transport(action, boundary))
+            .count()
     }
 
     pub fn commit_ready_for_transport(
         &mut self,
+        history: &ActionLog,
         boundary: CommitBoundaryState,
         committed_at: TimestampMs,
-    ) -> Vec<CommittedActionRef> {
+    ) -> Result<Vec<CommittedActionRef>, CommitSequenceExhausted> {
+        let sequences = history.prepare_commit_sequences(
+            &boundary,
+            self.ready_action_count_for_transport(boundary.kind),
+        )?;
         let mut remaining = VecDeque::with_capacity(self.pending.len());
         let mut committed = Vec::new();
-        let mut commit_sequence = 0;
 
-        while let Some(mut action) = self.pending.pop_front() {
-            if !action.command.commits_only_after_side_effect()
-                && action.quantization.is_ready_for(boundary.kind)
-            {
-                action.status = ActionStatus::Committed;
-                action.committed_at = Some(committed_at);
-                action.result = Some(ActionResult {
-                    accepted: true,
-                    summary: format!(
-                        "committed on {:?} boundary at beat {}, bar {}, phrase {}",
-                        boundary.kind,
-                        boundary.beat_index,
-                        boundary.bar_index,
-                        boundary.phrase_index
-                    ),
-                });
-                commit_sequence += 1;
-                committed.push(CommittedActionRef {
-                    action_id: action.id,
-                    boundary: boundary.clone(),
-                    commit_sequence,
-                });
-                self.history.push(action);
+        // The shared predicate counted exactly this stream before any mutation.
+        // Filter the entire stream (including trailing non-ready actions), then
+        // pair each ready action with one already checked absolute sequence.
+        let ready = self.pending.drain(..).filter_map(|mut action| {
+            if is_ready_for_transport(&action, boundary.kind) {
+                Some(action)
             } else {
                 action.status = ActionStatus::PendingCommit;
                 remaining.push_back(action);
+                None
             }
+        });
+        for (mut action, commit_sequence) in ready.zip(sequences) {
+            action.status = ActionStatus::Committed;
+            action.committed_at = Some(committed_at);
+            action.result = Some(ActionResult {
+                accepted: true,
+                summary: format!(
+                    "committed on {:?} boundary at beat {}, bar {}, phrase {}",
+                    boundary.kind, boundary.beat_index, boundary.bar_index, boundary.phrase_index
+                ),
+            });
+            committed.push(CommittedActionRef {
+                action_id: action.id,
+                boundary: boundary.clone(),
+                commit_sequence,
+            });
+            self.history.push(action);
         }
 
         self.pending = remaining;
-        committed
+        Ok(committed)
     }
 
     pub fn commit_pending_after_side_effect(
         &mut self,
+        history: &ActionLog,
         action_id: ActionId,
         boundary: CommitBoundaryState,
         committed_at: TimestampMs,
         result_summary: impl Into<String>,
-    ) -> Option<CommittedActionRef> {
-        let mut remaining = VecDeque::with_capacity(self.pending.len());
-        let mut committed = None;
+    ) -> Result<Option<CommittedActionRef>, CommitSequenceExhausted> {
+        let Some(index) = self.pending.iter().position(|action| {
+            action.id == action_id && action.quantization.is_ready_for(boundary.kind)
+        }) else {
+            return Ok(None);
+        };
+        let mut sequences = history.prepare_commit_sequences(&boundary, 1)?;
         let result_summary = result_summary.into();
 
-        while let Some(mut action) = self.pending.pop_front() {
-            if action.id == action_id && action.quantization.is_ready_for(boundary.kind) {
+        Ok(sequences.next().and_then(|commit_sequence| {
+            self.pending.remove(index).map(|mut action| {
                 action.status = ActionStatus::Committed;
                 action.committed_at = Some(committed_at);
                 action.result = Some(ActionResult {
                     accepted: true,
-                    summary: result_summary.clone(),
+                    summary: result_summary,
                 });
-                committed = Some(CommittedActionRef {
+                let committed = CommittedActionRef {
                     action_id: action.id,
                     boundary: boundary.clone(),
-                    commit_sequence: 1,
-                });
+                    commit_sequence,
+                };
                 self.history.push(action);
-            } else {
-                remaining.push_back(action);
-            }
-        }
-
-        self.pending = remaining;
-        committed
+                committed
+            })
+        }))
     }
 
     pub fn reject(&mut self, action_id: ActionId, reason: impl Into<String>) -> bool {
@@ -260,8 +275,15 @@ impl ActionQueue {
     }
 }
 
+fn is_ready_for_transport(action: &Action, boundary: CommitBoundary) -> bool {
+    !action.command.commits_only_after_side_effect() && action.quantization.is_ready_for(boundary)
+}
+
 #[cfg(test)]
 mod exhaustion_tests;
+
+#[cfg(test)]
+mod commit_sequence_tests;
 
 #[cfg(test)]
 mod tests {
@@ -307,11 +329,15 @@ mod tests {
             )
             .expect("generated queue ID available");
 
-        let committed = queue.commit_ready(CommitBoundary::Immediate, 110);
+        let committed = queue
+            .commit_ready(&ActionLog::default(), CommitBoundary::Immediate, 110)
+            .unwrap();
         assert_eq!(committed.len(), 1);
         assert_eq!(queue.pending_actions().len(), 1);
 
-        let committed = queue.commit_ready(CommitBoundary::Bar, 200);
+        let committed = queue
+            .commit_ready(&ActionLog::default(), CommitBoundary::Bar, 200)
+            .unwrap();
         assert_eq!(committed.len(), 1);
         assert_eq!(queue.pending_actions().len(), 0);
         assert_eq!(queue.history().len(), 2);
@@ -369,8 +395,13 @@ mod tests {
             current_scene: Some(SceneId::from("scene-a")),
         };
 
-        let committed =
-            queue.commit_ready_for_transport(clock.boundary_state(CommitBoundary::Phrase), 200);
+        let committed = queue
+            .commit_ready_for_transport(
+                &ActionLog::default(),
+                clock.boundary_state(CommitBoundary::Phrase),
+                200,
+            )
+            .unwrap();
 
         assert_eq!(committed.len(), 1);
         assert_eq!(committed[0].boundary.kind, CommitBoundary::Phrase);
@@ -419,16 +450,19 @@ mod tests {
             )
             .expect("generated queue ID available");
 
-        let committed = queue.commit_ready_for_transport(
-            CommitBoundaryState {
-                kind: CommitBoundary::Bar,
-                beat_index: 32,
-                bar_index: 9,
-                phrase_index: 2,
-                scene_id: None,
-            },
-            200,
-        );
+        let committed = queue
+            .commit_ready_for_transport(
+                &ActionLog::default(),
+                CommitBoundaryState {
+                    kind: CommitBoundary::Bar,
+                    beat_index: 32,
+                    bar_index: 9,
+                    phrase_index: 2,
+                    scene_id: None,
+                },
+                200,
+            )
+            .unwrap();
 
         assert_eq!(committed.len(), 2);
         assert_eq!(committed[0].action_id, first);
@@ -495,6 +529,7 @@ mod tests {
 
         let committed = queue
             .commit_pending_after_side_effect(
+                &ActionLog::default(),
                 export_action,
                 CommitBoundaryState {
                     kind: CommitBoundary::Immediate,
@@ -506,6 +541,7 @@ mod tests {
                 200,
                 "export wrote full_grid_mix",
             )
+            .expect("generated commit sequence available")
             .expect("export action commits after side effect success");
 
         assert_eq!(committed.action_id, export_action);
@@ -564,16 +600,19 @@ mod tests {
             )
             .expect("generated queue ID available");
 
-        let committed = queue.commit_ready_for_transport(
-            CommitBoundaryState {
-                kind: CommitBoundary::Beat,
-                beat_index: 1,
-                bar_index: 1,
-                phrase_index: 1,
-                scene_id: None,
-            },
-            200,
-        );
+        let committed = queue
+            .commit_ready_for_transport(
+                &ActionLog::default(),
+                CommitBoundaryState {
+                    kind: CommitBoundary::Beat,
+                    beat_index: 1,
+                    bar_index: 1,
+                    phrase_index: 1,
+                    scene_id: None,
+                },
+                200,
+            )
+            .unwrap();
 
         assert_eq!(
             committed

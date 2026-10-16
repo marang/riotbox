@@ -647,10 +647,17 @@ fn queue_w30_browse_slice_pool_prefers_feral_capture_and_changes_preview_window(
     assert_eq!(
         control_state
             .commit_ready_actions(boundary.clone(), 813)
+            .unwrap()
             .len(),
         1
     );
-    assert_eq!(feral_state.commit_ready_actions(boundary, 814).len(), 1);
+    assert_eq!(
+        feral_state
+            .commit_ready_actions(boundary, 814)
+            .unwrap()
+            .len(),
+        1
+    );
 
     let control_preview = control_state
         .runtime

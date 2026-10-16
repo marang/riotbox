@@ -15,6 +15,7 @@ use std::fs;
 use std::path::PathBuf;
 
 mod action_id_exhaustion;
+mod commit_sequence_exhaustion;
 mod fixtures;
 mod live_master_recording_cli;
 mod w30_hook_dawproject_cli;

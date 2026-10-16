@@ -88,6 +88,7 @@ impl JamAppState {
         requested_at: TimestampMs,
         claimed_stem_roles: Vec<ExportArtifactRole>,
     ) -> Result<ExportReceiptState, JamAppError> {
+        self.preflight_immediate_commit()?;
         let destination_dir = destination_dir.as_ref();
         let action_id = match self.pending_stem_package_export_action_id() {
             Some(action_id) => action_id,
@@ -272,11 +273,12 @@ impl JamAppState {
         let mut committed_ref = self
             .queue
             .commit_pending_after_side_effect(
+                &self.session.action_log,
                 action_id,
                 boundary.clone(),
                 requested_at,
                 result_summary.clone(),
-            )
+            )?
             .ok_or_else(|| {
                 JamAppError::InvalidSession(format!(
                     "queued export action {action_id} was not ready to commit"

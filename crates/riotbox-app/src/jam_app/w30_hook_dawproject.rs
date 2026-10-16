@@ -166,6 +166,7 @@ impl JamAppState {
         destination_path: impl AsRef<Path>,
         requested_at: TimestampMs,
     ) -> Result<ExportReceiptState, JamAppError> {
+        self.preflight_immediate_commit()?;
         let destination_path = destination_path.as_ref();
         let action_id = match self.pending_w30_hook_dawproject_action_id(destination_path) {
             Some(action_id) => action_id,

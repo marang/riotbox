@@ -1,5 +1,5 @@
 use super::{
-    state::JamAppState,
+    state::{JamAppError, JamAppState},
     transport_helpers::{crossed_commit_boundary, transport_clock_for_state},
 };
 use riotbox_audio::runtime::AudioRuntimeTimingSnapshot;
@@ -9,7 +9,8 @@ use riotbox_core::{
         ActionCommand, ActionDraft, ActionTarget, ActorType, CommitBoundary, Quantization,
         TargetScope,
     },
-    queue::{ActionIdExhausted, CommittedActionRef},
+    queue::CommittedActionRef,
+    session::CommitSequenceExhausted,
     transport::TransportClockState,
 };
 
@@ -50,7 +51,7 @@ impl JamAppState {
     pub fn commit_transport_toggle(
         &mut self,
         requested_at: TimestampMs,
-    ) -> Result<TransportToggleCommit, ActionIdExhausted> {
+    ) -> Result<TransportToggleCommit, JamAppError> {
         let command = if self.runtime.transport.is_playing {
             ActionCommand::TransportPause
         } else {
@@ -73,13 +74,13 @@ impl JamAppState {
             }
             .into(),
         );
-        self.queue.enqueue(draft, requested_at)?;
-
         let boundary = self
             .runtime
             .transport
             .boundary_state(CommitBoundary::Immediate);
-        let committed = self.commit_ready_actions(boundary, requested_at);
+        self.preflight_immediate_enqueue()?;
+        self.queue.enqueue(draft, requested_at)?;
+        let committed = self.commit_ready_actions(boundary, requested_at)?;
 
         Ok(TransportToggleCommit { command, committed })
     }
@@ -88,9 +89,9 @@ impl JamAppState {
         &mut self,
         delta_beats: f64,
         committed_at: TimestampMs,
-    ) -> Vec<CommittedActionRef> {
+    ) -> Result<Vec<CommittedActionRef>, CommitSequenceExhausted> {
         if !self.runtime.transport.is_playing || delta_beats <= 0.0 {
-            return Vec::new();
+            return Ok(Vec::new());
         }
 
         let previous = self.runtime.transport.clone();
@@ -101,14 +102,16 @@ impl JamAppState {
             previous.current_scene.clone(),
             self.source_graph.as_ref(),
         );
-        self.update_transport_clock(next_clock.clone());
+        let crossed = crossed_commit_boundary(&previous, &next_clock, self.source_graph.as_ref());
+        if let Some(boundary) = &crossed {
+            self.preflight_ready_actions(boundary)?;
+        }
+        self.update_transport_clock(next_clock);
 
-        if let Some(boundary) =
-            crossed_commit_boundary(&previous, &next_clock, self.source_graph.as_ref())
-        {
+        if let Some(boundary) = crossed {
             self.commit_ready_actions(boundary, committed_at)
         } else {
-            Vec::new()
+            Ok(Vec::new())
         }
     }
 
@@ -116,17 +119,16 @@ impl JamAppState {
         &mut self,
         timing: Option<AudioRuntimeTimingSnapshot>,
         committed_at: TimestampMs,
-    ) -> Vec<CommittedActionRef> {
+    ) -> Result<Vec<CommittedActionRef>, CommitSequenceExhausted> {
         let Some(timing) = timing else {
-            return Vec::new();
+            return Ok(Vec::new());
         };
         if let Some(pending_is_playing) = self.runtime.transport_driver.pending_audio_is_playing {
             if timing.is_transport_running != pending_is_playing {
-                return Vec::new();
+                return Ok(Vec::new());
             }
-            self.runtime.transport_driver.pending_audio_is_playing = None;
         } else if self.runtime.transport.is_playing && !timing.is_transport_running {
-            return Vec::new();
+            return Ok(Vec::new());
         }
 
         let previous = self.runtime.transport.clone();
@@ -136,18 +138,23 @@ impl JamAppState {
             previous.current_scene.clone(),
             self.source_graph.as_ref(),
         );
+        let crossed = timing
+            .is_transport_running
+            .then(|| crossed_commit_boundary(&previous, &next_clock, self.source_graph.as_ref()))
+            .flatten();
+        if let Some(boundary) = &crossed {
+            self.preflight_ready_actions(boundary)?;
+        }
+        self.runtime.transport_driver.pending_audio_is_playing = None;
         self.update_transport_clock(next_clock.clone());
         self.runtime.transport_driver.last_audio_position_beats =
             timing.is_transport_running.then_some(next_clock.beat_index);
 
-        if timing.is_transport_running
-            && let Some(boundary) =
-                crossed_commit_boundary(&previous, &next_clock, self.source_graph.as_ref())
-        {
+        if let Some(boundary) = crossed {
             return self.commit_ready_actions(boundary, committed_at);
         }
 
-        Vec::new()
+        Ok(Vec::new())
     }
 }
 

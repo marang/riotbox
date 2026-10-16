@@ -73,7 +73,7 @@ fn replay_from_zero_restore_rebuilds_commit_boundary_and_queue_cursor() {
         scene_id: Some(SceneId::from("scene-1")),
     };
 
-    let committed = live.commit_ready_actions(boundary.clone(), 500);
+    let committed = live.commit_ready_actions(boundary.clone(), 500).unwrap();
 
     assert_eq!(committed.len(), 2);
     assert_eq!(committed[0].action_id, first);
@@ -151,7 +151,7 @@ fn separate_commit_calls_and_later_batch_continue_the_same_boundary_sequence() {
             300,
         )
         .unwrap();
-    let first = state.commit_ready_actions(boundary.clone(), 400);
+    let first = state.commit_ready_actions(boundary.clone(), 400).unwrap();
     assert_eq!(first[0].commit_sequence, 1);
 
     state
@@ -178,7 +178,7 @@ fn separate_commit_calls_and_later_batch_continue_the_same_boundary_sequence() {
             420,
         )
         .unwrap();
-    let batch = state.commit_ready_actions(boundary, 500);
+    let batch = state.commit_ready_actions(boundary, 500).unwrap();
 
     assert_eq!(
         batch
@@ -222,16 +222,18 @@ fn accepted_ghost_action_snapshot_replay_plan_uses_restored_commit_records() {
         state.accept_current_ghost_suggestion(1_000).unwrap(),
         GhostSuggestionQueueResult::Enqueued(_)
     ));
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 32,
-            bar_index: 8,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-a")),
-        },
-        1_500,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 32,
+                bar_index: 8,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-a")),
+            },
+            1_500,
+        )
+        .unwrap();
     assert_eq!(committed.len(), 1);
     state.session.snapshots = vec![
         Snapshot {

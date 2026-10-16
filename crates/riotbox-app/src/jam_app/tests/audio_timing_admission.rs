@@ -24,7 +24,12 @@ fn unobserved_audio_timing_preserves_a_paused_restored_cursor() {
     );
 
     // The runtime withholds timing until a complete callback is observed.
-    assert!(state.apply_audio_timing_snapshot(None, 100).is_empty());
+    assert!(
+        state
+            .apply_audio_timing_snapshot(None, 100)
+            .unwrap()
+            .is_empty()
+    );
     assert_eq!(state.runtime.transport.position_beats, 12.5);
     assert_eq!(state.session.runtime_state.transport.position_beats, 12.5);
 
@@ -38,6 +43,7 @@ fn unobserved_audio_timing_preserves_a_paused_restored_cursor() {
                 }),
                 200,
             )
+            .unwrap()
             .is_empty()
     );
     assert_eq!(state.runtime.transport.position_beats, 12.5);
@@ -69,7 +75,12 @@ fn unavailable_timing_cannot_acknowledge_play_or_pause_or_commit_queued_actions(
         let before_driver = state.runtime.transport_driver.clone();
         let before_queue: Vec<_> = state.queue.pending_actions().into_iter().cloned().collect();
 
-        assert!(state.apply_audio_timing_snapshot(None, 100).is_empty());
+        assert!(
+            state
+                .apply_audio_timing_snapshot(None, 100)
+                .unwrap()
+                .is_empty()
+        );
 
         assert_eq!(state.session, before_session);
         assert_eq!(state.runtime.transport, before_transport);
@@ -91,14 +102,16 @@ fn unavailable_timing_cannot_acknowledge_play_or_pause_or_commit_queued_actions(
 fn observed_beat_zero_is_not_treated_as_missing_timing() {
     let mut state = restored_paused_state("observed-beat-zero");
     state.set_transport_playing(true);
-    state.apply_audio_timing_snapshot(
-        Some(AudioRuntimeTimingSnapshot {
-            is_transport_running: true,
-            tempo_bpm: 128.0,
-            position_beats: 0.0,
-        }),
-        100,
-    );
+    state
+        .apply_audio_timing_snapshot(
+            Some(AudioRuntimeTimingSnapshot {
+                is_transport_running: true,
+                tempo_bpm: 128.0,
+                position_beats: 0.0,
+            }),
+            100,
+        )
+        .unwrap();
     assert!(state.runtime.transport.is_playing);
     assert_eq!(state.runtime.transport.position_beats, 0.0);
     assert_eq!(state.session.runtime_state.transport.position_beats, 0.0);

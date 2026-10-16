@@ -99,6 +99,7 @@ impl JamAppState {
         destination_dir: impl AsRef<Path>,
         requested_at: TimestampMs,
     ) -> Result<ExportReceiptState, JamAppError> {
+        self.preflight_immediate_commit()?;
         let handoff_proof_path = handoff_proof_path.as_ref();
         let destination_dir = destination_dir.as_ref();
         let action_id = match self.pending_source_matched_stem_package_action_id() {

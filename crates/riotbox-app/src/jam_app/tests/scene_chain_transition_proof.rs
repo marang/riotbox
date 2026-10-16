@@ -339,16 +339,18 @@ pub(in crate::jam_app::tests) fn commit_scene_chain_step(
     scene_id: &str,
     committed_at: u64,
 ) {
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index,
-            bar_index,
-            phrase_index,
-            scene_id: Some(SceneId::from(scene_id)),
-        },
-        committed_at,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index,
+                bar_index,
+                phrase_index,
+                scene_id: Some(SceneId::from(scene_id)),
+            },
+            committed_at,
+        )
+        .unwrap();
     assert_eq!(committed.len(), 1);
 }
 

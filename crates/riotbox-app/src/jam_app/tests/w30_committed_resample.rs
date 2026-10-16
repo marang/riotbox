@@ -74,16 +74,18 @@ fn committed_w30_internal_resample_materializes_lineage_safe_capture() {
         Some(QueueControlResult::Enqueued)
     );
 
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: 33,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        740,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 33,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            740,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     let capture = state
@@ -156,48 +158,54 @@ fn committed_w30_internal_resample_prints_reusable_bus_artifact() {
     let mut state =
         JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("load app state");
     state.queue_capture_bar(300).unwrap();
-    let committed_capture = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: 0,
-            bar_index: 1,
-            phrase_index: 0,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        400,
-    );
+    let committed_capture = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 0,
+                bar_index: 1,
+                phrase_index: 0,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        )
+        .unwrap();
     assert_eq!(committed_capture.len(), 1);
     let raw_capture_path = tempdir.path().join(&state.session.captures[0].storage_path);
     let raw_artifact =
         SourceAudioCache::load_pcm_wav(&raw_capture_path).expect("load raw capture artifact");
 
     assert!(state.queue_promote_last_capture(410).unwrap());
-    let committed_promotion = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 4,
-            bar_index: 2,
-            phrase_index: 0,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        500,
-    );
+    let committed_promotion = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 4,
+                bar_index: 2,
+                phrase_index: 0,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            500,
+        )
+        .unwrap();
     assert_eq!(committed_promotion.len(), 1);
 
     assert_eq!(
         state.queue_w30_internal_resample(650).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
-    let committed_resample = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: 32,
-            bar_index: 8,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        740,
-    );
+    let committed_resample = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 32,
+                bar_index: 8,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            740,
+        )
+        .unwrap();
     assert_eq!(committed_resample.len(), 1);
 
     let capture = state
@@ -286,16 +294,18 @@ fn committed_w30_internal_resample_prints_reusable_bus_artifact() {
     );
 
     assert!(state.queue_promote_last_capture(780).unwrap());
-    let committed_resample_promotion = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 36,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        820,
-    );
+    let committed_resample_promotion = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 36,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            820,
+        )
+        .unwrap();
     assert_eq!(committed_resample_promotion.len(), 1);
     let promotion_action = state
         .session
@@ -377,16 +387,18 @@ fn committed_w30_internal_resample_prints_reusable_bus_artifact() {
         reloaded.queue_w30_trigger_pad(845).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
-    let committed_reload_trigger = reloaded.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Beat,
-            beat_index: 64,
-            bar_index: 16,
-            phrase_index: 4,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        940,
-    );
+    let committed_reload_trigger = reloaded
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Beat,
+                beat_index: 64,
+                bar_index: 16,
+                phrase_index: 4,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            940,
+        )
+        .unwrap();
     assert_eq!(committed_reload_trigger.len(), 1);
     assert_eq!(
         reloaded.runtime.w30_preview.capture_id.as_deref(),

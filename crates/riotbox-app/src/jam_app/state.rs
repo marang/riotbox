@@ -18,7 +18,7 @@ use riotbox_core::{
     ids::CaptureId,
     persistence::PersistenceError,
     queue::{ActionIdExhausted, ActionQueue},
-    session::SessionFile,
+    session::{CommitSequenceExhausted, SessionFile},
     source_graph::SourceGraph,
     transport::{CommitBoundaryState, TransportClockState},
     view::jam::JamViewModel,
@@ -34,6 +34,7 @@ pub enum JamAppError {
     Serialization(serde_json::Error),
     Sidecar(SidecarClientError),
     ActionIdExhausted(ActionIdExhausted),
+    CommitSequenceExhausted(CommitSequenceExhausted),
     InvalidSession(String),
 }
 
@@ -45,6 +46,7 @@ impl Display for JamAppError {
             Self::Serialization(error) => write!(f, "serialization error: {error}"),
             Self::Sidecar(error) => write!(f, "sidecar error: {error}"),
             Self::ActionIdExhausted(error) => Display::fmt(error, f),
+            Self::CommitSequenceExhausted(error) => Display::fmt(error, f),
             Self::InvalidSession(message) => write!(f, "invalid session: {message}"),
         }
     }
@@ -58,6 +60,7 @@ impl Error for JamAppError {
             Self::Serialization(error) => Some(error),
             Self::Sidecar(error) => Some(error),
             Self::ActionIdExhausted(error) => Some(error),
+            Self::CommitSequenceExhausted(error) => Some(error),
             Self::InvalidSession(_) => None,
         }
     }
@@ -72,6 +75,12 @@ impl From<io::Error> for JamAppError {
 impl From<ActionIdExhausted> for JamAppError {
     fn from(value: ActionIdExhausted) -> Self {
         Self::ActionIdExhausted(value)
+    }
+}
+
+impl From<CommitSequenceExhausted> for JamAppError {
+    fn from(value: CommitSequenceExhausted) -> Self {
+        Self::CommitSequenceExhausted(value)
     }
 }
 

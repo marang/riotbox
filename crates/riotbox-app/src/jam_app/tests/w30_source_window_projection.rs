@@ -122,16 +122,18 @@ fn captured_source_window_promotes_to_pad_and_auditions_source_preview() {
     state.refresh_view();
 
     state.queue_capture_bar(300).unwrap();
-    let committed_capture = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: 0,
-            bar_index: 1,
-            phrase_index: 0,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        400,
-    );
+    let committed_capture = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 0,
+                bar_index: 1,
+                phrase_index: 0,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        )
+        .unwrap();
 
     assert_eq!(committed_capture.len(), 1);
     assert_eq!(state.session.captures.len(), 1);
@@ -145,16 +147,18 @@ fn captured_source_window_promotes_to_pad_and_auditions_source_preview() {
     assert!(state.session.captures[0].source_window.is_some());
 
     assert!(state.queue_promote_last_capture(410).unwrap());
-    let committed_promotion = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 4,
-            bar_index: 2,
-            phrase_index: 0,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        500,
-    );
+    let committed_promotion = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 4,
+                bar_index: 2,
+                phrase_index: 0,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            500,
+        )
+        .unwrap();
 
     assert_eq!(committed_promotion.len(), 1);
     assert_eq!(
@@ -169,16 +173,18 @@ fn captured_source_window_promotes_to_pad_and_auditions_source_preview() {
         state.queue_w30_audition(520).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
-    let committed_audition = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 8,
-            bar_index: 3,
-            phrase_index: 0,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        600,
-    );
+    let committed_audition = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 8,
+                bar_index: 3,
+                phrase_index: 0,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            600,
+        )
+        .unwrap();
 
     assert_eq!(committed_audition.len(), 1);
     assert_eq!(

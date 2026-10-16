@@ -15,7 +15,12 @@ fn exhausted_initial_play_stops_device_without_mutating_session_or_publishing() 
     let session_before = state.session.clone();
     let queue_before = format!("{:?}", state.queue);
     let error = execute_with_control(&launch, &mut state, &mut control).unwrap_err();
-    assert!(error.is::<ActionIdExhausted>());
+    assert!(matches!(
+        error.downcast_ref::<crate::jam_app::JamAppError>(),
+        Some(crate::jam_app::JamAppError::ActionIdExhausted(
+            ActionIdExhausted
+        ))
+    ));
     assert_eq!(state.session, session_before);
     assert_eq!(format!("{:?}", state.queue), queue_before);
     assert_eq!(*control.events.borrow(), [Event::Stop]);
@@ -121,8 +126,10 @@ fn final_three_ids_complete_play_export_pause_and_reload_without_duplicates() {
         ]
         .into()
     );
-    assert_eq!(
+    assert!(matches!(
         restored.commit_transport_toggle(10_000),
-        Err(ActionIdExhausted)
-    );
+        Err(crate::jam_app::JamAppError::ActionIdExhausted(
+            ActionIdExhausted
+        ))
+    ));
 }

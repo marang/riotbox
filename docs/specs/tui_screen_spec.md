@@ -286,6 +286,13 @@ Show:
   Session/runtime/Undo/Ghost state on that refusal; do not imply transport
   changed because a key was pressed. Existing already-pending or unavailable
   outcomes remain distinct when no new ID was needed.
+- Queue admission and a later commit attempt are separate steps. If an
+  existing queue-then-commit control has accepted a pending action but the
+  boundary lacks commit-sequence capacity, retain that pending action/ID and
+  show `queued; commit blocked` with the typed reason. Do not roll back IDs,
+  duplicate eligibility in the UI, or emit a committed observer event. Direct
+  compound App operations such as transport toggle/Undo instead preflight
+  before their first mutation.
 - section labels should be conservative. When semantic confidence is weak, show
   neutral labels such as `section A`, `section B`, and `section C` instead of
   inventing `hook`, `drop`, or `break` labels.

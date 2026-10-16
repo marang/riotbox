@@ -105,10 +105,13 @@ pub(in crate::ui::tests) fn mc202_committed_shell_state(
         fixture.name
     );
 
-    let committed = shell.app.commit_ready_actions(
-        fixture.boundary.to_commit_boundary_state(),
-        fixture.committed_at,
-    );
+    let committed = shell
+        .app
+        .commit_ready_actions(
+            fixture.boundary.to_commit_boundary_state(),
+            fixture.committed_at,
+        )
+        .expect("fixture commit sequence available");
     assert_eq!(
         committed.len(),
         1,
@@ -192,14 +195,17 @@ pub(in crate::ui::tests) fn scene_committed_shell_state(
                 fixture.name
             );
 
-            let committed = shell.app.commit_ready_actions(
-                fixture
-                    .boundary
-                    .as_ref()
-                    .expect("scene select boundary")
-                    .to_commit_boundary_state(),
-                fixture.committed_at.expect("scene select committed_at"),
-            );
+            let committed = shell
+                .app
+                .commit_ready_actions(
+                    fixture
+                        .boundary
+                        .as_ref()
+                        .expect("scene select boundary")
+                        .to_commit_boundary_state(),
+                    fixture.committed_at.expect("scene select committed_at"),
+                )
+                .expect("fixture commit sequence available");
             assert_eq!(
                 committed.len(),
                 1,
@@ -218,14 +224,17 @@ pub(in crate::ui::tests) fn scene_committed_shell_state(
                 fixture.name
             );
 
-            let committed = shell.app.commit_ready_actions(
-                fixture
-                    .boundary
-                    .as_ref()
-                    .expect("scene restore boundary")
-                    .to_commit_boundary_state(),
-                fixture.committed_at.expect("scene restore committed_at"),
-            );
+            let committed = shell
+                .app
+                .commit_ready_actions(
+                    fixture
+                        .boundary
+                        .as_ref()
+                        .expect("scene restore boundary")
+                        .to_commit_boundary_state(),
+                    fixture.committed_at.expect("scene restore committed_at"),
+                )
+                .expect("fixture commit sequence available");
             assert_eq!(
                 committed.len(),
                 1,
@@ -438,10 +447,13 @@ pub(in crate::ui::tests) fn w30_committed_shell_state(
         fixture.name
     );
 
-    let committed = shell.app.commit_ready_actions(
-        fixture.boundary.to_commit_boundary_state(),
-        fixture.committed_at,
-    );
+    let committed = shell
+        .app
+        .commit_ready_actions(
+            fixture.boundary.to_commit_boundary_state(),
+            fixture.committed_at,
+        )
+        .expect("fixture commit sequence available");
     assert_eq!(
         committed.len(),
         1,

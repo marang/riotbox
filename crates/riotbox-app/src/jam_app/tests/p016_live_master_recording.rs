@@ -235,14 +235,16 @@ fn live_transport_progress_cannot_commit_capture_before_the_writer_succeeds() {
     };
 
     for position_beats in [1.0, 4.0, 8.0] {
-        state.apply_audio_timing_snapshot(
-            Some(riotbox_audio::runtime::AudioRuntimeTimingSnapshot {
-                is_transport_running: true,
-                tempo_bpm: 120.0,
-                position_beats,
-            }),
-            1_000 + (position_beats * 500.0) as u64,
-        );
+        state
+            .apply_audio_timing_snapshot(
+                Some(riotbox_audio::runtime::AudioRuntimeTimingSnapshot {
+                    is_transport_running: true,
+                    tempo_bpm: 120.0,
+                    position_beats,
+                }),
+                1_000 + (position_beats * 500.0) as u64,
+            )
+            .unwrap();
     }
 
     assert_eq!(

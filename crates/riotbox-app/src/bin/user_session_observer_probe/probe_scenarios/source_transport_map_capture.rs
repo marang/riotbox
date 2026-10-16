@@ -219,6 +219,14 @@ fn commit_at_beat(
     expected_count: usize,
 ) -> io::Result<()> {
     let grid_position = source_aware_grid_position(shell, beat_index);
+    let boundary = CommitBoundaryState {
+        kind,
+        beat_index: grid_position.beat_cursor,
+        bar_index: grid_position.bar_index,
+        phrase_index: grid_position.phrase_index,
+        scene_id: None,
+    };
+    super::super::prepare_observer_boundary_commit(shell, &boundary)?;
     shell.app.update_transport_clock(TransportClockState {
         is_playing: shell.app.runtime.transport.is_playing,
         position_beats: grid_position.beat_cursor as f64,
@@ -227,16 +235,10 @@ fn commit_at_beat(
         phrase_index: grid_position.phrase_index,
         current_scene: None,
     });
-    let committed = shell.app.commit_ready_actions(
-        CommitBoundaryState {
-            kind,
-            beat_index: grid_position.beat_cursor,
-            bar_index: grid_position.bar_index,
-            phrase_index: grid_position.phrase_index,
-            scene_id: None,
-        },
-        timestamp_ms,
-    );
+    let committed = shell
+        .app
+        .commit_ready_actions(boundary, timestamp_ms)
+        .map_err(io::Error::other)?;
     if committed.len() != expected_count {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,

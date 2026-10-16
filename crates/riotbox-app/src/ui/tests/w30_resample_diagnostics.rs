@@ -27,16 +27,19 @@ fn renders_capture_shell_snapshot_with_committed_w30_resample_lineage_diagnostic
             .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
-    let committed = shell.app.commit_ready_actions(
-        CommitBoundaryState {
-            kind: riotbox_core::action::CommitBoundary::Phrase,
-            beat_index: 33,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-a")),
-        },
-        240,
-    );
+    let committed = shell
+        .app
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Phrase,
+                beat_index: 33,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-a")),
+            },
+            240,
+        )
+        .expect("fixture commit sequence available");
     assert_eq!(committed.len(), 1);
     shell.active_screen = ShellScreen::Capture;
 
@@ -72,16 +75,19 @@ fn renders_log_shell_snapshot_with_committed_w30_audition_diagnostics() {
             .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
-    let committed = shell.app.commit_ready_actions(
-        CommitBoundaryState {
-            kind: riotbox_core::action::CommitBoundary::Bar,
-            beat_index: 33,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-a")),
-        },
-        240,
-    );
+    let committed = shell
+        .app
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Bar,
+                beat_index: 33,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-a")),
+            },
+            240,
+        )
+        .expect("fixture commit sequence available");
     assert_eq!(committed.len(), 1);
     shell.active_screen = ShellScreen::Log;
 
@@ -116,16 +122,19 @@ fn renders_log_shell_snapshot_with_committed_w30_trigger_preview_diagnostics() {
             .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
-    let committed = shell.app.commit_ready_actions(
-        CommitBoundaryState {
-            kind: riotbox_core::action::CommitBoundary::Beat,
-            beat_index: 34,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-a")),
-        },
-        250,
-    );
+    let committed = shell
+        .app
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Beat,
+                beat_index: 34,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-a")),
+            },
+            250,
+        )
+        .expect("fixture commit sequence available");
     assert_eq!(committed.len(), 1);
     shell.active_screen = ShellScreen::Log;
 
@@ -161,16 +170,19 @@ fn renders_log_shell_snapshot_with_committed_w30_resample_lineage_diagnostics() 
             .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
-    let committed = shell.app.commit_ready_actions(
-        CommitBoundaryState {
-            kind: riotbox_core::action::CommitBoundary::Phrase,
-            beat_index: 34,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-a")),
-        },
-        260,
-    );
+    let committed = shell
+        .app
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Phrase,
+                beat_index: 34,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-a")),
+            },
+            260,
+        )
+        .expect("fixture commit sequence available");
     assert_eq!(committed.len(), 1);
     shell.active_screen = ShellScreen::Log;
 
@@ -205,16 +217,19 @@ fn renders_w30_resample_lab_diagnostics_across_shell_surfaces() {
             .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
-    let committed = shell.app.commit_ready_actions(
-        CommitBoundaryState {
-            kind: riotbox_core::action::CommitBoundary::Phrase,
-            beat_index: 36,
-            bar_index: 10,
-            phrase_index: 3,
-            scene_id: Some(SceneId::from("scene-a")),
-        },
-        280,
-    );
+    let committed = shell
+        .app
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Phrase,
+                beat_index: 36,
+                bar_index: 10,
+                phrase_index: 3,
+                scene_id: Some(SceneId::from("scene-a")),
+            },
+            280,
+        )
+        .expect("fixture commit sequence available");
     assert_eq!(committed.len(), 1);
 
     let observer = crate::observer::observer_snapshot(&shell);

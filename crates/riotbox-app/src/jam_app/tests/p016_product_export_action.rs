@@ -1090,16 +1090,18 @@ fn w30_hook_loop_export_fails_closed_from_capture_scoped_damage_state() {
         state.queue_w30_apply_damage_profile(1_305).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
-    let committed = state.commit_ready_actions(
-        riotbox_core::transport::CommitBoundaryState {
-            kind: riotbox_core::action::CommitBoundary::Bar,
-            beat_index: 8,
-            bar_index: 3,
-            phrase_index: 1,
-            scene_id: Some(riotbox_core::ids::SceneId::from("scene-1")),
-        },
-        1_306,
-    );
+    let committed = state
+        .commit_ready_actions(
+            riotbox_core::transport::CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Bar,
+                beat_index: 8,
+                bar_index: 3,
+                phrase_index: 1,
+                scene_id: Some(riotbox_core::ids::SceneId::from("scene-1")),
+            },
+            1_306,
+        )
+        .unwrap();
     assert_eq!(committed.len(), 1);
 
     let error = state

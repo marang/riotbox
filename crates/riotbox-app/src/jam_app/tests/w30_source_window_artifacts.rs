@@ -44,16 +44,18 @@ fn committed_source_backed_capture_writes_wav_artifact() {
     let mut state =
         JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("load app state");
     state.queue_capture_bar(300).unwrap();
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: 0,
-            bar_index: 1,
-            phrase_index: 0,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        400,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 0,
+                bar_index: 1,
+                phrase_index: 0,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert_eq!(state.session.captures.len(), 1);
@@ -123,16 +125,18 @@ fn focused_w30_pad_trigger_uses_capture_artifact_preview_when_source_cache_unava
     let mut state =
         JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("load app state");
     state.queue_capture_bar(300).unwrap();
-    let committed_capture = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: 0,
-            bar_index: 1,
-            phrase_index: 0,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        400,
-    );
+    let committed_capture = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 0,
+                bar_index: 1,
+                phrase_index: 0,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        )
+        .unwrap();
     assert_eq!(committed_capture.len(), 1);
 
     let capture_id = CaptureId::from("cap-01");
@@ -160,32 +164,36 @@ fn focused_w30_pad_trigger_uses_capture_artifact_preview_when_source_cache_unava
     fs::remove_file(&source_path).expect("remove source to prove artifact-backed preview");
 
     assert!(state.queue_promote_last_capture(410).unwrap());
-    let committed_promotion = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 4,
-            bar_index: 2,
-            phrase_index: 0,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        500,
-    );
+    let committed_promotion = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 4,
+                bar_index: 2,
+                phrase_index: 0,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            500,
+        )
+        .unwrap();
     assert_eq!(committed_promotion.len(), 1);
 
     assert_eq!(
         state.queue_w30_trigger_pad(645).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
-    let committed_trigger = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Beat,
-            beat_index: 33,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        740,
-    );
+    let committed_trigger = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Beat,
+                beat_index: 33,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            740,
+        )
+        .unwrap();
     assert_eq!(committed_trigger.len(), 1);
 
     assert_eq!(
@@ -315,28 +323,32 @@ fn reloaded_session_uses_capture_artifact_cache_without_source_audio() {
     let mut state =
         JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("load app state");
     state.queue_capture_bar(300).unwrap();
-    let committed_capture = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: 0,
-            bar_index: 1,
-            phrase_index: 0,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        400,
-    );
+    let committed_capture = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 0,
+                bar_index: 1,
+                phrase_index: 0,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        )
+        .unwrap();
     assert_eq!(committed_capture.len(), 1);
     assert!(state.queue_promote_last_capture(410).unwrap());
-    let committed_promotion = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 4,
-            bar_index: 2,
-            phrase_index: 0,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        500,
-    );
+    let committed_promotion = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 4,
+                bar_index: 2,
+                phrase_index: 0,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            500,
+        )
+        .unwrap();
     assert_eq!(committed_promotion.len(), 1);
 
     let capture_id = CaptureId::from("cap-01");
@@ -367,16 +379,18 @@ fn reloaded_session_uses_capture_artifact_cache_without_source_audio() {
         reloaded.queue_w30_trigger_pad(645).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
-    let committed_trigger = reloaded.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Beat,
-            beat_index: 33,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        740,
-    );
+    let committed_trigger = reloaded
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Beat,
+                beat_index: 33,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            740,
+        )
+        .unwrap();
     assert_eq!(committed_trigger.len(), 1);
 
     let pad_playback = reloaded

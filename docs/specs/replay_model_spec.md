@@ -176,6 +176,16 @@ Current implementation:
   for the complete boundary. A second queue drain, structural Undo, or direct
   side-effect commit at the same paused transport point must continue the same
   sequence rather than restart at one.
+- Core checks capacity for the whole intended batch before consuming queue
+  state. An exhausted boundary returns typed `CommitSequenceExhausted`; no
+  rollover, renumber, saturation, fabricated record or panic is permitted.
+  Existing valid MAX-sequence history and other boundaries remain usable.
+  Core assigns final absolute sequences during the admitted drain; App retains
+  `record one action → its pipeline` order rather than preappending a batch.
+  Undo and side-effect writers admit their own one-record capacity before
+  snapshots, identity allocation or publication. A transport toggle instead
+  admits all existing ordinary Immediate-ready actions plus its prospective
+  action, because its existing behavior drains that whole batch.
 - Replaying a still-committed action with typed undo semantics rebuilds that
   action's pre-state undo snapshot before applying its side effect, so restored
   runtime state retains the same live undo capability as the original commit.

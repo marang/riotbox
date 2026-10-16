@@ -31,11 +31,15 @@ fn exhausted_probe_key_fails_without_success_event_or_product_state_change() {
             .expect_err("exhausted key must fail visibly");
 
         assert_eq!(error.kind(), io::ErrorKind::Other);
-        assert!(
-            error
-                .get_ref()
-                .is_some_and(|error| error.is::<ActionIdExhausted>())
-        );
+        let cause = error.get_ref().expect("typed allocation error");
+        if key == KeyCode::Char(' ') {
+            assert!(matches!(
+                cause.downcast_ref::<riotbox_app::jam_app::JamAppError>(),
+                Some(riotbox_app::jam_app::JamAppError::ActionIdExhausted(_))
+            ));
+        } else {
+            assert!(cause.is::<ActionIdExhausted>());
+        }
         assert_eq!(
             serde_json::to_value(&shell.app.session).expect("session snapshot"),
             session_before

@@ -1,6 +1,8 @@
 mod arrangement_export_placement;
 mod capture_identity;
 pub use capture_identity::{CaptureAudioIdentity, CaptureAudioIdentityProvenance};
+mod commit_sequences;
+pub use commit_sequences::{CommitSequenceExhausted, CommitSequenceRange};
 mod daw_tempo_map;
 mod dawproject_receipt;
 mod defaults;

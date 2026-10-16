@@ -1183,7 +1183,7 @@ fn commit(
             scene_id,
         },
         timestamp,
-    );
+    )?;
     if committed.len() != 1 {
         return Err(format!("expected one {kind:?} commit, got {}", committed.len()).into());
     }

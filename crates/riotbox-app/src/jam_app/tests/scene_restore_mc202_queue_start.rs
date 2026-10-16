@@ -74,16 +74,18 @@ fn committed_scene_select_projects_target_scene_into_tr909_source_support() {
         QueueControlResult::Enqueued
     );
 
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: riotbox_core::action::CommitBoundary::Bar,
-            beat_index: 32,
-            bar_index: 8,
-            phrase_index: 1,
-            scene_id: Some(SceneId::from("scene-01-drop")),
-        },
-        350,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Bar,
+                beat_index: 32,
+                bar_index: 8,
+                phrase_index: 1,
+                scene_id: Some(SceneId::from("scene-01-drop")),
+            },
+            350,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert_eq!(
@@ -161,16 +163,18 @@ fn committed_scene_restore_updates_transport_scene_and_restore_pointer() {
         QueueControlResult::Enqueued
     );
 
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: riotbox_core::action::CommitBoundary::Bar,
-            beat_index: 36,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-02-break")),
-        },
-        420,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Bar,
+                beat_index: 36,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-02-break")),
+            },
+            420,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert_eq!(
@@ -236,16 +240,18 @@ fn committed_scene_restore_projects_target_scene_into_tr909_source_support() {
         QueueControlResult::Enqueued
     );
 
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: riotbox_core::action::CommitBoundary::Bar,
-            beat_index: 36,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-02-break")),
-        },
-        420,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Bar,
+                beat_index: 36,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-02-break")),
+            },
+            420,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert_eq!(
@@ -330,16 +336,18 @@ fn scene_jump_restore_replay_proves_state_and_mixed_audio_path() {
         state.queue_scene_select(300).unwrap(),
         QueueControlResult::Enqueued
     );
-    let launched = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 36,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-01-drop")),
-        },
-        360,
-    );
+    let launched = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 36,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-01-drop")),
+            },
+            360,
+        )
+        .unwrap();
     assert_eq!(launched.len(), 1);
     assert_eq!(
         state.session.runtime_state.scene_state.active_scene,
@@ -425,16 +433,18 @@ fn scene_jump_restore_replay_proves_state_and_mixed_audio_path() {
         state.queue_scene_restore(420).unwrap(),
         QueueControlResult::Enqueued
     );
-    let restored = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 40,
-            bar_index: 10,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-02-break")),
-        },
-        480,
-    );
+    let restored = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 40,
+                bar_index: 10,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-02-break")),
+            },
+            480,
+        )
+        .unwrap();
     assert_eq!(restored.len(), 1);
     assert_eq!(
         state.session.runtime_state.scene_state.active_scene,
@@ -538,16 +548,18 @@ fn scene_jump_silences_mc202_plan_from_another_source_section_and_restore_recove
         state.queue_scene_select(300).unwrap(),
         QueueControlResult::Enqueued
     );
-    let launched = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 36,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-01-intro")),
-        },
-        360,
-    );
+    let launched = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 36,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-01-intro")),
+            },
+            360,
+        )
+        .unwrap();
     assert_eq!(launched.len(), 1);
     assert_eq!(
         state.runtime.mc202_render.routing,
@@ -560,16 +572,18 @@ fn scene_jump_silences_mc202_plan_from_another_source_section_and_restore_recove
         state.queue_scene_restore(420).unwrap(),
         QueueControlResult::Enqueued
     );
-    let restored = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 40,
-            bar_index: 10,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-02-drop")),
-        },
-        480,
-    );
+    let restored = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 40,
+                bar_index: 10,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-02-drop")),
+            },
+            480,
+        )
+        .unwrap();
     assert_eq!(restored.len(), 1);
     assert_eq!(state.runtime.mc202_render, before_jump);
 }

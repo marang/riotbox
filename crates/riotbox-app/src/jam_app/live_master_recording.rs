@@ -282,6 +282,7 @@ impl JamAppState {
         final_health: &AudioRuntimeHealth,
         committed_at: TimestampMs,
     ) -> Result<ExportReceiptState, JamAppError> {
+        self.preflight_immediate_commit()?;
         let written = match prepare_validated_recording(self, plan, outcome, final_health) {
             Ok(written) => written,
             Err(error) => {
@@ -354,6 +355,7 @@ impl JamAppState {
         final_health: &AudioRuntimeHealth,
         committed_at: TimestampMs,
     ) -> Result<ExportReceiptState, JamAppError> {
+        self.preflight_immediate_commit()?;
         let session_before_commit = self.session.clone();
         let queue_before_commit = self.queue.clone();
         let last_boundary_before_commit = self.runtime.last_commit_boundary.clone();
