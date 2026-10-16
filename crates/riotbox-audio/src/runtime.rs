@@ -6,7 +6,16 @@ use crate::runtime::{
         w30_source_profile_from_u32, w30_source_profile_to_u32,
     },
 };
-use std::sync::atomic::{AtomicU64, Ordering};
+use control_snapshot::{
+    COHERENT_SNAPSHOT_READ_ATTEMPTS, begin_coherent_snapshot_update, coherent_snapshot_or,
+    finish_coherent_snapshot_update, try_coherent_snapshot,
+};
+
+mod control_snapshot;
+mod control_sync {
+    pub(super) use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
+}
+mod transport_timing;
 
 mod fill_focus;
 #[cfg(any(test, feature = "limiter-calibration"))]
@@ -45,50 +54,6 @@ pub use source_monitor::{
     render_source_monitor_mix_offline, source_monitor_route_for_cache,
     source_monitor_route_for_output,
 };
-
-const COHERENT_SNAPSHOT_READ_ATTEMPTS: usize = 3;
-
-fn begin_coherent_snapshot_update(revision: &AtomicU64) {
-    let previous = revision.fetch_add(1, Ordering::AcqRel);
-    debug_assert_eq!(previous % 2, 0, "coherent snapshot update overlap");
-}
-
-fn finish_coherent_snapshot_update(revision: &AtomicU64) {
-    let previous = revision.fetch_add(1, Ordering::Release);
-    debug_assert_eq!(previous % 2, 1, "coherent snapshot update was not active");
-}
-
-fn coherent_snapshot<T>(revision: &AtomicU64, read: impl Fn() -> T) -> T {
-    let mut last_read = None;
-    for _ in 0..COHERENT_SNAPSHOT_READ_ATTEMPTS {
-        let before = revision.load(Ordering::Acquire);
-        if !before.is_multiple_of(2) {
-            continue;
-        }
-        let snapshot = read();
-        let after = revision.load(Ordering::Acquire);
-        if before == after && after.is_multiple_of(2) {
-            return snapshot;
-        }
-        last_read = Some(snapshot);
-    }
-    last_read.unwrap_or_else(read)
-}
-
-fn coherent_snapshot_or<T: Clone>(revision: &AtomicU64, previous: &T, read: impl Fn() -> T) -> T {
-    for _ in 0..COHERENT_SNAPSHOT_READ_ATTEMPTS {
-        let before = revision.load(Ordering::Acquire);
-        if !before.is_multiple_of(2) {
-            continue;
-        }
-        let snapshot = read();
-        let after = revision.load(Ordering::Acquire);
-        if before == after && after.is_multiple_of(2) {
-            return snapshot;
-        }
-    }
-    previous.clone()
-}
 
 #[cfg(test)]
 mod tests;

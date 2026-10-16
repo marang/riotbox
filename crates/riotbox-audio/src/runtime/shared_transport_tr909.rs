@@ -1,8 +1,4 @@
 use crate::mc202::Mc202RenderState;
-use crate::runtime::begin_coherent_snapshot_update;
-use crate::runtime::coherent_snapshot;
-use crate::runtime::coherent_snapshot_or;
-use crate::runtime::finish_coherent_snapshot_update;
 use crate::runtime::live_master_capture::LiveMasterCaptureError;
 use crate::runtime::live_master_capture::LiveMasterCaptureOutcome;
 use crate::runtime::live_master_capture::LiveMasterCaptureProgress;
@@ -37,7 +33,6 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::AtomicU32;
 use std::sync::atomic::AtomicU64;
-use std::sync::atomic::Ordering;
 use std::time::Instant;
 
 mod output_callback;
@@ -206,6 +201,7 @@ impl AudioRuntimeShell {
             })?;
 
         Ok(Self {
+            control_owner: std::marker::PhantomData,
             lifecycle: AudioRuntimeLifecycle::Running,
             output: Some(output),
             telemetry,
@@ -338,6 +334,7 @@ impl AudioRuntimeShell {
     #[cfg(test)]
     pub(super) fn from_test_parts(parts: AudioRuntimeShellTestParts) -> Self {
         Self {
+            control_owner: std::marker::PhantomData,
             lifecycle: parts.lifecycle,
             output: parts.output,
             telemetry: parts.telemetry,
@@ -424,60 +421,9 @@ pub(super) struct AudioRuntimeSharedState {
     live_master_capture: Arc<SharedLiveMasterCapture>,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub(super) struct RealtimeTransportTimingState {
-    pub(super) is_transport_running: bool,
-    pub(super) tempo_bpm: f32,
-    pub(super) position_beats: f64,
-}
-
-pub(super) struct SharedTransportTimingState {
-    revision: AtomicU64,
-    is_transport_running: AtomicBool,
-    tempo_bpm_bits: AtomicU32,
-    position_beats_bits: AtomicU64,
-}
-
-impl SharedTransportTimingState {
-    pub(super) fn new(is_transport_running: bool, tempo_bpm: f32, position_beats: f64) -> Self {
-        Self {
-            revision: AtomicU64::new(0),
-            is_transport_running: AtomicBool::new(is_transport_running),
-            tempo_bpm_bits: AtomicU32::new(tempo_bpm.to_bits()),
-            position_beats_bits: AtomicU64::new(position_beats.to_bits()),
-        }
-    }
-
-    pub(super) fn update(&self, is_transport_running: bool, tempo_bpm: f32, position_beats: f64) {
-        begin_coherent_snapshot_update(&self.revision);
-        self.is_transport_running
-            .store(is_transport_running, Ordering::Relaxed);
-        self.tempo_bpm_bits
-            .store(tempo_bpm.to_bits(), Ordering::Relaxed);
-        self.position_beats_bits
-            .store(position_beats.to_bits(), Ordering::Relaxed);
-        finish_coherent_snapshot_update(&self.revision);
-    }
-
-    pub(super) fn snapshot(&self) -> RealtimeTransportTimingState {
-        coherent_snapshot(&self.revision, || self.read_snapshot_fields())
-    }
-
-    pub(super) fn snapshot_or_previous(
-        &self,
-        previous: &RealtimeTransportTimingState,
-    ) -> RealtimeTransportTimingState {
-        coherent_snapshot_or(&self.revision, previous, || self.read_snapshot_fields())
-    }
-
-    fn read_snapshot_fields(&self) -> RealtimeTransportTimingState {
-        RealtimeTransportTimingState {
-            is_transport_running: self.is_transport_running.load(Ordering::Relaxed),
-            tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::Relaxed)),
-            position_beats: f64::from_bits(self.position_beats_bits.load(Ordering::Relaxed)),
-        }
-    }
-}
+pub(super) use super::transport_timing::{
+    RealtimeTransportTimingState, SharedTransportTimingState,
+};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub(super) struct RealtimeTr909RenderState {

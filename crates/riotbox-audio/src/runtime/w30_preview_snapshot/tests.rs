@@ -31,7 +31,12 @@ fn partial_publication_retains_complete_payload_then_adopts_completed_update() {
 
     state.music_bus_level = 0.9;
     shared.update(&state);
-    assert_eq!(cache.refresh(&shared), &shared.snapshot());
+    assert_eq!(
+        cache.refresh(&shared),
+        &shared
+            .try_snapshot()
+            .expect("quiescent control publication")
+    );
     assert_ne!(cache.revision, original_revision);
 }
 
@@ -54,7 +59,12 @@ fn changing_revision_exhausts_bounded_attempts_without_caching_rejected_payload(
     assert_eq!(*result, original);
     assert_eq!(reads, COHERENT_SNAPSHOT_READ_ATTEMPTS);
     assert_eq!(cache.revision, revision);
-    assert_eq!(cache.refresh(&shared), &shared.snapshot());
+    assert_eq!(
+        cache.refresh(&shared),
+        &shared
+            .try_snapshot()
+            .expect("quiescent control publication")
+    );
     assert_eq!(
         cache.revision,
         Some(shared.revision.load(Ordering::Acquire))
@@ -82,7 +92,12 @@ fn writer_starting_during_read_does_not_publish_candidate() {
     assert_eq!(reads, 1);
     assert_eq!(cache.revision, original_revision);
     shared.revision.fetch_add(1, Ordering::Release);
-    assert_eq!(cache.refresh(&shared), &shared.snapshot());
+    assert_eq!(
+        cache.refresh(&shared),
+        &shared
+            .try_snapshot()
+            .expect("quiescent control publication")
+    );
 }
 
 #[test]
@@ -99,6 +114,11 @@ fn startup_during_active_writer_remains_silent_until_first_complete_snapshot() {
     assert_eq!(cache.state.mode, W30PreviewRenderMode::Idle);
     assert_eq!(cache.state.music_bus_level, 0.0);
     shared.revision.fetch_add(1, Ordering::Release);
-    assert_eq!(cache.refresh(&shared), &shared.snapshot());
+    assert_eq!(
+        cache.refresh(&shared),
+        &shared
+            .try_snapshot()
+            .expect("quiescent control publication")
+    );
     assert_eq!(cache.state.mode, W30PreviewRenderMode::LiveRecall);
 }

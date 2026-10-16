@@ -631,10 +631,27 @@ Current implementation:
   marker
 - control-plane updates mark the group revision odd before field writes and even
   after the complete group is written
+- RIOTBOX-1584 / RBX-449 orders every participating payload store with Release
+  and every payload load with Acquire, including optional fields and sample-array
+  elements. The revision begins with AcqRel, commits with Release and is checked
+  with Acquire. Revision guards alone do not order independent Relaxed payloads.
+  A first committed guard excludes older payload; a later payload observation
+  synchronizes its preceding odd revision before the final guard, which then
+  cannot accept the original even generation. This is per-group coherence, not
+  one transaction across transport and all render groups.
 - the realtime callback attempts a small fixed number of stable reads
 - if a stable read is unavailable because a control update is active, the
   callback reuses the last complete snapshot for that group instead of rendering
   a mixed old/new state
+- the shared private bounded read returns unavailable after three failed
+  attempts, never an unchecked last read. Processor preparation must obtain a
+  complete initial required transport/render snapshot or return a typed visible
+  preparation error; it must not seed later fallback with an unchecked payload.
+  The existing W-30 preview cache's explicitly silent initial state remains its
+  own safe fallback. Offline preparation and stepped mix plans project their
+  unshared private publication through an exclusive mutable borrow. Rust
+  exclusivity, rather than a failed concurrent read or panic, establishes
+  coherence there; repeated blocks do not need to rebuild publications.
 - the callback must not spin without bound, block on locks, allocate, or call
   the control plane while waiting for coherence
 - W-30 preview retains its complete snapshot and publication revision in one
@@ -643,6 +660,18 @@ Current implementation:
   stable-read check; rejected reads must not advance the cached revision.
   Before the first complete read the fallback is silent. Callback-owned timing
   is refreshed separately on every invocation, even when payload data is reused.
+- this protocol requires one serialized control writer per group, synchronized
+  construction and no full 64-bit revision cycle between the paired reads (or
+  between a cached revision and reuse). Real production owners and actual-source
+  Loom tests must preserve those premises. `AudioRuntimeShell` is deliberately
+  not `Sync`: a private ownership marker prevents sharing its `&self` control
+  methods across concurrent writers. The marker itself preserves `Send`, so
+  the unique owner can still move when its backend supports that. This is an
+  intentional public auto-trait restriction, not an unchanged cross-thread API.
+  Callback observations remain separately owned; no control lock is introduced.
+  Strengthening payload ordering adds
+  fixed work but is not a measured latency, performance-neutrality or host pass.
+  The separate callback-to-App observed-timing owner in §7.1.1 remains unchanged.
 - source-monitor and live-master capture use RBX-427's preallocated borrowed
   SPSC publication rather than first-use thread-local snapshot registration.
   Their unique noncloneable readers are acquired during control-side processor

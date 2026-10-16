@@ -38,7 +38,9 @@ fn shared_render_state_tracks_updates() {
     };
     shared.update(&state);
 
-    let snapshot = shared.snapshot();
+    let snapshot = shared
+        .try_snapshot()
+        .expect("quiescent control publication");
     assert_eq!(snapshot.mode, Tr909RenderMode::Takeover);
     assert_eq!(snapshot.routing, Tr909RenderRouting::DrumBusTakeover);
     assert_eq!(
@@ -60,7 +62,9 @@ fn shared_render_state_tracks_updates() {
     state.takeover_profile = None;
     shared.update(&state);
 
-    let updated = shared.snapshot();
+    let updated = shared
+        .try_snapshot()
+        .expect("quiescent control publication");
     assert_eq!(updated.mode, Tr909RenderMode::SourceSupport);
     assert_eq!(updated.routing, Tr909RenderRouting::DrumBusSupport);
     assert_eq!(
@@ -83,7 +87,9 @@ fn shared_render_state_tracks_updates() {
     state.source_support_context = Some(Tr909SourceSupportContext::TransportBar);
     shared.update(&state);
 
-    let transport_fallback = shared.snapshot();
+    let transport_fallback = shared
+        .try_snapshot()
+        .expect("quiescent control publication");
     assert_eq!(
         transport_fallback.source_support_context,
         Some(Tr909SourceSupportContext::TransportBar)
@@ -92,7 +98,9 @@ fn shared_render_state_tracks_updates() {
     state.source_support_context = None;
     shared.update(&state);
 
-    let unset = shared.snapshot();
+    let unset = shared
+        .try_snapshot()
+        .expect("quiescent control publication");
     assert_eq!(unset.source_support_context, None);
 }
 
@@ -116,7 +124,9 @@ fn shared_mc202_render_state_tracks_updates() {
 
     shared.update(&render);
 
-    let snapshot = shared.snapshot();
+    let snapshot = shared
+        .try_snapshot()
+        .expect("quiescent control publication");
     assert_eq!(snapshot.mode, Mc202RenderMode::Instigator);
     assert_eq!(snapshot.routing, Mc202RenderRouting::MusicBusBass);
     assert_eq!(snapshot.phrase_shape, Mc202PhraseShape::InstigatorSpike);
@@ -151,13 +161,17 @@ fn shared_mc202_render_state_clears_source_phrase_plan() {
     };
     shared.update(&render);
 
-    let with_plan = shared.snapshot();
+    let with_plan = shared
+        .try_snapshot()
+        .expect("quiescent control publication");
     assert_eq!(with_plan.source_phrase_plan, render.source_phrase_plan);
 
     render.source_phrase_plan = None;
     shared.update(&render);
 
-    let cleared = shared.snapshot();
+    let cleared = shared
+        .try_snapshot()
+        .expect("quiescent control publication");
     assert!(cleared.source_phrase_plan.is_none());
 }
 
@@ -198,7 +212,9 @@ fn shared_w30_preview_state_tracks_updates() {
     };
     shared.update(&state);
 
-    let snapshot = shared.snapshot();
+    let snapshot = shared
+        .try_snapshot()
+        .expect("quiescent control publication");
     assert_eq!(snapshot.mode, W30PreviewRenderMode::LiveRecall);
     assert_eq!(snapshot.routing, W30PreviewRenderRouting::MusicBusPreview);
     assert_eq!(
@@ -227,7 +243,9 @@ fn shared_w30_preview_state_tracks_updates() {
     state.grit_level = 0.82;
     shared.update(&state);
 
-    let updated = shared.snapshot();
+    let updated = shared
+        .try_snapshot()
+        .expect("quiescent control publication");
     assert_eq!(updated.mode, W30PreviewRenderMode::PromotedAudition);
     assert_eq!(
         updated.source_profile,
@@ -262,7 +280,9 @@ fn shared_w30_resample_tap_state_tracks_updates() {
     };
     shared.update(&state);
 
-    let snapshot = shared.snapshot();
+    let snapshot = shared
+        .try_snapshot()
+        .expect("quiescent control publication");
     assert_eq!(snapshot.mode, W30ResampleTapMode::CaptureLineageReady);
     assert_eq!(snapshot.routing, W30ResampleTapRouting::InternalCaptureTap);
     assert_eq!(
@@ -291,11 +311,59 @@ fn shared_w30_resample_tap_state_tracks_updates() {
     state.generation_depth = 2;
     shared.update(&state);
 
-    let updated = shared.snapshot();
+    let updated = shared
+        .try_snapshot()
+        .expect("quiescent control publication");
     assert_eq!(
         updated.source_profile,
         Some(W30ResampleTapSourceProfile::PinnedCapture)
     );
     assert_eq!(updated.lineage_capture_count, 3);
     assert_eq!(updated.generation_depth, 2);
+}
+
+#[test]
+fn concurrent_resample_publication_keeps_full_array_and_geometry_together() {
+    use std::sync::Arc;
+    let first = W30ResampleTapState {
+        source_audio: Some(Box::new(W30ResampleSourceWindow {
+            source_start_frame: 10,
+            source_sample_rate: 44_100,
+            source_frame_count: W30_RESAMPLE_SOURCE_WINDOW_LEN as u64,
+            sample_count: W30_RESAMPLE_SOURCE_WINDOW_LEN,
+            samples: [0.125; W30_RESAMPLE_SOURCE_WINDOW_LEN],
+        })),
+        ..W30ResampleTapState::default()
+    };
+    let mut second = first.clone();
+    let audio = second.source_audio.as_mut().unwrap();
+    audio.source_start_frame = 20;
+    audio.source_sample_rate = 48_000;
+    audio.samples.fill(-0.5);
+    second.lineage_capture_count = 2;
+    second.generation_depth = 1;
+    second.position_beats = 16.0;
+    let expected_first = SharedW30ResampleTapState::new(&first).snapshot_exclusive();
+    let expected_second = SharedW30ResampleTapState::new(&second).snapshot_exclusive();
+    let shared = Arc::new(SharedW30ResampleTapState::new(&first));
+    let mut previous = expected_first;
+    std::thread::scope(|scope| {
+        scope.spawn(|| {
+            for _ in 0..32 {
+                shared.update(&second);
+                shared.update(&first);
+            }
+            shared.update(&second);
+        });
+        for _ in 0..128 {
+            let observed = shared.snapshot_or_previous(&previous);
+            assert!(
+                observed == expected_first || observed == expected_second,
+                "mixed resample array/geometry generation"
+            );
+            previous = observed;
+            std::thread::yield_now();
+        }
+    });
+    assert_eq!(shared.try_snapshot(), Some(expected_second));
 }

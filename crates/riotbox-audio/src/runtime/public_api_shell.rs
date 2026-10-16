@@ -187,7 +187,7 @@ pub fn render_w30_preview_offline(
     channel_count: u16,
     frame_count: usize,
 ) -> Vec<f32> {
-    let shared_state = SharedW30PreviewRenderState::new(render_state);
+    let mut shared_state = SharedW30PreviewRenderState::new(render_state);
     let mut callback_state = W30PreviewCallbackState::with_sample_rate_and_channels(
         sample_rate,
         usize::from(channel_count),
@@ -198,7 +198,7 @@ pub fn render_w30_preview_offline(
         &mut buffer,
         sample_rate,
         usize::from(channel_count),
-        &shared_state.snapshot(),
+        &shared_state.snapshot_exclusive(),
         &mut callback_state,
     );
 
@@ -212,7 +212,7 @@ pub fn render_w30_resample_tap_offline(
     channel_count: u16,
     frame_count: usize,
 ) -> Vec<f32> {
-    let shared_state = SharedW30ResampleTapState::new(render_state);
+    let mut shared_state = SharedW30ResampleTapState::new(render_state);
     let mut callback_state = W30ResampleTapCallbackState::default();
     let mut buffer = vec![0.0; frame_count.saturating_mul(usize::from(channel_count))];
 
@@ -220,7 +220,7 @@ pub fn render_w30_resample_tap_offline(
         &mut buffer,
         sample_rate,
         usize::from(channel_count),
-        &shared_state.snapshot(),
+        &shared_state.snapshot_exclusive(),
         &mut callback_state,
     );
 
@@ -234,7 +234,7 @@ pub fn render_tr909_offline(
     channel_count: u16,
     frame_count: usize,
 ) -> Vec<f32> {
-    let shared_state = SharedTr909RenderState::new(render_state);
+    let mut shared_state = SharedTr909RenderState::new(render_state);
     let mut callback_state = Tr909CallbackState::default();
     let mut buffer = vec![0.0; frame_count.saturating_mul(usize::from(channel_count))];
 
@@ -242,7 +242,7 @@ pub fn render_tr909_offline(
         &mut buffer,
         sample_rate,
         usize::from(channel_count),
-        &shared_state.snapshot(),
+        &shared_state.snapshot_exclusive(),
         &mut callback_state,
     );
 
@@ -503,7 +503,16 @@ fn event_density_per_bar(
     }
 }
 
+/// Control updates belong to one serialized owner, never concurrent writers.
+///
+/// ```compile_fail
+/// fn requires_sync<T: Sync>() {}
+/// requires_sync::<riotbox_audio::runtime::AudioRuntimeShell>();
+/// ```
 pub struct AudioRuntimeShell {
+    // Public methods borrow &self, but the revision protocol requires serialized
+    // control writers. Preserve Send while preventing shared concurrent writers.
+    pub(super) control_owner: std::marker::PhantomData<std::cell::Cell<()>>,
     pub(super) lifecycle: AudioRuntimeLifecycle,
     pub(super) output: Option<AudioOutputInfo>,
     pub(super) telemetry: Arc<RuntimeTelemetry>,

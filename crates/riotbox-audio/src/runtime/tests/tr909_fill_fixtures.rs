@@ -151,7 +151,7 @@ pub(super) fn render_candidate6_composite_control(
     channel_count: u16,
     frame_count: usize,
 ) -> Vec<f32> {
-    let render = SharedTr909RenderState::new(render_state).snapshot();
+    let render = SharedTr909RenderState::new(render_state).snapshot_exclusive();
     let channel_count = usize::from(channel_count.max(1));
     let mut state = Tr909CallbackState::default();
     let subdivision = render_subdivision(&render);

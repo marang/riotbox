@@ -53,7 +53,9 @@ fn w30_pitch_dive_uses_the_frozen_rate_curve_and_terminal_fade() {
             started_at_beat: 4,
         },
     )));
-    let render = shared.snapshot();
+    let render = shared
+        .try_snapshot()
+        .expect("quiescent control publication");
 
     assert!(
         crate::runtime::render_tr909_w30_preview::w30_hook_articulation_frame(&render, 11.999)

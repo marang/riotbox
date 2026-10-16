@@ -1,6 +1,5 @@
 use crate::mc202::render_mc202_buffer;
 use crate::runtime::begin_coherent_snapshot_update;
-use crate::runtime::coherent_snapshot;
 use crate::runtime::coherent_snapshot_or;
 use crate::runtime::fill_focus::FillFocusRenderState;
 use crate::runtime::fill_focus::apply_fill_focus_to_non_tr909_bed;
@@ -12,6 +11,7 @@ use crate::runtime::shared_mc202::RealtimeMc202RenderState;
 use crate::runtime::shared_transport_tr909::RealtimeTr909RenderState;
 use crate::runtime::shared_transport_tr909::RealtimeTransportTimingState;
 use crate::runtime::tr909_fill_voice::Tr909FillVoiceState;
+use crate::runtime::try_coherent_snapshot;
 use crate::runtime::w30_filter_slam::W30FilterSlamCallbackState;
 use crate::runtime::w30_preview_snapshot::RealtimeW30PreviewRenderState;
 use crate::w30::W30_RESAMPLE_SOURCE_WINDOW_LEN;
@@ -111,38 +111,43 @@ impl SharedW30ResampleTapState {
         begin_coherent_snapshot_update(&self.revision);
         self.mode.store(
             w30_resample_mode_to_u32(render_state.mode),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         self.routing.store(
             w30_resample_routing_to_u32(render_state.routing),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         self.source_profile.store(
             w30_resample_source_profile_to_u32(render_state.source_profile),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         self.update_source_audio(render_state.source_audio.as_deref());
         self.lineage_capture_count.store(
             u32::from(render_state.lineage_capture_count),
-            Ordering::Relaxed,
+            Ordering::Release,
         );
         self.generation_depth
-            .store(u32::from(render_state.generation_depth), Ordering::Relaxed);
+            .store(u32::from(render_state.generation_depth), Ordering::Release);
         self.music_bus_level_bits
-            .store(render_state.music_bus_level.to_bits(), Ordering::Relaxed);
+            .store(render_state.music_bus_level.to_bits(), Ordering::Release);
         self.grit_level_bits
-            .store(render_state.grit_level.to_bits(), Ordering::Relaxed);
+            .store(render_state.grit_level.to_bits(), Ordering::Release);
         self.is_transport_running
-            .store(render_state.is_transport_running, Ordering::Relaxed);
+            .store(render_state.is_transport_running, Ordering::Release);
         self.tempo_bpm_bits
-            .store(render_state.tempo_bpm.to_bits(), Ordering::Relaxed);
+            .store(render_state.tempo_bpm.to_bits(), Ordering::Release);
         self.position_beats_bits
-            .store(render_state.position_beats.to_bits(), Ordering::Relaxed);
+            .store(render_state.position_beats.to_bits(), Ordering::Release);
         finish_coherent_snapshot_update(&self.revision);
     }
 
-    pub(super) fn snapshot(&self) -> RealtimeW30ResampleTapState {
-        coherent_snapshot(&self.revision, || self.read_snapshot_fields())
+    /// Exclusive offline ownership excludes concurrent control writers.
+    pub(super) fn snapshot_exclusive(&mut self) -> RealtimeW30ResampleTapState {
+        self.read_snapshot_fields()
+    }
+
+    pub(super) fn try_snapshot(&self) -> Option<RealtimeW30ResampleTapState> {
+        try_coherent_snapshot(&self.revision, || self.read_snapshot_fields())
     }
 
     pub(super) fn snapshot_or_previous(
@@ -154,19 +159,19 @@ impl SharedW30ResampleTapState {
 
     fn read_snapshot_fields(&self) -> RealtimeW30ResampleTapState {
         RealtimeW30ResampleTapState {
-            mode: w30_resample_mode_from_u32(self.mode.load(Ordering::Relaxed)),
-            routing: w30_resample_routing_from_u32(self.routing.load(Ordering::Relaxed)),
+            mode: w30_resample_mode_from_u32(self.mode.load(Ordering::Acquire)),
+            routing: w30_resample_routing_from_u32(self.routing.load(Ordering::Acquire)),
             source_profile: w30_resample_source_profile_from_u32(
-                self.source_profile.load(Ordering::Relaxed),
+                self.source_profile.load(Ordering::Acquire),
             ),
             source_audio: self.source_audio_snapshot(),
-            lineage_capture_count: self.lineage_capture_count.load(Ordering::Relaxed) as u8,
-            generation_depth: self.generation_depth.load(Ordering::Relaxed) as u8,
-            music_bus_level: f32::from_bits(self.music_bus_level_bits.load(Ordering::Relaxed)),
-            grit_level: f32::from_bits(self.grit_level_bits.load(Ordering::Relaxed)),
-            is_transport_running: self.is_transport_running.load(Ordering::Relaxed),
-            tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::Relaxed)),
-            position_beats: f64::from_bits(self.position_beats_bits.load(Ordering::Relaxed)),
+            lineage_capture_count: self.lineage_capture_count.load(Ordering::Acquire) as u8,
+            generation_depth: self.generation_depth.load(Ordering::Acquire) as u8,
+            music_bus_level: f32::from_bits(self.music_bus_level_bits.load(Ordering::Acquire)),
+            grit_level: f32::from_bits(self.grit_level_bits.load(Ordering::Acquire)),
+            is_transport_running: self.is_transport_running.load(Ordering::Acquire),
+            tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::Acquire)),
+            position_beats: f64::from_bits(self.position_beats_bits.load(Ordering::Acquire)),
         }
     }
 
@@ -176,35 +181,35 @@ impl SharedW30ResampleTapState {
                 .sample_count
                 .min(W30_RESAMPLE_SOURCE_WINDOW_LEN);
             self.source_start_frame
-                .store(source_audio.source_start_frame, Ordering::Relaxed);
+                .store(source_audio.source_start_frame, Ordering::Release);
             self.source_sample_rate
-                .store(source_audio.source_sample_rate, Ordering::Relaxed);
+                .store(source_audio.source_sample_rate, Ordering::Release);
             self.source_frame_count
-                .store(source_audio.source_frame_count, Ordering::Relaxed);
+                .store(source_audio.source_frame_count, Ordering::Release);
             for (index, sample) in source_audio.samples.iter().copied().enumerate() {
-                self.source_samples[index].store(sample.to_bits(), Ordering::Relaxed);
+                self.source_samples[index].store(sample.to_bits(), Ordering::Release);
             }
             self.source_sample_count
-                .store(sample_count as u32, Ordering::Relaxed);
+                .store(sample_count as u32, Ordering::Release);
         } else {
-            self.source_start_frame.store(0, Ordering::Relaxed);
-            self.source_sample_rate.store(0, Ordering::Relaxed);
-            self.source_frame_count.store(0, Ordering::Relaxed);
-            self.source_sample_count.store(0, Ordering::Relaxed);
+            self.source_start_frame.store(0, Ordering::Release);
+            self.source_sample_rate.store(0, Ordering::Release);
+            self.source_frame_count.store(0, Ordering::Release);
+            self.source_sample_count.store(0, Ordering::Release);
         }
     }
 
     fn source_audio_snapshot(&self) -> RealtimeW30ResampleSourceWindow {
-        let sample_count = (self.source_sample_count.load(Ordering::Relaxed) as usize)
+        let sample_count = (self.source_sample_count.load(Ordering::Acquire) as usize)
             .min(W30_RESAMPLE_SOURCE_WINDOW_LEN);
         let mut samples = [0.0; W30_RESAMPLE_SOURCE_WINDOW_LEN];
         for (index, sample) in samples.iter_mut().enumerate() {
-            *sample = f32::from_bits(self.source_samples[index].load(Ordering::Relaxed));
+            *sample = f32::from_bits(self.source_samples[index].load(Ordering::Acquire));
         }
         RealtimeW30ResampleSourceWindow {
-            source_start_frame: self.source_start_frame.load(Ordering::Relaxed),
-            source_sample_rate: self.source_sample_rate.load(Ordering::Relaxed),
-            source_frame_count: self.source_frame_count.load(Ordering::Relaxed),
+            source_start_frame: self.source_start_frame.load(Ordering::Acquire),
+            source_sample_rate: self.source_sample_rate.load(Ordering::Acquire),
+            source_frame_count: self.source_frame_count.load(Ordering::Acquire),
             sample_count,
             samples,
         }

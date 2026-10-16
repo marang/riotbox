@@ -306,6 +306,38 @@ fn preparation_rejects_duplicate_consumers_without_render_fallback() {
 }
 
 #[test]
+fn unavailable_initial_group_fails_before_consuming_unique_readers() {
+    use std::sync::atomic::Ordering;
+    let state = shared();
+    state.tr909_render.revision.fetch_add(1, Ordering::AcqRel);
+    assert!(matches!(
+        prepare_output_callback::<f32>(&config(), state.clone(), Instant::now()),
+        Err(CallbackPreparationError::Tr909SnapshotUnavailable)
+    ));
+    assert_eq!(
+        CallbackPreparationError::Tr909SnapshotUnavailable.message(),
+        "initial TR-909 snapshot unavailable"
+    );
+    state.tr909_render.revision.fetch_add(1, Ordering::Release);
+    // Failed preparation did not consume source/capture readers or start a worker.
+    let _callback = prepare_output_callback::<f32>(&config(), state, Instant::now()).unwrap();
+}
+
+#[test]
+fn preview_keeps_existing_silent_startup_cache_during_active_update() {
+    use std::sync::atomic::Ordering;
+    let state = shared();
+    state.w30_preview.revision.fetch_add(1, Ordering::AcqRel);
+    let mut callback =
+        prepare_output_callback::<f32>(&config(), state.clone(), Instant::now()).unwrap();
+    let mut output = [1.0; 128];
+    let (_, heap) = measure(|| callback(&mut output));
+    assert_eq!(heap, HeapCounts::default());
+    assert_eq!(output, [0.0; 128]);
+    state.w30_preview.revision.fetch_add(1, Ordering::Release);
+}
+
+#[test]
 fn production_callbacks_remain_heap_free_through_publication_capture_and_stop() {
     use std::sync::atomic::Ordering;
     use std::sync::mpsc;

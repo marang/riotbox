@@ -58,7 +58,9 @@ pub(super) fn render_hook_turnaround_in_chunks(
     total_frames: usize,
 ) -> Vec<f32> {
     let shared = SharedW30PreviewRenderState::new(render);
-    let snapshot = shared.snapshot();
+    let snapshot = shared
+        .try_snapshot()
+        .expect("quiescent control publication");
     let mut state = W30PreviewCallbackState::default();
     let mut output = vec![0.0; total_frames];
 
