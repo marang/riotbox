@@ -86,7 +86,11 @@ new boundary control1 respectively, PASS:
 `/tmp/riotbox-1587-independent-limiter-delta.log` and
 `/tmp/riotbox-1587-spec-review-limiter-boundary.log`.
 The coordinator rechecked that only typed propagation and successful-test
-unwrapping change the old feature path. Full CI rerun remains pending.
+unwrapping change the old feature path. Full local source-free `just ci` then
+passed in `/tmp/riotbox-1587-full-ci-final.log`, including normal Rust/generated
+audio/contracts/JSON/format checks and strict all-target/all-feature Clippy.
+Its implementation candidate is `b1622d2c9bdaae629aedf689607e005b41e17c87`;
+subsequent edits to this report only record executed evidence/follow-up status.
 
 The first App/UI builds still reported four main-owned unused-Result warnings
 while recorder propagation was in progress; those calls were subsequently
@@ -118,15 +122,52 @@ the checked cursor, mutation order, failure propagation, unconditional device
 stop, public API compatibility, contracts or assertion preservation.
 `ui-expert` additionally checked that the existing error feedback
 does not imply a successful action; no layout, keymap or new TUI surface was
-introduced. After the optional-feature integration correction above, the full
-local source-free `just ci` rerun is active; no full pass is claimed yet.
-Exact-head native CI remains a later PR gate.
+introduced. Full local source-free CI passes as recorded above. Exact-head
+native CI remains a later PR gate; no pending native/merge result is claimed.
 
 Size review includes existing cohesive large queue, event-loop and recorder
 owners. Semantic exhaustion test children separate this boundary from ordinary
 queue, App and recorder behavior; no textual include shards or generic error
 framework were added. The public API propagation necessarily touches many
 existing tests; ordinary expected values/assertions are retained.
+
+## Separate adjacent finding and disposition
+
+### [P2] Per-boundary commit sequence exhaustion still panics after mutation
+
+Reviewers: Adversarial Implementation Reviewer (coordinator's subsequent
+adjacent-boundary diagnostic, not a finding attributed to either earlier
+independent review).
+
+Location: `jam_app/commit.rs:243`, `record_committed_action()` and its queue/Undo
+callers. The existing checked next-sequence calculation ends in `expect`.
+Normal restore and replay accept a nonzero unique `u32::MAX` sequence at the
+actual restored Immediate/beat12/bar4/phrase1/sceneNone boundary. The next
+ordinary toggle with available ActionId2 panics after adding a committed queue
+entry absent from Session. A separate typed Source Monitor Undo panics after
+restoring Blend→Source, marking its action Undone and consuming its snapshot,
+without appending the structural Undo marker.
+
+A bounded generated public-Core/App executable demonstrates both cases. The
+coordinator read its complete source, independently rebuilt and reran it in a
+fresh temporary owner: `/tmp/riotbox-1587-sequence-root-{build,run}.log`.
+Source: `/tmp/riotbox-1587-sequence-diagnostic-wi5GUT/main.rs`, SHA-256
+`838fc0ea164903df167ecfc54b5aa9b62598d92738e7ba56deb536142dfd9623`.
+The diagnostic catches the panics to inspect state; exit0 means it demonstrated
+the defect, not a correctness pass. Both disk files remain byte-identical; no
+post-panic save or runtime/device operation was performed. Static comparison
+confirms the same checked calculation/expect and admission on base main961dceff;
+this is pre-existing and independent of ActionId exhaustion. No executed
+old-main run is claimed.
+
+Disposition: deferred to the separately scoped immediate follow-up
+[RIOTBOX-1588](https://linear.app/riotbox/issue/RIOTBOX-1588), not waived or
+included in1587's repair claim. Per-boundary whole-batch capacity and direct
+Undo/export admission need their own typed Core/Session contract before
+mutation, while preserving valid exhausted history and other boundaries.
+This changes a distinct commit-capacity domain and stays out of the checked
+ActionId PR. It does not invalidate the focused ID regressions or green CI,
+which did not cover this previously untested sequence boundary.
 
 ## Bounds
 
