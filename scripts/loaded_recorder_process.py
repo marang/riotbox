@@ -5,9 +5,10 @@ import json
 from pathlib import Path
 import time
 
+from loaded_recorder_evidence import LoadedObservationVersion
 from silent_host_evidence import EvidenceError
 from silent_host_process import ManagedProcess
-from silent_host_routes import indexed, node_present, observe_route
+from silent_host_routes import indexed, kind, node_present, number, observe_route, props
 
 NANOSECONDS = 1_000_000_000
 MAX_STDOUT_BYTES = 262144
@@ -52,12 +53,30 @@ def _check_absence(absence, marker):
         raise EvidenceError("first absent route query overlaps window completion; ambiguous")
 
 
-def run_recording(binary, case, fixture, prefix, host, sink, protocol, environment, *, diagnostics):
+def _check_admitted_node(objects, identity, version):
+    if node_present(objects, identity):
+        return
+    occupant = indexed(objects).get(identity.node_id)
+    if occupant is None:
+        return
+    if version is LoadedObservationVersion.V2 and kind(occupant, "Client"):
+        # Only this closed non-audio interface is qualified by V2. It remains
+        # absence, never completion or permission to change a process route.
+        serial = number(props(occupant).get("object.serial"))
+        if 0 < serial < 2**64 and serial != identity.serial:
+            return
+    raise EvidenceError("admitted loaded node identity changed")
+
+
+def run_recording(binary, case, fixture, prefix, host, sink, protocol, environment, *,
+                  diagnostics, observation_version=LoadedObservationVersion.V1):
     """Run exactly the existing recorder CLI through established containment.
 
     Callers must already admit the frozen fixture and own the declared case paths.
     There is no command/profile seam, executable CLI or host authorization here.
     """
+    if type(observation_version) is not LoadedObservationVersion:
+        raise EvidenceError("unsupported loaded observation version")
     failure = None
     result = None
     try:
@@ -67,7 +86,7 @@ def run_recording(binary, case, fixture, prefix, host, sink, protocol, environme
         if type(case.bars) is not int or case.bars not in (2, 8, 16):
             raise EvidenceError("unsupported loaded recording duration")
         result = _run_recording(binary, case, fixture, Path(prefix), host, sink,
-                                protocol, environment, diagnostics)
+                                protocol, environment, diagnostics, observation_version)
     except BaseException as error:
         failure = error
     # Always perform the immutable-input check, including interrupted/failed
@@ -84,7 +103,8 @@ def run_recording(binary, case, fixture, prefix, host, sink, protocol, environme
     return result
 
 
-def _run_recording(binary, case, fixture, prefix, host, sink, protocol, environment, diagnostics):
+def _run_recording(binary, case, fixture, prefix, host, sink, protocol, environment, diagnostics,
+                   observation_version):
     # Local imports keep the closed workload adapter independent of the operator's
     # orchestration import direction. All lifecycle/cleanup owners remain shared.
     from loaded_recorder_evidence import (
@@ -174,9 +194,7 @@ def _run_recording(binary, case, fixture, prefix, host, sink, protocol, environm
                     # Unsafe route/identity errors are never a pending state.
                     route = observe_route(objects, sink, pid)
                     if observed is not None:
-                        original_present = node_present(objects, observed.node)
-                        if observed.node.node_id in indexed(objects) and not original_present:
-                            raise EvidenceError("admitted loaded node identity changed")
+                        _check_admitted_node(objects, observed.node, observation_version)
                     unchanged_default()
                     refresh_marker()
                     check_deadlines()

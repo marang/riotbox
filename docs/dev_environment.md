@@ -72,6 +72,13 @@ fixture, stopped milestone and zero-error partial ALSA measurements do not grant
 musical, endurance or physical-device qualification. RIOTBOX-1580 owns the
 source-free observer correction; it authorizes no retry or new host invocation.
 
+The [loaded-observer V2 correction](benchmarks/loaded_recorder_observation_v2.md)
+is source-free only and explicitly selected. It distinguishes a validated
+non-audio Client reusing a released Node ID from a replaced audio Node, while
+preserving all route, completion, deadline, artifact and cleanup gates. V1
+remains the historical default and retains its original rejection. No ordinary
+execution CLI or new actual observation is enabled by this version.
+
 ## Agent Sandbox Self-Checks
 
 Run these when Riotbox runs inside `agent-sandbox` and host capability is unclear:

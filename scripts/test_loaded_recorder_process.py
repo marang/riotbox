@@ -56,6 +56,7 @@ class Scenario:
     foreign_call: int | None = None
     changed_route: bool = False
     replaced_absent: bool = False
+    recycled_client: bool = False
     changed_default: bool = False
     group_cleanup: bool = True
     stream_cleanup: bool = True
@@ -126,6 +127,10 @@ class Host:
                 data[1]["info"]["props"]["application.process.id"] = 999
                 data[2]["info"]["props"]["object.serial"] += 1
                 return data[:3]
+            if self.test.scenario.recycled_client and self.calls > self.test.scenario.absence_call:
+                return [data[0], {"id": 30, "type": "PipeWire:Interface:Client",
+                    "info": {"props": {"object.serial": 4000,
+                                        "application.process.id": 999}}}]
             return data[:1]
         return data
 
@@ -186,6 +191,7 @@ class ProcessTests(unittest.TestCase):
                          "route_poll_interval_ms": 100}
         self.process = None
         self.complete_reads = []
+        self.observation_version = subject.LoadedObservationVersion.V1
         # These fake evidence seams check delegation/rejection propagation, not
         # the root-owned proof/observer validator's separate semantic coverage.
         evidence = ModuleType("loaded_recorder_evidence")
@@ -233,7 +239,8 @@ class ProcessTests(unittest.TestCase):
     def run_case(self):
         return subject.run_recording(self.root / "riotbox-app", self.case, self.fixture,
                                      self.prefix, self.host, self.sink, self.protocol, {},
-                                     diagnostics=self.diagnostics)
+                                     diagnostics=self.diagnostics,
+                                     observation_version=self.observation_version)
 
     def test_exact_cli_success_complete_observer_and_explicit_query_clock(self):
         result = self.run_case()
@@ -262,6 +269,20 @@ class ProcessTests(unittest.TestCase):
         result = self.run_case()
         self.assertTrue(result["result"]["ready"])
         self.assertGreaterEqual(self.clock.value, 102 * NS)
+
+    def test_terminal_client_id_reuse_preserves_original_node_absence(self):
+        self.scenario.recycled_client = True
+        self.observation_version = subject.LoadedObservationVersion.V2
+        result = self.run_case()
+        self.assertTrue(result["result"]["ready"])
+        self.assertEqual(self.diagnostics.finished, [(42, True)])
+        self.assertTrue(self.process.cleanup_verified)
+
+    def test_v1_terminal_client_id_reuse_retains_its_original_rejection(self):
+        self.scenario.recycled_client = True
+        with self.assertRaisesRegex(EvidenceError, "node identity changed"):
+            self.run_case()
+        self.assertTrue(self.process.cleanup_verified)
 
     def test_premature_absence_is_rejected_after_delayed_marker(self):
         self.scenario.complete, self.scenario.stopped = 100.5, 100.6
