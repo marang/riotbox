@@ -1420,6 +1420,41 @@ the discriminator; no record/cursor rewrite. The owning
 sequence, cursor, Undo and unsupported backward-navigation behavior. Frozen
 generated V1 controls explicitly retain their historical policy.
 
+RIOTBOX-1595 / RBX-455 exposes that conservative operation only as an explicit
+metadata copy:
+
+```sh
+riotbox-app --replay-chronology-upgrade-copy --session sessions/old.json \
+  --replay-chronology-destination sessions/upgraded.json
+```
+
+Both paths are mandatory; no competing launch/observer/source/export options.
+The input must be a regular non-symlink file; the new destination must have an
+ordinary leaf name in the same existing, canonically resolved parent. Reject
+occupied destinations including dangling symlinks, identical paths and lexical
+or resolved `.riotbox-graphs` storage; do not create directories or rebase refs.
+Read input once, decode supported Session metadata and use the unchanged Core
+chronology admission. Never hydrate referenced files or claim full Session
+qualification. Refuse invalid/ambiguous/incomplete histories and SnapshotOnly.
+
+Only the original replay-policy JSON token changes on a real upgrade. All other
+bytes, including unknown extensions, optional-field absence, whitespace, escapes
+and number spelling, remain identical. Known duplicate fields are rejected;
+unknown nested duplicate keys/numbers stay opaque, with no new product meaning.
+A valid already-V2 input is copied byte-for-byte and reported as already V2.
+Session ID, timestamps, history/cursors and relative references are not changed.
+
+Publication requires exclusive temporary creation, complete write and atomic
+no-replace hardlink; fail closed without overwrite/copy fallback if unsupported.
+No partial destination, no in-place write, no implicit repair or migration.
+Successful publication is not power-loss durability; concurrent hostile directory
+mutation is outside this contract. The operation never writes input but does not
+lock out other input writers. Temporary cleanup is best effort after publication.
+CLI JSON reports disposition, paths, old/new policies, `input_modified:false`,
+unverified references and old-reader incompatibility. A later stdout failure
+explicitly acknowledges the already published destination. This maintenance
+command is not a performer ActionCommand and writes no action or receipt.
+
 Each action must follow the Action Lexicon contract.
 
 Minimum stored fields:

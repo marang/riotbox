@@ -17,6 +17,10 @@ pub(in crate::cli) fn live_master_recording_boundary(
 
 #[derive(Clone, Debug)]
 pub(in crate::cli) enum LaunchMode {
+    ReplayChronologyUpgradeCopy {
+        session_path: PathBuf,
+        destination_path: PathBuf,
+    },
     Load {
         session_path: PathBuf,
         source_graph_path: Option<PathBuf>,
@@ -147,7 +151,8 @@ impl LaunchMode {
         match self {
             Self::Load { .. } => ShellLaunchMode::Load,
             Self::Ingest { .. } => ShellLaunchMode::Ingest,
-            Self::StemPackageLocalCiDryRun { .. }
+            Self::ReplayChronologyUpgradeCopy { .. }
+            | Self::StemPackageLocalCiDryRun { .. }
             | Self::StemPackageLocalCiExecute { .. }
             | Self::StemPackageSourceMatchedExecute { .. }
             | Self::StemPackageW30HookExecute { .. }

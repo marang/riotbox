@@ -62,7 +62,8 @@ fn parse_args_builds_daw_session_writer_plan_mode() {
         | LaunchMode::DawSessionWriterProofApply { .. }
         | LaunchMode::DawSessionWriterExportExecute { .. }
         | LaunchMode::W30HookDawprojectExecute { .. }
-        | LaunchMode::LiveMasterDawprojectExecute { .. } => {
+        | LaunchMode::LiveMasterDawprojectExecute { .. }
+        | LaunchMode::ReplayChronologyUpgradeCopy { .. } => {
             panic!("expected DAW session writer plan mode")
         }
     }

@@ -84,7 +84,7 @@ impl JamAppState {
                 .uses_committed_append_order()
         {
             return Ok(SourceMapNavigationResult::Unavailable {
-                reason: "backward navigation requires an explicit legacy replay chronology upgrade",
+                reason: "backward navigation requires an explicit legacy replay chronology upgrade; see riotbox-app --help: --replay-chronology-upgrade-copy",
             });
         }
 
