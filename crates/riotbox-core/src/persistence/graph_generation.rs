@@ -2,7 +2,7 @@ use std::{fs, io, path::Path};
 
 use crate::source_graph::SourceGraph;
 
-use super::{PersistenceError, atomic_save_temp_path};
+use super::{PersistenceError, exclusive_file};
 
 pub(super) fn publish(path: &Path, graph: &SourceGraph) -> Result<(), PersistenceError> {
     publish_with_hard_link(path, graph, |temporary, destination| {
@@ -18,35 +18,22 @@ fn publish_with_hard_link<F>(
 where
     F: FnOnce(&Path, &Path) -> io::Result<()>,
 {
-    use std::io::Write;
-
     let json = serde_json::to_vec_pretty(graph)?;
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
-    let temp_path = atomic_save_temp_path(path);
-    let mut file = fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(&temp_path)?;
-    let write_result = file.write_all(&json);
-    drop(file);
-    if let Err(source) = write_result {
-        let _ = fs::remove_file(&temp_path);
-        return Err(source.into());
-    }
-
-    let result = hard_link(&temp_path, path);
-    let _ = fs::remove_file(&temp_path);
+    let result = exclusive_file::publish_with_hard_link(path, &json, hard_link);
     match result {
         Ok(()) => Ok(()),
-        Err(source) if source.kind() == io::ErrorKind::Unsupported => {
+        Err(exclusive_file::ExclusiveFileError::Link(source))
+            if source.kind() == io::ErrorKind::Unsupported =>
+        {
             Err(PersistenceError::ImmutablePublicationUnsupported {
                 path: path.to_path_buf(),
                 source,
             })
         }
-        Err(source) => Err(source.into()),
+        Err(error) => Err(error.into_io().into()),
     }
 }
 

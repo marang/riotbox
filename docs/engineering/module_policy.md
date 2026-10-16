@@ -135,6 +135,16 @@ separate owner. Only the explicit upgrade function/error are newly re-exported;
 ordinary load/save/recording must not call it. Session's required typed policy is
 the persisted version authority, never an App cursor or second global sequence.
 
+RIOTBOX-1595 / RBX-455 puts the explicit sibling-copy operation in Core
+`persistence::replay_upgrade`, with typed result/error re-exports. It reads one
+buffer, uses the existing typed Session and conservative replay admission, and
+changes only the borrowed raw policy token. Its raw metadata locator is not a
+second Session schema or validator. A private `exclusive_file` owner supplies
+complete-write/no-replace publication for this copy and existing Graph
+generations; callers retain their distinct path and error policies. The thin
+App CLI owns strict exclusive argument routing and headless JSON presentation,
+never chronology or artifact hydration. No generic migration framework.
+
 RIOTBOX-1594 keeps MC-202 restore-input collection in the existing private App
 `restore_replay` owner. Its transient prefix index preserves first-match ActionId
 selection for unvalidated `from_parts` callers and traverses stored records in

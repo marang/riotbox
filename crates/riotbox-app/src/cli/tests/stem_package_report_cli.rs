@@ -44,6 +44,7 @@ fn parse_args_builds_stem_package_local_ci_report_mode() {
         | LaunchMode::DawSessionWriterExportExecute { .. }
         | LaunchMode::W30HookDawprojectExecute { .. }
         | LaunchMode::LiveMasterDawprojectExecute { .. }
+        | LaunchMode::ReplayChronologyUpgradeCopy { .. }
         | LaunchMode::DawSessionWriterPlan { .. } => {
             panic!("expected stem package report mode")
         }

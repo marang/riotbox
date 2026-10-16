@@ -14,12 +14,17 @@ const DEFAULT_SESSION_PATH: &str = "data/sessions/jam-session.json";
 const DEFAULT_SIDECAR_PATH: &str = "repository-bundled sidecar (CWD-independent)";
 
 mod daw_session;
+mod replay_upgrade;
 mod support;
 
 pub(in crate::cli) fn parse_args(
     args: impl IntoIterator<Item = String>,
 ) -> Result<AppLaunch, String> {
-    let mut args = args.into_iter();
+    let arguments = args.into_iter().collect::<Vec<_>>();
+    if let Some(launch) = replay_upgrade::parse(&arguments) {
+        return launch;
+    }
+    let mut args = arguments.into_iter();
     let mut source_path = None;
     let mut session_path = None;
     let mut source_graph_path = None;

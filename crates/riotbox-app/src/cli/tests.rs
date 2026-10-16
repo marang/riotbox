@@ -18,6 +18,7 @@ mod action_id_exhaustion;
 mod commit_sequence_exhaustion;
 mod fixtures;
 mod live_master_recording_cli;
+mod replay_upgrade_cli;
 mod w30_hook_dawproject_cli;
 
 #[test]

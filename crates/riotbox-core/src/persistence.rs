@@ -8,12 +8,18 @@ use std::{
 
 use crate::{session::SessionFile, source_graph::SourceGraph};
 
+mod exclusive_file;
 mod graph_generation;
 mod recovery;
+mod replay_upgrade;
 
 pub use recovery::{
     SessionRecoveryCandidate, SessionRecoveryCandidateKind, SessionRecoveryCandidateStatus,
     SessionRecoveryScan, scan_session_recovery_candidates,
+};
+pub use replay_upgrade::{
+    ReplayChronologyCopy, ReplayChronologyCopyDisposition, ReplayChronologyCopyError,
+    copy_session_with_committed_order,
 };
 
 #[derive(Debug)]

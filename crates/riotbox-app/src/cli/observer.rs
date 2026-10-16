@@ -124,6 +124,14 @@ impl UserSessionObserver {
 
 pub(in crate::cli) fn launch_summary(launch: &AppLaunch) -> Value {
     match &launch.mode {
+        LaunchMode::ReplayChronologyUpgradeCopy {
+            session_path,
+            destination_path,
+        } => json!({
+            "mode": "replay_chronology_upgrade_copy",
+            "session_path": session_path,
+            "destination_path": destination_path,
+        }),
         LaunchMode::Load {
             session_path,
             source_graph_path,

@@ -29,6 +29,10 @@ use std::env;
 pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     let raw_args = env::args().collect::<Vec<_>>();
     let launch = parse_args(raw_args.iter().skip(1).cloned())?;
+    if matches!(launch.mode, LaunchMode::ReplayChronologyUpgradeCopy { .. }) {
+        crate::cli::replay_upgrade::run(&launch, &mut std::io::stdout().lock())?;
+        return Ok(());
+    }
     if matches!(launch.mode, LaunchMode::StemPackageLocalCiDryRun { .. }) {
         run_stem_package_local_ci_dry_run(&launch)?;
         return Ok(());
@@ -162,6 +166,9 @@ pub(in crate::cli) fn recovery_surface_for_launch(
 
 pub(in crate::cli) fn load_state(mode: LaunchMode) -> Result<JamAppState, JamAppError> {
     match mode {
+        LaunchMode::ReplayChronologyUpgradeCopy { .. } => Err(JamAppError::InvalidSession(
+            "replay chronology copy is metadata-only and does not load app state".into(),
+        )),
         LaunchMode::Load {
             session_path,
             source_graph_path,

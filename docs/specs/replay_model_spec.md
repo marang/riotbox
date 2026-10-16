@@ -174,6 +174,14 @@ agreement and sequences. Ambiguity refuses without mutation or repair. Older
 enum decoders reject the new value; no ignored optional field can downgrade it.
 The frozen generated loaded-recorder V1 producer pins its historical policy.
 
+RBX-455 makes that unchanged conservative Core operation reachable through the
+exclusive `--replay-chronology-upgrade-copy` metadata CLI. It creates only an
+explicit new sibling file; never automatically migrates load/save, adopts an
+ambiguous history, rewrites records/cursors or hydrates referenced material.
+The [Session copy contract](./session_file_spec.md#9-action-log) owns exact-byte
+fidelity, no-clobber publication and operator feedback. Already-V2 input is
+validated and reported as a copy, not a new chronology upgrade.
+
 V2 structural Undo uses per-domain candidate stacks and the existing Core domain
 predicates: a non-undoable mutation invalidates only overlapping older candidates.
 An eligible typed action remains undoable in reverse committed order; timestamp

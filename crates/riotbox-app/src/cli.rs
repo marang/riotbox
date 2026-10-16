@@ -15,6 +15,7 @@ mod live_master_recording;
 mod live_recording_report;
 mod model;
 mod observer;
+mod replay_upgrade;
 mod stem_package_export;
 mod stem_package_handoff;
 mod stem_package_report;

@@ -50,6 +50,7 @@ fn parse_args_builds_ingest_mode() {
         | LaunchMode::DawSessionWriterExportExecute { .. }
         | LaunchMode::W30HookDawprojectExecute { .. }
         | LaunchMode::LiveMasterDawprojectExecute { .. }
+        | LaunchMode::ReplayChronologyUpgradeCopy { .. }
         | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected ingest mode"),
     }
 }
@@ -170,6 +171,7 @@ fn parse_args_defaults_ingest_to_embedded_graph_storage() {
         | LaunchMode::DawSessionWriterExportExecute { .. }
         | LaunchMode::W30HookDawprojectExecute { .. }
         | LaunchMode::LiveMasterDawprojectExecute { .. }
+        | LaunchMode::ReplayChronologyUpgradeCopy { .. }
         | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected ingest mode"),
     }
 }
@@ -212,6 +214,7 @@ fn parse_args_builds_load_mode() {
         | LaunchMode::DawSessionWriterExportExecute { .. }
         | LaunchMode::W30HookDawprojectExecute { .. }
         | LaunchMode::LiveMasterDawprojectExecute { .. }
+        | LaunchMode::ReplayChronologyUpgradeCopy { .. }
         | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected load mode"),
     }
 }
@@ -248,6 +251,7 @@ fn parse_args_allows_session_only_for_load_mode() {
         | LaunchMode::DawSessionWriterExportExecute { .. }
         | LaunchMode::W30HookDawprojectExecute { .. }
         | LaunchMode::LiveMasterDawprojectExecute { .. }
+        | LaunchMode::ReplayChronologyUpgradeCopy { .. }
         | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected load mode"),
     }
 }
