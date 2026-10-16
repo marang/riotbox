@@ -128,10 +128,12 @@ fn queued_extended_handoff_revalidates_duration_and_proof_identity_before_public
         let mut state = ready.clone();
         let destination = temp.path().join(format!("{mutation}.dawproject"));
         assert!(matches!(
-            state.queue_live_master_dawproject_export(
-                3_000,
-                Some(destination.to_string_lossy().into_owned()),
-            ),
+            state
+                .queue_live_master_dawproject_export(
+                    3_000,
+                    Some(destination.to_string_lossy().into_owned()),
+                )
+                .unwrap(),
             DawSessionExportQueueResult::Enqueued { .. }
         ));
         match mutation {
@@ -281,10 +283,12 @@ fn queued_extended_handoff_pins_source_version_and_duration_across_newer_takes()
         append_generated_recording(&mut state, selected);
         let destination = temp.path().join("pinned.dawproject");
         assert!(matches!(
-            state.queue_live_master_dawproject_export(
-                3_000,
-                Some(destination.to_string_lossy().into_owned()),
-            ),
+            state
+                .queue_live_master_dawproject_export(
+                    3_000,
+                    Some(destination.to_string_lossy().into_owned()),
+                )
+                .unwrap(),
             DawSessionExportQueueResult::Enqueued { .. }
         ));
         assert!(matches!(

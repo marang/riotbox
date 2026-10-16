@@ -21,7 +21,7 @@ fn commit_pipeline_logs_action_before_promotion_summary_side_effect() {
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    assert!(state.queue_promote_last_capture(300));
+    assert!(state.queue_promote_last_capture(300).unwrap());
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,
@@ -80,7 +80,7 @@ fn commit_pipeline_materializes_loop_freeze_capture_before_w30_side_effects() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_w30_loop_freeze(410),
+        state.queue_w30_loop_freeze(410).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     let committed = state.commit_ready_actions(
@@ -158,7 +158,10 @@ fn commit_pipeline_mirrors_scene_side_effects_after_scene_commit() {
     session.runtime_state.scene_state.scenes.clear();
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    assert_eq!(state.queue_scene_select(610), QueueControlResult::Enqueued);
+    assert_eq!(
+        state.queue_scene_select(610).unwrap(),
+        QueueControlResult::Enqueued
+    );
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,

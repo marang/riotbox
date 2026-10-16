@@ -42,7 +42,7 @@ fn committed_mc202_instigator_generation_updates_phrase_ref_touch_and_render_sha
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_mc202_generate_instigator(300),
+        state.queue_mc202_generate_instigator(300).unwrap(),
         QueueControlResult::Enqueued
     );
 
@@ -117,7 +117,7 @@ fn committed_mc202_phrase_mutation_updates_variant_and_render_shape() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_mc202_mutate_phrase(300),
+        state.queue_mc202_mutate_phrase(300).unwrap(),
         QueueControlResult::Enqueued
     );
 
@@ -221,7 +221,7 @@ fn committed_mc202_answer_with_confirmed_source_timing_stores_and_renders_source
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_mc202_generate_answer(300),
+        state.queue_mc202_generate_answer(300).unwrap(),
         QueueControlResult::Enqueued
     );
     let committed = state.commit_ready_actions(
@@ -362,7 +362,7 @@ fn committed_mc202_answer_requires_matching_source_phrase_slot_for_source_plan()
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_mc202_generate_answer(300),
+        state.queue_mc202_generate_answer(300).unwrap(),
         QueueControlResult::Enqueued
     );
     let committed = state.commit_ready_actions(
@@ -466,7 +466,7 @@ pub(in crate::jam_app::tests) fn confirmed_source_phrase_state(graph: SourceGrap
 
 pub(in crate::jam_app::tests) fn commit_source_derived_answer(state: &mut JamAppState) -> Vec<f32> {
     assert_eq!(
-        state.queue_mc202_generate_answer(300),
+        state.queue_mc202_generate_answer(300).unwrap(),
         QueueControlResult::Enqueued
     );
     let committed = state.commit_ready_actions(
@@ -492,7 +492,7 @@ fn mc202_recipe_replay_proves_control_and_audio_path() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_mc202_generate_follower(300),
+        state.queue_mc202_generate_follower(300).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut state, 1, 400);
@@ -500,7 +500,7 @@ fn mc202_recipe_replay_proves_control_and_audio_path() {
     let follower = render_mc202_recipe_buffer(&state.runtime.mc202_render);
 
     assert_eq!(
-        state.queue_mc202_generate_answer(500),
+        state.queue_mc202_generate_answer(500).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut state, 2, 600);
@@ -508,7 +508,7 @@ fn mc202_recipe_replay_proves_control_and_audio_path() {
     let answer = render_mc202_recipe_buffer(&state.runtime.mc202_render);
 
     assert_eq!(
-        state.queue_mc202_generate_pressure(700),
+        state.queue_mc202_generate_pressure(700).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut state, 3, 800);
@@ -516,7 +516,7 @@ fn mc202_recipe_replay_proves_control_and_audio_path() {
     let pressure = render_mc202_recipe_buffer(&state.runtime.mc202_render);
 
     assert_eq!(
-        state.queue_mc202_generate_instigator(900),
+        state.queue_mc202_generate_instigator(900).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut state, 4, 1_000);
@@ -524,7 +524,7 @@ fn mc202_recipe_replay_proves_control_and_audio_path() {
     let instigator = render_mc202_recipe_buffer(&state.runtime.mc202_render);
 
     assert_eq!(
-        state.queue_mc202_mutate_phrase(1_100),
+        state.queue_mc202_mutate_phrase(1_100).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut state, 5, 1_200);
@@ -563,35 +563,37 @@ fn mc202_replay_executor_matches_committed_app_state_and_audio_path() {
     );
 
     assert_eq!(
-        committed_state.queue_mc202_generate_follower(300),
+        committed_state.queue_mc202_generate_follower(300).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 1, 400);
     let follower = render_mc202_recipe_buffer(&committed_state.runtime.mc202_render);
 
     assert_eq!(
-        committed_state.queue_mc202_generate_answer(500),
+        committed_state.queue_mc202_generate_answer(500).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 2, 600);
     let committed_answer = render_mc202_recipe_buffer(&committed_state.runtime.mc202_render);
 
     assert_eq!(
-        committed_state.queue_mc202_generate_pressure(700),
+        committed_state.queue_mc202_generate_pressure(700).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 3, 800);
     let pressure = render_mc202_recipe_buffer(&committed_state.runtime.mc202_render);
 
     assert_eq!(
-        committed_state.queue_mc202_generate_instigator(900),
+        committed_state
+            .queue_mc202_generate_instigator(900)
+            .unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 4, 1_000);
     let instigator = render_mc202_recipe_buffer(&committed_state.runtime.mc202_render);
 
     assert_eq!(
-        committed_state.queue_mc202_mutate_phrase(1_100),
+        committed_state.queue_mc202_mutate_phrase(1_100).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 5, 1_200);
@@ -656,12 +658,12 @@ fn mc202_replay_without_source_graph_stays_silent_instead_of_fallback_audio() {
         JamAppState::from_parts(base_session.clone(), Some(graph), ActionQueue::new());
 
     assert_eq!(
-        committed_state.queue_mc202_generate_follower(300),
+        committed_state.queue_mc202_generate_follower(300).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 1, 400);
     assert_eq!(
-        committed_state.queue_mc202_generate_answer(500),
+        committed_state.queue_mc202_generate_answer(500).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 2, 600);
@@ -703,7 +705,7 @@ fn mc202_restore_does_not_resurrect_persisted_plan_after_source_timing_trust_is_
         JamAppState::from_parts(base_session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        committed_state.queue_mc202_generate_answer(300),
+        committed_state.queue_mc202_generate_answer(300).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 2, 400);
@@ -756,7 +758,7 @@ fn undo_mc202_phrase_move_restores_lane_state_and_audio_path() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_mc202_generate_follower(300),
+        state.queue_mc202_generate_follower(300).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut state, 1, 400);
@@ -765,7 +767,7 @@ fn undo_mc202_phrase_move_restores_lane_state_and_audio_path() {
     let follower = render_mc202_recipe_buffer(&follower_render);
 
     assert_eq!(
-        state.queue_mc202_generate_answer(500),
+        state.queue_mc202_generate_answer(500).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut state, 2, 600);
@@ -780,6 +782,7 @@ fn undo_mc202_phrase_move_restores_lane_state_and_audio_path() {
 
     let undo = state
         .undo_last_action(700)
+        .unwrap()
         .expect("undo latest committed MC-202 phrase action");
     assert_eq!(undo.command, ActionCommand::UndoLast);
     let undone_answer = state
@@ -831,7 +834,7 @@ fn undo_mc202_phrase_move_without_snapshot_does_not_claim_success() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_mc202_generate_follower(300),
+        state.queue_mc202_generate_follower(300).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut state, 1, 400);
@@ -842,7 +845,7 @@ fn undo_mc202_phrase_move_without_snapshot_does_not_claim_success() {
         .mc202_snapshots
         .clear();
 
-    assert_eq!(state.undo_last_action(500), None);
+    assert_eq!(state.undo_last_action(500).unwrap(), None);
     let follower_action = state
         .session
         .action_log
@@ -861,7 +864,7 @@ fn source_timing_revert_blocks_older_mc202_undo_snapshot_resurrection() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_mc202_generate_follower(300),
+        state.queue_mc202_generate_follower(300).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut state, 1, 400);
@@ -876,7 +879,7 @@ fn source_timing_revert_blocks_older_mc202_undo_snapshot_resurrection() {
     );
 
     assert_eq!(
-        state.queue_source_timing_grid_revert(410),
+        state.queue_source_timing_grid_revert(410).unwrap(),
         QueueControlResult::Enqueued
     );
     let reverted = state.commit_ready_actions(
@@ -900,7 +903,7 @@ fn source_timing_revert_blocks_older_mc202_undo_snapshot_resurrection() {
             .is_none()
     );
 
-    assert_eq!(state.undo_last_action(500), None);
+    assert_eq!(state.undo_last_action(500).unwrap(), None);
     assert!(
         state
             .session
@@ -920,7 +923,7 @@ fn typed_undo_target_without_unique_commit_record_is_normalized_and_rejected() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_mc202_generate_follower(300),
+        state.queue_mc202_generate_follower(300).unwrap(),
         QueueControlResult::Enqueued
     );
     let follower_id = state.queue.pending_actions()[0].id;
@@ -931,7 +934,7 @@ fn typed_undo_target_without_unique_commit_record_is_normalized_and_rejected() {
         .commit_records
         .retain(|record| record.action_id != follower_id);
 
-    assert_eq!(state.undo_last_action(500), None);
+    assert_eq!(state.undo_last_action(500).unwrap(), None);
     let follower = state
         .session
         .action_log
@@ -953,13 +956,15 @@ fn newer_typed_action_without_snapshot_does_not_block_earlier_restorable_mc202_a
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_mc202_generate_follower(300),
+        state.queue_mc202_generate_follower(300).unwrap(),
         QueueControlResult::Enqueued
     );
     let follower_id = state.queue.pending_actions()[0].id;
     commit_mc202_recipe_step(&mut state, 1, 400);
     assert_eq!(
-        state.queue_source_monitor_mode(SourceMonitorMode::Riotbox, 410),
+        state
+            .queue_source_monitor_mode(SourceMonitorMode::Riotbox, 410)
+            .unwrap(),
         QueueControlResult::Enqueued
     );
     state.commit_ready_actions(
@@ -981,6 +986,7 @@ fn newer_typed_action_without_snapshot_does_not_block_earlier_restorable_mc202_a
 
     let marker = state
         .undo_last_action(500)
+        .unwrap()
         .expect("missing newer snapshot must not hide earlier restorable action");
 
     assert_eq!(

@@ -75,6 +75,19 @@ Action ids have one allocator across queued actions and directly committed
 control markers. Persisted action ids must be unique; restore rejects duplicate
 ids instead of allowing commit/replay lookup to select an arbitrary action.
 
+The `u64` ID domain is finite. The shared Core allocator may issue `u64::MAX`
+once, then remains exhausted; reserving older history must not reopen it.
+Allocation and enqueue return typed `ActionIdExhausted` before changing queue,
+Session, runtime, Undo snapshots or Ghost acceptance state. An exhausted but
+otherwise valid Session remains readable and saveable without new actions;
+existing queued actions can still commit or be rejected. No rollover,
+renumbering, sentinel ID or fabricated rejected action is permitted.
+Eligibility/no-target and already-pending outcomes retain their existing
+precedence when no new ID is needed. UI/observer adapters must surface refusal
+without reporting a successful queue/commit. Device shutdown is a safety
+operation: a recorder still stops its runtime if exhaustion prevents the final
+Pause action, reports the cleanup failure, and does not publish that recording.
+
 ### 3.1 Actor types
 
 - `user`

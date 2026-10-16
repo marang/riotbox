@@ -27,8 +27,9 @@ fn legacy_two_bar_publication_preserves_legacy_rounding_and_readiness() {
             session_path: session_path.clone(),
             source_graph_path: None,
         });
-        let LiveMasterRecordingQueueResult::Enqueued(plan) =
-            state.queue_legacy_two_bar_recording_fixture(1_000, &output, &destination)
+        let LiveMasterRecordingQueueResult::Enqueued(plan) = state
+            .queue_legacy_two_bar_recording_fixture(1_000, &output, &destination)
+            .unwrap()
         else {
             panic!("queue default two-bar window")
         };
@@ -91,8 +92,9 @@ fn bounded_windows_bind_action_proof_receipt_and_restore_without_reopening_audio
             session_path: session_path.clone(),
             source_graph_path: None,
         });
-        let LiveMasterRecordingQueueResult::Enqueued(plan) =
-            state.queue_live_master_recording_with_duration(1_000, &output, &destination, duration)
+        let LiveMasterRecordingQueueResult::Enqueued(plan) = state
+            .queue_live_master_recording_with_duration(1_000, &output, &destination, duration)
+            .unwrap()
         else {
             panic!("queue window")
         };
@@ -200,6 +202,7 @@ fn changed_plan_duration_cannot_replace_the_queued_window() {
             &destination,
             LiveRecordingDuration::EightBars,
         )
+        .unwrap()
     else {
         panic!("queue window")
     };
@@ -234,6 +237,7 @@ fn long_window_rejects_allocation_overflow_before_callback_buffer_or_publication
             &destination,
             LiveRecordingDuration::SixteenBars,
         )
+        .unwrap()
     else {
         panic!("must reject oversized capture")
     };
@@ -257,8 +261,9 @@ fn long_window_failed_session_save_rolls_back_only_owned_artifacts() {
             source_graph_path: None,
         });
         let before = state.session.clone();
-        let LiveMasterRecordingQueueResult::Enqueued(plan) =
-            state.queue_live_master_recording_with_duration(1_000, &output, &destination, duration)
+        let LiveMasterRecordingQueueResult::Enqueued(plan) = state
+            .queue_live_master_recording_with_duration(1_000, &output, &destination, duration)
+            .unwrap()
         else {
             panic!("queue window")
         };
@@ -288,12 +293,14 @@ fn unrepresentable_v3_runtime_tempo_rejects_before_allocating_or_writing() {
     let output = live_master_test_output();
     let mut state = live_master_recording_state();
     state.session.runtime_state.source_timing.confirmed_bpm = Some(4.123_456_5_f32);
-    let result = state.queue_live_master_recording_with_duration(
-        1_000,
-        &output,
-        &destination,
-        LiveRecordingDuration::EightBars,
-    );
+    let result = state
+        .queue_live_master_recording_with_duration(
+            1_000,
+            &output,
+            &destination,
+            LiveRecordingDuration::EightBars,
+        )
+        .unwrap();
     let LiveMasterRecordingQueueResult::Rejected { reason } = result else {
         panic!("runtime tempo must roundtrip exactly");
     };
@@ -321,6 +328,7 @@ fn actual_clock_roundoff_is_accepted_but_not_a_displaced_endpoint() {
                 &destination,
                 LiveRecordingDuration::SixteenBars,
             )
+            .unwrap()
         else {
             panic!("queue window")
         };

@@ -9,7 +9,7 @@ use riotbox_core::{
         ActionCommand, ActionDraft, ActionTarget, ActorType, CommitBoundary, Quantization,
         TargetScope,
     },
-    queue::CommittedActionRef,
+    queue::{ActionIdExhausted, CommittedActionRef},
     transport::TransportClockState,
 };
 
@@ -47,7 +47,10 @@ impl JamAppState {
     /// Transport toggles are immediate performer actions: they use the current
     /// transport clock as their commit boundary and do not wait for a future
     /// beat, bar, or phrase.
-    pub fn commit_transport_toggle(&mut self, requested_at: TimestampMs) -> TransportToggleCommit {
+    pub fn commit_transport_toggle(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Result<TransportToggleCommit, ActionIdExhausted> {
         let command = if self.runtime.transport.is_playing {
             ActionCommand::TransportPause
         } else {
@@ -70,7 +73,7 @@ impl JamAppState {
             }
             .into(),
         );
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
 
         let boundary = self
             .runtime
@@ -78,7 +81,7 @@ impl JamAppState {
             .boundary_state(CommitBoundary::Immediate);
         let committed = self.commit_ready_actions(boundary, requested_at);
 
-        TransportToggleCommit { command, committed }
+        Ok(TransportToggleCommit { command, committed })
     }
 
     pub fn advance_transport_by(
@@ -166,7 +169,7 @@ mod tests {
         session.runtime_state.transport.position_beats = 12.5;
         let mut state = JamAppState::from_parts(session, None, ActionQueue::new());
 
-        let play = state.commit_transport_toggle(100);
+        let play = state.commit_transport_toggle(100).unwrap();
 
         assert_eq!(play.command, ActionCommand::TransportPlay);
         assert_eq!(play.committed.len(), 1);
@@ -190,7 +193,7 @@ mod tests {
         assert_eq!(state.session.action_log.actions.len(), 1);
         assert_eq!(state.session.action_log.commit_records.len(), 1);
 
-        let pause = state.commit_transport_toggle(200);
+        let pause = state.commit_transport_toggle(200).unwrap();
 
         assert_eq!(pause.command, ActionCommand::TransportPause);
         assert_eq!(pause.committed.len(), 1);
@@ -214,7 +217,7 @@ mod tests {
         baseline.runtime_state.transport.position_beats = 12.5;
         let mut live = JamAppState::from_parts(baseline.clone(), None, ActionQueue::new());
 
-        live.commit_transport_toggle(100);
+        live.commit_transport_toggle(100).unwrap();
         let play_plan =
             build_committed_replay_plan(&live.session.action_log).expect("committed play plan");
         let mut replayed_play = baseline.clone();
@@ -225,7 +228,7 @@ mod tests {
             live.session.runtime_state.transport
         );
 
-        live.commit_transport_toggle(200);
+        live.commit_transport_toggle(200).unwrap();
         let pause_plan =
             build_committed_replay_plan(&live.session.action_log).expect("committed pause plan");
         let mut replayed_pause = baseline;

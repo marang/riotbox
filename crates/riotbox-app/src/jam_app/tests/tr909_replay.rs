@@ -33,23 +33,23 @@ fn tr909_replay_executor_matches_committed_app_state_and_audio_path() {
         ActionQueue::new(),
     );
 
-    committed_state.queue_tr909_fill(300);
+    committed_state.queue_tr909_fill(300).unwrap();
     commit_tr909_replay_step(&mut committed_state, CommitBoundary::Bar, 8, 2, 0, 400);
     let fill = render_tr909_replay_buffer(&committed_state);
 
-    assert!(committed_state.queue_tr909_slam_toggle(500));
+    assert!(committed_state.queue_tr909_slam_toggle(500).unwrap());
     commit_tr909_replay_step(&mut committed_state, CommitBoundary::Beat, 9, 2, 0, 600);
     let slammed_fill = render_tr909_replay_buffer(&committed_state);
 
     assert_eq!(
-        committed_state.queue_tr909_takeover(700),
+        committed_state.queue_tr909_takeover(700).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_tr909_replay_step(&mut committed_state, CommitBoundary::Phrase, 16, 4, 1, 800);
     let takeover = render_tr909_replay_buffer(&committed_state);
 
     assert_eq!(
-        committed_state.queue_tr909_release(900),
+        committed_state.queue_tr909_release(900).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_tr909_replay_step(
@@ -116,11 +116,11 @@ fn tr909_target_suffix_replay_helper_matches_committed_app_projection() {
         ActionQueue::new(),
     );
 
-    committed_state.queue_tr909_fill(300);
+    committed_state.queue_tr909_fill(300).unwrap();
     commit_tr909_replay_step(&mut committed_state, CommitBoundary::Bar, 8, 2, 0, 400);
     let committed_fill = render_tr909_replay_buffer(&committed_state);
 
-    assert!(committed_state.queue_tr909_slam_toggle(500));
+    assert!(committed_state.queue_tr909_slam_toggle(500).unwrap());
     commit_tr909_replay_step(&mut committed_state, CommitBoundary::Beat, 9, 2, 0, 600);
     let committed_slam = render_tr909_replay_buffer(&committed_state);
 
@@ -210,10 +210,10 @@ fn tr909_snapshot_payload_restore_runner_matches_committed_app_projection() {
         ActionQueue::new(),
     );
 
-    committed_state.queue_tr909_fill(300);
+    committed_state.queue_tr909_fill(300).unwrap();
     commit_tr909_replay_step(&mut committed_state, CommitBoundary::Bar, 8, 2, 0, 400);
 
-    assert!(committed_state.queue_tr909_slam_toggle(500));
+    assert!(committed_state.queue_tr909_slam_toggle(500).unwrap());
     commit_tr909_replay_step(&mut committed_state, CommitBoundary::Beat, 9, 2, 0, 600);
     let committed_slam = render_tr909_replay_buffer(&committed_state);
 
@@ -262,18 +262,18 @@ fn tr909_snapshot_payload_restore_hydrates_takeover_release_projection() {
         ActionQueue::new(),
     );
 
-    committed_state.queue_tr909_fill(300);
+    committed_state.queue_tr909_fill(300).unwrap();
     commit_tr909_replay_step(&mut committed_state, CommitBoundary::Bar, 8, 2, 0, 400);
 
     assert_eq!(
-        committed_state.queue_tr909_takeover(500),
+        committed_state.queue_tr909_takeover(500).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_tr909_replay_step(&mut committed_state, CommitBoundary::Phrase, 16, 4, 1, 600);
     let committed_takeover = render_tr909_replay_buffer(&committed_state);
 
     assert_eq!(
-        committed_state.queue_tr909_release(700),
+        committed_state.queue_tr909_release(700).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_tr909_replay_step(&mut committed_state, CommitBoundary::Phrase, 32, 8, 2, 800);
@@ -330,12 +330,12 @@ fn tr909_snapshot_payload_restore_hydrates_reinforce_scene_lock_projection() {
         ActionQueue::new(),
     );
 
-    committed_state.queue_tr909_reinforce(300);
+    committed_state.queue_tr909_reinforce(300).unwrap();
     commit_tr909_replay_step(&mut committed_state, CommitBoundary::Phrase, 16, 4, 1, 400);
     let committed_reinforce = render_tr909_replay_buffer(&committed_state);
 
     assert_eq!(
-        committed_state.queue_tr909_scene_lock(500),
+        committed_state.queue_tr909_scene_lock(500).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_tr909_replay_step(&mut committed_state, CommitBoundary::Phrase, 32, 8, 2, 600);

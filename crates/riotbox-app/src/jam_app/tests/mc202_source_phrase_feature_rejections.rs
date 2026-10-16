@@ -39,7 +39,7 @@ fn committed_mc202_answer_rejects_feature_empty_source_phrase_as_fallback() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_mc202_generate_answer(300),
+        state.queue_mc202_generate_answer(300).unwrap(),
         QueueControlResult::Enqueued
     );
     let committed = state.commit_ready_actions(

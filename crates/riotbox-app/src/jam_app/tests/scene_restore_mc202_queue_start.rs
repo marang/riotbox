@@ -69,7 +69,10 @@ fn committed_scene_select_projects_target_scene_into_tr909_source_support() {
         state.runtime.tr909_render.source_support_profile,
         Some(Tr909SourceSupportProfile::DropDrive)
     );
-    assert_eq!(state.queue_scene_select(300), QueueControlResult::Enqueued);
+    assert_eq!(
+        state.queue_scene_select(300).unwrap(),
+        QueueControlResult::Enqueued
+    );
 
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
@@ -119,9 +122,12 @@ fn queue_scene_restore_enqueues_scene_restore_for_next_bar() {
     session.runtime_state.scene_state.restore_scene = Some(SceneId::from("scene-01-drop"));
 
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
-    assert_eq!(state.queue_scene_restore(300), QueueControlResult::Enqueued);
     assert_eq!(
-        state.queue_scene_restore(301),
+        state.queue_scene_restore(300).unwrap(),
+        QueueControlResult::Enqueued
+    );
+    assert_eq!(
+        state.queue_scene_restore(301).unwrap(),
         QueueControlResult::AlreadyPending
     );
 
@@ -150,7 +156,10 @@ fn committed_scene_restore_updates_transport_scene_and_restore_pointer() {
     session.runtime_state.scene_state.restore_scene = Some(SceneId::from("scene-01-drop"));
 
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
-    assert_eq!(state.queue_scene_restore(300), QueueControlResult::Enqueued);
+    assert_eq!(
+        state.queue_scene_restore(300).unwrap(),
+        QueueControlResult::Enqueued
+    );
 
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
@@ -222,7 +231,10 @@ fn committed_scene_restore_projects_target_scene_into_tr909_source_support() {
     session.runtime_state.lane_state.tr909.pattern_ref = Some("restore-support".into());
 
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
-    assert_eq!(state.queue_scene_restore(300), QueueControlResult::Enqueued);
+    assert_eq!(
+        state.queue_scene_restore(300).unwrap(),
+        QueueControlResult::Enqueued
+    );
 
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
@@ -314,7 +326,10 @@ fn scene_jump_restore_replay_proves_state_and_mixed_audio_path() {
         None
     );
 
-    assert_eq!(state.queue_scene_select(300), QueueControlResult::Enqueued);
+    assert_eq!(
+        state.queue_scene_select(300).unwrap(),
+        QueueControlResult::Enqueued
+    );
     let launched = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,
@@ -406,7 +421,10 @@ fn scene_jump_restore_replay_proves_state_and_mixed_audio_path() {
     let after_jump = render_scene_recipe_mix_buffer(&state);
     assert_recipe_buffers_differ("scene launch mixed audio", &before_jump, &after_jump, 0.002);
 
-    assert_eq!(state.queue_scene_restore(420), QueueControlResult::Enqueued);
+    assert_eq!(
+        state.queue_scene_restore(420).unwrap(),
+        QueueControlResult::Enqueued
+    );
     let restored = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,
@@ -516,7 +534,10 @@ fn scene_jump_silences_mc202_plan_from_another_source_section_and_restore_recove
     let before_jump = state.runtime.mc202_render;
     assert_eq!(before_jump.routing, Mc202RenderRouting::MusicBusBass);
 
-    assert_eq!(state.queue_scene_select(300), QueueControlResult::Enqueued);
+    assert_eq!(
+        state.queue_scene_select(300).unwrap(),
+        QueueControlResult::Enqueued
+    );
     let launched = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,
@@ -535,7 +556,10 @@ fn scene_jump_silences_mc202_plan_from_another_source_section_and_restore_recove
     );
     assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Idle);
 
-    assert_eq!(state.queue_scene_restore(420), QueueControlResult::Enqueued);
+    assert_eq!(
+        state.queue_scene_restore(420).unwrap(),
+        QueueControlResult::Enqueued
+    );
     let restored = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,
@@ -639,11 +663,11 @@ fn queueing_mc202_role_change_blocks_duplicate_pending_actions() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_mc202_role_toggle(300),
+        state.queue_mc202_role_toggle(300).unwrap(),
         QueueControlResult::Enqueued
     );
     assert_eq!(
-        state.queue_mc202_role_toggle(301),
+        state.queue_mc202_role_toggle(301).unwrap(),
         QueueControlResult::AlreadyPending
     );
 

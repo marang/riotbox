@@ -23,14 +23,14 @@ fn mc202_snapshot_payload_restore_hydrates_answer_projection() {
     );
 
     assert_eq!(
-        committed_state.queue_mc202_generate_follower(300),
+        committed_state.queue_mc202_generate_follower(300).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 1, 400);
     let committed_follower = render_mc202_recipe_buffer(&committed_state.runtime.mc202_render);
 
     assert_eq!(
-        committed_state.queue_mc202_generate_answer(500),
+        committed_state.queue_mc202_generate_answer(500).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 2, 600);
@@ -97,20 +97,20 @@ fn mc202_snapshot_payload_restore_hydrates_pressure_projection() {
     );
 
     assert_eq!(
-        committed_state.queue_mc202_generate_follower(300),
+        committed_state.queue_mc202_generate_follower(300).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 1, 400);
 
     assert_eq!(
-        committed_state.queue_mc202_generate_answer(500),
+        committed_state.queue_mc202_generate_answer(500).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 2, 600);
     let committed_answer = render_mc202_recipe_buffer(&committed_state.runtime.mc202_render);
 
     assert_eq!(
-        committed_state.queue_mc202_generate_pressure(700),
+        committed_state.queue_mc202_generate_pressure(700).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 3, 800);
@@ -177,26 +177,28 @@ fn mc202_snapshot_payload_restore_hydrates_instigator_projection() {
     );
 
     assert_eq!(
-        committed_state.queue_mc202_generate_follower(300),
+        committed_state.queue_mc202_generate_follower(300).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 1, 400);
 
     assert_eq!(
-        committed_state.queue_mc202_generate_answer(500),
+        committed_state.queue_mc202_generate_answer(500).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 2, 600);
 
     assert_eq!(
-        committed_state.queue_mc202_generate_pressure(700),
+        committed_state.queue_mc202_generate_pressure(700).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 3, 800);
     let committed_pressure = render_mc202_recipe_buffer(&committed_state.runtime.mc202_render);
 
     assert_eq!(
-        committed_state.queue_mc202_generate_instigator(900),
+        committed_state
+            .queue_mc202_generate_instigator(900)
+            .unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 4, 1_000);
@@ -263,32 +265,34 @@ fn mc202_snapshot_payload_restore_hydrates_phrase_mutation_projection() {
     );
 
     assert_eq!(
-        committed_state.queue_mc202_generate_follower(300),
+        committed_state.queue_mc202_generate_follower(300).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 1, 400);
 
     assert_eq!(
-        committed_state.queue_mc202_generate_answer(500),
+        committed_state.queue_mc202_generate_answer(500).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 2, 600);
 
     assert_eq!(
-        committed_state.queue_mc202_generate_pressure(700),
+        committed_state.queue_mc202_generate_pressure(700).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 3, 800);
 
     assert_eq!(
-        committed_state.queue_mc202_generate_instigator(900),
+        committed_state
+            .queue_mc202_generate_instigator(900)
+            .unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 4, 1_000);
     let committed_instigator = render_mc202_recipe_buffer(&committed_state.runtime.mc202_render);
 
     assert_eq!(
-        committed_state.queue_mc202_mutate_phrase(1_100),
+        committed_state.queue_mc202_mutate_phrase(1_100).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 5, 1_200);

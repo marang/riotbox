@@ -29,14 +29,18 @@ fn source_map_navigation_queues_commits_and_restores_transport_position() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_source_map_navigation(SourceMapNavigationIntent::NextPhrase, 100),
+        state
+            .queue_source_map_navigation(SourceMapNavigationIntent::NextPhrase, 100)
+            .unwrap(),
         SourceMapNavigationResult::Enqueued {
             target_position_beats: 16,
             target_label: "phrase 2 bar 5".into(),
         }
     );
     assert_eq!(
-        state.queue_source_map_navigation(SourceMapNavigationIntent::NextBar, 101),
+        state
+            .queue_source_map_navigation(SourceMapNavigationIntent::NextBar, 101)
+            .unwrap(),
         SourceMapNavigationResult::AlreadyPending
     );
 
@@ -70,7 +74,9 @@ fn source_map_navigation_clamps_at_source_map_edges() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_source_map_navigation(SourceMapNavigationIntent::PreviousBar, 100),
+        state
+            .queue_source_map_navigation(SourceMapNavigationIntent::PreviousBar, 100)
+            .unwrap(),
         SourceMapNavigationResult::AlreadyAtBoundary {
             target_label: "bar 1".into(),
         }
@@ -97,7 +103,9 @@ fn source_map_navigation_targets_selected_nonzero_downbeat_phase() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_source_map_navigation(SourceMapNavigationIntent::NextPhrase, 100),
+        state
+            .queue_source_map_navigation(SourceMapNavigationIntent::NextPhrase, 100)
+            .unwrap(),
         SourceMapNavigationResult::Enqueued {
             target_position_beats: 19,
             target_label: "phrase 2 bar 5".into(),

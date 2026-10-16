@@ -5,7 +5,7 @@ use riotbox_core::{
         CommitBoundary, Quantization, TargetScope, TypedUndoStateDomain, UndoPolicy,
     },
     ids::ActionId,
-    queue::CommittedActionRef,
+    queue::{ActionIdExhausted, CommittedActionRef},
     session::{
         ActionCommitRecord, CaptureRef, Mc202UndoSnapshotState, SourceMonitorUndoSnapshotState,
         Tr909FillUndoSnapshotState,
@@ -24,15 +24,24 @@ use crate::jam_app::helpers::{
 };
 
 impl JamAppState {
-    pub fn undo_last_action(&mut self, requested_at: TimestampMs) -> Option<Action> {
-        let normalized_missing_snapshots = normalize_missing_typed_undo_policies(&mut self.session);
+    pub fn undo_last_action(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Result<Option<Action>, ActionIdExhausted> {
         let undone_index = latest_trusted_typed_undo_index(&self.session);
         let Some(undone_index) = undone_index else {
+            let normalized_missing_snapshots =
+                normalize_missing_typed_undo_policies(&mut self.session);
             if normalized_missing_snapshots {
                 self.refresh_view();
             }
-            return None;
+            return Ok(None);
         };
+
+        // A trusted target already has a restorable snapshot. Reserve the marker
+        // before normalization or consuming any of that persisted pre-state.
+        let next_undo_action_id = self.queue.allocate_action_id()?;
+        normalize_missing_typed_undo_policies(&mut self.session);
 
         let undone_action_id = self.session.action_log.actions[undone_index].id;
         let undo_boundary = CommitBoundaryState {
@@ -65,7 +74,7 @@ impl JamAppState {
             || (is_source_monitor_undo && !source_monitor_restored)
             || (is_tr909_fill_undo && !tr909_fill_restored)
         {
-            return None;
+            return Ok(None);
         }
 
         let undo_summary = match (mc202_restored, source_monitor_restored, tr909_fill_restored) {
@@ -80,8 +89,6 @@ impl JamAppState {
             }
             _ => format!("undone by user at {requested_at}"),
         };
-
-        let next_undo_action_id = self.queue.allocate_action_id();
 
         {
             let undone = &mut self.session.action_log.actions[undone_index];
@@ -125,7 +132,7 @@ impl JamAppState {
         self.record_committed_action(undo_action.clone(), &mut committed_ref, requested_at);
         self.runtime.last_commit_boundary = Some(undo_boundary);
         self.refresh_view();
-        Some(undo_action)
+        Ok(Some(undo_action))
     }
 
     fn next_commit_sequence_for_boundary(&self, boundary: &CommitBoundaryState) -> Option<u32> {

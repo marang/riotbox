@@ -171,7 +171,7 @@ fn auto_fed_ghost_suggestion_respects_w30_lane_lock() {
     );
 
     assert_eq!(
-        state.accept_current_ghost_suggestion(1_000),
+        state.accept_current_ghost_suggestion(1_000).unwrap(),
         GhostSuggestionQueueResult::Rejected {
             reason: "ghost proposal is blocked".into()
         }

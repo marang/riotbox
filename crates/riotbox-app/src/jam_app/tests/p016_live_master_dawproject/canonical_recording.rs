@@ -55,15 +55,15 @@ pub(super) fn generated_recording(
         .queue
         .reserve_action_ids_after(Some(ActionId(after_action)));
     let queued = match kind {
-        GeneratedRecording::LegacyV2 => {
-            state.queue_legacy_two_bar_recording_fixture(1_000, &output, &recording)
-        }
-        GeneratedRecording::CanonicalV4 => {
-            state.queue_live_master_recording(1_000, &output, &recording)
-        }
-        GeneratedRecording::ExtendedV3(duration) => {
-            state.queue_live_master_recording_with_duration(1_000, &output, &recording, duration)
-        }
+        GeneratedRecording::LegacyV2 => state
+            .queue_legacy_two_bar_recording_fixture(1_000, &output, &recording)
+            .unwrap(),
+        GeneratedRecording::CanonicalV4 => state
+            .queue_live_master_recording(1_000, &output, &recording)
+            .unwrap(),
+        GeneratedRecording::ExtendedV3(duration) => state
+            .queue_live_master_recording_with_duration(1_000, &output, &recording, duration)
+            .unwrap(),
     };
     let LiveMasterRecordingQueueResult::Enqueued(plan) = queued else {
         panic!("queue generated recording")
@@ -309,10 +309,12 @@ fn mixed_supported_versions_pin_source_id_and_handoff_version_before_later_takes
         append_generated_recording(&mut state, selected);
         let destination = temp.path().join("pinned.dawproject");
         assert!(matches!(
-            state.queue_live_master_dawproject_export(
-                3_000,
-                Some(destination.to_string_lossy().into_owned())
-            ),
+            state
+                .queue_live_master_dawproject_export(
+                    3_000,
+                    Some(destination.to_string_lossy().into_owned())
+                )
+                .unwrap(),
             DawSessionExportQueueResult::Enqueued { .. }
         ));
         assert!(
@@ -376,10 +378,12 @@ fn queued_v4_handoff_rejects_changed_source_boundary_before_archive_publication(
     );
     let destination = temp.path().join("changed.dawproject");
     assert!(matches!(
-        state.queue_live_master_dawproject_export(
-            3_000,
-            Some(destination.to_string_lossy().into_owned())
-        ),
+        state
+            .queue_live_master_dawproject_export(
+                3_000,
+                Some(destination.to_string_lossy().into_owned())
+            )
+            .unwrap(),
         DawSessionExportQueueResult::Enqueued { .. }
     ));
     state.session.export_receipts[0].export_boundary =

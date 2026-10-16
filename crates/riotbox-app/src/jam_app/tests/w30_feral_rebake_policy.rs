@@ -80,7 +80,7 @@ pub(in crate::jam_app::tests) fn lineage_ready_resample_state(graph: SourceGraph
 
 pub(in crate::jam_app::tests) fn commit_lineage_ready_resample(state: &mut JamAppState) {
     assert_eq!(
-        state.queue_w30_internal_resample(650),
+        state.queue_w30_internal_resample(650).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     let committed = state.commit_ready_actions(

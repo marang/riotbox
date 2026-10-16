@@ -281,6 +281,11 @@ Show:
   current clock boundary. The visible status, Session/runtime transport,
   observer commit, audio-driver request, and replay must all describe that same
   action; the key handler must not mutate transport truth directly.
+- If the shared ActionId allocator is exhausted, the requested gesture shows
+  the explicit exhaustion error, not successful queue/commit feedback. Preserve
+  Session/runtime/Undo/Ghost state on that refusal; do not imply transport
+  changed because a key was pressed. Existing already-pending or unavailable
+  outcomes remain distinct when no new ID was needed.
 - section labels should be conservative. When semantic confidence is weak, show
   neutral labels such as `section A`, `section B`, and `section C` instead of
   inventing `hook`, `drop`, or `break` labels.

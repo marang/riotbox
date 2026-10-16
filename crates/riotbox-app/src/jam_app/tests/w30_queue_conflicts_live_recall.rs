@@ -35,7 +35,7 @@ fn queue_w30_apply_damage_profile_targets_focused_lane_capture_on_next_bar() {
     state.refresh_view();
 
     assert_eq!(
-        state.queue_w30_apply_damage_profile(644),
+        state.queue_w30_apply_damage_profile(644).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
 
@@ -102,7 +102,7 @@ fn queue_w30_live_recall_falls_back_to_latest_pinned_capture_without_explicit_fo
     state.refresh_view();
 
     assert_eq!(
-        state.queue_w30_live_recall(605),
+        state.queue_w30_live_recall(605).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
 
@@ -137,27 +137,27 @@ fn queueing_w30_pad_cues_blocks_conflicting_pending_actions() {
     state.refresh_view();
 
     assert_eq!(
-        state.queue_w30_live_recall(630),
+        state.queue_w30_live_recall(630).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     assert_eq!(
-        state.queue_w30_promoted_audition(631),
+        state.queue_w30_promoted_audition(631).unwrap(),
         Some(QueueControlResult::AlreadyPending)
     );
     assert_eq!(
-        state.queue_w30_step_focus(631),
+        state.queue_w30_step_focus(631).unwrap(),
         Some(QueueControlResult::AlreadyPending)
     );
     assert_eq!(
-        state.queue_w30_swap_bank(631),
+        state.queue_w30_swap_bank(631).unwrap(),
         Some(QueueControlResult::AlreadyPending)
     );
     assert_eq!(
-        state.queue_w30_apply_damage_profile(631),
+        state.queue_w30_apply_damage_profile(631).unwrap(),
         Some(QueueControlResult::AlreadyPending)
     );
     assert_eq!(
-        state.queue_w30_trigger_pad(632),
+        state.queue_w30_trigger_pad(632).unwrap(),
         Some(QueueControlResult::AlreadyPending)
     );
 
@@ -176,27 +176,27 @@ fn queueing_w30_pad_cues_blocks_conflicting_pending_actions() {
     other_state.refresh_view();
 
     assert_eq!(
-        other_state.queue_w30_promoted_audition(632),
+        other_state.queue_w30_promoted_audition(632).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     assert_eq!(
-        other_state.queue_w30_live_recall(633),
+        other_state.queue_w30_live_recall(633).unwrap(),
         Some(QueueControlResult::AlreadyPending)
     );
     assert_eq!(
-        other_state.queue_w30_step_focus(633),
+        other_state.queue_w30_step_focus(633).unwrap(),
         Some(QueueControlResult::AlreadyPending)
     );
     assert_eq!(
-        other_state.queue_w30_swap_bank(633),
+        other_state.queue_w30_swap_bank(633).unwrap(),
         Some(QueueControlResult::AlreadyPending)
     );
     assert_eq!(
-        other_state.queue_w30_apply_damage_profile(633),
+        other_state.queue_w30_apply_damage_profile(633).unwrap(),
         Some(QueueControlResult::AlreadyPending)
     );
     assert_eq!(
-        other_state.queue_w30_trigger_pad(634),
+        other_state.queue_w30_trigger_pad(634).unwrap(),
         Some(QueueControlResult::AlreadyPending)
     );
 }
@@ -217,11 +217,11 @@ fn queueing_w30_internal_resample_blocks_duplicate_pending_actions() {
     state.refresh_view();
 
     assert_eq!(
-        state.queue_w30_internal_resample(635),
+        state.queue_w30_internal_resample(635).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     assert_eq!(
-        state.queue_w30_internal_resample(636),
+        state.queue_w30_internal_resample(636).unwrap(),
         Some(QueueControlResult::AlreadyPending)
     );
 }
@@ -242,11 +242,11 @@ fn queueing_w30_internal_resample_blocks_pending_loop_freeze() {
     state.refresh_view();
 
     assert_eq!(
-        state.queue_w30_loop_freeze(635),
+        state.queue_w30_loop_freeze(635).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     assert_eq!(
-        state.queue_w30_internal_resample(636),
+        state.queue_w30_internal_resample(636).unwrap(),
         Some(QueueControlResult::AlreadyPending)
     );
 }
@@ -267,11 +267,11 @@ fn queueing_w30_loop_freeze_blocks_pending_internal_resample() {
     state.refresh_view();
 
     assert_eq!(
-        state.queue_w30_internal_resample(635),
+        state.queue_w30_internal_resample(635).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     assert_eq!(
-        state.queue_w30_loop_freeze(636),
+        state.queue_w30_loop_freeze(636).unwrap(),
         Some(QueueControlResult::AlreadyPending)
     );
 }
@@ -292,7 +292,7 @@ fn committed_w30_live_recall_updates_lane_focus_and_log_result() {
     state.refresh_view();
 
     assert_eq!(
-        state.queue_w30_live_recall(610),
+        state.queue_w30_live_recall(610).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
 

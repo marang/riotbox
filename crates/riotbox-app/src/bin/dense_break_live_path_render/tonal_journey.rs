@@ -31,7 +31,7 @@ pub(super) fn prepare(
 
     let held_plan = Box::new(render_plan(ready_state, bpm, held_cursor as f64));
     let mut state = Box::new(ready_state.clone());
-    if state.queue_w30_pitch_dive(2_000) != Some(QueueControlResult::Enqueued) {
+    if state.queue_w30_pitch_dive(2_000)? != Some(QueueControlResult::Enqueued) {
         return Err("tonal Pitch Dive was unavailable".into());
     }
     let scene = current_scene(&state);
@@ -56,7 +56,7 @@ pub(super) fn prepare(
         return Err("tonal Pitch Dive did not reach committed W-30 articulation state".into());
     }
 
-    if state.queue_w30_trigger_pad(2_100) != Some(QueueControlResult::Enqueued) {
+    if state.queue_w30_trigger_pad(2_100)? != Some(QueueControlResult::Enqueued) {
         return Err("ordinary tonal W-30 re-entry was unavailable".into());
     }
     let scene = current_scene(&state);

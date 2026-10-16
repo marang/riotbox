@@ -3,6 +3,7 @@ use riotbox_core::{
     action::{ActionCommand, ActionStatus, ActorType, GhostMode},
     ghost::{GhostSuggestionDraftError, GhostWatchSuggestion},
     ids::ActionId,
+    queue::ActionIdExhausted,
     session::GhostSuggestionStatus,
 };
 
@@ -43,18 +44,18 @@ impl JamAppState {
     pub fn accept_current_ghost_suggestion(
         &mut self,
         requested_at: TimestampMs,
-    ) -> GhostSuggestionQueueResult {
+    ) -> Result<GhostSuggestionQueueResult, ActionIdExhausted> {
         let Some(suggestion) = self.runtime.current_ghost_suggestion.clone() else {
-            return GhostSuggestionQueueResult::Rejected {
+            return Ok(GhostSuggestionQueueResult::Rejected {
                 reason: NO_CURRENT_GHOST_SUGGESTION_REASON.into(),
-            };
+            });
         };
 
-        let result = self.queue_accepted_ghost_suggestion(&suggestion, requested_at);
+        let result = self.queue_accepted_ghost_suggestion(&suggestion, requested_at)?;
         if matches!(result, GhostSuggestionQueueResult::Enqueued(_)) {
             self.runtime.current_ghost_suggestion = None;
         }
-        result
+        Ok(result)
     }
 
     pub fn reject_current_ghost_suggestion(&mut self) -> bool {
@@ -87,7 +88,7 @@ impl JamAppState {
         &mut self,
         suggestion: &GhostWatchSuggestion,
         requested_at: TimestampMs,
-    ) -> GhostSuggestionQueueResult {
+    ) -> Result<GhostSuggestionQueueResult, ActionIdExhausted> {
         if matches!(
             self.session
                 .ghost_state
@@ -98,67 +99,64 @@ impl JamAppState {
                 .map(|record| record.status()),
             Some(GhostSuggestionStatus::Accepted | GhostSuggestionStatus::Rejected)
         ) {
-            return GhostSuggestionQueueResult::Rejected {
+            return Ok(GhostSuggestionQueueResult::Rejected {
                 reason: format!("ghost proposal {} already decided", suggestion.proposal_id),
-            };
+            });
         }
 
         let draft = match suggestion.accepted_action_draft(self.session.ghost_state.mode) {
             Ok(draft) => draft,
             Err(error) => {
-                return GhostSuggestionQueueResult::Rejected {
+                return Ok(GhostSuggestionQueueResult::Rejected {
                     reason: ghost_queue_rejection_reason(error),
-                };
+                });
             }
         };
 
         if !self.ghost_pending_action_budget_available() {
-            return GhostSuggestionQueueResult::Rejected {
+            return Ok(GhostSuggestionQueueResult::Rejected {
                 reason: "ghost pending action budget exceeded".into(),
-            };
+            });
         }
 
         if !self.ghost_phrase_action_budget_available() {
-            return GhostSuggestionQueueResult::Rejected {
+            return Ok(GhostSuggestionQueueResult::Rejected {
                 reason: "ghost phrase action budget exceeded".into(),
-            };
+            });
         }
 
         if !self.ghost_destructive_scene_budget_available(draft.command) {
-            return GhostSuggestionQueueResult::Rejected {
+            return Ok(GhostSuggestionQueueResult::Rejected {
                 reason: "ghost destructive scene budget exceeded".into(),
-            };
+            });
         }
 
-        if !self
-            .session
-            .ghost_state
+        // Validate acceptance on a staged copy so a failed precondition never
+        // leaves an orphan queue action, and exhaustion never changes the archive.
+        let mut ghost_state = self.session.ghost_state.clone();
+        if !ghost_state
             .suggestion_history
             .iter()
             .any(|record| record.proposal_id == suggestion.proposal_id)
         {
-            self.session
-                .ghost_state
+            ghost_state
                 .suggestion_history
                 .push(suggestion.archive_record());
         }
 
-        if !self
-            .session
-            .ghost_state
-            .accept_suggestion(&suggestion.proposal_id)
-        {
-            return GhostSuggestionQueueResult::Rejected {
+        if !ghost_state.accept_suggestion(&suggestion.proposal_id) {
+            return Ok(GhostSuggestionQueueResult::Rejected {
                 reason: format!(
                     "ghost proposal {} could not be accepted",
                     suggestion.proposal_id
                 ),
-            };
+            });
         }
 
-        let action_id = self.queue.enqueue(draft, requested_at);
+        let action_id = self.queue.enqueue(draft, requested_at)?;
+        self.session.ghost_state = ghost_state;
         self.refresh_view();
-        GhostSuggestionQueueResult::Enqueued(action_id)
+        Ok(GhostSuggestionQueueResult::Enqueued(action_id))
     }
 
     fn ghost_pending_action_budget_available(&self) -> bool {

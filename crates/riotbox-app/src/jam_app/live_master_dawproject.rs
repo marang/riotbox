@@ -2,6 +2,8 @@
 //! Admission and document construction have separate owners; archive mechanics
 //! remain shared with the W-30 exporter.
 
+use riotbox_core::queue::ActionIdExhausted;
+
 use crate::jam_app::{
     JamAppError, JamAppState,
     dawproject_archive::{
@@ -41,7 +43,7 @@ impl JamAppState {
         &mut self,
         requested_at: TimestampMs,
         destination_path: Option<String>,
-    ) -> DawSessionExportQueueResult {
+    ) -> Result<DawSessionExportQueueResult, ActionIdExhausted> {
         let source_receipt = latest_live_master_receipt(&self.session);
         let version = source_receipt.and_then(|receipt| {
             LiveMasterDawprojectVersion::for_recording(
@@ -85,38 +87,40 @@ impl JamAppState {
                 LiveMasterDawprojectVersion::LegacyV1 | LiveMasterDawprojectVersion::CanonicalV2,
             ) => "place the committed live master as one two-bar DAW clip".into(),
         });
-        match self
-            .queue
-            .enqueue_if_no_pending_command(draft, requested_at)
-        {
-            QueueEnqueueResult::AlreadyPending { .. } => {
-                DawSessionExportQueueResult::AlreadyPending
-            }
-            QueueEnqueueResult::Enqueued(action_id) => {
-                let preflight = destination_path
-                    .as_deref()
-                    .ok_or_else(|| {
-                        JamAppError::InvalidSession(
+        Ok(
+            match self
+                .queue
+                .enqueue_if_no_pending_command(draft, requested_at)?
+            {
+                QueueEnqueueResult::AlreadyPending { .. } => {
+                    DawSessionExportQueueResult::AlreadyPending
+                }
+                QueueEnqueueResult::Enqueued(action_id) => {
+                    let preflight = destination_path
+                        .as_deref()
+                        .ok_or_else(|| {
+                            JamAppError::InvalidSession(
                             "live-master DAWproject export requires an explicit destination file"
                                 .into(),
                         )
-                    })
-                    .and_then(|destination| validate_destination(Path::new(destination)))
-                    .and_then(|_| validate_queue_source_receipt(&self.session));
-                match preflight {
-                    Ok(_) => {
-                        self.refresh_view();
-                        DawSessionExportQueueResult::Enqueued { action_id }
-                    }
-                    Err(error) => {
-                        let reason = error.to_string();
-                        self.queue.reject(action_id, reason.clone());
-                        self.refresh_view();
-                        DawSessionExportQueueResult::Rejected { reason }
+                        })
+                        .and_then(|destination| validate_destination(Path::new(destination)))
+                        .and_then(|_| validate_queue_source_receipt(&self.session));
+                    match preflight {
+                        Ok(_) => {
+                            self.refresh_view();
+                            DawSessionExportQueueResult::Enqueued { action_id }
+                        }
+                        Err(error) => {
+                            let reason = error.to_string();
+                            self.queue.reject(action_id, reason.clone());
+                            self.refresh_view();
+                            DawSessionExportQueueResult::Rejected { reason }
+                        }
                     }
                 }
-            }
-        }
+            },
+        )
     }
 
     pub fn commit_live_master_dawproject_export(
@@ -130,7 +134,7 @@ impl JamAppState {
             None => match self.queue_live_master_dawproject_export(
                 requested_at,
                 Some(destination_path.to_string_lossy().into_owned()),
-            ) {
+            )? {
                 DawSessionExportQueueResult::Enqueued { action_id } => action_id,
                 DawSessionExportQueueResult::Rejected { reason } => {
                     return Err(JamAppError::InvalidSession(reason));
@@ -190,7 +194,7 @@ impl JamAppState {
             None => match self.queue_live_master_dawproject_export(
                 requested_at,
                 Some(destination_path.to_string_lossy().into_owned()),
-            ) {
+            )? {
                 DawSessionExportQueueResult::Enqueued { action_id } => action_id,
                 DawSessionExportQueueResult::Rejected { reason } => {
                     return Err(JamAppError::InvalidSession(reason));

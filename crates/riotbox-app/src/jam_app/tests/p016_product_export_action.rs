@@ -299,10 +299,11 @@ fn explicit_product_mix_rejection_consumes_an_existing_pending_request() {
     let graph = sample_graph();
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
-    state.queue_product_mix_export(903, None);
+    state.queue_product_mix_export(903, None).unwrap();
 
-    let rejected_action =
-        state.reject_product_mix_export_request(904, "product mix export handoff is unavailable");
+    let rejected_action = state
+        .reject_product_mix_export_request(904, "product mix export handoff is unavailable")
+        .unwrap();
 
     assert!(state.queue.pending_actions().is_empty());
     assert_eq!(state.queue.history().len(), 1);
@@ -316,11 +317,13 @@ fn reserved_stem_package_export_queue_attempt_is_rejected_without_receipt() {
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    let result = state.queue_stem_package_export_reserved(
-        950,
-        Some("exports/stem-package".into()),
-        vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass],
-    );
+    let result = state
+        .queue_stem_package_export_reserved(
+            950,
+            Some("exports/stem-package".into()),
+            vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass],
+        )
+        .unwrap();
 
     let reason = match result {
         StemPackageExportQueueResult::Rejected { reason } => reason,
@@ -856,11 +859,13 @@ fn source_matched_stem_handoff_does_not_displace_another_pending_stem_export() {
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
     assert_eq!(
-        state.queue_stem_package_export_local_ci_package(
-            1_205,
-            Some(temp.path().join("local-ci").to_string_lossy().into_owned()),
-            vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass],
-        ),
+        state
+            .queue_stem_package_export_local_ci_package(
+                1_205,
+                Some(temp.path().join("local-ci").to_string_lossy().into_owned()),
+                vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass],
+            )
+            .unwrap(),
         QueueControlResult::Enqueued
     );
 
@@ -1082,7 +1087,7 @@ fn w30_hook_loop_export_fails_closed_from_capture_scoped_damage_state() {
     let destination = temp.path().join("w30-hook-export");
     let mut state = w30_hook_export_state();
     assert_eq!(
-        state.queue_w30_apply_damage_profile(1_305),
+        state.queue_w30_apply_damage_profile(1_305).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     let committed = state.commit_ready_actions(

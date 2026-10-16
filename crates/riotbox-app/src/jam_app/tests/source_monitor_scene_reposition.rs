@@ -52,7 +52,7 @@ fn scene_launch_repositions_source_monitor_to_target_section_and_replays() {
     );
 
     assert_eq!(
-        committed_state.queue_scene_select(300),
+        committed_state.queue_scene_select(300).unwrap(),
         QueueControlResult::Enqueued
     );
     let committed = committed_state.commit_ready_actions(
@@ -253,7 +253,7 @@ fn source_monitor_scene_reposition_waits_for_trusted_source_timing() {
         let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
         state.source_audio_cache = Some(source_monitor_reposition_source_cache());
         assert_eq!(
-            state.queue_scene_select(300),
+            state.queue_scene_select(300).unwrap(),
             QueueControlResult::Enqueued,
             "{} queue",
             case.name

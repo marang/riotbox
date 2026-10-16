@@ -232,10 +232,12 @@ mod tests {
     #[test]
     fn successful_summary_uses_receipts_own_action_version_not_latest_action() {
         let mut queue = ActionQueue::new();
-        let v1_id = queue.enqueue(
-            daw_draft(DawSessionExportBoundary::LiveMasterDawprojectV1),
-            10,
-        );
+        let v1_id = queue
+            .enqueue(
+                daw_draft(DawSessionExportBoundary::LiveMasterDawprojectV1),
+                10,
+            )
+            .expect("generated action ID available");
         let commit_boundary = CommitBoundaryState {
             kind: CommitBoundary::Immediate,
             beat_index: 0,
@@ -246,17 +248,21 @@ mod tests {
         queue
             .commit_pending_after_side_effect(v1_id, commit_boundary.clone(), 11, "fixture")
             .expect("committed V1 Action projection fixture");
-        let v2_id = queue.enqueue(
-            daw_draft(DawSessionExportBoundary::LiveMasterDawprojectV2),
-            12,
-        );
+        let v2_id = queue
+            .enqueue(
+                daw_draft(DawSessionExportBoundary::LiveMasterDawprojectV2),
+                12,
+            )
+            .expect("generated action ID available");
         queue
             .commit_pending_after_side_effect(v2_id, commit_boundary.clone(), 13, "fixture")
             .expect("committed V2 Action projection fixture");
-        let v3_id = queue.enqueue(
-            daw_draft(DawSessionExportBoundary::LiveMasterDawprojectV3),
-            14,
-        );
+        let v3_id = queue
+            .enqueue(
+                daw_draft(DawSessionExportBoundary::LiveMasterDawprojectV3),
+                14,
+            )
+            .expect("generated action ID available");
         queue
             .commit_pending_after_side_effect(v3_id, commit_boundary, 15, "fixture")
             .expect("committed V3 Action projection fixture");
@@ -330,7 +336,9 @@ mod tests {
             DawSessionExportBoundary::LiveMasterDawprojectV2,
             DawSessionExportBoundary::LiveMasterDawprojectV3,
         ] {
-            let id = queue.enqueue(daw_draft(boundary), 10);
+            let id = queue
+                .enqueue(daw_draft(boundary), 10)
+                .expect("generated action ID available");
             queue.reject(id, "synthetic preflight failure");
         }
         let state =

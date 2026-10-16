@@ -60,7 +60,7 @@ pub(super) fn prepare(
     if state.session.runtime_state.source_monitor.mode != SourceMonitorMode::Source {
         return Err("dense-break live path must begin in Source monitor mode".into());
     }
-    state.queue_capture_length_intent(CaptureLengthIntent::OneBar, 90);
+    state.queue_capture_length_intent(CaptureLengthIntent::OneBar, 90)?;
     commit(
         state,
         CommitBoundary::Immediate,
@@ -69,7 +69,7 @@ pub(super) fn prepare(
         95,
         1,
     )?;
-    state.queue_capture_bar(100);
+    state.queue_capture_bar(100)?;
     let capture_commit = one_commit(commit(
         state,
         CommitBoundary::Bar,
@@ -79,7 +79,7 @@ pub(super) fn prepare(
         1,
     )?)?;
     require_committed_command(state, &capture_commit, ActionCommand::CaptureBarGroup)?;
-    if state.queue_w30_raw_capture_audition(210) != Some(QueueControlResult::Enqueued) {
+    if state.queue_w30_raw_capture_audition(210)? != Some(QueueControlResult::Enqueued) {
         return Err("raw W-30 capture audition was unavailable".into());
     }
     let audition_commit = one_commit(commit(
@@ -95,7 +95,7 @@ pub(super) fn prepare(
         &audition_commit,
         ActionCommand::W30AuditionRawCapture,
     )?;
-    if !state.queue_promote_last_capture(230) {
+    if !state.queue_promote_last_capture(230)? {
         return Err("capture promotion was unavailable".into());
     }
     let promotion_commit = one_commit(commit(
@@ -111,7 +111,7 @@ pub(super) fn prepare(
     // at source start instead of asking a short loop to play from performance bar 5.
     let source_plan = Box::new(render_plan(state, bpm, 0.0));
     let preset_id = PerformancePresetId::FeralBreakAlphaV2;
-    if state.queue_performance_preset(preset_id, 305) != QueueControlResult::Enqueued {
+    if state.queue_performance_preset(preset_id, 305)? != QueueControlResult::Enqueued {
         return Err("Feral Break Alpha preset was unavailable".into());
     }
     let scene = current_scene(state);
@@ -124,7 +124,7 @@ pub(super) fn prepare(
         1,
     )?)?;
     require_committed_command(state, &preset_commit, ActionCommand::PresetActivate)?;
-    if state.queue_mc202_generate_instigator(311) != QueueControlResult::Enqueued {
+    if state.queue_mc202_generate_instigator(311)? != QueueControlResult::Enqueued {
         return Err("MC-202 instigator generation was unavailable".into());
     }
     commit(

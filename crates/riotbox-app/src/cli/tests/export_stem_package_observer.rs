@@ -154,11 +154,13 @@ fn observer_snapshot_reports_failed_reserved_stem_package_lifecycle_without_rece
     );
     let mut state = JamAppState::from_parts(session, None, ActionQueue::new());
 
-    state.queue_stem_package_export_reserved(
-        950,
-        Some("exports/stem-package".into()),
-        vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass],
-    );
+    state
+        .queue_stem_package_export_reserved(
+            950,
+            Some("exports/stem-package".into()),
+            vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass],
+        )
+        .expect("generated action ID available");
 
     let shell = JamShellState::new(state, ShellLaunchMode::Load);
     let snapshot = observer_snapshot(&shell);

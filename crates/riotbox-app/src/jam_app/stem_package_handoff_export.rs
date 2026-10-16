@@ -1,3 +1,4 @@
+use riotbox_core::queue::ActionIdExhausted;
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -49,7 +50,7 @@ impl JamAppState {
         requested_at: TimestampMs,
         handoff_proof_path: Option<String>,
         destination_path: Option<String>,
-    ) -> QueueControlResult {
+    ) -> Result<QueueControlResult, ActionIdExhausted> {
         let mut draft = ActionDraft::new(
             ActorType::User,
             ActionCommand::ExportStemPackage,
@@ -78,16 +79,18 @@ impl JamAppState {
             "export active-source-matched product stems through the Session receipt path".into(),
         );
 
-        match self
-            .queue
-            .enqueue_if_no_pending_command(draft, requested_at)
-        {
-            QueueEnqueueResult::AlreadyPending { .. } => QueueControlResult::AlreadyPending,
-            QueueEnqueueResult::Enqueued(_) => {
-                self.refresh_view();
-                QueueControlResult::Enqueued
-            }
-        }
+        Ok(
+            match self
+                .queue
+                .enqueue_if_no_pending_command(draft, requested_at)?
+            {
+                QueueEnqueueResult::AlreadyPending { .. } => QueueControlResult::AlreadyPending,
+                QueueEnqueueResult::Enqueued(_) => {
+                    self.refresh_view();
+                    QueueControlResult::Enqueued
+                }
+            },
+        )
     }
 
     pub fn commit_stem_package_export_from_product_handoff(
@@ -105,7 +108,7 @@ impl JamAppState {
                     requested_at,
                     Some(handoff_proof_path.to_string_lossy().into_owned()),
                     Some(destination_dir.to_string_lossy().into_owned()),
-                );
+                )?;
                 self.pending_source_matched_stem_package_action_id()
                     .ok_or_else(|| {
                         JamAppError::InvalidSession(

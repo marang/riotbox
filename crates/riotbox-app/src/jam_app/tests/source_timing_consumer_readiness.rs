@@ -21,7 +21,7 @@ fn manual_confirm_capture_does_not_materialize_source_window_until_confirmed() {
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    state.queue_capture_bar(300);
+    state.queue_capture_bar(300).unwrap();
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,
@@ -59,7 +59,7 @@ fn user_confirmed_manual_grid_allows_capture_source_window() {
     });
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    state.queue_capture_bar(300);
+    state.queue_capture_bar(300).unwrap();
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,

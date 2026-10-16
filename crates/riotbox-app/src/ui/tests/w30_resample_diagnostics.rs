@@ -21,7 +21,10 @@ fn renders_capture_shell_snapshot_with_committed_w30_resample_lineage_diagnostic
     shell.app.session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
     shell.app.refresh_view();
     assert_eq!(
-        shell.app.queue_w30_internal_resample(220),
+        shell
+            .app
+            .queue_w30_internal_resample(220)
+            .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
     let committed = shell.app.commit_ready_actions(
@@ -63,7 +66,10 @@ fn renders_log_shell_snapshot_with_committed_w30_audition_diagnostics() {
         });
     shell.app.refresh_view();
     assert_eq!(
-        shell.app.queue_w30_promoted_audition(220),
+        shell
+            .app
+            .queue_w30_promoted_audition(220)
+            .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
     let committed = shell.app.commit_ready_actions(
@@ -104,7 +110,10 @@ fn renders_log_shell_snapshot_with_committed_w30_trigger_preview_diagnostics() {
         });
     shell.app.refresh_view();
     assert_eq!(
-        shell.app.queue_w30_trigger_pad(230),
+        shell
+            .app
+            .queue_w30_trigger_pad(230)
+            .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
     let committed = shell.app.commit_ready_actions(
@@ -146,7 +155,10 @@ fn renders_log_shell_snapshot_with_committed_w30_resample_lineage_diagnostics() 
     shell.app.session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
     shell.app.refresh_view();
     assert_eq!(
-        shell.app.queue_w30_internal_resample(245),
+        shell
+            .app
+            .queue_w30_internal_resample(245)
+            .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
     let committed = shell.app.commit_ready_actions(
@@ -187,7 +199,10 @@ fn renders_w30_resample_lab_diagnostics_across_shell_surfaces() {
     shell.app.refresh_view();
 
     assert_eq!(
-        shell.app.queue_w30_internal_resample(265),
+        shell
+            .app
+            .queue_w30_internal_resample(265)
+            .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
     let committed = shell.app.commit_ready_actions(

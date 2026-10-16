@@ -18,23 +18,23 @@ fn queueing_mc202_follower_generation_blocks_duplicate_pending_actions() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_mc202_generate_follower(300),
+        state.queue_mc202_generate_follower(300).unwrap(),
         QueueControlResult::Enqueued
     );
     assert_eq!(
-        state.queue_mc202_generate_follower(301),
+        state.queue_mc202_generate_follower(301).unwrap(),
         QueueControlResult::AlreadyPending
     );
     assert_eq!(
-        state.queue_mc202_mutate_phrase(302),
+        state.queue_mc202_mutate_phrase(302).unwrap(),
         QueueControlResult::AlreadyPending
     );
     assert_eq!(
-        state.queue_mc202_generate_pressure(303),
+        state.queue_mc202_generate_pressure(303).unwrap(),
         QueueControlResult::AlreadyPending
     );
     assert_eq!(
-        state.queue_mc202_generate_instigator(304),
+        state.queue_mc202_generate_instigator(304).unwrap(),
         QueueControlResult::AlreadyPending
     );
 
@@ -54,11 +54,11 @@ fn queueing_mc202_answer_generation_blocks_duplicate_pending_actions() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_mc202_generate_answer(300),
+        state.queue_mc202_generate_answer(300).unwrap(),
         QueueControlResult::Enqueued
     );
     assert_eq!(
-        state.queue_mc202_generate_answer(301),
+        state.queue_mc202_generate_answer(301).unwrap(),
         QueueControlResult::AlreadyPending
     );
 
@@ -78,19 +78,19 @@ fn queueing_mc202_pressure_generation_blocks_duplicate_pending_actions() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_mc202_generate_pressure(300),
+        state.queue_mc202_generate_pressure(300).unwrap(),
         QueueControlResult::Enqueued
     );
     assert_eq!(
-        state.queue_mc202_generate_pressure(301),
+        state.queue_mc202_generate_pressure(301).unwrap(),
         QueueControlResult::AlreadyPending
     );
     assert_eq!(
-        state.queue_mc202_generate_answer(302),
+        state.queue_mc202_generate_answer(302).unwrap(),
         QueueControlResult::AlreadyPending
     );
     assert_eq!(
-        state.queue_mc202_generate_instigator(303),
+        state.queue_mc202_generate_instigator(303).unwrap(),
         QueueControlResult::AlreadyPending
     );
 
@@ -110,15 +110,15 @@ fn queueing_mc202_instigator_generation_blocks_duplicate_pending_actions() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_mc202_generate_instigator(300),
+        state.queue_mc202_generate_instigator(300).unwrap(),
         QueueControlResult::Enqueued
     );
     assert_eq!(
-        state.queue_mc202_generate_instigator(301),
+        state.queue_mc202_generate_instigator(301).unwrap(),
         QueueControlResult::AlreadyPending
     );
     assert_eq!(
-        state.queue_mc202_generate_answer(302),
+        state.queue_mc202_generate_answer(302).unwrap(),
         QueueControlResult::AlreadyPending
     );
 
@@ -141,7 +141,7 @@ fn queueing_mc202_phrase_mutation_requires_committed_voice_and_blocks_duplicates
         JamAppState::from_parts(session.clone(), Some(graph.clone()), ActionQueue::new());
 
     assert_eq!(
-        empty_state.queue_mc202_mutate_phrase(299),
+        empty_state.queue_mc202_mutate_phrase(299).unwrap(),
         QueueControlResult::AlreadyInState
     );
 
@@ -150,11 +150,11 @@ fn queueing_mc202_phrase_mutation_requires_committed_voice_and_blocks_duplicates
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_mc202_mutate_phrase(300),
+        state.queue_mc202_mutate_phrase(300).unwrap(),
         QueueControlResult::Enqueued
     );
     assert_eq!(
-        state.queue_mc202_mutate_phrase(301),
+        state.queue_mc202_mutate_phrase(301).unwrap(),
         QueueControlResult::AlreadyPending
     );
 
@@ -175,11 +175,11 @@ fn queueing_mc202_role_and_generation_blocks_conflicting_phrase_controls() {
     let mut state = JamAppState::from_parts(session, Some(graph.clone()), ActionQueue::new());
 
     assert_eq!(
-        state.queue_mc202_role_toggle(300),
+        state.queue_mc202_role_toggle(300).unwrap(),
         QueueControlResult::Enqueued
     );
     assert_eq!(
-        state.queue_mc202_generate_follower(301),
+        state.queue_mc202_generate_follower(301).unwrap(),
         QueueControlResult::AlreadyPending
     );
 
@@ -189,11 +189,11 @@ fn queueing_mc202_role_and_generation_blocks_conflicting_phrase_controls() {
         ActionQueue::new(),
     );
     assert_eq!(
-        other_state.queue_mc202_generate_follower(302),
+        other_state.queue_mc202_generate_follower(302).unwrap(),
         QueueControlResult::Enqueued
     );
     assert_eq!(
-        other_state.queue_mc202_role_toggle(303),
+        other_state.queue_mc202_role_toggle(303).unwrap(),
         QueueControlResult::AlreadyPending
     );
 
@@ -203,11 +203,11 @@ fn queueing_mc202_role_and_generation_blocks_conflicting_phrase_controls() {
         ActionQueue::new(),
     );
     assert_eq!(
-        answer_state.queue_mc202_generate_answer(304),
+        answer_state.queue_mc202_generate_answer(304).unwrap(),
         QueueControlResult::Enqueued
     );
     assert_eq!(
-        answer_state.queue_mc202_role_toggle(305),
+        answer_state.queue_mc202_role_toggle(305).unwrap(),
         QueueControlResult::AlreadyPending
     );
 
@@ -217,11 +217,11 @@ fn queueing_mc202_role_and_generation_blocks_conflicting_phrase_controls() {
         ActionQueue::new(),
     );
     assert_eq!(
-        pressure_state.queue_mc202_generate_pressure(306),
+        pressure_state.queue_mc202_generate_pressure(306).unwrap(),
         QueueControlResult::Enqueued
     );
     assert_eq!(
-        pressure_state.queue_mc202_generate_follower(307),
+        pressure_state.queue_mc202_generate_follower(307).unwrap(),
         QueueControlResult::AlreadyPending
     );
 
@@ -231,11 +231,13 @@ fn queueing_mc202_role_and_generation_blocks_conflicting_phrase_controls() {
         ActionQueue::new(),
     );
     assert_eq!(
-        instigator_state.queue_mc202_generate_instigator(308),
+        instigator_state
+            .queue_mc202_generate_instigator(308)
+            .unwrap(),
         QueueControlResult::Enqueued
     );
     assert_eq!(
-        instigator_state.queue_mc202_mutate_phrase(309),
+        instigator_state.queue_mc202_mutate_phrase(309).unwrap(),
         QueueControlResult::AlreadyPending
     );
 
@@ -244,11 +246,11 @@ fn queueing_mc202_role_and_generation_blocks_conflicting_phrase_controls() {
     let mut mutation_state =
         JamAppState::from_parts(mutation_session, Some(graph), ActionQueue::new());
     assert_eq!(
-        mutation_state.queue_mc202_mutate_phrase(310),
+        mutation_state.queue_mc202_mutate_phrase(310).unwrap(),
         QueueControlResult::Enqueued
     );
     assert_eq!(
-        mutation_state.queue_mc202_generate_answer(311),
+        mutation_state.queue_mc202_generate_answer(311).unwrap(),
         QueueControlResult::AlreadyPending
     );
 }
@@ -259,8 +261,8 @@ fn queueing_tr909_slam_blocks_duplicate_pending_slam_actions() {
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    assert!(state.queue_tr909_slam_toggle(300));
-    assert!(!state.queue_tr909_slam_toggle(301));
+    assert!(state.queue_tr909_slam_toggle(300).unwrap());
+    assert!(!state.queue_tr909_slam_toggle(301).unwrap());
 
     let pending = state.queue.pending_actions();
     assert_eq!(pending.len(), 1);
@@ -274,11 +276,11 @@ fn queueing_tr909_takeover_requires_clear_pending_and_inactive_state() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_tr909_takeover(300),
+        state.queue_tr909_takeover(300).unwrap(),
         QueueControlResult::Enqueued
     );
     assert_eq!(
-        state.queue_tr909_takeover(301),
+        state.queue_tr909_takeover(301).unwrap(),
         QueueControlResult::AlreadyPending
     );
 
@@ -303,11 +305,11 @@ fn queueing_tr909_scene_lock_requires_clear_pending_and_non_scene_lock_state() {
     let mut state = JamAppState::from_parts(session, Some(graph.clone()), ActionQueue::new());
 
     assert_eq!(
-        state.queue_tr909_scene_lock(300),
+        state.queue_tr909_scene_lock(300).unwrap(),
         QueueControlResult::Enqueued
     );
     assert_eq!(
-        state.queue_tr909_scene_lock(301),
+        state.queue_tr909_scene_lock(301).unwrap(),
         QueueControlResult::AlreadyPending
     );
 
@@ -341,7 +343,7 @@ fn queueing_tr909_scene_lock_requires_clear_pending_and_non_scene_lock_state() {
     already_locked.refresh_view();
 
     assert_eq!(
-        already_locked.queue_tr909_scene_lock(302),
+        already_locked.queue_tr909_scene_lock(302).unwrap(),
         QueueControlResult::AlreadyInState
     );
 }
@@ -355,9 +357,12 @@ fn queueing_tr909_release_requires_takeover_to_be_active() {
         Some(Tr909TakeoverProfileState::ControlledPhraseTakeover);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    assert_eq!(state.queue_tr909_release(300), QueueControlResult::Enqueued);
     assert_eq!(
-        state.queue_tr909_release(301),
+        state.queue_tr909_release(300).unwrap(),
+        QueueControlResult::Enqueued
+    );
+    assert_eq!(
+        state.queue_tr909_release(301).unwrap(),
         QueueControlResult::AlreadyPending
     );
 
@@ -387,7 +392,7 @@ fn audio_timing_snapshot_commits_crossed_bar_boundary() {
         current_scene: Some(SceneId::from("scene-1")),
     });
     state.set_transport_playing(true);
-    state.queue_tr909_fill(300);
+    state.queue_tr909_fill(300).unwrap();
 
     let committed = state.apply_audio_timing_snapshot(
         Some(AudioRuntimeTimingSnapshot {

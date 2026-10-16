@@ -57,7 +57,7 @@ pub(crate) fn qualify_pitch_dive_v1(
     let grit_before = state.session.runtime_state.macro_state.w30_grit;
     let source_monitor_before = state.session.runtime_state.source_monitor.clone();
     let requested_at = 400 + start_beat * 10;
-    if state.queue_w30_pitch_dive(requested_at) != Some(QueueControlResult::Enqueued) {
+    if state.queue_w30_pitch_dive(requested_at)? != Some(QueueControlResult::Enqueued) {
         return Err("W-30 pitch dive was unavailable".into());
     }
     commit(

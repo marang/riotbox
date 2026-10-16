@@ -2,6 +2,7 @@ use super::{
     helpers::user_lane_mutation_draft,
     state::{JamAppState, QueueControlResult},
 };
+use riotbox_core::queue::ActionIdExhausted;
 use riotbox_core::{
     TimestampMs,
     action::{ActionCommand, Quantization, TargetScope},
@@ -23,9 +24,12 @@ impl JamAppState {
         })
     }
 
-    pub fn queue_mc202_role_toggle(&mut self, requested_at: TimestampMs) -> QueueControlResult {
+    pub fn queue_mc202_role_toggle(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Result<QueueControlResult, ActionIdExhausted> {
         if self.mc202_phrase_control_pending() {
-            return QueueControlResult::AlreadyPending;
+            return Ok(QueueControlResult::AlreadyPending);
         }
 
         let next_role = match self.session.runtime_state.lane_state.mc202.role {
@@ -43,17 +47,20 @@ impl JamAppState {
             target_touch,
             format!("set MC-202 role to {next_role} on next phrase"),
         );
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        QueueControlResult::Enqueued
+        Ok(QueueControlResult::Enqueued)
     }
 
-    pub fn queue_mc202_mutate_phrase(&mut self, requested_at: TimestampMs) -> QueueControlResult {
+    pub fn queue_mc202_mutate_phrase(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Result<QueueControlResult, ActionIdExhausted> {
         if self.mc202_phrase_control_pending() {
-            return QueueControlResult::AlreadyPending;
+            return Ok(QueueControlResult::AlreadyPending);
         }
         if self.session.runtime_state.lane_state.mc202.role.is_none() {
-            return QueueControlResult::AlreadyInState;
+            return Ok(QueueControlResult::AlreadyInState);
         }
 
         let draft = user_lane_mutation_draft(
@@ -64,17 +71,17 @@ impl JamAppState {
             0.88,
             "mutate MC-202 phrase on next phrase boundary",
         );
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        QueueControlResult::Enqueued
+        Ok(QueueControlResult::Enqueued)
     }
 
     pub fn queue_mc202_generate_follower(
         &mut self,
         requested_at: TimestampMs,
-    ) -> QueueControlResult {
+    ) -> Result<QueueControlResult, ActionIdExhausted> {
         if self.mc202_phrase_control_pending() {
-            return QueueControlResult::AlreadyPending;
+            return Ok(QueueControlResult::AlreadyPending);
         }
 
         let draft = user_lane_mutation_draft(
@@ -85,14 +92,17 @@ impl JamAppState {
             0.78,
             "generate MC-202 follower phrase on next phrase boundary",
         );
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        QueueControlResult::Enqueued
+        Ok(QueueControlResult::Enqueued)
     }
 
-    pub fn queue_mc202_generate_answer(&mut self, requested_at: TimestampMs) -> QueueControlResult {
+    pub fn queue_mc202_generate_answer(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Result<QueueControlResult, ActionIdExhausted> {
         if self.mc202_phrase_control_pending() {
-            return QueueControlResult::AlreadyPending;
+            return Ok(QueueControlResult::AlreadyPending);
         }
 
         let draft = user_lane_mutation_draft(
@@ -103,17 +113,17 @@ impl JamAppState {
             0.82,
             "generate MC-202 answer phrase on next phrase boundary",
         );
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        QueueControlResult::Enqueued
+        Ok(QueueControlResult::Enqueued)
     }
 
     pub fn queue_mc202_generate_pressure(
         &mut self,
         requested_at: TimestampMs,
-    ) -> QueueControlResult {
+    ) -> Result<QueueControlResult, ActionIdExhausted> {
         if self.mc202_phrase_control_pending() {
-            return QueueControlResult::AlreadyPending;
+            return Ok(QueueControlResult::AlreadyPending);
         }
 
         let draft = user_lane_mutation_draft(
@@ -124,17 +134,17 @@ impl JamAppState {
             0.84,
             "generate MC-202 pressure phrase on next phrase boundary",
         );
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        QueueControlResult::Enqueued
+        Ok(QueueControlResult::Enqueued)
     }
 
     pub fn queue_mc202_generate_instigator(
         &mut self,
         requested_at: TimestampMs,
-    ) -> QueueControlResult {
+    ) -> Result<QueueControlResult, ActionIdExhausted> {
         if self.mc202_phrase_control_pending() {
-            return QueueControlResult::AlreadyPending;
+            return Ok(QueueControlResult::AlreadyPending);
         }
 
         let draft = user_lane_mutation_draft(
@@ -145,8 +155,8 @@ impl JamAppState {
             0.90,
             "generate MC-202 instigator phrase on next phrase boundary",
         );
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        QueueControlResult::Enqueued
+        Ok(QueueControlResult::Enqueued)
     }
 }

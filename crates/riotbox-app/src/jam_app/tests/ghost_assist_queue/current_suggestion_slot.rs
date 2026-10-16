@@ -45,7 +45,7 @@ fn accept_current_ghost_suggestion_queues_in_assist_and_clears_slot() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
     state.set_current_ghost_suggestion(ghost_fill_suggestion());
 
-    let result = state.accept_current_ghost_suggestion(1_000);
+    let result = state.accept_current_ghost_suggestion(1_000).unwrap();
 
     assert!(matches!(result, GhostSuggestionQueueResult::Enqueued(_)));
     assert!(state.runtime.current_ghost_suggestion.is_none());
@@ -62,7 +62,7 @@ fn accept_current_ghost_suggestion_respects_watch_read_only() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
     state.set_current_ghost_suggestion(ghost_fill_suggestion());
 
-    let result = state.accept_current_ghost_suggestion(1_000);
+    let result = state.accept_current_ghost_suggestion(1_000).unwrap();
 
     assert_eq!(
         result,
@@ -101,7 +101,7 @@ fn accept_current_ghost_suggestion_without_slot_is_explicit_noop() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.accept_current_ghost_suggestion(1_000),
+        state.accept_current_ghost_suggestion(1_000).unwrap(),
         GhostSuggestionQueueResult::Rejected {
             reason: "no current ghost suggestion".into()
         }

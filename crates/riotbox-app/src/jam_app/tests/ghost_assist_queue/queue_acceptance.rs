@@ -27,7 +27,9 @@ fn queue_accepted_ghost_suggestion_uses_normal_action_queue() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
     let suggestion = ghost_fill_suggestion();
 
-    let result = state.queue_accepted_ghost_suggestion(&suggestion, 1_000);
+    let result = state
+        .queue_accepted_ghost_suggestion(&suggestion, 1_000)
+        .unwrap();
 
     let GhostSuggestionQueueResult::Enqueued(action_id) = result else {
         panic!("expected enqueued ghost suggestion");
@@ -63,7 +65,9 @@ fn queue_accepted_ghost_suggestion_rejects_watch_and_blocked_proposals() {
     session.ghost_state.mode = GhostMode::Watch;
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    let watch_result = state.queue_accepted_ghost_suggestion(&ghost_fill_suggestion(), 1_000);
+    let watch_result = state
+        .queue_accepted_ghost_suggestion(&ghost_fill_suggestion(), 1_000)
+        .unwrap();
 
     assert_eq!(
         watch_result,
@@ -82,7 +86,9 @@ fn queue_accepted_ghost_suggestion_rejects_watch_and_blocked_proposals() {
         reason: "TR-909 lane is locked".into(),
     }];
 
-    let blocked_result = state.queue_accepted_ghost_suggestion(&blocked, 1_001);
+    let blocked_result = state
+        .queue_accepted_ghost_suggestion(&blocked, 1_001)
+        .unwrap();
 
     assert_eq!(
         blocked_result,
@@ -103,11 +109,15 @@ fn queue_accepted_ghost_suggestion_does_not_enqueue_decided_proposal_twice() {
     let suggestion = ghost_fill_suggestion();
 
     assert!(matches!(
-        state.queue_accepted_ghost_suggestion(&suggestion, 1_000),
+        state
+            .queue_accepted_ghost_suggestion(&suggestion, 1_000)
+            .unwrap(),
         GhostSuggestionQueueResult::Enqueued(_)
     ));
 
-    let duplicate = state.queue_accepted_ghost_suggestion(&suggestion, 1_001);
+    let duplicate = state
+        .queue_accepted_ghost_suggestion(&suggestion, 1_001)
+        .unwrap();
 
     assert_eq!(
         duplicate,
@@ -131,11 +141,15 @@ fn queue_accepted_ghost_suggestion_respects_pending_budget() {
     second.proposal_id = "ghost-fill-2".into();
 
     assert!(matches!(
-        state.queue_accepted_ghost_suggestion(&first, 1_000),
+        state
+            .queue_accepted_ghost_suggestion(&first, 1_000)
+            .unwrap(),
         GhostSuggestionQueueResult::Enqueued(_)
     ));
 
-    let over_budget = state.queue_accepted_ghost_suggestion(&second, 1_001);
+    let over_budget = state
+        .queue_accepted_ghost_suggestion(&second, 1_001)
+        .unwrap();
 
     assert_eq!(
         over_budget,
@@ -176,7 +190,9 @@ fn queue_accepted_ghost_suggestion_respects_phrase_budget() {
     second.proposal_id = "ghost-fill-2".into();
 
     assert!(matches!(
-        state.queue_accepted_ghost_suggestion(&first, 1_000),
+        state
+            .queue_accepted_ghost_suggestion(&first, 1_000)
+            .unwrap(),
         GhostSuggestionQueueResult::Enqueued(_)
     ));
     let committed = state.commit_ready_actions(
@@ -191,7 +207,9 @@ fn queue_accepted_ghost_suggestion_respects_phrase_budget() {
     );
     assert_eq!(committed.len(), 1);
 
-    let over_budget = state.queue_accepted_ghost_suggestion(&second, 1_501);
+    let over_budget = state
+        .queue_accepted_ghost_suggestion(&second, 1_501)
+        .unwrap();
 
     assert_eq!(
         over_budget,
@@ -242,7 +260,9 @@ fn queue_accepted_ghost_suggestion_respects_destructive_scene_budget() {
     let second = ghost_destructive_takeover_suggestion("ghost-takeover-2");
 
     assert!(matches!(
-        state.queue_accepted_ghost_suggestion(&first, 1_000),
+        state
+            .queue_accepted_ghost_suggestion(&first, 1_000)
+            .unwrap(),
         GhostSuggestionQueueResult::Enqueued(_)
     ));
     let committed = state.commit_ready_actions(
@@ -257,7 +277,9 @@ fn queue_accepted_ghost_suggestion_respects_destructive_scene_budget() {
     );
     assert_eq!(committed.len(), 1);
 
-    let over_budget = state.queue_accepted_ghost_suggestion(&second, 1_501);
+    let over_budget = state
+        .queue_accepted_ghost_suggestion(&second, 1_501)
+        .unwrap();
 
     assert_eq!(
         over_budget,
@@ -289,7 +311,9 @@ fn queue_accepted_ghost_suggestion_does_not_spend_destructive_budget_for_fill() 
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert!(matches!(
-        state.queue_accepted_ghost_suggestion(&ghost_fill_suggestion(), 1_000),
+        state
+            .queue_accepted_ghost_suggestion(&ghost_fill_suggestion(), 1_000)
+            .unwrap(),
         GhostSuggestionQueueResult::Enqueued(_)
     ));
     assert_eq!(state.queue.pending_actions().len(), 1);

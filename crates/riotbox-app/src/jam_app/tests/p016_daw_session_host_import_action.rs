@@ -22,10 +22,12 @@ fn daw_session_host_import_proof_commits_through_export_action_without_enabling_
         .expect("commit writer proof prerequisite");
     write_host_import_proof(&proof_path, true, &[]);
 
-    let queued = state.queue_daw_session_host_import_proof_export(
-        990,
-        Some(proof_path.to_string_lossy().into_owned()),
-    );
+    let queued = state
+        .queue_daw_session_host_import_proof_export(
+            990,
+            Some(proof_path.to_string_lossy().into_owned()),
+        )
+        .unwrap();
 
     let action_id = match queued {
         DawSessionExportQueueResult::Enqueued { action_id } => action_id,
@@ -124,10 +126,12 @@ fn daw_session_host_import_proof_commits_to_queued_receipt_not_latest_receipt() 
         .expect("commit writer proof prerequisite");
     write_host_import_proof(&proof_path, true, &[]);
 
-    let queued = state.queue_daw_session_host_import_proof_export(
-        990,
-        Some(proof_path.to_string_lossy().into_owned()),
-    );
+    let queued = state
+        .queue_daw_session_host_import_proof_export(
+            990,
+            Some(proof_path.to_string_lossy().into_owned()),
+        )
+        .unwrap();
     assert!(matches!(
         queued,
         DawSessionExportQueueResult::Enqueued { .. }
@@ -174,10 +178,12 @@ fn daw_session_host_import_proof_rejects_when_queued_receipt_disappears() {
         .expect("commit writer proof prerequisite");
     write_host_import_proof(&proof_path, true, &[]);
 
-    let queued = state.queue_daw_session_host_import_proof_export(
-        990,
-        Some(proof_path.to_string_lossy().into_owned()),
-    );
+    let queued = state
+        .queue_daw_session_host_import_proof_export(
+            990,
+            Some(proof_path.to_string_lossy().into_owned()),
+        )
+        .unwrap();
     assert!(matches!(
         queued,
         DawSessionExportQueueResult::Enqueued { .. }

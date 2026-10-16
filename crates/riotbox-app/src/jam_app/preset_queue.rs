@@ -1,4 +1,5 @@
 use super::state::{JamAppState, QueueControlResult};
+use riotbox_core::queue::ActionIdExhausted;
 use riotbox_core::{
     TimestampMs,
     action::{
@@ -13,12 +14,12 @@ impl JamAppState {
         &mut self,
         preset_id: PerformancePresetId,
         requested_at: TimestampMs,
-    ) -> QueueControlResult {
+    ) -> Result<QueueControlResult, ActionIdExhausted> {
         if self
             .queue
             .has_pending_command(ActionCommand::PresetActivate)
         {
-            return QueueControlResult::AlreadyPending;
+            return Ok(QueueControlResult::AlreadyPending);
         }
         let mut draft = ActionDraft::new(
             ActorType::User,
@@ -32,9 +33,9 @@ impl JamAppState {
         );
         draft.params = ActionParams::Preset { preset_id };
         draft.explanation = Some(format!("activate {}", preset_id.label()));
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        QueueControlResult::Enqueued
+        Ok(QueueControlResult::Enqueued)
     }
 }
 
@@ -56,11 +57,15 @@ mod tests {
         let mut state = JamAppState::from_parts(session, None, ActionQueue::new());
 
         assert_eq!(
-            state.queue_performance_preset(PerformancePresetId::FeralBreakAlphaV1, 100),
+            state
+                .queue_performance_preset(PerformancePresetId::FeralBreakAlphaV1, 100)
+                .unwrap(),
             QueueControlResult::Enqueued
         );
         assert_eq!(
-            state.queue_performance_preset(PerformancePresetId::FeralBreakAlphaV1, 101),
+            state
+                .queue_performance_preset(PerformancePresetId::FeralBreakAlphaV1, 101)
+                .unwrap(),
             QueueControlResult::AlreadyPending
         );
 
@@ -80,7 +85,9 @@ mod tests {
         let session = SessionFile::new("session-1", "riotbox-test", "2026-07-17T14:32:00Z");
         let mut state = JamAppState::from_parts(session, None, ActionQueue::new());
         assert_eq!(
-            state.queue_performance_preset(PerformancePresetId::FeralBreakAlphaV1, 100),
+            state
+                .queue_performance_preset(PerformancePresetId::FeralBreakAlphaV1, 100)
+                .unwrap(),
             QueueControlResult::Enqueued
         );
 
@@ -108,7 +115,9 @@ mod tests {
         assert_eq!(state.session.action_log.commit_records.len(), 1);
         state.session.runtime_state.macro_state.chaos = 0.0;
         assert_eq!(
-            state.queue_performance_preset(PerformancePresetId::FeralBreakAlphaV1, 101),
+            state
+                .queue_performance_preset(PerformancePresetId::FeralBreakAlphaV1, 101)
+                .unwrap(),
             QueueControlResult::Enqueued,
             "the musician must be able to recall versioned defaults after later control edits"
         );

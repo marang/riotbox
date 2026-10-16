@@ -28,10 +28,12 @@ fn daw_session_audible_output_proof_commits_through_export_action_without_enabli
         .expect("commit host-import proof prerequisite");
     write_audible_output_proof(&audible_proof_path, true, &[]);
 
-    let queued = state.queue_daw_session_audible_output_proof_export(
-        995,
-        Some(audible_proof_path.to_string_lossy().into_owned()),
-    );
+    let queued = state
+        .queue_daw_session_audible_output_proof_export(
+            995,
+            Some(audible_proof_path.to_string_lossy().into_owned()),
+        )
+        .unwrap();
 
     let action_id = match queued {
         DawSessionExportQueueResult::Enqueued { action_id } => action_id,
@@ -150,10 +152,12 @@ fn daw_session_audible_output_proof_commits_to_queued_receipt_not_latest_receipt
         .expect("commit host-import proof prerequisite");
     write_audible_output_proof(&audible_proof_path, true, &[]);
 
-    let queued = state.queue_daw_session_audible_output_proof_export(
-        995,
-        Some(audible_proof_path.to_string_lossy().into_owned()),
-    );
+    let queued = state
+        .queue_daw_session_audible_output_proof_export(
+            995,
+            Some(audible_proof_path.to_string_lossy().into_owned()),
+        )
+        .unwrap();
     assert!(matches!(
         queued,
         DawSessionExportQueueResult::Enqueued { .. }
@@ -203,10 +207,12 @@ fn daw_session_audible_output_proof_rejects_when_queued_receipt_disappears() {
         .expect("commit host-import proof prerequisite");
     write_audible_output_proof(&audible_proof_path, true, &[]);
 
-    let queued = state.queue_daw_session_audible_output_proof_export(
-        995,
-        Some(audible_proof_path.to_string_lossy().into_owned()),
-    );
+    let queued = state
+        .queue_daw_session_audible_output_proof_export(
+            995,
+            Some(audible_proof_path.to_string_lossy().into_owned()),
+        )
+        .unwrap();
     assert!(matches!(
         queued,
         DawSessionExportQueueResult::Enqueued { .. }

@@ -28,7 +28,7 @@ fn w30_replay_executor_matches_committed_app_state_and_preview_output() {
     let initial_preview = render_w30_replay_buffer(&committed_state);
 
     assert_eq!(
-        committed_state.queue_w30_browse_slice_pool(300),
+        committed_state.queue_w30_browse_slice_pool(300).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     commit_w30_replay_step(&mut committed_state, CommitBoundary::Beat, 33, 9, 2, 400);
@@ -96,14 +96,14 @@ fn w30_target_suffix_replay_helper_matches_committed_app_preview_output() {
     let replay_base_session = committed_state.session.clone();
 
     assert_eq!(
-        committed_state.queue_w30_browse_slice_pool(300),
+        committed_state.queue_w30_browse_slice_pool(300).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     commit_w30_replay_step(&mut committed_state, CommitBoundary::Beat, 33, 9, 2, 400);
     let committed_browse = render_w30_replay_buffer(&committed_state);
 
     assert_eq!(
-        committed_state.queue_w30_trigger_pad(500),
+        committed_state.queue_w30_trigger_pad(500).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     commit_w30_replay_step(&mut committed_state, CommitBoundary::Beat, 34, 9, 2, 600);
@@ -192,14 +192,14 @@ fn w30_snapshot_payload_restore_runner_matches_committed_app_preview_output() {
     let replay_base_session = committed_state.session.clone();
 
     assert_eq!(
-        committed_state.queue_w30_browse_slice_pool(300),
+        committed_state.queue_w30_browse_slice_pool(300).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     commit_w30_replay_step(&mut committed_state, CommitBoundary::Beat, 33, 9, 2, 400);
     let committed_browse = render_w30_replay_buffer(&committed_state);
 
     assert_eq!(
-        committed_state.queue_w30_trigger_pad(500),
+        committed_state.queue_w30_trigger_pad(500).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     commit_w30_replay_step(&mut committed_state, CommitBoundary::Beat, 34, 9, 2, 600);

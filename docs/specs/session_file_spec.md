@@ -486,6 +486,11 @@ Rules:
   unrelated newer mutations do not block a supported Undo target
 - action ids are unique across committed, pending-derived, and structural undo
   actions; duplicate persisted ids invalidate the session
+- a valid history ending at `u64::MAX` remains loadable, replayable and saveable;
+  new action allocation fails with typed exhaustion before Session/Undo
+  mutation. The allocator reserves one final `u64::MAX` after a history ending
+  at `u64::MAX - 1`, never reuses it, and is reconstructed from existing history
+  without a new persisted cursor field
 
 ### 8.8 Export receipts
 

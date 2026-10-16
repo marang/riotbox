@@ -197,7 +197,10 @@ fn jam_inspect_surfaces_blocked_stem_package_receipt() {
 #[test]
 fn jam_inspect_surfaces_export_failure_feedback() {
     let mut shell = sample_shell_state();
-    shell.app.queue_product_mix_export(900, None);
+    shell
+        .app
+        .queue_product_mix_export(900, None)
+        .expect("fixture action ID available");
     let action_id = shell
         .app
         .queue

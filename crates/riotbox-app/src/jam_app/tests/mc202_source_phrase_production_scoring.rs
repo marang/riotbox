@@ -125,7 +125,7 @@ fn explicit_pressure_stays_silent_when_only_a_pickup_family_is_eligible() {
     let mut state = confirmed_source_phrase_state(graph);
 
     assert_eq!(
-        state.queue_mc202_generate_pressure(300),
+        state.queue_mc202_generate_pressure(300).unwrap(),
         QueueControlResult::Enqueued
     );
     let committed = state.commit_ready_actions(
@@ -226,7 +226,7 @@ pub(in crate::jam_app::tests) fn commit_source_derived_instigator(
     state: &mut JamAppState,
 ) -> Vec<f32> {
     assert_eq!(
-        state.queue_mc202_generate_instigator(300),
+        state.queue_mc202_generate_instigator(300).unwrap(),
         QueueControlResult::Enqueued
     );
     let committed = state.commit_ready_actions(

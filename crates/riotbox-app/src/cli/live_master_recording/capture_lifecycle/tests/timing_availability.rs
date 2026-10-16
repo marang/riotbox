@@ -18,7 +18,9 @@ fn unavailable_timing_preserves_restored_transport_and_pending_acknowledgment() 
     );
     state.runtime.transport.position_beats = 12.5;
     state.set_transport_playing(true);
-    state.queue_tr909_fill(900);
+    state
+        .queue_tr909_fill(900)
+        .expect("generated action ID available");
     control.position_offset.set(12.5);
     let session = state.session.clone();
     let runtime = state.runtime.clone();

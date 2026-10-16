@@ -40,7 +40,7 @@ impl JamAppState {
                 requested_at,
                 session_base_dir,
                 Some(destination_dir.to_string_lossy().into_owned()),
-            ) {
+            )? {
                 DawSessionExportQueueResult::Enqueued { action_id } => action_id,
                 DawSessionExportQueueResult::Rejected { reason } => {
                     return Err(JamAppError::InvalidSession(reason));
@@ -157,7 +157,7 @@ impl JamAppState {
             None => match self.queue_daw_session_host_import_proof_export(
                 requested_at,
                 Some(proof_path.to_string_lossy().into_owned()),
-            ) {
+            )? {
                 DawSessionExportQueueResult::Enqueued { action_id } => action_id,
                 DawSessionExportQueueResult::Rejected { reason } => {
                     return Err(JamAppError::InvalidSession(reason));
@@ -273,7 +273,7 @@ impl JamAppState {
             None => match self.queue_daw_session_audible_output_proof_export(
                 requested_at,
                 Some(proof_path.to_string_lossy().into_owned()),
-            ) {
+            )? {
                 DawSessionExportQueueResult::Enqueued { action_id } => action_id,
                 DawSessionExportQueueResult::Rejected { reason } => {
                     return Err(JamAppError::InvalidSession(reason));

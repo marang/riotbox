@@ -315,7 +315,9 @@ fn observer_snapshot_records_committed_capture_source_window() {
     session.runtime_state.capture.length_intent = CaptureLengthIntent::OneBar;
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    state.queue_capture_bar(100);
+    state
+        .queue_capture_bar(100)
+        .expect("generated action ID available");
     let committed = state.commit_ready_actions(
         riotbox_core::transport::CommitBoundaryState {
             kind: riotbox_core::action::CommitBoundary::Bar,

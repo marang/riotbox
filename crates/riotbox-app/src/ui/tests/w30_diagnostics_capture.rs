@@ -43,7 +43,10 @@ fn renders_log_shell_snapshot_with_committed_w30_slice_pool_browse_diagnostics()
     shell.app.session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
     shell.app.refresh_view();
     assert_eq!(
-        shell.app.queue_w30_browse_slice_pool(320),
+        shell
+            .app
+            .queue_w30_browse_slice_pool(320)
+            .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
     shell.app.commit_ready_actions(
@@ -77,7 +80,10 @@ fn renders_capture_shell_snapshot_with_w30_damage_profile_cue() {
     shell.app.session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
     shell.app.refresh_view();
     assert_eq!(
-        shell.app.queue_w30_apply_damage_profile(210),
+        shell
+            .app
+            .queue_w30_apply_damage_profile(210)
+            .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
     shell.active_screen = ShellScreen::Capture;
@@ -126,7 +132,10 @@ fn renders_w30_bank_manager_and_damage_profile_diagnostics_across_shell_surfaces
     shell.app.refresh_view();
 
     assert_eq!(
-        shell.app.queue_w30_swap_bank(208),
+        shell
+            .app
+            .queue_w30_swap_bank(208)
+            .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
     let committed = shell.app.commit_ready_actions(
@@ -142,7 +151,10 @@ fn renders_w30_bank_manager_and_damage_profile_diagnostics_across_shell_surfaces
     assert_eq!(committed.len(), 1);
 
     assert_eq!(
-        shell.app.queue_w30_apply_damage_profile(222),
+        shell
+            .app
+            .queue_w30_apply_damage_profile(222)
+            .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
     let committed = shell.app.commit_ready_actions(
@@ -222,7 +234,10 @@ fn w30_operation_diagnostics_follow_current_lane_target() {
     shell.app.refresh_view();
 
     assert_eq!(
-        shell.app.queue_w30_swap_bank(208),
+        shell
+            .app
+            .queue_w30_swap_bank(208)
+            .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
     let committed = shell.app.commit_ready_actions(
@@ -238,7 +253,10 @@ fn w30_operation_diagnostics_follow_current_lane_target() {
     assert_eq!(committed.len(), 1);
 
     assert_eq!(
-        shell.app.queue_w30_apply_damage_profile(222),
+        shell
+            .app
+            .queue_w30_apply_damage_profile(222)
+            .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
     let committed = shell.app.commit_ready_actions(
@@ -254,7 +272,10 @@ fn w30_operation_diagnostics_follow_current_lane_target() {
     assert_eq!(committed.len(), 1);
 
     assert_eq!(
-        shell.app.queue_w30_loop_freeze(245),
+        shell
+            .app
+            .queue_w30_loop_freeze(245)
+            .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
     let committed = shell.app.commit_ready_actions(
@@ -315,7 +336,10 @@ fn renders_capture_shell_snapshot_with_w30_audition_cue() {
         });
     shell.app.refresh_view();
     assert_eq!(
-        shell.app.queue_w30_promoted_audition(210),
+        shell
+            .app
+            .queue_w30_promoted_audition(210)
+            .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
     shell.active_screen = ShellScreen::Capture;
@@ -450,7 +474,10 @@ fn renders_capture_shell_snapshot_with_w30_resample_cue() {
     shell.app.session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
     shell.app.refresh_view();
     assert_eq!(
-        shell.app.queue_w30_internal_resample(215),
+        shell
+            .app
+            .queue_w30_internal_resample(215)
+            .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
     shell.active_screen = ShellScreen::Capture;

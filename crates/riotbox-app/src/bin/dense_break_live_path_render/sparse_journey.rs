@@ -35,7 +35,7 @@ pub(super) fn prepare(
     require_ordinary_sparse_transform(&held_plan, "held")?;
 
     let mut state = Box::new(ready_state.clone());
-    if state.queue_w30_apply_damage_profile(2_000) != Some(QueueControlResult::Enqueued) {
+    if state.queue_w30_apply_damage_profile(2_000)? != Some(QueueControlResult::Enqueued) {
         return Err("sparse damage apply was unavailable".into());
     }
     let scene = current_scene(&state);
@@ -63,7 +63,7 @@ pub(super) fn prepare(
         return Err("sparse damage apply did not reach transient-bite gate state".into());
     }
 
-    if state.queue_w30_apply_damage_profile(2_100) != Some(QueueControlResult::Enqueued) {
+    if state.queue_w30_apply_damage_profile(2_100)? != Some(QueueControlResult::Enqueued) {
         return Err("sparse damage bypass was unavailable".into());
     }
     let scene = current_scene(&state);

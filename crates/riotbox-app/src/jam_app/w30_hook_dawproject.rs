@@ -1,3 +1,4 @@
+use riotbox_core::queue::ActionIdExhausted;
 use std::{fs, path::Path};
 
 use crate::jam_app::{
@@ -94,7 +95,7 @@ impl JamAppState {
         requested_at: TimestampMs,
         session_base_dir: Option<&Path>,
         destination_path: Option<String>,
-    ) -> DawSessionExportQueueResult {
+    ) -> Result<DawSessionExportQueueResult, ActionIdExhausted> {
         let source_receipt_id = latest_w30_hook_receipt(&self.session)
             .map(|receipt| receipt.receipt_id.as_str().to_owned());
         let mut draft = ActionDraft::new(
@@ -121,39 +122,42 @@ impl JamAppState {
         draft.explanation =
             Some("place the accepted W-30 hook in one vendor-neutral two-bar DAWproject".into());
 
-        match self
-            .queue
-            .enqueue_if_no_pending_command(draft, requested_at)
-        {
-            QueueEnqueueResult::AlreadyPending { .. } => {
-                DawSessionExportQueueResult::AlreadyPending
-            }
-            QueueEnqueueResult::Enqueued(action_id) => {
-                let preflight = destination_path
-                    .as_deref()
-                    .ok_or_else(|| {
-                        JamAppError::InvalidSession(
-                            "W-30 DAWproject export requires an explicit destination file".into(),
-                        )
-                    })
-                    .and_then(|destination| {
-                        validate_destination(Path::new(destination))?;
-                        prepare_input(&self.session, session_base_dir)
-                    });
-                match preflight {
-                    Ok(_) => {
-                        self.refresh_view();
-                        DawSessionExportQueueResult::Enqueued { action_id }
-                    }
-                    Err(error) => {
-                        let reason = error.to_string();
-                        self.queue.reject(action_id, reason.clone());
-                        self.refresh_view();
-                        DawSessionExportQueueResult::Rejected { reason }
+        Ok(
+            match self
+                .queue
+                .enqueue_if_no_pending_command(draft, requested_at)?
+            {
+                QueueEnqueueResult::AlreadyPending { .. } => {
+                    DawSessionExportQueueResult::AlreadyPending
+                }
+                QueueEnqueueResult::Enqueued(action_id) => {
+                    let preflight = destination_path
+                        .as_deref()
+                        .ok_or_else(|| {
+                            JamAppError::InvalidSession(
+                                "W-30 DAWproject export requires an explicit destination file"
+                                    .into(),
+                            )
+                        })
+                        .and_then(|destination| {
+                            validate_destination(Path::new(destination))?;
+                            prepare_input(&self.session, session_base_dir)
+                        });
+                    match preflight {
+                        Ok(_) => {
+                            self.refresh_view();
+                            DawSessionExportQueueResult::Enqueued { action_id }
+                        }
+                        Err(error) => {
+                            let reason = error.to_string();
+                            self.queue.reject(action_id, reason.clone());
+                            self.refresh_view();
+                            DawSessionExportQueueResult::Rejected { reason }
+                        }
                     }
                 }
-            }
-        }
+            },
+        )
     }
 
     pub fn commit_w30_hook_dawproject_export(
@@ -169,7 +173,7 @@ impl JamAppState {
                 requested_at,
                 session_base_dir,
                 Some(destination_path.to_string_lossy().into_owned()),
-            ) {
+            )? {
                 DawSessionExportQueueResult::Enqueued { action_id } => action_id,
                 DawSessionExportQueueResult::Rejected { reason } => {
                     return Err(JamAppError::InvalidSession(reason));

@@ -80,7 +80,7 @@ fn p014_scene_chain_launch_restore_replay_proves_transition_state_and_mix() {
     let baseline_break = render_scene_recipe_mix_buffer(&committed_state);
 
     assert_eq!(
-        committed_state.queue_scene_select(300),
+        committed_state.queue_scene_select(300).unwrap(),
         QueueControlResult::Enqueued
     );
     assert!(
@@ -137,7 +137,7 @@ fn p014_scene_chain_launch_restore_replay_proves_transition_state_and_mix() {
     let first_drop = render_scene_recipe_mix_buffer(&committed_state);
 
     assert_eq!(
-        committed_state.queue_scene_select(420),
+        committed_state.queue_scene_select(420).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_scene_chain_step(&mut committed_state, 40, 10, 2, "scene-02-drop", 480);
@@ -183,7 +183,7 @@ fn p014_scene_chain_launch_restore_replay_proves_transition_state_and_mix() {
     let second_intro = render_scene_recipe_mix_buffer(&committed_state);
 
     assert_eq!(
-        committed_state.queue_scene_restore(540),
+        committed_state.queue_scene_restore(540).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_scene_chain_step(&mut committed_state, 44, 11, 2, "scene-03-intro", 600);

@@ -1,5 +1,6 @@
 //! Semantic regression families and explicit shared synthetic fixtures.
 
+mod action_id_exhaustion;
 mod artifact_hydration_preflight;
 mod audio_timing_admission;
 mod capture_artifact_storage;

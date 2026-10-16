@@ -228,10 +228,10 @@ pub(in crate::jam_app::tests) fn commit_source_derived_role(
 ) -> Vec<f32> {
     let result = match role {
         Mc202RoleState::Leader => panic!("leader source phrase role is not covered by this helper"),
-        Mc202RoleState::Follower => state.queue_mc202_generate_follower(300),
-        Mc202RoleState::Answer => state.queue_mc202_generate_answer(300),
-        Mc202RoleState::Pressure => state.queue_mc202_generate_pressure(300),
-        Mc202RoleState::Instigator => state.queue_mc202_generate_instigator(300),
+        Mc202RoleState::Follower => state.queue_mc202_generate_follower(300).unwrap(),
+        Mc202RoleState::Answer => state.queue_mc202_generate_answer(300).unwrap(),
+        Mc202RoleState::Pressure => state.queue_mc202_generate_pressure(300).unwrap(),
+        Mc202RoleState::Instigator => state.queue_mc202_generate_instigator(300).unwrap(),
     };
     assert_eq!(result, QueueControlResult::Enqueued);
     let committed = state.commit_ready_actions(

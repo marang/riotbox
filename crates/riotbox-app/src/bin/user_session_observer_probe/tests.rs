@@ -4,6 +4,52 @@ use super::*;
 use serde_json::Value;
 
 #[test]
+fn exhausted_probe_key_fails_without_success_event_or_product_state_change() {
+    use riotbox_core::{ids::ActionId, queue::ActionIdExhausted};
+
+    for key in [
+        KeyCode::Char(' '),
+        KeyCode::Char('c'),
+        KeyCode::Char('f'),
+        KeyCode::Char('s'),
+        KeyCode::Char('g'),
+    ] {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let path = temp.path().join("events.ndjson");
+        let mut writer = NdjsonWriter::open(&path).expect("open observer");
+        let mut shell = probe_shell("exhausted-observer");
+        shell
+            .app
+            .queue
+            .reserve_action_ids_after(Some(ActionId(u64::MAX)));
+        let session_before = serde_json::to_value(&shell.app.session).expect("session snapshot");
+        let transport_before = shell.app.runtime.transport.clone();
+        let mut expected_observer = observer_snapshot(&shell);
+        expected_observer["status_message"] = json!(ActionIdExhausted.to_string());
+
+        let error = apply_probe_key(&mut shell, &mut writer, 100, key)
+            .expect_err("exhausted key must fail visibly");
+
+        assert_eq!(error.kind(), io::ErrorKind::Other);
+        assert!(
+            error
+                .get_ref()
+                .is_some_and(|error| error.is::<ActionIdExhausted>())
+        );
+        assert_eq!(
+            serde_json::to_value(&shell.app.session).expect("session snapshot"),
+            session_before
+        );
+        assert_eq!(shell.app.runtime.transport, transport_before);
+        assert_eq!(shell.status_message, ActionIdExhausted.to_string());
+        assert_eq!(observer_snapshot(&shell), expected_observer);
+        assert!(shell.app.queue.pending_actions().is_empty());
+        assert!(shell.app.queue.history().is_empty());
+        assert!(fs::read_to_string(path).expect("read observer").is_empty());
+    }
+}
+
+#[test]
 fn parses_required_probe_args() {
     let args = Args::parse([
         "--probe".into(),

@@ -13,6 +13,7 @@ use riotbox_audio::runtime::{
     LiveMasterCaptureError, LiveMasterCaptureOutcome, LiveMasterCaptureProgress,
     LiveMasterCaptureRequest,
 };
+use riotbox_core::queue::ActionIdExhausted;
 use riotbox_core::{TimestampMs, action::LiveRecordingDuration};
 use serde_json::{Value, json};
 
@@ -144,12 +145,16 @@ fn execute_with_control_observed(
         .ok_or("live master recording runtime has no output identity")?;
 
     let started_transport = !state.runtime.transport.is_playing;
-    if started_transport {
-        state.commit_transport_toggle(runtime.timestamp_now());
+    if started_transport && let Err(error) = state.commit_transport_toggle(runtime.timestamp_now())
+    {
+        stop_live_master_runtime(state, runtime, false)?;
+        return Err(error.into());
     }
     sync_live_master_runtime(state, runtime);
     if let Err(error) = wait_for_live_transport(state, runtime) {
-        stop_live_master_runtime(state, runtime, started_transport);
+        if let Err(stop_error) = stop_live_master_runtime(state, runtime, started_transport) {
+            return Err(format!("{error}; transport cleanup failed: {stop_error}").into());
+        }
         return Err(error);
     }
 
@@ -159,8 +164,8 @@ fn execute_with_control_observed(
         destination_path,
         *duration,
     ) {
-        crate::jam_app::LiveMasterRecordingQueueResult::Enqueued(plan) => plan,
-        crate::jam_app::LiveMasterRecordingQueueResult::Rejected { reason } => {
+        Ok(crate::jam_app::LiveMasterRecordingQueueResult::Enqueued(plan)) => plan,
+        Ok(crate::jam_app::LiveMasterRecordingQueueResult::Rejected { reason }) => {
             return Ok(blocked_live_master_recording_result(
                 launch,
                 state,
@@ -171,7 +176,7 @@ fn execute_with_control_observed(
                 reason,
             ));
         }
-        crate::jam_app::LiveMasterRecordingQueueResult::AlreadyPending => {
+        Ok(crate::jam_app::LiveMasterRecordingQueueResult::AlreadyPending) => {
             return Ok(blocked_live_master_recording_result(
                 launch,
                 state,
@@ -180,6 +185,17 @@ fn execute_with_control_observed(
                 None,
                 &output,
                 "another live recording export is already pending".into(),
+            ));
+        }
+        Err(error) => {
+            return Ok(blocked_live_master_recording_result(
+                launch,
+                state,
+                runtime,
+                started_transport,
+                None,
+                &output,
+                error.to_string(),
             ));
         }
     };
@@ -213,9 +229,12 @@ fn execute_with_control_observed(
             || health.stream_error_count > 0
             || health.callback_scratch_overflow_count > 0
         {
-            stop_live_master_runtime(state, runtime, started_transport);
+            let stop_result = stop_live_master_runtime(state, runtime, started_transport);
             runtime.abort_live_master_capture();
-            let reason = format!("live master runtime faulted during capture: {health:?}");
+            let reason = with_transport_cleanup_error(
+                format!("live master runtime faulted during capture: {health:?}"),
+                stop_result,
+            );
             state.reject_live_master_recording(plan.action_id, reason.clone());
             return Ok(blocked_live_master_recording_result(
                 launch,
@@ -229,10 +248,13 @@ fn execute_with_control_observed(
         }
         if let Some(progress) = runtime.live_master_capture_progress() {
             if progress.fault_count() > 0 {
-                stop_live_master_runtime(state, runtime, started_transport);
+                let stop_result = stop_live_master_runtime(state, runtime, started_transport);
                 let progress = runtime.abort_live_master_capture().unwrap_or(progress);
-                let reason = format!(
-                    "live master callback capture faulted while waiting for or recording the bar window: {progress:?}"
+                let reason = with_transport_cleanup_error(
+                    format!(
+                        "live master callback capture faulted while waiting for or recording the bar window: {progress:?}"
+                    ),
+                    stop_result,
                 );
                 state.reject_live_master_recording(plan.action_id, reason.clone());
                 return Ok(blocked_live_master_recording_result(
@@ -254,9 +276,12 @@ fn execute_with_control_observed(
             }
         }
         if runtime.now() >= deadline {
-            stop_live_master_runtime(state, runtime, started_transport);
+            let stop_result = stop_live_master_runtime(state, runtime, started_transport);
             let progress = runtime.abort_live_master_capture();
-            let reason = format!("live master callback capture stopped early: {progress:?}");
+            let reason = with_transport_cleanup_error(
+                format!("live master callback capture stopped early: {progress:?}"),
+                stop_result,
+            );
             state.reject_live_master_recording(plan.action_id, reason.clone());
             return Ok(blocked_live_master_recording_result(
                 launch,
@@ -274,7 +299,20 @@ fn execute_with_control_observed(
     sync_live_master_runtime(state, runtime);
     let final_health = runtime.health_snapshot();
     state.set_audio_health(final_health.clone());
-    stop_live_master_runtime(state, runtime, started_transport);
+    if let Err(error) = stop_live_master_runtime(state, runtime, started_transport) {
+        runtime.abort_live_master_capture();
+        let reason = format!("live master transport cleanup failed: {error}");
+        state.reject_live_master_recording(plan.action_id, reason.clone());
+        return Ok(blocked_live_master_recording_result(
+            launch,
+            state,
+            runtime,
+            false,
+            Some(&plan),
+            &output,
+            reason,
+        ));
+    }
     let stopped_ns = observation
         .enabled()
         .then(|| runtime.monotonic_ns())
@@ -387,10 +425,23 @@ fn stop_live_master_runtime(
     state: &mut JamAppState,
     runtime: &mut impl RuntimeControl,
     started_transport: bool,
-) {
-    stop_cli_started_transport(state, runtime, started_transport);
+) -> Result<(), ActionIdExhausted> {
+    let transport_result = stop_cli_started_transport(state, runtime, started_transport);
+    // Stopping the device is a safety operation, not a newly committed Action.
+    // Exhaustion may prevent a Pause record but must never skip the device stop.
     runtime.stop();
     state.set_audio_health(runtime.health_snapshot());
+    transport_result
+}
+
+fn with_transport_cleanup_error(
+    mut reason: String,
+    result: Result<(), ActionIdExhausted>,
+) -> String {
+    if let Err(error) = result {
+        reason.push_str(&format!("; transport cleanup failed: {error}"));
+    }
+    reason
 }
 
 fn blocked_live_master_recording_result(
@@ -400,11 +451,11 @@ fn blocked_live_master_recording_result(
     started_transport: bool,
     plan: Option<&crate::jam_app::LiveMasterRecordingPlan>,
     output: &riotbox_audio::runtime::AudioOutputInfo,
-    reason: String,
+    mut reason: String,
 ) -> Value {
-    stop_cli_started_transport(state, runtime, started_transport);
-    runtime.stop();
-    state.set_audio_health(runtime.health_snapshot());
+    if let Err(error) = stop_live_master_runtime(state, runtime, started_transport) {
+        reason.push_str(&format!("; transport cleanup failed: {error}"));
+    }
     let retained_paths = plan
         .into_iter()
         .flat_map(|plan| [&plan.destination_path, &plan.proof_path])
@@ -444,15 +495,16 @@ fn stop_cli_started_transport(
     state: &mut JamAppState,
     runtime: &impl RuntimeControl,
     started_transport: bool,
-) {
+) -> Result<(), ActionIdExhausted> {
     if started_transport && state.runtime.transport.is_playing {
-        state.commit_transport_toggle(runtime.timestamp_now());
+        state.commit_transport_toggle(runtime.timestamp_now())?;
         runtime.update_transport_state(
             false,
             state.runtime.tr909_render.tempo_bpm,
             state.runtime.transport.position_beats,
         );
     }
+    Ok(())
 }
 
 fn wait_for_live_transport(

@@ -145,7 +145,7 @@ fn cross_section_phrase_at_second_section_boundary_is_explicitly_unavailable() {
     let mut state = confirmed_source_phrase_state(graph);
 
     assert_eq!(
-        state.queue_mc202_generate_answer(300),
+        state.queue_mc202_generate_answer(300).unwrap(),
         QueueControlResult::Enqueued
     );
     let committed = state.commit_ready_actions(
@@ -196,7 +196,7 @@ fn section_owned_phrase_at_uncovered_boundary_is_explicitly_unavailable() {
     let mut state = confirmed_source_phrase_state(graph);
 
     assert_eq!(
-        state.queue_mc202_generate_answer(300),
+        state.queue_mc202_generate_answer(300).unwrap(),
         QueueControlResult::Enqueued
     );
     let committed = state.commit_ready_actions(
@@ -257,7 +257,7 @@ fn rejected_cross_section_phrase_is_atomic_and_replay_is_a_noop() {
     let replay_base = state.session.clone();
 
     assert_eq!(
-        state.queue_mc202_generate_follower(300),
+        state.queue_mc202_generate_follower(300).unwrap(),
         QueueControlResult::Enqueued
     );
     let first_commit = state.commit_ready_actions(
@@ -276,7 +276,7 @@ fn rejected_cross_section_phrase_is_atomic_and_replay_is_a_noop() {
     assert!(previous_mc202.source_phrase_plan.is_some());
 
     assert_eq!(
-        state.queue_mc202_generate_answer(500),
+        state.queue_mc202_generate_answer(500).unwrap(),
         QueueControlResult::Enqueued
     );
     let rejected_commit = state.commit_ready_actions(

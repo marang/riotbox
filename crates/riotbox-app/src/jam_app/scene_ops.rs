@@ -1,3 +1,4 @@
+use riotbox_core::queue::ActionIdExhausted;
 use riotbox_core::{
     TimestampMs,
     action::{ActionCommand, ActionDraft, ActionParams, ActorType, Quantization, TargetScope},
@@ -10,7 +11,10 @@ use riotbox_core::{
 use super::{JamAppState, QueueControlResult};
 
 impl JamAppState {
-    pub fn queue_scene_mutation(&mut self, requested_at: TimestampMs) {
+    pub fn queue_scene_mutation(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Result<(), ActionIdExhausted> {
         let mut draft = ActionDraft::new(
             ActorType::User,
             ActionCommand::MutateScene,
@@ -32,8 +36,9 @@ impl JamAppState {
                 .map(ToString::to_string),
         };
         draft.explanation = Some("mutate current scene on next bar".into());
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
+        Ok(())
     }
 
     fn scene_transition_pending(&self) -> bool {
@@ -66,13 +71,16 @@ impl JamAppState {
             .filter(|scene_id| current_scene.as_ref() != Some(scene_id))
     }
 
-    pub fn queue_scene_select(&mut self, requested_at: TimestampMs) -> QueueControlResult {
+    pub fn queue_scene_select(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Result<QueueControlResult, ActionIdExhausted> {
         if self.scene_transition_pending() {
-            return QueueControlResult::AlreadyPending;
+            return Ok(QueueControlResult::AlreadyPending);
         }
 
         let Some(candidate) = self.next_scene_candidate() else {
-            return QueueControlResult::AlreadyInState;
+            return Ok(QueueControlResult::AlreadyInState);
         };
         let scene_id = candidate.scene_id.clone();
 
@@ -95,18 +103,21 @@ impl JamAppState {
             }
             SceneLaunchTargetReason::Ordered => format!("launch scene {scene_id} on next bar"),
         });
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        QueueControlResult::Enqueued
+        Ok(QueueControlResult::Enqueued)
     }
 
-    pub fn queue_scene_restore(&mut self, requested_at: TimestampMs) -> QueueControlResult {
+    pub fn queue_scene_restore(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Result<QueueControlResult, ActionIdExhausted> {
         if self.scene_transition_pending() {
-            return QueueControlResult::AlreadyPending;
+            return Ok(QueueControlResult::AlreadyPending);
         }
 
         let Some(scene_id) = self.restorable_scene_target() else {
-            return QueueControlResult::AlreadyInState;
+            return Ok(QueueControlResult::AlreadyInState);
         };
 
         let mut draft = ActionDraft::new(
@@ -123,8 +134,8 @@ impl JamAppState {
             scene_id: Some(scene_id.clone()),
         };
         draft.explanation = Some(format!("restore scene {scene_id} on next bar"));
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        QueueControlResult::Enqueued
+        Ok(QueueControlResult::Enqueued)
     }
 }

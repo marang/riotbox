@@ -633,15 +633,21 @@ fn source_monitor_mode_queues_commits_and_surfaces_in_runtime_view() {
 
     assert_eq!(state.runtime_view.source_monitor_mode, "source");
     assert_eq!(
-        state.queue_source_monitor_mode(SourceMonitorMode::Riotbox, 100),
+        state
+            .queue_source_monitor_mode(SourceMonitorMode::Riotbox, 100)
+            .unwrap(),
         QueueControlResult::Enqueued
     );
     assert_eq!(
-        state.queue_source_monitor_mode(SourceMonitorMode::Riotbox, 101),
+        state
+            .queue_source_monitor_mode(SourceMonitorMode::Riotbox, 101)
+            .unwrap(),
         QueueControlResult::AlreadyPending
     );
     assert_eq!(
-        state.queue_source_monitor_mode(SourceMonitorMode::Source, 102),
+        state
+            .queue_source_monitor_mode(SourceMonitorMode::Source, 102)
+            .unwrap(),
         QueueControlResult::AlreadyPending
     );
 
@@ -663,7 +669,9 @@ fn source_monitor_mode_queues_commits_and_surfaces_in_runtime_view() {
     );
     assert_eq!(state.runtime_view.source_monitor_mode, "riotbox");
     assert_eq!(
-        state.queue_source_monitor_mode(SourceMonitorMode::Riotbox, 121),
+        state
+            .queue_source_monitor_mode(SourceMonitorMode::Riotbox, 121)
+            .unwrap(),
         QueueControlResult::AlreadyInState
     );
 }

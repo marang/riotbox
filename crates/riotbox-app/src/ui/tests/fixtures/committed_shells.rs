@@ -77,19 +77,26 @@ pub(in crate::ui::tests) fn mc202_committed_shell_state(
     );
 
     let queue_result = match fixture.action {
-        Mc202RegressionAction::SetRole => shell.app.queue_mc202_role_toggle(fixture.requested_at),
+        Mc202RegressionAction::SetRole => shell
+            .app
+            .queue_mc202_role_toggle(fixture.requested_at)
+            .expect("fixture action ID available"),
         Mc202RegressionAction::GenerateFollower => shell
             .app
-            .queue_mc202_generate_follower(fixture.requested_at),
-        Mc202RegressionAction::GenerateAnswer => {
-            shell.app.queue_mc202_generate_answer(fixture.requested_at)
-        }
+            .queue_mc202_generate_follower(fixture.requested_at)
+            .expect("fixture action ID available"),
+        Mc202RegressionAction::GenerateAnswer => shell
+            .app
+            .queue_mc202_generate_answer(fixture.requested_at)
+            .expect("fixture action ID available"),
         Mc202RegressionAction::GeneratePressure => shell
             .app
-            .queue_mc202_generate_pressure(fixture.requested_at),
+            .queue_mc202_generate_pressure(fixture.requested_at)
+            .expect("fixture action ID available"),
         Mc202RegressionAction::GenerateInstigator => shell
             .app
-            .queue_mc202_generate_instigator(fixture.requested_at),
+            .queue_mc202_generate_instigator(fixture.requested_at)
+            .expect("fixture action ID available"),
     };
     assert_eq!(
         queue_result,
@@ -178,7 +185,8 @@ pub(in crate::ui::tests) fn scene_committed_shell_state(
             assert_eq!(
                 shell
                     .app
-                    .queue_scene_select(fixture.requested_at.expect("scene select requested_at")),
+                    .queue_scene_select(fixture.requested_at.expect("scene select requested_at"))
+                    .expect("fixture action ID available"),
                 crate::jam_app::QueueControlResult::Enqueued,
                 "{} did not enqueue",
                 fixture.name
@@ -203,7 +211,8 @@ pub(in crate::ui::tests) fn scene_committed_shell_state(
             assert_eq!(
                 shell
                     .app
-                    .queue_scene_restore(fixture.requested_at.expect("scene restore requested_at")),
+                    .queue_scene_restore(fixture.requested_at.expect("scene restore requested_at"))
+                    .expect("fixture action ID available"),
                 crate::jam_app::QueueControlResult::Enqueued,
                 "{} did not enqueue",
                 fixture.name
@@ -389,22 +398,38 @@ pub(in crate::ui::tests) fn w30_committed_shell_state(
     );
 
     let queue_result = match fixture.action {
-        W30RegressionAction::LiveRecall => shell.app.queue_w30_live_recall(fixture.requested_at),
-        W30RegressionAction::RawCaptureAudition => {
-            shell.app.queue_w30_audition(fixture.requested_at)
-        }
-        W30RegressionAction::PromotedAudition => {
-            shell.app.queue_w30_promoted_audition(fixture.requested_at)
-        }
-        W30RegressionAction::TriggerPad => shell.app.queue_w30_trigger_pad(fixture.requested_at),
-        W30RegressionAction::SwapBank => shell.app.queue_w30_swap_bank(fixture.requested_at),
+        W30RegressionAction::LiveRecall => shell
+            .app
+            .queue_w30_live_recall(fixture.requested_at)
+            .expect("fixture action ID available"),
+        W30RegressionAction::RawCaptureAudition => shell
+            .app
+            .queue_w30_audition(fixture.requested_at)
+            .expect("fixture action ID available"),
+        W30RegressionAction::PromotedAudition => shell
+            .app
+            .queue_w30_promoted_audition(fixture.requested_at)
+            .expect("fixture action ID available"),
+        W30RegressionAction::TriggerPad => shell
+            .app
+            .queue_w30_trigger_pad(fixture.requested_at)
+            .expect("fixture action ID available"),
+        W30RegressionAction::SwapBank => shell
+            .app
+            .queue_w30_swap_bank(fixture.requested_at)
+            .expect("fixture action ID available"),
         W30RegressionAction::ApplyDamageProfile => shell
             .app
-            .queue_w30_apply_damage_profile(fixture.requested_at),
-        W30RegressionAction::LoopFreeze => shell.app.queue_w30_loop_freeze(fixture.requested_at),
-        W30RegressionAction::BrowseSlicePool => {
-            shell.app.queue_w30_browse_slice_pool(fixture.requested_at)
-        }
+            .queue_w30_apply_damage_profile(fixture.requested_at)
+            .expect("fixture action ID available"),
+        W30RegressionAction::LoopFreeze => shell
+            .app
+            .queue_w30_loop_freeze(fixture.requested_at)
+            .expect("fixture action ID available"),
+        W30RegressionAction::BrowseSlicePool => shell
+            .app
+            .queue_w30_browse_slice_pool(fixture.requested_at)
+            .expect("fixture action ID available"),
     };
     assert_eq!(
         queue_result,

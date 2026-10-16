@@ -92,7 +92,7 @@ impl JamAppState {
             ));
         }
         if self
-            .queue_source_timing_grid_confirmation_at_bpm(requested_at, Some(explicit_source_bpm))
+            .queue_source_timing_grid_confirmation_at_bpm(requested_at, Some(explicit_source_bpm))?
             != QueueControlResult::Enqueued
         {
             return Err(JamAppError::InvalidSession(

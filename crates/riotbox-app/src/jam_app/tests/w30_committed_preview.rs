@@ -35,7 +35,7 @@ fn committed_w30_promoted_audition_updates_lane_focus_grit_and_log_result() {
     state.refresh_view();
 
     assert_eq!(
-        state.queue_w30_promoted_audition(640),
+        state.queue_w30_promoted_audition(640).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
 
@@ -150,7 +150,7 @@ fn committed_w30_trigger_updates_preview_trigger_revision_and_log_result() {
     state.refresh_view();
 
     assert_eq!(
-        state.queue_w30_trigger_pad(645),
+        state.queue_w30_trigger_pad(645).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
 
@@ -222,7 +222,7 @@ fn committed_w30_trigger_preserves_source_window_preview_samples() {
     state.refresh_view();
 
     assert_eq!(
-        state.queue_w30_trigger_pad(645),
+        state.queue_w30_trigger_pad(645).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     let committed = state.commit_ready_actions(

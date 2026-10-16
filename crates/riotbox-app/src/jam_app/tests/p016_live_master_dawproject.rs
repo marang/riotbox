@@ -49,7 +49,10 @@ fn prepared_live_master_state(root: &std::path::Path) -> (JamAppState, PathBuf) 
     let output = live_master_test_output();
     let mut state = live_master_recording_state();
     // Existing DAW V1 regressions keep an explicitly legacy V2 recording.
-    let plan = match state.queue_legacy_two_bar_recording_fixture(1_000, &output, &recording) {
+    let plan = match state
+        .queue_legacy_two_bar_recording_fixture(1_000, &output, &recording)
+        .unwrap()
+    {
         LiveMasterRecordingQueueResult::Enqueued(plan) => plan,
         other => panic!("expected live master record plan, got {other:?}"),
     };
@@ -243,10 +246,12 @@ fn live_master_dawproject_rejects_ambiguous_receipt_ids_before_and_after_queue()
         let destination = temp.path().join("ambiguous.dawproject");
         if duplicate_after_queue {
             assert!(matches!(
-                state.queue_live_master_dawproject_export(
-                    3_000,
-                    Some(destination.to_string_lossy().into_owned())
-                ),
+                state
+                    .queue_live_master_dawproject_export(
+                        3_000,
+                        Some(destination.to_string_lossy().into_owned())
+                    )
+                    .unwrap(),
                 crate::jam_app::product_export::DawSessionExportQueueResult::Enqueued { .. }
             ));
         }
@@ -337,10 +342,12 @@ fn live_master_dawproject_pins_the_selected_receipt_and_never_falls_back_from_ne
     let temp = tempdir().expect("tempdir");
     let (mut state, _) = prepared_live_master_state(temp.path());
     let destination = temp.path().join("pinned.dawproject");
-    let queued = state.queue_live_master_dawproject_export(
-        3_000,
-        Some(destination.to_string_lossy().into_owned()),
-    );
+    let queued = state
+        .queue_live_master_dawproject_export(
+            3_000,
+            Some(destination.to_string_lossy().into_owned()),
+        )
+        .unwrap();
     assert!(matches!(
         queued,
         crate::jam_app::product_export::DawSessionExportQueueResult::Enqueued { .. }
@@ -369,7 +376,8 @@ fn live_master_dawproject_pins_the_selected_receipt_and_never_falls_back_from_ne
     no_fallback.session.export_receipts.push(newer_invalid);
     let blocked = temp.path().join("newest-invalid.dawproject");
     let result = no_fallback
-        .queue_live_master_dawproject_export(3_200, Some(blocked.to_string_lossy().into_owned()));
+        .queue_live_master_dawproject_export(3_200, Some(blocked.to_string_lossy().into_owned()))
+        .unwrap();
     assert!(matches!(
         result,
         crate::jam_app::product_export::DawSessionExportQueueResult::Rejected { .. }
@@ -395,10 +403,12 @@ fn live_master_dawproject_never_skips_newer_v2_boundary_with_corrupt_scope_or_ro
         let destination = root.join("must-not-fallback.dawproject");
         assert!(
             matches!(
-                state.queue_live_master_dawproject_export(
-                    3_300,
-                    Some(destination.to_string_lossy().into_owned())
-                ),
+                state
+                    .queue_live_master_dawproject_export(
+                        3_300,
+                        Some(destination.to_string_lossy().into_owned())
+                    )
+                    .unwrap(),
                 crate::jam_app::product_export::DawSessionExportQueueResult::Rejected { .. }
             ),
             "{corruption}"
@@ -665,10 +675,12 @@ fn live_master_dawproject_refuses_no_clobber_and_rolls_back_both_save_entry_poin
         let destination = case.join("rolled-back.dawproject");
         if queued_first {
             assert!(matches!(
-                state.queue_live_master_dawproject_export(
-                    5_100,
-                    Some(destination.to_string_lossy().into_owned())
-                ),
+                state
+                    .queue_live_master_dawproject_export(
+                        5_100,
+                        Some(destination.to_string_lossy().into_owned())
+                    )
+                    .unwrap(),
                 crate::jam_app::product_export::DawSessionExportQueueResult::Enqueued { .. }
             ));
         }

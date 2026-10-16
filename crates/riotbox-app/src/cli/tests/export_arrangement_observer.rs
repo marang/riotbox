@@ -31,7 +31,9 @@ fn observer_snapshot_projects_blocked_arrangement_placement_from_receipt() {
         None,
         ActionQueue::new(),
     );
-    state.queue_product_mix_export(904, Some("exports/arrangement".into()));
+    state
+        .queue_product_mix_export(904, Some("exports/arrangement".into()))
+        .expect("generated action ID available");
     let action_id = state
         .queue
         .pending_actions()
@@ -105,7 +107,9 @@ fn observer_snapshot_projects_ready_arrangement_placement_refs_from_receipt() {
         None,
         ActionQueue::new(),
     );
-    state.queue_product_mix_export(905, Some("exports/arrangement".into()));
+    state
+        .queue_product_mix_export(905, Some("exports/arrangement".into()))
+        .expect("generated action ID available");
     let action_id = state
         .queue
         .pending_actions()

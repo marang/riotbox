@@ -45,9 +45,9 @@ fn w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_outpu
 
     let mut committed_state =
         JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("load app state");
-    committed_state.queue_capture_bar(300);
+    committed_state.queue_capture_bar(300).unwrap();
     commit_w30_replay_step(&mut committed_state, CommitBoundary::Phrase, 0, 1, 0, 400);
-    assert!(committed_state.queue_promote_last_capture(410));
+    assert!(committed_state.queue_promote_last_capture(410).unwrap());
     commit_w30_replay_step(&mut committed_state, CommitBoundary::Bar, 4, 2, 0, 500);
     let pre_resample_action_cursor = committed_state.session.action_log.actions.len();
     let pre_resample_runtime = committed_state.session.runtime_state.clone();
@@ -62,7 +62,7 @@ fn w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_outpu
     );
 
     assert_eq!(
-        committed_state.queue_w30_internal_resample(650),
+        committed_state.queue_w30_internal_resample(650).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     commit_w30_replay_step(&mut committed_state, CommitBoundary::Phrase, 32, 8, 2, 740);

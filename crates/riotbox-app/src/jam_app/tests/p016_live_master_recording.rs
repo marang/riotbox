@@ -124,7 +124,10 @@ fn generated_legacy_v2_take_retains_wav_proof_action_session_and_receipt() {
     let destination = temp.path().join("live-master.wav");
     let output = live_master_test_output();
     let mut state = live_master_recording_state();
-    let plan = match state.queue_legacy_two_bar_recording_fixture(1_000, &output, &destination) {
+    let plan = match state
+        .queue_legacy_two_bar_recording_fixture(1_000, &output, &destination)
+        .unwrap()
+    {
         LiveMasterRecordingQueueResult::Enqueued(plan) => plan,
         other => panic!("expected queued live master recording, got {other:?}"),
     };
@@ -223,7 +226,10 @@ fn live_transport_progress_cannot_commit_capture_before_the_writer_succeeds() {
     let mut state = live_master_recording_state();
     state.runtime.transport.is_playing = true;
     state.session.runtime_state.transport.is_playing = true;
-    let plan = match state.queue_live_master_recording(1_000, &output, &destination) {
+    let plan = match state
+        .queue_live_master_recording(1_000, &output, &destination)
+        .unwrap()
+    {
         LiveMasterRecordingQueueResult::Enqueued(plan) => plan,
         other => panic!("expected queued live master recording, got {other:?}"),
     };
@@ -274,7 +280,10 @@ fn live_master_recording_fails_closed_on_callback_fault_without_final_files_or_r
     let destination = temp.path().join("faulted-live-master.wav");
     let output = live_master_test_output();
     let mut state = live_master_recording_state();
-    let plan = match state.queue_live_master_recording(1_000, &output, &destination) {
+    let plan = match state
+        .queue_live_master_recording(1_000, &output, &destination)
+        .unwrap()
+    {
         LiveMasterRecordingQueueResult::Enqueued(plan) => plan,
         other => panic!("expected queued live master recording, got {other:?}"),
     };
@@ -307,7 +316,10 @@ fn live_master_recording_rederives_and_enforces_the_frozen_eight_beat_window() {
     let destination = temp.path().join("mutated-window-live-master.wav");
     let output = live_master_test_output();
     let mut state = live_master_recording_state();
-    let mut plan = match state.queue_live_master_recording(1_000, &output, &destination) {
+    let mut plan = match state
+        .queue_live_master_recording(1_000, &output, &destination)
+        .unwrap()
+    {
         LiveMasterRecordingQueueResult::Enqueued(plan) => plan,
         other => panic!("expected queued live master recording, got {other:?}"),
     };
@@ -339,7 +351,10 @@ fn live_master_recording_rejects_a_capture_start_later_than_one_output_frame() {
     let destination = temp.path().join("misaligned-live-master.wav");
     let output = live_master_test_output();
     let mut state = live_master_recording_state();
-    let plan = match state.queue_live_master_recording(1_000, &output, &destination) {
+    let plan = match state
+        .queue_live_master_recording(1_000, &output, &destination)
+        .unwrap()
+    {
         LiveMasterRecordingQueueResult::Enqueued(plan) => plan,
         other => panic!("expected queued live master recording, got {other:?}"),
     };
@@ -372,7 +387,9 @@ fn live_master_recording_records_destination_collision_as_rejected_action() {
     let output = live_master_test_output();
     let mut state = live_master_recording_state();
 
-    let result = state.queue_live_master_recording(1_000, &output, &destination);
+    let result = state
+        .queue_live_master_recording(1_000, &output, &destination)
+        .unwrap();
 
     assert!(matches!(
         result,
@@ -406,7 +423,10 @@ fn live_master_recording_records_only_active_render_capture_lineage() {
     state.runtime.w30_preview.capture_id = Some("cap-active".into());
     state.runtime.w30_preview.music_bus_level = 0.8;
 
-    let plan = match state.queue_live_master_recording(1_000, &output, &destination) {
+    let plan = match state
+        .queue_live_master_recording(1_000, &output, &destination)
+        .unwrap()
+    {
         LiveMasterRecordingQueueResult::Enqueued(plan) => plan,
         other => panic!("expected queued live master recording, got {other:?}"),
     };
@@ -432,7 +452,9 @@ fn live_master_recording_rejects_an_active_render_capture_missing_from_session()
     state.runtime.w30_preview.capture_id = Some("cap-missing".into());
     state.runtime.w30_preview.music_bus_level = 0.8;
 
-    let result = state.queue_live_master_recording(1_000, &output, &destination);
+    let result = state
+        .queue_live_master_recording(1_000, &output, &destination)
+        .unwrap();
 
     let LiveMasterRecordingQueueResult::Rejected { reason } = result else {
         panic!("missing active capture must reject");
@@ -453,7 +475,9 @@ fn live_master_recording_rejects_pathological_positive_bpm_before_runtime_alloca
     let mut state = live_master_recording_state();
     state.session.runtime_state.source_timing.confirmed_bpm = Some(0.1);
 
-    let result = state.queue_live_master_recording(1_000, &output, &destination);
+    let result = state
+        .queue_live_master_recording(1_000, &output, &destination)
+        .unwrap();
 
     let LiveMasterRecordingQueueResult::Rejected { reason } = result else {
         panic!("oversized positive-BPM capture must reject");
@@ -473,7 +497,10 @@ fn live_master_recording_persists_session_after_owned_artifacts_are_validated() 
         session_path: session_path.clone(),
         source_graph_path: None,
     });
-    let plan = match state.queue_live_master_recording(1_000, &output, &destination) {
+    let plan = match state
+        .queue_live_master_recording(1_000, &output, &destination)
+        .unwrap()
+    {
         LiveMasterRecordingQueueResult::Enqueued(plan) => plan,
         other => panic!("expected queued live master recording, got {other:?}"),
     };
@@ -501,7 +528,10 @@ fn live_master_recording_rolls_back_owned_files_and_action_when_session_save_fai
         source_graph_path: None,
     });
     let session_before_commit = state.session.clone();
-    let plan = match state.queue_live_master_recording(1_000, &output, &destination) {
+    let plan = match state
+        .queue_live_master_recording(1_000, &output, &destination)
+        .unwrap()
+    {
         LiveMasterRecordingQueueResult::Enqueued(plan) => plan,
         other => panic!("expected queued live master recording, got {other:?}"),
     };

@@ -326,30 +326,34 @@ pub(in crate::ui::tests) fn sample_shell_state() -> JamShellState {
     };
 
     let mut queue = ActionQueue::new();
-    queue.enqueue(
-        ActionDraft::new(
-            ActorType::Ghost,
-            ActionCommand::MutateScene,
-            Quantization::NextBar,
-            ActionTarget {
-                scope: Some(TargetScope::Scene),
-                ..Default::default()
-            },
-        ),
-        130,
-    );
-    queue.enqueue(
-        ActionDraft::new(
-            ActorType::User,
-            ActionCommand::Tr909FillNext,
-            Quantization::NextBar,
-            ActionTarget {
-                scope: Some(TargetScope::LaneTr909),
-                ..Default::default()
-            },
-        ),
-        130,
-    );
+    queue
+        .enqueue(
+            ActionDraft::new(
+                ActorType::Ghost,
+                ActionCommand::MutateScene,
+                Quantization::NextBar,
+                ActionTarget {
+                    scope: Some(TargetScope::Scene),
+                    ..Default::default()
+                },
+            ),
+            130,
+        )
+        .expect("fixture action ID available");
+    queue
+        .enqueue(
+            ActionDraft::new(
+                ActorType::User,
+                ActionCommand::Tr909FillNext,
+                Quantization::NextBar,
+                ActionTarget {
+                    scope: Some(TargetScope::LaneTr909),
+                    ..Default::default()
+                },
+            ),
+            130,
+        )
+        .expect("fixture action ID available");
     let mut promote_draft = ActionDraft::new(
         ActorType::User,
         ActionCommand::PromoteCaptureToPad,
@@ -366,7 +370,9 @@ pub(in crate::ui::tests) fn sample_shell_state() -> JamShellState {
         destination: Some("w30:bank-a/pad-01".into()),
     };
     promote_draft.explanation = Some("promote keeper capture into the live pad".into());
-    queue.enqueue(promote_draft, 131);
+    queue
+        .enqueue(promote_draft, 131)
+        .expect("fixture action ID available");
 
     session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
     session.captures.push(riotbox_core::session::CaptureRef {

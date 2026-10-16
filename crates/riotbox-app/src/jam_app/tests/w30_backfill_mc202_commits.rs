@@ -137,8 +137,8 @@ fn committed_tr909_actions_update_lane_state() {
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    state.queue_tr909_fill(300);
-    state.queue_tr909_reinforce(301);
+    state.queue_tr909_fill(300).unwrap();
+    state.queue_tr909_reinforce(301).unwrap();
 
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
@@ -208,7 +208,7 @@ fn committed_mc202_role_change_updates_lane_state_and_macro_touch() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_mc202_role_toggle(300),
+        state.queue_mc202_role_toggle(300).unwrap(),
         QueueControlResult::Enqueued
     );
 
@@ -279,7 +279,7 @@ fn committed_mc202_role_change_rejects_unknown_role_without_mutating_lane_state(
         intensity: 0.99,
         target_id: Some("scene_lock".into()),
     };
-    state.queue.enqueue(draft, 300);
+    state.queue.enqueue(draft, 300).unwrap();
 
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
@@ -317,7 +317,7 @@ fn committed_mc202_follower_generation_updates_phrase_ref_and_touch() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_mc202_generate_follower(300),
+        state.queue_mc202_generate_follower(300).unwrap(),
         QueueControlResult::Enqueued
     );
 
@@ -383,7 +383,7 @@ fn committed_mc202_answer_generation_updates_phrase_ref_and_touch() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_mc202_generate_answer(300),
+        state.queue_mc202_generate_answer(300).unwrap(),
         QueueControlResult::Enqueued
     );
 
@@ -449,7 +449,7 @@ fn committed_mc202_pressure_generation_updates_phrase_ref_touch_and_render_shape
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_mc202_generate_pressure(300),
+        state.queue_mc202_generate_pressure(300).unwrap(),
         QueueControlResult::Enqueued
     );
 

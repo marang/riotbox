@@ -1,4 +1,5 @@
 use super::state::{JamAppState, QueueControlResult};
+use riotbox_core::queue::ActionIdExhausted;
 use riotbox_core::{
     TimestampMs,
     action::{
@@ -11,7 +12,7 @@ impl JamAppState {
     pub fn queue_source_timing_grid_confirmation(
         &mut self,
         requested_at: TimestampMs,
-    ) -> QueueControlResult {
+    ) -> Result<QueueControlResult, ActionIdExhausted> {
         let confirmed_bpm = self.source_graph.as_ref().and_then(|graph| {
             graph
                 .timing
@@ -26,12 +27,12 @@ impl JamAppState {
         &mut self,
         requested_at: TimestampMs,
         confirmed_bpm: Option<f32>,
-    ) -> QueueControlResult {
+    ) -> Result<QueueControlResult, ActionIdExhausted> {
         let Some(graph) = self.source_graph.as_ref() else {
-            return QueueControlResult::AlreadyInState;
+            return Ok(QueueControlResult::AlreadyInState);
         };
         if confirmed_bpm.is_some_and(|bpm| !bpm.is_finite() || bpm <= 0.0) {
-            return QueueControlResult::AlreadyInState;
+            return Ok(QueueControlResult::AlreadyInState);
         }
         let source_id = graph.source.source_id.clone();
         let hypothesis_id = graph.timing.primary_hypothesis_id.clone();
@@ -42,7 +43,7 @@ impl JamAppState {
             .iter()
             .any(|action| source_timing_trust_change_pending(action.command))
         {
-            return QueueControlResult::AlreadyPending;
+            return Ok(QueueControlResult::AlreadyPending);
         }
         if self
             .session
@@ -56,7 +57,7 @@ impl JamAppState {
                     && self.session.runtime_state.source_timing.confirmed_bpm == confirmed_bpm
             })
         {
-            return QueueControlResult::AlreadyInState;
+            return Ok(QueueControlResult::AlreadyInState);
         }
 
         let mut draft = ActionDraft::new(
@@ -81,15 +82,15 @@ impl JamAppState {
             Some(hypothesis_id) => format!("confirm source timing grid {hypothesis_id}"),
             None => "confirm source timing grid".into(),
         });
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        QueueControlResult::Enqueued
+        Ok(QueueControlResult::Enqueued)
     }
 
     pub fn queue_source_timing_grid_revert(
         &mut self,
         requested_at: TimestampMs,
-    ) -> QueueControlResult {
+    ) -> Result<QueueControlResult, ActionIdExhausted> {
         let Some(confirmed) = self
             .session
             .runtime_state
@@ -97,7 +98,7 @@ impl JamAppState {
             .confirmed_grid
             .as_ref()
         else {
-            return QueueControlResult::AlreadyInState;
+            return Ok(QueueControlResult::AlreadyInState);
         };
         if self
             .queue
@@ -105,7 +106,7 @@ impl JamAppState {
             .iter()
             .any(|action| source_timing_trust_change_pending(action.command))
         {
-            return QueueControlResult::AlreadyPending;
+            return Ok(QueueControlResult::AlreadyPending);
         }
 
         let source_id = confirmed.source_id.clone();
@@ -134,9 +135,9 @@ impl JamAppState {
             }
             None => "revert source timing grid confirmation".into(),
         });
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        QueueControlResult::Enqueued
+        Ok(QueueControlResult::Enqueued)
     }
 }
 

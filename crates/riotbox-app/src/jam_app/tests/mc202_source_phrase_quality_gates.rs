@@ -315,7 +315,7 @@ pub(in crate::jam_app::tests) fn neutralize_source_phrase_features(graph: &mut S
 
 pub(in crate::jam_app::tests) fn commit_source_answer_without_render(state: &mut JamAppState) {
     assert_eq!(
-        state.queue_mc202_generate_answer(300),
+        state.queue_mc202_generate_answer(300).unwrap(),
         QueueControlResult::Enqueued
     );
     let committed = state.commit_ready_actions(

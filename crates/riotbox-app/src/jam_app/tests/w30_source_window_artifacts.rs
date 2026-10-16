@@ -43,7 +43,7 @@ fn committed_source_backed_capture_writes_wav_artifact() {
 
     let mut state =
         JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("load app state");
-    state.queue_capture_bar(300);
+    state.queue_capture_bar(300).unwrap();
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Phrase,
@@ -122,7 +122,7 @@ fn focused_w30_pad_trigger_uses_capture_artifact_preview_when_source_cache_unava
 
     let mut state =
         JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("load app state");
-    state.queue_capture_bar(300);
+    state.queue_capture_bar(300).unwrap();
     let committed_capture = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Phrase,
@@ -159,7 +159,7 @@ fn focused_w30_pad_trigger_uses_capture_artifact_preview_when_source_cache_unava
     state.source_audio_cache = None;
     fs::remove_file(&source_path).expect("remove source to prove artifact-backed preview");
 
-    assert!(state.queue_promote_last_capture(410));
+    assert!(state.queue_promote_last_capture(410).unwrap());
     let committed_promotion = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,
@@ -173,7 +173,7 @@ fn focused_w30_pad_trigger_uses_capture_artifact_preview_when_source_cache_unava
     assert_eq!(committed_promotion.len(), 1);
 
     assert_eq!(
-        state.queue_w30_trigger_pad(645),
+        state.queue_w30_trigger_pad(645).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     let committed_trigger = state.commit_ready_actions(
@@ -314,7 +314,7 @@ fn reloaded_session_uses_capture_artifact_cache_without_source_audio() {
 
     let mut state =
         JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("load app state");
-    state.queue_capture_bar(300);
+    state.queue_capture_bar(300).unwrap();
     let committed_capture = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Phrase,
@@ -326,7 +326,7 @@ fn reloaded_session_uses_capture_artifact_cache_without_source_audio() {
         400,
     );
     assert_eq!(committed_capture.len(), 1);
-    assert!(state.queue_promote_last_capture(410));
+    assert!(state.queue_promote_last_capture(410).unwrap());
     let committed_promotion = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,
@@ -364,7 +364,7 @@ fn reloaded_session_uses_capture_artifact_cache_without_source_audio() {
     );
 
     assert_eq!(
-        reloaded.queue_w30_trigger_pad(645),
+        reloaded.queue_w30_trigger_pad(645).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     let committed_trigger = reloaded.commit_ready_actions(

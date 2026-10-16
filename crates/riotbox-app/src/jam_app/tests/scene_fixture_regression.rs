@@ -31,9 +31,11 @@ fn scene_fixture_backed_committed_state_regressions_hold() {
             SceneRegressionAction::ProjectCandidates => {}
             SceneRegressionAction::SelectNextScene => {
                 assert_eq!(
-                    state.queue_scene_select(
-                        fixture.requested_at.expect("scene select requested_at")
-                    ),
+                    state
+                        .queue_scene_select(
+                            fixture.requested_at.expect("scene select requested_at")
+                        )
+                        .unwrap(),
                     QueueControlResult::Enqueued,
                     "{} did not enqueue",
                     fixture.name
@@ -55,9 +57,11 @@ fn scene_fixture_backed_committed_state_regressions_hold() {
             }
             SceneRegressionAction::RestoreScene => {
                 assert_eq!(
-                    state.queue_scene_restore(
-                        fixture.requested_at.expect("scene restore requested_at")
-                    ),
+                    state
+                        .queue_scene_restore(
+                            fixture.requested_at.expect("scene restore requested_at")
+                        )
+                        .unwrap(),
                     QueueControlResult::Enqueued,
                     "{} did not enqueue",
                     fixture.name

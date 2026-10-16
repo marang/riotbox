@@ -225,11 +225,13 @@ fn feral_break_support_evidence_drives_current_lane_consumers_consistently() {
     let mut feral_w30_state =
         w30_slice_pool_state_with_source_windows(feral_graph.clone(), source_audio_cache);
     assert_eq!(
-        near_miss_w30_state.queue_w30_browse_slice_pool(710),
+        near_miss_w30_state
+            .queue_w30_browse_slice_pool(710)
+            .unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     assert_eq!(
-        feral_w30_state.queue_w30_browse_slice_pool(711),
+        feral_w30_state.queue_w30_browse_slice_pool(711).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     let near_miss_w30_pending = near_miss_w30_state.queue.pending_actions();

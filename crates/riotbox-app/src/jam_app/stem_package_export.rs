@@ -1,3 +1,4 @@
+use riotbox_core::queue::ActionIdExhausted;
 use std::path::{Path, PathBuf};
 
 use riotbox_core::{
@@ -40,7 +41,7 @@ impl JamAppState {
         requested_at: TimestampMs,
         destination_path: Option<String>,
         claimed_stem_roles: Vec<ExportArtifactRole>,
-    ) -> QueueControlResult {
+    ) -> Result<QueueControlResult, ActionIdExhausted> {
         let mut draft = ActionDraft::new(
             ActorType::User,
             ActionCommand::ExportStemPackage,
@@ -67,16 +68,18 @@ impl JamAppState {
         };
         draft.explanation = Some("export local CI stem package proof".into());
 
-        match self
-            .queue
-            .enqueue_if_no_pending_command(draft, requested_at)
-        {
-            QueueEnqueueResult::AlreadyPending { .. } => QueueControlResult::AlreadyPending,
-            QueueEnqueueResult::Enqueued(_) => {
-                self.refresh_view();
-                QueueControlResult::Enqueued
-            }
-        }
+        Ok(
+            match self
+                .queue
+                .enqueue_if_no_pending_command(draft, requested_at)?
+            {
+                QueueEnqueueResult::AlreadyPending { .. } => QueueControlResult::AlreadyPending,
+                QueueEnqueueResult::Enqueued(_) => {
+                    self.refresh_view();
+                    QueueControlResult::Enqueued
+                }
+            },
+        )
     }
 
     pub fn commit_stem_package_export_local_ci_package(
@@ -93,7 +96,7 @@ impl JamAppState {
                     requested_at,
                     Some(destination_dir.to_string_lossy().into_owned()),
                     claimed_stem_roles,
-                );
+                )?;
                 self.pending_stem_package_export_action_id()
                     .ok_or_else(|| {
                         JamAppError::InvalidSession(
