@@ -109,6 +109,12 @@ Logs: `/tmp/riotbox-1584-independent-{control-loom,w30-cache,w30-protocol,shell-
 and `/tmp/riotbox-1584-spec-review-{loom,owner}.log`.
 The coordinator's short self-review also retains no additional finding.
 
+The later report-attribution delta review found one P2 evidence-wording issue:
+it could describe still-pending gates as already completed. The wording below
+is corrected to explicit pending state; no production/test change or advance
+pass follows. The post-correction short self-review retains no further finding.
+
 Full source-free local CI, exact-head native CI and normal PR/merge/main/Linear
-closeout remain gates, recorded in Linear as completed. This report is not an
+closeout remain pending gates; their verified results will be recorded in
+Linear. This report is not an
 advance pass for them or a claim that RA alone proves all runtime behavior.
