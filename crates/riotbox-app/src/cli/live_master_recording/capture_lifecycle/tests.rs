@@ -357,6 +357,7 @@ fn fixture(
 
 mod action_id_exhaustion;
 mod commit_sequence_exhaustion;
+mod legacy_admission;
 mod observation;
 mod timing_availability;
 

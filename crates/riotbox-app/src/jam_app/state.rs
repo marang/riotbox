@@ -21,7 +21,8 @@ use riotbox_core::{
     ids::CaptureId,
     persistence::PersistenceError,
     queue::{ActionIdExhausted, ActionQueue},
-    session::{CommitSequenceExhausted, SessionFile},
+    replay::ReplayPlanError,
+    session::{CommitSequenceExhausted, ReplayPolicy, SessionFile},
     source_graph::SourceGraph,
     transport::{CommitBoundaryState, TransportClockState},
     view::jam::JamViewModel,
@@ -38,6 +39,10 @@ pub enum JamAppError {
     Sidecar(SidecarClientError),
     ActionIdExhausted(ActionIdExhausted),
     CommitSequenceExhausted(CommitSequenceExhausted),
+    ReplayAdmission {
+        policy: ReplayPolicy,
+        error: ReplayPlanError,
+    },
     AudioTransportControl(AudioTransportControlError),
     InvalidSession(String),
 }
@@ -51,6 +56,23 @@ impl Display for JamAppError {
             Self::Sidecar(error) => write!(f, "sidecar error: {error}"),
             Self::ActionIdExhausted(error) => Display::fmt(error, f),
             Self::CommitSequenceExhausted(error) => Display::fmt(error, f),
+            Self::ReplayAdmission { policy, error } => {
+                write!(
+                    f,
+                    "operation refused for declared replay policy {policy:?}: {error}; committed history was not changed"
+                )?;
+                match policy {
+                    ReplayPolicy::DeterministicPreferred => write!(
+                        f,
+                        "; an unambiguous legacy history can be copied explicitly with --replay-chronology-upgrade-copy (see --help)"
+                    ),
+                    ReplayPolicy::SnapshotOnly => write!(
+                        f,
+                        "; SnapshotOnly is not supported by the chronology-copy upgrader"
+                    ),
+                    ReplayPolicy::DeterministicCommittedOrderV2 => Ok(()),
+                }
+            }
             Self::AudioTransportControl(error) => Display::fmt(error, f),
             Self::InvalidSession(message) => write!(f, "invalid session: {message}"),
         }
@@ -66,6 +88,7 @@ impl Error for JamAppError {
             Self::Sidecar(error) => Some(error),
             Self::ActionIdExhausted(error) => Some(error),
             Self::CommitSequenceExhausted(error) => Some(error),
+            Self::ReplayAdmission { error, .. } => Some(error),
             Self::AudioTransportControl(error) => Some(error),
             Self::InvalidSession(_) => None,
         }

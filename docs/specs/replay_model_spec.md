@@ -182,6 +182,20 @@ The [Session copy contract](./session_file_spec.md#9-action-log) owns exact-byte
 fidelity, no-clobber publication and operator feedback. Already-V2 input is
 validated and reported as a copy, not a new chronology upgrade.
 
+RIOTBOX-1597 / RBX-456 requires live mutation to respect that declared policy.
+Non-append commits stage prospective metadata through the existing Queue and
+Core planner before original mutation; no second validator or silent upgrade.
+Legacy Undo stages its exact normalization, restored typed snapshot, target and
+marker/record before changing original state or ID capacity. Ordinary failed
+drains preserve legitimate earlier pending enqueue. Immediate toggle stages its
+new draft too; timing entrances validate their prospective boundary/timestamp
+before changing clock or pending acknowledgment. Preserve capacity-error
+precedence, V2 domain/rollback behavior and existing empty-drain semantics.
+Typed App ReplayAdmission reports policy/Core failure visibly and nonfatally for
+interactive use; recorder errors retain unconditional stop/abort. SnapshotOnly
+does not gain a migration promise. This guards live declared history, not all
+Session/source contracts or external audio delivery as a single transaction.
+
 V2 structural Undo uses per-domain candidate stacks and the existing Core domain
 predicates: a non-undoable mutation invalidates only overlapping older candidates.
 An eligible typed action remains undoable in reverse committed order; timestamp
