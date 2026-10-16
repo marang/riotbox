@@ -106,8 +106,8 @@ fn finish_accepts_an_owned_but_quiescent_slot_and_closes_stale_timing_work() {
     let outcome = shared.finish().expect("ownership is not callback activity");
     assert_eq!(outcome.samples, [0.25]);
     assert_eq!(outcome.progress, progress);
-    stale.record_callback(&[0.9], &timing(), 2_000);
-    stale.record_scratch_overflow(&timing(), 3_000);
+    stale.record_callback(&[0.9], &timing(), 2_000, None);
+    stale.record_scratch_overflow(&timing(), 3_000, None);
     assert_eq!(stale.progress(), progress);
     assert!(stale.admission.try_enter().is_none());
     assert!(stale.admission.is_quiescent());
@@ -156,8 +156,8 @@ fn abort_closes_a_stale_payload_with_a_held_lease_without_waiting() {
     assert!(!stale.admission.is_quiescent());
     assert!(stale.admission.try_enter().is_none());
 
-    stale.record_callback(&[0.9], &timing(), 2_000);
-    stale.record_scratch_overflow(&timing(), 3_000);
+    stale.record_callback(&[0.9], &timing(), 2_000, None);
+    stale.record_scratch_overflow(&timing(), 3_000, None);
     shared.record_stream_error();
     assert_eq!(stale.progress(), aborted);
     assert_eq!(shared.control.lock().unwrap().retired.len(), 1);

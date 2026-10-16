@@ -296,13 +296,7 @@ impl AudioRuntimeShell {
         &self,
         request: LiveMasterCaptureRequest,
     ) -> Result<(), LiveMasterCaptureError> {
-        let last_callback_micros = request
-            .start_position_beats
-            .is_some()
-            .then(|| self.telemetry.last_callback_micros())
-            .flatten();
-        self.live_master_capture
-            .begin_after_callback(request, last_callback_micros)
+        self.live_master_capture.begin(request)
     }
 
     #[must_use]

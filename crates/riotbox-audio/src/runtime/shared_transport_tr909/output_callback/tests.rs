@@ -192,10 +192,7 @@ fn cold_active_mix() {
         grit_level: 0.3,
         ..W30ResampleTapState::default()
     });
-    state
-        .live_master_capture
-        .begin_after_callback(request(64), None)
-        .unwrap();
+    state.live_master_capture.begin(request(64)).unwrap();
     let mut callback =
         prepare_output_callback::<f32>(&config(), state.clone(), Instant::now()).unwrap();
     let first = std::thread::spawn(move || {
@@ -226,10 +223,7 @@ where
         .source_monitor
         .replace_source_and_controls(&source(0.25));
     state.transport.update(true, 128.0, 0.0);
-    state
-        .live_master_capture
-        .begin_after_callback(request(64), None)
-        .unwrap();
+    state.live_master_capture.begin(request(64)).unwrap();
     let mut callback =
         prepare_output_callback::<T>(&config(), state.clone(), Instant::now()).unwrap();
     let device_samples = std::thread::spawn(move || {
@@ -366,10 +360,7 @@ fn production_callbacks_remain_heap_free_through_publication_capture_and_stop() 
         output
     };
     assert!(tick(false).iter().any(|s| *s > 0.01));
-    state
-        .live_master_capture
-        .begin_after_callback(request(64), None)
-        .unwrap();
+    state.live_master_capture.begin(request(64)).unwrap();
     let output = tick(false);
     let outcome = state.live_master_capture.finish().unwrap();
     assert_eq!(outcome.samples, output[..128]);
@@ -412,10 +403,7 @@ fn production_callbacks_remain_heap_free_through_publication_capture_and_stop() 
     tick(false); // Changed complete snapshots, then unchanged reuse.
     tick(false);
 
-    state
-        .live_master_capture
-        .begin_after_callback(request(128), None)
-        .unwrap();
+    state.live_master_capture.begin(request(128)).unwrap();
     tick(true);
     assert_eq!(
         state
@@ -430,10 +418,7 @@ fn production_callbacks_remain_heap_free_through_publication_capture_and_stop() 
     assert_eq!(aborted.written_sample_count, 128);
     tick(false);
     assert!(state.live_master_capture.progress().is_none());
-    state
-        .live_master_capture
-        .begin_after_callback(request(64), None)
-        .unwrap();
+    state.live_master_capture.begin(request(64)).unwrap();
     tick(false);
     assert_eq!(
         state
@@ -447,13 +432,10 @@ fn production_callbacks_remain_heap_free_through_publication_capture_and_stop() 
 
     state
         .live_master_capture
-        .begin_after_callback(
-            LiveMasterCaptureRequest {
-                start_position_beats: Some(4.0),
-                ..request(64)
-            },
-            None,
-        )
+        .begin(LiveMasterCaptureRequest {
+            start_position_beats: Some(4.0),
+            ..request(64)
+        })
         .unwrap();
     tick(false); // Actual processor stays armed before the requested boundary.
     let armed = state.live_master_capture.progress().unwrap();
@@ -529,10 +511,7 @@ fn concurrent_control_publication_and_capture_abort_do_not_reclaim_on_the_callba
         state
             .source_monitor
             .replace_source_and_controls(if index % 2 == 0 { &negative } else { &positive });
-        state
-            .live_master_capture
-            .begin_after_callback(request(128), None)
-            .unwrap();
+        state.live_master_capture.begin(request(128)).unwrap();
         state
             .live_master_capture
             .abort()

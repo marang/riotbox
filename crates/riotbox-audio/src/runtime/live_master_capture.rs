@@ -98,6 +98,8 @@ struct LiveMasterCaptureControl {
 /// callback is stopped and this reader has been dropped.
 pub(super) struct LiveMasterCaptureCallbackReader {
     output: Output<Option<Arc<LiveMasterCaptureBuffer>>>,
+    /// Callback-owned continuity, including callbacks without an active capture.
+    last_callback_micros: Option<u64>,
 }
 
 impl SharedLiveMasterCapture {
@@ -119,18 +121,15 @@ impl SharedLiveMasterCapture {
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .output
             .take()
-            .map(|output| LiveMasterCaptureCallbackReader { output })
+            .map(|output| LiveMasterCaptureCallbackReader {
+                output,
+                last_callback_micros: None,
+            })
     }
 
-    #[cfg(test)]
-    fn begin(&self, request: LiveMasterCaptureRequest) -> Result<(), LiveMasterCaptureError> {
-        self.begin_after_callback(request, None)
-    }
-
-    pub(super) fn begin_after_callback(
+    pub(super) fn begin(
         &self,
         request: LiveMasterCaptureRequest,
-        last_callback_micros: Option<u64>,
     ) -> Result<(), LiveMasterCaptureError> {
         let mut control = self
             .control
@@ -154,11 +153,7 @@ impl SharedLiveMasterCapture {
         if control.latest.is_some() {
             return Err(LiveMasterCaptureError::AlreadyActive);
         }
-        let capture = LiveMasterCaptureBuffer::try_new(
-            target_sample_count,
-            &request,
-            last_callback_micros.filter(|_| request.start_position_beats.is_some()),
-        )?;
+        let capture = LiveMasterCaptureBuffer::try_new(target_sample_count, &request)?;
         let capture = Arc::new(capture);
         control.input.write(Some(Arc::clone(&capture)));
         control.latest = Some(capture);
@@ -237,7 +232,7 @@ impl SharedLiveMasterCapture {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         if let Some(capture) = control.latest.as_ref() {
-            capture.record_callback(samples, timing, now_micros);
+            capture.record_callback(samples, timing, now_micros, None);
         }
     }
 
@@ -248,7 +243,7 @@ impl SharedLiveMasterCapture {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         if let Some(capture) = control.latest.as_ref() {
-            capture.record_scratch_overflow(timing, now_micros);
+            capture.record_scratch_overflow(timing, now_micros, None);
         }
     }
 
@@ -277,8 +272,9 @@ impl LiveMasterCaptureCallbackReader {
         timing: &CallbackTimingSnapshot,
         now_micros: u64,
     ) {
+        let previous = self.last_callback_micros.replace(now_micros);
         if let Some(capture) = self.output.read().as_ref() {
-            capture.record_callback(samples, timing, now_micros);
+            capture.record_callback(samples, timing, now_micros, previous);
         }
     }
 
@@ -287,8 +283,9 @@ impl LiveMasterCaptureCallbackReader {
         timing: &CallbackTimingSnapshot,
         now_micros: u64,
     ) {
+        let previous = self.last_callback_micros.replace(now_micros);
         if let Some(capture) = self.output.read().as_ref() {
-            capture.record_scratch_overflow(timing, now_micros);
+            capture.record_scratch_overflow(timing, now_micros, previous);
         }
     }
 }
@@ -322,7 +319,6 @@ impl LiveMasterCaptureBuffer {
     fn try_new(
         target_sample_count: usize,
         request: &LiveMasterCaptureRequest,
-        last_callback_micros: Option<u64>,
     ) -> Result<Self, LiveMasterCaptureError> {
         let mut samples = Vec::new();
         samples
@@ -342,7 +338,7 @@ impl LiveMasterCaptureBuffer {
             captured_end_position_beats_bits: AtomicU64::new(UNSET_POSITION_BITS),
             callback_count: AtomicU64::new(0),
             armed_callback_count: AtomicU64::new(0),
-            last_callback_micros: AtomicU64::new(last_callback_micros.unwrap_or(u64::MAX)),
+            last_callback_micros: AtomicU64::new(u64::MAX),
             max_callback_gap_micros: AtomicU64::new(0),
             callback_gap_over_threshold_count: AtomicU64::new(0),
             callback_scratch_overflow_count: AtomicU64::new(0),
@@ -355,7 +351,13 @@ impl LiveMasterCaptureBuffer {
         })
     }
 
-    fn record_callback(&self, samples: &[f32], timing: &CallbackTimingSnapshot, now_micros: u64) {
+    fn record_callback(
+        &self,
+        samples: &[f32],
+        timing: &CallbackTimingSnapshot,
+        now_micros: u64,
+        previous_callback_micros: Option<u64>,
+    ) {
         let Some(_lease) = self.admission.try_enter() else {
             return;
         };
@@ -364,7 +366,7 @@ impl LiveMasterCaptureBuffer {
         }
         let is_bar_window = self.requested_start_position_beats_bits != UNSET_POSITION_BITS;
         if is_bar_window {
-            self.record_callback_gap(now_micros);
+            self.record_callback_gap(now_micros, previous_callback_micros);
         }
         if is_bar_window && self.record_transport_and_tempo_faults(timing) {
             if !self.capture_started.load(Ordering::Acquire) {
@@ -378,7 +380,7 @@ impl LiveMasterCaptureBuffer {
         if is_bar_window {
             self.callback_count.fetch_add(1, Ordering::Relaxed);
         } else {
-            self.record_captured_callback_timing(timing, now_micros);
+            self.record_captured_callback_timing(timing, now_micros, None);
         }
 
         let start = self.written_sample_count.load(Ordering::Relaxed);
@@ -399,11 +401,16 @@ impl LiveMasterCaptureBuffer {
         }
     }
 
-    fn record_scratch_overflow(&self, timing: &CallbackTimingSnapshot, now_micros: u64) {
+    fn record_scratch_overflow(
+        &self,
+        timing: &CallbackTimingSnapshot,
+        now_micros: u64,
+        previous_callback_micros: Option<u64>,
+    ) {
         let Some(_lease) = self.admission.try_enter() else {
             return;
         };
-        self.record_captured_callback_timing(timing, now_micros);
+        self.record_captured_callback_timing(timing, now_micros, previous_callback_micros);
         self.callback_scratch_overflow_count
             .fetch_add(1, Ordering::Relaxed);
     }
@@ -509,11 +516,17 @@ impl LiveMasterCaptureBuffer {
             .store(end_position.to_bits(), Ordering::Release);
     }
 
-    fn record_callback_gap(&self, now_micros: u64) {
+    fn record_callback_gap(&self, now_micros: u64, previous_callback_micros: Option<u64>) {
         let previous = self
             .last_callback_micros
             .swap(now_micros, Ordering::Relaxed);
-        if previous != u64::MAX {
+        // Seed only the first bar-window observation from the actual consumer,
+        // never from a control-side clock sampled before buffer preparation.
+        let previous = (previous != u64::MAX).then_some(previous).or_else(|| {
+            previous_callback_micros
+                .filter(|_| self.requested_start_position_beats_bits != UNSET_POSITION_BITS)
+        });
+        if let Some(previous) = previous {
             let gap = now_micros.saturating_sub(previous);
             self.max_callback_gap_micros
                 .fetch_max(gap, Ordering::Relaxed);
@@ -524,8 +537,13 @@ impl LiveMasterCaptureBuffer {
         }
     }
 
-    fn record_captured_callback_timing(&self, timing: &CallbackTimingSnapshot, now_micros: u64) {
-        self.record_callback_gap(now_micros);
+    fn record_captured_callback_timing(
+        &self,
+        timing: &CallbackTimingSnapshot,
+        now_micros: u64,
+        previous_callback_micros: Option<u64>,
+    ) {
+        self.record_callback_gap(now_micros, previous_callback_micros);
         self.callback_count.fetch_add(1, Ordering::Relaxed);
         self.record_transport_and_tempo_faults(timing);
     }
@@ -604,6 +622,9 @@ mod canonical_two_bar_tests;
 
 #[cfg(test)]
 mod callback_reader_tests;
+
+#[cfg(test)]
+mod arming_gap_tests;
 
 #[cfg(test)]
 mod tests {
@@ -770,19 +791,18 @@ mod tests {
     #[test]
     fn bar_window_counts_the_gap_from_the_last_runtime_callback_into_arming() {
         let shared = SharedLiveMasterCapture::new();
+        let mut reader = shared.take_callback_reader().unwrap();
+        reader.record_callback(&[0.0], &timing_range(2.9, 3.0), 1_000);
         shared
-            .begin_after_callback(
-                LiveMasterCaptureRequest {
-                    target_frame_count: 2,
-                    channel_count: 1,
-                    expected_tempo_bpm: 120.0,
-                    start_position_beats: Some(4.0),
-                },
-                Some(1_000),
-            )
+            .begin(LiveMasterCaptureRequest {
+                target_frame_count: 2,
+                channel_count: 1,
+                expected_tempo_bpm: 120.0,
+                start_position_beats: Some(4.0),
+            })
             .expect("begin armed capture after runtime callback");
 
-        shared.record_callback(
+        reader.record_callback(
             &[1.0, 2.0],
             &timing_range(3.0, 3.2),
             1_000 + LIVE_MASTER_CALLBACK_GAP_THRESHOLD_MICROS + 1,
