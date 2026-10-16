@@ -17,6 +17,7 @@ pub(super) struct CallbackTimingPublication {
     is_transport_running: AtomicBool,
     tempo_bpm_bits: AtomicU32,
     position_beats_bits: AtomicU64,
+    applied_position_request_id: AtomicU64,
 }
 
 impl CallbackTimingPublication {
@@ -26,11 +27,12 @@ impl CallbackTimingPublication {
             is_transport_running: AtomicBool::new(false),
             tempo_bpm_bits: AtomicU32::new(0),
             position_beats_bits: AtomicU64::new(0),
+            applied_position_request_id: AtomicU64::new(0),
         }
     }
 
     /// Exactly one writer: the unique production output callback.
-    pub(super) fn publish(&self, timing: AudioRuntimeTimingSnapshot) {
+    pub(super) fn publish(&self, timing: AudioRuntimeTimingSnapshot, applied_request_id: u64) {
         let revision = self.revision.load(Ordering::SeqCst);
         self.revision
             .store(revision.wrapping_add(1), Ordering::SeqCst);
@@ -40,12 +42,16 @@ impl CallbackTimingPublication {
             .store(timing.tempo_bpm.to_bits(), Ordering::SeqCst);
         self.position_beats_bits
             .store(timing.position_beats.to_bits(), Ordering::SeqCst);
+        self.applied_position_request_id
+            .store(applied_request_id, Ordering::SeqCst);
         // Keep zero reserved for no publication, even at counter rollover.
         self.revision
             .store(revision.wrapping_add(2).max(2), Ordering::SeqCst);
     }
 
-    pub(super) fn snapshot(&self) -> Option<AudioRuntimeTimingSnapshot> {
+    pub(super) fn snapshot_with_position_request(
+        &self,
+    ) -> Option<(AudioRuntimeTimingSnapshot, u64)> {
         for _ in 0..READ_ATTEMPTS {
             let before = self.revision.load(Ordering::SeqCst);
             if before == 0 || !before.is_multiple_of(2) {
@@ -56,11 +62,12 @@ impl CallbackTimingPublication {
                 tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::SeqCst)),
                 position_beats: f64::from_bits(self.position_beats_bits.load(Ordering::SeqCst)),
             };
+            let applied_request_id = self.applied_position_request_id.load(Ordering::SeqCst);
             // All publication and read operations share the sequentially
             // consistent order: matching even revisions cannot enclose a
             // partial new payload. Never return an unchecked last read.
             if before == self.revision.load(Ordering::SeqCst) {
-                return Some(timing);
+                return Some((timing, applied_request_id));
             }
         }
         None

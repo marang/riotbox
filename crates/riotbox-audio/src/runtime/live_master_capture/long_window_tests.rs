@@ -201,6 +201,7 @@ fn sixteen_bar_capture_from_the_actual_runtime_clock_meets_the_publication_end_p
             is_transport_running: true,
             tempo_bpm: window.request.expected_tempo_bpm,
             position_beats: 0.0,
+            position_request_id: 0,
         };
         let mut clock = TransportTimingCallbackState::default();
         let mut first_frame = 0;

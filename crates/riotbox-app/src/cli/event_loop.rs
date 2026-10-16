@@ -44,10 +44,7 @@ pub(in crate::cli) fn run_event_loop(
     loop {
         if let Some(runtime) = audio_runtime.as_mut() {
             let now = timestamp_now();
-            match shell
-                .app
-                .apply_audio_timing_snapshot(runtime.timing_snapshot(), now)
-            {
+            match crate::cli::transport_sync::sync_transport(&mut shell.app, runtime, now) {
                 Ok(committed) => {
                     if !committed.is_empty() {
                         shell.set_error_status(
@@ -60,11 +57,6 @@ pub(in crate::cli) fn run_event_loop(
                         }
                     }
 
-                    runtime.update_transport_state(
-                        shell.app.runtime.transport.is_playing,
-                        shell.app.runtime.tr909_render.tempo_bpm,
-                        shell.app.runtime.transport.position_beats,
-                    );
                     runtime.update_tr909_render_state(&shell.app.runtime.tr909_render);
                     runtime.update_mc202_render_state(&shell.app.runtime.mc202_render);
                     runtime.update_w30_preview_render_state(&shell.app.runtime.w30_preview);

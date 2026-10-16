@@ -11,7 +11,7 @@ use super::{
         master_bus_limiter_ceiling, master_bus_limiter_threshold, signal_metrics,
     },
     shared_mc202::SharedMc202RenderState,
-    shared_transport_tr909::{SharedTr909RenderState, SharedTransportTimingState},
+    shared_transport_tr909::{RealtimeTransportTimingState, SharedTr909RenderState},
     shared_w30_resample_callback::{
         SharedW30ResampleTapState, Tr909CallbackState, TransportTimingCallbackState,
         W30MixRenderState, W30PreviewCallbackState, W30ResampleTapCallbackState,
@@ -166,11 +166,9 @@ pub(super) fn render_sequence_with_pre_limiter_sink(
     let channel_count = usize::from(channel_count.max(1));
     let callback_sample_count = callback_frame_count.max(1).saturating_mul(channel_count);
     let first_plan = first_step.plan;
-    let mut shared_transport = SharedTransportTimingState::new(
-        first_plan.transport.is_transport_running,
-        first_plan.transport.tempo_bpm,
-        first_plan.transport.position_beats,
-    );
+    // Legacy offline plans contain numeric control positions, not live observations.
+    // Keep their historical interpretation at this ingress, never in the live clock.
+    let mut legacy_transport = LegacyPlanTransport::default();
     let mut shared_tr909 = SharedTr909RenderState::new(&first_plan.tr909_render);
     let mut shared_mc202 = SharedMc202RenderState::new(&first_plan.mc202_render);
     let mut shared_w30_preview = SharedW30PreviewRenderState::new(&first_plan.w30_preview_render);
@@ -186,13 +184,9 @@ pub(super) fn render_sequence_with_pre_limiter_sink(
 
     steps
         .iter()
-        .map(|step| {
+        .enumerate()
+        .map(|(step_index, step)| {
             let plan = step.plan;
-            shared_transport.update(
-                plan.transport.is_transport_running,
-                plan.transport.tempo_bpm,
-                plan.transport.position_beats,
-            );
             shared_tr909.update(&plan.tr909_render);
             shared_mc202.update(&plan.mc202_render);
             shared_w30_preview.update(&plan.w30_preview_render);
@@ -207,8 +201,10 @@ pub(super) fn render_sequence_with_pre_limiter_sink(
                 .zip(pre_limiter.chunks_mut(callback_sample_count))
             {
                 let block_frame_count = block.len() / channel_count;
+                let transport_control =
+                    legacy_transport.adapt(&plan.transport, &transport_state, step_index);
                 let timing = advance_transport_timing(
-                    &shared_transport.snapshot_exclusive(),
+                    &transport_control,
                     &mut transport_state,
                     sample_rate,
                     block_frame_count,
@@ -275,4 +271,39 @@ pub(super) fn render_sequence_with_pre_limiter_sink(
             rendered
         })
         .collect()
+}
+
+#[derive(Default)]
+struct LegacyPlanTransport {
+    last_control_position_beats: f64,
+    was_running: bool,
+    position_request_id: u64,
+}
+
+impl LegacyPlanTransport {
+    fn adapt(
+        &mut self,
+        plan: &AudioRuntimeTimingSnapshot,
+        clock: &TransportTimingCallbackState,
+        step_index: usize,
+    ) -> RealtimeTransportTimingState {
+        let running = plan.is_transport_running && plan.tempo_bpm > 0.0;
+        let changed = (self.last_control_position_beats - plan.position_beats).abs() > f64::EPSILON;
+        if !running
+            || !self.was_running
+            || (changed && (clock.beat_position - plan.position_beats).abs() > 0.125)
+        {
+            // A slice has at most isize::MAX entries: this conversion cannot
+            // exhaust u64. Repeated callbacks in one step retain this identity.
+            self.position_request_id = step_index as u64 + 1;
+        }
+        self.last_control_position_beats = plan.position_beats;
+        self.was_running = running;
+        RealtimeTransportTimingState {
+            is_transport_running: plan.is_transport_running,
+            tempo_bpm: plan.tempo_bpm,
+            position_beats: plan.position_beats,
+            position_request_id: self.position_request_id,
+        }
+    }
 }

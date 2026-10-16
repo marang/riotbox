@@ -159,6 +159,48 @@ Loom controls prove this handoff, not real-host timing, physical latency,
 endurance, audible quality or the original ALSA trigger. Prior consumed phases
 and frozen recording/observer/artifact contracts remain unchanged.
 
+### 7.1.2 Explicit position intent and callback acknowledgment
+
+RIOTBOX-1592 / RBX-453 separates the live control handoff into typed `Preserve`
+and `Reposition(AudioTransportPositionRequest)`. Ordinary progress observations,
+Play/Pause and tempo refreshes preserve the callback-owned cursor; they never
+infer a seek from numeric distance. Construction seeds the restored cursor.
+Committed Seek, Stop (including zero), and same-runtime restore explicitly
+deliver their Core/Session target. Every admitted reposition receives a new
+runtime-only identity, including repeated identical and sub-step targets. Apply
+each observed identity at most once at callback ingress and invalidate the drum
+cursor's old tolerance for that explicit request. Like the existing latest-state
+control publication, a newer request may supersede one not yet observed by the
+callback; this is not another command queue or an every-request rendering promise.
+No action, Session/replay schema or musical recipe changes.
+
+Publish the applied identity coherently with completed callback timing, without
+adding fields to the public `AudioRuntimeTimingSnapshot`. The serialized control
+owner's timing getter returns `None` until the latest admitted identity matches;
+a numerically matching older observation is not acknowledgment. Control groups
+retain RBX-449's bounded coherent reads and cached previous snapshot. Timing
+publication retains RBX-448's bounded sequentially consistent protocol. Neither
+direction allocates, blocks or performs I/O in the callback.
+
+The existing App transport driver holds only an undelivered committed target.
+It refuses timing while that target is pending. One private CLI handoff used by
+the interactive loop and recorder delivers it before reading timing, clears it
+only after successful admission, then delivers any intent committed by a crossed
+queue boundary. Delivery is not callback acknowledgment. Invalid non-finite or
+negative targets and identity exhaustion fail before any control publication
+mutation. Identities never wrap or reopen; `Preserve` remains usable at exhaustion,
+and a new runtime creates a new callback/telemetry identity domain. Existing
+unconditional device-stop and recorder abort/no-publication paths apply on errors.
+
+Historical numeric offline plans retain their old interpretation at one private
+legacy ingress adapter, including the existing distance threshold, stopped/resumed
+states and empty-step behavior. They use the same transport clock and mixer, not
+a second clock/renderer or implicit live seek. Public offline plan/snapshot fields
+and frozen historical controls remain unchanged. Generated actual-callback output,
+App/queue/controller, exhaustion, heap and exact-source Loom proofs plus frozen
+offline compatibility are required; they grant no host, source, listening,
+hardness, physical latency, endurance or release qualification.
+
 ### 7.2 Source monitor playback
 
 Source monitor playback is a transport feature, not an external player.

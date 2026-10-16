@@ -1,12 +1,11 @@
 //! Admission of unavailable and first-observed callback timing by the real controller.
 
+use crate::cli::transport_sync::TransportControl;
 use std::time::Duration;
 
 use riotbox_core::action::LiveRecordingDuration;
 
-use super::super::{
-    RuntimeControl, execute_with_control, sync_live_master_runtime, wait_for_live_transport,
-};
+use super::super::{execute_with_control, sync_live_master_runtime, wait_for_live_transport};
 use super::{Case, Event, fixture};
 
 #[test]

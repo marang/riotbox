@@ -32,6 +32,7 @@ fn canonical_two_bar_ties_from_the_actual_clock_keep_full_timing_readiness() {
                 is_transport_running: true,
                 tempo_bpm: bpm,
                 position_beats: 0.0,
+                position_request_id: 0,
             };
             let mut clock = TransportTimingCallbackState::default();
             let mut rendered = 0_u64;

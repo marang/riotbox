@@ -123,6 +123,16 @@ impl JamAppState {
         let Some(timing) = timing else {
             return Ok(Vec::new());
         };
+        if self
+            .runtime
+            .transport_driver
+            .pending_audio_position
+            .is_some()
+        {
+            // The committed cursor must reach the audio owner before any old
+            // observation is admitted. The shell then filters until its ack.
+            return Ok(Vec::new());
+        }
         if let Some(pending_is_playing) = self.runtime.transport_driver.pending_audio_is_playing {
             if timing.is_transport_running != pending_is_playing {
                 return Ok(Vec::new());

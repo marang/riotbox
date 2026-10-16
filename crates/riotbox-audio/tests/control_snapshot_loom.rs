@@ -1,6 +1,9 @@
 //! Exact production requested-transport owner with only atomic primitives changed.
 mod control_sync {
     pub(super) use loom::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
+    pub(super) fn model(work: impl Fn() + Send + Sync + 'static) {
+        super::model(work);
+    }
 }
 #[path = "../src/runtime/control_snapshot.rs"]
 mod control_snapshot;
@@ -8,17 +11,26 @@ mod control_snapshot;
 mod transport_timing;
 
 use loom::{sync::Arc, thread};
-use transport_timing::{RealtimeTransportTimingState, SharedTransportTimingState};
+use transport_timing::{
+    AudioTransportPositionRequest, AudioTransportPositionUpdate, RealtimeTransportTimingState,
+    SharedTransportTimingState,
+};
+
+fn reposition(target: f64) -> AudioTransportPositionUpdate {
+    AudioTransportPositionUpdate::Reposition(AudioTransportPositionRequest::from_beats(target))
+}
 
 const FIRST: RealtimeTransportTimingState = RealtimeTransportTimingState {
     is_transport_running: false,
     tempo_bpm: 132.0,
     position_beats: 0.0,
+    position_request_id: 0,
 };
 const SECOND: RealtimeTransportTimingState = RealtimeTransportTimingState {
     is_transport_running: true,
     tempo_bpm: 144.0,
     position_beats: 8.0,
+    position_request_id: 1,
 };
 
 fn model(work: impl Fn() + Send + Sync + 'static) {
@@ -37,7 +49,7 @@ fn actual_transport_never_accepts_mixed_update() {
         let publication = Arc::new(SharedTransportTimingState::new(false, 132.0, 0.0));
         let writer = {
             let publication = Arc::clone(&publication);
-            thread::spawn(move || publication.update(true, 144.0, 8.0))
+            thread::spawn(move || publication.update(true, 144.0, reposition(8.0)).unwrap())
         };
         let observed = publication.snapshot_or_previous(&FIRST);
         writer.join().unwrap();
@@ -55,7 +67,7 @@ fn startup_never_accepts_unchecked_transport_fields() {
         let publication = Arc::new(SharedTransportTimingState::new(false, 132.0, 0.0));
         let writer = {
             let publication = Arc::clone(&publication);
-            thread::spawn(move || publication.update(true, 144.0, 8.0))
+            thread::spawn(move || publication.update(true, 144.0, reposition(8.0)).unwrap())
         };
         let observed = publication.try_snapshot();
         writer.join().unwrap();
@@ -70,11 +82,13 @@ fn startup_never_accepts_unchecked_transport_fields() {
 fn an_update_after_a_committed_publication_is_complete_or_previous() {
     model(|| {
         let publication = Arc::new(SharedTransportTimingState::new(false, 0.0, 0.0));
-        publication.update(false, 132.0, 0.0);
+        publication
+            .update(false, 132.0, AudioTransportPositionUpdate::Preserve)
+            .unwrap();
         assert_eq!(publication.try_snapshot(), Some(FIRST));
         let writer = {
             let publication = Arc::clone(&publication);
-            thread::spawn(move || publication.update(true, 144.0, 8.0))
+            thread::spawn(move || publication.update(true, 144.0, reposition(8.0)).unwrap())
         };
         let observed = publication.snapshot_or_previous(&FIRST);
         writer.join().unwrap();
@@ -91,7 +105,7 @@ fn repeated_running_value_does_not_hide_mixed_tempo_and_position() {
         let publication = Arc::new(SharedTransportTimingState::new(false, 132.0, 0.0));
         let writer = {
             let publication = Arc::clone(&publication);
-            thread::spawn(move || publication.update(false, 144.0, 8.0))
+            thread::spawn(move || publication.update(false, 144.0, reposition(8.0)).unwrap())
         };
         let observed = publication.snapshot_or_previous(&FIRST);
         writer.join().unwrap();
@@ -152,7 +166,7 @@ fn exclusive_offline_projection_preserves_the_exact_requested_state() {
     model(|| {
         let mut publication = SharedTransportTimingState::new(false, 132.0, 0.0);
         assert_eq!(publication.snapshot_exclusive(), FIRST);
-        publication.update(true, 144.0, 8.0);
+        publication.update(true, 144.0, reposition(8.0)).unwrap();
         assert_eq!(publication.snapshot_exclusive(), SECOND);
     });
 }

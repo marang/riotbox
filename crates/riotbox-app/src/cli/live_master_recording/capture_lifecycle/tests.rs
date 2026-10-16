@@ -7,14 +7,15 @@ use std::{
 };
 
 use super::{RuntimeControl, execute_with_control};
+use crate::cli::transport_sync::TransportControl;
 use crate::{
     cli::model::{AppLaunch, LaunchMode},
     jam_app::{JamAppState, JamFileSet},
 };
 use riotbox_audio::runtime::{
     AudioOutputInfo, AudioRuntimeHealth, AudioRuntimeLifecycle, AudioRuntimeTimingSnapshot,
-    LiveMasterCaptureError, LiveMasterCaptureOutcome, LiveMasterCaptureProgress,
-    LiveMasterCaptureRequest,
+    AudioTransportControlError, AudioTransportPositionUpdate, LiveMasterCaptureError,
+    LiveMasterCaptureOutcome, LiveMasterCaptureProgress, LiveMasterCaptureRequest,
 };
 use riotbox_core::{
     TimestampMs,
@@ -134,6 +135,36 @@ impl GeneratedControl {
     }
 }
 
+impl TransportControl for GeneratedControl {
+    fn timing_snapshot(&self) -> Option<AudioRuntimeTimingSnapshot> {
+        self.timing_available().then(|| AudioRuntimeTimingSnapshot {
+            is_transport_running: self.playing.get()
+                && !matches!(self.case, Case::ConfirmTimeout | Case::ConfirmFault)
+                && (self.case != Case::ConfirmDelayed
+                    || self.elapsed.get() >= Duration::from_millis(100)),
+            tempo_bpm: if self.case == Case::WrongBpm {
+                f32::from_bits(120.0_f32.to_bits() + 1)
+            } else {
+                120.0
+            },
+            position_beats: self.position_offset.get() + self.elapsed.get().as_secs_f64() * 2.0,
+        })
+    }
+    fn update_transport_state(
+        &self,
+        playing: bool,
+        _bpm: f32,
+        position: AudioTransportPositionUpdate,
+    ) -> Result<(), AudioTransportControlError> {
+        self.playing.set(playing);
+        if let AudioTransportPositionUpdate::Reposition(target) = position {
+            self.position_offset
+                .set(target.position_beats() - self.elapsed.get().as_secs_f64() * 2.0);
+        }
+        Ok(())
+    }
+}
+
 impl RuntimeControl for GeneratedControl {
     fn health_snapshot(&self) -> AudioRuntimeHealth {
         let capturing = self.request.borrow().is_some();
@@ -156,23 +187,6 @@ impl RuntimeControl for GeneratedControl {
             stream_error_count: u64::from(stream_fault),
             last_stream_error: stream_fault.then(|| "generated stream fault".into()),
         }
-    }
-    fn timing_snapshot(&self) -> Option<AudioRuntimeTimingSnapshot> {
-        self.timing_available().then(|| AudioRuntimeTimingSnapshot {
-            is_transport_running: self.playing.get()
-                && !matches!(self.case, Case::ConfirmTimeout | Case::ConfirmFault)
-                && (self.case != Case::ConfirmDelayed
-                    || self.elapsed.get() >= Duration::from_millis(100)),
-            tempo_bpm: if self.case == Case::WrongBpm {
-                f32::from_bits(120.0_f32.to_bits() + 1)
-            } else {
-                120.0
-            },
-            position_beats: self.position_offset.get() + self.elapsed.get().as_secs_f64() * 2.0,
-        })
-    }
-    fn update_transport_state(&self, playing: bool, _bpm: f32, _position: f64) {
-        self.playing.set(playing);
     }
     fn update_render_states(&self, _state: &JamAppState) {}
     fn begin_live_master_capture(

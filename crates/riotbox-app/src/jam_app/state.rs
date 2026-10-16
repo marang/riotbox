@@ -8,7 +8,10 @@ use std::{
 
 use riotbox_audio::{
     mc202::Mc202RenderState,
-    runtime::{AudioRuntimeHealth, SourceMonitorAudioRoute},
+    runtime::{
+        AudioRuntimeHealth, AudioTransportControlError, AudioTransportPositionRequest,
+        SourceMonitorAudioRoute,
+    },
     source_audio::SourceAudioCache,
     tr909::Tr909RenderState,
     w30::{W30PreviewRenderState, W30ResampleTapState},
@@ -35,6 +38,7 @@ pub enum JamAppError {
     Sidecar(SidecarClientError),
     ActionIdExhausted(ActionIdExhausted),
     CommitSequenceExhausted(CommitSequenceExhausted),
+    AudioTransportControl(AudioTransportControlError),
     InvalidSession(String),
 }
 
@@ -47,6 +51,7 @@ impl Display for JamAppError {
             Self::Sidecar(error) => write!(f, "sidecar error: {error}"),
             Self::ActionIdExhausted(error) => Display::fmt(error, f),
             Self::CommitSequenceExhausted(error) => Display::fmt(error, f),
+            Self::AudioTransportControl(error) => Display::fmt(error, f),
             Self::InvalidSession(message) => write!(f, "invalid session: {message}"),
         }
     }
@@ -61,6 +66,7 @@ impl Error for JamAppError {
             Self::Sidecar(error) => Some(error),
             Self::ActionIdExhausted(error) => Some(error),
             Self::CommitSequenceExhausted(error) => Some(error),
+            Self::AudioTransportControl(error) => Some(error),
             Self::InvalidSession(_) => None,
         }
     }
@@ -81,6 +87,12 @@ impl From<ActionIdExhausted> for JamAppError {
 impl From<CommitSequenceExhausted> for JamAppError {
     fn from(value: CommitSequenceExhausted) -> Self {
         Self::CommitSequenceExhausted(value)
+    }
+}
+
+impl From<AudioTransportControlError> for JamAppError {
+    fn from(value: AudioTransportControlError) -> Self {
+        Self::AudioTransportControl(value)
     }
 }
 
@@ -199,6 +211,8 @@ impl SourceAudioStatus {
 pub struct TransportDriverState {
     pub last_audio_position_beats: Option<u64>,
     pub pending_audio_is_playing: Option<bool>,
+    /// Committed Core/Session cursor awaiting delivery, never independent truth.
+    pub pending_audio_position: Option<AudioTransportPositionRequest>,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]

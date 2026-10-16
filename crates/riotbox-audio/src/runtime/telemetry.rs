@@ -39,7 +39,17 @@ impl RuntimeTelemetry {
         }
     }
 
+    #[cfg(test)]
     pub(super) fn record_callback_at(&self, now_micros: u64, timing: &CallbackTimingSnapshot) {
+        self.record_callback_with_position_request_at(now_micros, timing, 0);
+    }
+
+    pub(super) fn record_callback_with_position_request_at(
+        &self,
+        now_micros: u64,
+        timing: &CallbackTimingSnapshot,
+        applied_request_id: u64,
+    ) {
         let previous = self
             .last_callback_micros
             .swap(now_micros, Ordering::Relaxed);
@@ -49,21 +59,25 @@ impl RuntimeTelemetry {
                 .fetch_max(gap, Ordering::Relaxed);
         }
         self.callback_count.fetch_add(1, Ordering::Relaxed);
-        self.timing.publish(AudioRuntimeTimingSnapshot {
-            is_transport_running: timing.is_transport_running,
-            tempo_bpm: timing.tempo_bpm,
-            position_beats: timing.completed_position_beats,
-        });
+        self.timing.publish(
+            AudioRuntimeTimingSnapshot {
+                is_transport_running: timing.is_transport_running,
+                tempo_bpm: timing.tempo_bpm,
+                position_beats: timing.completed_position_beats,
+            },
+            applied_request_id,
+        );
     }
 
     pub(super) fn record_callback_scratch_overflow_at(
         &self,
         now_micros: u64,
         timing: &CallbackTimingSnapshot,
+        applied_request_id: u64,
     ) {
         self.callback_scratch_overflow_count
             .fetch_add(1, Ordering::Relaxed);
-        self.record_callback_at(now_micros, timing);
+        self.record_callback_with_position_request_at(now_micros, timing, applied_request_id);
     }
 
     pub(super) fn record_stream_error(&self, message: String) {
@@ -97,10 +111,21 @@ impl RuntimeTelemetry {
         }
     }
 
+    #[cfg(test)]
     pub(super) fn timing_snapshot(&self) -> Option<AudioRuntimeTimingSnapshot> {
         // Timing observers need only atomic progress, never the diagnostic
         // message mutex or its String allocation.
-        self.timing.snapshot()
+        self.timing
+            .snapshot_with_position_request()
+            .map(|(timing, _)| timing)
+    }
+
+    pub(super) fn timing_snapshot_for_position_request(
+        &self,
+        requested_id: u64,
+    ) -> Option<AudioRuntimeTimingSnapshot> {
+        let (timing, applied_id) = self.timing.snapshot_with_position_request()?;
+        (applied_id == requested_id).then_some(timing)
     }
 }
 

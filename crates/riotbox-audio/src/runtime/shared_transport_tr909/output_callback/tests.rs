@@ -2,6 +2,7 @@ use super::{CallbackPreparationError, prepare_output_callback};
 use crate::{
     mc202::Mc202RenderState,
     runtime::{
+        AudioTransportPositionRequest, AudioTransportPositionUpdate,
         live_master_capture::{LiveMasterCaptureRequest, SharedLiveMasterCapture},
         shared_mc202::SharedMc202RenderState,
         shared_transport_tr909::{
@@ -27,6 +28,7 @@ const COLD_TEST: &str = "runtime::shared_transport_tr909::output_callback::tests
 const COLD_CHILD: &str = "RIOTBOX_CALLBACK_HEAP_COLD_CHILD";
 
 mod timing_publication;
+mod transport_intent;
 
 fn shared() -> AudioRuntimeSharedState {
     AudioRuntimeSharedState {
@@ -133,7 +135,16 @@ fn cold_active_mix() {
         W30ResampleTapRouting,
     };
     let state = shared();
-    state.transport.update(true, 128.0, 0.0);
+    state
+        .transport
+        .update(
+            true,
+            128.0,
+            AudioTransportPositionUpdate::Reposition(AudioTransportPositionRequest::from_beats(
+                0.0,
+            )),
+        )
+        .unwrap();
     state
         .source_monitor
         .update_controls(&SourceMonitorRenderState::control_only(
@@ -222,7 +233,16 @@ where
     state
         .source_monitor
         .replace_source_and_controls(&source(0.25));
-    state.transport.update(true, 128.0, 0.0);
+    state
+        .transport
+        .update(
+            true,
+            128.0,
+            AudioTransportPositionUpdate::Reposition(AudioTransportPositionRequest::from_beats(
+                0.0,
+            )),
+        )
+        .unwrap();
     state.live_master_capture.begin(request(64)).unwrap();
     let mut callback =
         prepare_output_callback::<T>(&config(), state.clone(), Instant::now()).unwrap();
@@ -339,7 +359,16 @@ fn production_callbacks_remain_heap_free_through_publication_capture_and_stop() 
     state
         .source_monitor
         .replace_source_and_controls(&source(0.25));
-    state.transport.update(true, 128.0, 0.0);
+    state
+        .transport
+        .update(
+            true,
+            128.0,
+            AudioTransportPositionUpdate::Reposition(AudioTransportPositionRequest::from_beats(
+                0.0,
+            )),
+        )
+        .unwrap();
     let mut callback =
         prepare_output_callback::<f32>(&config(), state.clone(), Instant::now()).unwrap();
     let (commands, commands_in) = mpsc::channel::<bool>();
@@ -442,7 +471,16 @@ fn production_callbacks_remain_heap_free_through_publication_capture_and_stop() 
     assert_eq!(armed.written_sample_count, 0);
     assert_eq!(armed.armed_callback_count, 1);
     assert!(!armed.capture_started);
-    state.transport.update(true, 128.0, 4.0);
+    state
+        .transport
+        .update(
+            true,
+            128.0,
+            AudioTransportPositionUpdate::Reposition(AudioTransportPositionRequest::from_beats(
+                4.0,
+            )),
+        )
+        .unwrap();
     tick(false);
     let aligned = state.live_master_capture.finish().unwrap();
     assert_eq!(aligned.captured_start_position_beats, Some(4.0));
@@ -455,9 +493,27 @@ fn production_callbacks_remain_heap_free_through_publication_capture_and_stop() 
     state
         .source_monitor
         .replace_source_and_controls(&source(0.25));
-    state.transport.update(true, 128.0, 0.0);
+    state
+        .transport
+        .update(
+            true,
+            128.0,
+            AudioTransportPositionUpdate::Reposition(AudioTransportPositionRequest::from_beats(
+                0.0,
+            )),
+        )
+        .unwrap();
     assert!(tick(false).iter().any(|s| *s > 0.01));
-    state.transport.update(false, 128.0, 0.0);
+    state
+        .transport
+        .update(
+            false,
+            128.0,
+            AudioTransportPositionUpdate::Reposition(AudioTransportPositionRequest::from_beats(
+                0.0,
+            )),
+        )
+        .unwrap();
     // Preserve the existing 5 ms stop ramp (240 frames at 48 kHz), not an
     // invented first-buffer hard mute. Every ramp invocation is measured.
     for _ in 0..3 {
@@ -473,12 +529,30 @@ fn production_callbacks_remain_heap_free_through_publication_capture_and_stop() 
     state
         .source_monitor
         .replace_source_and_controls(&SourceMonitorRenderState::default());
-    state.transport.update(true, 128.0, 0.0);
+    state
+        .transport
+        .update(
+            true,
+            128.0,
+            AudioTransportPositionUpdate::Reposition(AudioTransportPositionRequest::from_beats(
+                0.0,
+            )),
+        )
+        .unwrap();
     assert!(
         tick(false).iter().all(|s| *s == 0.0),
         "missing source fails silent"
     );
-    state.transport.update(false, 128.0, 0.0);
+    state
+        .transport
+        .update(
+            false,
+            128.0,
+            AudioTransportPositionUpdate::Reposition(AudioTransportPositionRequest::from_beats(
+                0.0,
+            )),
+        )
+        .unwrap();
     assert!(tick(false).iter().all(|s| *s == 0.0));
     drop(commands);
     worker.join().unwrap();
@@ -492,7 +566,16 @@ fn concurrent_control_publication_and_capture_abort_do_not_reclaim_on_the_callba
     let positive = source(0.25);
     let negative = source(-0.5);
     state.source_monitor.replace_source_and_controls(&positive);
-    state.transport.update(true, 128.0, 0.0);
+    state
+        .transport
+        .update(
+            true,
+            128.0,
+            AudioTransportPositionUpdate::Reposition(AudioTransportPositionRequest::from_beats(
+                0.0,
+            )),
+        )
+        .unwrap();
     let mut callback =
         prepare_output_callback::<f32>(&config(), state.clone(), Instant::now()).unwrap();
     let rendezvous = Arc::new(Barrier::new(2));

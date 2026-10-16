@@ -258,17 +258,21 @@ impl AudioRuntimeShell {
     /// A coherent completed callback observation, or no observation yet/now.
     /// Requested control state is never substituted for unavailable timing.
     pub fn timing_snapshot(&self) -> Option<AudioRuntimeTimingSnapshot> {
-        self.telemetry.timing_snapshot()
+        // The control owner is serialized by the !Sync shell. Never expose a
+        // callback observation from before the latest admitted reposition.
+        let requested_id = self.transport.try_snapshot()?.position_request_id;
+        self.telemetry
+            .timing_snapshot_for_position_request(requested_id)
     }
 
     pub fn update_transport_state(
         &self,
         is_transport_running: bool,
         tempo_bpm: f32,
-        position_beats: f64,
-    ) {
+        position: super::AudioTransportPositionUpdate,
+    ) -> Result<(), super::AudioTransportControlError> {
         self.transport
-            .update(is_transport_running, tempo_bpm, position_beats);
+            .update(is_transport_running, tempo_bpm, position)
     }
 
     pub fn update_tr909_render_state(&self, render_state: &Tr909RenderState) {
