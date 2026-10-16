@@ -94,6 +94,14 @@ isolated generated-composite recording evidence, not musical, physical-device,
 latency, endurance, release or original ALSA-cause qualification. No further
 trial is authorized and the failed V1 result remains unchanged.
 
+The [RIOTBOX-1589 post-repair phase](benchmarks/loaded_recorder_host_riotbox_1589_v1.md)
+prospectively reuses that unchanged generated V2 observation for the now-repaired
+callback/control and history-capacity paths. Its new owner, fresh fixture and
+exact-revision bindings require separate explicit approval; preparation is not
+host access. The 1581 result and consumed permission stay unchanged. This is a
+current-runtime regression, not longer endurance, musical or physical-device
+qualification. No actual 1589 result or further trial is implied.
+
 ## Agent Sandbox Self-Checks
 
 Run these when Riotbox runs inside `agent-sandbox` and host capability is unclear:
