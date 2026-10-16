@@ -2,6 +2,7 @@
 
 use crate::runtime::fill_focus::FillFocusRenderState;
 use crate::runtime::public_api_shell::apply_master_bus_soft_limiter;
+use crate::runtime::render_tr909_w30_preview::reposition_w30_timing;
 use crate::runtime::shared_transport_tr909::AudioRuntimeSharedState;
 use crate::runtime::shared_transport_tr909::callback_scratch_sample_count;
 use crate::runtime::shared_w30_resample_callback::Tr909CallbackState;
@@ -85,6 +86,8 @@ where
     let callback_transport = Arc::clone(&shared.transport);
     let mut render_state = Tr909CallbackState::default();
     let mut transport_state = TransportTimingCallbackState::default();
+    let mut w30_applied_position_request_id = None;
+    let mut w30_was_transport_running = false;
     let channel_count = usize::from(config.channels.max(1));
     let mut w30_preview_state =
         W30PreviewCallbackState::with_sample_rate_and_channels(config.sample_rate, channel_count);
@@ -113,6 +116,9 @@ where
             frame_count,
         );
         let Some(mix_buffer) = mix_buffer.get_mut(..data.len()) else {
+            // The clock advances across these silent frames, but W-30 did not
+            // render them. Re-align at the next admitted block even on Preserve.
+            w30_applied_position_request_id = None;
             for output in data.iter_mut() {
                 *output = T::from_sample(0.0);
             }
@@ -156,6 +162,21 @@ where
         source_monitor_state.tempo_bpm = callback_timing.tempo_bpm;
         source_monitor_state.position_beats = callback_timing.render_position_beats;
 
+        let mut w30 = W30MixRenderState {
+            preview_render: w30_preview_render_state,
+            preview_state: &mut w30_preview_state,
+            resample_render: &w30_resample_render_state,
+            resample_state: &mut w30_resample_state,
+        };
+        if w30_applied_position_request_id != Some(transport_snapshot.position_request_id)
+            || (callback_timing.is_transport_running && !w30_was_transport_running)
+        {
+            // Overflow may already have advanced/acknowledged the clock. Only
+            // consume W-30's alignment here, at the actual renderable cursor.
+            reposition_w30_timing(callback_timing.render_position_beats, &mut w30);
+            w30_applied_position_request_id = Some(transport_snapshot.position_request_id);
+        }
+        w30_was_transport_running = callback_timing.is_transport_running;
         render_mix_buffer(
             mix_buffer,
             sample_rate,
@@ -163,12 +184,7 @@ where
             &tr909_render_state,
             &mc202_render_state,
             &mut render_state,
-            &mut W30MixRenderState {
-                preview_render: w30_preview_render_state,
-                preview_state: &mut w30_preview_state,
-                resample_render: &w30_resample_render_state,
-                resample_state: &mut w30_resample_state,
-            },
+            &mut w30,
         );
         apply_source_monitor_policy_with_state_and_fill_focus(
             mix_buffer,

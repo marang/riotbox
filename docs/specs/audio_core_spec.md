@@ -201,6 +201,47 @@ App/queue/controller, exhaustion, heap and exact-source Loom proofs plus frozen
 offline compatibility are required; they grant no host, source, listening,
 hardness, physical latency, endurance or release qualification.
 
+RIOTBOX-1598 / RBX-459 also aligns already-active W-30 preview and resample-tap
+scheduling when the live callback observes a new position identity. Rebase only
+their cached beat positions and destination step cursors using the existing
+renderer step calculations. A seek itself is not a pad trigger or a synthetic
+destination-step attack: preserve sample cursors/age, envelopes, trigger revision,
+material identity, character state and gesture history. The next ordinary step,
+explicit trigger, material replacement or activation still uses its existing
+renderer behavior. Articulation reads the rebased position relative to the same
+committed start; existing PitchDive/FilterSlam active/inactive/terminal handling
+and frozen curves remain authoritative, not bypassed by preservation.
+
+One callback-local applied-W-30 identity is updated only when a scratch-admitted
+block can reach the mixer. If an overflow block advances/acknowledges transport
+without rendering W-30, retain that pending phase alignment and apply the next
+renderable block's actual callback render position, not the old requested
+target. This also applies when the request identity was already applied and
+the overflowing callback used ordinary Preserve (RBX-461): invalidate only the
+local W-30 phase-alignment marker on any scratch overflow. This is render-phase
+bookkeeping, not a second clock, queue, public
+acknowledgment or persisted/App state. Ordinary Preserve, tempo refresh, Pause/
+Play and stopped audition do not implicitly rebase W-30 on every callback;
+explicit Stop/Seek/restore identities do. Preserve existing activation, one-shot,
+loop, fade, explicit-trigger and material-signature semantics.
+
+RBX-460 additionally aligns scheduling once on the first renderable running
+block after a rendered stopped block. Stopped preview/audition may advance its
+local idle phase while the shared clock remains stationary; Play/Preserve must
+resume at that clock, not at idle audition time. Track only the last renderable
+block's running flag, without manufacturing a new position identity or changing
+public acknowledgments. Use the same non-retriggering timing helper; subsequent
+running Preserve/tempo callbacks and uninterrupted stopped audition remain
+unchanged. Overflow does not consume this rendered-state transition.
+
+The helper belongs to the existing private W-30 renderer and is invoked only
+by the production live callback; historical numeric offline ingress never calls
+it and retains its declared byte compatibility. Require exact prepared-callback
+generated PCM phase/gesture and non-retrigger controls, resample coverage,
+overflow recovery, repeated/sub-step/backward/forward identities, ordinary
+transport controls, acknowledgment and zero callback heap operations. No device,
+host, human listening, source-general, latency or endurance claim follows.
+
 ### 7.2 Source monitor playback
 
 Source monitor playback is a transport feature, not an external player.
