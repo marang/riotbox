@@ -1,6 +1,7 @@
 """Closed workload/Core-report seam with generated metadata, never audio launch."""
 
 from contextlib import ExitStack
+from enum import Enum
 import json
 import os
 from pathlib import Path
@@ -9,8 +10,13 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
-from loaded_recorder_evidence import EvidenceError, load_protocol, sha256
+from loaded_recorder_evidence import (
+    EvidenceError, LoadedObservationVersion, PROTOCOL_SHA256, V2_PROTOCOL_SHA256,
+    load_protocol, load_protocol_v2, sha256,
+)
+from loaded_recorder_fixture import GeneratedFixture
 from loaded_recorder_workload import LoadedRecorderWorkload
+import loaded_recorder_workload as subject
 from run_silent_host_probe import execute_attempt
 import run_silent_host_probe as operator
 from silent_host_signals import OperatorInterrupts
@@ -18,6 +24,63 @@ from test_silent_host_routes import fixture as route_fixture
 
 
 class LoadedWorkloadTests(unittest.TestCase):
+    def test_default_constructor_is_v1_and_version_must_be_the_closed_enum(self):
+        self.assertIs(LoadedRecorderWorkload(object(), "a" * 64).observation_version,
+                      LoadedObservationVersion.V1)
+
+        class OtherVersion(Enum):
+            V1 = "v1"
+
+        fixture = Mock()
+        with patch.object(subject, "load_protocol") as v1, \
+                patch.object(subject, "load_protocol_v2") as v2, \
+                patch.object(Path, "read_bytes", side_effect=AssertionError("no file reads")), \
+                patch.object(operator, "HostCommands") as host:
+            for version in (None, True, 1, 2, "v1", "v2", object(), OtherVersion.V1):
+                with self.subTest(version=repr(version)), \
+                        self.assertRaisesRegex(EvidenceError, "closed observation version"):
+                    LoadedRecorderWorkload(fixture, "a" * 64, observation_version=version)
+            fixture.assert_not_called()
+            self.assertEqual(fixture.mock_calls, [])
+            v1.assert_not_called()
+            v2.assert_not_called()
+            host.assert_not_called()
+
+    def test_explicit_versions_select_only_matching_loader_before_existing_admission(self):
+        with tempfile.TemporaryDirectory() as directory:
+            binary = Path(directory) / "riotbox-app"
+            binary.write_bytes(b"generated-never-executed")
+            fixture = GeneratedFixture()
+            root = Path(__file__).resolve().parents[1]
+            for version in LoadedObservationVersion:
+                with self.subTest(version=version), \
+                        patch.object(fixture, "verify_unchanged") as unchanged, \
+                        patch.object(subject, "load_protocol", wraps=load_protocol) as v1, \
+                        patch.object(subject, "load_protocol_v2", wraps=load_protocol_v2) as v2:
+                    workload = LoadedRecorderWorkload(fixture, sha256(binary.read_bytes()), version)
+                    protocol = workload.admit(root, binary, object())
+                    self.assertEqual(protocol["schema_version"], 1 if version is LoadedObservationVersion.V1 else 2)
+                    selected, unused = (v1, v2) if version is LoadedObservationVersion.V1 else (v2, v1)
+                    selected.assert_called_once_with(root)
+                    unused.assert_not_called()
+                    unchanged.assert_called_once_with()
+
+    def test_admission_records_attribute_the_exact_selected_version(self):
+        fixture = SimpleNamespace(report_sha256="b" * 64, owner=Path("/generated-only-owner"))
+        for version, schema, digest, scope in (
+            (LoadedObservationVersion.V1, "riotbox.loaded_recorder_attempt.v1", PROTOCOL_SHA256,
+             "source_free_loaded_recording_adapter_preparation"),
+            (LoadedObservationVersion.V2, "riotbox.loaded_recorder_attempt.v2", V2_PROTOCOL_SHA256,
+             "source_free_loaded_recorder_client_reuse_preparation"),
+        ):
+            with self.subTest(version=version):
+                workload = LoadedRecorderWorkload(fixture, "a" * 64, version)
+                self.assertEqual(workload.admission(), {
+                    "schema": schema, "protocol_sha256": digest,
+                    "fixture_report_sha256": "b" * 64, "fixture_owner": str(fixture.owner),
+                    "quality_proof": False, "evidence_scope": scope,
+                })
+
     def test_arbitrary_workload_rejects_before_host_commands(self):
         with patch("run_silent_host_probe.HostCommands") as commands:
             with self.assertRaisesRegex(EvidenceError, "closed loaded"):
@@ -31,7 +94,7 @@ class LoadedWorkloadTests(unittest.TestCase):
                 execute_attempt(None, owner=Path("/unused"), workload=workload)
             commands.assert_not_called()
 
-    def run_case(self, *, changed=None, binary_changed=False):
+    def run_case(self, *, changed=None, binary_changed=False, version=None):
         with tempfile.TemporaryDirectory() as directory:
             prefix = Path(directory) / "run-1"
             binary = Path(directory) / "riotbox-app"
@@ -39,7 +102,8 @@ class LoadedWorkloadTests(unittest.TestCase):
             fixture = SimpleNamespace(verify_unchanged=lambda: None,
                                       verify_case_before_launch=lambda case: None)
             case = SimpleNamespace(session_path=Path(directory) / "session.json")
-            workload = LoadedRecorderWorkload(fixture, sha256(binary.read_bytes()))
+            workload = (LoadedRecorderWorkload(fixture, sha256(binary.read_bytes())) if version is None
+                        else LoadedRecorderWorkload(fixture, sha256(binary.read_bytes()), version))
             readiness = {"mode": "live_recording_readiness_report", "ready": True,
                 "status": "ready", "writes_files": False, "runtime_master_recording_ready": True,
                 "session_path": str(case.session_path), "readiness_blockers": [],
@@ -60,6 +124,8 @@ class LoadedWorkloadTests(unittest.TestCase):
                 report = workload.run_case(binary, case, prefix, SimpleNamespace(text=text),
                                            object(), {}, {}, object())
             run.assert_called_once()
+            self.assertIs(run.call_args.kwargs["observation_version"],
+                          LoadedObservationVersion.V1 if version is None else version)
             self.assertEqual(commands, [[str(binary), "--live-recording-readiness-report",
                                         "--session", str(case.session_path)]])
             self.assertEqual(report["core_readiness_sha256"],
@@ -73,6 +139,11 @@ class LoadedWorkloadTests(unittest.TestCase):
                         {"receipt": {"receipt_id": "receipt-4", "created_by_action": 3}}):
             with self.subTest(changed=changed), self.assertRaises(EvidenceError):
                 self.run_case(changed=changed)
+
+    def test_v2_version_is_forwarded_without_skipping_existing_Core_validation(self):
+        self.run_case(version=LoadedObservationVersion.V2)
+        with self.assertRaises(EvidenceError):
+            self.run_case(version=LoadedObservationVersion.V2, changed={"ready": False})
 
     def test_changed_binary_after_Core_report_never_passes(self):
         with self.assertRaisesRegex(EvidenceError, "binary"):

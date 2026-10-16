@@ -3,6 +3,7 @@
 import hashlib
 import json
 import math
+from enum import Enum
 from pathlib import Path
 import re
 
@@ -11,9 +12,15 @@ from silent_host_diagnostics import load_protocol_v4
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL_SHA256 = "687bea31dfa903a299fc14b9e01567bf34b3cd4536220397f2cbb6f780e943ca"
+V2_PROTOCOL_SHA256 = "4cf9514cf33057d67e268f4ee6d234e083f4703d25a2f3d8537de2b3c99564ed"
 FIXTURE_SHA256 = "18981581fe9e762c48fc120f0b325a9172b49194ac2cb686f5865eed0fe0b08d"
 MILESTONE = "live_master_recording_window_stopped"
 LIMIT = 262144
+
+
+class LoadedObservationVersion(Enum):
+    V1 = "v1"
+    V2 = "v2"
 
 
 def sha256(data):
@@ -83,6 +90,22 @@ def load_protocol(root=ROOT):
         require(protocol[key], diagnostic[key], key)
     fixture = (root / "docs/benchmarks/generated_live_master_load_fixture_v1.json").read_bytes()
     require(sha256(fixture), protocol["generated_fixture_contract_sha256"], "fixture contract")
+    return protocol
+
+
+def load_protocol_v2(root=ROOT):
+    data = (root / "docs/benchmarks/loaded_recorder_observation_v2.json").read_bytes()
+    require(sha256(data), V2_PROTOCOL_SHA256, "V2 protocol bytes")
+    protocol = load_json_bytes(data)
+    expected = {
+        **load_protocol(root),
+        "schema": "riotbox.loaded_recorder_observation.v2",
+        "schema_version": 2,
+        "predecessor_protocol_sha256": PROTOCOL_SHA256,
+        "node_id_reuse_policy": "validated_distinct_client_is_node_absence",
+        "evidence_scope": "source_free_loaded_recorder_client_reuse_preparation",
+    }
+    require(protocol, expected, "V2 complete predecessor inheritance")
     return protocol
 
 
