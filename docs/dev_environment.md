@@ -63,6 +63,15 @@ read diagnostics after verified group cleanup. It changes no production runtime,
 buffer, priority or original verdict and does not enable the ordinary CLI.
 An instrumented observation is not a zero-overhead or original-trigger fix claim.
 
+The separately authorized [RIOTBOX-1579 loaded V1 observation](reviews/riotbox_1579_loaded_recorder_observation_2026-10-16.md)
+is consumed and failed after its first two-bar stopped-window marker: the
+observer rejected terminal reuse of an audio Node's global ID by a non-audio
+Client. No finished recording pass exists; eight/sixteen-bar cases did not run.
+Owned cleanup and unchanged default/mute/volume were verified. The generated
+fixture, stopped milestone and zero-error partial ALSA measurements do not grant
+musical, endurance or physical-device qualification. RIOTBOX-1580 owns the
+source-free observer correction; it authorizes no retry or new host invocation.
+
 ## Agent Sandbox Self-Checks
 
 Run these when Riotbox runs inside `agent-sandbox` and host capability is unclear:
