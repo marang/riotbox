@@ -161,8 +161,7 @@ fn unsupported_legacy_backward_history_load_fails_without_rewriting_the_file() {
     save_session_json(&path, &app.session).unwrap();
     let before = std::fs::read(&path).unwrap();
     let error = JamAppState::from_json_files(&path, None::<&Path>)
-        .err()
-        .expect("legacy navigation needs explicit upgrade");
+        .expect_err("legacy navigation needs explicit upgrade");
     assert!(
         error
             .to_string()

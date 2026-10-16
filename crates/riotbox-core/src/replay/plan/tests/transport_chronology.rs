@@ -13,15 +13,16 @@ use crate::{
 };
 
 fn fresh_backwards_history() -> ActionLog {
-    let mut log = ActionLog::default();
     // IDs and wall-clock metadata deliberately disagree with commit chronology.
-    log.actions = vec![action(100, 300), action(2, 100), action(70, 200)];
-    log.commit_records = vec![
-        commit_record(100, 12, 4, 1, 300),
-        commit_record(2, 8, 3, 1, 100),
-        commit_record(70, 0, 1, 1, 200),
-    ];
-    log
+    ActionLog {
+        actions: vec![action(100, 300), action(2, 100), action(70, 200)],
+        commit_records: vec![
+            commit_record(100, 12, 4, 1, 300),
+            commit_record(2, 8, 3, 1, 100),
+            commit_record(70, 0, 1, 1, 200),
+        ],
+        ..ActionLog::default()
+    }
 }
 
 #[test]
@@ -77,15 +78,17 @@ fn revisiting_a_complete_boundary_keeps_global_order_and_local_sequence() {
 
 #[test]
 fn fresh_undo_uses_append_chronology_even_when_wall_clock_moves_backwards() {
-    let mut log = ActionLog::default();
-    log.actions = vec![
-        undone_source_monitor_action(1, 1000),
-        typed_undo_marker(2, 1, 500),
-    ];
-    log.commit_records = vec![
-        commit_record(1, 8, 3, 1, 1000),
-        undo_commit_record(2, 8, 3, 1, 500),
-    ];
+    let log = ActionLog {
+        actions: vec![
+            undone_source_monitor_action(1, 1000),
+            typed_undo_marker(2, 1, 500),
+        ],
+        commit_records: vec![
+            commit_record(1, 8, 3, 1, 1000),
+            undo_commit_record(2, 8, 3, 1, 500),
+        ],
+        ..ActionLog::default()
+    };
     assert!(build_committed_replay_plan(&log).unwrap().is_empty());
 }
 
