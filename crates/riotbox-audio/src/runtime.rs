@@ -14,8 +14,15 @@ use control_snapshot::{
 mod control_snapshot;
 mod control_sync {
     pub(super) use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
+    #[cfg(test)]
+    pub(super) fn model(work: impl Fn() + Send + Sync + 'static) {
+        work();
+    }
 }
 mod transport_timing;
+pub use transport_timing::{
+    AudioTransportControlError, AudioTransportPositionRequest, AudioTransportPositionUpdate,
+};
 
 mod fill_focus;
 #[cfg(any(test, feature = "limiter-calibration"))]

@@ -458,6 +458,16 @@ impl JamAppState {
                     .then_some(self.runtime.transport.beat_index);
                 if matches!(
                     action.command,
+                    ActionCommand::TransportSeek | ActionCommand::TransportStop
+                ) {
+                    self.runtime.transport_driver.pending_audio_position = Some(
+                        riotbox_audio::runtime::AudioTransportPositionRequest::from_beats(
+                            self.runtime.transport.position_beats,
+                        ),
+                    );
+                }
+                if matches!(
+                    action.command,
                     ActionCommand::TransportPlay
                         | ActionCommand::TransportPause
                         | ActionCommand::TransportStop

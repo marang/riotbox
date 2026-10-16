@@ -98,6 +98,14 @@ where
         let frame_count = data.len() / channel_count.max(1);
         let transport_snapshot = callback_transport.snapshot_or_previous(&last_transport_snapshot);
         last_transport_snapshot = transport_snapshot;
+        if transport_state.applied_position_request_id
+            != Some(transport_snapshot.position_request_id)
+        {
+            // The shared clock owns every explicit seek, including sub-step and
+            // repeated targets. Do not let the legacy drum cursor tolerance
+            // silently discard one after the transport has acknowledged it.
+            render_state.was_running = false;
+        }
         let callback_timing = advance_transport_timing(
             &transport_snapshot,
             &mut transport_state,
@@ -110,7 +118,11 @@ where
             }
             let now = start.elapsed().as_micros() as u64;
             capture_reader.record_scratch_overflow(&callback_timing, now);
-            callback_telemetry.record_callback_scratch_overflow_at(now, &callback_timing);
+            callback_telemetry.record_callback_scratch_overflow_at(
+                now,
+                &callback_timing,
+                transport_snapshot.position_request_id,
+            );
             return;
         };
         let mut tr909_render_state = shared
@@ -173,6 +185,10 @@ where
             *output = T::from_sample(sample);
         }
 
-        callback_telemetry.record_callback_at(now, &callback_timing);
+        callback_telemetry.record_callback_with_position_request_at(
+            now,
+            &callback_timing,
+            transport_snapshot.position_request_id,
+        );
     })
 }

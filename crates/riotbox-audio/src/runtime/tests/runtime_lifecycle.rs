@@ -98,7 +98,7 @@ fn tr909_snapshot_or_previous_holds_last_complete_state_during_partial_update() 
 #[test]
 fn telemetry_tracks_callback_scratch_overflow_without_stream_error() {
     let telemetry = RuntimeTelemetry::new();
-    telemetry.record_callback_scratch_overflow_at(100, &sample_timing(16.0));
+    telemetry.record_callback_scratch_overflow_at(100, &sample_timing(16.0), 0);
 
     let snapshot = telemetry.snapshot();
 

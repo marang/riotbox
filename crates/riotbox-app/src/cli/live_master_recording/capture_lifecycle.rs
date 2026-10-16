@@ -3,6 +3,7 @@
 use std::time::{Duration, Instant};
 
 use super::observation::{Observation, WindowStopped};
+use crate::cli::transport_sync::{TransportControl, publish_transport, sync_transport};
 use crate::cli::{
     model::{AppLaunch, LaunchMode, live_master_recording_boundary},
     observer::timestamp_now,
@@ -10,10 +11,9 @@ use crate::cli::{
 use crate::jam_app::{JamAppError, JamAppState};
 use riotbox_audio::runtime::{
     AudioRuntimeHealth, AudioRuntimeLifecycle, AudioRuntimeShell, AudioRuntimeTimingSnapshot,
-    LiveMasterCaptureError, LiveMasterCaptureOutcome, LiveMasterCaptureProgress,
-    LiveMasterCaptureRequest,
+    AudioTransportControlError, AudioTransportPositionUpdate, LiveMasterCaptureError,
+    LiveMasterCaptureOutcome, LiveMasterCaptureProgress, LiveMasterCaptureRequest,
 };
-use riotbox_core::session::CommitSequenceExhausted;
 use riotbox_core::{TimestampMs, action::LiveRecordingDuration};
 use serde_json::{Value, json};
 
@@ -31,10 +31,8 @@ pub(super) fn execute(
 
 // Private dependency seam: only observations, projection and existing device
 // operations vary. Session/queue policy and publication never live in an adapter.
-trait RuntimeControl {
+trait RuntimeControl: TransportControl {
     fn health_snapshot(&self) -> AudioRuntimeHealth;
-    fn timing_snapshot(&self) -> Option<AudioRuntimeTimingSnapshot>;
-    fn update_transport_state(&self, playing: bool, bpm: f32, position: f64);
     fn update_render_states(&self, state: &JamAppState);
     fn begin_live_master_capture(
         &self,
@@ -57,15 +55,23 @@ struct DeviceControl<'a>(&'a mut AudioRuntimeShell);
 #[cfg(test)]
 mod tests;
 
-impl RuntimeControl for DeviceControl<'_> {
-    fn health_snapshot(&self) -> AudioRuntimeHealth {
-        self.0.health_snapshot()
-    }
+impl TransportControl for DeviceControl<'_> {
     fn timing_snapshot(&self) -> Option<AudioRuntimeTimingSnapshot> {
         self.0.timing_snapshot()
     }
-    fn update_transport_state(&self, playing: bool, bpm: f32, position: f64) {
-        self.0.update_transport_state(playing, bpm, position);
+    fn update_transport_state(
+        &self,
+        playing: bool,
+        bpm: f32,
+        position: AudioTransportPositionUpdate,
+    ) -> Result<(), AudioTransportControlError> {
+        self.0.update_transport_state(playing, bpm, position)
+    }
+}
+
+impl RuntimeControl for DeviceControl<'_> {
+    fn health_snapshot(&self) -> AudioRuntimeHealth {
+        self.0.health_snapshot()
     }
     fn update_render_states(&self, state: &JamAppState) {
         self.0
@@ -473,7 +479,7 @@ fn blocked_capture_sync_failure(
     started_transport: bool,
     plan: &crate::jam_app::LiveMasterRecordingPlan,
     output: &riotbox_audio::runtime::AudioOutputInfo,
-    error: CommitSequenceExhausted,
+    error: JamAppError,
 ) -> Value {
     let stop_result = stop_live_master_runtime(state, runtime, started_transport);
     runtime.abort_live_master_capture();
@@ -539,11 +545,7 @@ fn stop_cli_started_transport(
 ) -> Result<(), JamAppError> {
     if started_transport && state.runtime.transport.is_playing {
         state.commit_transport_toggle(runtime.timestamp_now())?;
-        runtime.update_transport_state(
-            false,
-            state.runtime.tr909_render.tempo_bpm,
-            state.runtime.transport.position_beats,
-        );
+        publish_transport(state, runtime)?;
     }
     Ok(())
 }
@@ -584,13 +586,8 @@ fn wait_for_live_transport(
 fn sync_live_master_runtime(
     state: &mut JamAppState,
     runtime: &impl RuntimeControl,
-) -> Result<(), CommitSequenceExhausted> {
-    state.apply_audio_timing_snapshot(runtime.timing_snapshot(), runtime.timestamp_now())?;
-    runtime.update_transport_state(
-        state.runtime.transport.is_playing,
-        state.runtime.tr909_render.tempo_bpm,
-        state.runtime.transport.position_beats,
-    );
+) -> Result<(), JamAppError> {
+    sync_transport(state, runtime, runtime.timestamp_now())?;
     runtime.update_render_states(state);
     Ok(())
 }

@@ -35,18 +35,21 @@ fn model(work: impl Fn() + Send + Sync + 'static) {
 fn first_publication_is_absent_or_a_complete_observation() {
     model(|| {
         let publication = Arc::new(CallbackTimingPublication::new());
-        assert_eq!(publication.snapshot(), None);
+        assert_eq!(publication.snapshot_with_position_request(), None);
         let writer = {
             let publication = Arc::clone(&publication);
-            thread::spawn(move || publication.publish(FIRST))
+            thread::spawn(move || publication.publish(FIRST, 1))
         };
-        let observed = publication.snapshot();
+        let observed = publication.snapshot_with_position_request();
         assert!(
-            observed.is_none() || observed == Some(FIRST),
+            observed.is_none() || observed == Some((FIRST, 1)),
             "{observed:?}"
         );
         writer.join().unwrap();
-        assert_eq!(publication.snapshot(), Some(FIRST));
+        assert_eq!(
+            publication.snapshot_with_position_request(),
+            Some((FIRST, 1))
+        );
     });
 }
 
@@ -54,17 +57,20 @@ fn first_publication_is_absent_or_a_complete_observation() {
 fn an_update_never_publishes_mixed_transport_tempo_and_position() {
     model(|| {
         let publication = Arc::new(CallbackTimingPublication::new());
-        publication.publish(FIRST);
+        publication.publish(FIRST, 1);
         let writer = {
             let publication = Arc::clone(&publication);
-            thread::spawn(move || publication.publish(SECOND))
+            thread::spawn(move || publication.publish(SECOND, 2))
         };
-        let observed = publication.snapshot();
+        let observed = publication.snapshot_with_position_request();
         assert!(
-            observed.is_none() || observed == Some(FIRST) || observed == Some(SECOND),
+            observed.is_none() || observed == Some((FIRST, 1)) || observed == Some((SECOND, 2)),
             "mixed callback generations: {observed:?}"
         );
         writer.join().unwrap();
-        assert_eq!(publication.snapshot(), Some(SECOND));
+        assert_eq!(
+            publication.snapshot_with_position_request(),
+            Some((SECOND, 2))
+        );
     });
 }

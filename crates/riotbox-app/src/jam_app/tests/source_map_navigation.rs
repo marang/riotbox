@@ -21,6 +21,41 @@ use riotbox_core::source_graph::TimingHypothesisKind;
 use riotbox_core::source_graph::TimingQuality;
 
 #[test]
+fn a_committed_navigation_target_survives_a_pre_seek_audio_observation() {
+    let graph = source_map_navigation_graph();
+    let mut session = sample_session(&graph);
+    session.runtime_state.transport.is_playing = true;
+    session.runtime_state.transport.position_beats = 12.0;
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    state
+        .queue_source_map_navigation(SourceMapNavigationIntent::PreviousBar, 100)
+        .unwrap();
+    let boundary = state
+        .runtime
+        .transport
+        .boundary_state(riotbox_core::action::CommitBoundary::Immediate);
+    state.commit_ready_actions(boundary, 110).unwrap();
+    assert_eq!(state.runtime.transport.position_beats, 8.0);
+    let before = state.session.clone();
+
+    // Before repair the event loop observed again before publishing control.
+    // This same-running snapshot predates delivery of the committed seek.
+    state
+        .apply_audio_timing_snapshot(
+            Some(riotbox_audio::runtime::AudioRuntimeTimingSnapshot {
+                is_transport_running: true,
+                tempo_bpm: 120.0,
+                position_beats: 12.5,
+            }),
+            120,
+        )
+        .unwrap();
+
+    assert_eq!(state.runtime.transport.position_beats, 8.0);
+    assert_eq!(state.session, before);
+}
+
+#[test]
 fn source_map_navigation_queues_commits_and_restores_transport_position() {
     let graph = source_map_navigation_graph();
     let mut session = sample_session(&graph);

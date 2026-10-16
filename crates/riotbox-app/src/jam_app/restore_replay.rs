@@ -65,6 +65,18 @@ impl JamAppState {
             .reserve_action_ids_after(max_action_id(&self.session));
         self.runtime.transport =
             transport_clock_from_state(&self.session, self.source_graph.as_ref());
+        self.runtime.transport_driver.pending_audio_position = Some(
+            riotbox_audio::runtime::AudioTransportPositionRequest::from_beats(
+                self.runtime.transport.position_beats,
+            ),
+        );
+        self.runtime.transport_driver.pending_audio_is_playing =
+            Some(self.runtime.transport.is_playing);
+        self.runtime.transport_driver.last_audio_position_beats = self
+            .runtime
+            .transport
+            .is_playing
+            .then_some(self.runtime.transport.beat_index);
         self.runtime.last_commit_boundary = latest_commit_boundary_from_log(&self.session);
         self.reconstruct_mc202_source_phrase_plan_for_cursor(
             target_action_cursor.unwrap_or(self.session.action_log.actions.len()),

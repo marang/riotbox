@@ -276,8 +276,7 @@ pub(super) struct Tr909CallbackState {
 #[derive(Debug, Default)]
 pub(super) struct TransportTimingCallbackState {
     pub(super) beat_position: f64,
-    pub(super) last_control_position_beats: f64,
-    pub(super) was_running: bool,
+    pub(super) applied_position_request_id: Option<u64>,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -479,28 +478,18 @@ pub(super) fn advance_transport_timing(
     frame_count: usize,
 ) -> CallbackTimingSnapshot {
     let transport_running = control.is_transport_running && control.tempo_bpm > 0.0;
-    if !transport_running {
-        state.was_running = false;
+    if state.applied_position_request_id != Some(control.position_request_id) {
         state.beat_position = control.position_beats;
-        state.last_control_position_beats = control.position_beats;
+        state.applied_position_request_id = Some(control.position_request_id);
+    }
+    if !transport_running {
         return CallbackTimingSnapshot {
             is_transport_running: false,
             tempo_bpm: control.tempo_bpm,
-            render_position_beats: control.position_beats,
-            completed_position_beats: control.position_beats,
+            render_position_beats: state.beat_position,
+            completed_position_beats: state.beat_position,
         };
     }
-
-    let control_position_changed =
-        (state.last_control_position_beats - control.position_beats).abs() > f64::EPSILON;
-    if !state.was_running
-        || (control_position_changed
-            && (state.beat_position - control.position_beats).abs() > 0.125)
-    {
-        state.beat_position = control.position_beats;
-        state.was_running = true;
-    }
-    state.last_control_position_beats = control.position_beats;
 
     let render_position_beats = state.beat_position;
     let beats_per_sample = f64::from(control.tempo_bpm) / 60.0 / f64::from(sample_rate.max(1));

@@ -76,6 +76,15 @@ Generated control proof is not actual callback, source, listening, original
 ALSA-trigger or host/endurance qualification. No public Audio test constructor,
 second recorder, new action, DSP or persistent App state belongs to this seam.
 
+RIOTBOX-1592 / RBX-453 shares only the typed transport handoff in private
+`cli::transport_sync` between the interactive loop and recorder. It owns delivery
+before observation and delivery after boundary commits, not a clock, action or
+Session policy. The existing recorder control interface extends that small
+interface; real Audio and generated adapters supply observations/publication.
+The App driver retains only an undelivered committed target, and Audio owns
+runtime request identities/coherent callback acknowledgments. Historical numeric
+offline plans adapt at their existing ingress while reusing the same clock/mixer.
+
 ### Generated Loaded-Session Preparation Ownership
 
 RIOTBOX-1577 / RBX-443 keeps the private diagnostic `ready_prefix` responsible

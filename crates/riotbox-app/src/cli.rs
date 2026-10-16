@@ -19,6 +19,7 @@ mod stem_package_export;
 mod stem_package_handoff;
 mod stem_package_report;
 mod terminal;
+mod transport_sync;
 mod w30_hook_dawproject;
 
 pub use launch::run;

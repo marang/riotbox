@@ -54,12 +54,13 @@ pub(in crate::cli) fn start_audio_runtime_for_shell(
             shell.app.runtime.w30_resample_tap.clone(),
             shell.app.source_monitor_render_state(),
         ) {
-            Ok(runtime) => {
-                runtime.update_transport_state(
-                    shell.app.runtime.transport.is_playing,
-                    shell.app.runtime.tr909_render.tempo_bpm,
-                    shell.app.runtime.transport.position_beats,
-                );
+            Ok(mut runtime) => {
+                if let Err(error) =
+                    crate::cli::transport_sync::publish_transport(&mut shell.app, &runtime)
+                {
+                    runtime.stop();
+                    return Err(error.into());
+                }
                 shell.app.set_audio_health(runtime.health_snapshot());
                 if let Some(observer) = observer {
                     observer.record_audio_runtime(success_state, None, shell)?;
