@@ -390,11 +390,11 @@ fn audio_timing_snapshot_commits_crossed_bar_boundary() {
     state.queue_tr909_fill(300);
 
     let committed = state.apply_audio_timing_snapshot(
-        AudioRuntimeTimingSnapshot {
+        Some(AudioRuntimeTimingSnapshot {
             is_transport_running: true,
             tempo_bpm: 124.0,
             position_beats: 36.0,
-        },
+        }),
         3_100,
     );
 
@@ -429,11 +429,11 @@ fn audio_timing_snapshot_advances_transport_from_callback_position() {
     state.set_transport_playing(true);
 
     let committed = state.apply_audio_timing_snapshot(
-        AudioRuntimeTimingSnapshot {
+        Some(AudioRuntimeTimingSnapshot {
             is_transport_running: true,
             tempo_bpm: 124.0,
             position_beats: 33.0,
-        },
+        }),
         2_500,
     );
 
@@ -461,11 +461,11 @@ fn audio_timing_snapshot_keeps_zero_based_beat_and_one_based_bar_phrase_indices(
         (16.0, 16, 5, 2),
     ] {
         state.apply_audio_timing_snapshot(
-            AudioRuntimeTimingSnapshot {
+            Some(AudioRuntimeTimingSnapshot {
                 is_transport_running: true,
                 tempo_bpm: 124.0,
                 position_beats,
-            },
+            }),
             4_000,
         );
 

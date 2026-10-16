@@ -111,9 +111,12 @@ impl JamAppState {
 
     pub fn apply_audio_timing_snapshot(
         &mut self,
-        timing: AudioRuntimeTimingSnapshot,
+        timing: Option<AudioRuntimeTimingSnapshot>,
         committed_at: TimestampMs,
     ) -> Vec<CommittedActionRef> {
+        let Some(timing) = timing else {
+            return Vec::new();
+        };
         if let Some(pending_is_playing) = self.runtime.transport_driver.pending_audio_is_playing {
             if timing.is_transport_running != pending_is_playing {
                 return Vec::new();

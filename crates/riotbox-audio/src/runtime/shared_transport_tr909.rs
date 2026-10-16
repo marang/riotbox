@@ -259,7 +259,9 @@ impl AudioRuntimeShell {
     }
 
     #[must_use]
-    pub fn timing_snapshot(&self) -> AudioRuntimeTimingSnapshot {
+    /// A coherent completed callback observation, or no observation yet/now.
+    /// Requested control state is never substituted for unavailable timing.
+    pub fn timing_snapshot(&self) -> Option<AudioRuntimeTimingSnapshot> {
         self.telemetry.timing_snapshot()
     }
 

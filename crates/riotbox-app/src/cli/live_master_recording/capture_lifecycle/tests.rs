@@ -32,6 +32,9 @@ enum Case {
     ConfirmTimeout,
     ConfirmDelayed,
     ConfirmFault,
+    TimingUnavailableDelayed,
+    TimingUnavailable,
+    TimingUnavailableFault,
     WrongBpm,
     ArmFailure,
     RuntimeFault,
@@ -65,6 +68,7 @@ struct GeneratedControl {
     case: Case,
     origin: Instant,
     elapsed: Cell<Duration>,
+    position_offset: Cell<f64>,
     playing: Cell<bool>,
     stopped: Cell<bool>,
     request: RefCell<Option<LiveMasterCaptureRequest>>,
@@ -73,6 +77,14 @@ struct GeneratedControl {
 }
 
 impl GeneratedControl {
+    fn timing_available(&self) -> bool {
+        !matches!(
+            self.case,
+            Case::TimingUnavailable | Case::TimingUnavailableFault
+        ) && (self.case != Case::TimingUnavailableDelayed
+            || self.elapsed.get() >= Duration::from_millis(100))
+    }
+
     fn output(&self) -> AudioOutputInfo {
         AudioOutputInfo {
             host_name: "generated-control".into(),
@@ -125,7 +137,7 @@ impl GeneratedControl {
 impl RuntimeControl for GeneratedControl {
     fn health_snapshot(&self) -> AudioRuntimeHealth {
         let capturing = self.request.borrow().is_some();
-        let stream_fault = self.case == Case::ConfirmFault
+        let stream_fault = matches!(self.case, Case::ConfirmFault | Case::TimingUnavailableFault)
             || (capturing && matches!(self.case, Case::RuntimeFault | Case::FaultAndComplete))
             || (self.case == Case::LateFault && self.stopped.get());
         let scratch_fault = capturing && self.case == Case::ScratchFault;
@@ -138,15 +150,15 @@ impl RuntimeControl for GeneratedControl {
                 AudioRuntimeLifecycle::Running
             },
             output: Some(self.output()),
-            callback_count: 80,
-            max_callback_gap_micros: Some(12_000),
+            callback_count: if self.timing_available() { 80 } else { 0 },
+            max_callback_gap_micros: self.timing_available().then_some(12_000),
             callback_scratch_overflow_count: u64::from(scratch_fault),
             stream_error_count: u64::from(stream_fault),
             last_stream_error: stream_fault.then(|| "generated stream fault".into()),
         }
     }
-    fn timing_snapshot(&self) -> AudioRuntimeTimingSnapshot {
-        AudioRuntimeTimingSnapshot {
+    fn timing_snapshot(&self) -> Option<AudioRuntimeTimingSnapshot> {
+        self.timing_available().then(|| AudioRuntimeTimingSnapshot {
             is_transport_running: self.playing.get()
                 && !matches!(self.case, Case::ConfirmTimeout | Case::ConfirmFault)
                 && (self.case != Case::ConfirmDelayed
@@ -156,8 +168,8 @@ impl RuntimeControl for GeneratedControl {
             } else {
                 120.0
             },
-            position_beats: self.elapsed.get().as_secs_f64() * 2.0,
-        }
+            position_beats: self.position_offset.get() + self.elapsed.get().as_secs_f64() * 2.0,
+        })
     }
     fn update_transport_state(&self, playing: bool, _bpm: f32, _position: f64) {
         self.playing.set(playing);
@@ -167,6 +179,12 @@ impl RuntimeControl for GeneratedControl {
         &self,
         request: LiveMasterCaptureRequest,
     ) -> Result<(), LiveMasterCaptureError> {
+        if self.case == Case::TimingUnavailableDelayed {
+            assert!(
+                self.elapsed.get() >= Duration::from_millis(100),
+                "capture must not arm before callback timing is observed"
+            );
+        }
         self.events.borrow_mut().push(Event::Begin);
         self.assert_unpublished();
         if self.case == Case::ArmFailure {
@@ -313,6 +331,7 @@ fn fixture(
         case,
         origin: Instant::now(),
         elapsed: Cell::new(Duration::ZERO),
+        position_offset: Cell::new(0.0),
         playing: Cell::new(already_playing),
         stopped: Cell::new(false),
         request: RefCell::new(None),
@@ -323,6 +342,7 @@ fn fixture(
 }
 
 mod observation;
+mod timing_availability;
 
 fn assert_blocked(summary: &serde_json::Value, state: &JamAppState, control: &GeneratedControl) {
     assert_eq!(summary["ready"], false);
@@ -413,18 +433,25 @@ fn delayed_confirmation_and_timing_updates_still_use_actual_core_action_commits(
 
 #[test]
 fn confirmation_requires_exact_bpm_and_bounds_fault_or_missing_confirmation() {
-    for case in [Case::ConfirmTimeout, Case::WrongBpm, Case::ConfirmFault] {
+    for case in [
+        Case::ConfirmTimeout,
+        Case::WrongBpm,
+        Case::ConfirmFault,
+        Case::TimingUnavailable,
+        Case::TimingUnavailableFault,
+    ] {
         let (_temp, launch, mut state, mut control) =
             fixture(case, LiveRecordingDuration::TwoBars, false);
         let error = execute_with_control(&launch, &mut state, &mut control).unwrap_err();
-        assert!(error.to_string().contains(if case == Case::ConfirmFault {
+        let faulted = matches!(case, Case::ConfirmFault | Case::TimingUnavailableFault);
+        assert!(error.to_string().contains(if faulted {
             "faulted before"
         } else {
             "did not confirm"
         }));
         assert_eq!(
             control.elapsed.get(),
-            if case == Case::ConfirmFault {
+            if faulted {
                 Duration::ZERO
             } else {
                 Duration::from_secs(2)

@@ -129,6 +129,36 @@ The Source Graph informs musical alignment, but callback timing belongs to the a
   conversion helpers. It must not reuse a one-based Source Graph beat identity
   as a zero-based source-monitor or callback cursor.
 
+### 7.1.1 Observed callback timing availability
+
+RIOTBOX-1582 / RBX-448 distinguishes requested transport from observed callback
+progress. `AudioRuntimeShell::timing_snapshot()` returns
+`Option<AudioRuntimeTimingSnapshot>`: `None` before the first complete callback
+publication or when a bounded read cannot establish a coherent observation;
+`Some` contains running state, tempo and completed position from one publication.
+A real observed position of zero remains valid. Do not fabricate an initial
+zero snapshot or substitute requested control state as callback evidence.
+
+The unique output callback publishes through one private atomic timing owner.
+Its odd/even revision and payload use sequentially consistent operations;
+readers try at most three times and return unavailable rather than an unchecked
+partial payload. Publication and reads perform no allocation, blocking, logging
+or I/O and never acquire the diagnostic-message mutex. This timing observation
+does not make the separate health counters an atomic snapshot of all telemetry.
+
+The App timing consumer accepts the optional observation. With `None` it must
+preserve Session/runtime transport, pending Play/Pause acknowledgment, action
+queue and commit state. The event loop may still publish the existing requested
+state to the runtime. The recorder confirms transport only from available
+observed timing; unavailable timing still passes through the existing health,
+timeout and wait checks, with no new budget or success exemption. Offline render
+plans retain their explicit timing values and unchanged public snapshot fields.
+
+Generated restore/consumer/controller, exact callback heap and actual-source
+Loom controls prove this handoff, not real-host timing, physical latency,
+endurance, audible quality or the original ALSA trigger. Prior consumed phases
+and frozen recording/observer/artifact contracts remain unchanged.
+
 ### 7.2 Source monitor playback
 
 Source monitor playback is a transport feature, not an external player.
