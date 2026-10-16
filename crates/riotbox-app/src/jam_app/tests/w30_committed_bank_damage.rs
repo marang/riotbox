@@ -59,16 +59,18 @@ fn committed_w30_bank_swap_updates_lane_focus_and_log_result() {
         Some(QueueControlResult::Enqueued)
     );
 
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 41,
-            bar_index: 11,
-            phrase_index: 3,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        712,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 41,
+                bar_index: 11,
+                phrase_index: 3,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            712,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert_eq!(
@@ -155,16 +157,18 @@ fn committed_w30_slice_pool_browse_updates_last_capture_and_log_result() {
         Some(QueueControlResult::Enqueued)
     );
 
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Beat,
-            beat_index: 42,
-            bar_index: 11,
-            phrase_index: 3,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        813,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Beat,
+                beat_index: 42,
+                bar_index: 11,
+                phrase_index: 3,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            813,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert_eq!(
@@ -258,16 +262,18 @@ fn committed_w30_damage_profile_updates_grit_and_log_result() {
         Some(QueueControlResult::Enqueued)
     );
 
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 45,
-            bar_index: 12,
-            phrase_index: 3,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        720,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 45,
+                bar_index: 12,
+                phrase_index: 3,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            720,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert_eq!(
@@ -312,16 +318,18 @@ fn committed_w30_damage_profile_updates_grit_and_log_result() {
         Some("bypass shred damage profile on cap-01 at W-30 pad bank-a/pad-01")
     );
 
-    let bypassed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 49,
-            bar_index: 13,
-            phrase_index: 3,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        820,
-    );
+    let bypassed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 49,
+                bar_index: 13,
+                phrase_index: 3,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            820,
+        )
+        .unwrap();
 
     assert_eq!(bypassed.len(), 1);
     let ordinary_playback = state
@@ -370,16 +378,18 @@ fn committed_w30_hook_turnaround_persists_and_replays_the_exact_boundary_without
         state.queue_w30_hook_turnaround(630).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 48,
-            bar_index: 12,
-            phrase_index: 3,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        730,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 48,
+                bar_index: 12,
+                phrase_index: 3,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            730,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert_eq!(state.session.runtime_state.macro_state.w30_grit, 0.31);
@@ -467,16 +477,18 @@ fn committed_w30_pitch_dive_persists_projects_and_replays_without_grit_change() 
         state.queue_w30_pitch_dive(631).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 64,
-            bar_index: 16,
-            phrase_index: 4,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        731,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 64,
+                bar_index: 16,
+                phrase_index: 4,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            731,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert_eq!(state.session.runtime_state.macro_state.w30_grit, 0.31);
@@ -575,6 +587,7 @@ fn ordinary_w30_trigger_recovers_from_completed_pitch_dive_in_live_state_and_rep
                 },
                 701,
             )
+            .unwrap()
             .len(),
         1
     );
@@ -604,6 +617,7 @@ fn ordinary_w30_trigger_recovers_from_completed_pitch_dive_in_live_state_and_rep
                 },
                 703,
             )
+            .unwrap()
             .len(),
         1
     );
@@ -673,16 +687,18 @@ fn committed_w30_filter_slam_persists_projects_and_replays_without_other_lane_ch
         state.queue_w30_filter_slam(635).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 80,
-            bar_index: 20,
-            phrase_index: 5,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        735,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 80,
+                bar_index: 20,
+                phrase_index: 5,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            735,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert_eq!(state.session.runtime_state.macro_state.w30_grit, 0.31);
@@ -865,16 +881,18 @@ fn committed_w30_step_focus_updates_lane_focus_and_preview() {
         Some(QueueControlResult::Enqueued)
     );
 
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Beat,
-            beat_index: 37,
-            bar_index: 10,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        702,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Beat,
+                beat_index: 37,
+                bar_index: 10,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            702,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert_eq!(

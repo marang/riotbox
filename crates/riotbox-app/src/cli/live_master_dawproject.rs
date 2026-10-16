@@ -246,7 +246,14 @@ mod tests {
             scene_id: None,
         };
         queue
-            .commit_pending_after_side_effect(v1_id, commit_boundary.clone(), 11, "fixture")
+            .commit_pending_after_side_effect(
+                &Default::default(),
+                v1_id,
+                commit_boundary.clone(),
+                11,
+                "fixture",
+            )
+            .expect("fixture commit sequence available")
             .expect("committed V1 Action projection fixture");
         let v2_id = queue
             .enqueue(
@@ -255,7 +262,14 @@ mod tests {
             )
             .expect("generated action ID available");
         queue
-            .commit_pending_after_side_effect(v2_id, commit_boundary.clone(), 13, "fixture")
+            .commit_pending_after_side_effect(
+                &Default::default(),
+                v2_id,
+                commit_boundary.clone(),
+                13,
+                "fixture",
+            )
+            .expect("fixture commit sequence available")
             .expect("committed V2 Action projection fixture");
         let v3_id = queue
             .enqueue(
@@ -264,7 +278,14 @@ mod tests {
             )
             .expect("generated action ID available");
         queue
-            .commit_pending_after_side_effect(v3_id, commit_boundary, 15, "fixture")
+            .commit_pending_after_side_effect(
+                &Default::default(),
+                v3_id,
+                commit_boundary,
+                15,
+                "fixture",
+            )
+            .expect("fixture commit sequence available")
             .expect("committed V3 Action projection fixture");
         let state =
             JamAppState::from_parts(SessionFile::new("summary", "test", "now"), None, queue);

@@ -102,7 +102,13 @@ fn failed_enqueue_and_allocation_preserve_pending_actions_and_history() {
         .enqueue(transport_draft(ActionCommand::TransportPlay), 1)
         .unwrap();
     assert_eq!(
-        queue.commit_ready(CommitBoundary::Immediate, 2),
+        queue
+            .commit_ready(
+                &crate::session::ActionLog::default(),
+                CommitBoundary::Immediate,
+                2
+            )
+            .unwrap(),
         vec![committed_id]
     );
     let mut pending_draft = transport_draft(ActionCommand::CaptureNow);
@@ -170,7 +176,16 @@ fn final_unique_action_still_commits_or_rejects_after_allocation_exhausts() {
             .unwrap();
         assert_eq!(id, ActionId(u64::MAX));
         if commit {
-            assert_eq!(queue.commit_ready(CommitBoundary::Immediate, 2), vec![id]);
+            assert_eq!(
+                queue
+                    .commit_ready(
+                        &crate::session::ActionLog::default(),
+                        CommitBoundary::Immediate,
+                        2
+                    )
+                    .unwrap(),
+                vec![id]
+            );
             assert_eq!(queue.history()[0].status, ActionStatus::Committed);
         } else {
             assert!(queue.reject(id, "owned action rejected"));

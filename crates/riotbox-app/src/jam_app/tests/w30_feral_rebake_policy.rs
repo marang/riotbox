@@ -83,16 +83,18 @@ pub(in crate::jam_app::tests) fn commit_lineage_ready_resample(state: &mut JamAp
         state.queue_w30_internal_resample(650).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: 33,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        740,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 33,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            740,
+        )
+        .unwrap();
     assert_eq!(committed.len(), 1);
 }
 

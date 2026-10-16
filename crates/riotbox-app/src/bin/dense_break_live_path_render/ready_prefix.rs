@@ -264,7 +264,7 @@ pub(super) fn commit(
             scene_id,
         },
         timestamp,
-    );
+    )?;
     if committed.len() != expected_count {
         return Err(format!(
             "expected {expected_count} {kind:?} commits, got {}",

@@ -234,16 +234,18 @@ pub(in crate::jam_app::tests) fn commit_source_derived_role(
         Mc202RoleState::Instigator => state.queue_mc202_generate_instigator(300).unwrap(),
     };
     assert_eq!(result, QueueControlResult::Enqueued);
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: 32,
-            bar_index: 8,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-role-expression")),
-        },
-        400,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 32,
+                bar_index: 8,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-role-expression")),
+            },
+            400,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     let plan = state

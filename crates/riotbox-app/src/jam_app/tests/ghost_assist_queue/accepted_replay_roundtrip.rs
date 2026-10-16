@@ -37,16 +37,18 @@ fn accepted_ghost_action_replay_fixture_survives_session_roundtrip() {
         state.accept_current_ghost_suggestion(1_000).unwrap(),
         GhostSuggestionQueueResult::Enqueued(_)
     ));
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 32,
-            bar_index: 8,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-a")),
-        },
-        1_500,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 32,
+                bar_index: 8,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-a")),
+            },
+            1_500,
+        )
+        .unwrap();
     assert_eq!(committed.len(), 1);
 
     let tempdir = tempdir().expect("create ghost replay fixture tempdir");

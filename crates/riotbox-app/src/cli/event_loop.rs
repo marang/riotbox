@@ -42,33 +42,49 @@ pub(in crate::cli) fn run_event_loop(
     mut observer: Option<&mut UserSessionObserver>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     loop {
-        if let Some(audio_runtime) = audio_runtime.as_mut() {
+        if let Some(runtime) = audio_runtime.as_mut() {
             let now = timestamp_now();
-            let committed = shell
+            match shell
                 .app
-                .apply_audio_timing_snapshot(audio_runtime.timing_snapshot(), now);
-            if !committed.is_empty() {
-                shell.set_error_status(
-                    source_monitor_commit_status(&shell, &committed)
-                        .unwrap_or_else(|| "committed queued actions on transport boundary".into()),
-                );
-                if let Some(observer) = observer.as_deref_mut() {
-                    observer.record_transport_commit(now, &committed, &shell)?;
+                .apply_audio_timing_snapshot(runtime.timing_snapshot(), now)
+            {
+                Ok(committed) => {
+                    if !committed.is_empty() {
+                        shell.set_error_status(
+                            source_monitor_commit_status(&shell, &committed).unwrap_or_else(|| {
+                                "committed queued actions on transport boundary".into()
+                            }),
+                        );
+                        if let Some(observer) = observer.as_deref_mut() {
+                            observer.record_transport_commit(now, &committed, &shell)?;
+                        }
+                    }
+
+                    runtime.update_transport_state(
+                        shell.app.runtime.transport.is_playing,
+                        shell.app.runtime.tr909_render.tempo_bpm,
+                        shell.app.runtime.transport.position_beats,
+                    );
+                    runtime.update_tr909_render_state(&shell.app.runtime.tr909_render);
+                    runtime.update_mc202_render_state(&shell.app.runtime.mc202_render);
+                    runtime.update_w30_preview_render_state(&shell.app.runtime.w30_preview);
+                    runtime.update_w30_resample_tap_state(&shell.app.runtime.w30_resample_tap);
+                    runtime.update_source_monitor_control_state(
+                        &shell.app.source_monitor_control_state(),
+                    );
+                    shell.app.set_audio_health(runtime.health_snapshot());
+                }
+                Err(error) => {
+                    // Do not feed a rejected old transport position back into
+                    // the callback. Closing the runtime needs no new ActionId.
+                    runtime.stop();
+                    shell.app.set_audio_health(runtime.health_snapshot());
+                    *audio_runtime = None;
+                    shell.set_error_status(format!(
+                        "commit blocked; audio runtime stopped: {error}"
+                    ));
                 }
             }
-
-            audio_runtime.update_transport_state(
-                shell.app.runtime.transport.is_playing,
-                shell.app.runtime.tr909_render.tempo_bpm,
-                shell.app.runtime.transport.position_beats,
-            );
-            audio_runtime.update_tr909_render_state(&shell.app.runtime.tr909_render);
-            audio_runtime.update_mc202_render_state(&shell.app.runtime.mc202_render);
-            audio_runtime.update_w30_preview_render_state(&shell.app.runtime.w30_preview);
-            audio_runtime.update_w30_resample_tap_state(&shell.app.runtime.w30_resample_tap);
-            audio_runtime
-                .update_source_monitor_control_state(&shell.app.source_monitor_control_state());
-            shell.app.set_audio_health(audio_runtime.health_snapshot());
         }
 
         terminal.draw(|frame| render_jam_shell(frame, &shell))?;
@@ -617,7 +633,16 @@ pub(in crate::cli) fn run_event_loop(
             match key_result {
                 Ok(true) => return Ok(()),
                 Ok(false) => {}
-                Err(error) if error.is::<riotbox_core::queue::ActionIdExhausted>() => {
+                Err(error)
+                    if error.is::<riotbox_core::queue::ActionIdExhausted>()
+                        || matches!(
+                            error.downcast_ref::<crate::jam_app::JamAppError>(),
+                            Some(
+                                crate::jam_app::JamAppError::ActionIdExhausted(_)
+                                    | crate::jam_app::JamAppError::CommitSequenceExhausted(_)
+                            )
+                        ) =>
+                {
                     shell.set_error_status(error.to_string());
                 }
                 Err(error) => return Err(error),

@@ -32,7 +32,7 @@ fn unavailable_timing_preserves_restored_transport_and_pending_acknowledgment() 
         .collect::<Vec<_>>();
 
     assert!(control.timing_snapshot().is_none());
-    sync_live_master_runtime(&mut state, &control);
+    sync_live_master_runtime(&mut state, &control).unwrap();
 
     assert_eq!(state.session, session);
     assert_eq!(state.runtime, runtime);

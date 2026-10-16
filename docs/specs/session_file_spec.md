@@ -491,6 +491,21 @@ Rules:
   mutation. The allocator reserves one final `u64::MAX` after a history ending
   at `u64::MAX - 1`, never reuses it, and is reconstructed from existing history
   without a new persisted cursor field
+- commit-sequence capacity is derived by Core from `ActionLog` and complete
+  `CommitBoundaryState` equality, not from App-local counters. A valid positive
+  `u32::MAX` record remains loadable/replayable/saveable; a different complete
+  boundary has its own capacity. Preparing zero commits succeeds even when
+  the selected boundary is full
+- a whole ready batch must fit before queue draining/relabeling or any
+  Session/runtime/Undo mutation. `MAX - 1` permits one final sequence `MAX`,
+  but rejects a two-action batch with typed `CommitSequenceExhausted` and no
+  partial drain. Incremental action-record/pipeline ordering remains unchanged;
+  do not preappend future records ahead of capture/replay materialization
+- the Core prepared sequence range is transient arithmetic evidence, not an
+  exclusive reservation or a second persisted cursor. Compound queue commits
+  recheck history before mutation; synchronous App writer admission checks
+  before autoqueue/publication, then the final compound commit checks again
+  and preserves existing owned-file rollback on failure
 
 ### 8.8 Export receipts
 

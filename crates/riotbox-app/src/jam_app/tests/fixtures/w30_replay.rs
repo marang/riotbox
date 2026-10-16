@@ -59,16 +59,18 @@ pub(in crate::jam_app::tests) fn commit_w30_replay_step(
     phrase_index: u64,
     committed_at: u64,
 ) {
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind,
-            beat_index,
-            bar_index,
-            phrase_index,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        committed_at,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind,
+                beat_index,
+                bar_index,
+                phrase_index,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            committed_at,
+        )
+        .unwrap();
     assert_eq!(committed.len(), 1);
 }
 

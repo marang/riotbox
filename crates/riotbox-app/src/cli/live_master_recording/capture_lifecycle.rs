@@ -7,13 +7,13 @@ use crate::cli::{
     model::{AppLaunch, LaunchMode, live_master_recording_boundary},
     observer::timestamp_now,
 };
-use crate::jam_app::JamAppState;
+use crate::jam_app::{JamAppError, JamAppState};
 use riotbox_audio::runtime::{
     AudioRuntimeHealth, AudioRuntimeLifecycle, AudioRuntimeShell, AudioRuntimeTimingSnapshot,
     LiveMasterCaptureError, LiveMasterCaptureOutcome, LiveMasterCaptureProgress,
     LiveMasterCaptureRequest,
 };
-use riotbox_core::queue::ActionIdExhausted;
+use riotbox_core::session::CommitSequenceExhausted;
 use riotbox_core::{TimestampMs, action::LiveRecordingDuration};
 use serde_json::{Value, json};
 
@@ -150,8 +150,10 @@ fn execute_with_control_observed(
         stop_live_master_runtime(state, runtime, false)?;
         return Err(error.into());
     }
-    sync_live_master_runtime(state, runtime);
-    if let Err(error) = wait_for_live_transport(state, runtime) {
+    let confirmation = sync_live_master_runtime(state, runtime)
+        .map_err(Box::<dyn std::error::Error>::from)
+        .and_then(|()| wait_for_live_transport(state, runtime));
+    if let Err(error) = confirmation {
         if let Err(stop_error) = stop_live_master_runtime(state, runtime, started_transport) {
             return Err(format!("{error}; transport cleanup failed: {stop_error}").into());
         }
@@ -222,7 +224,17 @@ fn execute_with_control_observed(
     let deadline = runtime.now()
         + Duration::from_secs_f64(expected_arm_seconds + expected_duration_seconds + 2.0);
     let completion = loop {
-        sync_live_master_runtime(state, runtime);
+        if let Err(error) = sync_live_master_runtime(state, runtime) {
+            return Ok(blocked_capture_sync_failure(
+                launch,
+                state,
+                runtime,
+                started_transport,
+                &plan,
+                &output,
+                error,
+            ));
+        }
         let health = runtime.health_snapshot();
         state.set_audio_health(health.clone());
         if health.lifecycle != AudioRuntimeLifecycle::Running
@@ -296,7 +308,17 @@ fn execute_with_control_observed(
         runtime.wait(Duration::from_millis(10));
     };
 
-    sync_live_master_runtime(state, runtime);
+    if let Err(error) = sync_live_master_runtime(state, runtime) {
+        return Ok(blocked_capture_sync_failure(
+            launch,
+            state,
+            runtime,
+            started_transport,
+            &plan,
+            &output,
+            error,
+        ));
+    }
     let final_health = runtime.health_snapshot();
     state.set_audio_health(final_health.clone());
     if let Err(error) = stop_live_master_runtime(state, runtime, started_transport) {
@@ -368,6 +390,9 @@ fn execute_with_control_observed(
     ) {
         Ok(receipt) => receipt,
         Err(error) => {
+            // The controller already consumed/finalized this take. A writer's
+            // pre-publication refusal must retire its owned pending request.
+            state.reject_live_master_recording(plan.action_id, error.to_string());
             return Ok(blocked_live_master_recording_result(
                 launch,
                 state,
@@ -425,7 +450,7 @@ fn stop_live_master_runtime(
     state: &mut JamAppState,
     runtime: &mut impl RuntimeControl,
     started_transport: bool,
-) -> Result<(), ActionIdExhausted> {
+) -> Result<(), JamAppError> {
     let transport_result = stop_cli_started_transport(state, runtime, started_transport);
     // Stopping the device is a safety operation, not a newly committed Action.
     // Exhaustion may prevent a Pause record but must never skip the device stop.
@@ -434,14 +459,30 @@ fn stop_live_master_runtime(
     transport_result
 }
 
-fn with_transport_cleanup_error(
-    mut reason: String,
-    result: Result<(), ActionIdExhausted>,
-) -> String {
+fn with_transport_cleanup_error(mut reason: String, result: Result<(), JamAppError>) -> String {
     if let Err(error) = result {
         reason.push_str(&format!("; transport cleanup failed: {error}"));
     }
     reason
+}
+
+fn blocked_capture_sync_failure(
+    launch: &AppLaunch,
+    state: &mut JamAppState,
+    runtime: &mut impl RuntimeControl,
+    started_transport: bool,
+    plan: &crate::jam_app::LiveMasterRecordingPlan,
+    output: &riotbox_audio::runtime::AudioOutputInfo,
+    error: CommitSequenceExhausted,
+) -> Value {
+    let stop_result = stop_live_master_runtime(state, runtime, started_transport);
+    runtime.abort_live_master_capture();
+    let reason = with_transport_cleanup_error(
+        format!("live master timing commit failed: {error}"),
+        stop_result,
+    );
+    state.reject_live_master_recording(plan.action_id, reason.clone());
+    blocked_live_master_recording_result(launch, state, runtime, false, Some(plan), output, reason)
 }
 
 fn blocked_live_master_recording_result(
@@ -495,7 +536,7 @@ fn stop_cli_started_transport(
     state: &mut JamAppState,
     runtime: &impl RuntimeControl,
     started_transport: bool,
-) -> Result<(), ActionIdExhausted> {
+) -> Result<(), JamAppError> {
     if started_transport && state.runtime.transport.is_playing {
         state.commit_transport_toggle(runtime.timestamp_now())?;
         runtime.update_transport_state(
@@ -513,7 +554,7 @@ fn wait_for_live_transport(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let deadline = runtime.now() + Duration::from_secs(2);
     loop {
-        sync_live_master_runtime(state, runtime);
+        sync_live_master_runtime(state, runtime)?;
         let timing = runtime.timing_snapshot();
         let expected_bpm = state
             .session
@@ -540,12 +581,16 @@ fn wait_for_live_transport(
     }
 }
 
-fn sync_live_master_runtime(state: &mut JamAppState, runtime: &impl RuntimeControl) {
-    state.apply_audio_timing_snapshot(runtime.timing_snapshot(), runtime.timestamp_now());
+fn sync_live_master_runtime(
+    state: &mut JamAppState,
+    runtime: &impl RuntimeControl,
+) -> Result<(), CommitSequenceExhausted> {
+    state.apply_audio_timing_snapshot(runtime.timing_snapshot(), runtime.timestamp_now())?;
     runtime.update_transport_state(
         state.runtime.transport.is_playing,
         state.runtime.tr909_render.tempo_bpm,
         state.runtime.transport.position_beats,
     );
     runtime.update_render_states(state);
+    Ok(())
 }

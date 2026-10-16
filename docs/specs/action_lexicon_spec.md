@@ -88,6 +88,17 @@ without reporting a successful queue/commit. Device shutdown is a safety
 operation: a recorder still stops its runtime if exhaustion prevents the final
 Pause action, reports the cleanup failure, and does not publish that recording.
 
+Commit-sequence exhaustion is a distinct typed Core/Session error. Compound
+immediate producers check applicable eligibility/no-target preconditions, then
+read-only sequence capacity, then allocate an ActionId; if both domains are
+exhausted, sequence refusal wins without consuming an ID. Queue-only producers
+retain their ActionId-only failure contract. Observed-clock/acknowledgment
+updates are staged until capacity for any crossed ready batch is established.
+Adapters show refusal without forwarding stale render/transport truth or
+announcing a commit. An observed-timing commit failure stops the runtime;
+recorder sync/cleanup failures must still stop and abort an acquired capture
+before returning, without fabricating a committed Pause or publishing a take.
+
 ### 3.1 Actor types
 
 - `user`

@@ -231,16 +231,18 @@ fn undo_tr909_fill_restores_previous_fill_window_and_supports_post_undo_replay_a
 
     state.queue_tr909_fill(300).unwrap();
     let fill_action_id = state.queue.pending_actions()[0].id;
-    state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 8,
-            bar_index: 3,
-            phrase_index: 1,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        400,
-    );
+    state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 8,
+                bar_index: 3,
+                phrase_index: 1,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        )
+        .unwrap();
     assert_eq!(
         state.session.runtime_state.lane_state.tr909.last_fill_bar,
         Some(3)
@@ -293,16 +295,18 @@ fn undo_tr909_fill_restores_previous_fill_window_and_supports_post_undo_replay_a
     });
 
     assert!(state.queue_tr909_slam_toggle(600).unwrap());
-    state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Beat,
-            beat_index: 9,
-            bar_index: 3,
-            phrase_index: 1,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        700,
-    );
+    state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Beat,
+                beat_index: 9,
+                bar_index: 3,
+                phrase_index: 1,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            700,
+        )
+        .unwrap();
 
     let plan = riotbox_core::replay::build_replay_target_plan(
         &state.session.action_log,
@@ -344,7 +348,7 @@ fn pending_fill_undo_and_later_commit_keep_unique_ids_through_reload_and_replay(
         QueueControlResult::Enqueued
     );
     let source_monitor_id = state.queue.pending_actions()[0].id;
-    state.commit_ready_actions(immediate_boundary, 110);
+    state.commit_ready_actions(immediate_boundary, 110).unwrap();
 
     state.queue_tr909_fill(120).unwrap();
     let fill_id = state.queue.pending_actions()[0].id;
@@ -360,16 +364,18 @@ fn pending_fill_undo_and_later_commit_keep_unique_ids_through_reload_and_replay(
         }
     );
 
-    state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 4,
-            bar_index: 2,
-            phrase_index: 1,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        140,
-    );
+    state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 4,
+                bar_index: 2,
+                phrase_index: 1,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            140,
+        )
+        .unwrap();
     let action_ids = state
         .session
         .action_log
@@ -431,27 +437,31 @@ fn newer_non_undoable_tr909_action_does_not_block_typed_monitor_undo() {
         QueueControlResult::Enqueued
     );
     let monitor_id = state.queue.pending_actions()[0].id;
-    state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Immediate,
-            beat_index: state.runtime.transport.beat_index,
-            bar_index: state.runtime.transport.bar_index,
-            phrase_index: state.runtime.transport.phrase_index,
-            scene_id: state.runtime.transport.current_scene.clone(),
-        },
-        110,
-    );
+    state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Immediate,
+                beat_index: state.runtime.transport.beat_index,
+                bar_index: state.runtime.transport.bar_index,
+                phrase_index: state.runtime.transport.phrase_index,
+                scene_id: state.runtime.transport.current_scene.clone(),
+            },
+            110,
+        )
+        .unwrap();
     assert!(state.queue_tr909_slam_toggle(120).unwrap());
-    state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Beat,
-            beat_index: 1,
-            bar_index: 1,
-            phrase_index: 1,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        130,
-    );
+    state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Beat,
+                beat_index: 1,
+                bar_index: 1,
+                phrase_index: 1,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            130,
+        )
+        .unwrap();
     let slam = state
         .session
         .action_log

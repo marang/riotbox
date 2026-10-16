@@ -129,6 +129,7 @@ pub(super) fn confirm_explicit_source_bpm(
         )
     })?;
     validate_explicit_source_bpm(graph, explicit_source_bpm)?;
+    state.preflight_immediate_enqueue()?;
 
     let timestamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -150,7 +151,7 @@ pub(super) fn confirm_explicit_source_bpm(
             scene_id: state.runtime.transport.current_scene.clone(),
         },
         timestamp,
-    );
+    )?;
     if committed.len() != 1 {
         return Err(JamAppError::InvalidSession(
             "explicit source BPM confirmation did not commit exactly one action".into(),

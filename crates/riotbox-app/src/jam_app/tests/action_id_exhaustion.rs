@@ -58,7 +58,9 @@ fn write_source_free_history(path: &Path, imported_id: u64) {
         )
         .unwrap();
     assert_eq!(id, ActionId(imported_id));
-    let committed = queue.commit_ready_for_transport(immediate_boundary(), 2);
+    let committed = queue
+        .commit_ready_for_transport(&session.action_log, immediate_boundary(), 2)
+        .unwrap();
     assert_eq!(committed.len(), 1);
     session
         .action_log
@@ -84,20 +86,28 @@ fn load_source_free(path: &Path) -> JamAppState {
     assert!(state.session.source_refs.is_empty());
     assert!(state.session.source_graph_refs.is_empty());
     assert!(state.session.captures.is_empty());
-    assert!(state.apply_audio_timing_snapshot(None, 3).is_empty());
+    assert!(
+        state
+            .apply_audio_timing_snapshot(None, 3)
+            .unwrap()
+            .is_empty()
+    );
     state
 }
 
-fn assert_exhaustion_unchanged<T: Debug>(
+fn assert_exhaustion_unchanged<T: Debug, E: Debug + Into<JamAppError>>(
     state: &mut JamAppState,
-    operation: impl FnOnce(&mut JamAppState) -> Result<T, ActionIdExhausted>,
+    operation: impl FnOnce(&mut JamAppState) -> Result<T, E>,
 ) {
     let session = state.session.clone();
     let runtime = state.runtime.clone();
     let queue = format!("{:?}", state.queue);
     let jam_view = state.jam_view.clone();
     let runtime_view = state.runtime_view.clone();
-    assert_eq!(operation(state).unwrap_err(), ActionIdExhausted);
+    assert!(matches!(
+        operation(state).unwrap_err().into(),
+        JamAppError::ActionIdExhausted(ActionIdExhausted)
+    ));
     assert_eq!(state.session, session);
     assert_eq!(state.runtime, runtime);
     assert_eq!(format!("{:?}", state.queue), queue);
@@ -243,7 +253,10 @@ fn exhausted_undo_preserves_accepted_action_and_its_restore_snapshot() {
         .queue_source_monitor_mode(SourceMonitorMode::Blend, 100)
         .unwrap();
     assert_eq!(
-        state.commit_ready_actions(immediate_boundary(), 101).len(),
+        state
+            .commit_ready_actions(immediate_boundary(), 101)
+            .unwrap()
+            .len(),
         1
     );
     assert_eq!(
@@ -273,7 +286,9 @@ fn exhausted_undo_does_not_even_normalize_an_older_missing_snapshot() {
     state
         .queue_source_monitor_mode(SourceMonitorMode::Blend, 100)
         .unwrap();
-    state.commit_ready_actions(immediate_boundary(), 101);
+    state
+        .commit_ready_actions(immediate_boundary(), 101)
+        .unwrap();
 
     // Deliberately malformed in-memory older history makes normalization
     // observable. The latest Source Monitor target remains fully restorable;
@@ -293,7 +308,9 @@ fn final_available_id_can_commit_one_unique_undo_marker_and_reload() {
     state
         .queue_source_monitor_mode(SourceMonitorMode::Blend, 100)
         .unwrap();
-    state.commit_ready_actions(immediate_boundary(), 101);
+    state
+        .commit_ready_actions(immediate_boundary(), 101)
+        .unwrap();
     let undo = state.undo_last_action(200).unwrap().unwrap();
     assert_eq!(undo.id, ActionId(u64::MAX));
     assert_eq!(undo.command, ActionCommand::UndoLast);

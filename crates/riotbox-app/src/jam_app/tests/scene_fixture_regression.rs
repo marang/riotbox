@@ -41,13 +41,15 @@ fn scene_fixture_backed_committed_state_regressions_hold() {
                     fixture.name
                 );
 
-                let committed = state.commit_ready_actions(
-                    fixture
-                        .boundary
-                        .expect("scene select boundary")
-                        .into_commit_boundary_state(),
-                    fixture.committed_at.expect("scene select committed_at"),
-                );
+                let committed = state
+                    .commit_ready_actions(
+                        fixture
+                            .boundary
+                            .expect("scene select boundary")
+                            .into_commit_boundary_state(),
+                        fixture.committed_at.expect("scene select committed_at"),
+                    )
+                    .unwrap();
                 assert_eq!(
                     committed.len(),
                     1,
@@ -67,13 +69,15 @@ fn scene_fixture_backed_committed_state_regressions_hold() {
                     fixture.name
                 );
 
-                let committed = state.commit_ready_actions(
-                    fixture
-                        .boundary
-                        .expect("scene restore boundary")
-                        .into_commit_boundary_state(),
-                    fixture.committed_at.expect("scene restore committed_at"),
-                );
+                let committed = state
+                    .commit_ready_actions(
+                        fixture
+                            .boundary
+                            .expect("scene restore boundary")
+                            .into_commit_boundary_state(),
+                        fixture.committed_at.expect("scene restore committed_at"),
+                    )
+                    .unwrap();
                 assert_eq!(
                     committed.len(),
                     1,

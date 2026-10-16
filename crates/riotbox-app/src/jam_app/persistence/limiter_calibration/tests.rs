@@ -186,16 +186,18 @@ fn rejects_source_conflicts_shared_outputs_and_existing_destinations() {
 }
 
 fn commit(state: &mut JamAppState, kind: CommitBoundary, beat_index: u64) {
-    let actions = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind,
-            beat_index,
-            bar_index: beat_index / 4 + 1,
-            phrase_index: 0,
-            scene_id: None,
-        },
-        100 + beat_index,
-    );
+    let actions = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind,
+                beat_index,
+                bar_index: beat_index / 4 + 1,
+                phrase_index: 0,
+                scene_id: None,
+            },
+            100 + beat_index,
+        )
+        .unwrap();
     assert_eq!(actions.len(), 1);
     assert!(
         state

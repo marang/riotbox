@@ -103,6 +103,7 @@ impl JamAppState {
         destination_dir: impl AsRef<Path>,
         requested_at: TimestampMs,
     ) -> Result<riotbox_core::session::ExportReceiptState, JamAppError> {
+        self.preflight_immediate_commit()?;
         let destination_dir = destination_dir.as_ref();
         let action_id = match self.pending_w30_hook_stem_package_action_id() {
             Some(action_id) => action_id,

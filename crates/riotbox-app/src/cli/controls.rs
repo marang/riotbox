@@ -54,6 +54,26 @@ pub(in crate::cli) fn scene_select_unavailable_status(shell: &JamShellState) -> 
     }
 }
 
+// Queue admission already succeeded. A later commit refusal must retain that
+// legitimate pending action and report the two distinct outcomes honestly.
+fn commit_queued_immediate(
+    shell: &mut JamShellState,
+    requested_at: u64,
+) -> Option<Vec<CommittedActionRef>> {
+    let boundary = shell
+        .app
+        .runtime
+        .transport
+        .boundary_state(riotbox_core::action::CommitBoundary::Immediate);
+    match shell.app.commit_ready_actions(boundary, requested_at) {
+        Ok(committed) => Some(committed),
+        Err(error) => {
+            shell.set_error_status(format!("queued; commit blocked: {error}"));
+            None
+        }
+    }
+}
+
 pub(in crate::cli) fn queue_and_commit_source_monitor_mode(
     shell: &mut JamShellState,
     mode: SourceMonitorMode,
@@ -61,17 +81,9 @@ pub(in crate::cli) fn queue_and_commit_source_monitor_mode(
 ) -> Vec<CommittedActionRef> {
     match shell.app.queue_source_monitor_mode(mode, requested_at) {
         Ok(crate::jam_app::QueueControlResult::Enqueued) => {
-            let transport = shell.app.runtime.transport.clone();
-            let committed = shell.app.commit_ready_actions(
-                riotbox_core::transport::CommitBoundaryState {
-                    kind: riotbox_core::action::CommitBoundary::Immediate,
-                    beat_index: transport.beat_index,
-                    bar_index: transport.bar_index,
-                    phrase_index: transport.phrase_index,
-                    scene_id: transport.current_scene,
-                },
-                requested_at,
-            );
+            let Some(committed) = commit_queued_immediate(shell, requested_at) else {
+                return Vec::new();
+            };
             shell.set_error_status(
                 source_monitor_commit_status(shell, &committed)
                     .unwrap_or_else(|| format!("monitor {mode} queued; immediate commit pending")),
@@ -100,17 +112,9 @@ pub(in crate::cli) fn queue_and_commit_performance_preset(
 ) -> Vec<CommittedActionRef> {
     match shell.app.queue_performance_preset(preset_id, requested_at) {
         Ok(crate::jam_app::QueueControlResult::Enqueued) => {
-            let transport = shell.app.runtime.transport.clone();
-            let committed = shell.app.commit_ready_actions(
-                riotbox_core::transport::CommitBoundaryState {
-                    kind: riotbox_core::action::CommitBoundary::Immediate,
-                    beat_index: transport.beat_index,
-                    bar_index: transport.bar_index,
-                    phrase_index: transport.phrase_index,
-                    scene_id: transport.current_scene,
-                },
-                requested_at,
-            );
+            let Some(committed) = commit_queued_immediate(shell, requested_at) else {
+                return Vec::new();
+            };
             let landed = committed.iter().any(|committed| {
                 shell
                     .app
@@ -269,17 +273,9 @@ pub(in crate::cli) fn commit_capture_length_change(
     };
     match result {
         Ok(crate::jam_app::QueueControlResult::Enqueued) => {
-            let transport = shell.app.runtime.transport.clone();
-            let committed = shell.app.commit_ready_actions(
-                riotbox_core::transport::CommitBoundaryState {
-                    kind: riotbox_core::action::CommitBoundary::Immediate,
-                    beat_index: transport.beat_index,
-                    bar_index: transport.bar_index,
-                    phrase_index: transport.phrase_index,
-                    scene_id: transport.current_scene,
-                },
-                requested_at,
-            );
+            let Some(committed) = commit_queued_immediate(shell, requested_at) else {
+                return;
+            };
             if committed.is_empty() {
                 shell.set_error_status("capture length change queued");
             } else {
@@ -347,17 +343,9 @@ pub(in crate::cli) fn navigate_source_map(
             target_label,
             target_position_beats,
         }) => {
-            let transport = shell.app.runtime.transport.clone();
-            let committed = shell.app.commit_ready_actions(
-                riotbox_core::transport::CommitBoundaryState {
-                    kind: riotbox_core::action::CommitBoundary::Immediate,
-                    beat_index: transport.beat_index,
-                    bar_index: transport.bar_index,
-                    phrase_index: transport.phrase_index,
-                    scene_id: transport.current_scene,
-                },
-                requested_at,
-            );
+            let Some(committed) = commit_queued_immediate(shell, requested_at) else {
+                return;
+            };
             if committed.is_empty() {
                 shell.set_error_status(format!("source map navigation queued to {target_label}"));
             } else {
@@ -385,17 +373,9 @@ pub(in crate::cli) fn confirm_source_timing_grid(shell: &mut JamShellState, requ
         .queue_source_timing_grid_confirmation(requested_at)
     {
         Ok(crate::jam_app::QueueControlResult::Enqueued) => {
-            let transport = shell.app.runtime.transport.clone();
-            let committed = shell.app.commit_ready_actions(
-                riotbox_core::transport::CommitBoundaryState {
-                    kind: riotbox_core::action::CommitBoundary::Immediate,
-                    beat_index: transport.beat_index,
-                    bar_index: transport.bar_index,
-                    phrase_index: transport.phrase_index,
-                    scene_id: transport.current_scene,
-                },
-                requested_at,
-            );
+            let Some(committed) = commit_queued_immediate(shell, requested_at) else {
+                return;
+            };
             if committed.is_empty() {
                 shell.set_error_status("source timing grid confirmation queued");
             } else {
@@ -419,17 +399,9 @@ pub(in crate::cli) fn confirm_source_timing_grid(shell: &mut JamShellState, requ
 pub(in crate::cli) fn revert_source_timing_grid(shell: &mut JamShellState, requested_at: u64) {
     match shell.app.queue_source_timing_grid_revert(requested_at) {
         Ok(crate::jam_app::QueueControlResult::Enqueued) => {
-            let transport = shell.app.runtime.transport.clone();
-            let committed = shell.app.commit_ready_actions(
-                riotbox_core::transport::CommitBoundaryState {
-                    kind: riotbox_core::action::CommitBoundary::Immediate,
-                    beat_index: transport.beat_index,
-                    bar_index: transport.bar_index,
-                    phrase_index: transport.phrase_index,
-                    scene_id: transport.current_scene,
-                },
-                requested_at,
-            );
+            let Some(committed) = commit_queued_immediate(shell, requested_at) else {
+                return;
+            };
             if committed.is_empty() {
                 shell.set_error_status("source timing grid revert queued");
             } else {

@@ -22,16 +22,18 @@ fn manual_confirm_capture_does_not_materialize_source_window_until_confirmed() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     state.queue_capture_bar(300).unwrap();
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 32,
-            bar_index: 8,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        400,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 32,
+                bar_index: 8,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert_eq!(
@@ -60,16 +62,18 @@ fn user_confirmed_manual_grid_allows_capture_source_window() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     state.queue_capture_bar(300).unwrap();
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 32,
-            bar_index: 8,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        400,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 32,
+                bar_index: 8,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     let source_window = state.session.captures[1]

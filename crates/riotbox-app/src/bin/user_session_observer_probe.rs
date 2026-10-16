@@ -192,7 +192,8 @@ fn try_apply_probe_key(
                     let boundary = transport.boundary_state(CommitBoundary::Immediate);
                     immediate_committed = shell
                         .app
-                        .commit_ready_actions(boundary.clone(), timestamp_ms);
+                        .commit_ready_actions(boundary.clone(), timestamp_ms)
+                        .map_err(io::Error::other)?;
                     require_immediate_commit(
                         shell,
                         &immediate_committed,
@@ -225,7 +226,8 @@ fn try_apply_probe_key(
                     let boundary = transport.boundary_state(CommitBoundary::Immediate);
                     immediate_committed = shell
                         .app
-                        .commit_ready_actions(boundary.clone(), timestamp_ms);
+                        .commit_ready_actions(boundary.clone(), timestamp_ms)
+                        .map_err(io::Error::other)?;
                     require_immediate_commit(
                         shell,
                         &immediate_committed,
@@ -572,16 +574,19 @@ fn try_apply_probe_key(
             {
                 riotbox_app::jam_app::QueueControlResult::Enqueued => {
                     let transport = shell.app.runtime.transport.clone();
-                    immediate_committed = shell.app.commit_ready_actions(
-                        CommitBoundaryState {
-                            kind: CommitBoundary::Immediate,
-                            beat_index: transport.beat_index,
-                            bar_index: transport.bar_index,
-                            phrase_index: transport.phrase_index,
-                            scene_id: transport.current_scene,
-                        },
-                        timestamp_ms,
-                    );
+                    immediate_committed = shell
+                        .app
+                        .commit_ready_actions(
+                            CommitBoundaryState {
+                                kind: CommitBoundary::Immediate,
+                                beat_index: transport.beat_index,
+                                bar_index: transport.bar_index,
+                                phrase_index: transport.phrase_index,
+                                scene_id: transport.current_scene,
+                            },
+                            timestamp_ms,
+                        )
+                        .map_err(io::Error::other)?;
                     if immediate_committed.is_empty() {
                         shell.set_error_status("source timing grid confirmation queued");
                     } else {
@@ -704,6 +709,28 @@ fn require_immediate_commit(
     Ok(())
 }
 
+fn prepare_observer_boundary_commit(
+    shell: &mut JamShellState,
+    boundary: &CommitBoundaryState,
+) -> io::Result<()> {
+    let count = shell
+        .app
+        .queue
+        .ready_action_count_for_transport(boundary.kind);
+    match shell
+        .app
+        .session
+        .action_log
+        .prepare_commit_sequences(boundary, count)
+    {
+        Ok(_) => Ok(()),
+        Err(error) => {
+            shell.set_error_status(error.to_string());
+            Err(io::Error::other(error))
+        }
+    }
+}
+
 fn commit_boundary(
     shell: &mut JamShellState,
     writer: &mut NdjsonWriter,
@@ -715,24 +742,26 @@ fn commit_boundary(
     let beats_per_phrase = DEFAULT_BEATS_PER_BAR.saturating_mul(DEFAULT_BARS_PER_PHRASE);
     let grid_position = source_aware_grid_position(shell, index.saturating_mul(beats_per_phrase));
     let scene_id = Some(SceneId::from("scene-1"));
+    let boundary = CommitBoundaryState {
+        kind,
+        beat_index: grid_position.beat_cursor,
+        bar_index: grid_position.bar_index,
+        phrase_index: grid_position.phrase_index,
+        scene_id: scene_id.clone(),
+    };
+    prepare_observer_boundary_commit(shell, &boundary)?;
     shell.app.update_transport_clock(TransportClockState {
         is_playing: shell.app.runtime.transport.is_playing,
         position_beats: grid_position.beat_cursor as f64,
         beat_index: grid_position.beat_cursor,
         bar_index: grid_position.bar_index,
         phrase_index: grid_position.phrase_index,
-        current_scene: scene_id.clone(),
+        current_scene: scene_id,
     });
-    let committed = shell.app.commit_ready_actions(
-        CommitBoundaryState {
-            kind,
-            beat_index: grid_position.beat_cursor,
-            bar_index: grid_position.bar_index,
-            phrase_index: grid_position.phrase_index,
-            scene_id,
-        },
-        timestamp_ms,
-    );
+    let committed = shell
+        .app
+        .commit_ready_actions(boundary, timestamp_ms)
+        .map_err(io::Error::other)?;
     record_boundary_commit(
         shell,
         writer,
@@ -769,7 +798,11 @@ fn commit_boundary_for_scene(
 ) -> io::Result<()> {
     let kind = boundary.kind;
     let phrase_index = boundary.phrase_index;
-    let committed = shell.app.commit_ready_actions(boundary, timestamp_ms);
+    prepare_observer_boundary_commit(shell, &boundary)?;
+    let committed = shell
+        .app
+        .commit_ready_actions(boundary, timestamp_ms)
+        .map_err(io::Error::other)?;
     record_boundary_commit(
         shell,
         writer,
@@ -849,6 +882,9 @@ impl NdjsonWriter {
     }
 }
 
+#[cfg(test)]
+#[path = "user_session_observer_probe/commit_sequence_exhaustion_tests.rs"]
+mod commit_sequence_exhaustion_tests;
 #[cfg(test)]
 #[path = "user_session_observer_probe/source_transport_map_capture_tests.rs"]
 mod source_transport_map_capture_tests;

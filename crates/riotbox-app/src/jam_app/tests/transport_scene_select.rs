@@ -111,25 +111,29 @@ fn stale_running_audio_snapshot_cannot_cancel_requested_pause() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     state.set_transport_playing(true);
-    state.apply_audio_timing_snapshot(
-        Some(AudioRuntimeTimingSnapshot {
-            is_transport_running: true,
-            tempo_bpm: 124.0,
-            position_beats: 32.5,
-        }),
-        1_000,
-    );
+    state
+        .apply_audio_timing_snapshot(
+            Some(AudioRuntimeTimingSnapshot {
+                is_transport_running: true,
+                tempo_bpm: 124.0,
+                position_beats: 32.5,
+            }),
+            1_000,
+        )
+        .unwrap();
     state.set_transport_playing(false);
     let paused_position = state.runtime.transport.position_beats;
 
-    let stale_commit = state.apply_audio_timing_snapshot(
-        Some(AudioRuntimeTimingSnapshot {
-            is_transport_running: true,
-            tempo_bpm: 124.0,
-            position_beats: paused_position + 1.0,
-        }),
-        1_100,
-    );
+    let stale_commit = state
+        .apply_audio_timing_snapshot(
+            Some(AudioRuntimeTimingSnapshot {
+                is_transport_running: true,
+                tempo_bpm: 124.0,
+                position_beats: paused_position + 1.0,
+            }),
+            1_100,
+        )
+        .unwrap();
 
     assert!(stale_commit.is_empty());
     assert!(!state.runtime.transport.is_playing);
@@ -139,14 +143,16 @@ fn stale_running_audio_snapshot_cannot_cancel_requested_pause() {
         Some(false)
     );
 
-    state.apply_audio_timing_snapshot(
-        Some(AudioRuntimeTimingSnapshot {
-            is_transport_running: false,
-            tempo_bpm: 124.0,
-            position_beats: paused_position,
-        }),
-        1_200,
-    );
+    state
+        .apply_audio_timing_snapshot(
+            Some(AudioRuntimeTimingSnapshot {
+                is_transport_running: false,
+                tempo_bpm: 124.0,
+                position_beats: paused_position,
+            }),
+            1_200,
+        )
+        .unwrap();
 
     assert!(!state.runtime.transport.is_playing);
     assert_eq!(
@@ -161,25 +167,29 @@ fn stale_stopped_audio_snapshot_cannot_cancel_requested_play() {
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
     state.set_transport_playing(false);
-    state.apply_audio_timing_snapshot(
-        Some(AudioRuntimeTimingSnapshot {
-            is_transport_running: false,
-            tempo_bpm: 124.0,
-            position_beats: 32.0,
-        }),
-        1_000,
-    );
+    state
+        .apply_audio_timing_snapshot(
+            Some(AudioRuntimeTimingSnapshot {
+                is_transport_running: false,
+                tempo_bpm: 124.0,
+                position_beats: 32.0,
+            }),
+            1_000,
+        )
+        .unwrap();
 
     state.set_transport_playing(true);
     let started_position = state.runtime.transport.position_beats;
-    state.apply_audio_timing_snapshot(
-        Some(AudioRuntimeTimingSnapshot {
-            is_transport_running: false,
-            tempo_bpm: 124.0,
-            position_beats: started_position,
-        }),
-        1_100,
-    );
+    state
+        .apply_audio_timing_snapshot(
+            Some(AudioRuntimeTimingSnapshot {
+                is_transport_running: false,
+                tempo_bpm: 124.0,
+                position_beats: started_position,
+            }),
+            1_100,
+        )
+        .unwrap();
 
     assert!(state.runtime.transport.is_playing);
     assert_eq!(
@@ -187,14 +197,16 @@ fn stale_stopped_audio_snapshot_cannot_cancel_requested_play() {
         Some(true)
     );
 
-    state.apply_audio_timing_snapshot(
-        Some(AudioRuntimeTimingSnapshot {
-            is_transport_running: true,
-            tempo_bpm: 124.0,
-            position_beats: started_position,
-        }),
-        1_200,
-    );
+    state
+        .apply_audio_timing_snapshot(
+            Some(AudioRuntimeTimingSnapshot {
+                is_transport_running: true,
+                tempo_bpm: 124.0,
+                position_beats: started_position,
+            }),
+            1_200,
+        )
+        .unwrap();
 
     assert!(state.runtime.transport.is_playing);
     assert_eq!(
@@ -280,7 +292,7 @@ fn commits_ready_actions_into_session_log_in_stable_order() {
         scene_id: Some(SceneId::from("scene-1")),
     };
 
-    let committed = state.commit_ready_actions(boundary.clone(), 400);
+    let committed = state.commit_ready_actions(boundary.clone(), 400).unwrap();
 
     assert_eq!(committed.len(), 2);
     assert_eq!(committed[0].action_id, first);
@@ -368,16 +380,18 @@ fn committed_scene_mutation_updates_scene_aggression_and_log_result() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     state.queue_scene_mutation(300).unwrap();
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 40,
-            bar_index: 10,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        400,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 40,
+                bar_index: 10,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert!((state.session.runtime_state.macro_state.scene_aggression - 0.6).abs() < f32::EPSILON);
@@ -497,16 +511,18 @@ fn queue_scene_select_prefers_energy_contrast_candidate() {
         Some("launch contrast scene scene-03-intro on next bar")
     );
 
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: riotbox_core::action::CommitBoundary::Bar,
-            beat_index: 32,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-01-drop")),
-        },
-        350,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Bar,
+                beat_index: 32,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-01-drop")),
+            },
+            350,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert_eq!(
@@ -547,16 +563,18 @@ fn committed_scene_select_updates_transport_and_scene_state() {
         QueueControlResult::Enqueued
     );
 
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: riotbox_core::action::CommitBoundary::Bar,
-            beat_index: 32,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-01-drop")),
-        },
-        350,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Bar,
+                beat_index: 32,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-01-drop")),
+            },
+            350,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert_eq!(

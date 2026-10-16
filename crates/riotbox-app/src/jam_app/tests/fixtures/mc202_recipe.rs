@@ -46,16 +46,18 @@ fn committed_mc202_instigator_generation_updates_phrase_ref_touch_and_render_sha
         QueueControlResult::Enqueued
     );
 
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: 36,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        400,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 36,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert_eq!(
@@ -121,16 +123,18 @@ fn committed_mc202_phrase_mutation_updates_variant_and_render_shape() {
         QueueControlResult::Enqueued
     );
 
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: 40,
-            bar_index: 10,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        400,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 40,
+                bar_index: 10,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert_eq!(
@@ -224,16 +228,18 @@ fn committed_mc202_answer_with_confirmed_source_timing_stores_and_renders_source
         state.queue_mc202_generate_answer(300).unwrap(),
         QueueControlResult::Enqueued
     );
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: 32,
-            bar_index: 8,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        400,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 32,
+                bar_index: 8,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     let plan = state
@@ -365,16 +371,18 @@ fn committed_mc202_answer_requires_matching_source_phrase_slot_for_source_plan()
         state.queue_mc202_generate_answer(300).unwrap(),
         QueueControlResult::Enqueued
     );
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: 32,
-            bar_index: 8,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        400,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 32,
+                bar_index: 8,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert!(
@@ -469,16 +477,18 @@ pub(in crate::jam_app::tests) fn commit_source_derived_answer(state: &mut JamApp
         state.queue_mc202_generate_answer(300).unwrap(),
         QueueControlResult::Enqueued
     );
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: 32,
-            bar_index: 8,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        400,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 32,
+                bar_index: 8,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     render_mc202_recipe_buffer(&state.runtime.mc202_render)
@@ -882,16 +892,18 @@ fn source_timing_revert_blocks_older_mc202_undo_snapshot_resurrection() {
         state.queue_source_timing_grid_revert(410).unwrap(),
         QueueControlResult::Enqueued
     );
-    let reverted = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Immediate,
-            beat_index: state.runtime.transport.beat_index,
-            bar_index: state.runtime.transport.bar_index,
-            phrase_index: state.runtime.transport.phrase_index,
-            scene_id: state.runtime.transport.current_scene.clone(),
-        },
-        420,
-    );
+    let reverted = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Immediate,
+                beat_index: state.runtime.transport.beat_index,
+                bar_index: state.runtime.transport.bar_index,
+                phrase_index: state.runtime.transport.phrase_index,
+                scene_id: state.runtime.transport.current_scene.clone(),
+            },
+            420,
+        )
+        .unwrap();
     assert_eq!(reverted.len(), 1);
     assert!(
         state
@@ -967,16 +979,18 @@ fn newer_typed_action_without_snapshot_does_not_block_earlier_restorable_mc202_a
             .unwrap(),
         QueueControlResult::Enqueued
     );
-    state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Immediate,
-            beat_index: state.runtime.transport.beat_index,
-            bar_index: state.runtime.transport.bar_index,
-            phrase_index: state.runtime.transport.phrase_index,
-            scene_id: state.runtime.transport.current_scene.clone(),
-        },
-        420,
-    );
+    state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Immediate,
+                beat_index: state.runtime.transport.beat_index,
+                bar_index: state.runtime.transport.bar_index,
+                phrase_index: state.runtime.transport.phrase_index,
+                scene_id: state.runtime.transport.current_scene.clone(),
+            },
+            420,
+        )
+        .unwrap();
     state
         .session
         .runtime_state
@@ -1003,16 +1017,18 @@ pub(in crate::jam_app::tests) fn commit_mc202_recipe_step(
     committed_at: u64,
 ) {
     prepare_mc202_recipe_source_fixture(state, phrase_index as u32);
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: phrase_index * 16,
-            bar_index: phrase_index * 4,
-            phrase_index,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        committed_at,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: phrase_index * 16,
+                bar_index: phrase_index * 4,
+                phrase_index,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            committed_at,
+        )
+        .unwrap();
     assert_eq!(committed.len(), 1);
 }
 

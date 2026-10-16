@@ -63,10 +63,12 @@ fn mc202_fixture_backed_committed_state_regressions_hold() {
             fixture.name
         );
 
-        let committed = state.commit_ready_actions(
-            fixture.boundary.into_commit_boundary_state(),
-            fixture.committed_at,
-        );
+        let committed = state
+            .commit_ready_actions(
+                fixture.boundary.into_commit_boundary_state(),
+                fixture.committed_at,
+            )
+            .unwrap();
         assert_eq!(
             committed.len(),
             1,
@@ -271,10 +273,12 @@ fn w30_fixture_backed_committed_state_regressions_hold() {
             fixture.name
         );
 
-        let committed = state.commit_ready_actions(
-            fixture.boundary.into_commit_boundary_state(),
-            fixture.committed_at,
-        );
+        let committed = state
+            .commit_ready_actions(
+                fixture.boundary.into_commit_boundary_state(),
+                fixture.committed_at,
+            )
+            .unwrap();
         assert_eq!(
             committed.len(),
             1,
@@ -417,16 +421,18 @@ fn committed_tr909_slam_action_updates_lane_state_and_macro_intensity() {
 
     assert!(state.queue_tr909_slam_toggle(300).unwrap());
 
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Beat,
-            beat_index: 33,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        400,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Beat,
+                beat_index: 33,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert!(state.session.runtime_state.lane_state.tr909.slam_enabled);

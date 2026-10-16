@@ -79,16 +79,19 @@ fn committed_raw_capture_audition_surfaces_unavailable_readiness() {
             .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
-    shell.app.commit_ready_actions(
-        CommitBoundaryState {
-            kind: riotbox_core::action::CommitBoundary::Bar,
-            beat_index: 33,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        320,
-    );
+    shell
+        .app
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Bar,
+                beat_index: 33,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            320,
+        )
+        .expect("fixture commit sequence available");
     shell.active_screen = ShellScreen::Jam;
 
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);

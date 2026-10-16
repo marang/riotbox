@@ -5,10 +5,10 @@ use riotbox_core::{
         CommitBoundary, Quantization, TargetScope, TypedUndoStateDomain, UndoPolicy,
     },
     ids::ActionId,
-    queue::{ActionIdExhausted, CommittedActionRef},
+    queue::CommittedActionRef,
     session::{
-        ActionCommitRecord, CaptureRef, Mc202UndoSnapshotState, SourceMonitorUndoSnapshotState,
-        Tr909FillUndoSnapshotState,
+        ActionCommitRecord, CaptureRef, CommitSequenceExhausted, Mc202UndoSnapshotState,
+        SourceMonitorUndoSnapshotState, Tr909FillUndoSnapshotState,
     },
     source_graph::SourceGraph,
     transport::CommitBoundaryState,
@@ -16,7 +16,7 @@ use riotbox_core::{
 
 use super::side_effects::apply_committed_side_effects;
 use super::{
-    JamAppState, apply_capture_promotion_side_effects, capture_promotion_summary,
+    JamAppError, JamAppState, apply_capture_promotion_side_effects, capture_promotion_summary,
     capture_ref_from_action, is_mc202_phrase_action, update_logged_action_result,
 };
 use crate::jam_app::helpers::{
@@ -27,7 +27,7 @@ impl JamAppState {
     pub fn undo_last_action(
         &mut self,
         requested_at: TimestampMs,
-    ) -> Result<Option<Action>, ActionIdExhausted> {
+    ) -> Result<Option<Action>, JamAppError> {
         let undone_index = latest_trusted_typed_undo_index(&self.session);
         let Some(undone_index) = undone_index else {
             let normalized_missing_snapshots =
@@ -38,11 +38,6 @@ impl JamAppState {
             return Ok(None);
         };
 
-        // A trusted target already has a restorable snapshot. Reserve the marker
-        // before normalization or consuming any of that persisted pre-state.
-        let next_undo_action_id = self.queue.allocate_action_id()?;
-        normalize_missing_typed_undo_policies(&mut self.session);
-
         let undone_action_id = self.session.action_log.actions[undone_index].id;
         let undo_boundary = CommitBoundaryState {
             kind: CommitBoundary::Immediate,
@@ -51,6 +46,17 @@ impl JamAppState {
             phrase_index: self.runtime.transport.phrase_index,
             scene_id: self.runtime.transport.current_scene.clone(),
         };
+        // Preserve the trusted target and its snapshot until both capacities
+        // have admitted the marker; sequence refusal precedes ID allocation.
+        let mut sequences = self
+            .session
+            .action_log
+            .prepare_commit_sequences(&undo_boundary, 1)?;
+        let commit_sequence = sequences.next().ok_or_else(|| {
+            JamAppError::InvalidSession("admitted Undo marker sequence missing".into())
+        })?;
+        let next_undo_action_id = self.queue.allocate_action_id()?;
+        normalize_missing_typed_undo_policies(&mut self.session);
         let undone_command = self.session.action_log.actions[undone_index].command;
         let is_mc202_undo = is_mc202_phrase_action(undone_command);
         let is_source_monitor_undo = undone_command == ActionCommand::SourceMonitorSetMode;
@@ -127,24 +133,12 @@ impl JamAppState {
         let mut committed_ref = CommittedActionRef {
             action_id: undo_action.id,
             boundary: undo_boundary.clone(),
-            commit_sequence: 0,
+            commit_sequence,
         };
         self.record_committed_action(undo_action.clone(), &mut committed_ref, requested_at);
         self.runtime.last_commit_boundary = Some(undo_boundary);
         self.refresh_view();
         Ok(Some(undo_action))
-    }
-
-    fn next_commit_sequence_for_boundary(&self, boundary: &CommitBoundaryState) -> Option<u32> {
-        self.session
-            .action_log
-            .commit_records
-            .iter()
-            .filter(|record| record.boundary == *boundary)
-            .map(|record| record.commit_sequence)
-            .max()
-            .unwrap_or(0)
-            .checked_add(1)
     }
 
     fn restore_mc202_undo_snapshot(&mut self, action_id: ActionId) -> bool {
@@ -214,10 +208,12 @@ impl JamAppState {
         &mut self,
         boundary: CommitBoundaryState,
         committed_at: TimestampMs,
-    ) -> Vec<CommittedActionRef> {
-        let mut committed = self
-            .queue
-            .commit_ready_for_transport(boundary.clone(), committed_at);
+    ) -> Result<Vec<CommittedActionRef>, CommitSequenceExhausted> {
+        let mut committed = self.queue.commit_ready_for_transport(
+            &self.session.action_log,
+            boundary.clone(),
+            committed_at,
+        )?;
 
         for committed_ref in &mut committed {
             if let Some(action) = self.queue.history_action(committed_ref.action_id) {
@@ -229,7 +225,7 @@ impl JamAppState {
 
         self.runtime.last_commit_boundary = Some(boundary);
         self.refresh_view();
-        committed
+        Ok(committed)
     }
 
     pub(in crate::jam_app) fn record_committed_action(
@@ -238,9 +234,6 @@ impl JamAppState {
         committed_ref: &mut CommittedActionRef,
         committed_at: TimestampMs,
     ) -> Action {
-        committed_ref.commit_sequence = self
-            .next_commit_sequence_for_boundary(&committed_ref.boundary)
-            .expect("commit sequence exhausted for one transport boundary");
         self.session.action_log.actions.push(action.clone());
         self.session
             .action_log
@@ -253,6 +246,48 @@ impl JamAppState {
                 mc202_source_phrase_plan: None,
             });
         action
+    }
+
+    pub(in crate::jam_app) fn preflight_immediate_commit(
+        &self,
+    ) -> Result<(), CommitSequenceExhausted> {
+        let boundary = self
+            .runtime
+            .transport
+            .boundary_state(CommitBoundary::Immediate);
+        self.session
+            .action_log
+            .prepare_commit_sequences(&boundary, 1)?;
+        Ok(())
+    }
+
+    pub(in crate::jam_app) fn preflight_immediate_enqueue(&self) -> Result<(), JamAppError> {
+        let boundary = self
+            .runtime
+            .transport
+            .boundary_state(CommitBoundary::Immediate);
+        let count = self
+            .queue
+            .ready_action_count_for_transport(boundary.kind)
+            .checked_add(1)
+            .ok_or_else(|| {
+                JamAppError::InvalidSession("ready action count exceeds address space".into())
+            })?;
+        self.session
+            .action_log
+            .prepare_commit_sequences(&boundary, count)?;
+        Ok(())
+    }
+
+    pub(in crate::jam_app) fn preflight_ready_actions(
+        &self,
+        boundary: &CommitBoundaryState,
+    ) -> Result<(), CommitSequenceExhausted> {
+        let count = self.queue.ready_action_count_for_transport(boundary.kind);
+        self.session
+            .action_log
+            .prepare_commit_sequences(boundary, count)?;
+        Ok(())
     }
 
     fn apply_committed_action_pipeline(&mut self, action: &Action, boundary: &CommitBoundaryState) {

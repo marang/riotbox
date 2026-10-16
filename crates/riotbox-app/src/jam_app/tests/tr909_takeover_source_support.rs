@@ -41,16 +41,18 @@ fn committed_tr909_fill_and_reinforce_write_log_results() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     state.queue_tr909_fill(300).unwrap();
-    let committed_fill = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 37,
-            bar_index: 10,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        400,
-    );
+    let committed_fill = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 37,
+                bar_index: 10,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        )
+        .unwrap();
 
     assert_eq!(committed_fill.len(), 1);
     assert_eq!(
@@ -59,16 +61,18 @@ fn committed_tr909_fill_and_reinforce_write_log_results() {
     );
 
     state.queue_tr909_reinforce(500).unwrap();
-    let committed_reinforce = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: 48,
-            bar_index: 12,
-            phrase_index: 3,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        600,
-    );
+    let committed_reinforce = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 48,
+                bar_index: 12,
+                phrase_index: 3,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            600,
+        )
+        .unwrap();
 
     assert_eq!(committed_reinforce.len(), 1);
     assert_eq!(
@@ -96,16 +100,18 @@ fn fill_owns_only_its_commit_bar_then_slam_articulates_break_reinforcement() {
         current_scene: scene.clone(),
     });
     state.queue_tr909_fill(300).unwrap();
-    let fill = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 12,
-            bar_index: 4,
-            phrase_index: 1,
-            scene_id: scene.clone(),
-        },
-        400,
-    );
+    let fill = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 12,
+                bar_index: 4,
+                phrase_index: 1,
+                scene_id: scene.clone(),
+            },
+            400,
+        )
+        .unwrap();
 
     assert_eq!(fill.len(), 1);
     assert_eq!(state.runtime.tr909_render.mode, Tr909RenderMode::Fill);
@@ -134,16 +140,18 @@ fn fill_owns_only_its_commit_bar_then_slam_articulates_break_reinforcement() {
     assert!(!state.runtime.tr909_render.slam_enabled);
 
     assert!(state.queue_tr909_slam_toggle(500).unwrap());
-    let slam = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Beat,
-            beat_index: 16,
-            bar_index: 5,
-            phrase_index: 2,
-            scene_id: scene,
-        },
-        600,
-    );
+    let slam = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Beat,
+                beat_index: 16,
+                bar_index: 5,
+                phrase_index: 2,
+                scene_id: scene,
+            },
+            600,
+        )
+        .unwrap();
 
     assert_eq!(slam.len(), 1);
     assert_eq!(
@@ -166,16 +174,18 @@ fn committed_tr909_takeover_and_release_update_lane_state() {
         state.queue_tr909_takeover(300).unwrap(),
         QueueControlResult::Enqueued
     );
-    let committed_takeover = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: 36,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        400,
-    );
+    let committed_takeover = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 36,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        )
+        .unwrap();
 
     assert_eq!(committed_takeover.len(), 1);
     assert!(
@@ -252,16 +262,18 @@ fn committed_tr909_takeover_and_release_update_lane_state() {
         state.queue_tr909_scene_lock(450).unwrap(),
         QueueControlResult::Enqueued
     );
-    let committed_scene_lock = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: 44,
-            bar_index: 11,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        500,
-    );
+    let committed_scene_lock = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 44,
+                bar_index: 11,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            500,
+        )
+        .unwrap();
 
     assert_eq!(committed_scene_lock.len(), 1);
     assert!(
@@ -321,16 +333,18 @@ fn committed_tr909_takeover_and_release_update_lane_state() {
         state.queue_tr909_release(500).unwrap(),
         QueueControlResult::Enqueued
     );
-    let committed_release = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: 52,
-            bar_index: 13,
-            phrase_index: 3,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        600,
-    );
+    let committed_release = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 52,
+                bar_index: 13,
+                phrase_index: 3,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            600,
+        )
+        .unwrap();
 
     assert_eq!(committed_release.len(), 1);
     assert!(

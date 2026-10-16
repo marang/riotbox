@@ -55,16 +55,18 @@ fn scene_launch_repositions_source_monitor_to_target_section_and_replays() {
         committed_state.queue_scene_select(300).unwrap(),
         QueueControlResult::Enqueued
     );
-    let committed = committed_state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 36,
-            bar_index: 9,
-            phrase_index: 2,
-            scene_id: Some(SceneId::from("scene-01-break")),
-        },
-        360,
-    );
+    let committed = committed_state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 36,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-01-break")),
+            },
+            360,
+        )
+        .unwrap();
     assert_eq!(committed.len(), 1);
     committed_state.runtime.transport.is_playing = true;
     committed_state.runtime.transport.position_beats = 36.0;
@@ -258,16 +260,18 @@ fn source_monitor_scene_reposition_waits_for_trusted_source_timing() {
             "{} queue",
             case.name
         );
-        let committed = state.commit_ready_actions(
-            CommitBoundaryState {
-                kind: CommitBoundary::Bar,
-                beat_index: 36,
-                bar_index: 9,
-                phrase_index: 2,
-                scene_id: Some(SceneId::from("scene-01-break")),
-            },
-            360,
-        );
+        let committed = state
+            .commit_ready_actions(
+                CommitBoundaryState {
+                    kind: CommitBoundary::Bar,
+                    beat_index: 36,
+                    bar_index: 9,
+                    phrase_index: 2,
+                    scene_id: Some(SceneId::from("scene-01-break")),
+                },
+                360,
+            )
+            .unwrap();
         assert_eq!(committed.len(), 1, "{} committed action count", case.name);
         state.runtime.transport.is_playing = true;
         state.runtime.transport.position_beats = 36.0;

@@ -91,16 +91,18 @@ mod tests {
             QueueControlResult::Enqueued
         );
 
-        let committed = state.commit_ready_actions(
-            CommitBoundaryState {
-                kind: CommitBoundary::Immediate,
-                beat_index: 0,
-                bar_index: 0,
-                phrase_index: 0,
-                scene_id: None,
-            },
-            100,
-        );
+        let committed = state
+            .commit_ready_actions(
+                CommitBoundaryState {
+                    kind: CommitBoundary::Immediate,
+                    beat_index: 0,
+                    bar_index: 0,
+                    phrase_index: 0,
+                    scene_id: None,
+                },
+                100,
+            )
+            .unwrap();
 
         assert_eq!(committed.len(), 1);
         assert_eq!(
@@ -121,16 +123,18 @@ mod tests {
             QueueControlResult::Enqueued,
             "the musician must be able to recall versioned defaults after later control edits"
         );
-        let recalled = state.commit_ready_actions(
-            CommitBoundaryState {
-                kind: CommitBoundary::Immediate,
-                beat_index: 0,
-                bar_index: 0,
-                phrase_index: 0,
-                scene_id: None,
-            },
-            101,
-        );
+        let recalled = state
+            .commit_ready_actions(
+                CommitBoundaryState {
+                    kind: CommitBoundary::Immediate,
+                    beat_index: 0,
+                    bar_index: 0,
+                    phrase_index: 0,
+                    scene_id: None,
+                },
+                101,
+            )
+            .unwrap();
         assert_eq!(recalled.len(), 1);
         assert_eq!(
             state.session.runtime_state.macro_state,

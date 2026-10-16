@@ -82,7 +82,7 @@ fn w30_commit(
             scene_id: state.runtime.transport.current_scene.clone(),
         },
         timestamp,
-    );
+    )?;
     if committed.len() != 1 {
         return Err("calibration W-30 boundary did not commit exactly one action".into());
     }

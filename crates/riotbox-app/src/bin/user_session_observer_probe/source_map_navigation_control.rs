@@ -23,16 +23,19 @@ pub(super) fn apply_source_map_navigation(
             target_position_beats,
         } => {
             let transport = shell.app.runtime.transport.clone();
-            let committed = shell.app.commit_ready_actions(
-                CommitBoundaryState {
-                    kind: CommitBoundary::Immediate,
-                    beat_index: transport.beat_index,
-                    bar_index: transport.bar_index,
-                    phrase_index: transport.phrase_index,
-                    scene_id: transport.current_scene,
-                },
-                requested_at,
-            );
+            let committed = shell
+                .app
+                .commit_ready_actions(
+                    CommitBoundaryState {
+                        kind: CommitBoundary::Immediate,
+                        beat_index: transport.beat_index,
+                        bar_index: transport.bar_index,
+                        phrase_index: transport.phrase_index,
+                        scene_id: transport.current_scene,
+                    },
+                    requested_at,
+                )
+                .map_err(io::Error::other)?;
             if committed.is_empty() {
                 shell.set_error_status(format!("source map navigation queued to {target_label}"));
             } else {

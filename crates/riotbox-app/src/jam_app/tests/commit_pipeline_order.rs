@@ -22,16 +22,18 @@ fn commit_pipeline_logs_action_before_promotion_summary_side_effect() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert!(state.queue_promote_last_capture(300).unwrap());
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 32,
-            bar_index: 8,
-            phrase_index: 1,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        360,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 32,
+                bar_index: 8,
+                phrase_index: 1,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            360,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     let action_id = committed[0].action_id;
@@ -83,16 +85,18 @@ fn commit_pipeline_materializes_loop_freeze_capture_before_w30_side_effects() {
         state.queue_w30_loop_freeze(410).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: 64,
-            bar_index: 16,
-            phrase_index: 4,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        512,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 64,
+                bar_index: 16,
+                phrase_index: 4,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            512,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert_eq!(
@@ -162,16 +166,18 @@ fn commit_pipeline_mirrors_scene_side_effects_after_scene_commit() {
         state.queue_scene_select(610).unwrap(),
         QueueControlResult::Enqueued
     );
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 32,
-            bar_index: 8,
-            phrase_index: 1,
-            scene_id: Some(SceneId::from("scene-01-drop")),
-        },
-        700,
-    );
+    let committed = state
+        .commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 32,
+                bar_index: 8,
+                phrase_index: 1,
+                scene_id: Some(SceneId::from("scene-01-drop")),
+            },
+            700,
+        )
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert_eq!(

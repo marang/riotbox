@@ -44,7 +44,9 @@ fn source_map_navigation_queues_commits_and_restores_transport_position() {
         SourceMapNavigationResult::AlreadyPending
     );
 
-    let committed = state.commit_ready_actions(immediate_boundary(), 120);
+    let committed = state
+        .commit_ready_actions(immediate_boundary(), 120)
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     assert!(state.session.runtime_state.transport.is_playing);

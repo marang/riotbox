@@ -46,7 +46,9 @@ fn source_timing_grid_confirmation_queues_commits_and_persists_session_truth() {
         QueueControlResult::AlreadyPending
     );
 
-    let committed = state.commit_ready_actions(immediate_boundary(), 120);
+    let committed = state
+        .commit_ready_actions(immediate_boundary(), 120)
+        .unwrap();
 
     assert_eq!(committed.len(), 1);
     let confirmed = state
@@ -85,7 +87,9 @@ fn source_timing_grid_revert_queues_commits_and_clears_session_truth() {
         state.queue_source_timing_grid_confirmation(100).unwrap(),
         QueueControlResult::Enqueued
     );
-    let committed_confirm = state.commit_ready_actions(immediate_boundary(), 120);
+    let committed_confirm = state
+        .commit_ready_actions(immediate_boundary(), 120)
+        .unwrap();
     assert_eq!(committed_confirm.len(), 1);
     assert!(
         state
@@ -104,7 +108,9 @@ fn source_timing_grid_revert_queues_commits_and_clears_session_truth() {
         state.queue_source_timing_grid_revert(122).unwrap(),
         QueueControlResult::AlreadyPending
     );
-    let committed_revert = state.commit_ready_actions(immediate_boundary(), 140);
+    let committed_revert = state
+        .commit_ready_actions(immediate_boundary(), 140)
+        .unwrap();
 
     assert_eq!(committed_revert.len(), 1);
     assert_eq!(
