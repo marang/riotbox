@@ -158,6 +158,7 @@ fn earliest_duplicate_record_controls_error_precedence() {
 #[test]
 fn legacy_undone_fill_requires_a_committed_typed_marker() {
     let mut session = history(2, true);
+    session.action_log.replay_policy = riotbox_core::session::ReplayPolicy::DeterministicPreferred;
     assert!(restore(&session).is_ok());
     session.action_log.actions.pop();
     session.action_log.commit_records.pop();

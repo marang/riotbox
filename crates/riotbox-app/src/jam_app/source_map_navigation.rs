@@ -76,6 +76,17 @@ impl JamAppState {
                 target_label: target.label,
             });
         }
+        if target.position_beats < current_position
+            && !self
+                .session
+                .action_log
+                .replay_policy
+                .uses_committed_append_order()
+        {
+            return Ok(SourceMapNavigationResult::Unavailable {
+                reason: "backward navigation requires an explicit legacy replay chronology upgrade",
+            });
+        }
 
         let mut draft = ActionDraft::new(
             ActorType::User,

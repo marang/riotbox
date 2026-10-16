@@ -153,6 +153,33 @@ Decision:
 
 If two actions commit in the same musical window, their stored order must remain stable.
 
+RIOTBOX-1593 / RBX-454 declares that guarantee through the existing required
+`ReplayPolicy::DeterministicCommittedOrderV2`, selected by fresh Session/ActionLog
+defaults. The `commit_records` array is append chronology, not a set to sort by
+musical coordinates, ActionId or timestamps. Every committed/undone action needs
+its one record, in agreement with the committed action-vector subsequence;
+structural and failed-result records participate before executable filtering.
+Sequence numbers remain local to the complete boundary, increase on revisits,
+and need not be contiguous. Wall-clock rollback cannot reverse chronology;
+action/record timestamp equality and presence remain required.
+
+Legacy `DeterministicPreferred`/`SnapshotOnly` values retain their historical
+interpretation and roundtrip identity. Loading/saving never opts them into V2.
+Backward navigation requiring append chronology is explicitly unsupported in a
+legacy history: refuse the ordinary gesture before enqueue and fail replay
+closed with an upgrade-required error, not a new musical ordering guess.
+An explicit conservative Core upgrade changes only the policy after validating
+complete history, legacy relations, all-record canonical order, append/action
+agreement and sequences. Ambiguity refuses without mutation or repair. Older
+enum decoders reject the new value; no ignored optional field can downgrade it.
+The frozen generated loaded-recorder V1 producer pins its historical policy.
+
+V2 structural Undo uses per-domain candidate stacks and the existing Core domain
+predicates: a non-undoable mutation invalidates only overlapping older candidates.
+An eligible typed action remains undoable in reverse committed order; timestamp
+monotonicity is not its order proof. Every Undone target needs its valid later
+marker. These stacks are transient validation, never a second persisted history.
+
 Current implementation:
 
 - `ActionLog.commit_records` stores one structured commit record per committed action.

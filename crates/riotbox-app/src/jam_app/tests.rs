@@ -43,6 +43,7 @@ mod recovery_payload_guidance;
 mod recovery_replay_family_diagnostics;
 mod recovery_surface;
 mod replay_hardening;
+mod replay_transport_chronology;
 mod restore_contracts;
 mod restore_history;
 mod scene_chain_transition_proof;

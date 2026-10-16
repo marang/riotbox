@@ -1408,6 +1408,18 @@ ActionLog {
 }
 ```
 
+RIOTBOX-1593 / RBX-454 adds `DeterministicCommittedOrderV2` to the existing
+required `replay_policy` enum, without adding an ActionLog field or changing the
+Session V1 envelope. Fresh defaults use that explicit append-chronology contract;
+older enum readers reject it. Existing `DeterministicPreferred`/`SnapshotOnly`
+files retain their declared historical semantics and roundtrip identity. Do not
+silently upgrade on restore/save or guess the chronology of permuted/missing
+legacy records. Only an explicit, fully validated unambiguous upgrade may change
+the discriminator; no record/cursor rewrite. The owning
+[replay contract](./replay_model_spec.md#72-action-ordering) defines admission,
+sequence, cursor, Undo and unsupported backward-navigation behavior. Frozen
+generated V1 controls explicitly retain their historical policy.
+
 Each action must follow the Action Lexicon contract.
 
 Minimum stored fields:

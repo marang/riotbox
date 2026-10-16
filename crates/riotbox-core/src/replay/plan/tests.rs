@@ -1,8 +1,8 @@
 use super::*;
 use crate::{
     action::{
-        ActionCommand, ActionParams, ActionResult, ActionTarget, ActorType, Quantization,
-        UndoPolicy,
+        ActionCommand, ActionParams, ActionResult, ActionTarget, ActorType, CommitBoundary,
+        Quantization, UndoPolicy,
     },
     ids::SceneId,
     ids::SnapshotId,
@@ -10,8 +10,10 @@ use crate::{
     transport::CommitBoundaryState,
 };
 
+mod chronology_compatibility;
 mod cursor_equivalence;
 mod scaling;
+mod transport_chronology;
 
 fn action(id: u64, committed_at: TimestampMs) -> Action {
     Action {

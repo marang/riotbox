@@ -195,6 +195,10 @@ pub(in crate::jam_app::tests) fn seed_scene_fixture_state(
 
 pub(crate) fn sample_session(graph: &SourceGraph) -> SessionFile {
     let mut session = SessionFile::new("session-1", "0.1.0", "2026-04-12T18:00:00Z");
+    // Historical partial-history fixture: the captured action below predates
+    // commit-record coverage. Do not silently declare it a complete V2 log.
+    // Fresh chronology tests use SessionFile::new and real committed gestures.
+    session.action_log.replay_policy = riotbox_core::session::ReplayPolicy::DeterministicPreferred;
     session.source_refs.push(SourceRef {
         source_id: graph.source.source_id.clone(),
         path_hint: graph.source.path.clone(),

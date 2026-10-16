@@ -243,6 +243,47 @@ mod tests {
     }
 
     #[test]
+    fn committed_order_export_receipts_keep_action_identity_across_backward_boundaries() {
+        let mut session = session_with_export_receipt("exports/first.wav", "exports/first.json");
+        session.action_log.replay_policy = ReplayPolicy::DeterministicCommittedOrderV2;
+        session.action_log.commit_records[0].boundary.beat_index = 12;
+        let mut action = export_action();
+        action.id = ActionId(2);
+        action.committed_at = Some(800); // Wall-clock metadata is not chronology.
+        session.action_log.actions.push(action);
+        let mut record = session.action_log.commit_records[0].clone();
+        record.action_id = ActionId(2);
+        record.committed_at = 800;
+        record.boundary.beat_index = 0;
+        session.action_log.commit_records.push(record);
+        let mut receipt = session.export_receipts[0].clone();
+        receipt.created_by_action = ActionId(2);
+        receipt.receipt_id = ExportReceiptId::from("second-export");
+        receipt.artifact_path = "exports/second.wav".into();
+        session.export_receipts.push(receipt);
+        let decoded: SessionFile =
+            serde_json::from_slice(&serde_json::to_vec(&session).unwrap()).unwrap();
+        let plan = build_committed_replay_plan(&decoded.action_log).unwrap();
+        let proofs: Vec<_> = plan
+            .iter()
+            .map(|entry| plan_export_receipt_replay_validation(&decoded, entry).unwrap())
+            .collect();
+        assert_eq!(
+            proofs
+                .iter()
+                .map(|proof| proof.action_id)
+                .collect::<Vec<_>>(),
+            vec![ActionId(4), ActionId(2)]
+        );
+        assert_eq!(proofs[0].artifact_path, "exports/first.wav");
+        assert_eq!(proofs[1].artifact_path, "exports/second.wav");
+        assert_eq!(
+            decoded, session,
+            "receipt planning is metadata-only and does not rewrite lineage"
+        );
+    }
+
+    #[test]
     fn export_receipt_replay_validation_reads_typed_artifact_set() {
         let mut session =
             session_with_export_receipt("exports/full_grid_mix.wav", "exports/proof.json");
