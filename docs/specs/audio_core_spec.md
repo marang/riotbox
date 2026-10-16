@@ -800,6 +800,17 @@ Current limiter policy:
   discontinuity between captured callback windows. Callback-gap telemetry runs
   across both the armed wait and copied window. It still allocates nothing,
   takes no lock, and performs no I/O, analysis, or Session mutation
+- RBX-452 keeps the previous callback timestamp in the unique capture reader,
+  advancing it on every normal or scratch-overflow callback, including when no
+  capture is active or the old buffer is complete/closed. The first admitted
+  bar-window callback seeds its gap from that actual predecessor, not from a
+  control-side timestamp sampled before allocation/prefaulting. Later gaps use
+  that buffer's admitted history. An absent predecessor stays unavailable;
+  genuine initial, armed and copied-window gaps retain the existing 100-ms
+  threshold. V1 retains its existing copied-callback/scratch-fault observation
+  boundary without seeding from earlier reader history.
+  Admission closure still excludes stale timing writes. This is runtime-local
+  telemetry ownership, not a new Session/replay clock or host qualification.
 - V3 (RBX-422) admits explicitly selected eight- or sixteen-bar windows through
   that same generic frame-count tap, not a new recorder or DSP path. Core owns
   the typed duration and checked canonical-runtime-BPM frame calculation;

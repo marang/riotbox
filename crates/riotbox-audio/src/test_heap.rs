@@ -1,7 +1,13 @@
-//! Test-only per-thread heap accounting; never linked into production Audio.
+//! Test-only per-thread heap accounting and allocation barriers; never linked
+//! into production Audio.
 use std::{
     alloc::{GlobalAlloc, Layout, System},
-    cell::Cell,
+    cell::{Cell, RefCell},
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
+    time::{Duration, Instant},
 };
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -16,6 +22,71 @@ pub(crate) struct HeapCounts {
 thread_local! {
     // Const/no-Drop TLS does not allocate to initialize the accounting window.
     static WINDOW: Cell<Option<HeapCounts>> = const { Cell::new(None) };
+    static PAUSE: RefCell<Option<(usize, Arc<AllocationPause>)>> = const { RefCell::new(None) };
+}
+
+/// Test-only one-shot allocator barrier, scoped to the installing thread and
+/// exact allocation size. The callback thread never waits on this gate.
+#[derive(Default)]
+pub(crate) struct AllocationPause {
+    entered: AtomicBool,
+    released: AtomicBool,
+    timed_out: AtomicBool,
+}
+
+impl AllocationPause {
+    pub(crate) fn entered(&self) -> bool {
+        self.entered.load(Ordering::Acquire)
+    }
+
+    pub(crate) fn release(&self) {
+        self.released.store(true, Ordering::Release);
+    }
+
+    pub(crate) fn timed_out(&self) -> bool {
+        self.timed_out.load(Ordering::Acquire)
+    }
+}
+
+struct PauseGuard;
+
+impl Drop for PauseGuard {
+    fn drop(&mut self) {
+        let _ = PAUSE.try_with(|pause| pause.borrow_mut().take());
+    }
+}
+
+pub(crate) fn with_allocation_paused<T>(
+    bytes: usize,
+    pause: &Arc<AllocationPause>,
+    work: impl FnOnce() -> T,
+) -> T {
+    PAUSE.with(|slot| {
+        assert!(slot.borrow().is_none(), "allocation pauses must not nest");
+        *slot.borrow_mut() = Some((bytes, Arc::clone(pause)));
+    });
+    let _guard = PauseGuard;
+    work()
+}
+
+fn pause_allocation(bytes: usize) {
+    let _ = PAUSE.try_with(|slot| {
+        // Never panic or allocate inside GlobalAlloc, including TLS teardown.
+        if let Ok(slot) = slot.try_borrow()
+            && let Some((expected, pause)) = slot.as_ref()
+            && bytes == *expected
+            && !pause.entered.swap(true, Ordering::AcqRel)
+        {
+            let deadline = Instant::now() + Duration::from_secs(3);
+            while !pause.released.load(Ordering::Acquire) {
+                if Instant::now() >= deadline {
+                    pause.timed_out.store(true, Ordering::Release);
+                    break;
+                }
+                std::thread::yield_now();
+            }
+        }
+    });
 }
 
 enum Operation {
@@ -48,10 +119,12 @@ fn record(operation: Operation, bytes: usize) {
 struct MeasuredSystem;
 
 // SAFETY: Every operation delegates its pointer/layout contract unchanged to
-// System. Recording accesses only const-initialized thread-local Copy counters.
+// System. Accounting and the optional bounded pause use TLS and atomics only;
+// no allocator operation allocates, acquires a lock, formats or panics.
 unsafe impl GlobalAlloc for MeasuredSystem {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         record(Operation::Alloc, layout.size());
+        pause_allocation(layout.size());
         unsafe { System.alloc(layout) }
     }
 
