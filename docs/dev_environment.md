@@ -86,6 +86,14 @@ protocol and fresh generated-fixture bindings. The consumed 1579 approval cannot
 substitute. No actual result exists until that new fence is independently admitted
 and invoked once; first failure stops with no retry.
 
+The [actual RIOTBOX-1581 V2 observation](reviews/riotbox_1581_loaded_recorder_v2_observation_2026-10-16.md)
+is now consumed: its separately approved 250-ms preflight and generated
+2/8/16-bar recordings passed actual artifact/Session/receipt/Core/route/diagnostic
+gates with verified cleanup and unchanged defaults. This is only instrumented
+isolated generated-composite recording evidence, not musical, physical-device,
+latency, endurance, release or original ALSA-cause qualification. No further
+trial is authorized and the failed V1 result remains unchanged.
+
 ## Agent Sandbox Self-Checks
 
 Run these when Riotbox runs inside `agent-sandbox` and host capability is unclear:
