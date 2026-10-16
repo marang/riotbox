@@ -148,8 +148,14 @@ helper rather than duplicating admission policy. New arithmetic and exhaustion
 tests have semantic child owners; no general error/transaction abstraction or
 new durable state was introduced.
 
-Full local source-free CI and exact-head native PR CI are pending. No merge
-claim is implied by the focused successes or zero-findings reviews above.
+Full local source-free `just ci` passed:
+`/tmp/riotbox-1588-full-ci.log`, including normal Rust and optional limiter
+fixtures, generated audio/observer smokes, access/CI contracts, Decision-search
+fixtures, tracked JSON, format/diff checks and strict all-target/all-feature
+Clippy. Its implementation candidate is
+`1bd37f3bf11dba1d8ba060146fb292c83d71af37`; subsequent changes only record
+executed evidence in this report. Exact-head native PR CI is pending. No merge
+claim is implied by the local result or zero-findings reviews above.
 
 ## Bounds
 
