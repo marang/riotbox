@@ -122,6 +122,13 @@ Spec/Evidence review delta with no retained finding. Its interim wording about
 an unexecuted control was superseded by the actual final 14-test run above;
 no pending CI result is inferred from code inspection.
 
+The first complete local CI passed Rust tests, Python/contract checks, generated
+audio smokes, access guards and JSON checks, then failed strict all-feature
+Clippy on `unnecessary_lazy_evaluations` in the new adapter's borrowed-label
+fallback. Replaced `or_else` with `or` for that side-effect-free match; no
+behavioral change or lint suppression. A fresh full exact-head run remains
+required; the earlier overall run is not reported as passing.
+
 No new ActionCommand, serialized Session/replay/recording/observer field/schema,
 persistent App state, second history/validator/allocator/clock, dependency or
 source/DSP algorithm/threshold/recipe. No actual user Session migration,

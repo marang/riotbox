@@ -23,7 +23,7 @@ pub(in crate::jam_app) fn derive_legacy_mc202_source_phrase_plan(
                 .target
                 .object_id
                 .as_deref()
-                .or_else(|| match &action.params {
+                .or(match &action.params {
                     ActionParams::Mutation { target_id, .. } => target_id.as_deref(),
                     _ => None,
                 })?;
