@@ -860,6 +860,21 @@ Current limiter policy:
   device-free observations and virtual time. Core/Session and the existing tap
   remain authoritative; these tests do not establish callback or host health.
   Failed-stop summaries reflect observed lifecycle, not a hardcoded success.
+- RIOTBOX-1601 / RBX-462 exposes one cooperative capture-wait iteration in
+  that same private controller. A consumed owner carries immutable context and
+  one fixed existing deadline, borrowing App/runtime per call. Preserve sync,
+  runtime-health, progress-fault, completion and deadline precedence; faults
+  beat completion, completion beats timeout. Pending returns without sleeping,
+  finalizing, observation I/O or artifact publication; the unchanged blocking
+  wrapper alone waits its existing10ms before another poll. Terminal completion
+  performs final sync, pre-stop health and immediate verified device stop before
+  yielding control. Its stopped fact and optional internally plan-bound milestone
+  do not establish clean capture or publication; downstream late faults, finish,
+  read-back and Session gates remain authoritative. Preserve all current cleanup
+  and observer-disabled clock behavior. Initial transport confirmation and
+  terminal operations remain synchronous. This private non-Clone owner is not
+  a realtime API, cancellation-on-drop guarantee, new recorder, performer input
+  or receipt version; generated control tests grant no host/callback qualification.
 - the [generated loaded-Session V1 preparation](../benchmarks/generated_live_master_load_fixture_v1.md)
   (RIOTBOX-1577 / RBX-443) reuses normal ingest, committed actions, save/restore,
   recording-plan admission and the shared offline mixer. Its fixed generated

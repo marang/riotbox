@@ -76,6 +76,17 @@ Generated control proof is not actual callback, source, listening, original
 ALSA-trigger or host/endurance qualification. No public Audio test constructor,
 second recorder, new action, DSP or persistent App state belongs to this seam.
 
+RIOTBOX-1601 / RBX-462 deepens this controller with a private `capture_wait`
+owner for one complete supervisory iteration. Its consumed owner retains only
+immutable context and the existing fixed deadline; each call borrows App and
+runtime rather than copying Session or capture-progress truth. Continue yields
+that same owner; successful terminal return requires the existing final sync
+and verified device stop. A stopped fact is not a clean or published recording.
+Keep initial confirmation, optional post-stop observation, finish and publication
+in the existing lifecycle. The wrapper alone sleeps between pending polls.
+This is a semantic supervision boundary, not another recorder, asynchronous
+device API, cancellation-on-drop guard or new performer-input surface.
+
 RIOTBOX-1592 / RBX-453 shares only the typed transport handoff in private
 `cli::transport_sync` between the interactive loop and recorder. It owns delivery
 before observation and delivery after boundary commits, not a clock, action or
