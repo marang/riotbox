@@ -26,6 +26,8 @@ use std::{process::Command, sync::Arc, time::Instant};
 const COLD_TEST: &str = "runtime::shared_transport_tr909::output_callback::tests::cold_first_production_callback_has_no_heap_operations";
 const COLD_CHILD: &str = "RIOTBOX_CALLBACK_HEAP_COLD_CHILD";
 
+mod timing_publication;
+
 fn shared() -> AudioRuntimeSharedState {
     AudioRuntimeSharedState {
         telemetry: Arc::new(RuntimeTelemetry::new()),

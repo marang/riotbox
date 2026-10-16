@@ -57,6 +57,7 @@ because timing is unavailable.
 | App timing admission | 3 | Paused restore, pending Play/Pause and queued-action preservation, actual beat zero |
 | Audio lifecycle | 9 | Public shell absent before callback, first observed timing and existing lifecycle |
 | Exact production callback heap controls | 5 | Cold formats/active mix/overflow, lifecycle and control churn; isolated child subcases retained |
+| Actual callback timing/output handoff | 1 | Requested restored position withheld, first paused observation at 12.5, playing progress and source activity, stopped ramp silence; all seven callback invocations heap-free |
 | Diagnostic-lock controls | 4 | Timing remains independent of the error-buffer mutex; poison behavior unchanged |
 | Actual-source timing Loom models | 2 | First publication and one subsequent update versus a reader |
 | Recorder/controller after semantic test placement | 20 | Existing cases plus delayed/permanent-unavailable/fault admission |
@@ -68,6 +69,7 @@ These selections may overlap and are not summed as unique coverage. Logs:
 `/tmp/riotbox-1582-app-admission-green.log`,
 `/tmp/riotbox-1582-audio-lifecycle.log`,
 `/tmp/riotbox-1582-callback-heap.log`,
+`/tmp/riotbox-1582-actual-callback-timing.log`,
 `/tmp/riotbox-1582-timing-lock.log`,
 `/tmp/riotbox-1582-timing-loom-green.log`,
 `/tmp/riotbox-1582-recorder-post-move.log`, and
@@ -80,7 +82,13 @@ Removing the final revision validation fails the update model with the concrete
 impossible combination false/128 BPM/64.25 beats; restoring validation passes.
 Mutation log: `/tmp/riotbox-1582-coherence-mutation-red.log`. No mutation remains.
 
-New App and recorder timing-admission tests have ordinary semantic modules;
+The actual callback handoff uses only in-memory generated PCM anchored at the
+restored cursor; it opens no device. It observes timing from the processor CPAL
+actually invokes, verifies the worked 64-frame/48-kHz/120-BPM advance, active
+generated output on Play and silence after the existing Pause ramp. This is
+generated output-path evidence, not actual host timing or source qualification.
+
+New App, recorder and callback timing-admission tests have ordinary semantic modules;
 existing fixture ownership and old test bodies remain. This avoids growing
 unrelated scene/controller families for the new observation contract. No new
 dependency, public test constructor or generic test/launch framework is added.
@@ -97,6 +105,10 @@ Independent Spec/Evidence/Rust review also retained no findings and reran Loom
 Logs: `/tmp/riotbox-1582-spec-{loom,app-admission,recorder}.log`.
 Both checked the actual RED/mutation records, production callers, contract and
 report. Neither claims an independent host or full-runtime model test.
+Both also reviewed the final test-only callback handoff addition with no
+findings and independently reran that exact test successfully. Logs:
+`/tmp/riotbox-1582-review-actual-callback-timing.log` and
+`/tmp/riotbox-1582-spec-actual-callback.log`.
 
 Root Product/Risk self-review retains no finding: no unavailable-as-zero or
 requested-as-observed shortcut, no new persistent truth, callback blocking or
