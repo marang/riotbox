@@ -135,6 +135,13 @@ separate owner. Only the explicit upgrade function/error are newly re-exported;
 ordinary load/save/recording must not call it. Session's required typed policy is
 the persisted version authority, never an App cursor or second global sequence.
 
+RIOTBOX-1594 keeps MC-202 restore-input collection in the existing private App
+`restore_replay` owner. Its transient prefix index preserves first-match ActionId
+selection for unvalidated `from_parts` callers and traverses stored records in
+unchanged order. It neither admits policy/history nor sorts, repairs, caches or
+persists another replay model. The ordinary test child retains the former scan
+as an independent parity oracle; reconstruction and timing trust stay unchanged.
+
 ### Source Graph Timing Candidate Ownership
 
 `source_graph::timing_probe_candidates` preserves its public interface through

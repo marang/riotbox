@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use riotbox_core::{
     action::{Action, ActionStatus},
     replay::{
@@ -181,15 +183,19 @@ fn mc202_phrase_replay_inputs(
 ) -> Vec<Mc202PhraseReplayInput> {
     let target_action_cursor = target_action_cursor.min(session.action_log.actions.len());
     let committed_actions = &session.action_log.actions[..target_action_cursor];
+    let mut action_by_id = BTreeMap::new();
+    for action in committed_actions {
+        // from_parts is unvalidated: preserve the original scan's first match,
+        // including an ineligible duplicate masking a later eligible action.
+        action_by_id.entry(action.id).or_insert(action);
+    }
 
     session
         .action_log
         .commit_records
         .iter()
         .filter_map(|record| {
-            let action = committed_actions
-                .iter()
-                .find(|action| action.id == record.action_id)?;
+            let action = action_by_id.get(&record.action_id).copied()?;
             (action.status == ActionStatus::Committed
                 && action.result.as_ref().is_none_or(|result| result.accepted)
                 && is_mc202_phrase_action(action.command))
@@ -201,3 +207,6 @@ fn mc202_phrase_replay_inputs(
         })
         .collect()
 }
+
+#[cfg(test)]
+mod tests;
