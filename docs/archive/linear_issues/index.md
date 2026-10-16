@@ -1813,4 +1813,72 @@ This index tracks archived Linear ticket history that has been removed from the 
   Record the verified 2026-07-19 broad codebase review in repo docs
 - [RIOTBOX-1550.md](./RIOTBOX-1550.md)
   Freeze source-free limiter baseline protocol and exact RuntimeMix control proof
+- [RIOTBOX-1501.md](./RIOTBOX-1501.md)
+  Calibrate and document the inherited master-bus limiter headroom contract
+- [RIOTBOX-1551.md](./RIOTBOX-1551.md)
+  Add bounded 8/16-bar live master recording windows with versioned duration identity
+- [RIOTBOX-1552.md](./RIOTBOX-1552.md)
+  Reconcile legacy two-bar recording proof and readiness rounding without rewriting V2 evidence
+- [RIOTBOX-1553.md](./RIOTBOX-1553.md)
+  Qualify one eight-bar live master recording on the real host callback
+- [RIOTBOX-1554.md](./RIOTBOX-1554.md)
+  Make extended recording alignment-gate summaries report the actual bar count
+- [RIOTBOX-1555.md](./RIOTBOX-1555.md)
+  Export bounded 8/16-bar live master recordings as versioned DAWproject clips
+- [RIOTBOX-1556.md](./RIOTBOX-1556.md)
+  Bound source WAV reads and decoded PCM allocations without weakening identity admission
+- [RIOTBOX-1557.md](./RIOTBOX-1557.md)
+  Measure and bound snapshot/undo cursor replay planning cost without changing history semantics
+- [RIOTBOX-1558.md](./RIOTBOX-1558.md)
+  Instrument production callback heap activity including cold snapshots and capture lifecycle
+- [RIOTBOX-1559.md](./RIOTBOX-1559.md)
+  Bind Python and Rust source-ingest evidence to one verified byte identity before persistence
+- [RIOTBOX-1560.md](./RIOTBOX-1560.md)
+  Bound Sidecar response framing and fail closed on oversized replies
+- [RIOTBOX-1561.md](./RIOTBOX-1561.md)
+  Bound Python encoded-source admission before hashing and analysis
+- [RIOTBOX-1562.md](./RIOTBOX-1562.md)
+  Fail closed on malformed Python WAV containers without terminating the analysis peer
+- [RIOTBOX-1563.md](./RIOTBOX-1563.md)
+  Apply the existing decoded-sample limit before Python frame conversion and analysis
+- [RIOTBOX-1564.md](./RIOTBOX-1564.md)
+  Bind local DAW writer commits to the queued receipt before publishing proof files
+- [RIOTBOX-1565.md](./RIOTBOX-1565.md)
+  Fail closed on CPAL probe startup and callback-observation failures
+- [RIOTBOX-1566.md](./RIOTBOX-1566.md)
+  Observe source-free Linux callback continuity through isolated bounded host runs
+- [RIOTBOX-1567.md](./RIOTBOX-1567.md)
+  Version silent-host lifecycle checks for PipeWire object reuse and Pulse module identity
+- [RIOTBOX-1568.md](./RIOTBOX-1568.md)
+  Review current architecture after export and silent-host lifecycle hardening
+- [RIOTBOX-1569.md](./RIOTBOX-1569.md)
+  Bind product-mix export publication to the exact validated proof and copied bytes
+- [RIOTBOX-1570.md](./RIOTBOX-1570.md)
+  Execute one prospectively bound silent virtual-host observation with V2 checks
+- [RIOTBOX-1571.md](./RIOTBOX-1571.md)
+  Handle multiline Pulse module metadata without weakening exact owned-module identity
+- [RIOTBOX-1572.md](./RIOTBOX-1572.md)
+  Execute one prospectively bound silent V3 host observation after metadata repair
+- [RIOTBOX-1573.md](./RIOTBOX-1573.md)
+  Diagnose recorded silent V3 ALSA/PipeWire buffer error without retesting or relaxing gates
+- [RIOTBOX-1574.md](./RIOTBOX-1574.md)
+  Add bounded ALSA xrun measurements and execute one isolated silent diagnostic observation
+- [RIOTBOX-1575.md](./RIOTBOX-1575.md)
+  Make live-master recorder lifecycle device-free testable through one production seam
+- [RIOTBOX-1576.md](./RIOTBOX-1576.md)
+  Review current architecture after byte-bound export, host diagnostics and recorder control extraction
+- [RIOTBOX-1577.md](./RIOTBOX-1577.md)
+  Prepare a versioned generated live-master load fixture through the existing product spine
+- [RIOTBOX-1578.md](./RIOTBOX-1578.md)
+  Add isolated loaded-recorder observation adapter
+- [RIOTBOX-1579.md](./RIOTBOX-1579.md)
+  Run one prospectively bound isolated generated loaded-recorder observation
+- [RIOTBOX-1580.md](./RIOTBOX-1580.md)
+  Correct terminal non-Node ID recycling in loaded recorder observation
+- [RIOTBOX-1581.md](./RIOTBOX-1581.md)
+  Run one prospectively bound isolated generated loaded-recorder V2 observation
+- [RIOTBOX-1582.md](./RIOTBOX-1582.md)
+  Preserve restored transport until valid coherent callback timing is observed
+- [RIOTBOX-1583.md](./RIOTBOX-1583.md)
+  Checkpoint integrated callback timing, transport and recording trust boundaries
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
