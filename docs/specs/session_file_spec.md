@@ -1455,6 +1455,19 @@ unverified references and old-reader incompatibility. A later stdout failure
 explicitly acknowledges the already published destination. This maintenance
 command is not a performer ActionCommand and writes no action or receipt.
 
+RBX-456 guards non-append live commits and Undo against the unchanged declared
+Core replay policy before original mutation, so supported editing cannot
+successfully publish the demonstrated incompatible legacy Undo/Stop histories.
+Refusal preserves the pre-operation Session, typed restoration snapshots,
+queue/allocator, runtime/projections and existing file bytes. Earlier independent
+enqueue remains pending; no ID or record is repaired or renumbered. Immediate
+toggles include their new draft in admission, and timing entrances admit before
+clock/ack changes. No automatic migration, timestamp clamping, relaxed legacy
+validation or SnapshotOnly upgrade. V2 and valid legacy flows retain their
+meaning. The [replay contract](./replay_model_spec.md#72-action-ordering) owns
+admission details; this is not a general save validator or an external-I/O
+rollback promise.
+
 Each action must follow the Action Lexicon contract.
 
 Minimum stored fields:

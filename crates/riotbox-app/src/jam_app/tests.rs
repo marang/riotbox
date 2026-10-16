@@ -17,6 +17,8 @@ mod fixture_regressions_tr909_slam;
 mod fixtures;
 mod ghost_assist_queue;
 mod graph_transaction;
+mod legacy_commit_admission;
+mod legacy_undo_admission;
 mod live_source_timing;
 mod mc202_queue_timing;
 mod mc202_restore_replay;

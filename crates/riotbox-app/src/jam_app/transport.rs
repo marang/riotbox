@@ -10,7 +10,6 @@ use riotbox_core::{
         TargetScope,
     },
     queue::CommittedActionRef,
-    session::CommitSequenceExhausted,
     transport::TransportClockState,
 };
 
@@ -79,6 +78,7 @@ impl JamAppState {
             .transport
             .boundary_state(CommitBoundary::Immediate);
         self.preflight_immediate_enqueue()?;
+        self.preflight_legacy_immediate_draft(&draft, &boundary, requested_at)?;
         self.queue.enqueue(draft, requested_at)?;
         let committed = self.commit_ready_actions(boundary, requested_at)?;
 
@@ -89,7 +89,7 @@ impl JamAppState {
         &mut self,
         delta_beats: f64,
         committed_at: TimestampMs,
-    ) -> Result<Vec<CommittedActionRef>, CommitSequenceExhausted> {
+    ) -> Result<Vec<CommittedActionRef>, JamAppError> {
         if !self.runtime.transport.is_playing || delta_beats <= 0.0 {
             return Ok(Vec::new());
         }
@@ -104,7 +104,7 @@ impl JamAppState {
         );
         let crossed = crossed_commit_boundary(&previous, &next_clock, self.source_graph.as_ref());
         if let Some(boundary) = &crossed {
-            self.preflight_ready_actions(boundary)?;
+            self.preflight_ready_actions(boundary, committed_at)?;
         }
         self.update_transport_clock(next_clock);
 
@@ -119,7 +119,7 @@ impl JamAppState {
         &mut self,
         timing: Option<AudioRuntimeTimingSnapshot>,
         committed_at: TimestampMs,
-    ) -> Result<Vec<CommittedActionRef>, CommitSequenceExhausted> {
+    ) -> Result<Vec<CommittedActionRef>, JamAppError> {
         let Some(timing) = timing else {
             return Ok(Vec::new());
         };
@@ -153,7 +153,7 @@ impl JamAppState {
             .then(|| crossed_commit_boundary(&previous, &next_clock, self.source_graph.as_ref()))
             .flatten();
         if let Some(boundary) = &crossed {
-            self.preflight_ready_actions(boundary)?;
+            self.preflight_ready_actions(boundary, committed_at)?;
         }
         self.runtime.transport_driver.pending_audio_is_playing = None;
         self.update_transport_clock(next_clock.clone());

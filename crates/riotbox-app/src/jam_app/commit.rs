@@ -1,13 +1,9 @@
 use riotbox_core::{
     TimestampMs,
-    action::{
-        Action, ActionCommand, ActionParams, ActionResult, ActionStatus, ActionTarget, ActorType,
-        CommitBoundary, Quantization, TargetScope, TypedUndoStateDomain, UndoPolicy,
-    },
-    ids::ActionId,
+    action::{Action, ActionCommand, ActionDraft, ActionResult, CommitBoundary},
     queue::CommittedActionRef,
     session::{
-        ActionCommitRecord, CaptureRef, CommitSequenceExhausted, Mc202UndoSnapshotState,
+        ActionCommitRecord, ActionLog, CaptureRef, CommitSequenceExhausted, Mc202UndoSnapshotState,
         SourceMonitorUndoSnapshotState, Tr909FillUndoSnapshotState,
     },
     source_graph::SourceGraph,
@@ -19,196 +15,36 @@ use super::{
     JamAppError, JamAppState, apply_capture_promotion_side_effects, capture_promotion_summary,
     capture_ref_from_action, is_mc202_phrase_action, update_logged_action_result,
 };
-use crate::jam_app::helpers::{
-    action_has_typed_undo_snapshot, append_capture_note, normalize_missing_typed_undo_policies,
-};
+use crate::jam_app::helpers::append_capture_note;
+
+mod admission;
+mod typed_undo;
+
+// Actual and prospective histories share the same record construction owner.
+fn record_committed_action_in_log(
+    log: &mut ActionLog,
+    action: Action,
+    committed_ref: &CommittedActionRef,
+    committed_at: TimestampMs,
+) -> Action {
+    log.actions.push(action.clone());
+    log.commit_records.push(ActionCommitRecord {
+        action_id: committed_ref.action_id,
+        boundary: committed_ref.boundary.clone(),
+        commit_sequence: committed_ref.commit_sequence,
+        committed_at,
+        mc202_source_phrase_plan: None,
+    });
+    action
+}
 
 impl JamAppState {
-    pub fn undo_last_action(
-        &mut self,
-        requested_at: TimestampMs,
-    ) -> Result<Option<Action>, JamAppError> {
-        let undone_index = latest_trusted_typed_undo_index(&self.session);
-        let Some(undone_index) = undone_index else {
-            let normalized_missing_snapshots =
-                normalize_missing_typed_undo_policies(&mut self.session);
-            if normalized_missing_snapshots {
-                self.refresh_view();
-            }
-            return Ok(None);
-        };
-
-        let undone_action_id = self.session.action_log.actions[undone_index].id;
-        let undo_boundary = CommitBoundaryState {
-            kind: CommitBoundary::Immediate,
-            beat_index: self.runtime.transport.beat_index,
-            bar_index: self.runtime.transport.bar_index,
-            phrase_index: self.runtime.transport.phrase_index,
-            scene_id: self.runtime.transport.current_scene.clone(),
-        };
-        // Preserve the trusted target and its snapshot until both capacities
-        // have admitted the marker; sequence refusal precedes ID allocation.
-        let mut sequences = self
-            .session
-            .action_log
-            .prepare_commit_sequences(&undo_boundary, 1)?;
-        let commit_sequence = sequences.next().ok_or_else(|| {
-            JamAppError::InvalidSession("admitted Undo marker sequence missing".into())
-        })?;
-        let next_undo_action_id = self.queue.allocate_action_id()?;
-        normalize_missing_typed_undo_policies(&mut self.session);
-        let undone_command = self.session.action_log.actions[undone_index].command;
-        let is_mc202_undo = is_mc202_phrase_action(undone_command);
-        let is_source_monitor_undo = undone_command == ActionCommand::SourceMonitorSetMode;
-        let is_tr909_fill_undo = undone_command == ActionCommand::Tr909FillNext;
-        let mc202_restored = if is_mc202_undo {
-            self.restore_mc202_undo_snapshot(undone_action_id)
-        } else {
-            false
-        };
-        let source_monitor_restored = if is_source_monitor_undo {
-            self.restore_source_monitor_undo_snapshot(undone_action_id)
-        } else {
-            false
-        };
-        let tr909_fill_restored = if is_tr909_fill_undo {
-            self.restore_tr909_fill_undo_snapshot(undone_action_id)
-        } else {
-            false
-        };
-        if (is_mc202_undo && !mc202_restored)
-            || (is_source_monitor_undo && !source_monitor_restored)
-            || (is_tr909_fill_undo && !tr909_fill_restored)
-        {
-            return Ok(None);
-        }
-
-        let undo_summary = match (mc202_restored, source_monitor_restored, tr909_fill_restored) {
-            (true, false, false) => {
-                format!("undone by user at {requested_at}; restored MC-202 lane state")
-            }
-            (false, true, false) => {
-                format!("undone by user at {requested_at}; restored source monitor mode")
-            }
-            (false, false, true) => {
-                format!("undone by user at {requested_at}; restored TR-909 Fill state")
-            }
-            _ => format!("undone by user at {requested_at}"),
-        };
-
-        {
-            let undone = &mut self.session.action_log.actions[undone_index];
-            undone.status = ActionStatus::Undone;
-            undone.result = Some(ActionResult {
-                accepted: true,
-                summary: undo_summary,
-            });
-        }
-
-        let undo_action = Action {
-            id: next_undo_action_id,
-            actor: ActorType::User,
-            command: ActionCommand::UndoLast,
-            params: ActionParams::Undo {
-                target_action_id: undone_action_id,
-            },
-            target: ActionTarget {
-                scope: Some(TargetScope::Session),
-                ..Default::default()
-            },
-            requested_at,
-            quantization: Quantization::Immediate,
-            status: ActionStatus::Committed,
-            committed_at: Some(requested_at),
-            result: Some(ActionResult {
-                accepted: true,
-                summary: "undid most recent undoable action".into(),
-            }),
-            undo_policy: riotbox_core::action::UndoPolicy::NotUndoable {
-                reason: "undo marker actions are not themselves undoable".into(),
-            },
-            explanation: Some("undo most recent committed action".into()),
-        };
-
-        let mut committed_ref = CommittedActionRef {
-            action_id: undo_action.id,
-            boundary: undo_boundary.clone(),
-            commit_sequence,
-        };
-        self.record_committed_action(undo_action.clone(), &mut committed_ref, requested_at);
-        self.runtime.last_commit_boundary = Some(undo_boundary);
-        self.refresh_view();
-        Ok(Some(undo_action))
-    }
-
-    fn restore_mc202_undo_snapshot(&mut self, action_id: ActionId) -> bool {
-        let Some(snapshot_index) = self
-            .session
-            .runtime_state
-            .undo_state
-            .mc202_snapshots
-            .iter()
-            .rposition(|snapshot| snapshot.action_id == action_id)
-        else {
-            return false;
-        };
-        let snapshot = self
-            .session
-            .runtime_state
-            .undo_state
-            .mc202_snapshots
-            .remove(snapshot_index);
-        snapshot.apply_to_session(&mut self.session);
-        true
-    }
-
-    fn restore_source_monitor_undo_snapshot(&mut self, action_id: ActionId) -> bool {
-        let Some(snapshot_index) = self
-            .session
-            .runtime_state
-            .undo_state
-            .source_monitor_snapshots
-            .iter()
-            .rposition(|snapshot| snapshot.action_id == action_id)
-        else {
-            return false;
-        };
-        let snapshot = self
-            .session
-            .runtime_state
-            .undo_state
-            .source_monitor_snapshots
-            .remove(snapshot_index);
-        snapshot.apply_to_session(&mut self.session);
-        true
-    }
-
-    fn restore_tr909_fill_undo_snapshot(&mut self, action_id: ActionId) -> bool {
-        let Some(snapshot_index) = self
-            .session
-            .runtime_state
-            .undo_state
-            .tr909_fill_snapshots
-            .iter()
-            .rposition(|snapshot| snapshot.action_id == action_id)
-        else {
-            return false;
-        };
-        let snapshot = self
-            .session
-            .runtime_state
-            .undo_state
-            .tr909_fill_snapshots
-            .remove(snapshot_index);
-        snapshot.apply_to_session(&mut self.session);
-        true
-    }
-
     pub fn commit_ready_actions(
         &mut self,
         boundary: CommitBoundaryState,
         committed_at: TimestampMs,
-    ) -> Result<Vec<CommittedActionRef>, CommitSequenceExhausted> {
+    ) -> Result<Vec<CommittedActionRef>, JamAppError> {
+        self.preflight_ready_actions(&boundary, committed_at)?;
         let mut committed = self.queue.commit_ready_for_transport(
             &self.session.action_log,
             boundary.clone(),
@@ -234,18 +70,12 @@ impl JamAppState {
         committed_ref: &mut CommittedActionRef,
         committed_at: TimestampMs,
     ) -> Action {
-        self.session.action_log.actions.push(action.clone());
-        self.session
-            .action_log
-            .commit_records
-            .push(ActionCommitRecord {
-                action_id: committed_ref.action_id,
-                boundary: committed_ref.boundary.clone(),
-                commit_sequence: committed_ref.commit_sequence,
-                committed_at,
-                mc202_source_phrase_plan: None,
-            });
-        action
+        record_committed_action_in_log(
+            &mut self.session.action_log,
+            action,
+            committed_ref,
+            committed_at,
+        )
     }
 
     pub(in crate::jam_app) fn preflight_immediate_commit(
@@ -282,12 +112,33 @@ impl JamAppState {
     pub(in crate::jam_app) fn preflight_ready_actions(
         &self,
         boundary: &CommitBoundaryState,
-    ) -> Result<(), CommitSequenceExhausted> {
+        committed_at: TimestampMs,
+    ) -> Result<(), JamAppError> {
         let count = self.queue.ready_action_count_for_transport(boundary.kind);
         self.session
             .action_log
             .prepare_commit_sequences(boundary, count)?;
-        Ok(())
+        admission::preflight_ready_legacy_commits(
+            &self.queue,
+            &self.session.action_log,
+            boundary,
+            committed_at,
+        )
+    }
+
+    pub(in crate::jam_app) fn preflight_legacy_immediate_draft(
+        &self,
+        draft: &ActionDraft,
+        boundary: &CommitBoundaryState,
+        requested_at: TimestampMs,
+    ) -> Result<(), JamAppError> {
+        admission::preflight_legacy_draft(
+            &self.queue,
+            &self.session.action_log,
+            draft,
+            boundary,
+            requested_at,
+        )
     }
 
     fn apply_committed_action_pipeline(&mut self, action: &Action, boundary: &CommitBoundaryState) {
@@ -483,47 +334,6 @@ impl JamAppState {
             _ => {}
         }
     }
-}
-
-fn latest_trusted_typed_undo_index(session: &riotbox_core::session::SessionFile) -> Option<usize> {
-    let domains = [
-        TypedUndoStateDomain::Mc202Lane,
-        TypedUndoStateDomain::SourceMonitorMode,
-        TypedUndoStateDomain::Tr909FillWindow,
-    ];
-    let mut blocked_domains = std::collections::BTreeSet::new();
-
-    for (index, action) in session.action_log.actions.iter().enumerate().rev() {
-        let committed_effect_may_exist = action.status == ActionStatus::Committed
-            && !action
-                .result
-                .as_ref()
-                .is_some_and(|result| !result.accepted);
-        if let Some(domain) = action.command.typed_undo_state_domain()
-            && !blocked_domains.contains(&domain)
-            && matches!(action.undo_policy, UndoPolicy::Undoable)
-            && action.result.as_ref().is_some_and(|result| result.accepted)
-            && session
-                .action_log
-                .commit_records
-                .iter()
-                .filter(|record| record.action_id == action.id)
-                .count()
-                == 1
-            && action_has_typed_undo_snapshot(session, action)
-        {
-            return Some(index);
-        }
-
-        if committed_effect_may_exist {
-            blocked_domains.extend(
-                domains
-                    .into_iter()
-                    .filter(|domain| action.command.mutates_typed_undo_state_domain(*domain)),
-            );
-        }
-    }
-    None
 }
 
 fn feral_resample_policy_summary(

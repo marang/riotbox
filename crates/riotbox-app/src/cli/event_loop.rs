@@ -632,6 +632,7 @@ pub(in crate::cli) fn run_event_loop(
                             Some(
                                 crate::jam_app::JamAppError::ActionIdExhausted(_)
                                     | crate::jam_app::JamAppError::CommitSequenceExhausted(_)
+                                    | crate::jam_app::JamAppError::ReplayAdmission { .. }
                             )
                         ) =>
                 {

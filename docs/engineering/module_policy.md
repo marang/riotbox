@@ -145,6 +145,15 @@ generations; callers retain their distinct path and error policies. The thin
 App CLI owns strict exclusive argument routing and headless JSON presentation,
 never chronology or artifact hydration. No generic migration framework.
 
+RIOTBOX-1597 / RBX-456 keeps the App `commit` facade and introduces private
+semantic `typed_undo` and `admission` owners beneath it. One typed Undo operation
+serves staged legacy and ordinary V2 state; the existing Queue remains the only
+ID/commit allocator. Prospective legacy metadata goes to the unchanged Core
+planner, never a duplicate live replay validator. Share the canonical record
+append helper across actual and prospective histories. Typed App errors expose
+policy refusal; no state is added to the facade or serialized model. Timing and
+immediate-toggle consumers admit before their own mutation boundaries.
+
 RIOTBOX-1594 keeps MC-202 restore-input collection in the existing private App
 `restore_replay` owner. Its transient prefix index preserves first-match ActionId
 selection for unvalidated `from_parts` callers and traverses stored records in

@@ -88,6 +88,14 @@ pub enum ReplayPlanError {
     },
 }
 
+impl std::fmt::Display for ReplayPlanError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(formatter, "invalid replay history: {self:?}")
+    }
+}
+
+impl std::error::Error for ReplayPlanError {}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct ReplayPlanEntry<'a> {
     pub action: &'a Action,
