@@ -95,7 +95,7 @@ fn local_writer_rejects_missing_empty_unknown_or_wrong_scope_queued_identity() {
             destination_path: Some(destination.to_string_lossy().into_owned()),
             receipt_id: receipt_id.map(str::to_owned),
         };
-        let action_id = state.queue.enqueue(draft, 960);
+        let action_id = state.queue.enqueue(draft, 960).unwrap();
         assert_rejected_without_mutation(&mut state, dir.path(), &destination, action_id);
     }
 }
@@ -193,11 +193,14 @@ fn assert_written_identity(
 }
 
 fn queue_writer(state: &mut JamAppState, base: &Path, destination: &Path) -> ActionId {
-    match state.queue_daw_session_writer_export(
-        960,
-        Some(base),
-        Some(destination.to_string_lossy().into_owned()),
-    ) {
+    match state
+        .queue_daw_session_writer_export(
+            960,
+            Some(base),
+            Some(destination.to_string_lossy().into_owned()),
+        )
+        .unwrap()
+    {
         DawSessionExportQueueResult::Enqueued { action_id } => action_id,
         other => panic!("expected writer queue admission, got {other:?}"),
     }

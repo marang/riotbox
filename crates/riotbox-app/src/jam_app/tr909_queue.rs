@@ -1,4 +1,5 @@
 use super::state::{JamAppState, QueueControlResult};
+use riotbox_core::queue::ActionIdExhausted;
 use riotbox_core::{
     TimestampMs,
     action::{
@@ -9,7 +10,7 @@ use riotbox_core::{
 };
 
 impl JamAppState {
-    pub fn queue_tr909_fill(&mut self, requested_at: TimestampMs) {
+    pub fn queue_tr909_fill(&mut self, requested_at: TimestampMs) -> Result<(), ActionIdExhausted> {
         let mut draft = ActionDraft::new(
             ActorType::User,
             ActionCommand::Tr909FillNext,
@@ -20,11 +21,15 @@ impl JamAppState {
             },
         );
         draft.explanation = Some("trigger TR-909 fill on next bar".into());
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
+        Ok(())
     }
 
-    pub fn queue_tr909_reinforce(&mut self, requested_at: TimestampMs) {
+    pub fn queue_tr909_reinforce(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Result<(), ActionIdExhausted> {
         let mut draft = ActionDraft::new(
             ActorType::User,
             ActionCommand::Tr909ReinforceBreak,
@@ -35,8 +40,9 @@ impl JamAppState {
             },
         );
         draft.explanation = Some("reinforce next phrase with TR-909 drum layer".into());
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
+        Ok(())
     }
 
     fn tr909_takeover_change_pending(&self) -> bool {
@@ -50,14 +56,17 @@ impl JamAppState {
         })
     }
 
-    pub fn queue_tr909_slam_toggle(&mut self, requested_at: TimestampMs) -> bool {
+    pub fn queue_tr909_slam_toggle(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Result<bool, ActionIdExhausted> {
         if self
             .queue
             .pending_actions()
             .iter()
             .any(|action| action.command == ActionCommand::Tr909SetSlam)
         {
-            return false;
+            return Ok(false);
         }
 
         let enabling = !self.session.runtime_state.lane_state.tr909.slam_enabled;
@@ -85,17 +94,20 @@ impl JamAppState {
         } else {
             "disable TR-909 slam".into()
         });
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        true
+        Ok(true)
     }
 
-    pub fn queue_tr909_takeover(&mut self, requested_at: TimestampMs) -> QueueControlResult {
+    pub fn queue_tr909_takeover(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Result<QueueControlResult, ActionIdExhausted> {
         if self.tr909_takeover_change_pending() {
-            return QueueControlResult::AlreadyPending;
+            return Ok(QueueControlResult::AlreadyPending);
         }
         if self.session.runtime_state.lane_state.tr909.takeover_enabled {
-            return QueueControlResult::AlreadyInState;
+            return Ok(QueueControlResult::AlreadyInState);
         }
 
         let mut draft = ActionDraft::new(
@@ -112,21 +124,24 @@ impl JamAppState {
             target_id: Some("takeover".into()),
         };
         draft.explanation = Some("engage controlled TR-909 takeover on next phrase".into());
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        QueueControlResult::Enqueued
+        Ok(QueueControlResult::Enqueued)
     }
 
-    pub fn queue_tr909_scene_lock(&mut self, requested_at: TimestampMs) -> QueueControlResult {
+    pub fn queue_tr909_scene_lock(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Result<QueueControlResult, ActionIdExhausted> {
         if self.tr909_takeover_change_pending() {
-            return QueueControlResult::AlreadyPending;
+            return Ok(QueueControlResult::AlreadyPending);
         }
 
         if self.session.runtime_state.lane_state.tr909.takeover_enabled
             && self.session.runtime_state.lane_state.tr909.takeover_profile
                 == Some(Tr909TakeoverProfileState::SceneLockTakeover)
         {
-            return QueueControlResult::AlreadyInState;
+            return Ok(QueueControlResult::AlreadyInState);
         }
 
         let mut draft = ActionDraft::new(
@@ -143,17 +158,20 @@ impl JamAppState {
             target_id: Some("scene_lock".into()),
         };
         draft.explanation = Some("engage scene-lock TR-909 variation on next phrase".into());
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        QueueControlResult::Enqueued
+        Ok(QueueControlResult::Enqueued)
     }
 
-    pub fn queue_tr909_release(&mut self, requested_at: TimestampMs) -> QueueControlResult {
+    pub fn queue_tr909_release(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Result<QueueControlResult, ActionIdExhausted> {
         if self.tr909_takeover_change_pending() {
-            return QueueControlResult::AlreadyPending;
+            return Ok(QueueControlResult::AlreadyPending);
         }
         if !self.session.runtime_state.lane_state.tr909.takeover_enabled {
-            return QueueControlResult::AlreadyInState;
+            return Ok(QueueControlResult::AlreadyInState);
         }
 
         let mut draft = ActionDraft::new(
@@ -170,8 +188,8 @@ impl JamAppState {
             target_id: Some("release".into()),
         };
         draft.explanation = Some("release controlled TR-909 takeover on next phrase".into());
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        QueueControlResult::Enqueued
+        Ok(QueueControlResult::Enqueued)
     }
 }

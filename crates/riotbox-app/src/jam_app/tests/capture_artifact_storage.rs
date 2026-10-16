@@ -29,7 +29,7 @@ fn session_in(dir: &Path, name: &str, level: f32) -> JamAppState {
 }
 
 fn capture(state: &mut JamAppState) {
-    state.queue_capture_bar(300);
+    state.queue_capture_bar(300).unwrap();
     commit_w30_replay_step(state, CommitBoundary::Phrase, 0, 1, 0, 400);
     assert_eq!(state.session.captures.len(), 1);
     assert!(state.session.captures[0].audio_identity.is_some());
@@ -78,10 +78,10 @@ fn sessions_sharing_a_directory_preserve_each_others_capture_audio() {
 }
 
 fn print(state: &mut JamAppState) {
-    assert!(state.queue_promote_last_capture(410));
+    assert!(state.queue_promote_last_capture(410).unwrap());
     commit_w30_replay_step(state, CommitBoundary::Bar, 4, 2, 0, 500);
     assert_eq!(
-        state.queue_w30_internal_resample(650),
+        state.queue_w30_internal_resample(650).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     commit_w30_replay_step(state, CommitBoundary::Phrase, 32, 8, 2, 740);
@@ -169,7 +169,7 @@ fn artifact_write_failure_never_installs_a_trusted_capture() {
     let blocked_parent = dir.path().join("regular-file-not-a-directory");
     fs::write(&blocked_parent, b"existing user content").unwrap();
     state.files.as_mut().unwrap().session_path = blocked_parent.join("session.json");
-    state.queue_capture_bar(300);
+    state.queue_capture_bar(300).unwrap();
     commit_w30_replay_step(&mut state, CommitBoundary::Phrase, 0, 1, 0, 400);
     let capture = &state.session.captures[0];
     assert!(capture.audio_identity.is_none());

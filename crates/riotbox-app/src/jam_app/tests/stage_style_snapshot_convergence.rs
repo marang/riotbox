@@ -40,7 +40,7 @@ fn stage_style_snapshot_payload_restore_converges_supported_multi_lane_suffix() 
     let before_stage_run = render_scene_recipe_mix_buffer(&committed_state);
 
     assert_eq!(
-        committed_state.queue_scene_select(300),
+        committed_state.queue_scene_select(300).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_stage_style_step(
@@ -54,7 +54,7 @@ fn stage_style_snapshot_payload_restore_converges_supported_multi_lane_suffix() 
     );
 
     assert_eq!(
-        committed_state.queue_mc202_generate_answer(500),
+        committed_state.queue_mc202_generate_answer(500).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_stage_style_step(
@@ -68,7 +68,7 @@ fn stage_style_snapshot_payload_restore_converges_supported_multi_lane_suffix() 
     );
     let anchor_mix = render_scene_recipe_mix_buffer(&committed_state);
 
-    committed_state.queue_tr909_fill(700);
+    committed_state.queue_tr909_fill(700).unwrap();
     commit_stage_style_step(
         &mut committed_state,
         CommitBoundary::Bar,
@@ -79,7 +79,7 @@ fn stage_style_snapshot_payload_restore_converges_supported_multi_lane_suffix() 
         760,
     );
 
-    assert!(committed_state.queue_tr909_slam_toggle(900));
+    assert!(committed_state.queue_tr909_slam_toggle(900).unwrap());
     commit_stage_style_step(
         &mut committed_state,
         CommitBoundary::Beat,
@@ -91,7 +91,7 @@ fn stage_style_snapshot_payload_restore_converges_supported_multi_lane_suffix() 
     );
 
     assert_eq!(
-        committed_state.queue_scene_restore(1_100),
+        committed_state.queue_scene_restore(1_100).unwrap(),
         QueueControlResult::Enqueued
     );
     commit_stage_style_step(

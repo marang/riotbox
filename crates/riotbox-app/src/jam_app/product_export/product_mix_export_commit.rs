@@ -64,7 +64,7 @@ impl JamAppState {
             let error = JamAppError::InvalidSession(
                 "product mix export requires an active Source Graph identity".into(),
             );
-            self.reject_product_mix_export_request(requested_at, error.to_string());
+            self.reject_product_mix_export_request(requested_at, error.to_string())?;
             return Err(error);
         };
         self.commit_product_mix_export_from_proof_with_source_identity(
@@ -79,15 +79,21 @@ impl JamAppState {
         &mut self,
         requested_at: TimestampMs,
         reason: impl Into<String>,
-    ) -> ActionId {
-        let action_id = self.pending_export_action_id().unwrap_or_else(|| {
-            self.queue_product_mix_export(requested_at, None);
-            self.pending_export_action_id()
-                .expect("queued export action should be pending")
-        });
+    ) -> Result<ActionId, JamAppError> {
+        let action_id = match self.pending_export_action_id() {
+            Some(action_id) => action_id,
+            None => {
+                self.queue_product_mix_export(requested_at, None)?;
+                self.pending_export_action_id().ok_or_else(|| {
+                    JamAppError::InvalidSession(
+                        "queued product export action is not pending".into(),
+                    )
+                })?
+            }
+        };
         self.queue.reject(action_id, reason);
         self.refresh_view();
-        action_id
+        Ok(action_id)
     }
 
     fn commit_product_mix_export_from_proof_with_source_identity(
@@ -98,14 +104,20 @@ impl JamAppState {
         expected_source_hash: Option<&str>,
     ) -> Result<ExportReceiptState, JamAppError> {
         let destination_dir = destination_dir.as_ref();
-        let action_id = self.pending_export_action_id().unwrap_or_else(|| {
-            self.queue_product_mix_export(
-                requested_at,
-                Some(destination_dir.to_string_lossy().into_owned()),
-            );
-            self.pending_export_action_id()
-                .expect("queued export action should be pending")
-        });
+        let action_id = match self.pending_export_action_id() {
+            Some(action_id) => action_id,
+            None => {
+                self.queue_product_mix_export(
+                    requested_at,
+                    Some(destination_dir.to_string_lossy().into_owned()),
+                )?;
+                self.pending_export_action_id().ok_or_else(|| {
+                    JamAppError::InvalidSession(
+                        "queued product export action is not pending".into(),
+                    )
+                })?
+            }
+        };
 
         let export_result =
             prepare_product_mix_export(proof_path.as_ref(), destination_dir, expected_source_hash);

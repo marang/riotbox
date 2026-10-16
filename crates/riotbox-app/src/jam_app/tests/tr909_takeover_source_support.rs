@@ -40,7 +40,7 @@ fn committed_tr909_fill_and_reinforce_write_log_results() {
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    state.queue_tr909_fill(300);
+    state.queue_tr909_fill(300).unwrap();
     let committed_fill = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,
@@ -58,7 +58,7 @@ fn committed_tr909_fill_and_reinforce_write_log_results() {
         Some("triggered TR-909 fill at beat 37, bar 10, phrase 2")
     );
 
-    state.queue_tr909_reinforce(500);
+    state.queue_tr909_reinforce(500).unwrap();
     let committed_reinforce = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Phrase,
@@ -95,7 +95,7 @@ fn fill_owns_only_its_commit_bar_then_slam_articulates_break_reinforcement() {
         phrase_index: 1,
         current_scene: scene.clone(),
     });
-    state.queue_tr909_fill(300);
+    state.queue_tr909_fill(300).unwrap();
     let fill = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,
@@ -133,7 +133,7 @@ fn fill_owns_only_its_commit_bar_then_slam_articulates_break_reinforcement() {
     );
     assert!(!state.runtime.tr909_render.slam_enabled);
 
-    assert!(state.queue_tr909_slam_toggle(500));
+    assert!(state.queue_tr909_slam_toggle(500).unwrap());
     let slam = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Beat,
@@ -163,7 +163,7 @@ fn committed_tr909_takeover_and_release_update_lane_state() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_tr909_takeover(300),
+        state.queue_tr909_takeover(300).unwrap(),
         QueueControlResult::Enqueued
     );
     let committed_takeover = state.commit_ready_actions(
@@ -249,7 +249,7 @@ fn committed_tr909_takeover_and_release_update_lane_state() {
     });
 
     assert_eq!(
-        state.queue_tr909_scene_lock(450),
+        state.queue_tr909_scene_lock(450).unwrap(),
         QueueControlResult::Enqueued
     );
     let committed_scene_lock = state.commit_ready_actions(
@@ -317,7 +317,10 @@ fn committed_tr909_takeover_and_release_update_lane_state() {
         current_scene: Some(SceneId::from("scene-1")),
     });
 
-    assert_eq!(state.queue_tr909_release(500), QueueControlResult::Enqueued);
+    assert_eq!(
+        state.queue_tr909_release(500).unwrap(),
+        QueueControlResult::Enqueued
+    );
     let committed_release = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Phrase,

@@ -21,10 +21,9 @@ fn reserved_live_recording_export_queue_attempt_is_rejected_without_side_effects
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    let result = state.queue_live_recording_export_reserved(
-        970,
-        Some(destination.to_string_lossy().into_owned()),
-    );
+    let result = state
+        .queue_live_recording_export_reserved(970, Some(destination.to_string_lossy().into_owned()))
+        .unwrap();
 
     let reason = match result {
         LiveRecordingExportQueueResult::Rejected { reason } => reason,

@@ -410,7 +410,9 @@ fn observer_snapshot_reports_requested_product_export_lifecycle() {
         None,
         ActionQueue::new(),
     );
-    state.queue_product_mix_export(902, Some("exports".into()));
+    state
+        .queue_product_mix_export(902, Some("exports".into()))
+        .expect("generated action ID available");
     let shell = JamShellState::new(state, ShellLaunchMode::Load);
 
     let snapshot = observer_snapshot(&shell);

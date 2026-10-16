@@ -55,7 +55,7 @@ fn committed_w30_bank_swap_updates_lane_focus_and_log_result() {
     state.refresh_view();
 
     assert_eq!(
-        state.queue_w30_swap_bank(612),
+        state.queue_w30_swap_bank(612).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
 
@@ -151,7 +151,7 @@ fn committed_w30_slice_pool_browse_updates_last_capture_and_log_result() {
     state.refresh_view();
 
     assert_eq!(
-        state.queue_w30_browse_slice_pool(713),
+        state.queue_w30_browse_slice_pool(713).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
 
@@ -254,7 +254,7 @@ fn committed_w30_damage_profile_updates_grit_and_log_result() {
     );
 
     assert_eq!(
-        state.queue_w30_apply_damage_profile(620),
+        state.queue_w30_apply_damage_profile(620).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
 
@@ -297,7 +297,7 @@ fn committed_w30_damage_profile_updates_grit_and_log_result() {
     );
 
     assert_eq!(
-        state.queue_w30_apply_damage_profile(721),
+        state.queue_w30_apply_damage_profile(721).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     assert!(matches!(
@@ -367,7 +367,7 @@ fn committed_w30_hook_turnaround_persists_and_replays_the_exact_boundary_without
     let replay_base = state.session.clone();
 
     assert_eq!(
-        state.queue_w30_hook_turnaround(630),
+        state.queue_w30_hook_turnaround(630).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     let committed = state.commit_ready_actions(
@@ -464,7 +464,7 @@ fn committed_w30_pitch_dive_persists_projects_and_replays_without_grit_change() 
     let replay_base = state.session.clone();
 
     assert_eq!(
-        state.queue_w30_pitch_dive(631),
+        state.queue_w30_pitch_dive(631).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     let committed = state.commit_ready_actions(
@@ -560,7 +560,7 @@ fn ordinary_w30_trigger_recovers_from_completed_pitch_dive_in_live_state_and_rep
     let replay_base = state.session.clone();
 
     assert_eq!(
-        state.queue_w30_pitch_dive(700),
+        state.queue_w30_pitch_dive(700).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     assert_eq!(
@@ -589,7 +589,7 @@ fn ordinary_w30_trigger_recovers_from_completed_pitch_dive_in_live_state_and_rep
     );
 
     assert_eq!(
-        state.queue_w30_trigger_pad(702),
+        state.queue_w30_trigger_pad(702).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     assert_eq!(
@@ -670,7 +670,7 @@ fn committed_w30_filter_slam_persists_projects_and_replays_without_other_lane_ch
     let unchanged_source_monitor = state.session.runtime_state.source_monitor.clone();
 
     assert_eq!(
-        state.queue_w30_filter_slam(635),
+        state.queue_w30_filter_slam(635).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     let committed = state.commit_ready_actions(
@@ -861,7 +861,7 @@ fn committed_w30_step_focus_updates_lane_focus_and_preview() {
     state.refresh_view();
 
     assert_eq!(
-        state.queue_w30_step_focus(612),
+        state.queue_w30_step_focus(612).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
 

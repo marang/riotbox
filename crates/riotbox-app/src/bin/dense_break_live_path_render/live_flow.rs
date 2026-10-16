@@ -171,7 +171,7 @@ pub fn prepare(
     let mut transitions = Vec::new();
 
     let before_w = render_plan(&state, bpm, w_cursor as f64);
-    if state.queue_w30_trigger_pad(500) != Some(QueueControlResult::Enqueued) {
+    if state.queue_w30_trigger_pad(500)? != Some(QueueControlResult::Enqueued) {
         return Err("W-30 hit was unavailable".into());
     }
     let scene = current_scene(&state);
@@ -271,7 +271,7 @@ pub fn prepare(
         )
         .into());
     }
-    if !state.queue_tr909_slam_toggle(700) {
+    if !state.queue_tr909_slam_toggle(700)? {
         return Err("TR-909 slam was already pending".into());
     }
     let scene = current_scene(&state);
@@ -319,7 +319,7 @@ pub fn prepare(
 
     update_transport_position(&mut state, fill_cursor);
     let before_f = render_plan(&state, bpm, fill_cursor as f64);
-    state.queue_tr909_fill(600);
+    state.queue_tr909_fill(600)?;
     let scene = current_scene(&state);
     let f_commit = one_commit(commit(
         &mut state,
@@ -373,7 +373,7 @@ pub fn prepare(
         .clone();
     let pre_y_render_anchor = before_y.source_monitor_render.source_anchor_seconds;
     let expected_restore_anchor = scene_source_anchor_seconds(&state, &pre_y_scene);
-    if state.queue_scene_select(800) != QueueControlResult::Enqueued {
+    if state.queue_scene_select(800)? != QueueControlResult::Enqueued {
         return Err("scene jump was unavailable".into());
     }
     let scene = current_scene(&state);
@@ -468,7 +468,7 @@ pub fn prepare(
     // modifies W-30 playback at the same bar boundary. This keeps Scene truth and performer
     // damage ownership distinguishable even though the audible return intentionally combines them.
     let mut restore_only_control = state.clone();
-    if restore_only_control.queue_scene_restore(890) != QueueControlResult::Enqueued {
+    if restore_only_control.queue_scene_restore(890)? != QueueControlResult::Enqueued {
         return Err("restore-only control was unavailable after the landed jump".into());
     }
     let restore_only_scene = current_scene(&restore_only_control);
@@ -486,10 +486,10 @@ pub fn prepare(
         ActionCommand::SceneRestore,
     )?;
     let restore_only_plan = render_plan(&restore_only_control, bpm, restore_cursor as f64);
-    if state.queue_scene_restore(900) != QueueControlResult::Enqueued {
+    if state.queue_scene_restore(900)? != QueueControlResult::Enqueued {
         return Err("scene restore was unavailable after the landed jump".into());
     }
-    if state.queue_w30_apply_damage_profile(901) != Some(QueueControlResult::Enqueued) {
+    if state.queue_w30_apply_damage_profile(901)? != Some(QueueControlResult::Enqueued) {
         return Err("changed-return W-30 damage was unavailable after the landed jump".into());
     }
     let scene = current_scene(&state);
@@ -729,7 +729,10 @@ fn prepare_legacy_pressure_regression(
 
     let mut legacy_state = state.clone();
     let normal = legacy_riotbox_plan(&legacy_state, bpm);
-    if legacy_state.queue_w30_apply_damage_profile(1_000).is_none() {
+    if legacy_state
+        .queue_w30_apply_damage_profile(1_000)?
+        .is_none()
+    {
         return Err("legacy W-30 damage gesture was unavailable".into());
     }
     let scene = current_scene(&legacy_state);
@@ -763,7 +766,7 @@ fn set_monitor_mode(
     position_beats: u64,
     timestamp: u64,
 ) -> Result<CommittedActionRef, Box<dyn Error>> {
-    if state.queue_source_monitor_mode(mode, timestamp) != QueueControlResult::Enqueued {
+    if state.queue_source_monitor_mode(mode, timestamp)? != QueueControlResult::Enqueued {
         return Err(format!("monitor {mode} was not queueable").into());
     }
     let committed = one_commit(commit(

@@ -35,18 +35,21 @@ fn replay_from_zero_restore_rebuilds_commit_boundary_and_queue_cursor() {
     let session = sample_session(&graph);
     let mut live = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    let first = live.queue.enqueue(
-        ActionDraft::new(
-            ActorType::User,
-            ActionCommand::Tr909FillNext,
-            Quantization::NextBar,
-            ActionTarget {
-                scope: Some(TargetScope::LaneTr909),
-                ..Default::default()
-            },
-        ),
-        300,
-    );
+    let first = live
+        .queue
+        .enqueue(
+            ActionDraft::new(
+                ActorType::User,
+                ActionCommand::Tr909FillNext,
+                Quantization::NextBar,
+                ActionTarget {
+                    scope: Some(TargetScope::LaneTr909),
+                    ..Default::default()
+                },
+            ),
+            300,
+        )
+        .unwrap();
     let mut scene_mutation = ActionDraft::new(
         ActorType::User,
         ActionCommand::MutateScene,
@@ -61,7 +64,7 @@ fn replay_from_zero_restore_rebuilds_commit_boundary_and_queue_cursor() {
         intensity: 0.5,
         target_id: Some("scene-1".into()),
     };
-    let second = live.queue.enqueue(scene_mutation, 301);
+    let second = live.queue.enqueue(scene_mutation, 301).unwrap();
     let boundary = CommitBoundaryState {
         kind: CommitBoundary::Bar,
         beat_index: 80,
@@ -100,18 +103,21 @@ fn replay_from_zero_restore_rebuilds_commit_boundary_and_queue_cursor() {
     assert_eq!(restored.jam_view.recent_actions[0].id, second.to_string());
     assert_eq!(restored.jam_view.recent_actions[1].id, first.to_string());
 
-    let next_id = restored.queue.enqueue(
-        ActionDraft::new(
-            ActorType::User,
-            ActionCommand::Tr909FillNext,
-            Quantization::NextBar,
-            ActionTarget {
-                scope: Some(TargetScope::LaneTr909),
-                ..Default::default()
-            },
-        ),
-        800,
-    );
+    let next_id = restored
+        .queue
+        .enqueue(
+            ActionDraft::new(
+                ActorType::User,
+                ActionCommand::Tr909FillNext,
+                Quantization::NextBar,
+                ActionTarget {
+                    scope: Some(TargetScope::LaneTr909),
+                    ..Default::default()
+                },
+            ),
+            800,
+        )
+        .unwrap();
 
     assert_eq!(next_id, ActionId(4));
 }
@@ -133,36 +139,45 @@ fn separate_commit_calls_and_later_batch_continue_the_same_boundary_sequence() {
         ..Default::default()
     };
 
-    state.queue.enqueue(
-        ActionDraft::new(
-            ActorType::User,
-            ActionCommand::CaptureNow,
-            Quantization::NextBar,
-            capture_target.clone(),
-        ),
-        300,
-    );
+    state
+        .queue
+        .enqueue(
+            ActionDraft::new(
+                ActorType::User,
+                ActionCommand::CaptureNow,
+                Quantization::NextBar,
+                capture_target.clone(),
+            ),
+            300,
+        )
+        .unwrap();
     let first = state.commit_ready_actions(boundary.clone(), 400);
     assert_eq!(first[0].commit_sequence, 1);
 
-    state.queue.enqueue(
-        ActionDraft::new(
-            ActorType::User,
-            ActionCommand::CaptureNow,
-            Quantization::NextBar,
-            capture_target.clone(),
-        ),
-        410,
-    );
-    state.queue.enqueue(
-        ActionDraft::new(
-            ActorType::User,
-            ActionCommand::CaptureLoop,
-            Quantization::NextBar,
-            capture_target,
-        ),
-        420,
-    );
+    state
+        .queue
+        .enqueue(
+            ActionDraft::new(
+                ActorType::User,
+                ActionCommand::CaptureNow,
+                Quantization::NextBar,
+                capture_target.clone(),
+            ),
+            410,
+        )
+        .unwrap();
+    state
+        .queue
+        .enqueue(
+            ActionDraft::new(
+                ActorType::User,
+                ActionCommand::CaptureLoop,
+                Quantization::NextBar,
+                capture_target,
+            ),
+            420,
+        )
+        .unwrap();
     let batch = state.commit_ready_actions(boundary, 500);
 
     assert_eq!(
@@ -204,7 +219,7 @@ fn accepted_ghost_action_snapshot_replay_plan_uses_restored_commit_records() {
     state.set_current_ghost_suggestion(ghost_fill_suggestion());
 
     assert!(matches!(
-        state.accept_current_ghost_suggestion(1_000),
+        state.accept_current_ghost_suggestion(1_000).unwrap(),
         GhostSuggestionQueueResult::Enqueued(_)
     ));
     let committed = state.commit_ready_actions(

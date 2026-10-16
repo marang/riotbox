@@ -242,18 +242,21 @@ fn commits_ready_actions_into_session_log_in_stable_order() {
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    let first = state.queue.enqueue(
-        ActionDraft::new(
-            ActorType::User,
-            ActionCommand::CaptureNow,
-            Quantization::NextBar,
-            ActionTarget {
-                scope: Some(TargetScope::LaneW30),
-                ..Default::default()
-            },
-        ),
-        300,
-    );
+    let first = state
+        .queue
+        .enqueue(
+            ActionDraft::new(
+                ActorType::User,
+                ActionCommand::CaptureNow,
+                Quantization::NextBar,
+                ActionTarget {
+                    scope: Some(TargetScope::LaneW30),
+                    ..Default::default()
+                },
+            ),
+            300,
+        )
+        .unwrap();
     let mut scene_mutation = ActionDraft::new(
         ActorType::Ghost,
         ActionCommand::MutateScene,
@@ -267,7 +270,7 @@ fn commits_ready_actions_into_session_log_in_stable_order() {
         intensity: 0.5,
         target_id: Some("scene-1".into()),
     };
-    let second = state.queue.enqueue(scene_mutation, 301);
+    let second = state.queue.enqueue(scene_mutation, 301).unwrap();
 
     let boundary = CommitBoundaryState {
         kind: CommitBoundary::Bar,
@@ -310,16 +313,16 @@ fn queues_first_live_safe_jam_actions() {
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    state.queue_scene_mutation(300);
+    state.queue_scene_mutation(300).unwrap();
     assert_eq!(
-        state.queue_mc202_role_toggle(301),
+        state.queue_mc202_role_toggle(301).unwrap(),
         QueueControlResult::Enqueued
     );
-    state.queue_tr909_fill(302);
-    state.queue_tr909_reinforce(303);
-    assert!(state.queue_tr909_slam_toggle(304));
-    state.queue_capture_bar(305);
-    assert!(state.queue_promote_last_capture(306));
+    state.queue_tr909_fill(302).unwrap();
+    state.queue_tr909_reinforce(303).unwrap();
+    assert!(state.queue_tr909_slam_toggle(304).unwrap());
+    state.queue_capture_bar(305).unwrap();
+    assert!(state.queue_promote_last_capture(306).unwrap());
 
     let pending = state.queue.pending_actions();
 
@@ -364,7 +367,7 @@ fn committed_scene_mutation_updates_scene_aggression_and_log_result() {
     session.runtime_state.macro_state.scene_aggression = 0.4;
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    state.queue_scene_mutation(300);
+    state.queue_scene_mutation(300).unwrap();
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,
@@ -417,9 +420,12 @@ fn queue_scene_select_enqueues_scene_launch_for_next_bar() {
         state.jam_view.scene.next_scene_energy.as_deref(),
         Some("medium")
     );
-    assert_eq!(state.queue_scene_select(300), QueueControlResult::Enqueued);
     assert_eq!(
-        state.queue_scene_select(301),
+        state.queue_scene_select(300).unwrap(),
+        QueueControlResult::Enqueued
+    );
+    assert_eq!(
+        state.queue_scene_select(301).unwrap(),
         QueueControlResult::AlreadyPending
     );
 
@@ -450,7 +456,7 @@ fn queue_scene_select_rejects_single_current_scene_without_pending_action() {
         SceneJumpAvailabilityView::WaitingForMoreScenes
     );
     assert_eq!(
-        state.queue_scene_select(300),
+        state.queue_scene_select(300).unwrap(),
         QueueControlResult::AlreadyInState
     );
     assert!(state.queue.pending_actions().is_empty());
@@ -478,7 +484,10 @@ fn queue_scene_select_prefers_energy_contrast_candidate() {
         state.jam_view.scene.next_scene.as_deref(),
         Some("scene-03-intro")
     );
-    assert_eq!(state.queue_scene_select(300), QueueControlResult::Enqueued);
+    assert_eq!(
+        state.queue_scene_select(300).unwrap(),
+        QueueControlResult::Enqueued
+    );
     assert_eq!(
         state.queue.pending_actions()[0].target.scene_id,
         Some(SceneId::from("scene-03-intro"))
@@ -533,7 +542,10 @@ fn committed_scene_select_updates_transport_and_scene_state() {
     session.runtime_state.scene_state.scenes.clear();
 
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
-    assert_eq!(state.queue_scene_select(300), QueueControlResult::Enqueued);
+    assert_eq!(
+        state.queue_scene_select(300).unwrap(),
+        QueueControlResult::Enqueued
+    );
 
     let committed = state.commit_ready_actions(
         CommitBoundaryState {

@@ -1,3 +1,4 @@
+use riotbox_core::queue::ActionIdExhausted;
 use std::{fs, io::Read, path::Path};
 
 use riotbox_core::{
@@ -170,14 +171,14 @@ impl JamAppState {
         &mut self,
         requested_at: TimestampMs,
         destination_path: Option<String>,
-    ) -> QueueControlResult {
+    ) -> Result<QueueControlResult, ActionIdExhausted> {
         if self
             .queue
             .pending_actions()
             .iter()
             .any(|action| action.command == ActionCommand::ExportProductMix)
         {
-            return QueueControlResult::AlreadyPending;
+            return Ok(QueueControlResult::AlreadyPending);
         }
 
         let mut draft = ActionDraft::new(
@@ -202,9 +203,9 @@ impl JamAppState {
         };
         draft.explanation = Some("export full_grid_mix product proof".into());
 
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        QueueControlResult::Enqueued
+        Ok(QueueControlResult::Enqueued)
     }
 
     pub fn queue_stem_package_export_reserved(
@@ -212,7 +213,7 @@ impl JamAppState {
         requested_at: TimestampMs,
         destination_path: Option<String>,
         claimed_stem_roles: Vec<ExportArtifactRole>,
-    ) -> StemPackageExportQueueResult {
+    ) -> Result<StemPackageExportQueueResult, ActionIdExhausted> {
         let mut draft = ActionDraft::new(
             ActorType::User,
             ActionCommand::ExportStemPackage,
@@ -239,20 +240,22 @@ impl JamAppState {
         };
         draft.explanation = Some("reserved stem package export contract; not runnable yet".into());
 
-        match self
-            .queue
-            .enqueue_if_no_pending_command(draft, requested_at)
-        {
-            QueueEnqueueResult::AlreadyPending { .. } => {
-                StemPackageExportQueueResult::AlreadyPending
-            }
-            QueueEnqueueResult::Enqueued(action_id) => {
-                let reason = self.stem_package_export_surface_gate().musician_summary();
-                self.queue.reject(action_id, reason.clone());
-                self.refresh_view();
-                StemPackageExportQueueResult::Rejected { reason }
-            }
-        }
+        Ok(
+            match self
+                .queue
+                .enqueue_if_no_pending_command(draft, requested_at)?
+            {
+                QueueEnqueueResult::AlreadyPending { .. } => {
+                    StemPackageExportQueueResult::AlreadyPending
+                }
+                QueueEnqueueResult::Enqueued(action_id) => {
+                    let reason = self.stem_package_export_surface_gate().musician_summary();
+                    self.queue.reject(action_id, reason.clone());
+                    self.refresh_view();
+                    StemPackageExportQueueResult::Rejected { reason }
+                }
+            },
+        )
     }
 
     pub fn stem_package_export_surface_gate(&self) -> StemPackageExportSurfaceGate {

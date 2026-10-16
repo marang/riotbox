@@ -34,7 +34,7 @@ fn source_timing_grid_confirmation_queues_commits_and_persists_session_truth() {
             .is_none()
     );
     assert_eq!(
-        state.queue_source_timing_grid_confirmation(100),
+        state.queue_source_timing_grid_confirmation(100).unwrap(),
         QueueControlResult::Enqueued
     );
     assert!(matches!(
@@ -42,7 +42,7 @@ fn source_timing_grid_confirmation_queues_commits_and_persists_session_truth() {
         UndoPolicy::NotUndoable { .. }
     ));
     assert_eq!(
-        state.queue_source_timing_grid_confirmation(101),
+        state.queue_source_timing_grid_confirmation(101).unwrap(),
         QueueControlResult::AlreadyPending
     );
 
@@ -65,7 +65,7 @@ fn source_timing_grid_confirmation_queues_commits_and_persists_session_truth() {
         Some(126.0)
     );
     assert_eq!(
-        state.queue_source_timing_grid_confirmation(121),
+        state.queue_source_timing_grid_confirmation(121).unwrap(),
         QueueControlResult::AlreadyInState
     );
 }
@@ -78,11 +78,11 @@ fn source_timing_grid_revert_queues_commits_and_clears_session_truth() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_source_timing_grid_revert(99),
+        state.queue_source_timing_grid_revert(99).unwrap(),
         QueueControlResult::AlreadyInState
     );
     assert_eq!(
-        state.queue_source_timing_grid_confirmation(100),
+        state.queue_source_timing_grid_confirmation(100).unwrap(),
         QueueControlResult::Enqueued
     );
     let committed_confirm = state.commit_ready_actions(immediate_boundary(), 120);
@@ -97,11 +97,11 @@ fn source_timing_grid_revert_queues_commits_and_clears_session_truth() {
     );
 
     assert_eq!(
-        state.queue_source_timing_grid_revert(121),
+        state.queue_source_timing_grid_revert(121).unwrap(),
         QueueControlResult::Enqueued
     );
     assert_eq!(
-        state.queue_source_timing_grid_revert(122),
+        state.queue_source_timing_grid_revert(122).unwrap(),
         QueueControlResult::AlreadyPending
     );
     let committed_revert = state.commit_ready_actions(immediate_boundary(), 140);
@@ -134,7 +134,7 @@ fn source_timing_grid_revert_queues_commits_and_clears_session_truth() {
             .is_none()
     );
     assert_eq!(
-        state.queue_source_timing_grid_revert(141),
+        state.queue_source_timing_grid_revert(141).unwrap(),
         QueueControlResult::AlreadyInState
     );
 }

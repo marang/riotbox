@@ -58,7 +58,7 @@ pub(crate) fn qualify_gesture_vocabulary_restart_recall(
     }
 
     restarted.set_transport_playing(true);
-    if restarted.queue_w30_live_recall(5_000) != Some(QueueControlResult::Enqueued) {
+    if restarted.queue_w30_live_recall(5_000)? != Some(QueueControlResult::Enqueued) {
         return Err("gesture-vocabulary W-30 recall was unavailable after restart".into());
     }
     commit(
@@ -70,7 +70,7 @@ pub(crate) fn qualify_gesture_vocabulary_restart_recall(
         scene_id.clone(),
         5_010,
     )?;
-    if restarted.queue_w30_trigger_pad(5_100) != Some(QueueControlResult::Enqueued) {
+    if restarted.queue_w30_trigger_pad(5_100)? != Some(QueueControlResult::Enqueued) {
         return Err("gesture-vocabulary W-30 trigger was unavailable after restart".into());
     }
     commit(

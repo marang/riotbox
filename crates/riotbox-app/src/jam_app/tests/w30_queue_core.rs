@@ -63,7 +63,7 @@ fn queue_w30_trigger_pad_targets_focused_lane_capture_on_next_beat() {
     state.refresh_view();
 
     assert_eq!(
-        state.queue_w30_trigger_pad(625),
+        state.queue_w30_trigger_pad(625).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
 
@@ -112,7 +112,7 @@ fn queue_w30_hook_turnaround_targets_focused_capture_on_next_bar() {
     state.refresh_view();
 
     assert_eq!(
-        state.queue_w30_hook_turnaround(626),
+        state.queue_w30_hook_turnaround(626).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
 
@@ -151,12 +151,12 @@ fn queue_w30_hook_turnaround_refuses_stopped_or_missing_source_state() {
     state.session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
     state.refresh_view();
 
-    assert_eq!(state.queue_w30_hook_turnaround(627), None);
+    assert_eq!(state.queue_w30_hook_turnaround(627).unwrap(), None);
     assert!(state.queue.pending_actions().is_empty());
 
     state.set_transport_playing(true);
     state.refresh_view();
-    assert_eq!(state.queue_w30_hook_turnaround(628), None);
+    assert_eq!(state.queue_w30_hook_turnaround(628).unwrap(), None);
     assert!(state.queue.pending_actions().is_empty());
 }
 
@@ -181,7 +181,7 @@ fn queue_w30_pitch_dive_targets_focused_capture_on_next_bar() {
     state.refresh_view();
 
     assert_eq!(
-        state.queue_w30_pitch_dive(629),
+        state.queue_w30_pitch_dive(629).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
 
@@ -224,12 +224,12 @@ fn queue_w30_pitch_dive_refuses_stopped_or_missing_source_state() {
     state.session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
     state.refresh_view();
 
-    assert_eq!(state.queue_w30_pitch_dive(630), None);
+    assert_eq!(state.queue_w30_pitch_dive(630).unwrap(), None);
     assert!(state.queue.pending_actions().is_empty());
 
     state.set_transport_playing(true);
     state.refresh_view();
-    assert_eq!(state.queue_w30_pitch_dive(631), None);
+    assert_eq!(state.queue_w30_pitch_dive(631).unwrap(), None);
     assert!(state.queue.pending_actions().is_empty());
 }
 
@@ -254,7 +254,7 @@ fn queue_w30_filter_slam_targets_focused_capture_on_next_bar() {
     state.refresh_view();
 
     assert_eq!(
-        state.queue_w30_filter_slam(632),
+        state.queue_w30_filter_slam(632).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
 
@@ -297,12 +297,12 @@ fn queue_w30_filter_slam_refuses_stopped_or_missing_source_state() {
     state.session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
     state.refresh_view();
 
-    assert_eq!(state.queue_w30_filter_slam(633), None);
+    assert_eq!(state.queue_w30_filter_slam(633).unwrap(), None);
     assert!(state.queue.pending_actions().is_empty());
 
     state.set_transport_playing(true);
     state.refresh_view();
-    assert_eq!(state.queue_w30_filter_slam(634), None);
+    assert_eq!(state.queue_w30_filter_slam(634).unwrap(), None);
     assert!(state.queue.pending_actions().is_empty());
 }
 
@@ -338,7 +338,7 @@ fn queue_w30_step_focus_targets_next_promoted_pad_on_next_beat() {
     state.refresh_view();
 
     assert_eq!(
-        state.queue_w30_step_focus(622),
+        state.queue_w30_step_focus(622).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
 
@@ -403,7 +403,7 @@ fn queue_w30_internal_resample_targets_focused_lane_capture_on_next_phrase() {
     state.refresh_view();
 
     assert_eq!(
-        state.queue_w30_internal_resample(627),
+        state.queue_w30_internal_resample(627).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
 
@@ -457,7 +457,7 @@ fn queue_w30_swap_bank_targets_next_bank_on_next_bar() {
     state.refresh_view();
 
     assert_eq!(
-        state.queue_w30_swap_bank(628),
+        state.queue_w30_swap_bank(628).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
 
@@ -523,7 +523,7 @@ fn queue_w30_browse_slice_pool_targets_next_capture_on_current_pad() {
     state.refresh_view();
 
     assert_eq!(
-        state.queue_w30_browse_slice_pool(629),
+        state.queue_w30_browse_slice_pool(629).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
 
@@ -608,11 +608,11 @@ fn queue_w30_browse_slice_pool_prefers_feral_capture_and_changes_preview_window(
     let mut feral_state = w30_slice_pool_state_with_source_windows(feral_graph, source_audio_cache);
 
     assert_eq!(
-        control_state.queue_w30_browse_slice_pool(629),
+        control_state.queue_w30_browse_slice_pool(629).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     assert_eq!(
-        feral_state.queue_w30_browse_slice_pool(630),
+        feral_state.queue_w30_browse_slice_pool(630).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
 

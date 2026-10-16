@@ -35,7 +35,10 @@ fn first_run_onramp_tracks_capture_promotion_monitor_and_performance_readiness()
         Some(FirstRunOnrampStage::Capture)
     );
 
-    shell.app.queue_tr909_fill(200);
+    shell
+        .app
+        .queue_tr909_fill(200)
+        .expect("fixture action ID available");
     assert_eq!(
         first_run_onramp_stage(&shell),
         Some(FirstRunOnrampStage::Capture),
@@ -43,7 +46,10 @@ fn first_run_onramp_tracks_capture_promotion_monitor_and_performance_readiness()
     );
 
     let mut shell = first_run_shell_state();
-    shell.app.queue_capture_bar(201);
+    shell
+        .app
+        .queue_capture_bar(201)
+        .expect("fixture action ID available");
     assert_eq!(
         first_run_onramp_stage(&shell),
         Some(FirstRunOnrampStage::CapturePending)
@@ -56,14 +62,22 @@ fn first_run_onramp_tracks_capture_promotion_monitor_and_performance_readiness()
     );
 
     let mut recapture_shell = first_run_captured_shell_state(false);
-    recapture_shell.app.queue_capture_bar(219);
+    recapture_shell
+        .app
+        .queue_capture_bar(219)
+        .expect("fixture action ID available");
     assert_eq!(
         first_run_onramp_stage(&recapture_shell),
         Some(FirstRunOnrampStage::CapturePending),
         "a recapture must remain visibly pending even after an earlier capture"
     );
 
-    assert!(shell.app.queue_promote_last_capture(220));
+    assert!(
+        shell
+            .app
+            .queue_promote_last_capture(220)
+            .expect("fixture action ID available")
+    );
     assert_eq!(
         first_run_onramp_stage(&shell),
         Some(FirstRunOnrampStage::PromotionPending)
@@ -127,7 +141,10 @@ fn first_run_onramp_tracks_capture_promotion_monitor_and_performance_readiness()
         Some(AudioRuntimeLifecycle::Running),
         SourceMonitorAudioRoute::SourceOnly,
     );
-    shell.app.queue_capture_bar(300);
+    shell
+        .app
+        .queue_capture_bar(300)
+        .expect("fixture action ID available");
     assert_eq!(
         first_run_onramp_stage(&shell),
         None,

@@ -49,18 +49,21 @@ fn unavailable_timing_cannot_acknowledge_play_or_pause_or_commit_queued_actions(
     for requested_playing in [false, true] {
         let mut state = restored_paused_state("unavailable-pending-transport");
         state.set_transport_playing(requested_playing);
-        state.queue.enqueue(
-            ActionDraft::new(
-                ActorType::User,
-                ActionCommand::CaptureNow,
-                Quantization::NextBar,
-                ActionTarget {
-                    scope: Some(TargetScope::LaneW30),
-                    ..Default::default()
-                },
-            ),
-            50,
-        );
+        state
+            .queue
+            .enqueue(
+                ActionDraft::new(
+                    ActorType::User,
+                    ActionCommand::CaptureNow,
+                    Quantization::NextBar,
+                    ActionTarget {
+                        scope: Some(TargetScope::LaneW30),
+                        ..Default::default()
+                    },
+                ),
+                50,
+            )
+            .unwrap();
         let before_session = state.session.clone();
         let before_transport = state.runtime.transport.clone();
         let before_driver = state.runtime.transport_driver.clone();

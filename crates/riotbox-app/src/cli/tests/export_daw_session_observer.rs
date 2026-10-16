@@ -113,7 +113,9 @@ fn observer_snapshot_reports_rejected_reserved_daw_session_lifecycle_without_rec
     let destination = temp.path().join("daw-session-export");
     let mut state = daw_session_writer_export_observer_state(temp.path(), &destination, false);
 
-    state.queue_daw_session_export_reserved(990, Some(destination.to_string_lossy().into_owned()));
+    state
+        .queue_daw_session_export_reserved(990, Some(destination.to_string_lossy().into_owned()))
+        .expect("generated action ID available");
 
     let shell = JamShellState::new(state, ShellLaunchMode::Load);
     let snapshot = observer_snapshot(&shell);
@@ -156,10 +158,9 @@ fn observer_snapshot_reports_rejected_reserved_live_recording_lifecycle_without_
     );
     let mut state = JamAppState::from_parts(session, None, ActionQueue::new());
 
-    state.queue_live_recording_export_reserved(
-        990,
-        Some(destination.to_string_lossy().into_owned()),
-    );
+    state
+        .queue_live_recording_export_reserved(990, Some(destination.to_string_lossy().into_owned()))
+        .expect("generated action ID available");
 
     let shell = JamShellState::new(state, ShellLaunchMode::Load);
     let snapshot = observer_snapshot(&shell);

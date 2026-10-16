@@ -143,6 +143,19 @@ fn apply_probe_key(
     timestamp_ms: u64,
     key: KeyCode,
 ) -> io::Result<()> {
+    let result = try_apply_probe_key(shell, writer, timestamp_ms, key);
+    if let Err(error) = &result {
+        shell.set_error_status(error.to_string());
+    }
+    result
+}
+
+fn try_apply_probe_key(
+    shell: &mut JamShellState,
+    writer: &mut NdjsonWriter,
+    timestamp_ms: u64,
+    key: KeyCode,
+) -> io::Result<()> {
     let outcome = shell.handle_key_code(key);
     let mut immediate_committed = Vec::new();
 
@@ -150,7 +163,10 @@ fn apply_probe_key(
         ShellKeyOutcome::ToggleTransport => {
             let transport = shell.app.runtime.transport.clone();
             let boundary = transport.boundary_state(CommitBoundary::Immediate);
-            let toggle = shell.app.commit_transport_toggle(timestamp_ms);
+            let toggle = shell
+                .app
+                .commit_transport_toggle(timestamp_ms)
+                .map_err(io::Error::other)?;
             immediate_committed = toggle.committed;
             require_immediate_commit(
                 shell,
@@ -166,7 +182,11 @@ fn apply_probe_key(
             });
         }
         ShellKeyOutcome::QueueSourceMonitorMode(mode) => {
-            match shell.app.queue_source_monitor_mode(mode, timestamp_ms) {
+            match shell
+                .app
+                .queue_source_monitor_mode(mode, timestamp_ms)
+                .map_err(io::Error::other)?
+            {
                 riotbox_app::jam_app::QueueControlResult::Enqueued => {
                     let transport = shell.app.runtime.transport.clone();
                     let boundary = transport.boundary_state(CommitBoundary::Immediate);
@@ -195,7 +215,11 @@ fn apply_probe_key(
             }
         }
         ShellKeyOutcome::QueuePerformancePreset(preset_id) => {
-            match shell.app.queue_performance_preset(preset_id, timestamp_ms) {
+            match shell
+                .app
+                .queue_performance_preset(preset_id, timestamp_ms)
+                .map_err(io::Error::other)?
+            {
                 riotbox_app::jam_app::QueueControlResult::Enqueued => {
                     let transport = shell.app.runtime.transport.clone();
                     let boundary = transport.boundary_state(CommitBoundary::Immediate);
@@ -220,7 +244,11 @@ fn apply_probe_key(
             }
         }
         ShellKeyOutcome::QueueMc202GenerateFollower => {
-            match shell.app.queue_mc202_generate_follower(timestamp_ms) {
+            match shell
+                .app
+                .queue_mc202_generate_follower(timestamp_ms)
+                .map_err(io::Error::other)?
+            {
                 riotbox_app::jam_app::QueueControlResult::Enqueued => {
                     shell.set_error_status("queued MC-202 follower generation for next phrase");
                 }
@@ -233,7 +261,11 @@ fn apply_probe_key(
             }
         }
         ShellKeyOutcome::QueueMc202GenerateAnswer => {
-            match shell.app.queue_mc202_generate_answer(timestamp_ms) {
+            match shell
+                .app
+                .queue_mc202_generate_answer(timestamp_ms)
+                .map_err(io::Error::other)?
+            {
                 riotbox_app::jam_app::QueueControlResult::Enqueued => {
                     shell.set_error_status("queued MC-202 answer generation for next phrase");
                 }
@@ -246,7 +278,11 @@ fn apply_probe_key(
             }
         }
         ShellKeyOutcome::QueueMc202GeneratePressure => {
-            match shell.app.queue_mc202_generate_pressure(timestamp_ms) {
+            match shell
+                .app
+                .queue_mc202_generate_pressure(timestamp_ms)
+                .map_err(io::Error::other)?
+            {
                 riotbox_app::jam_app::QueueControlResult::Enqueued => {
                     shell.set_error_status("queued MC-202 pressure generation for next phrase");
                 }
@@ -259,7 +295,11 @@ fn apply_probe_key(
             }
         }
         ShellKeyOutcome::QueueMc202GenerateInstigator => {
-            match shell.app.queue_mc202_generate_instigator(timestamp_ms) {
+            match shell
+                .app
+                .queue_mc202_generate_instigator(timestamp_ms)
+                .map_err(io::Error::other)?
+            {
                 riotbox_app::jam_app::QueueControlResult::Enqueued => {
                     shell.set_error_status("queued MC-202 instigator generation for next phrase");
                 }
@@ -272,7 +312,11 @@ fn apply_probe_key(
             }
         }
         ShellKeyOutcome::QueueMc202MutatePhrase => {
-            match shell.app.queue_mc202_mutate_phrase(timestamp_ms) {
+            match shell
+                .app
+                .queue_mc202_mutate_phrase(timestamp_ms)
+                .map_err(io::Error::other)?
+            {
                 riotbox_app::jam_app::QueueControlResult::Enqueued => {
                     shell.set_error_status("queued MC-202 phrase mutation for next phrase");
                 }
@@ -285,17 +329,28 @@ fn apply_probe_key(
             }
         }
         ShellKeyOutcome::QueueTr909Fill => {
-            shell.app.queue_tr909_fill(timestamp_ms);
+            shell
+                .app
+                .queue_tr909_fill(timestamp_ms)
+                .map_err(io::Error::other)?;
             shell.set_error_status("queued TR-909 fill for next bar");
         }
         ShellKeyOutcome::QueueTr909Slam => {
-            if shell.app.queue_tr909_slam_toggle(timestamp_ms) {
+            if shell
+                .app
+                .queue_tr909_slam_toggle(timestamp_ms)
+                .map_err(io::Error::other)?
+            {
                 shell.set_error_status("queued TR-909 slam change for next beat");
             } else {
                 shell.set_error_status("TR-909 slam change already queued");
             }
         }
-        ShellKeyOutcome::QueueSceneSelect => match shell.app.queue_scene_select(timestamp_ms) {
+        ShellKeyOutcome::QueueSceneSelect => match shell
+            .app
+            .queue_scene_select(timestamp_ms)
+            .map_err(io::Error::other)?
+        {
             riotbox_app::jam_app::QueueControlResult::Enqueued => {
                 shell.set_error_status("queued scene select for next bar");
             }
@@ -306,7 +361,11 @@ fn apply_probe_key(
                 shell.set_error_status("no next scene available");
             }
         },
-        ShellKeyOutcome::QueueSceneRestore => match shell.app.queue_scene_restore(timestamp_ms) {
+        ShellKeyOutcome::QueueSceneRestore => match shell
+            .app
+            .queue_scene_restore(timestamp_ms)
+            .map_err(io::Error::other)?
+        {
             riotbox_app::jam_app::QueueControlResult::Enqueued => {
                 shell.set_error_status("queued scene restore for next bar");
             }
@@ -318,11 +377,18 @@ fn apply_probe_key(
             }
         },
         ShellKeyOutcome::QueueTr909Reinforce => {
-            shell.app.queue_tr909_reinforce(timestamp_ms);
+            shell
+                .app
+                .queue_tr909_reinforce(timestamp_ms)
+                .map_err(io::Error::other)?;
             shell.set_error_status("queued TR-909 reinforcement for next phrase");
         }
         ShellKeyOutcome::QueueTr909SceneLock => {
-            match shell.app.queue_tr909_scene_lock(timestamp_ms) {
+            match shell
+                .app
+                .queue_tr909_scene_lock(timestamp_ms)
+                .map_err(io::Error::other)?
+            {
                 riotbox_app::jam_app::QueueControlResult::Enqueued => {
                     shell.set_error_status("queued TR-909 scene lock for next phrase");
                 }
@@ -334,7 +400,11 @@ fn apply_probe_key(
                 }
             }
         }
-        ShellKeyOutcome::QueueTr909Release => match shell.app.queue_tr909_release(timestamp_ms) {
+        ShellKeyOutcome::QueueTr909Release => match shell
+            .app
+            .queue_tr909_release(timestamp_ms)
+            .map_err(io::Error::other)?
+        {
             riotbox_app::jam_app::QueueControlResult::Enqueued => {
                 shell.set_error_status("queued TR-909 release for next phrase");
             }
@@ -346,17 +416,28 @@ fn apply_probe_key(
             }
         },
         ShellKeyOutcome::QueueCaptureBar => {
-            shell.app.queue_capture_bar(timestamp_ms);
+            shell
+                .app
+                .queue_capture_bar(timestamp_ms)
+                .map_err(io::Error::other)?;
             shell.set_error_status("queued capture for next phrase");
         }
         ShellKeyOutcome::PromoteLastCapture => {
-            if shell.app.queue_promote_last_capture(timestamp_ms) {
+            if shell
+                .app
+                .queue_promote_last_capture(timestamp_ms)
+                .map_err(io::Error::other)?
+            {
                 shell.set_error_status("queued promotion for latest capture");
             } else {
                 shell.set_error_status("no promotable capture or W-30 target available");
             }
         }
-        ShellKeyOutcome::QueueW30Audition => match shell.app.queue_w30_audition(timestamp_ms) {
+        ShellKeyOutcome::QueueW30Audition => match shell
+            .app
+            .queue_w30_audition(timestamp_ms)
+            .map_err(io::Error::other)?
+        {
             Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
                 shell.set_error_status("queued W-30 audition for next bar");
             }
@@ -369,7 +450,11 @@ fn apply_probe_key(
             None => shell.set_error_status("no W-30 or raw capture available to audition"),
         },
         ShellKeyOutcome::QueueW30LiveRecall => {
-            match shell.app.queue_w30_live_recall(timestamp_ms) {
+            match shell
+                .app
+                .queue_w30_live_recall(timestamp_ms)
+                .map_err(io::Error::other)?
+            {
                 Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
                     shell.set_error_status("queued W-30 live recall for next bar");
                 }
@@ -386,7 +471,11 @@ fn apply_probe_key(
             }
         }
         ShellKeyOutcome::QueueW30TriggerPad => {
-            match shell.app.queue_w30_trigger_pad(timestamp_ms) {
+            match shell
+                .app
+                .queue_w30_trigger_pad(timestamp_ms)
+                .map_err(io::Error::other)?
+            {
                 Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
                     shell.set_error_status("queued W-30 pad trigger for next beat");
                 }
@@ -400,7 +489,11 @@ fn apply_probe_key(
             }
         }
         ShellKeyOutcome::QueueW30ApplyDamageProfile => {
-            match shell.app.queue_w30_apply_damage_profile(timestamp_ms) {
+            match shell
+                .app
+                .queue_w30_apply_damage_profile(timestamp_ms)
+                .map_err(io::Error::other)?
+            {
                 Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
                     shell.set_error_status("queued W-30 damage for next bar");
                 }
@@ -414,7 +507,11 @@ fn apply_probe_key(
             }
         }
         ShellKeyOutcome::QueueW30HookTurnaround => {
-            match shell.app.queue_w30_hook_turnaround(timestamp_ms) {
+            match shell
+                .app
+                .queue_w30_hook_turnaround(timestamp_ms)
+                .map_err(io::Error::other)?
+            {
                 Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
                     shell.set_error_status("queued W-30 hook turnaround for next bar");
                 }
@@ -427,7 +524,11 @@ fn apply_probe_key(
                 None => shell.set_error_status("no committed W-30 pad available to turn around"),
             }
         }
-        ShellKeyOutcome::QueueW30PitchDive => match shell.app.queue_w30_pitch_dive(timestamp_ms) {
+        ShellKeyOutcome::QueueW30PitchDive => match shell
+            .app
+            .queue_w30_pitch_dive(timestamp_ms)
+            .map_err(io::Error::other)?
+        {
             Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
                 shell.set_error_status("queued W-30 pitch dive for next bar");
             }
@@ -440,7 +541,11 @@ fn apply_probe_key(
             None => shell.set_error_status("no committed W-30 pad available to pitch-dive"),
         },
         ShellKeyOutcome::QueueW30FilterSlam => {
-            match shell.app.queue_w30_filter_slam(timestamp_ms) {
+            match shell
+                .app
+                .queue_w30_filter_slam(timestamp_ms)
+                .map_err(io::Error::other)?
+            {
                 Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
                     shell.set_error_status("queued W-30 filter slam for next bar");
                 }
@@ -463,6 +568,7 @@ fn apply_probe_key(
             match shell
                 .app
                 .queue_source_timing_grid_confirmation(timestamp_ms)
+                .map_err(io::Error::other)?
             {
                 riotbox_app::jam_app::QueueControlResult::Enqueued => {
                     let transport = shell.app.runtime.transport.clone();
@@ -499,28 +605,28 @@ fn apply_probe_key(
                 shell,
                 SourceMapNavigationIntent::PreviousBar,
                 timestamp_ms,
-            );
+            )?;
         }
         ShellKeyOutcome::NavigateSourceMapNextBar => {
             immediate_committed = apply_source_map_navigation(
                 shell,
                 SourceMapNavigationIntent::NextBar,
                 timestamp_ms,
-            );
+            )?;
         }
         ShellKeyOutcome::NavigateSourceMapPreviousPhrase => {
             immediate_committed = apply_source_map_navigation(
                 shell,
                 SourceMapNavigationIntent::PreviousPhrase,
                 timestamp_ms,
-            );
+            )?;
         }
         ShellKeyOutcome::NavigateSourceMapNextPhrase => {
             immediate_committed = apply_source_map_navigation(
                 shell,
                 SourceMapNavigationIntent::NextPhrase,
                 timestamp_ms,
-            );
+            )?;
         }
         other => {
             return Err(io::Error::new(

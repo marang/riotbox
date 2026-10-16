@@ -66,7 +66,7 @@ fn committed_capture_actions_materialize_capture_refs() {
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    state.queue_capture_bar(300);
+    state.queue_capture_bar(300).unwrap();
 
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
@@ -129,7 +129,7 @@ fn capture_length_intent_controls_source_window_duration() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
     state.session.runtime_state.capture.length_intent = CaptureLengthIntent::OneBeat;
 
-    state.queue_capture_bar(300);
+    state.queue_capture_bar(300).unwrap();
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,
@@ -177,7 +177,7 @@ fn capture_source_window_maps_zero_based_cursor_to_one_based_source_grid_beat() 
     state.session.captures.clear();
     state.session.runtime_state.capture.length_intent = CaptureLengthIntent::OneBeat;
 
-    state.queue_capture_bar(300);
+    state.queue_capture_bar(300).unwrap();
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,
@@ -218,7 +218,7 @@ fn capture_source_window_missing_end_beat_uses_primary_hypothesis_bpm() {
     state.session.captures.clear();
     state.session.runtime_state.capture.length_intent = CaptureLengthIntent::OneBeat;
 
-    state.queue_capture_bar(300);
+    state.queue_capture_bar(300).unwrap();
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,
@@ -249,7 +249,7 @@ fn capture_after_source_eof_does_not_claim_an_empty_source_window() {
     state.session.captures.clear();
     state.session.runtime_state.capture.length_intent = CaptureLengthIntent::OneBar;
 
-    state.queue_capture_bar(300);
+    state.queue_capture_bar(300).unwrap();
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,
@@ -311,7 +311,7 @@ fn source_phase_bar_boundary_commits_capture_at_the_crossed_downbeat() {
     session.runtime_state.transport.is_playing = false;
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
     state.set_transport_playing(true);
-    state.queue_capture_bar(300);
+    state.queue_capture_bar(300).unwrap();
 
     let committed = state.apply_audio_timing_snapshot(
         Some(AudioRuntimeTimingSnapshot {
@@ -351,7 +351,7 @@ fn phrase_capture_length_uses_phrase_grid_when_available() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
     state.session.runtime_state.capture.length_intent = CaptureLengthIntent::Phrase;
 
-    state.queue_capture_bar(300);
+    state.queue_capture_bar(300).unwrap();
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,
@@ -382,7 +382,7 @@ fn phrase_capture_length_prefers_primary_hypothesis_phrase_grid() {
     state.session.captures.clear();
     state.session.runtime_state.capture.length_intent = CaptureLengthIntent::Phrase;
 
-    state.queue_capture_bar(300);
+    state.queue_capture_bar(300).unwrap();
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,
@@ -426,7 +426,7 @@ fn phrase_capture_length_preserves_selected_nonzero_downbeat_phase() {
     state.session.captures.clear();
     state.session.runtime_state.capture.length_intent = CaptureLengthIntent::Phrase;
 
-    state.queue_capture_bar(300);
+    state.queue_capture_bar(300).unwrap();
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,
@@ -453,7 +453,7 @@ fn committed_promotion_actions_assign_target_to_existing_capture() {
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    state.queue_promote_last_capture(300);
+    state.queue_promote_last_capture(300).unwrap();
 
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
@@ -495,7 +495,7 @@ fn second_promotion_updates_existing_capture_note_and_target() {
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    state.queue_promote_last_capture(300);
+    state.queue_promote_last_capture(300).unwrap();
     state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,
@@ -508,7 +508,7 @@ fn second_promotion_updates_existing_capture_note_and_target() {
     );
 
     state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-02"));
-    assert!(state.queue_promote_last_capture(401));
+    assert!(state.queue_promote_last_capture(401).unwrap());
     state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,
@@ -599,7 +599,7 @@ fn queue_w30_live_recall_targets_committed_lane_focus_before_latest_pinned_captu
     state.refresh_view();
 
     assert_eq!(
-        state.queue_w30_live_recall(600),
+        state.queue_w30_live_recall(600).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
 
@@ -654,7 +654,7 @@ fn queue_w30_promoted_audition_targets_committed_lane_focus() {
     state.refresh_view();
 
     assert_eq!(
-        state.queue_w30_promoted_audition(620),
+        state.queue_w30_promoted_audition(620).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
 
@@ -696,7 +696,7 @@ fn queue_w30_audition_targets_raw_capture_before_promotion() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_w30_audition(620),
+        state.queue_w30_audition(620).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
 
@@ -737,7 +737,7 @@ fn committed_w30_raw_capture_audition_updates_preview_state() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_w30_audition(620),
+        state.queue_w30_audition(620).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     let committed = state.commit_ready_actions(

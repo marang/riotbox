@@ -1,3 +1,4 @@
+use riotbox_core::queue::ActionIdExhausted;
 use riotbox_core::{
     TimestampMs,
     action::{
@@ -24,7 +25,7 @@ impl JamAppState {
         &mut self,
         requested_at: TimestampMs,
         destination_path: Option<String>,
-    ) -> LiveRecordingExportQueueResult {
+    ) -> Result<LiveRecordingExportQueueResult, ActionIdExhausted> {
         let mut draft = ActionDraft::new(
             ActorType::User,
             ActionCommand::ExportLiveRecording,
@@ -50,19 +51,21 @@ impl JamAppState {
         draft.explanation =
             Some("reserved live recording export contract; not runnable yet".into());
 
-        match self
-            .queue
-            .enqueue_if_no_pending_command(draft, requested_at)
-        {
-            QueueEnqueueResult::AlreadyPending { .. } => {
-                LiveRecordingExportQueueResult::AlreadyPending
-            }
-            QueueEnqueueResult::Enqueued(action_id) => {
-                let reason = LIVE_RECORDING_EXPORT_RESERVED_REASON.to_owned();
-                self.queue.reject(action_id, reason.clone());
-                self.refresh_view();
-                LiveRecordingExportQueueResult::Rejected { reason }
-            }
-        }
+        Ok(
+            match self
+                .queue
+                .enqueue_if_no_pending_command(draft, requested_at)?
+            {
+                QueueEnqueueResult::AlreadyPending { .. } => {
+                    LiveRecordingExportQueueResult::AlreadyPending
+                }
+                QueueEnqueueResult::Enqueued(action_id) => {
+                    let reason = LIVE_RECORDING_EXPORT_RESERVED_REASON.to_owned();
+                    self.queue.reject(action_id, reason.clone());
+                    self.refresh_view();
+                    LiveRecordingExportQueueResult::Rejected { reason }
+                }
+            },
+        )
     }
 }

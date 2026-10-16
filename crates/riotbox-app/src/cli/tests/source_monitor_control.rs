@@ -90,6 +90,7 @@ fn source_monitor_m_then_u_restores_runtime_route_and_replay_converges() {
     shell
         .app
         .undo_last_action(124)
+        .expect("generated action ID available")
         .expect("source monitor action should undo");
 
     assert_eq!(
@@ -150,6 +151,7 @@ fn source_monitor_m_then_u_survives_save_and_reload_as_typed_undo_history() {
     shell
         .app
         .undo_last_action(124)
+        .expect("generated action ID available")
         .expect("source monitor action should undo");
     assert_eq!(
         shell
@@ -211,6 +213,7 @@ fn immediate_commits_around_undo_share_one_persisted_boundary_sequence() {
     shell
         .app
         .undo_last_action(124)
+        .expect("generated action ID available")
         .expect("first monitor commit should undo");
     let second = queue_and_commit_source_monitor_mode(&mut shell, SourceMonitorMode::Riotbox, 125);
     assert_eq!(second[0].commit_sequence, 3);

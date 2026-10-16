@@ -115,7 +115,10 @@ fn help_overlay_keeps_core_sections_visible_in_first_run() {
 fn renders_help_overlay_with_pending_scene_jump_cue() {
     let mut shell = sample_shell_state();
     assert_eq!(
-        shell.app.queue_scene_select(300),
+        shell
+            .app
+            .queue_scene_select(300)
+            .expect("fixture action ID available"),
         crate::jam_app::QueueControlResult::Enqueued
     );
     shell.show_help = true;
@@ -141,7 +144,10 @@ fn renders_help_overlay_with_pending_scene_jump_cue() {
 fn help_overlay_keeps_scene_taste_and_primary_sections_visible_together() {
     let mut shell = sample_shell_state();
     assert_eq!(
-        shell.app.queue_scene_select(300),
+        shell
+            .app
+            .queue_scene_select(300)
+            .expect("fixture action ID available"),
         crate::jam_app::QueueControlResult::Enqueued
     );
     shell.show_help = true;
@@ -170,7 +176,10 @@ fn renders_help_overlay_with_pending_scene_restore_cue() {
     );
     shell.app.set_transport_playing(true);
     assert_eq!(
-        shell.app.queue_scene_restore(300),
+        shell
+            .app
+            .queue_scene_restore(300)
+            .expect("fixture action ID available"),
         crate::jam_app::QueueControlResult::Enqueued
     );
     shell.show_help = true;

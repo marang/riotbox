@@ -59,7 +59,7 @@ pub(crate) fn qualify_filter_slam_v1(
     let mc202_before = state.session.runtime_state.lane_state.mc202.clone();
     let tr909_before = state.session.runtime_state.lane_state.tr909.clone();
     let requested_at = 400 + start_beat * 10;
-    if state.queue_w30_filter_slam(requested_at) != Some(QueueControlResult::Enqueued) {
+    if state.queue_w30_filter_slam(requested_at)? != Some(QueueControlResult::Enqueued) {
         return Err("W-30 filter slam was unavailable".into());
     }
     commit(

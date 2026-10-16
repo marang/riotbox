@@ -17,13 +17,13 @@ pub(in crate::cli) fn accept_current_ghost_suggestion(
     requested_at: u64,
 ) {
     match shell.app.accept_current_ghost_suggestion(requested_at) {
-        crate::jam_app::GhostSuggestionQueueResult::Enqueued(action_id) => {
+        Ok(crate::jam_app::GhostSuggestionQueueResult::Enqueued(action_id)) => {
             shell.set_error_status(format!(
                 "accepted ghost suggestion | queued action {}",
                 action_id.0
             ));
         }
-        crate::jam_app::GhostSuggestionQueueResult::Rejected { reason } => {
+        Ok(crate::jam_app::GhostSuggestionQueueResult::Rejected { reason }) => {
             if reason == crate::jam_app::NO_CURRENT_GHOST_SUGGESTION_REASON
                 && shell.app.refresh_current_ghost_suggestion_from_jam_state()
                 && let Some(suggestion) = shell.app.runtime.current_ghost_suggestion.as_ref()
@@ -33,6 +33,7 @@ pub(in crate::cli) fn accept_current_ghost_suggestion(
                 shell.set_error_status(format!("ghost accept ignored: {reason}"));
             }
         }
+        Err(error) => shell.set_error_status(error.to_string()),
     }
 }
 
@@ -59,7 +60,7 @@ pub(in crate::cli) fn queue_and_commit_source_monitor_mode(
     requested_at: u64,
 ) -> Vec<CommittedActionRef> {
     match shell.app.queue_source_monitor_mode(mode, requested_at) {
-        crate::jam_app::QueueControlResult::Enqueued => {
+        Ok(crate::jam_app::QueueControlResult::Enqueued) => {
             let transport = shell.app.runtime.transport.clone();
             let committed = shell.app.commit_ready_actions(
                 riotbox_core::transport::CommitBoundaryState {
@@ -77,12 +78,16 @@ pub(in crate::cli) fn queue_and_commit_source_monitor_mode(
             );
             committed
         }
-        crate::jam_app::QueueControlResult::AlreadyPending => {
+        Ok(crate::jam_app::QueueControlResult::AlreadyPending) => {
             shell.set_error_status("source monitor change already queued");
             Vec::new()
         }
-        crate::jam_app::QueueControlResult::AlreadyInState => {
+        Ok(crate::jam_app::QueueControlResult::AlreadyInState) => {
             shell.set_error_status(format!("monitor already {mode}"));
+            Vec::new()
+        }
+        Err(error) => {
+            shell.set_error_status(error.to_string());
             Vec::new()
         }
     }
@@ -94,7 +99,7 @@ pub(in crate::cli) fn queue_and_commit_performance_preset(
     requested_at: u64,
 ) -> Vec<CommittedActionRef> {
     match shell.app.queue_performance_preset(preset_id, requested_at) {
-        crate::jam_app::QueueControlResult::Enqueued => {
+        Ok(crate::jam_app::QueueControlResult::Enqueued) => {
             let transport = shell.app.runtime.transport.clone();
             let committed = shell.app.commit_ready_actions(
                 riotbox_core::transport::CommitBoundaryState {
@@ -125,12 +130,16 @@ pub(in crate::cli) fn queue_and_commit_performance_preset(
             });
             committed
         }
-        crate::jam_app::QueueControlResult::AlreadyPending => {
+        Ok(crate::jam_app::QueueControlResult::AlreadyPending) => {
             shell.set_error_status("performance preset activation already queued");
             Vec::new()
         }
-        crate::jam_app::QueueControlResult::AlreadyInState => {
+        Ok(crate::jam_app::QueueControlResult::AlreadyInState) => {
             shell.set_error_status(format!("{} already active", preset_id.label()));
+            Vec::new()
+        }
+        Err(error) => {
+            shell.set_error_status(error.to_string());
             Vec::new()
         }
     }
@@ -161,7 +170,13 @@ pub(in crate::cli) fn commit_transport_toggle(
     shell: &mut JamShellState,
     requested_at: u64,
 ) -> Vec<CommittedActionRef> {
-    let toggle = shell.app.commit_transport_toggle(requested_at);
+    let toggle = match shell.app.commit_transport_toggle(requested_at) {
+        Ok(toggle) => toggle,
+        Err(error) => {
+            shell.set_error_status(error.to_string());
+            return Vec::new();
+        }
+    };
     shell.set_error_status(match toggle.command {
         ActionCommand::TransportPlay => "transport started",
         ActionCommand::TransportPause => "transport paused",
@@ -253,7 +268,7 @@ pub(in crate::cli) fn commit_capture_length_change(
         shell.app.queue_previous_capture_length_intent(requested_at)
     };
     match result {
-        crate::jam_app::QueueControlResult::Enqueued => {
+        Ok(crate::jam_app::QueueControlResult::Enqueued) => {
             let transport = shell.app.runtime.transport.clone();
             let committed = shell.app.commit_ready_actions(
                 riotbox_core::transport::CommitBoundaryState {
@@ -274,15 +289,16 @@ pub(in crate::cli) fn commit_capture_length_change(
                 ));
             }
         }
-        crate::jam_app::QueueControlResult::AlreadyPending => {
+        Ok(crate::jam_app::QueueControlResult::AlreadyPending) => {
             shell.set_error_status("capture length change already queued");
         }
-        crate::jam_app::QueueControlResult::AlreadyInState => {
+        Ok(crate::jam_app::QueueControlResult::AlreadyInState) => {
             shell.set_error_status(format!(
                 "capture length already {}",
                 shell.app.session.runtime_state.capture.length_intent
             ));
         }
+        Err(error) => shell.set_error_status(error.to_string()),
     }
 }
 
@@ -293,9 +309,13 @@ pub(in crate::cli) fn execute_product_mix_export(
 ) {
     let Some(handoff) = handoff else {
         let reason = "product mix export unavailable: launch with --product-export-proof and --product-export-destination";
-        shell
+        if let Err(error) = shell
             .app
-            .reject_product_mix_export_request(requested_at, reason);
+            .reject_product_mix_export_request(requested_at, reason)
+        {
+            shell.set_error_status(error.to_string());
+            return;
+        }
         shell.set_error_status(reason);
         return;
     };
@@ -323,10 +343,10 @@ pub(in crate::cli) fn navigate_source_map(
     requested_at: u64,
 ) {
     match shell.app.queue_source_map_navigation(intent, requested_at) {
-        crate::jam_app::SourceMapNavigationResult::Enqueued {
+        Ok(crate::jam_app::SourceMapNavigationResult::Enqueued {
             target_label,
             target_position_beats,
-        } => {
+        }) => {
             let transport = shell.app.runtime.transport.clone();
             let committed = shell.app.commit_ready_actions(
                 riotbox_core::transport::CommitBoundaryState {
@@ -346,15 +366,16 @@ pub(in crate::cli) fn navigate_source_map(
                 ));
             }
         }
-        crate::jam_app::SourceMapNavigationResult::AlreadyPending => {
+        Ok(crate::jam_app::SourceMapNavigationResult::AlreadyPending) => {
             shell.set_error_status("source map navigation already queued");
         }
-        crate::jam_app::SourceMapNavigationResult::AlreadyAtBoundary { target_label } => {
+        Ok(crate::jam_app::SourceMapNavigationResult::AlreadyAtBoundary { target_label }) => {
             shell.set_error_status(format!("source map already at {target_label}"));
         }
-        crate::jam_app::SourceMapNavigationResult::Unavailable { reason } => {
+        Ok(crate::jam_app::SourceMapNavigationResult::Unavailable { reason }) => {
             shell.set_error_status(reason);
         }
+        Err(error) => shell.set_error_status(error.to_string()),
     }
 }
 
@@ -363,7 +384,7 @@ pub(in crate::cli) fn confirm_source_timing_grid(shell: &mut JamShellState, requ
         .app
         .queue_source_timing_grid_confirmation(requested_at)
     {
-        crate::jam_app::QueueControlResult::Enqueued => {
+        Ok(crate::jam_app::QueueControlResult::Enqueued) => {
             let transport = shell.app.runtime.transport.clone();
             let committed = shell.app.commit_ready_actions(
                 riotbox_core::transport::CommitBoundaryState {
@@ -381,22 +402,23 @@ pub(in crate::cli) fn confirm_source_timing_grid(shell: &mut JamShellState, requ
                 shell.set_error_status("confirmed source timing grid");
             }
         }
-        crate::jam_app::QueueControlResult::AlreadyPending => {
+        Ok(crate::jam_app::QueueControlResult::AlreadyPending) => {
             shell.set_error_status("source timing grid trust change already queued");
         }
-        crate::jam_app::QueueControlResult::AlreadyInState => {
+        Ok(crate::jam_app::QueueControlResult::AlreadyInState) => {
             if shell.app.source_graph.is_some() {
                 shell.set_error_status("source timing grid already confirmed");
             } else {
                 shell.set_error_status("no source timing grid available to confirm");
             }
         }
+        Err(error) => shell.set_error_status(error.to_string()),
     }
 }
 
 pub(in crate::cli) fn revert_source_timing_grid(shell: &mut JamShellState, requested_at: u64) {
     match shell.app.queue_source_timing_grid_revert(requested_at) {
-        crate::jam_app::QueueControlResult::Enqueued => {
+        Ok(crate::jam_app::QueueControlResult::Enqueued) => {
             let transport = shell.app.runtime.transport.clone();
             let committed = shell.app.commit_ready_actions(
                 riotbox_core::transport::CommitBoundaryState {
@@ -414,11 +436,12 @@ pub(in crate::cli) fn revert_source_timing_grid(shell: &mut JamShellState, reque
                 shell.set_error_status("reverted source timing grid confirmation");
             }
         }
-        crate::jam_app::QueueControlResult::AlreadyPending => {
+        Ok(crate::jam_app::QueueControlResult::AlreadyPending) => {
             shell.set_error_status("source timing grid trust change already queued");
         }
-        crate::jam_app::QueueControlResult::AlreadyInState => {
+        Ok(crate::jam_app::QueueControlResult::AlreadyInState) => {
             shell.set_error_status("no source timing grid confirmation to revert");
         }
+        Err(error) => shell.set_error_status(error.to_string()),
     }
 }

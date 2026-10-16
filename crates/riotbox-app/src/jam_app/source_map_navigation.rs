@@ -1,3 +1,4 @@
+use riotbox_core::queue::ActionIdExhausted;
 use riotbox_core::{
     TimestampMs,
     action::{
@@ -49,14 +50,14 @@ impl JamAppState {
         &mut self,
         intent: SourceMapNavigationIntent,
         requested_at: TimestampMs,
-    ) -> SourceMapNavigationResult {
+    ) -> Result<SourceMapNavigationResult, ActionIdExhausted> {
         if self
             .queue
             .pending_actions()
             .iter()
             .any(|action| action.command == ActionCommand::TransportSeek)
         {
-            return SourceMapNavigationResult::AlreadyPending;
+            return Ok(SourceMapNavigationResult::AlreadyPending);
         }
 
         let Some(target) = source_map_navigation_target(
@@ -64,16 +65,16 @@ impl JamAppState {
             self.runtime.transport.position_beats,
             intent,
         ) else {
-            return SourceMapNavigationResult::Unavailable {
+            return Ok(SourceMapNavigationResult::Unavailable {
                 reason: "source map timing grid unavailable",
-            };
+            });
         };
 
         let current_position = self.runtime.transport.position_beats.floor().max(0.0) as u64;
         if target.position_beats == current_position {
-            return SourceMapNavigationResult::AlreadyAtBoundary {
+            return Ok(SourceMapNavigationResult::AlreadyAtBoundary {
                 target_label: target.label,
-            };
+            });
         }
 
         let mut draft = ActionDraft::new(
@@ -93,12 +94,12 @@ impl JamAppState {
             reason: "source map navigation is explicit transport position selection".into(),
         };
         draft.explanation = Some(format!("source map {} to {}", intent.label(), target.label));
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        SourceMapNavigationResult::Enqueued {
+        Ok(SourceMapNavigationResult::Enqueued {
             target_position_beats: target.position_beats,
             target_label: target.label,
-        }
+        })
     }
 }
 

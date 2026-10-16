@@ -17,7 +17,7 @@ use riotbox_core::{
     ghost::GhostWatchSuggestion,
     ids::CaptureId,
     persistence::PersistenceError,
-    queue::ActionQueue,
+    queue::{ActionIdExhausted, ActionQueue},
     session::SessionFile,
     source_graph::SourceGraph,
     transport::{CommitBoundaryState, TransportClockState},
@@ -33,6 +33,7 @@ pub enum JamAppError {
     Persistence(PersistenceError),
     Serialization(serde_json::Error),
     Sidecar(SidecarClientError),
+    ActionIdExhausted(ActionIdExhausted),
     InvalidSession(String),
 }
 
@@ -43,6 +44,7 @@ impl Display for JamAppError {
             Self::Persistence(error) => write!(f, "persistence error: {error}"),
             Self::Serialization(error) => write!(f, "serialization error: {error}"),
             Self::Sidecar(error) => write!(f, "sidecar error: {error}"),
+            Self::ActionIdExhausted(error) => Display::fmt(error, f),
             Self::InvalidSession(message) => write!(f, "invalid session: {message}"),
         }
     }
@@ -55,6 +57,7 @@ impl Error for JamAppError {
             Self::Persistence(error) => Some(error),
             Self::Serialization(error) => Some(error),
             Self::Sidecar(error) => Some(error),
+            Self::ActionIdExhausted(error) => Some(error),
             Self::InvalidSession(_) => None,
         }
     }
@@ -63,6 +66,12 @@ impl Error for JamAppError {
 impl From<io::Error> for JamAppError {
     fn from(value: io::Error) -> Self {
         Self::Io(value)
+    }
+}
+
+impl From<ActionIdExhausted> for JamAppError {
+    fn from(value: ActionIdExhausted) -> Self {
+        Self::ActionIdExhausted(value)
     }
 }
 

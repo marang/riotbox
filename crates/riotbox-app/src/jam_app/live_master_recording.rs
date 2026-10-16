@@ -1,3 +1,4 @@
+use riotbox_core::queue::ActionIdExhausted;
 use std::path::{Path, PathBuf};
 
 use riotbox_audio::runtime::{
@@ -128,7 +129,7 @@ impl JamAppState {
         requested_at: TimestampMs,
         output: &AudioOutputInfo,
         destination_path: impl AsRef<Path>,
-    ) -> LiveMasterRecordingQueueResult {
+    ) -> Result<LiveMasterRecordingQueueResult, ActionIdExhausted> {
         self.queue_live_master_recording_with_duration(
             requested_at,
             output,
@@ -143,7 +144,7 @@ impl JamAppState {
         output: &AudioOutputInfo,
         destination_path: impl AsRef<Path>,
         duration: LiveRecordingDuration,
-    ) -> LiveMasterRecordingQueueResult {
+    ) -> Result<LiveMasterRecordingQueueResult, ActionIdExhausted> {
         self.queue_versioned_live_master_recording(
             requested_at,
             output,
@@ -161,7 +162,7 @@ impl JamAppState {
         requested_at: TimestampMs,
         output: &AudioOutputInfo,
         destination_path: impl AsRef<Path>,
-    ) -> LiveMasterRecordingQueueResult {
+    ) -> Result<LiveMasterRecordingQueueResult, ActionIdExhausted> {
         self.queue_versioned_live_master_recording(
             requested_at,
             output,
@@ -178,7 +179,7 @@ impl JamAppState {
         destination_path: &Path,
         boundary: LiveRecordingExportBoundary,
         duration: LiveRecordingDuration,
-    ) -> LiveMasterRecordingQueueResult {
+    ) -> Result<LiveMasterRecordingQueueResult, ActionIdExhausted> {
         let target_scene = self.session.runtime_state.scene_state.active_scene.clone();
 
         let mut draft = ActionDraft::new(
@@ -209,61 +210,64 @@ impl JamAppState {
             duration.bars(),
         ));
 
-        match self
-            .queue
-            .enqueue_if_no_pending_command(draft, requested_at)
-        {
-            QueueEnqueueResult::AlreadyPending { .. } => {
-                LiveMasterRecordingQueueResult::AlreadyPending
-            }
-            QueueEnqueueResult::Enqueued(action_id) => {
-                match prepare_recording_plan_input(
-                    self,
-                    output,
-                    destination_path,
-                    boundary,
-                    duration,
-                ) {
-                    Ok(prepared) => {
-                        let identity = prepared.identity;
-                        self.refresh_view();
-                        LiveMasterRecordingQueueResult::Enqueued(Box::new(
-                            LiveMasterRecordingPlan {
-                                action_id,
-                                boundary,
-                                duration,
-                                request: LiveMasterCaptureRequest {
-                                    target_frame_count: prepared.target_frame_count,
-                                    channel_count: output.channel_count,
-                                    expected_tempo_bpm: identity.confirmed_bpm,
-                                    start_position_beats: Some(prepared.start_position_beats),
+        Ok(
+            match self
+                .queue
+                .enqueue_if_no_pending_command(draft, requested_at)?
+            {
+                QueueEnqueueResult::AlreadyPending { .. } => {
+                    LiveMasterRecordingQueueResult::AlreadyPending
+                }
+                QueueEnqueueResult::Enqueued(action_id) => {
+                    match prepare_recording_plan_input(
+                        self,
+                        output,
+                        destination_path,
+                        boundary,
+                        duration,
+                    ) {
+                        Ok(prepared) => {
+                            let identity = prepared.identity;
+                            self.refresh_view();
+                            LiveMasterRecordingQueueResult::Enqueued(Box::new(
+                                LiveMasterRecordingPlan {
+                                    action_id,
+                                    boundary,
+                                    duration,
+                                    request: LiveMasterCaptureRequest {
+                                        target_frame_count: prepared.target_frame_count,
+                                        channel_count: output.channel_count,
+                                        expected_tempo_bpm: identity.confirmed_bpm,
+                                        start_position_beats: Some(prepared.start_position_beats),
+                                    },
+                                    destination_path: destination_path.to_owned(),
+                                    proof_path: prepared.proof_path,
+                                    confirmed_bpm: identity.confirmed_bpm,
+                                    beats_per_bar: identity.beats_per_bar,
+                                    bar_grid_anchor_beat_cursor: identity
+                                        .bar_grid_anchor_beat_cursor,
+                                    requested_start_position_beats: prepared.start_position_beats,
+                                    scene_id: identity.scene_id,
+                                    output: output.clone(),
+                                    session_id: self.session.session_id.clone(),
+                                    session_pre_capture_sha256: prepared.session_sha256,
+                                    source_graph_ref: identity.source_graph_ref,
+                                    timing_grid_ref: identity.timing_grid_ref,
+                                    source_capture_refs: identity.source_capture_refs,
+                                    lineage_capture_refs: identity.lineage_capture_refs,
                                 },
-                                destination_path: destination_path.to_owned(),
-                                proof_path: prepared.proof_path,
-                                confirmed_bpm: identity.confirmed_bpm,
-                                beats_per_bar: identity.beats_per_bar,
-                                bar_grid_anchor_beat_cursor: identity.bar_grid_anchor_beat_cursor,
-                                requested_start_position_beats: prepared.start_position_beats,
-                                scene_id: identity.scene_id,
-                                output: output.clone(),
-                                session_id: self.session.session_id.clone(),
-                                session_pre_capture_sha256: prepared.session_sha256,
-                                source_graph_ref: identity.source_graph_ref,
-                                timing_grid_ref: identity.timing_grid_ref,
-                                source_capture_refs: identity.source_capture_refs,
-                                lineage_capture_refs: identity.lineage_capture_refs,
-                            },
-                        ))
-                    }
-                    Err(error) => {
-                        let reason = error.to_string();
-                        self.queue.reject(action_id, reason.clone());
-                        self.refresh_view();
-                        LiveMasterRecordingQueueResult::Rejected { reason }
+                            ))
+                        }
+                        Err(error) => {
+                            let reason = error.to_string();
+                            self.queue.reject(action_id, reason.clone());
+                            self.refresh_view();
+                            LiveMasterRecordingQueueResult::Rejected { reason }
+                        }
                     }
                 }
-            }
-        }
+            },
+        )
     }
 
     pub fn reject_live_master_recording(&mut self, action_id: ActionId, reason: impl Into<String>) {

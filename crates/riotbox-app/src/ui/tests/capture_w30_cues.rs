@@ -13,7 +13,10 @@ use riotbox_core::source_graph::TimingQuality;
 fn renders_capture_do_next_with_pending_capture_state() {
     let first_run_shell = first_run_shell_state();
     let mut shell = JamShellState::new(first_run_shell.app, ShellLaunchMode::Load);
-    shell.app.queue_capture_bar(240);
+    shell
+        .app
+        .queue_capture_bar(240)
+        .expect("fixture action ID available");
     shell.active_screen = ShellScreen::Capture;
 
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
@@ -33,8 +36,14 @@ fn renders_capture_do_next_with_pending_capture_state() {
 fn renders_capture_pending_cues_panel_as_first_item_with_log_overflow() {
     let first_run_shell = first_run_shell_state();
     let mut shell = JamShellState::new(first_run_shell.app, ShellLaunchMode::Load);
-    shell.app.queue_capture_bar(240);
-    shell.app.queue_capture_bar(241);
+    shell
+        .app
+        .queue_capture_bar(240)
+        .expect("fixture action ID available");
+    shell
+        .app
+        .queue_capture_bar(241)
+        .expect("fixture action ID available");
 
     let lines = pending_capture_lines(&shell);
     let rendered: Vec<String> = lines
@@ -129,7 +138,10 @@ fn renders_capture_shell_snapshot_with_w30_live_recall_cue() {
     shell.app.session.captures[0].is_pinned = true;
     shell.app.refresh_view();
     assert_eq!(
-        shell.app.queue_w30_live_recall(200),
+        shell
+            .app
+            .queue_w30_live_recall(200)
+            .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
     shell.active_screen = ShellScreen::Capture;
@@ -150,7 +162,10 @@ fn renders_capture_shell_snapshot_with_w30_trigger_cue() {
         });
     shell.app.refresh_view();
     assert_eq!(
-        shell.app.queue_w30_trigger_pad(205),
+        shell
+            .app
+            .queue_w30_trigger_pad(205)
+            .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
     shell.active_screen = ShellScreen::Capture;
@@ -195,7 +210,10 @@ fn renders_capture_shell_snapshot_with_w30_step_cue() {
     shell.app.session.runtime_state.lane_state.w30.focused_pad = Some("pad-01".into());
     shell.app.refresh_view();
     assert_eq!(
-        shell.app.queue_w30_step_focus(207),
+        shell
+            .app
+            .queue_w30_step_focus(207)
+            .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
     shell.active_screen = ShellScreen::Capture;
@@ -240,7 +258,10 @@ fn renders_capture_shell_snapshot_with_w30_bank_swap_cue() {
     shell.app.session.runtime_state.lane_state.w30.focused_pad = Some("pad-01".into());
     shell.app.refresh_view();
     assert_eq!(
-        shell.app.queue_w30_swap_bank(208),
+        shell
+            .app
+            .queue_w30_swap_bank(208)
+            .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
     shell.active_screen = ShellScreen::Capture;
@@ -288,7 +309,10 @@ fn renders_capture_shell_snapshot_with_w30_slice_pool_browse_cue() {
     shell.app.session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
     shell.app.refresh_view();
     assert_eq!(
-        shell.app.queue_w30_browse_slice_pool(209),
+        shell
+            .app
+            .queue_w30_browse_slice_pool(209)
+            .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
     shell.active_screen = ShellScreen::Capture;
@@ -336,7 +360,10 @@ fn renders_capture_shell_snapshot_with_feral_w30_slice_pool_browse_cue() {
     shell.app.session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
     shell.app.refresh_view();
     assert_eq!(
-        shell.app.queue_w30_browse_slice_pool(210),
+        shell
+            .app
+            .queue_w30_browse_slice_pool(210)
+            .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
     assert_eq!(

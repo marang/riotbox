@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::{collections::VecDeque, error::Error, fmt};
 
 use crate::{
     TimestampMs,
@@ -7,11 +7,33 @@ use crate::{
     transport::CommitBoundaryState,
 };
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ActionIdExhausted;
+
+impl fmt::Display for ActionIdExhausted {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("action ID space exhausted")
+    }
+}
+
+impl Error for ActionIdExhausted {}
+
+#[derive(Clone, Debug)]
 pub struct ActionQueue {
-    next_id: u64,
+    next_id: Option<u64>,
     pending: VecDeque<Action>,
     history: Vec<Action>,
+}
+
+impl Default for ActionQueue {
+    fn default() -> Self {
+        // Preserve the original derived Default's first ID, distinct from new().
+        Self {
+            next_id: Some(0),
+            pending: VecDeque::new(),
+            history: Vec::new(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -31,14 +53,18 @@ impl ActionQueue {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            next_id: 1,
+            next_id: Some(1),
             pending: VecDeque::new(),
             history: Vec::new(),
         }
     }
 
-    pub fn enqueue(&mut self, draft: ActionDraft, requested_at: TimestampMs) -> ActionId {
-        let id = self.allocate_action_id();
+    pub fn enqueue(
+        &mut self,
+        draft: ActionDraft,
+        requested_at: TimestampMs,
+    ) -> Result<ActionId, ActionIdExhausted> {
+        let id = self.allocate_action_id()?;
 
         let action = Action {
             id,
@@ -56,30 +82,32 @@ impl ActionQueue {
         };
 
         self.pending.push_back(action);
-        id
+        Ok(id)
     }
 
     /// Reserve the next globally unique in-memory action id.
     ///
     /// Directly committed control actions such as `undo.last` use the same
     /// allocator as queued actions so pending/history ids cannot collide.
-    pub fn allocate_action_id(&mut self) -> ActionId {
-        let id = ActionId(self.next_id);
-        self.next_id = self.next_id.saturating_add(1);
-        id
+    /// Exhaustion never reuses an ID or mutates pending/history state.
+    pub fn allocate_action_id(&mut self) -> Result<ActionId, ActionIdExhausted> {
+        let next = self.next_id.ok_or(ActionIdExhausted)?;
+        self.next_id = next.checked_add(1);
+        Ok(ActionId(next))
     }
 
     pub fn enqueue_if_no_pending_command(
         &mut self,
         draft: ActionDraft,
         requested_at: TimestampMs,
-    ) -> QueueEnqueueResult {
+    ) -> Result<QueueEnqueueResult, ActionIdExhausted> {
         let command = draft.command;
         if self.has_pending_command(command) {
-            return QueueEnqueueResult::AlreadyPending { command };
+            return Ok(QueueEnqueueResult::AlreadyPending { command });
         }
 
-        QueueEnqueueResult::Enqueued(self.enqueue(draft, requested_at))
+        self.enqueue(draft, requested_at)
+            .map(QueueEnqueueResult::Enqueued)
     }
 
     #[must_use]
@@ -97,9 +125,13 @@ impl ActionQueue {
         &self.history
     }
 
+    /// Advance beyond persisted history; exhaustion is sticky, even for older history.
     pub fn reserve_action_ids_after(&mut self, last_action_id: Option<ActionId>) {
         if let Some(last_action_id) = last_action_id {
-            self.next_id = self.next_id.max(last_action_id.0.saturating_add(1));
+            self.next_id = self
+                .next_id
+                .zip(last_action_id.0.checked_add(1))
+                .map(|(next, reserved)| next.max(reserved));
         }
     }
 
@@ -229,6 +261,9 @@ impl ActionQueue {
 }
 
 #[cfg(test)]
+mod exhaustion_tests;
+
+#[cfg(test)]
 mod tests {
     use crate::{
         action::{ActionCommand, ActorType, Quantization, TargetScope},
@@ -242,31 +277,35 @@ mod tests {
     fn commits_only_actions_that_match_boundary() {
         let mut queue = ActionQueue::new();
 
-        queue.enqueue(
-            ActionDraft::new(
-                ActorType::User,
-                ActionCommand::CaptureNow,
-                Quantization::NextBar,
-                crate::action::ActionTarget {
-                    scope: Some(TargetScope::LaneW30),
-                    ..Default::default()
-                },
-            ),
-            100,
-        );
+        queue
+            .enqueue(
+                ActionDraft::new(
+                    ActorType::User,
+                    ActionCommand::CaptureNow,
+                    Quantization::NextBar,
+                    crate::action::ActionTarget {
+                        scope: Some(TargetScope::LaneW30),
+                        ..Default::default()
+                    },
+                ),
+                100,
+            )
+            .expect("generated queue ID available");
 
-        queue.enqueue(
-            ActionDraft::new(
-                ActorType::Ghost,
-                ActionCommand::GhostSetMode,
-                Quantization::Immediate,
-                crate::action::ActionTarget {
-                    scope: Some(TargetScope::Ghost),
-                    ..Default::default()
-                },
-            ),
-            101,
-        );
+        queue
+            .enqueue(
+                ActionDraft::new(
+                    ActorType::Ghost,
+                    ActionCommand::GhostSetMode,
+                    Quantization::Immediate,
+                    crate::action::ActionTarget {
+                        scope: Some(TargetScope::Ghost),
+                        ..Default::default()
+                    },
+                ),
+                101,
+            )
+            .expect("generated queue ID available");
 
         let committed = queue.commit_ready(CommitBoundary::Immediate, 110);
         assert_eq!(committed.len(), 1);
@@ -281,18 +320,20 @@ mod tests {
     #[test]
     fn can_reject_pending_action() {
         let mut queue = ActionQueue::new();
-        let id = queue.enqueue(
-            ActionDraft::new(
-                ActorType::User,
-                ActionCommand::MutateScene,
-                Quantization::NextPhrase,
-                crate::action::ActionTarget {
-                    scope: Some(TargetScope::Scene),
-                    ..Default::default()
-                },
-            ),
-            100,
-        );
+        let id = queue
+            .enqueue(
+                ActionDraft::new(
+                    ActorType::User,
+                    ActionCommand::MutateScene,
+                    Quantization::NextPhrase,
+                    crate::action::ActionTarget {
+                        scope: Some(TargetScope::Scene),
+                        ..Default::default()
+                    },
+                ),
+                100,
+            )
+            .expect("generated queue ID available");
 
         assert!(queue.reject(id, "scene locked"));
         assert_eq!(queue.pending_actions().len(), 0);
@@ -304,18 +345,20 @@ mod tests {
     fn commits_against_explicit_transport_boundary_state() {
         let mut queue = ActionQueue::new();
 
-        queue.enqueue(
-            ActionDraft::new(
-                ActorType::User,
-                ActionCommand::SceneLaunch,
-                Quantization::NextPhrase,
-                crate::action::ActionTarget {
-                    scope: Some(TargetScope::Scene),
-                    ..Default::default()
-                },
-            ),
-            100,
-        );
+        queue
+            .enqueue(
+                ActionDraft::new(
+                    ActorType::User,
+                    ActionCommand::SceneLaunch,
+                    Quantization::NextPhrase,
+                    crate::action::ActionTarget {
+                        scope: Some(TargetScope::Scene),
+                        ..Default::default()
+                    },
+                ),
+                100,
+            )
+            .expect("generated queue ID available");
 
         let clock = TransportClockState {
             is_playing: true,
@@ -347,30 +390,34 @@ mod tests {
     fn preserves_stable_commit_sequence_within_boundary() {
         let mut queue = ActionQueue::new();
 
-        let first = queue.enqueue(
-            ActionDraft::new(
-                ActorType::User,
-                ActionCommand::CaptureNow,
-                Quantization::NextBar,
-                crate::action::ActionTarget {
-                    scope: Some(TargetScope::LaneW30),
-                    ..Default::default()
-                },
-            ),
-            100,
-        );
-        let second = queue.enqueue(
-            ActionDraft::new(
-                ActorType::Ghost,
-                ActionCommand::MutateScene,
-                Quantization::NextBar,
-                crate::action::ActionTarget {
-                    scope: Some(TargetScope::Scene),
-                    ..Default::default()
-                },
-            ),
-            101,
-        );
+        let first = queue
+            .enqueue(
+                ActionDraft::new(
+                    ActorType::User,
+                    ActionCommand::CaptureNow,
+                    Quantization::NextBar,
+                    crate::action::ActionTarget {
+                        scope: Some(TargetScope::LaneW30),
+                        ..Default::default()
+                    },
+                ),
+                100,
+            )
+            .expect("generated queue ID available");
+        let second = queue
+            .enqueue(
+                ActionDraft::new(
+                    ActorType::Ghost,
+                    ActionCommand::MutateScene,
+                    Quantization::NextBar,
+                    crate::action::ActionTarget {
+                        scope: Some(TargetScope::Scene),
+                        ..Default::default()
+                    },
+                ),
+                101,
+            )
+            .expect("generated queue ID available");
 
         let committed = queue.commit_ready_for_transport(
             CommitBoundaryState {
@@ -395,18 +442,20 @@ mod tests {
         let mut queue = ActionQueue::new();
         queue.reserve_action_ids_after(Some(ActionId(9)));
 
-        let action_id = queue.enqueue(
-            ActionDraft::new(
-                ActorType::User,
-                ActionCommand::CaptureNow,
-                Quantization::Immediate,
-                crate::action::ActionTarget {
-                    scope: Some(TargetScope::LaneW30),
-                    ..Default::default()
-                },
-            ),
-            100,
-        );
+        let action_id = queue
+            .enqueue(
+                ActionDraft::new(
+                    ActorType::User,
+                    ActionCommand::CaptureNow,
+                    Quantization::Immediate,
+                    crate::action::ActionTarget {
+                        scope: Some(TargetScope::LaneW30),
+                        ..Default::default()
+                    },
+                ),
+                100,
+            )
+            .expect("generated queue ID available");
 
         assert_eq!(action_id, ActionId(10));
     }
@@ -415,30 +464,34 @@ mod tests {
     fn commits_one_side_effect_action_only_after_caller_reports_success() {
         let mut queue = ActionQueue::new();
 
-        let export_action = queue.enqueue(
-            ActionDraft::new(
-                ActorType::User,
-                ActionCommand::ExportProductMix,
-                Quantization::Immediate,
-                crate::action::ActionTarget {
-                    scope: Some(TargetScope::Session),
-                    ..Default::default()
-                },
-            ),
-            100,
-        );
-        let scene_action = queue.enqueue(
-            ActionDraft::new(
-                ActorType::User,
-                ActionCommand::SceneLaunch,
-                Quantization::NextBar,
-                crate::action::ActionTarget {
-                    scope: Some(TargetScope::Scene),
-                    ..Default::default()
-                },
-            ),
-            101,
-        );
+        let export_action = queue
+            .enqueue(
+                ActionDraft::new(
+                    ActorType::User,
+                    ActionCommand::ExportProductMix,
+                    Quantization::Immediate,
+                    crate::action::ActionTarget {
+                        scope: Some(TargetScope::Session),
+                        ..Default::default()
+                    },
+                ),
+                100,
+            )
+            .expect("generated queue ID available");
+        let scene_action = queue
+            .enqueue(
+                ActionDraft::new(
+                    ActorType::User,
+                    ActionCommand::SceneLaunch,
+                    Quantization::NextBar,
+                    crate::action::ActionTarget {
+                        scope: Some(TargetScope::Scene),
+                        ..Default::default()
+                    },
+                ),
+                101,
+            )
+            .expect("generated queue ID available");
 
         let committed = queue
             .commit_pending_after_side_effect(
@@ -480,32 +533,36 @@ mod tests {
         let export_ids = export_commands
             .into_iter()
             .map(|command| {
-                queue.enqueue(
-                    ActionDraft::new(
-                        ActorType::User,
-                        command,
-                        Quantization::Immediate,
-                        crate::action::ActionTarget {
-                            scope: Some(TargetScope::Session),
-                            ..Default::default()
-                        },
-                    ),
-                    100,
-                )
+                queue
+                    .enqueue(
+                        ActionDraft::new(
+                            ActorType::User,
+                            command,
+                            Quantization::Immediate,
+                            crate::action::ActionTarget {
+                                scope: Some(TargetScope::Session),
+                                ..Default::default()
+                            },
+                        ),
+                        100,
+                    )
+                    .expect("generated queue ID available")
             })
             .collect::<Vec<_>>();
-        let scene_id = queue.enqueue(
-            ActionDraft::new(
-                ActorType::User,
-                ActionCommand::SceneLaunch,
-                Quantization::Immediate,
-                crate::action::ActionTarget {
-                    scope: Some(TargetScope::Scene),
-                    ..Default::default()
-                },
-            ),
-            101,
-        );
+        let scene_id = queue
+            .enqueue(
+                ActionDraft::new(
+                    ActorType::User,
+                    ActionCommand::SceneLaunch,
+                    Quantization::Immediate,
+                    crate::action::ActionTarget {
+                        scope: Some(TargetScope::Scene),
+                        ..Default::default()
+                    },
+                ),
+                101,
+            )
+            .expect("generated queue ID available");
 
         let committed = queue.commit_ready_for_transport(
             CommitBoundaryState {
@@ -550,11 +607,15 @@ mod tests {
             )
         };
 
-        let first = queue.enqueue_if_no_pending_command(draft(), 100);
+        let first = queue
+            .enqueue_if_no_pending_command(draft(), 100)
+            .expect("generated queue ID available");
         assert_eq!(first, QueueEnqueueResult::Enqueued(ActionId(1)));
         assert!(queue.has_pending_command(ActionCommand::ExportStemPackage));
 
-        let second = queue.enqueue_if_no_pending_command(draft(), 101);
+        let second = queue
+            .enqueue_if_no_pending_command(draft(), 101)
+            .expect("generated queue ID available");
         assert_eq!(
             second,
             QueueEnqueueResult::AlreadyPending {

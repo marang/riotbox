@@ -2,6 +2,7 @@ use super::{
     state::{JamAppState, QueueControlResult},
     w30_targets,
 };
+use riotbox_core::queue::ActionIdExhausted;
 use riotbox_core::{
     TimestampMs,
     action::{
@@ -13,7 +14,10 @@ use riotbox_core::{
 };
 
 impl JamAppState {
-    pub fn queue_promote_last_capture(&mut self, requested_at: TimestampMs) -> bool {
+    pub fn queue_promote_last_capture(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Result<bool, ActionIdExhausted> {
         let Some(capture) = self
             .session
             .captures
@@ -22,7 +26,7 @@ impl JamAppState {
             .find(|capture| capture.assigned_target.is_none())
             .or_else(|| self.session.captures.last())
         else {
-            return false;
+            return Ok(false);
         };
 
         let Some(bank_id) = self
@@ -33,7 +37,7 @@ impl JamAppState {
             .active_bank
             .clone()
         else {
-            return false;
+            return Ok(false);
         };
         let Some(pad_id) = self
             .session
@@ -43,7 +47,7 @@ impl JamAppState {
             .focused_pad
             .clone()
         else {
-            return false;
+            return Ok(false);
         };
 
         let mut draft = ActionDraft::new(
@@ -65,22 +69,25 @@ impl JamAppState {
             "promote {} into W-30 pad {bank_id}/{pad_id}",
             capture.capture_id
         ));
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        true
+        Ok(true)
     }
 
     pub fn queue_w30_live_recall(
         &mut self,
         requested_at: TimestampMs,
-    ) -> Option<QueueControlResult> {
+    ) -> Result<Option<QueueControlResult>, ActionIdExhausted> {
         if self.w30_pad_cue_pending() {
-            return Some(QueueControlResult::AlreadyPending);
+            return Ok(Some(QueueControlResult::AlreadyPending));
         }
 
-        let capture = self.recallable_w30_capture()?.clone();
-        let CaptureTarget::W30Pad { bank_id, pad_id } = capture.assigned_target.clone()? else {
-            return None;
+        let Some(capture) = self.recallable_w30_capture().cloned() else {
+            return Ok(None);
+        };
+        let Some(CaptureTarget::W30Pad { bank_id, pad_id }) = capture.assigned_target.clone()
+        else {
+            return Ok(None);
         };
         let mut draft = ActionDraft::new(
             ActorType::User,
@@ -101,20 +108,22 @@ impl JamAppState {
             "recall {} on W-30 pad {bank_id}/{pad_id}",
             capture.capture_id
         ));
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        Some(QueueControlResult::Enqueued)
+        Ok(Some(QueueControlResult::Enqueued))
     }
 
     pub fn queue_w30_step_focus(
         &mut self,
         requested_at: TimestampMs,
-    ) -> Option<QueueControlResult> {
+    ) -> Result<Option<QueueControlResult>, ActionIdExhausted> {
         if self.w30_pad_cue_pending() {
-            return Some(QueueControlResult::AlreadyPending);
+            return Ok(Some(QueueControlResult::AlreadyPending));
         }
 
-        let (bank_id, pad_id) = self.next_w30_focus_target()?;
+        let Some((bank_id, pad_id)) = self.next_w30_focus_target() else {
+            return Ok(None);
+        };
         let current_focus = self
             .session
             .runtime_state
@@ -131,7 +140,7 @@ impl JamAppState {
                     .clone(),
             );
         if current_focus == Some((bank_id.clone(), pad_id.clone())) {
-            return Some(QueueControlResult::AlreadyInState);
+            return Ok(Some(QueueControlResult::AlreadyInState));
         }
 
         let mut draft = ActionDraft::new(
@@ -148,17 +157,22 @@ impl JamAppState {
         draft.explanation = Some(format!(
             "step W-30 focus to {bank_id}/{pad_id} on next beat"
         ));
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        Some(QueueControlResult::Enqueued)
+        Ok(Some(QueueControlResult::Enqueued))
     }
 
-    pub fn queue_w30_swap_bank(&mut self, requested_at: TimestampMs) -> Option<QueueControlResult> {
+    pub fn queue_w30_swap_bank(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Result<Option<QueueControlResult>, ActionIdExhausted> {
         if self.w30_pad_cue_pending() {
-            return Some(QueueControlResult::AlreadyPending);
+            return Ok(Some(QueueControlResult::AlreadyPending));
         }
 
-        let (bank_id, pad_id, capture_id) = self.next_w30_bank_target()?;
+        let Some((bank_id, pad_id, capture_id)) = self.next_w30_bank_target() else {
+            return Ok(None);
+        };
         let current_focus = self
             .session
             .runtime_state
@@ -175,7 +189,7 @@ impl JamAppState {
                     .clone(),
             );
         if current_focus == Some((bank_id.clone(), pad_id.clone())) {
-            return Some(QueueControlResult::AlreadyInState);
+            return Ok(Some(QueueControlResult::AlreadyInState));
         }
 
         let mut draft = ActionDraft::new(
@@ -196,20 +210,22 @@ impl JamAppState {
         draft.explanation = Some(format!(
             "swap W-30 bank to {bank_id}/{pad_id} with {capture_id} on next bar"
         ));
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        Some(QueueControlResult::Enqueued)
+        Ok(Some(QueueControlResult::Enqueued))
     }
 
     pub fn queue_w30_browse_slice_pool(
         &mut self,
         requested_at: TimestampMs,
-    ) -> Option<QueueControlResult> {
+    ) -> Result<Option<QueueControlResult>, ActionIdExhausted> {
         if self.w30_pad_cue_pending() {
-            return Some(QueueControlResult::AlreadyPending);
+            return Ok(Some(QueueControlResult::AlreadyPending));
         }
 
-        let target = self.next_w30_slice_pool_capture()?;
+        let Some(target) = self.next_w30_slice_pool_capture() else {
+            return Ok(None);
+        };
         if self
             .session
             .runtime_state
@@ -219,7 +235,7 @@ impl JamAppState {
             .as_ref()
             == Some(&target.capture_id)
         {
-            return Some(QueueControlResult::AlreadyInState);
+            return Ok(Some(QueueControlResult::AlreadyInState));
         }
 
         let mut draft = ActionDraft::new(
@@ -245,22 +261,25 @@ impl JamAppState {
             "browse W-30 {reason} to {} on {}/{} on next beat",
             target.capture_id, target.bank_id, target.pad_id
         ));
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        Some(QueueControlResult::Enqueued)
+        Ok(Some(QueueControlResult::Enqueued))
     }
 
     pub fn queue_w30_apply_damage_profile(
         &mut self,
         requested_at: TimestampMs,
-    ) -> Option<QueueControlResult> {
+    ) -> Result<Option<QueueControlResult>, ActionIdExhausted> {
         if self.w30_pad_cue_pending() {
-            return Some(QueueControlResult::AlreadyPending);
+            return Ok(Some(QueueControlResult::AlreadyPending));
         }
 
-        let capture = self.damage_profile_ready_w30_capture()?.clone();
-        let CaptureTarget::W30Pad { bank_id, pad_id } = capture.assigned_target.clone()? else {
-            return None;
+        let Some(capture) = self.damage_profile_ready_w30_capture().cloned() else {
+            return Ok(None);
+        };
+        let Some(CaptureTarget::W30Pad { bank_id, pad_id }) = capture.assigned_target.clone()
+        else {
+            return Ok(None);
         };
 
         let mut draft = ActionDraft::new(
@@ -299,29 +318,29 @@ impl JamAppState {
                 capture.capture_id
             )
         });
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        Some(QueueControlResult::Enqueued)
+        Ok(Some(QueueControlResult::Enqueued))
     }
 
     pub fn queue_w30_hook_turnaround(
         &mut self,
         requested_at: TimestampMs,
-    ) -> Option<QueueControlResult> {
+    ) -> Result<Option<QueueControlResult>, ActionIdExhausted> {
         self.queue_w30_hook_articulation(requested_at, ActionCommand::W30HookTurnaround)
     }
 
     pub fn queue_w30_pitch_dive(
         &mut self,
         requested_at: TimestampMs,
-    ) -> Option<QueueControlResult> {
+    ) -> Result<Option<QueueControlResult>, ActionIdExhausted> {
         self.queue_w30_hook_articulation(requested_at, ActionCommand::W30PitchDive)
     }
 
     pub fn queue_w30_filter_slam(
         &mut self,
         requested_at: TimestampMs,
-    ) -> Option<QueueControlResult> {
+    ) -> Result<Option<QueueControlResult>, ActionIdExhausted> {
         self.queue_w30_hook_articulation(requested_at, ActionCommand::W30FilterSlam)
     }
 
@@ -329,7 +348,7 @@ impl JamAppState {
         &mut self,
         requested_at: TimestampMs,
         command: ActionCommand,
-    ) -> Option<QueueControlResult> {
+    ) -> Result<Option<QueueControlResult>, ActionIdExhausted> {
         debug_assert!(matches!(
             command,
             ActionCommand::W30HookTurnaround
@@ -337,12 +356,15 @@ impl JamAppState {
                 | ActionCommand::W30FilterSlam
         ));
         if self.w30_pad_cue_pending() {
-            return Some(QueueControlResult::AlreadyPending);
+            return Ok(Some(QueueControlResult::AlreadyPending));
         }
 
-        let capture = self.triggerable_w30_capture()?.clone();
-        let CaptureTarget::W30Pad { bank_id, pad_id } = capture.assigned_target.clone()? else {
-            return None;
+        let Some(capture) = self.triggerable_w30_capture().cloned() else {
+            return Ok(None);
+        };
+        let Some(CaptureTarget::W30Pad { bank_id, pad_id }) = capture.assigned_target.clone()
+        else {
+            return Ok(None);
         };
         let capture_id = capture.capture_id.to_string();
         let render = &self.runtime.w30_preview;
@@ -354,7 +376,7 @@ impl JamAppState {
             || render.pad_playback.is_none()
             || render.capture_id.as_deref() != Some(capture_id.as_str())
         {
-            return None;
+            return Ok(None);
         }
 
         let mut draft = ActionDraft::new(
@@ -387,22 +409,25 @@ impl JamAppState {
             ),
             _ => unreachable!("W-30 hook articulation helper received another command"),
         });
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        Some(QueueControlResult::Enqueued)
+        Ok(Some(QueueControlResult::Enqueued))
     }
 
     pub fn queue_w30_loop_freeze(
         &mut self,
         requested_at: TimestampMs,
-    ) -> Option<QueueControlResult> {
+    ) -> Result<Option<QueueControlResult>, ActionIdExhausted> {
         if self.w30_phrase_capture_cue_pending() || self.w30_pad_cue_pending() {
-            return Some(QueueControlResult::AlreadyPending);
+            return Ok(Some(QueueControlResult::AlreadyPending));
         }
 
-        let capture = self.loop_freeze_ready_w30_capture()?.clone();
-        let CaptureTarget::W30Pad { bank_id, pad_id } = capture.assigned_target.clone()? else {
-            return None;
+        let Some(capture) = self.loop_freeze_ready_w30_capture().cloned() else {
+            return Ok(None);
+        };
+        let Some(CaptureTarget::W30Pad { bank_id, pad_id }) = capture.assigned_target.clone()
+        else {
+            return Ok(None);
         };
 
         let mut draft = ActionDraft::new(
@@ -425,22 +450,25 @@ impl JamAppState {
             Self::W30_LOOP_FREEZE_LABEL,
             capture.capture_id
         ));
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        Some(QueueControlResult::Enqueued)
+        Ok(Some(QueueControlResult::Enqueued))
     }
 
     pub fn queue_w30_promoted_audition(
         &mut self,
         requested_at: TimestampMs,
-    ) -> Option<QueueControlResult> {
+    ) -> Result<Option<QueueControlResult>, ActionIdExhausted> {
         if self.w30_pad_cue_pending() {
-            return Some(QueueControlResult::AlreadyPending);
+            return Ok(Some(QueueControlResult::AlreadyPending));
         }
 
-        let capture = self.auditionable_w30_capture()?.clone();
-        let CaptureTarget::W30Pad { bank_id, pad_id } = capture.assigned_target.clone()? else {
-            return None;
+        let Some(capture) = self.auditionable_w30_capture().cloned() else {
+            return Ok(None);
+        };
+        let Some(CaptureTarget::W30Pad { bank_id, pad_id }) = capture.assigned_target.clone()
+        else {
+            return Ok(None);
         };
 
         let mut draft = ActionDraft::new(
@@ -462,14 +490,17 @@ impl JamAppState {
             "audition promoted {} on W-30 pad {bank_id}/{pad_id}",
             capture.capture_id
         ));
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        Some(QueueControlResult::Enqueued)
+        Ok(Some(QueueControlResult::Enqueued))
     }
 
-    pub fn queue_w30_audition(&mut self, requested_at: TimestampMs) -> Option<QueueControlResult> {
+    pub fn queue_w30_audition(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Result<Option<QueueControlResult>, ActionIdExhausted> {
         if self.w30_pad_cue_pending() {
-            return Some(QueueControlResult::AlreadyPending);
+            return Ok(Some(QueueControlResult::AlreadyPending));
         }
 
         if self.auditionable_w30_capture().is_some() {
@@ -482,15 +513,21 @@ impl JamAppState {
     pub fn queue_w30_raw_capture_audition(
         &mut self,
         requested_at: TimestampMs,
-    ) -> Option<QueueControlResult> {
+    ) -> Result<Option<QueueControlResult>, ActionIdExhausted> {
         if self.w30_pad_cue_pending() {
-            return Some(QueueControlResult::AlreadyPending);
+            return Ok(Some(QueueControlResult::AlreadyPending));
         }
 
-        let capture = self.raw_auditionable_capture()?.clone();
+        let Some(capture) = self.raw_auditionable_capture().cloned() else {
+            return Ok(None);
+        };
         let w30 = &self.session.runtime_state.lane_state.w30;
-        let bank_id = w30.active_bank.clone()?;
-        let pad_id = w30.focused_pad.clone()?;
+        let Some(bank_id) = w30.active_bank.clone() else {
+            return Ok(None);
+        };
+        let Some(pad_id) = w30.focused_pad.clone() else {
+            return Ok(None);
+        };
 
         let mut draft = ActionDraft::new(
             ActorType::User,
@@ -511,22 +548,25 @@ impl JamAppState {
             "audition raw capture {} on W-30 preview {bank_id}/{pad_id}",
             capture.capture_id
         ));
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        Some(QueueControlResult::Enqueued)
+        Ok(Some(QueueControlResult::Enqueued))
     }
 
     pub fn queue_w30_trigger_pad(
         &mut self,
         requested_at: TimestampMs,
-    ) -> Option<QueueControlResult> {
+    ) -> Result<Option<QueueControlResult>, ActionIdExhausted> {
         if self.w30_pad_cue_pending() {
-            return Some(QueueControlResult::AlreadyPending);
+            return Ok(Some(QueueControlResult::AlreadyPending));
         }
 
-        let capture = self.triggerable_w30_capture()?.clone();
-        let CaptureTarget::W30Pad { bank_id, pad_id } = capture.assigned_target.clone()? else {
-            return None;
+        let Some(capture) = self.triggerable_w30_capture().cloned() else {
+            return Ok(None);
+        };
+        let Some(CaptureTarget::W30Pad { bank_id, pad_id }) = capture.assigned_target.clone()
+        else {
+            return Ok(None);
         };
 
         let mut draft = ActionDraft::new(
@@ -548,20 +588,22 @@ impl JamAppState {
             "trigger W-30 pad {bank_id}/{pad_id} from {} on next beat",
             capture.capture_id
         ));
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        Some(QueueControlResult::Enqueued)
+        Ok(Some(QueueControlResult::Enqueued))
     }
 
     pub fn queue_w30_internal_resample(
         &mut self,
         requested_at: TimestampMs,
-    ) -> Option<QueueControlResult> {
+    ) -> Result<Option<QueueControlResult>, ActionIdExhausted> {
         if self.w30_phrase_capture_cue_pending() {
-            return Some(QueueControlResult::AlreadyPending);
+            return Ok(Some(QueueControlResult::AlreadyPending));
         }
 
-        let capture = self.resample_ready_w30_capture()?.clone();
+        let Some(capture) = self.resample_ready_w30_capture().cloned() else {
+            return Ok(None);
+        };
         let mut draft = ActionDraft::new(
             ActorType::User,
             ActionCommand::PromoteResample,
@@ -579,8 +621,8 @@ impl JamAppState {
             "resample {} through W-30 on next phrase",
             capture.capture_id
         ));
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        Some(QueueControlResult::Enqueued)
+        Ok(Some(QueueControlResult::Enqueued))
     }
 }

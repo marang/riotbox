@@ -299,7 +299,9 @@ fn queue_with_lane_pending_actions() -> ActionQueue {
     );
     capture_draft.undo_policy = UndoPolicy::Undoable;
     capture_draft.explanation = Some("capture current break".into());
-    queue.enqueue(capture_draft, 100);
+    queue
+        .enqueue(capture_draft, 100)
+        .expect("generated queue ID available");
 
     let mut mc202_role = action_draft(
         ActorType::User,
@@ -308,7 +310,9 @@ fn queue_with_lane_pending_actions() -> ActionQueue {
         Some(TargetScope::LaneMc202),
     );
     mc202_role.target.object_id = Some("leader".into());
-    queue.enqueue(mc202_role, 101);
+    queue
+        .enqueue(mc202_role, 101)
+        .expect("generated queue ID available");
 
     enqueue_w30_action(
         &mut queue,
@@ -359,24 +363,28 @@ fn queue_with_lane_pending_actions() -> ActionQueue {
         "pad-01",
         104,
     );
-    queue.enqueue(
-        action_draft(
-            ActorType::User,
-            ActionCommand::Tr909Release,
-            Quantization::NextPhrase,
-            Some(TargetScope::LaneTr909),
-        ),
-        104,
-    );
-    queue.enqueue(
-        action_draft(
-            ActorType::User,
-            ActionCommand::Tr909FillNext,
-            Quantization::NextBar,
-            Some(TargetScope::LaneTr909),
-        ),
-        105,
-    );
+    queue
+        .enqueue(
+            action_draft(
+                ActorType::User,
+                ActionCommand::Tr909Release,
+                Quantization::NextPhrase,
+                Some(TargetScope::LaneTr909),
+            ),
+            104,
+        )
+        .expect("generated queue ID available");
+    queue
+        .enqueue(
+            action_draft(
+                ActorType::User,
+                ActionCommand::Tr909FillNext,
+                Quantization::NextBar,
+                Some(TargetScope::LaneTr909),
+            ),
+            105,
+        )
+        .expect("generated queue ID available");
 
     let mut resample_draft = action_draft(
         ActorType::User,
@@ -388,7 +396,9 @@ fn queue_with_lane_pending_actions() -> ActionQueue {
         capture_id: Some("cap-01".into()),
         destination: Some("w30:resample".into()),
     };
-    queue.enqueue(resample_draft, 106);
+    queue
+        .enqueue(resample_draft, 106)
+        .expect("generated queue ID available");
 
     queue
 }
@@ -419,7 +429,9 @@ fn enqueue_w30_action(
     requested_at: u64,
 ) {
     let draft = w30_target_draft(command, quantization, bank_id, pad_id);
-    queue.enqueue(draft, requested_at);
+    queue
+        .enqueue(draft, requested_at)
+        .expect("generated queue ID available");
 }
 
 fn enqueue_w30_mutation_action(
@@ -436,7 +448,9 @@ fn enqueue_w30_mutation_action(
         intensity: 1.0,
         target_id: Some(target_id.into()),
     };
-    queue.enqueue(draft, requested_at);
+    queue
+        .enqueue(draft, requested_at)
+        .expect("generated queue ID available");
 }
 
 fn w30_target_draft(

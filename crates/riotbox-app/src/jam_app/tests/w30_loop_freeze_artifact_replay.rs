@@ -57,7 +57,7 @@ fn w30_snapshot_payload_restore_hydrates_loop_freeze_artifact_preview_output() {
     let pre_freeze_runtime = committed_state.session.runtime_state.clone();
 
     assert_eq!(
-        committed_state.queue_w30_loop_freeze(700),
+        committed_state.queue_w30_loop_freeze(700).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     commit_w30_replay_step(&mut committed_state, CommitBoundary::Phrase, 48, 12, 3, 800);

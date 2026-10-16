@@ -34,14 +34,18 @@ fn canonical_two_bar_rounding_ties_publish_fully_ready_identity_and_restore() {
             source_graph_path: None,
         });
         let queued = if explicit {
-            state.queue_live_master_recording_with_duration(
-                1_000,
-                &output,
-                &destination,
-                LiveRecordingDuration::TwoBars,
-            )
+            state
+                .queue_live_master_recording_with_duration(
+                    1_000,
+                    &output,
+                    &destination,
+                    LiveRecordingDuration::TwoBars,
+                )
+                .unwrap()
         } else {
-            state.queue_live_master_recording(1_000, &output, &destination)
+            state
+                .queue_live_master_recording(1_000, &output, &destination)
+                .unwrap()
         };
         let LiveMasterRecordingQueueResult::Enqueued(plan) = queued else {
             panic!("queue canonical two-bar take");
@@ -127,8 +131,9 @@ fn canonical_two_bar_endpoint_or_version_drift_does_not_publish() {
         output.sample_rate = 48_000;
         let mut state = live_master_recording_state();
         state.session.runtime_state.source_timing.confirmed_bpm = Some(121.5);
-        let LiveMasterRecordingQueueResult::Enqueued(mut plan) =
-            state.queue_live_master_recording(1_000, &output, &destination)
+        let LiveMasterRecordingQueueResult::Enqueued(mut plan) = state
+            .queue_live_master_recording(1_000, &output, &destination)
+            .unwrap()
         else {
             panic!("queue V4");
         };
@@ -162,8 +167,9 @@ fn canonical_two_bar_unrepresentable_tempo_fails_before_publication() {
     let output = live_master_test_output();
     let mut state = live_master_recording_state();
     state.session.runtime_state.source_timing.confirmed_bpm = Some(4.123_456_5_f32);
-    let LiveMasterRecordingQueueResult::Rejected { reason } =
-        state.queue_live_master_recording(1_000, &output, &destination)
+    let LiveMasterRecordingQueueResult::Rejected { reason } = state
+        .queue_live_master_recording(1_000, &output, &destination)
+        .unwrap()
     else {
         panic!("reject noncanonical tempo");
     };

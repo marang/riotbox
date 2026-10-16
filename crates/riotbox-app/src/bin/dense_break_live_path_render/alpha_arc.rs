@@ -45,7 +45,7 @@ pub(super) fn prepare_restart_recall(
         .bar_start_beat_cursor(recall_bar_index)
         .ok_or_else(|| format!("live path cannot resolve restart recall bar {recall_bar_index}"))?;
     state.set_transport_playing(true);
-    if state.queue_w30_live_recall(3_000) != Some(QueueControlResult::Enqueued) {
+    if state.queue_w30_live_recall(3_000)? != Some(QueueControlResult::Enqueued) {
         return Err("live path W-30 recall was unavailable after restart".into());
     }
     let scene = current_scene(&state);
@@ -59,7 +59,7 @@ pub(super) fn prepare_restart_recall(
     )?)?;
     require_committed_command(&state, &recall_commit, ActionCommand::W30LiveRecall)?;
 
-    if state.queue_w30_trigger_pad(3_100) != Some(QueueControlResult::Enqueued) {
+    if state.queue_w30_trigger_pad(3_100)? != Some(QueueControlResult::Enqueued) {
         return Err("live path W-30 trigger was unavailable after restart recall".into());
     }
     let trigger_cursor = recall_cursor.saturating_add(1);
@@ -116,7 +116,7 @@ pub(super) fn prepare_alpha_arc(
 
     let mut state = ready_state.clone();
     let original_scene = current_scene(&state).ok_or("Feral Break Alpha has no original scene")?;
-    if state.queue_w30_trigger_pad(2_000) != Some(QueueControlResult::Enqueued) {
+    if state.queue_w30_trigger_pad(2_000)? != Some(QueueControlResult::Enqueued) {
         return Err("Feral Break Alpha W-30 hook trigger was unavailable".into());
     }
     let hook_commit = one_commit(commit(
@@ -143,7 +143,7 @@ pub(super) fn prepare_alpha_arc(
         hook_cursor,
     );
 
-    if !state.queue_tr909_slam_toggle(2_100) {
+    if !state.queue_tr909_slam_toggle(2_100)? {
         return Err("Feral Break Alpha pressure lift was unavailable".into());
     }
     let pressure_commit = one_commit(commit(
@@ -169,7 +169,7 @@ pub(super) fn prepare_alpha_arc(
         pressure_cursor,
     );
 
-    state.queue_tr909_fill(2_200);
+    state.queue_tr909_fill(2_200)?;
     let fill_commit = one_commit(commit(
         &mut state,
         CommitBoundary::Bar,
@@ -205,7 +205,7 @@ pub(super) fn prepare_alpha_arc(
         .into());
     }
 
-    if state.queue_scene_select(2_300) != QueueControlResult::Enqueued {
+    if state.queue_scene_select(2_300)? != QueueControlResult::Enqueued {
         return Err("Feral Break Alpha destructive role swap was unavailable".into());
     }
     let role_swap_commit = one_commit(commit(
@@ -236,10 +236,10 @@ pub(super) fn prepare_alpha_arc(
         role_swap_cursor,
     );
 
-    if state.queue_scene_restore(2_400) != QueueControlResult::Enqueued {
+    if state.queue_scene_restore(2_400)? != QueueControlResult::Enqueued {
         return Err("Feral Break Alpha return was unavailable".into());
     }
-    if state.queue_w30_apply_damage_profile(2_401) != Some(QueueControlResult::Enqueued) {
+    if state.queue_w30_apply_damage_profile(2_401)? != Some(QueueControlResult::Enqueued) {
         return Err("Feral Break Alpha changed-return damage was unavailable".into());
     }
     let return_commits = commit(

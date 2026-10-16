@@ -1,4 +1,5 @@
 use super::state::{JamAppState, QueueControlResult};
+use riotbox_core::queue::ActionIdExhausted;
 use riotbox_core::{
     TimestampMs,
     action::{
@@ -12,17 +13,17 @@ impl JamAppState {
         &mut self,
         mode: SourceMonitorMode,
         requested_at: TimestampMs,
-    ) -> QueueControlResult {
+    ) -> Result<QueueControlResult, ActionIdExhausted> {
         if self
             .queue
             .pending_actions()
             .iter()
             .any(|action| action.command == ActionCommand::SourceMonitorSetMode)
         {
-            return QueueControlResult::AlreadyPending;
+            return Ok(QueueControlResult::AlreadyPending);
         }
         if self.session.runtime_state.source_monitor.mode == mode {
-            return QueueControlResult::AlreadyInState;
+            return Ok(QueueControlResult::AlreadyInState);
         }
 
         let mut draft = ActionDraft::new(
@@ -36,8 +37,8 @@ impl JamAppState {
         );
         draft.params = ActionParams::SourceMonitor { mode: Some(mode) };
         draft.explanation = Some(format!("set source monitor to {mode}"));
-        self.queue.enqueue(draft, requested_at);
+        self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        QueueControlResult::Enqueued
+        Ok(QueueControlResult::Enqueued)
     }
 }

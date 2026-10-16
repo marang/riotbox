@@ -121,7 +121,7 @@ fn captured_source_window_promotes_to_pad_and_auditions_source_preview() {
     state.source_audio_cache = Some(source_audio_cache);
     state.refresh_view();
 
-    state.queue_capture_bar(300);
+    state.queue_capture_bar(300).unwrap();
     let committed_capture = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Phrase,
@@ -144,7 +144,7 @@ fn captured_source_window_promotes_to_pad_and_auditions_source_preview() {
     );
     assert!(state.session.captures[0].source_window.is_some());
 
-    assert!(state.queue_promote_last_capture(410));
+    assert!(state.queue_promote_last_capture(410).unwrap());
     let committed_promotion = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,
@@ -166,7 +166,7 @@ fn captured_source_window_promotes_to_pad_and_auditions_source_preview() {
     );
 
     assert_eq!(
-        state.queue_w30_audition(520),
+        state.queue_w30_audition(520).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     let committed_audition = state.commit_ready_actions(

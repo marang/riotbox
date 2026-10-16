@@ -1,3 +1,4 @@
+use riotbox_core::queue::ActionIdExhausted;
 use std::{fmt::Write as _, path::Path};
 
 use riotbox_core::{
@@ -26,7 +27,7 @@ impl JamAppState {
         &mut self,
         requested_at: TimestampMs,
         destination_path: Option<String>,
-    ) -> DawSessionExportQueueResult {
+    ) -> Result<DawSessionExportQueueResult, ActionIdExhausted> {
         let receipt_id = self
             .session
             .export_receipts
@@ -57,20 +58,22 @@ impl JamAppState {
         };
         draft.explanation = Some("reserved DAW session export contract; not runnable yet".into());
 
-        match self
-            .queue
-            .enqueue_if_no_pending_command(draft, requested_at)
-        {
-            QueueEnqueueResult::AlreadyPending { .. } => {
-                DawSessionExportQueueResult::AlreadyPending
-            }
-            QueueEnqueueResult::Enqueued(action_id) => {
-                let reason = self.daw_session_export_surface_gate().musician_summary();
-                self.queue.reject(action_id, reason.clone());
-                self.refresh_view();
-                DawSessionExportQueueResult::Rejected { reason }
-            }
-        }
+        Ok(
+            match self
+                .queue
+                .enqueue_if_no_pending_command(draft, requested_at)?
+            {
+                QueueEnqueueResult::AlreadyPending { .. } => {
+                    DawSessionExportQueueResult::AlreadyPending
+                }
+                QueueEnqueueResult::Enqueued(action_id) => {
+                    let reason = self.daw_session_export_surface_gate().musician_summary();
+                    self.queue.reject(action_id, reason.clone());
+                    self.refresh_view();
+                    DawSessionExportQueueResult::Rejected { reason }
+                }
+            },
+        )
     }
 
     pub fn queue_daw_session_writer_export(
@@ -78,7 +81,7 @@ impl JamAppState {
         requested_at: TimestampMs,
         session_base_dir: Option<&Path>,
         destination_path: Option<String>,
-    ) -> DawSessionExportQueueResult {
+    ) -> Result<DawSessionExportQueueResult, ActionIdExhausted> {
         let receipt_id = latest_daw_session_receipt(&self.session)
             .map(|receipt| receipt.receipt_id.as_str().to_owned());
         let mut draft = ActionDraft::new(
@@ -105,37 +108,39 @@ impl JamAppState {
         draft.explanation =
             Some("commit local DAW session writer proof through export.daw_session".into());
 
-        match self
-            .queue
-            .enqueue_if_no_pending_command(draft, requested_at)
-        {
-            QueueEnqueueResult::AlreadyPending { .. } => {
-                DawSessionExportQueueResult::AlreadyPending
-            }
-            QueueEnqueueResult::Enqueued(action_id) => {
-                let blockers = daw_session_writer_queue_blockers(
-                    &self.session,
-                    session_base_dir,
-                    destination_path.as_deref(),
-                );
-                if blockers.is_empty() {
-                    self.refresh_view();
-                    return DawSessionExportQueueResult::Enqueued { action_id };
+        Ok(
+            match self
+                .queue
+                .enqueue_if_no_pending_command(draft, requested_at)?
+            {
+                QueueEnqueueResult::AlreadyPending { .. } => {
+                    DawSessionExportQueueResult::AlreadyPending
                 }
+                QueueEnqueueResult::Enqueued(action_id) => {
+                    let blockers = daw_session_writer_queue_blockers(
+                        &self.session,
+                        session_base_dir,
+                        destination_path.as_deref(),
+                    );
+                    if blockers.is_empty() {
+                        self.refresh_view();
+                        return Ok(DawSessionExportQueueResult::Enqueued { action_id });
+                    }
 
-                let reason = daw_session_writer_rejection_reason(&blockers);
-                self.queue.reject(action_id, reason.clone());
-                self.refresh_view();
-                DawSessionExportQueueResult::Rejected { reason }
-            }
-        }
+                    let reason = daw_session_writer_rejection_reason(&blockers);
+                    self.queue.reject(action_id, reason.clone());
+                    self.refresh_view();
+                    DawSessionExportQueueResult::Rejected { reason }
+                }
+            },
+        )
     }
 
     pub fn queue_daw_session_host_import_proof_export(
         &mut self,
         requested_at: TimestampMs,
         proof_path: Option<String>,
-    ) -> DawSessionExportQueueResult {
+    ) -> Result<DawSessionExportQueueResult, ActionIdExhausted> {
         let receipt_id = latest_daw_session_receipt(&self.session)
             .map(|receipt| receipt.receipt_id.as_str().to_owned());
         let mut draft = ActionDraft::new(
@@ -163,34 +168,38 @@ impl JamAppState {
         };
         draft.explanation = Some("commit DAW host-import proof through export.daw_session".into());
 
-        match self
-            .queue
-            .enqueue_if_no_pending_command(draft, requested_at)
-        {
-            QueueEnqueueResult::AlreadyPending { .. } => {
-                DawSessionExportQueueResult::AlreadyPending
-            }
-            QueueEnqueueResult::Enqueued(action_id) => {
-                let blockers =
-                    daw_session_host_import_queue_blockers(&self.session, proof_path.as_deref());
-                if blockers.is_empty() {
-                    self.refresh_view();
-                    return DawSessionExportQueueResult::Enqueued { action_id };
+        Ok(
+            match self
+                .queue
+                .enqueue_if_no_pending_command(draft, requested_at)?
+            {
+                QueueEnqueueResult::AlreadyPending { .. } => {
+                    DawSessionExportQueueResult::AlreadyPending
                 }
+                QueueEnqueueResult::Enqueued(action_id) => {
+                    let blockers = daw_session_host_import_queue_blockers(
+                        &self.session,
+                        proof_path.as_deref(),
+                    );
+                    if blockers.is_empty() {
+                        self.refresh_view();
+                        return Ok(DawSessionExportQueueResult::Enqueued { action_id });
+                    }
 
-                let reason = daw_session_host_import_rejection_reason(&blockers);
-                self.queue.reject(action_id, reason.clone());
-                self.refresh_view();
-                DawSessionExportQueueResult::Rejected { reason }
-            }
-        }
+                    let reason = daw_session_host_import_rejection_reason(&blockers);
+                    self.queue.reject(action_id, reason.clone());
+                    self.refresh_view();
+                    DawSessionExportQueueResult::Rejected { reason }
+                }
+            },
+        )
     }
 
     pub fn queue_daw_session_audible_output_proof_export(
         &mut self,
         requested_at: TimestampMs,
         proof_path: Option<String>,
-    ) -> DawSessionExportQueueResult {
+    ) -> Result<DawSessionExportQueueResult, ActionIdExhausted> {
         let receipt_id = latest_daw_session_receipt(&self.session)
             .map(|receipt| receipt.receipt_id.as_str().to_owned());
         let mut draft = ActionDraft::new(
@@ -219,27 +228,31 @@ impl JamAppState {
         draft.explanation =
             Some("commit DAW audible-output proof through export.daw_session".into());
 
-        match self
-            .queue
-            .enqueue_if_no_pending_command(draft, requested_at)
-        {
-            QueueEnqueueResult::AlreadyPending { .. } => {
-                DawSessionExportQueueResult::AlreadyPending
-            }
-            QueueEnqueueResult::Enqueued(action_id) => {
-                let blockers =
-                    daw_session_audible_output_queue_blockers(&self.session, proof_path.as_deref());
-                if blockers.is_empty() {
-                    self.refresh_view();
-                    return DawSessionExportQueueResult::Enqueued { action_id };
+        Ok(
+            match self
+                .queue
+                .enqueue_if_no_pending_command(draft, requested_at)?
+            {
+                QueueEnqueueResult::AlreadyPending { .. } => {
+                    DawSessionExportQueueResult::AlreadyPending
                 }
+                QueueEnqueueResult::Enqueued(action_id) => {
+                    let blockers = daw_session_audible_output_queue_blockers(
+                        &self.session,
+                        proof_path.as_deref(),
+                    );
+                    if blockers.is_empty() {
+                        self.refresh_view();
+                        return Ok(DawSessionExportQueueResult::Enqueued { action_id });
+                    }
 
-                let reason = daw_session_audible_output_rejection_reason(&blockers);
-                self.queue.reject(action_id, reason.clone());
-                self.refresh_view();
-                DawSessionExportQueueResult::Rejected { reason }
-            }
-        }
+                    let reason = daw_session_audible_output_rejection_reason(&blockers);
+                    self.queue.reject(action_id, reason.clone());
+                    self.refresh_view();
+                    DawSessionExportQueueResult::Rejected { reason }
+                }
+            },
+        )
     }
 }
 

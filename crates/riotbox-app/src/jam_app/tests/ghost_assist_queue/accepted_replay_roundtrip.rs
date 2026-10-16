@@ -34,7 +34,7 @@ fn accepted_ghost_action_replay_fixture_survives_session_roundtrip() {
     state.set_current_ghost_suggestion(ghost_fill_suggestion());
 
     assert!(matches!(
-        state.accept_current_ghost_suggestion(1_000),
+        state.accept_current_ghost_suggestion(1_000).unwrap(),
         GhostSuggestionQueueResult::Enqueued(_)
     ));
     let committed = state.commit_ready_actions(

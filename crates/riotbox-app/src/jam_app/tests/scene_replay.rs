@@ -44,7 +44,7 @@ fn graph_aware_scene_replay_matches_committed_movement_projection() {
     );
 
     assert_eq!(
-        committed_state.queue_scene_select(300),
+        committed_state.queue_scene_select(300).unwrap(),
         QueueControlResult::Enqueued
     );
     let committed = committed_state.commit_ready_actions(
@@ -183,7 +183,7 @@ fn scene_restore_snapshot_payload_restore_matches_committed_movement_projection(
     let before_launch_mc202 = committed_state.runtime.mc202_render;
 
     assert_eq!(
-        committed_state.queue_scene_select(300),
+        committed_state.queue_scene_select(300).unwrap(),
         QueueControlResult::Enqueued
     );
     let launched = committed_state.commit_ready_actions(
@@ -200,7 +200,7 @@ fn scene_restore_snapshot_payload_restore_matches_committed_movement_projection(
     let after_launch = render_scene_recipe_mix_buffer(&committed_state);
 
     assert_eq!(
-        committed_state.queue_scene_restore(420),
+        committed_state.queue_scene_restore(420).unwrap(),
         QueueControlResult::Enqueued
     );
     let restored = committed_state.commit_ready_actions(

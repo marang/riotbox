@@ -88,7 +88,7 @@ pub(super) fn measure(
         duration.bars()
     ));
     let plan =
-        match state.queue_live_master_recording_with_duration(5_000, &output, &target, duration) {
+        match state.queue_live_master_recording_with_duration(5_000, &output, &target, duration)? {
             LiveMasterRecordingQueueResult::Enqueued(plan) => plan,
             LiveMasterRecordingQueueResult::Rejected { reason } => return Err(reason.into()),
             LiveMasterRecordingQueueResult::AlreadyPending => {

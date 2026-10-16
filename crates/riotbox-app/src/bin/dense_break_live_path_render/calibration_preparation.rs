@@ -58,7 +58,7 @@ fn require_pad_queued(result: Option<QueueControlResult>) -> Result<()> {
 }
 
 fn require_promotion(state: &mut JamAppState, timestamp: u64) -> Result<()> {
-    if !state.queue_promote_last_capture(timestamp) {
+    if !state.queue_promote_last_capture(timestamp)? {
         return Err("calibration capture promotion was unavailable".into());
     }
     Ok(())
@@ -90,15 +90,15 @@ fn w30_commit(
 }
 
 fn prepare_w30(state: &mut JamAppState, case: Case) -> Result<RuntimeMixRenderPlan> {
-    require_queued(state.queue_performance_preset(PerformancePresetId::FeralBreakAlphaV2, 90))?;
+    require_queued(state.queue_performance_preset(PerformancePresetId::FeralBreakAlphaV2, 90)?)?;
     w30_commit(state, CommitBoundary::Immediate, 0, 1, 95)?;
-    state.queue_capture_length_intent(CaptureLengthIntent::OneBar, 96);
+    state.queue_capture_length_intent(CaptureLengthIntent::OneBar, 96)?;
     w30_commit(state, CommitBoundary::Immediate, 0, 1, 97)?;
-    state.queue_capture_bar(100);
+    state.queue_capture_bar(100)?;
     w30_commit(state, CommitBoundary::Bar, 0, 1, 200)?;
     require_promotion(state, 210)?;
     w30_commit(state, CommitBoundary::Bar, 5, 2, 300)?;
-    require_pad_queued(state.queue_w30_trigger_pad(310))?;
+    require_pad_queued(state.queue_w30_trigger_pad(310)?)?;
     w30_commit(state, CommitBoundary::Beat, 6, 2, 400)?;
     // This is the established six-action ordinary W-30 projection, not the
     // dense_break_live_path_render multi-lane preparation that failed V3.
@@ -150,17 +150,17 @@ fn prepare_sparse(state: &mut JamAppState) -> Result<RuntimeMixRenderPlan> {
     if state.session.runtime_state.source_monitor.mode != SourceMonitorMode::Source {
         return Err("calibration sparse prefix must begin in Source monitor mode".into());
     }
-    state.queue_capture_length_intent(CaptureLengthIntent::OneBar, 90);
+    state.queue_capture_length_intent(CaptureLengthIntent::OneBar, 90)?;
     sparse_commit(state, CommitBoundary::Immediate, 0, 95)?;
-    state.queue_capture_bar(100);
+    state.queue_capture_bar(100)?;
     sparse_commit(state, CommitBoundary::Bar, 0, 200)?;
-    require_pad_queued(state.queue_w30_raw_capture_audition(210))?;
+    require_pad_queued(state.queue_w30_raw_capture_audition(210)?)?;
     sparse_commit(state, CommitBoundary::Bar, 4, 220)?;
     require_promotion(state, 230)?;
     sparse_commit(state, CommitBoundary::Bar, 8, 300)?;
-    require_queued(state.queue_performance_preset(PerformancePresetId::FeralBreakAlphaV2, 305))?;
+    require_queued(state.queue_performance_preset(PerformancePresetId::FeralBreakAlphaV2, 305)?)?;
     sparse_commit(state, CommitBoundary::Immediate, 8, 306)?;
-    require_queued(state.queue_mc202_generate_instigator(311))?;
+    require_queued(state.queue_mc202_generate_instigator(311)?)?;
     sparse_commit(state, CommitBoundary::Phrase, 16, 400)?;
     let policy = state
         .source_graph
@@ -179,10 +179,10 @@ fn prepare_sparse(state: &mut JamAppState) -> Result<RuntimeMixRenderPlan> {
         (SourceMonitorMode::Blend, 430),
         (SourceMonitorMode::Riotbox, 440),
     ] {
-        require_queued(state.queue_source_monitor_mode(mode, timestamp))?;
+        require_queued(state.queue_source_monitor_mode(mode, timestamp)?)?;
         sparse_commit(state, CommitBoundary::Immediate, 16, timestamp + 1)?;
     }
-    require_pad_queued(state.queue_w30_trigger_pad(500))?;
+    require_pad_queued(state.queue_w30_trigger_pad(500)?)?;
     sparse_commit(state, CommitBoundary::Beat, 17, 510)?;
     let plan = live_flow::render_plan(state, 120.0, 17.0);
     if plan.tr909_render.mode == Tr909RenderMode::Idle

@@ -81,7 +81,10 @@ fn renders_tr909_feral_support_reason_cue() {
 fn renders_log_shell_snapshot_with_scene_brain_diagnostics() {
     let mut shell = sample_shell_state();
     assert_eq!(
-        shell.app.queue_scene_select(300),
+        shell
+            .app
+            .queue_scene_select(300)
+            .expect("fixture action ID available"),
         crate::jam_app::QueueControlResult::Enqueued
     );
     shell.active_screen = ShellScreen::Log;

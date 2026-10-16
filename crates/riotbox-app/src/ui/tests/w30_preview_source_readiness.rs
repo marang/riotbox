@@ -37,7 +37,10 @@ fn renders_capture_shell_snapshot_with_raw_capture_audition_cue() {
     shell.app.session.runtime_state.lane_state.w30.focused_pad = Some("pad-01".into());
     shell.app.refresh_view();
     assert_eq!(
-        shell.app.queue_w30_audition(260),
+        shell
+            .app
+            .queue_w30_audition(260)
+            .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
     shell.active_screen = ShellScreen::Capture;
@@ -70,7 +73,10 @@ fn committed_raw_capture_audition_surfaces_unavailable_readiness() {
     shell.app.session.runtime_state.lane_state.w30.focused_pad = Some("pad-01".into());
     shell.app.refresh_view();
     assert_eq!(
-        shell.app.queue_w30_audition(260),
+        shell
+            .app
+            .queue_w30_audition(260)
+            .expect("fixture action ID available"),
         Some(crate::jam_app::QueueControlResult::Enqueued)
     );
     shell.app.commit_ready_actions(

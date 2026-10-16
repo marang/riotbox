@@ -66,7 +66,8 @@ fn reserved_daw_session_export_queue_attempt_is_rejected_without_side_effects() 
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     let result = state
-        .queue_daw_session_export_reserved(960, Some(destination.to_string_lossy().into_owned()));
+        .queue_daw_session_export_reserved(960, Some(destination.to_string_lossy().into_owned()))
+        .unwrap();
 
     let reason = match result {
         DawSessionExportQueueResult::Rejected { reason } => reason,
@@ -142,11 +143,13 @@ fn daw_session_writer_export_commits_local_proof_without_enabling_surface() {
     let destination = temp.path().join("daw-session-export");
     let mut state = daw_session_writer_export_state(temp.path(), &destination, true);
 
-    let queued = state.queue_daw_session_writer_export(
-        960,
-        Some(temp.path()),
-        Some(destination.to_string_lossy().into_owned()),
-    );
+    let queued = state
+        .queue_daw_session_writer_export(
+            960,
+            Some(temp.path()),
+            Some(destination.to_string_lossy().into_owned()),
+        )
+        .unwrap();
 
     let action_id = match queued {
         DawSessionExportQueueResult::Enqueued { action_id } => action_id,
@@ -257,11 +260,13 @@ fn daw_session_writer_export_queue_rejects_without_json_package_evidence() {
     let destination = temp.path().join("daw-session-export");
     let mut state = daw_session_writer_export_state(temp.path(), &destination, false);
 
-    let result = state.queue_daw_session_writer_export(
-        960,
-        Some(temp.path()),
-        Some(destination.to_string_lossy().into_owned()),
-    );
+    let result = state
+        .queue_daw_session_writer_export(
+            960,
+            Some(temp.path()),
+            Some(destination.to_string_lossy().into_owned()),
+        )
+        .unwrap();
 
     let reason = match result {
         DawSessionExportQueueResult::Rejected { reason } => reason,
@@ -301,11 +306,13 @@ fn daw_session_writer_export_commit_rejects_pending_destination_mismatch() {
     let other_destination = temp.path().join("other-daw-session-export");
     let mut state = daw_session_writer_export_state(temp.path(), &destination, true);
 
-    let queued = state.queue_daw_session_writer_export(
-        960,
-        Some(temp.path()),
-        Some(destination.to_string_lossy().into_owned()),
-    );
+    let queued = state
+        .queue_daw_session_writer_export(
+            960,
+            Some(temp.path()),
+            Some(destination.to_string_lossy().into_owned()),
+        )
+        .unwrap();
     assert!(matches!(
         queued,
         DawSessionExportQueueResult::Enqueued { .. }

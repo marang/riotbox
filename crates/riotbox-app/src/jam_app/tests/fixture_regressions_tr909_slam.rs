@@ -40,19 +40,21 @@ fn mc202_fixture_backed_committed_state_regressions_hold() {
         let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
         let queue_result = match fixture.action {
-            Mc202RegressionAction::SetRole => state.queue_mc202_role_toggle(fixture.requested_at),
-            Mc202RegressionAction::GenerateFollower => {
-                state.queue_mc202_generate_follower(fixture.requested_at)
+            Mc202RegressionAction::SetRole => {
+                state.queue_mc202_role_toggle(fixture.requested_at).unwrap()
             }
-            Mc202RegressionAction::GenerateAnswer => {
-                state.queue_mc202_generate_answer(fixture.requested_at)
-            }
-            Mc202RegressionAction::GeneratePressure => {
-                state.queue_mc202_generate_pressure(fixture.requested_at)
-            }
-            Mc202RegressionAction::GenerateInstigator => {
-                state.queue_mc202_generate_instigator(fixture.requested_at)
-            }
+            Mc202RegressionAction::GenerateFollower => state
+                .queue_mc202_generate_follower(fixture.requested_at)
+                .unwrap(),
+            Mc202RegressionAction::GenerateAnswer => state
+                .queue_mc202_generate_answer(fixture.requested_at)
+                .unwrap(),
+            Mc202RegressionAction::GeneratePressure => state
+                .queue_mc202_generate_pressure(fixture.requested_at)
+                .unwrap(),
+            Mc202RegressionAction::GenerateInstigator => state
+                .queue_mc202_generate_instigator(fixture.requested_at)
+                .unwrap(),
         };
         assert_eq!(
             queue_result,
@@ -237,22 +239,30 @@ fn w30_fixture_backed_committed_state_regressions_hold() {
         let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
         let queue_result = match fixture.action {
-            W30RegressionAction::LiveRecall => state.queue_w30_live_recall(fixture.requested_at),
+            W30RegressionAction::LiveRecall => {
+                state.queue_w30_live_recall(fixture.requested_at).unwrap()
+            }
             W30RegressionAction::RawCaptureAudition => {
-                state.queue_w30_audition(fixture.requested_at)
+                state.queue_w30_audition(fixture.requested_at).unwrap()
             }
-            W30RegressionAction::PromotedAudition => {
-                state.queue_w30_promoted_audition(fixture.requested_at)
+            W30RegressionAction::PromotedAudition => state
+                .queue_w30_promoted_audition(fixture.requested_at)
+                .unwrap(),
+            W30RegressionAction::TriggerPad => {
+                state.queue_w30_trigger_pad(fixture.requested_at).unwrap()
             }
-            W30RegressionAction::TriggerPad => state.queue_w30_trigger_pad(fixture.requested_at),
-            W30RegressionAction::SwapBank => state.queue_w30_swap_bank(fixture.requested_at),
-            W30RegressionAction::ApplyDamageProfile => {
-                state.queue_w30_apply_damage_profile(fixture.requested_at)
+            W30RegressionAction::SwapBank => {
+                state.queue_w30_swap_bank(fixture.requested_at).unwrap()
             }
-            W30RegressionAction::LoopFreeze => state.queue_w30_loop_freeze(fixture.requested_at),
-            W30RegressionAction::BrowseSlicePool => {
-                state.queue_w30_browse_slice_pool(fixture.requested_at)
+            W30RegressionAction::ApplyDamageProfile => state
+                .queue_w30_apply_damage_profile(fixture.requested_at)
+                .unwrap(),
+            W30RegressionAction::LoopFreeze => {
+                state.queue_w30_loop_freeze(fixture.requested_at).unwrap()
             }
+            W30RegressionAction::BrowseSlicePool => state
+                .queue_w30_browse_slice_pool(fixture.requested_at)
+                .unwrap(),
         };
         assert_eq!(
             queue_result,
@@ -405,7 +415,7 @@ fn committed_tr909_slam_action_updates_lane_state_and_macro_intensity() {
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    assert!(state.queue_tr909_slam_toggle(300));
+    assert!(state.queue_tr909_slam_toggle(300).unwrap());
 
     let committed = state.commit_ready_actions(
         CommitBoundaryState {

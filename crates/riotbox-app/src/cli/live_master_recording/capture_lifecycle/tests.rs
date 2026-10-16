@@ -341,6 +341,7 @@ fn fixture(
     (temp, launch, state, control)
 }
 
+mod action_id_exhaustion;
 mod observation;
 mod timing_availability;
 
@@ -412,7 +413,10 @@ fn delayed_confirmation_and_timing_updates_still_use_actual_core_action_commits(
     draft.params = ActionParams::CaptureLength {
         intent: Some(CaptureLengthIntent::OneBar),
     };
-    let queued = state.queue.enqueue(draft, 900);
+    let queued = state
+        .queue
+        .enqueue(draft, 900)
+        .expect("generated action ID available");
     let summary = execute_with_control(&launch, &mut state, &mut control).unwrap();
     assert_eq!(summary["ready"], true);
     assert_eq!(
@@ -600,7 +604,9 @@ fn queue_rejection_and_existing_pending_action_stop_without_capture() {
         if already_pending {
             let previous = control.destination.with_file_name("previous.wav");
             assert!(matches!(
-                state.queue_live_master_recording(100, &control.output(), previous),
+                state
+                    .queue_live_master_recording(100, &control.output(), previous)
+                    .expect("generated action ID available"),
                 crate::jam_app::LiveMasterRecordingQueueResult::Enqueued(_)
             ));
         }

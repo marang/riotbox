@@ -6,6 +6,8 @@ use riotbox_audio::{
 };
 use riotbox_core::{
     action::{ActionCommand, ActionParams, CommitBoundary},
+    ids::ActionId,
+    queue::ActionIdExhausted,
     session::CaptureAudioIdentityProvenance,
     source_graph::{
         DecodeProfile, GraphProvenance, ManualSourceTimingGrid, SourceDescriptor, SourceGraph,
@@ -15,7 +17,9 @@ use riotbox_core::{
 };
 use sha2::{Digest, Sha256};
 
-use crate::jam_app::{CaptureAudioStatus, JamAppState, JamFileSet, QueueControlResult};
+use crate::jam_app::{
+    CaptureAudioStatus, JamAppError, JamAppState, JamFileSet, QueueControlResult,
+};
 
 fn fixture(root: &Path, frame_count: usize) -> (SourceGraph, Vec<u8>, JamFileSet) {
     let samples: Vec<f32> = (0..frame_count * 2)
@@ -223,11 +227,11 @@ fn ordinary_commits_write_and_hydrate_capture_without_original_source_io() {
     let mut state =
         JamAppState::from_limiter_calibration_graph_bytes(graph, &bytes, files.clone()).unwrap();
     assert_eq!(
-        state.queue_source_timing_grid_confirmation(10),
+        state.queue_source_timing_grid_confirmation(10).unwrap(),
         QueueControlResult::Enqueued
     );
     commit(&mut state, CommitBoundary::Immediate, 0);
-    state.queue_capture_bar(20);
+    state.queue_capture_bar(20).unwrap();
     commit(&mut state, CommitBoundary::Phrase, 0);
 
     let capture = &state.session.captures[0];
@@ -255,10 +259,10 @@ fn ordinary_commits_write_and_hydrate_capture_without_original_source_io() {
         SourceAudioCache::from_pcm_wav_bytes(&artifact_path, &artifact_bytes).unwrap()
     );
     state.source_audio_cache = None;
-    assert!(state.queue_promote_last_capture(30));
+    assert!(state.queue_promote_last_capture(30).unwrap());
     commit(&mut state, CommitBoundary::Bar, 0);
     assert_eq!(
-        state.queue_w30_trigger_pad(40),
+        state.queue_w30_trigger_pad(40).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     commit(&mut state, CommitBoundary::Beat, 0);
@@ -356,7 +360,7 @@ fn explicit_bpm_mismatch_or_pending_actions_fail_without_committing() {
         );
         assert_eq!(state.source_graph.as_ref(), Some(&graph));
     }
-    state.queue_capture_bar(9);
+    state.queue_capture_bar(9).unwrap();
     assert!(
         state
             .confirm_limiter_calibration_source_bpm(130.0, 10)
@@ -368,4 +372,34 @@ fn explicit_bpm_mismatch_or_pending_actions_fail_without_committing() {
         ActionCommand::CaptureBarGroup
     );
     assert!(state.session.action_log.actions.is_empty());
+}
+
+#[test]
+fn explicit_bpm_id_exhaustion_preserves_typed_failure_and_all_state() {
+    let dir = tempfile::tempdir().unwrap();
+    let (graph, bytes, files) = fixture(dir.path(), 176_400);
+    let graph = detected_timing_graph(graph);
+    let mut state =
+        JamAppState::from_limiter_calibration_graph_bytes(graph.clone(), &bytes, files.clone())
+            .unwrap();
+    state
+        .queue
+        .reserve_action_ids_after(Some(ActionId(u64::MAX)));
+    let session = state.session.clone();
+    let runtime = state.runtime.clone();
+    let queue = format!("{:?}", state.queue);
+
+    for timestamp in [10, 11] {
+        assert!(matches!(
+            state.confirm_limiter_calibration_source_bpm(130.0, timestamp),
+            Err(JamAppError::ActionIdExhausted(ActionIdExhausted))
+        ));
+        assert_eq!(state.session, session);
+        assert_eq!(state.runtime, runtime);
+        assert_eq!(format!("{:?}", state.queue), queue);
+        assert_eq!(state.source_graph.as_ref(), Some(&graph));
+        assert!(!Path::new(&graph.source.path).exists());
+        assert!(!files.session_path.exists());
+        assert!(!files.source_graph_path.as_ref().unwrap().exists());
+    }
 }

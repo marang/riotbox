@@ -86,7 +86,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
     state.set_transport_playing(true);
     let scene_id = state.runtime.transport.current_scene.clone();
-    if state.queue_performance_preset(PerformancePresetId::FeralBreakAlphaV2, 90)
+    if state.queue_performance_preset(PerformancePresetId::FeralBreakAlphaV2, 90)?
         != QueueControlResult::Enqueued
     {
         return Err("FeralBreakAlphaV2 preset activation was unavailable".into());
@@ -103,7 +103,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // This diagnostic override compares the two already-frozen policies through the same
     // product capture/runtime path. The shipped preset default changes only after a winner.
     state.session.runtime_state.style.w30_hook_selection_policy = hook_policy;
-    state.queue_capture_length_intent(CaptureLengthIntent::OneBar, 96);
+    state.queue_capture_length_intent(CaptureLengthIntent::OneBar, 96)?;
     commit(
         &mut state,
         CommitBoundary::Immediate,
@@ -114,7 +114,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         97,
     )?;
 
-    state.queue_capture_bar(100);
+    state.queue_capture_bar(100)?;
     commit(
         &mut state,
         CommitBoundary::Bar,
@@ -137,7 +137,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "hook selection: policy={hook_policy:?} range={:.6}-{:.6}s decision={:?}",
         source_window.start_seconds, source_window.end_seconds, source_window.hook_selection
     );
-    if !state.queue_promote_last_capture(210) {
+    if !state.queue_promote_last_capture(210)? {
         return Err("capture promotion was unavailable".into());
     }
     commit(
@@ -149,7 +149,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         scene_id.clone(),
         300,
     )?;
-    if state.queue_w30_trigger_pad(310).is_none() {
+    if state.queue_w30_trigger_pad(310)?.is_none() {
         return Err("W-30 trigger was unavailable".into());
     }
     commit(
@@ -235,7 +235,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
     let normal = render_state(&state, bpm);
-    if state.queue_w30_apply_damage_profile(410).is_none() {
+    if state.queue_w30_apply_damage_profile(410)?.is_none() {
         return Err("W-30 damage gesture was unavailable".into());
     }
     commit(
@@ -294,7 +294,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     let resample_outputs = if include_resample {
-        if state.queue_w30_internal_resample(510).is_none() {
+        if state.queue_w30_internal_resample(510)?.is_none() {
             return Err("W-30 internal resample was unavailable".into());
         }
         commit(&mut state, CommitBoundary::Phrase, 16, 4, 2, scene_id, 600)?;
@@ -405,7 +405,7 @@ fn qualify_hook_turnaround_v1(
     let grit_before = state.session.runtime_state.macro_state.w30_grit;
     let source_monitor_before = state.session.runtime_state.source_monitor.clone();
     let requested_at = 400 + start_beat * 10;
-    if state.queue_w30_hook_turnaround(requested_at) != Some(QueueControlResult::Enqueued) {
+    if state.queue_w30_hook_turnaround(requested_at)? != Some(QueueControlResult::Enqueued) {
         return Err("W-30 hook turnaround was unavailable".into());
     }
     commit(
@@ -884,7 +884,7 @@ fn qualify_ordinary_w30_reentry(
     beat_index: u64,
     after_role: &str,
 ) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
-    if state.queue_w30_trigger_pad(400 + beat_index * 10) != Some(QueueControlResult::Enqueued) {
+    if state.queue_w30_trigger_pad(400 + beat_index * 10)? != Some(QueueControlResult::Enqueued) {
         return Err(format!("ordinary W-30 re-entry after {after_role} was unavailable").into());
     }
     commit(

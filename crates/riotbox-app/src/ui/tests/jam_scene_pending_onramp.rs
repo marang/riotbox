@@ -43,7 +43,10 @@ fn renders_jam_shell_with_scene_brain_summary() {
         ShellLaunchMode::Load,
     );
     assert_eq!(
-        shell.app.queue_scene_select(300),
+        shell
+            .app
+            .queue_scene_select(300)
+            .expect("fixture action ID available"),
         crate::jam_app::QueueControlResult::Enqueued
     );
 
@@ -92,7 +95,10 @@ fn scene_pending_line_styles_define_intent_hierarchy() {
         ShellLaunchMode::Load,
     );
     assert_eq!(
-        shell.app.queue_scene_select(300),
+        shell
+            .app
+            .queue_scene_select(300)
+            .expect("fixture action ID available"),
         crate::jam_app::QueueControlResult::Enqueued
     );
 
@@ -156,7 +162,10 @@ fn renders_jam_shell_with_pending_scene_restore_summary() {
     shell.app.session.runtime_state.scene_state.restore_scene =
         Some(SceneId::from("scene-02-intro"));
     assert_eq!(
-        shell.app.queue_scene_restore(300),
+        shell
+            .app
+            .queue_scene_restore(300)
+            .expect("fixture action ID available"),
         crate::jam_app::QueueControlResult::Enqueued
     );
 
@@ -201,7 +210,10 @@ fn renders_log_shell_with_pending_scene_restore_summary() {
         ShellLaunchMode::Load,
     );
     assert_eq!(
-        shell.app.queue_scene_restore(300),
+        shell
+            .app
+            .queue_scene_restore(300)
+            .expect("fixture action ID available"),
         crate::jam_app::QueueControlResult::Enqueued
     );
     shell.active_screen = ShellScreen::Log;
@@ -220,7 +232,10 @@ fn renders_log_shell_with_pending_scene_restore_summary() {
 fn renders_jam_shell_with_pending_mc202_role_change() {
     let mut shell = sample_shell_state();
     assert_eq!(
-        shell.app.queue_mc202_role_toggle(200),
+        shell
+            .app
+            .queue_mc202_role_toggle(200)
+            .expect("fixture action ID available"),
         crate::jam_app::QueueControlResult::Enqueued
     );
 
@@ -236,7 +251,10 @@ fn renders_jam_shell_with_pending_mc202_follower_generation() {
     let mut shell = JamShellState::new(first_run_shell.app, ShellLaunchMode::Load);
     shell.app.set_transport_playing(true);
     assert_eq!(
-        shell.app.queue_mc202_generate_follower(200),
+        shell
+            .app
+            .queue_mc202_generate_follower(200)
+            .expect("fixture action ID available"),
         crate::jam_app::QueueControlResult::Enqueued
     );
 
@@ -253,7 +271,10 @@ fn renders_jam_shell_with_pending_mc202_follower_generation() {
 fn renders_jam_shell_with_pending_mc202_answer_generation() {
     let mut shell = sample_shell_state();
     assert_eq!(
-        shell.app.queue_mc202_generate_answer(200),
+        shell
+            .app
+            .queue_mc202_generate_answer(200)
+            .expect("fixture action ID available"),
         crate::jam_app::QueueControlResult::Enqueued
     );
 
@@ -266,7 +287,10 @@ fn renders_jam_shell_with_pending_mc202_answer_generation() {
 fn renders_jam_shell_with_pending_mc202_pressure_generation() {
     let mut shell = sample_shell_state();
     assert_eq!(
-        shell.app.queue_mc202_generate_pressure(200),
+        shell
+            .app
+            .queue_mc202_generate_pressure(200)
+            .expect("fixture action ID available"),
         crate::jam_app::QueueControlResult::Enqueued
     );
 
@@ -279,7 +303,10 @@ fn renders_jam_shell_with_pending_mc202_pressure_generation() {
 fn renders_jam_shell_with_pending_mc202_instigator_generation() {
     let mut shell = sample_shell_state();
     assert_eq!(
-        shell.app.queue_mc202_generate_instigator(200),
+        shell
+            .app
+            .queue_mc202_generate_instigator(200)
+            .expect("fixture action ID available"),
         crate::jam_app::QueueControlResult::Enqueued
     );
 
@@ -292,9 +319,18 @@ fn renders_jam_shell_with_pending_mc202_instigator_generation() {
 fn renders_jam_shell_with_two_promoted_pending_actions_and_queue_summary() {
     let first_run_shell = first_run_shell_state();
     let mut shell = JamShellState::new(first_run_shell.app, ShellLaunchMode::Load);
-    shell.app.queue_scene_mutation(200);
-    shell.app.queue_tr909_fill(201);
-    shell.app.queue_capture_bar(202);
+    shell
+        .app
+        .queue_scene_mutation(200)
+        .expect("fixture action ID available");
+    shell
+        .app
+        .queue_tr909_fill(201)
+        .expect("fixture action ID available");
+    shell
+        .app
+        .queue_capture_bar(202)
+        .expect("fixture action ID available");
 
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
@@ -371,7 +407,10 @@ fn queued_scene_timing_rail_styles_pulse_hierarchy() {
         ShellLaunchMode::Load,
     );
     assert_eq!(
-        shell.app.queue_scene_select(300),
+        shell
+            .app
+            .queue_scene_select(300)
+            .expect("fixture action ID available"),
         crate::jam_app::QueueControlResult::Enqueued
     );
 
@@ -418,7 +457,10 @@ fn renders_jam_shell_with_first_run_onramp() {
 #[test]
 fn unrelated_pending_move_does_not_impersonate_capture_progress() {
     let mut shell = first_run_shell_state();
-    shell.app.queue_tr909_fill(200);
+    shell
+        .app
+        .queue_tr909_fill(200)
+        .expect("fixture action ID available");
 
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
@@ -482,7 +524,10 @@ fn promoted_keeper_offers_blend_only_when_source_monitor_is_ready() {
 #[test]
 fn next_panel_promotes_timing_rail_above_landed_history() {
     let mut shell = first_result_shell_state();
-    shell.app.queue_tr909_fill(240);
+    shell
+        .app
+        .queue_tr909_fill(240)
+        .expect("fixture action ID available");
 
     let line_texts = next_panel_lines(&shell)
         .iter()

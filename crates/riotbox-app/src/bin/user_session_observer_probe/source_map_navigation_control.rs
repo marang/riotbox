@@ -1,3 +1,5 @@
+use std::io;
+
 use riotbox_app::{
     jam_app::{SourceMapNavigationIntent, SourceMapNavigationResult},
     ui::JamShellState,
@@ -10,8 +12,12 @@ pub(super) fn apply_source_map_navigation(
     shell: &mut JamShellState,
     intent: SourceMapNavigationIntent,
     requested_at: u64,
-) -> Vec<CommittedActionRef> {
-    match shell.app.queue_source_map_navigation(intent, requested_at) {
+) -> io::Result<Vec<CommittedActionRef>> {
+    let committed = match shell
+        .app
+        .queue_source_map_navigation(intent, requested_at)
+        .map_err(io::Error::other)?
+    {
         SourceMapNavigationResult::Enqueued {
             target_label,
             target_position_beats,
@@ -48,5 +54,6 @@ pub(super) fn apply_source_map_navigation(
             shell.set_error_status(reason);
             Vec::new()
         }
-    }
+    };
+    Ok(committed)
 }

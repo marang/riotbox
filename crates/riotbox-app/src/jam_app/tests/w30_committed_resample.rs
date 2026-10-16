@@ -70,7 +70,7 @@ fn committed_w30_internal_resample_materializes_lineage_safe_capture() {
     state.refresh_view();
 
     assert_eq!(
-        state.queue_w30_internal_resample(650),
+        state.queue_w30_internal_resample(650).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
 
@@ -155,7 +155,7 @@ fn committed_w30_internal_resample_prints_reusable_bus_artifact() {
 
     let mut state =
         JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("load app state");
-    state.queue_capture_bar(300);
+    state.queue_capture_bar(300).unwrap();
     let committed_capture = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Phrase,
@@ -171,7 +171,7 @@ fn committed_w30_internal_resample_prints_reusable_bus_artifact() {
     let raw_artifact =
         SourceAudioCache::load_pcm_wav(&raw_capture_path).expect("load raw capture artifact");
 
-    assert!(state.queue_promote_last_capture(410));
+    assert!(state.queue_promote_last_capture(410).unwrap());
     let committed_promotion = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,
@@ -185,7 +185,7 @@ fn committed_w30_internal_resample_prints_reusable_bus_artifact() {
     assert_eq!(committed_promotion.len(), 1);
 
     assert_eq!(
-        state.queue_w30_internal_resample(650),
+        state.queue_w30_internal_resample(650).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     let committed_resample = state.commit_ready_actions(
@@ -285,7 +285,7 @@ fn committed_w30_internal_resample_prints_reusable_bus_artifact() {
         0.001,
     );
 
-    assert!(state.queue_promote_last_capture(780));
+    assert!(state.queue_promote_last_capture(780).unwrap());
     let committed_resample_promotion = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Bar,
@@ -374,7 +374,7 @@ fn committed_w30_internal_resample_prints_reusable_bus_artifact() {
     );
 
     assert_eq!(
-        reloaded.queue_w30_trigger_pad(845),
+        reloaded.queue_w30_trigger_pad(845).unwrap(),
         Some(QueueControlResult::Enqueued)
     );
     let committed_reload_trigger = reloaded.commit_ready_actions(

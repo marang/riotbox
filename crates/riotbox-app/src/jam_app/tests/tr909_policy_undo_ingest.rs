@@ -213,7 +213,7 @@ fn undo_does_not_claim_success_without_typed_runtime_restoration() {
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    assert_eq!(state.undo_last_action(500), None);
+    assert_eq!(state.undo_last_action(500).unwrap(), None);
     assert_eq!(state.session.action_log.actions.len(), 1);
     assert_eq!(
         state.session.action_log.actions[0].status,
@@ -229,7 +229,7 @@ fn undo_tr909_fill_restores_previous_fill_window_and_supports_post_undo_replay_a
     session.runtime_state.lane_state.tr909.last_fill_bar = Some(2);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    state.queue_tr909_fill(300);
+    state.queue_tr909_fill(300).unwrap();
     let fill_action_id = state.queue.pending_actions()[0].id;
     state.commit_ready_actions(
         CommitBoundaryState {
@@ -248,6 +248,7 @@ fn undo_tr909_fill_restores_previous_fill_window_and_supports_post_undo_replay_a
 
     let undo = state
         .undo_last_action(500)
+        .unwrap()
         .expect("committed Fill has typed restoration");
     assert_eq!(
         undo.params,
@@ -291,7 +292,7 @@ fn undo_tr909_fill_restores_previous_fill_window_and_supports_post_undo_replay_a
         )),
     });
 
-    assert!(state.queue_tr909_slam_toggle(600));
+    assert!(state.queue_tr909_slam_toggle(600).unwrap());
     state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Beat,
@@ -337,16 +338,19 @@ fn pending_fill_undo_and_later_commit_keep_unique_ids_through_reload_and_replay(
     };
 
     assert_eq!(
-        state.queue_source_monitor_mode(SourceMonitorMode::Riotbox, 100),
+        state
+            .queue_source_monitor_mode(SourceMonitorMode::Riotbox, 100)
+            .unwrap(),
         QueueControlResult::Enqueued
     );
     let source_monitor_id = state.queue.pending_actions()[0].id;
     state.commit_ready_actions(immediate_boundary, 110);
 
-    state.queue_tr909_fill(120);
+    state.queue_tr909_fill(120).unwrap();
     let fill_id = state.queue.pending_actions()[0].id;
     let undo = state
         .undo_last_action(130)
+        .unwrap()
         .expect("source monitor action has typed restoration");
     assert_ne!(undo.id, fill_id);
     assert_eq!(
@@ -421,7 +425,9 @@ fn newer_non_undoable_tr909_action_does_not_block_typed_monitor_undo() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     assert_eq!(
-        state.queue_source_monitor_mode(SourceMonitorMode::Riotbox, 100),
+        state
+            .queue_source_monitor_mode(SourceMonitorMode::Riotbox, 100)
+            .unwrap(),
         QueueControlResult::Enqueued
     );
     let monitor_id = state.queue.pending_actions()[0].id;
@@ -435,7 +441,7 @@ fn newer_non_undoable_tr909_action_does_not_block_typed_monitor_undo() {
         },
         110,
     );
-    assert!(state.queue_tr909_slam_toggle(120));
+    assert!(state.queue_tr909_slam_toggle(120).unwrap());
     state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Beat,
@@ -457,6 +463,7 @@ fn newer_non_undoable_tr909_action_does_not_block_typed_monitor_undo() {
 
     let undo = state
         .undo_last_action(140)
+        .unwrap()
         .expect("typed monitor action remains undoable");
 
     assert_eq!(
@@ -485,7 +492,7 @@ fn saving_with_pending_tr909_fill_does_not_persist_committed_lane_state() {
 
     let mut state =
         JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("load app state");
-    state.queue_tr909_fill(700);
+    state.queue_tr909_fill(700).unwrap();
 
     assert!(state.jam_view.lanes.tr909_fill_armed_next_bar);
     assert!(
