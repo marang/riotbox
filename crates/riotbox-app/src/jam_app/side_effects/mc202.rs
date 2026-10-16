@@ -5,9 +5,14 @@ use riotbox_core::{
     transport::CommitBoundaryState,
 };
 
+mod legacy_source_plan;
 mod source_phrase;
 
+pub(in crate::jam_app) use legacy_source_plan::derive_legacy_mc202_source_phrase_plan;
+
 use source_phrase::derive_mc202_source_phrase_plan;
+
+const MC202_MUTATION_DEFAULT_TOUCH: f32 = 0.88;
 
 pub(in crate::jam_app) fn apply_mc202_side_effects(
     session: &mut SessionFile,
@@ -140,7 +145,7 @@ pub(in crate::jam_app) fn apply_mc202_side_effects(
             let phrase_ref = format!("{current_role_label}-{variant}-bar-{bar_index}");
             let touch = match &action.params {
                 ActionParams::Mutation { intensity, .. } => intensity.clamp(0.0, 1.0),
-                _ => 0.88,
+                _ => MC202_MUTATION_DEFAULT_TOUCH,
             };
 
             let effective_touch = session.runtime_state.macro_state.mc202_touch.max(touch);

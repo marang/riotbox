@@ -154,6 +154,19 @@ append helper across actual and prospective histories. Typed App errors expose
 policy refusal; no state is added to the facade or serialized model. Timing and
 immediate-toggle consumers admit before their own mutation boundaries.
 
+RIOTBOX-1599 / RBX-457 deepens Core's transactional replay traversal into one
+private semantic owner shared by graph-free and graph-aware callers. Narrow
+legacy-MC-202 resolver interfaces return only a missing plan from immutable
+pre-entry state; Core retains order, anchor/suffix, execution and installation.
+The App adapter reuses its existing pure source selector, never a second replay
+validator or mutating side-effect wrapper. Explicit restore stops full-prefix
+postprocessing. The existing unvalidated constructor/index compatibility owner
+remains separate in `jam_app::restore_replay::legacy_mc202`, retaining complete
+semantic ownership and its compatibility evidence, not mechanical include
+shards. Core exposes the narrowly named single-entry legacy resolver to that
+constructor, sharing missing-plan/normal-execution semantics with the
+transactional target traversal; the caller owns its scratch candidate.
+
 RIOTBOX-1594 keeps MC-202 restore-input collection in the existing private App
 `restore_replay` owner. Its transient prefix index preserves first-match ActionId
 selection for unvalidated `from_parts` callers and traverses stored records in
