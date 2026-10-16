@@ -15,7 +15,7 @@
 - Labels: `Bug`
 - PR: [#1666](https://github.com/marang/riotbox/pull/1666)
 - Merge commit: `01f4f0a5717e2dd144f17010d9ee6e2244d526c7`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: Historical Python 23-test suite; Rust Sidecar 32 unit + 4 integration tests; App 5 ingest identity/persistence tests; fifth-slice architecture checkpoint; full source-free local just ci; exact-head native CI 37107333091 passed
 - Docs touched: `docs/research_decision_log.md`, `docs/reviews/riotbox_1563_current_state_cadence_2026-10-03.md`, `docs/reviews/riotbox_1563_python_sample_admission_2026-10-03.md`, `docs/specs/audio_core_spec.md`, `docs/specs/source_graph_spec.md`
 - Follow-ups: RIOTBOX-1564 (local DAW writer queued-receipt identity), separately completed

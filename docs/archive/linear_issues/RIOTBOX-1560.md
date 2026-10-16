@@ -15,7 +15,7 @@
 - Labels: `Bug`
 - PR: [#1663](https://github.com/marang/riotbox/pull/1663)
 - Merge commit: `2df1c772fcd8fb57785ffd094d5cbb245d47f428`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: Historical: generated public-client RED→GREEN, Sidecar 32 unit + 1 integration, admission 6 Release, source-free `just ci`; native CI 37103897824 passed. Current archival check: Linear Done and merged PR metadata only.
 - Docs touched: `docs/research_decision_log.md`, `docs/reviews/riotbox_1560_sidecar_response_admission_2026-10-03.md`, `docs/specs/technology_stack_spec.md`
 - Follow-ups: RIOTBOX-1561 owns the earlier Python encoded-file admission gap; RIOTBOX-1562/1563 address other Python container/decoded bounds. This issue remains wire-framing-only.

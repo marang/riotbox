@@ -15,7 +15,7 @@
 - Labels: `Audio`, `Improvement`
 - PR: [#1684](https://github.com/marang/riotbox/pull/1684)
 - Merge commit: `3ab397cfb278c047315bba3b3346da61e209f0cc`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: 34 process/Client controls and 43 loader/workload/historical-fence controls PASS; each independent reviewer ran 77 focused executions; full local `just ci` PASS (165 silent/116 loaded controls); exact native PR CI 38858691544 PASS. Post-merge main run 38859355406 had Linux rust-ci PASS but Windows handshake failures; retained separately, not relabeled green.
 - Docs touched: `docs/benchmarks/loaded_recorder_observation_v2.json`, `docs/benchmarks/loaded_recorder_observation_v2.md`, `docs/dev_environment.md`, `docs/research_decision_log.md`, `docs/reviews/riotbox_1580_loaded_client_reuse_v2_2026-10-16.md`
 - Follow-ups: RIOTBOX-1581 separately approved prospective V2 observation subsequently completed with bounded technical PASS; post-merge Windows CI gap retained, root cause unproven; RIOTBOX-1041/1036 remain open; original ALSA cause unresolved.

@@ -15,7 +15,7 @@
 - Labels: `Audio`, `Improvement`
 - PR: [#1680](https://github.com/marang/riotbox/pull/1680)
 - Merge commit: `6edcef2cdd8fbde889ca2e822635442e836f87ee`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: 30 default tests, 18 calibration selections and 2 Python controls PASS; actual fresh preparation CLI six/six offline windows and normal restore PASS; full local `just ci`, native PR CI 38695995797 and post-merge main CI 38697005290 PASS; independent reviews/self-review: zero retained findings.
 - Docs touched: `docs/benchmarks/generated_live_master_load_fixture_v1.json`, `docs/benchmarks/generated_live_master_load_fixture_v1.md`, `docs/engineering/module_policy.md`, `docs/research_decision_log.md`, `docs/reviews/riotbox_1577_generated_load_preparation_2026-10-15.md`, `docs/reviews/riotbox_1577_load_fixture_preparation_wip_2026-10-13.md`, `docs/specs/audio_core_spec.md`, `docs/specs/audio_qa/automated_qa.md`
 - Follow-ups: RIOTBOX-1578 loaded adapter and RIOTBOX-1579 separate prospective observation subsequently completed; RIOTBOX-1041/1036 remain open; original ALSA cause unexplained.

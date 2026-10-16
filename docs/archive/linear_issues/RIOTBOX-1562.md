@@ -15,7 +15,7 @@
 - Labels: `Bug`
 - PR: [#1665](https://github.com/marang/riotbox/pull/1665)
 - Merge commit: `e6b6f67ac698eee81b43a58c1ade9a7e85690b85`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: Historical Python 18-test suite; Rust Sidecar 32 unit + 3 integration tests; App 4 source-ingest identity/persistence tests; full source-free local just ci; exact-head native CI 37106346588 passed
 - Docs touched: `docs/research_decision_log.md`, `docs/reviews/riotbox_1562_python_wave_container_2026-10-03.md`, `docs/specs/source_graph_spec.md`
 - Follow-ups: RIOTBOX-1563 (decoded-interleaved-sample admission), separately completed

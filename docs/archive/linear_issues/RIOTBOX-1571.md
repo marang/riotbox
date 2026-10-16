@@ -15,7 +15,7 @@
 - Labels: `Bug`
 - PR: [#1674](https://github.com/marang/riotbox/pull/1674)
 - Merge commit: `58a4eccddf2ff35c0d2e54a0cd578d2da44b30ff`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: Historical canonical generated RED/GREEN, independent 19-test metadata suite and synthetic-clock deadline regression; all 134 source-free host fixtures with ResourceWarnings fatal; full local just ci; exact-head native CI 37977961393 passed; no host invocation
 - Docs touched: `docs/benchmarks/silent_host_observation_v3.json`, `docs/benchmarks/silent_host_observation_v3.md`, `docs/dev_environment.md`, `docs/research_decision_log.md`, `docs/reviews/riotbox_1571_silent_host_metadata_v3_2026-10-09.md`, `docs/specs/audio_core_spec.md`
 - Follow-ups: RIOTBOX-1572 later owns a separate prospectively authorized V3 observation; RIOTBOX-1041 remains open; related RIOTBOX-1576 architecture checkpoint

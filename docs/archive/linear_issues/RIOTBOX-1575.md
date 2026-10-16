@@ -15,7 +15,7 @@
 - Labels: `Audio`, `Improvement`
 - PR: [#1678](https://github.com/marang/riotbox/pull/1678)
 - Merge commit: `fe92445e87e0f5301877da658a5d44c41599d658`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: 62 preexisting tests PASS before changes; new lifecycle 12 PASS and combined recorder/export 74 PASS (overlapping counts); stack-pressure and stop-projection RED→GREEN; full local `just ci` and exact native CI 38443530920 PASS; independent reviews/self-review: zero retained findings.
 - Docs touched: `docs/engineering/module_policy.md`, `docs/research_decision_log.md`, `docs/reviews/riotbox_1575_recorder_control_lifecycle_2026-10-13.md`, `docs/specs/audio_core_spec.md`
 - Follow-ups: RIOTBOX-1036 and RIOTBOX-1041 remain open; RIOTBOX-1576 checkpoint subsequently completed; original RIOTBOX-1572 trigger unresolved.

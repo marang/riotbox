@@ -15,7 +15,7 @@
 - Labels: `Audio`, `Improvement`
 - PR: [#1681](https://github.com/marang/riotbox/pull/1681)
 - Merge commit: `92a89ca1d7abb2092713f8d9ea5ec5974a5d65c2`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: Full local `just ci` PASS; final 165 existing silent + 74 loaded controls PASS; 18 shared-controller lifecycle controls and overlapping 80-test live-master family PASS; fresh generated six-window preparation, three sibling copies and metadata-only Core restores PASS; native PR CI 38706255441 and post-merge CI 38707331483 PASS.
 - Docs touched: `docs/benchmarks/loaded_recorder_observation_v1.json`, `docs/benchmarks/loaded_recorder_observation_v1.md`, `docs/engineering/module_policy.md`, `docs/research_decision_log.md`, `docs/reviews/riotbox_1578_loaded_recorder_adapter_2026-10-15.md`, `docs/specs/audio_core_spec.md`, `docs/specs/audio_qa/automated_qa.md`
 - Follow-ups: RIOTBOX-1579 separately authorized V1 observation subsequently FAILED/consumed; RIOTBOX-1580 versioned correction and RIOTBOX-1581 separate V2 subsequently completed; RIOTBOX-1041/1036 remain open; original ALSA cause unexplained.

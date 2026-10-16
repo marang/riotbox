@@ -15,7 +15,7 @@
 - Labels: `Bug`
 - PR: [#1664](https://github.com/marang/riotbox/pull/1664)
 - Merge commit: `34c3c79261e41f8df3f2c59bd2a503a2024171bd`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: Historical generated Python 12-test suite and tracing-enabled repeat; Rust Sidecar 32 unit + 2 integration tests; full source-free local just ci; exact-head native CI 37105279061 passed
 - Docs touched: `docs/research_decision_log.md`, `docs/reviews/riotbox_1561_python_source_admission_2026-10-03.md`, `docs/specs/audio_core_spec.md`, `docs/specs/source_graph_spec.md`
 - Follow-ups: RIOTBOX-1562 (malformed-container admission), RIOTBOX-1563 (early decoded-input sample-count admission); both separately completed

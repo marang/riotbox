@@ -15,7 +15,7 @@
 - Labels: `None`
 - PR: [#1655](https://github.com/marang/riotbox/pull/1655)
 - Merge commit: `175bc6ecc59e5a9dcab740384a4a405dc747596a`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: Historical: final source-free `just ci`; Core recording 31/replay 122, App recording 21/DAW 15, CLI 152, UI 2 and 15 generated actual-clock combinations; native CI 37042597586 passed. Current archival check: Linear Done and merged PR metadata only.
 - Docs touched: `docs/execution_roadmap.md`, `docs/research_decision_log.md`, `docs/reviews/riotbox_1552_canonical_two_bar_recording_2026-10-02.md`, `docs/specs/action_lexicon_spec.md`, `docs/specs/audio_core_spec.md`, `docs/specs/audio_qa/manifests_and_artifacts.md`, `docs/specs/session_file_spec.md`
 - Follow-ups: At implementation closeout, RIOTBOX-1036 remained broader recording/export scope; RIOTBOX-1553 separately qualifies an eight-bar host take. Historical non-ready V2 receipts remain diagnosed, with no automatic migration or reassessment.

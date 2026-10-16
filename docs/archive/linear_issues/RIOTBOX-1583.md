@@ -15,10 +15,10 @@
 - Labels: `Audio`, `review-followup`
 - PR: `#1688 (https://github.com/marang/riotbox/pull/1688)`
 - Merge commit: `a688b5e3f25b6af0f5c02518e59ee0b6105c21e2`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: `26 Core/App, 82 Audio/Sidecar, 12 QA test selections PASS (overlap not unique coverage); independent counterexample rebuild/reruns; full source-free just ci PASS; exact-head native38875077235 both configured jobs PASS; independent report review and short self-review zero additional findings; GitHub comments/reviews empty`
 - Docs touched: `docs/reviews/riotbox_1583_current_state_checkpoint_2026-10-16.md`
-- Follow-ups: `RIOTBOX-1584 first, then checked ActionId exhaustion; RIOTBOX-1041/1036 remain open. Report source is durable even after Linear deletion.`
+- Follow-ups: `RIOTBOX-1584 first, then RIOTBOX-1587 checked ActionId exhaustion; RIOTBOX-1041/1036 remain open. Report source is durable even after Linear deletion.`
 
 ## Why This Ticket Existed
 
@@ -73,3 +73,9 @@ and recording paths before broader host/endurance or DAW qualification.
 - Specifically approved late Jev advisory used historical pre-checkpoint status
   (1054 input/156 output tokens), favoring lifecycle inspection. It is not defect
   evidence, host authorization or a current test result.
+- Closeout PR #1689 merged `245e09dbee9363008ed862f01e57af58a5261c9c`
+  after exact native CI38876855242 passed. All34 new archives were durable before
+  fresh Done/UUID/title/no-open-child checks and successful deletion on2026-10-16
+  (final sync4353261066). Postcheck found zero unarchived Done and all15 unrelated
+  open records unchanged. Capacity recovery then allowed RIOTBOX-1587; the
+  historical report's earlier issue-limit blocker is resolved, not a waived bug.

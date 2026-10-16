@@ -15,7 +15,7 @@
 - Labels: `None`
 - PR: [#1654](https://github.com/marang/riotbox/pull/1654)
 - Merge commit: `654791993a744c5c2b6e1948bdb71e0566ad48fb`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: Historical: final source-free `just ci`; Core recording 25/replay 121, CLI 144, Audio capture 18, App window 7; native CI 37038877195 passed. Current archival check: Linear Done and merged PR metadata; no test/audio rerun.
 - Docs touched: `README.md`, `docs/execution_roadmap.md`, `docs/research_decision_log.md`, `docs/reviews/riotbox_1551_bounded_recording_windows_2026-10-02.md`, `docs/specs/action_lexicon_spec.md`, `docs/specs/audio_core_spec.md`, `docs/specs/session_file_spec.md`
 - Follow-ups: RIOTBOX-1552 owns legacy two-bar producer/readiness reconciliation; RIOTBOX-1553 owns fresh eight-bar host evidence; RIOTBOX-1555 later owns V3 DAW handoff. RIOTBOX-1036/P016 was broader open scope at implementation closeout; its current status is not reassessed here.

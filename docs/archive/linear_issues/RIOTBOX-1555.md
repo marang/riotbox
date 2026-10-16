@@ -15,7 +15,7 @@
 - Labels: `None`
 - PR: [#1658](https://github.com/marang/riotbox/pull/1658)
 - Merge commit: `996471448e9f763300e1cc44659ceefb7953ac25`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: Historical: source-free `just ci`, DAW App 22, Core 495 including six new, CLI projections 5, recording controls 21; native CI 37071672280 passed. Current archival check: Linear Done and merged PR metadata only.
 - Docs touched: `docs/execution_roadmap.md`, `docs/research_decision_log.md`, `docs/reviews/riotbox_1555_extended_live_master_dawproject_2026-10-02.md`, `docs/specs/action_lexicon_spec.md`, `docs/specs/replay_model_spec.md`, `docs/specs/session_file_spec.md`
 - Follow-ups: At implementation closeout, RIOTBOX-1036/P016 real-host DAW import/output qualification was dependent on the user's DAW setup; local packaging does not close that audible follow-up.

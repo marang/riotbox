@@ -15,7 +15,7 @@
 - Labels: `None`
 - PR: [#1656](https://github.com/marang/riotbox/pull/1656)
 - Merge commit: `6a647dac9ae9b5a0cdf752abd5f8447cf37cc0d9`
-- Deleted from Linear: `Pending archive merge and verified deletion`
+- Deleted from Linear: `2026-10-16`
 - Verification: Historical: one exact real-host eight-bar CPAL take, artifact/proof/receipt/restore checks, bounded continuity-only human keep, source-free `just ci`; native CI 37062706317 passed. Current archival check: tracked report, Linear and merged PR metadata only; no artifact/audio/device/host recheck.
 - Docs touched: `docs/reviews/riotbox_1553_eight_bar_host_qualification_2026-10-02.md`
 - Follow-ups: RIOTBOX-1554 corrects future descriptive alignment summaries without rewriting this take; RIOTBOX-1555 separately adds V3 DAW packaging. At implementation closeout, RIOTBOX-1036 remained open, including real DAW-host import/output dependent on the user's setup; this archive does not reassess that dependency.
