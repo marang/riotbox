@@ -1,8 +1,11 @@
 //! Owns the recorder's control lifecycle, not a second recording or Session model.
 //! Both production and generated tests execute the same queue/stop/publication path.
-use std::time::{Duration, Instant};
+use std::{
+    ops::ControlFlow,
+    time::{Duration, Instant},
+};
 
-use super::observation::{Observation, WindowStopped};
+use super::observation::Observation;
 use crate::cli::transport_sync::{TransportControl, publish_transport, sync_transport};
 use crate::cli::{
     model::{AppLaunch, LaunchMode, live_master_recording_boundary},
@@ -16,6 +19,9 @@ use riotbox_audio::runtime::{
 };
 use riotbox_core::{TimestampMs, action::LiveRecordingDuration};
 use serde_json::{Value, json};
+
+mod capture_wait;
+use capture_wait::CaptureWait;
 
 pub(super) fn execute(
     launch: &AppLaunch,
@@ -229,147 +235,20 @@ fn execute_with_control_observed(
             / f64::from(plan.confirmed_bpm);
     let deadline = runtime.now()
         + Duration::from_secs_f64(expected_arm_seconds + expected_duration_seconds + 2.0);
-    let completion = loop {
-        if let Err(error) = sync_live_master_runtime(state, runtime) {
-            return Ok(blocked_capture_sync_failure(
-                launch,
-                state,
-                runtime,
-                started_transport,
-                &plan,
-                &output,
-                error,
-            ));
-        }
-        let health = runtime.health_snapshot();
-        state.set_audio_health(health.clone());
-        if health.lifecycle != AudioRuntimeLifecycle::Running
-            || health.stream_error_count > 0
-            || health.callback_scratch_overflow_count > 0
-        {
-            let stop_result = stop_live_master_runtime(state, runtime, started_transport);
-            runtime.abort_live_master_capture();
-            let reason = with_transport_cleanup_error(
-                format!("live master runtime faulted during capture: {health:?}"),
-                stop_result,
-            );
-            state.reject_live_master_recording(plan.action_id, reason.clone());
-            return Ok(blocked_live_master_recording_result(
-                launch,
-                state,
-                runtime,
-                false,
-                Some(&plan),
-                &output,
-                reason,
-            ));
-        }
-        if let Some(progress) = runtime.live_master_capture_progress() {
-            if progress.fault_count() > 0 {
-                let stop_result = stop_live_master_runtime(state, runtime, started_transport);
-                let progress = runtime.abort_live_master_capture().unwrap_or(progress);
-                let reason = with_transport_cleanup_error(
-                    format!(
-                        "live master callback capture faulted while waiting for or recording the bar window: {progress:?}"
-                    ),
-                    stop_result,
-                );
-                state.reject_live_master_recording(plan.action_id, reason.clone());
-                return Ok(blocked_live_master_recording_result(
-                    launch,
-                    state,
-                    runtime,
-                    false,
-                    Some(&plan),
-                    &output,
-                    reason,
-                ));
+    let mut wait = CaptureWait::new(launch, &plan, &output, started_transport, deadline);
+    let stopped = loop {
+        match wait.poll(state, runtime, observation.enabled()) {
+            ControlFlow::Continue(next) => {
+                wait = next;
+                runtime.wait(Duration::from_millis(10));
             }
-            if progress.complete {
-                // Only in-memory observations before stop; optional observer I/O
-                // cannot prolong the live output window.
-                break observation
-                    .enabled()
-                    .then(|| (runtime.monotonic_ns(), progress));
-            }
+            ControlFlow::Break(Ok(stopped)) => break stopped,
+            ControlFlow::Break(Err(summary)) => return Ok(summary),
         }
-        if runtime.now() >= deadline {
-            let stop_result = stop_live_master_runtime(state, runtime, started_transport);
-            let progress = runtime.abort_live_master_capture();
-            let reason = with_transport_cleanup_error(
-                format!("live master callback capture stopped early: {progress:?}"),
-                stop_result,
-            );
-            state.reject_live_master_recording(plan.action_id, reason.clone());
-            return Ok(blocked_live_master_recording_result(
-                launch,
-                state,
-                runtime,
-                false,
-                Some(&plan),
-                &output,
-                reason,
-            ));
-        }
-        runtime.wait(Duration::from_millis(10));
     };
-
-    if let Err(error) = sync_live_master_runtime(state, runtime) {
-        return Ok(blocked_capture_sync_failure(
-            launch,
-            state,
-            runtime,
-            started_transport,
-            &plan,
-            &output,
-            error,
-        ));
-    }
-    let final_health = runtime.health_snapshot();
-    state.set_audio_health(final_health.clone());
-    if let Err(error) = stop_live_master_runtime(state, runtime, started_transport) {
-        runtime.abort_live_master_capture();
-        let reason = format!("live master transport cleanup failed: {error}");
-        state.reject_live_master_recording(plan.action_id, reason.clone());
-        return Ok(blocked_live_master_recording_result(
-            launch,
-            state,
-            runtime,
-            false,
-            Some(&plan),
-            &output,
-            reason,
-        ));
-    }
-    let stopped_ns = observation
-        .enabled()
-        .then(|| runtime.monotonic_ns())
-        .flatten();
-    let stopped_health = runtime.health_snapshot();
-    if stopped_health.lifecycle != AudioRuntimeLifecycle::Stopped {
-        let progress = runtime.abort_live_master_capture();
-        let reason = format!(
-            "live master runtime did not stop before recording finalization: {stopped_health:?}; capture: {progress:?}"
-        );
-        state.reject_live_master_recording(plan.action_id, reason.clone());
-        return Ok(blocked_live_master_recording_result(
-            launch,
-            state,
-            runtime,
-            false,
-            Some(&plan),
-            &output,
-            reason,
-        ));
-    }
-
-    if let Some((complete_ns, progress)) = completion {
-        observation.record(&WindowStopped::new(
-            &plan,
-            complete_ns,
-            stopped_ns,
-            progress.fault_count(),
-        ));
+    let (final_health, milestone) = stopped.into_parts();
+    if let Some(milestone) = milestone {
+        observation.record(&milestone);
     }
 
     let outcome = match runtime.finish_live_master_capture() {

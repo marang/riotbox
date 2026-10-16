@@ -356,6 +356,8 @@ fn fixture(
 }
 
 mod action_id_exhaustion;
+mod capture_wait;
+mod capture_wait_ordering;
 mod commit_sequence_exhaustion;
 mod legacy_admission;
 mod observation;
