@@ -117,9 +117,10 @@ Devil's Advocate review found no P0–P3 defect, verified the cited intermediate
 and green logs, preserved existing assertions and scope, and reran Core9,
 App/CLI/recorder13 and observer1 controls, all PASS:
 `/tmp/riotbox-1587-spec-review-{core,action-id,observer}.log`.
-The coordinator's subsequent self-review found no additional P0–P3 issue in
-the checked cursor, mutation order, failure propagation, unconditional device
-stop, public API compatibility, contracts or assertion preservation.
+The coordinator's follow-up self-review found no additional ActionId-specific
+P0–P3 issue in the checked cursor, mutation order, failure propagation,
+unconditional device stop, public API compatibility, contracts or assertion
+preservation. The later adjacent capacity finding is separately retained below.
 `ui-expert` additionally checked that the existing error feedback
 does not imply a successful action; no layout, keymap or new TUI surface was
 introduced. Full local source-free CI passes as recorded above. Exact-head
