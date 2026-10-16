@@ -146,12 +146,10 @@ fn queued_monitor_action_remains_pending_when_its_later_commit_is_refused() {
     let error = apply_probe_key(&mut shell, &mut writer, 100, KeyCode::Char('M'))
         .expect_err("a later refused commit must not announce success");
 
-    assert_eq!(
-        error
-            .get_ref()
-            .and_then(|error| error.downcast_ref::<CommitSequenceExhausted>()),
-        Some(&expected)
-    );
+    assert!(matches!(
+        error.get_ref().and_then(|error| error.downcast_ref::<JamAppError>()),
+        Some(JamAppError::CommitSequenceExhausted(cause)) if cause == &expected
+    ));
     assert_eq!(shell.status_message, expected.to_string());
     assert_eq!(shell.app.session, session_before);
     assert_eq!(shell.app.runtime, runtime_before);

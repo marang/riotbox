@@ -73,6 +73,12 @@ record reordering, relaxed validator or general save-validation framework.
 - Complete App library: **932 passed, one existing ignored benchmark**, no
   failures, `/tmp/riotbox-1597-app-full.log`. This run includes the later-added
   historical-copy and neutral-writer controls, unlike the earlier focused logs.
+- The first full local CI found one stale observer-probe downcast expectation:
+  direct commits now carry sequence refusal inside `JamAppError`, not as a
+  bare Core error. Updated that exact test to match the typed variant and full
+  cause; state/pending/event assertions are unchanged. A focused one-test RED
+  and all19 probe tests GREEN are retained in
+  `/tmp/riotbox-1597-observer-adapter-{red,green}.log`. No production weakening.
 
 ## Review and limits
 
