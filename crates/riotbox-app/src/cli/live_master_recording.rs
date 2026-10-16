@@ -15,12 +15,16 @@ use std::path::Path;
 use std::path::PathBuf;
 mod capture_lifecycle;
 mod observation;
+mod terminal_input;
+use crate::cli::model::LiveRecordingInputMode;
 use observation::{Observation, WindowStoppedSink};
+use terminal_input::{RecordingInput, TerminalInput};
 
 pub(super) fn run_live_master_recording_execute(
     launch: &AppLaunch,
     raw_args: &[String],
 ) -> Result<(), Box<dyn std::error::Error>> {
+    let input_mode = launch.mode.live_recording_input_mode();
     let mut observer = open_live_master_recording_observer(launch)?;
     let (execution, milestone_result) = {
         let sink = observer
@@ -39,7 +43,7 @@ pub(super) fn run_live_master_recording_execute(
                     "schema": "riotbox.user_session_observer.v1",
                     "timestamp_ms": timestamp_now(),
                     "opt_in": true,
-                    "capture_context": "non_interactive_real_audio_cli",
+                    "capture_context": input_mode.capture_context(),
                     "raw_audio_recording": false,
                     "live_master_recording": true,
                     "realtime_callback_io": false,
@@ -64,7 +68,7 @@ pub(super) fn run_live_master_recording_execute(
             "schema": "riotbox.user_session_observer.v1",
             "timestamp_ms": timestamp_now(),
             "opt_in": true,
-            "capture_context": "non_interactive_real_audio_cli",
+            "capture_context": input_mode.capture_context(),
             "raw_audio_recording": false,
             "live_master_recording": true,
             "realtime_callback_io": false,
@@ -222,16 +226,138 @@ fn live_master_recording_execute_summary(
     else {
         return Err("not a live master recording execute launch".into());
     };
-
-    let mut state = JamAppState::from_json_files(session_path, source_graph_path.as_deref())?;
-    let mut runtime =
-        AudioRuntimeShell::start_default_output_with_render_states_and_source_monitor(
-            state.runtime.tr909_render.clone(),
-            state.runtime.mc202_render,
-            state.runtime.w30_preview.clone(),
-            state.runtime.w30_resample_tap.clone(),
-            state.source_monitor_render_state(),
-        )?;
-    let summary = capture_lifecycle::execute(launch, &mut state, &mut runtime, observation)?;
+    let mut input = match launch.mode.live_recording_input_mode() {
+        LiveRecordingInputMode::Disabled => None,
+        LiveRecordingInputMode::TerminalFill => {
+            // Brief before raw mode/device startup, never I/O during a take.
+            eprintln!(
+                "Recording input (Linux ASCII): f queues Fill; q/Ctrl-C or standalone Esc (50 ms) cancels while pending. Avoid paste/typeahead; unsupported key sequences abort. A queued Fill may miss this take; audio delivery is not confirmed."
+            );
+            Some(TerminalInput::open()?)
+        }
+    };
+    let mut state = match JamAppState::from_json_files(session_path, source_graph_path.as_deref()) {
+        Ok(state) => state,
+        Err(error) => {
+            let restoration = input.as_mut().map_or(Ok(()), TerminalInput::restore);
+            return Err(with_terminal_restore_error(error.into(), restoration));
+        }
+    };
+    // Borrow the single large facade, and return only a small summary through
+    // this execution frame. Construct the shell only after runtime and terminal
+    // cleanup, never move App/Shell through an extra resource-wrapper frame.
+    let execution = (|| {
+        let mut runtime =
+            AudioRuntimeShell::start_default_output_with_render_states_and_source_monitor(
+                state.runtime.tr909_render.clone(),
+                state.runtime.mc202_render,
+                state.runtime.w30_preview.clone(),
+                state.runtime.w30_resample_tap.clone(),
+                state.source_monitor_render_state(),
+            )?;
+        capture_lifecycle::execute(
+            launch,
+            &mut state,
+            &mut runtime,
+            observation,
+            input.as_mut().map(|input| input as &mut dyn RecordingInput),
+        )
+    })();
+    let restoration = input.as_mut().map_or(Ok(()), TerminalInput::restore);
+    let summary = recording_result_after_terminal_restore(execution, restoration)?;
     Ok((summary, JamShellState::new(state, ShellLaunchMode::Load)))
+}
+
+fn with_terminal_restore_error(
+    error: Box<dyn std::error::Error>,
+    restoration: io::Result<()>,
+) -> Box<dyn std::error::Error> {
+    match restoration {
+        Ok(()) => error,
+        Err(restore_error) => {
+            format!("{error}; additionally terminal restoration failed: {restore_error}").into()
+        }
+    }
+}
+
+fn recording_result_after_terminal_restore(
+    execution: Result<Value, Box<dyn std::error::Error>>,
+    restoration: io::Result<()>,
+) -> Result<Value, Box<dyn std::error::Error>> {
+    match execution {
+        Err(error) => Err(with_terminal_restore_error(error, restoration)),
+        Ok(summary) => {
+            // No successful stdout JSON without confirmed restoration. This
+            // small reporting seam has no Session or file handles: cleanup
+            // cannot erase or invalidate an already committed recording.
+            if let Err(error) = restoration {
+                return Err(format!(
+                    "terminal restoration failed after recording execution (recording ready={}); any committed Session/receipt and published artifacts are retained: {error}",
+                    summary["ready"],
+                ).into());
+            }
+            Ok(summary)
+        }
+    }
+}
+
+#[cfg(test)]
+mod terminal_result_tests {
+    use super::recording_result_after_terminal_restore;
+    use serde_json::json;
+    use std::io;
+
+    #[test]
+    fn successful_restore_keeps_ready_and_blocked_recording_summaries_exact() {
+        for ready in [false, true] {
+            let summary = json!({"ready": ready, "receipt": {"receipt_id": "kept"}});
+            assert_eq!(
+                recording_result_after_terminal_restore(Ok(summary.clone()), Ok(())).unwrap(),
+                summary
+            );
+        }
+    }
+
+    #[test]
+    fn restore_failure_reports_recording_state_without_a_success_result() {
+        for ready in [false, true] {
+            let summary = json!({"ready": ready, "receipt": {"receipt_id": "kept"}});
+            let error = recording_result_after_terminal_restore(
+                Ok(summary),
+                Err(io::Error::other("generated restore failure")),
+            )
+            .unwrap_err()
+            .to_string();
+            assert!(error.contains(&format!("recording ready={ready}")));
+            assert!(
+                error.contains("committed Session/receipt and published artifacts are retained")
+            );
+            assert!(error.contains("generated restore failure"));
+        }
+    }
+
+    #[test]
+    fn restore_failure_preserves_original_failure_cause() {
+        let error = recording_result_after_terminal_restore(
+            Err(io::Error::other("generated recording failure").into()),
+            Err(io::Error::other("generated restore failure")),
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(error.contains("generated recording failure"));
+        assert!(error.contains("generated restore failure"));
+    }
+
+    #[test]
+    fn successful_restore_preserves_the_original_error_type() {
+        let error = recording_result_after_terminal_restore(
+            Err(io::Error::new(io::ErrorKind::UnexpectedEof, "generated load failure").into()),
+            Ok(()),
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.downcast_ref::<io::Error>().unwrap().kind(),
+            io::ErrorKind::UnexpectedEof
+        );
+    }
 }

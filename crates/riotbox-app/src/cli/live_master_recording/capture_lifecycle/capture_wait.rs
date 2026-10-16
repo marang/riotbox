@@ -164,7 +164,13 @@ impl<'a> CaptureWait<'a> {
             )));
         }
         let milestone = completion.map(|(complete_ns, progress)| {
-            WindowStopped::new(self.plan, complete_ns, stopped_ns, progress.fault_count())
+            WindowStopped::new(
+                self.plan,
+                self.launch.mode.live_recording_input_mode(),
+                complete_ns,
+                stopped_ns,
+                progress.fault_count(),
+            )
         });
         ControlFlow::Break(Ok(StoppedCapture {
             final_health,

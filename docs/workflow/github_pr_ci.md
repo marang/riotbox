@@ -220,6 +220,10 @@ copying the stale wording.
 
 ## CI Check After PR Open
 
+For focused Rust test evidence, verify the intended Cargo target and actual
+executed test count in the log. A successful invocation that selects zero tests
+is not verification; correct the target/filter and rerun before claiming a pass.
+
 After opening a PR, explicitly inspect the GitHub Actions / CI status.
 
 Minimum expectation:

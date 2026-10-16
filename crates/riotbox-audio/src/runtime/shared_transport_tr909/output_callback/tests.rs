@@ -28,6 +28,7 @@ const COLD_TEST: &str = "runtime::shared_transport_tr909::output_callback::tests
 const COLD_CHILD: &str = "RIOTBOX_CALLBACK_HEAP_COLD_CHILD";
 
 mod timing_publication;
+mod tr909_fill_capture;
 mod transport_intent;
 mod w30_fixture;
 mod w30_overflow;

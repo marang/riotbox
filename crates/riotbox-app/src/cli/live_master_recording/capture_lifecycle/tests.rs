@@ -68,7 +68,7 @@ enum Event {
 struct GeneratedControl {
     case: Case,
     origin: Instant,
-    elapsed: Cell<Duration>,
+    elapsed: Rc<Cell<Duration>>,
     position_offset: Cell<f64>,
     playing: Cell<bool>,
     stopped: Cell<bool>,
@@ -338,13 +338,14 @@ fn fixture(
             source_graph_path: None,
             destination_path: destination.clone(),
             duration,
+            input_mode: crate::cli::model::LiveRecordingInputMode::Disabled,
         },
         observer_path: None,
     };
     let control = GeneratedControl {
         case,
         origin: Instant::now(),
-        elapsed: Cell::new(Duration::ZERO),
+        elapsed: Rc::new(Cell::new(Duration::ZERO)),
         position_offset: Cell::new(0.0),
         playing: Cell::new(already_playing),
         stopped: Cell::new(false),
@@ -361,6 +362,10 @@ mod capture_wait_ordering;
 mod commit_sequence_exhaustion;
 mod legacy_admission;
 mod observation;
+mod performer_input;
+mod performer_input_bytes;
+mod performer_input_failures;
+mod performer_input_projection;
 mod timing_availability;
 
 fn assert_blocked(summary: &serde_json::Value, state: &JamAppState, control: &GeneratedControl) {

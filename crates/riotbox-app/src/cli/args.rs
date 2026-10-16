@@ -5,6 +5,7 @@ use crate::cli::args::support::next_path;
 use crate::cli::args::support::parse_export_artifact_role;
 use crate::cli::model::AppLaunch;
 use crate::cli::model::LaunchMode;
+use crate::cli::model::LiveRecordingInputMode;
 use crate::cli::model::ProductMixExportHandoff;
 use riotbox_core::action::LiveRecordingDuration;
 use riotbox_sidecar::path::bundled_sidecar_script_path;
@@ -64,6 +65,7 @@ pub(in crate::cli) fn parse_args(
     let mut daw_session_audible_output_proof_path = None;
     let mut live_recording_destination_path = None;
     let mut live_recording_duration = None;
+    let mut live_recording_input_mode = LiveRecordingInputMode::default();
     let mut claimed_stem_roles = Vec::new();
 
     while let Some(arg) = args.next() {
@@ -77,6 +79,14 @@ pub(in crate::cli) fn parse_args(
             "--stem-package-local-ci-report" => stem_package_local_ci_report = true,
             "--live-recording-readiness-report" => live_recording_readiness_report = true,
             "--live-master-recording-execute" => live_master_recording_execute = true,
+            "--live-recording-terminal-input" => {
+                if live_recording_input_mode != LiveRecordingInputMode::Disabled {
+                    return Err(
+                        "--live-recording-terminal-input must be specified at most once".into(),
+                    );
+                }
+                live_recording_input_mode = LiveRecordingInputMode::TerminalFill;
+            }
             "--daw-export-readiness-report" => daw_export_readiness_report = true,
             "--daw-session-json-package-execute" => daw_session_json_package_execute = true,
             "--daw-session-json-package-evidence-apply" => {
@@ -219,6 +229,13 @@ pub(in crate::cli) fn parse_args(
     if live_recording_duration.is_some() && !live_master_recording_execute {
         return Err("--live-recording-bars requires --live-master-recording-execute".into());
     }
+    if live_recording_input_mode != LiveRecordingInputMode::Disabled
+        && !live_master_recording_execute
+    {
+        return Err(
+            "--live-recording-terminal-input requires --live-master-recording-execute".into(),
+        );
+    }
     if explicit_source_bpm.is_some() && source_path.is_none() {
         return Err("--source-bpm requires --source <audio.wav>".into());
     }
@@ -293,6 +310,7 @@ pub(in crate::cli) fn parse_args(
                 source_graph_path,
                 destination_path,
                 duration: live_recording_duration.unwrap_or(LiveRecordingDuration::TwoBars),
+                input_mode: live_recording_input_mode,
             },
             observer_path,
         });

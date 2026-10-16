@@ -2,7 +2,25 @@ use crate::ui::ShellLaunchMode;
 use riotbox_core::action::LiveRecordingDuration;
 use riotbox_core::action::LiveRecordingExportBoundary;
 use riotbox_core::session::ExportArtifactRole;
+use serde::Serialize;
 use std::path::PathBuf;
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub(in crate::cli) enum LiveRecordingInputMode {
+    #[default]
+    Disabled,
+    TerminalFill,
+}
+
+impl LiveRecordingInputMode {
+    pub(in crate::cli) const fn capture_context(self) -> &'static str {
+        match self {
+            Self::Disabled => "non_interactive_real_audio_cli",
+            Self::TerminalFill => "terminal_input_real_audio_cli",
+        }
+    }
+}
 
 pub(in crate::cli) fn live_master_recording_boundary(
     duration: LiveRecordingDuration,
@@ -68,6 +86,7 @@ pub(in crate::cli) enum LaunchMode {
         source_graph_path: Option<PathBuf>,
         destination_path: PathBuf,
         duration: LiveRecordingDuration,
+        input_mode: LiveRecordingInputMode,
     },
     DawExportReadinessReport {
         session_path: PathBuf,
@@ -125,6 +144,13 @@ pub(in crate::cli) struct ProductMixExportHandoff {
 }
 
 impl LaunchMode {
+    pub(in crate::cli) fn live_recording_input_mode(&self) -> LiveRecordingInputMode {
+        match self {
+            Self::LiveMasterRecordingExecute { input_mode, .. } => *input_mode,
+            _ => LiveRecordingInputMode::Disabled,
+        }
+    }
+
     pub(in crate::cli) fn product_mix_export_handoff(&self) -> Option<&ProductMixExportHandoff> {
         match self {
             Self::Load {

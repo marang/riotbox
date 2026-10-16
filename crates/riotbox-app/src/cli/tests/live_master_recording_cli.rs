@@ -40,6 +40,7 @@ fn live_master_recording_cli_parses_one_explicit_real_audio_path() {
             source_graph_path,
             destination_path,
             duration,
+            ..
         } => {
             assert_eq!(session_path, PathBuf::from("session.json"));
             assert_eq!(source_graph_path, Some(PathBuf::from("graph.json")));
