@@ -162,11 +162,11 @@ fn changing_revision_stops_at_three_candidates_and_preserves_previous() {
 }
 
 #[test]
-fn exclusive_offline_projection_preserves_the_exact_requested_state() {
+fn serialized_control_read_preserves_the_exact_requested_state() {
     model(|| {
-        let mut publication = SharedTransportTimingState::new(false, 132.0, 0.0);
-        assert_eq!(publication.snapshot_exclusive(), FIRST);
+        let publication = SharedTransportTimingState::new(false, 132.0, 0.0);
+        assert_eq!(publication.try_snapshot(), Some(FIRST));
         publication.update(true, 144.0, reposition(8.0)).unwrap();
-        assert_eq!(publication.snapshot_exclusive(), SECOND);
+        assert_eq!(publication.try_snapshot(), Some(SECOND));
     });
 }

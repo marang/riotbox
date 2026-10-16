@@ -113,12 +113,6 @@ impl SharedTransportTimingState {
         try_coherent_snapshot(&self.revision, || self.read_snapshot_fields())
     }
 
-    /// Exclusive offline ownership excludes concurrent control writers.
-    #[cfg(test)]
-    pub(super) fn snapshot_exclusive(&mut self) -> RealtimeTransportTimingState {
-        self.read_snapshot_fields()
-    }
-
     pub(super) fn snapshot_or_previous(
         &self,
         previous: &RealtimeTransportTimingState,
