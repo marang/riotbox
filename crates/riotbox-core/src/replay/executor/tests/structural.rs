@@ -280,7 +280,7 @@ fn plan_executor_rejects_invalid_source_timing_confirmed_bpm() {
 
 #[test]
 fn plan_executor_handles_stop_unlock_and_duplicate_lock_deterministically() {
-    let action_log = action_log(vec![
+    let mut action_log = action_log(vec![
         action(
             1,
             ActionCommand::TransportSeek,
@@ -316,6 +316,8 @@ fn plan_executor_handles_stop_unlock_and_duplicate_lock_deterministically() {
         ),
         action(6, ActionCommand::TransportStop, ActionParams::Empty, 600),
     ]);
+    // Stop rewinds transport; this current executor control declares append chronology.
+    action_log.replay_policy = ReplayPolicy::DeterministicCommittedOrderV2;
     let plan = build_committed_replay_plan(&action_log).expect("valid replay plan");
     let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-29T20:00:00Z");
 

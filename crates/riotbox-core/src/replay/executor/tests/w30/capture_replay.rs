@@ -2,6 +2,58 @@ use super::*;
 use crate::session::SessionFile;
 
 #[test]
+fn committed_order_capture_lineage_survives_backward_seek_and_json_roundtrip() {
+    let mut log = action_log(vec![
+        w30_action(
+            100,
+            ActionCommand::W30CaptureToPad,
+            ActionParams::Capture { bars: Some(2) },
+            200,
+        ),
+        action(
+            2,
+            ActionCommand::TransportSeek,
+            ActionParams::Transport {
+                position_beats: Some(0),
+            },
+            210,
+        ),
+        w30_action(
+            70,
+            ActionCommand::W30CaptureToPad,
+            ActionParams::Capture { bars: Some(2) },
+            220,
+        ),
+    ]);
+    log.replay_policy = ReplayPolicy::DeterministicCommittedOrderV2;
+    log.commit_records[0] = commit_record(100, 12, 1, 200);
+    log.commit_records[1] = commit_record(2, 12, 1, 210);
+    log.commit_records[1].boundary.kind = CommitBoundary::Immediate;
+    log.commit_records[2] = commit_record(70, 0, 1, 220);
+    let mut session = SessionFile::new("generated-capture-chronology", "test", "2026-10-16");
+    session.action_log = log;
+    let mut first = w30_capture_to_pad_capture_for_action(100);
+    first.capture_id = CaptureId::from("before-navigation");
+    let mut last = w30_capture_to_pad_capture_for_action(70);
+    last.capture_id = CaptureId::from("after-navigation");
+    session.captures = vec![first, last];
+    let mut decoded: SessionFile =
+        serde_json::from_slice(&serde_json::to_vec(&session).unwrap()).unwrap();
+    let history = decoded.action_log.clone();
+    let plan = build_replay_target_plan(&history, &[], 3).unwrap();
+    let report = apply_replay_plan_to_session(&mut decoded, &plan.suffix).unwrap();
+    assert_eq!(
+        report.applied_action_ids,
+        vec![ActionId(100), ActionId(2), ActionId(70)]
+    );
+    assert_eq!(
+        decoded.runtime_state.lane_state.w30.last_capture,
+        Some(CaptureId::from("after-navigation"))
+    );
+    assert_eq!(decoded.captures, session.captures);
+}
+
+#[test]
 fn w30_capture_to_pad_replay_hydrates_persisted_source_window_capture() {
     let action_log = action_log(vec![w30_action(
         2,

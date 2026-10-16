@@ -529,9 +529,18 @@ pub struct ActionCommitRecord {
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum ReplayPolicy {
-    #[default]
     DeterministicPreferred,
     SnapshotOnly,
+    /// Versioned append chronology; older enum decoders must reject this policy.
+    #[default]
+    DeterministicCommittedOrderV2,
+}
+
+impl ReplayPolicy {
+    #[must_use]
+    pub const fn uses_committed_append_order(self) -> bool {
+        matches!(self, Self::DeterministicCommittedOrderV2)
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

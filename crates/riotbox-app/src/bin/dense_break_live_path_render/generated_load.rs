@@ -184,6 +184,11 @@ fn prepare(root: &Path, contract: &Contract, report: &mut Report) -> Result<(), 
         Some(contract.source_bpm),
         None,
     )?;
+    // Frozen generated V1 is a declared historical control, not a fresh V2
+    // chronology qualification. Keep its policy/Session bytes and prefix meaning.
+    // Ordinary product ingestion retains the new committed-order default.
+    state.session.action_log.replay_policy =
+        riotbox_core::session::ReplayPolicy::DeterministicPreferred;
     let cache = state
         .source_audio_cache
         .as_ref()

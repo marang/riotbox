@@ -122,6 +122,19 @@ paths stable with explicit re-exports and limit sibling helper visibility to
 the Jam subtree. Source-map rows and projection tests are ordinary children;
 shared synthetic graph/session/queue fixtures belong only to the test tree.
 
+### Replay Chronology And Structural Undo Ownership
+
+RIOTBOX-1593 / RBX-454 keeps `replay::plan` as the single Core replay facade.
+Its private `committed_order` owner validates declared append history, diagnoses
+known unsupported legacy navigation and owns the explicitly requested conservative
+metadata upgrade. The same private planner validates both declared and prospective
+policy; there is no alternate executable planner or inferred migration. Private
+`undo_validation` owns historical marker relations and transient domain stacks
+using the existing Core action predicates. Cursor safety remains its existing
+separate owner. Only the explicit upgrade function/error are newly re-exported;
+ordinary load/save/recording must not call it. Session's required typed policy is
+the persisted version authority, never an App cursor or second global sequence.
+
 ### Source Graph Timing Candidate Ownership
 
 `source_graph::timing_probe_candidates` preserves its public interface through

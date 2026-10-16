@@ -23,7 +23,8 @@ use riotbox_core::source_graph::TimingQuality;
 #[test]
 fn a_committed_navigation_target_survives_a_pre_seek_audio_observation() {
     let graph = source_map_navigation_graph();
-    let mut session = sample_session(&graph);
+    let mut session =
+        riotbox_core::session::SessionFile::new("fresh-navigation-handoff", "test", "2026-10-16");
     session.runtime_state.transport.is_playing = true;
     session.runtime_state.transport.position_beats = 12.0;
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());

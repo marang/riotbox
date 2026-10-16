@@ -5,14 +5,16 @@ use std::{
 
 use crate::{
     TimestampMs,
-    action::{
-        Action, ActionCommand, ActionParams, ActionStatus, CommitBoundary, Quantization, UndoPolicy,
-    },
+    action::{Action, ActionCommand, ActionStatus},
     ids::ActionId,
-    session::{ActionCommitRecord, ActionLog, Snapshot},
+    session::{ActionCommitRecord, ActionLog, ReplayPolicy, Snapshot},
     transport::CommitBoundaryState,
 };
 
+mod committed_order;
+mod undo_validation;
+pub use committed_order::{ReplayPolicyUpgradeError, upgrade_replay_policy_to_committed_order};
+use undo_validation::validate_typed_undo_relations;
 mod cursor_safety;
 use cursor_safety::UndoCursorSafety;
 
@@ -66,6 +68,24 @@ pub enum ReplayPlanError {
         record_committed_at: TimestampMs,
         action_committed_at: TimestampMs,
     },
+    MissingCommittedActionRecord {
+        action_id: ActionId,
+    },
+    CommitRecordOrderMismatch {
+        expected_action_id: ActionId,
+        record_action_id: ActionId,
+    },
+    NonIncreasingCommitSequence {
+        action_id: ActionId,
+        previous_sequence: u32,
+        commit_sequence: u32,
+    },
+    UnresolvedUndoneAction {
+        action_id: ActionId,
+    },
+    LegacyNavigationRequiresChronologyUpgrade {
+        action_id: ActionId,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -92,9 +112,19 @@ pub struct ReplayTargetPlan<'a> {
 pub fn build_committed_replay_plan(
     action_log: &ActionLog,
 ) -> Result<Vec<ReplayPlanEntry<'_>>, ReplayPlanError> {
+    build_replay_plan_with_policy(action_log, action_log.replay_policy)
+}
+
+fn build_replay_plan_with_policy(
+    action_log: &ActionLog,
+    policy: ReplayPolicy,
+) -> Result<Vec<ReplayPlanEntry<'_>>, ReplayPlanError> {
     let mut entries = Vec::with_capacity(action_log.commit_records.len());
     let action_by_id = action_index_by_id(&action_log.actions)?;
-    validate_typed_undo_relations(action_log, &action_by_id)?;
+    let append_order = policy.uses_committed_append_order();
+    if !append_order {
+        validate_typed_undo_relations(action_log, &action_by_id, policy)?;
+    }
     let mut seen_action_ids = BTreeSet::new();
     let mut seen_boundary_sequences = BTreeSet::new();
 
@@ -169,7 +199,13 @@ pub fn build_committed_replay_plan(
         });
     }
 
-    entries.sort_by(compare_replay_entries);
+    if append_order {
+        committed_order::validate_append_history(action_log)?;
+        validate_typed_undo_relations(action_log, &action_by_id, policy)?;
+    } else {
+        committed_order::validate_legacy_navigation(&entries)?;
+        entries.sort_by(compare_replay_entries);
+    }
     Ok(entries)
 }
 
@@ -324,99 +360,6 @@ fn select_safe_replay_snapshot_anchor<'a>(
     }
 
     selected.map(|(_, snapshot)| snapshot)
-}
-
-fn validate_typed_undo_relations(
-    action_log: &ActionLog,
-    action_by_id: &BTreeMap<ActionId, &Action>,
-) -> Result<(), ReplayPlanError> {
-    let mut active_typed_actions = Vec::new();
-    let mut resolved_targets = BTreeSet::new();
-    let mut first_record_by_action = BTreeMap::new();
-    for record in &action_log.commit_records {
-        // Match the historical .find() behavior even for an invalid duplicate
-        // history. Duplicate validation still runs at its original later gate.
-        first_record_by_action
-            .entry(record.action_id)
-            .or_insert(record);
-    }
-
-    for action in &action_log.actions {
-        if action.command != ActionCommand::UndoLast {
-            if matches!(
-                action.status,
-                ActionStatus::Committed | ActionStatus::Undone
-            ) && action.command.has_typed_undo_semantics()
-                && matches!(action.undo_policy, UndoPolicy::Undoable)
-                && action.result.as_ref().is_some_and(|result| result.accepted)
-            {
-                active_typed_actions.push(action.id);
-            }
-            continue;
-        }
-
-        let target_action_id = match &action.params {
-            ActionParams::Undo { target_action_id } => Some(*target_action_id),
-            _ => None,
-        };
-
-        // Old untyped markers had no target or commit record. They remain
-        // untrusted historical state: they cannot establish a safe snapshot
-        // boundary, but their legacy target may still be replayed from the
-        // materialized Session state. A marker that claims the new typed shape
-        // must satisfy the complete RBX-142 relation below.
-        let Some(target_action_id) = target_action_id else {
-            if first_record_by_action.contains_key(&action.id) {
-                return Err(ReplayPlanError::InvalidUndoTargetRelation {
-                    undo_action_id: action.id,
-                    target_action_id: None,
-                });
-            }
-            if action.status == ActionStatus::Committed
-                && let Some(target_id) = active_typed_actions.last().copied()
-                && action_by_id
-                    .get(&target_id)
-                    .is_some_and(|candidate| candidate.status == ActionStatus::Undone)
-            {
-                active_typed_actions.pop();
-            }
-            continue;
-        };
-
-        let marker_record = first_record_by_action.get(&action.id);
-        let target = action_by_id.get(&target_action_id);
-        let target_record = first_record_by_action.get(&target_action_id);
-        let latest_active_target = active_typed_actions.last().copied();
-        let valid = marker_record.zip(target).zip(target_record).is_some_and(
-            |((marker_record, target), _target_record)| {
-                action.status == ActionStatus::Committed
-                    && action.quantization == Quantization::Immediate
-                    && matches!(action.undo_policy, UndoPolicy::NotUndoable { .. })
-                    && action.result.as_ref().is_some_and(|result| result.accepted)
-                    && marker_record.boundary.kind == CommitBoundary::Immediate
-                    && target.status == ActionStatus::Undone
-                    && target.command.has_typed_undo_semantics()
-                    && matches!(target.undo_policy, UndoPolicy::Undoable)
-                    && target.result.as_ref().is_some_and(|result| result.accepted)
-                    && matches!(
-                        (target.committed_at, action.committed_at),
-                        (Some(target_at), Some(marker_at)) if target_at <= marker_at
-                    )
-                    && latest_active_target == Some(target_action_id)
-                    && resolved_targets.insert(target_action_id)
-            },
-        );
-
-        if !valid {
-            return Err(ReplayPlanError::InvalidUndoTargetRelation {
-                undo_action_id: action.id,
-                target_action_id: Some(target_action_id),
-            });
-        }
-        active_typed_actions.pop();
-    }
-
-    Ok(())
 }
 
 fn action_index_by_id(actions: &[Action]) -> Result<BTreeMap<ActionId, &Action>, ReplayPlanError> {

@@ -222,6 +222,46 @@ fn cursor_plans_match_scan_oracle_for_typed_legacy_and_plain_histories() {
 }
 
 #[test]
+fn committed_order_v2_all_cursors_match_scan_with_revisits_and_structural_undo() {
+    for targets in 0..=5 {
+        for tail in 0..=3 {
+            let mut log = history(targets, tail, false);
+            log.replay_policy = ReplayPolicy::DeterministicCommittedOrderV2;
+            let mut sequences = std::collections::HashMap::new();
+            for (index, record) in log.commit_records.iter_mut().enumerate() {
+                let beat = [12, 0, 8][index % 3];
+                record.boundary.beat_index = beat;
+                record.boundary.bar_index = beat / 4 + 1;
+                record.boundary.phrase_index = 1;
+                let sequence = sequences.entry(record.boundary.clone()).or_insert(0);
+                *sequence += 1;
+                record.commit_sequence = *sequence;
+                // Wall-clock rollback must not reject otherwise trusted Undo.
+                record.committed_at = 10_000 - index as u64;
+                log.actions[index].committed_at = Some(record.committed_at);
+            }
+            if let Some(action) = log.actions.last_mut().filter(|_| tail > 0) {
+                action.result.as_mut().unwrap().accepted = false;
+            }
+            let mut rejected = action(999, 100);
+            rejected.status = ActionStatus::Rejected;
+            rejected.committed_at = None;
+            log.actions.insert(0, rejected);
+            let actual: Vec<_> = build_committed_replay_plan(&log)
+                .unwrap()
+                .iter()
+                .map(|entry| entry.action.id)
+                .collect();
+            let expected: Vec<_> = (0..tail.saturating_sub(1))
+                .map(|index| ActionId(200 + index as u64))
+                .collect();
+            assert_eq!(actual, expected, "targets={targets}, tail={tail}");
+            compare_all_cursors(&log);
+        }
+    }
+}
+
+#[test]
 fn cursor_plans_match_scan_oracle_for_rejected_and_noncommitted_actions() {
     let mut log = history(3, 2, false);
     log.actions

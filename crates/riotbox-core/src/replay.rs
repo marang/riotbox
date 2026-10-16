@@ -20,9 +20,10 @@ pub use export_receipt::{
     plan_export_receipt_replay_validation,
 };
 pub use plan::{
-    ReplayPlanEntry, ReplayPlanError, ReplayTargetPlan, SnapshotReplayPlanComparison,
-    build_committed_replay_plan, build_replay_target_plan, build_snapshot_replay_plan_comparison,
-    select_replay_snapshot_anchor,
+    ReplayPlanEntry, ReplayPlanError, ReplayPolicyUpgradeError, ReplayTargetPlan,
+    SnapshotReplayPlanComparison, build_committed_replay_plan, build_replay_target_plan,
+    build_snapshot_replay_plan_comparison, select_replay_snapshot_anchor,
+    upgrade_replay_policy_to_committed_order,
 };
 pub use scene_movement::{
     apply_graph_aware_replay_plan_to_session, apply_scene_audio_projection_transition,

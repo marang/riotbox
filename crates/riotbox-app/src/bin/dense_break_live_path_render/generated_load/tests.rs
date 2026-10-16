@@ -231,6 +231,11 @@ fn generated_product_spine_roundtrip_all_six_windows_and_mutation_controls() {
 fn restored_identity(root: &Path) -> (Vec<u8>, std::path::PathBuf) {
     let restored =
         JamAppState::from_json_files(root.join("session.json"), Option::<&Path>::None).unwrap();
+    assert_eq!(
+        restored.session.action_log.replay_policy,
+        riotbox_core::session::ReplayPolicy::DeterministicPreferred,
+        "the frozen generated V1 control must not silently become V2 evidence"
+    );
     assert!(restored.session.export_receipts.is_empty());
     let capture = &restored.session.captures[0];
     assert!(capture.audio_identity.is_some());
