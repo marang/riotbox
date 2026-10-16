@@ -1,4 +1,5 @@
 use super::state::{JamAppState, QueueControlResult};
+use riotbox_core::ids::ActionId;
 use riotbox_core::queue::ActionIdExhausted;
 use riotbox_core::{
     TimestampMs,
@@ -10,7 +11,10 @@ use riotbox_core::{
 };
 
 impl JamAppState {
-    pub fn queue_tr909_fill(&mut self, requested_at: TimestampMs) -> Result<(), ActionIdExhausted> {
+    pub fn queue_tr909_fill(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Result<ActionId, ActionIdExhausted> {
         let mut draft = ActionDraft::new(
             ActorType::User,
             ActionCommand::Tr909FillNext,
@@ -21,9 +25,9 @@ impl JamAppState {
             },
         );
         draft.explanation = Some("trigger TR-909 fill on next bar".into());
-        self.queue.enqueue(draft, requested_at)?;
+        let id = self.queue.enqueue(draft, requested_at)?;
         self.refresh_view();
-        Ok(())
+        Ok(id)
     }
 
     pub fn queue_tr909_reinforce(

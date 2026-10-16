@@ -19,6 +19,7 @@ mod commit_sequence_exhaustion;
 mod fixtures;
 mod legacy_admission;
 mod live_master_recording_cli;
+mod live_recording_input_args;
 mod replay_upgrade_cli;
 mod w30_hook_dawproject_cli;
 

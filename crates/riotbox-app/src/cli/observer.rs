@@ -241,7 +241,9 @@ pub(in crate::cli) fn launch_summary(launch: &AppLaunch) -> Value {
             source_graph_path,
             destination_path,
             duration,
-        } => json!({
+            input_mode,
+        } => {
+            let mut summary = json!({
             "mode": "live_master_recording_execute",
             "boundary": live_master_recording_boundary(*duration),
             "duration_bars": duration.bars(),
@@ -250,7 +252,12 @@ pub(in crate::cli) fn launch_summary(launch: &AppLaunch) -> Value {
             "source_graph_path": source_graph_path,
             "destination_path": destination_path,
             "observer_path": launch.observer_path,
-        }),
+            });
+            if *input_mode != crate::cli::model::LiveRecordingInputMode::Disabled {
+                summary["input_mode"] = json!(input_mode);
+            }
+            summary
+        }
         LaunchMode::DawExportReadinessReport { session_path } => json!({
             "mode": "daw_export_readiness_report",
             "session_path": session_path,

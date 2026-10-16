@@ -6,6 +6,7 @@ use std::{
 };
 
 use super::observation::Observation;
+use super::terminal_input::RecordingInput;
 use crate::cli::transport_sync::{TransportControl, publish_transport, sync_transport};
 use crate::cli::{
     model::{AppLaunch, LaunchMode, live_master_recording_boundary},
@@ -21,18 +22,27 @@ use riotbox_core::{TimestampMs, action::LiveRecordingDuration};
 use serde_json::{Value, json};
 
 mod capture_wait;
+mod input_control;
 use capture_wait::CaptureWait;
+use input_control::{InputControl, execute as execute_with_control_observed_and_input};
 
 pub(super) fn execute(
     launch: &AppLaunch,
     state: &mut JamAppState,
     runtime: &mut AudioRuntimeShell,
     observation: &mut Observation<'_>,
+    input: Option<&mut dyn RecordingInput>,
 ) -> Result<Value, Box<dyn std::error::Error>> {
     // Borrow the large facade; the caller constructs the shell after this
     // control frame returns. Moving it through nested frames can exhaust a
     // normal test-thread stack while committing transport/refreshing its view.
-    execute_with_control_observed(launch, state, &mut DeviceControl(runtime), observation)
+    execute_with_control_observed_and_input(
+        launch,
+        state,
+        &mut DeviceControl(runtime),
+        observation,
+        input,
+    )
 }
 
 // Private dependency seam: only observations, projection and existing device
@@ -134,11 +144,39 @@ fn execute_with_control(
     execute_with_control_observed(launch, state, runtime, &mut Observation::new(None))
 }
 
+#[cfg(test)]
+fn execute_with_control_and_input(
+    launch: &AppLaunch,
+    state: &mut JamAppState,
+    runtime: &mut impl RuntimeControl,
+    input: &mut dyn RecordingInput,
+) -> Result<Value, Box<dyn std::error::Error>> {
+    execute_with_control_observed_and_input(
+        launch,
+        state,
+        runtime,
+        &mut Observation::new(None),
+        Some(input),
+    )
+}
+
+#[cfg(test)]
 fn execute_with_control_observed(
     launch: &AppLaunch,
     state: &mut JamAppState,
     runtime: &mut impl RuntimeControl,
     observation: &mut Observation<'_>,
+) -> Result<Value, Box<dyn std::error::Error>> {
+    execute_with_control_observed_and_input(launch, state, runtime, observation, None)
+}
+
+fn execute_policy(
+    launch: &AppLaunch,
+    state: &mut JamAppState,
+    runtime: &mut impl RuntimeControl,
+    observation: &mut Observation<'_>,
+    mut input: Option<&mut dyn RecordingInput>,
+    input_control: &mut InputControl,
 ) -> Result<Value, Box<dyn std::error::Error>> {
     let LaunchMode::LiveMasterRecordingExecute {
         session_path,
@@ -240,6 +278,19 @@ fn execute_with_control_observed(
         match wait.poll(state, runtime, observation.enabled()) {
             ControlFlow::Continue(next) => {
                 wait = next;
+                if let Some(input) = input.as_deref_mut()
+                    && let Err(error) = input_control.pending(state, input, runtime.timestamp_now())
+                {
+                    return Ok(blocked_acquired_capture_failure(
+                        launch,
+                        state,
+                        runtime,
+                        started_transport,
+                        &plan,
+                        &output,
+                        format!("live master terminal input {error}"),
+                    ));
+                }
                 runtime.wait(Duration::from_millis(10));
             }
             ControlFlow::Break(Ok(stopped)) => break stopped,
@@ -360,12 +411,29 @@ fn blocked_capture_sync_failure(
     output: &riotbox_audio::runtime::AudioOutputInfo,
     error: JamAppError,
 ) -> Value {
+    blocked_acquired_capture_failure(
+        launch,
+        state,
+        runtime,
+        started_transport,
+        plan,
+        output,
+        format!("live master timing commit failed: {error}"),
+    )
+}
+
+fn blocked_acquired_capture_failure(
+    launch: &AppLaunch,
+    state: &mut JamAppState,
+    runtime: &mut impl RuntimeControl,
+    started_transport: bool,
+    plan: &crate::jam_app::LiveMasterRecordingPlan,
+    output: &riotbox_audio::runtime::AudioOutputInfo,
+    reason: String,
+) -> Value {
     let stop_result = stop_live_master_runtime(state, runtime, started_transport);
     runtime.abort_live_master_capture();
-    let reason = with_transport_cleanup_error(
-        format!("live master timing commit failed: {error}"),
-        stop_result,
-    );
+    let reason = with_transport_cleanup_error(reason, stop_result);
     state.reject_live_master_recording(plan.action_id, reason.clone());
     blocked_live_master_recording_result(launch, state, runtime, false, Some(plan), output, reason)
 }

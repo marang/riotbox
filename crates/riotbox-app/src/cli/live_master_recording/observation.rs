@@ -1,6 +1,7 @@
 //! Optional post-stop observations; never an authority for capture or publication.
 use std::io;
 
+use crate::cli::model::LiveRecordingInputMode;
 use crate::{cli::observer::UserSessionObserver, jam_app::LiveMasterRecordingPlan};
 use riotbox_core::{
     ids::CaptureId,
@@ -15,6 +16,8 @@ pub(super) struct WindowStopped {
     observation_schema: &'static str,
     opt_in: bool,
     capture_context: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    input_mode: Option<LiveRecordingInputMode>,
     realtime_callback_io: bool,
     raw_audio_recording: bool,
     live_master_recording: bool,
@@ -43,6 +46,7 @@ pub(super) struct WindowStopped {
 impl WindowStopped {
     pub(super) fn new(
         plan: &LiveMasterRecordingPlan,
+        input_mode: LiveRecordingInputMode,
         complete_ns: Option<u64>,
         stopped_ns: Option<u64>,
         fault_count: u64,
@@ -56,9 +60,17 @@ impl WindowStopped {
         Self {
             event: "live_master_recording_window_stopped",
             schema: "riotbox.user_session_observer.v1",
-            observation_schema: "riotbox.live_master_recording_window_stopped.v1",
+            observation_schema: match input_mode {
+                LiveRecordingInputMode::Disabled => {
+                    "riotbox.live_master_recording_window_stopped.v1"
+                }
+                LiveRecordingInputMode::TerminalFill => {
+                    "riotbox.live_master_recording_window_stopped.v2"
+                }
+            },
             opt_in: true,
-            capture_context: "non_interactive_real_audio_cli",
+            capture_context: input_mode.capture_context(),
+            input_mode: (input_mode != LiveRecordingInputMode::Disabled).then_some(input_mode),
             realtime_callback_io: false,
             raw_audio_recording: false,
             live_master_recording: true,

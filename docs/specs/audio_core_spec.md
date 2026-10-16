@@ -875,6 +875,16 @@ Current limiter policy:
   terminal operations remain synchronous. This private non-Clone owner is not
   a realtime API, cancellation-on-drop guarantee, new recorder, performer input
   or receipt version; generated control tests grant no host/callback qualification.
+- RIOTBOX-1602 / RBX-463–464 adds explicit terminal Fill input through that same
+  pending wrapper, not through the callback or a second recorder. The frozen
+  [terminal-input V2 contract](live_recording_terminal_input_v2.md) owns bounded
+  Linux byte ingress and terminal resources, superseding historical V1's
+  unbounded library decoder. V1 retains action-ownership, cleanup and
+  observation rules; V2 explicitly narrows accepted input protocols.
+  Default input and historical WindowStopped V1 remain unchanged; opt-in
+  observations use V2 and a distinct typed context. Existing recording proofs
+  still qualify the master window, not action-to-frame delivery. No new DSP,
+  source mechanism, realtime-input or per-key audible-execution claim.
 - the [generated loaded-Session V1 preparation](../benchmarks/generated_live_master_load_fixture_v1.md)
   (RIOTBOX-1577 / RBX-443) reuses normal ingest, committed actions, save/restore,
   recording-plan admission and the shared offline mixer. Its fixed generated

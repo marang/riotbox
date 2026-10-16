@@ -87,6 +87,15 @@ in the existing lifecycle. The wrapper alone sleeps between pending polls.
 This is a semantic supervision boundary, not another recorder, asynchronous
 device API, cancellation-on-drop guard or new performer-input surface.
 
+RIOTBOX-1602 / RBX-463–464 gives that pending wrapper an opt-in terminal consumer.
+`terminal_input` owns only guarded TTY/raw-mode/descriptor resources and bounded
+byte decoding under the V2 contract; no library event-reader loop is permitted.
+`capture_lifecycle::input_control` owns key policy, transient input-owned ID
+correlation and terminal reporting/retirement. Real queue/Core records remain
+the only pending/committed truth. Neither module owns audio progress or Session
+restore state. Keep the default reader absent, stop before post-stop evidence,
+and make observation mode explicit without changing recording-receipt meaning.
+
 RIOTBOX-1592 / RBX-453 shares only the typed transport handoff in private
 `cli::transport_sync` between the interactive loop and recorder. It owns delivery
 before observation and delivery after boundary commits, not a clock, action or
