@@ -79,6 +79,13 @@ preserving all route, completion, deadline, artifact and cleanup gates. V1
 remains the historical default and retains its original rejection. No ordinary
 execution CLI or new actual observation is enabled by this version.
 
+The [RIOTBOX-1581 prospective loaded V2 phase](benchmarks/loaded_recorder_host_riotbox_1581_v2.md)
+is separate preparation, not an execution grant. Its explicit V2 fence requires
+fresh phase-specific approval and exact reviewed local/native CI, binary,
+protocol and fresh generated-fixture bindings. The consumed 1579 approval cannot
+substitute. No actual result exists until that new fence is independently admitted
+and invoked once; first failure stops with no retry.
+
 ## Agent Sandbox Self-Checks
 
 Run these when Riotbox runs inside `agent-sandbox` and host capability is unclear:
