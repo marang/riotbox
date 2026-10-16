@@ -1,6 +1,7 @@
 use crate::runtime::shared_transport_tr909::RealtimeTr909RenderState;
 use crate::runtime::shared_w30_resample_callback::RealtimeW30ResampleTapState;
 use crate::runtime::shared_w30_resample_callback::Tr909CallbackState;
+use crate::runtime::shared_w30_resample_callback::W30MixRenderState;
 use crate::runtime::shared_w30_resample_callback::W30PreviewCallbackState;
 use crate::runtime::shared_w30_resample_callback::W30ResampleTapCallbackState;
 use crate::runtime::tr909_fill_voice::render_tr909_fill_buffer;
@@ -116,6 +117,16 @@ pub(super) fn render_tr909_buffer(
 
         state.beat_position += beats_per_sample;
     }
+}
+
+/// Align scheduling without turning a seek into a sample/envelope retrigger.
+/// Ordinary activation, trigger and gesture transitions still belong to render.
+pub(super) fn reposition_w30_timing(position_beats: f64, w30: &mut W30MixRenderState<'_>) {
+    w30.preview_state.beat_position = position_beats;
+    w30.preview_state.last_step = w30_current_step(position_beats, w30.preview_render);
+    w30.resample_state.beat_position = position_beats;
+    w30.resample_state.last_step =
+        (position_beats * f64::from(w30_resample_subdivision(w30.resample_render))).floor() as i64;
 }
 
 pub(super) fn render_w30_preview_buffer(

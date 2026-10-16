@@ -85,6 +85,15 @@ The App driver retains only an undelivered committed target, and Audio owns
 runtime request identities/coherent callback acknowledgments. Historical numeric
 offline plans adapt at their existing ingress while reusing the same clock/mixer.
 
+RIOTBOX-1598 / RBX-459–461 keeps W-30 phase alignment beside the existing private
+renderer's step calculations. One narrowly named helper rebases preview/tap
+timing without cold-resetting their sound state. The live callback alone owns
+when the latest position identity has reached a renderable block; this local
+bookkeeping is not another clock or acknowledgment model. Do not widen the
+shared mixer/offline interfaces or duplicate profile/subdivision rules for this
+live-only repair. The cohesive existing renderer remains counted legacy; a
+mechanical split solely to hide its length would not improve ownership.
+
 ### Generated Loaded-Session Preparation Ownership
 
 RIOTBOX-1577 / RBX-443 keeps the private diagnostic `ready_prefix` responsible

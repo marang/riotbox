@@ -29,6 +29,15 @@ const COLD_CHILD: &str = "RIOTBOX_CALLBACK_HEAP_COLD_CHILD";
 
 mod timing_publication;
 mod transport_intent;
+mod w30_fixture;
+mod w30_overflow;
+mod w30_pitch_history;
+mod w30_reposition;
+mod w30_resample_tap;
+mod w30_resume;
+mod w30_source_window;
+mod w30_stopped_controls;
+mod w30_timing_controls;
 
 fn shared() -> AudioRuntimeSharedState {
     AudioRuntimeSharedState {

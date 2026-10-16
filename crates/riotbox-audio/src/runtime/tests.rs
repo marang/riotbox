@@ -30,4 +30,5 @@ mod w30_pitch_dive;
 mod w30_preview;
 mod w30_resample_tap;
 mod w30_snapshot_cache;
+mod w30_transport_compat;
 mod w30_transport_stop;
