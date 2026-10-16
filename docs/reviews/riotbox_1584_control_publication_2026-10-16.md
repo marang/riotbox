@@ -100,7 +100,15 @@ no musical/human/hardness/source-general/latency/endurance/release qualification
 The original ALSA cause and broader1041/1036 remain open; prior phases stay
 consumed. RIOTBOX-1587 separately owns checked ActionId exhaustion.
 
-The branch still requires independent Rust/concurrency and Spec/Evidence review,
-coordinator self-review, full source-free local CI, exact-head native CI and
-normal PR/merge/main/Linear closeout. This report is not an advance pass for
-those gates or a claim that RA alone proves all runtime behavior.
+Independent Maintainer/Adversarial Rust Concurrency review and separate
+Spec/Evidence/Product Pragmatist review of `245e09db..1de0831b` retain zero
+P0–P3 findings. Both independently run the seven actual-source Loom controls
+and !Sync doctest; the maintainer additionally runs cache2 + protocol5,
+lifecycle10, shared-render6 and exact callback8 (overlap, not unique totals).
+Logs: `/tmp/riotbox-1584-independent-{control-loom,w30-cache,w30-protocol,shell-traits,lifecycle,shared-render,callback}.log`
+and `/tmp/riotbox-1584-spec-review-{loom,owner}.log`.
+The coordinator's short self-review also retains no additional finding.
+
+Full source-free local CI, exact-head native CI and normal PR/merge/main/Linear
+closeout remain gates, recorded in Linear as completed. This report is not an
+advance pass for them or a claim that RA alone proves all runtime behavior.
