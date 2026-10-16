@@ -1,6 +1,7 @@
 //! Semantic regression families and explicit shared synthetic fixtures.
 
 mod artifact_hydration_preflight;
+mod audio_timing_admission;
 mod capture_artifact_storage;
 mod capture_identity;
 mod capture_w30_audition;

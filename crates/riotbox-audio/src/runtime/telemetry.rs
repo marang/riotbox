@@ -1,8 +1,9 @@
 use std::sync::{
     Mutex,
-    atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering},
+    atomic::{AtomicU64, Ordering},
 };
 
+use super::timing_snapshot::CallbackTimingPublication;
 use super::{AudioRuntimeTimingSnapshot, CallbackTimingSnapshot};
 
 #[derive(Default)]
@@ -22,9 +23,7 @@ pub(super) struct RuntimeTelemetry {
     callback_scratch_overflow_count: AtomicU64,
     stream_error_count: AtomicU64,
     last_stream_error: Mutex<Option<String>>,
-    is_transport_running: AtomicBool,
-    tempo_bpm_bits: AtomicU32,
-    position_beats_bits: AtomicU64,
+    timing: CallbackTimingPublication,
 }
 
 impl RuntimeTelemetry {
@@ -36,9 +35,7 @@ impl RuntimeTelemetry {
             callback_scratch_overflow_count: AtomicU64::new(0),
             stream_error_count: AtomicU64::new(0),
             last_stream_error: Mutex::new(None),
-            is_transport_running: AtomicBool::new(false),
-            tempo_bpm_bits: AtomicU32::new(0.0_f32.to_bits()),
-            position_beats_bits: AtomicU64::new(0.0_f64.to_bits()),
+            timing: CallbackTimingPublication::new(),
         }
     }
 
@@ -52,12 +49,11 @@ impl RuntimeTelemetry {
                 .fetch_max(gap, Ordering::Relaxed);
         }
         self.callback_count.fetch_add(1, Ordering::Relaxed);
-        self.is_transport_running
-            .store(timing.is_transport_running, Ordering::Relaxed);
-        self.tempo_bpm_bits
-            .store(timing.tempo_bpm.to_bits(), Ordering::Relaxed);
-        self.position_beats_bits
-            .store(timing.completed_position_beats.to_bits(), Ordering::Relaxed);
+        self.timing.publish(AudioRuntimeTimingSnapshot {
+            is_transport_running: timing.is_transport_running,
+            tempo_bpm: timing.tempo_bpm,
+            position_beats: timing.completed_position_beats,
+        });
     }
 
     pub(super) fn last_callback_micros(&self) -> Option<u64> {
@@ -106,14 +102,10 @@ impl RuntimeTelemetry {
         }
     }
 
-    pub(super) fn timing_snapshot(&self) -> AudioRuntimeTimingSnapshot {
+    pub(super) fn timing_snapshot(&self) -> Option<AudioRuntimeTimingSnapshot> {
         // Timing observers need only atomic progress, never the diagnostic
         // message mutex or its String allocation.
-        AudioRuntimeTimingSnapshot {
-            is_transport_running: self.is_transport_running.load(Ordering::Relaxed),
-            tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::Relaxed)),
-            position_beats: f64::from_bits(self.position_beats_bits.load(Ordering::Relaxed)),
-        }
+        self.timing.snapshot()
     }
 }
 
@@ -192,7 +184,9 @@ mod telemetry_poison_tests {
         // Release before asserting: a lock regression must fail, not hang CI.
         drop(guard);
         reader.join().expect("timing thread");
-        let timing = result.expect("timing should not wait on the diagnostic message lock");
+        let timing = result
+            .expect("timing should not wait on the diagnostic message lock")
+            .expect("completed callback timing");
         assert!(timing.is_transport_running);
         assert_eq!(timing.tempo_bpm, 132.0);
         assert_eq!(timing.position_beats, 4.0);

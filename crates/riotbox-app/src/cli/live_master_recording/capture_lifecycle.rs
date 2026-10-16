@@ -32,7 +32,7 @@ pub(super) fn execute(
 // operations vary. Session/queue policy and publication never live in an adapter.
 trait RuntimeControl {
     fn health_snapshot(&self) -> AudioRuntimeHealth;
-    fn timing_snapshot(&self) -> AudioRuntimeTimingSnapshot;
+    fn timing_snapshot(&self) -> Option<AudioRuntimeTimingSnapshot>;
     fn update_transport_state(&self, playing: bool, bpm: f32, position: f64);
     fn update_render_states(&self, state: &JamAppState);
     fn begin_live_master_capture(
@@ -60,7 +60,7 @@ impl RuntimeControl for DeviceControl<'_> {
     fn health_snapshot(&self) -> AudioRuntimeHealth {
         self.0.health_snapshot()
     }
-    fn timing_snapshot(&self) -> AudioRuntimeTimingSnapshot {
+    fn timing_snapshot(&self) -> Option<AudioRuntimeTimingSnapshot> {
         self.0.timing_snapshot()
     }
     fn update_transport_state(&self, playing: bool, bpm: f32, position: f64) {
@@ -469,7 +469,9 @@ fn wait_for_live_transport(
             .source_timing
             .confirmed_bpm
             .ok_or("live master recording Session BPM disappeared")?;
-        if timing.is_transport_running && timing.tempo_bpm.to_bits() == expected_bpm.to_bits() {
+        if timing.is_some_and(|timing| {
+            timing.is_transport_running && timing.tempo_bpm.to_bits() == expected_bpm.to_bits()
+        }) {
             return Ok(());
         }
         let health = runtime.health_snapshot();

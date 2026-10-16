@@ -45,11 +45,11 @@ fn stale_stopped_audio_timing_snapshot_does_not_cancel_transport_start() {
     state.set_transport_playing(true);
 
     let committed = state.apply_audio_timing_snapshot(
-        AudioRuntimeTimingSnapshot {
+        Some(AudioRuntimeTimingSnapshot {
             is_transport_running: false,
             tempo_bpm: 124.0,
             position_beats: 32.0,
-        },
+        }),
         2_500,
     );
 
@@ -314,11 +314,11 @@ fn source_phase_bar_boundary_commits_capture_at_the_crossed_downbeat() {
     state.queue_capture_bar(300);
 
     let committed = state.apply_audio_timing_snapshot(
-        AudioRuntimeTimingSnapshot {
+        Some(AudioRuntimeTimingSnapshot {
             is_transport_running: true,
             tempo_bpm: 130.0,
             position_beats: 2.1,
-        },
+        }),
         400,
     );
 

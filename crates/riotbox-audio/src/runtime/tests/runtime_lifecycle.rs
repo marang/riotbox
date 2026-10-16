@@ -51,7 +51,7 @@ fn telemetry_tracks_callback_count_and_max_gap() {
 
     assert_eq!(snapshot.callback_count, 3);
     assert_eq!(snapshot.max_callback_gap_micros, Some(425));
-    let timing = telemetry.timing_snapshot();
+    let timing = telemetry.timing_snapshot().expect("completed callback");
     assert!(timing.is_transport_running);
     assert_eq!(timing.position_beats, 17.0);
 }
@@ -221,6 +221,7 @@ fn timing_snapshot_reflects_callback_owned_transport_progress() {
         )),
     });
 
+    assert_eq!(shell.timing_snapshot(), None, "requested is not observed");
     telemetry.record_callback_at(
         100,
         &CallbackTimingSnapshot {
@@ -231,8 +232,19 @@ fn timing_snapshot_reflects_callback_owned_transport_progress() {
         },
     );
 
-    let snapshot = shell.timing_snapshot();
+    let snapshot = shell.timing_snapshot().expect("first observed callback");
     assert!(snapshot.is_transport_running);
     assert_eq!(snapshot.tempo_bpm, 126.0);
     assert_eq!(snapshot.position_beats, 32.5);
+}
+
+#[test]
+fn first_observed_beat_zero_is_available_timing() {
+    let telemetry = RuntimeTelemetry::new();
+    assert_eq!(telemetry.timing_snapshot(), None);
+    telemetry.record_callback_at(0, &sample_timing(0.0));
+    let timing = telemetry.timing_snapshot().expect("observed beat zero");
+    assert!(timing.is_transport_running);
+    assert_eq!(timing.tempo_bpm, 128.0);
+    assert_eq!(timing.position_beats, 0.0);
 }

@@ -83,12 +83,7 @@ pub struct MasterBusLimiterReport {
     pub post: OfflineAudioMetrics,
 }
 
-#[derive(Copy, Clone, Debug, Default, PartialEq)]
-pub struct AudioRuntimeTimingSnapshot {
-    pub is_transport_running: bool,
-    pub tempo_bpm: f32,
-    pub position_beats: f64,
-}
+pub use super::timing_snapshot::AudioRuntimeTimingSnapshot;
 
 #[derive(Debug)]
 pub enum AudioRuntimeError {

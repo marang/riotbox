@@ -20,6 +20,10 @@ mod shared_transport_tr909;
 mod shared_w30_resample_callback;
 mod source_monitor;
 mod telemetry;
+mod timing_snapshot;
+mod timing_sync {
+    pub(super) use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
+}
 mod tr909_fill_recipe;
 mod tr909_fill_voice;
 mod tr909_tail_telemetry;

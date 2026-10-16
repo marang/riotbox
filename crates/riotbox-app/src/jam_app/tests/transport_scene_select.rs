@@ -112,22 +112,22 @@ fn stale_running_audio_snapshot_cannot_cancel_requested_pause() {
 
     state.set_transport_playing(true);
     state.apply_audio_timing_snapshot(
-        AudioRuntimeTimingSnapshot {
+        Some(AudioRuntimeTimingSnapshot {
             is_transport_running: true,
             tempo_bpm: 124.0,
             position_beats: 32.5,
-        },
+        }),
         1_000,
     );
     state.set_transport_playing(false);
     let paused_position = state.runtime.transport.position_beats;
 
     let stale_commit = state.apply_audio_timing_snapshot(
-        AudioRuntimeTimingSnapshot {
+        Some(AudioRuntimeTimingSnapshot {
             is_transport_running: true,
             tempo_bpm: 124.0,
             position_beats: paused_position + 1.0,
-        },
+        }),
         1_100,
     );
 
@@ -140,11 +140,11 @@ fn stale_running_audio_snapshot_cannot_cancel_requested_pause() {
     );
 
     state.apply_audio_timing_snapshot(
-        AudioRuntimeTimingSnapshot {
+        Some(AudioRuntimeTimingSnapshot {
             is_transport_running: false,
             tempo_bpm: 124.0,
             position_beats: paused_position,
-        },
+        }),
         1_200,
     );
 
@@ -162,22 +162,22 @@ fn stale_stopped_audio_snapshot_cannot_cancel_requested_play() {
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
     state.set_transport_playing(false);
     state.apply_audio_timing_snapshot(
-        AudioRuntimeTimingSnapshot {
+        Some(AudioRuntimeTimingSnapshot {
             is_transport_running: false,
             tempo_bpm: 124.0,
             position_beats: 32.0,
-        },
+        }),
         1_000,
     );
 
     state.set_transport_playing(true);
     let started_position = state.runtime.transport.position_beats;
     state.apply_audio_timing_snapshot(
-        AudioRuntimeTimingSnapshot {
+        Some(AudioRuntimeTimingSnapshot {
             is_transport_running: false,
             tempo_bpm: 124.0,
             position_beats: started_position,
-        },
+        }),
         1_100,
     );
 
@@ -188,11 +188,11 @@ fn stale_stopped_audio_snapshot_cannot_cancel_requested_play() {
     );
 
     state.apply_audio_timing_snapshot(
-        AudioRuntimeTimingSnapshot {
+        Some(AudioRuntimeTimingSnapshot {
             is_transport_running: true,
             tempo_bpm: 124.0,
             position_beats: started_position,
-        },
+        }),
         1_200,
     );
 
