@@ -270,7 +270,17 @@ pub(super) struct Tr909CallbackState {
     pub(super) envelope: f32,
     pub(super) last_step: i64,
     pub(super) was_running: bool,
+    pub(super) phase_pending_after_overflow: bool,
     pub(super) fill_voices: Tr909FillVoiceState,
+}
+
+impl Tr909CallbackState {
+    pub(super) fn align_after_scratch_overflow(&mut self, position_beats: f64) {
+        if self.phase_pending_after_overflow {
+            self.beat_position = position_beats;
+            self.phase_pending_after_overflow = false;
+        }
+    }
 }
 
 #[derive(Debug, Default)]
