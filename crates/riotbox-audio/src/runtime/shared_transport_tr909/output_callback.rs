@@ -90,7 +90,7 @@ where
     let mut w30_was_transport_running = false;
     let channel_count = usize::from(config.channels.max(1));
     let mut w30_preview_state =
-        W30PreviewCallbackState::with_sample_rate_and_channels(config.sample_rate, channel_count);
+        W30PreviewCallbackState::for_live_output(config.sample_rate, channel_count);
     let mut w30_resample_state = W30ResampleTapCallbackState::default();
     let mut source_monitor_callback_state = SourceMonitorCallbackState::default();
     let sample_rate = config.sample_rate;

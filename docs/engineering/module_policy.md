@@ -114,6 +114,14 @@ shared mixer/offline interfaces or duplicate profile/subdivision rules for this
 live-only repair. The cohesive existing renderer remains counted legacy; a
 mechanical split solely to hide its length would not improve ownership.
 
+RIOTBOX-1604 / RBX-465 keeps stop-envelope placement in the existing private
+`W30PreviewCallbackState`, selected only during construction. The production
+output callback selects final-output placement; existing offline constructors
+retain historical pre-articulation placement. The same renderer owns both
+arithmetic paths, frame-counted fade and stateful articulation. Do not thread a
+new policy through public render plans or the mixer, add a setter, gate the
+whole mix, or create another renderer/clock to preserve offline compatibility.
+
 ### Generated Loaded-Session Preparation Ownership
 
 RIOTBOX-1577 / RBX-443 keeps the private diagnostic `ready_prefix` responsible
