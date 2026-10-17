@@ -87,7 +87,7 @@ pub(super) fn prepared_with_preview(
     AudioRuntimeShell,
     impl FnMut(&mut [f32]),
 ) {
-    prepared_with_w30(preview, W30ResampleTapState::default())
+    prepared_with_w30(preview, W30ResampleTapState::default(), 1000, 1)
 }
 
 pub(super) fn prepared_with_resample(
@@ -97,12 +97,33 @@ pub(super) fn prepared_with_resample(
     AudioRuntimeShell,
     impl FnMut(&mut [f32]),
 ) {
-    prepared_with_w30(W30PreviewRenderState::default(), resample)
+    prepared_with_w30(W30PreviewRenderState::default(), resample, 1000, 1)
 }
 
+pub(super) fn prepared_with_preview_format(
+    preview: W30PreviewRenderState,
+    sample_rate: u32,
+    channels: u16,
+) -> (
+    AudioRuntimeSharedState,
+    AudioRuntimeShell,
+    impl FnMut(&mut [f32]),
+) {
+    prepared_with_w30(
+        preview,
+        W30ResampleTapState::default(),
+        sample_rate,
+        channels,
+    )
+}
+
+// Keep format selection on this one constructor: an extra by-value wrapper
+// overflowed an ordinary test thread in the three-callback history control.
 fn prepared_with_w30(
     preview: W30PreviewRenderState,
     resample: W30ResampleTapState,
+    sample_rate: u32,
+    channels: u16,
 ) -> (
     AudioRuntimeSharedState,
     AudioRuntimeShell,
@@ -131,9 +152,9 @@ fn prepared_with_w30(
         .update_transport_state(true, 120.0, reposition(0.0))
         .unwrap();
     let config = cpal::StreamConfig {
-        channels: 1,
-        sample_rate: 1000,
-        buffer_size: cpal::BufferSize::Fixed(50),
+        channels,
+        sample_rate,
+        buffer_size: cpal::BufferSize::Fixed(sample_rate / 20),
     };
     let callback = prepare_output_callback::<f32>(&config, state.clone(), Instant::now()).unwrap();
     // Multiple exact processors are compared in one ordinary test thread.

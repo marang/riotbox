@@ -4,6 +4,7 @@ use crate::runtime::shared_w30_resample_callback::Tr909CallbackState;
 use crate::runtime::shared_w30_resample_callback::W30MixRenderState;
 use crate::runtime::shared_w30_resample_callback::W30PreviewCallbackState;
 use crate::runtime::shared_w30_resample_callback::W30ResampleTapCallbackState;
+use crate::runtime::shared_w30_resample_callback::W30StopEnvelopePlacement;
 use crate::runtime::tr909_fill_voice::render_tr909_fill_buffer;
 use crate::runtime::tr909_tail_telemetry::envelope_decay;
 use crate::runtime::w30_filter_slam::w30_filter_slam_frame;
@@ -261,11 +262,12 @@ pub(super) fn render_w30_preview_buffer(
             &mut state.transport_stop_fade_frames_remaining,
             transport_stop_fade_frames,
         );
-        let control_sample = waveform
-            * state.envelope
-            * tremolo
-            * w30_render_gain(render, transport_running)
-            * stop_gain;
+        let control_sample =
+            waveform * state.envelope * tremolo * w30_render_gain(render, transport_running);
+        let control_sample = match state.stop_envelope_placement {
+            W30StopEnvelopePlacement::HistoricalPreArticulation => control_sample * stop_gain,
+            W30StopEnvelopePlacement::FinalOutput => control_sample,
+        };
         let articulation_sample =
             w30_post_render_articulation_sample(control_sample, render, state, state.beat_position);
         let filter_slam_frame = w30_filter_slam_frame(render, state.beat_position, sample_rate);
@@ -285,6 +287,10 @@ pub(super) fn render_w30_preview_buffer(
             let sample = filter_slam_frame.map_or(articulation_sample, |frame| {
                 w30_filter_slam_sample(articulation_sample, channel, frame, &mut state.filter_slam)
             });
+            let sample = match state.stop_envelope_placement {
+                W30StopEnvelopePlacement::HistoricalPreArticulation => sample,
+                W30StopEnvelopePlacement::FinalOutput => sample * stop_gain,
+            };
             data[base + channel] += sample;
         }
 
