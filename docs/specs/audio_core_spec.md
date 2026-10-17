@@ -242,6 +242,25 @@ overflow recovery, repeated/sub-step/backward/forward identities, ordinary
 transport controls, acknowledgment and zero callback heap operations. No device,
 host, human listening, source-general, latency or endurance claim follows.
 
+RIOTBOX-1604 / RBX-465 bounds live W-30 preview stop output after stateful
+articulation. The existing private callback state selects stop-envelope
+placement at construction: production live output applies the existing gain
+once per frame to each final W-30 sample after PitchDive/FilterSlam and before
+adding it to the mix. Other contributors are not attenuated by this lane gate.
+Keep the existing fade duration, stop latch, explicit stopped retrigger and
+resume/activation topology; do not reset gesture history at a new point or
+retune a frozen curve. Running output remains sample-bit-compatible.
+
+Historical numeric offline ingress retains its original pre-articulation stop
+placement and exact bytes, including historical stopped tails. It is not proof
+of the corrected live stop guarantee. Select this distinction only in private
+callback-state construction, without a public plan field, mutable runtime
+setting, second renderer, new clock or persisted state. Actual prepared-callback
+articulated/dry mono/stereo output, stop partitions, latch/retrigger/resume,
+running-bit and historical offline-baseline controls plus zero callback heap
+operations are required. Generated proof grants no device, listening or
+physical-latency qualification.
+
 ### 7.2 Source monitor playback
 
 Source monitor playback is a transport feature, not an external player.
