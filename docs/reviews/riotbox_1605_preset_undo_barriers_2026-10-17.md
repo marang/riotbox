@@ -80,8 +80,10 @@ Broader `cargo test -p riotbox-core -p riotbox-app --lib` passed995App tests and
 570Core tests,0failed, with2existing manual release-mode benchmarks ignored.
 Log `/tmp/riotbox-1605-core-app-lib.log`, SHA-256
 `b7e5af55b952ea0b7ea66cfcfa45fe6d2677026d9618472f07fb3a6f5cd1924c`.
-All inputs are generated metadata or fresh owned temporary Session files with
-no graph/source/capture hydration. No host runtime or playback was used.
+The new conflict tests use generated metadata or fresh owned temporary Session
+files with no graph/source/capture hydration. The broader existing suite also
+hydrates generated temporary WAV/Graph/capture fixtures, never actual user,
+Holdout or commercial material. No host runtime or playback was used.
 
 ## Review and remaining gates
 
@@ -92,6 +94,12 @@ exact-head local/native CI remain separately recorded in PR/Linear before merge.
 The large existing command enum and planner test facade were reviewed by changed
 responsibility; each new regression family has an ordinary semantic test owner,
 not another policy system or mechanical file shard.
+
+Final Spec/Evidence review found oneP3 wording ambiguity: an unqualified
+no-hydration sentence could be read as covering the broad existing suite. It was
+restricted to the new metadata-only conflict tests, with generated-fixture
+hydration in the broad suite stated explicitly. No production change; the
+follow-up self-review checks the corrected claim and original log evidence.
 
 1604's independently gated RBX-465 must precede466 after Main integration. No
 prior entry is renumbered or silently altered.1606drum phase and1607snapshot
