@@ -267,6 +267,17 @@ Current implementation:
   before the matching typed undo marker remains unsafe because it contains the
   now-undone state; a snapshot at or after that committed marker is a valid
   anchor. Later tail actions replay normally from that post-undo anchor.
+- RIOTBOX-1605 / RBX-466 makes preset activation an overlapping writer for
+  Source Monitor mode and MC-202 lane snapshots (the latter includes touch).
+  It is not a TR-909 Fill-window writer. The shared Core predicate governs
+  future live Undo for all policies and existing V2 marker validation. Already
+  persisted V2 markers crossing such a preset are invalid relations and fail
+  closed; do not rewrite actions, infer a new policy or adopt their divergent
+  materialized state. This corrects the existing V2 conflict contract without
+  changing its chronology or adding a policy version. Historical Legacy Core
+  stack interpretation stays unchanged; explicit upgrade must refuse an
+  unprovable V2 relation without mutation. Independent-domain live Undo under
+  Legacy remains subject to its existing prospective global-stack admission.
 - Cursor safety is a transient Core projection, never persisted replay truth
   (RBX-426). After the existing history-validation gate, a forward sweep records
   the first unresolved `Undone` action in action-vector order for each cursor.

@@ -504,6 +504,15 @@ Rules:
   unrelated newer mutations do not block a supported Undo target
 - action ids are unique across committed, pending-derived, and structural undo
   actions; duplicate persisted ids invalidate the session
+- RIOTBOX-1605 / RBX-466 treats `preset.activate` as a newer writer of both
+  Source Monitor mode and MC-202 touch, but not the committed Fill window.
+  Future live Undo cannot restore an older overlapping snapshot across it.
+  Invalid historical V2 cross-preset markers are refused through the existing
+  Core relation validation and App `InvalidSession` load surface, without
+  editing the file or silently changing policy. Legacy planning/serialization
+  remains historical; its explicit V2 upgrade may refuse rather than repair
+  those relations. Valid unrelated-domain and post-preset Undo retain their
+  existing policy-specific admission.
 - a valid history ending at `u64::MAX` remains loadable, replayable and saveable;
   new action allocation fails with typed exhaustion before Session/Undo
   mutation. The allocator reserves one final `u64::MAX` after a history ending
