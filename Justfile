@@ -41,6 +41,7 @@ ci:
     just audio-qa-pr
     just audio-qa-access-guard-fixtures
     just ci-gate-contract-fixtures
+    just source-evaluation-release-fixtures
     just decision-search-fixtures
     just tracked-json-validate
     git diff --check
@@ -128,6 +129,11 @@ audio-qa-access-guard-fixtures:
 
 ci-gate-contract-fixtures:
     python3 scripts/validate_ci_gate_contract.py --fixtures
+
+# Synthetic Git/archive/access controls only; never reads Development audio.
+source-evaluation-release-fixtures:
+    python3 -m unittest discover -s scripts -p 'test_source_release_package.py'
+    python3 -m unittest discover -s scripts -p 'test_source_evaluation_development.py'
 
 audio-qa-ci:
     scripts/require_broad_audio_qa_access.sh

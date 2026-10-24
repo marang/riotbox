@@ -31,6 +31,14 @@ Right now Riotbox is already a serious prototype:
 - capture and reuse material without losing lineage
 - save and restore deterministic sessions
 
+## Evaluation Release
+
+The first release scope is a source-only evaluation alpha, not stage-ready 1.0.
+See the [0.1.0-alpha.1 notes](docs/releases/0.1.0-alpha.1.md) for build
+instructions, known limitations and qualification boundaries. Actual gate and
+checksum evidence accompanies the published assets on
+[GitHub Releases](https://github.com/marang/riotbox/releases).
+
 ## Start Here
 
 If you only want the fastest first playable run:

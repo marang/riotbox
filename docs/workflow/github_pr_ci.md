@@ -250,6 +250,10 @@ Rules:
 
 ### PR And Broad Audio-QA Gates
 
+For the first source-only evaluation alpha, also apply the bounded
+[release contract and publication procedure](source_evaluation_release.md).
+Its narrower claims do not waive the release regression gate below.
+
 Use this gate matrix; recipe count is not a quality claim:
 
 | Moment | Command | Audio boundary |
