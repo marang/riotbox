@@ -22,5 +22,7 @@ jobs:
         uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
       - name: Install cargo-audit
         run: cargo install cargo-audit --locked --version 0.22.2
+      - name: Verify bounded upstream patch
+        run: python3 scripts/verify_dawproject_patch.py
       - name: Audit Cargo.lock
         run: cargo audit
