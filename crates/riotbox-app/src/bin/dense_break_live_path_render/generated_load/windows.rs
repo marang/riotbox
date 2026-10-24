@@ -204,7 +204,7 @@ fn publish_offline_wave(
     {
         return Err("offline artifact readback disagrees with computed geometry".into());
     }
-    let hash = format!("{:x}", Sha256::digest(&bytes));
+    let hash = hex::encode(Sha256::digest(&bytes));
     temporary
         .persist_noclobber(path)
         .map_err(|error| error.error.to_string())?;

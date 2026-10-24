@@ -117,7 +117,7 @@ fn attach_generated_recording_lineage(state: &mut JamAppState) {
     proof.source_capture_refs = Vec::<CaptureId>::new();
     proof.lineage_capture_refs = Vec::<CaptureId>::new();
     let proof_bytes = serde_json::to_vec_pretty(&proof).expect("serialize amended proof");
-    let proof_sha = format!("{:x}", Sha256::digest(&proof_bytes));
+    let proof_sha = hex::encode(Sha256::digest(&proof_bytes));
     fs::write(&proof_path, proof_bytes).expect("write synthetic amended proof");
     receipt.normalized_manifest_hash = proof_sha.clone();
     for artifact in &mut receipt.artifact_set {
@@ -499,7 +499,7 @@ fn live_master_dawproject_rejects_hash_and_metadata_proof_drift_without_archive_
                     _ => unreachable!(),
                 }
                 let bytes = serde_json::to_vec_pretty(&proof).expect("serialize mutated proof");
-                let hash = format!("{:x}", Sha256::digest(&bytes));
+                let hash = hex::encode(Sha256::digest(&bytes));
                 fs::write(&receipt.proof_path, bytes).expect("rewrite proof");
                 receipt.normalized_manifest_hash = hash.clone();
                 receipt

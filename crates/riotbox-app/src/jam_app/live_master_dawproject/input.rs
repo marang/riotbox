@@ -440,6 +440,6 @@ pub(super) fn read_exact_regular_artifact(
     }
     let mut bytes = Vec::new();
     file.read_to_end(&mut bytes)?;
-    let sha256 = format!("{:x}", Sha256::digest(&bytes));
+    let sha256 = hex::encode(Sha256::digest(&bytes));
     Ok((path, bytes, sha256))
 }

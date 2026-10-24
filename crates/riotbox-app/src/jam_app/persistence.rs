@@ -310,7 +310,7 @@ fn load_source_audio_cache_for_graph(
 
     match SourceAudioCache::from_pcm_wav_bytes(&graph.source.path, &bytes) {
         Ok(cache) => {
-            let actual_hash = format!("sha256:{:x}", Sha256::digest(&bytes));
+            let actual_hash = format!("sha256:{}", hex::encode(Sha256::digest(&bytes)));
             if let Err(reason) =
                 validate_source_audio_cache_identity(source_ref, graph, &actual_hash)
             {
@@ -552,7 +552,7 @@ fn session_from_ingested_graph(
 
 pub(in crate::jam_app) fn source_graph_hash(graph: &SourceGraph) -> Result<String, JamAppError> {
     let encoded = serde_json::to_vec(graph)?;
-    Ok(format!("sha256:{:x}", Sha256::digest(encoded)))
+    Ok(format!("sha256:{}", hex::encode(Sha256::digest(encoded))))
 }
 
 fn timestamp_now() -> String {

@@ -73,7 +73,9 @@ class ManagedProcessTests(unittest.TestCase):
                     self.wait_for_exit(process)
                     self.assertEqual(process.finish(), 127)
                     self.assertTrue(process.cleanup_verified)
-            self.assertIn(missing, (root / "err").read_text())
+            # GNU and uutils timeout word missing-executable diagnostics differently.
+            # Preserve the real diagnostic without requiring one implementation's text.
+            self.assertTrue((root / "err").read_text().strip())
 
     def test_missing_watchdog_fails_start_and_closes_new_log_handles(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -199,7 +201,7 @@ class ManagedProcessTests(unittest.TestCase):
         program = "import signal,time; signal.signal(signal.SIGTERM, signal.SIG_IGN); print('ready', flush=True); time.sleep(30)"
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            with self.assertRaisesRegex(ManagedProcessError, "status -9"):
+            with self.assertRaisesRegex(ManagedProcessError, r"status (-9|137)$"):
                 with ManagedProcess(
                     [sys.executable, "-c", program],
                     root / "out", root / "err", os.environ.copy(), 0.6,
@@ -207,11 +209,13 @@ class ManagedProcessTests(unittest.TestCase):
                 ) as process:
                     child = self.wait_for_child(process)
                     self.wait_for_text(root / "out", "ready\n")
-                    # GNU timeout, not a cooperative coordinator, escalates.
+                    # The independent watchdog, not a cooperative coordinator, escalates.
                     time.sleep(1)
                     self.assertTrue(process.exited())
                     self.assert_not_running(child)
-                    self.assertEqual(process.finish(), -signal.SIGKILL)
+                    # GNU timeout kills its group (including itself); uutils can reap
+                    # the killed child and return the shell-encoded signal status.
+                    self.assertIn(process.finish(), (-signal.SIGKILL, 128 + signal.SIGKILL))
                     self.assertTrue(process.cleanup_verified)
 
     def test_watchdog_expires_without_coordinator_polling(self):

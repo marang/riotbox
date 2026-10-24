@@ -422,7 +422,7 @@ fn canonical_source_proof_schema_and_duration_cannot_be_relabelled_even_with_upd
             _ => unreachable!(),
         }
         let bytes = serde_json::to_vec_pretty(&proof).unwrap();
-        let sha = format!("{:x}", Sha256::digest(&bytes));
+        let sha = hex::encode(Sha256::digest(&bytes));
         fs::write(&source.proof_path, bytes).unwrap();
         source.normalized_manifest_hash = sha.clone();
         source

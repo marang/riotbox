@@ -11,7 +11,7 @@ pub(in crate::jam_app::tests) fn bind_synthetic_wav_identity(
     use sha2::{Digest, Sha256};
 
     let bytes = fs::read(source_path).expect("read synthetic source WAV");
-    let content_hash = format!("sha256:{:x}", Sha256::digest(bytes));
+    let content_hash = format!("sha256:{}", hex::encode(Sha256::digest(bytes)));
     graph.source.content_hash = content_hash.clone();
     graph.provenance.source_hash = content_hash;
 }

@@ -14,7 +14,7 @@ pub(super) fn canonicalize_root(xml: &[u8], expected_root: &str) -> Result<Vec<u
     let mut depth = 0_usize;
     let mut saw_root = false;
     let mut root_closed = false;
-    let mut source_root = None::<Vec<u8>>;
+    let mut source_root = None::<String>;
     loop {
         match reader.read_event_into(&mut buffer).map_err(xml_error)? {
             Event::Eof => break,
@@ -26,8 +26,8 @@ pub(super) fn canonicalize_root(xml: &[u8], expected_root: &str) -> Result<Vec<u
                     return Err(invalid("XML has more than one root element"));
                 }
                 let mut root = start.into_owned();
-                source_root = Some(root.name().as_ref().to_vec());
-                root.set_name(expected_root.as_bytes());
+                source_root = Some(root.name().as_ref().to_owned());
+                root.set_name(expected_root);
                 writer.write_event(Event::Start(root)).map_err(xml_error)?;
                 saw_root = true;
                 depth = 1;
@@ -42,7 +42,7 @@ pub(super) fn canonicalize_root(xml: &[u8], expected_root: &str) -> Result<Vec<u
                     ));
                 }
                 let mut root = empty.into_owned();
-                root.set_name(expected_root.as_bytes());
+                root.set_name(expected_root);
                 writer.write_event(Event::Empty(root)).map_err(xml_error)?;
                 saw_root = true;
                 root_closed = true;
@@ -97,8 +97,7 @@ pub(super) fn validate_canonical_root(xml: &[u8], expected_root: &str) -> Result
             Event::Eof => break,
             Event::Start(start) => {
                 if depth == 0 {
-                    if root_seen || root_closed || start.name().as_ref() != expected_root.as_bytes()
-                    {
+                    if root_seen || root_closed || start.name().as_ref() != expected_root {
                         return Err(invalid("XML document root is not canonical"));
                     }
                     root_seen = true;
@@ -110,7 +109,7 @@ pub(super) fn validate_canonical_root(xml: &[u8], expected_root: &str) -> Result
                     return Err(invalid("XML ended before its root started"));
                 }
                 if depth == 1 {
-                    if end.name().as_ref() != expected_root.as_bytes() {
+                    if end.name().as_ref() != expected_root {
                         return Err(invalid("XML root end is not canonical"));
                     }
                     root_closed = true;
@@ -118,7 +117,7 @@ pub(super) fn validate_canonical_root(xml: &[u8], expected_root: &str) -> Result
                 depth -= 1;
             }
             Event::Empty(empty) if depth == 0 => {
-                if root_seen || root_closed || empty.name().as_ref() != expected_root.as_bytes() {
+                if root_seen || root_closed || empty.name().as_ref() != expected_root {
                     return Err(invalid("XML document root is not canonical"));
                 }
                 root_seen = true;
@@ -136,14 +135,14 @@ pub(super) fn validate_canonical_root(xml: &[u8], expected_root: &str) -> Result
     }
 }
 
-fn is_expected_or_dependency_root(name: &[u8], expected: &str) -> bool {
-    name == expected.as_bytes() || name == format!("{expected}Type").as_bytes()
+fn is_expected_or_dependency_root(name: &str, expected: &str) -> bool {
+    name == expected || name == format!("{expected}Type")
 }
 
 fn reject_non_document_outside_root(event: &Event<'_>) -> Result<(), JamAppError> {
     match event {
         Event::Decl(_) | Event::DocType(_) | Event::Comment(_) | Event::PI(_) => Ok(()),
-        Event::Text(text) if (text.as_ref() as &[u8]).iter().all(u8::is_ascii_whitespace) => Ok(()),
+        Event::Text(text) if text.as_ref().as_bytes().iter().all(u8::is_ascii_whitespace) => Ok(()),
         Event::Text(_) | Event::CData(_) | Event::GeneralRef(_) => {
             Err(invalid("XML has non-whitespace content outside its root"))
         }

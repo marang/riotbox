@@ -1,0 +1,17 @@
+{
+  "src/generated/metadata.rs": "baaa496fbc85e0831f6370231029bea9aac95b24f61b1ceeaae029fd705e42fc",
+  "src/generated/project.rs": "060f7e5804e404783c677ae4f64cd8eb926309c172c89657527ecc88fffa1b4a",
+  "src/lib.rs": "9f6b77ea128451e74bdd0221eaa30aabe3b3327137c8822c79f88a45ba49a6a4",
+  "src/models/bases.rs": "9920621156fdc38d6bb49b9c8ac1ebb91817dedd56e4fceeb2e12927089b0461",
+  "src/models/mod.rs": "820bd6b9ae287d4725354cd6f6014ce467de0bb922a0b3ffea57429706cb2434",
+  "src/models/parameters.rs": "f48b6d780ba5321c219dbb5c8e8e077da3df61dc200652905f1c314d4a0ad04d",
+  "src/prelude.rs": "26973b5c0808b78ff086902308b1a4092bc6234a01817596e158900c76b6866b",
+  "src/read.rs": "79249019525419ed80fad6cfb7f147f12abcf9760cbe549d8ef37fbcaecdb1c6",
+  "src/repositories/metadata.rs": "888c38e604c11f6e0f85794097e034d6188d3cfc06efdb54498980c93620ecb0",
+  "src/repositories/mod.rs": "bdb669b8208930b06e9d5078ce6a685001c13c239bf190f6276c775ccddf5297",
+  "src/repositories/project.rs": "70e431b70dc666821ffb73434b7fca828737dd78c9531a6ce09939b6d44f2c9c",
+  "src/utils/consts.rs": "91f107a86d84ab342b7bba587b908a24f06efd7a8b44d1ea432b4fb48abf2d34",
+  "src/utils/mod.rs": "55125ccdbfa86b64df48518f8b4d95c313e1bc2ceef1f6a2a81aa1e982756214",
+  "src/write.rs": "7e77e059e48eeff872b3d10ecb08adb0c9fa3303f378dade252d9b9a7b02d039",
+  "src/xml_types.rs": "205abffc36c8023d6b891c33ee0d6feab25b5c46a7f4c27a78b089b35b372043"
+}

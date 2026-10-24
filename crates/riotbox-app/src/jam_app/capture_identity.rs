@@ -46,7 +46,7 @@ pub(super) fn identity(
     provenance: CaptureAudioIdentityProvenance,
 ) -> CaptureAudioIdentity {
     CaptureAudioIdentity {
-        sha256: format!("sha256:{:x}", Sha256::digest(bytes)),
+        sha256: format!("sha256:{}", hex::encode(Sha256::digest(bytes))),
         provenance,
     }
 }
@@ -64,7 +64,7 @@ pub(super) fn load_verified(
     }
     let (bytes, cache) =
         read_wav(path).map_err(|reason| CaptureAudioStatus::Unavailable { reason })?;
-    if format!("sha256:{:x}", Sha256::digest(&bytes)) != expected.sha256 {
+    if format!("sha256:{}", hex::encode(Sha256::digest(&bytes))) != expected.sha256 {
         return Err(CaptureAudioStatus::Changed);
     }
     Ok(cache)

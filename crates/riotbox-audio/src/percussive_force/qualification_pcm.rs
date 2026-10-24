@@ -947,11 +947,11 @@ fn pcm_f32le_sha256(
     for sample in samples {
         digest.update(sample.to_bits().to_le_bytes());
     }
-    format!("{:x}", digest.finalize())
+    hex::encode(digest.finalize())
 }
 
 fn sha256_hex(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    hex::encode(Sha256::digest(bytes))
 }
 
 fn is_lowercase_sha256(value: &str) -> bool {

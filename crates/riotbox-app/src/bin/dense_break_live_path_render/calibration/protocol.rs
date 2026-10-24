@@ -55,5 +55,5 @@ pub(super) fn pcm_hash(samples: &[f32]) -> String {
     for sample in samples {
         digest.update(sample.to_le_bytes());
     }
-    format!("{:x}", digest.finalize())
+    hex::encode(digest.finalize())
 }

@@ -758,12 +758,14 @@ impl ActionCommand {
                 matches!(
                     self.typed_undo_state_domain(),
                     Some(TypedUndoStateDomain::Mc202Lane)
-                ) || matches!(self, Self::SourceTimingRevertGrid)
+                ) || matches!(self, Self::SourceTimingRevertGrid | Self::PresetActivate)
             }
-            TypedUndoStateDomain::SourceMonitorMode => matches!(
-                self.typed_undo_state_domain(),
-                Some(TypedUndoStateDomain::SourceMonitorMode)
-            ),
+            TypedUndoStateDomain::SourceMonitorMode => {
+                matches!(
+                    self.typed_undo_state_domain(),
+                    Some(TypedUndoStateDomain::SourceMonitorMode)
+                ) || matches!(self, Self::PresetActivate)
+            }
             TypedUndoStateDomain::Tr909FillWindow => matches!(
                 self.typed_undo_state_domain(),
                 Some(TypedUndoStateDomain::Tr909FillWindow)

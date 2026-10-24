@@ -39,6 +39,7 @@ mod p016_product_export_action;
 mod p016_product_mix_byte_identity;
 mod p016_w30_hook_dawproject_action;
 mod persistence_runtime_view;
+mod preset_undo_conflicts;
 mod recovery_choice_dry_run;
 mod recovery_hydration_guidance;
 mod recovery_payload_guidance;

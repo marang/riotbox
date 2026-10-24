@@ -12,6 +12,7 @@ use crate::{
 
 mod chronology_compatibility;
 mod cursor_equivalence;
+mod preset_undo_conflicts;
 mod scaling;
 mod transport_chronology;
 

@@ -58,7 +58,7 @@ pub(super) fn enrich_graph_with_rust_source_timing(
             source_path.display()
         ))
     })?;
-    let actual_hash = format!("sha256:{:x}", Sha256::digest(&bytes));
+    let actual_hash = format!("sha256:{}", hex::encode(Sha256::digest(&bytes)));
     if graph.source.content_hash != actual_hash {
         return Err(JamAppError::InvalidSession(format!(
             "source audio hash mismatch during ingest: graph has {}, loaded WAV has {actual_hash}",

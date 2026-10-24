@@ -90,7 +90,7 @@ pub(super) fn synthetic_artifact_hash(
     for sample in samples {
         digest.update(sample.to_bits().to_be_bytes());
     }
-    format!("{:x}", digest.finalize())
+    hex::encode(digest.finalize())
 }
 
 pub(super) fn actionable_policy_identity(
@@ -110,7 +110,7 @@ pub(super) fn actionable_policy_identity(
         family_id: F3_CAUSAL_ENVELOPE_CONTRAST_DYNAMIC_RESIDUAL_V2,
         field_order: ACTIONABLE_POLICY_FIELD_ORDER,
         residual_scales,
-        sha256: format!("{:x}", digest.finalize()),
+        sha256: hex::encode(digest.finalize()),
     })
 }
 
@@ -206,7 +206,7 @@ fn source_response_digest(
         digest.update(canonical_f64_bytes(value)?);
     }
     digest.update(quantized_summary);
-    Ok(format!("{:x}", digest.finalize()))
+    Ok(hex::encode(digest.finalize()))
 }
 
 pub fn f3_source_response_identities_are_diversity_separated(
@@ -322,7 +322,7 @@ pub(super) fn synthetic_outcome_hash(outcome: F3DynamicSyntheticOutcome) -> Stri
     let mut digest = Sha256::new();
     hash_length_prefixed(&mut digest, SYNTHETIC_OUTCOME_HASH_DOMAIN.as_bytes());
     hash_length_prefixed(&mut digest, label.as_bytes());
-    format!("{:x}", digest.finalize())
+    hex::encode(digest.finalize())
 }
 
 fn hash_length_prefixed(digest: &mut Sha256, bytes: &[u8]) {

@@ -109,6 +109,26 @@ in the PR and Linear; this document does not predeclare those passes.
 
 ## Boundaries
 
+## 2026-10-24 integration refresh
+
+The paused implementation is retained, not rebuilt. Current main
+`1fbd38fe65540a07b2142268ed8abd2898281f5e` adds the independently qualified
+security/dependency maintenance (including CPAL0.18.2, quick-xml0.42 and
+SHA-2 0.11). The only merge conflict is the append-only Decision Log:
+retain the exact RBX-466 text before the exact RBX-467 text. No production
+algorithm, threshold or historical control is changed during integration.
+
+Fresh focused execution in `/tmp/riotbox-1606-current-overflow.log` passes
+all nine selected actual-callback tests (the eight new recovery/parity
+functions plus existing Fill/CaptureTap proof), not an empty exact filter.
+Full exact-head source-free local/native CI and refreshed independent
+Rust/spec review remain required before merge. Existing listening-review
+technical-correction rules do not automatically require another musical
+verdict for this unchanged sound recipe; no historical verdict is transferred
+to a new artifact and no real-host/release qualification is claimed.
+
+### Access and claim boundaries
+
 New tests use generated metadata/in-memory PCM only. No actual Session
 migration, source/capture/Holdout/commercial/ignored material access/discovery,
 host/device/service/TTY operation or playback. Existing full CI's generated

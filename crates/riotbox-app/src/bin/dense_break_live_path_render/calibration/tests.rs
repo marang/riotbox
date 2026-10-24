@@ -588,7 +588,7 @@ fn f32le_hash_binds_bits_including_signed_zero() {
     use sha2::{Digest, Sha256};
     let samples = [0.0_f32, -0.0, 0.3, -0.3];
     let bytes: Vec<u8> = samples.into_iter().flat_map(f32::to_le_bytes).collect();
-    assert_eq!(pcm_hash(&samples), format!("{:x}", Sha256::digest(bytes)));
+    assert_eq!(pcm_hash(&samples), hex::encode(Sha256::digest(bytes)));
     assert_ne!(pcm_hash(&[0.0]), pcm_hash(&[-0.0]));
 }
 
