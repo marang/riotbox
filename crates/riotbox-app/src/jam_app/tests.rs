@@ -55,6 +55,7 @@ mod scene_replay;
 mod scene_restore_mc202_queue_start;
 mod scene_source_identity;
 mod snapshot_payload_restore_failures;
+mod snapshot_runtime_provenance;
 #[cfg(unix)]
 mod source_file_admission;
 mod source_ingest_identity;

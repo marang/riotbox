@@ -3,6 +3,7 @@ mod executor;
 mod export_receipt;
 mod plan;
 mod scene_movement;
+mod snapshot_runtime;
 mod summary;
 mod target_execution;
 mod traversal;
@@ -29,6 +30,10 @@ pub use plan::{
 pub use scene_movement::{
     apply_graph_aware_replay_plan_to_session, apply_scene_audio_projection_transition,
     derive_scene_movement_for_replay_entry, derive_scene_movement_state,
+};
+pub use snapshot_runtime::{
+    SnapshotRuntimeActionError, SnapshotRuntimeField, SnapshotRuntimeReference,
+    SnapshotRuntimeReferenceError, SnapshotRuntimeValidationError,
 };
 pub use summary::{
     LatestSnapshotReplayConvergenceSummary, ReplayTargetDryRunSummary, SnapshotPayloadReadiness,

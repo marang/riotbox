@@ -37,6 +37,10 @@ pub enum SnapshotPayloadHydrationError {
         snapshot_action_cursor: usize,
         payload_action_cursor: usize,
     },
+    RuntimeProvenance {
+        snapshot_id: String,
+        reason: super::SnapshotRuntimeValidationError,
+    },
     Execution(ReplayTargetExecutionError),
 }
 
@@ -46,6 +50,11 @@ pub struct SnapshotPayloadHydrationReport {
     pub replay_report: ReplayTargetExecutionReport,
 }
 
+/// Hydrates the selected anchor after metadata admission.
+///
+/// Any supplied graph must already have passed identity admission
+/// against this Session's graph reference. Embedded references resolve only
+/// against their persisted graph; this function never loads graph/audio files.
 pub fn hydrate_replay_target_from_snapshot_payload(
     session: &SessionFile,
     target_action_cursor: usize,
@@ -63,6 +72,8 @@ pub fn hydrate_replay_target_from_snapshot_payload(
 ///
 /// Only actual suffix entries invoke the resolver; an empty suffix preserves
 /// the payload state without deriving any skipped historical phrase.
+/// Any supplied graph must already have passed identity admission
+/// against this Session's graph reference; embedded metadata remains authoritative.
 pub fn hydrate_replay_target_from_snapshot_payload_with_mc202_legacy_resolver(
     session: &SessionFile,
     target_action_cursor: usize,
@@ -101,6 +112,13 @@ pub fn hydrate_replay_target_from_snapshot_payload_with_mc202_legacy_resolver(
             payload_action_cursor: payload.action_cursor,
         });
     }
+
+    super::snapshot_runtime::validate(session, payload, source_graph).map_err(|reason| {
+        SnapshotPayloadHydrationError::RuntimeProvenance {
+            snapshot_id,
+            reason,
+        }
+    })?;
 
     let mut hydrated_session = session.clone();
     hydrated_session.runtime_state = payload.runtime_state.clone();
