@@ -331,7 +331,7 @@ mod tests {
             .map(|index| ((index % 97) as f32 / 194.0 - 0.25) * 0.25)
             .collect();
         let bytes = pcm16_wave_bytes(44_100, 2, &samples).unwrap();
-        let hash = format!("sha256:{:x}", Sha256::digest(&bytes));
+        let hash = format!("sha256:{}", hex::encode(Sha256::digest(&bytes)));
         let mut graph = SourceGraph::new(
             SourceDescriptor {
                 source_id: "synthetic-limiter-preparation".into(),

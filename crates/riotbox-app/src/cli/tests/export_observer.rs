@@ -452,7 +452,7 @@ fn write_product_export_proof(path: &Path, export_artifact: &str, export_hash: &
 fn sha256_bytes(bytes: &[u8]) -> String {
     let mut digest = Sha256::new();
     digest.update(bytes);
-    format!("{:x}", digest.finalize())
+    hex::encode(digest.finalize())
 }
 
 fn stem_receipt_artifact(role: ExportArtifactRole) -> ExportArtifactSetEntry {

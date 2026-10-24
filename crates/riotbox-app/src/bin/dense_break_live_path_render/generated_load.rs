@@ -144,7 +144,7 @@ fn prepare(root: &Path, contract: &Contract, report: &mut Report) -> Result<(), 
     report.identity = Some(json!({
         "generator_repository_path": generator,
         "generator_snapshot_path": generator_snapshot,
-        "generator_sha256": format!("{:x}", Sha256::digest(&generator_bytes)),
+        "generator_sha256": hex::encode(Sha256::digest(&generator_bytes)),
         // Linux's live executable inode, even if a later build replaces its path.
         "producer_binary_sha256": file_hash(Path::new("/proc/self/exe"))?,
     }));
@@ -252,7 +252,7 @@ fn prepare(root: &Path, contract: &Contract, report: &mut Report) -> Result<(), 
     }
     identity["save_restore_identity_verified"] = json!(true);
     identity["capture_artifacts"] = json!(restored.session.captures);
-    identity["core_session_sha256"] = json!(format!("{:x}", Sha256::digest(&saved_session)));
+    identity["core_session_sha256"] = json!(hex::encode(Sha256::digest(&saved_session)));
     identity["contributors"] = json!([
         "tr909",
         "mc202",
@@ -310,7 +310,7 @@ pub(super) fn file_hash(path: &Path) -> std::io::Result<String> {
         }
         digest.update(&buffer[..count]);
     }
-    Ok(format!("{:x}", digest.finalize()))
+    Ok(hex::encode(digest.finalize()))
 }
 
 #[cfg(test)]

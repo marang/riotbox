@@ -163,7 +163,7 @@ fn extended_recordings_export_distinct_v3_handoffs_for_both_durations() {
             .unwrap();
         assert_eq!(embedded, source_bytes);
         assert_eq!(
-            format!("{:x}", Sha256::digest(&embedded)),
+            hex::encode(Sha256::digest(&embedded)),
             proof.embedded_audio_sha256
         );
         let readiness = daw_export_operator_readiness_report(&restored.session, None);

@@ -254,7 +254,7 @@ fn prepare_product_mix_export(
     }
     drop(source);
     staged_artifact.rewind()?;
-    let proof_hash = format!("{:x}", Sha256::digest(&proof_bytes));
+    let proof_hash = hex::encode(Sha256::digest(&proof_bytes));
     #[cfg(test)]
     test_support::run(test_support::ProductMixCheckpoint::AfterArtifactSnapshot);
 
@@ -372,5 +372,5 @@ fn copy_hashed(source: &mut impl Read, destination: &mut impl Write) -> io::Resu
         destination.write_all(&buffer[..read])?;
         digest.update(&buffer[..read]);
     }
-    Ok(format!("{:x}", digest.finalize()))
+    Ok(hex::encode(digest.finalize()))
 }

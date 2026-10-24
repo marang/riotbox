@@ -659,7 +659,7 @@ fn controller_hash(
     for value in values {
         digest.update(value.to_bits().to_be_bytes());
     }
-    Ok(format!("{:x}", digest.finalize()))
+    Ok(hex::encode(digest.finalize()))
 }
 
 fn hash_length_prefixed(digest: &mut Sha256, bytes: &[u8]) {

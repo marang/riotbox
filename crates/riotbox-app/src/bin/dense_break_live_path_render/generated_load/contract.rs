@@ -64,7 +64,7 @@ impl Contract {
 }
 
 pub(super) fn digest() -> String {
-    format!("{:x}", Sha256::digest(BYTES))
+    hex::encode(Sha256::digest(BYTES))
 }
 
 #[cfg(test)]
