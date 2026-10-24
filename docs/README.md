@@ -495,7 +495,8 @@ docs/
 - `architecture_phase_map.md`: component and P000-P020 phase map captured
 - `execution_roadmap.md`: active roadmap with Source Timing Intelligence anchored
 - `workflow_conventions.md`: compact normative workflow core and task router
-- `workflow/`: focused GitHub/PR/CI, Linear, archive/cleanup, and context-hygiene procedures
+- `workflow/`: focused GitHub/PR/CI, Linear, archive/cleanup, context-hygiene and
+  [source-evaluation release](workflow/source_evaluation_release.md) procedures
 - `dev_environment.md`: sandbox, host, search, and environment notes captured
 - `jam_recipes.md`: learning-path guide captured
 - `recovery_notes.md`: current manual recovery and snapshot-payload label guidance captured

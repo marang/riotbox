@@ -1,0 +1,30 @@
+{
+  "schema": "riotbox.source_evaluation_alpha_staged_retry.v2",
+  "owner_ticket": "RIOTBOX-1609",
+  "decision": "RBX-469",
+  "requires_fresh_explicit_user_authorization": true,
+  "broad_invocation_limit": 1,
+  "original_file_opens_allowed": 0,
+  "hash_enrollment_allowed": false,
+  "substitution_allowed": false,
+  "playback_allowed": false,
+  "holdout_audio_access_allowed": false,
+  "commercial_reference_access_allowed": false,
+  "maximum_source_bytes": 67108864,
+  "prior_original_access_receipt_sha256": "ccab1bda3fe93be02850f33154e0c6fe86665b5e4d2edccc51cde8dbe13bee8c",
+  "failed_v1_broad_log_sha256": "c6841b4b91a2c281314af2371c39b589a3984325f7f68ea2f890fbff1b70edbf",
+  "protected_registry_sha256": {
+    "docs/benchmarks/source_holdout_rotation_v1.json": "dd017080f311dcb2a8eda2fac63d8da372a356f0fc2cc33d5c97d3fd2ea34cfc",
+    "docs/benchmarks/source_holdout_rotation_v2.json": "af98af67d5b0ef9f8478bf800438b268af2a4640bed29d8ec7c87fa585eb6812",
+    "docs/benchmarks/source_holdout_rotation_v3.json": "9e5e03ad64319061a4baaa6cee7c40fc5e993171b0d11003ec29767f273bc502"
+  },
+  "sources": [
+    {"case_id": "legacy_dense_beat03", "path": "data/test_audio/examples/Beat03_130BPM(Full).wav", "sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a"},
+    {"case_id": "legacy_dense_beat08", "path": "data/test_audio/examples/Beat08_128BPM(Full).wav", "sha256": "0579c1be25bcf2e453c61e8ab48c2696190e309548abc2b69c4785bff86c8e2d"},
+    {"case_id": "legacy_weak_beat20", "path": "data/test_audio/examples/Beat20_128BPM(Full).wav", "sha256": "d3d86134e99dfb5889c9efe683ccd427cdf73e499ebfbc69dbd1f3a145bdf1e1"},
+    {"case_id": "legacy_pressure_beatc", "path": "data/test_audio/examples/DH_BeatC_120-01.wav", "sha256": "0227b28650c03c168dab8d4b563eb5ba2f78a6972e489845f9f1b8e2f7c01b6a"},
+    {"case_id": "legacy_sparse_kicksnr", "path": "data/test_audio/examples/DH_BeatC_KickSnr_120-01.wav", "sha256": "8a970e5d7bd9b29771aba85f75e697c7510940d4404714bfb1e55e210c15f46c"},
+    {"case_id": "legacy_tonal_rusharp", "path": "data/test_audio/examples/DH_RushArp_120_A.wav", "sha256": "ec2a0c930eb338bf81cd5cb4b5fef487e07c140ad40181e1d92b2a0990334e0e"},
+    {"case_id": "legacy_pad_fadapad", "path": "data/test_audio/examples/DH_Fadapad_120_A.wav", "sha256": "22e825c8bf59cfd71a02ce229d222d1d35f1bae6f7d1bafab6edeb4ff4829d8c"}
+  ]
+}

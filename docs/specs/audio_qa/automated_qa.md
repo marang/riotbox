@@ -1245,6 +1245,23 @@ Each fixture should support a small review set such as:
 
 Not every fixture needs every pack, but the assignment must be explicit.
 
+### 9.3 Hermetic legacy Stage-A contract fixtures
+
+RBX-469 separates synthetic semantic coverage from historical receipt
+attestation. The v4/v5 broad fixture recipes use a versioned source-free runner
+over pinned tracked documents and explicitly synthetic in-memory terminal
+states. Preserve the existing six v4 and four v5 mutations and terminal-access
+negative controls. Report `historical_receipts_verified=false`; this is not
+source admission, quality, listening or a historical raw-byte pass.
+
+Keep the original validators, JSON contracts and historical receipt hash pins
+unchanged and fail-closed. Never fill their actual ignored receipt paths with
+synthetic stand-ins. Missing genuine receipts remain unavailable for historical
+attestation, but do not prevent isolated synthetic contract tests. Qualification
+and matrix validate-only gates remain separate and unchanged. Execution of a
+new broad run still requires its own active source-access authorization; see
+the [source evaluation release contract](../../workflow/source_evaluation_release.md).
+
 ---
 
 

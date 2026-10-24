@@ -1,0 +1,26 @@
+{
+  "schema": "riotbox.source_evaluation_alpha_development_access.v1",
+  "owner_ticket": "RIOTBOX-1609",
+  "authorization_date": "2026-10-24",
+  "broad_invocation_limit": 1,
+  "original_reads_per_source_limit": 1,
+  "maximum_source_bytes": 67108864,
+  "quality_proof": false,
+  "playback_allowed": false,
+  "commercial_reference_material_allowed": false,
+  "protected_registries": [
+    "docs/benchmarks/source_holdout_rotation_v1.json",
+    "docs/benchmarks/source_holdout_rotation_v2.json",
+    "docs/benchmarks/source_holdout_rotation_v3.json"
+  ],
+  "rights_context": "Existing local ignored MusicRadar/SampleRadar Development examples; local regression only, no redistribution. Not commercial reference recordings.",
+  "sources": [
+    {"case_id": "legacy_dense_beat03", "path": "data/test_audio/examples/Beat03_130BPM(Full).wav", "historical_sha256": "e752819f53f7147c2a3e3de307775f21b6bc295332b3010b13479ae7e19ae30a", "allow_hash_enrollment": false, "identity_record": "docs/benchmarks/master_bus_limiter_calibration_protocol_v2.json"},
+    {"case_id": "legacy_dense_beat08", "path": "data/test_audio/examples/Beat08_128BPM(Full).wav", "historical_sha256": null, "allow_hash_enrollment": true, "identity_record": "No historical full-source SHA located; source registration: sound_excellence_source_corpus_v1.json dense_beat08_128. Never substitute a rendered tap hash."},
+    {"case_id": "legacy_weak_beat20", "path": "data/test_audio/examples/Beat20_128BPM(Full).wav", "historical_sha256": "d3d86134e99dfb5889c9efe683ccd427cdf73e499ebfbc69dbd1f3a145bdf1e1", "allow_hash_enrollment": false, "identity_record": "docs/reviews/riotbox_1460_corrected_negative_family_qualification_2026-08-24.md"},
+    {"case_id": "legacy_pressure_beatc", "path": "data/test_audio/examples/DH_BeatC_120-01.wav", "historical_sha256": null, "allow_hash_enrollment": true, "identity_record": "No historical full-source SHA located; fixed legacy Development registration in scripts/validate_pro_pressure_source_matrix.py."},
+    {"case_id": "legacy_sparse_kicksnr", "path": "data/test_audio/examples/DH_BeatC_KickSnr_120-01.wav", "historical_sha256": "8a970e5d7bd9b29771aba85f75e697c7510940d4404714bfb1e55e210c15f46c", "allow_hash_enrollment": false, "identity_record": "docs/benchmarks/master_bus_limiter_calibration_protocol_v2.json"},
+    {"case_id": "legacy_tonal_rusharp", "path": "data/test_audio/examples/DH_RushArp_120_A.wav", "historical_sha256": "ec2a0c930eb338bf81cd5cb4b5fef487e07c140ad40181e1d92b2a0990334e0e", "allow_hash_enrollment": false, "identity_record": "docs/benchmarks/master_bus_limiter_calibration_protocol_v2.json"},
+    {"case_id": "legacy_pad_fadapad", "path": "data/test_audio/examples/DH_Fadapad_120_A.wav", "historical_sha256": "22e825c8bf59cfd71a02ce229d222d1d35f1bae6f7d1bafab6edeb4ff4829d8c", "allow_hash_enrollment": false, "identity_record": "docs/reviews/riotbox_1457_pad_noise_product_outcome_2026-08-24.md"}
+  ]
+}

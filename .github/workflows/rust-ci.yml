@@ -47,6 +47,9 @@ jobs:
           /usr/bin/python3 -m unittest discover -s scripts -p 'test_master_bus_limiter*.py'
           scripts/validate_broad_audio_qa_access_guard.sh
           python3 scripts/validate_ci_gate_contract.py --fixtures
+          python3 -m unittest discover -s scripts -p 'test_source_release_package.py'
+          python3 -m unittest discover -s scripts -p 'test_source_evaluation_development.py'
+          python3 -m unittest discover -s scripts -p 'test_percussive_force_stage_a_legacy_contract_fixtures.py'
           git ls-files -z '*.json' | xargs -0 -r -n 64 jq empty
           git diff --check
 

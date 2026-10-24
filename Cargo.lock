@@ -1666,7 +1666,7 @@ checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
 name = "riotbox-app"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "crossterm",
  "dawproject",
@@ -1685,7 +1685,7 @@ dependencies = [
 
 [[package]]
 name = "riotbox-audio"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "cpal",
  "hex",
@@ -1702,7 +1702,7 @@ dependencies = [
 
 [[package]]
 name = "riotbox-core"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "hex",
  "serde",
@@ -1713,7 +1713,7 @@ dependencies = [
 
 [[package]]
 name = "riotbox-sidecar"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "libc",
  "riotbox-core",

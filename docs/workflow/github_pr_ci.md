@@ -250,6 +250,10 @@ Rules:
 
 ### PR And Broad Audio-QA Gates
 
+For the first source-only evaluation alpha, also apply the bounded
+[release contract and publication procedure](source_evaluation_release.md).
+Its narrower claims do not waive the release regression gate below.
+
 Use this gate matrix; recipe count is not a quality claim:
 
 | Moment | Command | Audio boundary |
@@ -273,6 +277,12 @@ validation instead of rerendering equivalent professional packs independently.
 Synthetic exact-mix validation remains in the source-free audio PR gate beside
 the artifact it consumes; the later broad layer does not reread that mutable
 shared path.
+
+Historical Stage-A v4/v5 receipt attestation is separate from hermetic contract
+fixtures (RBX-469; [release contract](source_evaluation_release.md#historical-attestation-versus-synthetic-contract-coverage)).
+Their original validators and raw pins remain fail-closed; the broad fixture
+recipes exercise unchanged semantic checks with explicitly synthetic in-memory
+terminal evidence, never a claimed historical receipt verification.
 
 Do not run broad audio-QA gates concurrently when they write shared
 `artifacts/audio_qa/local-*` paths. `just audio-qa-ci` acquires the repo-local
