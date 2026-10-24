@@ -107,8 +107,6 @@ test owners remain bounded, semantic children of the actual callback seam.
 Review/CI/merge/main synchronization and issue/branch closeout status belong
 in the PR and Linear; this document does not predeclare those passes.
 
-## Boundaries
-
 ## 2026-10-24 integration refresh
 
 The paused implementation is retained, not rebuilt. Current main
@@ -127,7 +125,7 @@ technical-correction rules do not automatically require another musical
 verdict for this unchanged sound recipe; no historical verdict is transferred
 to a new artifact and no real-host/release qualification is claimed.
 
-### Access and claim boundaries
+## Boundaries
 
 New tests use generated metadata/in-memory PCM only. No actual Session
 migration, source/capture/Holdout/commercial/ignored material access/discovery,
