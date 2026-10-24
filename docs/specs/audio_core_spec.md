@@ -261,6 +261,23 @@ running-bit and historical offline-baseline controls plus zero callback heap
 operations are required. Generated proof grants no device, listening or
 physical-latency qualification.
 
+RIOTBOX-1606 / RBX-467 also marks TR-909 scheduling pending whenever production
+scratch admission fails. The next admitted block uses its actual shared-clock
+render position even when the skipped distance falls below the existing drum
+deadband. Consume this private callback-state flag only after the existing
+renderer's reset rules: retain explicit-seek, activation, mode-transition and
+large-jump behavior, particularly Fill's full-step jump reset of hidden voices.
+For short recovery within one step, retain voice state and avoid a fabricated
+attack; for a different destination step, let the existing step comparison
+handle that event once without replaying skipped steps. This does not simulate
+voice age through the silent interval. Inactive rendering clears pending with
+its normal position update. Offline states never receive the flag and retain
+historical numeric thresholds and bytes. Transport acknowledgment, overflow
+silence, capture faults/refusal and other lanes are unchanged. Require actual
+prepared-callback Takeover/Fill timing and PCM, same-step and prior-bar-rest,
+repeated-overflow/seek, ordinary transport and zero-heap regressions. Generated
+tests are not host, listening, source-general or latency qualification.
+
 ### 7.2 Source monitor playback
 
 Source monitor playback is a transport feature, not an external player.

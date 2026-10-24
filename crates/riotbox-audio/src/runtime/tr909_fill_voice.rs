@@ -472,6 +472,9 @@ pub(super) fn render_tr909_fill_buffer(
         state.fill_voices.start();
         state.was_running = true;
     }
+    // Large jumps must clear hidden voices before phase is aligned; otherwise
+    // old-bar tails can return at full gain when recovery lands on a rest.
+    state.align_after_scratch_overflow(render.position_beats);
 
     let beats_per_sample = f64::from(render.tempo_bpm) / 60.0 / f64::from(sample_rate.max(1));
     let frame_count = data.len() / channel_count.max(1);

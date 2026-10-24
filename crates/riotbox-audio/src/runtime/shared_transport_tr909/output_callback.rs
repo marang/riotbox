@@ -116,8 +116,9 @@ where
             frame_count,
         );
         let Some(mix_buffer) = mix_buffer.get_mut(..data.len()) else {
-            // The clock advances across these silent frames, but W-30 did not
-            // render them. Re-align at the next admitted block even on Preserve.
+            // The clock advances across these silent frames, but neither lane
+            // rendered them. Re-align at the next admitted block on Preserve.
+            render_state.phase_pending_after_overflow = true;
             w30_applied_position_request_id = None;
             for output in data.iter_mut() {
                 *output = T::from_sample(0.0);

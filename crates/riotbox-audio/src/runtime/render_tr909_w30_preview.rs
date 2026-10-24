@@ -50,6 +50,7 @@ pub(super) fn render_tr909_buffer(
         state.envelope = 0.0;
         state.fill_voices.deactivate();
         state.beat_position = render.position_beats;
+        state.phase_pending_after_overflow = false;
         return;
     }
 
@@ -82,6 +83,9 @@ pub(super) fn render_tr909_buffer(
         state.last_step = current_step.saturating_sub(1);
         state.was_running = true;
     }
+    // Preserve the existing reset/seek policy, then bypass only stale phase.
+    // Retaining last_step avoids a synthetic attack within the same step.
+    state.align_after_scratch_overflow(render.position_beats);
 
     let beats_per_sample = f64::from(render.tempo_bpm) / 60.0 / f64::from(sample_rate.max(1));
     let frame_count = data.len() / channel_count.max(1);

@@ -29,6 +29,9 @@ const COLD_CHILD: &str = "RIOTBOX_CALLBACK_HEAP_COLD_CHILD";
 
 mod timing_publication;
 mod tr909_fill_capture;
+mod tr909_overflow;
+mod tr909_overflow_controls;
+mod tr909_running_compat;
 mod transport_intent;
 mod w30_articulated_stop;
 mod w30_fixture;
