@@ -8,7 +8,7 @@ license-file.workspace = true
 limiter-calibration = []
 
 [dependencies]
-cpal = "0.17.3"
+cpal = "0.18.2"
 riotbox-core = { path = "../riotbox-core" }
 same-file = "1.0.6"
 serde.workspace = true
