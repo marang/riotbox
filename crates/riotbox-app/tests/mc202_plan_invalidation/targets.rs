@@ -22,6 +22,7 @@ fn every_target_prefix_retains_exact_persisted_plan_or_invalidation_for_all_poli
         for graph_available in [false, true] {
             for cursor in 0..=4 {
                 let mut origin = SessionFile::new("generated-target-prefix", "test", "2026-10-16");
+                origin.source_refs = history.session.source_refs.clone();
                 origin.action_log = history.session.action_log.clone();
                 let log = origin.action_log.clone();
                 let mut core = origin.clone();

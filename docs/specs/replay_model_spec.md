@@ -525,6 +525,40 @@ fails, the runtime may surface a read-only recovery/debug prompt, but it must no
 silently fall back to a different anchor or repair the session without an
 explicit recovery path.
 
+RIOTBOX-1607 / RBX-470 makes the selected V1 payload's explicit provenance
+checkable before installation. Prefix membership means an action's stored vector
+index is strictly below the **anchor** cursor, not the target cursor, ActionId,
+timestamp, or transport position. History retains its declared policy's record
+admission: V2 requires complete validated records; legacy partial record coverage
+is not implicitly upgraded. The referenced action must have a committed timestamp,
+a committed (or supported typed-Undone) status, no rejected result,
+and the correct owner command/domain. Confirmed timing, capture length, all three
+Scene movement slots and all three Undo snapshot families are covered. Timing,
+length and movement identities must match their owner's persisted parameters;
+Undo snapshots hold pre-action values, not the owner's result.
+
+Resolve reached CaptureIds and SourceIds uniquely from this Session. Follow
+typed capture lineage without cycles; a present capture producer must be a
+prefix capture-producing action. An absent producer remains legacy/import-valid.
+Resolve explicit SectionIds in already supplied Session-bound or embedded graph
+metadata; absent required metadata is a typed refusal, never implicit file I/O.
+The declared storage mode owns graph authority: an embedded graph cannot be
+overridden by a supplied same-SourceId graph; a conflicting supplied embedded
+context is refused before traversal or resolution. All supplied graphs must have
+passed existing Session graph-identity admission before either public hydration
+API is called; Core does not duplicate that hash validator or load external files.
+Explicit Scene source bindings use the same resolution and reject duplicates.
+Legacy absent MC-202 sections and absent/empty binding lists retain their distinct
+meanings. Do not invent Bank/Pad or custom Scene registries: initial focus and
+bare Scenes require no owning action.
+
+The bounded check does not prove arbitrary runtime equality to a replayed prefix.
+Opaque phrase/pattern/provenance strings, scalar sound decisions, timestamps and
+beat positions are not action identities. It does not replay skipped history,
+replan phrases, load graph/audio files, validate unrelated historical payloads,
+migrate metadata or change save/load header admission. A typed refusal precedes
+any suffix resolver and preserves the input Session and App/queue projections.
+
 Session load validation rejects present payloads whose identity or cursor does
 not match the owning snapshot before app state is constructed. Missing payloads
 remain load-valid because payloads are optional unless a selected restore path

@@ -204,6 +204,13 @@ shards. Core exposes the narrowly named single-entry legacy resolver to that
 constructor, sharing missing-plan/normal-execution semantics with the
 transactional target traversal; the caller owns its scratch candidate.
 
+RIOTBOX-1607 / RBX-470 keeps selected-anchor metadata admission in private Core
+`replay::snapshot_runtime`, with reachable typed graph/capture references owned
+by its `references` child. The existing target executor calls it before clone,
+installation or suffix resolution. Public types expose refusal reasons only;
+there is no persisted index, App-local provenance, second replay engine or I/O.
+Replay9.3 owns the exact compatibility and validation contract.
+
 RIOTBOX-1594 keeps MC-202 restore-input collection in the existing private App
 `restore_replay` owner. Its transient prefix index preserves first-match ActionId
 selection for unvalidated `from_parts` callers and traverses stored records in

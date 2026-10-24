@@ -17,6 +17,7 @@ use riotbox_core::{
     session::{
         ActionCommitRecord, Mc202RoleState, Mc202SourcePhraseNoteBudgetState,
         Mc202SourcePhrasePlanState, Mc202SourcePhraseSlotState, ReplayPolicy, SessionFile,
+        SourceRef,
     },
     source_graph::{
         DecodeProfile, GraphProvenance, ManualSourceTimingGrid, SourceDescriptor, SourceGraph,
@@ -93,6 +94,15 @@ fn confirmed_app_with_persisted_plan(nonexistent_source: &Path) -> JamAppState {
     )
     .unwrap();
     let mut session = SessionFile::new("generated-plan-invalidation", "test", "2026-10-16");
+    // Register the typed SourceId used by selected payloads. Metadata presence
+    // is not hydration: this path remains nonexistent and is never opened.
+    session.source_refs.push(SourceRef {
+        source_id: graph.source.source_id.clone(),
+        path_hint: graph.source.path.clone(),
+        content_hash: graph.source.content_hash.clone(),
+        duration_seconds: graph.source.duration_seconds,
+        decode_profile: graph.source.decode_profile.clone(),
+    });
     for (id, command, params, plan) in [
         (
             1,
@@ -190,7 +200,11 @@ fn invalidated_history(path: &Path, policy: ReplayPolicy) -> JamAppState {
 }
 
 fn assert_no_hydration(app: &JamAppState) {
-    assert!(app.session.source_refs.is_empty());
+    assert_eq!(
+        app.session.source_refs.len(),
+        1,
+        "generated identity metadata only"
+    );
     assert!(app.session.source_graph_refs.is_empty());
     assert!(app.session.captures.is_empty());
     assert!(app.session.export_receipts.is_empty());

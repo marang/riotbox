@@ -1080,11 +1080,60 @@ pub(in crate::jam_app::tests) fn prepare_mc202_recipe_source_fixture(
         features[6],
         features[7],
     );
+    // This fixture seeds timing before the exercised recorded recipe suffix.
+    // Keep that legacy prefix explicit: an opaque, absent ActionId(77) is not
+    // legitimate snapshot provenance. No commit record is invented for this
+    // deliberately partial-history fixture or added to the asserted suffix.
+    let legacy_prefix = !state
+        .session
+        .action_log
+        .replay_policy
+        .uses_committed_append_order();
+    let timing_owner = if legacy_prefix {
+        ActionId(0)
+    } else {
+        ActionId(77)
+    };
+    if legacy_prefix
+        && !state
+            .session
+            .action_log
+            .actions
+            .iter()
+            .any(|action| action.id == timing_owner)
+    {
+        state.session.action_log.actions.insert(
+            0,
+            riotbox_core::action::Action {
+                id: timing_owner,
+                actor: riotbox_core::action::ActorType::User,
+                command: ActionCommand::SourceTimingConfirmGrid,
+                params: ActionParams::SourceTimingGrid {
+                    source_id: Some(source_id.clone()),
+                    hypothesis_id: None,
+                    confirmed_bpm: state.session.runtime_state.source_timing.confirmed_bpm,
+                },
+                target: Default::default(),
+                requested_at: 1_771_156_800_000,
+                quantization: riotbox_core::action::Quantization::Immediate,
+                status: ActionStatus::Committed,
+                committed_at: Some(1_771_156_800_000),
+                result: Some(riotbox_core::action::ActionResult {
+                    accepted: true,
+                    summary: "generated legacy timing prefix".into(),
+                }),
+                undo_policy: UndoPolicy::NotUndoable {
+                    reason: "timing confirmation has no typed Undo".into(),
+                },
+                explanation: None,
+            },
+        );
+    }
     state.session.runtime_state.source_timing.confirmed_grid =
         Some(SourceTimingGridConfirmationState {
             source_id: source_id.clone(),
             hypothesis_id: None,
-            confirmed_by_action: ActionId(77),
+            confirmed_by_action: timing_owner,
             confirmed_at: 1_771_156_800_000,
         });
     if let Some(source_ref) = state.session.source_refs.first_mut() {
