@@ -278,6 +278,12 @@ Synthetic exact-mix validation remains in the source-free audio PR gate beside
 the artifact it consumes; the later broad layer does not reread that mutable
 shared path.
 
+Historical Stage-A v4/v5 receipt attestation is separate from hermetic contract
+fixtures (RBX-469; [release contract](source_evaluation_release.md#historical-attestation-versus-synthetic-contract-coverage)).
+Their original validators and raw pins remain fail-closed; the broad fixture
+recipes exercise unchanged semantic checks with explicitly synthetic in-memory
+terminal evidence, never a claimed historical receipt verification.
+
 Do not run broad audio-QA gates concurrently when they write shared
 `artifacts/audio_qa/local-*` paths. `just audio-qa-ci` acquires the repo-local
 `broad-audio-qa` lock through `scripts/with_audio_qa_lock.sh` before it starts

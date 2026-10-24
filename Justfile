@@ -42,6 +42,7 @@ ci:
     just audio-qa-access-guard-fixtures
     just ci-gate-contract-fixtures
     just source-evaluation-release-fixtures
+    just percussive-force-stage-a-legacy-fixture-regressions
     just decision-search-fixtures
     just tracked-json-validate
     git diff --check
@@ -134,6 +135,10 @@ ci-gate-contract-fixtures:
 source-evaluation-release-fixtures:
     python3 -m unittest discover -s scripts -p 'test_source_release_package.py'
     python3 -m unittest discover -s scripts -p 'test_source_evaluation_development.py'
+
+# Generated metadata sandboxes only; no genuine historical receipts or source audio.
+percussive-force-stage-a-legacy-fixture-regressions:
+    python3 -m unittest discover -s scripts -p 'test_percussive_force_stage_a_legacy_contract_fixtures.py'
 
 audio-qa-ci:
     scripts/require_broad_audio_qa_access.sh
@@ -549,10 +554,10 @@ percussive-force-stage-a-v3-contract-fixtures:
     python3 scripts/validate_percussive_force_stage_a_protocol_v3.py --fixtures
 
 percussive-force-stage-a-v4-contract-fixtures:
-    python3 scripts/validate_percussive_force_stage_a_protocol_v4.py --fixtures
+    python3 scripts/percussive_force_stage_a_legacy_contract_fixtures.py --contract v4
 
 percussive-force-stage-a-v5-contract-fixtures:
-    python3 scripts/validate_percussive_force_stage_a_protocol_v5.py --fixtures
+    python3 scripts/percussive_force_stage_a_legacy_contract_fixtures.py --contract v5
 
 percussive-force-stage-a-v5-qualification-contracts:
     python3 scripts/run_percussive_force_stage_a_v5_qualification.py --validate-only

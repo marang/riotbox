@@ -1,6 +1,6 @@
-# Source evaluation alpha release v1
+# Source evaluation alpha release v2
 
-Owner: RIOTBOX-1609. Decision: RBX-468. First version: `0.1.0-alpha.1`.
+Owner: RIOTBOX-1609. Decisions: RBX-468, RBX-469. First version: `0.1.0-alpha.1`.
 This supplements, and does not waive, the normal PR and audio-QA gates.
 
 ## Scope and authority
@@ -73,11 +73,42 @@ internal read. Clear external source/handoff environment overrides first.
 
 ## Candidate, package, and publication gates
 
+### Historical attestation versus synthetic contract coverage
+
+The original one-shot broad run (V1) failed before registered-source renderers:
+the v4/v5 `--fixtures` commands required two ignored RIOTBOX-1430 historical
+access receipts that are absent. V1 remains failed and its authorization is
+consumed. Summaries and recorded hashes cannot reconstruct those original bytes.
+
+RBX-469 separates this accidental dependency without weakening historical
+attestation. The original v3/v4/v5 validators, pinned JSON contracts, receipt
+paths and raw hashes remain unchanged. Their production commands still fail
+closed when genuine historical evidence is missing or mismatched. A separate
+versioned, source-free fixture runner uses explicitly synthetic terminal-state
+objects only in memory to exercise the unchanged semantic validators. It pins
+the tracked inputs, retains all six v4 and four v5 negative mutations, and adds
+terminal-access negative controls. Its result is contract coverage only:
+`historical_receipts_verified=false`, never source admission or quality proof.
+It must not write stand-ins at real historical receipt paths. The broad v4/v5
+fixture recipes use this hermetic runner; qualification and matrix validate-only
+gates remain. Synthetic runner regressions also belong in source-free CI.
+
+A revised candidate requires fresh review and complete applicable gates. A V2
+broad run additionally requires new explicit one-shot authorization and a
+reviewed, frozen preflight of the seven already-staged copies against their
+enrolled hashes and protected metadata, bound by
+`docs/benchmarks/source_evaluation_alpha_staged_retry_v2.json`.
+No original-file reopen, substitution,
+new enrollment or inherited automatic retry is permitted. Preserve the V1
+receipt/log separately; do not relabel it as passing.
+
+### Required checks
+
 1. Linear In Progress before the release branch. Consistent workspace and four
    local lockfile versions; no unrelated dependency updates.
 2. Review this contract, access policy and helpers before Development access.
    Synthetic helper tests never open real sources or initialize audio.
-3. Clean committed candidate: full source-free `just ci`, the sole approved
+3. Clean committed candidate: full source-free `just ci`, the separately approved
    guarded `just ci-broad`, vendor source/license verifier. Preserve exact
    candidate commit/tree, commands/results and log hashes.
 4. Deterministic source tar.gz from the **Git commit**, not the filesystem:

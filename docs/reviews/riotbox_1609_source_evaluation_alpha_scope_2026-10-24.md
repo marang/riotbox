@@ -86,6 +86,54 @@ An optional bounded Jev scope sanity-check (jev-1.14.0;1054 input/102 output
 tokens) supported separating1.0 aspirations from this narrower scope and keeping
 the broad gate. It is neither authority nor correctness/audio qualification.
 
+## Broad V1 failure and prospective repair
+
+The sole initial authorized broad invocation on candidate
+`0e0957b23e48cfbf241c8c5aa8eba040f32c46d0` failed before the seven-source
+generators. Its v4 fixture recipe attempted to load the absent ignored
+RIOTBOX-1430 v3 access receipt; the v5 recipe also requires the historical v4
+receipt. Neither original is present at its exact named path. Their hashes and
+summaries do not provide recoverable original bytes. The full V1 log SHA256 is
+`c6841b4b91a2c281314af2371c39b589a3984325f7f68ea2f890fbff1b70edbf`.
+V1 remains failed, not a current broad pass or a reusable authorization.
+
+RBX-469 records the independently assessed repair: separate hermetic semantic
+fixtures from historical raw-byte attestation. Original validators and pinned
+contracts remain unchanged and fail closed without genuine receipts. New
+explicitly synthetic fixtures preserve the existing six v4 and four v5 negative
+mutations and exercise terminal-evidence rejection without writing historical
+receipt stand-ins. This is QA maintenance for the actual release blocker, not
+an algorithm change, threshold retuning or release-gate waiver. Historical
+attestation remains unverified; no positive musical evidence is manufactured.
+
+The seven originals were already read exactly once in the authorized preflight:
+five historical matches and two declared new enrollments, zero protected path
+opens or observed protected hash collisions. The original receipt SHA256 is
+`ccab1bda3fe93be02850f33154e0c6fe86665b5e4d2edccc51cde8dbe13bee8c`.
+A possible V2 invocation requires fresh explicit permission, independent
+review, a newly committed candidate and staged-only identity preflight under
+`source_evaluation_alpha_staged_retry_v2.json`. No original reopen, new
+enrollment, substitution or automatic retry is authorized. Revised validation
+results belong in the eventual evidence manifest, not an assumed pass here.
+
+The revised fixture gate executes all ten preserved contract mutations and
+17 terminal-access negatives. Ten generated public-seam regression tests cover
+both Just and the GitHub no-Just CLI path, all twelve tracked raw pins, missing
+and linked metadata, unchanged production missing/mismatched-receipt rejection,
+and separation from deliberately invalid sandbox-only receipts. A stale Python
+bytecode negative exposed that checking `.py` bytes before ordinary import did
+not prove those exact bytes executed. The runner now compiles the checked legacy
+source into isolated fixture-process modules; the poisoned-cache control passes
+without changing any legacy validator. No real historical receipt is recreated.
+
+Refreshed independent Spec And Evidence and Adversarial/Security/Risk reviews
+retain zero findings in the repair, as does the final Maintainer/Product
+self-review. Both public fixture recipes and all ten generated regressions
+pass. The one-off staged-only preflight also passes eleven generated tests and
+independent safety review; its acknowledgment is not user authority. These
+reviews do not verify real staged bytes or authorize V2, and do not replace
+the revised exact-candidate CI, broad, build or publication gates.
+
 ## Publication proof location
 
 The final release manifest and PR/Linear updates bind actual candidate/merge
