@@ -330,7 +330,7 @@ fn validate_product_stem_handoff_bundle(
         )));
     }
     let proof_bytes = fs::read(proof_path)?;
-    let proof_sha256 = format!("{:x}", Sha256::digest(&proof_bytes));
+    let proof_sha256 = hex::encode(Sha256::digest(&proof_bytes));
     let proof: ProductStemHandoff = serde_json::from_slice(&proof_bytes)?;
     proof.validate().map_err(|error| {
         JamAppError::InvalidSession(format!("invalid product-stem handoff: {error:?}"))

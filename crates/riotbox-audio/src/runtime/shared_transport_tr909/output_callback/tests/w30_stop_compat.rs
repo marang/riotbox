@@ -86,7 +86,7 @@ fn historical_sequence(profile: Option<W30HookArticulationProfile>, channels: u1
             }
         }
     }
-    format!("{:x}", digest.finalize())
+    hex::encode(digest.finalize())
 }
 
 #[test]

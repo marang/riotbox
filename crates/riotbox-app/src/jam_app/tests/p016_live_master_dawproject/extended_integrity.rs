@@ -168,7 +168,7 @@ fn queued_extended_handoff_revalidates_duration_and_proof_identity_before_public
                     _ => unreachable!(),
                 }
                 let bytes = serde_json::to_vec_pretty(&proof).unwrap();
-                let hash = format!("{:x}", Sha256::digest(&bytes));
+                let hash = hex::encode(Sha256::digest(&bytes));
                 fs::write(proof_path, bytes).unwrap();
                 let source = &mut state.session.export_receipts[0];
                 source.normalized_manifest_hash = hash.clone();

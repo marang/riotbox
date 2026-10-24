@@ -89,9 +89,9 @@ impl AudioRuntimeShell {
             return Err(AudioRuntimeError::NoDefaultOutputDevice { host_name });
         };
 
-        #[allow(deprecated)]
         let device_name = device
-            .name()
+            .description()
+            .map(|description| description.name().to_owned())
             .unwrap_or_else(|_| "<unknown-device>".to_string());
 
         let supported_output_config_count = device
@@ -372,21 +372,19 @@ pub(super) fn build_silent_output_stream<T>(
     config: &cpal::StreamConfig,
     shared: AudioRuntimeSharedState,
     start: Instant,
-) -> Result<cpal::Stream, cpal::BuildStreamError>
+) -> Result<cpal::Stream, cpal::Error>
 where
     T: cpal::SizedSample + cpal::FromSample<f32>,
 {
     let error_telemetry = Arc::clone(&shared.telemetry);
     let error_live_master_capture = Arc::clone(&shared.live_master_capture);
     let mut callback = output_callback::prepare_output_callback::<T>(config, shared, start)
-        .map_err(|error| cpal::BuildStreamError::BackendSpecific {
-            err: cpal::BackendSpecificError {
-                description: error.message().into(),
-            },
+        .map_err(|error| {
+            cpal::Error::with_message(cpal::ErrorKind::Other, error.message().to_owned())
         })?;
 
     device.build_output_stream(
-        config,
+        *config,
         move |data: &mut [T], _| callback(data),
         move |error| {
             error_live_master_capture.record_stream_error();

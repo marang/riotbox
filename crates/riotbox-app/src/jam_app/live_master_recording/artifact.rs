@@ -678,11 +678,11 @@ fn sha256_float_samples(samples: &[f32]) -> String {
     for sample in samples {
         digest.update(sample.to_le_bytes());
     }
-    format!("{:x}", digest.finalize())
+    hex::encode(digest.finalize())
 }
 
 fn sha256_bytes(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    hex::encode(Sha256::digest(bytes))
 }
 
 pub(super) fn remove_owned_recording(

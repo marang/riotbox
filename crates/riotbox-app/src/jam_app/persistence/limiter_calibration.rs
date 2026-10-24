@@ -51,7 +51,7 @@ impl JamAppState {
         )?;
         let source_ref =
             source_audio_identity_ref(&session, &graph).map_err(JamAppError::InvalidSession)?;
-        let actual_hash = format!("sha256:{:x}", Sha256::digest(source_wav_bytes));
+        let actual_hash = format!("sha256:{}", hex::encode(Sha256::digest(source_wav_bytes)));
         validate_source_audio_cache_identity(source_ref, &graph, &actual_hash)
             .map_err(JamAppError::InvalidSession)?;
         if graph.provenance.source_hash != actual_hash {

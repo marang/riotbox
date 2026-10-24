@@ -251,6 +251,6 @@ fn write_product_export_handoff_fixture(proof_dir: &Path, source_hash: &str) -> 
 fn sha256(bytes: &[u8]) -> String {
     let mut digest = Sha256::new();
     digest.update(bytes);
-    format!("{:x}", digest.finalize())
+    hex::encode(digest.finalize())
 }
 use sha2::Digest;

@@ -452,7 +452,7 @@ pub(super) fn proof_path_for(destination: &Path) -> Result<PathBuf, JamAppError>
     Ok(destination.with_file_name(format!("{file_name}.riotbox.json")))
 }
 fn sha256_bytes(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    hex::encode(Sha256::digest(bytes))
 }
 
 #[cfg(test)]

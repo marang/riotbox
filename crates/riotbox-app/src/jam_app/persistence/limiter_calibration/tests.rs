@@ -26,7 +26,7 @@ fn fixture(root: &Path, frame_count: usize) -> (SourceGraph, Vec<u8>, JamFileSet
         .map(|index| (index % 97) as f32 / 194.0 - 0.25)
         .collect();
     let bytes = pcm16_wave_bytes(44_100, 2, &samples).unwrap();
-    let hash = format!("sha256:{:x}", Sha256::digest(&bytes));
+    let hash = format!("sha256:{}", hex::encode(Sha256::digest(&bytes)));
     let graph = SourceGraph::new(
         SourceDescriptor {
             source_id: "synthetic-calibration-source".into(),
@@ -139,7 +139,7 @@ fn rejects_empty_or_invalid_wav_bytes_even_when_hashes_match() {
         b"not WAV".to_vec(),
     ] {
         let (mut graph, _, files) = fixture(dir.path(), 176_400);
-        let hash = format!("sha256:{:x}", Sha256::digest(&bytes));
+        let hash = format!("sha256:{}", hex::encode(Sha256::digest(&bytes)));
         graph.source.content_hash = hash.clone();
         graph.provenance.source_hash = hash;
         assert!(JamAppState::from_limiter_calibration_graph_bytes(graph, &bytes, files).is_err());
@@ -250,7 +250,7 @@ fn ordinary_commits_write_and_hydrate_capture_without_original_source_io() {
     );
     assert_eq!(
         capture.audio_identity.as_ref().unwrap().sha256,
-        format!("sha256:{:x}", Sha256::digest(&artifact_bytes))
+        format!("sha256:{}", hex::encode(Sha256::digest(&artifact_bytes)))
     );
     assert_eq!(
         state.runtime.capture_audio_status.get(&capture_id),

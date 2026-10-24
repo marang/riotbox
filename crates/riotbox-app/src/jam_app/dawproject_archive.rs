@@ -294,7 +294,7 @@ fn expected_archive_paths(audio_path: &str) -> Vec<String> {
 }
 
 fn sha256_bytes(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    hex::encode(Sha256::digest(bytes))
 }
 
 fn invalid_dawproject(context: &str, error: impl std::fmt::Display) -> JamAppError {
@@ -318,7 +318,7 @@ mod tests {
         loop {
             match reader.read_event_into(&mut buffer).expect("XML event") {
                 Event::Start(start) => {
-                    return String::from_utf8(start.name().as_ref().to_vec()).expect("root UTF-8");
+                    return start.name().as_ref().to_owned();
                 }
                 Event::Decl(_) | Event::DocType(_) | Event::Comment(_) | Event::Text(_) => {}
                 other => panic!("expected XML root start, got {other:?}"),

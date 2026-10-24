@@ -658,11 +658,11 @@ fn pcm_f32le_sha256(samples: &[f32], sample_rate_hz: u32, channels: usize) -> St
     for sample in samples {
         digest.update(sample.to_bits().to_le_bytes());
     }
-    format!("{:x}", digest.finalize())
+    hex::encode(digest.finalize())
 }
 
 fn sha256_hex(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    hex::encode(Sha256::digest(bytes))
 }
 
 fn write_new(path: &Path, bytes: &[u8]) -> io::Result<()> {

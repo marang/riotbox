@@ -141,7 +141,7 @@ impl DawSessionManifest {
         let bytes = self.normalized_json_bytes()?;
         let mut digest = Sha256::new();
         digest.update(&bytes);
-        Ok(format!("{:x}", digest.finalize()))
+        Ok(hex::encode(digest.finalize()))
     }
 }
 
