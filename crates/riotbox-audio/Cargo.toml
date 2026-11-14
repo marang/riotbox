@@ -15,7 +15,7 @@ same-file = "1.0.6"
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
-triple_buffer = "=9.0.0"
+triple_buffer = "=9.0.1"
 
 [target.'cfg(unix)'.dependencies]
 libc.workspace = true
